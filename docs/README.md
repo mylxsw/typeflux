@@ -7,3 +7,4 @@
 - `04-configuration.md`：配置项与存储（快捷键、LLM、STT）
 - `05-risks-and-decisions.md`：关键技术风险、决策与取舍
  - `06-developer-onboarding.md`：开发者入门（如何本地运行、理解主流程、常见改动/扩展点、调试排错）
+ - `07-outsider-onboarding.md`：外行开发者入门（零 Swift/macOS 基础，把本项目当教程来学习与练习）
