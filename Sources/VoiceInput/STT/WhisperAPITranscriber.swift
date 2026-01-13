@@ -29,8 +29,13 @@ final class WhisperAPITranscriber: Transcriber {
         request.httpBody = body
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw NSError(domain: "WhisperAPITranscriber", code: 2)
+        guard let http = response as? HTTPURLResponse else {
+            throw NSError(domain: "WhisperAPITranscriber", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid response type"])
+        }
+        
+        guard (200..<300).contains(http.statusCode) else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "WhisperAPITranscriber", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(errorBody)"])
         }
 
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
