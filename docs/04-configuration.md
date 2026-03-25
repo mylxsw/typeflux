@@ -8,36 +8,47 @@
 - 立即生效：设置页写入后触发 `HotkeyService.updateBindings(...)`
 
 ### STT
-- `stt.provider: enum`：auto / whisper / appleSpeech / custom
+- `stt.provider: enum`：`whisperAPI` / `appleSpeech`
 - Whisper（OpenAI-compatible transcriptions）
   - `stt.whisper.baseURL`
   - `stt.whisper.apiKey`
   - `stt.whisper.model`
 - Apple Speech
   - `stt.appleSpeech.enabled`
-- Custom
-  - `stt.custom.baseURL`
-  - `stt.custom.apiKey`（若需要）
-  - `stt.custom.protocol: enum`（建议支持 `openai_transcriptions` 或 `custom`）
 
-### LLM（OpenAI-compatible ChatCompletions）
-- `llm.baseURL`
-- `llm.apiKey`
-- `llm.model`
-- `llm.temperature`（可选）
+### LLM
+- `llm.provider: enum`：`openAICompatible` / `ollama`
+- OpenAI-compatible ChatCompletions
+  - `llm.baseURL`
+  - `llm.apiKey`
+  - `llm.model`
+- Ollama（本地模型）
+  - `llm.ollama.baseURL`
+  - `llm.ollama.model`
+  - `llm.ollama.autoSetup`
 
-## Provider 路由策略（建议实现为 STTRouter）
-- 当 `stt.provider == custom` 且 custom 配置完整：使用 Custom
-- 当 `stt.provider == whisper` 或 `auto` 且 whisper 配置完整：使用 Whisper
-- 否则：使用 Apple Speech（作为本地/系统备选）
+### Personas
+- `persona.enabled: Bool`
+- `persona.activeID: String`
+- `persona.items: JSON<[PersonaProfile]>`
 
-> 该策略覆盖了“默认 Whisper，同时支持 Apple Speech；若用户配置了自定义 provider 则优先使用自定义”的需求。
+## Provider 路由策略
+- 当 `stt.provider == whisperAPI` 且 Whisper 配置完整：使用 Whisper API
+- 当 `stt.provider == whisperAPI` 但配置不完整且允许 fallback：使用 Apple Speech
+- 当 `stt.provider == appleSpeech`：直接使用 Apple Speech
+- 当 `llm.provider == openAICompatible`：使用远程或自建 OpenAI-compatible Chat API
+- 当 `llm.provider == ollama`：自动检查本地 Ollama 服务、按需拉起服务并拉取模型
+
+## 人设处理策略
+- 若用户有选中文本：语音内容作为编辑指令，和激活的人设一起作用于选中文本
+- 若用户未选中文本但激活了人设：把 STT 结果送给 LLM 按人设进行二次改写
+- 若用户未激活人设：直接插入转写结果
 
 ## 存储建议
 - UserDefaults：
-  - baseURL、model、开关、快捷键列表
+  - provider、baseURL、model、开关、快捷键列表、人设 JSON
 - Keychain：
-  - STT/LLM API Key（避免明文落盘）
+  - STT/LLM API Key（当前实现仍在 UserDefaults，可后续迁移）
 
 ## 变更通知
 - `SettingsStore` 在配置变化时发送通知（例如 Combine Publisher 或 NotificationCenter）

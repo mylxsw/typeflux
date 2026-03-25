@@ -3,6 +3,22 @@ import Foundation
 final class SettingsStore {
     private let defaults = UserDefaults.standard
 
+    var sttProvider: STTProvider {
+        get {
+            let raw = defaults.string(forKey: "stt.provider") ?? STTProvider.whisperAPI.rawValue
+            return STTProvider(rawValue: raw) ?? .whisperAPI
+        }
+        set { defaults.set(newValue.rawValue, forKey: "stt.provider") }
+    }
+
+    var llmProvider: LLMProvider {
+        get {
+            let raw = defaults.string(forKey: "llm.provider") ?? LLMProvider.openAICompatible.rawValue
+            return LLMProvider(rawValue: raw) ?? .openAICompatible
+        }
+        set { defaults.set(newValue.rawValue, forKey: "llm.provider") }
+    }
+
     var llmBaseURL: String {
         get { defaults.string(forKey: "llm.baseURL") ?? "" }
         set { defaults.set(newValue, forKey: "llm.baseURL") }
@@ -18,6 +34,21 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "llm.apiKey") }
     }
 
+    var ollamaBaseURL: String {
+        get { defaults.string(forKey: "llm.ollama.baseURL") ?? "http://127.0.0.1:11434" }
+        set { defaults.set(newValue, forKey: "llm.ollama.baseURL") }
+    }
+
+    var ollamaModel: String {
+        get { defaults.string(forKey: "llm.ollama.model") ?? "qwen2.5:7b" }
+        set { defaults.set(newValue, forKey: "llm.ollama.model") }
+    }
+
+    var ollamaAutoSetup: Bool {
+        get { defaults.object(forKey: "llm.ollama.autoSetup") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "llm.ollama.autoSetup") }
+    }
+
     var whisperBaseURL: String {
         get { defaults.string(forKey: "stt.whisper.baseURL") ?? "" }
         set { defaults.set(newValue, forKey: "stt.whisper.baseURL") }
@@ -31,6 +62,38 @@ final class SettingsStore {
     var whisperAPIKey: String {
         get { defaults.string(forKey: "stt.whisper.apiKey") ?? "" }
         set { defaults.set(newValue, forKey: "stt.whisper.apiKey") }
+    }
+
+    var personaRewriteEnabled: Bool {
+        get { defaults.object(forKey: "persona.enabled") as? Bool ?? false }
+        set { defaults.set(newValue, forKey: "persona.enabled") }
+    }
+
+    var activePersonaID: String {
+        get { defaults.string(forKey: "persona.activeID") ?? "" }
+        set { defaults.set(newValue, forKey: "persona.activeID") }
+    }
+
+    var personasJSON: String {
+        get { defaults.string(forKey: "persona.items") ?? "" }
+        set { defaults.set(newValue, forKey: "persona.items") }
+    }
+
+    var personas: [PersonaProfile] {
+        get {
+            guard let data = personasJSON.data(using: .utf8), !personasJSON.isEmpty else { return defaultPersonas }
+            let decoded = (try? JSONDecoder().decode([PersonaProfile].self, from: data)) ?? []
+            return decoded.isEmpty ? defaultPersonas : decoded
+        }
+        set {
+            let data = (try? JSONEncoder().encode(newValue)) ?? Data("[]".utf8)
+            personasJSON = String(decoding: data, as: UTF8.self)
+        }
+    }
+
+    var activePersona: PersonaProfile? {
+        guard personaRewriteEnabled else { return nil }
+        return personas.first { $0.id.uuidString == activePersonaID }
     }
 
     var useAppleSpeechFallback: Bool {
@@ -63,5 +126,18 @@ final class SettingsStore {
     // Default hotkey: Option+Space (keyCode 49 = Space, Option = 0x80000)
     private var defaultHotkeys: [HotkeyBinding] {
         [HotkeyBinding(keyCode: 49, modifierFlags: 0x80000)]
+    }
+
+    private var defaultPersonas: [PersonaProfile] {
+        [
+            PersonaProfile(
+                name: "专业助理",
+                prompt: "使用专业、清晰、简洁的中文表达，整理语序，保留关键信息，适合直接发给同事或客户。"
+            ),
+            PersonaProfile(
+                name: "社媒达人",
+                prompt: "改写成更有感染力和分享感的中文内容，语气自然、鲜活，适合社交媒体发布。"
+            )
+        ]
     }
 }

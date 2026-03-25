@@ -167,18 +167,37 @@ final class WorkflowController {
 
             do {
                 let audioFile = try self.audioRecorder.stop()
-                let instructionText = try await self.sttRouter.transcribe(audioFile: audioFile)
+                let transcribedText = try await self.sttRouter.transcribe(audioFile: audioFile)
 
                 let selectedText = await self.selectionTask?.value
                 self.currentSelectedText = selectedText
+                let activePersona = self.settingsStore.activePersona
 
                 if let selected = self.currentSelectedText, !selected.isEmpty {
-                    let finalText = try await self.generateEdit(selectedText: selected, instruction: instructionText)
+                    let finalText = try await self.generateRewrite(
+                        request: LLMRewriteRequest(
+                            mode: .editSelection,
+                            sourceText: selected,
+                            spokenInstruction: transcribedText,
+                            personaPrompt: activePersona?.prompt
+                        )
+                    )
                     self.applyText(finalText, replace: true)
                     self.historyStore.append(record: .init(date: Date(), text: finalText, audioFilePath: audioFile.fileURL.path))
+                } else if let activePersona {
+                    let finalText = try await self.generateRewrite(
+                        request: LLMRewriteRequest(
+                            mode: .rewriteTranscript,
+                            sourceText: transcribedText,
+                            spokenInstruction: nil,
+                            personaPrompt: activePersona.prompt
+                        )
+                    )
+                    self.applyText(finalText, replace: false)
+                    self.historyStore.append(record: .init(date: Date(), text: finalText, audioFilePath: audioFile.fileURL.path))
                 } else {
-                    self.applyText(instructionText, replace: false)
-                    self.historyStore.append(record: .init(date: Date(), text: instructionText, audioFilePath: audioFile.fileURL.path))
+                    self.applyText(transcribedText, replace: false)
+                    self.historyStore.append(record: .init(date: Date(), text: transcribedText, audioFilePath: audioFile.fileURL.path))
                 }
 
                 self.historyStore.purge(olderThanDays: 7)
@@ -199,11 +218,11 @@ final class WorkflowController {
         }
     }
 
-    private func generateEdit(selectedText: String, instruction: String) async throws -> String {
+    private func generateRewrite(request: LLMRewriteRequest) async throws -> String {
         var buffer = ""
         var lastChunkAt = Date()
 
-        let stream = llmService.streamEdit(selectedText: selectedText, instruction: instruction)
+        let stream = llmService.streamRewrite(request: request)
         for try await chunk in stream {
             buffer += chunk
             let now = Date()

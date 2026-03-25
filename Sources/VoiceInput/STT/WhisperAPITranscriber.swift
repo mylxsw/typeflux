@@ -8,7 +8,7 @@ final class WhisperAPITranscriber: Transcriber {
     }
 
     func transcribe(audioFile: AudioFile) async throws -> String {
-        guard let baseURL = URL(string: settingsStore.whisperBaseURL), !settingsStore.whisperAPIKey.isEmpty else {
+        guard let baseURL = URL(string: settingsStore.whisperBaseURL), !settingsStore.whisperBaseURL.isEmpty else {
             throw NSError(domain: "WhisperAPITranscriber", code: 1)
         }
 
@@ -17,7 +17,9 @@ final class WhisperAPITranscriber: Transcriber {
         let url = baseURL.appendingPathComponent("audio/transcriptions")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(settingsStore.whisperAPIKey)", forHTTPHeaderField: "Authorization")
+        if !settingsStore.whisperAPIKey.isEmpty {
+            request.setValue("Bearer \(settingsStore.whisperAPIKey)", forHTTPHeaderField: "Authorization")
+        }
 
         let boundary = "Boundary-\(UUID().uuidString)"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")

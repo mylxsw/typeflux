@@ -7,11 +7,11 @@ final class OpenAICompatibleLLMService: LLMService {
         self.settingsStore = settingsStore
     }
 
-    func streamEdit(selectedText: String, instruction: String) -> AsyncThrowingStream<String, Error> {
+    func streamRewrite(request rewriteRequest: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             Task {
                 do {
-                    let text = try await streamEditInternal(selectedText: selectedText, instruction: instruction, continuation: continuation)
+                    let text = try await streamRewriteInternal(request: rewriteRequest, continuation: continuation)
                     continuation.finish()
                     _ = text
                 } catch {
@@ -21,42 +21,42 @@ final class OpenAICompatibleLLMService: LLMService {
         }
     }
 
-    private func streamEditInternal(
-        selectedText: String,
-        instruction: String,
+    private func streamRewriteInternal(
+        request rewriteRequest: LLMRewriteRequest,
         continuation: AsyncThrowingStream<String, Error>.Continuation
     ) async throws -> String {
-        guard let baseURL = URL(string: settingsStore.llmBaseURL), !settingsStore.llmAPIKey.isEmpty else {
+        guard let baseURL = URL(string: settingsStore.llmBaseURL), !settingsStore.llmBaseURL.isEmpty else {
             throw NSError(domain: "LLM", code: 1)
         }
 
         let model = settingsStore.llmModel.isEmpty ? "gpt-4o-mini" : settingsStore.llmModel
 
         let url = baseURL.appendingPathComponent("chat/completions")
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(settingsStore.llmAPIKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        if !settingsStore.llmAPIKey.isEmpty {
+            urlRequest.setValue("Bearer \(settingsStore.llmAPIKey)", forHTTPHeaderField: "Authorization")
+        }
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let systemPrompt = "You are a text editing assistant. Return ONLY the final rewritten text. Do not include explanations."
-        let userPrompt = "Selected text:\n\(selectedText)\n\nInstruction:\n\(instruction)\n\nReturn only the final text."
+        let prompts = buildPrompts(for: rewriteRequest)
 
         let body: [String: Any] = [
             "model": model,
             "stream": true,
             "messages": [
-                ["role": "system", "content": systemPrompt],
-                ["role": "user", "content": userPrompt]
+                ["role": "system", "content": prompts.system],
+                ["role": "user", "content": prompts.user]
             ]
         ]
 
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        NetworkDebugLogger.logRequest(request)
+        urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
+        NetworkDebugLogger.logRequest(urlRequest)
 
         var final = ""
 
         do {
-            for try await line in try await SSEClient.lines(for: request) {
+            for try await line in try await SSEClient.lines(for: urlRequest) {
                 if line == "[DONE]" { break }
 
                 guard let data = line.data(using: .utf8) else { continue }
@@ -78,6 +78,60 @@ final class OpenAICompatibleLLMService: LLMService {
         NetworkDebugLogger.logMessage("LLM final result: \(final.isEmpty ? "<empty stream result>" : final)")
 
         return final
+    }
+
+    private func buildPrompts(for request: LLMRewriteRequest) -> (system: String, user: String) {
+        let personaSection: String
+        if let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines), !personaPrompt.isEmpty {
+            personaSection = "\nPersona requirements:\n\(personaPrompt)"
+        } else {
+            personaSection = ""
+        }
+
+        switch request.mode {
+        case .editSelection:
+            let spokenInstruction = request.spokenInstruction?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let outputRequirement: String
+            if let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines), !personaPrompt.isEmpty {
+                outputRequirement = """
+
+                Output requirements:
+                - Treat the spoken instruction as the highest-priority requirement.
+                - Apply the persona requirement below only when it does not conflict with the edit intent.
+                - Persona requirement: \(personaPrompt)
+                """
+            } else {
+                outputRequirement = """
+
+                Output requirements:
+                - Treat the spoken instruction as the highest-priority requirement.
+                """
+            }
+
+            return (
+                system: "You are a text editing assistant. When editing existing text, preserve the user's editing intent first and use any persona requirement only as a secondary output-style constraint. Return only the final rewritten text without explanations or quotation marks.",
+                user: """
+                Selected text:
+                \(request.sourceText)
+
+                Spoken instruction:
+                \(spokenInstruction)\(outputRequirement)
+
+                Return only the final rewritten text.
+                """
+            )
+
+        case .rewriteTranscript:
+            return (
+                system: "You rewrite dictated text into polished final copy. Follow the persona requirements exactly when provided. Return only the final text without explanations or quotation marks.",
+                user: """
+                Raw transcript:
+                \(request.sourceText)\(personaSection)
+
+                Clean up recognition artifacts if needed and return only the final text.
+                """
+            )
+        }
     }
 }
 
