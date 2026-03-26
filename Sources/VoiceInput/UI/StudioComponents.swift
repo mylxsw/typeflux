@@ -1,5 +1,14 @@
 import SwiftUI
 
+struct StudioInteractiveButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? StudioTheme.Opacity.pressedFade : 1)
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
 struct StudioShell<Content: View>: View {
     let currentSection: StudioSection
     let onSelect: (StudioSection) -> Void
@@ -22,23 +31,38 @@ struct StudioShell<Content: View>: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            StudioSidebar(currentSection: currentSection, onSelect: onSelect)
-                .frame(width: StudioTheme.sidebarWidth)
+        ZStack {
+            StudioTheme.windowBackground
+                .ignoresSafeArea()
 
-            VStack(spacing: 0) {
+            HStack(spacing: StudioTheme.Spacing.none) {
+                StudioSidebar(currentSection: currentSection, onSelect: onSelect)
+                    .frame(width: StudioTheme.sidebarWidth)
+
                 ScrollView {
-                    content
-                        .frame(maxWidth: StudioTheme.contentMaxWidth, alignment: .leading)
-                        .padding(.horizontal, StudioTheme.contentInset)
-                        .padding(.top, 20)
-                        .padding(.bottom, 28)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.section) {
+                        content
+                    }
+                    .frame(maxWidth: StudioTheme.contentMaxWidth, alignment: .leading)
+                    .padding(.horizontal, StudioTheme.contentInset)
+                    .padding(.top, StudioTheme.Layout.shellContentTopInset)
+                    .padding(.bottom, StudioTheme.Layout.shellContentBottomInset)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
                 }
+                .background(
+                    RoundedRectangle(cornerRadius: StudioTheme.Layout.shellCornerRadius, style: .continuous)
+                        .fill(StudioTheme.surface)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: StudioTheme.Layout.shellCornerRadius, style: .continuous)
+                        .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.shellBorder), lineWidth: StudioTheme.BorderWidth.thin)
+                )
+                .padding(.vertical, StudioTheme.Layout.contentCardInset)
+                .padding(.trailing, StudioTheme.Layout.contentCardInset)
+                .padding(.leading, StudioTheme.Layout.shellContentLeadingInset)
             }
-            .background(StudioTheme.background)
+            .padding(StudioTheme.Layout.shellInset)
         }
-        .background(StudioTheme.background)
     }
 }
 
@@ -47,70 +71,55 @@ struct StudioSidebar: View {
     let onSelect: (StudioSection) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Voice Studio")
-                    .font(.studioDisplay(16, weight: .bold))
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
+            HStack(spacing: StudioTheme.Spacing.smallMedium) {
+                Image(systemName: "waveform.circle.fill")
+                    .font(.system(size: StudioTheme.Typography.iconMediumLarge, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text("macOS Sequioa Edition".uppercased())
-                    .font(.studioBody(9, weight: .semibold))
-                    .tracking(2.1)
-                    .foregroundStyle(StudioTheme.textSecondary)
-            }
-            .padding(.horizontal, 18)
-            .padding(.top, 26)
 
-            VStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.sidebarHeaderText) {
+                    Text("VoiceInput")
+                        .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .bold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text("Desktop")
+                        .font(.studioBody(StudioTheme.Typography.caption, weight: .medium))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
+
+                Spacer()
+            }
+            .padding(.top, StudioTheme.Insets.sidebarHeaderTop)
+
+            VStack(spacing: StudioTheme.Spacing.xxSmall) {
                 ForEach(StudioSection.allCases) { section in
                     Button(action: { onSelect(section) }) {
-                        HStack(spacing: 14) {
+                        HStack(spacing: StudioTheme.Spacing.medium) {
                             Image(systemName: section.iconName)
-                                .font(.system(size: 15, weight: .semibold))
-                                .frame(width: 18)
+                                .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
+                                .frame(width: StudioTheme.ControlSize.sidebarNavigationIcon)
+
                             Text(section.title)
-                                .font(.studioBody(14, weight: .medium))
+                                .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
+
                             Spacer()
                         }
                         .foregroundStyle(section == currentSection ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, StudioTheme.Insets.sidebarItemHorizontal)
+                        .padding(.vertical, StudioTheme.Insets.sidebarItemVertical)
                         .background(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(section == currentSection ? StudioTheme.surfaceMuted : Color.clear)
+                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                                .fill(section == currentSection ? StudioTheme.Colors.white.opacity(StudioTheme.Opacity.sidebarSelectionFill) : Color.clear)
                         )
-                        .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(StudioInteractiveButtonStyle())
                 }
             }
-            .padding(.horizontal, 12)
 
             Spacer()
-
-            HStack(spacing: 12) {
-                Circle()
-                    .fill(StudioTheme.accentSoft)
-                    .frame(width: 34, height: 34)
-                    .overlay(
-                        Text("VI")
-                            .font(.studioBody(12, weight: .bold))
-                            .foregroundStyle(StudioTheme.accent)
-                    )
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("VoiceInput Pro")
-                        .font(.studioBody(12, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text("Reusable UI System")
-                        .font(.studioBody(10))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(StudioTheme.sidebar)
+        .padding(.horizontal, StudioTheme.Insets.sidebarOuterHorizontal)
+        .padding(.vertical, StudioTheme.Insets.sidebarOuterVertical)
     }
 }
 
@@ -120,18 +129,14 @@ struct StudioHeroHeader: View {
     let subtitle: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(eyebrow.uppercased())
-                .font(.studioBody(11, weight: .bold))
-                .tracking(2.6)
-                .foregroundStyle(StudioTheme.textSecondary)
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
             Text(title)
-                .font(.studioDisplay(36, weight: .bold))
+                .font(.studioDisplay(StudioTheme.Typography.heroTitle, weight: .semibold))
                 .foregroundStyle(StudioTheme.textPrimary)
             Text(subtitle)
-                .font(.studioBody(14))
+                .font(.studioBody(StudioTheme.Typography.bodyLarge))
                 .foregroundStyle(StudioTheme.textSecondary)
-                .frame(maxWidth: 620, alignment: .leading)
+                .frame(maxWidth: StudioTheme.Layout.heroMaxWidth, alignment: .leading)
         }
     }
 }
@@ -140,35 +145,33 @@ struct StudioSectionTitle: View {
     let title: String
 
     var body: some View {
-        Text(title.uppercased())
-            .font(.studioBody(10, weight: .bold))
-            .tracking(2.3)
+        Text(title)
+            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
             .foregroundStyle(StudioTheme.textSecondary)
     }
 }
 
 struct StudioCard<Content: View>: View {
-    var padding: CGFloat = 20
+    var padding: CGFloat = StudioTheme.Insets.cardDefault
     let content: Content
 
-    init(padding: CGFloat = 24, @ViewBuilder content: () -> Content) {
+    init(padding: CGFloat = StudioTheme.Insets.cardDefault, @ViewBuilder content: () -> Content) {
         self.padding = padding
         self.content = content()
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardCompact) {
             content
         }
         .padding(padding)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
                 .fill(StudioTheme.surface)
         )
-        .shadow(color: Color.black.opacity(0.02), radius: 12, x: 0, y: 6)
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(StudioTheme.border, lineWidth: 1)
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: StudioTheme.BorderWidth.thin)
         )
     }
 }
@@ -187,37 +190,45 @@ struct StudioButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 10) {
+            HStack(spacing: StudioTheme.Spacing.xSmall) {
                 if let systemImage {
                     Image(systemName: systemImage)
+                        .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
                 }
                 Text(title)
-                    .font(.studioBody(14, weight: .semibold))
+                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .frame(minWidth: 88)
+            .padding(.horizontal, variant == .ghost ? StudioTheme.Insets.none : StudioTheme.Insets.buttonHorizontal)
+            .padding(.vertical, variant == .ghost ? StudioTheme.Insets.none : StudioTheme.Insets.buttonVertical)
+            .frame(minWidth: variant == .ghost ? nil : StudioTheme.ControlSize.buttonMinWidth)
+            .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
         }
-        .buttonStyle(.plain)
-        .background(background)
+        .buttonStyle(StudioInteractiveButtonStyle())
         .foregroundStyle(foreground)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(variant == .ghost ? Color.clear : StudioTheme.border, lineWidth: variant == .primary ? 0 : 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(background)
+        .overlay(overlay)
+        .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
     }
 
+    @ViewBuilder
     private var background: some View {
-        Group {
-            switch variant {
-            case .primary:
-                RoundedRectangle(cornerRadius: 14, style: .continuous).fill(StudioTheme.accent)
-            case .secondary:
-                RoundedRectangle(cornerRadius: 14, style: .continuous).fill(StudioTheme.surface)
-            case .ghost:
-                RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.clear)
-            }
+        switch variant {
+        case .primary:
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                .fill(StudioTheme.accent)
+        case .secondary:
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                .fill(StudioTheme.surfaceMuted)
+        case .ghost:
+            Color.clear
+        }
+    }
+
+    @ViewBuilder
+    private var overlay: some View {
+        if variant != .ghost {
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                .stroke(variant == .primary ? Color.clear : StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
         }
     }
 
@@ -228,22 +239,22 @@ struct StudioButton: View {
         case .secondary:
             return StudioTheme.textPrimary
         case .ghost:
-            return StudioTheme.accent
+            return StudioTheme.textSecondary
         }
     }
 }
 
 struct StudioPill: View {
     let title: String
-    var tone: Color = StudioTheme.accent
-    var fill: Color = StudioTheme.accentSoft
+    var tone: Color = StudioTheme.textSecondary
+    var fill: Color = StudioTheme.surfaceMuted
 
     var body: some View {
-        Text(title.uppercased())
-            .font(.studioBody(10, weight: .bold))
+        Text(title)
+            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
             .foregroundStyle(tone)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
+            .padding(.horizontal, StudioTheme.Insets.pillHorizontal)
+            .padding(.vertical, StudioTheme.Insets.pillVertical)
             .background(Capsule().fill(fill))
     }
 }
@@ -256,31 +267,32 @@ struct StudioMetricCard: View {
 
     var body: some View {
         StudioCard {
-            HStack(alignment: .top) {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(StudioTheme.accentSoft)
-                    .frame(width: 52, height: 52)
+            HStack(alignment: .center) {
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
+                    .fill(StudioTheme.surfaceMuted)
+                    .frame(width: StudioTheme.ControlSize.overviewBadge, height: StudioTheme.ControlSize.overviewBadge)
                     .overlay(
                         Image(systemName: icon)
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundStyle(StudioTheme.accent)
+                            .font(.system(size: StudioTheme.Typography.iconRegular, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textSecondary)
                     )
+
                 Spacer()
+
                 if let badge {
                     StudioPill(title: badge)
                 }
             }
 
-            Spacer(minLength: 24)
-
             Text(value)
-                .font(.studioDisplay(40, weight: .bold))
+                .font(.studioDisplay(StudioTheme.Typography.heroMetric, weight: .semibold))
                 .foregroundStyle(StudioTheme.textPrimary)
+
             Text(caption)
-                .font(.studioBody(14))
+                .font(.studioBody(StudioTheme.Typography.body))
                 .foregroundStyle(StudioTheme.textSecondary)
         }
-        .frame(maxWidth: .infinity, minHeight: 184, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: StudioTheme.Layout.compactMetricMinHeight, alignment: .leading)
     }
 }
 
@@ -296,19 +308,20 @@ struct StudioSettingRow<Accessory: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 18) {
-            VStack(alignment: .leading, spacing: 6) {
+        HStack(alignment: .center, spacing: StudioTheme.Spacing.large) {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
                 Text(title)
-                    .font(.studioDisplay(17, weight: .semibold))
+                    .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
                 Text(subtitle)
-                    .font(.studioBody(14))
+                    .font(.studioBody(StudioTheme.Typography.bodyLarge))
                     .foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer()
+            Spacer(minLength: StudioTheme.Spacing.pageGroup)
             accessory
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, StudioTheme.Spacing.xSmall)
     }
 }
 
@@ -319,10 +332,9 @@ struct StudioTextInputCard: View {
     var secure: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(label.uppercased())
-                .font(.studioBody(10, weight: .bold))
-                .tracking(2)
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            Text(label)
+                .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
                 .foregroundStyle(StudioTheme.textSecondary)
 
             Group {
@@ -333,17 +345,17 @@ struct StudioTextInputCard: View {
                 }
             }
             .textFieldStyle(.plain)
-            .font(.studioBody(15))
+            .font(.studioBody(StudioTheme.Typography.bodyLarge))
             .foregroundStyle(StudioTheme.textPrimary)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 13)
+            .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
+            .padding(.vertical, StudioTheme.Insets.textFieldVertical)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(StudioTheme.surface)
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                    .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(StudioTheme.border, lineWidth: 1)
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                    .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: StudioTheme.BorderWidth.thin)
             )
         }
     }
@@ -353,37 +365,35 @@ struct StudioHistoryRow: View {
     let record: HistoryPresentationRecord
 
     var body: some View {
-        HStack(spacing: 18) {
-            Text(record.timestampText)
-                .font(.studioBody(14, weight: .medium))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .frame(width: 170, alignment: .leading)
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            HStack(spacing: StudioTheme.Spacing.smallMedium) {
+                Text(record.timestampText)
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                    .foregroundStyle(StudioTheme.textTertiary)
 
-            HStack(spacing: 12) {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(record.accentColor)
-                    .frame(width: 34, height: 34)
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.historyBadge, style: .continuous)
+                    .fill(record.accentColor.opacity(StudioTheme.Opacity.historyAccent))
+                    .frame(width: StudioTheme.ControlSize.historyBadge, height: StudioTheme.ControlSize.historyBadge)
                     .overlay(
                         Image(systemName: record.accentName)
-                            .foregroundStyle(.white)
+                            .font(.system(size: StudioTheme.Typography.iconTiny, weight: .semibold))
+                            .foregroundStyle(record.accentColor)
                     )
 
                 Text(record.sourceName)
-                    .font(.studioBody(14, weight: .semibold))
+                    .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
                     .foregroundStyle(StudioTheme.textPrimary)
+
+                Spacer()
             }
-            .frame(width: 280, alignment: .leading)
 
             Text(record.previewText)
-                .font(.studioBody(14))
-                .italic()
+                .font(.studioBody(StudioTheme.Typography.bodyLarge))
                 .foregroundStyle(StudioTheme.textSecondary)
-                .lineLimit(1)
-
-            Spacer()
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
+        .padding(.horizontal, StudioTheme.Insets.historyRowHorizontal)
+        .padding(.vertical, StudioTheme.Insets.historyRowVertical)
         .background(StudioTheme.surface)
     }
 }
@@ -392,11 +402,11 @@ private extension HistoryPresentationRecord {
     var accentColor: Color {
         switch accentColorName {
         case "purple":
-            return Color.purple.opacity(0.82)
+            return StudioTheme.Colors.historyPurple.opacity(StudioTheme.Opacity.historyAccentStrong)
         case "green":
-            return Color.green.opacity(0.82)
+            return StudioTheme.Colors.historyGreen.opacity(StudioTheme.Opacity.historyAccentStrong)
         case "orange":
-            return Color.orange.opacity(0.82)
+            return StudioTheme.Colors.historyOrange.opacity(StudioTheme.Opacity.historyAccentStrong)
         default:
             return StudioTheme.accent
         }

@@ -12,11 +12,11 @@ enum StudioSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home: return "Home"
+        case .home: return "Overview"
         case .models: return "Models"
         case .personas: return "Personas"
         case .history: return "History"
-        case .debug: return "Debug"
+        case .debug: return "Diagnostics"
         case .settings: return "Settings"
         }
     }
@@ -34,10 +34,10 @@ enum StudioSection: String, CaseIterable, Identifiable {
 
     var eyebrow: String {
         switch self {
-        case .home: return "Overview"
-        case .models: return "Models Configuration"
-        case .personas: return "Personas Management"
-        case .history: return "Voice History"
+        case .home: return "VoiceInput"
+        case .models: return "Configuration"
+        case .personas: return "Voice Personas"
+        case .history: return "Session History"
         case .debug: return "Diagnostics"
         case .settings: return "Settings"
         }
@@ -45,11 +45,11 @@ enum StudioSection: String, CaseIterable, Identifiable {
 
     var heading: String {
         switch self {
-        case .home: return "Good Morning, Creator"
-        case .models: return "Intelligence Engines."
-        case .personas: return "Personas"
-        case .history: return "Recent Sessions"
-        case .debug: return "Debug Console"
+        case .home: return "Speak naturally, write anywhere."
+        case .models: return "Model configuration"
+        case .personas: return "Persona library"
+        case .history: return "History"
+        case .debug: return "Runtime status"
         case .settings: return "Preferences"
         }
     }
@@ -57,17 +57,17 @@ enum StudioSection: String, CaseIterable, Identifiable {
     var subheading: String {
         switch self {
         case .home:
-            return "Here is your voice activity and editing momentum over the last 7 days."
+            return "Keep the whole desktop experience consistent with a calmer, cleaner control surface."
         case .models:
-            return "Configure the local and cloud architectures that power transcription and rewriting."
+            return "Choose the local and remote engines used for transcription and rewrite flows."
         case .personas:
-            return "Curate reusable writing identities and keep their prompts validated."
+            return "Create reusable writing styles and keep every prompt ready for daily use."
         case .history:
-            return "Browse processed sessions, inspect recognized text, and export your timeline."
+            return "Review recent sessions, inspect the recognized text, and export your archive."
         case .debug:
-            return "Inspect recent failures, connectivity hints, and model preparation status."
+            return "Inspect connectivity, local model state, and recent application errors."
         case .settings:
-            return "Configure how Voice Studio behaves on your system and personalize your interaction experience."
+            return "Adjust shortcuts, appearance, and behavior from one unified interface."
         }
     }
 

@@ -40,7 +40,7 @@ final class SettingsWindowController: NSObject {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
-        window.backgroundColor = NSColor(StudioTheme.background)
+        window.backgroundColor = NSColor(StudioTheme.windowBackground)
         window.contentView = hosting
         window.isReleasedWhenClosed = false
         window.delegate = self

@@ -21,7 +21,12 @@ final class OverlayController {
             let hosting = NSHostingView(rootView: view)
 
             let panel = NSPanel(
-                contentRect: NSRect(x: 0, y: 0, width: 320, height: 92),
+                contentRect: NSRect(
+                    x: 0,
+                    y: 0,
+                    width: StudioTheme.Layout.overlayWidth,
+                    height: StudioTheme.Layout.overlayHeight
+                ),
                 styleMask: [.nonactivatingPanel, .borderless],
                 backing: .buffered,
                 defer: false
@@ -79,7 +84,7 @@ final class OverlayController {
     }
 
     func dismissSoon() {
-        dismiss(after: 0.4)
+        dismiss(after: StudioTheme.Durations.overlayDismissDelay)
     }
 
     func dismiss(after delay: TimeInterval) {
@@ -95,7 +100,7 @@ final class OverlayController {
         let frame = screen.visibleFrame
         let size = window.frame.size
         let x = frame.midX - size.width / 2
-        let y = frame.minY + 80
+        let y = frame.minY + StudioTheme.Layout.overlayBottomOffset
         window.setFrameOrigin(NSPoint(x: x, y: y))
     }
 }
@@ -111,31 +116,31 @@ private struct OverlayView: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.overlay)
                 .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.overlay)
+                        .stroke(StudioTheme.Colors.white.opacity(StudioTheme.Opacity.overlayStroke), lineWidth: StudioTheme.BorderWidth.thin)
                 )
 
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: StudioTheme.Spacing.smallMedium) {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
                     Text(model.statusText)
                         .font(.headline)
                     if !model.detailText.isEmpty {
                         Text(model.detailText)
                             .font(.caption)
-                            .lineLimit(2)
+                            .lineLimit(StudioTheme.LineLimit.detail)
                             .foregroundStyle(.secondary)
                     }
                 }
-                Spacer(minLength: 0)
+                Spacer(minLength: StudioTheme.Insets.none)
                 LevelBar(level: model.level)
-                    .frame(width: 56, height: 12)
+                    .frame(width: StudioTheme.ControlSize.overlayLevelWidth, height: StudioTheme.ControlSize.overlayLevelHeight)
             }
-            .padding(14)
+            .padding(StudioTheme.Insets.overlay)
         }
-        .frame(width: 320, height: 92)
+        .frame(width: StudioTheme.Layout.overlayWidth, height: StudioTheme.Layout.overlayHeight)
     }
 }
 
@@ -145,10 +150,10 @@ private struct LevelBar: View {
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.white.opacity(0.12))
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.green.opacity(0.7))
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.meter)
+                    .fill(StudioTheme.Colors.white.opacity(StudioTheme.Opacity.overlayTrack))
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.meter)
+                    .fill(StudioTheme.Colors.overlayLevel.opacity(StudioTheme.Opacity.overlayLevel))
                     .frame(width: geo.size.width * CGFloat(max(0, min(1, level))))
             }
         }

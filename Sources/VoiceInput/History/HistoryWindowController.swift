@@ -17,7 +17,12 @@ final class HistoryWindowController: NSObject {
         let hosting = NSHostingView(rootView: view)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 680, height: 520),
+            contentRect: NSRect(
+                x: 0,
+                y: 0,
+                width: StudioTheme.Layout.historyWindowWidth,
+                height: StudioTheme.Layout.historyWindowHeight
+            ),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
@@ -49,7 +54,7 @@ private struct HistoryView: View {
                 .foregroundStyle(.secondary)
             Spacer()
         }
-        .padding(12)
+        .padding(StudioTheme.Insets.windowContent)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
