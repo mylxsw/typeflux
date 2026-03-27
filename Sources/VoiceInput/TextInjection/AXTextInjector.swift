@@ -64,7 +64,58 @@ final class AXTextInjector: TextInjector {
             return nil
         }
 
-        return copyStringAttribute(kAXSelectedTextAttribute, from: element)
+        let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
+        let nativeTextRoles: Set<String> = [
+            "AXTextArea",
+            "AXTextField",
+            "AXComboBox",
+            "AXSearchField"
+        ]
+        let isNativeText = role != nil && nativeTextRoles.contains(role!)
+
+        let isSettable = isAttributeSettable(kAXSelectedTextRangeAttribute as CFString, on: element)
+                      || isAttributeSettable(kAXValueAttribute as CFString, on: element)
+                      || isAttributeSettable(kAXSelectedTextAttribute as CFString, on: element)
+
+        if !isNativeText && !isSettable {
+            return nil
+        }
+
+        let range = copySelectedTextRange(from: element)
+        if let r = range, r.length == 0 {
+            return nil
+        }
+
+        guard let text = copyStringAttribute(kAXSelectedTextAttribute, from: element) else {
+            return nil
+        }
+
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return nil }
+
+        // Electron Bug Defense 1: Fake selection exactly matches Placeholder or Title
+        if let placeholder = copyStringAttribute(kAXPlaceholderValueAttribute as String, from: element), placeholder == text {
+            return nil
+        }
+        if let title = copyStringAttribute(kAXTitleAttribute as String, from: element), title == text {
+            return nil
+        }
+
+        // Electron Bug Defense 2: Fake selection matches the entire node's value, but the node refuses to provide a selection range.
+        // This usually happens when an Electron WebArea focuses a block but hasn't actually selected any text inside it.
+        if range == nil && (role == "AXWebArea" || role == "AXGroup" || role == "AXUnknown") {
+            if let value = copyStringAttribute(kAXValueAttribute as String, from: element), value == text {
+                return nil
+            }
+        }
+
+        return text
+    }
+
+    private func isAttributeSettable(_ attribute: CFString, on element: AXUIElement) -> Bool {
+        var settable = DarwinBoolean(false)
+        let status = AXUIElementIsAttributeSettable(element, attribute, &settable)
+        return status == .success && settable.boolValue
     }
 
     private func setText(_ text: String, replaceSelection: Bool) throws {
@@ -101,35 +152,13 @@ final class AXTextInjector: TextInjector {
             }
         }
 
-        guard
-            let currentValue = copyStringAttribute(kAXValueAttribute, from: element),
-            let selectedRange = copySelectedTextRange(from: element)
-        else {
-            return false
-        }
-
-        let nsValue = currentValue as NSString
-        let maxLength = nsValue.length
-        let safeLocation = min(max(0, selectedRange.location), maxLength)
-        let safeLength = min(max(0, selectedRange.length), maxLength - safeLocation)
-        let range = NSRange(location: safeLocation, length: replaceSelection ? safeLength : 0)
-        let updatedValue = nsValue.replacingCharacters(in: range, with: text)
-
-        let setValueResult = AXUIElementSetAttributeValue(
-            element,
-            kAXValueAttribute as CFString,
-            updatedValue as CFTypeRef
-        )
-        guard setValueResult == .success else {
-            return false
-        }
-
-        let insertionLocation = safeLocation + (text as NSString).length
-        _ = setSelectedTextRange(
-            CFRange(location: insertionLocation, length: 0),
-            on: element
-        )
-        return true
+        // EXTREMELY DANGEROUS: 
+        // We previously attempted to read `kAXValueAttribute`, string-splice the new text into it, and set it back.
+        // However, many Electron apps (like Codex) expose their placeholder text inside `kAXValueAttribute` when empty.
+        // String splicing here permanently fuses the user's dictation with the placeholder (e.g. "Ask for follow-up changes")
+        // and physically writes it into the document. Furthermore, mutating `kAXValueAttribute` breaks Undo/Redo across macOS.
+        // By returning false, we securely delegate all standard insertions to `setTextViaPaste` (Cmd+V), which works natively.
+        return false
     }
 
     private func setTextViaPaste(_ text: String) throws {
