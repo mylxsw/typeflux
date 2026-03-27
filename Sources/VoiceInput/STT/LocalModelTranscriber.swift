@@ -10,11 +10,18 @@ final class LocalModelTranscriber: Transcriber {
     }
 
     func transcribe(audioFile: AudioFile) async throws -> String {
+        try await transcribeStream(audioFile: audioFile) { _ in }
+    }
+
+    func transcribeStream(
+        audioFile: AudioFile,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> String {
         let baseURL = try await serviceManager.ensureServerReady(settingsStore: settingsStore)
         let model = settingsStore.localSTTModelIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? settingsStore.localSTTModel.defaultModelIdentifier
             : settingsStore.localSTTModelIdentifier
-        let uploadURL = audioFile.fileURL
+        let uploadURL = try AudioFileTranscoder.wavFileURL(for: audioFile)
         let vocabularyPrompt = vocabularyPromptText()
 
         let url = baseURL.appendingPathComponent("audio/transcriptions")
@@ -80,7 +87,9 @@ final class LocalModelTranscriber: Transcriber {
         }
 
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        return (json?["text"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let text = (json?["text"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        await onUpdate(TranscriptionSnapshot(text: text, isFinal: true))
+        return text
     }
 
     private func mimeType(for fileURL: URL) -> String {
@@ -99,8 +108,6 @@ final class LocalModelTranscriber: Transcriber {
     }
 
     private func vocabularyPromptText() -> String? {
-        let terms = VocabularyStore.activeTerms()
-        guard !terms.isEmpty else { return nil }
-        return "Vocabulary terms to recognize accurately: \(terms.joined(separator: ", "))"
+        PromptCatalog.transcriptionVocabularyHint(terms: VocabularyStore.activeTerms())
     }
 }

@@ -3,6 +3,13 @@ import Speech
 
 final class AppleSpeechTranscriber: Transcriber {
     func transcribe(audioFile: AudioFile) async throws -> String {
+        try await transcribeStream(audioFile: audioFile) { _ in }
+    }
+
+    func transcribeStream(
+        audioFile: AudioFile,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> String {
         let auth = await MainActor.run { SFSpeechRecognizer.authorizationStatus() }
         guard auth == .authorized else {
             throw NSError(domain: "AppleSpeechTranscriber", code: 2, userInfo: [NSLocalizedDescriptionKey: "Speech recognition not authorized"])
@@ -30,7 +37,11 @@ final class AppleSpeechTranscriber: Transcriber {
                 }
                 if let result, result.isFinal {
                     hasResumed = true
-                    continuation.resume(returning: result.bestTranscription.formattedString)
+                    let text = result.bestTranscription.formattedString.trimmingCharacters(in: .whitespacesAndNewlines)
+                    Task {
+                        await onUpdate(TranscriptionSnapshot(text: text, isFinal: true))
+                    }
+                    continuation.resume(returning: text)
                 }
             }
         }

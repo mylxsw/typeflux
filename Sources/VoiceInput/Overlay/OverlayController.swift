@@ -65,6 +65,26 @@ final class OverlayController {
         refreshWindow()
     }
 
+    func updateRecordingPreviewText(_ text: String) {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.updateRecordingPreviewText(text) }
+            return
+        }
+
+        model.detailText = text
+        switch model.presentation {
+        case .recordingHold:
+            model.presentation = .recordingHoldPreview
+        case .recordingLocked:
+            model.presentation = .recordingLockedPreview
+        case .recordingHoldPreview, .recordingLockedPreview:
+            break
+        default:
+            return
+        }
+        refreshWindow()
+    }
+
     func showProcessing() {
         if !Thread.isMainThread {
             DispatchQueue.main.async { [weak self] in self?.showProcessing() }
@@ -182,8 +202,12 @@ final class OverlayController {
         switch presentation {
         case .recordingHold:
             return OverlayMetrics(size: NSSize(width: 118, height: 72), anchor: .bottom, offset: 24, interactive: false)
+        case .recordingHoldPreview:
+            return OverlayMetrics(size: NSSize(width: 344, height: 118), anchor: .bottom, offset: 24, interactive: false)
         case .recordingLocked:
             return OverlayMetrics(size: NSSize(width: 158, height: 66), anchor: .bottom, offset: 26, interactive: true)
+        case .recordingLockedPreview:
+            return OverlayMetrics(size: NSSize(width: 344, height: 124), anchor: .bottom, offset: 24, interactive: true)
         case .processing:
             return OverlayMetrics(size: NSSize(width: 118, height: 72), anchor: .bottom, offset: 24, interactive: false)
         case .transcriptPreview:
@@ -196,7 +220,7 @@ final class OverlayController {
     }
 
     private func updateKeyMonitoring() {
-        if model.presentation == .recordingLocked {
+        if model.presentation == .recordingLocked || model.presentation == .recordingLockedPreview {
             installKeyMonitoringIfNeeded()
         } else {
             removeKeyMonitoring()
@@ -226,7 +250,7 @@ final class OverlayController {
     }
 
     private func handleKeyEvent(_ event: NSEvent) {
-        guard model.presentation == .recordingLocked else { return }
+        guard model.presentation == .recordingLocked || model.presentation == .recordingLockedPreview else { return }
         if Int(event.keyCode) == 53 {
             model.requestCancel()
         }
@@ -248,7 +272,9 @@ private struct OverlayMetrics {
 final class OverlayViewModel: ObservableObject {
     enum Presentation {
         case recordingHold
+        case recordingHoldPreview
         case recordingLocked
+        case recordingLockedPreview
         case processing
         case transcriptPreview
         case notice
@@ -285,8 +311,12 @@ private struct OverlayView: View {
             switch model.presentation {
             case .recordingHold:
                 recordingCapsule
+            case .recordingHoldPreview:
+                recordingPreviewCard(showControls: false)
             case .recordingLocked:
                 lockedRecordingCapsule
+            case .recordingLockedPreview:
+                recordingPreviewCard(showControls: true)
             case .processing:
                 processingCapsule
             case .transcriptPreview:
@@ -303,7 +333,7 @@ private struct OverlayView: View {
 
     private var contentAlignment: Alignment {
         switch model.presentation {
-        case .recordingHold, .recordingLocked, .processing, .notice:
+        case .recordingHold, .recordingHoldPreview, .recordingLocked, .recordingLockedPreview, .processing, .notice:
             return .bottom
         case .transcriptPreview, .failure:
             return .top
@@ -314,8 +344,12 @@ private struct OverlayView: View {
         switch model.presentation {
         case .recordingHold, .processing:
             return EdgeInsets(top: 16, leading: 18, bottom: 16, trailing: 18)
+        case .recordingHoldPreview:
+            return EdgeInsets(top: 12, leading: 16, bottom: 16, trailing: 16)
         case .recordingLocked:
             return EdgeInsets(top: 15, leading: 14, bottom: 15, trailing: 14)
+        case .recordingLockedPreview:
+            return EdgeInsets(top: 12, leading: 16, bottom: 16, trailing: 16)
         case .transcriptPreview, .notice, .failure:
             return EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16)
         }
@@ -341,6 +375,47 @@ private struct OverlayView: View {
             onCancel: model.requestCancel,
             onConfirm: model.requestConfirm
         )
+    }
+
+    private func recordingPreviewCard(showControls: Bool) -> some View {
+        OverlayCompactToast(width: 312) {
+            VStack(alignment: .leading, spacing: 10) {
+                if showControls {
+                    HStack(spacing: 8) {
+                        Button(action: model.requestCancel) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.white.opacity(0.96))
+                                .frame(width: 24, height: 24)
+                                .background(Circle().fill(Color.white.opacity(0.18)))
+                        }
+                        .buttonStyle(.plain)
+
+                        LevelWaveform(level: model.level, activeColor: Color.white.opacity(0.95))
+                            .frame(width: 38, height: 14)
+
+                        Spacer(minLength: 0)
+
+                        Button(action: model.requestConfirm) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.black.opacity(0.9))
+                                .frame(width: 24, height: 24)
+                                .background(Circle().fill(Color.white.opacity(0.98)))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } else {
+                    LevelWaveform(level: model.level, activeColor: Color.white.opacity(0.95))
+                        .frame(width: 38, height: 14)
+                }
+
+                Text("“\(model.detailText)”")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.84))
+                    .lineLimit(2)
+            }
+        }
     }
 
     private var previewCard: some View {

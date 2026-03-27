@@ -8,35 +8,29 @@ final class WhisperAPITranscriber: Transcriber {
     }
 
     func transcribe(audioFile: AudioFile) async throws -> String {
+        try await transcribeStream(audioFile: audioFile) { _ in }
+    }
+
+    func transcribeStream(
+        audioFile: AudioFile,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> String {
         guard let baseURL = URL(string: settingsStore.whisperBaseURL), !settingsStore.whisperBaseURL.isEmpty else {
             throw NSError(domain: "WhisperAPITranscriber", code: 1)
         }
 
         let model = settingsStore.whisperModel.isEmpty ? "whisper-1" : settingsStore.whisperModel
         let vocabularyPrompt = vocabularyPromptText()
+        let uploadURL = try preparedUploadURL(for: audioFile)
 
-        let url = baseURL.appendingPathComponent("audio/transcriptions")
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        if !settingsStore.whisperAPIKey.isEmpty {
-            request.setValue("Bearer \(settingsStore.whisperAPIKey)", forHTTPHeaderField: "Authorization")
-        }
-
-        let boundary = "Boundary-\(UUID().uuidString)"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-
-        var parts: [MultipartPart] = [
-            .text(name: "model", value: model)
-        ]
-        if let vocabularyPrompt, !vocabularyPrompt.isEmpty {
-            parts.append(.text(name: "prompt", value: vocabularyPrompt))
-        }
-        parts.append(
-            .file(name: "file", filename: audioFile.fileURL.lastPathComponent, mimeType: "audio/m4a", fileURL: audioFile.fileURL)
+        let shouldRequestStreaming = supportsServerStream(for: model)
+        let request = try makeRequest(
+            baseURL: baseURL,
+            model: model,
+            vocabularyPrompt: vocabularyPrompt,
+            uploadURL: uploadURL,
+            stream: shouldRequestStreaming
         )
-
-        let body = try MultipartFormData.build(boundary: boundary, parts: parts)
-        request.httpBody = body
 
         NetworkDebugLogger.logRequest(
             request,
@@ -44,17 +38,57 @@ final class WhisperAPITranscriber: Transcriber {
             {
               "model": "\(model)",
               "prompt": "\(vocabularyPrompt ?? "")",
+              "stream": \(shouldRequestStreaming),
               "file": {
-                "path": "\(audioFile.fileURL.path)",
-                "filename": "\(audioFile.fileURL.lastPathComponent)",
-                "mimeType": "audio/m4a",
-                "sizeBytes": \(body.count)
+                "path": "\(uploadURL.path)",
+                "filename": "\(uploadURL.lastPathComponent)",
+                "mimeType": "\(mimeType(for: uploadURL))",
+                "sizeBytes": \(request.httpBody?.count ?? 0)
               }
             }
             """
         )
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        if shouldRequestStreaming {
+            do {
+                let text = try await streamResponse(for: request, onUpdate: onUpdate)
+                if !text.isEmpty {
+                    return text
+                }
+            } catch {
+                NetworkDebugLogger.logError(context: "Remote STT streaming failed, retrying without stream", error: error)
+            }
+        }
+
+        return try await transcribeOnce(
+            baseURL: baseURL,
+            model: model,
+            vocabularyPrompt: vocabularyPrompt,
+            uploadURL: uploadURL,
+            onUpdate: onUpdate
+        )
+    }
+
+    private func vocabularyPromptText() -> String? {
+        PromptCatalog.transcriptionVocabularyHint(terms: VocabularyStore.activeTerms())
+    }
+
+    private func transcribeOnce(
+        baseURL: URL,
+        model: String,
+        vocabularyPrompt: String?,
+        uploadURL: URL,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> String {
+        let nonStreamingRequest = try makeRequest(
+            baseURL: baseURL,
+            model: model,
+            vocabularyPrompt: vocabularyPrompt,
+            uploadURL: uploadURL,
+            stream: false
+        )
+
+        let (data, response) = try await URLSession.shared.data(for: nonStreamingRequest)
         guard let http = response as? HTTPURLResponse else {
             NetworkDebugLogger.logResponse(response, data: data)
             throw NSError(domain: "WhisperAPITranscriber", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid response type"])
@@ -68,14 +102,147 @@ final class WhisperAPITranscriber: Transcriber {
         }
 
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        let text = json?["text"] as? String
-        return text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let text = (json?["text"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        await onUpdate(TranscriptionSnapshot(text: text, isFinal: true))
+        NetworkDebugLogger.logMessage("Remote STT final result (\(model)): \(text.isEmpty ? "<empty>" : text)")
+        return text
     }
 
-    private func vocabularyPromptText() -> String? {
-        let terms = VocabularyStore.activeTerms()
-        guard !terms.isEmpty else { return nil }
-        return "Vocabulary terms to recognize accurately: \(terms.joined(separator: ", "))"
+    private func streamResponse(
+        for request: URLRequest,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> String {
+        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw NSError(
+                domain: "WhisperAPITranscriber",
+                code: 3,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid stream response type."]
+            )
+        }
+
+        guard (200..<300).contains(http.statusCode) else {
+            var errorBody = Data()
+            for try await byte in bytes {
+                errorBody.append(byte)
+            }
+            NetworkDebugLogger.logResponse(http, data: errorBody)
+            let message = String(data: errorBody, encoding: .utf8) ?? "Unknown error"
+            throw NSError(
+                domain: "WhisperAPITranscriber",
+                code: http.statusCode,
+                userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(message)"]
+            )
+        }
+
+        NetworkDebugLogger.logResponse(http, bodyDescription: "<transcription stream opened>")
+
+        var finalText = ""
+        for try await event in SSEClient.lines(for: bytes) {
+            if event == "[DONE]" { break }
+            guard let payload = event.data(using: .utf8) else { continue }
+
+            let snapshot = try Self.snapshot(from: payload, currentText: finalText)
+            guard let snapshot else { continue }
+            finalText = snapshot.text
+            await onUpdate(snapshot)
+            if snapshot.isFinal {
+                break
+            }
+        }
+
+        return finalText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func snapshot(from payload: Data, currentText: String) throws -> TranscriptionSnapshot? {
+        guard let object = try JSONSerialization.jsonObject(with: payload) as? [String: Any] else {
+            return nil
+        }
+
+        if let type = object["type"] as? String {
+            switch type {
+            case "transcript.text.delta":
+                let delta = object["delta"] as? String ?? ""
+                return TranscriptionSnapshot(text: currentText + delta, isFinal: false)
+            case "transcript.text.done":
+                let text = (object["text"] as? String ?? currentText).trimmingCharacters(in: .whitespacesAndNewlines)
+                return TranscriptionSnapshot(text: text, isFinal: true)
+            default:
+                return nil
+            }
+        }
+
+        if let text = object["text"] as? String {
+            return TranscriptionSnapshot(text: text.trimmingCharacters(in: .whitespacesAndNewlines), isFinal: true)
+        }
+
+        return nil
+    }
+
+    private func preparedUploadURL(for audioFile: AudioFile) throws -> URL {
+        switch audioFile.fileURL.pathExtension.lowercased() {
+        case "wav", "mp3", "m4a", "mp4", "mpeg", "mpga", "webm":
+            return audioFile.fileURL
+        default:
+            return try AudioFileTranscoder.wavFileURL(for: audioFile)
+        }
+    }
+
+    private func supportsServerStream(for model: String) -> Bool {
+        let normalized = model.lowercased()
+        return normalized != "whisper-1"
+    }
+
+    private func makeRequest(
+        baseURL: URL,
+        model: String,
+        vocabularyPrompt: String?,
+        uploadURL: URL,
+        stream: Bool
+    ) throws -> URLRequest {
+        let url = baseURL.appendingPathComponent("audio/transcriptions")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        if !settingsStore.whisperAPIKey.isEmpty {
+            request.setValue("Bearer \(settingsStore.whisperAPIKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        let boundary = "Boundary-\(UUID().uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var parts: [MultipartPart] = [.text(name: "model", value: model)]
+        if let vocabularyPrompt, !vocabularyPrompt.isEmpty {
+            parts.append(.text(name: "prompt", value: vocabularyPrompt))
+        }
+        if stream {
+            parts.append(.text(name: "stream", value: "true"))
+        }
+        parts.append(
+            .file(
+                name: "file",
+                filename: uploadURL.lastPathComponent,
+                mimeType: mimeType(for: uploadURL),
+                fileURL: uploadURL
+            )
+        )
+
+        request.httpBody = try MultipartFormData.build(boundary: boundary, parts: parts)
+        return request
+    }
+
+    private func mimeType(for fileURL: URL) -> String {
+        switch fileURL.pathExtension.lowercased() {
+        case "wav":
+            return "audio/wav"
+        case "m4a", "mp4":
+            return "audio/m4a"
+        case "mp3", "mpeg", "mpga":
+            return "audio/mpeg"
+        case "webm":
+            return "audio/webm"
+        default:
+            return "application/octet-stream"
+        }
     }
 }
 

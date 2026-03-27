@@ -27,6 +27,7 @@ final class WorkflowController {
     private let settingsStore: SettingsStore
     private let hotkeyService: HotkeyService
     private let audioRecorder: AudioRecorder
+    private let livePreviewer: LiveTranscriptionPreviewer
     private let sttRouter: STTRouter
     private let llmService: LLMService
     private let textInjector: TextInjector
@@ -41,6 +42,7 @@ final class WorkflowController {
     private var recordingTimeoutTask: Task<Void, Never>?
     private var selectionTask: Task<String?, Never>?
     private var processingTask: Task<Void, Never>?
+    private var previewStartupTask: Task<Void, Never>?
     private var processingSessionID = UUID()
     private var activeProcessingRecordID: UUID?
 
@@ -49,6 +51,7 @@ final class WorkflowController {
         settingsStore: SettingsStore,
         hotkeyService: HotkeyService,
         audioRecorder: AudioRecorder,
+        livePreviewer: LiveTranscriptionPreviewer,
         sttRouter: STTRouter,
         llmService: LLMService,
         textInjector: TextInjector,
@@ -60,6 +63,7 @@ final class WorkflowController {
         self.settingsStore = settingsStore
         self.hotkeyService = hotkeyService
         self.audioRecorder = audioRecorder
+        self.livePreviewer = livePreviewer
         self.sttRouter = sttRouter
         self.llmService = llmService
         self.textInjector = textInjector
@@ -128,8 +132,11 @@ final class WorkflowController {
         recordingTimeoutTask?.cancel()
         recordingTimeoutTask = nil
         _ = try? audioRecorder.stop()
+        previewStartupTask?.cancel()
+        previewStartupTask = nil
         selectionTask?.cancel()
         selectionTask = nil
+        Task { await livePreviewer.cancel() }
         Task { @MainActor in
             appState.setStatus(.idle)
             overlayController.dismiss(after: 0.3)
@@ -162,10 +169,12 @@ final class WorkflowController {
         }
 
         cancelCurrentProcessing(resetUI: false, reason: "Cancelled by new recording.")
-        beginRecording()
+        Task { [weak self] in
+            await self?.beginRecording()
+        }
     }
 
-    private func beginRecording() {
+    private func beginRecording() async {
         isRecording = true
         recordingMode = .holdToTalk
         NSLog("[Workflow] Recording started")
@@ -188,9 +197,33 @@ final class WorkflowController {
         }
 
         do {
-            try audioRecorder.start(levelHandler: { [weak self] level in
-                self?.overlayController.updateLevel(level)
-            })
+            await livePreviewer.prepareForStart()
+            previewStartupTask = Task {
+                do {
+                    try await self.livePreviewer.start { [weak self] text in
+                        guard let self, !text.isEmpty else { return }
+                        Task { @MainActor in
+                            if self.isRecording {
+                                self.overlayController.updateRecordingPreviewText(text)
+                            }
+                        }
+                    }
+                } catch {
+                    NetworkDebugLogger.logError(context: "Live preview setup failed", error: error)
+                }
+            }
+
+            try audioRecorder.start(
+                levelHandler: { [weak self] level in
+                    self?.overlayController.updateLevel(level)
+                },
+                audioBufferHandler: { [weak self] buffer in
+                    guard let self else { return }
+                    Task {
+                        await self.livePreviewer.append(buffer)
+                    }
+                }
+            )
 
             // Set a timeout to auto-stop recording after 10 minutes
             recordingTimeoutTask?.cancel()
@@ -316,6 +349,11 @@ final class WorkflowController {
     private func finishRecordingAndProcess() async {
         do {
             let audioFile = try audioRecorder.stop()
+            if let previewStartupTask {
+                _ = await previewStartupTask.result
+                self.previewStartupTask = nil
+            }
+            let livePreviewText = await livePreviewer.finish()
             let selectedText = await selectionTask?.value?.trimmingCharacters(in: .whitespacesAndNewlines)
             selectionTask = nil
             currentSelectedText = selectedText
@@ -325,6 +363,7 @@ final class WorkflowController {
                 date: Date(),
                 mode: inferredMode(selectedText: selectedText, personaPrompt: personaPrompt),
                 audioFilePath: audioFile.fileURL.path,
+                transcriptText: livePreviewText.isEmpty ? nil : livePreviewText,
                 personaPrompt: personaPrompt,
                 selectionOriginalText: selectedText,
                 recordingStatus: .succeeded,
@@ -338,7 +377,14 @@ final class WorkflowController {
 
             processingTask = Task { [weak self] in
                 guard let self else { return }
-                await self.process(audioFile: audioFile, record: record, selectedText: selectedText, personaPrompt: personaPrompt, sessionID: sessionID)
+                await self.process(
+                    audioFile: audioFile,
+                    record: record,
+                    selectedText: selectedText,
+                    personaPrompt: personaPrompt,
+                    livePreviewText: livePreviewText,
+                    sessionID: sessionID
+                )
                 await MainActor.run {
                     if self.processingSessionID == sessionID {
                         self.processingTask = nil
@@ -397,7 +443,14 @@ final class WorkflowController {
         let audioFile = AudioFile(fileURL: audioURL, duration: 0)
         let selectedText = mutableRecord.selectionOriginalText?.trimmingCharacters(in: .whitespacesAndNewlines)
         let personaPrompt = personaPrompt(for: mutableRecord)
-        await process(audioFile: audioFile, record: mutableRecord, selectedText: selectedText, personaPrompt: personaPrompt, sessionID: sessionID)
+        await process(
+            audioFile: audioFile,
+            record: mutableRecord,
+            selectedText: selectedText,
+            personaPrompt: personaPrompt,
+            livePreviewText: mutableRecord.transcriptText ?? "",
+            sessionID: sessionID
+        )
     }
 
     private func process(
@@ -405,12 +458,28 @@ final class WorkflowController {
         record: HistoryRecord,
         selectedText: String?,
         personaPrompt: String?,
+        livePreviewText: String,
         sessionID: UUID
     ) async {
         var record = record
         do {
             try ensureProcessingIsActive(sessionID)
-            let transcribedText = try await sttRouter.transcribe(audioFile: audioFile)
+            if !livePreviewText.isEmpty {
+                await MainActor.run {
+                    if self.processingSessionID == sessionID {
+                        self.overlayController.updateStreamingText(livePreviewText)
+                    }
+                }
+            }
+
+            let transcribedText = try await sttRouter.transcribeStream(audioFile: audioFile) { [weak self] snapshot in
+                guard let self, !snapshot.text.isEmpty else { return }
+                await MainActor.run {
+                    if self.processingSessionID == sessionID {
+                        self.overlayController.updateStreamingText(snapshot.text)
+                    }
+                }
+            }
             try ensureProcessingIsActive(sessionID)
             record.transcriptText = transcribedText
             record.transcriptionStatus = .succeeded

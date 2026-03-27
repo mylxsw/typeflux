@@ -39,7 +39,7 @@ final class OpenAICompatibleLLMService: LLMService {
         }
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let prompts = buildPrompts(for: rewriteRequest)
+        let prompts = PromptCatalog.rewritePrompts(for: rewriteRequest)
 
         let body: [String: Any] = [
             "model": model,
@@ -79,60 +79,6 @@ final class OpenAICompatibleLLMService: LLMService {
 
         return final
     }
-
-    private func buildPrompts(for request: LLMRewriteRequest) -> (system: String, user: String) {
-        let personaSection: String
-        if let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines), !personaPrompt.isEmpty {
-            personaSection = "\nPersona requirements:\n\(personaPrompt)"
-        } else {
-            personaSection = ""
-        }
-
-        switch request.mode {
-        case .editSelection:
-            let spokenInstruction = request.spokenInstruction?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            let outputRequirement: String
-            if let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines), !personaPrompt.isEmpty {
-                outputRequirement = """
-
-                Output requirements:
-                - Treat the spoken instruction as the highest-priority requirement.
-                - Apply the persona requirement below only when it does not conflict with the edit intent.
-                - Persona requirement: \(personaPrompt)
-                """
-            } else {
-                outputRequirement = """
-
-                Output requirements:
-                - Treat the spoken instruction as the highest-priority requirement.
-                """
-            }
-
-            return (
-                system: "You are a text editing assistant. When editing existing text, preserve the user's editing intent first and use any persona requirement only as a secondary output-style constraint. Return only the final rewritten text without explanations or quotation marks.",
-                user: """
-                Selected text:
-                \(request.sourceText)
-
-                Spoken instruction:
-                \(spokenInstruction)\(outputRequirement)
-
-                Return only the final rewritten text.
-                """
-            )
-
-        case .rewriteTranscript:
-            return (
-                system: "You rewrite dictated text into polished final copy. Follow the persona requirements exactly when provided. Return only the final text without explanations or quotation marks.",
-                user: """
-                Raw transcript:
-                \(request.sourceText)\(personaSection)
-
-                Clean up recognition artifacts if needed and return only the final text.
-                """
-            )
-        }
-    }
 }
 
 enum SSEClient {
@@ -155,6 +101,10 @@ enum SSEClient {
 
         NetworkDebugLogger.logResponse(http, bodyDescription: "<stream opened>")
 
+        return lines(for: bytes)
+    }
+
+    static func lines(for bytes: URLSession.AsyncBytes) -> AsyncThrowingStream<String, Error> {
         return AsyncThrowingStream { continuation in
             Task {
                 do {
