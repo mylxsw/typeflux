@@ -45,6 +45,7 @@ final class StudioViewModel: ObservableObject {
     @Published var personas: [PersonaProfile]
     @Published var selectedPersonaID: UUID?
     @Published private(set) var activePersonaID: String
+    @Published var vocabularyEntries: [VocabularyEntry]
 
     @Published var customHotkeys: [HotkeyBinding]
     @Published private(set) var historyRecords: [HistoryRecord]
@@ -110,6 +111,7 @@ final class StudioViewModel: ObservableObject {
         personas = currentPersonas
         selectedPersonaID = settingsStore.activePersona.map(\.id) ?? currentPersonas.first?.id
         activePersonaID = settingsStore.activePersonaID
+        vocabularyEntries = VocabularyStore.load()
         customHotkeys = settingsStore.customHotkeys
         historyRecords = historyStore.list()
         settingsStore.localSTTModelIdentifier = localSTTModelIdentifier
@@ -189,6 +191,11 @@ final class StudioViewModel: ObservableObject {
             $0.name.localizedCaseInsensitiveContains(searchQuery) ||
             $0.prompt.localizedCaseInsensitiveContains(searchQuery)
         }
+    }
+
+    var filteredVocabularyEntries: [VocabularyEntry] {
+        guard !searchQuery.isEmpty else { return vocabularyEntries }
+        return vocabularyEntries.filter { $0.term.localizedCaseInsensitiveContains(searchQuery) }
     }
 
     var transcriptionMinutesText: String {
@@ -459,6 +466,14 @@ final class StudioViewModel: ObservableObject {
     func removeHotkey(_ binding: HotkeyBinding) {
         customHotkeys.removeAll { $0.id == binding.id }
         settingsStore.customHotkeys = customHotkeys
+    }
+
+    func addVocabularyTerm(_ term: String, source: VocabularySource = .manual) {
+        vocabularyEntries = VocabularyStore.add(term: term, source: source)
+    }
+
+    func removeVocabularyEntry(id: UUID) {
+        vocabularyEntries = VocabularyStore.remove(id: id)
     }
 
     func addPersona() {

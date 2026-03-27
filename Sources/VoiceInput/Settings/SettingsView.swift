@@ -1,8 +1,52 @@
 import SwiftUI
 
+private enum VocabularyFilter: String, CaseIterable, Identifiable {
+    case all
+    case automatic
+    case manual
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all:
+            return "All"
+        case .automatic:
+            return "Auto-added"
+        case .manual:
+            return "Manually-added"
+        }
+    }
+
+    var source: VocabularySource? {
+        switch self {
+        case .all:
+            return nil
+        case .automatic:
+            return .automatic
+        case .manual:
+            return .manual
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .all:
+            return "line.3.horizontal.decrease.circle"
+        case .automatic:
+            return "sparkles"
+        case .manual:
+            return "hand.draw"
+        }
+    }
+}
+
 struct StudioView: View {
     @ObservedObject var viewModel: StudioViewModel
     @StateObject private var recorder = HotkeyRecorder()
+    @State private var vocabularyFilter: VocabularyFilter = .all
+    @State private var isAddingVocabulary = false
+    @State private var newVocabularyTerm = ""
 
     var body: some View {
         StudioShell(
@@ -40,8 +84,11 @@ struct StudioView: View {
                             .fill(StudioTheme.surface)
                     )
                     .overlay(Capsule().stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin))
-                    .padding(.bottom, StudioTheme.Insets.toastBottom)
+                .padding(.bottom, StudioTheme.Insets.toastBottom)
             }
+        }
+        .sheet(isPresented: $isAddingVocabulary) {
+            vocabularyAddSheet
         }
     }
 
@@ -54,6 +101,8 @@ struct StudioView: View {
             modelsPage
         case .personas:
             personasPage
+        case .vocabulary:
+            vocabularyPage
         case .history:
             historyPage
         case .debug:
@@ -353,6 +402,99 @@ struct StudioView: View {
         }
     }
 
+    private var vocabularyPage: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                    Text("Help VoiceInput catch names, products, and domain terms more reliably.")
+                        .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                    Text("Manual entries are sent as recognition hints to Whisper-compatible transcription backends.")
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                }
+
+                Spacer()
+
+                StudioButton(title: "New word", systemImage: "plus", variant: .primary) {
+                    newVocabularyTerm = ""
+                    isAddingVocabulary = true
+                }
+            }
+
+            StudioCard {
+                HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
+                    HStack(spacing: StudioTheme.Spacing.xSmall) {
+                        ForEach(VocabularyFilter.allCases) { filter in
+                            vocabularyFilterChip(filter)
+                        }
+                    }
+
+                    Spacer()
+
+                    HStack(spacing: StudioTheme.Spacing.small) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(StudioTheme.textTertiary)
+
+                        TextField("Search vocabulary...", text: $viewModel.searchQuery)
+                            .textFieldStyle(.plain)
+                            .font(.studioBody(StudioTheme.Typography.body))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                            .frame(width: 220)
+                    }
+                    .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
+                    .padding(.vertical, StudioTheme.Insets.textFieldVertical)
+                    .background(
+                        RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                            .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                            .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: StudioTheme.BorderWidth.thin)
+                    )
+                }
+
+                if filteredVocabularyEntries.isEmpty {
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                        Text("No vocabulary terms yet.")
+                            .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                        Text("Add product names, people, brands, or jargon you use frequently to improve recognition quality.")
+                            .font(.studioBody(StudioTheme.Typography.body))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                        StudioButton(title: "Add your first word", systemImage: "plus", variant: .secondary) {
+                            newVocabularyTerm = ""
+                            isAddingVocabulary = true
+                        }
+                    }
+                    .padding(.vertical, StudioTheme.Insets.historyEmptyVertical)
+                } else {
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
+                            GridItem(.flexible(), spacing: StudioTheme.Spacing.medium)
+                        ],
+                        alignment: .leading,
+                        spacing: StudioTheme.Spacing.medium
+                    ) {
+                        ForEach(filteredVocabularyEntries) { entry in
+                            vocabularyTermCard(entry)
+                        }
+                    }
+                }
+            }
+
+            StudioCard {
+                StudioSettingRow(
+                    title: "Recognition Hints",
+                    subtitle: "Vocabulary terms currently influence Whisper API and the local Whisper transcription path. Apple Speech and the other local models will ignore them for now."
+                ) {
+                    StudioPill(title: "\(viewModel.vocabularyEntries.count) terms")
+                }
+            }
+        }
+    }
+
     private var debugPage: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
             HStack(spacing: StudioTheme.Spacing.xxLarge) {
@@ -622,6 +764,139 @@ struct StudioView: View {
             }
         }
         .padding(.vertical, StudioTheme.Spacing.xSmall)
+    }
+
+    private var filteredVocabularyEntries: [VocabularyEntry] {
+        let entries = viewModel.filteredVocabularyEntries
+        guard let source = vocabularyFilter.source else { return entries }
+        return entries.filter { $0.source == source }
+    }
+
+    private func vocabularyFilterChip(_ filter: VocabularyFilter) -> some View {
+        Button {
+            vocabularyFilter = filter
+        } label: {
+            HStack(spacing: StudioTheme.Spacing.xSmall) {
+                Image(systemName: filter.iconName)
+                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+                Text(filter.title)
+                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                Text("\(vocabularyCount(for: filter))")
+                    .font(.studioBody(StudioTheme.Typography.caption, weight: .bold))
+                    .foregroundStyle(vocabularyFilter == filter ? StudioTheme.textPrimary : StudioTheme.textTertiary)
+            }
+            .foregroundStyle(vocabularyFilter == filter ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+            .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
+            .padding(.vertical, StudioTheme.Insets.pillVertical + 2)
+            .background(
+                Capsule()
+                    .fill(vocabularyFilter == filter ? StudioTheme.surface : StudioTheme.surfaceMuted.opacity(0.82))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: StudioTheme.BorderWidth.thin)
+            )
+        }
+        .buttonStyle(StudioInteractiveButtonStyle())
+    }
+
+    private func vocabularyTermCard(_ entry: VocabularyEntry) -> some View {
+        HStack(spacing: StudioTheme.Spacing.small) {
+            Image(systemName: entry.source == .automatic ? "sparkles" : "plus.circle.fill")
+                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+                .foregroundStyle(entry.source == .automatic ? StudioTheme.warning : StudioTheme.accent)
+
+            Text(entry.term)
+                .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .lineLimit(1)
+
+            Spacer()
+
+            Button {
+                viewModel.removeVocabularyEntry(id: entry.id)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .bold))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .frame(width: 24, height: 24)
+                    .background(
+                        Circle()
+                            .fill(StudioTheme.surfaceMuted.opacity(0.8))
+                    )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, StudioTheme.Insets.cardCompact)
+        .padding(.vertical, StudioTheme.Insets.buttonVertical)
+        .background(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                .fill(StudioTheme.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: StudioTheme.BorderWidth.thin)
+        )
+    }
+
+    private var vocabularyAddSheet: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+            Text("Add to vocabulary")
+                .font(.studioDisplay(StudioTheme.Typography.pageTitle, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
+
+            Text("Use one term per entry. This works best for names, brands, product terms, and other frequently dictated jargon.")
+                .font(.studioBody(StudioTheme.Typography.body))
+                .foregroundStyle(StudioTheme.textSecondary)
+
+            TextField("Add a new word", text: $newVocabularyTerm)
+                .textFieldStyle(.plain)
+                .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
+                .padding(.vertical, StudioTheme.Insets.textFieldVertical)
+                .background(
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                        .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                        .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
+                )
+                .onSubmit {
+                    submitVocabularyTerm()
+                }
+
+            HStack {
+                Spacer()
+                StudioButton(title: "Cancel", systemImage: nil, variant: .secondary) {
+                    isAddingVocabulary = false
+                }
+                StudioButton(
+                    title: "Add word",
+                    systemImage: nil,
+                    variant: .primary,
+                    isDisabled: newVocabularyTerm.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ) {
+                    submitVocabularyTerm()
+                }
+            }
+        }
+        .padding(32)
+        .frame(width: 520)
+    }
+
+    private func submitVocabularyTerm() {
+        let term = newVocabularyTerm.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty else { return }
+        viewModel.addVocabularyTerm(term)
+        newVocabularyTerm = ""
+        isAddingVocabulary = false
+    }
+
+    private func vocabularyCount(for filter: VocabularyFilter) -> Int {
+        guard let source = filter.source else { return viewModel.vocabularyEntries.count }
+        return viewModel.vocabularyEntries.filter { $0.source == source }.count
     }
 
     private var parameterCard: some View {

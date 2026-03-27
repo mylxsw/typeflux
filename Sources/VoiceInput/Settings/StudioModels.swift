@@ -4,6 +4,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
     case home
     case models
     case personas
+    case vocabulary
     case history
     case debug
     case settings
@@ -15,6 +16,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .home: return "Overview"
         case .models: return "Models"
         case .personas: return "Personas"
+        case .vocabulary: return "Vocabulary"
         case .history: return "History"
         case .debug: return "Diagnostics"
         case .settings: return "Settings"
@@ -26,6 +28,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .home: return "house.fill"
         case .models: return "cpu"
         case .personas: return "face.smiling"
+        case .vocabulary: return "text.book.closed"
         case .history: return "clock.arrow.circlepath"
         case .debug: return "terminal"
         case .settings: return "gearshape.fill"
@@ -37,6 +40,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .home: return "VoiceInput"
         case .models: return "Configuration"
         case .personas: return "Voice Personas"
+        case .vocabulary: return "Custom Terms"
         case .history: return "Session History"
         case .debug: return "Diagnostics"
         case .settings: return "Settings"
@@ -48,6 +52,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .home: return "Speak naturally, write anywhere."
         case .models: return "Model configuration"
         case .personas: return "Persona library"
+        case .vocabulary: return "Vocabulary"
         case .history: return "History"
         case .debug: return "Runtime status"
         case .settings: return "Preferences"
@@ -62,6 +67,8 @@ enum StudioSection: String, CaseIterable, Identifiable {
             return "Choose the local and remote engines used for transcription and rewrite flows."
         case .personas:
             return "Create reusable writing styles and keep every prompt ready for daily use."
+        case .vocabulary:
+            return "Manage the words and names that should be recognized more reliably during dictation."
         case .history:
             return "Review recent sessions, inspect the recognized text, and export your archive."
         case .debug:
@@ -76,6 +83,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .home: return "Search activity..."
         case .models: return "Search models..."
         case .personas: return "Search personas..."
+        case .vocabulary: return "Search vocabulary..."
         case .history: return "Search history..."
         case .debug: return "Search logs..."
         case .settings: return "Search settings..."

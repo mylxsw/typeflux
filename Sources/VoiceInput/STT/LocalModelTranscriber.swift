@@ -15,6 +15,7 @@ final class LocalModelTranscriber: Transcriber {
             ? settingsStore.localSTTModel.defaultModelIdentifier
             : settingsStore.localSTTModelIdentifier
         let uploadURL = audioFile.fileURL
+        let vocabularyPrompt = vocabularyPromptText()
 
         let url = baseURL.appendingPathComponent("audio/transcriptions")
         var request = URLRequest(url: url)
@@ -23,16 +24,23 @@ final class LocalModelTranscriber: Transcriber {
         let boundary = "Boundary-\(UUID().uuidString)"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
-        request.httpBody = try MultipartFormData.build(boundary: boundary, parts: [
+        var parts: [MultipartPart] = [
             .text(name: "model", value: model),
-            .text(name: "provider", value: settingsStore.localSTTModel.rawValue),
+            .text(name: "provider", value: settingsStore.localSTTModel.rawValue)
+        ]
+        if let vocabularyPrompt, !vocabularyPrompt.isEmpty {
+            parts.append(.text(name: "prompt", value: vocabularyPrompt))
+        }
+        parts.append(
             .file(
                 name: "file",
                 filename: uploadURL.lastPathComponent,
                 mimeType: mimeType(for: uploadURL),
                 fileURL: uploadURL
             )
-        ])
+        )
+
+        request.httpBody = try MultipartFormData.build(boundary: boundary, parts: parts)
 
         NetworkDebugLogger.logRequest(
             request,
@@ -40,6 +48,7 @@ final class LocalModelTranscriber: Transcriber {
             {
               "model": "\(model)",
               "provider": "\(settingsStore.localSTTModel.rawValue)",
+              "prompt": "\(vocabularyPrompt ?? "")",
               "file": {
                 "path": "\(uploadURL.path)",
                 "filename": "\(uploadURL.lastPathComponent)",
@@ -87,5 +96,11 @@ final class LocalModelTranscriber: Transcriber {
         default:
             return "application/octet-stream"
         }
+    }
+
+    private func vocabularyPromptText() -> String? {
+        let terms = VocabularyStore.activeTerms()
+        guard !terms.isEmpty else { return nil }
+        return "Vocabulary terms to recognize accurately: \(terms.joined(separator: ", "))"
     }
 }

@@ -1,52 +1,53 @@
 import Foundation
+import os
 
 enum NetworkDebugLogger {
+    static let logger = Logger(subsystem: "dev.voiceinput", category: "Network")
+
     static func logRequest(_ request: URLRequest, bodyDescription: String? = nil) {
         let method = request.httpMethod ?? "GET"
         let url = request.url?.absoluteString ?? "<unknown>"
         let headers = redact(headers: request.allHTTPHeaderFields ?? [:])
 
-        NSLog(
-            """
-            [Network][Request]
-            URL: \(url)
-            Method: \(method)
-            Headers: \(headers)
-            Body: \(bodyDescription ?? describeBody(request.httpBody))
-            """
-        )
+        let message = """
+        [Request]
+        URL: \(url)
+        Method: \(method)
+        Headers: \(headers)
+        Body: \(bodyDescription ?? describeBody(request.httpBody))
+        """
+        logger.info("\(message, privacy: .public)")
     }
 
     static func logResponse(_ response: URLResponse?, data: Data? = nil, bodyDescription: String? = nil) {
         if let http = response as? HTTPURLResponse {
-            NSLog(
-                """
-                [Network][Response]
-                URL: \(http.url?.absoluteString ?? "<unknown>")
-                Status: \(http.statusCode)
-                Headers: \(http.allHeaderFields)
-                Body: \(bodyDescription ?? describeBody(data))
-                """
-            )
+            let message = """
+            [Response]
+            URL: \(http.url?.absoluteString ?? "<unknown>")
+            Status: \(http.statusCode)
+            Headers: \(http.allHeaderFields)
+            Body: \(bodyDescription ?? describeBody(data))
+            """
+            logger.info("\(message, privacy: .public)")
             return
         }
 
-        NSLog(
-            """
-            [Network][Response]
-            URL: \(response?.url?.absoluteString ?? "<unknown>")
-            Status: <non-http>
-            Body: \(bodyDescription ?? describeBody(data))
-            """
-        )
+        let message = """
+        [Response]
+        URL: \(response?.url?.absoluteString ?? "<unknown>")
+        Status: <non-http>
+        Body: \(bodyDescription ?? describeBody(data))
+        """
+        logger.info("\(message, privacy: .public)")
     }
 
     static func logError(context: String, error: Error) {
-        NSLog("[Network][Error] \(context): \(error.localizedDescription)")
+        let message = "[Error] \(context): \(error.localizedDescription)"
+        logger.error("\(message, privacy: .public)")
     }
 
     static func logMessage(_ message: String) {
-        NSLog("[Network] \(message)")
+        logger.info("\(message, privacy: .public)")
     }
 
     private static func redact(headers: [String: String]) -> [String: String] {

@@ -68,7 +68,7 @@ echo "App launched in attached dev mode: $APP_DIR"
 echo "Logs stay attached to this terminal. Press Ctrl+C to stop the app."
 
 if command -v log >/dev/null 2>&1; then
-  log stream --style compact --predicate 'process == "VoiceInput"' &
+  log stream --level debug --predicate 'process == "VoiceInput" && NOT (subsystem BEGINSWITH "com.apple.") && eventType == logEvent' &
   LOG_PID=$!
 fi
 

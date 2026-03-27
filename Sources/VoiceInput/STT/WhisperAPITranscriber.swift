@@ -13,6 +13,7 @@ final class WhisperAPITranscriber: Transcriber {
         }
 
         let model = settingsStore.whisperModel.isEmpty ? "whisper-1" : settingsStore.whisperModel
+        let vocabularyPrompt = vocabularyPromptText()
 
         let url = baseURL.appendingPathComponent("audio/transcriptions")
         var request = URLRequest(url: url)
@@ -24,10 +25,17 @@ final class WhisperAPITranscriber: Transcriber {
         let boundary = "Boundary-\(UUID().uuidString)"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
-        let body = try MultipartFormData.build(boundary: boundary, parts: [
-            .text(name: "model", value: model),
+        var parts: [MultipartPart] = [
+            .text(name: "model", value: model)
+        ]
+        if let vocabularyPrompt, !vocabularyPrompt.isEmpty {
+            parts.append(.text(name: "prompt", value: vocabularyPrompt))
+        }
+        parts.append(
             .file(name: "file", filename: audioFile.fileURL.lastPathComponent, mimeType: "audio/m4a", fileURL: audioFile.fileURL)
-        ])
+        )
+
+        let body = try MultipartFormData.build(boundary: boundary, parts: parts)
         request.httpBody = body
 
         NetworkDebugLogger.logRequest(
@@ -35,6 +43,7 @@ final class WhisperAPITranscriber: Transcriber {
             bodyDescription: """
             {
               "model": "\(model)",
+              "prompt": "\(vocabularyPrompt ?? "")",
               "file": {
                 "path": "\(audioFile.fileURL.path)",
                 "filename": "\(audioFile.fileURL.lastPathComponent)",
@@ -61,6 +70,12 @@ final class WhisperAPITranscriber: Transcriber {
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         let text = json?["text"] as? String
         return text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    private func vocabularyPromptText() -> String? {
+        let terms = VocabularyStore.activeTerms()
+        guard !terms.isEmpty else { return nil }
+        return "Vocabulary terms to recognize accurately: \(terms.joined(separator: ", "))"
     }
 }
 

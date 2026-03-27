@@ -172,9 +172,12 @@ def load_runtime(model_name, model_id, cache_dir, source):
     raise ValueError(f"Unsupported model: {model_name}")
 
 
-def transcribe(runtime, audio_path):
+def transcribe(runtime, audio_path, prompt=None):
     if runtime["type"] == "whisperLocal":
-        result = runtime["model"].transcribe(audio_path)
+        transcribe_options = {}
+        if prompt:
+            transcribe_options["initial_prompt"] = prompt
+        result = runtime["model"].transcribe(audio_path, **transcribe_options)
         return result.get("text", "").strip()
 
     if runtime["type"] == "senseVoiceSmall":
@@ -224,6 +227,7 @@ def run_server(args):
         file: UploadFile = File(...),
         model: str = Form(...),
         provider: str = Form(None),
+        prompt: str = Form(None),
     ):
         suffix = Path(file.filename or "audio.wav").suffix or ".wav"
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -231,8 +235,8 @@ def run_server(args):
             tmp_path = tmp.name
 
         try:
-            text = transcribe(runtime, tmp_path)
-            return JSONResponse({"text": text, "model": model, "provider": provider or args.model})
+            text = transcribe(runtime, tmp_path, prompt=prompt)
+            return JSONResponse({"text": text, "model": model, "provider": provider or args.model, "prompt": prompt})
         except Exception as exc:
             raise HTTPException(status_code=500, detail=str(exc)) from exc
         finally:
