@@ -158,15 +158,15 @@ final class OverlayController {
     private static func metrics(for presentation: OverlayViewModel.Presentation) -> OverlayMetrics {
         switch presentation {
         case .recording:
-            return OverlayMetrics(size: NSSize(width: 78, height: 40), anchor: .bottom, offset: 38, interactive: false)
+            return OverlayMetrics(size: NSSize(width: 118, height: 72), anchor: .bottom, offset: 24, interactive: false)
         case .processing:
-            return OverlayMetrics(size: NSSize(width: 78, height: 40), anchor: .bottom, offset: 38, interactive: false)
+            return OverlayMetrics(size: NSSize(width: 118, height: 72), anchor: .bottom, offset: 24, interactive: false)
         case .transcriptPreview:
-            return OverlayMetrics(size: NSSize(width: 312, height: 80), anchor: .top, offset: 98, interactive: false)
+            return OverlayMetrics(size: NSSize(width: 344, height: 108), anchor: .top, offset: 84, interactive: false)
         case .notice:
-            return OverlayMetrics(size: NSSize(width: 312, height: 78), anchor: .bottom, offset: 94, interactive: true)
+            return OverlayMetrics(size: NSSize(width: 344, height: 108), anchor: .bottom, offset: 80, interactive: true)
         case .failure:
-            return OverlayMetrics(size: NSSize(width: 320, height: 102), anchor: .top, offset: 92, interactive: true)
+            return OverlayMetrics(size: NSSize(width: 352, height: 132), anchor: .top, offset: 78, interactive: true)
         }
     }
 }
@@ -221,6 +221,26 @@ private struct OverlayView: View {
             case .failure:
                 failureCard
             }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: contentAlignment)
+        .padding(containerPadding)
+    }
+
+    private var contentAlignment: Alignment {
+        switch model.presentation {
+        case .recording, .processing, .notice:
+            return .bottom
+        case .transcriptPreview, .failure:
+            return .top
+        }
+    }
+
+    private var containerPadding: EdgeInsets {
+        switch model.presentation {
+        case .recording, .processing:
+            return EdgeInsets(top: 16, leading: 18, bottom: 16, trailing: 18)
+        case .transcriptPreview, .notice, .failure:
+            return EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16)
         }
     }
 
