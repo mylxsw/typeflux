@@ -5,6 +5,7 @@ import Foundation
 final class AXTextInjector: TextInjector {
     private static var didRequestAccessibility = false
     private static let pasteRestoreDelayNanoseconds: UInt64 = 180_000_000
+    private static let selectedTextTimeoutMilliseconds = 200
 
     func getSelectedText() async -> String? {
         guard AXIsProcessTrusted() else {
@@ -17,46 +18,8 @@ final class AXTextInjector: TextInjector {
             return nil
         }
 
-        let pboard = NSPasteboard.general
-        let oldChangeCount = pboard.changeCount
-        let oldString = pboard.string(forType: .string)
-
-        // Send Cmd+C
-        let src = CGEventSource(stateID: .combinedSessionState)
-        let cDown = CGEvent(keyboardEventSource: src, virtualKey: 0x08, keyDown: true) // 0x08 is kVK_ANSI_C
-        cDown?.flags = .maskCommand
-        let cUp = CGEvent(keyboardEventSource: src, virtualKey: 0x08, keyDown: false)
-        cUp?.flags = .maskCommand
-
-        cDown?.post(tap: .cghidEventTap)
-        cUp?.post(tap: .cghidEventTap)
-
-        // Wait for change count to increment (up to 300ms)
-        var didChange = false
-        for _ in 0..<15 {
-            try? await Task.sleep(nanoseconds: 20_000_000) // 20ms
-            if pboard.changeCount != oldChangeCount {
-                didChange = true
-                break
-            }
-        }
-
-        let newString: String?
-        if didChange {
-            newString = pboard.string(forType: .string)
-        } else {
-            newString = nil
-        }
-
-        // Restore previous pasteboard content
-        if let old = oldString {
-            pboard.clearContents()
-            pboard.setString(old, forType: .string)
-        } else {
-            pboard.clearContents()
-        }
-
-        return newString
+        return readSelectedTextWithTimeout(milliseconds: Self.selectedTextTimeoutMilliseconds)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     func insert(text: String) throws {
@@ -73,6 +36,35 @@ final class AXTextInjector: TextInjector {
         let err = AXUIElementCopyAttributeValue(system, kAXFocusedUIElementAttribute as CFString, &focused)
         guard err == .success, let element = focused else { return nil }
         return (element as! AXUIElement)
+    }
+
+    private func readSelectedTextWithTimeout(milliseconds: Int) -> String? {
+        final class Box: @unchecked Sendable {
+            var value: String?
+        }
+
+        let box = Box()
+        let semaphore = DispatchSemaphore(value: 0)
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            box.value = self.readSelectedText()
+            semaphore.signal()
+        }
+
+        let timeout = DispatchTime.now() + .milliseconds(milliseconds)
+        guard semaphore.wait(timeout: timeout) != .timedOut else {
+            return nil
+        }
+
+        return box.value
+    }
+
+    private func readSelectedText() -> String? {
+        guard let element = focusedElement() else {
+            return nil
+        }
+
+        return copyStringAttribute(kAXSelectedTextAttribute, from: element)
     }
 
     private func setText(_ text: String, replaceSelection: Bool) throws {
