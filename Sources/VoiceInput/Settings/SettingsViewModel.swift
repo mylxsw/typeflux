@@ -5,7 +5,13 @@ import SwiftUI
 @MainActor
 final class StudioViewModel: ObservableObject {
     @Published var currentSection: StudioSection
-    @Published var searchQuery = ""
+    @Published var searchQuery = "" {
+        didSet {
+            if currentSection == .home || currentSection == .history {
+                rebuildDisplayedHistory()
+            }
+        }
+    }
     @Published var modelDomain: StudioModelDomain = .stt
     @Published var focusedModelProvider: StudioModelProviderID
 
@@ -132,6 +138,7 @@ final class StudioViewModel: ObservableObject {
         activationHotkey = settingsStore.activationHotkey
         personaHotkey = settingsStore.personaHotkey
         historyRecords = historyStore.list()
+        displayedHistory = historyRecords.map(makeHistoryPresentation)
         settingsStore.localSTTModelIdentifier = localSTTModelIdentifier
         settingsStore.localSTTDownloadSource = localSTTModel.recommendedDownloadSource
         settingsStore.localSTTAutoSetup = true
@@ -190,9 +197,7 @@ final class StudioViewModel: ObservableObject {
         return StudioTheme.accent
     }
 
-    var displayedHistory: [HistoryPresentationRecord] {
-        filteredHistory.map(makeHistoryPresentation)
-    }
+    @Published private(set) var displayedHistory: [HistoryPresentationRecord] = []
 
     var selectedPersona: PersonaProfile? {
         guard let selectedPersonaID else { return nil }
@@ -342,11 +347,18 @@ final class StudioViewModel: ObservableObject {
     func navigate(to section: StudioSection) {
         currentSection = section
         searchQuery = ""
-        refreshHistory()
+        if section == .home || section == .history {
+            refreshHistory()
+        }
     }
 
     func refreshHistory() {
         historyRecords = historyStore.list()
+        rebuildDisplayedHistory()
+    }
+
+    private func rebuildDisplayedHistory() {
+        displayedHistory = filteredHistory.map(makeHistoryPresentation)
     }
 
     func refreshHistoryWithFeedback() {

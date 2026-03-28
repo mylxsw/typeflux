@@ -67,6 +67,9 @@ struct StudioView: View {
 
                 currentPage
             }
+            .id(viewModel.currentSection)
+            .transition(.opacity)
+            .animation(.easeInOut(duration: 0.15), value: viewModel.currentSection)
         }
         .onAppear {
             viewModel.schedulePermissionRefresh()
