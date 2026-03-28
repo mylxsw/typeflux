@@ -11,13 +11,18 @@ final class AudioDeviceManager {
     static let automaticDeviceID = ""
 
     func availableInputDevices() -> [AudioInputDevice] {
-        let discoverySession = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.microphone],
-            mediaType: .audio,
-            position: .unspecified
-        )
+        let devices: [AVCaptureDevice]
+        if #available(macOS 14.0, *) {
+            devices = AVCaptureDevice.DiscoverySession(
+                deviceTypes: [.microphone],
+                mediaType: .audio,
+                position: .unspecified
+            ).devices
+        } else {
+            devices = AVCaptureDevice.devices(for: .audio)
+        }
 
-        return discoverySession.devices
+        return devices
             .map { AudioInputDevice(id: $0.uniqueID, name: $0.localizedName) }
             .sorted { lhs, rhs in
                 lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending

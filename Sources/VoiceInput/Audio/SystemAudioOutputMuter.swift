@@ -32,13 +32,18 @@ final class SystemAudioOutputMuter {
             mElement: kAudioObjectPropertyElementMain
         )
         var deviceID = AudioDeviceID()
-        let size = UInt32(MemoryLayout<AudioDeviceID>.size)
-        guard getPropertyData(
-            objectID: AudioObjectID(kAudioObjectSystemObject),
-            address: &address,
-            value: &deviceID,
-            dataSize: size
-        ) == noErr else {
+        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        let status = withUnsafeMutablePointer(to: &deviceID) { pointer in
+            AudioObjectGetPropertyData(
+                AudioObjectID(kAudioObjectSystemObject),
+                &address,
+                0,
+                nil,
+                &size,
+                pointer
+            )
+        }
+        guard status == noErr else {
             return nil
         }
 
@@ -50,8 +55,11 @@ final class SystemAudioOutputMuter {
         guard AudioObjectHasProperty(deviceID, &address) else { return nil }
 
         var mute: UInt32 = 0
-        let size = UInt32(MemoryLayout<UInt32>.size)
-        guard getPropertyData(objectID: deviceID, address: &address, value: &mute, dataSize: size) == noErr else {
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        let status = withUnsafeMutablePointer(to: &mute) { pointer in
+            AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, pointer)
+        }
+        guard status == noErr else {
             return nil
         }
 
@@ -73,15 +81,5 @@ final class SystemAudioOutputMuter {
             mScope: kAudioDevicePropertyScopeOutput,
             mElement: kAudioObjectPropertyElementMain
         )
-    }
-
-    private func getPropertyData<T>(
-        objectID: AudioObjectID,
-        address: inout AudioObjectPropertyAddress,
-        value: inout T,
-        dataSize: UInt32
-    ) -> OSStatus {
-        var size = dataSize
-        return AudioObjectGetPropertyData(objectID, &address, 0, nil, &size, &value)
     }
 }
