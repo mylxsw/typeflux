@@ -172,6 +172,7 @@ enum StudioTheme {
         static let sidebarNavigationIcon: CGFloat = 16
         static let sidebarNavigationSymbol: CGFloat = 15
         static let buttonMinWidth: CGFloat = 84
+        static let buttonHeight: CGFloat = 34
         static let personaAddButton: CGFloat = 36
         static let personaAvatar: CGFloat = 52
         static let personaStatusDot: CGFloat = 10

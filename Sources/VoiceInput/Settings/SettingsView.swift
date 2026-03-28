@@ -700,7 +700,7 @@ struct StudioView: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    .frame(width: StudioTheme.Layout.appearancePickerWidth)
+                    .frame(width: StudioTheme.Layout.appearancePickerWidth, height: StudioTheme.ControlSize.buttonHeight)
                 }
             }
 
@@ -726,7 +726,7 @@ struct StudioView: View {
                                 }
                             }
                             .pickerStyle(.menu)
-                            .frame(width: 260)
+                            .frame(width: 260, height: StudioTheme.ControlSize.buttonHeight)
 
                             StudioButton(title: "Refresh", systemImage: "arrow.clockwise", variant: .secondary) {
                                 viewModel.refreshAvailableMicrophones()
