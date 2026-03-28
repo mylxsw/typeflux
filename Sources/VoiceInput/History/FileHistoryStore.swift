@@ -85,9 +85,6 @@ final class FileHistoryStore: HistoryStore {
             if let transcriptText = r.transcriptText, !transcriptText.isEmpty {
                 md += "\n### Transcript\n\n\(transcriptText)\n"
             }
-            if let personaPrompt = r.personaPrompt, !personaPrompt.isEmpty {
-                md += "\n### Persona Prompt\n\n\(personaPrompt)\n"
-            }
             if let personaResultText = r.personaResultText, !personaResultText.isEmpty {
                 md += "\n### Persona Result\n\n\(personaResultText)\n"
             }
@@ -96,9 +93,6 @@ final class FileHistoryStore: HistoryStore {
             }
             if let selectionEditedText = r.selectionEditedText, !selectionEditedText.isEmpty {
                 md += "\n### Selection Result\n\n\(selectionEditedText)\n"
-            }
-            if let applyMessage = r.applyMessage, !applyMessage.isEmpty {
-                md += "\n### Apply Status\n\n\(applyMessage)\n"
             }
             if let errorMessage = r.errorMessage, !errorMessage.isEmpty {
                 md += "\n### Error\n\n\(errorMessage)\n"

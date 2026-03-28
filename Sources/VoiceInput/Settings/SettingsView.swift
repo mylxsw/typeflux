@@ -47,6 +47,7 @@ struct StudioView: View {
     @State private var vocabularyFilter: VocabularyFilter = .all
     @State private var isAddingVocabulary = false
     @State private var newVocabularyTerm = ""
+    @State private var personaPendingDeletion: PersonaProfile?
 
     var body: some View {
         StudioShell(
@@ -56,11 +57,7 @@ struct StudioView: View {
             searchPlaceholder: viewModel.currentSection.searchPlaceholder
         ) {
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.heroSection) {
-                StudioHeroHeader(
-                    eyebrow: viewModel.currentSection.eyebrow,
-                    title: viewModel.currentSection.heading,
-                    subtitle: viewModel.currentSection.subheading
-                )
+                pageHeader
 
                 currentPage
             }
@@ -90,6 +87,51 @@ struct StudioView: View {
         .sheet(isPresented: $isAddingVocabulary) {
             vocabularyAddSheet
         }
+        .confirmationDialog(
+            "Delete Persona?",
+            isPresented: Binding(
+                get: { personaPendingDeletion != nil },
+                set: { if !$0 { personaPendingDeletion = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                guard let personaPendingDeletion else { return }
+                viewModel.deletePersona(id: personaPendingDeletion.id)
+                self.personaPendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                personaPendingDeletion = nil
+            }
+        } message: {
+            if let personaPendingDeletion {
+                Text("Delete \"\(personaPendingDeletion.name)\"? This cannot be undone.")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var pageHeader: some View {
+        HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
+            StudioHeroHeader(
+                eyebrow: viewModel.currentSection.eyebrow,
+                title: viewModel.currentSection.heading,
+                subtitle: viewModel.currentSection.subheading
+            )
+
+            if viewModel.currentSection == .history {
+                Spacer()
+
+                StudioButton(
+                    title: viewModel.isRefreshingHistory ? "Refreshing..." : "Refresh",
+                    systemImage: "arrow.clockwise",
+                    variant: .secondary,
+                    isLoading: viewModel.isRefreshingHistory
+                ) {
+                    viewModel.refreshHistoryWithFeedback()
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -105,8 +147,6 @@ struct StudioView: View {
             vocabularyPage
         case .history:
             historyPage
-        case .debug:
-            debugPage
         case .settings:
             settingsPage
         }
@@ -114,54 +154,14 @@ struct StudioView: View {
 
     private var homePage: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-                    Text("Press and hold your shortcut to start dictation, then release to finish.")
-                        .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-
-                Spacer()
-
-                StudioButton(title: "Popular use cases", systemImage: "arrow.up.right", variant: .secondary) {
-                    viewModel.navigate(to: .settings)
-                }
-            }
-
             overviewPanel
-
-            HStack(spacing: StudioTheme.Spacing.large) {
-                accentPromoCard(
-                    title: "Recommended workflow",
-                    description: "Use a persona to keep punctuation, tone, and wording consistent across apps.",
-                    buttonTitle: "Open Personas",
-                    colors: [
-                        StudioTheme.Colors.promoWorkflowStart,
-                        StudioTheme.Colors.promoWorkflowEnd
-                    ]
-                ) {
-                    viewModel.navigate(to: .personas)
-                }
-
-                accentPromoCard(
-                    title: "Refine your setup",
-                    description: "Review models, fallback behavior, and appearance from a single settings surface.",
-                    buttonTitle: "Open Settings",
-                    colors: [
-                        StudioTheme.Colors.promoSetupStart,
-                        StudioTheme.Colors.promoSetupEnd
-                    ]
-                ) {
-                    viewModel.navigate(to: .settings)
-                }
-            }
 
             sectionHeader(
                 title: "Recent Transcriptions",
-                primaryButtonTitle: "Open Settings",
-                primaryAction: { viewModel.navigate(to: .settings) },
                 secondaryButtonTitle: "Export All",
-                secondaryAction: { viewModel.exportHistory() }
+                secondaryAction: { viewModel.exportHistory() },
+                primaryButtonTitle: "Open History",
+                primaryAction: { viewModel.navigate(to: .history) }
             )
 
             sessionStream(records: Array(viewModel.displayedHistory.prefix(StudioTheme.Count.homeRecentRecords)))
@@ -230,7 +230,7 @@ struct StudioView: View {
                         .font(.studioDisplay(StudioTheme.Typography.subsectionTitle, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
                     Spacer()
-                    Button(action: viewModel.addPersona) {
+                    Button(action: viewModel.beginCreatingPersona) {
                         Image(systemName: "plus")
                             .foregroundStyle(.white)
                             .frame(width: StudioTheme.ControlSize.personaAddButton, height: StudioTheme.ControlSize.personaAddButton)
@@ -276,59 +276,36 @@ struct StudioView: View {
                             .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xxLarge, style: .continuous))
                         }
                         .buttonStyle(StudioInteractiveButtonStyle())
+                        .contextMenu {
+                            Button("Delete", role: .destructive) {
+                                viewModel.selectPersona(persona.id)
+                                personaPendingDeletion = persona
+                            }
+                        }
                     }
                 }
             }
             .frame(width: StudioTheme.Layout.personasListWidth)
 
             StudioCard {
-                HStack {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-                        Text("Editing Active Persona")
-                            .font(.studioBody(StudioTheme.Typography.sidebarEyebrow, weight: .bold))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                        Text(viewModel.selectedPersona?.name ?? "No Persona Selected")
-                            .font(.studioDisplay(StudioTheme.Typography.pageTitle, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                    }
-                    Spacer()
-                    StudioButton(title: "Discard", systemImage: nil, variant: .secondary) {
-                        viewModel.refreshHistory()
-                    }
-                    StudioButton(title: "Save Changes", systemImage: nil, variant: .primary) {
-                        viewModel.applyModelConfiguration()
-                    }
-                }
-
-                Divider().overlay(StudioTheme.border)
-
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSectionTitle(title: "Core Identity")
                     StudioTextInputCard(
                         label: "Persona Name",
                         placeholder: "Enter persona name",
                         text: Binding(
-                            get: { viewModel.selectedPersonaName },
-                            set: { viewModel.selectedPersonaName = $0 }
+                            get: { viewModel.personaDraftName },
+                            set: { viewModel.personaDraftName = $0 }
                         )
                     )
                 }
 
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    HStack {
-                        StudioSectionTitle(title: "System Prompt")
-                        Spacer()
-                        Toggle("", isOn: Binding(
-                            get: { viewModel.personaRewriteEnabled },
-                            set: viewModel.setPersonaRewriteEnabled
-                        ))
-                        .toggleStyle(.switch)
-                    }
+                    StudioSectionTitle(title: "System Prompt")
 
                     TextEditor(
                         text: Binding(
-                            get: { viewModel.selectedPersonaPrompt },
-                            set: { viewModel.selectedPersonaPrompt = $0 }
+                            get: { viewModel.personaDraftPrompt },
+                            set: { viewModel.personaDraftPrompt = $0 }
                         )
                     )
                     .font(.studioMono(StudioTheme.Typography.body))
@@ -344,18 +321,20 @@ struct StudioView: View {
                         RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
                             .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
                     )
+                }
 
-                    HStack {
-                        Text("Persona rewrite is \(viewModel.personaRewriteEnabled ? "enabled" : "disabled").")
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                        Spacer()
-                        StudioButton(title: "Delete", systemImage: nil, variant: .ghost) {
-                            viewModel.deleteSelectedPersona()
-                        }
-                        StudioButton(title: "Set Active", systemImage: nil, variant: .primary) {
-                            viewModel.activateSelectedPersona()
-                        }
+                HStack {
+                    Spacer()
+                    StudioButton(title: "Cancel", systemImage: nil, variant: .secondary) {
+                        viewModel.cancelPersonaEditing()
+                    }
+                    StudioButton(
+                        title: "Save",
+                        systemImage: nil,
+                        variant: .primary,
+                        isDisabled: !viewModel.canSavePersonaDraft || !viewModel.hasPersonaDraftChanges
+                    ) {
+                        viewModel.savePersonaDraft()
                     }
                 }
             }
@@ -366,22 +345,6 @@ struct StudioView: View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
             StudioCard {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSettingRow(
-                        title: "Keep local history",
-                        subtitle: "Recent dictation sessions stay on this device unless you export them."
-                    ) {
-                        StudioButton(
-                            title: viewModel.isRefreshingHistory ? "Refreshing..." : "Refresh",
-                            systemImage: "arrow.clockwise",
-                            variant: .secondary,
-                            isLoading: viewModel.isRefreshingHistory
-                        ) {
-                            viewModel.refreshHistoryWithFeedback()
-                        }
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
                     StudioSettingRow(
                         title: "Export archive",
                         subtitle: "Download your history as markdown or clear the current timeline."
@@ -484,90 +447,23 @@ struct StudioView: View {
                 }
             }
 
-            StudioCard {
-                StudioSettingRow(
-                    title: "Recognition Hints",
-                    subtitle: "Vocabulary terms currently influence Whisper API and the local Whisper transcription path. Apple Speech and the other local models will ignore them for now."
-                ) {
-                    StudioPill(title: "\(viewModel.vocabularyEntries.count) terms")
-                }
-            }
-        }
-    }
-
-    private var debugPage: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-            HStack(spacing: StudioTheme.Spacing.xxLarge) {
-                StudioCard {
-                    StudioSectionTitle(title: "Runtime Status")
-                    debugLine(title: "STT Provider", value: viewModel.sttProvider.displayName)
-                    debugLine(title: "LLM Provider", value: viewModel.llmProvider.displayName)
-                    debugLine(title: "Ollama", value: viewModel.ollamaStatus)
-                }
-
-                StudioCard {
-                    StudioSectionTitle(title: "Quick Actions")
-                    StudioButton(title: "Prepare Local Model", systemImage: "arrow.down.circle", variant: .primary) {
-                        viewModel.prepareOllamaModel()
-                    }
-                    StudioButton(title: "Open Models", systemImage: "cpu", variant: .secondary) {
-                        viewModel.navigate(to: .models)
-                    }
-                }
-                .frame(width: StudioTheme.Layout.debugActionsCardWidth)
-            }
-
-            StudioCard {
-                HStack {
-                    Text("Recent Errors")
-                        .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Spacer()
-                    StudioButton(title: "Clear", systemImage: nil, variant: .ghost) {
-                        viewModel.errorLogStore.clear()
-                    }
-                }
-
-                if viewModel.errorLogStore.entries.isEmpty {
-                    Text("No errors recorded.")
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .padding(.vertical, StudioTheme.Insets.errorEmptyVertical)
-                } else {
-                    VStack(spacing: StudioTheme.Spacing.none) {
-                        ForEach(viewModel.errorLogStore.entries) { entry in
-                            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-                                Text(entry.date, style: .time)
-                                    .font(.studioBody(StudioTheme.Typography.eyebrow, weight: .semibold))
-                                    .foregroundStyle(StudioTheme.textSecondary)
-                                Text(entry.message)
-                                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                                    .foregroundStyle(StudioTheme.textPrimary)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, StudioTheme.Insets.historyRowVertical)
-
-                            if entry.id != viewModel.errorLogStore.entries.last?.id {
-                                Divider().overlay(StudioTheme.border)
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 
     private var settingsPage: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            StudioSectionTitle(title: "General Behaviour")
+            StudioSectionTitle(title: "Activation Hotkey")
 
             StudioCard {
-                StudioSettingRow(
-                    title: "Enable Press-and-Hold Hotkey",
-                    subtitle: "Keep the recorder ready from the menu bar with your debug override hotkey."
-                ) {
-                    Toggle("", isOn: Binding(get: { viewModel.enableFn }, set: viewModel.setEnableFn))
-                        .toggleStyle(.switch)
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
+                    HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
+                        primaryTriggerPanel
+                        additionalShortcutsPanel
+                    }
+
+                    if recorder.isRecording {
+                        recordingShortcutBanner
+                    }
                 }
             }
 
@@ -575,82 +471,82 @@ struct StudioView: View {
 
             HStack(alignment: .top, spacing: StudioTheme.Spacing.xxLarge) {
                 StudioCard {
-                    Text("Default Persona")
-                        .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text("Select the voice identity used for new dictation sessions.")
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                        HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
+                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
+                                .fill(StudioTheme.accentSoft)
+                                .frame(width: 46, height: 46)
+                                .overlay(
+                                    Image(systemName: "person.crop.rectangle.stack.fill")
+                                        .foregroundStyle(StudioTheme.accent)
+                                )
 
-                    Picker(
-                        "",
-                        selection: Binding(
-                            get: { viewModel.defaultPersonaSelectionID },
-                            set: viewModel.setDefaultPersonaSelection
-                        )
-                    ) {
-                        Text("Do Not Use Persona").tag(UUID?.none)
-                        ForEach(viewModel.personas) { persona in
-                            Text(persona.name).tag(Optional(persona.id))
+                            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                                Text("Default Persona")
+                                    .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
+                                    .foregroundStyle(StudioTheme.textPrimary)
+                                Text("Choose the writing identity that should shape new dictation sessions.")
+                                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                                    .foregroundStyle(StudioTheme.textSecondary)
+                            }
+
+                            Spacer()
+
+                            if let selectedID = viewModel.defaultPersonaSelectionID,
+                               let persona = viewModel.personas.first(where: { $0.id == selectedID }) {
+                                StudioPill(title: persona.name)
+                            } else {
+                                StudioPill(title: "Plain Dictation")
+                            }
                         }
-                    }
-                    .labelsHidden()
-                    .pickerStyle(.menu)
-                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Text(
-                        viewModel.personaRewriteEnabled
-                            ? "Persona rewriting is enabled for new dictation sessions."
-                            : "Persona is off. Dictation will use the plain rewrite flow."
-                    )
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
+                                GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
+                                GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
+                                GridItem(.flexible(), spacing: StudioTheme.Spacing.medium)
+                            ],
+                            alignment: .leading,
+                            spacing: StudioTheme.Spacing.medium
+                        ) {
+                            personaSelectionCard(
+                                title: "Plain Dictation",
+                                subtitle: "Use the direct rewrite flow without any persona styling.",
+                                initials: "OFF",
+                                isSelected: viewModel.defaultPersonaSelectionID == nil
+                            ) {
+                                viewModel.setDefaultPersonaSelection(nil)
+                            }
 
-                    StudioButton(title: "Open Personas", systemImage: nil, variant: .ghost) {
-                        viewModel.navigate(to: .personas)
-                    }
-                }
-                .frame(maxWidth: .infinity)
+                            ForEach(viewModel.personas) { persona in
+                                personaSelectionCard(
+                                    title: persona.name,
+                                    subtitle: persona.prompt,
+                                    initials: String(persona.name.prefix(2)).uppercased(),
+                                    isSelected: viewModel.defaultPersonaSelectionID == persona.id
+                                ) {
+                                    viewModel.setDefaultPersonaSelection(persona.id)
+                                }
+                            }
+                        }
 
-                StudioCard {
-                    Text("Activation Hotkey")
-                        .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text("The keyboard shortcut used to trigger voice recording.")
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textSecondary)
-
-                    if let first = viewModel.customHotkeys.first {
-                        Text(HotkeyFormat.display(first))
-                            .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                            .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
-                            .padding(.vertical, StudioTheme.Insets.buttonVertical)
-                            .background(
-                                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                                    .fill(StudioTheme.surfaceMuted)
+                        HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
+                            Text(
+                                viewModel.personaRewriteEnabled
+                                    ? "New dictation sessions will be rewritten with the selected persona."
+                                    : "Persona is currently off, so dictation will stay in its plain form."
                             )
-                    } else {
-                        Text("Option + Space")
-                            .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                            .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
-                            .padding(.vertical, StudioTheme.Insets.buttonVertical)
-                            .background(
-                                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                                    .fill(StudioTheme.surfaceMuted)
-                            )
-                    }
+                            .font(.studioBody(StudioTheme.Typography.caption))
+                            .foregroundStyle(StudioTheme.textSecondary)
 
-                    Button(recorder.isRecording ? "Recording…" : "Record New") {
-                        if recorder.isRecording {
-                            recorder.stop()
-                        } else {
-                            recorder.start { binding in
-                                viewModel.addHotkey(binding)
+                            Spacer()
+
+                            StudioButton(title: "Open Personas", systemImage: nil, variant: .secondary) {
+                                viewModel.navigate(to: .personas)
                             }
                         }
                     }
-                    .buttonStyle(StudioInteractiveButtonStyle())
-                    .foregroundStyle(StudioTheme.accent)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -724,6 +620,269 @@ struct StudioView: View {
                 }
             }
         }
+    }
+
+    private var primaryTriggerPanel: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+            HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                StudioTheme.accentSoft,
+                                StudioTheme.surfaceMuted
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 54, height: 54)
+                    .overlay(
+                        Image(systemName: "command")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(StudioTheme.accent)
+                    )
+
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                    Text("Primary trigger")
+                        .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text("Hold the right Command key to start dictation and release it to finish.")
+                        .font(.studioBody(StudioTheme.Typography.bodySmall))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
+            }
+
+            HStack(spacing: StudioTheme.Spacing.small) {
+                shortcutKeycap("Right")
+                shortcutKeycap("Command")
+            }
+
+            Text("This trigger is always available and does not need to be recorded again.")
+                .font(.studioBody(StudioTheme.Typography.caption))
+                .foregroundStyle(StudioTheme.textTertiary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(StudioTheme.Insets.cardDense)
+        .background(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                .fill(StudioTheme.surfaceMuted.opacity(0.55))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: StudioTheme.BorderWidth.thin)
+        )
+    }
+
+    private var additionalShortcutsPanel: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                    Text("Additional shortcuts")
+                        .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text("Add optional shortcuts if you want another way to trigger dictation.")
+                        .font(.studioBody(StudioTheme.Typography.bodySmall))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
+
+                Spacer()
+
+                StudioButton(
+                    title: recorder.isRecording ? "Stop Recording" : "Add Shortcut",
+                    systemImage: recorder.isRecording ? "stop.circle.fill" : "plus",
+                    variant: recorder.isRecording ? .secondary : .primary
+                ) {
+                    if recorder.isRecording {
+                        recorder.stop()
+                    } else {
+                        recorder.start { binding in
+                            viewModel.addHotkey(binding)
+                        }
+                    }
+                }
+            }
+
+            if viewModel.customHotkeys.isEmpty {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    Text("No additional shortcuts")
+                        .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text("Create one if you want a backup trigger for external keyboards or a more familiar combination.")
+                        .font(.studioBody(StudioTheme.Typography.bodySmall))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(StudioTheme.Insets.cardDense)
+                .background(
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                        .fill(StudioTheme.surface)
+                )
+            } else {
+                LazyVGrid(
+                    columns: [
+                        GridItem(.adaptive(minimum: 170), spacing: StudioTheme.Spacing.small)
+                    ],
+                    alignment: .leading,
+                    spacing: StudioTheme.Spacing.small
+                ) {
+                    ForEach(viewModel.customHotkeys) { binding in
+                        shortcutToken(binding)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(StudioTheme.Insets.cardDense)
+        .background(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                .fill(StudioTheme.surfaceMuted.opacity(0.38))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: StudioTheme.BorderWidth.thin)
+        )
+    }
+
+    private var recordingShortcutBanner: some View {
+        HStack(spacing: StudioTheme.Spacing.medium) {
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
+                .fill(StudioTheme.accentSoft)
+                .frame(width: 38, height: 38)
+                .overlay(
+                    Image(systemName: "keyboard")
+                        .foregroundStyle(StudioTheme.accent)
+                )
+
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                Text("Recording a new shortcut")
+                    .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Text("Press the full key combination you want to use. Include at least one modifier key.")
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
+
+            Spacer()
+        }
+        .padding(StudioTheme.Insets.cardDense)
+        .background(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                .fill(StudioTheme.accentSoft.opacity(0.72))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                .stroke(StudioTheme.accent.opacity(0.28), lineWidth: StudioTheme.BorderWidth.thin)
+        )
+    }
+
+    private func shortcutKeycap(_ title: String) -> some View {
+        Text(title)
+            .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+            .foregroundStyle(StudioTheme.textPrimary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
+                    .fill(StudioTheme.surface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
+                    .stroke(StudioTheme.border.opacity(0.75), lineWidth: StudioTheme.BorderWidth.thin)
+            )
+    }
+
+    private func shortcutToken(_ binding: HotkeyBinding) -> some View {
+        HStack(spacing: StudioTheme.Spacing.small) {
+            HStack(spacing: 6) {
+                Image(systemName: "keyboard")
+                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+                    .foregroundStyle(StudioTheme.accent)
+                Text(HotkeyFormat.display(binding))
+                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+            }
+
+            Button {
+                viewModel.removeHotkey(binding)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .frame(width: 18, height: 18)
+                    .background(
+                        Circle()
+                            .fill(StudioTheme.surface.opacity(0.95))
+                    )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            Capsule(style: .continuous)
+                .fill(StudioTheme.surface)
+        )
+        .overlay(
+            Capsule(style: .continuous)
+                .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: StudioTheme.BorderWidth.thin)
+        )
+    }
+
+    private func personaSelectionCard(
+        title: String,
+        subtitle: String,
+        initials: String,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
+                HStack(alignment: .top, spacing: StudioTheme.Spacing.small) {
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
+                        .fill(isSelected ? StudioTheme.accentSoft : StudioTheme.surfaceMuted)
+                        .frame(width: 42, height: 42)
+                        .overlay(
+                            Text(initials)
+                                .font(.studioBody(StudioTheme.Typography.caption, weight: .bold))
+                                .foregroundStyle(isSelected ? StudioTheme.accent : StudioTheme.textSecondary)
+                        )
+
+                    Spacer()
+
+                    Circle()
+                        .stroke(isSelected ? StudioTheme.accent : StudioTheme.border, lineWidth: StudioTheme.BorderWidth.emphasis)
+                        .frame(width: 18, height: 18)
+                        .overlay(
+                            Circle()
+                                .fill(isSelected ? StudioTheme.accent : Color.clear)
+                                .frame(width: 8, height: 8)
+                        )
+                }
+
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                    Text(title)
+                        .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .lineLimit(1)
+                    Text(subtitle)
+                        .font(.studioBody(StudioTheme.Typography.bodySmall))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .lineLimit(2)
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 126, alignment: .topLeading)
+            .padding(StudioTheme.Insets.cardCompact)
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                    .fill(isSelected ? StudioTheme.accentSoft.opacity(0.75) : StudioTheme.surfaceMuted.opacity(0.42))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                    .stroke(isSelected ? StudioTheme.accent.opacity(0.45) : StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: isSelected ? StudioTheme.BorderWidth.emphasis : StudioTheme.BorderWidth.thin)
+            )
+        }
+        .buttonStyle(StudioInteractiveButtonStyle())
     }
 
     private func permissionRow(_ permission: StudioPermissionRowModel) -> some View {
@@ -1037,10 +1196,6 @@ struct StudioView: View {
                                 .font(.studioBody(StudioTheme.Typography.body))
                                 .foregroundStyle(StudioTheme.textSecondary)
 
-                            StudioButton(title: "View report", systemImage: nil, variant: .secondary) {
-                                viewModel.navigate(to: .history)
-                            }
-
                             Spacer(minLength: StudioTheme.Spacing.smallMedium)
 
                             Text("Your voice data stays on-device unless you export it.")
@@ -1110,49 +1265,12 @@ struct StudioView: View {
         .frame(maxWidth: .infinity, minHeight: StudioTheme.Layout.compactMetricMinHeight, alignment: .topLeading)
     }
 
-    private func accentPromoCard(
-        title: String,
-        description: String,
-        buttonTitle: String,
-        colors: [Color],
-        action: @escaping () -> Void
-    ) -> some View {
-        HStack(spacing: StudioTheme.Spacing.cardCompact) {
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.promoIllustration, style: .continuous)
-                .fill(StudioTheme.Colors.white.opacity(StudioTheme.Opacity.promoIconFill))
-                .frame(width: StudioTheme.ControlSize.promoIllustration, height: StudioTheme.ControlSize.promoIllustration)
-                .overlay(
-                    Image(systemName: "hands.sparkles.fill")
-                        .font(.system(size: StudioTheme.Typography.iconLarge, weight: .medium))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                )
-
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                Text(title)
-                    .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .bold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Text(description)
-                    .font(.studioBody(StudioTheme.Typography.body))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                StudioButton(title: buttonTitle, systemImage: nil, variant: .secondary, action: action)
-            }
-            Spacer(minLength: StudioTheme.Insets.none)
-        }
-        .padding(StudioTheme.Insets.promoCard)
-        .frame(maxWidth: .infinity, minHeight: StudioTheme.Layout.promoCardMinHeight, alignment: .leading)
-        .background(
-            LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
-    }
-
     private func sectionHeader(
         title: String,
-        primaryButtonTitle: String,
-        primaryAction: @escaping () -> Void,
         secondaryButtonTitle: String,
-        secondaryAction: @escaping () -> Void
+        secondaryAction: @escaping () -> Void,
+        primaryButtonTitle: String,
+        primaryAction: @escaping () -> Void
     ) -> some View {
         HStack {
             Text(title)
@@ -2028,16 +2146,4 @@ struct StudioView: View {
             : "Add a remote endpoint and model before using cloud rewrite."
     }
 
-    private func debugLine(title: String, value: String) -> some View {
-        HStack {
-            Text(title)
-                .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-            Spacer()
-            Text(value)
-                .font(.studioBody(StudioTheme.Typography.bodySmall))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .multilineTextAlignment(.trailing)
-        }
-    }
 }

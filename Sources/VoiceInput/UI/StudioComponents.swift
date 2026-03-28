@@ -552,14 +552,11 @@ struct StudioHistoryRow: View {
 
             if isExpanded {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-                    historyDetailSection(title: "音频文件", content: record.sourceName)
-                    historyDetailSection(title: "原始音频路径", content: record.audioFilePath ?? "未生成音频文件")
+                    historyDetailSection(title: "Audio Path", content: record.audioFilePath ?? "No audio file")
                     historyDetailSection(title: "模型原始转写", content: record.transcriptText, copyAction: record.hasTranscriptToCopy ? onCopyTranscript : nil)
-                    historyDetailSection(title: "Persona Prompt", content: record.personaPrompt)
                     historyDetailSection(title: "Persona 处理结果", content: record.personaResultText)
                     historyDetailSection(title: "选中文本", content: record.selectionOriginalText)
                     historyDetailSection(title: "选中文本修改结果", content: record.selectionEditedText)
-                    historyDetailSection(title: "写入结果", content: record.applyMessage)
                     historyDetailSection(title: "错误信息", content: record.errorMessage, emphasize: true)
                 }
                 .padding(.top, StudioTheme.Spacing.xSmall)

@@ -42,13 +42,15 @@ final class StudioViewModel: ObservableObject {
     @Published var isLocalSTTPrepared = false
     @Published var isPreparingLocalSTT = false
 
-    @Published var enableFn: Bool
     @Published var appleSpeechFallback: Bool
 
     @Published var personaRewriteEnabled: Bool
     @Published var personas: [PersonaProfile]
     @Published var selectedPersonaID: UUID?
     @Published private(set) var activePersonaID: String
+    @Published var personaDraftName: String
+    @Published var personaDraftPrompt: String
+    @Published private(set) var isCreatingPersonaDraft: Bool
     @Published var vocabularyEntries: [VocabularyEntry]
 
     @Published var customHotkeys: [HotkeyBinding]
@@ -114,12 +116,16 @@ final class StudioViewModel: ObservableObject {
         localSTTDownloadSource = settingsStore.localSTTDownloadSource
         localSTTAutoSetup = true
         localSTTStoragePath = ""
-        enableFn = settingsStore.enableFnHotkey
         appleSpeechFallback = settingsStore.useAppleSpeechFallback
         personaRewriteEnabled = settingsStore.personaRewriteEnabled
         personas = currentPersonas
-        selectedPersonaID = settingsStore.activePersona.map(\.id) ?? currentPersonas.first?.id
+        let initialSelectedPersonaID = settingsStore.activePersona.map(\.id) ?? currentPersonas.first?.id
+        selectedPersonaID = initialSelectedPersonaID
         activePersonaID = settingsStore.activePersonaID
+        let initialPersona = currentPersonas.first(where: { $0.id == initialSelectedPersonaID }) ?? currentPersonas.first
+        personaDraftName = initialPersona?.name ?? ""
+        personaDraftPrompt = initialPersona?.prompt ?? ""
+        isCreatingPersonaDraft = false
         vocabularyEntries = VocabularyStore.load()
         customHotkeys = settingsStore.customHotkeys
         historyRecords = historyStore.list()
@@ -178,20 +184,18 @@ final class StudioViewModel: ObservableObject {
         return personas.first { $0.id == selectedPersonaID }
     }
 
-    var selectedPersonaName: String {
-        get { selectedPersona?.name ?? "" }
-        set {
-            guard let persona = selectedPersona else { return }
-            updateSelectedPersona(name: newValue, prompt: persona.prompt)
+    var hasPersonaDraftChanges: Bool {
+        if isCreatingPersonaDraft {
+            return !personaDraftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                !personaDraftPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
+
+        guard let selectedPersona else { return false }
+        return personaDraftName != selectedPersona.name || personaDraftPrompt != selectedPersona.prompt
     }
 
-    var selectedPersonaPrompt: String {
-        get { selectedPersona?.prompt ?? "" }
-        set {
-            guard let persona = selectedPersona else { return }
-            updateSelectedPersona(name: persona.name, prompt: newValue)
-        }
+    var canSavePersonaDraft: Bool {
+        !personaDraftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var filteredPersonas: [PersonaProfile] {
@@ -454,7 +458,6 @@ final class StudioViewModel: ObservableObject {
     }
     func setLocalSTTDownloadSource(_ value: ModelDownloadSource) { localSTTDownloadSource = value; settingsStore.localSTTDownloadSource = value }
     func setLocalSTTAutoSetup(_ value: Bool) { localSTTAutoSetup = value; settingsStore.localSTTAutoSetup = value }
-    func setEnableFn(_ value: Bool) { enableFn = value; settingsStore.enableFnHotkey = value }
     func setAppleSpeechFallback(_ value: Bool) { appleSpeechFallback = value; settingsStore.useAppleSpeechFallback = value }
     func setPersonaRewriteEnabled(_ value: Bool) { personaRewriteEnabled = value; settingsStore.personaRewriteEnabled = value }
 
@@ -484,6 +487,7 @@ final class StudioViewModel: ObservableObject {
             settingsStore.activePersonaID = id.uuidString
             activePersonaID = id.uuidString
         }
+        loadPersonaDraft()
     }
 
     func addHotkey(_ binding: HotkeyBinding) {
@@ -505,26 +509,25 @@ final class StudioViewModel: ObservableObject {
         vocabularyEntries = VocabularyStore.remove(id: id)
     }
 
-    func addPersona() {
-        let persona = PersonaProfile(name: "New Persona", prompt: "Describe the desired voice, tone, and output structure here.")
-        personas.insert(persona, at: 0)
-        persistPersonas()
-        selectedPersonaID = persona.id
-        if settingsStore.activePersonaID.isEmpty {
-            settingsStore.activePersonaID = persona.id.uuidString
-            activePersonaID = persona.id.uuidString
-        }
+    func beginCreatingPersona() {
+        isCreatingPersonaDraft = true
+        selectedPersonaID = nil
+        personaDraftName = ""
+        personaDraftPrompt = ""
     }
 
-    func deleteSelectedPersona() {
-        guard let selectedPersonaID else { return }
-        personas.removeAll { $0.id == selectedPersonaID }
+    func deletePersona(id: UUID) {
+        personas.removeAll { $0.id == id }
         persistPersonas()
-        if settingsStore.activePersonaID == selectedPersonaID.uuidString {
+        if settingsStore.activePersonaID == id.uuidString {
             settingsStore.activePersonaID = personas.first?.id.uuidString ?? ""
             activePersonaID = settingsStore.activePersonaID
         }
-        self.selectedPersonaID = personas.first?.id
+        if selectedPersonaID == id {
+            selectedPersonaID = personas.first?.id
+        }
+        isCreatingPersonaDraft = false
+        loadPersonaDraft()
     }
 
     func activateSelectedPersona() {
@@ -540,11 +543,40 @@ final class StudioViewModel: ObservableObject {
         setPersonaRewriteEnabled(false)
     }
 
-    func updateSelectedPersona(name: String, prompt: String) {
+    func savePersonaDraft() {
+        let name = personaDraftName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prompt = personaDraftPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+
+        if isCreatingPersonaDraft {
+            let persona = PersonaProfile(name: name, prompt: prompt)
+            personas.insert(persona, at: 0)
+            persistPersonas()
+            selectedPersonaID = persona.id
+            isCreatingPersonaDraft = false
+            if settingsStore.activePersonaID.isEmpty {
+                settingsStore.activePersonaID = persona.id.uuidString
+                activePersonaID = persona.id.uuidString
+            }
+            loadPersonaDraft()
+            showToast("Persona saved.")
+            return
+        }
+
         guard let selectedPersonaID, let index = personas.firstIndex(where: { $0.id == selectedPersonaID }) else { return }
         personas[index].name = name
         personas[index].prompt = prompt
         persistPersonas()
+        loadPersonaDraft()
+        showToast("Persona saved.")
+    }
+
+    func cancelPersonaEditing() {
+        if isCreatingPersonaDraft {
+            isCreatingPersonaDraft = false
+            selectedPersonaID = personas.first?.id
+        }
+        loadPersonaDraft()
     }
 
     func prepareOllamaModel() {
@@ -780,6 +812,16 @@ final class StudioViewModel: ObservableObject {
 
     private func persistPersonas() {
         settingsStore.personas = personas
+    }
+
+    private func loadPersonaDraft() {
+        if let selectedPersona {
+            personaDraftName = selectedPersona.name
+            personaDraftPrompt = selectedPersona.prompt
+        } else {
+            personaDraftName = ""
+            personaDraftPrompt = ""
+        }
     }
 
     private func activeProvider(for domain: StudioModelDomain) -> StudioModelProviderID {

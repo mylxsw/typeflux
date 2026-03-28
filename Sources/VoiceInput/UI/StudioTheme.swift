@@ -13,7 +13,7 @@ enum StudioTheme {
         static let contentMaxWidth: CGFloat = 900
         static let contentInset: CGFloat = 24
         static let settingsWindowWidth: CGFloat = 1100
-        static let settingsWindowHeight: CGFloat = 750
+        static let settingsWindowHeight: CGFloat = 800
         static let settingsWindowMinWidth: CGFloat = 1080
         static let settingsWindowMinHeight: CGFloat = 620
         static let overlayWidth: CGFloat = 320

@@ -6,7 +6,6 @@ enum StudioSection: String, CaseIterable, Identifiable {
     case personas
     case vocabulary
     case history
-    case debug
     case settings
 
     var id: String { rawValue }
@@ -18,7 +17,6 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .personas: return "Personas"
         case .vocabulary: return "Vocabulary"
         case .history: return "History"
-        case .debug: return "Diagnostics"
         case .settings: return "Settings"
         }
     }
@@ -30,7 +28,6 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .personas: return "face.smiling"
         case .vocabulary: return "text.book.closed"
         case .history: return "clock.arrow.circlepath"
-        case .debug: return "terminal"
         case .settings: return "gearshape.fill"
         }
     }
@@ -42,7 +39,6 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .personas: return "Voice Personas"
         case .vocabulary: return "Custom Terms"
         case .history: return "Session History"
-        case .debug: return "Diagnostics"
         case .settings: return "Settings"
         }
     }
@@ -54,8 +50,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .personas: return "Persona library"
         case .vocabulary: return "Vocabulary"
         case .history: return "History"
-        case .debug: return "Runtime status"
-        case .settings: return "Preferences"
+        case .settings: return "Settings"
         }
     }
 
@@ -71,8 +66,6 @@ enum StudioSection: String, CaseIterable, Identifiable {
             return "Manage the words and names that should be recognized more reliably during dictation."
         case .history:
             return "Review recent sessions, inspect the recognized text, and export your archive."
-        case .debug:
-            return "Inspect connectivity, local model state, and recent application errors."
         case .settings:
             return "Adjust shortcuts, appearance, and behavior from one unified interface."
         }
@@ -85,7 +78,6 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .personas: return "Search personas..."
         case .vocabulary: return "Search vocabulary..."
         case .history: return "Search history..."
-        case .debug: return "Search logs..."
         case .settings: return "Search settings..."
         }
     }

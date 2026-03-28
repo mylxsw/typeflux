@@ -153,11 +153,6 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "stt.appleSpeech.enabled") }
     }
 
-    var enableFnHotkey: Bool {
-        get { defaults.object(forKey: "hotkey.fn.enabled") as? Bool ?? true }
-        set { defaults.set(newValue, forKey: "hotkey.fn.enabled") }
-    }
-
     var customHotkeyJSON: String {
         get { defaults.string(forKey: "hotkey.custom.json") ?? "[]" }
         set { defaults.set(newValue, forKey: "hotkey.custom.json") }
@@ -175,9 +170,8 @@ final class SettingsStore {
         }
     }
 
-    // Default hotkey: Option+Space (keyCode 49 = Space, Option = 0x80000)
     private var defaultHotkeys: [HotkeyBinding] {
-        [HotkeyBinding(keyCode: 49, modifierFlags: 0x80000)]
+        []
     }
 
     private var defaultPersonas: [PersonaProfile] {

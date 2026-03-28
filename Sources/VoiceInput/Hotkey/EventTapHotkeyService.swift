@@ -85,24 +85,6 @@ final class EventTapHotkeyService: HotkeyService {
              }
 
          case .flagsChanged:
-             guard settingsStore.enableFnHotkey else { return }
-//             let fnDown = event.modifierFlags.contains(.function)
-//             let hasOtherModifiers = event.modifierFlags.intersection([.command, .shift, .control, .option]).rawValue != 0
-//
-//             if fnDown, !hasOtherModifiers, !nseventIsPressed {
-//                 nseventIsPressed = true
-//                 ErrorLogStore.shared.log("Hotkey(NSEvent): fn down")
-//                 DispatchQueue.main.async { [weak self] in
-//                     self?.onPressBegan?()
-//                 }
-//             } else if !fnDown, nseventIsPressed {
-//                 nseventIsPressed = false
-//                 ErrorLogStore.shared.log("Hotkey(NSEvent): fn up")
-//                 DispatchQueue.main.async { [weak self] in
-//                     self?.onPressEnded?()
-//                 }
-//             }
-
              let isRightCommandEvent = Int(event.keyCode) == PrimaryModifierHotkey.rightCommandKeyCode
              let rightCommandDown = isRightCommandEvent && event.modifierFlags.contains(.command)
              let hasOtherModifiers = event.modifierFlags.intersection([.shift, .control, .option]).rawValue != 0
