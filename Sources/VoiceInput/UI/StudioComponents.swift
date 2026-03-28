@@ -632,3 +632,88 @@ struct StudioHistoryRow: View {
         }
     }
 }
+
+struct StudioSegmentedPicker<T: Hashable>: View {
+    let options: [(label: String, value: T)]
+    @Binding var selection: T
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
+                Button {
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        selection = option.value
+                    }
+                } label: {
+                    Text(option.label)
+                        .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
+                        .foregroundStyle(selection == option.value ? .white : StudioTheme.textPrimary)
+                        .padding(.horizontal, StudioTheme.Insets.segmentedItemHorizontal)
+                        .padding(.vertical, StudioTheme.Insets.segmentedItemVertical)
+                        .background(
+                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedItem - 2, style: .continuous)
+                                .fill(selection == option.value ? StudioTheme.accent : Color.clear)
+                        )
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(StudioTheme.Insets.segmentedControlVertical)
+        .background(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedControl, style: .continuous)
+                .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.segmentedControlFill))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedControl, style: .continuous)
+                .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
+        )
+    }
+}
+
+struct StudioMenuPicker<T: Hashable>: View {
+    let options: [(label: String, value: T)]
+    @Binding var selection: T
+    var width: CGFloat? = nil
+
+    private var selectedLabel: String {
+        options.first(where: { $0.value == selection })?.label ?? ""
+    }
+
+    var body: some View {
+        Menu {
+            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
+                Button(option.label) {
+                    selection = option.value
+                }
+            }
+        } label: {
+            HStack(spacing: StudioTheme.Spacing.xSmall) {
+                Text(selectedLabel)
+                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
+            .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
+            .padding(.vertical, StudioTheme.Insets.buttonVertical)
+            .frame(width: width)
+            .contentShape(Rectangle())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .frame(width: width)
+        .background(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                .fill(StudioTheme.surfaceMuted)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
+    }
+}

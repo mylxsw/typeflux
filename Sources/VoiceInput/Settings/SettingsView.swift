@@ -688,19 +688,14 @@ struct StudioView: View {
 
                     Spacer()
 
-                    Picker(
-                        "",
+                    StudioSegmentedPicker(
+                        options: AppearanceMode.allCases.map { (label: $0.displayName, value: $0) },
                         selection: Binding(
                             get: { viewModel.appearanceMode },
                             set: viewModel.setAppearanceMode
                         )
-                    ) {
-                        ForEach(AppearanceMode.allCases, id: \.self) { mode in
-                            Text(mode.displayName).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: StudioTheme.Layout.appearancePickerWidth, height: StudioTheme.ControlSize.buttonHeight)
+                    )
+                    .frame(width: StudioTheme.Layout.appearancePickerWidth)
                 }
             }
 
@@ -713,20 +708,15 @@ struct StudioView: View {
                         subtitle: "Pick the device used for dictation. Automatic follows the current macOS default input."
                     ) {
                         HStack(spacing: StudioTheme.Spacing.small) {
-                            Picker(
-                                "",
+                            StudioMenuPicker(
+                                options: [(label: "Automatic", value: AudioDeviceManager.automaticDeviceID)] +
+                                         viewModel.availableMicrophones.map { (label: $0.name, value: $0.id) },
                                 selection: Binding(
                                     get: { viewModel.preferredMicrophoneID },
                                     set: viewModel.setPreferredMicrophoneID
-                                )
-                            ) {
-                                Text("Automatic").tag(AudioDeviceManager.automaticDeviceID)
-                                ForEach(viewModel.availableMicrophones) { device in
-                                    Text(device.name).tag(device.id)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            .frame(width: 260, height: StudioTheme.ControlSize.buttonHeight)
+                                ),
+                                width: 260
+                            )
 
                             StudioButton(title: "Refresh", systemImage: "arrow.clockwise", variant: .secondary) {
                                 viewModel.refreshAvailableMicrophones()
