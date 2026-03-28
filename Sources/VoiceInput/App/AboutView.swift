@@ -16,7 +16,6 @@ struct AboutView: View {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
                     headerCard
                     detailsCard
-                    linksCard
                 }
                 .padding(StudioTheme.Insets.cardDefault)
                 .frame(maxWidth: 560, alignment: .leading)
@@ -49,10 +48,6 @@ struct AboutView: View {
                 }
 
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    Text("About")
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
-
                     Text("VoiceInput")
                         .font(.studioDisplay(StudioTheme.Typography.heroTitle, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
@@ -60,15 +55,6 @@ struct AboutView: View {
                     Text("A personal macOS menu bar voice input app by @mylxsw.")
                         .font(.studioBody(StudioTheme.Typography.bodyLarge))
                         .foregroundStyle(StudioTheme.textSecondary)
-
-                    HStack(spacing: StudioTheme.Spacing.small) {
-                        StudioPill(title: "Version \(versionDescription)")
-                        StudioPill(
-                            title: appearanceMode.displayName,
-                            tone: StudioTheme.accent,
-                            fill: StudioTheme.accentSoft
-                        )
-                    }
                 }
 
                 Spacer()
@@ -115,30 +101,6 @@ struct AboutView: View {
                 value: versionDescription,
                 subtitle: "Read from the app bundle"
             )
-        }
-    }
-
-    private var linksCard: some View {
-        StudioCard {
-            StudioSectionTitle(title: "LINKS")
-
-            Text("Use the links below to visit the repository or developer profile.")
-                .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                .foregroundStyle(StudioTheme.textSecondary)
-
-            HStack(spacing: StudioTheme.Spacing.smallMedium) {
-                StudioButton(title: "Open Website", systemImage: "globe", variant: .secondary) {
-                    open(websiteURL)
-                }
-
-                StudioButton(title: "Open Repository", systemImage: "arrow.up.right.square", variant: .primary) {
-                    open(projectURL)
-                }
-            }
-
-            Text("Speak naturally, write anywhere.")
-                .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
         }
     }
 
@@ -209,6 +171,15 @@ struct AboutView: View {
             .frame(height: 1)
     }
 
+    private var versionDescription: String {
+        let shortVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
+        let buildVersion = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+        if let buildVersion, buildVersion != shortVersion {
+            return "\(shortVersion) (\(buildVersion))"
+        }
+        return shortVersion
+    }
+
     private var preferredColorScheme: ColorScheme? {
         switch appearanceMode {
         case .system:
@@ -218,18 +189,6 @@ struct AboutView: View {
         case .dark:
             return .dark
         }
-    }
-
-    private var shortVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
-    }
-
-    private var versionDescription: String {
-        let buildVersion = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
-        if let buildVersion, buildVersion != shortVersion {
-            return "\(shortVersion) (\(buildVersion))"
-        }
-        return shortVersion
     }
 
     private func open(_ url: URL) {
