@@ -1649,8 +1649,8 @@ struct StudioView: View {
                                 title: viewModel.llmConnectionTestState == .testing ? "Testing..." : "Test Connection",
                                 systemImage: viewModel.llmConnectionTestState == .testing ? nil : "network",
                                 variant: .secondary,
-                                isLoading: viewModel.llmConnectionTestState == .testing,
-                                isDisabled: viewModel.llmConnectionTestState == .testing
+                                isDisabled: viewModel.llmConnectionTestState == .testing,
+                                isLoading: viewModel.llmConnectionTestState == .testing
                             ) {
                                 viewModel.testLLMConnection()
                             }
