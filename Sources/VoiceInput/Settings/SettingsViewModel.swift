@@ -53,7 +53,8 @@ final class StudioViewModel: ObservableObject {
     @Published private(set) var isCreatingPersonaDraft: Bool
     @Published var vocabularyEntries: [VocabularyEntry]
 
-    @Published var customHotkeys: [HotkeyBinding]
+    @Published var activationHotkey: HotkeyBinding
+    @Published var personaHotkey: HotkeyBinding
     @Published private(set) var historyRecords: [HistoryRecord]
     @Published var toastMessage: String?
     @Published private(set) var permissionRows: [StudioPermissionRowModel] = []
@@ -127,7 +128,8 @@ final class StudioViewModel: ObservableObject {
         personaDraftPrompt = initialPersona?.prompt ?? ""
         isCreatingPersonaDraft = false
         vocabularyEntries = VocabularyStore.load()
-        customHotkeys = settingsStore.customHotkeys
+        activationHotkey = settingsStore.activationHotkey
+        personaHotkey = settingsStore.personaHotkey
         historyRecords = historyStore.list()
         settingsStore.localSTTModelIdentifier = localSTTModelIdentifier
         settingsStore.localSTTDownloadSource = localSTTModel.recommendedDownloadSource
@@ -490,15 +492,44 @@ final class StudioViewModel: ObservableObject {
         loadPersonaDraft()
     }
 
-    func addHotkey(_ binding: HotkeyBinding) {
-        guard !customHotkeys.contains(where: { $0.keyCode == binding.keyCode && $0.modifierFlags == binding.modifierFlags }) else { return }
-        customHotkeys.append(binding)
-        settingsStore.customHotkeys = customHotkeys
+    func setActivationHotkey(_ binding: HotkeyBinding) {
+        guard binding.signature != personaHotkey.signature else {
+            showToast("Activation shortcut cannot match the persona shortcut.")
+            return
+        }
+
+        activationHotkey = binding
+        settingsStore.activationHotkey = binding
+        showToast("Activation shortcut updated.")
     }
 
-    func removeHotkey(_ binding: HotkeyBinding) {
-        customHotkeys.removeAll { $0.id == binding.id }
-        settingsStore.customHotkeys = customHotkeys
+    func resetActivationHotkey() {
+        setActivationHotkey(.defaultActivation)
+    }
+
+    func setPersonaHotkey(_ binding: HotkeyBinding) {
+        guard binding.signature != activationHotkey.signature else {
+            showToast("Persona shortcut cannot match the activation shortcut.")
+            return
+        }
+
+        personaHotkey = binding
+        settingsStore.personaHotkey = binding
+        showToast("Persona shortcut updated.")
+    }
+
+    func resetPersonaHotkey() {
+        setPersonaHotkey(.defaultPersona)
+    }
+
+    func applyPersonaSelection(_ id: UUID?) {
+        setDefaultPersonaSelection(id)
+
+        if let id, let persona = personas.first(where: { $0.id == id }) {
+            showToast("Switched to \(persona.name).")
+        } else {
+            showToast("Persona disabled.")
+        }
     }
 
     func addVocabularyTerm(_ term: String, source: VocabularySource = .manual) {

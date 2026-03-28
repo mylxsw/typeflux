@@ -3,6 +3,10 @@ import Foundation
 
 enum HotkeyFormat {
     static func display(_ binding: HotkeyBinding) -> String {
+        if binding.isRightCommandTrigger {
+            return "Right Command"
+        }
+
         let flags: NSEvent.ModifierFlags = NSEvent.ModifierFlags(rawValue: binding.modifierFlags)
         let mods = [
             flags.contains(.control) ? "⌃" : "",

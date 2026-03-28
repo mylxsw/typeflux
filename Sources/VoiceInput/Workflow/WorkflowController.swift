@@ -43,6 +43,15 @@ final class WorkflowController {
     private var processingTask: Task<Void, Never>?
     private var processingSessionID = UUID()
     private var activeProcessingRecordID: UUID?
+    private var isPersonaPickerPresented = false
+    private var personaPickerItems: [PersonaPickerEntry] = []
+    private var personaPickerSelectedIndex = 0
+
+    private struct PersonaPickerEntry {
+        let id: UUID?
+        let title: String
+        let subtitle: String
+    }
 
     init(
         appState: AppStateStore,
@@ -70,6 +79,12 @@ final class WorkflowController {
             onCancel: { [weak self] in self?.cancelRecording() },
             onConfirm: { [weak self] in self?.confirmLockedRecording() }
         )
+        self.overlayController.setPersonaPickerHandlers(
+            onMoveUp: { [weak self] in self?.movePersonaSelection(delta: -1) },
+            onMoveDown: { [weak self] in self?.movePersonaSelection(delta: 1) },
+            onConfirm: { [weak self] in self?.confirmPersonaSelection() },
+            onCancel: { [weak self] in self?.dismissPersonaPicker() }
+        )
     }
 
     func start() {
@@ -78,6 +93,9 @@ final class WorkflowController {
         }
         hotkeyService.onPressEnded = { [weak self] in
             self?.handlePressEnded()
+        }
+        hotkeyService.onPersonaPickerRequested = { [weak self] in
+            self?.handlePersonaPickerRequested()
         }
         hotkeyService.onError = { [weak self] message in
             guard let self else { return }
@@ -94,6 +112,7 @@ final class WorkflowController {
 
     func stop() {
         hotkeyService.stop()
+        dismissPersonaPicker()
         cancelRecording()
         cancelCurrentProcessing(resetUI: true, reason: "Cancelled while stopping.")
     }
@@ -138,6 +157,10 @@ final class WorkflowController {
     }
 
     private func handlePressBegan() {
+        if isPersonaPickerPresented {
+            dismissPersonaPicker()
+        }
+
         if !PrivacyGuard.isRunningInAppBundle {
             Task { @MainActor in
                 let msg = "Please run via scripts/run_dev_app.sh (app bundle required for privacy permissions)"
@@ -164,6 +187,48 @@ final class WorkflowController {
         cancelCurrentProcessing(resetUI: false, reason: "Cancelled by new recording.")
         Task { [weak self] in
             await self?.beginRecording()
+        }
+    }
+
+    private func handlePersonaPickerRequested() {
+        guard !isRecording else {
+            Task { @MainActor in
+                self.overlayController.showNotice(message: "Finish the current recording before switching persona.")
+            }
+            return
+        }
+
+        guard processingTask == nil else {
+            Task { @MainActor in
+                self.overlayController.showNotice(message: "Please wait until processing finishes before switching persona.")
+            }
+            return
+        }
+
+        if isPersonaPickerPresented {
+            dismissPersonaPicker(closeOverlay: false)
+            return
+        }
+
+        let activeID = settingsStore.personaRewriteEnabled ? UUID(uuidString: settingsStore.activePersonaID) : nil
+        let items = personaPickerEntries()
+        guard !items.isEmpty else { return }
+
+        personaPickerItems = items
+        personaPickerSelectedIndex = items.firstIndex(where: { $0.id == activeID }) ?? 0
+        isPersonaPickerPresented = true
+
+        Task { @MainActor in
+            self.overlayController.showPersonaPicker(
+                items: items.map {
+                    OverlayController.PersonaPickerItem(
+                        id: $0.id?.uuidString ?? "plain-dictation",
+                        title: $0.title,
+                        subtitle: $0.subtitle
+                    )
+                },
+                selectedIndex: self.personaPickerSelectedIndex
+            )
         }
     }
 
@@ -692,6 +757,62 @@ final class WorkflowController {
         switch record.mode {
         case .dictation, .editSelection, .personaRewrite:
             return record.personaPrompt ?? settingsStore.activePersona?.prompt
+        }
+    }
+
+    private func personaPickerEntries() -> [PersonaPickerEntry] {
+        var items = [
+            PersonaPickerEntry(
+                id: nil,
+                title: "Plain Dictation",
+                subtitle: "Write directly without persona rewriting."
+            )
+        ]
+        items.append(
+            contentsOf: settingsStore.personas.map {
+                PersonaPickerEntry(id: $0.id, title: $0.name, subtitle: $0.prompt)
+            }
+        )
+        return items
+    }
+
+    private func movePersonaSelection(delta: Int) {
+        guard isPersonaPickerPresented, !personaPickerItems.isEmpty else { return }
+        let maxIndex = personaPickerItems.count - 1
+        personaPickerSelectedIndex = max(0, min(maxIndex, personaPickerSelectedIndex + delta))
+        Task { @MainActor in
+            self.overlayController.updatePersonaPickerSelection(self.personaPickerSelectedIndex)
+        }
+    }
+
+    private func confirmPersonaSelection() {
+        guard isPersonaPickerPresented, personaPickerItems.indices.contains(personaPickerSelectedIndex) else { return }
+
+        let selected = personaPickerItems[personaPickerSelectedIndex]
+        if let id = selected.id {
+            settingsStore.activePersonaID = id.uuidString
+            settingsStore.personaRewriteEnabled = true
+            Task { @MainActor in
+                self.overlayController.showNotice(message: "Persona switched to \(selected.title).")
+            }
+        } else {
+            settingsStore.personaRewriteEnabled = false
+            Task { @MainActor in
+                self.overlayController.showNotice(message: "Persona switched off.")
+            }
+        }
+
+        dismissPersonaPicker(closeOverlay: false)
+    }
+
+    private func dismissPersonaPicker(closeOverlay: Bool = true) {
+        guard isPersonaPickerPresented else { return }
+        isPersonaPickerPresented = false
+        personaPickerItems = []
+        personaPickerSelectedIndex = 0
+        guard closeOverlay else { return }
+        Task { @MainActor in
+            self.overlayController.dismiss(after: 0.05)
         }
     }
 }

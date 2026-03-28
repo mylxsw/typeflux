@@ -10,4 +10,19 @@ struct HotkeyBinding: Codable, Equatable, Identifiable {
         self.keyCode = keyCode
         self.modifierFlags = modifierFlags
     }
+
+    var signature: String {
+        "\(keyCode):\(modifierFlags)"
+    }
+
+    var isRightCommandTrigger: Bool {
+        keyCode == 54 && modifierFlags == 1_048_576
+    }
+
+    func matches(keyCode: Int, modifierFlags: UInt) -> Bool {
+        self.keyCode == keyCode && self.modifierFlags == modifierFlags
+    }
+
+    static let defaultActivation = HotkeyBinding(keyCode: 54, modifierFlags: 1_048_576)
+    static let defaultPersona = HotkeyBinding(keyCode: 35, modifierFlags: 1_572_864)
 }

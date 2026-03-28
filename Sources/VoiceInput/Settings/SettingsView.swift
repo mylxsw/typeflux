@@ -42,8 +42,14 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
 }
 
 struct StudioView: View {
+    private enum ShortcutRecordingTarget {
+        case activation
+        case persona
+    }
+
     @ObservedObject var viewModel: StudioViewModel
     @StateObject private var recorder = HotkeyRecorder()
+    @State private var recordingTarget: ShortcutRecordingTarget?
     @State private var vocabularyFilter: VocabularyFilter = .all
     @State private var isAddingVocabulary = false
     @State private var newVocabularyTerm = ""
@@ -456,9 +462,48 @@ struct StudioView: View {
 
             StudioCard {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
-                    HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
-                        primaryTriggerPanel
-                        additionalShortcutsPanel
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
+                        shortcutConfigurationRow(
+                            title: "Primary trigger",
+                            subtitle: "Use one shortcut to start dictation. Hold to talk, or tap quickly to lock the recording session.",
+                            footnote: "Default is Right Command. You can replace it with any modifier-based combination and reset it later.",
+                            icon: "command",
+                            badgeSymbol: "mic.fill",
+                            binding: viewModel.activationHotkey,
+                            isDefault: viewModel.activationHotkey.signature == HotkeyBinding.defaultActivation.signature,
+                            onStartRecording: {
+                                recordingTarget = .activation
+                                recorder.start { binding in
+                                    viewModel.setActivationHotkey(binding)
+                                    recordingTarget = nil
+                                }
+                            },
+                            onReset: {
+                                viewModel.resetActivationHotkey()
+                            }
+                        )
+
+                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                        shortcutConfigurationRow(
+                            title: "Persona switcher",
+                            subtitle: "Open a centered picker, move with Up and Down, then press Return to switch the active persona instantly.",
+                            footnote: "The picker includes Plain Dictation and every saved persona, so you can switch styles without opening Settings.",
+                            icon: "person.crop.rectangle.stack.fill",
+                            badgeSymbol: "person.crop.circle.badge.checkmark",
+                            binding: viewModel.personaHotkey,
+                            isDefault: viewModel.personaHotkey.signature == HotkeyBinding.defaultPersona.signature,
+                            onStartRecording: {
+                                recordingTarget = .persona
+                                recorder.start { binding in
+                                    viewModel.setPersonaHotkey(binding)
+                                    recordingTarget = nil
+                                }
+                            },
+                            onReset: {
+                                viewModel.resetPersonaHotkey()
+                            }
+                        )
                     }
 
                     if recorder.isRecording {
@@ -622,121 +667,63 @@ struct StudioView: View {
         }
     }
 
-    private var primaryTriggerPanel: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                StudioTheme.accentSoft,
-                                StudioTheme.surfaceMuted
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+    private func shortcutConfigurationRow(
+        title: String,
+        subtitle: String,
+        footnote: String,
+        icon: String,
+        badgeSymbol: String,
+        binding: HotkeyBinding,
+        isDefault: Bool,
+        onStartRecording: @escaping () -> Void,
+        onReset: @escaping () -> Void
+    ) -> some View {
+        HStack(alignment: .center, spacing: StudioTheme.Spacing.large) {
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [StudioTheme.accentSoft, StudioTheme.surfaceMuted],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
-                    .frame(width: 54, height: 54)
-                    .overlay(
-                        Image(systemName: "command")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(StudioTheme.accent)
-                    )
-
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                    Text("Primary trigger")
-                        .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text("Hold the right Command key to start dictation and release it to finish.")
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-            }
-
-            HStack(spacing: StudioTheme.Spacing.small) {
-                shortcutKeycap("Right")
-                shortcutKeycap("Command")
-            }
-
-            Text("This trigger is always available and does not need to be recorded again.")
-                .font(.studioBody(StudioTheme.Typography.caption))
-                .foregroundStyle(StudioTheme.textTertiary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(StudioTheme.Insets.cardDense)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                .fill(StudioTheme.surfaceMuted.opacity(0.55))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: StudioTheme.BorderWidth.thin)
-        )
-    }
-
-    private var additionalShortcutsPanel: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                    Text("Additional shortcuts")
-                        .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text("Add optional shortcuts if you want another way to trigger dictation.")
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-
-                Spacer()
-
-                StudioButton(
-                    title: recorder.isRecording ? "Stop Recording" : "Add Shortcut",
-                    systemImage: recorder.isRecording ? "stop.circle.fill" : "plus",
-                    variant: recorder.isRecording ? .secondary : .primary
-                ) {
-                    if recorder.isRecording {
-                        recorder.stop()
-                    } else {
-                        recorder.start { binding in
-                            viewModel.addHotkey(binding)
-                        }
-                    }
-                }
-            }
-
-            if viewModel.customHotkeys.isEmpty {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    Text("No additional shortcuts")
-                        .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text("Create one if you want a backup trigger for external keyboards or a more familiar combination.")
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(StudioTheme.Insets.cardDense)
-                .background(
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                        .fill(StudioTheme.surface)
                 )
-            } else {
-                LazyVGrid(
-                    columns: [
-                        GridItem(.adaptive(minimum: 170), spacing: StudioTheme.Spacing.small)
-                    ],
-                    alignment: .leading,
-                    spacing: StudioTheme.Spacing.small
-                ) {
-                    ForEach(viewModel.customHotkeys) { binding in
-                        shortcutToken(binding)
-                    }
-                }
+                .frame(width: 54, height: 54)
+                .overlay(
+                    Image(systemName: icon)
+                        .font(.system(size: 21, weight: .semibold))
+                        .foregroundStyle(StudioTheme.accent)
+                )
+
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                Text(title)
+                    .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Text(subtitle)
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(footnote)
+                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: 340, alignment: .leading)
+
+            Spacer(minLength: StudioTheme.Spacing.large)
+
+            shortcutPill(binding, accentSymbol: badgeSymbol)
+                .frame(minWidth: 170, alignment: .leading)
+
+            shortcutActionButtons(
+                isDefault: isDefault,
+                onStart: onStartRecording,
+                onReset: onReset
+            )
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(StudioTheme.Insets.cardDense)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                .fill(StudioTheme.surfaceMuted.opacity(0.38))
+                .fill(StudioTheme.surfaceMuted.opacity(0.42))
         )
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
@@ -758,7 +745,7 @@ struct StudioView: View {
                 Text("Recording a new shortcut")
                     .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text("Press the full key combination you want to use. Include at least one modifier key.")
+                Text(recordingBannerDescription)
                     .font(.studioBody(StudioTheme.Typography.bodySmall))
                     .foregroundStyle(StudioTheme.textSecondary)
             }
@@ -792,30 +779,51 @@ struct StudioView: View {
             )
     }
 
-    private func shortcutToken(_ binding: HotkeyBinding) -> some View {
+    private var recordingBannerDescription: String {
+        switch recordingTarget {
+        case .activation:
+            return "Press the new activation combination now. Include at least one modifier key."
+        case .persona:
+            return "Press the shortcut that should open the persona picker. Include at least one modifier key."
+        case nil:
+            return "Press the full key combination you want to use. Include at least one modifier key."
+        }
+    }
+
+    private func shortcutActionButtons(
+        isDefault: Bool,
+        onStart: @escaping () -> Void,
+        onReset: @escaping () -> Void
+    ) -> some View {
         HStack(spacing: StudioTheme.Spacing.small) {
-            HStack(spacing: 6) {
-                Image(systemName: "keyboard")
-                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                    .foregroundStyle(StudioTheme.accent)
-                Text(HotkeyFormat.display(binding))
-                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+            StudioButton(
+                title: recorder.isRecording ? "Stop Recording" : "Record",
+                systemImage: recorder.isRecording ? "stop.circle.fill" : "keyboard",
+                variant: recorder.isRecording ? .secondary : .primary
+            ) {
+                if recorder.isRecording {
+                    recorder.stop()
+                    recordingTarget = nil
+                } else {
+                    onStart()
+                }
             }
 
-            Button {
-                viewModel.removeHotkey(binding)
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .frame(width: 18, height: 18)
-                    .background(
-                        Circle()
-                            .fill(StudioTheme.surface.opacity(0.95))
-                    )
+            StudioButton(title: "Reset", systemImage: "arrow.counterclockwise", variant: .secondary, isDisabled: isDefault) {
+                onReset()
             }
-            .buttonStyle(.plain)
+        }
+    }
+
+    private func shortcutPill(_ binding: HotkeyBinding, accentSymbol: String) -> some View {
+        HStack(spacing: StudioTheme.Spacing.small) {
+            Image(systemName: accentSymbol)
+                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+                .foregroundStyle(StudioTheme.accent)
+
+            Text(HotkeyFormat.display(binding))
+                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)

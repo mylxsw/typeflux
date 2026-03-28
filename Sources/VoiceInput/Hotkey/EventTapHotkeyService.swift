@@ -2,22 +2,16 @@ import AppKit
 import Foundation
 
 final class EventTapHotkeyService: HotkeyService {
-    private enum PrimaryModifierHotkey {
-        static let rightCommandKeyCode = 54
-    }
-
     var onPressBegan: (() -> Void)?
     var onPressEnded: (() -> Void)?
+    var onPersonaPickerRequested: (() -> Void)?
     var onError: ((String) -> Void)?
 
     private let settingsStore: SettingsStore
 
-    private var isPressed = false
-    private var activeCustomKeyCode: Int?
-
     private var globalMonitor: Any?
     private var localMonitor: Any?
-    private var nseventIsPressed = false
+    private var activeAction: HotkeyAction?
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
@@ -49,62 +43,88 @@ final class EventTapHotkeyService: HotkeyService {
         }
         globalMonitor = nil
         localMonitor = nil
-        nseventIsPressed = false
- 
-        isPressed = false
-        activeCustomKeyCode = nil
+        activeAction = nil
     }
 
-     private func handleNSEvent(_ event: NSEvent) {
-         switch event.type {
-         case .keyDown, .keyUp:
-             let keyCode = Int(event.keyCode)
-             let flags = event.modifierFlags.intersection([.command, .shift, .control, .option])
-             let flagsRaw = UInt(flags.rawValue)
+    private func handleNSEvent(_ event: NSEvent) {
+        switch event.type {
+        case .keyDown:
+            handleKeyDown(event)
+        case .keyUp:
+            handleKeyUp(event)
+        case .flagsChanged:
+            handleFlagsChanged(event)
+        default:
+            return
+        }
+    }
 
-             let bindings = settingsStore.customHotkeys
-             let matched = bindings.contains(where: { $0.keyCode == keyCode && $0.modifierFlags == flagsRaw })
-             guard matched else { return }
+    private func handleKeyDown(_ event: NSEvent) {
+        if event.isARepeat { return }
 
-             if event.type == .keyDown {
-                 if activeCustomKeyCode == nil {
-                     activeCustomKeyCode = keyCode
-                     ErrorLogStore.shared.log("Hotkey(NSEvent): custom down")
-                     DispatchQueue.main.async { [weak self] in
-                         self?.onPressBegan?()
-                     }
-                 }
-             } else {
-                 if activeCustomKeyCode == keyCode {
-                     activeCustomKeyCode = nil
-                     ErrorLogStore.shared.log("Hotkey(NSEvent): custom up")
-                     DispatchQueue.main.async { [weak self] in
-                         self?.onPressEnded?()
-                     }
-                 }
-             }
+        let keyCode = Int(event.keyCode)
+        let flags = filteredFlags(event.modifierFlags)
+        let activationHotkey = settingsStore.activationHotkey
+        let personaHotkey = settingsStore.personaHotkey
 
-         case .flagsChanged:
-             let isRightCommandEvent = Int(event.keyCode) == PrimaryModifierHotkey.rightCommandKeyCode
-             let rightCommandDown = isRightCommandEvent && event.modifierFlags.contains(.command)
-             let hasOtherModifiers = event.modifierFlags.intersection([.shift, .control, .option]).rawValue != 0
+        if !activationHotkey.isRightCommandTrigger,
+           activationHotkey.matches(keyCode: keyCode, modifierFlags: flags),
+           activeAction == nil {
+            activeAction = .activation
+            ErrorLogStore.shared.log("Hotkey(NSEvent): activation down")
+            DispatchQueue.main.async { [weak self] in
+                self?.onPressBegan?()
+            }
+            return
+        }
 
-             if rightCommandDown, !hasOtherModifiers, !nseventIsPressed {
-                 nseventIsPressed = true
-                 ErrorLogStore.shared.log("Hotkey(NSEvent): right command down")
-                 DispatchQueue.main.async { [weak self] in
-                     self?.onPressBegan?()
-                 }
-             } else if isRightCommandEvent, !rightCommandDown, nseventIsPressed {
-                 nseventIsPressed = false
-                 ErrorLogStore.shared.log("Hotkey(NSEvent): right command up")
-                 DispatchQueue.main.async { [weak self] in
-                     self?.onPressEnded?()
-                 }
-             }
+        if personaHotkey.matches(keyCode: keyCode, modifierFlags: flags) {
+            ErrorLogStore.shared.log("Hotkey(NSEvent): persona picker")
+            DispatchQueue.main.async { [weak self] in
+                self?.onPersonaPickerRequested?()
+            }
+        }
+    }
 
-         default:
-             return
-         }
-     }
+    private func handleKeyUp(_ event: NSEvent) {
+        let keyCode = Int(event.keyCode)
+        let flags = filteredFlags(event.modifierFlags)
+        let activationHotkey = settingsStore.activationHotkey
+
+        guard activeAction == .activation else { return }
+        guard !activationHotkey.isRightCommandTrigger else { return }
+        guard activationHotkey.matches(keyCode: keyCode, modifierFlags: flags) else { return }
+
+        activeAction = nil
+        ErrorLogStore.shared.log("Hotkey(NSEvent): activation up")
+        DispatchQueue.main.async { [weak self] in
+            self?.onPressEnded?()
+        }
+    }
+
+    private func handleFlagsChanged(_ event: NSEvent) {
+        let activationHotkey = settingsStore.activationHotkey
+        guard activationHotkey.isRightCommandTrigger else { return }
+
+        let isRightCommandEvent = Int(event.keyCode) == activationHotkey.keyCode
+        let rightCommandDown = isRightCommandEvent && filteredFlags(event.modifierFlags) == activationHotkey.modifierFlags
+
+        if rightCommandDown, activeAction == nil {
+            activeAction = .activation
+            ErrorLogStore.shared.log("Hotkey(NSEvent): right command down")
+            DispatchQueue.main.async { [weak self] in
+                self?.onPressBegan?()
+            }
+        } else if isRightCommandEvent, !rightCommandDown, activeAction == .activation {
+            activeAction = nil
+            ErrorLogStore.shared.log("Hotkey(NSEvent): right command up")
+            DispatchQueue.main.async { [weak self] in
+                self?.onPressEnded?()
+            }
+        }
+    }
+
+    private func filteredFlags(_ flags: NSEvent.ModifierFlags) -> UInt {
+        UInt(flags.intersection([.command, .shift, .control, .option]).rawValue)
+    }
 }

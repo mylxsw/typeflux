@@ -153,25 +153,59 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "stt.appleSpeech.enabled") }
     }
 
-    var customHotkeyJSON: String {
-        get { defaults.string(forKey: "hotkey.custom.json") ?? "[]" }
-        set { defaults.set(newValue, forKey: "hotkey.custom.json") }
+    var activationHotkeyJSON: String {
+        get { defaults.string(forKey: "hotkey.activation.json") ?? "" }
+        set { defaults.set(newValue, forKey: "hotkey.activation.json") }
     }
 
-    var customHotkeys: [HotkeyBinding] {
+    var activationHotkey: HotkeyBinding {
         get {
-            guard let data = customHotkeyJSON.data(using: .utf8) else { return defaultHotkeys }
-            let decoded = (try? JSONDecoder().decode([HotkeyBinding].self, from: data)) ?? []
-            return decoded.isEmpty ? defaultHotkeys : decoded
+            if let migrated = legacyActivationHotkey {
+                return migrated
+            }
+
+            guard let data = activationHotkeyJSON.data(using: .utf8), !activationHotkeyJSON.isEmpty else {
+                return .defaultActivation
+            }
+
+            return (try? JSONDecoder().decode(HotkeyBinding.self, from: data)) ?? .defaultActivation
         }
         set {
-            let data = (try? JSONEncoder().encode(newValue)) ?? Data("[]".utf8)
-            customHotkeyJSON = String(decoding: data, as: UTF8.self)
+            let data = (try? JSONEncoder().encode(newValue)) ?? Data()
+            activationHotkeyJSON = String(decoding: data, as: UTF8.self)
+            defaults.removeObject(forKey: "hotkey.custom.json")
         }
     }
 
-    private var defaultHotkeys: [HotkeyBinding] {
-        []
+    var personaHotkeyJSON: String {
+        get { defaults.string(forKey: "hotkey.persona.json") ?? "" }
+        set { defaults.set(newValue, forKey: "hotkey.persona.json") }
+    }
+
+    var personaHotkey: HotkeyBinding {
+        get {
+            guard let data = personaHotkeyJSON.data(using: .utf8), !personaHotkeyJSON.isEmpty else {
+                return .defaultPersona
+            }
+
+            return (try? JSONDecoder().decode(HotkeyBinding.self, from: data)) ?? .defaultPersona
+        }
+        set {
+            let data = (try? JSONEncoder().encode(newValue)) ?? Data()
+            personaHotkeyJSON = String(decoding: data, as: UTF8.self)
+        }
+    }
+
+    private var legacyActivationHotkey: HotkeyBinding? {
+        guard activationHotkeyJSON.isEmpty else { return nil }
+        let legacyJSON = defaults.string(forKey: "hotkey.custom.json") ?? "[]"
+        guard let data = legacyJSON.data(using: .utf8) else { return nil }
+        let decoded = (try? JSONDecoder().decode([HotkeyBinding].self, from: data)) ?? []
+        guard let first = decoded.first else { return nil }
+
+        let migrated = HotkeyBinding(keyCode: first.keyCode, modifierFlags: first.modifierFlags)
+        activationHotkey = migrated
+        return migrated
     }
 
     private var defaultPersonas: [PersonaProfile] {

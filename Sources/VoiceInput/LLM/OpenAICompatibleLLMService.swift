@@ -108,13 +108,21 @@ enum SSEClient {
         return AsyncThrowingStream { continuation in
             Task {
                 do {
-                    var buffer = ""
+                    var buffer = Data()
                     for try await byte in bytes {
-                        let scalar = UnicodeScalar(byte)
-                        buffer.append(Character(scalar))
-                        if buffer.hasSuffix("\n") {
-                            let line = buffer.trimmingCharacters(in: .newlines)
-                            buffer = ""
+                        buffer.append(byte)
+
+                        while let newlineIndex = buffer.firstIndex(of: 0x0A) {
+                            let lineData = buffer.prefix(upTo: newlineIndex)
+                            buffer.removeSubrange(...newlineIndex)
+
+                            guard var line = String(data: lineData, encoding: .utf8) else {
+                                continue
+                            }
+
+                            if line.hasSuffix("\r") {
+                                line.removeLast()
+                            }
 
                             if line.hasPrefix("data:") {
                                 let payload = line.dropFirst("data:".count).trimmingCharacters(in: .whitespaces)
@@ -122,6 +130,12 @@ enum SSEClient {
                             }
                         }
                     }
+
+                    if !buffer.isEmpty, let line = String(data: buffer, encoding: .utf8), line.hasPrefix("data:") {
+                        let payload = line.dropFirst("data:".count).trimmingCharacters(in: .whitespaces)
+                        continuation.yield(payload)
+                    }
+
                     continuation.finish()
                 } catch {
                     NetworkDebugLogger.logError(context: "SSE stream parsing failed", error: error)

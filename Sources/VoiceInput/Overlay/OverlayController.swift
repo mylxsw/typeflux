@@ -2,6 +2,12 @@ import AppKit
 import SwiftUI
 
 final class OverlayController {
+    struct PersonaPickerItem: Identifiable, Equatable {
+        let id: String
+        let title: String
+        let subtitle: String
+    }
+
     private let appState: AppStateStore
     private var window: NSPanel?
 
@@ -26,6 +32,18 @@ final class OverlayController {
         model.onConfirmRequested = onConfirm
     }
 
+    func setPersonaPickerHandlers(
+        onMoveUp: (() -> Void)?,
+        onMoveDown: (() -> Void)?,
+        onConfirm: (() -> Void)?,
+        onCancel: (() -> Void)?
+    ) {
+        model.onPersonaMoveUpRequested = onMoveUp
+        model.onPersonaMoveDownRequested = onMoveDown
+        model.onPersonaConfirmRequested = onConfirm
+        model.onPersonaCancelRequested = onCancel
+    }
+
     func show() {
         if !Thread.isMainThread {
             DispatchQueue.main.async { [weak self] in self?.show() }
@@ -34,15 +52,15 @@ final class OverlayController {
         if window == nil {
             let view = OverlayView(model: model)
             let hosting = NSHostingView(rootView: view)
-            let metrics = Self.metrics(for: .recordingHold)
+            let metrics = metrics(for: .recordingHold)
             let panel = NSPanel(contentRect: NSRect(origin: .zero, size: metrics.size), styleMask: [.nonactivatingPanel, .borderless], backing: .buffered, defer: false)
             panel.isFloatingPanel = true
-            panel.level = .statusBar
-            panel.backgroundColor = .clear
+            panel.level = NSWindow.Level.statusBar
+            panel.backgroundColor = NSColor.clear
             panel.hasShadow = false
             panel.isOpaque = false
             panel.ignoresMouseEvents = false
-            panel.collectionBehavior = [.canJoinAllSpaces, .transient]
+            panel.collectionBehavior = [NSWindow.CollectionBehavior.canJoinAllSpaces, NSWindow.CollectionBehavior.transient]
             panel.contentView = hosting
 
             window = panel
@@ -140,6 +158,34 @@ final class OverlayController {
         refreshWindow()
     }
 
+    func showPersonaPicker(items: [PersonaPickerItem], selectedIndex: Int) {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.showPersonaPicker(items: items, selectedIndex: selectedIndex) }
+            return
+        }
+
+        dismissWorkItem?.cancel()
+        show()
+        model.presentation = .personaPicker
+        model.personaItems = items
+        model.personaSelectedIndex = max(0, min(selectedIndex, max(0, items.count - 1)))
+        model.personaViewportHeight = min(360, CGFloat(max(1, items.count)) * 84)
+        model.statusText = "Switch Persona"
+        model.detailText = ""
+        refreshWindow()
+    }
+
+    func updatePersonaPickerSelection(_ index: Int) {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.updatePersonaPickerSelection(index) }
+            return
+        }
+
+        guard !model.personaItems.isEmpty else { return }
+        model.personaSelectedIndex = max(0, min(index, model.personaItems.count - 1))
+        refreshWindow()
+    }
+
     func dismissSoon() {
         if !Thread.isMainThread {
             DispatchQueue.main.async { [weak self] in self?.dismissSoon() }
@@ -182,14 +228,19 @@ final class OverlayController {
     private func positionWindow() {
         guard let screen = NSScreen.main, let window else { return }
         let frame = screen.visibleFrame
-        let metrics = Self.metrics(for: model.presentation)
-        let x = frame.midX - metrics.size.width / 2
+        let metrics = metrics(for: model.presentation)
+        let x: CGFloat
         let y: CGFloat
 
         switch metrics.anchor {
+        case .center:
+            x = frame.midX - metrics.size.width / 2
+            y = frame.midY - metrics.size.height / 2
         case .bottom:
+            x = frame.midX - metrics.size.width / 2
             y = frame.minY + metrics.offset
         case .top:
+            x = frame.midX - metrics.size.width / 2
             y = frame.maxY - metrics.offset - metrics.size.height
         }
 
@@ -198,7 +249,7 @@ final class OverlayController {
         window.ignoresMouseEvents = !metrics.interactive
     }
 
-    private static func metrics(for presentation: OverlayViewModel.Presentation) -> OverlayMetrics {
+    private func metrics(for presentation: OverlayViewModel.Presentation) -> OverlayMetrics {
         switch presentation {
         case .recordingHold:
             return OverlayMetrics(size: NSSize(width: 118, height: 72), anchor: .bottom, offset: 24, interactive: false)
@@ -216,11 +267,14 @@ final class OverlayController {
             return OverlayMetrics(size: NSSize(width: 344, height: 108), anchor: .bottom, offset: 80, interactive: true)
         case .failure:
             return OverlayMetrics(size: NSSize(width: 352, height: 132), anchor: .top, offset: 78, interactive: true)
+        case .personaPicker:
+            let viewportHeight = max(180, model.personaViewportHeight)
+            return OverlayMetrics(size: NSSize(width: 456, height: viewportHeight + 132), anchor: .center, offset: 0, interactive: true)
         }
     }
 
     private func updateKeyMonitoring() {
-        if model.presentation == .recordingLocked || model.presentation == .recordingLockedPreview {
+        if model.presentation == .recordingLocked || model.presentation == .recordingLockedPreview || model.presentation == .personaPicker {
             installKeyMonitoringIfNeeded()
         } else {
             removeKeyMonitoring()
@@ -250,9 +304,25 @@ final class OverlayController {
     }
 
     private func handleKeyEvent(_ event: NSEvent) {
-        guard model.presentation == .recordingLocked || model.presentation == .recordingLockedPreview else { return }
-        if Int(event.keyCode) == 53 {
+        if model.presentation == .recordingLocked || model.presentation == .recordingLockedPreview {
+            if Int(event.keyCode) == 53 {
+                model.requestCancel()
+            }
+            return
+        }
+
+        guard model.presentation == .personaPicker else { return }
+        switch Int(event.keyCode) {
+        case 53:
             model.requestCancel()
+        case 125:
+            model.requestPersonaMoveDown()
+        case 126:
+            model.requestPersonaMoveUp()
+        case 36, 76:
+            model.requestPersonaConfirm()
+        default:
+            return
         }
     }
 }
@@ -261,6 +331,7 @@ private struct OverlayMetrics {
     enum Anchor {
         case top
         case bottom
+        case center
     }
 
     let size: NSSize
@@ -279,6 +350,7 @@ final class OverlayViewModel: ObservableObject {
         case transcriptPreview
         case notice
         case failure
+        case personaPicker
     }
 
     @Published var presentation: Presentation = .recordingHold
@@ -286,9 +358,16 @@ final class OverlayViewModel: ObservableObject {
     @Published var detailText: String = ""
     @Published var level: Float = 0
     @Published var processingProgress: CGFloat = 0
+    @Published var personaItems: [OverlayController.PersonaPickerItem] = []
+    @Published var personaSelectedIndex: Int = 0
+    @Published var personaViewportHeight: CGFloat = 240
     var onDismissRequested: (() -> Void)?
     var onCancelRequested: (() -> Void)?
     var onConfirmRequested: (() -> Void)?
+    var onPersonaMoveUpRequested: (() -> Void)?
+    var onPersonaMoveDownRequested: (() -> Void)?
+    var onPersonaConfirmRequested: (() -> Void)?
+    var onPersonaCancelRequested: (() -> Void)?
 
     func requestDismiss() {
         onDismissRequested?()
@@ -300,6 +379,22 @@ final class OverlayViewModel: ObservableObject {
 
     func requestConfirm() {
         onConfirmRequested?()
+    }
+
+    func requestPersonaMoveUp() {
+        onPersonaMoveUpRequested?()
+    }
+
+    func requestPersonaMoveDown() {
+        onPersonaMoveDownRequested?()
+    }
+
+    func requestPersonaConfirm() {
+        onPersonaConfirmRequested?()
+    }
+
+    func requestPersonaCancel() {
+        onPersonaCancelRequested?()
     }
 }
 
@@ -325,6 +420,8 @@ private struct OverlayView: View {
                 noticeToast
             case .failure:
                 failureCard
+            case .personaPicker:
+                personaPickerCard
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: contentAlignment)
@@ -337,6 +434,8 @@ private struct OverlayView: View {
             return .bottom
         case .transcriptPreview, .failure:
             return .top
+        case .personaPicker:
+            return .center
         }
     }
 
@@ -352,6 +451,8 @@ private struct OverlayView: View {
             return EdgeInsets(top: 12, leading: 16, bottom: 16, trailing: 16)
         case .transcriptPreview, .notice, .failure:
             return EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16)
+        case .personaPicker:
+            return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         }
     }
 
@@ -466,6 +567,86 @@ private struct OverlayView: View {
                     .lineLimit(2)
             }
         }
+    }
+
+    private var personaPickerCard: some View {
+        OverlayCard(width: 420) {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(model.statusText)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(Color.white.opacity(0.96))
+
+                        Text("Use Up and Down to choose, then press Return to confirm.")
+                            .font(.system(size: 12.5, weight: .medium))
+                            .foregroundStyle(Color.white.opacity(0.7))
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Button(action: model.requestPersonaCancel) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13.5, weight: .semibold))
+                            .foregroundStyle(Color.white.opacity(0.62))
+                            .frame(width: 24, height: 24)
+                            .background(Circle().fill(Color.white.opacity(0.08)))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 10) {
+                        ForEach(Array(model.personaItems.enumerated()), id: \.element.id) { index, item in
+                            personaPickerRow(item: item, isSelected: index == model.personaSelectedIndex)
+                        }
+                    }
+                    .padding(2)
+                }
+                .frame(height: model.personaViewportHeight)
+            }
+        }
+    }
+
+    private func personaPickerRow(item: OverlayController.PersonaPickerItem, isSelected: Bool) -> some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(isSelected ? Color(red: 0.43, green: 0.56, blue: 1.0).opacity(0.24) : Color.white.opacity(0.06))
+                .frame(width: 38, height: 38)
+                .overlay(
+                    Text(String(item.title.prefix(2)).uppercased())
+                        .font(.system(size: 11.5, weight: .bold))
+                        .foregroundStyle(isSelected ? Color(red: 0.68, green: 0.78, blue: 1.0) : Color.white.opacity(0.7))
+                )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.title)
+                    .font(.system(size: 14.5, weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(0.96))
+                Text(item.subtitle)
+                    .font(.system(size: 11.5, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.64))
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+
+            if isSelected {
+                Image(systemName: "return")
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 1.0))
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(isSelected ? Color.white.opacity(0.1) : Color.white.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(isSelected ? Color(red: 0.43, green: 0.56, blue: 1.0).opacity(0.72) : Color.white.opacity(0.08), lineWidth: 1)
+                )
+        )
     }
 
     private func cardHeader(
