@@ -17,7 +17,10 @@ final class AppleSpeechTranscriber: Transcriber {
         
         // Create recognizer on main thread
         let recognizer: SFSpeechRecognizer? = await MainActor.run {
-            SFSpeechRecognizer()
+            if let locale = TranscriptionLanguageHints.speechRecognizerLocale() {
+                return SFSpeechRecognizer(locale: locale)
+            }
+            return SFSpeechRecognizer()
         }
         
         guard let recognizer else {

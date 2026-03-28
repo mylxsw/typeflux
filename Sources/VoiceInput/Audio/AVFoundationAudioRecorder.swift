@@ -21,7 +21,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("voice-input", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
-        let url = dir.appendingPathComponent(UUID().uuidString).appendingPathExtension("caf")
+        let url = dir.appendingPathComponent(UUID().uuidString).appendingPathExtension("wav")
         let inputNode = engine.inputNode
         let inputFormat = inputNode.inputFormat(forBus: 0)
         let outputSettings: [String: Any] = [

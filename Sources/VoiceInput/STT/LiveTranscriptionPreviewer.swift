@@ -165,7 +165,12 @@ actor AppleSpeechPreviewBackend: LivePreviewBackend {
             )
         }
 
-        let recognizer = await MainActor.run { SFSpeechRecognizer() }
+        let recognizer = await MainActor.run {
+            if let locale = TranscriptionLanguageHints.speechRecognizerLocale() {
+                return SFSpeechRecognizer(locale: locale)
+            }
+            return SFSpeechRecognizer()
+        }
         guard let recognizer else {
             throw NSError(
                 domain: "AppleSpeechPreviewBackend",

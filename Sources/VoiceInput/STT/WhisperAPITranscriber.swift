@@ -22,6 +22,18 @@ final class WhisperAPITranscriber: Transcriber {
         let model = settingsStore.whisperModel.isEmpty ? "whisper-1" : settingsStore.whisperModel
         let vocabularyPrompt = vocabularyPromptText()
         let uploadURL = try preparedUploadURL(for: audioFile)
+        let uploadAttributes = try? FileManager.default.attributesOfItem(atPath: uploadURL.path)
+        let uploadSize = (uploadAttributes?[.size] as? NSNumber)?.int64Value ?? -1
+
+        NetworkDebugLogger.logMessage(
+            """
+            Remote STT upload prepared:
+            sourcePath=\(audioFile.fileURL.path)
+            uploadPath=\(uploadURL.path)
+            ext=\(uploadURL.pathExtension.lowercased())
+            sizeBytes=\(uploadSize)
+            """
+        )
 
         let shouldRequestStreaming = supportsServerStream(for: model)
         let request = try makeRequest(
@@ -70,7 +82,7 @@ final class WhisperAPITranscriber: Transcriber {
     }
 
     private func vocabularyPromptText() -> String? {
-        PromptCatalog.transcriptionVocabularyHint(terms: VocabularyStore.activeTerms())
+        TranscriptionLanguageHints.remotePrompt(vocabularyTerms: VocabularyStore.activeTerms())
     }
 
     private func transcribeOnce(
@@ -184,7 +196,19 @@ final class WhisperAPITranscriber: Transcriber {
         case "wav", "mp3", "m4a", "mp4", "mpeg", "mpga", "webm":
             return audioFile.fileURL
         default:
-            return try AudioFileTranscoder.wavFileURL(for: audioFile)
+            do {
+                return try AudioFileTranscoder.wavFileURL(for: audioFile)
+            } catch {
+                throw NSError(
+                    domain: "WhisperAPITranscriber",
+                    code: 4,
+                    userInfo: [
+                        NSLocalizedDescriptionKey: "Unable to prepare audio upload file.",
+                        NSLocalizedFailureReasonErrorKey: "Audio file transcoding failed for \(audioFile.fileURL.lastPathComponent).",
+                        NSUnderlyingErrorKey: error
+                    ]
+                )
+            }
         }
     }
 

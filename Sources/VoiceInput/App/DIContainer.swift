@@ -15,7 +15,6 @@ final class DIContainer {
     let sttRouter: STTRouter
     let ollamaModelManager: OllamaLocalModelManager
     let localSTTServiceManager: LocalSTTServiceManager
-    let liveTranscriptionPreviewer: LiveTranscriptionPreviewer
 
     init() {
         hotkeyService = EventTapHotkeyService(settingsStore: settingsStore)
@@ -26,7 +25,6 @@ final class DIContainer {
         historyStore = FileHistoryStore()
         ollamaModelManager = OllamaLocalModelManager()
         localSTTServiceManager = LocalSTTServiceManager()
-        liveTranscriptionPreviewer = LiveTranscriptionPreviewer(settingsStore: settingsStore)
         llmService = LLMRouter(
             settingsStore: settingsStore,
             openAICompatible: OpenAICompatibleLLMService(settingsStore: settingsStore),

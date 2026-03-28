@@ -13,7 +13,6 @@ final class AppCoordinator {
             settingsStore: di.settingsStore,
             hotkeyService: di.hotkeyService,
             audioRecorder: di.audioRecorder,
-            livePreviewer: di.liveTranscriptionPreviewer,
             sttRouter: di.sttRouter,
             llmService: di.llmService,
             textInjector: di.textInjector,

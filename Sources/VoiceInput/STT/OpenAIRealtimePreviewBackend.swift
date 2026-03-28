@@ -223,7 +223,17 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
     }
 
     private func buildSessionUpdatePayload() -> [String: Any] {
-        var transcriptionSession: [String: Any] = [
+        let model = settingsStore.whisperModel.isEmpty ? "gpt-4o-mini-transcribe" : settingsStore.whisperModel
+        let prompt = TranscriptionLanguageHints.remotePrompt(vocabularyTerms: VocabularyStore.activeTerms())
+
+        var transcriptionPayload: [String: Any] = [
+            "model": model
+        ]
+        if let prompt {
+            transcriptionPayload["prompt"] = prompt
+        }
+
+        let transcriptionSession: [String: Any] = [
             "type": "realtime.transcription_session",
             "input_audio_format": "pcm16",
             "turn_detection": [
@@ -231,17 +241,8 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
                 "silence_duration_ms": 500,
                 "prefix_padding_ms": 300
             ],
-            "input_audio_transcription": [
-                "model": settingsStore.whisperModel.isEmpty ? "gpt-4o-mini-transcribe" : settingsStore.whisperModel
-            ]
+            "input_audio_transcription": transcriptionPayload
         ]
-
-        if let prompt = PromptCatalog.transcriptionVocabularyHint(terms: VocabularyStore.activeTerms()) {
-            transcriptionSession["input_audio_transcription"] = [
-                "model": settingsStore.whisperModel.isEmpty ? "gpt-4o-mini-transcribe" : settingsStore.whisperModel,
-                "prompt": prompt
-            ]
-        }
 
         return [
             "type": "session.update",

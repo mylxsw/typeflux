@@ -1776,7 +1776,7 @@ struct StudioView: View {
         case .localSTT:
             return true
         case .whisperAPI:
-            return !viewModel.whisperBaseURL.isEmpty && !viewModel.whisperModel.isEmpty
+            return !viewModel.whisperBaseURL.isEmpty
         case .ollama:
             return !viewModel.ollamaModel.isEmpty
         case .openAICompatible:

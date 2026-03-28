@@ -42,8 +42,10 @@ enum NetworkDebugLogger {
     }
 
     static func logError(context: String, error: Error) {
-        let message = "[Error] \(context): \(error.localizedDescription)"
+        let message = "[Error] \(context): \(describe(error: error))"
         logger.error("\(message, privacy: .public)")
+        ErrorLogStore.shared.log("[Network] \(message)")
+        fputs("VoiceInput \(message)\n", stderr)
     }
 
     static func logMessage(_ message: String) {
@@ -76,5 +78,61 @@ enum NetworkDebugLogger {
         }
 
         return "<\(data.count) bytes binary>"
+    }
+
+    static func describe(error: Error) -> String {
+        var components: [String] = []
+        components.append(error.localizedDescription)
+        components.append("type=\(String(reflecting: type(of: error)))")
+
+        let nsError = error as NSError
+        components.append("domain=\(nsError.domain)")
+        components.append("code=\(nsError.code)")
+
+        if let reason = nsError.localizedFailureReason, !reason.isEmpty {
+            components.append("reason=\(reason)")
+        }
+
+        if let suggestion = nsError.localizedRecoverySuggestion, !suggestion.isEmpty {
+            components.append("suggestion=\(suggestion)")
+        }
+
+        if let failingURL = nsError.userInfo[NSURLErrorFailingURLErrorKey] as? URL {
+            components.append("failingURL=\(failingURL.absoluteString)")
+        }
+
+        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
+            components.append(
+                "underlying=\(underlying.domain)(\(underlying.code)): \(underlying.localizedDescription)"
+            )
+        }
+
+        let sanitizedUserInfo = sanitize(userInfo: nsError.userInfo)
+        if !sanitizedUserInfo.isEmpty {
+            components.append("userInfo=\(sanitizedUserInfo)")
+        }
+
+        return components.joined(separator: " | ")
+    }
+
+    private static func sanitize(userInfo: [String: Any]) -> [String: String] {
+        var sanitized: [String: String] = [:]
+
+        for (key, value) in userInfo {
+            switch key {
+            case NSUnderlyingErrorKey, NSURLErrorFailingURLErrorKey, NSURLErrorFailingURLStringErrorKey:
+                continue
+            case NSLocalizedDescriptionKey,
+                 NSLocalizedFailureReasonErrorKey,
+                 NSLocalizedRecoverySuggestionErrorKey:
+                sanitized[key] = String(describing: value)
+            default:
+                if let stringValue = value as? CustomStringConvertible {
+                    sanitized[key] = stringValue.description
+                }
+            }
+        }
+
+        return sanitized
     }
 }
