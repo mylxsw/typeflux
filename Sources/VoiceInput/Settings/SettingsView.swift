@@ -370,7 +370,55 @@ struct StudioView: View {
                 }
             }
 
-            sessionStream(records: viewModel.displayedHistory)
+            groupedSessionStream(sections: viewModel.groupedHistory)
+        }
+    }
+
+    private func groupedSessionStream(sections: [HistorySection]) -> some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
+            if sections.isEmpty {
+                StudioCard(padding: StudioTheme.Insets.none) {
+                    Text("No history entries yet.")
+                        .font(.studioBody(StudioTheme.Typography.bodySmall))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, StudioTheme.Insets.sessionEmptyVertical)
+                }
+            } else {
+                ForEach(sections) { section in
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
+                        Text(section.id)
+                            .font(.studioBody(StudioTheme.Typography.caption, weight: .bold))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                            .padding(.horizontal, StudioTheme.Insets.historyRowHorizontal)
+
+                        StudioCard(padding: StudioTheme.Insets.none) {
+                            VStack(spacing: StudioTheme.Spacing.none) {
+                                ForEach(section.records) { record in
+                                    StudioHistoryRow(
+                                        record: record,
+                                        onCopyTranscript: {
+                                            viewModel.copyTranscript(id: record.id)
+                                        },
+                                        onDownloadAudio: {
+                                            viewModel.downloadAudio(id: record.id)
+                                        },
+                                        onDelete: {
+                                            viewModel.deleteHistoryRecord(id: record.id)
+                                        },
+                                        onRetry: {
+                                            viewModel.retryHistoryRecord(id: record.id)
+                                        }
+                                    )
+                                    if record.id != section.records.last?.id {
+                                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.listDivider))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

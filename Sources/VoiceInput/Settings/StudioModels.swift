@@ -144,6 +144,7 @@ struct StudioModelCard: Identifiable {
 
 struct HistoryPresentationRecord: Identifiable {
     let id: UUID
+    let date: Date
     let timestampText: String
     let sourceName: String
     let previewText: String
@@ -161,6 +162,11 @@ struct HistoryPresentationRecord: Identifiable {
     let failureMessage: String?
     let accentName: String
     let accentColorName: String
+}
+
+struct HistorySection: Identifiable {
+    let id: String
+    let records: [HistoryPresentationRecord]
 }
 
 struct StudioPermissionRowModel: Identifiable, Equatable {

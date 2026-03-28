@@ -199,6 +199,30 @@ final class StudioViewModel: ObservableObject {
 
     @Published private(set) var displayedHistory: [HistoryPresentationRecord] = []
 
+    var groupedHistory: [HistorySection] {
+        let calendar = Calendar.current
+        let groups = Dictionary(grouping: displayedHistory) { record in
+            calendar.startOfDay(for: record.date)
+        }
+
+        return groups.keys.sorted(by: >).map { date in
+            let title: String
+            if calendar.isDateInToday(date) {
+                title = "Today"
+            } else if calendar.isDateInYesterday(date) {
+                title = "Yesterday"
+            } else {
+                let formatter = DateFormatter()
+                formatter.dateStyle = .medium
+                formatter.timeStyle = .none
+                title = formatter.string(from: date)
+            }
+
+            let recordsForDate = groups[date]!.sorted { $0.date > $1.date }
+            return HistorySection(id: title, records: recordsForDate)
+        }
+    }
+
     var selectedPersona: PersonaProfile? {
         guard let selectedPersonaID else { return nil }
         return personas.first { $0.id == selectedPersonaID }
@@ -972,8 +996,7 @@ final class StudioViewModel: ObservableObject {
 
     private func makeHistoryPresentation(_ record: HistoryRecord) -> HistoryPresentationRecord {
         let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
+        formatter.dateFormat = "HH:mm"
 
         let fileName = record.audioFilePath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "No audio file"
         let preview = record.text.replacingOccurrences(of: "\n", with: " ")
@@ -993,6 +1016,7 @@ final class StudioViewModel: ObservableObject {
 
         return HistoryPresentationRecord(
             id: record.id,
+            date: record.date,
             timestampText: formatter.string(from: record.date),
             sourceName: fileName,
             previewText: "\(preview.prefix(84))\(preview.count > 84 ? "..." : "")",
