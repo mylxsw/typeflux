@@ -1876,17 +1876,15 @@ struct StudioView: View {
             case .aliCloud:
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
                     StudioTextInputCard(label: "Model", placeholder: "fun-asr-realtime", text: Binding(get: { viewModel.aliCloudModel }, set: viewModel.setAliCloudModel))
-                    HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
-                        StudioTextInputCard(label: "API Key", placeholder: "sk-...", text: Binding(get: { viewModel.aliCloudAPIKey }, set: viewModel.setAliCloudAPIKey), secure: true)
+                    StudioTextInputCard(label: "API Key", placeholder: "sk-...", text: Binding(get: { viewModel.aliCloudAPIKey }, set: viewModel.setAliCloudAPIKey), secure: true) {
                         Button {
-                            NSWorkspace.shared.open(URL(string: "https://dashscope.console.aliyun.com/apiKey")!)
+                            NSWorkspace.shared.open(URL(string: "https://bailian.console.aliyun.com?tab=model#/api-key")!)
                         } label: {
                             Text("获取 API Key")
                                 .font(.studioBody(StudioTheme.Typography.caption))
                                 .foregroundStyle(StudioTheme.accent)
                         }
                         .buttonStyle(.plain)
-                        .fixedSize()
                     }
                 }
             }

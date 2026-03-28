@@ -462,17 +462,30 @@ struct StudioSettingRow<Accessory: View>: View {
     }
 }
 
-struct StudioTextInputCard: View {
+struct StudioTextInputCard<LabelTrailing: View>: View {
     let label: String
     let placeholder: String
     @Binding var text: String
     var secure: Bool = false
+    @ViewBuilder var labelTrailing: () -> LabelTrailing
+
+    init(label: String, placeholder: String, text: Binding<String>, secure: Bool = false, @ViewBuilder labelTrailing: @escaping () -> LabelTrailing = { EmptyView() }) {
+        self.label = label
+        self.placeholder = placeholder
+        self._text = text
+        self.secure = secure
+        self.labelTrailing = labelTrailing
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            Text(label)
-                .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
+            HStack(alignment: .center) {
+                Text(label)
+                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                Spacer()
+                labelTrailing()
+            }
 
             Group {
                 if secure {
