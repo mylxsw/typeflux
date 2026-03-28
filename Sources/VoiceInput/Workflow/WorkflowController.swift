@@ -39,10 +39,11 @@ final class WorkflowController {
     private var recordingMode: RecordingMode = .holdToTalk
     private var hotkeyPressedAt: Date?
     private var recordingTimeoutTask: Task<Void, Never>?
-    private var selectionTask: Task<String?, Never>?
+    private var selectionTask: Task<TextSelectionSnapshot, Never>?
     private var processingTask: Task<Void, Never>?
     private var processingSessionID = UUID()
     private var activeProcessingRecordID: UUID?
+    private var lastDialogResultText: String?
     private var isPersonaPickerPresented = false
     private var personaPickerItems: [PersonaPickerEntry] = []
     private var personaPickerSelectedIndex = 0
@@ -78,6 +79,9 @@ final class WorkflowController {
         self.overlayController.setRecordingActionHandlers(
             onCancel: { [weak self] in self?.cancelRecording() },
             onConfirm: { [weak self] in self?.confirmLockedRecording() }
+        )
+        self.overlayController.setResultDialogHandler(
+            onCopy: { [weak self] in self?.copyLastResultFromDialog() }
         )
         self.overlayController.setPersonaPickerHandlers(
             onMoveUp: { [weak self] in self?.movePersonaSelection(delta: -1) },
@@ -243,15 +247,8 @@ final class WorkflowController {
         }
 
         selectionTask = Task { [weak self] in
-            guard let self else { return nil }
-            let text = await self.textInjector.getSelectedText()?.trimmingCharacters(in: .whitespacesAndNewlines)
-            let result = (text?.isEmpty == true) ? nil : text
-            if let result {
-                NSLog("[Workflow] Selected text: \(result)")
-            } else {
-                NSLog("[Workflow] No selected text")
-            }
-            return result
+            guard let self else { return TextSelectionSnapshot() }
+            return await self.textInjector.getSelectionSnapshot()
         }
 
         do {
@@ -330,18 +327,17 @@ final class WorkflowController {
         recordingTimeoutTask = nil
         NSLog("[Workflow] Recording stopped")
 
-        Task { @MainActor in
-            appState.setStatus(.processing)
-            overlayController.showProcessing()
-        }
-
         Task { [weak self] in
             guard let self else { return }
             await self.finishRecordingAndProcess()
         }
     }
 
-    private func generateRewrite(request: LLMRewriteRequest, sessionID: UUID) async throws -> String {
+    private func generateRewrite(
+        request: LLMRewriteRequest,
+        sessionID: UUID,
+        showsStreamingPreview: Bool = true
+    ) async throws -> String {
         var buffer = ""
         var lastChunkAt = Date()
 
@@ -353,9 +349,11 @@ final class WorkflowController {
             if now.timeIntervalSince(lastChunkAt) > 0.15 {
                 lastChunkAt = now
                 let snapshot = buffer
-                await MainActor.run {
-                    if self.processingSessionID == sessionID {
-                        overlayController.updateStreamingText(snapshot)
+                if showsStreamingPreview {
+                    await MainActor.run {
+                        if self.processingSessionID == sessionID {
+                            overlayController.updateStreamingText(snapshot)
+                        }
                     }
                 }
             }
@@ -376,7 +374,7 @@ final class WorkflowController {
         return false
     }
 
-    private func applyText(_ text: String, replace: Bool) -> ApplyOutcome {
+    private func applyText(_ text: String, replace: Bool, fallbackTitle: String = "Copy Result") -> ApplyOutcome {
         clipboard.write(text: text)
 
         do {
@@ -387,9 +385,9 @@ final class WorkflowController {
             }
             return .inserted
         } catch {
-            // Text is already in clipboard, just show a brief info (not an error)
             Task { @MainActor in
-                overlayController.showNotice(message: "已复制到剪贴板 (⌘V 粘贴)")
+                self.lastDialogResultText = text
+                self.overlayController.showResultDialog(title: fallbackTitle, message: text)
             }
             return .copiedToClipboard
         }
@@ -398,10 +396,21 @@ final class WorkflowController {
     private func finishRecordingAndProcess() async {
         do {
             let audioFile = try audioRecorder.stop()
-            let selectedText = await selectionTask?.value?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
             selectionTask = nil
+            let selectedText = selectionSnapshot.selectedText?.trimmingCharacters(in: .whitespacesAndNewlines)
             currentSelectedText = selectedText
             let personaPrompt = settingsStore.activePersona?.prompt
+
+            NetworkDebugLogger.logMessage(selectionSnapshotLog(selectionSnapshot))
+            let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
+
+            if !shouldShowResultDialog {
+                await MainActor.run {
+                    self.appState.setStatus(.processing)
+                    self.overlayController.showProcessing()
+                }
+            }
 
             let record = HistoryRecord(
                 date: Date(),
@@ -424,6 +433,7 @@ final class WorkflowController {
                 await self.process(
                     audioFile: audioFile,
                     record: record,
+                    selectionSnapshot: selectionSnapshot,
                     selectedText: selectedText,
                     personaPrompt: personaPrompt,
                     sessionID: sessionID
@@ -489,6 +499,14 @@ final class WorkflowController {
         await process(
             audioFile: audioFile,
             record: mutableRecord,
+            selectionSnapshot: TextSelectionSnapshot(
+                processID: nil,
+                processName: nil,
+                selectedRange: nil,
+                selectedText: selectedText,
+                source: "history-retry",
+                isEditable: false
+            ),
             selectedText: selectedText,
             personaPrompt: personaPrompt,
             sessionID: sessionID
@@ -498,6 +516,7 @@ final class WorkflowController {
     private func process(
         audioFile: AudioFile,
         record: HistoryRecord,
+        selectionSnapshot: TextSelectionSnapshot,
         selectedText: String?,
         personaPrompt: String?,
         sessionID: UUID
@@ -531,10 +550,27 @@ final class WorkflowController {
             record.transcriptionStatus = .succeeded
             historyStore.save(record: record)
 
+            let normalizedTranscript = transcribedText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if normalizedTranscript.isEmpty {
+                record.processingStatus = .skipped
+                record.applyStatus = .skipped
+                record.applyMessage = "Skipped because transcription was empty."
+                historyStore.save(record: record)
+
+                await MainActor.run {
+                    if self.processingSessionID == sessionID {
+                        self.appState.setStatus(.idle)
+                        self.overlayController.showNotice(message: "未识别到有效语音内容")
+                    }
+                }
+                return
+            }
+
             if let selectedText, !selectedText.isEmpty {
                 record.mode = .editSelection
                 record.processingStatus = .running
                 historyStore.save(record: record)
+                let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
 
                 let finalText = try await generateRewrite(
                     request: LLMRewriteRequest(
@@ -543,7 +579,8 @@ final class WorkflowController {
                         spokenInstruction: transcribedText,
                         personaPrompt: personaPrompt
                     ),
-                    sessionID: sessionID
+                    sessionID: sessionID,
+                    showsStreamingPreview: !shouldShowResultDialog
                 )
 
                 try ensureProcessingIsActive(sessionID)
@@ -553,7 +590,21 @@ final class WorkflowController {
                 historyStore.save(record: record)
 
                 try ensureProcessingIsActive(sessionID)
-                let outcome = applyText(finalText, replace: true)
+                let outcome: ApplyOutcome
+                NetworkDebugLogger.logMessage(
+                    "[Apply Decision] mode=editSelection hasSelection=\(selectionSnapshot.hasSelection) " +
+                    "isEditable=\(selectionSnapshot.isEditable) hasRange=\(selectionSnapshot.selectedRange != nil) " +
+                    "showResultDialog=\(shouldShowResultDialog)"
+                )
+                if shouldShowResultDialog {
+                    await MainActor.run {
+                        self.lastDialogResultText = finalText
+                        self.overlayController.showResultDialog(title: "Copy Result", message: finalText)
+                    }
+                    outcome = .copiedToClipboard
+                } else {
+                    outcome = applyText(finalText, replace: true, fallbackTitle: "Copy Result")
+                }
                 record.applyStatus = .succeeded
                 record.applyMessage = outcome.message
             } else if let personaPrompt, !personaPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -758,6 +809,53 @@ final class WorkflowController {
         case .dictation, .editSelection, .personaRewrite:
             return record.personaPrompt ?? settingsStore.activePersona?.prompt
         }
+    }
+
+    private func selectionSnapshotLog(_ snapshot: TextSelectionSnapshot) -> String {
+        let processDescription: String
+        if let name = snapshot.processName, let pid = snapshot.processID {
+            processDescription = "\(name) (pid: \(pid))"
+        } else if let name = snapshot.processName {
+            processDescription = name
+        } else if let pid = snapshot.processID {
+            processDescription = "pid: \(pid)"
+        } else {
+            processDescription = "<unknown>"
+        }
+
+        let rangeDescription: String
+        if let range = snapshot.selectedRange {
+            rangeDescription = "{location: \(range.location), length: \(range.length)}"
+        } else {
+            rangeDescription = "<none>"
+        }
+
+        let contentDescription: String
+        if let text = snapshot.selectedText, !text.isEmpty {
+            contentDescription = text
+        } else {
+            contentDescription = "<none>"
+        }
+
+        return """
+        [Selection Context]
+        Process: \(processDescription)
+        Source: \(snapshot.source)
+        Editable target: \(snapshot.isEditable)
+        Has selection: \(snapshot.hasSelection)
+        Selected range: \(rangeDescription)
+        Selected text: \(contentDescription)
+        """
+    }
+
+    private func shouldPresentResultDialog(for snapshot: TextSelectionSnapshot) -> Bool {
+        snapshot.hasSelection && (!snapshot.isEditable || snapshot.selectedRange == nil)
+    }
+
+    private func copyLastResultFromDialog() {
+        guard let lastDialogResultText, !lastDialogResultText.isEmpty else { return }
+        clipboard.write(text: lastDialogResultText)
+        overlayController.showNotice(message: "已复制到剪贴板")
     }
 
     private func personaPickerEntries() -> [PersonaPickerEntry] {

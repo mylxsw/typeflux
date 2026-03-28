@@ -1,6 +1,10 @@
 import AppKit
 import SwiftUI
 
+private final class TransparentHostingView<Content: View>: NSHostingView<Content> {
+    override var isOpaque: Bool { false }
+}
+
 final class OverlayController {
     struct PersonaPickerItem: Identifiable, Equatable {
         let id: String
@@ -44,14 +48,29 @@ final class OverlayController {
         model.onPersonaCancelRequested = onCancel
     }
 
+    func setResultDialogHandler(onCopy: (() -> Void)?) {
+        model.onResultCopyRequested = onCopy
+    }
+
     func show() {
         if !Thread.isMainThread {
             DispatchQueue.main.async { [weak self] in self?.show() }
             return
         }
+        ensureWindow()
+        model.presentation = .recordingHold
+        model.statusText = "正在聆听"
+        model.detailText = ""
+        model.processingProgress = 0
+        refreshWindow()
+    }
+
+    private func ensureWindow() {
         if window == nil {
             let view = OverlayView(model: model)
-            let hosting = NSHostingView(rootView: view)
+            let hosting = TransparentHostingView(rootView: view)
+            hosting.wantsLayer = true
+            hosting.layer?.backgroundColor = NSColor.clear.cgColor
             let metrics = metrics(for: .recordingHold)
             let panel = NSPanel(contentRect: NSRect(origin: .zero, size: metrics.size), styleMask: [.nonactivatingPanel, .borderless], backing: .buffered, defer: false)
             panel.isFloatingPanel = true
@@ -62,15 +81,11 @@ final class OverlayController {
             panel.ignoresMouseEvents = false
             panel.collectionBehavior = [NSWindow.CollectionBehavior.canJoinAllSpaces, NSWindow.CollectionBehavior.transient]
             panel.contentView = hosting
+            panel.contentView?.wantsLayer = true
+            panel.contentView?.layer?.backgroundColor = NSColor.clear.cgColor
 
             window = panel
         }
-
-        model.presentation = .recordingHold
-        model.statusText = "正在聆听"
-        model.detailText = ""
-        model.processingProgress = 0
-        refreshWindow()
     }
 
     func showLockedRecording() {
@@ -78,7 +93,7 @@ final class OverlayController {
             DispatchQueue.main.async { [weak self] in self?.showLockedRecording() }
             return
         }
-        show()
+        ensureWindow()
         model.presentation = .recordingLocked
         refreshWindow()
     }
@@ -108,7 +123,7 @@ final class OverlayController {
             DispatchQueue.main.async { [weak self] in self?.showProcessing() }
             return
         }
-        show()
+        ensureWindow()
         model.presentation = .processing
         model.statusText = "Thinking"
         model.detailText = ""
@@ -121,7 +136,7 @@ final class OverlayController {
             DispatchQueue.main.async { [weak self] in self?.showFailure(message: message) }
             return
         }
-        show()
+        ensureWindow()
         model.presentation = .failure
         model.statusText = "处理失败"
         model.detailText = message
@@ -156,6 +171,20 @@ final class OverlayController {
         model.statusText = "提示"
         model.detailText = message
         refreshWindow()
+        dismiss(after: 5.0)
+    }
+
+    func showResultDialog(title: String, message: String) {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.showResultDialog(title: title, message: message) }
+            return
+        }
+        dismissWorkItem?.cancel()
+        ensureWindow()
+        model.presentation = .resultDialog
+        model.statusText = title
+        model.detailText = message
+        refreshWindow()
     }
 
     func showPersonaPicker(items: [PersonaPickerItem], selectedIndex: Int) {
@@ -165,7 +194,7 @@ final class OverlayController {
         }
 
         dismissWorkItem?.cancel()
-        show()
+        ensureWindow()
         model.presentation = .personaPicker
         model.personaItems = items
         model.personaSelectedIndex = max(0, min(selectedIndex, max(0, items.count - 1)))
@@ -195,7 +224,7 @@ final class OverlayController {
         if model.presentation == .processing {
             model.processingProgress = 1
             dismiss(after: 0.18)
-        } else if model.presentation == .notice {
+        } else if model.presentation == .notice || model.presentation == .resultDialog {
             return
         } else {
             dismiss(after: StudioTheme.Durations.overlayDismissDelay)
@@ -221,8 +250,50 @@ final class OverlayController {
 
     private func refreshWindow() {
         positionWindow()
+        configureWindowAppearance()
         window?.orderFrontRegardless()
         updateKeyMonitoring()
+    }
+
+    private func configureWindowAppearance() {
+        guard let window, let contentView = window.contentView else { return }
+
+        contentView.wantsLayer = true
+        contentView.layer?.cornerCurve = .continuous
+
+        if let chrome = windowChrome(for: model.presentation) {
+            contentView.layer?.backgroundColor = chrome.background.cgColor
+            contentView.layer?.cornerRadius = chrome.cornerRadius
+            contentView.layer?.masksToBounds = true
+            contentView.layer?.borderWidth = 1
+            contentView.layer?.borderColor = NSColor.white.withAlphaComponent(0.12).cgColor
+        } else {
+            contentView.layer?.backgroundColor = NSColor.clear.cgColor
+            contentView.layer?.cornerRadius = 0
+            contentView.layer?.masksToBounds = false
+            contentView.layer?.borderWidth = 0
+            contentView.layer?.borderColor = nil
+        }
+    }
+
+    private func windowChrome(for presentation: OverlayViewModel.Presentation) -> WindowChromeStyle? {
+        let background = NSColor(
+            calibratedRed: 0.13,
+            green: 0.11,
+            blue: 0.11,
+            alpha: 0.96
+        )
+
+        switch presentation {
+        case .recordingHoldPreview, .recordingLockedPreview, .transcriptPreview, .notice:
+            return WindowChromeStyle(background: background, cornerRadius: 14)
+        case .failure, .personaPicker:
+            return WindowChromeStyle(background: background, cornerRadius: 16)
+        case .resultDialog:
+            return WindowChromeStyle(background: background, cornerRadius: 14)
+        default:
+            return nil
+        }
     }
 
     private func positionWindow() {
@@ -270,11 +341,16 @@ final class OverlayController {
         case .personaPicker:
             let viewportHeight = max(180, model.personaViewportHeight)
             return OverlayMetrics(size: NSSize(width: 456, height: viewportHeight + 132), anchor: .center, offset: 0, interactive: true)
+        case .resultDialog:
+            return OverlayMetrics(size: NSSize(width: 446, height: 236), anchor: .center, offset: 0, interactive: true)
         }
     }
 
     private func updateKeyMonitoring() {
-        if model.presentation == .recordingLocked || model.presentation == .recordingLockedPreview || model.presentation == .personaPicker {
+        if model.presentation == .recordingLocked
+            || model.presentation == .recordingLockedPreview
+            || model.presentation == .personaPicker
+            || model.presentation == .resultDialog {
             installKeyMonitoringIfNeeded()
         } else {
             removeKeyMonitoring()
@@ -311,16 +387,24 @@ final class OverlayController {
             return
         }
 
-        guard model.presentation == .personaPicker else { return }
-        switch Int(event.keyCode) {
-        case 53:
-            model.requestCancel()
-        case 125:
-            model.requestPersonaMoveDown()
-        case 126:
-            model.requestPersonaMoveUp()
-        case 36, 76:
-            model.requestPersonaConfirm()
+        switch model.presentation {
+        case .personaPicker:
+            switch Int(event.keyCode) {
+            case 53:
+                model.requestCancel()
+            case 125:
+                model.requestPersonaMoveDown()
+            case 126:
+                model.requestPersonaMoveUp()
+            case 36, 76:
+                model.requestPersonaConfirm()
+            default:
+                return
+            }
+        case .resultDialog:
+            if Int(event.keyCode) == 53 {
+                model.requestDismiss()
+            }
         default:
             return
         }
@@ -340,6 +424,11 @@ private struct OverlayMetrics {
     let interactive: Bool
 }
 
+private struct WindowChromeStyle {
+    let background: NSColor
+    let cornerRadius: CGFloat
+}
+
 final class OverlayViewModel: ObservableObject {
     enum Presentation {
         case recordingHold
@@ -351,6 +440,7 @@ final class OverlayViewModel: ObservableObject {
         case notice
         case failure
         case personaPicker
+        case resultDialog
     }
 
     @Published var presentation: Presentation = .recordingHold
@@ -368,6 +458,7 @@ final class OverlayViewModel: ObservableObject {
     var onPersonaMoveDownRequested: (() -> Void)?
     var onPersonaConfirmRequested: (() -> Void)?
     var onPersonaCancelRequested: (() -> Void)?
+    var onResultCopyRequested: (() -> Void)?
 
     func requestDismiss() {
         onDismissRequested?()
@@ -396,36 +487,78 @@ final class OverlayViewModel: ObservableObject {
     func requestPersonaCancel() {
         onPersonaCancelRequested?()
     }
+
+    func requestResultCopy() {
+        onResultCopyRequested?()
+    }
 }
 
 private struct OverlayView: View {
     @ObservedObject var model: OverlayViewModel
 
     var body: some View {
-        Group {
-            switch model.presentation {
-            case .recordingHold:
-                recordingCapsule
-            case .recordingHoldPreview:
-                recordingPreviewCard(showControls: false)
-            case .recordingLocked:
-                lockedRecordingCapsule
-            case .recordingLockedPreview:
-                recordingPreviewCard(showControls: true)
-            case .processing:
-                processingCapsule
-            case .transcriptPreview:
-                previewCard
-            case .notice:
-                noticeToast
-            case .failure:
-                failureCard
-            case .personaPicker:
-                personaPickerCard
+        if usesWindowChrome {
+            Group {
+                switch model.presentation {
+                case .recordingHold:
+                    recordingCapsule
+                case .recordingHoldPreview:
+                    recordingPreviewCard(showControls: false)
+                case .recordingLocked:
+                    lockedRecordingCapsule
+                case .recordingLockedPreview:
+                    recordingPreviewCard(showControls: true)
+                case .processing:
+                    processingCapsule
+                case .transcriptPreview:
+                    previewCard
+                case .notice:
+                    noticeToast
+                case .failure:
+                    failureCard
+                case .personaPicker:
+                    personaPickerCard
+                case .resultDialog:
+                    resultDialogCard
+                }
             }
+        } else {
+            Group {
+                switch model.presentation {
+                case .recordingHold:
+                    recordingCapsule
+                case .recordingHoldPreview:
+                    recordingPreviewCard(showControls: false)
+                case .recordingLocked:
+                    lockedRecordingCapsule
+                case .recordingLockedPreview:
+                    recordingPreviewCard(showControls: true)
+                case .processing:
+                    processingCapsule
+                case .transcriptPreview:
+                    previewCard
+                case .notice:
+                    noticeToast
+                case .failure:
+                    failureCard
+                case .personaPicker:
+                    personaPickerCard
+                case .resultDialog:
+                    resultDialogCard
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: contentAlignment)
+            .padding(containerPadding)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: contentAlignment)
-        .padding(containerPadding)
+    }
+
+    private var usesWindowChrome: Bool {
+        switch model.presentation {
+        case .recordingHoldPreview, .recordingLockedPreview, .transcriptPreview, .notice, .failure, .personaPicker, .resultDialog:
+            return true
+        default:
+            return false
+        }
     }
 
     private var contentAlignment: Alignment {
@@ -434,7 +567,7 @@ private struct OverlayView: View {
             return .bottom
         case .transcriptPreview, .failure:
             return .top
-        case .personaPicker:
+        case .personaPicker, .resultDialog:
             return .center
         }
     }
@@ -451,7 +584,7 @@ private struct OverlayView: View {
             return EdgeInsets(top: 12, leading: 16, bottom: 16, trailing: 16)
         case .transcriptPreview, .notice, .failure:
             return EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16)
-        case .personaPicker:
+        case .personaPicker, .resultDialog:
             return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         }
     }
@@ -479,7 +612,7 @@ private struct OverlayView: View {
     }
 
     private func recordingPreviewCard(showControls: Bool) -> some View {
-        OverlayCompactToast(width: 312) {
+        OverlayCompactToast(width: 344, hostedInWindowChrome: true) {
             VStack(alignment: .leading, spacing: 10) {
                 if showControls {
                     HStack(spacing: 8) {
@@ -520,7 +653,7 @@ private struct OverlayView: View {
     }
 
     private var previewCard: some View {
-        OverlayCompactToast(width: 312) {
+        OverlayCompactToast(width: 344, hostedInWindowChrome: true) {
             HStack(spacing: 10) {
                 Image(systemName: "info.circle")
                     .font(.system(size: 14, weight: .semibold))
@@ -537,7 +670,7 @@ private struct OverlayView: View {
     }
 
     private var failureCard: some View {
-        OverlayCard(width: 320) {
+        OverlayCard(width: 352, hostedInWindowChrome: true, shadowed: false) {
             VStack(alignment: .leading, spacing: 12) {
                 cardHeader(icon: "exclamationmark.circle", accent: Color(red: 1.0, green: 0.42, blue: 0.08), title: model.statusText, dismissible: true)
 
@@ -551,7 +684,7 @@ private struct OverlayView: View {
     }
 
     private var noticeToast: some View {
-        OverlayCompactToast(width: 312) {
+        OverlayCompactToast(width: 344, hostedInWindowChrome: true) {
             VStack(alignment: .leading, spacing: 8) {
                 cardHeader(
                     icon: "info.circle",
@@ -570,7 +703,7 @@ private struct OverlayView: View {
     }
 
     private var personaPickerCard: some View {
-        OverlayCard(width: 420) {
+        OverlayCard(width: 456, hostedInWindowChrome: true, shadowed: false) {
             VStack(alignment: .leading, spacing: 18) {
                 HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 6) {
@@ -606,6 +739,55 @@ private struct OverlayView: View {
                 .frame(height: model.personaViewportHeight)
             }
         }
+    }
+
+    private var resultDialogCard: some View {
+        OverlayCard(width: 446, compact: true, hostedInWindowChrome: true, shadowed: false) {
+            VStack(alignment: .leading, spacing: 10) {
+                cardHeader(
+                    icon: "info.circle",
+                    accent: Color(red: 0.43, green: 0.56, blue: 1.0),
+                    title: model.statusText,
+                    dismissible: true,
+                    titleSize: 13.5
+                )
+
+                VStack(alignment: .leading, spacing: 12) {
+                    ScrollView(showsIndicators: false) {
+                        Text(model.detailText)
+                            .font(.system(size: 12.5, weight: .medium))
+                            .foregroundStyle(Color.white.opacity(0.9))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                    }
+                    .frame(maxHeight: 126)
+
+                    HStack {
+                        Spacer()
+
+                        Button(action: model.requestResultCopy) {
+                            Text("Copy")
+                                .font(.system(size: 12.5, weight: .semibold))
+                                .foregroundStyle(Color.white.opacity(0.96))
+                                .padding(.horizontal, 18)
+                                .padding(.vertical, 9)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .fill(Color.white.opacity(0.14))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .fixedSize()
     }
 
     private func personaPickerRow(item: OverlayController.PersonaPickerItem, isSelected: Bool) -> some View {
@@ -826,11 +1008,21 @@ private struct OverlayCapsule<Content: View>: View {
 private struct OverlayCard<Content: View>: View {
     let width: CGFloat
     let compact: Bool
+    let hostedInWindowChrome: Bool
+    let shadowed: Bool
     @ViewBuilder var content: Content
 
-    init(width: CGFloat, compact: Bool = false, @ViewBuilder content: () -> Content) {
+    init(
+        width: CGFloat,
+        compact: Bool = false,
+        hostedInWindowChrome: Bool = false,
+        shadowed: Bool = true,
+        @ViewBuilder content: () -> Content
+    ) {
         self.width = width
         self.compact = compact
+        self.hostedInWindowChrome = hostedInWindowChrome
+        self.shadowed = shadowed
         self.content = content()
     }
 
@@ -839,24 +1031,33 @@ private struct OverlayCard<Content: View>: View {
             .padding(.horizontal, compact ? 16 : 23)
             .padding(.vertical, compact ? 12 : 21)
             .frame(width: width, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: compact ? 14 : 16, style: .continuous)
-                    .fill(Color(red: 0.13, green: 0.11, blue: 0.11).opacity(0.96))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: compact ? 14 : 16, style: .continuous)
-                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                    )
-            )
-            .shadow(color: Color.black.opacity(0.32), radius: 26, x: 0, y: 16)
+            .background(cardBackground)
+            .shadow(color: Color.black.opacity(shadowed ? 0.32 : 0), radius: shadowed ? 26 : 0, x: 0, y: shadowed ? 16 : 0)
+    }
+
+    @ViewBuilder
+    private var cardBackground: some View {
+        if hostedInWindowChrome {
+            Color.clear
+        } else {
+            RoundedRectangle(cornerRadius: compact ? 14 : 16, style: .continuous)
+                .fill(Color(red: 0.13, green: 0.11, blue: 0.11).opacity(0.96))
+                .overlay(
+                    RoundedRectangle(cornerRadius: compact ? 14 : 16, style: .continuous)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                )
+        }
     }
 }
 
 private struct OverlayCompactToast<Content: View>: View {
     let width: CGFloat
+    let hostedInWindowChrome: Bool
     @ViewBuilder var content: Content
 
-    init(width: CGFloat, @ViewBuilder content: () -> Content) {
+    init(width: CGFloat, hostedInWindowChrome: Bool = false, @ViewBuilder content: () -> Content) {
         self.width = width
+        self.hostedInWindowChrome = hostedInWindowChrome
         self.content = content()
     }
 
@@ -865,15 +1066,22 @@ private struct OverlayCompactToast<Content: View>: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .frame(width: width, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(red: 0.13, green: 0.11, blue: 0.11).opacity(0.96))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                    )
-            )
-            .shadow(color: Color.black.opacity(0.28), radius: 18, x: 0, y: 12)
+            .background(toastBackground)
+            .shadow(color: Color.black.opacity(hostedInWindowChrome ? 0 : 0.28), radius: hostedInWindowChrome ? 0 : 18, x: 0, y: hostedInWindowChrome ? 0 : 12)
+    }
+
+    @ViewBuilder
+    private var toastBackground: some View {
+        if hostedInWindowChrome {
+            Color.clear
+        } else {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(red: 0.13, green: 0.11, blue: 0.11).opacity(0.96))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                )
+        }
     }
 }
 

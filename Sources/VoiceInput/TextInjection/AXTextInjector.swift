@@ -3,11 +3,25 @@ import ApplicationServices
 import Foundation
 
 final class AXTextInjector: TextInjector {
+    private struct SelectionContext {
+        let element: AXUIElement
+        let range: CFRange?
+        let processID: pid_t?
+        let processName: String?
+        let source: String
+        let capturedAt: Date
+    }
+
     private static var didRequestAccessibility = false
     private static let pasteRestoreDelayNanoseconds: UInt64 = 180_000_000
     private static let selectedTextTimeoutMilliseconds = 200
+    private static let copySelectionTimeoutMilliseconds = 180
+    private static let copyShortcutKeyCode: CGKeyCode = 8
+    private static let selectionContextLifetime: TimeInterval = 180
 
-    func getSelectedText() async -> String? {
+    private var latestSelectionContext: SelectionContext?
+
+    func getSelectionSnapshot() async -> TextSelectionSnapshot {
         guard AXIsProcessTrusted() else {
             if !Self.didRequestAccessibility {
                 Self.didRequestAccessibility = true
@@ -15,11 +29,61 @@ final class AXTextInjector: TextInjector {
                     NSWorkspace.shared.open(url)
                 }
             }
-            return nil
+            return TextSelectionSnapshot(
+                processID: frontmostProcessID(),
+                processName: frontmostApplicationName(),
+                selectedRange: nil,
+                selectedText: nil,
+                source: "unavailable",
+                isEditable: false
+            )
         }
 
-        return readSelectedTextWithTimeout(milliseconds: Self.selectedTextTimeoutMilliseconds)?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let processID = frontmostProcessID()
+        let processName = frontmostApplicationName()
+        let editability = focusedElement().map(isLikelyEditable(element:)) ?? false
+
+        if let result = readSelectedTextWithTimeout(milliseconds: Self.selectedTextTimeoutMilliseconds) {
+            latestSelectionContext = result.context
+            return TextSelectionSnapshot(
+                processID: result.context.processID,
+                processName: result.context.processName,
+                selectedRange: result.context.range,
+                selectedText: result.text.trimmingCharacters(in: .whitespacesAndNewlines),
+                source: result.context.source,
+                isEditable: editability
+            )
+        }
+
+        if let copiedText = readSelectedTextViaCopy(processID: processID, milliseconds: Self.copySelectionTimeoutMilliseconds) {
+            let context = SelectionContext(
+                element: focusedElement() ?? AXUIElementCreateSystemWide(),
+                range: nil,
+                processID: processID,
+                processName: processName,
+                source: "clipboard-copy",
+                capturedAt: Date()
+            )
+            latestSelectionContext = context
+            return TextSelectionSnapshot(
+                processID: processID,
+                processName: processName,
+                selectedRange: nil,
+                selectedText: copiedText,
+                source: "clipboard-copy",
+                isEditable: editability
+            )
+        }
+
+            latestSelectionContext = nil
+            return TextSelectionSnapshot(
+                processID: processID,
+                processName: processName,
+                selectedRange: nil,
+                selectedText: nil,
+                source: "none",
+                isEditable: editability
+            )
     }
 
     func insert(text: String) throws {
@@ -38,9 +102,9 @@ final class AXTextInjector: TextInjector {
         return (element as! AXUIElement)
     }
 
-    private func readSelectedTextWithTimeout(milliseconds: Int) -> String? {
+    private func readSelectedTextWithTimeout(milliseconds: Int) -> (text: String, context: SelectionContext)? {
         final class Box: @unchecked Sendable {
-            var value: String?
+            var value: (text: String, context: SelectionContext)?
         }
 
         let box = Box()
@@ -59,7 +123,7 @@ final class AXTextInjector: TextInjector {
         return box.value
     }
 
-    private func readSelectedText() -> String? {
+    private func readSelectedText() -> (text: String, context: SelectionContext)? {
         guard let element = focusedElement() else {
             return nil
         }
@@ -109,13 +173,41 @@ final class AXTextInjector: TextInjector {
             }
         }
 
-        return text
+        guard let range else { return nil }
+
+        let context = SelectionContext(
+            element: element,
+            range: range,
+            processID: frontmostProcessID(),
+            processName: frontmostApplicationName(),
+            source: "accessibility",
+            capturedAt: Date()
+        )
+
+        return (text, context)
     }
 
     private func isAttributeSettable(_ attribute: CFString, on element: AXUIElement) -> Bool {
         var settable = DarwinBoolean(false)
         let status = AXUIElementIsAttributeSettable(element, attribute, &settable)
         return status == .success && settable.boolValue
+    }
+
+    private func isLikelyEditable(element: AXUIElement) -> Bool {
+        let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
+        let nativeTextRoles: Set<String> = [
+            "AXTextArea",
+            "AXTextField",
+            "AXComboBox",
+            "AXSearchField"
+        ]
+        if let role, nativeTextRoles.contains(role) {
+            return true
+        }
+
+        return isAttributeSettable(kAXSelectedTextRangeAttribute as CFString, on: element)
+            || isAttributeSettable(kAXValueAttribute as CFString, on: element)
+            || isAttributeSettable(kAXSelectedTextAttribute as CFString, on: element)
     }
 
     private func setText(_ text: String, replaceSelection: Bool) throws {
@@ -133,15 +225,32 @@ final class AXTextInjector: TextInjector {
             )
         }
 
-        if let element = focusedElement(), try insertTextViaAX(text, into: element, replaceSelection: replaceSelection) {
+        if replaceSelection,
+           let context = activeSelectionContext(),
+           context.range != nil,
+           try insertTextViaAX(text, into: context.element, replaceSelection: true, selectionRange: context.range) {
+            latestSelectionContext = nil
             return
         }
 
-        try setTextViaPaste(text)
+        if let element = focusedElement(), try insertTextViaAX(text, into: element, replaceSelection: replaceSelection, selectionRange: nil) {
+            if replaceSelection {
+                latestSelectionContext = nil
+            }
+            return
+        }
+
+        try setTextViaPaste(text, replaceSelection: replaceSelection)
+        if replaceSelection {
+            latestSelectionContext = nil
+        }
     }
 
-    private func insertTextViaAX(_ text: String, into element: AXUIElement, replaceSelection: Bool) throws -> Bool {
+    private func insertTextViaAX(_ text: String, into element: AXUIElement, replaceSelection: Bool, selectionRange: CFRange?) throws -> Bool {
         if replaceSelection {
+            if let selectionRange {
+                _ = setSelectedTextRange(selectionRange, on: element)
+            }
             let replaceSelectedText = AXUIElementSetAttributeValue(
                 element,
                 kAXSelectedTextAttribute as CFString,
@@ -161,10 +270,23 @@ final class AXTextInjector: TextInjector {
         return false
     }
 
-    private func setTextViaPaste(_ text: String) throws {
+    private func setTextViaPaste(_ text: String, replaceSelection: Bool) throws {
         let pasteboard = NSPasteboard.general
         let previousString = pasteboard.string(forType: .string)
-        let targetPID = frontmostProcessID()
+        let targetPID: pid_t?
+
+        if replaceSelection, let context = activeSelectionContext() {
+            targetPID = context.processID
+            if let range = context.range {
+                _ = setSelectedTextRange(range, on: context.element)
+            }
+            if let processID = context.processID,
+               let app = NSRunningApplication(processIdentifier: processID) {
+                app.activate(options: [.activateIgnoringOtherApps])
+            }
+        } else {
+            targetPID = frontmostProcessID()
+        }
 
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
@@ -222,6 +344,57 @@ final class AXTextInjector: TextInjector {
 
     private func frontmostProcessID() -> pid_t? {
         NSWorkspace.shared.frontmostApplication?.processIdentifier
+    }
+
+    private func frontmostApplicationName() -> String? {
+        NSWorkspace.shared.frontmostApplication?.localizedName
+    }
+
+    private func readSelectedTextViaCopy(processID: pid_t?, milliseconds: Int) -> String? {
+        let pasteboard = NSPasteboard.general
+        let previousString = pasteboard.string(forType: .string)
+        let previousChangeCount = pasteboard.changeCount
+
+        sendCopyShortcut(to: processID)
+
+        let timeout = Date().addingTimeInterval(Double(milliseconds) / 1000.0)
+        while Date() < timeout {
+            if pasteboard.changeCount != previousChangeCount {
+                let copiedText = pasteboard.string(forType: .string)
+                restorePasteboardAfterPaste(previousString)
+                let trimmed = copiedText?.trimmingCharacters(in: .whitespacesAndNewlines)
+                return (trimmed?.isEmpty == false) ? trimmed : nil
+            }
+            usleep(10_000)
+        }
+
+        restorePasteboardAfterPaste(previousString)
+        return nil
+    }
+
+    private func sendCopyShortcut(to processID: pid_t?) {
+        let source = CGEventSource(stateID: .combinedSessionState)
+        let down = CGEvent(keyboardEventSource: source, virtualKey: Self.copyShortcutKeyCode, keyDown: true)
+        down?.flags = .maskCommand
+        let up = CGEvent(keyboardEventSource: source, virtualKey: Self.copyShortcutKeyCode, keyDown: false)
+        up?.flags = .maskCommand
+
+        if let processID {
+            down?.postToPid(processID)
+            up?.postToPid(processID)
+        } else {
+            down?.post(tap: .cghidEventTap)
+            up?.post(tap: .cghidEventTap)
+        }
+    }
+
+    private func activeSelectionContext() -> SelectionContext? {
+        guard let latestSelectionContext else { return nil }
+        guard Date().timeIntervalSince(latestSelectionContext.capturedAt) <= Self.selectionContextLifetime else {
+            self.latestSelectionContext = nil
+            return nil
+        }
+        return latestSelectionContext
     }
 
     private func restorePasteboardAfterPaste(_ previousString: String?) {
