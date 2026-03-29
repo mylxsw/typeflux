@@ -553,42 +553,48 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
                 labelTrailing()
             }
 
-            HStack(spacing: StudioTheme.Spacing.none) {
+            ZStack(alignment: .trailing) {
                 TextField(placeholder, text: $text)
                     .textFieldStyle(.plain)
                     .font(.studioBody(StudioTheme.Typography.bodyLarge))
                     .foregroundStyle(StudioTheme.textPrimary)
                     .padding(.leading, StudioTheme.Insets.textFieldHorizontal)
-                    .padding(.trailing, normalizedSuggestions.isEmpty ? StudioTheme.Insets.textFieldHorizontal : StudioTheme.Spacing.small)
+                    .padding(.trailing, normalizedSuggestions.isEmpty ? StudioTheme.Insets.textFieldHorizontal : 58)
                     .padding(.vertical, StudioTheme.Insets.textFieldVertical)
 
                 if !normalizedSuggestions.isEmpty {
-                    Rectangle()
-                        .fill(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder))
-                        .frame(width: 1)
-                        .padding(.vertical, 8)
+                    HStack(spacing: StudioTheme.Spacing.xSmall) {
+                        Rectangle()
+                            .fill(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder))
+                            .frame(width: 1, height: 18)
 
-                    Menu {
-                        ForEach(normalizedSuggestions, id: \.self) { suggestion in
-                            Button(suggestion) {
-                                text = suggestion
+                        Menu {
+                            ForEach(normalizedSuggestions, id: \.self) { suggestion in
+                                Button(suggestion) {
+                                    text = suggestion
+                                }
                             }
+                        } label: {
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(StudioTheme.textSecondary)
+                                .frame(width: 28, height: 28)
+                                .background(
+                                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
+                                        .fill(StudioTheme.surface)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
+                                        .stroke(StudioTheme.border.opacity(0.9), lineWidth: StudioTheme.BorderWidth.thin)
+                                )
                         }
-                    } label: {
-                        HStack(spacing: StudioTheme.Spacing.xxxSmall) {
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                            Text("Select")
-                                .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                        }
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .padding(.horizontal, StudioTheme.Spacing.smallMedium)
-                        .frame(maxHeight: .infinity)
-                        .contentShape(Rectangle())
+                        .menuStyle(.borderlessButton)
+                        .help("Select a suggested value")
                     }
-                    .menuStyle(.borderlessButton)
+                    .padding(.trailing, 10)
                 }
             }
+            .frame(minHeight: 46)
             .background(
                 RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
                     .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
