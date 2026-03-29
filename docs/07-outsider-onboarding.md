@@ -1,4 +1,4 @@
-# 外行开发者入门（把 VoiceInput 当作 Swift/macOS 教程）
+# 外行开发者入门（把 Typeflux 当作 Swift/macOS 教程）
 
 > 适用人群：你会写代码，但 **完全不会 Swift / iOS / macOS 开发**；你更熟悉 Flutter / Go / Python 等。
 >
@@ -26,9 +26,9 @@
 
 ---
 
-## 1. VoiceInput 是什么？（用一句话理解）
+## 1. Typeflux 是什么？（用一句话理解）
 
-VoiceInput 是一个 macOS 菜单栏常驻工具：
+Typeflux 是一个 macOS 菜单栏常驻工具：
 
 - 按住快捷键开始录音
 - 松开结束录音并转写（STT）
@@ -68,7 +68,7 @@ VoiceInput 是一个 macOS 菜单栏常驻工具：
 脚本做了什么（你不需要背，但需要知道原因）：
 
 - `swift build -c debug`
-- 生成 `.build/VoiceInput.app`（路径固定，避免反复授权）
+- 生成 `.build/Typeflux.app`（路径固定，避免反复授权）
 - 复制 `app/Info.plist` 到 `.app`（里面有权限说明 key）
 - 默认不做 ad-hoc `codesign`，避免 Accessibility 把每次重编译后的 app 识别成新应用
 - 如果确实需要签名，可传 `DEV_CODESIGN_IDENTITY` 使用固定签名身份
@@ -287,7 +287,7 @@ await MainActor.run {
 
 macOS 应用通常是一个目录结构（bundle），里面包含：
 
-- `Contents/MacOS/VoiceInput`：可执行文件
+- `Contents/MacOS/Typeflux`：可执行文件
 - `Contents/Info.plist`：权限说明、Bundle ID、是否菜单栏应用等
 
 隐私权限（麦克风、辅助功能等）通常是按 `.app` 身份管理的，所以脚本要生成 `.app`。
@@ -530,7 +530,7 @@ SwiftUI View 通过 `NSHostingView(rootView:)` 放进 AppKit window。
 快速定位建议：
 
 - 先打开 Settings -> Errors 看是否有 `Hotkey: failed to create event tap` 之类的错误
-- 再看系统设置权限是否把 `.build/VoiceInput.app` 勾选上
+- 再看系统设置权限是否把 `.build/Typeflux.app` 勾选上
 
 ### 7.2 现象：录音失败/无声音
 
@@ -623,11 +623,11 @@ SwiftUI View 通过 `NSHostingView(rootView:)` 放进 AppKit window。
 ### 11.1 菜单栏没有 `VI`
 
 - 你是否是通过 `scripts/run_dev_app.sh` 启动？
-- `.build/VoiceInput.app` 是否成功生成并被 `open` 启动？
+- `.build/Typeflux.app` 是否成功生成并被 `open` 启动？
 
 ### 11.2 有 `VI`，但按键无反应
 
-- Input Monitoring 是否授权给 `.build/VoiceInput.app`？
+- Input Monitoring 是否授权给 `.build/Typeflux.app`？
 - Settings 里添加一个自定义快捷键（比如 `⌥Space`）试试
 
 ### 11.3 能进入录音，但松开后一直处理中

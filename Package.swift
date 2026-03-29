@@ -2,13 +2,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "VoiceInput",
+    name: "Typeflux",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "VoiceInput", targets: ["VoiceInput"])
+        .executable(name: "Typeflux", targets: ["VoiceInput"])
     ],
     targets: [
         .executableTarget(

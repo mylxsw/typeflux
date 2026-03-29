@@ -8,7 +8,13 @@ final class FileHistoryStore: HistoryStore {
 
     init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        baseDir = appSupport.appendingPathComponent("VoiceInput", isDirectory: true)
+        let newBaseDir = appSupport.appendingPathComponent("Typeflux", isDirectory: true)
+        let legacyBaseDir = appSupport.appendingPathComponent("VoiceInput", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: newBaseDir.path),
+           FileManager.default.fileExists(atPath: legacyBaseDir.path) {
+            try? FileManager.default.moveItem(at: legacyBaseDir, to: newBaseDir)
+        }
+        baseDir = newBaseDir
         indexURL = baseDir.appendingPathComponent("history.json")
 
         try? FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
@@ -86,7 +92,7 @@ final class FileHistoryStore: HistoryStore {
         let records = list()
         let dateFmt = ISO8601DateFormatter()
 
-        var md = "# VoiceInput History\n\n"
+        var md = "# Typeflux History\n\n"
         for r in records {
             md += "## \(dateFmt.string(from: r.date))\n\n"
             md += "- Mode: \(r.mode.rawValue)\n"

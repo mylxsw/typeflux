@@ -7,7 +7,7 @@
 "appearance.dark" = "深色";
 
 "window.voiceStudio" = "語音工作台";
-"window.about" = "關於 VoiceInput";
+"window.about" = "關於 Typeflux";
 
 "common.refresh" = "重新整理";
 "common.refreshing" = "重新整理中...";
@@ -16,10 +16,10 @@
 "home.exportAll" = "匯出全部";
 "home.openHistory" = "打開歷史";
 
-"sidebar.appName" = "VoiceInput";
+"sidebar.appName" = "Typeflux";
 "sidebar.platform" = "桌面版";
 "sidebar.about" = "關於";
-"sidebar.aboutAccessibility" = "關於 VoiceInput";
+"sidebar.aboutAccessibility" = "關於 Typeflux";
 
 "studio.section.home" = "總覽";
 "studio.section.models" = "模型";
@@ -27,7 +27,7 @@
 "studio.section.vocabulary" = "詞庫";
 "studio.section.history" = "歷史";
 "studio.section.settings" = "設定";
-"studio.eyebrow.home" = "VoiceInput";
+"studio.eyebrow.home" = "Typeflux";
 "studio.eyebrow.models" = "配置";
 "studio.eyebrow.personas" = "語音人設";
 "studio.eyebrow.vocabulary" = "自訂詞彙";
@@ -54,13 +54,13 @@
 
 "settings.general" = "一般";
 "settings.launchAtLogin.title" = "開機自動啟動";
-"settings.launchAtLogin.subtitle" = "登入 Mac 後自動啟動 VoiceInput，無需手動打開。";
+"settings.launchAtLogin.subtitle" = "登入 Mac 後自動啟動 Typeflux，無需手動打開。";
 "settings.activationHotkey" = "啟動快捷鍵";
 "settings.identity" = "身份與互動";
 "settings.appearance.title" = "明暗模式";
 "settings.appearance.subtitle" = "在淺色、深色或跟隨系統主題之間切換整個介面。";
 "settings.language.title" = "語言";
-"settings.language.subtitle" = "選擇 VoiceInput 介面的顯示語言。";
+"settings.language.subtitle" = "選擇 Typeflux 介面的顯示語言。";
 "settings.audio" = "音訊";
 "settings.microphone.title" = "麥克風";
 "settings.microphone.subtitle" = "選擇聽寫使用的輸入裝置。自動模式會跟隨目前 macOS 預設輸入裝置。";
@@ -69,16 +69,16 @@
 "settings.mute.subtitle" = "錄音期間暫時靜音系統輸出，減少回聲或系統聲音進入麥克風。";
 "settings.permissions" = "權限";
 "settings.permissionStatus.title" = "權限狀態";
-"settings.permissionStatus.subtitle" = "檢視 VoiceInput 依賴的 macOS 權限，並在需要時完成授權。";
+"settings.permissionStatus.subtitle" = "檢視 Typeflux 依賴的 macOS 權限，並在需要時完成授權。";
 
-"menu.openVoiceStudio" = "打開語音工作台";
+"menu.openVoiceStudio" = "打開 Typeflux";
 "menu.history" = "歷史…";
 "menu.personas" = "人設";
 "menu.appearance" = "外觀";
 "menu.settings" = "設定…";
-"menu.about" = "關於 VoiceInput";
+"menu.about" = "關於 Typeflux";
 "menu.checkForUpdates" = "檢查更新…";
-"menu.quit" = "結束 VoiceInput";
+"menu.quit" = "結束 Typeflux";
 "menu.status.ready" = "已就緒";
 "menu.status.recording" = "錄音中…";
 "menu.status.processing" = "處理中…";
@@ -97,8 +97,8 @@
 "appMenu.paste" = "貼上";
 "appMenu.selectAll" = "全選";
 
-"about.appName" = "VoiceInput";
-"about.subtitle" = "一款由 @mylxsw 開發的 macOS 選單列語音輸入應用。";
+"about.appName" = "Typeflux";
+"about.subtitle" = "The voice-native typing experience";
 "about.details" = "詳情";
 "about.developer" = "開發者";
 "about.developer.subtitle" = "獨立開發者";
@@ -110,7 +110,7 @@
 
 "permission.microphone.title" = "麥克風";
 "permission.microphone.summary" = "用於擷取系統麥克風輸入。";
-"permission.microphone.detail.authorized" = "VoiceInput 已可存取系統麥克風。";
+"permission.microphone.detail.authorized" = "Typeflux 已可存取系統麥克風。";
 "permission.microphone.detail.notDetermined" = "請授予麥克風權限，以便從選單列開始錄音。";
 "permission.microphone.detail.denied" = "麥克風權限已被拒絕，請前往系統設定重新啟用。";
 "permission.microphone.detail.restricted" = "麥克風權限受系統限制。";
@@ -124,8 +124,8 @@
 "permission.speechRecognition.detail.unknown" = "語音辨識權限需要注意。";
 "permission.accessibility.title" = "輔助使用";
 "permission.accessibility.summary" = "用於向其他應用插入或替換文字。";
-"permission.accessibility.detail.granted" = "VoiceInput 現在可以控制其他應用中的文字輸入框。";
-"permission.accessibility.detail.required" = "請開啟輔助使用權限，讓 VoiceInput 能向目前應用輸入文字。";
+"permission.accessibility.detail.granted" = "Typeflux 現在可以控制其他應用中的文字輸入框。";
+"permission.accessibility.detail.required" = "請開啟輔助使用權限，讓 Typeflux 能向目前應用輸入文字。";
 "permission.badge.granted" = "已授權";
 "permission.badge.required" = "必需";
 "permission.action.openSettings" = "打開設定";
@@ -158,11 +158,11 @@
 "common.failedPrefix" = "失敗：";
 
 "updater.available.title" = "發現新版本";
-"updater.available.message" = "VoiceInput 有新版本（%@）可用。\n\n更新說明：\n%@";
+"updater.available.message" = "Typeflux 有新版本（%@）可用。\n\n更新說明：\n%@";
 "updater.action.download" = "下載";
 "updater.action.later" = "稍後提醒";
 "updater.latest.title" = "已是最新版本";
-"updater.latest.message" = "你目前執行的是最新版本的 VoiceInput。";
+"updater.latest.message" = "你目前執行的是最新版本的 Typeflux。";
 
 "provider.stt.whisperAPI" = "Whisper API";
 "provider.stt.appleSpeech" = "Apple Speech";
@@ -241,7 +241,7 @@
 "history.detail.selectionEdited" = "選取文字修改結果";
 "history.detail.error" = "錯誤資訊";
 "history.keep.title" = "保留歷史";
-"history.keep.subtitle" = "選擇 VoiceInput 在這台裝置上保留本地聽寫歷史的時間。";
+"history.keep.subtitle" = "選擇 Typeflux 在這台裝置上保留本地聽寫歷史的時間。";
 "history.privacy.title" = "你的資料保持私密";
 "history.privacy.subtitle" = "語音聽寫歷史只保存在這台 Mac 上。自動清理會移除過期本地記錄和關聯音訊檔。";
 "history.export.title" = "匯出封存";
@@ -270,7 +270,7 @@
 "vocabulary.filter.all" = "全部";
 "vocabulary.filter.automatic" = "自動新增";
 "vocabulary.filter.manual" = "手動新增";
-"vocabulary.intro.title" = "協助 VoiceInput 更穩定地辨識人名、產品名與領域詞彙。";
+"vocabulary.intro.title" = "協助 Typeflux 更穩定地辨識人名、產品名與領域詞彙。";
 "vocabulary.intro.subtitle" = "手動新增的詞條會作為辨識提示送往相容 Whisper 的轉寫後端。";
 "vocabulary.search.placeholder" = "搜尋詞庫...";
 "vocabulary.empty.title" = "還沒有詞條。";

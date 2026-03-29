@@ -3,8 +3,8 @@
 <plist version="1.0">
 <dict>
     <key>NSMicrophoneUsageDescription</key>
-    <string>VoiceInput needs microphone access to record your speech.</string>
+    <string>Typeflux needs microphone access to record your speech.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
-    <string>VoiceInput uses speech recognition to transcribe audio when Apple Speech fallback is enabled.</string>
+    <string>Typeflux uses speech recognition to transcribe audio when Apple Speech fallback is enabled.</string>
 </dict>
 </plist>

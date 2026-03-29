@@ -2,8 +2,8 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="${VOICEINPUT_DEV_APP_DIR:-$HOME/Applications/VoiceInput Dev.app}"
-APP_EXEC="$APP_DIR/Contents/MacOS/VoiceInput"
+APP_DIR="${TYPEFLUX_DEV_APP_DIR:-${VOICEINPUT_DEV_APP_DIR:-$HOME/Applications/Typeflux Dev.app}}"
+APP_EXEC="$APP_DIR/Contents/MacOS/Typeflux"
 LOG_PID=""
 
 cleanup() {
@@ -28,7 +28,7 @@ mkdir -p "$APP_DIR/Contents/Resources"
 
 # Keep the .app path stable to avoid macOS privacy permission re-prompts.
 cp "$ROOT_DIR/app/Info.plist" "$APP_DIR/Contents/Info.plist"
-cp "$BIN" "$APP_DIR/Contents/MacOS/VoiceInput"
+cp "$BIN" "$APP_DIR/Contents/MacOS/Typeflux"
 
 chmod +x "$APP_EXEC"
 
@@ -44,7 +44,7 @@ if [[ -z "${DEV_CODESIGN_IDENTITY:-}" ]] && command -v security >/dev/null 2>&1;
 fi
 
 if [[ -z "${DEV_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
-  codesign --force --deep --sign - --identifier "dev.voiceinput" "$APP_DIR"
+  codesign --force --deep --sign - --identifier "dev.typeflux" "$APP_DIR"
 fi
 
 # If you want a fully stable identity across machines and clean TCC behavior,
@@ -59,7 +59,7 @@ else
 fi
 
 if pgrep -f "$APP_EXEC" >/dev/null 2>&1; then
-  echo "VoiceInput is already running from $APP_EXEC, stopping the previous instance first..."
+  echo "Typeflux is already running from $APP_EXEC, stopping the previous instance first..."
   pkill -f "$APP_EXEC" >/dev/null 2>&1 || true
   sleep 1
 fi
@@ -68,7 +68,7 @@ echo "App launched in attached dev mode: $APP_DIR"
 echo "Logs stay attached to this terminal. Press Ctrl+C to stop the app."
 
 if command -v log >/dev/null 2>&1; then
-  log stream --level debug --predicate 'process == "VoiceInput" && NOT (subsystem BEGINSWITH "com.apple.") && eventType == logEvent' &
+  log stream --level debug --predicate 'process == "Typeflux" && NOT (subsystem BEGINSWITH "com.apple.") && eventType == logEvent' &
   LOG_PID=$!
 fi
 

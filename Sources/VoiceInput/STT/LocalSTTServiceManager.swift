@@ -450,7 +450,15 @@ final class LocalSTTServiceManager {
 
     private var appSupportRootURL: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return base.appendingPathComponent("VoiceInput/STT", isDirectory: true)
+        let newRootURL = base.appendingPathComponent("Typeflux/STT", isDirectory: true)
+        let legacyRootURL = base.appendingPathComponent("VoiceInput/STT", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: newRootURL.path),
+           FileManager.default.fileExists(atPath: legacyRootURL.path) {
+            let parentURL = newRootURL.deletingLastPathComponent()
+            try? FileManager.default.createDirectory(at: parentURL, withIntermediateDirectories: true)
+            try? FileManager.default.moveItem(at: legacyRootURL, to: newRootURL)
+        }
+        return newRootURL
     }
 
     private func scriptURL() throws -> URL {

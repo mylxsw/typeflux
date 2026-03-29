@@ -90,7 +90,7 @@ struct AboutView: View {
             detailLinkRow(
                 icon: "shippingbox",
                 title: L("about.project"),
-                value: "voice-input",
+                value: "Typeflux",
                 subtitle: L("about.project.subtitle"),
                 url: projectURL
             )

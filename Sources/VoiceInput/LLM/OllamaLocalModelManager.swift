@@ -111,7 +111,7 @@ final class OllamaLocalModelManager {
         process.executableURL = URL(fileURLWithPath: executablePath)
         process.arguments = ["serve"]
 
-        let logURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("voice-input-ollama.log")
+        let logURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("typeflux-ollama.log")
         if !fileManager.fileExists(atPath: logURL.path) {
             fileManager.createFile(atPath: logURL.path, contents: nil)
         }

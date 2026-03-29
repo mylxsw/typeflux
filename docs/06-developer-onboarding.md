@@ -24,9 +24,9 @@
 
 仓库根目录：
 
-- **`Package.swift`**：SwiftPM 配置，生成可执行程序 `VoiceInput`。
+- **`Package.swift`**：SwiftPM 配置，生成可执行程序 `Typeflux`。
 - **`Sources/VoiceInput/`**：主 Target 源码（按领域目录拆分）。
-- **`scripts/run_dev_app.sh`**：开发态启动脚本（构建 + 生成 `.build/VoiceInput.app` + `open` 启动）。
+- **`scripts/run_dev_app.sh`**：开发态启动脚本（构建 + 生成 `.build/Typeflux.app` + `open` 启动）。
 - **`app/Info.plist`**：`.app` 的 Info.plist（包含隐私权限 key，且 `LSUIElement = true` 作为菜单栏常驻应用）。
 - **`docs/`**：设计文档与本入门文档。
 
@@ -59,11 +59,11 @@
 脚本做了什么：
 
 - **构建**：`swift build -c debug`
-- **生成稳定路径 `.app`**：`.build/VoiceInput.app`
+- **生成稳定路径 `.app`**：`.build/Typeflux.app`
 - **复制 Info.plist**：使用 `app/Info.plist`（包含权限描述 key）
 - **默认不签名**：开发态保持固定 `.app` 路径，避免 TCC/Accessibility 因 ad-hoc 签名变化而把它当成新应用
 - **可选稳定签名**：如需签名，传 `DEV_CODESIGN_IDENTITY` 使用固定 identity
-- **启动**：`open .build/VoiceInput.app --args --prompt-accessibility`
+- **启动**：`open .build/Typeflux.app --args --prompt-accessibility`
 
 ### 4.2 `swift run` 的行为（了解即可）
 
@@ -180,7 +180,7 @@
 关键点：
 
 - **输出格式**：m4a(AAC)
-- **临时文件目录**：`FileManager.default.temporaryDirectory/voice-input/`
+- **临时文件目录**：`FileManager.default.temporaryDirectory/typeflux/`
 - **音量**：通过 `AVAudioRecorder.averagePower(forChannel:)` 归一化为 0~1
 
 ### 6.3 STT：转写
@@ -281,7 +281,7 @@
 
 行为：
 
-- **目录**：`~/Library/Application Support/VoiceInput/`
+- **目录**：`~/Library/Application Support/Typeflux/`
 - **索引**：`history.json`
 - **导出**：`exportMarkdown()` 生成 `history-<ts>.md`
 - **清理**：`purge(olderThanDays:)` 会删除索引与对应音频文件

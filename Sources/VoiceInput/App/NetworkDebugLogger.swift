@@ -2,7 +2,7 @@ import Foundation
 import os
 
 enum NetworkDebugLogger {
-    static let logger = Logger(subsystem: "dev.voiceinput", category: "Network")
+    static let logger = Logger(subsystem: "dev.typeflux", category: "Network")
 
     static func logRequest(_ request: URLRequest, bodyDescription: String? = nil) {
         let method = request.httpMethod ?? "GET"
@@ -45,7 +45,7 @@ enum NetworkDebugLogger {
         let message = "[Error] \(context): \(describe(error: error))"
         logger.error("\(message, privacy: .public)")
         ErrorLogStore.shared.log("[Network] \(message)")
-        fputs("VoiceInput \(message)\n", stderr)
+        fputs("Typeflux \(message)\n", stderr)
     }
 
     static func logMessage(_ message: String) {

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="${VOICEINPUT_DEV_APP_DIR:-$HOME/Applications/VoiceInput Dev.app}"
+APP_DIR="${TYPEFLUX_DEV_APP_DIR:-${VOICEINPUT_DEV_APP_DIR:-$HOME/Applications/Typeflux Dev.app}}"
 
 swift build --package-path "$ROOT_DIR" -c debug
 
@@ -12,9 +12,9 @@ mkdir -p "$APP_DIR/Contents/Resources"
 
 # Keep the .app path stable to avoid macOS privacy permission re-prompts.
 cp "$ROOT_DIR/app/Info.plist" "$APP_DIR/Contents/Info.plist"
-cp "$BIN" "$APP_DIR/Contents/MacOS/VoiceInput"
+cp "$BIN" "$APP_DIR/Contents/MacOS/Typeflux"
 
-chmod +x "$APP_DIR/Contents/MacOS/VoiceInput"
+chmod +x "$APP_DIR/Contents/MacOS/Typeflux"
 
 # SwiftPM debug builds may carry a transient ad-hoc signature with a generated
 # identifier. Re-sign the assembled app bundle with a stable identifier so the
@@ -28,7 +28,7 @@ if [[ -z "${DEV_CODESIGN_IDENTITY:-}" ]] && command -v security >/dev/null 2>&1;
 fi
 
 if [[ -z "${DEV_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
-  codesign --force --deep --sign - --identifier "dev.voiceinput" "$APP_DIR"
+  codesign --force --deep --sign - --identifier "dev.typeflux" "$APP_DIR"
 fi
 
 # If you want a fully stable identity across machines and clean TCC behavior,

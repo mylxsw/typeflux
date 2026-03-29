@@ -8,7 +8,7 @@ enum AudioFileTranscoder {
         }
 
         let outputURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("voice-input-transcoded", isDirectory: true)
+            .appendingPathComponent("typeflux-transcoded", isDirectory: true)
             .appendingPathComponent(audioFile.fileURL.deletingPathExtension().lastPathComponent)
             .appendingPathExtension("wav")
 

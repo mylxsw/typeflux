@@ -6,8 +6,8 @@
 "appearance.light" = "Light";
 "appearance.dark" = "Dark";
 
-"window.voiceStudio" = "Voice Studio";
-"window.about" = "About VoiceInput";
+"window.voiceStudio" = "Typeflux";
+"window.about" = "About Typeflux";
 
 "common.refresh" = "Refresh";
 "common.refreshing" = "Refreshing...";
@@ -16,10 +16,10 @@
 "home.exportAll" = "Export All";
 "home.openHistory" = "Open History";
 
-"sidebar.appName" = "VoiceInput";
+"sidebar.appName" = "Typeflux";
 "sidebar.platform" = "Desktop";
 "sidebar.about" = "About";
-"sidebar.aboutAccessibility" = "About VoiceInput";
+"sidebar.aboutAccessibility" = "About Typeflux";
 
 "studio.section.home" = "Overview";
 "studio.section.models" = "Models";
@@ -27,7 +27,7 @@
 "studio.section.vocabulary" = "Vocabulary";
 "studio.section.history" = "History";
 "studio.section.settings" = "Settings";
-"studio.eyebrow.home" = "VoiceInput";
+"studio.eyebrow.home" = "Typeflux";
 "studio.eyebrow.models" = "Configuration";
 "studio.eyebrow.personas" = "Voice Personas";
 "studio.eyebrow.vocabulary" = "Custom Terms";
@@ -54,13 +54,13 @@
 
 "settings.general" = "General";
 "settings.launchAtLogin.title" = "Launch at Login";
-"settings.launchAtLogin.subtitle" = "Start VoiceInput automatically after you sign in to your Mac.";
+"settings.launchAtLogin.subtitle" = "Start Typeflux automatically after you sign in to your Mac.";
 "settings.activationHotkey" = "Activation Hotkey";
 "settings.identity" = "Identity & Interaction";
 "settings.appearance.title" = "Appearance";
 "settings.appearance.subtitle" = "Switch the component system between light, dark, or system-following themes.";
 "settings.language.title" = "Language";
-"settings.language.subtitle" = "Choose the display language used across the VoiceInput interface.";
+"settings.language.subtitle" = "Choose the display language used across the Typeflux interface.";
 "settings.audio" = "Audio";
 "settings.microphone.title" = "Microphone";
 "settings.microphone.subtitle" = "Pick the device used for dictation. Automatic follows the current macOS default input.";
@@ -69,16 +69,16 @@
 "settings.mute.subtitle" = "Temporarily mute the system output while recording to reduce feedback or system sounds leaking into the microphone.";
 "settings.permissions" = "Permissions";
 "settings.permissionStatus.title" = "Permission Status";
-"settings.permissionStatus.subtitle" = "Review the macOS permissions VoiceInput depends on, then grant access where needed.";
+"settings.permissionStatus.subtitle" = "Review the macOS permissions Typeflux depends on, then grant access where needed.";
 
-"menu.openVoiceStudio" = "Open Voice Studio";
+"menu.openVoiceStudio" = "Open Typeflux";
 "menu.history" = "History…";
 "menu.personas" = "Personas";
 "menu.appearance" = "Appearance";
 "menu.settings" = "Settings…";
-"menu.about" = "About VoiceInput";
+"menu.about" = "About Typeflux";
 "menu.checkForUpdates" = "Check for Updates…";
-"menu.quit" = "Quit VoiceInput";
+"menu.quit" = "Quit Typeflux";
 "menu.status.ready" = "Ready";
 "menu.status.recording" = "Recording in progress…";
 "menu.status.processing" = "Processing latest capture…";
@@ -97,8 +97,8 @@
 "appMenu.paste" = "Paste";
 "appMenu.selectAll" = "Select All";
 
-"about.appName" = "VoiceInput";
-"about.subtitle" = "A personal macOS menu bar voice input app by @mylxsw.";
+"about.appName" = "Typeflux";
+"about.subtitle" = "The voice-native typing experience";
 "about.details" = "DETAILS";
 "about.developer" = "Developer";
 "about.developer.subtitle" = "Independent developer";
@@ -110,7 +110,7 @@
 
 "permission.microphone.title" = "Microphone";
 "permission.microphone.summary" = "Required to capture audio from the system microphone.";
-"permission.microphone.detail.authorized" = "VoiceInput can access the system microphone.";
+"permission.microphone.detail.authorized" = "Typeflux can access the system microphone.";
 "permission.microphone.detail.notDetermined" = "Grant microphone access to allow recording from the menu bar.";
 "permission.microphone.detail.denied" = "Microphone access was denied. Re-enable it in System Settings.";
 "permission.microphone.detail.restricted" = "Microphone access is restricted by the system.";
@@ -124,8 +124,8 @@
 "permission.speechRecognition.detail.unknown" = "Speech recognition needs attention.";
 "permission.accessibility.title" = "Accessibility";
 "permission.accessibility.summary" = "Required to insert or replace text in other apps.";
-"permission.accessibility.detail.granted" = "VoiceInput can control text fields in other apps.";
-"permission.accessibility.detail.required" = "Enable Accessibility so VoiceInput can type into the focused app.";
+"permission.accessibility.detail.granted" = "Typeflux can control text fields in other apps.";
+"permission.accessibility.detail.required" = "Enable Accessibility so Typeflux can type into the focused app.";
 "permission.badge.granted" = "Granted";
 "permission.badge.required" = "Required";
 "permission.action.openSettings" = "Open Settings";
@@ -158,11 +158,11 @@
 "common.failedPrefix" = "Failed:";
 
 "updater.available.title" = "Update Available";
-"updater.available.message" = "A new version (%@) of VoiceInput is available.\n\nRelease Notes:\n%@";
+"updater.available.message" = "A new version (%@) of Typeflux is available.\n\nRelease Notes:\n%@";
 "updater.action.download" = "Download";
 "updater.action.later" = "Remind Me Later";
 "updater.latest.title" = "Up to Date";
-"updater.latest.message" = "You are running the latest version of VoiceInput.";
+"updater.latest.message" = "You are running the latest version of Typeflux.";
 
 "provider.stt.whisperAPI" = "Whisper API";
 "provider.stt.appleSpeech" = "Apple Speech";
@@ -241,7 +241,7 @@
 "history.detail.selectionEdited" = "Edited Selection";
 "history.detail.error" = "Error";
 "history.keep.title" = "Keep history";
-"history.keep.subtitle" = "Choose how long VoiceInput keeps local dictation history on this device.";
+"history.keep.subtitle" = "Choose how long Typeflux keeps local dictation history on this device.";
 "history.privacy.title" = "Your data stays private";
 "history.privacy.subtitle" = "Voice dictation history is only stored on this Mac. Auto-cleanup removes expired local entries and linked audio files.";
 "history.export.title" = "Export archive";
@@ -270,7 +270,7 @@
 "vocabulary.filter.all" = "All";
 "vocabulary.filter.automatic" = "Auto-added";
 "vocabulary.filter.manual" = "Manually added";
-"vocabulary.intro.title" = "Help VoiceInput catch names, products, and domain terms more reliably.";
+"vocabulary.intro.title" = "Help Typeflux catch names, products, and domain terms more reliably.";
 "vocabulary.intro.subtitle" = "Manual entries are sent as recognition hints to Whisper-compatible transcription backends.";
 "vocabulary.search.placeholder" = "Search vocabulary...";
 "vocabulary.empty.title" = "No vocabulary terms yet.";

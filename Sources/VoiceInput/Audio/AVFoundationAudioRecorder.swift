@@ -31,7 +31,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         self.levelHandler = levelHandler
         self.audioBufferHandler = audioBufferHandler
 
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("voice-input", isDirectory: true)
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("typeflux", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
         let url = dir.appendingPathComponent(UUID().uuidString).appendingPathExtension("wav")
