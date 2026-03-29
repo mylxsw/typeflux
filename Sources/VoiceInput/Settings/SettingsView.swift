@@ -1829,6 +1829,10 @@ struct StudioView: View {
                                 tone: StudioTheme.success,
                                 fill: StudioTheme.success.opacity(0.12)
                             )
+                        } else {
+                            StudioButton(title: "Use as Default", systemImage: "checkmark.circle.fill", variant: .secondary) {
+                                applyFocusedProviderAsDefault()
+                            }
                         }
                     }
                 }
@@ -1942,11 +1946,6 @@ struct StudioView: View {
                     }
                 }
 
-                if viewModel.focusedModelProvider != activeModelProviderID {
-                    StudioButton(title: "Use as Default", systemImage: "checkmark.circle.fill", variant: .primary) {
-                        applyFocusedProviderAsDefault()
-                    }
-                }
             }
         }
     }
