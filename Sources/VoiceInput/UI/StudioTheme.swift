@@ -253,6 +253,7 @@ enum StudioTheme {
     static let contentMaxWidth = Layout.contentMaxWidth
     static let contentInset = Layout.contentInset
 
+    static let sidebarSelection = dynamic(light: NSColor(calibratedWhite: 0.0, alpha: 0.08), dark: NSColor(calibratedWhite: 1.0, alpha: 0.15))
     static let accent = dynamic(light: NSColor(calibratedRed: 0.16, green: 0.36, blue: 0.93, alpha: 1), dark: NSColor(calibratedRed: 0.34, green: 0.62, blue: 1.0, alpha: 1))
     static let accentSoft = dynamic(light: NSColor(calibratedRed: 0.93, green: 0.96, blue: 1.0, alpha: 1), dark: NSColor(calibratedRed: 0.14, green: 0.16, blue: 0.22, alpha: 1))
     static let windowBackground = dynamic(light: NSColor(calibratedRed: 0.949, green: 0.946, blue: 0.941, alpha: 1), dark: NSColor(calibratedWhite: 0.0, alpha: 1))

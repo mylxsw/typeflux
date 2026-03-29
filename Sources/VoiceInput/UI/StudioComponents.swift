@@ -226,7 +226,7 @@ struct StudioSidebar: View {
                         .padding(.vertical, StudioTheme.Insets.sidebarItemVertical)
                         .background(
                             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                                .fill(section == currentSection ? StudioTheme.Colors.white.opacity(StudioTheme.Opacity.sidebarSelectionFill) : Color.clear)
+                                .fill(section == currentSection ? StudioTheme.sidebarSelection : Color.clear)
                         )
                         .contentShape(Rectangle())
                     }
