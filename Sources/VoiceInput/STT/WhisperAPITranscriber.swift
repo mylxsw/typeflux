@@ -19,7 +19,7 @@ final class WhisperAPITranscriber: Transcriber {
             throw NSError(domain: "WhisperAPITranscriber", code: 1)
         }
 
-        let model = settingsStore.whisperModel.isEmpty ? "whisper-1" : settingsStore.whisperModel
+        let model = OpenAIAudioModelCatalog.normalizeWhisperModel(settingsStore.whisperModel)
         let vocabularyPrompt = vocabularyPromptText()
         let uploadURL = try preparedUploadURL(for: audioFile)
         let uploadAttributes = try? FileManager.default.attributesOfItem(atPath: uploadURL.path)

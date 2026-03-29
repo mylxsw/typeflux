@@ -36,7 +36,7 @@ final class MultimodalLLMTranscriber: Transcriber {
             )
         }
 
-        let model = settingsStore.multimodalLLMModel.isEmpty ? "gpt-4o-mini-audio-preview" : settingsStore.multimodalLLMModel
+        let model = OpenAIAudioModelCatalog.normalizeMultimodalModel(settingsStore.multimodalLLMModel)
 
         // Build system prompt: persona + vocabulary in one shot
         let personaPrompt = settingsStore.activePersona?.prompt

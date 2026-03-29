@@ -604,6 +604,81 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
     }
 }
 
+struct StudioSelectionCard<LabelTrailing: View>: View {
+    let label: String
+    let options: [String]
+    @Binding var selection: String
+    @ViewBuilder var labelTrailing: () -> LabelTrailing
+
+    init(
+        label: String,
+        selection: Binding<String>,
+        options: [String],
+        @ViewBuilder labelTrailing: @escaping () -> LabelTrailing = { EmptyView() }
+    ) {
+        self.label = label
+        self._selection = selection
+        self.options = options
+        self.labelTrailing = labelTrailing
+    }
+
+    private var normalizedOptions: [String] {
+        var seen = Set<String>()
+        return options.compactMap { raw in
+            let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !value.isEmpty else { return nil }
+            let key = value.lowercased()
+            guard seen.insert(key).inserted else { return nil }
+            return value
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            HStack(alignment: .center) {
+                Text(label)
+                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                Spacer()
+                labelTrailing()
+            }
+
+            Menu {
+                ForEach(normalizedOptions, id: \.self) { option in
+                    Button(option) {
+                        selection = option
+                    }
+                }
+            } label: {
+                HStack(spacing: StudioTheme.Spacing.small) {
+                    Text(selection)
+                        .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
+                .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
+                .padding(.vertical, StudioTheme.Insets.textFieldVertical)
+                .frame(minHeight: 46)
+                .background(
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                        .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                        .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: StudioTheme.BorderWidth.thin)
+                )
+            }
+            .menuStyle(.borderlessButton)
+        }
+    }
+}
+
 struct StudioHistoryRow: View {
     let record: HistoryPresentationRecord
     let onCopyTranscript: (() -> Void)?

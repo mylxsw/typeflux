@@ -1199,22 +1199,11 @@ struct StudioView: View {
     }
 
     private var whisperEndpointSuggestions: [String] {
-        uniqueSuggestions([
-            viewModel.whisperBaseURL,
-            viewModel.llmBaseURL,
-            viewModel.multimodalLLMBaseURL,
-            "https://api.openai.com/v1/audio/transcriptions",
-            "http://127.0.0.1:11434/v1"
-        ])
+        OpenAIAudioModelCatalog.whisperEndpoints
     }
 
     private var whisperModelSuggestions: [String] {
-        uniqueSuggestions([
-            viewModel.whisperModel,
-            "whisper-1",
-            "gpt-4o-mini-transcribe",
-            "gpt-4o-transcribe"
-        ])
+        OpenAIAudioModelCatalog.whisperModels
     }
 
     private var llmEndpointSuggestions: [String] {
@@ -1255,38 +1244,26 @@ struct StudioView: View {
     }
 
     private var multimodalEndpointSuggestions: [String] {
-        uniqueSuggestions([
-            viewModel.multimodalLLMBaseURL,
-            viewModel.llmBaseURL,
-            "https://api.openai.com/v1/chat/completions",
-            "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
-        ])
+        OpenAIAudioModelCatalog.multimodalEndpoints
     }
 
     private var multimodalModelSuggestions: [String] {
-        uniqueSuggestions([
-            viewModel.multimodalLLMModel,
-            "gpt-4o-mini-audio-preview",
-            "gpt-4o-audio-preview",
-            "gpt-audio-mini"
-        ])
+        OpenAIAudioModelCatalog.multimodalModels
     }
 
     private var parameterCard: some View {
         StudioCard {
             StudioSectionTitle(title: "Configuration")
             if viewModel.modelDomain == .stt {
-                StudioSuggestedTextInputCard(
+                StudioSelectionCard(
                     label: "Whisper Endpoint",
-                    placeholder: "https://api.openai.com/v1/audio/transcriptions",
-                    text: Binding(get: { viewModel.whisperBaseURL }, set: viewModel.setWhisperBaseURL),
-                    suggestions: whisperEndpointSuggestions
+                    selection: Binding(get: { viewModel.whisperBaseURL }, set: viewModel.setWhisperBaseURL),
+                    options: whisperEndpointSuggestions
                 )
-                StudioSuggestedTextInputCard(
+                StudioSelectionCard(
                     label: "Whisper Model",
-                    placeholder: "whisper-1",
-                    text: Binding(get: { viewModel.whisperModel }, set: viewModel.setWhisperModel),
-                    suggestions: whisperModelSuggestions
+                    selection: Binding(get: { viewModel.whisperModel }, set: viewModel.setWhisperModel),
+                    options: whisperModelSuggestions
                 )
                 Toggle("Enable Apple fallback", isOn: Binding(get: { viewModel.appleSpeechFallback }, set: viewModel.setAppleSpeechFallback))
                     .toggleStyle(.switch)
@@ -1647,7 +1624,7 @@ struct StudioView: View {
         case "local-stt":
             viewModel.setSTTProvider(.localModel)
         case "whisper-api":
-            viewModel.setSTTModelSelection(.whisperAPI, suggestedModel: viewModel.whisperModel.isEmpty ? "whisper-1" : viewModel.whisperModel)
+            viewModel.setSTTModelSelection(.whisperAPI, suggestedModel: OpenAIAudioModelCatalog.normalizeWhisperModel(viewModel.whisperModel))
         case "ollama-local":
             viewModel.setLLMModelSelection(.ollama, suggestedModel: viewModel.ollamaModel.isEmpty ? "qwen2.5:7b" : viewModel.ollamaModel)
         case "openai-compatible":
@@ -1973,17 +1950,15 @@ struct StudioView: View {
                 }
 
             case .whisperAPI:
-                StudioSuggestedTextInputCard(
+                StudioSelectionCard(
                     label: "Transcription Endpoint",
-                    placeholder: "https://api.openai.com/v1/audio/transcriptions",
-                    text: Binding(get: { viewModel.whisperBaseURL }, set: viewModel.setWhisperBaseURL),
-                    suggestions: whisperEndpointSuggestions
+                    selection: Binding(get: { viewModel.whisperBaseURL }, set: viewModel.setWhisperBaseURL),
+                    options: whisperEndpointSuggestions
                 )
-                StudioSuggestedTextInputCard(
+                StudioSelectionCard(
                     label: "Model",
-                    placeholder: "whisper-1",
-                    text: Binding(get: { viewModel.whisperModel }, set: viewModel.setWhisperModel),
-                    suggestions: whisperModelSuggestions
+                    selection: Binding(get: { viewModel.whisperModel }, set: viewModel.setWhisperModel),
+                    options: whisperModelSuggestions
                 )
                 StudioTextInputCard(label: "API Key", placeholder: "sk-...", text: Binding(get: { viewModel.whisperAPIKey }, set: viewModel.setWhisperAPIKey), secure: true)
 
@@ -2020,17 +1995,15 @@ struct StudioView: View {
 
             case .multimodalLLM:
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    StudioSuggestedTextInputCard(
+                    StudioSelectionCard(
                         label: "API Endpoint",
-                        placeholder: "https://api.openai.com/v1/chat/completions",
-                        text: Binding(get: { viewModel.multimodalLLMBaseURL }, set: viewModel.setMultimodalLLMBaseURL),
-                        suggestions: multimodalEndpointSuggestions
+                        selection: Binding(get: { viewModel.multimodalLLMBaseURL }, set: viewModel.setMultimodalLLMBaseURL),
+                        options: multimodalEndpointSuggestions
                     )
-                    StudioSuggestedTextInputCard(
+                    StudioSelectionCard(
                         label: "Model",
-                        placeholder: "gpt-4o-mini-audio-preview",
-                        text: Binding(get: { viewModel.multimodalLLMModel }, set: viewModel.setMultimodalLLMModel),
-                        suggestions: multimodalModelSuggestions
+                        selection: Binding(get: { viewModel.multimodalLLMModel }, set: viewModel.setMultimodalLLMModel),
+                        options: multimodalModelSuggestions
                     )
                     StudioTextInputCard(label: "API Key", placeholder: "sk-...", text: Binding(get: { viewModel.multimodalLLMAPIKey }, set: viewModel.setMultimodalLLMAPIKey), secure: true)
                     Text("Audio is base64-encoded and sent as input_audio to the configured chat/completions endpoint. When a persona is active, transcription and rewriting happen in a single call.")
@@ -2311,14 +2284,14 @@ struct StudioView: View {
         case .localSTT:
             viewModel.setSTTProvider(.localModel)
         case .whisperAPI:
-            viewModel.setSTTModelSelection(.whisperAPI, suggestedModel: viewModel.whisperModel.isEmpty ? "whisper-1" : viewModel.whisperModel)
+            viewModel.setSTTModelSelection(.whisperAPI, suggestedModel: OpenAIAudioModelCatalog.normalizeWhisperModel(viewModel.whisperModel))
         case .ollama:
             viewModel.setLLMModelSelection(.ollama, suggestedModel: viewModel.ollamaModel.isEmpty ? "qwen2.5:7b" : viewModel.ollamaModel)
             viewModel.prepareOllamaModel()
         case .openAICompatible:
             viewModel.setLLMModelSelection(.openAICompatible, suggestedModel: viewModel.llmModel.isEmpty ? "gpt-4o-mini" : viewModel.llmModel)
         case .multimodalLLM:
-            viewModel.setSTTModelSelection(.multimodalLLM, suggestedModel: viewModel.multimodalLLMModel.isEmpty ? "gpt-4o-mini-audio-preview" : viewModel.multimodalLLMModel)
+            viewModel.setSTTModelSelection(.multimodalLLM, suggestedModel: OpenAIAudioModelCatalog.normalizeMultimodalModel(viewModel.multimodalLLMModel))
         case .aliCloud:
             viewModel.setSTTProvider(.aliCloud)
         case .doubaoRealtime:
@@ -2445,13 +2418,13 @@ struct StudioView: View {
         case .localSTT:
             return viewModel.localSTTModel.displayName
         case .whisperAPI:
-            return viewModel.whisperModel.isEmpty ? "whisper-1" : viewModel.whisperModel
+            return OpenAIAudioModelCatalog.normalizeWhisperModel(viewModel.whisperModel)
         case .ollama:
             return viewModel.ollamaModel.isEmpty ? "qwen2.5:7b" : viewModel.ollamaModel
         case .openAICompatible:
             return viewModel.llmModel.isEmpty ? "gpt-4o-mini" : viewModel.llmModel
         case .multimodalLLM:
-            return viewModel.multimodalLLMModel.isEmpty ? "gpt-4o-mini-audio-preview" : viewModel.multimodalLLMModel
+            return OpenAIAudioModelCatalog.normalizeMultimodalModel(viewModel.multimodalLLMModel)
         case .aliCloud:
             return AliCloudASRDefaults.model
         case .doubaoRealtime:

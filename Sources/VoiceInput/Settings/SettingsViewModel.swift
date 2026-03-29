@@ -145,11 +145,11 @@ final class StudioViewModel: ObservableObject {
         ollamaBaseURL = settingsStore.ollamaBaseURL
         ollamaModel = settingsStore.ollamaModel
         ollamaAutoSetup = settingsStore.ollamaAutoSetup
-        whisperBaseURL = settingsStore.whisperBaseURL
-        whisperModel = settingsStore.whisperModel
+        whisperBaseURL = OpenAIAudioModelCatalog.normalizeWhisperEndpoint(settingsStore.whisperBaseURL)
+        whisperModel = OpenAIAudioModelCatalog.normalizeWhisperModel(settingsStore.whisperModel)
         whisperAPIKey = settingsStore.whisperAPIKey
-        multimodalLLMBaseURL = settingsStore.multimodalLLMBaseURL
-        multimodalLLMModel = settingsStore.multimodalLLMModel
+        multimodalLLMBaseURL = OpenAIAudioModelCatalog.normalizeMultimodalEndpoint(settingsStore.multimodalLLMBaseURL)
+        multimodalLLMModel = OpenAIAudioModelCatalog.normalizeMultimodalModel(settingsStore.multimodalLLMModel)
         multimodalLLMAPIKey = settingsStore.multimodalLLMAPIKey
         aliCloudAPIKey = settingsStore.aliCloudAPIKey
         doubaoAppID = settingsStore.doubaoAppID
@@ -579,11 +579,11 @@ final class StudioViewModel: ObservableObject {
     func setOllamaBaseURL(_ value: String) { ollamaBaseURL = value; llmConnectionTestState = .idle }
     func setOllamaModel(_ value: String) { ollamaModel = value; llmConnectionTestState = .idle }
     func setOllamaAutoSetup(_ value: Bool) { ollamaAutoSetup = value; settingsStore.ollamaAutoSetup = value }
-    func setWhisperBaseURL(_ value: String) { whisperBaseURL = value }
-    func setWhisperModel(_ value: String) { whisperModel = value }
+    func setWhisperBaseURL(_ value: String) { whisperBaseURL = OpenAIAudioModelCatalog.normalizeWhisperEndpoint(value) }
+    func setWhisperModel(_ value: String) { whisperModel = OpenAIAudioModelCatalog.normalizeWhisperModel(value) }
     func setWhisperAPIKey(_ value: String) { whisperAPIKey = value }
-    func setMultimodalLLMBaseURL(_ value: String) { multimodalLLMBaseURL = value }
-    func setMultimodalLLMModel(_ value: String) { multimodalLLMModel = value }
+    func setMultimodalLLMBaseURL(_ value: String) { multimodalLLMBaseURL = OpenAIAudioModelCatalog.normalizeMultimodalEndpoint(value) }
+    func setMultimodalLLMModel(_ value: String) { multimodalLLMModel = OpenAIAudioModelCatalog.normalizeMultimodalModel(value) }
     func setMultimodalLLMAPIKey(_ value: String) { multimodalLLMAPIKey = value }
     func setAliCloudAPIKey(_ value: String) { aliCloudAPIKey = value }
     func setDoubaoAppID(_ value: String) { doubaoAppID = value }
@@ -919,12 +919,12 @@ final class StudioViewModel: ObservableObject {
             settingsStore.ollamaBaseURL = ollamaBaseURL
             settingsStore.ollamaModel = ollamaModel
         case .whisperAPI:
-            settingsStore.whisperBaseURL = whisperBaseURL
-            settingsStore.whisperModel = whisperModel
+            settingsStore.whisperBaseURL = OpenAIAudioModelCatalog.normalizeWhisperEndpoint(whisperBaseURL)
+            settingsStore.whisperModel = OpenAIAudioModelCatalog.normalizeWhisperModel(whisperModel)
             settingsStore.whisperAPIKey = whisperAPIKey
         case .multimodalLLM:
-            settingsStore.multimodalLLMBaseURL = multimodalLLMBaseURL
-            settingsStore.multimodalLLMModel = multimodalLLMModel
+            settingsStore.multimodalLLMBaseURL = OpenAIAudioModelCatalog.normalizeMultimodalEndpoint(multimodalLLMBaseURL)
+            settingsStore.multimodalLLMModel = OpenAIAudioModelCatalog.normalizeMultimodalModel(multimodalLLMModel)
             settingsStore.multimodalLLMAPIKey = multimodalLLMAPIKey
         case .aliCloud:
             settingsStore.aliCloudAPIKey = aliCloudAPIKey

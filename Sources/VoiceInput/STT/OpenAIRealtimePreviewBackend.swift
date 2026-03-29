@@ -122,14 +122,14 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
     static func isSupported(settingsStore: SettingsStore) -> Bool {
         OpenAIRealtimePreviewSupport.isSupported(
             baseURL: settingsStore.whisperBaseURL,
-            model: settingsStore.whisperModel.isEmpty ? "whisper-1" : settingsStore.whisperModel
+            model: OpenAIAudioModelCatalog.normalizeWhisperModel(settingsStore.whisperModel)
         )
     }
 
     func start(onTextUpdate: @escaping @Sendable (String) -> Void) async throws {
         cancel()
 
-        let model = settingsStore.whisperModel.isEmpty ? "whisper-1" : settingsStore.whisperModel
+        let model = OpenAIAudioModelCatalog.normalizeWhisperModel(settingsStore.whisperModel)
         guard let url = OpenAIRealtimePreviewSupport.webSocketURL(
             baseURL: settingsStore.whisperBaseURL,
             model: model
@@ -223,7 +223,7 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
     }
 
     private func buildSessionUpdatePayload() -> [String: Any] {
-        let model = settingsStore.whisperModel.isEmpty ? "gpt-4o-mini-transcribe" : settingsStore.whisperModel
+        let model = OpenAIAudioModelCatalog.normalizeWhisperModel(settingsStore.whisperModel)
         let prompt = TranscriptionLanguageHints.remotePrompt(vocabularyTerms: VocabularyStore.activeTerms())
 
         var transcriptionPayload: [String: Any] = [
