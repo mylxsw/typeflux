@@ -13,6 +13,7 @@ mkdir -p "$APP_DIR/Contents/Resources"
 # Keep the .app path stable to avoid macOS privacy permission re-prompts.
 cp "$ROOT_DIR/app/Info.plist" "$APP_DIR/Contents/Info.plist"
 cp "$BIN" "$APP_DIR/Contents/MacOS/Typeflux"
+cp "$ROOT_DIR/app/Typeflux.icns" "$APP_DIR/Contents/Resources/Typeflux.icns"
 
 chmod +x "$APP_DIR/Contents/MacOS/Typeflux"
 

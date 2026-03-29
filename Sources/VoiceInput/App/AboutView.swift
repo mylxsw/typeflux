@@ -30,24 +30,34 @@ struct AboutView: View {
     private var headerCard: some View {
         StudioCard {
             HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(red: 0.92, green: 0.96, blue: 1.00),
-                                    Color(red: 0.84, green: 0.91, blue: 1.00)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                Group {
+                    if let appIconImage {
+                        Image(nsImage: appIconImage)
+                            .resizable()
+                            .interpolation(.high)
+                    } else {
+                        RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0.92, green: 0.96, blue: 1.00),
+                                        Color(red: 0.84, green: 0.91, blue: 1.00)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                             )
-                        )
-                        .frame(width: 84, height: 84)
-
-                    Image(systemName: "waveform.badge.mic")
-                        .font(.system(size: 32, weight: .semibold))
-                        .foregroundStyle(StudioTheme.accent)
+                            .overlay(
+                                Image(systemName: "waveform.badge.mic")
+                                    .font(.system(size: 32, weight: .semibold))
+                                    .foregroundStyle(StudioTheme.accent)
+                            )
+                    }
                 }
+                .frame(width: 84, height: 84)
+                .clipShape(
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                )
 
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
                     Text(L("about.appName"))
@@ -191,6 +201,20 @@ struct AboutView: View {
         case .dark:
             return .dark
         }
+    }
+
+    private var appIconImage: NSImage? {
+        guard Bundle.main.bundleURL.pathExtension == "app" else {
+            return nil
+        }
+
+        let icon = NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
+        guard icon.isValid else {
+            return nil
+        }
+
+        icon.size = NSSize(width: 256, height: 256)
+        return icon
     }
 
     private func open(_ url: URL) {

@@ -257,28 +257,30 @@ struct StudioSidebar: View {
                 .fill(StudioTheme.border.opacity(0.5))
                 .frame(height: 1)
 
-            HStack(spacing: StudioTheme.Spacing.smallMedium) {
-                // StudioSidebarAvatarButton()
+            HStack(spacing: StudioTheme.Spacing.none) {
+                HStack(spacing: StudioTheme.Spacing.smallMedium) {
+                    StudioSidebarIconButton(
+                        systemImage: "envelope",
+                        accessibilityLabel: L("sidebar.feedbackAccessibility"),
+                        action: onSendFeedback
+                    )
 
-                StudioSidebarIconButton(
-                    systemImage: "envelope",
-                    accessibilityLabel: L("sidebar.feedbackAccessibility"),
-                    action: onSendFeedback
-                )
+                    StudioSidebarIconButton(
+                        systemImage: "questionmark.circle",
+                        accessibilityLabel: L("sidebar.aboutAccessibility"),
+                        action: onOpenAbout
+                    )
+                }
+
+                Spacer()
 
                 StudioSidebarIconButton(
                     systemImage: "gearshape",
                     accessibilityLabel: L("sidebar.settingsAccessibility"),
                     action: { onSelect(.settings) }
                 )
-
-                StudioSidebarIconButton(
-                    systemImage: "questionmark.circle",
-                    accessibilityLabel: L("sidebar.aboutAccessibility"),
-                    action: onOpenAbout
-                )
             }
-            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, StudioTheme.Insets.sidebarOuterHorizontal)
         .padding(.vertical, StudioTheme.Insets.sidebarOuterVertical)
@@ -294,7 +296,7 @@ private struct StudioSidebarIconButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: StudioTheme.Typography.iconMedium, weight: .medium))
+                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .medium))
                 .foregroundStyle(StudioTheme.textTertiary.opacity(0.9))
                 .frame(width: StudioTheme.ControlSize.sidebarUtilityButton, height: StudioTheme.ControlSize.sidebarUtilityButton)
                 .background(
