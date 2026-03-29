@@ -581,6 +581,7 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
                                 .frame(width: 16, height: 16)
                         }
                         .menuStyle(.borderlessButton)
+                        .menuIndicator(.hidden)
                         .help("Select a suggested value")
                     }
                     .padding(.trailing, 14)
