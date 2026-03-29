@@ -13,6 +13,10 @@ enum AppLanguage: String, CaseIterable, Codable, Identifiable {
 
     var localeIdentifier: String { rawValue }
 
+    var bundleLocalizationName: String {
+        rawValue.lowercased()
+    }
+
     var displayName: String {
         switch self {
         case .english:
@@ -75,7 +79,7 @@ final class AppLocalization: ObservableObject {
 
     private func bundle(for language: AppLanguage) -> Bundle {
         guard
-            let path = Bundle.module.path(forResource: language.rawValue, ofType: "lproj"),
+            let path = Bundle.module.path(forResource: language.bundleLocalizationName, ofType: "lproj"),
             let bundle = Bundle(path: path)
         else {
             return Bundle.module
