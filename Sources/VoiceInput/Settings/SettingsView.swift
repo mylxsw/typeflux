@@ -376,7 +376,7 @@ struct StudioView: View {
                         subtitle: "Voice dictation history is only stored on this Mac. Auto-cleanup removes expired local entries and linked audio files."
                     ) {
                         Image(systemName: "lock.fill")
-                            .foregroundStyle(StudioTheme.textSecondary)
+                            .foregroundStyle(StudioTheme.success)
                     }
 
                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
