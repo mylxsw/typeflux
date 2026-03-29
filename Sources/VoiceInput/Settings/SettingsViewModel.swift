@@ -11,11 +11,13 @@ enum LLMConnectionTestState: Equatable {
 
 @MainActor
 final class StudioViewModel: ObservableObject {
+    private static let historyPageSize = 100
+
     @Published var currentSection: StudioSection
     @Published var searchQuery = "" {
         didSet {
             if currentSection == .home || currentSection == .history {
-                rebuildDisplayedHistory()
+                refreshHistory(reset: true)
             }
         }
     }
@@ -78,12 +80,15 @@ final class StudioViewModel: ObservableObject {
     @Published var launchAtLogin: Bool
     @Published var activationHotkey: HotkeyBinding
     @Published var personaHotkey: HotkeyBinding
+    @Published var historyRetentionPolicy: HistoryRetentionPolicy
     @Published private(set) var historyRecords: [HistoryRecord]
     @Published var toastMessage: String?
     @Published var llmConnectionTestState: LLMConnectionTestState = .idle
     @Published private(set) var permissionRows: [StudioPermissionRowModel] = []
     @Published private(set) var isRefreshingPermissions = false
     @Published private(set) var isRefreshingHistory = false
+    @Published private(set) var isLoadingMoreHistory = false
+    @Published private(set) var canLoadMoreHistory = false
 
     let errorLogStore = ErrorLogStore.shared
 
@@ -174,11 +179,14 @@ final class StudioViewModel: ObservableObject {
         launchAtLogin = LaunchAtLoginManager.isEnabled
         activationHotkey = settingsStore.activationHotkey
         personaHotkey = settingsStore.personaHotkey
-        historyRecords = historyStore.list()
-        displayedHistory = historyRecords.map(makeHistoryPresentation)
+        historyRetentionPolicy = settingsStore.historyRetentionPolicy
+        historyRecords = []
+        displayedHistory = []
         settingsStore.localSTTModelIdentifier = localSTTModelIdentifier
         settingsStore.localSTTDownloadSource = localSTTModel.recommendedDownloadSource
         settingsStore.localSTTAutoSetup = true
+        applyHistoryRetentionPolicy()
+        refreshHistory(reset: true)
         refreshAvailableMicrophones()
         refreshLocalSTTStoragePath()
         refreshLocalSTTPreparedState()
@@ -431,17 +439,48 @@ final class StudioViewModel: ObservableObject {
         currentSection = section
         searchQuery = ""
         if section == .home || section == .history {
-            refreshHistory()
+            applyHistoryRetentionPolicy()
+            refreshHistory(reset: true)
         }
     }
 
-    func refreshHistory() {
-        historyRecords = historyStore.list()
-        rebuildDisplayedHistory()
+    func refreshHistory(reset: Bool = true) {
+        if reset {
+            historyRecords = []
+            displayedHistory = []
+            canLoadMoreHistory = false
+        }
+
+        let records = historyStore.list(
+            limit: Self.historyPageSize,
+            offset: 0,
+            searchQuery: historySearchQuery
+        )
+        historyRecords = records
+        displayedHistory = records.map(makeHistoryPresentation)
+        canLoadMoreHistory = records.count == Self.historyPageSize
+        isLoadingMoreHistory = false
     }
 
-    private func rebuildDisplayedHistory() {
-        displayedHistory = filteredHistory.map(makeHistoryPresentation)
+    func loadMoreHistoryIfNeeded() {
+        guard !isLoadingMoreHistory, canLoadMoreHistory else { return }
+
+        isLoadingMoreHistory = true
+        let nextPage = historyStore.list(
+            limit: Self.historyPageSize,
+            offset: historyRecords.count,
+            searchQuery: historySearchQuery
+        )
+
+        if nextPage.isEmpty {
+            canLoadMoreHistory = false
+        } else {
+            historyRecords.append(contentsOf: nextPage)
+            displayedHistory.append(contentsOf: nextPage.map(makeHistoryPresentation))
+            canLoadMoreHistory = nextPage.count == Self.historyPageSize
+        }
+
+        isLoadingMoreHistory = false
     }
 
     func refreshHistoryWithFeedback() {
@@ -489,6 +528,14 @@ final class StudioViewModel: ObservableObject {
     func setMuteSystemOutputDuringRecording(_ value: Bool) {
         muteSystemOutputDuringRecording = value
         settingsStore.muteSystemOutputDuringRecording = value
+    }
+
+    func setHistoryRetentionPolicy(_ value: HistoryRetentionPolicy) {
+        historyRetentionPolicy = value
+        settingsStore.historyRetentionPolicy = value
+        applyHistoryRetentionPolicy()
+        refreshHistory(reset: true)
+        showToast("History retention updated.")
     }
 
     func setSTTProvider(_ provider: STTProvider) {
@@ -851,7 +898,9 @@ final class StudioViewModel: ObservableObject {
 
     func clearHistory() {
         historyStore.clear()
-        refreshHistory()
+        historyRecords = []
+        displayedHistory = []
+        canLoadMoreHistory = false
         showToast("History cleared.")
     }
 
@@ -905,7 +954,8 @@ final class StudioViewModel: ObservableObject {
 
     func deleteHistoryRecord(id: UUID) {
         historyStore.delete(id: id)
-        refreshHistory()
+        historyRecords.removeAll { $0.id == id }
+        displayedHistory.removeAll { $0.id == id }
         showToast("Transcript deleted.")
     }
 
@@ -1129,16 +1179,14 @@ final class StudioViewModel: ObservableObject {
         }
     }
 
-    private var filteredHistory: [HistoryRecord] {
-        guard !searchQuery.isEmpty else { return historyRecords }
-        return historyRecords.filter {
-            $0.text.localizedCaseInsensitiveContains(searchQuery) ||
-            ($0.transcriptText?.localizedCaseInsensitiveContains(searchQuery) ?? false) ||
-            ($0.personaResultText?.localizedCaseInsensitiveContains(searchQuery) ?? false) ||
-            ($0.selectionEditedText?.localizedCaseInsensitiveContains(searchQuery) ?? false) ||
-            ($0.errorMessage?.localizedCaseInsensitiveContains(searchQuery) ?? false) ||
-            ($0.audioFilePath.map { URL(fileURLWithPath: $0).lastPathComponent.localizedCaseInsensitiveContains(searchQuery) } ?? false)
-        }
+    private var historySearchQuery: String? {
+        let trimmed = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private func applyHistoryRetentionPolicy() {
+        guard let days = historyRetentionPolicy.days else { return }
+        historyStore.purge(olderThanDays: days)
     }
 
     private func persistPersonas() {

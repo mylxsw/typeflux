@@ -32,6 +32,15 @@ final class FileHistoryStore: HistoryStore {
         }
     }
 
+    func list(limit: Int, offset: Int, searchQuery: String?) -> [HistoryRecord] {
+        queue.sync {
+            let records = filteredIndex(searchQuery: searchQuery)
+            guard offset < records.count else { return [] }
+            let endIndex = min(offset + limit, records.count)
+            return Array(records[offset..<endIndex])
+        }
+    }
+
     func record(id: UUID) -> HistoryRecord? {
         queue.sync {
             readIndex().first(where: { $0.id == id })
@@ -114,6 +123,22 @@ final class FileHistoryStore: HistoryStore {
     private func readIndex() -> [HistoryRecord] {
         guard let data = try? Data(contentsOf: indexURL) else { return [] }
         return (try? JSONDecoder().decode([HistoryRecord].self, from: data)) ?? []
+    }
+
+    private func filteredIndex(searchQuery: String?) -> [HistoryRecord] {
+        let records = readIndex().sorted { $0.date > $1.date }
+        let trimmedQuery = searchQuery?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmedQuery.isEmpty else { return records }
+
+        return records.filter {
+            $0.mode.rawValue.localizedCaseInsensitiveContains(trimmedQuery) ||
+            $0.text.localizedCaseInsensitiveContains(trimmedQuery) ||
+            ($0.transcriptText?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
+            ($0.personaResultText?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
+            ($0.selectionEditedText?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
+            ($0.errorMessage?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
+            ($0.audioFilePath?.localizedCaseInsensitiveContains(trimmedQuery) ?? false)
+        }
     }
 
     private func writeIndex(_ list: [HistoryRecord]) {

@@ -356,6 +356,32 @@ struct StudioView: View {
             StudioCard {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
                     StudioSettingRow(
+                        title: "Keep history",
+                        subtitle: "Choose how long VoiceInput keeps local dictation history on this device."
+                    ) {
+                        StudioMenuPicker(
+                            options: HistoryRetentionPolicy.allCases.map { (label: $0.title, value: $0) },
+                            selection: Binding(
+                                get: { viewModel.historyRetentionPolicy },
+                                set: viewModel.setHistoryRetentionPolicy
+                            ),
+                            width: 140
+                        )
+                    }
+
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                    StudioSettingRow(
+                        title: "Your data stays private",
+                        subtitle: "Voice dictation history is only stored on this Mac. Auto-cleanup removes expired local entries and linked audio files."
+                    ) {
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(StudioTheme.textSecondary)
+                    }
+
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                    StudioSettingRow(
                         title: "Export archive",
                         subtitle: "Download your history as markdown or clear the current timeline."
                     ) {
@@ -376,7 +402,7 @@ struct StudioView: View {
     }
 
     private func groupedSessionStream(sections: [HistorySection]) -> some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
+        LazyVStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             if sections.isEmpty {
                 StudioCard(padding: StudioTheme.Insets.none) {
                     Text("No history entries yet.")
@@ -419,6 +445,24 @@ struct StudioView: View {
                         }
                     }
                 }
+            }
+
+            if viewModel.isLoadingMoreHistory {
+                HStack(spacing: StudioTheme.Spacing.small) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Loading more history...")
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, StudioTheme.Spacing.medium)
+            } else if viewModel.canLoadMoreHistory {
+                Color.clear
+                    .frame(height: 1)
+                    .onAppear {
+                        viewModel.loadMoreHistoryIfNeeded()
+                    }
             }
         }
     }

@@ -4,6 +4,61 @@ extension Notification.Name {
     static let personaSelectionDidChange = Notification.Name("SettingsStore.personaSelectionDidChange")
 }
 
+enum HistoryRetentionPolicy: String, CaseIterable, Identifiable {
+    case never
+    case oneDay
+    case oneWeek
+    case oneMonth
+    case forever
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .never:
+            return "Never"
+        case .oneDay:
+            return "24 hours"
+        case .oneWeek:
+            return "1 week"
+        case .oneMonth:
+            return "1 month"
+        case .forever:
+            return "Forever"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .never:
+            return "Do not retain local history after each session."
+        case .oneDay:
+            return "Automatically remove entries older than one day."
+        case .oneWeek:
+            return "Keep the latest seven days of dictation history."
+        case .oneMonth:
+            return "Keep the latest thirty days of dictation history."
+        case .forever:
+            return "Keep all local history until you remove it manually."
+        }
+    }
+
+    var days: Int? {
+        switch self {
+        case .never:
+            return 0
+        case .oneDay:
+            return 1
+        case .oneWeek:
+            return 7
+        case .oneMonth:
+            return 30
+        case .forever:
+            return nil
+        }
+    }
+}
+
 final class SettingsStore {
     private let defaults = UserDefaults.standard
 
@@ -39,6 +94,14 @@ final class SettingsStore {
     var muteSystemOutputDuringRecording: Bool {
         get { defaults.object(forKey: "audio.recording.muteSystemOutput") as? Bool ?? false }
         set { defaults.set(newValue, forKey: "audio.recording.muteSystemOutput") }
+    }
+
+    var historyRetentionPolicy: HistoryRetentionPolicy {
+        get {
+            let raw = defaults.string(forKey: "history.retentionPolicy") ?? HistoryRetentionPolicy.oneWeek.rawValue
+            return HistoryRetentionPolicy(rawValue: raw) ?? .oneWeek
+        }
+        set { defaults.set(newValue.rawValue, forKey: "history.retentionPolicy") }
     }
 
     var llmBaseURL: String {

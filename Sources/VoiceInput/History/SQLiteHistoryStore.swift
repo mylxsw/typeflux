@@ -56,6 +56,17 @@ final class SQLiteHistoryStore: HistoryStore {
         }
     }
 
+    func list(limit: Int, offset: Int, searchQuery: String?) -> [HistoryRecord] {
+        queue.sync {
+            do {
+                return try self.fetchPage(limit: limit, offset: offset, searchQuery: searchQuery)
+            } catch {
+                ErrorLogStore.shared.log("History paged list failed: \(error.localizedDescription)")
+                return []
+            }
+        }
+    }
+
     func record(id: UUID) -> HistoryRecord? {
         queue.sync {
             do {
@@ -236,6 +247,54 @@ final class SQLiteHistoryStore: HistoryStore {
             FROM history_records
             ORDER BY date DESC;
             """
+        )
+    }
+
+    private func fetchPage(limit: Int, offset: Int, searchQuery: String?) throws -> [HistoryRecord] {
+        let trimmedQuery = searchQuery?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if trimmedQuery.isEmpty {
+            return try fetchRecords(
+                sql: """
+                SELECT id, date, mode, audio_file_path, transcript_text, persona_prompt, persona_result_text,
+                       selection_original_text, selection_edited_text, recording_duration_seconds, error_message,
+                       apply_message, recording_status, transcription_status, processing_status, apply_status
+                FROM history_records
+                ORDER BY date DESC
+                LIMIT ? OFFSET ?;
+                """,
+                bind: { statement in
+                    sqlite3_bind_int64(statement, 1, sqlite3_int64(limit))
+                    sqlite3_bind_int64(statement, 2, sqlite3_int64(offset))
+                }
+            )
+        }
+
+        let wildcardQuery = "%\(trimmedQuery)%"
+        return try fetchRecords(
+            sql: """
+            SELECT id, date, mode, audio_file_path, transcript_text, persona_prompt, persona_result_text,
+                   selection_original_text, selection_edited_text, recording_duration_seconds, error_message,
+                   apply_message, recording_status, transcription_status, processing_status, apply_status
+            FROM history_records
+            WHERE mode LIKE ? COLLATE NOCASE
+               OR transcript_text LIKE ? COLLATE NOCASE
+               OR persona_result_text LIKE ? COLLATE NOCASE
+               OR selection_edited_text LIKE ? COLLATE NOCASE
+               OR error_message LIKE ? COLLATE NOCASE
+               OR audio_file_path LIKE ? COLLATE NOCASE
+            ORDER BY date DESC
+            LIMIT ? OFFSET ?;
+            """,
+            bind: { statement in
+                self.bind(wildcardQuery, at: 1, in: statement)
+                self.bind(wildcardQuery, at: 2, in: statement)
+                self.bind(wildcardQuery, at: 3, in: statement)
+                self.bind(wildcardQuery, at: 4, in: statement)
+                self.bind(wildcardQuery, at: 5, in: statement)
+                self.bind(wildcardQuery, at: 6, in: statement)
+                sqlite3_bind_int64(statement, 7, sqlite3_int64(limit))
+                sqlite3_bind_int64(statement, 8, sqlite3_int64(offset))
+            }
         )
     }
 

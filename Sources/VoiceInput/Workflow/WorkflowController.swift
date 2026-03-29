@@ -320,7 +320,7 @@ final class WorkflowController {
                 applyStatus: .skipped
             )
             record.errorMessage = "Audio start failed: \(error.localizedDescription)"
-            historyStore.save(record: record)
+            saveHistoryRecord(record)
             Task { @MainActor in
                 let msg = "Audio start failed: \(error.localizedDescription)"
                 appState.setStatus(.failed(message: "Audio start failed"))
@@ -467,7 +467,7 @@ final class WorkflowController {
                 processingStatus: .pending,
                 applyStatus: .pending
             )
-            historyStore.save(record: record)
+            saveHistoryRecord(record)
             activeProcessingRecordID = record.id
             let sessionID = beginProcessingSession()
 
@@ -502,7 +502,7 @@ final class WorkflowController {
                 applyStatus: .skipped
             )
             record.errorMessage = msg
-            historyStore.save(record: record)
+            saveHistoryRecord(record)
 
             await MainActor.run {
                 self.appState.setStatus(.failed(message: "Processing failed"))
@@ -535,7 +535,7 @@ final class WorkflowController {
         mutableRecord.transcriptionStatus = .running
         mutableRecord.processingStatus = .pending
         mutableRecord.applyStatus = .pending
-        historyStore.save(record: mutableRecord)
+        saveHistoryRecord(mutableRecord)
         activeProcessingRecordID = mutableRecord.id
 
         let audioFile = AudioFile(fileURL: audioURL, duration: 0)
@@ -593,14 +593,14 @@ final class WorkflowController {
             try ensureProcessingIsActive(sessionID)
             record.transcriptText = transcribedText
             record.transcriptionStatus = .succeeded
-            historyStore.save(record: record)
+            saveHistoryRecord(record)
 
             let normalizedTranscript = transcribedText.trimmingCharacters(in: .whitespacesAndNewlines)
             if normalizedTranscript.isEmpty {
                 record.processingStatus = .skipped
                 record.applyStatus = .skipped
                 record.applyMessage = "Skipped because transcription was empty."
-                historyStore.save(record: record)
+                saveHistoryRecord(record)
 
                 await MainActor.run {
                     if self.processingSessionID == sessionID {
@@ -614,7 +614,7 @@ final class WorkflowController {
             if let selectedText, !selectedText.isEmpty {
                 record.mode = .editSelection
                 record.processingStatus = .running
-                historyStore.save(record: record)
+                saveHistoryRecord(record)
                 let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
 
                 let finalText = try await generateRewrite(
@@ -632,7 +632,7 @@ final class WorkflowController {
                 record.selectionEditedText = finalText
                 record.processingStatus = .succeeded
                 record.applyStatus = .running
-                historyStore.save(record: record)
+                saveHistoryRecord(record)
 
                 try ensureProcessingIsActive(sessionID)
                 let outcome: ApplyOutcome
@@ -660,7 +660,7 @@ final class WorkflowController {
                     record.personaResultText = transcribedText
                     record.processingStatus = .succeeded
                     record.applyStatus = .running
-                    historyStore.save(record: record)
+                    saveHistoryRecord(record)
 
                     try ensureProcessingIsActive(sessionID)
                     let outcome = applyText(transcribedText, replace: false)
@@ -668,7 +668,7 @@ final class WorkflowController {
                     record.applyMessage = outcome.message
                 } else {
                     record.processingStatus = .running
-                    historyStore.save(record: record)
+                    saveHistoryRecord(record)
 
                     let finalText = try await generateRewrite(
                         request: LLMRewriteRequest(
@@ -684,7 +684,7 @@ final class WorkflowController {
                     record.personaResultText = finalText
                     record.processingStatus = .succeeded
                     record.applyStatus = .running
-                    historyStore.save(record: record)
+                    saveHistoryRecord(record)
 
                     try ensureProcessingIsActive(sessionID)
                     let outcome = applyText(finalText, replace: false)
@@ -695,7 +695,7 @@ final class WorkflowController {
                 record.mode = .dictation
                 record.processingStatus = .skipped
                 record.applyStatus = .running
-                historyStore.save(record: record)
+                saveHistoryRecord(record)
 
                 try ensureProcessingIsActive(sessionID)
                 let outcome = applyText(transcribedText, replace: false)
@@ -704,9 +704,9 @@ final class WorkflowController {
             }
 
             try ensureProcessingIsActive(sessionID)
-            historyStore.save(record: record)
+            saveHistoryRecord(record)
             UsageStatsStore.shared.recordSession(record: record)
-            historyStore.purge(olderThanDays: 7)
+            enforceHistoryRetentionPolicy()
 
             await MainActor.run {
                 if self.processingSessionID == sessionID {
@@ -716,13 +716,15 @@ final class WorkflowController {
             }
         } catch is CancellationError {
             markCancelled(&record)
-            historyStore.save(record: record)
+            saveHistoryRecord(record)
+            enforceHistoryRetentionPolicy()
         } catch {
             let msg = "Processing failed: \(error.localizedDescription)"
             ErrorLogStore.shared.log(msg)
             markFailure(&record, message: msg)
-            historyStore.save(record: record)
+            saveHistoryRecord(record)
             UsageStatsStore.shared.recordSession(record: record)
+            enforceHistoryRetentionPolicy()
 
             await MainActor.run {
                 if self.processingSessionID == sessionID {
@@ -745,7 +747,7 @@ final class WorkflowController {
         } else {
             mutableRecord.processingStatus = .failed
         }
-        historyStore.save(record: mutableRecord)
+        saveHistoryRecord(mutableRecord)
 
         await MainActor.run {
             self.appState.setStatus(.failed(message: "Processing failed"))
@@ -829,7 +831,7 @@ final class WorkflowController {
             } else if record.applyStatus == .running {
                 record.applyStatus = .failed
             }
-            historyStore.save(record: record)
+            saveHistoryRecord(record)
         }
         activeProcessingRecordID = nil
 
@@ -964,5 +966,14 @@ final class WorkflowController {
         Task { @MainActor in
             self.overlayController.dismiss(after: 0.05)
         }
+    }
+
+    private func saveHistoryRecord(_ record: HistoryRecord) {
+        historyStore.save(record: record)
+    }
+
+    private func enforceHistoryRetentionPolicy() {
+        guard let days = settingsStore.historyRetentionPolicy.days else { return }
+        historyStore.purge(olderThanDays: days)
     }
 }
