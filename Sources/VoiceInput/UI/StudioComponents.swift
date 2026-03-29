@@ -515,7 +515,6 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
     let label: String
     let placeholder: String
     let suggestions: [String]
-    let suggestionTitle: String
     @Binding var text: String
     @ViewBuilder var labelTrailing: () -> LabelTrailing
 
@@ -524,14 +523,12 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
         placeholder: String,
         text: Binding<String>,
         suggestions: [String],
-        suggestionTitle: String = "Quick fill",
         @ViewBuilder labelTrailing: @escaping () -> LabelTrailing = { EmptyView() }
     ) {
         self.label = label
         self.placeholder = placeholder
         self._text = text
         self.suggestions = suggestions
-        self.suggestionTitle = suggestionTitle
         self.labelTrailing = labelTrailing
     }
 
@@ -556,50 +553,50 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
                 labelTrailing()
             }
 
-            TextField(placeholder, text: $text)
-                .textFieldStyle(.plain)
-                .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
-                .padding(.vertical, StudioTheme.Insets.textFieldVertical)
-                .background(
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                        .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                        .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: StudioTheme.BorderWidth.thin)
-                )
+            HStack(spacing: StudioTheme.Spacing.none) {
+                TextField(placeholder, text: $text)
+                    .textFieldStyle(.plain)
+                    .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .padding(.leading, StudioTheme.Insets.textFieldHorizontal)
+                    .padding(.trailing, normalizedSuggestions.isEmpty ? StudioTheme.Insets.textFieldHorizontal : StudioTheme.Spacing.small)
+                    .padding(.vertical, StudioTheme.Insets.textFieldVertical)
 
-            if !normalizedSuggestions.isEmpty {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-                    Text(suggestionTitle)
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                if !normalizedSuggestions.isEmpty {
+                    Rectangle()
+                        .fill(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder))
+                        .frame(width: 1)
+                        .padding(.vertical, 8)
 
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: StudioTheme.Spacing.xSmall) {
-                            ForEach(normalizedSuggestions, id: \.self) { suggestion in
-                                Button {
-                                    text = suggestion
-                                } label: {
-                                    Text(suggestion)
-                                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                                        .foregroundStyle(text == suggestion ? StudioTheme.accent : StudioTheme.textSecondary)
-                                        .lineLimit(1)
-                                        .padding(.horizontal, StudioTheme.Insets.pillHorizontal)
-                                        .padding(.vertical, StudioTheme.Insets.pillVertical)
-                                        .background(
-                                            Capsule()
-                                                .fill(text == suggestion ? StudioTheme.accentSoft : StudioTheme.surfaceMuted)
-                                        )
-                                }
-                                .buttonStyle(StudioInteractiveButtonStyle())
+                    Menu {
+                        ForEach(normalizedSuggestions, id: \.self) { suggestion in
+                            Button(suggestion) {
+                                text = suggestion
                             }
                         }
+                    } label: {
+                        HStack(spacing: StudioTheme.Spacing.xxxSmall) {
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+                            Text("Select")
+                                .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                        }
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .padding(.horizontal, StudioTheme.Spacing.smallMedium)
+                        .frame(maxHeight: .infinity)
+                        .contentShape(Rectangle())
                     }
+                    .menuStyle(.borderlessButton)
                 }
             }
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                    .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                    .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: StudioTheme.BorderWidth.thin)
+            )
         }
     }
 }
