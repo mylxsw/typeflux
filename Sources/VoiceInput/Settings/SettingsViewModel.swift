@@ -518,6 +518,7 @@ final class StudioViewModel: ObservableObject {
         appLanguage = language
         settingsStore.appLanguage = language
         AppLocalization.shared.setLanguage(language)
+        refreshPermissionRows()
     }
 
     func refreshAvailableMicrophones() {
