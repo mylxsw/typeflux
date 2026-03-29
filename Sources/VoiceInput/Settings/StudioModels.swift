@@ -91,15 +91,15 @@ enum StudioModelDomain: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .stt: return "Voice Transcription"
-        case .llm: return "LLM"
+        case .stt: return L("modelDomain.stt.title")
+        case .llm: return L("modelDomain.llm.title")
         }
     }
 
     var subtitle: String {
         switch self {
-        case .stt: return "语音转写"
-        case .llm: return "大语言模型"
+        case .stt: return L("modelDomain.stt.subtitle")
+        case .llm: return L("modelDomain.llm.subtitle")
         }
     }
 

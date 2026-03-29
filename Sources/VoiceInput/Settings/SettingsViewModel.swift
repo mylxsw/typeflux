@@ -39,7 +39,7 @@ final class StudioViewModel: ObservableObject {
     @Published var ollamaBaseURL: String
     @Published var ollamaModel: String
     @Published var ollamaAutoSetup: Bool
-    @Published var ollamaStatus = "Local model has not been prepared yet."
+    @Published var ollamaStatus = L("settings.models.ollama.notPrepared")
     @Published var isPreparingOllama = false
 
     @Published var whisperBaseURL: String
@@ -59,11 +59,11 @@ final class StudioViewModel: ObservableObject {
     @Published var localSTTModelIdentifier: String
     @Published var localSTTDownloadSource: ModelDownloadSource
     @Published var localSTTAutoSetup: Bool
-    @Published var localSTTStatus = "Local speech model has not been prepared yet."
+    @Published var localSTTStatus = L("settings.models.localSTT.notPrepared")
     @Published var localSTTPreparationProgress: Double = 0
-    @Published var localSTTPreparationDetail = "The selected local speech model will be prepared automatically when needed."
+    @Published var localSTTPreparationDetail = L("settings.models.localSTT.autoPrepareHint")
     @Published var localSTTStoragePath: String
-    @Published var localSTTPreparedSource = "Automatic"
+    @Published var localSTTPreparedSource = L("common.automatic")
     @Published var isLocalSTTPrepared = false
     @Published var isPreparingLocalSTT = false
 
@@ -242,7 +242,7 @@ final class StudioViewModel: ObservableObject {
             return StudioTheme.success
         }
 
-        if localSTTStatus.hasPrefix("Failed:") {
+        if localSTTStatus.hasPrefix(L("common.failedPrefix")) {
             return StudioTheme.danger
         }
 
@@ -260,9 +260,9 @@ final class StudioViewModel: ObservableObject {
         return groups.keys.sorted(by: >).map { date in
             let title: String
             if calendar.isDateInToday(date) {
-                title = "Today"
+                title = L("history.section.today")
             } else if calendar.isDateInYesterday(date) {
-                title = "Yesterday"
+                title = L("history.section.yesterday")
             } else {
                 let formatter = DateFormatter()
                 formatter.dateStyle = .medium
@@ -505,7 +505,7 @@ final class StudioViewModel: ObservableObject {
             }
 
             isRefreshingHistory = false
-            showToast("History refreshed.")
+            showToast(L("history.toast.refreshed"))
         }
     }
 
@@ -528,7 +528,7 @@ final class StudioViewModel: ObservableObject {
            devices.contains(where: { $0.id == preferredMicrophoneID }) == false {
             preferredMicrophoneID = AudioDeviceManager.automaticDeviceID
             settingsStore.preferredMicrophoneID = AudioDeviceManager.automaticDeviceID
-            showToast("Selected microphone is unavailable. Switched to automatic.")
+            showToast(L("settings.audio.microphone.unavailable"))
         }
     }
 
@@ -547,7 +547,7 @@ final class StudioViewModel: ObservableObject {
         settingsStore.historyRetentionPolicy = value
         applyHistoryRetentionPolicy()
         refreshHistory(reset: true)
-        showToast("History retention updated.")
+        showToast(L("history.toast.retentionUpdated"))
     }
 
     func setSTTProvider(_ provider: STTProvider) {
@@ -697,13 +697,13 @@ final class StudioViewModel: ObservableObject {
 
     func setActivationHotkey(_ binding: HotkeyBinding) {
         guard binding.signature != personaHotkey.signature else {
-            showToast("Activation shortcut cannot match the persona shortcut.")
+            showToast(L("settings.shortcuts.activationConflict"))
             return
         }
 
         activationHotkey = binding
         settingsStore.activationHotkey = binding
-        showToast("Activation shortcut updated.")
+        showToast(L("settings.shortcuts.activationUpdated"))
     }
 
     func resetActivationHotkey() {
@@ -712,13 +712,13 @@ final class StudioViewModel: ObservableObject {
 
     func setPersonaHotkey(_ binding: HotkeyBinding) {
         guard binding.signature != activationHotkey.signature else {
-            showToast("Persona shortcut cannot match the activation shortcut.")
+            showToast(L("settings.shortcuts.personaConflict"))
             return
         }
 
         personaHotkey = binding
         settingsStore.personaHotkey = binding
-        showToast("Persona shortcut updated.")
+        showToast(L("settings.shortcuts.personaUpdated"))
     }
 
     func resetPersonaHotkey() {
@@ -730,9 +730,9 @@ final class StudioViewModel: ObservableObject {
         syncPersonaSelectionFromStore()
 
         if let id, let persona = personas.first(where: { $0.id == id }) {
-            showToast("Switched to \(persona.name).")
+            showToast(L("workflow.persona.switched", persona.name))
         } else {
-            showToast("Persona disabled.")
+            showToast(L("workflow.persona.disabled"))
         }
     }
 
@@ -792,7 +792,7 @@ final class StudioViewModel: ObservableObject {
                 activePersonaID = persona.id.uuidString
             }
             loadPersonaDraft()
-            showToast("Persona saved.")
+            showToast(L("settings.personas.saved"))
             return
         }
 
@@ -801,7 +801,7 @@ final class StudioViewModel: ObservableObject {
         personas[index].prompt = prompt
         persistPersonas()
         loadPersonaDraft()
-        showToast("Persona saved.")
+        showToast(L("settings.personas.saved"))
     }
 
     private func syncPersonaSelectionFromStore() {
@@ -825,7 +825,7 @@ final class StudioViewModel: ObservableObject {
         guard !isPreparingOllama else { return }
 
         isPreparingOllama = true
-        ollamaStatus = "Preparing local model..."
+        ollamaStatus = L("settings.models.ollama.preparing")
 
         settingsStore.ollamaBaseURL = ollamaBaseURL
         settingsStore.ollamaModel = ollamaModel
@@ -834,11 +834,11 @@ final class StudioViewModel: ObservableObject {
         Task {
             do {
                 try await modelManager.ensureModelReady(settingsStore: settingsStore)
-                ollamaStatus = "Local model is ready."
-                showToast("Local model is ready.")
+                ollamaStatus = L("settings.models.ollama.ready")
+                showToast(L("settings.models.ollama.ready"))
             } catch {
-                ollamaStatus = "Failed: \(error.localizedDescription)"
-                showToast("Local model preparation failed.")
+                ollamaStatus = L("common.failedWithReason", error.localizedDescription)
+                showToast(L("settings.models.ollama.prepareFailed"))
             }
             isPreparingOllama = false
         }
@@ -853,16 +853,16 @@ final class StudioViewModel: ObservableObject {
 
         if localSTTServiceManager.preparedModelInfo(settingsStore: settingsStore) != nil {
             refreshLocalSTTPreparedState()
-            showToast("Local speech model is ready.")
+            showToast(L("settings.models.localSTT.ready"))
             return
         }
 
         isPreparingLocalSTT = true
-        localSTTStatus = "Preparing local speech model..."
+        localSTTStatus = L("settings.models.localSTT.preparing")
         localSTTPreparationProgress = 0.02
-        localSTTPreparationDetail = "Preparing local speech model..."
+        localSTTPreparationDetail = L("settings.models.localSTT.preparing")
         isLocalSTTPrepared = false
-        localSTTPreparedSource = "Automatic"
+        localSTTPreparedSource = L("common.automatic")
         refreshLocalSTTStoragePath()
 
         settingsStore.localSTTModel = localSTTModel
@@ -882,17 +882,17 @@ final class StudioViewModel: ObservableObject {
                         }
                     }
                 }
-                localSTTStatus = "\(localSTTModel.displayName) is ready."
+                localSTTStatus = L("settings.models.localSTT.readyNamed", localSTTModel.displayName)
                 localSTTPreparationProgress = 1
-                localSTTPreparationDetail = "Download complete. Local speech model is ready."
+                localSTTPreparationDetail = L("settings.models.localSTT.downloadComplete")
                 isLocalSTTPrepared = true
                 refreshLocalSTTPreparedState()
-                showToast("Local speech model is ready.")
+                showToast(L("settings.models.localSTT.ready"))
             } catch {
-                localSTTStatus = "Failed: \(error.localizedDescription)"
-                localSTTPreparationDetail = "Preparation failed."
+                localSTTStatus = L("common.failedWithReason", error.localizedDescription)
+                localSTTPreparationDetail = L("settings.models.localSTT.prepareFailed")
                 isLocalSTTPrepared = false
-                showToast("Local speech model preparation failed.")
+                showToast(L("settings.models.localSTT.prepareFailed"))
             }
             isPreparingLocalSTT = false
         }
@@ -902,9 +902,9 @@ final class StudioViewModel: ObservableObject {
         do {
             let url = try historyStore.exportMarkdown()
             NSWorkspace.shared.activateFileViewerSelecting([url])
-            showToast("History exported.")
+            showToast(L("history.toast.exported"))
         } catch {
-            showToast("Failed to export history.")
+            showToast(L("history.toast.exportFailed"))
         }
     }
 
@@ -913,13 +913,13 @@ final class StudioViewModel: ObservableObject {
         historyRecords = []
         displayedHistory = []
         canLoadMoreHistory = false
-        showToast("History cleared.")
+        showToast(L("history.toast.cleared"))
     }
 
     func retryHistoryRecord(id: UUID) {
         guard let record = historyRecords.first(where: { $0.id == id }) else { return }
         onRetryHistory(record)
-        showToast("Retry started.")
+        showToast(L("history.toast.retryStarted"))
     }
 
     func copyTranscript(id: UUID) {
@@ -931,7 +931,7 @@ final class StudioViewModel: ObservableObject {
 
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(transcriptText, forType: .string)
-        showToast("Transcript copied.")
+        showToast(L("history.toast.transcriptCopied"))
     }
 
     func downloadAudio(id: UUID) {
@@ -943,7 +943,7 @@ final class StudioViewModel: ObservableObject {
 
         let sourceURL = URL(fileURLWithPath: audioFilePath)
         guard FileManager.default.fileExists(atPath: sourceURL.path) else {
-            showToast("Audio file is unavailable.")
+            showToast(L("history.toast.audioUnavailable"))
             return
         }
 
@@ -957,9 +957,9 @@ final class StudioViewModel: ObservableObject {
                     try FileManager.default.removeItem(at: destinationURL)
                 }
                 try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
-                showToast("Audio downloaded.")
+                showToast(L("history.toast.audioDownloaded"))
             } catch {
-                showToast("Failed to download audio.")
+                showToast(L("history.toast.audioDownloadFailed"))
             }
         }
     }
@@ -968,7 +968,7 @@ final class StudioViewModel: ObservableObject {
         historyStore.delete(id: id)
         historyRecords.removeAll { $0.id == id }
         displayedHistory.removeAll { $0.id == id }
-        showToast("Transcript deleted.")
+        showToast(L("history.toast.transcriptDeleted"))
     }
 
     func applyModelConfiguration() {
@@ -997,7 +997,7 @@ final class StudioViewModel: ObservableObject {
         case .appleSpeech, .localSTT:
             break
         }
-        showToast("Configuration saved.")
+        showToast(L("settings.models.configurationSaved"))
     }
 
     func testLLMConnection() {
@@ -1126,7 +1126,7 @@ final class StudioViewModel: ObservableObject {
     func copyLocalSTTStoragePath() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(localSTTStoragePath, forType: .string)
-        showToast("Storage path copied.")
+        showToast(L("settings.models.storagePathCopied"))
     }
 
     func openLocalSTTStorageFolder() {
@@ -1169,7 +1169,7 @@ final class StudioViewModel: ObservableObject {
             }
 
             isRefreshingPermissions = false
-            showToast("Permission status updated.")
+            showToast(L("settings.permissions.updated"))
         }
     }
 
@@ -1186,7 +1186,7 @@ final class StudioViewModel: ObservableObject {
             try? await Task.sleep(nanoseconds: 350_000_000)
             refreshPermissionRows()
             if let row = permissionRows.first(where: { $0.id == id }) {
-                showToast(row.isGranted ? "\(row.title) is ready." : "Review \(row.title) in System Settings.")
+                showToast(row.isGranted ? L("settings.permissions.ready", row.title) : L("settings.permissions.reviewInSystemSettings", row.title))
             }
         }
     }

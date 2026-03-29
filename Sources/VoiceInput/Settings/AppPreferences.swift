@@ -15,17 +15,17 @@ enum STTProvider: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .whisperAPI:
-            return "Whisper API"
+            return L("provider.stt.whisperAPI")
         case .appleSpeech:
-            return "Apple Speech"
+            return L("provider.stt.appleSpeech")
         case .localModel:
-            return "Local Model"
+            return L("provider.stt.localModel")
         case .multimodalLLM:
-            return "Multimodal LLM"
+            return L("provider.stt.multimodalLLM")
         case .aliCloud:
-            return "Alibaba Cloud ASR"
+            return L("provider.stt.aliCloud")
         case .doubaoRealtime:
-            return "Doubao Realtime ASR"
+            return L("provider.stt.doubaoRealtime")
         }
     }
 
@@ -49,11 +49,11 @@ enum LocalSTTModel: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .whisperLocal:
-            return "Whisper Local"
+            return L("localSTT.whisperLocal.name")
         case .senseVoiceSmall:
-            return "SenseVoice Small"
+            return L("localSTT.senseVoiceSmall.name")
         case .qwen3ASR:
-            return "Qwen3-ASR"
+            return L("localSTT.qwen3ASR.name")
         }
     }
 
@@ -81,21 +81,21 @@ enum LocalSTTModel: String, CaseIterable, Codable {
         switch self {
         case .whisperLocal:
             return Specs(
-                summary: "Balanced local ASR with stable English and multilingual dictation, suitable for most offline transcription needs.",
-                parameterInfo: "Whisper small, around 244M parameters",
-                sizeInfo: "Model file about 460 MB"
+                summary: L("localSTT.whisperLocal.summary"),
+                parameterInfo: L("localSTT.whisperLocal.parameters"),
+                sizeInfo: L("localSTT.whisperLocal.size")
             )
         case .senseVoiceSmall:
             return Specs(
-                summary: "Fast multilingual speech recognition with strong Mandarin, Cantonese, English, Japanese, and Korean support.",
-                parameterInfo: "SenseVoiceSmall, about 234M parameters",
-                sizeInfo: "Runtime files usually around 1.1 GB"
+                summary: L("localSTT.senseVoiceSmall.summary"),
+                parameterInfo: L("localSTT.senseVoiceSmall.parameters"),
+                sizeInfo: L("localSTT.senseVoiceSmall.size")
             )
         case .qwen3ASR:
             return Specs(
-                summary: "Larger multilingual ASR model with stronger context understanding and better long-form recognition quality.",
-                parameterInfo: "Qwen3-ASR-0.6B, about 600M parameters",
-                sizeInfo: "Runtime files usually around 1.6 GB"
+                summary: L("localSTT.qwen3ASR.summary"),
+                parameterInfo: L("localSTT.qwen3ASR.parameters"),
+                sizeInfo: L("localSTT.qwen3ASR.size")
             )
         }
     }
@@ -108,9 +108,9 @@ enum ModelDownloadSource: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .modelScope:
-            return "ModelScope"
+            return L("downloadSource.modelScope")
         case .huggingFace:
-            return "Hugging Face"
+            return L("downloadSource.huggingFace")
         }
     }
 }
@@ -122,9 +122,9 @@ enum LLMProvider: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .openAICompatible:
-            return "OpenAI-Compatible"
+            return L("provider.llm.openAICompatible")
         case .ollama:
-            return "Local Ollama"
+            return L("provider.llm.ollama")
         }
     }
 }

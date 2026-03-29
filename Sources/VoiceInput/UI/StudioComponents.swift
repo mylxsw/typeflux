@@ -588,7 +588,7 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
                                 .frame(width: 12, height: 12)
                         }
                         .menuStyle(.borderlessButton)
-                        .help("Select a suggested value")
+                        .help(L("common.selectSuggestedValue"))
                     }
                     .padding(.trailing, 12)
                 }
@@ -636,7 +636,7 @@ struct StudioHistoryRow: View {
                                 .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
                                 .foregroundStyle(StudioTheme.danger)
                                 .padding(.top, 3)
-                                .help(record.failureMessage ?? "Processing failed.")
+                                .help(record.failureMessage ?? L("workflow.processing.failed"))
                         }
                     }
                 }
@@ -645,21 +645,21 @@ struct StudioHistoryRow: View {
 
                 HStack(spacing: StudioTheme.Spacing.small) {
                     if let onCopyTranscript, record.hasTranscriptToCopy {
-                        historyIconButton(systemImage: "doc.on.doc", helpText: "复制转写文本", action: onCopyTranscript)
+                        historyIconButton(systemImage: "doc.on.doc", helpText: L("history.action.copyTranscript"), action: onCopyTranscript)
                     }
 
                     Menu {
                         if let onRetry {
-                            Button("Retry", systemImage: "arrow.clockwise", action: onRetry)
+                            Button(L("common.retry"), systemImage: "arrow.clockwise", action: onRetry)
                                 .disabled(!record.canRetry)
                         }
                         if let onDownloadAudio {
-                            Button("Download audio", systemImage: "arrow.down.circle", action: onDownloadAudio)
+                            Button(L("history.action.downloadAudio"), systemImage: "arrow.down.circle", action: onDownloadAudio)
                                 .disabled(record.audioFilePath == nil)
                         }
                         Divider()
                         if let onDelete {
-                            Button("Delete transcript", systemImage: "trash", role: .destructive, action: onDelete)
+                            Button(L("history.action.deleteTranscript"), systemImage: "trash", role: .destructive, action: onDelete)
                         }
                     } label: {
                         RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
@@ -679,12 +679,12 @@ struct StudioHistoryRow: View {
 
             if isExpanded {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-                    historyDetailSection(title: "Audio Path", content: record.audioFilePath ?? "No audio file")
-                    historyDetailSection(title: "模型原始转写", content: record.transcriptText, copyAction: record.hasTranscriptToCopy ? onCopyTranscript : nil)
-                    historyDetailSection(title: "Persona 处理结果", content: record.personaResultText)
-                    historyDetailSection(title: "选中文本", content: record.selectionOriginalText)
-                    historyDetailSection(title: "选中文本修改结果", content: record.selectionEditedText)
-                    historyDetailSection(title: "错误信息", content: record.errorMessage, emphasize: true)
+                    historyDetailSection(title: L("history.detail.audioPath"), content: record.audioFilePath ?? L("history.detail.noAudioFile"))
+                    historyDetailSection(title: L("history.detail.rawTranscript"), content: record.transcriptText, copyAction: record.hasTranscriptToCopy ? onCopyTranscript : nil)
+                    historyDetailSection(title: L("history.detail.personaResult"), content: record.personaResultText)
+                    historyDetailSection(title: L("history.detail.selectionOriginal"), content: record.selectionOriginalText)
+                    historyDetailSection(title: L("history.detail.selectionEdited"), content: record.selectionEditedText)
+                    historyDetailSection(title: L("history.detail.error"), content: record.errorMessage, emphasize: true)
                 }
                 .padding(.top, StudioTheme.Spacing.xSmall)
             }
@@ -721,7 +721,7 @@ struct StudioHistoryRow: View {
 
                     if let copyAction {
                         StudioIconButton(systemImage: "doc.on.doc", frame: 24, action: copyAction)
-                            .help("复制转写文本")
+                            .help(L("history.action.copyTranscript"))
                     }
                 }
 

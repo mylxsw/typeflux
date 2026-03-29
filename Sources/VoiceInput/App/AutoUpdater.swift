@@ -17,15 +17,10 @@ enum AutoUpdater {
             DispatchQueue.main.async {
                 if hasUpdate {
                     let alert = NSAlert()
-                    alert.messageText = "Update Available"
-                    alert.informativeText = """
-A new version (\(mockVersion)) of VoiceInput is available.
-
-Release Notes:
-\(mockReleaseNotes)
-"""
-                    alert.addButton(withTitle: "Download")
-                    alert.addButton(withTitle: "Remind Me Later")
+                    alert.messageText = L("updater.available.title")
+                    alert.informativeText = L("updater.available.message", mockVersion, mockReleaseNotes)
+                    alert.addButton(withTitle: L("updater.action.download"))
+                    alert.addButton(withTitle: L("updater.action.later"))
                     
                     let response = alert.runModal()
                     if response == .alertFirstButtonReturn {
@@ -36,9 +31,9 @@ Release Notes:
                     }
                 } else if manual {
                     let alert = NSAlert()
-                    alert.messageText = "Up to Date"
-                    alert.informativeText = "You are running the latest version of VoiceInput."
-                    alert.addButton(withTitle: "OK")
+                    alert.messageText = L("updater.latest.title")
+                    alert.informativeText = L("updater.latest.message")
+                    alert.addButton(withTitle: L("common.ok"))
                     alert.runModal()
                 }
             }

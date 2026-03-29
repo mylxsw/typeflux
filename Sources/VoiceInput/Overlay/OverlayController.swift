@@ -65,7 +65,7 @@ final class OverlayController {
         }
         ensureWindow()
         model.presentation = .recordingHold
-        model.statusText = "正在聆听"
+        model.statusText = L("overlay.recording.listening")
         model.detailText = ""
         model.processingProgress = 0
         refreshWindow()
@@ -131,7 +131,7 @@ final class OverlayController {
         }
         ensureWindow()
         model.presentation = .processing
-        model.statusText = "Thinking"
+        model.statusText = L("overlay.processing.thinking")
         model.detailText = ""
         model.processingProgress = 0
         refreshWindow()
@@ -144,7 +144,7 @@ final class OverlayController {
         }
         ensureWindow()
         model.presentation = .failure
-        model.statusText = "处理失败"
+        model.statusText = L("overlay.failure.title")
         model.detailText = message
         model.failureRetryable = false
         refreshWindow()
@@ -158,8 +158,8 @@ final class OverlayController {
         dismissWorkItem?.cancel()
         ensureWindow()
         model.presentation = .failure
-        model.statusText = "处理超时"
-        model.detailText = "处理时间超过120秒，请重试。"
+        model.statusText = L("overlay.timeout.title")
+        model.detailText = L("overlay.timeout.message")
         model.failureRetryable = true
         refreshWindow()
     }
@@ -189,7 +189,7 @@ final class OverlayController {
         }
         dismissWorkItem?.cancel()
         model.presentation = .notice
-        model.statusText = "提示"
+        model.statusText = L("overlay.notice.title")
         model.detailText = message
         refreshWindow()
         dismiss(after: 5.0)
@@ -220,7 +220,7 @@ final class OverlayController {
         model.personaItems = items
         model.personaSelectedIndex = max(0, min(selectedIndex, max(0, items.count - 1)))
         model.personaViewportHeight = min(360, CGFloat(max(1, items.count)) * 84)
-        model.statusText = "Switch Persona"
+        model.statusText = L("overlay.personaPicker.title")
         model.detailText = ""
         refreshWindow()
     }
@@ -631,7 +631,7 @@ private struct OverlayView: View {
 
     private var processingCapsule: some View {
         ThinkingProgressCapsule(
-            title: model.statusText.isEmpty ? "Thinking" : model.statusText,
+            title: model.statusText.isEmpty ? L("overlay.processing.thinking") : model.statusText,
             progress: model.processingProgress
         )
     }
@@ -715,7 +715,7 @@ private struct OverlayView: View {
 
                 if model.failureRetryable {
                     Button(action: model.requestFailureRetry) {
-                        Text("重试")
+                        Text(L("common.retry"))
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(Color.white)
                             .frame(maxWidth: .infinity)
@@ -756,7 +756,7 @@ private struct OverlayView: View {
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(Color.white.opacity(0.96))
 
-                        Text("Use Up and Down to choose, Return to confirm, or Esc to close.")
+                        Text(L("overlay.personaPicker.instructions"))
                             .font(.system(size: 12.5, weight: .medium))
                             .foregroundStyle(Color.white.opacity(0.7))
                     }
@@ -821,7 +821,7 @@ private struct OverlayView: View {
                         Spacer()
 
                         Button(action: model.requestResultCopy) {
-                            Text("Copy")
+                            Text(L("common.copy"))
                                 .font(.system(size: 12.5, weight: .semibold))
                                 .foregroundStyle(Color.white.opacity(0.96))
                                 .padding(.horizontal, 18)

@@ -7,9 +7,9 @@ enum VocabularySource: String, Codable, CaseIterable, Sendable {
     var displayName: String {
         switch self {
         case .manual:
-            return "Manually added"
+            return L("vocabulary.source.manual")
         case .automatic:
-            return "Auto-added"
+            return L("vocabulary.source.automatic")
         }
     }
 }

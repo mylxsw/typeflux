@@ -17,9 +17,9 @@ final class WorkflowController {
         var message: String {
             switch self {
             case .inserted:
-                return "Applied to the active app."
+                return L("workflow.apply.inserted")
             case .copiedToClipboard:
-                return "Copied to the clipboard because direct insertion was unavailable."
+                return L("workflow.apply.copiedToClipboard")
             }
         }
     }
@@ -128,12 +128,12 @@ final class WorkflowController {
         hotkeyService.stop()
         dismissPersonaPicker()
         cancelRecording()
-        cancelCurrentProcessing(resetUI: true, reason: "Cancelled while stopping.")
+        cancelCurrentProcessing(resetUI: true, reason: L("workflow.cancel.stopping"))
     }
 
     func retry(record: HistoryRecord) {
         guard !isRecording else { return }
-        cancelCurrentProcessing(resetUI: false, reason: "Cancelled due to retry.")
+        cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.retry"))
 
         let sessionID = beginProcessingSession()
         startProcessingTimeout(sessionID: sessionID)
@@ -190,14 +190,14 @@ final class WorkflowController {
     private func handleProcessingTimeout(sessionID: UUID) {
         guard processingSessionID == sessionID else { return }
         let recordID = activeProcessingRecordID
-        cancelCurrentProcessing(resetUI: false, reason: "处理超时（超过120秒）。")
+        cancelCurrentProcessing(resetUI: false, reason: L("workflow.timeout.reason"))
         var timeoutRecord: HistoryRecord? = nil
         if let recordID {
             timeoutRecord = historyStore.record(id: recordID)
         }
         Task { @MainActor in
             self.lastTimeoutRecord = timeoutRecord
-            self.appState.setStatus(.failed(message: "处理超时"))
+            self.appState.setStatus(.failed(message: L("workflow.timeout.status")))
             self.overlayController.showTimeoutFailure()
         }
     }
@@ -209,8 +209,8 @@ final class WorkflowController {
 
         if !PrivacyGuard.isRunningInAppBundle {
             Task { @MainActor in
-                let msg = "Please run via scripts/run_dev_app.sh (app bundle required for privacy permissions)"
-                appState.setStatus(.failed(message: "Run as .app"))
+                let msg = L("workflow.devApp.requiredMessage")
+                appState.setStatus(.failed(message: L("workflow.devApp.requiredStatus")))
                 overlayController.showFailure(message: msg)
                 overlayController.dismiss(after: 3.0)
                 ErrorLogStore.shared.log(msg)
@@ -230,7 +230,7 @@ final class WorkflowController {
             return
         }
 
-        cancelCurrentProcessing(resetUI: false, reason: "Cancelled by new recording.")
+        cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.newRecording"))
         Task { [weak self] in
             await self?.beginRecording()
         }
@@ -239,14 +239,14 @@ final class WorkflowController {
     private func handlePersonaPickerRequested() {
         guard !isRecording else {
             Task { @MainActor in
-                self.overlayController.showNotice(message: "Finish the current recording before switching persona.")
+                self.overlayController.showNotice(message: L("workflow.persona.finishRecordingFirst"))
             }
             return
         }
 
         guard processingTask == nil else {
             Task { @MainActor in
-                self.overlayController.showNotice(message: "Please wait until processing finishes before switching persona.")
+                self.overlayController.showNotice(message: L("workflow.persona.waitForProcessing"))
             }
             return
         }
@@ -323,7 +323,7 @@ final class WorkflowController {
             saveHistoryRecord(record)
             Task { @MainActor in
                 let msg = "Audio start failed: \(error.localizedDescription)"
-                appState.setStatus(.failed(message: "Audio start failed"))
+                appState.setStatus(.failed(message: L("workflow.audioStart.failedStatus")))
                 overlayController.showFailure(message: msg)
                 overlayController.dismiss(after: 3.0)
                 ErrorLogStore.shared.log(msg)
@@ -416,7 +416,7 @@ final class WorkflowController {
         return false
     }
 
-    private func applyText(_ text: String, replace: Bool, fallbackTitle: String = "Copy Result") -> ApplyOutcome {
+    private func applyText(_ text: String, replace: Bool, fallbackTitle: String = L("workflow.result.copyTitle")) -> ApplyOutcome {
         clipboard.write(text: text)
 
         do {
@@ -505,7 +505,7 @@ final class WorkflowController {
             saveHistoryRecord(record)
 
             await MainActor.run {
-                self.appState.setStatus(.failed(message: "Processing failed"))
+                    self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
                 self.overlayController.showFailure(message: msg)
                 self.overlayController.dismiss(after: 3.0)
             }
@@ -514,13 +514,13 @@ final class WorkflowController {
 
     private func reprocess(record: HistoryRecord, sessionID: UUID) async {
         guard let audioFilePath = record.audioFilePath, !audioFilePath.isEmpty else {
-            await failRetry(record: record, message: "Retry failed: audio file is missing.")
+            await failRetry(record: record, message: L("workflow.retry.audioMissing"))
             return
         }
 
         let audioURL = URL(fileURLWithPath: audioFilePath)
         guard FileManager.default.fileExists(atPath: audioURL.path) else {
-            await failRetry(record: record, message: "Retry failed: audio file no longer exists.")
+            await failRetry(record: record, message: L("workflow.retry.audioGone"))
             return
         }
 
@@ -599,13 +599,13 @@ final class WorkflowController {
             if normalizedTranscript.isEmpty {
                 record.processingStatus = .skipped
                 record.applyStatus = .skipped
-                record.applyMessage = "Skipped because transcription was empty."
+                record.applyMessage = L("workflow.transcription.emptySkipped")
                 saveHistoryRecord(record)
 
                 await MainActor.run {
                     if self.processingSessionID == sessionID {
                         self.appState.setStatus(.idle)
-                        self.overlayController.showNotice(message: "未识别到有效语音内容")
+                        self.overlayController.showNotice(message: L("workflow.transcription.noSpeech"))
                     }
                 }
                 return
@@ -644,11 +644,11 @@ final class WorkflowController {
                 if shouldShowResultDialog {
                     await MainActor.run {
                         self.lastDialogResultText = finalText
-                        self.overlayController.showResultDialog(title: "Copy Result", message: finalText)
+                        self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: finalText)
                     }
                     outcome = .copiedToClipboard
                 } else {
-                    outcome = applyText(finalText, replace: true, fallbackTitle: "Copy Result")
+                    outcome = applyText(finalText, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
                 }
                 record.applyStatus = .succeeded
                 record.applyMessage = outcome.message
@@ -728,7 +728,7 @@ final class WorkflowController {
 
             await MainActor.run {
                 if self.processingSessionID == sessionID {
-                    self.appState.setStatus(.failed(message: "Processing failed"))
+                    self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
                     self.overlayController.showFailure(message: msg)
                     self.overlayController.dismiss(after: 3.0)
                 }
@@ -750,7 +750,7 @@ final class WorkflowController {
         saveHistoryRecord(mutableRecord)
 
         await MainActor.run {
-            self.appState.setStatus(.failed(message: "Processing failed"))
+            self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
             self.overlayController.showFailure(message: message)
             self.overlayController.dismiss(after: 3.0)
         }
@@ -780,7 +780,7 @@ final class WorkflowController {
     }
 
     private func markCancelled(_ record: inout HistoryRecord) {
-        record.errorMessage = "Cancelled by a new recording."
+        record.errorMessage = L("workflow.cancel.newRecording")
         if record.transcriptionStatus == .running {
             record.transcriptionStatus = .failed
             record.processingStatus = .skipped
@@ -905,15 +905,15 @@ final class WorkflowController {
     private func copyLastResultFromDialog() {
         guard let lastDialogResultText, !lastDialogResultText.isEmpty else { return }
         clipboard.write(text: lastDialogResultText)
-        overlayController.showNotice(message: "已复制到剪贴板")
+        overlayController.showNotice(message: L("workflow.result.copied"))
     }
 
     private func personaPickerEntries() -> [PersonaPickerEntry] {
         var items = [
             PersonaPickerEntry(
                 id: nil,
-                title: "No Persona",
-                subtitle: "Dictate without any persona styling."
+                title: L("persona.none.title"),
+                subtitle: L("persona.none.subtitle")
             )
         ]
         items.append(
@@ -940,11 +940,11 @@ final class WorkflowController {
         settingsStore.applyPersonaSelection(selected.id)
         if selected.id != nil {
             Task { @MainActor in
-                self.overlayController.showNotice(message: "Persona switched to \(selected.title).")
+                self.overlayController.showNotice(message: L("workflow.persona.switched", selected.title))
             }
         } else {
             Task { @MainActor in
-                self.overlayController.showNotice(message: "Persona switched off.")
+                self.overlayController.showNotice(message: L("workflow.persona.switchedOff"))
             }
         }
 

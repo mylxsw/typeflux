@@ -10,11 +10,11 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .all:
-            return "All"
+            return L("vocabulary.filter.all")
         case .automatic:
-            return "Auto-added"
+            return L("vocabulary.filter.automatic")
         case .manual:
-            return "Manually-added"
+            return L("vocabulary.filter.manual")
         }
     }
 
@@ -101,24 +101,24 @@ struct StudioView: View {
             vocabularyAddSheet
         }
         .confirmationDialog(
-            "Delete Persona?",
+            L("settings.personas.deleteDialog.title"),
             isPresented: Binding(
                 get: { personaPendingDeletion != nil },
                 set: { if !$0 { personaPendingDeletion = nil } }
             ),
             titleVisibility: .visible
         ) {
-            Button("Delete", role: .destructive) {
+            Button(L("common.delete"), role: .destructive) {
                 guard let personaPendingDeletion else { return }
                 viewModel.deletePersona(id: personaPendingDeletion.id)
                 self.personaPendingDeletion = nil
             }
-            Button("Cancel", role: .cancel) {
+            Button(L("common.cancel"), role: .cancel) {
                 personaPendingDeletion = nil
             }
         } message: {
             if let personaPendingDeletion {
-                Text("Delete \"\(personaPendingDeletion.name)\"? This cannot be undone.")
+                Text(L("settings.personas.deleteDialog.message", personaPendingDeletion.name))
             }
         }
     }
@@ -229,9 +229,9 @@ struct StudioView: View {
     private func modelDomainTabTitle(for domain: StudioModelDomain) -> String {
         switch domain {
         case .stt:
-            return "Speech Provider"
+            return L("settings.models.domain.stt")
         case .llm:
-            return "LLM Providers"
+            return L("settings.models.domain.llm")
         }
     }
 
@@ -239,7 +239,7 @@ struct StudioView: View {
         HStack(alignment: .top, spacing: StudioTheme.Spacing.section) {
             StudioCard {
                 HStack {
-                    Text("Persona Roster")
+                    Text(L("settings.personas.roster"))
                         .font(.studioDisplay(StudioTheme.Typography.subsectionTitle, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
                     Spacer()
@@ -290,7 +290,7 @@ struct StudioView: View {
                         }
                         .buttonStyle(StudioInteractiveButtonStyle())
                         .contextMenu {
-                            Button("Delete", role: .destructive) {
+                            Button(L("common.delete"), role: .destructive) {
                                 viewModel.selectPersona(persona.id)
                                 personaPendingDeletion = persona
                             }
@@ -303,8 +303,8 @@ struct StudioView: View {
             StudioCard {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
                     StudioTextInputCard(
-                        label: "Persona Name",
-                        placeholder: "Enter persona name",
+                        label: L("settings.personas.name"),
+                        placeholder: L("settings.personas.namePlaceholder"),
                         text: Binding(
                             get: { viewModel.personaDraftName },
                             set: { viewModel.personaDraftName = $0 }
@@ -313,7 +313,7 @@ struct StudioView: View {
                 }
 
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSectionTitle(title: "System Prompt")
+                    StudioSectionTitle(title: L("settings.personas.prompt"))
 
                     TextEditor(
                         text: Binding(
@@ -338,11 +338,11 @@ struct StudioView: View {
 
                 HStack {
                     Spacer()
-                    StudioButton(title: "Cancel", systemImage: nil, variant: .secondary) {
+                    StudioButton(title: L("common.cancel"), systemImage: nil, variant: .secondary) {
                         viewModel.cancelPersonaEditing()
                     }
                     StudioButton(
-                        title: "Save",
+                        title: L("common.save"),
                         systemImage: nil,
                         variant: .primary,
                         isDisabled: !viewModel.canSavePersonaDraft || !viewModel.hasPersonaDraftChanges
@@ -359,8 +359,8 @@ struct StudioView: View {
             StudioCard {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
                     StudioSettingRow(
-                        title: "Keep history",
-                        subtitle: "Choose how long VoiceInput keeps local dictation history on this device."
+                        title: L("history.keep.title"),
+                        subtitle: L("history.keep.subtitle")
                     ) {
                         StudioMenuPicker(
                             options: HistoryRetentionPolicy.allCases.map { (label: $0.title, value: $0) },
@@ -375,8 +375,8 @@ struct StudioView: View {
                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                     StudioSettingRow(
-                        title: "Your data stays private",
-                        subtitle: "Voice dictation history is only stored on this Mac. Auto-cleanup removes expired local entries and linked audio files."
+                        title: L("history.privacy.title"),
+                        subtitle: L("history.privacy.subtitle")
                     ) {
                         Image(systemName: "lock.fill")
                             .foregroundStyle(StudioTheme.success)
@@ -385,14 +385,14 @@ struct StudioView: View {
                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                     StudioSettingRow(
-                        title: "Export archive",
-                        subtitle: "Download your history as markdown or clear the current timeline."
+                        title: L("history.export.title"),
+                        subtitle: L("history.export.subtitle")
                     ) {
                         HStack(spacing: StudioTheme.Spacing.medium) {
-                            StudioButton(title: "Export Markdown", systemImage: "square.and.arrow.up", variant: .primary) {
+                            StudioButton(title: L("history.action.exportMarkdown"), systemImage: "square.and.arrow.up", variant: .primary) {
                                 viewModel.exportHistory()
                             }
-                            StudioButton(title: "Clear", systemImage: "trash", variant: .ghost) {
+                            StudioButton(title: L("common.clear"), systemImage: "trash", variant: .ghost) {
                                 viewModel.clearHistory()
                             }
                         }
@@ -408,7 +408,7 @@ struct StudioView: View {
         LazyVStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             if sections.isEmpty {
                 StudioCard(padding: StudioTheme.Insets.none) {
-                    Text("No history entries yet.")
+                    Text(L("history.empty"))
                         .font(.studioBody(StudioTheme.Typography.bodySmall))
                         .foregroundStyle(StudioTheme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -454,7 +454,7 @@ struct StudioView: View {
                 HStack(spacing: StudioTheme.Spacing.small) {
                     ProgressView()
                         .controlSize(.small)
-                    Text("Loading more history...")
+                    Text(L("history.loadingMore"))
                         .font(.studioBody(StudioTheme.Typography.caption))
                         .foregroundStyle(StudioTheme.textSecondary)
                 }
@@ -474,17 +474,17 @@ struct StudioView: View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                    Text("Help VoiceInput catch names, products, and domain terms more reliably.")
+                    Text(L("vocabulary.intro.title"))
                         .font(.studioBody(StudioTheme.Typography.bodyLarge))
                         .foregroundStyle(StudioTheme.textSecondary)
-                    Text("Manual entries are sent as recognition hints to Whisper-compatible transcription backends.")
+                    Text(L("vocabulary.intro.subtitle"))
                         .font(.studioBody(StudioTheme.Typography.caption))
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
 
                 Spacer()
 
-                StudioButton(title: "New word", systemImage: "plus", variant: .primary) {
+                StudioButton(title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .primary) {
                     newVocabularyTerm = ""
                     isAddingVocabulary = true
                 }
@@ -504,7 +504,7 @@ struct StudioView: View {
                         Image(systemName: "magnifyingglass")
                             .foregroundStyle(StudioTheme.textTertiary)
 
-                        TextField("Search vocabulary...", text: $viewModel.searchQuery)
+                        TextField(L("vocabulary.search.placeholder"), text: $viewModel.searchQuery)
                             .textFieldStyle(.plain)
                             .font(.studioBody(StudioTheme.Typography.body))
                             .foregroundStyle(StudioTheme.textPrimary)
@@ -524,13 +524,13 @@ struct StudioView: View {
 
                 if filteredVocabularyEntries.isEmpty {
                     VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                        Text("No vocabulary terms yet.")
+                        Text(L("vocabulary.empty.title"))
                             .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
                             .foregroundStyle(StudioTheme.textPrimary)
-                        Text("Add product names, people, brands, or jargon you use frequently to improve recognition quality.")
+                        Text(L("vocabulary.empty.subtitle"))
                             .font(.studioBody(StudioTheme.Typography.body))
                             .foregroundStyle(StudioTheme.textSecondary)
-                        StudioButton(title: "Add your first word", systemImage: "plus", variant: .secondary) {
+                        StudioButton(title: L("vocabulary.action.addFirst"), systemImage: "plus", variant: .secondary) {
                             newVocabularyTerm = ""
                             isAddingVocabulary = true
                         }
@@ -582,9 +582,9 @@ struct StudioView: View {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
                     VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
                         shortcutConfigurationRow(
-                            title: "Primary trigger",
-                            subtitle: "Use one shortcut to start dictation. Hold to talk, or tap quickly to lock the recording session.",
-                            footnote: "Default is Right Command. You can replace it with any modifier-based combination and reset it later.",
+                            title: L("settings.shortcuts.activation.title"),
+                            subtitle: L("settings.shortcuts.activation.subtitle"),
+                            footnote: L("settings.shortcuts.activation.footnote"),
                             icon: "command",
                             badgeSymbol: "mic.fill",
                             binding: viewModel.activationHotkey,
@@ -604,9 +604,9 @@ struct StudioView: View {
                         Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                         shortcutConfigurationRow(
-                            title: "Persona switcher",
-                            subtitle: "Open a centered picker, move with Up and Down, then press Return to switch the active persona instantly.",
-                            footnote: "The picker includes No Persona and every saved persona, so you can switch styles without opening Settings.",
+                            title: L("settings.shortcuts.persona.title"),
+                            subtitle: L("settings.shortcuts.persona.subtitle"),
+                            footnote: L("settings.shortcuts.persona.footnote"),
                             icon: "person.crop.rectangle.stack.fill",
                             badgeSymbol: "person.crop.circle.badge.checkmark",
                             binding: viewModel.personaHotkey,
@@ -645,10 +645,10 @@ struct StudioView: View {
                                 )
 
                             VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                                Text("Default Persona")
+                                Text(L("settings.personaDefault.title"))
                                     .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
                                     .foregroundStyle(StudioTheme.textPrimary)
-                                Text("Choose the writing identity that should shape new dictation sessions.")
+                                Text(L("settings.personaDefault.subtitle"))
                                     .font(.studioBody(StudioTheme.Typography.bodySmall))
                                     .foregroundStyle(StudioTheme.textSecondary)
                             }
@@ -659,7 +659,7 @@ struct StudioView: View {
                                let persona = viewModel.personas.first(where: { $0.id == selectedID }) {
                                 StudioPill(title: persona.name)
                             } else {
-                                StudioPill(title: "No Persona", systemImage: "person.slash")
+                                StudioPill(title: L("persona.none.title"), systemImage: "person.slash")
                             }
                         }
 
@@ -674,8 +674,8 @@ struct StudioView: View {
                             spacing: StudioTheme.Spacing.medium
                         ) {
                             personaSelectionCard(
-                                title: "No Persona",
-                                subtitle: "Dictate without any persona styling.",
+                                title: L("persona.none.title"),
+                                subtitle: L("persona.none.subtitle"),
                                 initials: "",
                                 systemImage: "person.slash.fill",
                                 isSelected: viewModel.defaultPersonaSelectionID == nil
@@ -698,15 +698,15 @@ struct StudioView: View {
                         HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
                             Text(
                                 viewModel.personaRewriteEnabled
-                                    ? "New dictation sessions will be rewritten with the selected persona."
-                                    : "Persona is currently off, so dictation will stay in its plain form."
+                                    ? L("settings.personaDefault.enabled")
+                                    : L("settings.personaDefault.disabled")
                             )
                             .font(.studioBody(StudioTheme.Typography.caption))
                             .foregroundStyle(StudioTheme.textSecondary)
 
                             Spacer()
 
-                            StudioButton(title: "Open Personas", systemImage: nil, variant: .secondary) {
+                            StudioButton(title: L("settings.personaDefault.openPersonas"), systemImage: nil, variant: .secondary) {
                                 viewModel.navigate(to: .personas)
                             }
                         }
@@ -933,7 +933,7 @@ struct StudioView: View {
                 )
 
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
-                Text("Recording a new shortcut")
+                Text(L("settings.shortcuts.recording"))
                     .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
                 Text(recordingBannerDescription)
@@ -973,11 +973,11 @@ struct StudioView: View {
     private var recordingBannerDescription: String {
         switch recordingTarget {
         case .activation:
-            return "Press the new activation combination now. Include at least one modifier key."
+            return L("settings.shortcuts.recordingActivation")
         case .persona:
-            return "Press the shortcut that should open the persona picker. Include at least one modifier key."
+            return L("settings.shortcuts.recordingPersona")
         case nil:
-            return "Press the full key combination you want to use. Include at least one modifier key."
+            return L("settings.shortcuts.recordingGeneric")
         }
     }
 
@@ -988,7 +988,7 @@ struct StudioView: View {
     ) -> some View {
         HStack(spacing: StudioTheme.Spacing.small) {
             StudioButton(
-                title: recorder.isRecording ? "Stop Recording" : "Record",
+                title: recorder.isRecording ? L("settings.shortcuts.stopRecording") : L("settings.shortcuts.record"),
                 systemImage: recorder.isRecording ? "stop.circle.fill" : "keyboard",
                 variant: recorder.isRecording ? .secondary : .primary
             ) {
@@ -1000,7 +1000,7 @@ struct StudioView: View {
                 }
             }
 
-            StudioButton(title: "Reset", systemImage: "arrow.counterclockwise", variant: .secondary, isDisabled: isDefault) {
+            StudioButton(title: L("common.reset"), systemImage: "arrow.counterclockwise", variant: .secondary, isDisabled: isDefault) {
                 onReset()
             }
         }
@@ -1208,15 +1208,15 @@ struct StudioView: View {
 
     private var vocabularyAddSheet: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-            Text("Add to vocabulary")
+            Text(L("vocabulary.sheet.title"))
                 .font(.studioDisplay(StudioTheme.Typography.pageTitle, weight: .semibold))
                 .foregroundStyle(StudioTheme.textPrimary)
 
-            Text("Use one term per entry. This works best for names, brands, product terms, and other frequently dictated jargon.")
+            Text(L("vocabulary.sheet.subtitle"))
                 .font(.studioBody(StudioTheme.Typography.body))
                 .foregroundStyle(StudioTheme.textSecondary)
 
-            TextField("Add a new word", text: $newVocabularyTerm)
+            TextField(L("vocabulary.sheet.placeholder"), text: $newVocabularyTerm)
                 .textFieldStyle(.plain)
                 .font(.studioBody(StudioTheme.Typography.bodyLarge))
                 .foregroundStyle(StudioTheme.textPrimary)
@@ -1236,11 +1236,11 @@ struct StudioView: View {
 
             HStack {
                 Spacer()
-                StudioButton(title: "Cancel", systemImage: nil, variant: .secondary) {
+                StudioButton(title: L("common.cancel"), systemImage: nil, variant: .secondary) {
                     isAddingVocabulary = false
                 }
                 StudioButton(
-                    title: "Add word",
+                    title: L("vocabulary.action.addWord"),
                     systemImage: nil,
                     variant: .primary,
                     isDisabled: newVocabularyTerm.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -1332,52 +1332,52 @@ struct StudioView: View {
 
     private var parameterCard: some View {
         StudioCard {
-            StudioSectionTitle(title: "Configuration")
+            StudioSectionTitle(title: L("settings.models.configuration"))
             if viewModel.modelDomain == .stt {
                 StudioSuggestedTextInputCard(
-                    label: "Whisper Endpoint",
+                    label: L("settings.models.whisper.endpoint"),
                     placeholder: OpenAIAudioModelCatalog.whisperEndpoints[0],
                     text: Binding(get: { viewModel.whisperBaseURL }, set: viewModel.setWhisperBaseURL),
                     suggestions: whisperEndpointSuggestions
                 )
                 StudioSuggestedTextInputCard(
-                    label: "Whisper Model",
+                    label: L("settings.models.whisper.model"),
                     placeholder: OpenAIAudioModelCatalog.whisperModels[0],
                     text: Binding(get: { viewModel.whisperModel }, set: viewModel.setWhisperModel),
                     suggestions: whisperModelSuggestions
                 )
-                Toggle("Enable Apple fallback", isOn: Binding(get: { viewModel.appleSpeechFallback }, set: viewModel.setAppleSpeechFallback))
+                Toggle(L("settings.models.appleFallback"), isOn: Binding(get: { viewModel.appleSpeechFallback }, set: viewModel.setAppleSpeechFallback))
                     .toggleStyle(.switch)
             } else {
                 if viewModel.llmProvider == .ollama {
                     StudioSuggestedTextInputCard(
-                        label: "Ollama Base URL",
+                        label: L("settings.models.ollama.baseURL"),
                         placeholder: "http://127.0.0.1:11434",
                         text: Binding(get: { viewModel.ollamaBaseURL }, set: viewModel.setOllamaBaseURL),
                         suggestions: ollamaEndpointSuggestions
                     )
                     StudioSuggestedTextInputCard(
-                        label: "Local Model",
+                        label: L("settings.models.localModel"),
                         placeholder: "qwen2.5:7b",
                         text: Binding(get: { viewModel.ollamaModel }, set: viewModel.setOllamaModel),
                         suggestions: ollamaModelSuggestions
                     )
-                    Toggle("Automatic local setup", isOn: Binding(get: { viewModel.ollamaAutoSetup }, set: viewModel.setOllamaAutoSetup))
+                    Toggle(L("settings.models.ollama.autoSetup"), isOn: Binding(get: { viewModel.ollamaAutoSetup }, set: viewModel.setOllamaAutoSetup))
                         .toggleStyle(.switch)
                 } else {
                     StudioSuggestedTextInputCard(
-                        label: "Remote Base URL",
+                        label: L("settings.models.remote.baseURL"),
                         placeholder: "https://api.openai.com/v1",
                         text: Binding(get: { viewModel.llmBaseURL }, set: viewModel.setLLMBaseURL),
                         suggestions: llmEndpointSuggestions
                     )
                     StudioSuggestedTextInputCard(
-                        label: "Model",
+                        label: L("common.model"),
                         placeholder: "gpt-4o-mini",
                         text: Binding(get: { viewModel.llmModel }, set: viewModel.setLLMModel),
                         suggestions: llmModelSuggestions
                     )
-                    StudioTextInputCard(label: "API Key", placeholder: "sk-...", text: Binding(get: { viewModel.llmAPIKey }, set: viewModel.setLLMAPIKey), secure: true)
+                    StudioTextInputCard(label: L("common.apiKey"), placeholder: "sk-...", text: Binding(get: { viewModel.llmAPIKey }, set: viewModel.setLLMAPIKey), secure: true)
                 }
             }
         }
@@ -1386,11 +1386,11 @@ struct StudioView: View {
 
     private var actionCard: some View {
         StudioCard {
-            StudioSectionTitle(title: "Activation")
-            Text("Custom Architecture?")
+            StudioSectionTitle(title: L("settings.models.activation"))
+            Text(L("settings.models.customArchitecture.title"))
                 .font(.studioDisplay(StudioTheme.Typography.settingTitle, weight: .semibold))
                 .foregroundStyle(StudioTheme.textPrimary)
-            Text("Import your own gateway URL or prepare a local model directly from the component-driven configuration panels.")
+            Text(L("settings.models.customArchitecture.subtitle"))
                 .font(.studioBody(StudioTheme.Typography.body))
                 .foregroundStyle(StudioTheme.textSecondary)
 
@@ -1423,11 +1423,11 @@ struct StudioView: View {
         StudioCard(padding: StudioTheme.Insets.none) {
             VStack(spacing: StudioTheme.Spacing.none) {
                 HStack {
-                    Text("Timestamp")
+                    Text(L("history.table.timestamp"))
                         .frame(width: StudioTheme.Layout.historyTimestampColumnWidth, alignment: .leading)
-                    Text("Source File")
+                    Text(L("history.table.sourceFile"))
                         .frame(width: StudioTheme.Layout.historySourceColumnWidth, alignment: .leading)
-                    Text("Recognized Text")
+                    Text(L("history.table.recognizedText"))
                     Spacer()
                 }
                 .font(.studioBody(StudioTheme.Typography.sidebarEyebrow, weight: .bold))
@@ -1439,7 +1439,7 @@ struct StudioView: View {
                 Divider().overlay(StudioTheme.border)
 
                 if records.isEmpty {
-                    Text("No history entries yet.")
+                    Text(L("history.empty"))
                         .font(.studioBody(StudioTheme.Typography.bodySmall))
                         .foregroundStyle(StudioTheme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -1485,7 +1485,7 @@ struct StudioView: View {
                                             .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
                                             .foregroundStyle(StudioTheme.textSecondary)
                                     )
-                                Text("Overall activity")
+                                Text(L("home.activity.title"))
                                     .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
                                     .foregroundStyle(StudioTheme.textSecondary)
                             }
@@ -1494,13 +1494,13 @@ struct StudioView: View {
                                 .font(.studioDisplay(StudioTheme.Typography.displayLarge, weight: .bold))
                                 .foregroundStyle(StudioTheme.textPrimary)
 
-                            Text("Completion rate")
+                            Text(L("home.activity.completionRate"))
                                 .font(.studioBody(StudioTheme.Typography.body))
                                 .foregroundStyle(StudioTheme.textSecondary)
 
                             Spacer(minLength: StudioTheme.Spacing.smallMedium)
 
-                            Text("Your voice data stays on-device unless you export it.")
+                            Text(L("home.activity.privacy"))
                                 .font(.studioBody(StudioTheme.Typography.caption))
                                 .foregroundStyle(StudioTheme.textTertiary)
                                 .frame(maxWidth: 240, alignment: .leading)
@@ -1531,10 +1531,10 @@ struct StudioView: View {
                     alignment: .leading,
                     spacing: StudioTheme.Spacing.medium
                 ) {
-                    homeMiniMetric(icon: "clock", value: "\(viewModel.transcriptionMinutesText) min", title: "Total dictation time")
-                    homeMiniMetric(icon: "mic", value: "\(viewModel.statsTotalCharacters)", title: "Characters dictated")
-                    homeMiniMetric(icon: "hourglass", value: "\(viewModel.statsSavedMinutes) min", title: "Time saved")
-                    homeMiniMetric(icon: "bolt", value: viewModel.statsAveragePaceWPM > 0 ? "\(viewModel.statsAveragePaceWPM) wpm" : "--", title: "Average pace")
+                    homeMiniMetric(icon: "clock", value: "\(viewModel.transcriptionMinutesText) min", title: L("home.metric.totalDictation"))
+                    homeMiniMetric(icon: "mic", value: "\(viewModel.statsTotalCharacters)", title: L("home.metric.charactersDictated"))
+                    homeMiniMetric(icon: "hourglass", value: "\(viewModel.statsSavedMinutes) min", title: L("home.metric.timeSaved"))
+                    homeMiniMetric(icon: "bolt", value: viewModel.statsAveragePaceWPM > 0 ? "\(viewModel.statsAveragePaceWPM) wpm" : "--", title: L("home.metric.averagePace"))
                 }
                 .frame(width: StudioTheme.Layout.overviewSideMetricsWidth)
             }
@@ -1587,7 +1587,7 @@ struct StudioView: View {
     private func sessionStream(records: [HistoryPresentationRecord]) -> some View {
         StudioCard(padding: StudioTheme.Insets.none) {
             if records.isEmpty {
-                Text("No history entries yet.")
+                Text(L("history.empty"))
                     .font(.studioBody(StudioTheme.Typography.bodySmall))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -1743,76 +1743,76 @@ struct StudioView: View {
             return [
                 StudioModelCard(
                     id: StudioModelProviderID.whisperAPI.rawValue,
-                    name: "Whisper API",
-                    summary: "Remote transcription through OpenAI-compatible endpoints with better model flexibility.",
-                    badge: "API",
-                    metadata: viewModel.whisperModel.isEmpty ? "Model not configured" : viewModel.whisperModel,
+                    name: STTProvider.whisperAPI.displayName,
+                    summary: L("settings.models.card.whisper.summary"),
+                    badge: L("settings.models.badge.api"),
+                    metadata: viewModel.whisperModel.isEmpty ? L("settings.models.modelNotConfigured") : viewModel.whisperModel,
                     isSelected: viewModel.sttProvider == .whisperAPI,
                     isMuted: false,
-                    actionTitle: "Use Remote"
+                    actionTitle: L("settings.models.useRemote")
                 ),
                 StudioModelCard(
                     id: StudioModelProviderID.localSTT.rawValue,
-                    name: "Local Models",
-                    summary: "Run Whisper, SenseVoice Small, or Qwen3-ASR locally through an embedded service runtime.",
-                    badge: "Local",
+                    name: L("settings.models.localModels"),
+                    summary: L("settings.models.card.localSTT.summary"),
+                    badge: L("settings.models.badge.local"),
                     metadata: viewModel.localSTTModel.displayName,
                     isSelected: viewModel.sttProvider == .localModel,
                     isMuted: false,
-                    actionTitle: "Use Local"
+                    actionTitle: L("settings.models.useLocal")
                 ),
                 StudioModelCard(
                     id: StudioModelProviderID.multimodalLLM.rawValue,
-                    name: "Multimodal LLM",
-                    summary: "Send audio directly to a multimodal model. Transcription and persona rewriting happen in a single API call — faster end-to-end.",
-                    badge: "API",
-                    metadata: viewModel.multimodalLLMModel.isEmpty ? "Model not configured" : viewModel.multimodalLLMModel,
+                    name: STTProvider.multimodalLLM.displayName,
+                    summary: L("settings.models.card.multimodal.summary"),
+                    badge: L("settings.models.badge.api"),
+                    metadata: viewModel.multimodalLLMModel.isEmpty ? L("settings.models.modelNotConfigured") : viewModel.multimodalLLMModel,
                     isSelected: viewModel.sttProvider == .multimodalLLM,
                     isMuted: false,
-                    actionTitle: "Use Multimodal"
+                    actionTitle: L("settings.models.useMultimodal")
                 ),
                 StudioModelCard(
                     id: StudioModelProviderID.aliCloud.rawValue,
-                    name: "Alibaba Cloud ASR",
-                    summary: "Real-time streaming recognition via DashScope. Supports FunASR and Qwen3-ASR models with low-latency WebSocket streaming.",
-                    badge: "API",
-                    metadata: "Built-in default model",
+                    name: STTProvider.aliCloud.displayName,
+                    summary: L("settings.models.card.aliCloud.summary"),
+                    badge: L("settings.models.badge.api"),
+                    metadata: L("settings.models.builtInDefaultModel"),
                     isSelected: viewModel.sttProvider == .aliCloud,
                     isMuted: false,
-                    actionTitle: "Use Alibaba Cloud"
+                    actionTitle: L("settings.models.useAliCloud")
                 ),
                 StudioModelCard(
                     id: StudioModelProviderID.doubaoRealtime.rawValue,
-                    name: "Doubao Realtime ASR",
-                    summary: "Low-latency streaming recognition through Doubao Speech Recognition 2.0 with ByteDance's native binary WebSocket protocol.",
-                    badge: "API",
-                    metadata: "Built-in default profile",
+                    name: STTProvider.doubaoRealtime.displayName,
+                    summary: L("settings.models.card.doubao.summary"),
+                    badge: L("settings.models.badge.api"),
+                    metadata: L("settings.models.builtInDefaultProfile"),
                     isSelected: viewModel.sttProvider == .doubaoRealtime,
                     isMuted: false,
-                    actionTitle: "Use Doubao"
+                    actionTitle: L("settings.models.useDoubao")
                 )
             ]
         case .llm:
             return [
                 StudioModelCard(
                     id: StudioModelProviderID.ollama.rawValue,
-                    name: "Local Ollama",
-                    summary: "Runs rewrite and edit commands locally, with optional automatic model preparation.",
-                    badge: "Local",
-                    metadata: viewModel.ollamaModel.isEmpty ? "Model not configured" : viewModel.ollamaModel,
+                    name: LLMProvider.ollama.displayName,
+                    summary: L("settings.models.card.ollama.summary"),
+                    badge: L("settings.models.badge.local"),
+                    metadata: viewModel.ollamaModel.isEmpty ? L("settings.models.modelNotConfigured") : viewModel.ollamaModel,
                     isSelected: viewModel.llmProvider == .ollama,
                     isMuted: false,
-                    actionTitle: "Use Local"
+                    actionTitle: L("settings.models.useLocal")
                 ),
                 StudioModelCard(
                     id: StudioModelProviderID.openAICompatible.rawValue,
-                    name: "OpenAI-Compatible",
-                    summary: "Connect remote chat-completions providers for persona rewriting and editing workflows.",
-                    badge: "API",
-                    metadata: viewModel.llmModel.isEmpty ? "Model not configured" : viewModel.llmModel,
+                    name: LLMProvider.openAICompatible.displayName,
+                    summary: L("settings.models.card.openAICompatible.summary"),
+                    badge: L("settings.models.badge.api"),
+                    metadata: viewModel.llmModel.isEmpty ? L("settings.models.modelNotConfigured") : viewModel.llmModel,
                     isSelected: viewModel.llmProvider == .openAICompatible,
                     isMuted: false,
-                    actionTitle: "Use Remote"
+                    actionTitle: L("settings.models.useRemote")
                 )
             ]
         }
@@ -1859,7 +1859,7 @@ struct StudioView: View {
                     Text(modelOverviewModelHint)
                         .font(.studioBody(StudioTheme.Typography.caption))
                         .foregroundStyle(StudioTheme.textSecondary)
-                    StudioButton(title: "Edit current provider", systemImage: nil, variant: .secondary) {
+                    StudioButton(title: L("settings.models.editCurrentProvider"), systemImage: nil, variant: .secondary) {
                         viewModel.focusModelProvider(activeModelProviderID)
                     }
                 }
@@ -1885,12 +1885,12 @@ struct StudioView: View {
 
                         if viewModel.focusedModelProvider == activeModelProviderID {
                             StudioPill(
-                                title: "Active",
+                                title: L("settings.models.active"),
                                 tone: StudioTheme.success,
                                 fill: StudioTheme.success.opacity(0.12)
                             )
                         } else {
-                            StudioButton(title: "Use as Default", systemImage: "checkmark.circle.fill", variant: .secondary) {
+                            StudioButton(title: L("settings.models.useAsDefault"), systemImage: "checkmark.circle.fill", variant: .secondary) {
                                 applyFocusedProviderAsDefault()
                             }
                         }
@@ -1901,12 +1901,12 @@ struct StudioView: View {
 
                 if [StudioModelProviderID.whisperAPI, .multimodalLLM, .openAICompatible, .ollama, .aliCloud, .doubaoRealtime].contains(viewModel.focusedModelProvider) {
                     HStack(spacing: StudioTheme.Spacing.small) {
-                        StudioButton(title: "Save", systemImage: "checkmark", variant: .primary) {
+                        StudioButton(title: L("common.save"), systemImage: "checkmark", variant: .primary) {
                             viewModel.applyModelConfiguration()
                         }
                         if viewModel.focusedModelProvider == .openAICompatible || viewModel.focusedModelProvider == .ollama {
                             StudioButton(
-                                title: viewModel.llmConnectionTestState == .testing ? "Testing..." : "Test Connection",
+                                title: viewModel.llmConnectionTestState == .testing ? L("settings.models.testingConnection") : L("settings.models.testConnection"),
                                 systemImage: viewModel.llmConnectionTestState == .testing ? nil : "network",
                                 variant: .secondary,
                                 isDisabled: viewModel.llmConnectionTestState == .testing,
@@ -1926,7 +1926,7 @@ struct StudioView: View {
                 if viewModel.focusedModelProvider == .ollama {
                     VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
                         StudioButton(
-                            title: viewModel.isPreparingOllama ? "Preparing..." : "Prepare Local Model",
+                            title: viewModel.isPreparingOllama ? L("settings.models.preparing") : L("settings.models.prepareLocalModel"),
                             systemImage: viewModel.isPreparingOllama ? nil : "arrow.down.circle",
                             variant: .primary
                         ) {
@@ -1958,7 +1958,7 @@ struct StudioView: View {
 
                         VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
                             HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
-                                Text("Storage Path")
+                                Text(L("settings.models.storagePath"))
                                     .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
                                     .foregroundStyle(StudioTheme.textSecondary)
 
@@ -2015,13 +2015,13 @@ struct StudioView: View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
             switch viewModel.focusedModelProvider {
             case .appleSpeech:
-                Text("Apple Speech is the quickest local option and requires no additional setup or downloads.")
+                Text(L("settings.models.appleSpeech.quickest"))
                     .font(.studioBody(StudioTheme.Typography.caption))
                     .foregroundStyle(StudioTheme.textSecondary)
 
             case .localSTT:
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-                    Text("Local Model")
+                    Text(L("settings.models.localModel"))
                         .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
                         .foregroundStyle(StudioTheme.textSecondary)
 
@@ -2032,77 +2032,77 @@ struct StudioView: View {
 
             case .whisperAPI:
                 StudioSuggestedTextInputCard(
-                    label: "Transcription Endpoint",
+                    label: L("settings.models.transcriptionEndpoint"),
                     placeholder: OpenAIAudioModelCatalog.whisperEndpoints[0],
                     text: Binding(get: { viewModel.whisperBaseURL }, set: viewModel.setWhisperBaseURL),
                     suggestions: whisperEndpointSuggestions
                 )
                 StudioSuggestedTextInputCard(
-                    label: "Model",
+                    label: L("common.model"),
                     placeholder: OpenAIAudioModelCatalog.whisperModels[0],
                     text: Binding(get: { viewModel.whisperModel }, set: viewModel.setWhisperModel),
                     suggestions: whisperModelSuggestions
                 )
-                StudioTextInputCard(label: "API Key", placeholder: "sk-...", text: Binding(get: { viewModel.whisperAPIKey }, set: viewModel.setWhisperAPIKey), secure: true)
+                StudioTextInputCard(label: L("common.apiKey"), placeholder: "sk-...", text: Binding(get: { viewModel.whisperAPIKey }, set: viewModel.setWhisperAPIKey), secure: true)
 
             case .ollama:
                 StudioSuggestedTextInputCard(
-                    label: "Ollama Base URL",
+                    label: L("settings.models.ollama.baseURL"),
                     placeholder: "http://127.0.0.1:11434",
                     text: Binding(get: { viewModel.ollamaBaseURL }, set: viewModel.setOllamaBaseURL),
                     suggestions: ollamaEndpointSuggestions
                 )
                 StudioSuggestedTextInputCard(
-                    label: "Local Model",
+                    label: L("settings.models.localModel"),
                     placeholder: "qwen2.5:7b",
                     text: Binding(get: { viewModel.ollamaModel }, set: viewModel.setOllamaModel),
                     suggestions: ollamaModelSuggestions
                 )
-                Toggle("Automatically install or pull the model when missing", isOn: Binding(get: { viewModel.ollamaAutoSetup }, set: viewModel.setOllamaAutoSetup))
+                Toggle(L("settings.models.ollama.autoInstall"), isOn: Binding(get: { viewModel.ollamaAutoSetup }, set: viewModel.setOllamaAutoSetup))
                     .toggleStyle(.switch)
 
             case .openAICompatible:
                 StudioSuggestedTextInputCard(
-                    label: "Chat Endpoint",
+                    label: L("settings.models.chatEndpoint"),
                     placeholder: "https://api.openai.com/v1",
                     text: Binding(get: { viewModel.llmBaseURL }, set: viewModel.setLLMBaseURL),
                     suggestions: llmEndpointSuggestions
                 )
                 StudioSuggestedTextInputCard(
-                    label: "Model",
+                    label: L("common.model"),
                     placeholder: "gpt-4o-mini",
                     text: Binding(get: { viewModel.llmModel }, set: viewModel.setLLMModel),
                     suggestions: llmModelSuggestions
                 )
-                StudioTextInputCard(label: "API Key", placeholder: "sk-...", text: Binding(get: { viewModel.llmAPIKey }, set: viewModel.setLLMAPIKey), secure: true)
+                StudioTextInputCard(label: L("common.apiKey"), placeholder: "sk-...", text: Binding(get: { viewModel.llmAPIKey }, set: viewModel.setLLMAPIKey), secure: true)
 
             case .multimodalLLM:
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
                     StudioSuggestedTextInputCard(
-                        label: "API Endpoint",
+                        label: L("settings.models.apiEndpoint"),
                         placeholder: OpenAIAudioModelCatalog.multimodalEndpoints[0],
                         text: Binding(get: { viewModel.multimodalLLMBaseURL }, set: viewModel.setMultimodalLLMBaseURL),
                         suggestions: multimodalEndpointSuggestions
                     )
                     StudioSuggestedTextInputCard(
-                        label: "Model",
+                        label: L("common.model"),
                         placeholder: OpenAIAudioModelCatalog.multimodalModels[0],
                         text: Binding(get: { viewModel.multimodalLLMModel }, set: viewModel.setMultimodalLLMModel),
                         suggestions: multimodalModelSuggestions
                     )
-                    StudioTextInputCard(label: "API Key", placeholder: "sk-...", text: Binding(get: { viewModel.multimodalLLMAPIKey }, set: viewModel.setMultimodalLLMAPIKey), secure: true)
-                    Text("Audio is base64-encoded and sent as input_audio to the configured chat/completions endpoint. When a persona is active, transcription and rewriting happen in a single call.")
+                    StudioTextInputCard(label: L("common.apiKey"), placeholder: "sk-...", text: Binding(get: { viewModel.multimodalLLMAPIKey }, set: viewModel.setMultimodalLLMAPIKey), secure: true)
+                    Text(L("settings.models.multimodalLLM.audioHint"))
                         .font(.studioBody(StudioTheme.Typography.caption))
                         .foregroundStyle(StudioTheme.textSecondary)
                 }
 
             case .aliCloud:
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    StudioTextInputCard(label: "API Key", placeholder: "sk-...", text: Binding(get: { viewModel.aliCloudAPIKey }, set: viewModel.setAliCloudAPIKey), secure: true) {
+                    StudioTextInputCard(label: L("common.apiKey"), placeholder: "sk-...", text: Binding(get: { viewModel.aliCloudAPIKey }, set: viewModel.setAliCloudAPIKey), secure: true) {
                         Button {
                             NSWorkspace.shared.open(URL(string: "https://bailian.console.aliyun.com?tab=model#/api-key")!)
                         } label: {
-                            Text("获取 API Key")
+                            Text(L("settings.models.aliCloud.getAPIKey"))
                                 .font(.studioBody(StudioTheme.Typography.caption))
                                 .foregroundStyle(StudioTheme.accent)
                         }
@@ -2112,12 +2112,12 @@ struct StudioView: View {
 
             case .doubaoRealtime:
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    StudioTextInputCard(label: "App ID", placeholder: "APPID", text: Binding(get: { viewModel.doubaoAppID }, set: viewModel.setDoubaoAppID))
-                    StudioTextInputCard(label: "Access Token", placeholder: "access-token", text: Binding(get: { viewModel.doubaoAccessToken }, set: viewModel.setDoubaoAccessToken), secure: true) {
+                    StudioTextInputCard(label: L("settings.models.doubao.appID"), placeholder: "APPID", text: Binding(get: { viewModel.doubaoAppID }, set: viewModel.setDoubaoAppID))
+                    StudioTextInputCard(label: L("settings.models.doubao.accessToken"), placeholder: "access-token", text: Binding(get: { viewModel.doubaoAccessToken }, set: viewModel.setDoubaoAccessToken), secure: true) {
                         Button {
                             NSWorkspace.shared.open(URL(string: "https://www.volcengine.com/docs/6561/1354869?lang=zh")!)
                         } label: {
-                            Text("查看接入文档")
+                            Text(L("settings.models.doubao.docs"))
                                 .font(.studioBody(StudioTheme.Typography.caption))
                                 .foregroundStyle(StudioTheme.accent)
                         }
@@ -2137,7 +2137,7 @@ struct StudioView: View {
             HStack(spacing: StudioTheme.Spacing.xSmall) {
                 ProgressView()
                     .controlSize(.small)
-                Text("Testing connection...")
+                Text(L("settings.models.testingConnection"))
                     .font(.studioBody(StudioTheme.Typography.caption))
                     .foregroundStyle(StudioTheme.textSecondary)
             }
@@ -2147,7 +2147,7 @@ struct StudioView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(StudioTheme.success)
-                    Text("Connected · First token: \(firstMs)ms · Total: \(totalMs)ms")
+                    Text(L("settings.models.connectionSuccess", firstMs, totalMs))
                         .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
                 }
@@ -2180,18 +2180,18 @@ struct StudioView: View {
     private var modelRoutingPanel: some View {
         StudioCard {
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
-                StudioSectionTitle(title: "Routing behaviour")
+                StudioSectionTitle(title: L("settings.models.routing"))
                 providerFactRow(title: modelRoutingPrimaryTitle, value: modelRoutingPrimaryValue)
                 if let title = modelRoutingSecondaryTitle, let value = modelRoutingSecondaryValue {
                     providerFactRow(title: title, value: value)
                 }
 
                 HStack {
-                    StudioButton(title: "Apply Configuration", systemImage: "bolt.fill", variant: .primary) {
+                    StudioButton(title: L("settings.models.applyConfiguration"), systemImage: "bolt.fill", variant: .primary) {
                         viewModel.applyModelConfiguration()
                     }
                     if viewModel.modelDomain == .llm && viewModel.llmProvider == .ollama {
-                        StudioButton(title: "Prepare Ollama", systemImage: nil, variant: .secondary) {
+                        StudioButton(title: L("settings.models.prepareOllama"), systemImage: nil, variant: .secondary) {
                             viewModel.prepareOllamaModel()
                         }
                     }
@@ -2248,7 +2248,7 @@ struct StudioView: View {
 
                         if card.isSelected {
                             StudioPill(
-                                title: "Active",
+                                title: L("settings.models.active"),
                                 tone: StudioTheme.success,
                                 fill: StudioTheme.success.opacity(0.12)
                             )
@@ -2304,7 +2304,7 @@ struct StudioView: View {
 
                     if isSelected {
                         StudioPill(
-                            title: "Selected",
+                            title: L("settings.models.selected"),
                             tone: StudioTheme.accent,
                             fill: StudioTheme.accentSoft
                         )
@@ -2406,67 +2406,67 @@ struct StudioView: View {
     }
 
     private var modelProviderSectionTitle: String {
-        viewModel.modelDomain == .stt ? "Speech providers" : "LLM providers"
+        viewModel.modelDomain == .stt ? L("settings.models.providers.stt") : L("settings.models.providers.llm")
     }
 
     private var modelProviderSectionSubtitle: String {
         viewModel.modelDomain == .stt
-            ? "Choose the recognizer you want to default to, then configure credentials and fallback without leaving this page."
-            : "Choose the runtime for rewrite and edit flows, then tune local or remote settings on the right."
+            ? L("settings.models.providers.sttSubtitle")
+            : L("settings.models.providers.llmSubtitle")
     }
 
     private var modelOverviewTitle: String {
-        viewModel.modelDomain == .stt ? "Default transcription stack" : "Default rewrite stack"
+        viewModel.modelDomain == .stt ? L("settings.models.overview.sttTitle") : L("settings.models.overview.llmTitle")
     }
 
     private var modelOverviewSubtitle: String {
         switch activeModelProviderID {
         case .appleSpeech:
-            return "Voice input stays on-device for predictable startup and lower friction."
+            return L("settings.models.overview.appleSpeech")
         case .localSTT:
-            return "Speech recognition is handled by a local runtime with curated downloadable models."
+            return L("settings.models.overview.localSTT")
         case .whisperAPI:
-            return "Speech recognition is routed to your configured remote transcription endpoint."
+            return L("settings.models.overview.whisper")
         case .ollama:
-            return "Rewrite requests stay local and run through your Ollama runtime."
+            return L("settings.models.overview.ollama")
         case .openAICompatible:
-            return "Rewrite requests are sent to your selected remote chat-completions provider."
+            return L("settings.models.overview.openAICompatible")
         case .multimodalLLM:
-            return "Audio is sent directly to a multimodal model — transcription and persona rewriting in one call."
+            return L("settings.models.overview.multimodal")
         case .aliCloud:
-            return "Speech recognition is streamed in real-time to Alibaba Cloud DashScope via WebSocket."
+            return L("settings.models.overview.aliCloud")
         case .doubaoRealtime:
-            return "Speech recognition is streamed in real-time to Doubao Speech Recognition 2.0 via ByteDance WebSocket."
+            return L("settings.models.overview.doubao")
         }
     }
 
     private var modelOverviewProviderPill: String {
         switch activeModelProviderID {
         case .appleSpeech:
-            return "Apple Speech"
+            return STTProvider.appleSpeech.displayName
         case .localSTT:
-            return "Local Model"
+            return STTProvider.localModel.displayName
         case .whisperAPI:
-            return "Whisper API"
+            return STTProvider.whisperAPI.displayName
         case .ollama:
-            return "Ollama"
+            return LLMProvider.ollama.displayName
         case .openAICompatible:
-            return "OpenAI-Compatible"
+            return LLMProvider.openAICompatible.displayName
         case .multimodalLLM:
-            return "Multimodal LLM"
+            return STTProvider.multimodalLLM.displayName
         case .aliCloud:
-            return "Alibaba Cloud ASR"
+            return STTProvider.aliCloud.displayName
         case .doubaoRealtime:
-            return "Doubao Realtime ASR"
+            return STTProvider.doubaoRealtime.displayName
         }
     }
 
     private var modelOverviewModePill: String {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
-            return "Local"
+            return L("settings.models.mode.local")
         case .whisperAPI, .openAICompatible, .multimodalLLM, .aliCloud, .doubaoRealtime:
-            return "Remote"
+            return L("settings.models.mode.remote")
         }
     }
 
@@ -2490,16 +2490,16 @@ struct StudioView: View {
 
     private var modelOverviewExtraPill: String? {
         if viewModel.modelDomain == .stt {
-            return viewModel.appleSpeechFallback ? "Fallback enabled" : "Fallback off"
+            return viewModel.appleSpeechFallback ? L("settings.models.fallback.enabled") : L("settings.models.fallback.off")
         }
 
-        return providerIsConfigured(activeModelProviderID) ? "Configured" : "Needs setup"
+        return providerIsConfigured(activeModelProviderID) ? L("settings.models.configured") : L("settings.models.needsSetup")
     }
 
     private var modelOverviewModelName: String {
         switch activeModelProviderID {
         case .appleSpeech:
-            return "Apple Speech"
+            return STTProvider.appleSpeech.displayName
         case .localSTT:
             return viewModel.localSTTModel.displayName
         case .whisperAPI:
@@ -2513,105 +2513,105 @@ struct StudioView: View {
         case .aliCloud:
             return AliCloudASRDefaults.model
         case .doubaoRealtime:
-            return "Doubao Speech Recognition 2.0"
+            return L("settings.models.doubao.productName")
         }
     }
 
     private var modelOverviewModelHint: String {
-        providerIsConfigured(activeModelProviderID) ? "Ready for use" : "Configuration still needed"
+        providerIsConfigured(activeModelProviderID) ? L("settings.models.readyForUse") : L("settings.models.configurationNeeded")
     }
 
     private var focusedProviderTitle: String {
         switch viewModel.focusedModelProvider {
         case .appleSpeech:
-            return "Apple Speech"
+            return STTProvider.appleSpeech.displayName
         case .localSTT:
-            return "Local Speech Models"
+            return L("settings.models.localSpeechModels")
         case .whisperAPI:
-            return "Whisper API"
+            return STTProvider.whisperAPI.displayName
         case .ollama:
-            return "Local Ollama"
+            return LLMProvider.ollama.displayName
         case .openAICompatible:
-            return "OpenAI-Compatible"
+            return LLMProvider.openAICompatible.displayName
         case .multimodalLLM:
-            return "Multimodal LLM"
+            return STTProvider.multimodalLLM.displayName
         case .aliCloud:
-            return "Alibaba Cloud ASR"
+            return STTProvider.aliCloud.displayName
         case .doubaoRealtime:
-            return "Doubao Realtime ASR"
+            return STTProvider.doubaoRealtime.displayName
         }
     }
 
     private var focusedProviderSubtitle: String {
         switch viewModel.focusedModelProvider {
         case .appleSpeech:
-            return "Use this when you want offline-first dictation with almost no setup."
+            return L("settings.models.focused.appleSpeech")
         case .localSTT:
-            return "Use this when you want downloadable local ASR models with better multilingual coverage than the system recognizer."
+            return L("settings.models.focused.localSTT")
         case .whisperAPI:
-            return "Use this when you want better model control or your own speech gateway."
+            return L("settings.models.focused.whisper")
         case .ollama:
-            return "Use this when local privacy matters for rewrite and editing flows."
+            return L("settings.models.focused.ollama")
         case .openAICompatible:
-            return "Use this when you want flexible remote LLM access for rewriting and assistant actions."
+            return L("settings.models.focused.openAICompatible")
         case .multimodalLLM:
-            return "Use this when you want the fastest end-to-end path — audio goes directly to a multimodal model that transcribes and rewrites in one shot."
+            return L("settings.models.focused.multimodal")
         case .aliCloud:
-            return "Use this when you want low-latency real-time streaming recognition via Alibaba Cloud DashScope with FunASR or Qwen3 ASR models."
+            return L("settings.models.focused.aliCloud")
         case .doubaoRealtime:
-            return "Use this when you want the lowest-latency cloud dictation path through Doubao Speech Recognition 2.0 and ByteDance's streaming ASR protocol."
+            return L("settings.models.focused.doubao")
         }
     }
 
     private var modelRoutingPrimaryTitle: String {
-        viewModel.modelDomain == .stt ? "Primary recognizer" : "Primary runtime"
+        viewModel.modelDomain == .stt ? L("settings.models.routing.primaryRecognizer") : L("settings.models.routing.primaryRuntime")
     }
 
     private var modelRoutingPrimaryValue: String {
         switch activeModelProviderID {
         case .appleSpeech:
-            return "Apple Speech handles dictation directly on your Mac."
+            return L("settings.models.routing.appleSpeech")
         case .localSTT:
-            return "The embedded local STT service handles dictation with your selected downloadable model."
+            return L("settings.models.routing.localSTT")
         case .whisperAPI:
-            return "Whisper API handles dictation through the configured transcription endpoint."
+            return L("settings.models.routing.whisper")
         case .ollama:
-            return "Ollama handles rewrite and edit requests locally."
+            return L("settings.models.routing.ollama")
         case .openAICompatible:
-            return "The remote chat-completions endpoint handles rewrite and edit requests."
+            return L("settings.models.routing.openAICompatible")
         case .multimodalLLM:
-            return "A multimodal LLM handles the full transcription pipeline. When a persona is active, rewriting is folded into the same call."
+            return L("settings.models.routing.multimodal")
         case .aliCloud:
-            return "Alibaba Cloud DashScope handles real-time streaming ASR via WebSocket."
+            return L("settings.models.routing.aliCloud")
         case .doubaoRealtime:
-            return "Doubao Speech Recognition 2.0 handles real-time streaming ASR via ByteDance's binary WebSocket protocol."
+            return L("settings.models.routing.doubao")
         }
     }
 
     private var modelRoutingSecondaryTitle: String? {
         if viewModel.modelDomain == .stt {
-            return "Fallback"
+            return L("settings.models.routing.fallback")
         }
 
-        return activeModelProviderID == .ollama ? "Local setup" : "Readiness"
+        return activeModelProviderID == .ollama ? L("settings.models.routing.localSetup") : L("settings.models.routing.readiness")
     }
 
     private var modelRoutingSecondaryValue: String? {
         if viewModel.modelDomain == .stt {
             return viewModel.appleSpeechFallback
-                ? "If remote transcription fails, the app can fall back to Apple Speech automatically."
-                : "Automatic fallback is currently disabled."
+                ? L("settings.models.routing.fallbackEnabled")
+                : L("settings.models.routing.fallbackDisabled")
         }
 
         if activeModelProviderID == .ollama {
             return viewModel.ollamaAutoSetup
-                ? "Missing local models can be prepared automatically when needed."
-                : "Local model setup is manual until you enable auto preparation."
+                ? L("settings.models.routing.localSetupAutomatic")
+                : L("settings.models.routing.localSetupManual")
         }
 
         return providerIsConfigured(.openAICompatible)
-            ? "Remote endpoint and model are set. API key is optional in the current implementation."
-            : "Add a remote endpoint and model before using cloud rewrite."
+            ? L("settings.models.routing.readinessConfigured")
+            : L("settings.models.routing.readinessNeedsSetup")
     }
 
 }
