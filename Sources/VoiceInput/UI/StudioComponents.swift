@@ -576,22 +576,14 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
                             }
                         } label: {
                             Image(systemName: "chevron.down")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(StudioTheme.textSecondary)
-                                .frame(width: 28, height: 28)
-                                .background(
-                                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                                        .fill(StudioTheme.surface)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                                        .stroke(StudioTheme.border.opacity(0.9), lineWidth: StudioTheme.BorderWidth.thin)
-                                )
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(StudioTheme.textTertiary)
+                                .frame(width: 16, height: 16)
                         }
                         .menuStyle(.borderlessButton)
                         .help("Select a suggested value")
                     }
-                    .padding(.trailing, 10)
+                    .padding(.trailing, 14)
                 }
             }
             .frame(minHeight: 46)
