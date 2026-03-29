@@ -76,7 +76,7 @@ final class MultimodalLLMTranscriber: Transcriber {
           "model": "\(model)",
           "stream": true,
           "messages": [
-            {"role": "system", "content": "<\(systemPrompt.count) chars>"},
+            {"role": "system", "content": "\(systemPrompt)"},
             {"role": "user", "content": [{"type": "input_audio", "format": "\(audioFormat)", "data": "<\(base64Audio.count) chars base64>"}]}
           ]
         }
