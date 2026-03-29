@@ -130,6 +130,21 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "stt.alicloud.model") }
     }
 
+    var doubaoAppID: String {
+        get { defaults.string(forKey: "stt.doubao.appID") ?? "" }
+        set { defaults.set(newValue, forKey: "stt.doubao.appID") }
+    }
+
+    var doubaoAccessToken: String {
+        get { defaults.string(forKey: "stt.doubao.accessToken") ?? "" }
+        set { defaults.set(newValue, forKey: "stt.doubao.accessToken") }
+    }
+
+    var doubaoResourceID: String {
+        get { defaults.string(forKey: "stt.doubao.resourceID") ?? "volc.bigasr.sauc.duration" }
+        set { defaults.set(newValue, forKey: "stt.doubao.resourceID") }
+    }
+
     var multimodalLLMModel: String {
         get { defaults.string(forKey: "stt.multimodal.model") ?? "" }
         set { defaults.set(newValue, forKey: "stt.multimodal.model") }

@@ -49,6 +49,9 @@ final class StudioViewModel: ObservableObject {
 
     @Published var aliCloudAPIKey: String
     @Published var aliCloudModel: String
+    @Published var doubaoAppID: String
+    @Published var doubaoAccessToken: String
+    @Published var doubaoResourceID: String
 
     @Published var localSTTModel: LocalSTTModel
     @Published var localSTTModelIdentifier: String
@@ -127,6 +130,8 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .multimodalLLM
         case .aliCloud:
             focusedModelProvider = .aliCloud
+        case .doubaoRealtime:
+            focusedModelProvider = .doubaoRealtime
         }
         appearanceMode = settingsStore.appearanceMode
         preferredMicrophoneID = settingsStore.preferredMicrophoneID
@@ -145,6 +150,9 @@ final class StudioViewModel: ObservableObject {
         multimodalLLMAPIKey = settingsStore.multimodalLLMAPIKey
         aliCloudAPIKey = settingsStore.aliCloudAPIKey
         aliCloudModel = settingsStore.aliCloudModel
+        doubaoAppID = settingsStore.doubaoAppID
+        doubaoAccessToken = settingsStore.doubaoAccessToken
+        doubaoResourceID = settingsStore.doubaoResourceID
         localSTTModel = settingsStore.localSTTModel
         localSTTModelIdentifier = settingsStore.localSTTModel.defaultModelIdentifier
         localSTTDownloadSource = settingsStore.localSTTDownloadSource
@@ -387,7 +395,7 @@ final class StudioViewModel: ObservableObject {
             switch sttProvider {
             case .appleSpeech, .localModel:
                 return "Local Processing"
-            case .whisperAPI, .multimodalLLM, .aliCloud:
+            case .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime:
                 return "Remote API"
             }
         case .llm:
@@ -409,6 +417,8 @@ final class StudioViewModel: ObservableObject {
                 return "Using a multimodal LLM for transcription and persona rewriting in one call."
             case .aliCloud:
                 return "Streaming audio to Alibaba Cloud DashScope for real-time speech recognition."
+            case .doubaoRealtime:
+                return "Streaming audio to Doubao Speech Recognition 2.0 over WebSocket."
             }
         case .llm:
             return llmProvider == .ollama ? "Using local Ollama generation." : "Using remote chat-completion endpoints."
@@ -498,6 +508,8 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .multimodalLLM
         case .aliCloud:
             focusedModelProvider = .aliCloud
+        case .doubaoRealtime:
+            focusedModelProvider = .doubaoRealtime
         }
     }
 
@@ -576,6 +588,9 @@ final class StudioViewModel: ObservableObject {
     func setMultimodalLLMAPIKey(_ value: String) { multimodalLLMAPIKey = value }
     func setAliCloudAPIKey(_ value: String) { aliCloudAPIKey = value }
     func setAliCloudModel(_ value: String) { aliCloudModel = value }
+    func setDoubaoAppID(_ value: String) { doubaoAppID = value }
+    func setDoubaoAccessToken(_ value: String) { doubaoAccessToken = value }
+    func setDoubaoResourceID(_ value: String) { doubaoResourceID = value }
     func setLocalSTTModelIdentifier(_ value: String) {
         let identifier = value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? localSTTModel.defaultModelIdentifier
@@ -916,6 +931,10 @@ final class StudioViewModel: ObservableObject {
         case .aliCloud:
             settingsStore.aliCloudAPIKey = aliCloudAPIKey
             settingsStore.aliCloudModel = aliCloudModel
+        case .doubaoRealtime:
+            settingsStore.doubaoAppID = doubaoAppID
+            settingsStore.doubaoAccessToken = doubaoAccessToken
+            settingsStore.doubaoResourceID = doubaoResourceID
         case .appleSpeech, .localSTT:
             break
         }
@@ -1153,6 +1172,8 @@ final class StudioViewModel: ObservableObject {
                 return .multimodalLLM
             case .aliCloud:
                 return .aliCloud
+            case .doubaoRealtime:
+                return .doubaoRealtime
             }
         case .llm:
             return llmProvider == .ollama ? .ollama : .openAICompatible

@@ -31,6 +31,7 @@ final class STTRouter {
     private let localModel: Transcriber
     private let multimodal: Transcriber
     private let aliCloud: Transcriber
+    private let doubaoRealtime: Transcriber
 
     init(
         settingsStore: SettingsStore,
@@ -38,7 +39,8 @@ final class STTRouter {
         appleSpeech: Transcriber,
         localModel: Transcriber,
         multimodal: Transcriber,
-        aliCloud: Transcriber
+        aliCloud: Transcriber,
+        doubaoRealtime: Transcriber
     ) {
         self.settingsStore = settingsStore
         self.whisper = whisper
@@ -46,6 +48,7 @@ final class STTRouter {
         self.localModel = localModel
         self.multimodal = multimodal
         self.aliCloud = aliCloud
+        self.doubaoRealtime = doubaoRealtime
     }
 
     func transcribe(audioFile: AudioFile) async throws -> String {
@@ -105,6 +108,18 @@ final class STTRouter {
                 NetworkDebugLogger.logError(context: "Alibaba Cloud ASR failed", error: error)
                 if settingsStore.useAppleSpeechFallback {
                     NetworkDebugLogger.logMessage("Falling back to Apple Speech after Alibaba Cloud ASR failure")
+                    return try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                }
+                throw error
+            }
+
+        case .doubaoRealtime:
+            do {
+                return try await doubaoRealtime.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+            } catch {
+                NetworkDebugLogger.logError(context: "Doubao realtime ASR failed", error: error)
+                if settingsStore.useAppleSpeechFallback {
+                    NetworkDebugLogger.logMessage("Falling back to Apple Speech after Doubao realtime ASR failure")
                     return try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
                 }
                 throw error

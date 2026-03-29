@@ -1547,6 +1547,8 @@ struct StudioView: View {
                 return .multimodalLLM
             case .aliCloud:
                 return .aliCloud
+            case .doubaoRealtime:
+                return .doubaoRealtime
             }
         case .llm:
             return viewModel.llmProvider == .ollama ? .ollama : .openAICompatible
@@ -1606,6 +1608,16 @@ struct StudioView: View {
                     isSelected: viewModel.sttProvider == .aliCloud,
                     isMuted: false,
                     actionTitle: "Use Alibaba Cloud"
+                ),
+                StudioModelCard(
+                    id: StudioModelProviderID.doubaoRealtime.rawValue,
+                    name: "Doubao Realtime ASR",
+                    summary: "Low-latency streaming recognition through Doubao Speech Recognition 2.0 with ByteDance's native binary WebSocket protocol.",
+                    badge: "API",
+                    metadata: viewModel.doubaoResourceID.isEmpty ? "volc.bigasr.sauc.duration" : viewModel.doubaoResourceID,
+                    isSelected: viewModel.sttProvider == .doubaoRealtime,
+                    isMuted: false,
+                    actionTitle: "Use Doubao"
                 )
             ]
         case .llm:
@@ -1711,7 +1723,7 @@ struct StudioView: View {
 
                 focusedProviderForm
 
-                if [StudioModelProviderID.whisperAPI, .multimodalLLM, .openAICompatible, .ollama, .aliCloud].contains(viewModel.focusedModelProvider) {
+                if [StudioModelProviderID.whisperAPI, .multimodalLLM, .openAICompatible, .ollama, .aliCloud, .doubaoRealtime].contains(viewModel.focusedModelProvider) {
                     HStack(spacing: StudioTheme.Spacing.small) {
                         StudioButton(title: "Save", systemImage: "checkmark", variant: .primary) {
                             viewModel.applyModelConfiguration()
@@ -1886,6 +1898,25 @@ struct StudioView: View {
                         }
                         .buttonStyle(.plain)
                     }
+                }
+
+            case .doubaoRealtime:
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    StudioTextInputCard(label: "App ID", placeholder: "APPID", text: Binding(get: { viewModel.doubaoAppID }, set: viewModel.setDoubaoAppID))
+                    StudioTextInputCard(label: "Access Token", placeholder: "access-token", text: Binding(get: { viewModel.doubaoAccessToken }, set: viewModel.setDoubaoAccessToken), secure: true) {
+                        Button {
+                            NSWorkspace.shared.open(URL(string: "https://www.volcengine.com/docs/6561/1354869?lang=zh")!)
+                        } label: {
+                            Text("查看接入文档")
+                                .font(.studioBody(StudioTheme.Typography.caption))
+                                .foregroundStyle(StudioTheme.accent)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    StudioTextInputCard(label: "Resource ID", placeholder: "volc.bigasr.sauc.duration", text: Binding(get: { viewModel.doubaoResourceID }, set: viewModel.setDoubaoResourceID))
+                    Text("Audio is transcoded to 16 kHz mono PCM16 and streamed over ByteDance's binary WebSocket protocol for lower latency. Vocabulary terms are passed as hotwords automatically.")
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textSecondary)
                 }
             }
         }
@@ -2122,6 +2153,8 @@ struct StudioView: View {
             return !viewModel.multimodalLLMBaseURL.isEmpty && !viewModel.multimodalLLMModel.isEmpty
         case .aliCloud:
             return !viewModel.aliCloudAPIKey.isEmpty
+        case .doubaoRealtime:
+            return !viewModel.doubaoAppID.isEmpty && !viewModel.doubaoAccessToken.isEmpty
         }
     }
 
@@ -2142,6 +2175,8 @@ struct StudioView: View {
             viewModel.setSTTModelSelection(.multimodalLLM, suggestedModel: viewModel.multimodalLLMModel.isEmpty ? "gpt-4o-audio-preview" : viewModel.multimodalLLMModel)
         case .aliCloud:
             viewModel.setSTTModelSelection(.aliCloud, suggestedModel: viewModel.aliCloudModel.isEmpty ? "fun-asr-realtime" : viewModel.aliCloudModel)
+        case .doubaoRealtime:
+            viewModel.setSTTProvider(.doubaoRealtime)
         }
     }
 
@@ -2161,6 +2196,8 @@ struct StudioView: View {
             return "brain.filled.head.profile"
         case .aliCloud:
             return "antenna.radiowaves.left.and.right"
+        case .doubaoRealtime:
+            return "bolt.horizontal.circle"
         }
     }
 
@@ -2194,6 +2231,8 @@ struct StudioView: View {
             return "Audio is sent directly to a multimodal model — transcription and persona rewriting in one call."
         case .aliCloud:
             return "Speech recognition is streamed in real-time to Alibaba Cloud DashScope via WebSocket."
+        case .doubaoRealtime:
+            return "Speech recognition is streamed in real-time to Doubao Speech Recognition 2.0 via ByteDance WebSocket."
         }
     }
 
@@ -2213,6 +2252,8 @@ struct StudioView: View {
             return "Multimodal LLM"
         case .aliCloud:
             return "Alibaba Cloud ASR"
+        case .doubaoRealtime:
+            return "Doubao Realtime ASR"
         }
     }
 
@@ -2220,7 +2261,7 @@ struct StudioView: View {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
             return "Local"
-        case .whisperAPI, .openAICompatible, .multimodalLLM, .aliCloud:
+        case .whisperAPI, .openAICompatible, .multimodalLLM, .aliCloud, .doubaoRealtime:
             return "Remote"
         }
     }
@@ -2229,7 +2270,7 @@ struct StudioView: View {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
             return StudioTheme.success
-        case .whisperAPI, .openAICompatible, .multimodalLLM, .aliCloud:
+        case .whisperAPI, .openAICompatible, .multimodalLLM, .aliCloud, .doubaoRealtime:
             return StudioTheme.accent
         }
     }
@@ -2238,7 +2279,7 @@ struct StudioView: View {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
             return StudioTheme.success.opacity(0.12)
-        case .whisperAPI, .openAICompatible, .multimodalLLM, .aliCloud:
+        case .whisperAPI, .openAICompatible, .multimodalLLM, .aliCloud, .doubaoRealtime:
             return StudioTheme.accentSoft
         }
     }
@@ -2267,6 +2308,8 @@ struct StudioView: View {
             return viewModel.multimodalLLMModel.isEmpty ? "gpt-4o-audio-preview" : viewModel.multimodalLLMModel
         case .aliCloud:
             return viewModel.aliCloudModel.isEmpty ? "fun-asr-realtime" : viewModel.aliCloudModel
+        case .doubaoRealtime:
+            return viewModel.doubaoResourceID.isEmpty ? "volc.bigasr.sauc.duration" : viewModel.doubaoResourceID
         }
     }
 
@@ -2290,6 +2333,8 @@ struct StudioView: View {
             return "Multimodal LLM"
         case .aliCloud:
             return "Alibaba Cloud ASR"
+        case .doubaoRealtime:
+            return "Doubao Realtime ASR"
         }
     }
 
@@ -2309,6 +2354,8 @@ struct StudioView: View {
             return "Use this when you want the fastest end-to-end path — audio goes directly to a multimodal model that transcribes and rewrites in one shot."
         case .aliCloud:
             return "Use this when you want low-latency real-time streaming recognition via Alibaba Cloud DashScope with FunASR or Qwen3 ASR models."
+        case .doubaoRealtime:
+            return "Use this when you want the lowest-latency cloud dictation path through Doubao Speech Recognition 2.0 and ByteDance's streaming ASR protocol."
         }
     }
 
@@ -2332,6 +2379,8 @@ struct StudioView: View {
             return "A multimodal LLM handles the full transcription pipeline. When a persona is active, rewriting is folded into the same call."
         case .aliCloud:
             return "Alibaba Cloud DashScope handles real-time streaming ASR via WebSocket."
+        case .doubaoRealtime:
+            return "Doubao Speech Recognition 2.0 handles real-time streaming ASR via ByteDance's binary WebSocket protocol."
         }
     }
 

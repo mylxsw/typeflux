@@ -40,7 +40,8 @@ final class DIContainer {
             appleSpeech: AppleSpeechTranscriber(),
             localModel: LocalModelTranscriber(settingsStore: settingsStore, serviceManager: localSTTServiceManager),
             multimodal: MultimodalLLMTranscriber(settingsStore: settingsStore),
-            aliCloud: AliCloudRealtimeTranscriber(settingsStore: settingsStore)
+            aliCloud: AliCloudRealtimeTranscriber(settingsStore: settingsStore),
+            doubaoRealtime: DoubaoRealtimeTranscriber(settingsStore: settingsStore)
         )
     }
 }
