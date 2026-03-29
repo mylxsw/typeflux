@@ -575,16 +575,13 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
                                 }
                             }
                         } label: {
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundStyle(StudioTheme.textTertiary)
-                                .frame(width: 16, height: 16)
+                            Color.clear
+                                .frame(width: 12, height: 12)
                         }
                         .menuStyle(.borderlessButton)
-                        .menuIndicator(.hidden)
                         .help("Select a suggested value")
                     }
-                    .padding(.trailing, 14)
+                    .padding(.trailing, 12)
                 }
             }
             .frame(minHeight: 46)
