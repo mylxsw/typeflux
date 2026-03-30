@@ -345,12 +345,12 @@ final class SettingsStore {
     private var defaultPersonas: [PersonaProfile] {
         [
             PersonaProfile(
-                name: "专业助理",
-                prompt: "使用专业、清晰、简洁的中文表达，整理语序，保留关键信息，适合直接发给同事或客户。"
+                name: "Professional Assistant",
+                prompt: "Rewrite in professional, clear, and concise Chinese. Improve sentence flow, preserve key information, and make it suitable to send directly to colleagues or clients."
             ),
             PersonaProfile(
-                name: "社媒达人",
-                prompt: "改写成更有感染力和分享感的中文内容，语气自然、鲜活，适合社交媒体发布。"
+                name: "Social Media Creator",
+                prompt: "Rewrite into more engaging and shareable Chinese content with a natural, vivid tone that is suitable for social media posting."
             )
         ]
     }
