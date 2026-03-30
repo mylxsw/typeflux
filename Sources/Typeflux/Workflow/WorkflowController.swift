@@ -525,7 +525,6 @@ final class WorkflowController {
         }
 
         var mutableRecord = record
-        mutableRecord.date = Date()
         mutableRecord.errorMessage = nil
         mutableRecord.applyMessage = nil
         mutableRecord.transcriptText = nil
@@ -554,7 +553,8 @@ final class WorkflowController {
             ),
             selectedText: selectedText,
             personaPrompt: personaPrompt,
-            sessionID: sessionID
+            sessionID: sessionID,
+            forceResultDialogOnSuccess: true
         )
     }
 
@@ -564,7 +564,8 @@ final class WorkflowController {
         selectionSnapshot: TextSelectionSnapshot,
         selectedText: String?,
         personaPrompt: String?,
-        sessionID: UUID
+        sessionID: UUID,
+        forceResultDialogOnSuccess: Bool = false
     ) async {
         var record = record
         do {
@@ -707,11 +708,17 @@ final class WorkflowController {
             saveHistoryRecord(record)
             UsageStatsStore.shared.recordSession(record: record)
             enforceHistoryRetentionPolicy()
+            let retryResultText = forceResultDialogOnSuccess ? record.finalText : nil
 
             await MainActor.run {
                 if self.processingSessionID == sessionID {
                     self.appState.setStatus(.idle)
-                    self.overlayController.dismissSoon()
+                    if let finalText = retryResultText, !finalText.isEmpty {
+                        self.lastDialogResultText = finalText
+                        self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: finalText)
+                    } else {
+                        self.overlayController.dismissSoon()
+                    }
                 }
             }
         } catch is CancellationError {
