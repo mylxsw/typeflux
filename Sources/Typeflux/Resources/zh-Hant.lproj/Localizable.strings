@@ -180,16 +180,16 @@
 
 "localSTT.whisperLocal.name" = "Whisper Local";
 "localSTT.whisperLocal.summary" = "均衡的本地 ASR，英文與多語言聽寫表現穩定，適合多數離線轉寫情境。";
-"localSTT.whisperLocal.parameters" = "Whisper small，約 2.44 億參數";
-"localSTT.whisperLocal.size" = "模型檔案約 460 MB";
+"localSTT.whisperLocal.parameterValue" = "244M";
+"localSTT.whisperLocal.sizeValue" = "460 MB";
 "localSTT.senseVoiceSmall.name" = "SenseVoice Small";
 "localSTT.senseVoiceSmall.summary" = "快速的多語言語音辨識，對普通話、粵語、英語、日語與韓語支援較強。";
-"localSTT.senseVoiceSmall.parameters" = "SenseVoiceSmall，約 2.34 億參數";
-"localSTT.senseVoiceSmall.size" = "執行檔通常約 1.1 GB";
+"localSTT.senseVoiceSmall.parameterValue" = "234M";
+"localSTT.senseVoiceSmall.sizeValue" = "1.1 GB";
 "localSTT.qwen3ASR.name" = "Qwen3-ASR";
 "localSTT.qwen3ASR.summary" = "更大的多語言 ASR 模型，語境理解更強，長語音辨識品質更好。";
-"localSTT.qwen3ASR.parameters" = "Qwen3-ASR-0.6B，約 6 億參數";
-"localSTT.qwen3ASR.size" = "執行檔通常約 1.6 GB";
+"localSTT.qwen3ASR.parameterValue" = "0.6B";
+"localSTT.qwen3ASR.sizeValue" = "1.6 GB";
 
 "modelDomain.stt.title" = "語音轉寫";
 "modelDomain.stt.subtitle" = "語音轉文字";

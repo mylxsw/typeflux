@@ -42,8 +42,8 @@ enum LocalSTTModel: String, CaseIterable, Codable {
 
     struct Specs {
         let summary: String
-        let parameterInfo: String
-        let sizeInfo: String
+        let parameterValue: String
+        let sizeValue: String
     }
 
     var displayName: String {
@@ -82,20 +82,20 @@ enum LocalSTTModel: String, CaseIterable, Codable {
         case .whisperLocal:
             return Specs(
                 summary: L("localSTT.whisperLocal.summary"),
-                parameterInfo: L("localSTT.whisperLocal.parameters"),
-                sizeInfo: L("localSTT.whisperLocal.size")
+                parameterValue: L("localSTT.whisperLocal.parameterValue"),
+                sizeValue: L("localSTT.whisperLocal.sizeValue")
             )
         case .senseVoiceSmall:
             return Specs(
                 summary: L("localSTT.senseVoiceSmall.summary"),
-                parameterInfo: L("localSTT.senseVoiceSmall.parameters"),
-                sizeInfo: L("localSTT.senseVoiceSmall.size")
+                parameterValue: L("localSTT.senseVoiceSmall.parameterValue"),
+                sizeValue: L("localSTT.senseVoiceSmall.sizeValue")
             )
         case .qwen3ASR:
             return Specs(
                 summary: L("localSTT.qwen3ASR.summary"),
-                parameterInfo: L("localSTT.qwen3ASR.parameters"),
-                sizeInfo: L("localSTT.qwen3ASR.size")
+                parameterValue: L("localSTT.qwen3ASR.parameterValue"),
+                sizeValue: L("localSTT.qwen3ASR.sizeValue")
             )
         }
     }

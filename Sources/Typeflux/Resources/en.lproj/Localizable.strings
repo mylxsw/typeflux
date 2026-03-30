@@ -180,16 +180,16 @@
 
 "localSTT.whisperLocal.name" = "Whisper Local";
 "localSTT.whisperLocal.summary" = "Balanced local ASR with stable English and multilingual dictation, suitable for most offline transcription needs.";
-"localSTT.whisperLocal.parameters" = "Whisper small, around 244M parameters";
-"localSTT.whisperLocal.size" = "Model file about 460 MB";
+"localSTT.whisperLocal.parameterValue" = "244M";
+"localSTT.whisperLocal.sizeValue" = "460 MB";
 "localSTT.senseVoiceSmall.name" = "SenseVoice Small";
 "localSTT.senseVoiceSmall.summary" = "Fast multilingual speech recognition with strong Mandarin, Cantonese, English, Japanese, and Korean support.";
-"localSTT.senseVoiceSmall.parameters" = "SenseVoiceSmall, about 234M parameters";
-"localSTT.senseVoiceSmall.size" = "Runtime files usually around 1.1 GB";
+"localSTT.senseVoiceSmall.parameterValue" = "234M";
+"localSTT.senseVoiceSmall.sizeValue" = "1.1 GB";
 "localSTT.qwen3ASR.name" = "Qwen3-ASR";
 "localSTT.qwen3ASR.summary" = "Larger multilingual ASR model with stronger context understanding and better long-form recognition quality.";
-"localSTT.qwen3ASR.parameters" = "Qwen3-ASR-0.6B, about 600M parameters";
-"localSTT.qwen3ASR.size" = "Runtime files usually around 1.6 GB";
+"localSTT.qwen3ASR.parameterValue" = "0.6B";
+"localSTT.qwen3ASR.sizeValue" = "1.6 GB";
 
 "modelDomain.stt.title" = "Voice Transcription";
 "modelDomain.stt.subtitle" = "Speech to text";

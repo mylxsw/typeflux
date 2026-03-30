@@ -2325,8 +2325,9 @@ struct StudioView: View {
                 }
 
                 HStack(spacing: StudioTheme.Spacing.xSmall) {
-                    localSTTSpecPill(specs.parameterInfo)
-                    localSTTSpecPill(specs.sizeInfo)
+                    localSTTSpecPill(model.displayName)
+                    localSTTSpecPill("\(specs.parameterValue) parameters")
+                    localSTTSpecPill(specs.sizeValue)
                 }
             }
             .padding(StudioTheme.Insets.cardCompact)

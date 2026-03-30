@@ -180,16 +180,16 @@
 
 "localSTT.whisperLocal.name" = "Whisper Local";
 "localSTT.whisperLocal.summary" = "均衡的本地 ASR，英文和多语言听写表现稳定，适合大多数离线转写场景。";
-"localSTT.whisperLocal.parameters" = "Whisper small，约 2.44 亿参数";
-"localSTT.whisperLocal.size" = "模型文件约 460 MB";
+"localSTT.whisperLocal.parameterValue" = "244M";
+"localSTT.whisperLocal.sizeValue" = "460 MB";
 "localSTT.senseVoiceSmall.name" = "SenseVoice Small";
 "localSTT.senseVoiceSmall.summary" = "快速的多语言语音识别，对普通话、粤语、英语、日语和韩语支持较强。";
-"localSTT.senseVoiceSmall.parameters" = "SenseVoiceSmall，约 2.34 亿参数";
-"localSTT.senseVoiceSmall.size" = "运行文件通常约 1.1 GB";
+"localSTT.senseVoiceSmall.parameterValue" = "234M";
+"localSTT.senseVoiceSmall.sizeValue" = "1.1 GB";
 "localSTT.qwen3ASR.name" = "Qwen3-ASR";
 "localSTT.qwen3ASR.summary" = "更大的多语言 ASR 模型，语境理解更强，长语音识别质量更好。";
-"localSTT.qwen3ASR.parameters" = "Qwen3-ASR-0.6B，约 6 亿参数";
-"localSTT.qwen3ASR.size" = "运行文件通常约 1.6 GB";
+"localSTT.qwen3ASR.parameterValue" = "0.6B";
+"localSTT.qwen3ASR.sizeValue" = "1.6 GB";
 
 "modelDomain.stt.title" = "语音转写";
 "modelDomain.stt.subtitle" = "语音转文字";
