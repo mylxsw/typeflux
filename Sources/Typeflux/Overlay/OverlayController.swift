@@ -806,29 +806,29 @@ private struct OverlayView: View {
             HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 5) {
                     Text(model.statusText)
-                        .font(.system(size: 21, weight: .semibold))
+                        .font(.system(size: 19, weight: .semibold))
                         .foregroundStyle(Color.white.opacity(0.98))
 
                     Text(model.detailText)
-                        .font(.system(size: 12.5, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(0.68))
-                        .lineLimit(2)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.white.opacity(0.62))
+                        .lineLimit(1)
                 }
 
                 Spacer(minLength: 0)
 
                 Button(action: model.requestPersonaCancel) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 12.5, weight: .bold))
-                        .foregroundStyle(Color.white.opacity(0.56))
-                        .frame(width: 28, height: 28)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Color.white.opacity(0.52))
+                        .frame(width: 26, height: 26)
                         .background(
                             Circle()
-                                .fill(Color.white.opacity(0.08))
+                                .fill(Color.white.opacity(0.06))
                         )
                         .overlay(
                             Circle()
-                                .stroke(Color.white.opacity(0.08), lineWidth: 0.8)
+                                .stroke(Color.white.opacity(0.06), lineWidth: 0.8)
                         )
                 }
                 .buttonStyle(.plain)
@@ -853,14 +853,15 @@ private struct OverlayView: View {
                 }
             }
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 20)
-        .frame(width: 468, alignment: .leading)
+        .padding(.horizontal, 20)
+        .padding(.top, 18)
+        .padding(.bottom, 16)
+        .frame(width: 458, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color(nsColor: .windowBackgroundColor).opacity(0.16))
+                .fill(Color.black.opacity(0.44))
                 .background(
-                    .ultraThinMaterial,
+                    .regularMaterial,
                     in: RoundedRectangle(cornerRadius: 24, style: .continuous)
                 )
                 .overlay(
@@ -868,22 +869,21 @@ private struct OverlayView: View {
                         .strokeBorder(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.28),
-                                    Color.white.opacity(0.12)
+                                    Color.white.opacity(0.18),
+                                    Color.white.opacity(0.06)
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
                             ),
-                            lineWidth: 1
+                            lineWidth: 0.9
                         )
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(Color.black.opacity(0.18), lineWidth: 0.5)
-                        .blur(radius: 1.5)
+                        .stroke(Color.black.opacity(0.35), lineWidth: 0.6)
                 )
         )
-        .shadow(color: Color.black.opacity(0.22), radius: 24, x: 0, y: 18)
+        .shadow(color: Color.black.opacity(0.32), radius: 32, x: 0, y: 18)
     }
 
     private var resultDialogCard: some View {
@@ -941,7 +941,7 @@ private struct OverlayView: View {
                 .fill(
                     isSelected
                         ? Color.accentColor.opacity(0.18)
-                        : Color.white.opacity(0.055)
+                        : Color.white.opacity(0.045)
                 )
                 .frame(width: 40, height: 40)
                 .overlay(
@@ -953,10 +953,10 @@ private struct OverlayView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.title)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.white.opacity(0.96))
+                    .foregroundStyle(Color.white.opacity(isSelected ? 0.98 : 0.94))
                 Text(item.subtitle)
                     .font(.system(size: 11.5, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(isSelected ? 0.72 : 0.58))
+                    .foregroundStyle(Color.white.opacity(isSelected ? 0.7 : 0.5))
                     .lineLimit(2)
             }
 
@@ -969,15 +969,15 @@ private struct OverlayView: View {
             }
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 11)
+        .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(isSelected ? Color.white.opacity(0.12) : Color.white.opacity(0.025))
+                .fill(isSelected ? Color.white.opacity(0.08) : Color.white.opacity(0.02))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .stroke(
-                            isSelected ? Color.accentColor.opacity(0.78) : Color.white.opacity(0.06),
-                            lineWidth: isSelected ? 1.1 : 0.8
+                            isSelected ? Color.accentColor.opacity(0.68) : Color.white.opacity(0.045),
+                            lineWidth: isSelected ? 1 : 0.8
                         )
                 )
         )
