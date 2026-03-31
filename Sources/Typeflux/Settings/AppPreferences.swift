@@ -146,14 +146,46 @@ enum AppearanceMode: String, CaseIterable, Codable {
     }
 }
 
+enum PersonaProfileKind: String, Codable {
+    case system
+    case custom
+}
+
 struct PersonaProfile: Codable, Identifiable, Equatable {
     let id: UUID
     var name: String
     var prompt: String
+    var kind: PersonaProfileKind
 
-    init(id: UUID = UUID(), name: String, prompt: String) {
+    var isSystem: Bool { kind == .system }
+
+    init(id: UUID = UUID(), name: String, prompt: String, kind: PersonaProfileKind = .custom) {
         self.id = id
         self.name = name
         self.prompt = prompt
+        self.kind = kind
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case prompt
+        case kind
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        prompt = try container.decode(String.self, forKey: .prompt)
+        kind = try container.decodeIfPresent(PersonaProfileKind.self, forKey: .kind) ?? .custom
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(prompt, forKey: .prompt)
+        try container.encode(kind, forKey: .kind)
     }
 }

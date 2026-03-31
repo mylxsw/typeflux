@@ -305,6 +305,7 @@
 "settings.personas.namePlaceholder" = "Enter persona name";
 "settings.personas.prompt" = "System Prompt";
 "settings.personas.saved" = "Persona saved.";
+"settings.personas.tag.system" = "System";
 "settings.personas.deleteDialog.title" = "Delete Persona?";
 "settings.personas.deleteDialog.message" = "Delete \"%@\"? This cannot be undone.";
 "settings.personaDefault.title" = "Default Persona";
