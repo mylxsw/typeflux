@@ -2583,7 +2583,7 @@ struct StudioView: View {
         case .ollama:
             return "cpu"
         case .customLLM:
-            return "xmark.triangle.circle.square"
+            return "xmark.triangle.circle.square.fill"
         case .openRouter:
             return "arrow.triangle.branch"
         case .openAI:
