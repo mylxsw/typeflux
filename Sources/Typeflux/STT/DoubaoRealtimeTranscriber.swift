@@ -163,6 +163,8 @@ private enum DoubaoConnectionTester {
         request.setValue(accessToken, forHTTPHeaderField: "X-Api-Access-Key")
         request.setValue(resourceID, forHTTPHeaderField: "X-Api-Resource-Id")
         request.setValue(UUID().uuidString, forHTTPHeaderField: "X-Api-Connect-Id")
+        NetworkDebugLogger.logRequest(request, bodyDescription: "<websocket handshake>")
+        NetworkDebugLogger.logWebSocketEvent(provider: "Doubao Realtime ASR", phase: "connect", details: "resourceID=\(resourceID)")
 
         let delegate = DoubaoWSDelegate()
         let urlSession = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
@@ -175,6 +177,7 @@ private enum DoubaoConnectionTester {
         }
 
         try await delegate.waitUntilOpen(timeout: .seconds(10))
+        NetworkDebugLogger.logWebSocketEvent(provider: "Doubao Realtime ASR", phase: "open")
 
         let payload = DoubaoProtocol.buildClientRequest(uid: UUID().uuidString, hotwords: [])
         let requestMessage = DoubaoProtocol.encodeMessage(
@@ -185,6 +188,11 @@ private enum DoubaoConnectionTester {
                 compression: .none
             ),
             payload: payload
+        )
+        NetworkDebugLogger.logWebSocketEvent(
+            provider: "Doubao Realtime ASR",
+            phase: "send",
+            details: "client_request"
         )
         try await socketTask.send(.data(requestMessage))
 
@@ -297,6 +305,8 @@ private actor DoubaoRealtimeSession {
         request.setValue(accessToken, forHTTPHeaderField: "X-Api-Access-Key")
         request.setValue(resourceID, forHTTPHeaderField: "X-Api-Resource-Id")
         request.setValue(UUID().uuidString, forHTTPHeaderField: "X-Api-Connect-Id")
+        NetworkDebugLogger.logRequest(request, bodyDescription: "<websocket handshake>")
+        NetworkDebugLogger.logWebSocketEvent(provider: "Doubao Realtime ASR", phase: "connect", details: "resourceID=\(resourceID)")
 
         let delegate = DoubaoWSDelegate()
         let urlSession = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
@@ -309,6 +319,7 @@ private actor DoubaoRealtimeSession {
         }
 
         try await delegate.waitUntilOpen(timeout: .seconds(10))
+        NetworkDebugLogger.logWebSocketEvent(provider: "Doubao Realtime ASR", phase: "open")
 
         let receiveTask = Task { [weak self] in
             await self?.receiveLoop(socketTask: socketTask)
@@ -325,15 +336,28 @@ private actor DoubaoRealtimeSession {
             ),
             payload: payload
         )
+        NetworkDebugLogger.logWebSocketEvent(
+            provider: "Doubao Realtime ASR",
+            phase: "send",
+            details: "client_request hotwords=\(hotwords.count)"
+        )
         try await socketTask.send(.data(requestMessage))
 
         var offset = 0
+        var chunkCount = 0
         while offset < pcmData.count {
             let end = min(offset + DoubaoAudioConverter.chunkSize, pcmData.count)
             let chunk = pcmData[offset..<end]
             try await socketTask.send(.data(DoubaoProtocol.encodeAudioPacket(audioData: Data(chunk), isLast: false)))
             offset = end
+            chunkCount += 1
         }
+        NetworkDebugLogger.logWebSocketEvent(
+            provider: "Doubao Realtime ASR",
+            phase: "send",
+            details: "audio_chunks=\(chunkCount) audio_bytes=\(pcmData.count)"
+        )
+        NetworkDebugLogger.logWebSocketEvent(provider: "Doubao Realtime ASR", phase: "send", details: "audio_end")
         try await socketTask.send(.data(DoubaoProtocol.encodeAudioPacket(audioData: Data(), isLast: true)))
 
         try await waitForCompletion()
@@ -350,12 +374,18 @@ private actor DoubaoRealtimeSession {
             do {
                 let message = try await socketTask.receive()
                 guard let data = messageData(from: message) else { continue }
+                NetworkDebugLogger.logWebSocketEvent(
+                    provider: "Doubao Realtime ASR",
+                    phase: "receive",
+                    details: describeInboundMessage(data)
+                )
                 try await handleMessage(data)
             } catch {
                 if Task.isCancelled { break }
                 if didFinish {
                     break
                 }
+                NetworkDebugLogger.logError(context: "Doubao realtime receive loop failed", error: error)
                 if lastSnapshot.text.isEmpty {
                     signalError(error)
                 } else {
@@ -370,22 +400,39 @@ private actor DoubaoRealtimeSession {
         let header = try DoubaoHeader.decode(from: data)
         if header.messageType == .serverError {
             if !lastSnapshot.text.isEmpty {
+                NetworkDebugLogger.logWebSocketEvent(
+                    provider: "Doubao Realtime ASR",
+                    phase: "server_error_after_text",
+                    details: NetworkDebugLogger.describe(error: DoubaoProtocol.decodeServerError(data))
+                )
                 finish()
                 return
             }
-            throw DoubaoProtocol.decodeServerError(data)
+            let error = DoubaoProtocol.decodeServerError(data)
+            NetworkDebugLogger.logWebSocketEvent(
+                provider: "Doubao Realtime ASR",
+                phase: "server_error",
+                details: NetworkDebugLogger.describe(error: error)
+            )
+            throw error
         }
 
         let response = try DoubaoProtocol.decodeServerResponse(data)
         let snapshot = response.snapshot
         guard !snapshot.text.isEmpty, snapshot.text != lastSnapshot.text || snapshot.isFinal != lastSnapshot.isFinal else {
             if snapshot.isFinal {
+                NetworkDebugLogger.logWebSocketEvent(provider: "Doubao Realtime ASR", phase: "final")
                 finish()
             }
             return
         }
 
         lastSnapshot = snapshot
+        NetworkDebugLogger.logWebSocketEvent(
+            provider: "Doubao Realtime ASR",
+            phase: snapshot.isFinal ? "final" : "partial",
+            details: "text_length=\(snapshot.text.count)"
+        )
         await onUpdate(snapshot)
         if snapshot.isFinal {
             finish()
@@ -424,6 +471,14 @@ private actor DoubaoRealtimeSession {
         finishContinuation?.resume(throwing: error)
         finishContinuation = nil
     }
+
+    private func describeInboundMessage(_ data: Data) -> String {
+        guard let header = try? DoubaoHeader.decode(from: data) else {
+            return "<\(data.count) bytes invalid_header>"
+        }
+
+        return "type=\(header.messageType) flags=\(header.flags) bytes=\(data.count)"
+    }
 }
 
 private actor DoubaoWSDelegateState {
@@ -433,6 +488,11 @@ private actor DoubaoWSDelegateState {
     func markOpen() {
         isOpen = true
         openContinuation?.resume()
+        openContinuation = nil
+    }
+
+    func markFailed(_ error: Error) {
+        openContinuation?.resume(throwing: error)
         openContinuation = nil
     }
 
@@ -479,6 +539,15 @@ private final class DoubaoWSDelegate: NSObject, URLSessionWebSocketDelegate, URL
         Task {
             await state.markOpen()
         }
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didCompleteWithError error: Error?
+    ) {
+        guard let error else { return }
+        Task { await state.markFailed(error) }
     }
 }
 

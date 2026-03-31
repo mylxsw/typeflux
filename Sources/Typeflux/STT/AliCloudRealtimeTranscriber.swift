@@ -193,6 +193,8 @@ private actor AliCloudFunASRSession {
         let url = URL(string: "wss://dashscope.aliyuncs.com/api-ws/v1/inference/")!
         var request = URLRequest(url: url)
         request.setValue("bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        NetworkDebugLogger.logRequest(request, bodyDescription: "<websocket handshake>")
+        NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud FunASR", phase: "connect", details: "model=\(model)")
 
         let socketDelegate = AliCloudWSDelegate()
         let urlSession = URLSession(configuration: .default, delegate: socketDelegate, delegateQueue: nil)
@@ -205,6 +207,7 @@ private actor AliCloudFunASRSession {
         }
 
         try await socketDelegate.waitUntilOpen(timeout: .seconds(10))
+        NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud FunASR", phase: "open")
 
         let taskID = UUID().uuidString.replacingOccurrences(of: "-", with: "")
 
@@ -274,9 +277,15 @@ private actor AliCloudFunASRSession {
                 @unknown default: data = nil
                 }
                 guard let data else { continue }
+                NetworkDebugLogger.logWebSocketEvent(
+                    provider: "AliCloud FunASR",
+                    phase: "receive",
+                    details: String(data: data, encoding: .utf8) ?? "<\(data.count) bytes>"
+                )
                 handleEvent(data: data)
             } catch {
                 if !Task.isCancelled {
+                    NetworkDebugLogger.logError(context: "AliCloud FunASR receive loop failed", error: error)
                     signalError(error)
                 }
                 break
@@ -291,6 +300,7 @@ private actor AliCloudFunASRSession {
 
         switch event {
         case "task-started":
+            NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud FunASR", phase: "task-started")
             taskStarted = true
             taskStartedCont?.resume()
             taskStartedCont = nil
@@ -326,6 +336,7 @@ private actor AliCloudFunASRSession {
             }
 
         case "task-finished":
+            NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud FunASR", phase: "task-finished")
             taskFinished = true
             taskFinishedCont?.resume()
             taskFinishedCont = nil
@@ -333,6 +344,11 @@ private actor AliCloudFunASRSession {
         case "task-failed":
             let msg = (header["message"] as? String) ?? "ASR task failed"
             let code = (header["status"] as? Int) ?? -1
+            NetworkDebugLogger.logWebSocketEvent(
+                provider: "AliCloud FunASR",
+                phase: "task-failed",
+                details: "code=\(code) message=\(msg)"
+            )
             signalError(NSError(
                 domain: "AliCloudFunASR",
                 code: code,
@@ -385,6 +401,7 @@ private actor AliCloudFunASRSession {
                 userInfo: [NSLocalizedDescriptionKey: "Failed to encode JSON payload."]
             )
         }
+        NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud FunASR", phase: "send", details: text)
         try await socketTask.send(.string(text))
     }
 }
@@ -465,6 +482,8 @@ private actor AliCloudQwenASRSession {
         let url = URL(string: "wss://dashscope.aliyuncs.com/api-ws/v1/realtime")!
         var request = URLRequest(url: url)
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        NetworkDebugLogger.logRequest(request, bodyDescription: "<websocket handshake>")
+        NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud Qwen ASR", phase: "connect", details: "model=\(model)")
 
         let socketDelegate = AliCloudWSDelegate()
         let urlSession = URLSession(configuration: .default, delegate: socketDelegate, delegateQueue: nil)
@@ -477,6 +496,7 @@ private actor AliCloudQwenASRSession {
         }
 
         try await socketDelegate.waitUntilOpen(timeout: .seconds(10))
+        NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud Qwen ASR", phase: "open")
 
         let sessionUpdate: [String: Any] = [
             "type": "session.update",
@@ -529,9 +549,15 @@ private actor AliCloudQwenASRSession {
                 @unknown default: data = nil
                 }
                 guard let data else { continue }
+                NetworkDebugLogger.logWebSocketEvent(
+                    provider: "AliCloud Qwen ASR",
+                    phase: "receive",
+                    details: String(data: data, encoding: .utf8) ?? "<\(data.count) bytes>"
+                )
                 handleEvent(data: data)
             } catch {
                 if !Task.isCancelled {
+                    NetworkDebugLogger.logError(context: "AliCloud Qwen ASR receive loop failed", error: error)
                     signalError(error)
                 }
                 break
@@ -545,17 +571,24 @@ private actor AliCloudQwenASRSession {
 
         switch type {
         case "session.created", "session.updated":
+            NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud Qwen ASR", phase: type)
             sessionReady = true
             sessionReadyCont?.resume()
             sessionReadyCont = nil
 
         case "session.finished":
+            NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud Qwen ASR", phase: "session.finished")
             sessionFinished = true
             sessionFinishedCont?.resume()
             sessionFinishedCont = nil
 
         case "error":
             let message = (json["error"] as? [String: Any])?["message"] as? String ?? "Session error"
+            NetworkDebugLogger.logWebSocketEvent(
+                provider: "AliCloud Qwen ASR",
+                phase: "error",
+                details: message
+            )
             signalError(NSError(
                 domain: "AliCloudQwenASR",
                 code: -1,
@@ -605,6 +638,7 @@ private actor AliCloudQwenASRSession {
                 userInfo: [NSLocalizedDescriptionKey: "Failed to encode JSON payload."]
             )
         }
+        NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud Qwen ASR", phase: "send", details: text)
         try await socketTask.send(.string(text))
     }
 }

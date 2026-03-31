@@ -52,6 +52,15 @@ enum NetworkDebugLogger {
         logger.info("\(message, privacy: .public)")
     }
 
+    static func logWebSocketEvent(
+        provider: String,
+        phase: String,
+        details: String? = nil
+    ) {
+        let suffix = details.map { " | \($0)" } ?? ""
+        logger.info("[WebSocket] \(provider, privacy: .public) | \(phase, privacy: .public)\(suffix, privacy: .public)")
+    }
+
     private static func redact(headers: [String: String]) -> [String: String] {
         var redacted = headers
         for key in headers.keys {
