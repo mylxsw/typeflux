@@ -303,39 +303,51 @@ struct StudioView: View {
                                             .foregroundStyle(StudioTheme.accent)
                                     )
                                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
-                                    Text(persona.name)
-                                        .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
-                                        .foregroundStyle(StudioTheme.textPrimary)
-                                        .lineLimit(1)
+                                    HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
+                                        Text(persona.name)
+                                            .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
+                                            .foregroundStyle(StudioTheme.textPrimary)
+                                            .lineLimit(1)
+
+                                        Spacer(minLength: StudioTheme.Spacing.small)
+
+                                        if persona.isSystem {
+                                            Text(L("settings.personas.tag.system"))
+                                                .font(.studioBody(11, weight: .semibold))
+                                                .foregroundStyle(StudioTheme.textTertiary)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 3)
+                                                .background(
+                                                    Capsule()
+                                                        .fill(StudioTheme.surfaceMuted)
+                                                )
+                                                .overlay(
+                                                    Capsule()
+                                                        .stroke(StudioTheme.border.opacity(0.75), lineWidth: StudioTheme.BorderWidth.thin)
+                                                )
+                                        }
+                                    }
                                     Text(persona.prompt)
                                         .font(.studioBody(StudioTheme.Typography.caption))
                                         .foregroundStyle(StudioTheme.textSecondary)
                                         .lineLimit(StudioTheme.LineLimit.personaPrompt)
                                 }
-                                Spacer()
-                                VStack(alignment: .trailing, spacing: StudioTheme.Spacing.xxxSmall) {
-                                    if persona.isSystem {
-                                        StudioPill(
-                                            title: L("settings.personas.tag.system"),
-                                            tone: StudioTheme.textTertiary,
-                                            fill: StudioTheme.surfaceMuted
-                                        )
-                                    }
-
-                                    Circle()
-                                        .fill(persona.id.uuidString == viewModel.activePersonaID ? StudioTheme.accent : Color.clear)
-                                        .frame(
-                                            width: StudioTheme.ControlSize.personaStatusDot,
-                                            height: StudioTheme.ControlSize.personaStatusDot
-                                        )
-                                }
-                                .frame(minWidth: 56, alignment: .trailing)
                             }
                             .padding(StudioTheme.Insets.personaRow)
+                            .padding(.trailing, 18)
                             .background(
                                 RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xxLarge, style: .continuous)
                                     .fill(viewModel.selectedPersonaID == persona.id ? StudioTheme.surfaceMuted : Color.clear)
                             )
+                            .overlay(alignment: .trailing) {
+                                Circle()
+                                    .fill(persona.id.uuidString == viewModel.activePersonaID ? StudioTheme.accent : Color.clear)
+                                    .frame(
+                                        width: StudioTheme.ControlSize.personaStatusDot,
+                                        height: StudioTheme.ControlSize.personaStatusDot
+                                    )
+                                    .padding(.trailing, StudioTheme.Insets.personaRow)
+                            }
                             .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xxLarge, style: .continuous))
                         }
                         .buttonStyle(StudioInteractiveButtonStyle())
