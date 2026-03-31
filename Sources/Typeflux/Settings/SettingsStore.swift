@@ -61,7 +61,11 @@ enum HistoryRetentionPolicy: String, CaseIterable, Identifiable {
 }
 
 final class SettingsStore {
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
 
     var appLanguage: AppLanguage {
         get {
@@ -279,12 +283,13 @@ final class SettingsStore {
 
     var personas: [PersonaProfile] {
         get {
-            guard let data = personasJSON.data(using: .utf8), !personasJSON.isEmpty else { return defaultPersonas }
+            guard let data = personasJSON.data(using: .utf8), !personasJSON.isEmpty else { return systemPersonas }
             let decoded = (try? JSONDecoder().decode([PersonaProfile].self, from: data)) ?? []
-            return decoded.isEmpty ? defaultPersonas : decoded
+            return mergedPersonas(from: decoded)
         }
         set {
-            let data = (try? JSONEncoder().encode(newValue)) ?? Data("[]".utf8)
+            let customPersonas = newValue.filter { !$0.isSystem }
+            let data = (try? JSONEncoder().encode(customPersonas)) ?? Data("[]".utf8)
             personasJSON = String(decoding: data, as: UTF8.self)
         }
     }
@@ -425,17 +430,41 @@ final class SettingsStore {
         return migrated
     }
 
-    private var defaultPersonas: [PersonaProfile] {
+    private var systemPersonas: [PersonaProfile] {
         [
             PersonaProfile(
+                id: UUID(uuidString: "2A7A4A74-A8AC-4F3C-9FB1-5A433EDFA001")!,
                 name: "Professional Assistant",
-                prompt: "Rewrite in professional, clear, and concise Chinese. Improve sentence flow, preserve key information, and make it suitable to send directly to colleagues or clients."
+                prompt: "Rewrite in professional, clear, and concise Chinese. Improve sentence flow, preserve key information, and make it suitable to send directly to colleagues or clients.",
+                kind: .system
             ),
             PersonaProfile(
+                id: UUID(uuidString: "2A7A4A74-A8AC-4F3C-9FB1-5A433EDFA002")!,
                 name: "Social Media Creator",
-                prompt: "Rewrite into more engaging and shareable Chinese content with a natural, vivid tone that is suitable for social media posting."
+                prompt: "Rewrite into more engaging and shareable Chinese content with a natural, vivid tone that is suitable for social media posting.",
+                kind: .system
             )
         ]
+    }
+
+    private func mergedPersonas(from storedPersonas: [PersonaProfile]) -> [PersonaProfile] {
+        let systemSignatureSet = Set(
+            systemPersonas.map { systemPersona in
+                personaSignature(name: systemPersona.name, prompt: systemPersona.prompt)
+            }
+        )
+
+        let customPersonas = storedPersonas.compactMap { persona -> PersonaProfile? in
+            let signature = personaSignature(name: persona.name, prompt: persona.prompt)
+            guard !systemSignatureSet.contains(signature) else { return nil }
+            return PersonaProfile(id: persona.id, name: persona.name, prompt: persona.prompt, kind: .custom)
+        }
+
+        return systemPersonas + customPersonas
+    }
+
+    private func personaSignature(name: String, prompt: String) -> String {
+        "\(name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())::\(prompt.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())"
     }
 
     private func llmRemoteKey(_ provider: LLMRemoteProvider, suffix: String) -> String {

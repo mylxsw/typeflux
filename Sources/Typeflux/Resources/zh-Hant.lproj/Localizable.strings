@@ -305,6 +305,7 @@
 "settings.personas.namePlaceholder" = "輸入人設名稱";
 "settings.personas.prompt" = "系統提示詞";
 "settings.personas.saved" = "人設已儲存。";
+"settings.personas.tag.system" = "系統";
 "settings.personas.deleteDialog.title" = "刪除人設？";
 "settings.personas.deleteDialog.message" = "刪除「%@」？此操作無法復原。";
 "settings.personaDefault.title" = "預設人設";

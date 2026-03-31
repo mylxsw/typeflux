@@ -315,6 +315,10 @@ final class StudioViewModel: ObservableObject {
         return personas.first { $0.id == selectedPersonaID }
     }
 
+    var selectedPersonaIsSystem: Bool {
+        selectedPersona?.isSystem ?? false
+    }
+
     var hasPersonaDraftChanges: Bool {
         if isCreatingPersonaDraft {
             return !personaDraftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
@@ -322,11 +326,12 @@ final class StudioViewModel: ObservableObject {
         }
 
         guard let selectedPersona else { return false }
+        guard !selectedPersona.isSystem else { return false }
         return personaDraftName != selectedPersona.name || personaDraftPrompt != selectedPersona.prompt
     }
 
     var canSavePersonaDraft: Bool {
-        !personaDraftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !selectedPersonaIsSystem && !personaDraftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var filteredPersonas: [PersonaProfile] {
@@ -821,6 +826,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func deletePersona(id: UUID) {
+        guard let persona = personas.first(where: { $0.id == id }), !persona.isSystem else { return }
         personas.removeAll { $0.id == id }
         persistPersonas()
         if settingsStore.activePersonaID == id.uuidString {
@@ -866,6 +872,7 @@ final class StudioViewModel: ObservableObject {
         }
 
         guard let selectedPersonaID, let index = personas.firstIndex(where: { $0.id == selectedPersonaID }) else { return }
+        guard !personas[index].isSystem else { return }
         personas[index].name = name
         personas[index].prompt = prompt
         persistPersonas()

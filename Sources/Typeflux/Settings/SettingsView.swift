@@ -303,9 +303,22 @@ struct StudioView: View {
                                             .foregroundStyle(StudioTheme.accent)
                                     )
                                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
-                                    Text(persona.name)
-                                        .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
-                                        .foregroundStyle(StudioTheme.textPrimary)
+                                    HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
+                                        Text(persona.name)
+                                            .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
+                                            .foregroundStyle(StudioTheme.textPrimary)
+                                            .lineLimit(1)
+
+                                        Spacer(minLength: StudioTheme.Spacing.small)
+
+                                        if persona.isSystem {
+                                            StudioPill(
+                                                title: L("settings.personas.tag.system"),
+                                                tone: StudioTheme.textTertiary,
+                                                fill: StudioTheme.surfaceMuted
+                                            )
+                                        }
+                                    }
                                     Text(persona.prompt)
                                         .font(.studioBody(StudioTheme.Typography.caption))
                                         .foregroundStyle(StudioTheme.textSecondary)
@@ -323,11 +336,14 @@ struct StudioView: View {
                             )
                             .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xxLarge, style: .continuous))
                         }
+                        .opacity(persona.isSystem ? 0.62 : 1)
                         .buttonStyle(StudioInteractiveButtonStyle())
                         .contextMenu {
-                            Button(L("common.delete"), role: .destructive) {
-                                viewModel.selectPersona(persona.id)
-                                personaPendingDeletion = persona
+                            if !persona.isSystem {
+                                Button(L("common.delete"), role: .destructive) {
+                                    viewModel.selectPersona(persona.id)
+                                    personaPendingDeletion = persona
+                                }
                             }
                         }
                     }
@@ -345,6 +361,8 @@ struct StudioView: View {
                             set: { viewModel.personaDraftName = $0 }
                         )
                     )
+                    .disabled(viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft)
+                    .opacity(viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft ? 0.6 : 1)
                 }
 
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
@@ -359,6 +377,7 @@ struct StudioView: View {
                     .font(.studioMono(StudioTheme.Typography.body))
                     .foregroundStyle(StudioTheme.textPrimary)
                     .scrollContentBackground(.hidden)
+                    .disabled(viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft)
                     .frame(minHeight: StudioTheme.Layout.textEditorMinHeight)
                     .padding(StudioTheme.Insets.textEditor)
                     .background(
@@ -369,6 +388,7 @@ struct StudioView: View {
                         RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
                             .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
                     )
+                    .opacity(viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft ? 0.6 : 1)
                 }
 
                 HStack {
