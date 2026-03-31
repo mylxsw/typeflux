@@ -23,6 +23,11 @@ enum PromptCatalog {
             Transcribe the audio accurately, then immediately rewrite the result according to the persona requirements below.
             Return only the final rewritten text — no explanations, no quotation marks, no meta-commentary.
 
+            Input semantics:
+            - The audio is the source content that determines the default output language and meaning.
+            - Persona requirements are style constraints for the final rewrite. They are not source content.
+            - Vocabulary hints are recognition hints only. They are not source content and must not be copied unless spoken.
+
             Persona requirements:
             \(persona)
             """)
@@ -33,6 +38,10 @@ enum PromptCatalog {
             You are a precise transcription assistant.
             Transcribe the audio accurately. Preserve the speaker's intent and natural phrasing.
             Return only the transcribed text — no explanations, no meta-commentary.
+
+            Input semantics:
+            - The audio is the source content that determines the output language and meaning.
+            - Vocabulary hints are recognition hints only. They are not source content and must not be copied unless spoken.
             """)
         }
 
@@ -59,7 +68,11 @@ enum PromptCatalog {
     static func rewritePrompts(for request: LLMRewriteRequest) -> (system: String, user: String) {
         let personaSection: String
         if let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines), !personaPrompt.isEmpty {
-            personaSection = "\nPersona requirements:\n\(personaPrompt)"
+            personaSection = """
+
+            Section B - Persona requirements (style constraints, not source content):
+            \(personaPrompt)
+            """
         } else {
             personaSection = ""
         }
@@ -90,12 +103,18 @@ enum PromptCatalog {
                 \(sourceTextRule)
 
                 You are a text editing assistant. When editing existing text, preserve the user's editing intent first and use any persona requirement only as a secondary output-style constraint. Return only the final rewritten text without explanations or quotation marks.
+
+                User prompt structure:
+                - "Section A - Selected text" is the source content to edit. Preserve its meaning and default output language unless a later instruction explicitly requires changing language.
+                - "Section B - Spoken instruction" is the user's edit intent and has the highest priority.
+                - "Section C - Output requirements" contains system-authored processing rules, including how persona constraints should be applied.
+                - Any persona requirement is a style constraint, not source content.
                 """,
                 user: """
-                Selected text:
+                Section A - Selected text (source content):
                 \(request.sourceText)
 
-                Spoken instruction:
+                Section B - Spoken instruction (highest-priority edit intent):
                 \(spokenInstruction)\(outputRequirement)
 
                 Return only the final rewritten text.
@@ -109,9 +128,13 @@ enum PromptCatalog {
                 \(sourceTextRule)
 
                 You rewrite dictated text into polished final copy. Follow the persona requirements exactly when provided. Return only the final text without explanations or quotation marks.
+
+                User prompt structure:
+                - "Section A - Raw transcript" is the source content to rewrite. Preserve its meaning and default output language unless a later instruction explicitly requires changing language.
+                - "Section B - Persona requirements" contains style and formatting constraints for the rewrite. It is not source content.
                 """,
                 user: """
-                Raw transcript:
+                Section A - Raw transcript (source content):
                 \(request.sourceText)\(personaSection)
 
                 Clean up recognition artifacts if needed and return only the final text.
