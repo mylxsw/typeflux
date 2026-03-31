@@ -30,13 +30,11 @@ final class DoubaoRealtimeTranscriber: Transcriber {
             )
         }
 
-        return try await DoubaoRealtimeSession.run(
-            pcmData: RemoteSTTTestAudio.pcm16MonoSilence(),
+        return try await DoubaoConnectionTester.verify(
             appID: trimmedAppID,
             accessToken: trimmedAccessToken,
-            resourceID: trimmedResourceID.isEmpty ? "volc.seedasr.sauc.duration" : trimmedResourceID,
-            hotwords: []
-        ) { _ in }
+            resourceID: trimmedResourceID.isEmpty ? "volc.seedasr.sauc.duration" : trimmedResourceID
+        )
     }
 
     func transcribe(audioFile: AudioFile) async throws -> String {
@@ -157,6 +155,93 @@ private enum DoubaoAudioConverter {
         return Data(bytes: channelData[0], count: byteCount)
     }
 }
+
+private enum DoubaoConnectionTester {
+    static func verify(appID: String, accessToken: String, resourceID: String) async throws -> String {
+        var request = URLRequest(url: URL(string: "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async")!)
+        request.setValue(appID, forHTTPHeaderField: "X-Api-App-Key")
+        request.setValue(accessToken, forHTTPHeaderField: "X-Api-Access-Key")
+        request.setValue(resourceID, forHTTPHeaderField: "X-Api-Resource-Id")
+        request.setValue(UUID().uuidString, forHTTPHeaderField: "X-Api-Connect-Id")
+
+        let delegate = DoubaoWSDelegate()
+        let urlSession = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+        let socketTask = urlSession.webSocketTask(with: request)
+        socketTask.resume()
+
+        defer {
+            socketTask.cancel(with: .normalClosure, reason: nil)
+            urlSession.invalidateAndCancel()
+        }
+
+        try await delegate.waitUntilOpen(timeout: .seconds(10))
+
+        let payload = DoubaoProtocol.buildClientRequest(uid: UUID().uuidString, hotwords: [])
+        let requestMessage = DoubaoProtocol.encodeMessage(
+            header: DoubaoHeader(
+                messageType: .fullClientRequest,
+                flags: .noSequence,
+                serialization: .json,
+                compression: .none
+            ),
+            payload: payload
+        )
+        try await socketTask.send(.data(requestMessage))
+
+        do {
+            _ = try await firstServerMessage(from: socketTask, timeout: .seconds(2))
+        } catch is DoubaoConnectionTestTimeout {
+            // Some valid connections don't emit a server message until audio arrives.
+            return "WebSocket connected."
+        }
+
+        return "WebSocket connected."
+    }
+
+    private static func firstServerMessage(
+        from socketTask: URLSessionWebSocketTask,
+        timeout: Duration
+    ) async throws -> Data {
+        try await withThrowingTaskGroup(of: Data.self) { group in
+            group.addTask {
+                let message = try await socketTask.receive()
+                guard let data = messageData(from: message) else {
+                    throw NSError(
+                        domain: "DoubaoConnectionTester",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "Received an empty Doubao server message."]
+                    )
+                }
+                let header = try DoubaoHeader.decode(from: data)
+                if header.messageType == .serverError {
+                    throw DoubaoProtocol.decodeServerError(data)
+                }
+                return data
+            }
+            group.addTask {
+                try await Task.sleep(for: timeout)
+                throw DoubaoConnectionTestTimeout()
+            }
+
+            let result = try await group.next()!
+            group.cancelAll()
+            return result
+        }
+    }
+
+    private static func messageData(from message: URLSessionWebSocketTask.Message) -> Data? {
+        switch message {
+        case .data(let data):
+            return data
+        case .string(let string):
+            return string.data(using: .utf8)
+        @unknown default:
+            return nil
+        }
+    }
+}
+
+private struct DoubaoConnectionTestTimeout: Error {}
 
 private actor DoubaoRealtimeSession {
     static func run(
