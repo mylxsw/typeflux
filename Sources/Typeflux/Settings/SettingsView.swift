@@ -2442,6 +2442,8 @@ struct StudioView: View {
 
     private func providerLogoResourceName(for provider: StudioModelProviderID) -> String? {
         switch provider {
+        case .whisperAPI, .multimodalLLM:
+            return "openai"
         case .ollama:
             return "ollama"
         case .customLLM:
@@ -2452,6 +2454,8 @@ struct StudioView: View {
             return "claude-color"
         case .gemini:
             return "gemini-color"
+        case .deepSeek:
+            return "deepseek-color"
         case .kimi:
             return "moonshot"
         case .qwen:
