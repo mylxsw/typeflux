@@ -313,10 +313,10 @@ struct StudioView: View {
 
                                         if persona.isSystem {
                                             Text(L("settings.personas.tag.system"))
-                                                .font(.studioBody(11, weight: .semibold))
+                                                .font(.studioBody(9, weight: .semibold))
                                                 .foregroundStyle(StudioTheme.textTertiary)
-                                                .padding(.horizontal, 8)
-                                                .padding(.vertical, 3)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
                                                 .background(
                                                     Capsule()
                                                         .fill(StudioTheme.surfaceMuted)
