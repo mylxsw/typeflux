@@ -929,7 +929,7 @@ private struct OverlayView: View {
         .frame(width: 458, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color.black.opacity(0.44))
+                .fill(Color.black.opacity(0.52))
                 .background(
                     .regularMaterial,
                     in: RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -939,8 +939,8 @@ private struct OverlayView: View {
                         .strokeBorder(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.18),
-                                    Color.white.opacity(0.06)
+                                    Color.white.opacity(0.16),
+                                    Color.white.opacity(0.05)
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -1009,14 +1009,14 @@ private struct OverlayView: View {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(
                     isSelected
-                        ? Color.accentColor.opacity(0.18)
+                        ? Color.accentColor.opacity(0.26)
                         : Color.white.opacity(0.045)
                 )
                 .frame(width: 40, height: 40)
                 .overlay(
                     Text(String(item.title.prefix(2)).uppercased())
                         .font(.system(size: 11.5, weight: .bold))
-                        .foregroundStyle(isSelected ? Color.white.opacity(0.96) : Color.white.opacity(0.7))
+                        .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.7))
                 )
 
             VStack(alignment: .leading, spacing: 4) {
@@ -1032,21 +1032,42 @@ private struct OverlayView: View {
             Spacer(minLength: 0)
 
             if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.accentColor.opacity(0.95))
+                ZStack {
+                    Circle()
+                        .fill(Color.accentColor)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 9.5, weight: .bold))
+                        .foregroundStyle(Color.white)
+                }
+                .frame(width: 21, height: 21)
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(isSelected ? Color.white.opacity(0.08) : Color.white.opacity(0.02))
+                .fill(
+                    isSelected
+                        ? Color.accentColor.opacity(0.11)
+                        : Color.white.opacity(0.02)
+                )
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .stroke(
-                            isSelected ? Color.accentColor.opacity(0.68) : Color.white.opacity(0.045),
-                            lineWidth: isSelected ? 1 : 0.8
+                            isSelected ? Color.accentColor.opacity(0.92) : Color.white.opacity(0.045),
+                            lineWidth: isSelected ? 1.15 : 0.8
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: isSelected
+                                    ? [Color.white.opacity(0.055), Color.white.opacity(0.01)]
+                                    : [Color.clear, Color.clear],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
                 )
         )
