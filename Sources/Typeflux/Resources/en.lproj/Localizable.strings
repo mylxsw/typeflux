@@ -71,6 +71,8 @@
 "settings.mute.subtitle" = "Temporarily mute the system output while recording to reduce feedback or system sounds leaking into the microphone.";
 "settings.permissions" = "Permissions";
 "settings.advanced" = "Advanced";
+"settings.advanced.soundEffects.title" = "Enable sound effects";
+"settings.advanced.soundEffects.subtitle" = "Play start, done, and error sounds during recording workflow feedback.";
 "settings.permissionStatus.title" = "Permission Status";
 "settings.permissionStatus.subtitle" = "Review the macOS permissions Typeflux depends on, then grant access where needed.";
 

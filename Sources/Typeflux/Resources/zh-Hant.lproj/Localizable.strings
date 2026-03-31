@@ -71,6 +71,8 @@
 "settings.mute.subtitle" = "錄音期間暫時靜音系統輸出，減少回聲或系統聲音進入麥克風。";
 "settings.permissions" = "權限";
 "settings.advanced" = "進階";
+"settings.advanced.soundEffects.title" = "啟用音效";
+"settings.advanced.soundEffects.subtitle" = "在開始錄音、完成操作與發生錯誤時播放提示音。";
 "settings.permissionStatus.title" = "權限狀態";
 "settings.permissionStatus.subtitle" = "檢視 Typeflux 依賴的 macOS 權限，並在需要時完成授權。";
 

@@ -9,6 +9,7 @@ final class DIContainer {
     let hotkeyService: HotkeyService
     let audioRecorder: AudioRecorder
     let overlayController: OverlayController
+    let soundEffectPlayer: SoundEffectPlayer
     let clipboard: ClipboardService
     let textInjector: TextInjector
     let historyStore: HistoryStore
@@ -24,6 +25,7 @@ final class DIContainer {
             audioDeviceManager: audioDeviceManager
         )
         overlayController = OverlayController(appState: appState)
+        soundEffectPlayer = SoundEffectPlayer(settingsStore: settingsStore)
         clipboard = SystemClipboardService()
         textInjector = AXTextInjector()
         historyStore = SQLiteHistoryStore()

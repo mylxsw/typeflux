@@ -32,6 +32,7 @@ final class StudioViewModel: ObservableObject {
     @Published var availableMicrophones: [AudioInputDevice] = []
     @Published var preferredMicrophoneID: String
     @Published var muteSystemOutputDuringRecording: Bool
+    @Published var soundEffectsEnabled: Bool
 
     @Published var llmBaseURL: String
     @Published var llmModel: String
@@ -155,6 +156,7 @@ final class StudioViewModel: ObservableObject {
         appLanguage = settingsStore.appLanguage
         preferredMicrophoneID = settingsStore.preferredMicrophoneID
         muteSystemOutputDuringRecording = settingsStore.muteSystemOutputDuringRecording
+        soundEffectsEnabled = settingsStore.soundEffectsEnabled
         llmBaseURL = settingsStore.llmBaseURL(for: initialLLMRemoteProvider)
         llmModel = settingsStore.llmModel(for: initialLLMRemoteProvider)
         llmAPIKey = settingsStore.llmAPIKey(for: initialLLMRemoteProvider)
@@ -572,6 +574,11 @@ final class StudioViewModel: ObservableObject {
     func setMuteSystemOutputDuringRecording(_ value: Bool) {
         muteSystemOutputDuringRecording = value
         settingsStore.muteSystemOutputDuringRecording = value
+    }
+
+    func setSoundEffectsEnabled(_ value: Bool) {
+        soundEffectsEnabled = value
+        settingsStore.soundEffectsEnabled = value
     }
 
     func setHistoryRetentionPolicy(_ value: HistoryRetentionPolicy) {

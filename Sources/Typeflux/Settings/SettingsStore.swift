@@ -124,6 +124,11 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "audio.recording.muteSystemOutput") }
     }
 
+    var soundEffectsEnabled: Bool {
+        get { defaults.object(forKey: "audio.soundEffects.enabled") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "audio.soundEffects.enabled") }
+    }
+
     var historyRetentionPolicy: HistoryRetentionPolicy {
         get {
             let raw = defaults.string(forKey: "history.retentionPolicy") ?? HistoryRetentionPolicy.oneWeek.rawValue
