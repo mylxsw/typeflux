@@ -264,6 +264,27 @@ final class OverlayController {
         }
     }
 
+    /// Immediately hides the overlay window and resets state, running synchronously
+    /// on the main thread. Use this before returning focus to the original application
+    /// so the panel is guaranteed to be hidden before activation.
+    func dismissImmediately() {
+        let work = { [weak self] in
+            guard let self else { return }
+            self.dismissWorkItem?.cancel()
+            self.dismissWorkItem = nil
+            self.window?.orderOut(nil)
+            self.model.detailText = ""
+            self.model.level = 0
+            self.model.processingProgress = 0
+            self.removeKeyMonitoring()
+        }
+        if Thread.isMainThread {
+            work()
+        } else {
+            DispatchQueue.main.sync(execute: work)
+        }
+    }
+
     func dismiss(after delay: TimeInterval) {
         if !Thread.isMainThread {
             DispatchQueue.main.async { [weak self] in self?.dismiss(after: delay) }

@@ -950,13 +950,7 @@ final class WorkflowController {
     }
 
     private func dismissOverlayForExternalReplacement() {
-        if Thread.isMainThread {
-            overlayController.dismiss(after: 0)
-        } else {
-            DispatchQueue.main.sync {
-                self.overlayController.dismiss(after: 0)
-            }
-        }
+        overlayController.dismissImmediately()
         usleep(Self.selectionRestoreDelayMicroseconds)
     }
 
