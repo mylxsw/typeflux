@@ -42,9 +42,11 @@ final class AXTextInjector: TextInjector {
 
         let processID = frontmostProcessID()
         let processName = frontmostApplicationName()
-        let editability = focusedElement().map(isLikelyEditable(element:)) ?? false
 
         if let result = readSelectedTextWithTimeout(milliseconds: Self.selectedTextTimeoutMilliseconds) {
+            // Compute editability from the SAME element that produced the text,
+            // avoiding a race where a second focusedElement() call returns a different element.
+            let editability = isLikelyEditable(element: result.context.element)
             latestSelectionContext = result.context
             return TextSelectionSnapshot(
                 processID: result.context.processID,
@@ -66,16 +68,18 @@ final class AXTextInjector: TextInjector {
                 capturedAt: Date()
             )
             latestSelectionContext = context
+            // Cmd+C succeeded → the field accepts clipboard operations → Cmd+V should work.
             return TextSelectionSnapshot(
                 processID: processID,
                 processName: processName,
                 selectedRange: nil,
                 selectedText: copiedText,
                 source: "clipboard-copy",
-                isEditable: editability
+                isEditable: true
             )
         }
 
+            let editability = focusedElement().map(isLikelyEditable(element:)) ?? false
             latestSelectionContext = nil
             return TextSelectionSnapshot(
                 processID: processID,
