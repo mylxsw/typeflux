@@ -365,6 +365,11 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "stt.appleSpeech.enabled") }
     }
 
+    var automaticVocabularyCollectionEnabled: Bool {
+        get { defaults.object(forKey: "vocabulary.automaticCollection.enabled") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "vocabulary.automaticCollection.enabled") }
+    }
+
     var activationHotkeyJSON: String {
         get { defaults.string(forKey: "hotkey.activation.json") ?? "" }
         set { defaults.set(newValue, forKey: "hotkey.activation.json") }

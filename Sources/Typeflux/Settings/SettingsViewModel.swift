@@ -72,6 +72,7 @@ final class StudioViewModel: ObservableObject {
     @Published var localSTTPendingRedownload: LocalSTTModel? = nil
 
     @Published var appleSpeechFallback: Bool
+    @Published var automaticVocabularyCollectionEnabled: Bool
 
     @Published var personaRewriteEnabled: Bool
     @Published var personaHotkeyAppliesToSelection: Bool
@@ -179,6 +180,7 @@ final class StudioViewModel: ObservableObject {
         localSTTAutoSetup = true
         localSTTStoragePath = ""
         appleSpeechFallback = settingsStore.useAppleSpeechFallback
+        automaticVocabularyCollectionEnabled = settingsStore.automaticVocabularyCollectionEnabled
         personaRewriteEnabled = settingsStore.personaRewriteEnabled
         personaHotkeyAppliesToSelection = settingsStore.personaHotkeyAppliesToSelection
         personas = currentPersonas
@@ -719,6 +721,10 @@ final class StudioViewModel: ObservableObject {
     func setLocalSTTDownloadSource(_ value: ModelDownloadSource) { localSTTDownloadSource = value; settingsStore.localSTTDownloadSource = value }
     func setLocalSTTAutoSetup(_ value: Bool) { localSTTAutoSetup = value; settingsStore.localSTTAutoSetup = value }
     func setAppleSpeechFallback(_ value: Bool) { appleSpeechFallback = value; settingsStore.useAppleSpeechFallback = value }
+    func setAutomaticVocabularyCollectionEnabled(_ value: Bool) {
+        automaticVocabularyCollectionEnabled = value
+        settingsStore.automaticVocabularyCollectionEnabled = value
+    }
     func setLaunchAtLogin(_ value: Bool) { launchAtLogin = value; LaunchAtLoginManager.setEnabled(value) }
     func setPersonaRewriteEnabled(_ value: Bool) {
         personaRewriteEnabled = value

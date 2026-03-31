@@ -97,4 +97,43 @@ enum PromptCatalog {
             )
         }
     }
+
+    static func automaticVocabularyDecisionPrompts(
+        transcript: String,
+        oldFragment: String,
+        newFragment: String,
+        candidateTerms: [String],
+        existingTerms: [String]
+    ) -> (system: String, user: String) {
+        let existingSummary = existingTerms.isEmpty ? "<empty>" : existingTerms.joined(separator: ", ")
+        let oldSummary = oldFragment.isEmpty ? "<empty>" : oldFragment
+
+        return (
+            system: """
+            You decide whether user-corrected terms should be added to a speech transcription vocabulary.
+            Only keep terms that are likely proper nouns, domain terms, product names, code identifiers, uncommon transliterations, or deliberate spellings that speech recognition should preserve.
+            Exclude common everyday words, generic rewrites, punctuation-only changes, and phrases that do not look like vocabulary terms.
+            Return strict JSON only in the form {"terms":["term1","term2"]}.
+            """,
+            user: """
+            Original dictated text:
+            \(transcript)
+
+            Previous edited fragment:
+            \(oldSummary)
+
+            Current edited fragment:
+            \(newFragment)
+
+            Candidate terms:
+            \(candidateTerms.joined(separator: ", "))
+
+            Existing vocabulary:
+            \(existingSummary)
+
+            Keep only the candidates that should be added to the vocabulary.
+            Return strict JSON only.
+            """
+        )
+    }
 }

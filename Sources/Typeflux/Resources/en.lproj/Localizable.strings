@@ -478,3 +478,7 @@
 "settings.models.redownloadDialog.message" = "The existing model files will be deleted before re-downloading.";
 "settings.models.deleteDialog.title" = "Delete %@?";
 "settings.models.deleteDialog.message" = "Model files will be deleted. You'll need to re-download before next use.";
+"settings.advanced.autoVocabulary.title" = "Auto-add corrected vocabulary";
+"settings.advanced.autoVocabulary.subtitle" = "After voice input is inserted, watch the current field for 30 seconds. If you manually correct a term, the app can ask the model whether it should be added to your vocabulary automatically.";
+"workflow.vocabulary.autoAdded.single" = "Added %@ to vocabulary.";
+"workflow.vocabulary.autoAdded.multiple" = "Added %d terms to vocabulary.";

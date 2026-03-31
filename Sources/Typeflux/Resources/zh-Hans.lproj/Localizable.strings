@@ -478,3 +478,7 @@
 "settings.models.redownloadDialog.message" = "本地模型文件已存在，将先删除已有文件再重新下载。";
 "settings.models.deleteDialog.title" = "删除 %@？";
 "settings.models.deleteDialog.message" = "模型文件将被删除，下次使用时需要重新下载。";
+"settings.advanced.autoVocabulary.title" = "自动添加修正生词";
+"settings.advanced.autoVocabulary.subtitle" = "语音输入插入后，继续监听当前输入框 30 秒。如果你手动修正了某个词，应用会调用模型判断是否应自动加入生词本。";
+"workflow.vocabulary.autoAdded.single" = "已自动将 %@ 添加到生词本。";
+"workflow.vocabulary.autoAdded.multiple" = "已自动将 %d 个词添加到生词本。";

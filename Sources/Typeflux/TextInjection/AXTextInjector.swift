@@ -95,6 +95,24 @@ final class AXTextInjector: TextInjector {
         try setText(text, replaceSelection: false)
     }
 
+    func currentInputText() async -> String? {
+        guard AXIsProcessTrusted(), let element = focusedElement(), isLikelyEditable(element: element) else {
+            return nil
+        }
+
+        if let value = copyStringAttribute(kAXValueAttribute as String, from: element) {
+            if let placeholder = copyStringAttribute(kAXPlaceholderValueAttribute as String, from: element), placeholder == value {
+                return nil
+            }
+            if let title = copyStringAttribute(kAXTitleAttribute as String, from: element), title == value {
+                return nil
+            }
+            return value
+        }
+
+        return nil
+    }
+
     func replaceSelection(text: String) throws {
         try setText(text, replaceSelection: true)
     }

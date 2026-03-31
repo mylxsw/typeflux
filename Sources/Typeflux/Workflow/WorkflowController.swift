@@ -5,6 +5,11 @@ final class WorkflowController {
     private static let processingTimeoutNanoseconds: UInt64 = 120_000_000_000 // 2 minutes
     private static let tapToLockThreshold: TimeInterval = 0.22
     private static let selectionRestoreDelayMicroseconds: useconds_t = 120_000
+    private static let automaticVocabularyObservationWindow: TimeInterval = 30
+    private static let automaticVocabularyPollInterval: Duration = .seconds(1)
+    private static let automaticVocabularyStartupDelay: Duration = .milliseconds(350)
+    private static let automaticVocabularySettleDelay: TimeInterval = 2.5
+    private static let automaticVocabularyMaxAnalysesPerSession = 3
 
     private enum RecordingMode {
         case holdToTalk
@@ -45,6 +50,7 @@ final class WorkflowController {
     private var processingTimeoutTask: Task<Void, Never>?
     private var selectionTask: Task<TextSelectionSnapshot, Never>?
     private var processingTask: Task<Void, Never>?
+    private var automaticVocabularyObservationTask: Task<Void, Never>?
     private var processingSessionID = UUID()
     private var activeProcessingRecordID: UUID?
     private var lastTimeoutRecord: HistoryRecord?
@@ -145,6 +151,8 @@ final class WorkflowController {
         dismissPersonaPicker()
         cancelRecording()
         cancelCurrentProcessing(resetUI: true, reason: L("workflow.cancel.stopping"))
+        automaticVocabularyObservationTask?.cancel()
+        automaticVocabularyObservationTask = nil
     }
 
     func retry(record: HistoryRecord) {
@@ -475,6 +483,7 @@ final class WorkflowController {
             } else {
                 try textInjector.insert(text: text)
             }
+            scheduleAutomaticVocabularyObservation(for: text)
             return .inserted
         } catch {
             Task { @MainActor in
@@ -992,6 +1001,128 @@ final class WorkflowController {
         guard let lastDialogResultText, !lastDialogResultText.isEmpty else { return }
         clipboard.write(text: lastDialogResultText)
         overlayController.showNotice(message: L("workflow.result.copied"))
+    }
+
+    private func scheduleAutomaticVocabularyObservation(for insertedText: String) {
+        automaticVocabularyObservationTask?.cancel()
+        automaticVocabularyObservationTask = nil
+
+        guard settingsStore.automaticVocabularyCollectionEnabled else { return }
+
+        let normalizedInsertedText = insertedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedInsertedText.isEmpty else { return }
+
+        automaticVocabularyObservationTask = Task { [weak self] in
+            guard let self else { return }
+
+            do {
+                try await Task.sleep(for: Self.automaticVocabularyStartupDelay)
+            } catch {
+                return
+            }
+
+            guard !Task.isCancelled else { return }
+            guard let baselineText = await self.textInjector.currentInputText() else { return }
+
+            var observationState = AutomaticVocabularyMonitor.makeObservationState(
+                baselineText: baselineText,
+                startedAt: Date()
+            )
+            let deadline = Date().addingTimeInterval(Self.automaticVocabularyObservationWindow)
+
+            while Date() < deadline {
+                do {
+                    try await Task.sleep(for: Self.automaticVocabularyPollInterval)
+                } catch {
+                    return
+                }
+
+                guard !Task.isCancelled else { return }
+                guard let currentText = await self.textInjector.currentInputText() else { continue }
+                let now = Date()
+                _ = AutomaticVocabularyMonitor.observe(
+                    text: currentText,
+                    at: now,
+                    state: &observationState
+                )
+
+                guard let pendingAnalysis = AutomaticVocabularyMonitor.pendingAnalysis(
+                    state: observationState,
+                    now: now,
+                    settleDelay: Self.automaticVocabularySettleDelay,
+                    maxAnalyses: Self.automaticVocabularyMaxAnalysesPerSession
+                ) else {
+                    continue
+                }
+
+                AutomaticVocabularyMonitor.markAnalysisCompleted(
+                    for: pendingAnalysis.updatedText,
+                    state: &observationState
+                )
+
+                guard let change = AutomaticVocabularyMonitor.detectChange(
+                    from: pendingAnalysis.previousStableText,
+                    to: pendingAnalysis.updatedText
+                ) else {
+                    continue
+                }
+
+                do {
+                    let acceptedTerms = try await self.evaluateAutomaticVocabularyCandidates(
+                        transcript: normalizedInsertedText,
+                        change: change
+                    )
+                    let addedTerms = self.addAutomaticVocabularyTerms(acceptedTerms)
+                    guard !addedTerms.isEmpty else { continue }
+
+                    await MainActor.run {
+                        self.overlayController.showNotice(message: self.automaticVocabularyNotice(for: addedTerms))
+                    }
+                } catch {
+                    ErrorLogStore.shared.log("Automatic vocabulary evaluation failed: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    private func evaluateAutomaticVocabularyCandidates(
+        transcript: String,
+        change: AutomaticVocabularyChange
+    ) async throws -> [String] {
+        let prompts = PromptCatalog.automaticVocabularyDecisionPrompts(
+            transcript: transcript,
+            oldFragment: change.oldFragment,
+            newFragment: change.newFragment,
+            candidateTerms: change.candidateTerms,
+            existingTerms: VocabularyStore.activeTerms()
+        )
+        let response = try await llmService.complete(systemPrompt: prompts.system, userPrompt: prompts.user)
+        return AutomaticVocabularyMonitor.parseAcceptedTerms(from: response)
+    }
+
+    private func addAutomaticVocabularyTerms(_ terms: [String]) -> [String] {
+        let existingTerms = Set(VocabularyStore.activeTerms().map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() })
+        var knownTerms = existingTerms
+        var addedTerms: [String] = []
+
+        for rawTerm in terms {
+            let term = rawTerm.trimmingCharacters(in: .whitespacesAndNewlines)
+            let normalized = term.lowercased()
+            guard !term.isEmpty, !knownTerms.contains(normalized) else { continue }
+            _ = VocabularyStore.add(term: term, source: .automatic)
+            knownTerms.insert(normalized)
+            addedTerms.append(term)
+        }
+
+        return addedTerms
+    }
+
+    private func automaticVocabularyNotice(for terms: [String]) -> String {
+        if terms.count == 1, let term = terms.first {
+            return L("workflow.vocabulary.autoAdded.single", term)
+        }
+
+        return L("workflow.vocabulary.autoAdded.multiple", terms.count)
     }
 
     private func personaPickerEntries(includeNoneOption: Bool) -> [PersonaPickerEntry] {
