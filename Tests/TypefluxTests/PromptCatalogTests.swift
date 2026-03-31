@@ -36,7 +36,8 @@ final class PromptCatalogTests: XCTestCase {
 
         XCTAssertTrue(prompts.system.contains("polished final copy"))
         XCTAssertTrue(prompts.system.contains(PromptCatalog.languageConsistencyRule(for: "source text")))
-        XCTAssertTrue(prompts.user.contains("Persona requirements:\nformal and concise"))
+        XCTAssertTrue(prompts.system.contains("\"Section A - Raw transcript\" is the source content to rewrite"))
+        XCTAssertTrue(prompts.user.contains("Section B - Persona requirements (style constraints, not source content):\nformal and concise"))
     }
 
     func testRewritePromptsIncludeLanguageConsistencyForSelectionEditing() {
@@ -74,6 +75,7 @@ final class PromptCatalogTests: XCTestCase {
         )
 
         XCTAssertTrue(prompt.contains(PromptCatalog.languageConsistencyRule(for: "spoken content")))
+        XCTAssertTrue(prompt.contains("Input semantics:"))
         XCTAssertTrue(prompt.contains("Persona requirements:"))
     }
 }
