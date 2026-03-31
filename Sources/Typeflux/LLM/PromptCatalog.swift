@@ -1,14 +1,24 @@
 import Foundation
 
 enum PromptCatalog {
+    static func languageConsistencyRule(for contentDescription: String) -> String {
+        """
+        Language consistency rule:
+        You must keep the output language consistent with the original language of the \(contentDescription) by default. Do not translate, paraphrase into another language, or switch languages because of persona defaults, style preferences, or formatting instructions alone. Only change the output language when a later instruction explicitly and clearly requires a different language.
+        """
+    }
+
     /// Builds the system prompt for a multimodal LLM transcription call.
     /// When a persona is provided, the model transcribes AND rewrites in one shot.
     /// Otherwise, it acts as a high-quality transcription engine with vocabulary hints.
     static func multimodalTranscriptionSystemPrompt(personaPrompt: String?, vocabularyTerms: [String]) -> String {
         var parts: [String] = []
+        let spokenContentRule = languageConsistencyRule(for: "spoken content")
 
         if let persona = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines), !persona.isEmpty {
             parts.append("""
+            \(spokenContentRule)
+
             You are a transcription and text-rewriting assistant.
             Transcribe the audio accurately, then immediately rewrite the result according to the persona requirements below.
             Return only the final rewritten text — no explanations, no quotation marks, no meta-commentary.
@@ -18,6 +28,8 @@ enum PromptCatalog {
             """)
         } else {
             parts.append("""
+            \(spokenContentRule)
+
             You are a precise transcription assistant.
             Transcribe the audio accurately. Preserve the speaker's intent and natural phrasing.
             Return only the transcribed text — no explanations, no meta-commentary.
@@ -55,6 +67,7 @@ enum PromptCatalog {
         switch request.mode {
         case .editSelection:
             let spokenInstruction = request.spokenInstruction?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let sourceTextRule = languageConsistencyRule(for: "selected text")
             let outputRequirement: String
             if let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines), !personaPrompt.isEmpty {
                 outputRequirement = """
@@ -73,7 +86,11 @@ enum PromptCatalog {
             }
 
             return (
-                system: "You are a text editing assistant. When editing existing text, preserve the user's editing intent first and use any persona requirement only as a secondary output-style constraint. Return only the final rewritten text without explanations or quotation marks.",
+                system: """
+                \(sourceTextRule)
+
+                You are a text editing assistant. When editing existing text, preserve the user's editing intent first and use any persona requirement only as a secondary output-style constraint. Return only the final rewritten text without explanations or quotation marks.
+                """,
                 user: """
                 Selected text:
                 \(request.sourceText)
@@ -86,8 +103,13 @@ enum PromptCatalog {
             )
 
         case .rewriteTranscript:
+            let sourceTextRule = languageConsistencyRule(for: "source text")
             return (
-                system: "You rewrite dictated text into polished final copy. Follow the persona requirements exactly when provided. Return only the final text without explanations or quotation marks.",
+                system: """
+                \(sourceTextRule)
+
+                You rewrite dictated text into polished final copy. Follow the persona requirements exactly when provided. Return only the final text without explanations or quotation marks.
+                """,
                 user: """
                 Raw transcript:
                 \(request.sourceText)\(personaSection)
