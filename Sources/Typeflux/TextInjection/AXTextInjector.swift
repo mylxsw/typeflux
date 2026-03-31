@@ -427,14 +427,18 @@ final class AXTextInjector: TextInjector {
         var value: AnyObject?
         let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
         guard result == .success, let value else { return nil }
-        return value as! AXUIElement
+        guard CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+        return unsafeBitCast(value, to: AXUIElement.self)
     }
 
     private func copyElementArrayAttribute(_ attribute: String, from element: AXUIElement) -> [AXUIElement] {
         var value: AnyObject?
         let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
         guard result == .success, let array = value as? [AnyObject] else { return [] }
-        return array.map { $0 as! AXUIElement }
+        return array.compactMap { item in
+            guard CFGetTypeID(item) == AXUIElementGetTypeID() else { return nil }
+            return unsafeBitCast(item, to: AXUIElement.self)
+        }
     }
 
     private func copyTextAttribute(_ attribute: String, from element: AXUIElement) -> String? {
