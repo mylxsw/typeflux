@@ -1007,10 +1007,23 @@ final class WorkflowController {
         automaticVocabularyObservationTask?.cancel()
         automaticVocabularyObservationTask = nil
 
-        guard settingsStore.automaticVocabularyCollectionEnabled else { return }
+        guard settingsStore.automaticVocabularyCollectionEnabled else {
+            logAutomaticVocabulary("skip scheduling: feature disabled")
+            return
+        }
 
         let normalizedInsertedText = insertedText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !normalizedInsertedText.isEmpty else { return }
+        guard !normalizedInsertedText.isEmpty else {
+            logAutomaticVocabulary("skip scheduling: inserted text empty after normalization")
+            return
+        }
+
+        logAutomaticVocabulary(
+            "session scheduled | insertedText=\(automaticVocabularyPreview(normalizedInsertedText)) " +
+            "| observationWindow=\(Int(Self.automaticVocabularyObservationWindow))s " +
+            "| settleDelay=\(Self.automaticVocabularySettleDelay)s " +
+            "| maxAnalyses=\(Self.automaticVocabularyMaxAnalysesPerSession)"
+        )
 
         automaticVocabularyObservationTask = Task { [weak self] in
             guard let self else { return }
@@ -1018,15 +1031,22 @@ final class WorkflowController {
             do {
                 try await Task.sleep(for: Self.automaticVocabularyStartupDelay)
             } catch {
+                self.logAutomaticVocabulary("session cancelled before startup delay finished")
                 return
             }
 
             guard !Task.isCancelled else { return }
-            guard let baselineText = await self.textInjector.currentInputText() else { return }
+            guard let baselineText = await self.textInjector.currentInputText() else {
+                self.logAutomaticVocabulary("session aborted: failed to read baseline input text")
+                return
+            }
 
             var observationState = AutomaticVocabularyMonitor.makeObservationState(
                 baselineText: baselineText,
                 startedAt: Date()
+            )
+            self.logAutomaticVocabulary(
+                "session started | baselineText=\(self.automaticVocabularyPreview(baselineText))"
             )
             let deadline = Date().addingTimeInterval(Self.automaticVocabularyObservationWindow)
 
@@ -1034,17 +1054,27 @@ final class WorkflowController {
                 do {
                     try await Task.sleep(for: Self.automaticVocabularyPollInterval)
                 } catch {
+                    self.logAutomaticVocabulary("session cancelled during polling")
                     return
                 }
 
                 guard !Task.isCancelled else { return }
-                guard let currentText = await self.textInjector.currentInputText() else { continue }
+                guard let currentText = await self.textInjector.currentInputText() else {
+                    self.logAutomaticVocabulary("poll skipped: failed to read current input text")
+                    continue
+                }
                 let now = Date()
-                _ = AutomaticVocabularyMonitor.observe(
+                let didChange = AutomaticVocabularyMonitor.observe(
                     text: currentText,
                     at: now,
                     state: &observationState
                 )
+                if didChange {
+                    self.logAutomaticVocabulary(
+                        "change observed | analysisCount=\(observationState.analysisCount) " +
+                        "| latestText=\(self.automaticVocabularyPreview(currentText))"
+                    )
+                }
 
                 guard let pendingAnalysis = AutomaticVocabularyMonitor.pendingAnalysis(
                     state: observationState,
@@ -1059,29 +1089,54 @@ final class WorkflowController {
                     for: pendingAnalysis.updatedText,
                     state: &observationState
                 )
+                self.logAutomaticVocabulary(
+                    "stable change ready for analysis | analysisRound=\(observationState.analysisCount) " +
+                    "| previous=\(self.automaticVocabularyPreview(pendingAnalysis.previousStableText)) " +
+                    "| updated=\(self.automaticVocabularyPreview(pendingAnalysis.updatedText))"
+                )
 
                 guard let change = AutomaticVocabularyMonitor.detectChange(
                     from: pendingAnalysis.previousStableText,
                     to: pendingAnalysis.updatedText
                 ) else {
+                    self.logAutomaticVocabulary("analysis skipped: no candidate terms found after diff")
                     continue
                 }
+                let candidateSummary = change.candidateTerms.joined(separator: ", ")
+                self.logAutomaticVocabulary(
+                    "diff detected | oldFragment=\(self.automaticVocabularyPreview(change.oldFragment)) " +
+                    "| newFragment=\(self.automaticVocabularyPreview(change.newFragment)) " +
+                    "| candidates=\(candidateSummary)"
+                )
 
                 do {
                     let acceptedTerms = try await self.evaluateAutomaticVocabularyCandidates(
                         transcript: normalizedInsertedText,
                         change: change
                     )
+                    let approvedSummary = acceptedTerms.joined(separator: ", ")
+                    self.logAutomaticVocabulary("llm decision received | approvedTerms=\(approvedSummary)")
                     let addedTerms = self.addAutomaticVocabularyTerms(acceptedTerms)
-                    guard !addedTerms.isEmpty else { continue }
+                    guard !addedTerms.isEmpty else {
+                        self.logAutomaticVocabulary("analysis completed: no new terms added")
+                        continue
+                    }
+
+                    let addedSummary = addedTerms.joined(separator: ", ")
+                    self.logAutomaticVocabulary("terms added | addedTerms=\(addedSummary)")
 
                     await MainActor.run {
                         self.overlayController.showNotice(message: self.automaticVocabularyNotice(for: addedTerms))
                     }
                 } catch {
+                    self.logAutomaticVocabulary("analysis failed: \(error.localizedDescription)")
                     ErrorLogStore.shared.log("Automatic vocabulary evaluation failed: \(error.localizedDescription)")
                 }
             }
+
+            self.logAutomaticVocabulary(
+                "session completed | totalAnalyses=\(observationState.analysisCount)"
+            )
         }
     }
 
@@ -1123,6 +1178,16 @@ final class WorkflowController {
         }
 
         return L("workflow.vocabulary.autoAdded.multiple", terms.count)
+    }
+
+    private func logAutomaticVocabulary(_ message: String) {
+        NetworkDebugLogger.logMessage("[Auto Vocabulary] \(message)")
+    }
+
+    private func automaticVocabularyPreview(_ text: String, limit: Int = 80) -> String {
+        let normalized = text.replacingOccurrences(of: "\n", with: "\\n")
+        guard normalized.count > limit else { return normalized }
+        return String(normalized.prefix(limit)) + "..."
     }
 
     private func personaPickerEntries(includeNoneOption: Bool) -> [PersonaPickerEntry] {
