@@ -19,6 +19,7 @@ final class AXTextInjector: TextInjector {
     private static let copySelectionTimeoutMilliseconds = 180
     private static let copyShortcutKeyCode: CGKeyCode = 8
     private static let selectionContextLifetime: TimeInterval = 180
+    private static let focusedDescendantSearchDepth = 6
 
     private var latestSelectionContext: SelectionContext?
 
@@ -186,10 +187,25 @@ final class AXTextInjector: TextInjector {
 
     private func focusedElement() -> AXUIElement? {
         let system = AXUIElementCreateSystemWide()
-        var focused: AnyObject?
-        let err = AXUIElementCopyAttributeValue(system, kAXFocusedUIElementAttribute as CFString, &focused)
-        guard err == .success, let element = focused else { return nil }
-        return (element as! AXUIElement)
+        if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: system),
+           let resolved = resolveFocusedElement(focused) {
+            return resolved
+        }
+
+        guard let processID = frontmostProcessID() else { return nil }
+        let appElement = AXUIElementCreateApplication(processID)
+
+        if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: appElement),
+           let resolved = resolveFocusedElement(focused) {
+            return resolved
+        }
+
+        if let focusedWindow = copyElementAttribute(kAXFocusedWindowAttribute as String, from: appElement),
+           let resolved = resolveFocusedElement(focusedWindow) {
+            return resolved
+        }
+
+        return nil
     }
 
     private func readSelectedTextWithTimeout(milliseconds: Int) -> (text: String, context: SelectionContext)? {
@@ -407,6 +423,20 @@ final class AXTextInjector: TextInjector {
         return value as? String
     }
 
+    private func copyElementAttribute(_ attribute: String, from element: AXUIElement) -> AXUIElement? {
+        var value: AnyObject?
+        let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
+        guard result == .success, let value else { return nil }
+        return value as! AXUIElement
+    }
+
+    private func copyElementArrayAttribute(_ attribute: String, from element: AXUIElement) -> [AXUIElement] {
+        var value: AnyObject?
+        let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
+        guard result == .success, let array = value as? [AnyObject] else { return [] }
+        return array.map { $0 as! AXUIElement }
+    }
+
     private func copyTextAttribute(_ attribute: String, from element: AXUIElement) -> String? {
         var value: AnyObject?
         let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
@@ -466,6 +496,52 @@ final class AXTextInjector: TextInjector {
 
     private func frontmostApplicationName() -> String? {
         NSWorkspace.shared.frontmostApplication?.localizedName
+    }
+
+    private func resolveFocusedElement(_ element: AXUIElement) -> AXUIElement? {
+        let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
+
+        if role != "AXWindow" {
+            return element
+        }
+
+        if let nestedFocused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: element),
+           nestedFocused != element,
+           let resolved = resolveFocusedElement(nestedFocused) {
+            return resolved
+        }
+
+        if let descendant = findFocusedDescendant(
+            in: element,
+            depthRemaining: Self.focusedDescendantSearchDepth
+        ) {
+            return descendant
+        }
+
+        return element
+    }
+
+    private func findFocusedDescendant(in element: AXUIElement, depthRemaining: Int) -> AXUIElement? {
+        guard depthRemaining > 0 else { return nil }
+
+        let children = copyElementArrayAttribute(kAXChildrenAttribute as String, from: element)
+        for child in children {
+            if let focused = copyBooleanAttribute(kAXFocusedAttribute as String, from: child), focused {
+                return child
+            }
+            if let nested = findFocusedDescendant(in: child, depthRemaining: depthRemaining - 1) {
+                return nested
+            }
+        }
+
+        return nil
+    }
+
+    private func copyBooleanAttribute(_ attribute: String, from element: AXUIElement) -> Bool? {
+        var value: AnyObject?
+        let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
+        guard result == .success, let number = value as? NSNumber else { return nil }
+        return number.boolValue
     }
 
     private func readSelectedTextViaCopy(processID: pid_t?, milliseconds: Int) -> String? {
