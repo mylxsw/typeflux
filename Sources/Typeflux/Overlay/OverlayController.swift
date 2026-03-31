@@ -356,17 +356,17 @@ final class OverlayController {
         case .processing:
             return OverlayMetrics(size: NSSize(width: 118, height: 72), anchor: .bottom, offset: 24, interactive: false)
         case .transcriptPreview:
-            return OverlayMetrics(size: NSSize(width: 344, height: 108), anchor: .top, offset: 84, interactive: false)
+            return OverlayMetrics(size: NSSize(width: 344, height: 108), anchor: .bottom, offset: 80, interactive: false)
         case .notice:
             return OverlayMetrics(size: NSSize(width: 344, height: 108), anchor: .bottom, offset: 80, interactive: true)
         case .failure:
             let failureHeight: CGFloat = model.failureRetryable ? 172 : 132
-            return OverlayMetrics(size: NSSize(width: 352, height: failureHeight), anchor: .top, offset: 78, interactive: true)
+            return OverlayMetrics(size: NSSize(width: 352, height: failureHeight), anchor: .bottom, offset: 80, interactive: true)
         case .personaPicker:
-            let viewportHeight = max(180, model.personaViewportHeight)
-            return OverlayMetrics(size: NSSize(width: 456, height: viewportHeight + 132), anchor: .center, offset: 0, interactive: true)
+            let viewportHeight = min(320, max(180, model.personaViewportHeight))
+            return OverlayMetrics(size: NSSize(width: 456, height: viewportHeight + 132), anchor: .bottom, offset: 36, interactive: true)
         case .resultDialog:
-            return OverlayMetrics(size: NSSize(width: 446, height: 236), anchor: .center, offset: 0, interactive: true)
+            return OverlayMetrics(size: NSSize(width: 446, height: 236), anchor: .bottom, offset: 36, interactive: true)
         }
     }
 
@@ -598,12 +598,8 @@ private struct OverlayView: View {
 
     private var contentAlignment: Alignment {
         switch model.presentation {
-        case .recordingHold, .recordingHoldPreview, .recordingLocked, .recordingLockedPreview, .processing, .notice:
+        case .recordingHold, .recordingHoldPreview, .recordingLocked, .recordingLockedPreview, .processing, .notice, .transcriptPreview, .failure, .personaPicker, .resultDialog:
             return .bottom
-        case .transcriptPreview, .failure:
-            return .top
-        case .personaPicker, .resultDialog:
-            return .center
         }
     }
 

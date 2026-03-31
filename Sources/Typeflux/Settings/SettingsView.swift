@@ -870,6 +870,27 @@ struct StudioView: View {
                     }
                 }
             }
+
+            StudioSectionTitle(title: L("settings.advanced"))
+
+            StudioCard {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                    StudioSettingRow(
+                        title: L("settings.models.appleFallback"),
+                        subtitle: L("settings.models.appleFallback.detail")
+                    ) {
+                        Toggle(
+                            "",
+                            isOn: Binding(
+                                get: { viewModel.appleSpeechFallback },
+                                set: viewModel.setAppleSpeechFallback
+                            )
+                        )
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
+                }
+            }
         }
     }
 
@@ -1361,8 +1382,6 @@ struct StudioView: View {
                     text: Binding(get: { viewModel.whisperModel }, set: viewModel.setWhisperModel),
                     suggestions: whisperModelSuggestions
                 )
-                Toggle(L("settings.models.appleFallback"), isOn: Binding(get: { viewModel.appleSpeechFallback }, set: viewModel.setAppleSpeechFallback))
-                    .toggleStyle(.switch)
             } else {
                 if viewModel.llmProvider == .ollama {
                     StudioSuggestedTextInputCard(
@@ -1947,27 +1966,6 @@ struct StudioView: View {
                         connectionTestResultView(viewModel.llmConnectionTestState)
                     } else if [StudioModelProviderID.whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime].contains(viewModel.focusedModelProvider) {
                         connectionTestResultView(viewModel.sttConnectionTestState)
-                    }
-                }
-
-                if viewModel.modelDomain == .stt {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                        Divider()
-                            .overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                        Toggle(
-                            L("settings.models.appleFallback"),
-                            isOn: Binding(
-                                get: { viewModel.appleSpeechFallback },
-                                set: viewModel.setAppleSpeechFallback
-                            )
-                        )
-                        .toggleStyle(.switch)
-
-                        Text(L("settings.models.appleFallback.detail"))
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
 
