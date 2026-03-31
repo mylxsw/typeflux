@@ -414,7 +414,7 @@ final class OverlayController {
             return OverlayMetrics(size: NSSize(width: 352, height: failureHeight), anchor: .bottom, offset: 80, interactive: true)
         case .personaPicker:
             let viewportHeight = min(320, max(180, model.personaViewportHeight))
-            return OverlayMetrics(size: NSSize(width: 458, height: viewportHeight + 132), anchor: .center, offset: 36, interactive: true)
+            return OverlayMetrics(size: NSSize(width: 498, height: viewportHeight + 172), anchor: .center, offset: 36, interactive: true)
         case .resultDialog:
             return OverlayMetrics(size: NSSize(width: 446, height: 236), anchor: .bottom, offset: 36, interactive: true)
         }
@@ -954,6 +954,7 @@ private struct OverlayView: View {
                 )
         )
         .shadow(color: Color.black.opacity(0.32), radius: 32, x: 0, y: 18)
+        .padding(20)
     }
 
     private var resultDialogCard: some View {
