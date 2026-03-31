@@ -348,7 +348,7 @@ final class OverlayController {
         switch presentation {
         case .recordingHoldPreview, .recordingLockedPreview, .transcriptPreview, .notice:
             return WindowChromeStyle(background: background, cornerRadius: 14)
-        case .failure, .personaPicker:
+        case .failure:
             return WindowChromeStyle(background: background, cornerRadius: 16)
         case .resultDialog:
             return WindowChromeStyle(background: background, cornerRadius: 14)
@@ -402,7 +402,7 @@ final class OverlayController {
             return OverlayMetrics(size: NSSize(width: 352, height: failureHeight), anchor: .bottom, offset: 80, interactive: true)
         case .personaPicker:
             let viewportHeight = min(320, max(180, model.personaViewportHeight))
-            return OverlayMetrics(size: NSSize(width: 456, height: viewportHeight + 132), anchor: .center, offset: 36, interactive: true)
+            return OverlayMetrics(size: NSSize(width: 458, height: viewportHeight + 132), anchor: .center, offset: 36, interactive: true)
         case .resultDialog:
             return OverlayMetrics(size: NSSize(width: 446, height: 236), anchor: .bottom, offset: 36, interactive: true)
         }
