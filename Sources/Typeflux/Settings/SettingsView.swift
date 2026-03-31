@@ -303,31 +303,33 @@ struct StudioView: View {
                                             .foregroundStyle(StudioTheme.accent)
                                     )
                                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
-                                    HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
-                                        Text(persona.name)
-                                            .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
-                                            .foregroundStyle(StudioTheme.textPrimary)
-                                            .lineLimit(1)
-
-                                        Spacer(minLength: StudioTheme.Spacing.small)
-
-                                        if persona.isSystem {
-                                            StudioPill(
-                                                title: L("settings.personas.tag.system"),
-                                                tone: StudioTheme.textTertiary,
-                                                fill: StudioTheme.surfaceMuted
-                                            )
-                                        }
-                                    }
+                                    Text(persona.name)
+                                        .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
+                                        .foregroundStyle(StudioTheme.textPrimary)
+                                        .lineLimit(1)
                                     Text(persona.prompt)
                                         .font(.studioBody(StudioTheme.Typography.caption))
                                         .foregroundStyle(StudioTheme.textSecondary)
                                         .lineLimit(StudioTheme.LineLimit.personaPrompt)
                                 }
                                 Spacer()
-                                Circle()
-                                    .fill(persona.id.uuidString == viewModel.activePersonaID ? StudioTheme.accent : Color.clear)
-                                    .frame(width: StudioTheme.ControlSize.personaStatusDot, height: StudioTheme.ControlSize.personaStatusDot)
+                                Group {
+                                    if persona.isSystem {
+                                        StudioPill(
+                                            title: L("settings.personas.tag.system"),
+                                            tone: StudioTheme.textTertiary,
+                                            fill: StudioTheme.surfaceMuted
+                                        )
+                                    } else {
+                                        Circle()
+                                            .fill(persona.id.uuidString == viewModel.activePersonaID ? StudioTheme.accent : Color.clear)
+                                            .frame(
+                                                width: StudioTheme.ControlSize.personaStatusDot,
+                                                height: StudioTheme.ControlSize.personaStatusDot
+                                            )
+                                    }
+                                }
+                                .frame(minWidth: 56, alignment: .trailing)
                             }
                             .padding(StudioTheme.Insets.personaRow)
                             .background(
@@ -391,18 +393,20 @@ struct StudioView: View {
                     .opacity(viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft ? 0.6 : 1)
                 }
 
-                HStack {
-                    Spacer()
-                    StudioButton(title: L("common.cancel"), systemImage: nil, variant: .secondary) {
-                        viewModel.cancelPersonaEditing()
-                    }
-                    StudioButton(
-                        title: L("common.save"),
-                        systemImage: nil,
-                        variant: .primary,
-                        isDisabled: !viewModel.canSavePersonaDraft || !viewModel.hasPersonaDraftChanges
-                    ) {
-                        viewModel.savePersonaDraft()
+                if !(viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft) {
+                    HStack {
+                        Spacer()
+                        StudioButton(title: L("common.cancel"), systemImage: nil, variant: .secondary) {
+                            viewModel.cancelPersonaEditing()
+                        }
+                        StudioButton(
+                            title: L("common.save"),
+                            systemImage: nil,
+                            variant: .primary,
+                            isDisabled: !viewModel.canSavePersonaDraft || !viewModel.hasPersonaDraftChanges
+                        ) {
+                            viewModel.savePersonaDraft()
+                        }
                     }
                 }
             }
