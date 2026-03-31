@@ -9,6 +9,19 @@ private final class OverlayPanel: NSPanel {
     override var canBecomeKey: Bool { true }
 }
 
+// CGEventTap callback — intercepts and consumes keyboard events (Return/Esc/arrows)
+// system-wide so the panel never needs to steal focus from the original app.
+private func overlayEventTapCallback(
+    proxy: CGEventTapProxy,
+    type: CGEventType,
+    event: CGEvent,
+    refcon: UnsafeMutableRawPointer?
+) -> Unmanaged<CGEvent>? {
+    guard let refcon else { return Unmanaged.passUnretained(event) }
+    let controller = Unmanaged<OverlayController>.fromOpaque(refcon).takeUnretainedValue()
+    return controller.handleEventTapEvent(type: type, event: event)
+}
+
 final class OverlayController {
     private static let autoDismissDelay: TimeInterval = 10.0
 
@@ -23,8 +36,8 @@ final class OverlayController {
 
     private let model = OverlayViewModel()
     private var dismissWorkItem: DispatchWorkItem?
-    private var globalKeyMonitor: Any?
-    private var localKeyMonitor: Any?
+    fileprivate var eventTap: CFMachPort?
+    private var runLoopSource: CFRunLoopSource?
 
     init(appState: AppStateStore) {
         self.appState = appState
@@ -91,7 +104,7 @@ final class OverlayController {
             panel.hasShadow = false
             panel.isOpaque = false
             panel.ignoresMouseEvents = false
-            panel.becomesKeyOnlyIfNeeded = false
+            panel.becomesKeyOnlyIfNeeded = true
             panel.collectionBehavior = [NSWindow.CollectionBehavior.canJoinAllSpaces, NSWindow.CollectionBehavior.transient]
             panel.contentView = hosting
             panel.contentView?.wantsLayer = true
@@ -308,11 +321,10 @@ final class OverlayController {
     private func refreshWindow() {
         positionWindow()
         configureWindowAppearance()
-        if metrics(for: model.presentation).interactive {
-            window?.makeKeyAndOrderFront(nil)
-        } else {
-            window?.orderFrontRegardless()
-        }
+        // Always use orderFrontRegardless — never makeKeyAndOrderFront.
+        // Stealing key window status from the original app causes it to lose
+        // focus and selection, which breaks write-back after LLM processing.
+        window?.orderFrontRegardless()
         updateKeyMonitoring()
     }
 
@@ -421,30 +433,88 @@ final class OverlayController {
     }
 
     private func installKeyMonitoringIfNeeded() {
-        guard globalKeyMonitor == nil, localKeyMonitor == nil else { return }
-        globalKeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            _ = self?.handleKeyEvent(event)
+        guard eventTap == nil else { return }
+
+        let mask: CGEventMask = (1 << CGEventType.keyDown.rawValue)
+        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
+
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: mask,
+            callback: overlayEventTapCallback,
+            userInfo: selfPtr
+        ) else {
+            NSLog("[OverlayController] Failed to create CGEventTap — falling back to NSEvent monitors")
+            installNSEventMonitorFallback()
+            return
         }
-        localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self else { return event }
-            return self.handleKeyEvent(event) ? nil : event
-        }
+
+        eventTap = tap
+        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+        runLoopSource = source
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        CGEvent.tapEnable(tap: tap, enable: true)
     }
+
+    /// Fallback when CGEventTap creation fails (e.g. sandboxed environment).
+    /// Global monitors cannot consume events, so Return may still leak to chat apps.
+    private func installNSEventMonitorFallback() {
+        guard eventTap == nil, runLoopSource == nil else { return }
+        let globalMon = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            _ = self?.handleKeyCode(Int(event.keyCode))
+        }
+        let localMon = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self else { return event }
+            return self.handleKeyCode(Int(event.keyCode)) ? nil : event
+        }
+        // Store monitors in the eventTap/runLoopSource slots is not possible,
+        // so we use associated-object-free approach: keep them as "Any" via a side channel.
+        _fallbackGlobalMonitor = globalMon
+        _fallbackLocalMonitor = localMon
+    }
+    private var _fallbackGlobalMonitor: Any?
+    private var _fallbackLocalMonitor: Any?
 
     private func removeKeyMonitoring() {
-        if let globalKeyMonitor {
-            NSEvent.removeMonitor(globalKeyMonitor)
-            self.globalKeyMonitor = nil
+        if let tap = eventTap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+            if let source = runLoopSource {
+                CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+            }
+            CFMachPortInvalidate(tap)
         }
-        if let localKeyMonitor {
-            NSEvent.removeMonitor(localKeyMonitor)
-            self.localKeyMonitor = nil
-        }
+        eventTap = nil
+        runLoopSource = nil
+
+        if let m = _fallbackGlobalMonitor { NSEvent.removeMonitor(m) }
+        if let m = _fallbackLocalMonitor { NSEvent.removeMonitor(m) }
+        _fallbackGlobalMonitor = nil
+        _fallbackLocalMonitor = nil
     }
 
-    private func handleKeyEvent(_ event: NSEvent) -> Bool {
+    /// Called from the CGEventTap C callback on the main run loop.
+    fileprivate func handleEventTapEvent(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let tap = eventTap {
+                CGEvent.tapEnable(tap: tap, enable: true)
+            }
+            return Unmanaged.passUnretained(event)
+        }
+
+        guard type == .keyDown else { return Unmanaged.passUnretained(event) }
+
+        let keyCode = Int(event.getIntegerValueField(.keyboardEventKeycode))
+        if handleKeyCode(keyCode) {
+            return nil // consume the event
+        }
+        return Unmanaged.passUnretained(event)
+    }
+
+    fileprivate func handleKeyCode(_ keyCode: Int) -> Bool {
         if model.presentation == .recordingLocked || model.presentation == .recordingLockedPreview {
-            if Int(event.keyCode) == 53 {
+            if keyCode == 53 {
                 model.requestCancel()
                 return true
             }
@@ -453,13 +523,13 @@ final class OverlayController {
 
         switch model.presentation {
         case .failure:
-            if Int(event.keyCode) == 53 {
+            if keyCode == 53 {
                 model.requestDismiss()
                 return true
             }
             return false
         case .personaPicker:
-            switch Int(event.keyCode) {
+            switch keyCode {
             case 53:
                 model.requestPersonaCancel()
                 return true
@@ -476,7 +546,7 @@ final class OverlayController {
                 return false
             }
         case .resultDialog:
-            if Int(event.keyCode) == 53 {
+            if keyCode == 53 {
                 model.requestDismiss()
                 return true
             }
