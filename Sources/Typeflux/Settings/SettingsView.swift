@@ -313,21 +313,21 @@ struct StudioView: View {
                                         .lineLimit(StudioTheme.LineLimit.personaPrompt)
                                 }
                                 Spacer()
-                                Group {
+                                VStack(alignment: .trailing, spacing: StudioTheme.Spacing.xxxSmall) {
                                     if persona.isSystem {
                                         StudioPill(
                                             title: L("settings.personas.tag.system"),
                                             tone: StudioTheme.textTertiary,
                                             fill: StudioTheme.surfaceMuted
                                         )
-                                    } else {
-                                        Circle()
-                                            .fill(persona.id.uuidString == viewModel.activePersonaID ? StudioTheme.accent : Color.clear)
-                                            .frame(
-                                                width: StudioTheme.ControlSize.personaStatusDot,
-                                                height: StudioTheme.ControlSize.personaStatusDot
-                                            )
                                     }
+
+                                    Circle()
+                                        .fill(persona.id.uuidString == viewModel.activePersonaID ? StudioTheme.accent : Color.clear)
+                                        .frame(
+                                            width: StudioTheme.ControlSize.personaStatusDot,
+                                            height: StudioTheme.ControlSize.personaStatusDot
+                                        )
                                 }
                                 .frame(minWidth: 56, alignment: .trailing)
                             }
@@ -338,7 +338,6 @@ struct StudioView: View {
                             )
                             .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xxLarge, style: .continuous))
                         }
-                        .opacity(persona.isSystem ? 0.62 : 1)
                         .buttonStyle(StudioInteractiveButtonStyle())
                         .contextMenu {
                             if !persona.isSystem {
