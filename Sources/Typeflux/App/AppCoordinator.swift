@@ -18,7 +18,8 @@ final class AppCoordinator {
             textInjector: di.textInjector,
             clipboard: di.clipboard,
             historyStore: di.historyStore,
-            overlayController: di.overlayController
+            overlayController: di.overlayController,
+            soundEffectPlayer: di.soundEffectPlayer
         )
         self.workflowController = workflowController
 

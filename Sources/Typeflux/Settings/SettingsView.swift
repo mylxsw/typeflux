@@ -864,6 +864,23 @@ struct StudioView: View {
             StudioCard {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
                     StudioSettingRow(
+                        title: L("settings.advanced.soundEffects.title"),
+                        subtitle: L("settings.advanced.soundEffects.subtitle")
+                    ) {
+                        Toggle(
+                            "",
+                            isOn: Binding(
+                                get: { viewModel.soundEffectsEnabled },
+                                set: viewModel.setSoundEffectsEnabled
+                            )
+                        )
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
+
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                    StudioSettingRow(
                         title: L("settings.advanced.personaHotkeyApply.title"),
                         subtitle: L("settings.advanced.personaHotkeyApply.subtitle"),
                         badge: "Beta"

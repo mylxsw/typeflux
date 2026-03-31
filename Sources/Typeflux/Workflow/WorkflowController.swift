@@ -35,6 +35,7 @@ final class WorkflowController {
     private let clipboard: ClipboardService
     private let historyStore: HistoryStore
     private let overlayController: OverlayController
+    private let soundEffectPlayer: SoundEffectPlayer
 
     private var currentSelectedText: String?
     private var isRecording = false
@@ -79,7 +80,8 @@ final class WorkflowController {
         textInjector: TextInjector,
         clipboard: ClipboardService,
         historyStore: HistoryStore,
-        overlayController: OverlayController
+        overlayController: OverlayController,
+        soundEffectPlayer: SoundEffectPlayer
     ) {
         self.appState = appState
         self.settingsStore = settingsStore
@@ -91,6 +93,7 @@ final class WorkflowController {
         self.clipboard = clipboard
         self.historyStore = historyStore
         self.overlayController = overlayController
+        self.soundEffectPlayer = soundEffectPlayer
         self.overlayController.setRecordingActionHandlers(
             onCancel: { [weak self] in self?.cancelRecording() },
             onConfirm: { [weak self] in self?.confirmLockedRecording() }
@@ -127,6 +130,7 @@ final class WorkflowController {
             guard let self else { return }
             ErrorLogStore.shared.log(message)
             Task { @MainActor in
+                self.soundEffectPlayer.play(.error)
                 self.appState.setStatus(.failed(message: message))
                 self.overlayController.showFailure(message: message)
                 self.overlayController.dismiss(after: 3.0)
@@ -209,6 +213,7 @@ final class WorkflowController {
         }
         Task { @MainActor in
             self.lastTimeoutRecord = timeoutRecord
+            self.soundEffectPlayer.play(.error)
             self.appState.setStatus(.failed(message: L("workflow.timeout.status")))
             self.overlayController.showTimeoutFailure()
         }
@@ -222,6 +227,7 @@ final class WorkflowController {
         if !PrivacyGuard.isRunningInAppBundle {
             Task { @MainActor in
                 let msg = L("workflow.devApp.requiredMessage")
+                self.soundEffectPlayer.play(.error)
                 appState.setStatus(.failed(message: L("workflow.devApp.requiredStatus")))
                 overlayController.showFailure(message: msg)
                 overlayController.dismiss(after: 3.0)
@@ -321,6 +327,9 @@ final class WorkflowController {
         isRecording = true
         recordingMode = .holdToTalk
         NSLog("[Workflow] Recording started")
+        await MainActor.run {
+            self.soundEffectPlayer.play(.start)
+        }
 
         Task { @MainActor in
             appState.setStatus(.recording)
@@ -362,6 +371,7 @@ final class WorkflowController {
             saveHistoryRecord(record)
             Task { @MainActor in
                 let msg = "Audio start failed: \(error.localizedDescription)"
+                self.soundEffectPlayer.play(.error)
                 appState.setStatus(.failed(message: L("workflow.audioStart.failedStatus")))
                 overlayController.showFailure(message: msg)
                 overlayController.dismiss(after: 3.0)
@@ -478,6 +488,9 @@ final class WorkflowController {
     private func finishRecordingAndProcess() async {
         do {
             let audioFile = try audioRecorder.stop()
+            await MainActor.run {
+                self.soundEffectPlayer.play(.done)
+            }
             let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
             selectionTask = nil
             let selectedText = selectionSnapshot.selectedText?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -545,7 +558,8 @@ final class WorkflowController {
             saveHistoryRecord(record)
 
             await MainActor.run {
-                    self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
+                self.soundEffectPlayer.play(.error)
+                self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
                 self.overlayController.showFailure(message: msg)
                 self.overlayController.dismiss(after: 3.0)
             }
@@ -775,6 +789,7 @@ final class WorkflowController {
 
             await MainActor.run {
                 if self.processingSessionID == sessionID {
+                    self.soundEffectPlayer.play(.error)
                     self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
                     self.overlayController.showFailure(message: msg)
                     self.overlayController.dismiss(after: 3.0)
@@ -797,6 +812,7 @@ final class WorkflowController {
         saveHistoryRecord(mutableRecord)
 
         await MainActor.run {
+            self.soundEffectPlayer.play(.error)
             self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
             self.overlayController.showFailure(message: message)
             self.overlayController.dismiss(after: 3.0)
@@ -1146,6 +1162,7 @@ final class WorkflowController {
 
                 await MainActor.run {
                     if self.processingSessionID == sessionID {
+                        self.soundEffectPlayer.play(.error)
                         self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
                         self.overlayController.showFailure(message: msg)
                         self.overlayController.dismiss(after: 3.0)
