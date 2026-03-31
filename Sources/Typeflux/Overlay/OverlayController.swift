@@ -802,51 +802,88 @@ private struct OverlayView: View {
     }
 
     private var personaPickerCard: some View {
-        OverlayCard(width: 456, hostedInWindowChrome: true, shadowed: false) {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(model.statusText)
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(Color.white.opacity(0.96))
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(model.statusText)
+                        .font(.system(size: 21, weight: .semibold))
+                        .foregroundStyle(Color.white.opacity(0.98))
 
-                        Text(model.detailText)
-                            .font(.system(size: 12.5, weight: .medium))
-                            .foregroundStyle(Color.white.opacity(0.7))
-                    }
-
-                    Spacer(minLength: 0)
-
-                    Button(action: model.requestPersonaCancel) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 13.5, weight: .semibold))
-                            .foregroundStyle(Color.white.opacity(0.62))
-                            .frame(width: 24, height: 24)
-                            .background(Circle().fill(Color.white.opacity(0.08)))
-                    }
-                    .buttonStyle(.plain)
+                    Text(model.detailText)
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(Color.white.opacity(0.68))
+                        .lineLimit(2)
                 }
 
-                ScrollViewReader { proxy in
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 10) {
-                            ForEach(Array(model.personaItems.enumerated()), id: \.element.id) { index, item in
-                                personaPickerRow(item: item, index: index, isSelected: index == model.personaSelectedIndex)
-                                    .id(index)
-                            }
+                Spacer(minLength: 0)
+
+                Button(action: model.requestPersonaCancel) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12.5, weight: .bold))
+                        .foregroundStyle(Color.white.opacity(0.56))
+                        .frame(width: 28, height: 28)
+                        .background(
+                            Circle()
+                                .fill(Color.white.opacity(0.08))
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.08), lineWidth: 0.8)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+
+            ScrollViewReader { proxy in
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 10) {
+                        ForEach(Array(model.personaItems.enumerated()), id: \.element.id) { index, item in
+                            personaPickerRow(item: item, index: index, isSelected: index == model.personaSelectedIndex)
+                                .id(index)
                         }
-                        .padding(2)
                     }
-                    .frame(height: model.personaViewportHeight)
-                    .onAppear {
-                        scrollPersonaSelection(with: proxy)
-                    }
-                    .onChange(of: model.personaSelectedIndex) { _ in
-                        scrollPersonaSelection(with: proxy)
-                    }
+                    .padding(.vertical, 2)
+                }
+                .frame(height: model.personaViewportHeight)
+                .onAppear {
+                    scrollPersonaSelection(with: proxy)
+                }
+                .onChange(of: model.personaSelectedIndex) { _ in
+                    scrollPersonaSelection(with: proxy)
                 }
             }
         }
+        .padding(.horizontal, 22)
+        .padding(.vertical, 20)
+        .frame(width: 468, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color(nsColor: .windowBackgroundColor).opacity(0.16))
+                .background(
+                    .ultraThinMaterial,
+                    in: RoundedRectangle(cornerRadius: 24, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.28),
+                                    Color.white.opacity(0.12)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.black.opacity(0.18), lineWidth: 0.5)
+                        .blur(radius: 1.5)
+                )
+        )
+        .shadow(color: Color.black.opacity(0.22), radius: 24, x: 0, y: 18)
     }
 
     private var resultDialogCard: some View {
@@ -900,44 +937,51 @@ private struct OverlayView: View {
 
     private func personaPickerRow(item: OverlayController.PersonaPickerItem, index: Int, isSelected: Bool) -> some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(isSelected ? Color(red: 0.43, green: 0.56, blue: 1.0).opacity(0.24) : Color.white.opacity(0.06))
-                .frame(width: 38, height: 38)
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .fill(
+                    isSelected
+                        ? Color.accentColor.opacity(0.18)
+                        : Color.white.opacity(0.055)
+                )
+                .frame(width: 40, height: 40)
                 .overlay(
                     Text(String(item.title.prefix(2)).uppercased())
                         .font(.system(size: 11.5, weight: .bold))
-                        .foregroundStyle(isSelected ? Color(red: 0.68, green: 0.78, blue: 1.0) : Color.white.opacity(0.7))
+                        .foregroundStyle(isSelected ? Color.white.opacity(0.96) : Color.white.opacity(0.7))
                 )
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(item.title)
-                    .font(.system(size: 14.5, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.white.opacity(0.96))
                 Text(item.subtitle)
                     .font(.system(size: 11.5, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.64))
+                    .foregroundStyle(Color.white.opacity(isSelected ? 0.72 : 0.58))
                     .lineLimit(2)
             }
 
             Spacer(minLength: 0)
 
             if isSelected {
-                Image(systemName: "return")
-                    .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.68, green: 0.78, blue: 1.0))
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.accentColor.opacity(0.95))
             }
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.vertical, 11)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(isSelected ? Color.white.opacity(0.1) : Color.white.opacity(0.03))
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(isSelected ? Color.white.opacity(0.12) : Color.white.opacity(0.025))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(isSelected ? Color(red: 0.43, green: 0.56, blue: 1.0).opacity(0.72) : Color.white.opacity(0.08), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(
+                            isSelected ? Color.accentColor.opacity(0.78) : Color.white.opacity(0.06),
+                            lineWidth: isSelected ? 1.1 : 0.8
+                        )
                 )
         )
-        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .onTapGesture {
             model.requestPersonaSelection(at: index)
         }
