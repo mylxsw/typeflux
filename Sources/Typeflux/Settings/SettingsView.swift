@@ -2346,9 +2346,7 @@ struct StudioView: View {
                             .fill(isFocused ? StudioTheme.accentSoft : StudioTheme.surfaceMuted)
                             .frame(width: StudioTheme.ControlSize.modelProviderBadge, height: StudioTheme.ControlSize.modelProviderBadge)
                             .overlay(
-                                Image(systemName: iconName(for: providerID))
-                                    .font(.system(size: StudioTheme.ControlSize.modelProviderBadgeSymbol, weight: .semibold))
-                                    .foregroundStyle(isFocused ? StudioTheme.accent : StudioTheme.textSecondary)
+                                providerIconView(for: providerID, isFocused: isFocused)
                             )
 
                         Text(card.name)
@@ -2414,6 +2412,59 @@ struct StudioView: View {
     private func metadata(for provider: LLMRemoteProvider) -> String {
         let model = viewModel.llmRemoteProvider == provider ? viewModel.llmModel : provider.defaultModel
         return model.isEmpty ? L("settings.models.modelNotConfigured") : model
+    }
+
+    @ViewBuilder
+    private func providerIconView(for provider: StudioModelProviderID, isFocused: Bool) -> some View {
+        if let image = providerLogoImage(for: provider) {
+            Image(nsImage: image)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .padding(8)
+        } else {
+            Image(systemName: iconName(for: provider))
+                .font(.system(size: StudioTheme.ControlSize.modelProviderBadgeSymbol, weight: .semibold))
+                .foregroundStyle(isFocused ? StudioTheme.accent : StudioTheme.textSecondary)
+        }
+    }
+
+    private func providerLogoImage(for provider: StudioModelProviderID) -> NSImage? {
+        guard let resourceName = providerLogoResourceName(for: provider) else { return nil }
+
+        let url = Bundle.module.url(forResource: resourceName, withExtension: "png", subdirectory: "Resources/Providers")
+            ?? Bundle.module.url(forResource: resourceName, withExtension: "png", subdirectory: "Providers")
+            ?? Bundle.module.url(forResource: resourceName, withExtension: "png")
+
+        guard let url else { return nil }
+        return NSImage(contentsOf: url)
+    }
+
+    private func providerLogoResourceName(for provider: StudioModelProviderID) -> String? {
+        switch provider {
+        case .ollama:
+            return "ollama"
+        case .customLLM:
+            return "openrouter"
+        case .openAI:
+            return "openai"
+        case .anthropic:
+            return "claude-color"
+        case .gemini:
+            return "gemini-color"
+        case .kimi:
+            return "moonshot"
+        case .qwen:
+            return "qwen-color"
+        case .zhipu:
+            return "zhipu-color"
+        case .aliCloud:
+            return "bailian-color"
+        case .doubaoRealtime:
+            return "doubao-color"
+        default:
+            return nil
+        }
     }
 
     private func localSTTModelOptionCard(_ model: LocalSTTModel) -> some View {
