@@ -2417,11 +2417,21 @@ struct StudioView: View {
     @ViewBuilder
     private func providerIconView(for provider: StudioModelProviderID, isFocused: Bool) -> some View {
         if let image = providerLogoImage(for: provider) {
-            Image(nsImage: image)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .padding(8)
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.white.opacity(isFocused ? 0.98 : 0.94))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                    )
+                    .padding(6)
+
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .padding(11)
+            }
         } else {
             Image(systemName: iconName(for: provider))
                 .font(.system(size: StudioTheme.ControlSize.modelProviderBadgeSymbol, weight: .semibold))
