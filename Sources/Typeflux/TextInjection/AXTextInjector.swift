@@ -95,22 +95,89 @@ final class AXTextInjector: TextInjector {
         try setText(text, replaceSelection: false)
     }
 
+    func currentInputTextSnapshot() async -> CurrentInputTextSnapshot {
+        guard AXIsProcessTrusted() else {
+            return CurrentInputTextSnapshot(
+                processID: frontmostProcessID(),
+                processName: frontmostApplicationName(),
+                role: nil,
+                text: nil,
+                isEditable: false,
+                failureReason: "accessibility-not-trusted"
+            )
+        }
+
+        guard let element = focusedElement() else {
+            return CurrentInputTextSnapshot(
+                processID: frontmostProcessID(),
+                processName: frontmostApplicationName(),
+                role: nil,
+                text: nil,
+                isEditable: false,
+                failureReason: "no-focused-element"
+            )
+        }
+
+        let processID = frontmostProcessID()
+        let processName = frontmostApplicationName()
+        let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
+        let isEditable = isLikelyEditable(element: element)
+
+        guard isEditable else {
+            return CurrentInputTextSnapshot(
+                processID: processID,
+                processName: processName,
+                role: role,
+                text: nil,
+                isEditable: false,
+                failureReason: "focused-element-not-editable"
+            )
+        }
+
+        if let value = copyTextAttribute(kAXValueAttribute as String, from: element) {
+            if let placeholder = copyTextAttribute(kAXPlaceholderValueAttribute as String, from: element), placeholder == value {
+                return CurrentInputTextSnapshot(
+                    processID: processID,
+                    processName: processName,
+                    role: role,
+                    text: nil,
+                    isEditable: true,
+                    failureReason: "value-matched-placeholder"
+                )
+            }
+            if let title = copyTextAttribute(kAXTitleAttribute as String, from: element), title == value {
+                return CurrentInputTextSnapshot(
+                    processID: processID,
+                    processName: processName,
+                    role: role,
+                    text: nil,
+                    isEditable: true,
+                    failureReason: "value-matched-title"
+                )
+            }
+
+            return CurrentInputTextSnapshot(
+                processID: processID,
+                processName: processName,
+                role: role,
+                text: value,
+                isEditable: true,
+                failureReason: nil
+            )
+        }
+
+        return CurrentInputTextSnapshot(
+            processID: processID,
+            processName: processName,
+            role: role,
+            text: nil,
+            isEditable: true,
+            failureReason: "missing-ax-value"
+        )
+    }
+
     func currentInputText() async -> String? {
-        guard AXIsProcessTrusted(), let element = focusedElement(), isLikelyEditable(element: element) else {
-            return nil
-        }
-
-        if let value = copyStringAttribute(kAXValueAttribute as String, from: element) {
-            if let placeholder = copyStringAttribute(kAXPlaceholderValueAttribute as String, from: element), placeholder == value {
-                return nil
-            }
-            if let title = copyStringAttribute(kAXTitleAttribute as String, from: element), title == value {
-                return nil
-            }
-            return value
-        }
-
-        return nil
+        await currentInputTextSnapshot().text
     }
 
     func replaceSelection(text: String) throws {
@@ -338,6 +405,22 @@ final class AXTextInjector: TextInjector {
         let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
         guard result == .success else { return nil }
         return value as? String
+    }
+
+    private func copyTextAttribute(_ attribute: String, from element: AXUIElement) -> String? {
+        var value: AnyObject?
+        let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
+        guard result == .success, let value else { return nil }
+
+        if let string = value as? String {
+            return string
+        }
+
+        if let attributed = value as? NSAttributedString {
+            return attributed.string
+        }
+
+        return nil
     }
 
     private func copySelectedTextRange(from element: AXUIElement) -> CFRange? {

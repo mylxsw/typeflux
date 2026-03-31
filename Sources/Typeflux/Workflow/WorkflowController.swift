@@ -8,6 +8,8 @@ final class WorkflowController {
     private static let automaticVocabularyObservationWindow: TimeInterval = 30
     private static let automaticVocabularyPollInterval: Duration = .seconds(1)
     private static let automaticVocabularyStartupDelay: Duration = .milliseconds(350)
+    private static let automaticVocabularyBaselineRetryDelay: Duration = .milliseconds(400)
+    private static let automaticVocabularyBaselineRetryCount = 3
     private static let automaticVocabularySettleDelay: TimeInterval = 2.5
     private static let automaticVocabularyMaxAnalysesPerSession = 3
 
@@ -1036,8 +1038,12 @@ final class WorkflowController {
             }
 
             guard !Task.isCancelled else { return }
-            guard let baselineText = await self.textInjector.currentInputText() else {
-                self.logAutomaticVocabulary("session aborted: failed to read baseline input text")
+            let baselineSnapshot = await self.readAutomaticVocabularyBaselineWithRetry()
+            guard let baselineText = baselineSnapshot.text else {
+                self.logAutomaticVocabulary(
+                    "session aborted: failed to read baseline input text | " +
+                    self.describeCurrentInputTextSnapshot(baselineSnapshot)
+                )
                 return
             }
 
@@ -1059,8 +1065,12 @@ final class WorkflowController {
                 }
 
                 guard !Task.isCancelled else { return }
-                guard let currentText = await self.textInjector.currentInputText() else {
-                    self.logAutomaticVocabulary("poll skipped: failed to read current input text")
+                let currentSnapshot = await self.textInjector.currentInputTextSnapshot()
+                guard let currentText = currentSnapshot.text else {
+                    self.logAutomaticVocabulary(
+                        "poll skipped: failed to read current input text | " +
+                        self.describeCurrentInputTextSnapshot(currentSnapshot)
+                    )
                     continue
                 }
                 let now = Date()
@@ -1180,6 +1190,35 @@ final class WorkflowController {
         return L("workflow.vocabulary.autoAdded.multiple", terms.count)
     }
 
+    private func readAutomaticVocabularyBaselineWithRetry() async -> CurrentInputTextSnapshot {
+        var latestSnapshot = await textInjector.currentInputTextSnapshot()
+        guard latestSnapshot.text == nil else { return latestSnapshot }
+
+        for attempt in 1...Self.automaticVocabularyBaselineRetryCount {
+            logAutomaticVocabulary(
+                "baseline read retry \(attempt)/\(Self.automaticVocabularyBaselineRetryCount) | " +
+                describeCurrentInputTextSnapshot(latestSnapshot)
+            )
+
+            do {
+                try await Task.sleep(for: Self.automaticVocabularyBaselineRetryDelay)
+            } catch {
+                return latestSnapshot
+            }
+
+            latestSnapshot = await textInjector.currentInputTextSnapshot()
+            if latestSnapshot.text != nil {
+                logAutomaticVocabulary(
+                    "baseline read recovered on retry \(attempt) | " +
+                    describeCurrentInputTextSnapshot(latestSnapshot)
+                )
+                return latestSnapshot
+            }
+        }
+
+        return latestSnapshot
+    }
+
     private func logAutomaticVocabulary(_ message: String) {
         NetworkDebugLogger.logMessage("[Auto Vocabulary] \(message)")
     }
@@ -1188,6 +1227,17 @@ final class WorkflowController {
         let normalized = text.replacingOccurrences(of: "\n", with: "\\n")
         guard normalized.count > limit else { return normalized }
         return String(normalized.prefix(limit)) + "..."
+    }
+
+    private func describeCurrentInputTextSnapshot(_ snapshot: CurrentInputTextSnapshot) -> String {
+        let processName = snapshot.processName ?? "<unknown>"
+        let processID = snapshot.processID.map(String.init) ?? "<unknown>"
+        let role = snapshot.role ?? "<unknown>"
+        let textPreview = snapshot.text.map { automaticVocabularyPreview($0) } ?? "<nil>"
+        let failureReason = snapshot.failureReason ?? "<none>"
+
+        return "process=\(processName)(pid: \(processID)) | role=\(role) | " +
+            "editable=\(snapshot.isEditable) | failureReason=\(failureReason) | text=\(textPreview)"
     }
 
     private func personaPickerEntries(includeNoneOption: Bool) -> [PersonaPickerEntry] {

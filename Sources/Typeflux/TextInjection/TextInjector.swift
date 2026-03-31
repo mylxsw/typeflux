@@ -14,8 +14,18 @@ struct TextSelectionSnapshot {
     }
 }
 
+struct CurrentInputTextSnapshot {
+    var processID: pid_t?
+    var processName: String?
+    var role: String?
+    var text: String?
+    var isEditable: Bool = false
+    var failureReason: String?
+}
+
 protocol TextInjector {
     func getSelectionSnapshot() async -> TextSelectionSnapshot
+    func currentInputTextSnapshot() async -> CurrentInputTextSnapshot
     func currentInputText() async -> String?
     func insert(text: String) throws
     func replaceSelection(text: String) throws
