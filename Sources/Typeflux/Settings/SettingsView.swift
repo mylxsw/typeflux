@@ -2416,8 +2416,6 @@ struct StudioView: View {
             return "openai"
         case .ollama:
             return "ollama"
-        case .customLLM:
-            return "openrouter"
         case .openRouter:
             return "openrouter"
         case .openAI:
@@ -2579,13 +2577,13 @@ struct StudioView: View {
         case .appleSpeech:
             return "waveform"
         case .localSTT:
-            return "waveform.circle"
+            return "laptopcomputer.and.arrow.down"
         case .whisperAPI:
             return "dot.radiowaves.left.and.right"
         case .ollama:
             return "cpu"
         case .customLLM:
-            return "sparkles"
+            return "xmark.triangle.circle.square"
         case .openRouter:
             return "arrow.triangle.branch"
         case .openAI:
