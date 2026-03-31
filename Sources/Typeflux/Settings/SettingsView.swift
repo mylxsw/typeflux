@@ -899,6 +899,23 @@ struct StudioView: View {
                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                     StudioSettingRow(
+                        title: L("settings.advanced.autoVocabulary.title"),
+                        subtitle: L("settings.advanced.autoVocabulary.subtitle")
+                    ) {
+                        Toggle(
+                            "",
+                            isOn: Binding(
+                                get: { viewModel.automaticVocabularyCollectionEnabled },
+                                set: viewModel.setAutomaticVocabularyCollectionEnabled
+                            )
+                        )
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
+
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                    StudioSettingRow(
                         title: L("settings.models.appleFallback"),
                         subtitle: L("settings.models.appleFallback.detail")
                     ) {

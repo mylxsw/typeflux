@@ -24,6 +24,60 @@ final class OllamaLLMService: LLMService {
         }
     }
 
+    func complete(systemPrompt: String, userPrompt: String) async throws -> String {
+        try await modelManager.ensureModelReady(settingsStore: settingsStore)
+
+        let base = settingsStore.ollamaBaseURL.isEmpty ? "http://127.0.0.1:11434" : settingsStore.ollamaBaseURL
+        guard let baseURL = URL(string: base) else {
+            throw NSError(
+                domain: "OllamaLLMService",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama base URL."]
+            )
+        }
+
+        let url = baseURL.appendingPathComponent("api/chat")
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Any] = [
+            "model": settingsStore.ollamaModel,
+            "stream": false,
+            "messages": [
+                ["role": "system", "content": systemPrompt],
+                ["role": "user", "content": userPrompt]
+            ],
+            "options": [
+                "temperature": 0.1
+            ]
+        ]
+
+        urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
+        NetworkDebugLogger.logRequest(urlRequest)
+        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        NetworkDebugLogger.logResponse(response, data: data)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw NSError(
+                domain: "OllamaLLMService",
+                code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama response."]
+            )
+        }
+
+        guard (200..<300).contains(http.statusCode) else {
+            let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(
+                domain: "OllamaLLMService",
+                code: http.statusCode,
+                userInfo: [NSLocalizedDescriptionKey: message]
+            )
+        }
+
+        let payload = try JSONDecoder().decode(OllamaChatResponse.self, from: data)
+        return payload.message?.content?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
     private func streamRewriteInternal(
         request: LLMRewriteRequest,
         continuation: AsyncThrowingStream<String, Error>.Continuation

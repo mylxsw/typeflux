@@ -16,6 +16,7 @@ struct TextSelectionSnapshot {
 
 protocol TextInjector {
     func getSelectionSnapshot() async -> TextSelectionSnapshot
+    func currentInputText() async -> String?
     func insert(text: String) throws
     func replaceSelection(text: String) throws
 }

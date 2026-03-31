@@ -19,4 +19,13 @@ final class LLMRouter: LLMService {
             return ollama.streamRewrite(request: request)
         }
     }
+
+    func complete(systemPrompt: String, userPrompt: String) async throws -> String {
+        switch settingsStore.llmProvider {
+        case .openAICompatible:
+            return try await openAICompatible.complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
+        case .ollama:
+            return try await ollama.complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
+        }
+    }
 }

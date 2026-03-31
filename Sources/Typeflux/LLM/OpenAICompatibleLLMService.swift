@@ -21,6 +21,24 @@ final class OpenAICompatibleLLMService: LLMService {
         }
     }
 
+    func complete(systemPrompt: String, userPrompt: String) async throws -> String {
+        let remoteProvider = settingsStore.llmRemoteProvider
+        let configuredBaseURL = settingsStore.llmBaseURL
+        guard let baseURL = URL(string: configuredBaseURL), !configuredBaseURL.isEmpty else {
+            throw NSError(domain: "LLM", code: 1)
+        }
+
+        let model = settingsStore.llmModel.isEmpty ? remoteProvider.defaultModel : settingsStore.llmModel
+        return try await RemoteLLMClient.complete(
+            provider: remoteProvider,
+            baseURL: baseURL,
+            model: model,
+            apiKey: settingsStore.llmAPIKey,
+            systemPrompt: systemPrompt,
+            userPrompt: userPrompt
+        )
+    }
+
     private func streamRewriteInternal(
         request rewriteRequest: LLMRewriteRequest,
         continuation: AsyncThrowingStream<String, Error>.Continuation
@@ -126,6 +144,42 @@ enum RemoteLLMClient {
         }
     }
 
+    static func complete(
+        provider: LLMRemoteProvider,
+        baseURL: URL,
+        model: String,
+        apiKey: String,
+        systemPrompt: String,
+        userPrompt: String
+    ) async throws -> String {
+        switch provider.apiStyle {
+        case .openAICompatible:
+            return try await requestOpenAICompatible(
+                baseURL: baseURL,
+                model: model,
+                apiKey: apiKey,
+                systemPrompt: systemPrompt,
+                userPrompt: userPrompt
+            )
+        case .anthropic:
+            return try await requestAnthropic(
+                baseURL: baseURL,
+                model: model,
+                apiKey: apiKey,
+                systemPrompt: systemPrompt,
+                userPrompt: userPrompt
+            )
+        case .gemini:
+            return try await requestGemini(
+                baseURL: baseURL,
+                model: model,
+                apiKey: apiKey,
+                systemPrompt: systemPrompt,
+                userPrompt: userPrompt
+            )
+        }
+    }
+
     private static func streamOpenAICompatible(
         provider: LLMRemoteProvider,
         baseURL: URL,
@@ -214,6 +268,37 @@ enum RemoteLLMClient {
             }
         }
         return collected
+    }
+
+    private static func requestOpenAICompatible(
+        baseURL: URL,
+        model: String,
+        apiKey: String,
+        systemPrompt: String,
+        userPrompt: String
+    ) async throws -> String {
+        let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "chat/completions")
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        if !apiKey.isEmpty {
+            urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        var body: [String: Any] = [
+            "model": model,
+            "stream": false,
+            "messages": [
+                ["role": "system", "content": systemPrompt],
+                ["role": "user", "content": userPrompt]
+            ]
+        ]
+        OpenAICompatibleResponseSupport.applyProviderTuning(body: &body, baseURL: baseURL, model: model)
+        urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let data = try await performJSONRequest(urlRequest)
+        return OpenAICompatibleResponseSupport.extractTextDelta(from: data)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
     private static func requestAnthropic(
