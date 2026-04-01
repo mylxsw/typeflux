@@ -455,6 +455,11 @@ final class WorkflowController {
         let completedAt: Date
     }
 
+    private struct AskSelectionDecisionResult {
+        let decision: AskSelectionDecision
+        let completedAt: Date
+    }
+
     private func generateRewrite(
         request: LLMRewriteRequest,
         sessionID: UUID,
@@ -498,6 +503,57 @@ final class WorkflowController {
                 completedAt: Date()
             )
         }
+    }
+
+    private func decideAskSelection(
+        selectedText: String,
+        spokenInstruction: String,
+        personaPrompt: String?,
+        sessionID: UUID
+    ) async throws -> AskSelectionDecisionResult {
+        let prompts = PromptCatalog.askSelectionDecisionPrompts(
+            selectedText: selectedText,
+            spokenInstruction: spokenInstruction,
+            personaPrompt: personaPrompt
+        )
+        let response = try await RequestRetry.perform(operationName: "Ask selection decision") { [self] in
+            try await self.llmService.completeJSON(
+                systemPrompt: prompts.system,
+                userPrompt: prompts.user,
+                schema: AskSelectionDecision.schema
+            )
+        }
+
+        try ensureProcessingIsActive(sessionID)
+
+        guard let decision = AskSelectionDecision.parseOrDefaultToAnswer(from: response) else {
+            throw NSError(
+                domain: "WorkflowController",
+                code: 3001,
+                userInfo: [NSLocalizedDescriptionKey: "Ask selection decision returned invalid JSON."]
+            )
+        }
+
+        if AskSelectionDecision.parse(from: response) == nil {
+            NetworkDebugLogger.logMessage(
+                "[Ask Selection] Invalid JSON decision response; defaulting to read-only answer."
+            )
+        }
+
+        switch decision.action {
+        case .answer:
+            guard !decision.trimmedResponse.isEmpty else {
+                throw NSError(
+                    domain: "WorkflowController",
+                    code: 3002,
+                    userInfo: [NSLocalizedDescriptionKey: "Ask selection answer was empty."]
+                )
+            }
+        case .edit:
+            break
+        }
+
+        return AskSelectionDecisionResult(decision: decision, completedAt: Date())
     }
 
     private func requiresRewrite(selectedText: String?, personaPrompt: String?) -> Bool {
@@ -577,7 +633,11 @@ final class WorkflowController {
 
             let record = HistoryRecord(
                 date: Date(),
-                mode: inferredMode(selectedText: selectedText, personaPrompt: personaPrompt),
+                mode: inferredMode(
+                    selectedText: selectedText,
+                    personaPrompt: personaPrompt,
+                    recordingIntent: recordingIntent
+                ),
                 audioFilePath: audioFile.fileURL.path,
                 transcriptText: nil,
                 personaPrompt: personaPrompt,
@@ -689,7 +749,7 @@ final class WorkflowController {
             ),
             selectedText: selectedText,
             personaPrompt: personaPrompt,
-            recordingIntent: mutableRecord.mode == .editSelection ? .askSelection : .dictation,
+            recordingIntent: mutableRecord.mode == .editSelection || mutableRecord.mode == .askAnswer ? .askSelection : .dictation,
             sessionID: sessionID,
             forceResultDialogOnSuccess: true
         )
@@ -762,58 +822,96 @@ final class WorkflowController {
             }
 
             if isAskSelectionFlow, let selectedText, !selectedText.isEmpty {
-                record.mode = .editSelection
                 record.processingStatus = .running
                 saveHistoryRecord(record)
-                let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
 
                 pipelineTiming.llmProcessingStartedAt = Date()
                 record.pipelineTiming = pipelineTiming
                 saveHistoryRecord(record)
                 logPipelineEvent("llm-processing-started", for: record)
 
-                let rewriteResult = try await generateRewrite(
-                    request: LLMRewriteRequest(
-                        mode: .editSelection,
-                        sourceText: selectedText,
-                        spokenInstruction: transcribedText,
-                        personaPrompt: personaPrompt
-                    ),
-                    sessionID: sessionID,
-                    showsStreamingPreview: !shouldShowResultDialog
+                let askDecisionResult = try await decideAskSelection(
+                    selectedText: selectedText,
+                    spokenInstruction: transcribedText,
+                    personaPrompt: personaPrompt,
+                    sessionID: sessionID
                 )
 
-                try ensureProcessingIsActive(sessionID)
-                pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
-                record.pipelineTiming = pipelineTiming
-                record.selectionEditedText = rewriteResult.text
-                record.processingStatus = .succeeded
-                record.applyStatus = .running
-                saveHistoryRecord(record)
-                logPipelineEvent("llm-processing-completed", for: record)
+                switch askDecisionResult.decision.action {
+                case .answer:
+                    try ensureProcessingIsActive(sessionID)
+                    pipelineTiming.llmProcessingCompletedAt = askDecisionResult.completedAt
+                    record.pipelineTiming = pipelineTiming
+                    logPipelineEvent("llm-processing-completed", for: record)
+                    record.mode = .askAnswer
+                    record.personaResultText = askDecisionResult.decision.trimmedResponse
+                    record.processingStatus = .succeeded
+                    record.applyStatus = .running
+                    saveHistoryRecord(record)
 
-                try ensureProcessingIsActive(sessionID)
-                pipelineTiming.applyStartedAt = Date()
-                record.pipelineTiming = pipelineTiming
-                let outcome: ApplyOutcome
-                NetworkDebugLogger.logMessage(
-                    "[Apply Decision] mode=editSelection hasSelection=\(selectionSnapshot.hasSelection) " +
-                    "isEditable=\(selectionSnapshot.isEditable) hasRange=\(selectionSnapshot.selectedRange != nil) " +
-                    "showResultDialog=\(shouldShowResultDialog)"
-                )
-                if shouldShowResultDialog {
+                    try ensureProcessingIsActive(sessionID)
+                    pipelineTiming.applyStartedAt = Date()
+                    record.pipelineTiming = pipelineTiming
                     await MainActor.run {
-                        self.lastDialogResultText = rewriteResult.text
-                        self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: rewriteResult.text)
+                        self.lastDialogResultText = askDecisionResult.decision.trimmedResponse
+                        self.overlayController.showResultDialog(
+                            title: L("workflow.ask.answerTitle"),
+                            message: askDecisionResult.decision.trimmedResponse
+                        )
                     }
-                    outcome = .copiedToClipboard
-                } else {
-                    outcome = applyText(rewriteResult.text, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
+                    pipelineTiming.applyCompletedAt = Date()
+                    record.pipelineTiming = pipelineTiming
+                    record.applyStatus = .succeeded
+                    record.applyMessage = L("workflow.ask.answerPresented")
+                case .edit:
+                    record.mode = .editSelection
+                    record.applyStatus = .pending
+                    saveHistoryRecord(record)
+
+                    let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
+                    let rewriteResult = try await generateRewrite(
+                        request: LLMRewriteRequest(
+                            mode: .editSelection,
+                            sourceText: selectedText,
+                            spokenInstruction: transcribedText,
+                            personaPrompt: personaPrompt
+                        ),
+                        sessionID: sessionID,
+                        showsStreamingPreview: !shouldShowResultDialog
+                    )
+
+                    try ensureProcessingIsActive(sessionID)
+                    pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
+                    record.pipelineTiming = pipelineTiming
+                    logPipelineEvent("llm-processing-completed", for: record)
+                    record.selectionEditedText = rewriteResult.text
+                    record.processingStatus = .succeeded
+                    record.applyStatus = .running
+                    saveHistoryRecord(record)
+
+                    try ensureProcessingIsActive(sessionID)
+                    pipelineTiming.applyStartedAt = Date()
+                    record.pipelineTiming = pipelineTiming
+                    let outcome: ApplyOutcome
+                    NetworkDebugLogger.logMessage(
+                        "[Apply Decision] mode=editSelection hasSelection=\(selectionSnapshot.hasSelection) " +
+                        "isEditable=\(selectionSnapshot.isEditable) hasRange=\(selectionSnapshot.selectedRange != nil) " +
+                        "showResultDialog=\(shouldShowResultDialog)"
+                    )
+                    if shouldShowResultDialog {
+                        await MainActor.run {
+                            self.lastDialogResultText = rewriteResult.text
+                            self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: rewriteResult.text)
+                        }
+                        outcome = .copiedToClipboard
+                    } else {
+                        outcome = applyText(rewriteResult.text, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
+                    }
+                    pipelineTiming.applyCompletedAt = Date()
+                    record.pipelineTiming = pipelineTiming
+                    record.applyStatus = .succeeded
+                    record.applyMessage = outcome.message
                 }
-                pipelineTiming.applyCompletedAt = Date()
-                record.pipelineTiming = pipelineTiming
-                record.applyStatus = .succeeded
-                record.applyMessage = outcome.message
             } else if let personaPrompt, !personaPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 record.mode = .personaRewrite
 
@@ -1062,7 +1160,15 @@ final class WorkflowController {
         }
     }
 
-    private func inferredMode(selectedText: String?, personaPrompt: String?) -> HistoryRecord.Mode {
+    private func inferredMode(
+        selectedText: String?,
+        personaPrompt: String?,
+        recordingIntent: RecordingIntent
+    ) -> HistoryRecord.Mode {
+        if recordingIntent == .askSelection {
+            return .askAnswer
+        }
+
         if let selectedText, !selectedText.isEmpty {
             return .editSelection
         }
@@ -1076,7 +1182,7 @@ final class WorkflowController {
 
     private func personaPrompt(for record: HistoryRecord) -> String? {
         switch record.mode {
-        case .dictation, .editSelection, .personaRewrite:
+        case .dictation, .editSelection, .personaRewrite, .askAnswer:
             return record.personaPrompt ?? settingsStore.activePersona?.prompt
         }
     }

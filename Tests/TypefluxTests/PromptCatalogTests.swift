@@ -98,4 +98,27 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertTrue(prompt.contains("Input semantics:"))
         XCTAssertTrue(prompt.contains("Persona requirements:"))
     }
+
+    func testAskSelectionDecisionPromptDefaultsAmbiguousRequestsToAnswer() {
+        let prompts = PromptCatalog.askSelectionDecisionPrompts(
+            selectedText: "We should probably move the launch by two weeks.",
+            spokenInstruction: "What risks do you see here?",
+            personaPrompt: "Be concise."
+        )
+
+        XCTAssertTrue(prompts.system.contains("Default to \"answer\" whenever the intent is ambiguous."))
+        XCTAssertTrue(prompts.user.contains("<selected_text>\nWe should probably move the launch by two weeks.\n</selected_text>"))
+        XCTAssertTrue(prompts.user.contains("<spoken_instruction>\nWhat risks do you see here?\n</spoken_instruction>"))
+        XCTAssertTrue(prompts.user.contains("<persona_definition>\nBe concise.\n</persona_definition>"))
+    }
+
+    func testAskSelectionDecisionSchemaRequiresActionAndResponse() {
+        let properties = AskSelectionDecision.schema.jsonObject["properties"] as? [String: Any]
+        let actionSchema = properties?["action"] as? [String: Any]
+        let actionEnum = actionSchema?["enum"] as? [String]
+        let required = AskSelectionDecision.schema.jsonObject["required"] as? [String]
+
+        XCTAssertEqual(actionEnum, ["answer", "edit"])
+        XCTAssertEqual(required ?? [], ["action", "response"])
+    }
 }

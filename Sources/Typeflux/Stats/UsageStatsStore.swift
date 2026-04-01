@@ -16,6 +16,7 @@ final class UsageStatsStore {
         case dictationCount = "stats.dictationCount"
         case personaRewriteCount = "stats.personaRewriteCount"
         case editSelectionCount = "stats.editSelectionCount"
+        case askAnswerCount = "stats.askAnswerCount"
         case didBackfill = "stats.didBackfill"
     }
 
@@ -55,6 +56,10 @@ final class UsageStatsStore {
 
     var editSelectionCount: Int {
         defaults.integer(forKey: Key.editSelectionCount.rawValue)
+    }
+
+    var askAnswerCount: Int {
+        defaults.integer(forKey: Key.askAnswerCount.rawValue)
     }
 
     // MARK: - Computed metrics for Overview
@@ -123,6 +128,8 @@ final class UsageStatsStore {
                 increment(.personaRewriteCount, by: 1)
             case .editSelection:
                 increment(.editSelectionCount, by: 1)
+            case .askAnswer:
+                increment(.askAnswerCount, by: 1)
             }
         }
     }
@@ -154,6 +161,7 @@ final class UsageStatsStore {
             var dictation = 0
             var persona = 0
             var editSel = 0
+            var askAnswer = 0
 
             for record in records {
                 sessions += 1
@@ -176,6 +184,7 @@ final class UsageStatsStore {
                 case .dictation: dictation += 1
                 case .personaRewrite: persona += 1
                 case .editSelection: editSel += 1
+                case .askAnswer: askAnswer += 1
                 }
             }
 
@@ -188,6 +197,7 @@ final class UsageStatsStore {
             defaults.set(dictation, forKey: Key.dictationCount.rawValue)
             defaults.set(persona, forKey: Key.personaRewriteCount.rawValue)
             defaults.set(editSel, forKey: Key.editSelectionCount.rawValue)
+            defaults.set(askAnswer, forKey: Key.askAnswerCount.rawValue)
             defaults.set(true, forKey: Key.didBackfill.rawValue)
         }
     }

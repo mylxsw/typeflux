@@ -32,6 +32,7 @@ struct HistoryRecord: Codable, Identifiable {
         case dictation
         case personaRewrite
         case editSelection
+        case askAnswer
     }
 
     enum StepStatus: String, Codable {
