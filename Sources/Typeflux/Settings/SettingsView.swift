@@ -45,6 +45,7 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
 struct StudioView: View {
     private enum ShortcutRecordingTarget {
         case activation
+        case ask
         case persona
     }
 
@@ -708,6 +709,28 @@ struct StudioView: View {
                         Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                         shortcutConfigurationRow(
+                            title: L("settings.shortcuts.ask.title"),
+                            subtitle: L("settings.shortcuts.ask.subtitle"),
+                            footnote: L("settings.shortcuts.ask.footnote"),
+                            icon: "questionmark.bubble.fill",
+                            badgeSymbol: "text.quote",
+                            binding: viewModel.askHotkey,
+                            isDefault: viewModel.askHotkey.signature == HotkeyBinding.defaultAsk.signature,
+                            onStartRecording: {
+                                recordingTarget = .ask
+                                recorder.start { binding in
+                                    viewModel.setAskHotkey(binding)
+                                    recordingTarget = nil
+                                }
+                            },
+                            onReset: {
+                                viewModel.resetAskHotkey()
+                            }
+                        )
+
+                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                        shortcutConfigurationRow(
                             title: L("settings.shortcuts.persona.title"),
                             subtitle: L("settings.shortcuts.persona.subtitle"),
                             footnote: L("settings.shortcuts.persona.footnote"),
@@ -1085,6 +1108,8 @@ struct StudioView: View {
         switch recordingTarget {
         case .activation:
             return L("settings.shortcuts.recordingActivation")
+        case .ask:
+            return L("settings.shortcuts.recordingAsk")
         case .persona:
             return L("settings.shortcuts.recordingPersona")
         case nil:

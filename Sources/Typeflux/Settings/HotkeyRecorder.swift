@@ -17,7 +17,7 @@ final class HotkeyRecorder: ObservableObject {
             if event.isARepeat { return nil }
 
             let keyCode = Int(event.keyCode)
-            let flags = event.modifierFlags.intersection([.command, .option, .control, .shift])
+            let flags = event.modifierFlags.intersection([.command, .option, .control, .shift, .function])
 
             // Require at least one modifier to reduce collisions.
             if flags.isEmpty { return nil }

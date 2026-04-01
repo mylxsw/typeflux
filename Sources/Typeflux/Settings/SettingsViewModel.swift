@@ -86,6 +86,7 @@ final class StudioViewModel: ObservableObject {
 
     @Published var launchAtLogin: Bool
     @Published var activationHotkey: HotkeyBinding
+    @Published var askHotkey: HotkeyBinding
     @Published var personaHotkey: HotkeyBinding
     @Published var historyRetentionPolicy: HistoryRetentionPolicy
     @Published private(set) var historyRecords: [HistoryRecord]
@@ -195,6 +196,7 @@ final class StudioViewModel: ObservableObject {
         vocabularyEntries = VocabularyStore.load()
         launchAtLogin = LaunchAtLoginManager.isEnabled
         activationHotkey = settingsStore.activationHotkey
+        askHotkey = settingsStore.askHotkey
         personaHotkey = settingsStore.personaHotkey
         historyRetentionPolicy = settingsStore.historyRetentionPolicy
         historyRecords = []
@@ -788,7 +790,8 @@ final class StudioViewModel: ObservableObject {
     }
 
     func setActivationHotkey(_ binding: HotkeyBinding) {
-        guard binding.signature != personaHotkey.signature else {
+        guard binding.signature != personaHotkey.signature,
+              binding.signature != askHotkey.signature else {
             showToast(L("settings.shortcuts.activationConflict"))
             return
         }
@@ -802,8 +805,25 @@ final class StudioViewModel: ObservableObject {
         setActivationHotkey(.defaultActivation)
     }
 
+    func setAskHotkey(_ binding: HotkeyBinding) {
+        guard binding.signature != activationHotkey.signature,
+              binding.signature != personaHotkey.signature else {
+            showToast(L("settings.shortcuts.askConflict"))
+            return
+        }
+
+        askHotkey = binding
+        settingsStore.askHotkey = binding
+        showToast(L("settings.shortcuts.askUpdated"))
+    }
+
+    func resetAskHotkey() {
+        setAskHotkey(.defaultAsk)
+    }
+
     func setPersonaHotkey(_ binding: HotkeyBinding) {
-        guard binding.signature != activationHotkey.signature else {
+        guard binding.signature != activationHotkey.signature,
+              binding.signature != askHotkey.signature else {
             showToast(L("settings.shortcuts.personaConflict"))
             return
         }

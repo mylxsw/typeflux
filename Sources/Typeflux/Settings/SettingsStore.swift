@@ -415,6 +415,25 @@ final class SettingsStore {
         }
     }
 
+    var askHotkeyJSON: String {
+        get { defaults.string(forKey: "hotkey.ask.json") ?? "" }
+        set { defaults.set(newValue, forKey: "hotkey.ask.json") }
+    }
+
+    var askHotkey: HotkeyBinding {
+        get {
+            guard let data = askHotkeyJSON.data(using: .utf8), !askHotkeyJSON.isEmpty else {
+                return .defaultAsk
+            }
+
+            return (try? JSONDecoder().decode(HotkeyBinding.self, from: data)) ?? .defaultAsk
+        }
+        set {
+            let data = (try? JSONEncoder().encode(newValue)) ?? Data()
+            askHotkeyJSON = String(decoding: data, as: UTF8.self)
+        }
+    }
+
     var personaHotkeyJSON: String {
         get { defaults.string(forKey: "hotkey.persona.json") ?? "" }
         set { defaults.set(newValue, forKey: "hotkey.persona.json") }

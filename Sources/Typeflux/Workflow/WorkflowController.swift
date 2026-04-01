@@ -18,6 +18,11 @@ final class WorkflowController {
         case locked
     }
 
+    private enum RecordingIntent {
+        case dictation
+        case askSelection
+    }
+
     private enum ApplyOutcome {
         case inserted
         case copiedToClipboard
@@ -47,6 +52,7 @@ final class WorkflowController {
     private var currentSelectedText: String?
     private var isRecording = false
     private var recordingMode: RecordingMode = .holdToTalk
+    private var recordingIntent: RecordingIntent = .dictation
     private var hotkeyPressedAt: Date?
     private var recordingTimeoutTask: Task<Void, Never>?
     private var processingTimeoutTask: Task<Void, Never>?
@@ -125,10 +131,16 @@ final class WorkflowController {
     }
 
     func start() {
-        hotkeyService.onPressBegan = { [weak self] in
-            self?.handlePressBegan()
+        hotkeyService.onActivationPressBegan = { [weak self] in
+            self?.handlePressBegan(intent: .dictation)
         }
-        hotkeyService.onPressEnded = { [weak self] in
+        hotkeyService.onActivationPressEnded = { [weak self] in
+            self?.handlePressEnded()
+        }
+        hotkeyService.onAskPressBegan = { [weak self] in
+            self?.handlePressBegan(intent: .askSelection)
+        }
+        hotkeyService.onAskPressEnded = { [weak self] in
             self?.handlePressEnded()
         }
         hotkeyService.onPersonaPickerRequested = { [weak self] in
@@ -185,6 +197,7 @@ final class WorkflowController {
         guard isRecording else { return }
         isRecording = false
         recordingMode = .holdToTalk
+        recordingIntent = .dictation
         hotkeyPressedAt = nil
         recordingTimeoutTask?.cancel()
         recordingTimeoutTask = nil
@@ -229,7 +242,7 @@ final class WorkflowController {
         }
     }
 
-    private func handlePressBegan() {
+    private func handlePressBegan(intent: RecordingIntent) {
         if isPersonaPickerPresented {
             dismissPersonaPicker()
         }
@@ -260,7 +273,7 @@ final class WorkflowController {
 
         cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.newRecording"))
         Task { [weak self] in
-            await self?.beginRecording()
+            await self?.beginRecording(intent: intent)
         }
     }
 
@@ -333,9 +346,10 @@ final class WorkflowController {
         }
     }
 
-    private func beginRecording() async {
+    private func beginRecording(intent: RecordingIntent) async {
         isRecording = true
         recordingMode = .holdToTalk
+        recordingIntent = intent
         lastRetryableFailureRecord = nil
         NSLog("[Workflow] Recording started")
         await MainActor.run {
@@ -506,6 +520,13 @@ final class WorkflowController {
         }
     }
 
+    private func applyTranscribedText(
+        _ text: String,
+        selectionSnapshot: TextSelectionSnapshot
+    ) -> ApplyOutcome {
+        applyText(text, replace: shouldReplaceActiveSelection(for: selectionSnapshot))
+    }
+
     private func finishRecordingAndProcess(recordingStoppedAt: Date) async {
         do {
             let audioFile = try audioRecorder.stop()
@@ -513,14 +534,26 @@ final class WorkflowController {
             await MainActor.run {
                 self.soundEffectPlayer.play(.done)
             }
+            let recordingIntent = self.recordingIntent
+            self.recordingIntent = .dictation
             let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
             selectionTask = nil
-            let selectedText = editingSelectedText(from: selectionSnapshot)
+            let selectedText = recordingIntent == .askSelection
+                ? editingSelectedText(from: selectionSnapshot)
+                : nil
             currentSelectedText = selectedText
             let personaPrompt = settingsStore.activePersona?.prompt
 
             NetworkDebugLogger.logMessage(selectionSnapshotLog(selectionSnapshot))
             let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
+
+            if recordingIntent == .askSelection && selectedText == nil {
+                await MainActor.run {
+                    self.appState.setStatus(.idle)
+                    self.overlayController.showNotice(message: L("workflow.ask.selectionRequired"))
+                }
+                return
+            }
 
             if !shouldShowResultDialog {
                 await MainActor.run {
@@ -535,7 +568,7 @@ final class WorkflowController {
                 audioFilePath: audioFile.fileURL.path,
                 transcriptText: nil,
                 personaPrompt: personaPrompt,
-                selectionOriginalText: selectedText,
+                selectionOriginalText: recordingIntent == .askSelection ? selectedText : nil,
                 recordingDurationSeconds: audioFile.duration,
                 pipelineTiming: HistoryPipelineTiming(
                     recordingStoppedAt: recordingStoppedAt,
@@ -560,6 +593,7 @@ final class WorkflowController {
                     selectionSnapshot: selectionSnapshot,
                     selectedText: selectedText,
                     personaPrompt: personaPrompt,
+                    recordingIntent: recordingIntent,
                     sessionID: sessionID
                 )
                 self.cancelProcessingTimeout()
@@ -642,6 +676,7 @@ final class WorkflowController {
             ),
             selectedText: selectedText,
             personaPrompt: personaPrompt,
+            recordingIntent: mutableRecord.mode == .editSelection ? .askSelection : .dictation,
             sessionID: sessionID,
             forceResultDialogOnSuccess: true
         )
@@ -653,6 +688,7 @@ final class WorkflowController {
         selectionSnapshot: TextSelectionSnapshot,
         selectedText: String?,
         personaPrompt: String?,
+        recordingIntent: RecordingIntent,
         sessionID: UUID,
         forceResultDialogOnSuccess: Bool = false
     ) async {
@@ -660,6 +696,8 @@ final class WorkflowController {
         do {
             try ensureProcessingIsActive(sessionID)
             var pipelineTiming = record.pipelineTiming ?? HistoryPipelineTiming()
+
+            let isAskSelectionFlow = recordingIntent == .askSelection && selectedText != nil
 
             // When using multimodal and there is no selected text to edit, the transcriber applies
             // persona internally in one shot — no separate LLM rewrite is needed afterwards.
@@ -710,7 +748,7 @@ final class WorkflowController {
                 return
             }
 
-            if let selectedText, !selectedText.isEmpty {
+            if isAskSelectionFlow, let selectedText, !selectedText.isEmpty {
                 record.mode = .editSelection
                 record.processingStatus = .running
                 saveHistoryRecord(record)
@@ -776,7 +814,7 @@ final class WorkflowController {
                     try ensureProcessingIsActive(sessionID)
                     pipelineTiming.applyStartedAt = Date()
                     record.pipelineTiming = pipelineTiming
-                    let outcome = applyText(transcribedText, replace: false)
+                    let outcome = applyTranscribedText(transcribedText, selectionSnapshot: selectionSnapshot)
                     pipelineTiming.applyCompletedAt = Date()
                     record.pipelineTiming = pipelineTiming
                     record.applyStatus = .succeeded
@@ -812,7 +850,7 @@ final class WorkflowController {
                     try ensureProcessingIsActive(sessionID)
                     pipelineTiming.applyStartedAt = Date()
                     record.pipelineTiming = pipelineTiming
-                    let outcome = applyText(rewriteResult.text, replace: false)
+                    let outcome = applyTranscribedText(rewriteResult.text, selectionSnapshot: selectionSnapshot)
                     pipelineTiming.applyCompletedAt = Date()
                     record.pipelineTiming = pipelineTiming
                     record.applyStatus = .succeeded
@@ -827,7 +865,7 @@ final class WorkflowController {
                 try ensureProcessingIsActive(sessionID)
                 pipelineTiming.applyStartedAt = Date()
                 record.pipelineTiming = pipelineTiming
-                let outcome = applyText(transcribedText, replace: false)
+                let outcome = applyTranscribedText(transcribedText, selectionSnapshot: selectionSnapshot)
                 pipelineTiming.applyCompletedAt = Date()
                 record.pipelineTiming = pipelineTiming
                 record.applyStatus = .succeeded
@@ -1059,6 +1097,10 @@ final class WorkflowController {
     private func editingSelectedText(from snapshot: TextSelectionSnapshot) -> String? {
         guard isSelectionEligibleForEditing(snapshot) else { return nil }
         return snapshot.selectedText?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func shouldReplaceActiveSelection(for snapshot: TextSelectionSnapshot) -> Bool {
+        isSelectionEligibleForEditing(snapshot) && snapshot.isEditable
     }
 
     private func isSelectionEligibleForEditing(_ snapshot: TextSelectionSnapshot) -> Bool {

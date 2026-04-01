@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 struct HotkeyBinding: Codable, Equatable, Identifiable {
@@ -24,5 +25,9 @@ struct HotkeyBinding: Codable, Equatable, Identifiable {
     }
 
     static let defaultActivation = HotkeyBinding(keyCode: 54, modifierFlags: 1_048_576)
+    static let defaultAsk = HotkeyBinding(
+        keyCode: 49,
+        modifierFlags: UInt(NSEvent.ModifierFlags.function.rawValue)
+    )
     static let defaultPersona = HotkeyBinding(keyCode: 35, modifierFlags: 1_572_864)
 }

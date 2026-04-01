@@ -2,12 +2,15 @@ import Foundation
 
 enum HotkeyAction {
     case activation
+    case ask
     case personaPicker
 }
 
 protocol HotkeyService: AnyObject {
-    var onPressBegan: (() -> Void)? { get set }
-    var onPressEnded: (() -> Void)? { get set }
+    var onActivationPressBegan: (() -> Void)? { get set }
+    var onActivationPressEnded: (() -> Void)? { get set }
+    var onAskPressBegan: (() -> Void)? { get set }
+    var onAskPressEnded: (() -> Void)? { get set }
     var onPersonaPickerRequested: (() -> Void)? { get set }
     var onError: ((String) -> Void)? { get set }
 

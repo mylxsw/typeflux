@@ -2,8 +2,10 @@ import AppKit
 import Foundation
 
 final class EventTapHotkeyService: HotkeyService {
-    var onPressBegan: (() -> Void)?
-    var onPressEnded: (() -> Void)?
+    var onActivationPressBegan: (() -> Void)?
+    var onActivationPressEnded: (() -> Void)?
+    var onAskPressBegan: (() -> Void)?
+    var onAskPressEnded: (() -> Void)?
     var onPersonaPickerRequested: (() -> Void)?
     var onError: ((String) -> Void)?
 
@@ -65,6 +67,7 @@ final class EventTapHotkeyService: HotkeyService {
         let keyCode = Int(event.keyCode)
         let flags = filteredFlags(event.modifierFlags)
         let activationHotkey = settingsStore.activationHotkey
+        let askHotkey = settingsStore.askHotkey
         let personaHotkey = settingsStore.personaHotkey
 
         if !activationHotkey.isRightCommandTrigger,
@@ -73,7 +76,17 @@ final class EventTapHotkeyService: HotkeyService {
             activeAction = .activation
             ErrorLogStore.shared.log("Hotkey(NSEvent): activation down")
             DispatchQueue.main.async { [weak self] in
-                self?.onPressBegan?()
+                self?.onActivationPressBegan?()
+            }
+            return
+        }
+
+        if askHotkey.matches(keyCode: keyCode, modifierFlags: flags),
+           activeAction == nil {
+            activeAction = .ask
+            ErrorLogStore.shared.log("Hotkey(NSEvent): ask down")
+            DispatchQueue.main.async { [weak self] in
+                self?.onAskPressBegan?()
             }
             return
         }
@@ -88,17 +101,29 @@ final class EventTapHotkeyService: HotkeyService {
 
     private func handleKeyUp(_ event: NSEvent) {
         let keyCode = Int(event.keyCode)
-        let flags = filteredFlags(event.modifierFlags)
         let activationHotkey = settingsStore.activationHotkey
+        let askHotkey = settingsStore.askHotkey
 
-        guard activeAction == .activation else { return }
-        guard !activationHotkey.isRightCommandTrigger else { return }
-        guard activationHotkey.matches(keyCode: keyCode, modifierFlags: flags) else { return }
+        switch activeAction {
+        case .activation:
+            guard !activationHotkey.isRightCommandTrigger else { return }
+            guard activationHotkey.keyCode == keyCode else { return }
 
-        activeAction = nil
-        ErrorLogStore.shared.log("Hotkey(NSEvent): activation up")
-        DispatchQueue.main.async { [weak self] in
-            self?.onPressEnded?()
+            activeAction = nil
+            ErrorLogStore.shared.log("Hotkey(NSEvent): activation up")
+            DispatchQueue.main.async { [weak self] in
+                self?.onActivationPressEnded?()
+            }
+        case .ask:
+            guard askHotkey.keyCode == keyCode else { return }
+
+            activeAction = nil
+            ErrorLogStore.shared.log("Hotkey(NSEvent): ask up")
+            DispatchQueue.main.async { [weak self] in
+                self?.onAskPressEnded?()
+            }
+        default:
+            return
         }
     }
 
@@ -113,18 +138,18 @@ final class EventTapHotkeyService: HotkeyService {
             activeAction = .activation
             ErrorLogStore.shared.log("Hotkey(NSEvent): right command down")
             DispatchQueue.main.async { [weak self] in
-                self?.onPressBegan?()
+                self?.onActivationPressBegan?()
             }
         } else if isRightCommandEvent, !rightCommandDown, activeAction == .activation {
             activeAction = nil
             ErrorLogStore.shared.log("Hotkey(NSEvent): right command up")
             DispatchQueue.main.async { [weak self] in
-                self?.onPressEnded?()
+                self?.onActivationPressEnded?()
             }
         }
     }
 
     private func filteredFlags(_ flags: NSEvent.ModifierFlags) -> UInt {
-        UInt(flags.intersection([.command, .shift, .control, .option]).rawValue)
+        UInt(flags.intersection([.command, .shift, .control, .option, .function]).rawValue)
     }
 }

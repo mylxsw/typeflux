@@ -9,6 +9,7 @@ enum HotkeyFormat {
 
         let flags: NSEvent.ModifierFlags = NSEvent.ModifierFlags(rawValue: binding.modifierFlags)
         let mods = [
+            flags.contains(.function) ? "fn" : "",
             flags.contains(.control) ? "⌃" : "",
             flags.contains(.option) ? "⌥" : "",
             flags.contains(.shift) ? "⇧" : "",

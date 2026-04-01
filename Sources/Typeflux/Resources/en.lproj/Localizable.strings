@@ -57,7 +57,7 @@
 "settings.general" = "General";
 "settings.launchAtLogin.title" = "Launch at Login";
 "settings.launchAtLogin.subtitle" = "Start Typeflux automatically after you sign in to your Mac.";
-"settings.activationHotkey" = "Activation Hotkey";
+"settings.activationHotkey" = "Voice Shortcuts";
 "settings.identity" = "Identity & Interaction";
 "settings.appearance.title" = "Appearance";
 "settings.appearance.subtitle" = "Switch the component system between light, dark, or system-following themes.";
@@ -233,6 +233,7 @@
 "workflow.persona.switched" = "Persona switched to %@.";
 "workflow.persona.switchedOff" = "Persona switched off.";
 "workflow.persona.disabled" = "Persona disabled.";
+"workflow.ask.selectionRequired" = "Ask Anything requires selected text first.";
 "workflow.retry.audioMissing" = "Retry failed: audio file is missing.";
 "workflow.retry.audioGone" = "Retry failed: audio file no longer exists.";
 
@@ -333,23 +334,29 @@
 "settings.personaDefault.disabled" = "Persona is currently off, so dictation will stay in its plain form.";
 "settings.personaDefault.openPersonas" = "Open Personas";
 
-"settings.shortcuts.activation.title" = "Primary trigger";
-"settings.shortcuts.activation.subtitle" = "Use one shortcut to start dictation. Hold to talk, or tap quickly to lock the recording session.";
-"settings.shortcuts.activation.footnote" = "Default is Right Command. You can replace it with any modifier-based combination and reset it later.";
+"settings.shortcuts.activation.title" = "Voice Input";
+"settings.shortcuts.activation.subtitle" = "Use one shortcut to start voice input. Hold to talk, or tap quickly to lock the recording session. If text is selected, the transcript replaces that selection directly.";
+"settings.shortcuts.activation.footnote" = "Default is Right Command. This shortcut is now dedicated to text insertion only and no longer switches into selected-text Q&A or rewrite flows.";
+"settings.shortcuts.ask.title" = "Ask Anything";
+"settings.shortcuts.ask.subtitle" = "Run the existing selected-text voice workflow on the current selection using a dedicated shortcut.";
+"settings.shortcuts.ask.footnote" = "Default is Fn + Space. Select text before using it.";
 "settings.shortcuts.persona.title" = "Persona switcher";
 "settings.shortcuts.persona.subtitle" = "Open a centered picker. With selected text, it can also apply a persona directly to that selection.";
 "settings.shortcuts.persona.footnote" = "When the advanced option is on, the shortcut rewrites selected text with the chosen persona. Otherwise it behaves as a pure persona switcher.";
 "settings.advanced.personaHotkeyApply.title" = "Apply persona to selected text";
 "settings.advanced.personaHotkeyApply.subtitle" = "When enabled, the persona shortcut checks for selected text first and uses the picker to rewrite that selection instead of only switching the default persona.";
 "settings.shortcuts.recording" = "Recording a new shortcut";
-"settings.shortcuts.recordingActivation" = "Press the new activation combination now. Include at least one modifier key.";
+"settings.shortcuts.recordingActivation" = "Press the new voice input combination now. Include at least one modifier key.";
+"settings.shortcuts.recordingAsk" = "Press the new Ask Anything combination now. Include at least one modifier key.";
 "settings.shortcuts.recordingPersona" = "Press the shortcut that should open the persona picker. Include at least one modifier key.";
 "settings.shortcuts.recordingGeneric" = "Press the full key combination you want to use. Include at least one modifier key.";
 "settings.shortcuts.record" = "Record";
 "settings.shortcuts.stopRecording" = "Stop Recording";
-"settings.shortcuts.activationConflict" = "Activation shortcut cannot match the persona shortcut.";
-"settings.shortcuts.activationUpdated" = "Activation shortcut updated.";
-"settings.shortcuts.personaConflict" = "Persona shortcut cannot match the activation shortcut.";
+"settings.shortcuts.activationConflict" = "Voice input shortcut cannot match the Ask Anything or persona shortcut.";
+"settings.shortcuts.activationUpdated" = "Voice input shortcut updated.";
+"settings.shortcuts.askConflict" = "Ask Anything shortcut cannot match the voice input or persona shortcut.";
+"settings.shortcuts.askUpdated" = "Ask Anything shortcut updated.";
+"settings.shortcuts.personaConflict" = "Persona shortcut cannot match the voice input or Ask Anything shortcut.";
 "settings.shortcuts.personaUpdated" = "Persona shortcut updated.";
 
 "settings.audio.microphone.unavailable" = "Selected microphone is unavailable. Switched to automatic.";

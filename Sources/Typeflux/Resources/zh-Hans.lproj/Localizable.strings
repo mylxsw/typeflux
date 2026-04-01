@@ -57,7 +57,7 @@
 "settings.general" = "通用";
 "settings.launchAtLogin.title" = "开机自动启动";
 "settings.launchAtLogin.subtitle" = "登录 Mac 后自动启动 Typeflux，无需手动打开。";
-"settings.activationHotkey" = "激活快捷键";
+"settings.activationHotkey" = "语音快捷键";
 "settings.identity" = "身份与交互";
 "settings.appearance.title" = "明暗模式";
 "settings.appearance.subtitle" = "在浅色、深色或跟随系统主题之间切换整个界面。";
@@ -233,6 +233,7 @@
 "workflow.persona.switched" = "已切换到人设 %@。";
 "workflow.persona.switchedOff" = "已关闭人设。";
 "workflow.persona.disabled" = "人设已关闭。";
+"workflow.ask.selectionRequired" = "“随便问”需要先选中文本。";
 "workflow.retry.audioMissing" = "重试失败：缺少音频文件。";
 "workflow.retry.audioGone" = "重试失败：音频文件已不存在。";
 
@@ -333,23 +334,29 @@
 "settings.personaDefault.disabled" = "当前未启用人设，听写内容将保持原始形式。";
 "settings.personaDefault.openPersonas" = "打开人设";
 
-"settings.shortcuts.activation.title" = "主触发键";
-"settings.shortcuts.activation.subtitle" = "使用一个快捷键开始听写。可按住说话，也可快速轻触后锁定录音。";
-"settings.shortcuts.activation.footnote" = "默认是右 Command。你可以改成任何包含修饰键的组合，之后也可以重置。";
+"settings.shortcuts.activation.title" = "语音输入";
+"settings.shortcuts.activation.subtitle" = "使用一个快捷键开始语音输入。可按住说话，也可快速轻触后锁定录音。若当前已有选区，识别结果会直接覆盖该选区。";
+"settings.shortcuts.activation.footnote" = "默认是右 Command。它只负责录入文本，不再根据选中文本切换到问答或改写流程。";
+"settings.shortcuts.ask.title" = "随便问";
+"settings.shortcuts.ask.subtitle" = "对当前选中文本发起语音提问或指令，并沿用原来的选中文本处理流程。";
+"settings.shortcuts.ask.footnote" = "默认是 Fn + Space。使用前请先选中文本。";
 "settings.shortcuts.persona.title" = "人设切换器";
 "settings.shortcuts.persona.subtitle" = "打开居中选择器；如果当前存在选中文本，也可以直接将所选人设应用到这段文本。";
 "settings.shortcuts.persona.footnote" = "开启高级选项后，快捷键会优先检查选中文本并执行人设改写；关闭后则保持为纯粹的人设切换器。";
 "settings.advanced.personaHotkeyApply.title" = "将人设应用到选中文本";
 "settings.advanced.personaHotkeyApply.subtitle" = "开启后，人设快捷键会先检查是否有选中文本；如果有，就用所选人设直接改写该文本，而不只是切换默认人设。";
 "settings.shortcuts.recording" = "正在录制新的快捷键";
-"settings.shortcuts.recordingActivation" = "现在按下新的激活组合键，至少包含一个修饰键。";
+"settings.shortcuts.recordingActivation" = "现在按下新的语音输入组合键，至少包含一个修饰键。";
+"settings.shortcuts.recordingAsk" = "现在按下新的“随便问”组合键，至少包含一个修饰键。";
 "settings.shortcuts.recordingPersona" = "现在按下用于打开人设选择器的快捷键，至少包含一个修饰键。";
 "settings.shortcuts.recordingGeneric" = "按下你想使用的完整组合键，至少包含一个修饰键。";
 "settings.shortcuts.record" = "录制";
 "settings.shortcuts.stopRecording" = "停止录制";
-"settings.shortcuts.activationConflict" = "激活快捷键不能与人设快捷键相同。";
-"settings.shortcuts.activationUpdated" = "激活快捷键已更新。";
-"settings.shortcuts.personaConflict" = "人设快捷键不能与激活快捷键相同。";
+"settings.shortcuts.activationConflict" = "语音输入快捷键不能与“随便问”或人设快捷键相同。";
+"settings.shortcuts.activationUpdated" = "语音输入快捷键已更新。";
+"settings.shortcuts.askConflict" = "“随便问”快捷键不能与语音输入或人设快捷键相同。";
+"settings.shortcuts.askUpdated" = "“随便问”快捷键已更新。";
+"settings.shortcuts.personaConflict" = "人设快捷键不能与语音输入或“随便问”快捷键相同。";
 "settings.shortcuts.personaUpdated" = "人设快捷键已更新。";
 
 "settings.audio.microphone.unavailable" = "所选麦克风不可用，已切换为自动。";

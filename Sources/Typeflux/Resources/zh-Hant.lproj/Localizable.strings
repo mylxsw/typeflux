@@ -57,7 +57,7 @@
 "settings.general" = "一般";
 "settings.launchAtLogin.title" = "開機自動啟動";
 "settings.launchAtLogin.subtitle" = "登入 Mac 後自動啟動 Typeflux，無需手動打開。";
-"settings.activationHotkey" = "啟動快捷鍵";
+"settings.activationHotkey" = "語音快捷鍵";
 "settings.identity" = "身份與互動";
 "settings.appearance.title" = "明暗模式";
 "settings.appearance.subtitle" = "在淺色、深色或跟隨系統主題之間切換整個介面。";
@@ -233,6 +233,7 @@
 "workflow.persona.switched" = "已切換到人設 %@。";
 "workflow.persona.switchedOff" = "已關閉人設。";
 "workflow.persona.disabled" = "人設已關閉。";
+"workflow.ask.selectionRequired" = "「隨便問」需要先選取文字。";
 "workflow.retry.audioMissing" = "重試失敗：缺少音訊檔。";
 "workflow.retry.audioGone" = "重試失敗：音訊檔已不存在。";
 
@@ -333,23 +334,29 @@
 "settings.personaDefault.disabled" = "目前未啟用人設，聽寫內容會保持原始形式。";
 "settings.personaDefault.openPersonas" = "打開人設";
 
-"settings.shortcuts.activation.title" = "主觸發鍵";
-"settings.shortcuts.activation.subtitle" = "使用一組快捷鍵開始聽寫。可按住說話，也可快速輕觸後鎖定錄音。";
-"settings.shortcuts.activation.footnote" = "預設是右 Command。你可以改成任何包含修飾鍵的組合，之後也可以重設。";
+"settings.shortcuts.activation.title" = "語音輸入";
+"settings.shortcuts.activation.subtitle" = "使用一組快捷鍵開始語音輸入。可按住說話，也可快速輕觸後鎖定錄音。若目前已有選取內容，識別結果會直接覆蓋該選取範圍。";
+"settings.shortcuts.activation.footnote" = "預設是右 Command。它現在只負責輸入文字，不再依照選取文字切換到問答或改寫流程。";
+"settings.shortcuts.ask.title" = "隨便問";
+"settings.shortcuts.ask.subtitle" = "針對目前選取的文字發起語音提問或指令，沿用原本的選取文字處理流程。";
+"settings.shortcuts.ask.footnote" = "預設是 Fn + Space。使用前請先選取文字。";
 "settings.shortcuts.persona.title" = "人設切換器";
 "settings.shortcuts.persona.subtitle" = "打開置中的選擇器；如果目前有選取文字，也可以直接把所選人設套用到這段文字。";
 "settings.shortcuts.persona.footnote" = "開啟進階選項後，快捷鍵會優先檢查選取文字並執行人設改寫；關閉後則維持為純粹的人設切換器。";
 "settings.advanced.personaHotkeyApply.title" = "將人設套用到選取文字";
 "settings.advanced.personaHotkeyApply.subtitle" = "開啟後，人設快捷鍵會先檢查是否有選取文字；如果有，就用所選人設直接改寫該文字，而不只是切換預設人設。";
 "settings.shortcuts.recording" = "正在錄製新的快捷鍵";
-"settings.shortcuts.recordingActivation" = "現在按下新的啟動組合鍵，至少包含一個修飾鍵。";
+"settings.shortcuts.recordingActivation" = "現在按下新的語音輸入組合鍵，至少包含一個修飾鍵。";
+"settings.shortcuts.recordingAsk" = "現在按下新的「隨便問」組合鍵，至少包含一個修飾鍵。";
 "settings.shortcuts.recordingPersona" = "現在按下用於打開人設選擇器的快捷鍵，至少包含一個修飾鍵。";
 "settings.shortcuts.recordingGeneric" = "按下你想使用的完整組合鍵，至少包含一個修飾鍵。";
 "settings.shortcuts.record" = "錄製";
 "settings.shortcuts.stopRecording" = "停止錄製";
-"settings.shortcuts.activationConflict" = "啟動快捷鍵不能與人設快捷鍵相同。";
-"settings.shortcuts.activationUpdated" = "啟動快捷鍵已更新。";
-"settings.shortcuts.personaConflict" = "人設快捷鍵不能與啟動快捷鍵相同。";
+"settings.shortcuts.activationConflict" = "語音輸入快捷鍵不能與「隨便問」或人設快捷鍵相同。";
+"settings.shortcuts.activationUpdated" = "語音輸入快捷鍵已更新。";
+"settings.shortcuts.askConflict" = "「隨便問」快捷鍵不能與語音輸入或人設快捷鍵相同。";
+"settings.shortcuts.askUpdated" = "「隨便問」快捷鍵已更新。";
+"settings.shortcuts.personaConflict" = "人設快捷鍵不能與語音輸入或「隨便問」快捷鍵相同。";
 "settings.shortcuts.personaUpdated" = "人設快捷鍵已更新。";
 
 "settings.audio.microphone.unavailable" = "所選麥克風不可用，已切換為自動。";
