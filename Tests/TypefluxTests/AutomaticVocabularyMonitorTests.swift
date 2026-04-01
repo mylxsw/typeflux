@@ -143,6 +143,39 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
         XCTAssertEqual(change?.candidateTerms, ["PRDPlus"])
     }
 
+    func testDetectChangeExpandsIntraWordReplacementToWholeToken() {
+        let change = AutomaticVocabularyMonitor.detectChange(
+            from: "Please open Redmi docs",
+            to: "Please open Readme docs"
+        )
+
+        XCTAssertEqual(change?.oldFragment, "Redmi")
+        XCTAssertEqual(change?.newFragment, "Readme")
+        XCTAssertEqual(change?.candidateTerms, ["Readme"])
+    }
+
+    func testDetectChangeExpandsInsertedSuffixToWholeToken() {
+        let change = AutomaticVocabularyMonitor.detectChange(
+            from: "I meant Readm",
+            to: "I meant Readme"
+        )
+
+        XCTAssertEqual(change?.oldFragment, "Readm")
+        XCTAssertEqual(change?.newFragment, "Readme")
+        XCTAssertEqual(change?.candidateTerms, ["Readme"])
+    }
+
+    func testDetectChangeExpandsTechnicalVariantToWholeToken() {
+        let change = AutomaticVocabularyMonitor.detectChange(
+            from: "Switch to fooBar today",
+            to: "Switch to foo_bar today"
+        )
+
+        XCTAssertEqual(change?.oldFragment, "fooBar")
+        XCTAssertEqual(change?.newFragment, "foo_bar")
+        XCTAssertEqual(change?.candidateTerms, ["foo_bar"])
+    }
+
     func testDetectChangeExtractsNewHanToken() {
         let change = AutomaticVocabularyMonitor.detectChange(
             from: "我在写豆包语音",

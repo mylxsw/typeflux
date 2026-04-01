@@ -64,8 +64,18 @@ enum AutomaticVocabularyMonitor {
 
         let oldEnd = max(sharedPrefixCount, oldCharacters.count - sharedSuffixCount)
         let newEnd = max(sharedPrefixCount, newCharacters.count - sharedSuffixCount)
-        let oldFragment = String(oldCharacters[sharedPrefixCount..<oldEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
-        let newFragment = String(newCharacters[sharedPrefixCount..<newEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let oldRange = expandChangedRange(
+            in: oldCharacters,
+            start: sharedPrefixCount,
+            end: oldEnd
+        )
+        let newRange = expandChangedRange(
+            in: newCharacters,
+            start: sharedPrefixCount,
+            end: newEnd
+        )
+        let oldFragment = String(oldCharacters[oldRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let newFragment = String(newCharacters[newRange]).trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !newFragment.isEmpty else { return nil }
 
@@ -308,6 +318,77 @@ enum AutomaticVocabularyMonitor {
         }
         return count
     }
+
+    private static func expandChangedRange(
+        in characters: [Character],
+        start: Int,
+        end: Int
+    ) -> Range<Int> {
+        guard !characters.isEmpty else { return start..<end }
+
+        var lowerBound = max(0, min(start, characters.count))
+        var upperBound = max(lowerBound, min(end, characters.count))
+
+        let anchorIndex: Int?
+        if lowerBound < upperBound {
+            anchorIndex = lowerBound
+        } else if lowerBound < characters.count, tokenKind(for: characters[lowerBound]) != .none {
+            anchorIndex = lowerBound
+            upperBound = lowerBound + 1
+        } else if lowerBound > 0, tokenKind(for: characters[lowerBound - 1]) != .none {
+            anchorIndex = lowerBound - 1
+            lowerBound = lowerBound - 1
+            upperBound = max(upperBound, lowerBound + 1)
+        } else {
+            anchorIndex = nil
+        }
+
+        guard let anchorIndex else { return lowerBound..<upperBound }
+        let kind = tokenKind(for: characters[anchorIndex])
+        guard kind != .none else { return lowerBound..<upperBound }
+
+        while lowerBound > 0, tokenKind(for: characters[lowerBound - 1]) == kind {
+            lowerBound -= 1
+        }
+
+        while upperBound < characters.count, tokenKind(for: characters[upperBound]) == kind {
+            upperBound += 1
+        }
+
+        return lowerBound..<upperBound
+    }
+
+    private static func tokenKind(for character: Character) -> TokenKind {
+        if isLatinOrNumberTokenCharacter(character) {
+            return .latinOrNumber
+        }
+        if isHanCharacter(character) {
+            return .han
+        }
+        return .none
+    }
+
+    private static func isLatinOrNumberTokenCharacter(_ character: Character) -> Bool {
+        guard character.unicodeScalars.count == 1, let scalar = character.unicodeScalars.first else {
+            return false
+        }
+
+        if CharacterSet.alphanumerics.contains(scalar) {
+            return true
+        }
+
+        return "._+-'".unicodeScalars.contains(scalar)
+    }
+
+    private static func isHanCharacter(_ character: Character) -> Bool {
+        character.unicodeScalars.contains { (0x4E00...0x9FFF).contains($0.value) }
+    }
+}
+
+private enum TokenKind: Equatable {
+    case none
+    case latinOrNumber
+    case han
 }
 
 private extension Array where Element == String {
