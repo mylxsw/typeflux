@@ -483,6 +483,7 @@ final class SettingsStore {
                     - Support multi-language seamlessly while keeping the output extremely clean and readable in any plain-text environment.
                     - Never add information the user did not imply. Never hallucinate details.
                     - If the user gives a follow-up voice command such as "make this more professional" or "shorten it" or "turn into bullet points", instantly apply the edit while still following the clean format rules above.
+                    - If the user's input is brief (typically a short phrase or a few words), do not add punctuation at the end, especially periods. Keep it clean and natural for quick voice commands or short replies.
 
                     You excel at turning spoken ideas into polished emails, blog posts, prompts, meeting notes, code documentation, project plans, or creative writing — all delivered in the cleanest possible text format.
 
