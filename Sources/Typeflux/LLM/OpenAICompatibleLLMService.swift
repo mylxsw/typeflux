@@ -39,7 +39,31 @@ final class OpenAICompatibleLLMService: LLMService {
             model: model,
             apiKey: settingsStore.llmAPIKey,
             systemPrompt: effectiveSystemPrompt,
-            userPrompt: userPrompt
+            userPrompt: userPrompt,
+            schema: nil
+        )
+    }
+
+    func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
+        let remoteProvider = settingsStore.llmRemoteProvider
+        let configuredBaseURL = settingsStore.llmBaseURL
+        guard let baseURL = URL(string: configuredBaseURL), !configuredBaseURL.isEmpty else {
+            throw NSError(domain: "LLM", code: 1)
+        }
+
+        let model = settingsStore.llmModel.isEmpty ? remoteProvider.defaultModel : settingsStore.llmModel
+        let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
+            to: systemPrompt,
+            appLanguage: settingsStore.appLanguage
+        )
+        return try await RemoteLLMClient.complete(
+            provider: remoteProvider,
+            baseURL: baseURL,
+            model: model,
+            apiKey: settingsStore.llmAPIKey,
+            systemPrompt: effectiveSystemPrompt,
+            userPrompt: userPrompt,
+            schema: schema
         )
     }
 
@@ -103,7 +127,8 @@ enum RemoteLLMClient {
                 model: model,
                 apiKey: apiKey,
                 systemPrompt: systemPrompt,
-                userPrompt: userPrompt
+                userPrompt: userPrompt,
+                schema: nil
             )
             if !text.isEmpty {
                 continuation.yield(text)
@@ -115,7 +140,8 @@ enum RemoteLLMClient {
                 model: model,
                 apiKey: apiKey,
                 systemPrompt: systemPrompt,
-                userPrompt: userPrompt
+                userPrompt: userPrompt,
+                schema: nil
             )
             if !text.isEmpty {
                 continuation.yield(text)
@@ -139,7 +165,8 @@ enum RemoteLLMClient {
                 model: model,
                 apiKey: apiKey,
                 systemPrompt: "Reply with a short greeting.",
-                userPrompt: "Hello"
+                userPrompt: "Hello",
+                schema: nil
             )
         case .gemini:
             return try await requestGemini(
@@ -147,7 +174,8 @@ enum RemoteLLMClient {
                 model: model,
                 apiKey: apiKey,
                 systemPrompt: "Reply with a short greeting.",
-                userPrompt: "Hello"
+                userPrompt: "Hello",
+                schema: nil
             )
         }
     }
@@ -158,7 +186,8 @@ enum RemoteLLMClient {
         model: String,
         apiKey: String,
         systemPrompt: String,
-        userPrompt: String
+        userPrompt: String,
+        schema: LLMJSONSchema?
     ) async throws -> String {
         switch provider.apiStyle {
         case .openAICompatible:
@@ -167,7 +196,8 @@ enum RemoteLLMClient {
                 model: model,
                 apiKey: apiKey,
                 systemPrompt: systemPrompt,
-                userPrompt: userPrompt
+                userPrompt: userPrompt,
+                schema: schema
             )
         case .anthropic:
             return try await requestAnthropic(
@@ -175,7 +205,8 @@ enum RemoteLLMClient {
                 model: model,
                 apiKey: apiKey,
                 systemPrompt: systemPrompt,
-                userPrompt: userPrompt
+                userPrompt: userPrompt,
+                schema: schema
             )
         case .gemini:
             return try await requestGemini(
@@ -183,7 +214,8 @@ enum RemoteLLMClient {
                 model: model,
                 apiKey: apiKey,
                 systemPrompt: systemPrompt,
-                userPrompt: userPrompt
+                userPrompt: userPrompt,
+                schema: schema
             )
         }
     }
@@ -283,7 +315,8 @@ enum RemoteLLMClient {
         model: String,
         apiKey: String,
         systemPrompt: String,
-        userPrompt: String
+        userPrompt: String,
+        schema: LLMJSONSchema?
     ) async throws -> String {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "chat/completions")
         var urlRequest = URLRequest(url: url)
@@ -301,6 +334,16 @@ enum RemoteLLMClient {
                 ["role": "user", "content": userPrompt]
             ]
         ]
+        if let schema, providerSupportsResponseFormat(baseURL: baseURL) {
+            body["response_format"] = [
+                "type": "json_schema",
+                "json_schema": [
+                    "name": schema.name,
+                    "strict": schema.strict,
+                    "schema": schema.jsonObject
+                ]
+            ]
+        }
         OpenAICompatibleResponseSupport.applyProviderTuning(body: &body, baseURL: baseURL, model: model)
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -314,7 +357,8 @@ enum RemoteLLMClient {
         model: String,
         apiKey: String,
         systemPrompt: String,
-        userPrompt: String
+        userPrompt: String,
+        schema: LLMJSONSchema?
     ) async throws -> String {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "messages")
         var urlRequest = URLRequest(url: url)
@@ -325,12 +369,12 @@ enum RemoteLLMClient {
         let body: [String: Any] = [
             "model": model,
             "max_tokens": 1024,
-            "system": systemPrompt,
+            "system": anthropicSystemPrompt(systemPrompt: systemPrompt, schema: schema),
             "messages": [
                 [
                     "role": "user",
                     "content": [
-                        ["type": "text", "text": userPrompt]
+                        ["type": "text", "text": anthropicUserPrompt(userPrompt: userPrompt, schema: schema)]
                     ]
                 ]
             ]
@@ -354,7 +398,8 @@ enum RemoteLLMClient {
         model: String,
         apiKey: String,
         systemPrompt: String,
-        userPrompt: String
+        userPrompt: String,
+        schema: LLMJSONSchema?
     ) async throws -> String {
         guard var components = URLComponents(url: baseURL.appendingPathComponent("models/\(model):generateContent"), resolvingAgainstBaseURL: false) else {
             throw NSError(domain: "LLM", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid Gemini endpoint."])
@@ -367,7 +412,7 @@ enum RemoteLLMClient {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "systemInstruction": [
                 "parts": [["text": systemPrompt]]
             ],
@@ -382,6 +427,14 @@ enum RemoteLLMClient {
                 "maxOutputTokens": 1024
             ]
         ]
+        if let schema {
+            body["generationConfig"] = [
+                "candidateCount": 1,
+                "maxOutputTokens": 1024,
+                "responseMimeType": "application/json",
+                "responseSchema": schema.jsonObject
+            ]
+        }
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let data = try await performJSONRequest(urlRequest)
@@ -393,6 +446,32 @@ enum RemoteLLMClient {
         }
 
         return parts.compactMap { $0["text"] as? String }.joined()
+    }
+
+    private static func providerSupportsResponseFormat(baseURL: URL) -> Bool {
+        let host = baseURL.host?.lowercased() ?? ""
+        return host == "api.openai.com"
+            || host.hasSuffix(".openai.com")
+    }
+
+    private static func anthropicSystemPrompt(systemPrompt: String, schema: LLMJSONSchema?) -> String {
+        guard let schema else { return systemPrompt }
+        return """
+        \(systemPrompt)
+
+        Return JSON only. Do not wrap it in Markdown code fences.
+        The JSON must match this schema exactly:
+        \(schema.jsonObject.prettyPrintedJSONString ?? "{}")
+        """
+    }
+
+    private static func anthropicUserPrompt(userPrompt: String, schema: LLMJSONSchema?) -> String {
+        guard schema != nil else { return userPrompt }
+        return """
+        \(userPrompt)
+
+        Return only valid JSON matching the required schema.
+        """
     }
 
     private static func performJSONRequest(_ request: URLRequest) async throws -> Data {
@@ -472,5 +551,16 @@ enum SSEClient {
                 }
             }
         }
+    }
+}
+
+private extension Dictionary where Key == String, Value == Any {
+    var prettyPrintedJSONString: String? {
+        guard JSONSerialization.isValidJSONObject(self),
+              let data = try? JSONSerialization.data(withJSONObject: self, options: [.prettyPrinted]),
+              let string = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+        return string
     }
 }

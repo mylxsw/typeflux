@@ -30,7 +30,23 @@ final class OllamaLLMService: LLMService {
             to: systemPrompt,
             appLanguage: settingsStore.appLanguage
         )
+        return try await completeInternal(systemPrompt: effectiveSystemPrompt, userPrompt: userPrompt, schema: nil)
+    }
 
+    func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
+        try await modelManager.ensureModelReady(settingsStore: settingsStore)
+        let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
+            to: systemPrompt,
+            appLanguage: settingsStore.appLanguage
+        )
+        return try await completeInternal(systemPrompt: effectiveSystemPrompt, userPrompt: userPrompt, schema: schema)
+    }
+
+    private func completeInternal(
+        systemPrompt: String,
+        userPrompt: String,
+        schema: LLMJSONSchema?
+    ) async throws -> String {
         let base = settingsStore.ollamaBaseURL.isEmpty ? "http://127.0.0.1:11434" : settingsStore.ollamaBaseURL
         guard let baseURL = URL(string: base) else {
             throw NSError(
@@ -44,17 +60,20 @@ final class OllamaLLMService: LLMService {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "model": settingsStore.ollamaModel,
             "stream": false,
             "messages": [
-                ["role": "system", "content": effectiveSystemPrompt],
+                ["role": "system", "content": systemPrompt],
                 ["role": "user", "content": userPrompt]
             ],
             "options": [
                 "temperature": 0.1
             ]
         ]
+        if let schema {
+            body["format"] = schema.jsonObject
+        }
 
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
         NetworkDebugLogger.logRequest(urlRequest)
@@ -81,7 +100,6 @@ final class OllamaLLMService: LLMService {
         let payload = try JSONDecoder().decode(OllamaChatResponse.self, from: data)
         return payload.message?.content?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
-
     private func streamRewriteInternal(
         request: LLMRewriteRequest,
         continuation: AsyncThrowingStream<String, Error>.Continuation

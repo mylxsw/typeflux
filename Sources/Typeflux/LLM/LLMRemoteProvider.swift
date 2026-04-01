@@ -101,6 +101,15 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
         suggestedModels.first ?? ""
     }
 
+    var supportsNativeStructuredOutput: Bool {
+        switch self {
+        case .openAI, .gemini:
+            return true
+        case .custom, .openRouter, .anthropic, .deepSeek, .kimi, .qwen, .zhipu:
+            return false
+        }
+    }
+
     var studioProviderID: StudioModelProviderID {
         switch self {
         case .custom:

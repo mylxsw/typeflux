@@ -28,4 +28,21 @@ final class LLMRouter: LLMService {
             return try await ollama.complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
         }
     }
+
+    func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
+        switch settingsStore.llmProvider {
+        case .openAICompatible:
+            return try await openAICompatible.completeJSON(
+                systemPrompt: systemPrompt,
+                userPrompt: userPrompt,
+                schema: schema
+            )
+        case .ollama:
+            return try await ollama.completeJSON(
+                systemPrompt: systemPrompt,
+                userPrompt: userPrompt,
+                schema: schema
+            )
+        }
+    }
 }

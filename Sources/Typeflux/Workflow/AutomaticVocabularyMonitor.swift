@@ -25,6 +25,30 @@ enum AutomaticVocabularyMonitor {
         pattern: #"[A-Za-z0-9]+(?:[._+\-'][A-Za-z0-9]+)*"#
     )
     private static let hanRegex = try! NSRegularExpression(pattern: #"\p{Han}{2,12}"#)
+    private static let acceptedTermRegex = try! NSRegularExpression(
+        pattern: #"^[\p{Han}A-Za-z0-9](?:[\p{Han}A-Za-z0-9 ._+\-/']{0,38}[\p{Han}A-Za-z0-9])?$"#
+    )
+    private static let rejectedAcceptedTerms: Set<String> = ["```"]
+
+    static let decisionSchema = LLMJSONSchema(
+        name: "automatic_vocabulary_terms",
+        schema: [
+            "type": .string("object"),
+            "additionalProperties": .bool(false),
+            "required": .array([.string("terms")]),
+            "properties": .object([
+                "terms": .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "minLength": .int(2),
+                        "maxLength": .int(40)
+                    ]),
+                    "maxItems": .int(8)
+                ])
+            ])
+        ]
+    )
 
     static func detectChange(from oldText: String, to newText: String) -> AutomaticVocabularyChange? {
         guard oldText != newText else { return nil }
@@ -62,25 +86,20 @@ enum AutomaticVocabularyMonitor {
     static func parseAcceptedTerms(from response: String) -> [String] {
         guard !response.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [] }
 
-        if let data = response.data(using: .utf8),
+        if let jsonPayload = extractJSONObjectOrArray(from: response),
+           let data = jsonPayload.data(using: .utf8),
            let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let terms = object["terms"] as? [String] {
-            return terms.uniquedPreservingOrder(by: normalize)
+            return sanitizeAcceptedTerms(terms)
         }
 
-        if let data = response.data(using: .utf8),
+        if let jsonPayload = extractJSONObjectOrArray(from: response),
+           let data = jsonPayload.data(using: .utf8),
            let terms = try? JSONSerialization.jsonObject(with: data) as? [String] {
-            return terms.uniquedPreservingOrder(by: normalize)
+            return sanitizeAcceptedTerms(terms)
         }
 
-        let lines = response
-            .split(whereSeparator: \.isNewline)
-            .map {
-                $0.trimmingCharacters(in: CharacterSet(charactersIn: "\"',- ").union(.whitespacesAndNewlines))
-            }
-            .filter { !$0.isEmpty }
-
-        return lines.uniquedPreservingOrder(by: normalize)
+        return []
     }
 
     static func makeObservationState(
@@ -167,6 +186,100 @@ enum AutomaticVocabularyMonitor {
 
     private static func normalize(_ term: String) -> String {
         term.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private static func sanitizeAcceptedTerms(_ terms: [String]) -> [String] {
+        terms
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter(isValidAcceptedTerm)
+            .uniquedPreservingOrder(by: normalize)
+    }
+
+    private static func isValidAcceptedTerm(_ term: String) -> Bool {
+        let trimmed = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2, trimmed.count <= 40 else { return false }
+        guard !trimmed.contains(where: \.isNewline) else { return false }
+
+        let normalized = trimmed.lowercased()
+        guard !rejectedAcceptedTerms.contains(normalized) else {
+            return false
+        }
+
+        let nsRange = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
+        guard acceptedTermRegex.firstMatch(in: trimmed, range: nsRange) != nil else {
+            return false
+        }
+
+        return trimmed.rangeOfCharacter(from: .letters) != nil
+            || trimmed.rangeOfCharacter(from: .decimalDigits) != nil
+            || trimmed.unicodeScalars.contains(where: { (0x4E00...0x9FFF).contains($0.value) })
+    }
+
+    private static func extractJSONObjectOrArray(from response: String) -> String? {
+        let stripped = stripMarkdownCodeFence(from: response).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !stripped.isEmpty else { return nil }
+
+        if stripped.first == "{" || stripped.first == "[" {
+            return balancedJSONSubstring(in: stripped)
+        }
+
+        guard let start = stripped.firstIndex(where: { $0 == "{" || $0 == "[" }) else {
+            return nil
+        }
+
+        return balancedJSONSubstring(in: String(stripped[start...]))
+    }
+
+    private static func stripMarkdownCodeFence(from response: String) -> String {
+        let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.hasPrefix("```"), let closingRange = trimmed.range(of: "```", options: .backwards), closingRange.lowerBound > trimmed.startIndex else {
+            return trimmed
+        }
+
+        let innerStart = trimmed.index(after: trimmed.index(after: trimmed.startIndex))
+        let contentStart = trimmed[innerStart...].firstIndex(of: "\n") ?? innerStart
+        let bodyStart = contentStart < trimmed.endIndex ? trimmed.index(after: contentStart) : contentStart
+        return String(trimmed[bodyStart..<closingRange.lowerBound])
+    }
+
+    private static func balancedJSONSubstring(in text: String) -> String? {
+        guard let first = text.first, first == "{" || first == "[" else { return nil }
+        let opening = first
+        let closing: Character = first == "{" ? "}" : "]"
+        var depth = 0
+        var isInsideString = false
+        var isEscaped = false
+
+        for (index, character) in text.enumerated() {
+            if isEscaped {
+                isEscaped = false
+                continue
+            }
+
+            if character == "\\" {
+                isEscaped = true
+                continue
+            }
+
+            if character == "\"" {
+                isInsideString.toggle()
+                continue
+            }
+
+            guard !isInsideString else { continue }
+
+            if character == opening {
+                depth += 1
+            } else if character == closing {
+                depth -= 1
+                if depth == 0 {
+                    let endIndex = text.index(text.startIndex, offsetBy: index)
+                    return String(text[text.startIndex...endIndex])
+                }
+            }
+        }
+
+        return nil
     }
 
     private static func commonPrefixCount(_ lhs: [Character], _ rhs: [Character]) -> Int {

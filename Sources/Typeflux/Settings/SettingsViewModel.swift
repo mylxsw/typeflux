@@ -109,6 +109,7 @@ final class StudioViewModel: ObservableObject {
     private var historyObserver: NSObjectProtocol?
     private var personaSelectionObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
+    private var vocabularyObserver: NSObjectProtocol?
     private var llmTestTask: Task<Void, Never>?
     private var sttTestTask: Task<Void, Never>?
 
@@ -234,6 +235,20 @@ final class StudioViewModel: ObservableObject {
                 self.appearanceMode = self.settingsStore.appearanceMode
             }
         }
+        vocabularyObserver = NotificationCenter.default.addObserver(
+            forName: .vocabularyStoreDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if let entries = notification.userInfo?["entries"] as? [VocabularyEntry] {
+                    self.vocabularyEntries = entries
+                } else {
+                    self.vocabularyEntries = VocabularyStore.load()
+                }
+            }
+        }
     }
 
     deinit {
@@ -245,6 +260,9 @@ final class StudioViewModel: ObservableObject {
         }
         if let appearanceObserver {
             NotificationCenter.default.removeObserver(appearanceObserver)
+        }
+        if let vocabularyObserver {
+            NotificationCenter.default.removeObserver(vocabularyObserver)
         }
     }
 

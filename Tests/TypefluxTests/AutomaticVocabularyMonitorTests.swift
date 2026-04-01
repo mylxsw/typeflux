@@ -159,4 +159,44 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
 
         XCTAssertEqual(terms, ["SeedASR", "Qwen3-ASR"])
     }
+
+    func testParseAcceptedTermsSupportsFencedJSONObject() {
+        let terms = AutomaticVocabularyMonitor.parseAcceptedTerms(
+            from: """
+            ```json
+            {"terms":["mylxsw","cc-src-learning"]}
+            ```
+            """
+        )
+
+        XCTAssertEqual(terms, ["mylxsw", "cc-src-learning"])
+    }
+
+    func testParseAcceptedTermsRejectsInvalidJSONFragments() {
+        let terms = AutomaticVocabularyMonitor.parseAcceptedTerms(
+            from: #"{"terms":["```","{","}","terms\":[\"mylxsw\"]","mylxsw"]}"#
+        )
+
+        XCTAssertEqual(terms, ["mylxsw"])
+    }
+
+    func testParseAcceptedTermsKeepsValidTechnicalTermsContainingJSON() {
+        let terms = AutomaticVocabularyMonitor.parseAcceptedTerms(
+            from: #"{"terms":["JSONSchema","jsonrpc","fastjson2"]}"#
+        )
+
+        XCTAssertEqual(terms, ["JSONSchema", "jsonrpc", "fastjson2"])
+    }
+
+    func testParseAcceptedTermsDoesNotFallbackToLineParsing() {
+        let terms = AutomaticVocabularyMonitor.parseAcceptedTerms(
+            from: """
+            ```json
+            {"terms":["mylxsw","cc-src-learning"]
+            ```
+            """
+        )
+
+        XCTAssertTrue(terms.isEmpty)
+    }
 }

@@ -1253,7 +1253,12 @@ final class WorkflowController {
             candidateTerms: change.candidateTerms,
             existingTerms: VocabularyStore.activeTerms()
         )
-        let response = try await llmService.complete(systemPrompt: prompts.system, userPrompt: prompts.user)
+        let response = try await llmService.completeJSON(
+            systemPrompt: prompts.system,
+            userPrompt: prompts.user,
+            schema: AutomaticVocabularyMonitor.decisionSchema
+        )
+        self.logAutomaticVocabulary("llm raw response | response=\(self.automaticVocabularyPreview(response))")
         return AutomaticVocabularyMonitor.parseAcceptedTerms(from: response)
     }
 

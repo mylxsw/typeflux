@@ -1,5 +1,9 @@
 import Foundation
 
+extension Notification.Name {
+    static let vocabularyStoreDidChange = Notification.Name("VocabularyStore.didChange")
+}
+
 enum VocabularySource: String, Codable, CaseIterable, Sendable {
     case manual
     case automatic
@@ -32,19 +36,33 @@ enum VocabularyStore {
     private static let key = "vocabulary.entries"
 
     static func load() -> [VocabularyEntry] {
-        guard
-            let data = UserDefaults.standard.data(forKey: key),
-            let decoded = try? JSONDecoder().decode([VocabularyEntry].self, from: data)
-        else {
+        guard let data = UserDefaults.standard.data(forKey: key) else {
             return []
         }
 
-        return deduplicated(decoded)
+        do {
+            let decoded = try JSONDecoder().decode([VocabularyEntry].self, from: data)
+            return deduplicated(decoded)
+        } catch {
+            ErrorLogStore.shared.log("Vocabulary load failed: \(error.localizedDescription)")
+            return []
+        }
     }
 
     static func save(_ entries: [VocabularyEntry]) {
-        let data = (try? JSONEncoder().encode(deduplicated(entries))) ?? Data("[]".utf8)
-        UserDefaults.standard.set(data, forKey: key)
+        let deduplicatedEntries = deduplicated(entries)
+
+        do {
+            let data = try JSONEncoder().encode(deduplicatedEntries)
+            UserDefaults.standard.set(data, forKey: key)
+            NotificationCenter.default.post(
+                name: .vocabularyStoreDidChange,
+                object: nil,
+                userInfo: ["entries": deduplicatedEntries]
+            )
+        } catch {
+            ErrorLogStore.shared.log("Vocabulary save failed: \(error.localizedDescription)")
+        }
     }
 
     static func add(term: String, source: VocabularySource = .manual) -> [VocabularyEntry] {

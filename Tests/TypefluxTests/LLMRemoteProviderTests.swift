@@ -57,6 +57,14 @@ final class LLMRemoteProviderTests: XCTestCase {
         }
     }
 
+    func testStructuredOutputSupportIsOptInPerProvider() {
+        XCTAssertTrue(LLMRemoteProvider.openAI.supportsNativeStructuredOutput)
+        XCTAssertTrue(LLMRemoteProvider.gemini.supportsNativeStructuredOutput)
+        XCTAssertFalse(LLMRemoteProvider.custom.supportsNativeStructuredOutput)
+        XCTAssertFalse(LLMRemoteProvider.openRouter.supportsNativeStructuredOutput)
+        XCTAssertFalse(LLMRemoteProvider.deepSeek.supportsNativeStructuredOutput)
+    }
+
     private func clearLLMKeys() {
         for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("llm.") {
             defaults.removeObject(forKey: key)

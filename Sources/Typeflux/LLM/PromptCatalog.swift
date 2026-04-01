@@ -197,6 +197,8 @@ enum PromptCatalog {
             Only keep terms that are likely proper nouns, domain terms, product names, code identifiers, uncommon transliterations, or deliberate spellings that speech recognition should preserve.
             Exclude common everyday words, generic rewrites, punctuation-only changes, and phrases that do not look like vocabulary terms.
             Return strict JSON only in the form {"terms":["term1","term2"]}.
+            Never wrap the JSON in Markdown code fences.
+            Never include commentary, explanation, or any keys other than "terms".
             """,
             user: """
             Original dictated text:
