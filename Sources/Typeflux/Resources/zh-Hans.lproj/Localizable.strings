@@ -227,6 +227,8 @@
 "workflow.transcription.emptySkipped" = "由于转写结果为空，已跳过后续处理。";
 "workflow.transcription.noSpeech" = "未识别到有效语音内容";
 "workflow.result.copyTitle" = "复制结果";
+"workflow.ask.answerTitle" = "随便问";
+"workflow.ask.answerPresented" = "已展示回答";
 "workflow.result.copied" = "已复制到剪贴板";
 "workflow.persona.finishRecordingFirst" = "请先完成当前录音，再切换人设。";
 "workflow.persona.waitForProcessing" = "请等待当前处理完成后再切换人设。";
@@ -338,8 +340,8 @@
 "settings.shortcuts.activation.subtitle" = "使用一个快捷键开始语音输入。可按住说话，也可快速轻触后锁定录音。若当前已有选区，识别结果会直接覆盖该选区。";
 "settings.shortcuts.activation.footnote" = "默认是 Fn。它只负责录入文本，不再根据选中文本切换到问答或改写流程。";
 "settings.shortcuts.ask.title" = "随便问";
-"settings.shortcuts.ask.subtitle" = "对当前选中文本发起语音提问或指令，并沿用原来的选中文本处理流程。";
-"settings.shortcuts.ask.footnote" = "默认是 Fn + Space。使用前请先选中文本。";
+"settings.shortcuts.ask.subtitle" = "围绕当前选中文本进行提问或发出编辑指令。提问会打开回答弹窗，明确的编辑请求才会改写选中文本。";
+"settings.shortcuts.ask.footnote" = "默认是 Fn + Space。使用前请先选中文本。意图不明确时会保持只读。";
 "settings.shortcuts.persona.title" = "人设切换器";
 "settings.shortcuts.persona.subtitle" = "打开居中选择器；如果当前存在选中文本，也可以直接将所选人设应用到这段文本。";
 "settings.shortcuts.persona.footnote" = "开启高级选项后，快捷键会优先检查选中文本并执行人设改写；关闭后则保持为纯粹的人设切换器。";

@@ -227,6 +227,8 @@
 "workflow.transcription.emptySkipped" = "Skipped because transcription was empty.";
 "workflow.transcription.noSpeech" = "No valid speech content was detected.";
 "workflow.result.copyTitle" = "Copy Result";
+"workflow.ask.answerTitle" = "Ask Anything";
+"workflow.ask.answerPresented" = "Answer shown";
 "workflow.result.copied" = "Copied to clipboard";
 "workflow.persona.finishRecordingFirst" = "Finish the current recording before switching persona.";
 "workflow.persona.waitForProcessing" = "Please wait until processing finishes before switching persona.";
@@ -338,8 +340,8 @@
 "settings.shortcuts.activation.subtitle" = "Use one shortcut to start voice input. Hold to talk, or tap quickly to lock the recording session. If text is selected, the transcript replaces that selection directly.";
 "settings.shortcuts.activation.footnote" = "Default is Fn. This shortcut is now dedicated to text insertion only and no longer switches into selected-text Q&A or rewrite flows.";
 "settings.shortcuts.ask.title" = "Ask Anything";
-"settings.shortcuts.ask.subtitle" = "Run the existing selected-text voice workflow on the current selection using a dedicated shortcut.";
-"settings.shortcuts.ask.footnote" = "Default is Fn + Space. Select text before using it.";
+"settings.shortcuts.ask.subtitle" = "Ask questions about the current selection or request an edit. Questions open a result dialog, while explicit edit requests rewrite the selected text.";
+"settings.shortcuts.ask.footnote" = "Default is Fn + Space. Select text before using it. Ambiguous requests stay read-only.";
 "settings.shortcuts.persona.title" = "Persona switcher";
 "settings.shortcuts.persona.subtitle" = "Open a centered picker. With selected text, it can also apply a persona directly to that selection.";
 "settings.shortcuts.persona.footnote" = "When the advanced option is on, the shortcut rewrites selected text with the chosen persona. Otherwise it behaves as a pure persona switcher.";

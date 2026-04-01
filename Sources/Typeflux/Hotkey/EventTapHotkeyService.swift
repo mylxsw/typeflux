@@ -2,6 +2,8 @@ import AppKit
 import Foundation
 
 final class EventTapHotkeyService: HotkeyService {
+    private static let modifierActivationArbitrationDelay: TimeInterval = 0.12
+
     var onActivationPressBegan: (() -> Void)?
     var onActivationPressEnded: (() -> Void)?
     var onAskPressBegan: (() -> Void)?
@@ -13,7 +15,8 @@ final class EventTapHotkeyService: HotkeyService {
 
     private var globalMonitor: Any?
     private var localMonitor: Any?
-    private var activeAction: HotkeyAction?
+    private var arbiter = HotkeyGestureArbiter()
+    private var pendingModifierActivationWorkItem: DispatchWorkItem?
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
@@ -45,7 +48,9 @@ final class EventTapHotkeyService: HotkeyService {
         }
         globalMonitor = nil
         localMonitor = nil
-        activeAction = nil
+        pendingModifierActivationWorkItem?.cancel()
+        pendingModifierActivationWorkItem = nil
+        arbiter = HotkeyGestureArbiter()
     }
 
     private func handleNSEvent(_ event: NSEvent) {
@@ -62,96 +67,107 @@ final class EventTapHotkeyService: HotkeyService {
     }
 
     private func handleKeyDown(_ event: NSEvent) {
-        if event.isARepeat { return }
-
         let keyCode = Int(event.keyCode)
         let flags = filteredFlags(event.modifierFlags)
         let activationHotkey = settingsStore.activationHotkey
         let askHotkey = settingsStore.askHotkey
         let personaHotkey = settingsStore.personaHotkey
-
-        if !activationHotkey.isRightCommandTrigger,
-           !activationHotkey.isFunctionTrigger,
-           activationHotkey.matches(keyCode: keyCode, modifierFlags: flags),
-           activeAction == nil {
-            activeAction = .activation
-            ErrorLogStore.shared.log("Hotkey(NSEvent): activation down")
-            DispatchQueue.main.async { [weak self] in
-                self?.onActivationPressBegan?()
-            }
-            return
-        }
-
-        if askHotkey.matches(keyCode: keyCode, modifierFlags: flags),
-           activeAction == nil {
-            activeAction = .ask
-            ErrorLogStore.shared.log("Hotkey(NSEvent): ask down")
-            DispatchQueue.main.async { [weak self] in
-                self?.onAskPressBegan?()
-            }
-            return
-        }
-
-        if personaHotkey.matches(keyCode: keyCode, modifierFlags: flags) {
-            ErrorLogStore.shared.log("Hotkey(NSEvent): persona picker")
-            DispatchQueue.main.async { [weak self] in
-                self?.onPersonaPickerRequested?()
-            }
-        }
+        handleGestureEvents(
+            arbiter.handleKeyDown(
+                keyCode: keyCode,
+                modifierFlags: flags,
+                isRepeat: event.isARepeat,
+                activationHotkey: activationHotkey,
+                askHotkey: askHotkey,
+                personaHotkey: personaHotkey
+            )
+        )
     }
 
     private func handleKeyUp(_ event: NSEvent) {
         let keyCode = Int(event.keyCode)
         let activationHotkey = settingsStore.activationHotkey
         let askHotkey = settingsStore.askHotkey
-
-        switch activeAction {
-        case .activation:
-            guard !activationHotkey.isRightCommandTrigger else { return }
-            guard activationHotkey.keyCode == keyCode else { return }
-
-            activeAction = nil
-            ErrorLogStore.shared.log("Hotkey(NSEvent): activation up")
-            DispatchQueue.main.async { [weak self] in
-                self?.onActivationPressEnded?()
-            }
-        case .ask:
-            guard askHotkey.keyCode == keyCode else { return }
-
-            activeAction = nil
-            ErrorLogStore.shared.log("Hotkey(NSEvent): ask up")
-            DispatchQueue.main.async { [weak self] in
-                self?.onAskPressEnded?()
-            }
-        default:
-            return
-        }
+        handleGestureEvents(
+            arbiter.handleKeyUp(
+                keyCode: keyCode,
+                activationHotkey: activationHotkey,
+                askHotkey: askHotkey
+            )
+        )
     }
 
     private func handleFlagsChanged(_ event: NSEvent) {
         let activationHotkey = settingsStore.activationHotkey
-        guard activationHotkey.isRightCommandTrigger || activationHotkey.isFunctionTrigger else { return }
-
-        let isActivationModifierEvent = Int(event.keyCode) == activationHotkey.keyCode
-        let activationModifierDown = isActivationModifierEvent
-            && filteredFlags(event.modifierFlags) == activationHotkey.modifierFlags
-
-        if activationModifierDown, activeAction == nil {
-            activeAction = .activation
-            ErrorLogStore.shared.log("Hotkey(NSEvent): modifier activation down")
-            DispatchQueue.main.async { [weak self] in
-                self?.onActivationPressBegan?()
-            }
-        } else if isActivationModifierEvent, !activationModifierDown, activeAction == .activation {
-            activeAction = nil
-            ErrorLogStore.shared.log("Hotkey(NSEvent): modifier activation up")
-            DispatchQueue.main.async { [weak self] in
-                self?.onActivationPressEnded?()
-            }
-        }
+        let askHotkey = settingsStore.askHotkey
+        handleGestureEvents(
+            arbiter.handleFlagsChanged(
+                keyCode: Int(event.keyCode),
+                modifierFlags: filteredFlags(event.modifierFlags),
+                activationHotkey: activationHotkey,
+                askHotkey: askHotkey
+            )
+        )
     }
 
     private func filteredFlags(_ flags: NSEvent.ModifierFlags) -> UInt {
         UInt(flags.intersection([.command, .shift, .control, .option, .function]).rawValue)
+    }
+
+    private func handleGestureEvents(_ events: [HotkeyGestureEvent]) {
+        syncPendingModifierActivationTimer()
+
+        for event in events {
+            switch event {
+            case .begin(.activation):
+                ErrorLogStore.shared.log("Hotkey(NSEvent): activation down")
+                DispatchQueue.main.async { [weak self] in
+                    self?.onActivationPressBegan?()
+                }
+            case .end(.activation):
+                ErrorLogStore.shared.log("Hotkey(NSEvent): activation up")
+                DispatchQueue.main.async { [weak self] in
+                    self?.onActivationPressEnded?()
+                }
+            case .begin(.ask):
+                ErrorLogStore.shared.log("Hotkey(NSEvent): ask down")
+                DispatchQueue.main.async { [weak self] in
+                    self?.onAskPressBegan?()
+                }
+            case .end(.ask):
+                ErrorLogStore.shared.log("Hotkey(NSEvent): ask up")
+                DispatchQueue.main.async { [weak self] in
+                    self?.onAskPressEnded?()
+                }
+            case .begin(.personaPicker), .end(.personaPicker):
+                break
+            case .personaRequested:
+                ErrorLogStore.shared.log("Hotkey(NSEvent): persona picker")
+                DispatchQueue.main.async { [weak self] in
+                    self?.onPersonaPickerRequested?()
+                }
+            }
+        }
+    }
+
+    private func syncPendingModifierActivationTimer() {
+        guard arbiter.hasPendingModifierActivation else {
+            pendingModifierActivationWorkItem?.cancel()
+            pendingModifierActivationWorkItem = nil
+            return
+        }
+
+        guard pendingModifierActivationWorkItem == nil else { return }
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.pendingModifierActivationWorkItem = nil
+            self.handleGestureEvents(self.arbiter.handlePendingModifierActivationTimeout())
+        }
+        pendingModifierActivationWorkItem = workItem
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + Self.modifierActivationArbitrationDelay,
+            execute: workItem
+        )
     }
 }

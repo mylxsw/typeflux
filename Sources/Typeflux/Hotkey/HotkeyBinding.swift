@@ -27,6 +27,10 @@ struct HotkeyBinding: Codable, Equatable, Identifiable {
             && modifierFlags == UInt(NSEvent.ModifierFlags.function.rawValue)
     }
 
+    var isModifierOnlyTrigger: Bool {
+        isRightCommandTrigger || isFunctionTrigger
+    }
+
     func matches(keyCode: Int, modifierFlags: UInt) -> Bool {
         self.keyCode == keyCode && self.modifierFlags == modifierFlags
     }
