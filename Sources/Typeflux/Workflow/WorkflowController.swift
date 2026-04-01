@@ -294,7 +294,7 @@ final class WorkflowController {
                 selectionSnapshot = TextSelectionSnapshot()
             }
 
-            let selectedText = selectionSnapshot.selectedText?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let selectedText = editingSelectedText(from: selectionSnapshot)
             let mode: PersonaPickerMode
             let items: [PersonaPickerEntry]
 
@@ -505,7 +505,7 @@ final class WorkflowController {
             }
             let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
             selectionTask = nil
-            let selectedText = selectionSnapshot.selectedText?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let selectedText = editingSelectedText(from: selectionSnapshot)
             currentSelectedText = selectedText
             let personaPrompt = settingsStore.activePersona?.prompt
 
@@ -979,6 +979,9 @@ final class WorkflowController {
         Process: \(processDescription)
         Source: \(snapshot.source)
         Editable target: \(snapshot.isEditable)
+        Focus matched: \(snapshot.isFocusedTarget)
+        Role: \(snapshot.role ?? "<unknown>")
+        Window: \(snapshot.windowTitle ?? "<unknown>")
         Has selection: \(snapshot.hasSelection)
         Selected range: \(rangeDescription)
         Selected text: \(contentDescription)
@@ -986,7 +989,19 @@ final class WorkflowController {
     }
 
     private func shouldPresentResultDialog(for snapshot: TextSelectionSnapshot) -> Bool {
-        snapshot.hasSelection && !snapshot.isEditable
+        isSelectionEligibleForEditing(snapshot) && !snapshot.isEditable
+    }
+
+    private func editingSelectedText(from snapshot: TextSelectionSnapshot) -> String? {
+        guard isSelectionEligibleForEditing(snapshot) else { return nil }
+        return snapshot.selectedText?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func isSelectionEligibleForEditing(_ snapshot: TextSelectionSnapshot) -> Bool {
+        guard snapshot.source == "accessibility" else { return false }
+        guard snapshot.isFocusedTarget else { return false }
+        guard snapshot.selectedRange != nil else { return false }
+        return snapshot.hasSelection
     }
 
     private func dismissOverlayForExternalReplacement() {

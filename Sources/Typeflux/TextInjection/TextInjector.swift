@@ -7,6 +7,9 @@ struct TextSelectionSnapshot {
     var selectedText: String?
     var source: String = "none"
     var isEditable: Bool = false
+    var role: String?
+    var windowTitle: String?
+    var isFocusedTarget: Bool = false
 
     var hasSelection: Bool {
         let trimmed = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

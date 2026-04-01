@@ -8,6 +8,9 @@ final class AXTextInjector: TextInjector {
         let range: CFRange?
         let processID: pid_t?
         let processName: String?
+        let role: String?
+        let windowTitle: String?
+        let isFocusedTarget: Bool
         let source: String
         let capturedAt: Date
     }
@@ -37,7 +40,10 @@ final class AXTextInjector: TextInjector {
                 selectedRange: nil,
                 selectedText: nil,
                 source: "unavailable",
-                isEditable: false
+                isEditable: false,
+                role: nil,
+                windowTitle: nil,
+                isFocusedTarget: false
             )
         }
 
@@ -55,7 +61,10 @@ final class AXTextInjector: TextInjector {
                 selectedRange: result.context.range,
                 selectedText: result.text.trimmingCharacters(in: .whitespacesAndNewlines),
                 source: result.context.source,
-                isEditable: editability
+                isEditable: editability,
+                role: result.context.role,
+                windowTitle: result.context.windowTitle,
+                isFocusedTarget: result.context.isFocusedTarget
             )
         }
 
@@ -65,6 +74,9 @@ final class AXTextInjector: TextInjector {
                 range: nil,
                 processID: processID,
                 processName: processName,
+                role: nil,
+                windowTitle: focusedWindowTitle(for: processID),
+                isFocusedTarget: false,
                 source: "clipboard-copy",
                 capturedAt: Date()
             )
@@ -76,20 +88,27 @@ final class AXTextInjector: TextInjector {
                 selectedRange: nil,
                 selectedText: copiedText,
                 source: "clipboard-copy",
-                isEditable: true
+                isEditable: true,
+                role: nil,
+                windowTitle: context.windowTitle,
+                isFocusedTarget: false
             )
         }
 
-            let editability = focusedElement().map(isLikelyEditable(element:)) ?? false
-            latestSelectionContext = nil
-            return TextSelectionSnapshot(
-                processID: processID,
-                processName: processName,
-                selectedRange: nil,
-                selectedText: nil,
-                source: "none",
-                isEditable: editability
-            )
+        let focused = focusedElement()
+        let editability = focused.map(isLikelyEditable(element:)) ?? false
+        latestSelectionContext = nil
+        return TextSelectionSnapshot(
+            processID: processID,
+            processName: processName,
+            selectedRange: nil,
+            selectedText: nil,
+            source: "none",
+            isEditable: editability,
+            role: focused.flatMap { copyStringAttribute(kAXRoleAttribute as String, from: $0) },
+            windowTitle: focused.flatMap(containingWindowTitle(of:)),
+            isFocusedTarget: false
+        )
     }
 
     func insert(text: String) throws {
@@ -186,26 +205,12 @@ final class AXTextInjector: TextInjector {
     }
 
     private func focusedElement() -> AXUIElement? {
-        let system = AXUIElementCreateSystemWide()
-        if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: system),
-           let resolved = resolveFocusedElement(focused) {
-            return resolved
+        if let processID = frontmostProcessID(),
+           let focused = focusedElement(for: processID) {
+            return focused
         }
 
-        guard let processID = frontmostProcessID() else { return nil }
-        let appElement = AXUIElementCreateApplication(processID)
-
-        if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: appElement),
-           let resolved = resolveFocusedElement(focused) {
-            return resolved
-        }
-
-        if let focusedWindow = copyElementAttribute(kAXFocusedWindowAttribute as String, from: appElement),
-           let resolved = resolveFocusedElement(focusedWindow) {
-            return resolved
-        }
-
-        return nil
+        return systemFocusedElement()
     }
 
     private func readSelectedTextWithTimeout(milliseconds: Int) -> (text: String, context: SelectionContext)? {
@@ -281,11 +286,19 @@ final class AXTextInjector: TextInjector {
 
         guard let range else { return nil }
 
+        let processID = frontmostProcessID()
+        let focusedWindow = processID.flatMap(focusedWindowElement(for:))
+        let selectionWindow = containingWindow(of: element)
+        let isFocusedTarget = focusedWindow.map { windowsMatch($0, selectionWindow) } ?? false
+
         let context = SelectionContext(
             element: element,
             range: range,
-            processID: frontmostProcessID(),
+            processID: processID,
             processName: frontmostApplicationName(),
+            role: role,
+            windowTitle: selectionWindow.flatMap(windowTitle(of:)),
+            isFocusedTarget: isFocusedTarget,
             source: "accessibility",
             capturedAt: Date()
         )
@@ -502,6 +515,42 @@ final class AXTextInjector: TextInjector {
         NSWorkspace.shared.frontmostApplication?.localizedName
     }
 
+    private func systemFocusedElement() -> AXUIElement? {
+        let system = AXUIElementCreateSystemWide()
+        if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: system),
+           let resolved = resolveFocusedElement(focused) {
+            return resolved
+        }
+
+        return nil
+    }
+
+    private func focusedElement(for processID: pid_t) -> AXUIElement? {
+        let appElement = AXUIElementCreateApplication(processID)
+
+        if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: appElement),
+           let resolved = resolveFocusedElement(focused) {
+            return resolved
+        }
+
+        if let focusedWindow = copyElementAttribute(kAXFocusedWindowAttribute as String, from: appElement),
+           let resolved = resolveFocusedElement(focusedWindow) {
+            return resolved
+        }
+
+        return nil
+    }
+
+    private func focusedWindowElement(for processID: pid_t) -> AXUIElement? {
+        let appElement = AXUIElementCreateApplication(processID)
+        return copyElementAttribute(kAXFocusedWindowAttribute as String, from: appElement)
+    }
+
+    private func focusedWindowTitle(for processID: pid_t?) -> String? {
+        guard let processID, let window = focusedWindowElement(for: processID) else { return nil }
+        return windowTitle(of: window)
+    }
+
     private func resolveFocusedElement(_ element: AXUIElement) -> AXUIElement? {
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
 
@@ -539,6 +588,36 @@ final class AXTextInjector: TextInjector {
         }
 
         return nil
+    }
+
+    private func containingWindow(of element: AXUIElement) -> AXUIElement? {
+        var current: AXUIElement? = element
+        var depthRemaining = Self.focusedDescendantSearchDepth + 10
+
+        while let node = current, depthRemaining > 0 {
+            if copyStringAttribute(kAXRoleAttribute as String, from: node) == kAXWindowRole as String {
+                return node
+            }
+
+            current = copyElementAttribute(kAXParentAttribute as String, from: node)
+            depthRemaining -= 1
+        }
+
+        return nil
+    }
+
+    private func containingWindowTitle(of element: AXUIElement) -> String? {
+        guard let window = containingWindow(of: element) else { return nil }
+        return windowTitle(of: window)
+    }
+
+    private func windowTitle(of window: AXUIElement) -> String? {
+        copyTextAttribute(kAXTitleAttribute as String, from: window)
+    }
+
+    private func windowsMatch(_ lhs: AXUIElement, _ rhs: AXUIElement?) -> Bool {
+        guard let rhs else { return false }
+        return CFEqual(lhs, rhs)
     }
 
     private func copyBooleanAttribute(_ attribute: String, from element: AXUIElement) -> Bool? {
