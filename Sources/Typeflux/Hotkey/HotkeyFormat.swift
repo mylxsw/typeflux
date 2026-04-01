@@ -6,10 +6,13 @@ enum HotkeyFormat {
         if binding.isRightCommandTrigger {
             return "Right Command"
         }
+        if binding.isFunctionTrigger {
+            return "Fn"
+        }
 
         let flags: NSEvent.ModifierFlags = NSEvent.ModifierFlags(rawValue: binding.modifierFlags)
         let modifiers = [
-            flags.contains(.function) ? "FN" : nil,
+            flags.contains(.function) ? "Fn" : nil,
             flags.contains(.control) ? "⌃" : nil,
             flags.contains(.option) ? "⌥" : nil,
             flags.contains(.shift) ? "⇧" : nil,

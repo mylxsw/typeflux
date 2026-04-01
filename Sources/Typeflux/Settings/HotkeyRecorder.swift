@@ -10,19 +10,27 @@ final class HotkeyRecorder: ObservableObject {
         stop()
         isRecording = true
 
-        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { [weak self] event in
             guard let self else { return event }
-
-            // Ignore repeats
-            if event.isARepeat { return nil }
 
             let keyCode = Int(event.keyCode)
             let flags = event.modifierFlags.intersection([.command, .option, .control, .shift, .function])
 
+            let binding = HotkeyBinding(keyCode: keyCode, modifierFlags: UInt(flags.rawValue))
+
+            if event.type == .flagsChanged {
+                guard binding.isRightCommandTrigger || binding.isFunctionTrigger else { return event }
+                onRecorded(binding)
+                self.stop()
+                return nil
+            }
+
+            // Ignore repeats
+            if event.isARepeat { return nil }
+
             // Require at least one modifier to reduce collisions.
             if flags.isEmpty { return nil }
 
-            let binding = HotkeyBinding(keyCode: keyCode, modifierFlags: UInt(flags.rawValue))
             onRecorded(binding)
             self.stop()
             return nil

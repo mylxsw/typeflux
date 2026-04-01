@@ -336,7 +336,7 @@
 
 "settings.shortcuts.activation.title" = "Voice Input";
 "settings.shortcuts.activation.subtitle" = "Use one shortcut to start voice input. Hold to talk, or tap quickly to lock the recording session. If text is selected, the transcript replaces that selection directly.";
-"settings.shortcuts.activation.footnote" = "Default is Right Command. This shortcut is now dedicated to text insertion only and no longer switches into selected-text Q&A or rewrite flows.";
+"settings.shortcuts.activation.footnote" = "Default is Fn. This shortcut is now dedicated to text insertion only and no longer switches into selected-text Q&A or rewrite flows.";
 "settings.shortcuts.ask.title" = "Ask Anything";
 "settings.shortcuts.ask.subtitle" = "Run the existing selected-text voice workflow on the current selection using a dedicated shortcut.";
 "settings.shortcuts.ask.footnote" = "Default is Fn + Space. Select text before using it.";
@@ -346,7 +346,7 @@
 "settings.advanced.personaHotkeyApply.title" = "Apply persona to selected text";
 "settings.advanced.personaHotkeyApply.subtitle" = "When enabled, the persona shortcut checks for selected text first and uses the picker to rewrite that selection instead of only switching the default persona.";
 "settings.shortcuts.recording" = "Recording a new shortcut";
-"settings.shortcuts.recordingActivation" = "Press the new voice input combination now. Include at least one modifier key.";
+"settings.shortcuts.recordingActivation" = "Press the new voice input key or key combination now.";
 "settings.shortcuts.recordingAsk" = "Press the new Ask Anything combination now. Include at least one modifier key.";
 "settings.shortcuts.recordingPersona" = "Press the shortcut that should open the persona picker. Include at least one modifier key.";
 "settings.shortcuts.recordingGeneric" = "Press the full key combination you want to use. Include at least one modifier key.";

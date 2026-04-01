@@ -2,6 +2,8 @@ import AppKit
 import Foundation
 
 struct HotkeyBinding: Codable, Equatable, Identifiable {
+    static let functionKeyCode = 63
+
     var id: UUID
     var keyCode: Int
     var modifierFlags: UInt
@@ -20,11 +22,19 @@ struct HotkeyBinding: Codable, Equatable, Identifiable {
         keyCode == 54 && modifierFlags == 1_048_576
     }
 
+    var isFunctionTrigger: Bool {
+        keyCode == Self.functionKeyCode
+            && modifierFlags == UInt(NSEvent.ModifierFlags.function.rawValue)
+    }
+
     func matches(keyCode: Int, modifierFlags: UInt) -> Bool {
         self.keyCode == keyCode && self.modifierFlags == modifierFlags
     }
 
-    static let defaultActivation = HotkeyBinding(keyCode: 54, modifierFlags: 1_048_576)
+    static let defaultActivation = HotkeyBinding(
+        keyCode: functionKeyCode,
+        modifierFlags: UInt(NSEvent.ModifierFlags.function.rawValue)
+    )
     static let defaultAsk = HotkeyBinding(
         keyCode: 49,
         modifierFlags: UInt(NSEvent.ModifierFlags.function.rawValue)
