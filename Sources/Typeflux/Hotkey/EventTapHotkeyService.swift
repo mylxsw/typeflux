@@ -71,6 +71,7 @@ final class EventTapHotkeyService: HotkeyService {
         let personaHotkey = settingsStore.personaHotkey
 
         if !activationHotkey.isRightCommandTrigger,
+           !activationHotkey.isFunctionTrigger,
            activationHotkey.matches(keyCode: keyCode, modifierFlags: flags),
            activeAction == nil {
             activeAction = .activation
@@ -129,20 +130,21 @@ final class EventTapHotkeyService: HotkeyService {
 
     private func handleFlagsChanged(_ event: NSEvent) {
         let activationHotkey = settingsStore.activationHotkey
-        guard activationHotkey.isRightCommandTrigger else { return }
+        guard activationHotkey.isRightCommandTrigger || activationHotkey.isFunctionTrigger else { return }
 
-        let isRightCommandEvent = Int(event.keyCode) == activationHotkey.keyCode
-        let rightCommandDown = isRightCommandEvent && filteredFlags(event.modifierFlags) == activationHotkey.modifierFlags
+        let isActivationModifierEvent = Int(event.keyCode) == activationHotkey.keyCode
+        let activationModifierDown = isActivationModifierEvent
+            && filteredFlags(event.modifierFlags) == activationHotkey.modifierFlags
 
-        if rightCommandDown, activeAction == nil {
+        if activationModifierDown, activeAction == nil {
             activeAction = .activation
-            ErrorLogStore.shared.log("Hotkey(NSEvent): right command down")
+            ErrorLogStore.shared.log("Hotkey(NSEvent): modifier activation down")
             DispatchQueue.main.async { [weak self] in
                 self?.onActivationPressBegan?()
             }
-        } else if isRightCommandEvent, !rightCommandDown, activeAction == .activation {
+        } else if isActivationModifierEvent, !activationModifierDown, activeAction == .activation {
             activeAction = nil
-            ErrorLogStore.shared.log("Hotkey(NSEvent): right command up")
+            ErrorLogStore.shared.log("Hotkey(NSEvent): modifier activation up")
             DispatchQueue.main.async { [weak self] in
                 self?.onActivationPressEnded?()
             }
