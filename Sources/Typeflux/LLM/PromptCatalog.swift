@@ -16,6 +16,36 @@ enum PromptCatalog {
         """
     }
 
+    static func userEnvironmentContext(
+        preferredLanguages: [String] = Locale.preferredLanguages,
+        appLanguage: AppLanguage
+    ) -> String {
+        let systemLanguage = preferredLanguages.first?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedSystemLanguage = (systemLanguage?.isEmpty == false) ? systemLanguage! : "unknown"
+
+        return """
+        User environment context:
+        - The user's operating system preferred language is: \(normalizedSystemLanguage)
+        - The app interface language selected in settings is: \(appLanguage.rawValue)
+        Treat this as supporting context only. Do not let it override explicit task instructions or source-language constraints.
+        """
+    }
+
+    static func appendUserEnvironmentContext(
+        to systemPrompt: String,
+        preferredLanguages: [String] = Locale.preferredLanguages,
+        appLanguage: AppLanguage
+    ) -> String {
+        let trimmedPrompt = systemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        let environmentContext = userEnvironmentContext(
+            preferredLanguages: preferredLanguages,
+            appLanguage: appLanguage
+        )
+
+        guard !trimmedPrompt.isEmpty else { return environmentContext }
+        return "\(trimmedPrompt)\n\n\(environmentContext)"
+    }
+
     /// Builds the system prompt for a multimodal LLM transcription call.
     /// When a persona is provided, the model transcribes AND rewrites in one shot.
     /// Otherwise, it acts as a high-quality transcription engine with vocabulary hints.

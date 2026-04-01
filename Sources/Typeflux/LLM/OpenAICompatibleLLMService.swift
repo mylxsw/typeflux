@@ -29,12 +29,16 @@ final class OpenAICompatibleLLMService: LLMService {
         }
 
         let model = settingsStore.llmModel.isEmpty ? remoteProvider.defaultModel : settingsStore.llmModel
+        let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
+            to: systemPrompt,
+            appLanguage: settingsStore.appLanguage
+        )
         return try await RemoteLLMClient.complete(
             provider: remoteProvider,
             baseURL: baseURL,
             model: model,
             apiKey: settingsStore.llmAPIKey,
-            systemPrompt: systemPrompt,
+            systemPrompt: effectiveSystemPrompt,
             userPrompt: userPrompt
         )
     }
@@ -50,6 +54,10 @@ final class OpenAICompatibleLLMService: LLMService {
         }
 
         let prompts = PromptCatalog.rewritePrompts(for: rewriteRequest)
+        let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
+            to: prompts.system,
+            appLanguage: settingsStore.appLanguage
+        )
 
         let model = settingsStore.llmModel.isEmpty ? remoteProvider.defaultModel : settingsStore.llmModel
         let final = try await RemoteLLMClient.streamRewrite(
@@ -57,7 +65,7 @@ final class OpenAICompatibleLLMService: LLMService {
             baseURL: baseURL,
             model: model,
             apiKey: settingsStore.llmAPIKey,
-            systemPrompt: prompts.system,
+            systemPrompt: effectiveSystemPrompt,
             userPrompt: prompts.user,
             continuation: continuation
         )
