@@ -30,7 +30,9 @@ final class OllamaLLMService: LLMService {
             to: systemPrompt,
             appLanguage: settingsStore.appLanguage
         )
-        return try await completeInternal(systemPrompt: effectiveSystemPrompt, userPrompt: userPrompt, schema: nil)
+        return try await RequestRetry.perform(operationName: "Ollama completion request") { [self] in
+            try await self.completeInternal(systemPrompt: effectiveSystemPrompt, userPrompt: userPrompt, schema: nil)
+        }
     }
 
     func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
@@ -39,7 +41,9 @@ final class OllamaLLMService: LLMService {
             to: systemPrompt,
             appLanguage: settingsStore.appLanguage
         )
-        return try await completeInternal(systemPrompt: effectiveSystemPrompt, userPrompt: userPrompt, schema: schema)
+        return try await RequestRetry.perform(operationName: "Ollama JSON completion request") { [self] in
+            try await self.completeInternal(systemPrompt: effectiveSystemPrompt, userPrompt: userPrompt, schema: schema)
+        }
     }
 
     private func completeInternal(

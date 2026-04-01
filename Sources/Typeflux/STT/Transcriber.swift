@@ -63,7 +63,9 @@ final class STTRouter {
         case .whisperAPI:
             if !settingsStore.whisperBaseURL.isEmpty {
                 do {
-                    return try await whisper.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                    return try await RequestRetry.perform(operationName: "Remote STT request") { [self] in
+                        try await self.whisper.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                    }
                 } catch {
                     NetworkDebugLogger.logError(context: "Remote STT failed", error: error)
                     if settingsStore.useAppleSpeechFallback {
@@ -99,11 +101,15 @@ final class STTRouter {
             }
 
         case .multimodalLLM:
-            return try await multimodal.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+            return try await RequestRetry.perform(operationName: "Multimodal STT request") { [self] in
+                try await self.multimodal.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+            }
 
         case .aliCloud:
             do {
-                return try await aliCloud.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                return try await RequestRetry.perform(operationName: "AliCloud STT request") { [self] in
+                    try await self.aliCloud.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                }
             } catch {
                 NetworkDebugLogger.logError(context: "Alibaba Cloud ASR failed", error: error)
                 if settingsStore.useAppleSpeechFallback {
@@ -115,7 +121,9 @@ final class STTRouter {
 
         case .doubaoRealtime:
             do {
-                return try await doubaoRealtime.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                return try await RequestRetry.perform(operationName: "Doubao realtime STT request") { [self] in
+                    try await self.doubaoRealtime.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                }
             } catch {
                 NetworkDebugLogger.logError(context: "Doubao realtime ASR failed", error: error)
                 if settingsStore.useAppleSpeechFallback {

@@ -460,31 +460,44 @@ final class WorkflowController {
         sessionID: UUID,
         showsStreamingPreview: Bool = true
     ) async throws -> RewriteGenerationResult {
-        var buffer = ""
-        var lastChunkAt = Date()
+        try await RequestRetry.perform(
+            operationName: "LLM rewrite stream",
+            onRetry: { [weak self] _, _, _ in
+                guard let self else { return }
+                guard showsStreamingPreview else { return }
+                await MainActor.run {
+                    if self.processingSessionID == sessionID {
+                        self.overlayController.updateStreamingText("")
+                    }
+                }
+            }
+        ) { [self] in
+            var buffer = ""
+            var lastChunkAt = Date()
 
-        let stream = llmService.streamRewrite(request: request)
-        for try await chunk in stream {
-            try ensureProcessingIsActive(sessionID)
-            buffer += chunk
-            let now = Date()
-            if now.timeIntervalSince(lastChunkAt) > 0.15 {
-                lastChunkAt = now
-                let snapshot = buffer
-                if showsStreamingPreview {
-                    await MainActor.run {
-                        if self.processingSessionID == sessionID {
-                            overlayController.updateStreamingText(snapshot)
+            let stream = self.llmService.streamRewrite(request: request)
+            for try await chunk in stream {
+                try self.ensureProcessingIsActive(sessionID)
+                buffer += chunk
+                let now = Date()
+                if now.timeIntervalSince(lastChunkAt) > 0.15 {
+                    lastChunkAt = now
+                    let snapshot = buffer
+                    if showsStreamingPreview {
+                        await MainActor.run {
+                            if self.processingSessionID == sessionID {
+                                self.overlayController.updateStreamingText(snapshot)
+                            }
                         }
                     }
                 }
             }
-        }
 
-        return RewriteGenerationResult(
-            text: buffer.trimmingCharacters(in: .whitespacesAndNewlines),
-            completedAt: Date()
-        )
+            return RewriteGenerationResult(
+                text: buffer.trimmingCharacters(in: .whitespacesAndNewlines),
+                completedAt: Date()
+            )
+        }
     }
 
     private func requiresRewrite(selectedText: String?, personaPrompt: String?) -> Bool {
@@ -828,29 +841,47 @@ final class WorkflowController {
                     saveHistoryRecord(record)
                     logPipelineEvent("llm-processing-started", for: record)
 
-                    let rewriteResult = try await generateRewrite(
-                        request: LLMRewriteRequest(
-                            mode: .rewriteTranscript,
-                            sourceText: transcribedText,
-                            spokenInstruction: nil,
-                            personaPrompt: personaPrompt
-                        ),
-                        sessionID: sessionID
-                    )
+                    let rewriteOutput: String
+                    do {
+                        let rewriteResult = try await generateRewrite(
+                            request: LLMRewriteRequest(
+                                mode: .rewriteTranscript,
+                                sourceText: transcribedText,
+                                spokenInstruction: nil,
+                                personaPrompt: personaPrompt
+                            ),
+                            sessionID: sessionID
+                        )
 
-                    try ensureProcessingIsActive(sessionID)
-                    pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
+                        try ensureProcessingIsActive(sessionID)
+                        pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
+                        rewriteOutput = rewriteResult.text
+                        record.personaResultText = rewriteResult.text
+                        logPipelineEvent("llm-processing-completed", for: record)
+                    } catch is CancellationError {
+                        throw CancellationError()
+                    } catch {
+                        NetworkDebugLogger.logError(
+                            context: "Persona rewrite failed, using transcript as fallback",
+                            error: error
+                        )
+                        ErrorLogStore.shared.log(
+                            "Persona rewrite failed, using transcript as fallback: \(error.localizedDescription)"
+                        )
+                        pipelineTiming.llmProcessingCompletedAt = Date()
+                        rewriteOutput = transcribedText
+                        record.personaResultText = transcribedText
+                    }
+
                     record.pipelineTiming = pipelineTiming
-                    record.personaResultText = rewriteResult.text
                     record.processingStatus = .succeeded
                     record.applyStatus = .running
                     saveHistoryRecord(record)
-                    logPipelineEvent("llm-processing-completed", for: record)
 
                     try ensureProcessingIsActive(sessionID)
                     pipelineTiming.applyStartedAt = Date()
                     record.pipelineTiming = pipelineTiming
-                    let outcome = applyTranscribedText(rewriteResult.text, selectionSnapshot: selectionSnapshot)
+                    let outcome = applyTranscribedText(rewriteOutput, selectionSnapshot: selectionSnapshot)
                     pipelineTiming.applyCompletedAt = Date()
                     record.pipelineTiming = pipelineTiming
                     record.applyStatus = .succeeded

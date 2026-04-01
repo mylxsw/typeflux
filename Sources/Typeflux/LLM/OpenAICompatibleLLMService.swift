@@ -33,15 +33,17 @@ final class OpenAICompatibleLLMService: LLMService {
             to: systemPrompt,
             appLanguage: settingsStore.appLanguage
         )
-        return try await RemoteLLMClient.complete(
-            provider: remoteProvider,
-            baseURL: baseURL,
-            model: model,
-            apiKey: settingsStore.llmAPIKey,
-            systemPrompt: effectiveSystemPrompt,
-            userPrompt: userPrompt,
-            schema: nil
-        )
+        return try await RequestRetry.perform(operationName: "LLM completion request") { [self] in
+            try await RemoteLLMClient.complete(
+                provider: remoteProvider,
+                baseURL: baseURL,
+                model: model,
+                apiKey: self.settingsStore.llmAPIKey,
+                systemPrompt: effectiveSystemPrompt,
+                userPrompt: userPrompt,
+                schema: nil
+            )
+        }
     }
 
     func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
@@ -56,15 +58,17 @@ final class OpenAICompatibleLLMService: LLMService {
             to: systemPrompt,
             appLanguage: settingsStore.appLanguage
         )
-        return try await RemoteLLMClient.complete(
-            provider: remoteProvider,
-            baseURL: baseURL,
-            model: model,
-            apiKey: settingsStore.llmAPIKey,
-            systemPrompt: effectiveSystemPrompt,
-            userPrompt: userPrompt,
-            schema: schema
-        )
+        return try await RequestRetry.perform(operationName: "LLM JSON completion request") { [self] in
+            try await RemoteLLMClient.complete(
+                provider: remoteProvider,
+                baseURL: baseURL,
+                model: model,
+                apiKey: self.settingsStore.llmAPIKey,
+                systemPrompt: effectiveSystemPrompt,
+                userPrompt: userPrompt,
+                schema: schema
+            )
+        }
     }
 
     private func streamRewriteInternal(
