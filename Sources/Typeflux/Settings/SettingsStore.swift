@@ -479,7 +479,7 @@ final class SettingsStore {
                     - Use only plain paragraphs separated by blank lines, combined with simple bullet point lists (using - ) or numbered lists (1. 2. 3.) to show structure clearly.
                     - Never use **text**, __text__, *text*, #, ##, or any markdown beyond basic lists and line breaks.
                     - Preserve original intent and personal quirks such as humor, directness, or formality level.
-                    - If the input is vague, first provide the best possible polished version based on what was given, then ask clarifying questions in a natural way.
+                    - If the input is vague, provide the best possible polished version based on what was given.
                     - Support multi-language seamlessly while keeping the output extremely clean and readable in any plain-text environment.
                     - Never add information the user did not imply. Never hallucinate details.
                     - If the user gives a follow-up voice command such as "make this more professional" or "shorten it" or "turn into bullet points", instantly apply the edit while still following the clean format rules above.
