@@ -8,16 +8,20 @@ enum HotkeyFormat {
         }
 
         let flags: NSEvent.ModifierFlags = NSEvent.ModifierFlags(rawValue: binding.modifierFlags)
-        let mods = [
-            flags.contains(.function) ? "fn" : "",
-            flags.contains(.control) ? "⌃" : "",
-            flags.contains(.option) ? "⌥" : "",
-            flags.contains(.shift) ? "⇧" : "",
-            flags.contains(.command) ? "⌘" : ""
-        ].joined()
+        let modifiers = [
+            flags.contains(.function) ? "FN" : nil,
+            flags.contains(.control) ? "⌃" : nil,
+            flags.contains(.option) ? "⌥" : nil,
+            flags.contains(.shift) ? "⇧" : nil,
+            flags.contains(.command) ? "⌘" : nil
+        ].compactMap { $0 }
 
         let keyName = keyCodeToName(binding.keyCode)
-        return "\(mods)\(keyName)"
+        if modifiers.isEmpty {
+            return keyName
+        }
+
+        return (modifiers + [keyName]).joined(separator: " ")
     }
 
     private static func keyCodeToName(_ keyCode: Int) -> String {
