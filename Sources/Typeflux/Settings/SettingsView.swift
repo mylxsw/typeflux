@@ -1671,24 +1671,50 @@ struct StudioView: View {
                                 .stroke(StudioTheme.accent.opacity(StudioTheme.Opacity.overviewProgress), style: StrokeStyle(lineWidth: StudioTheme.BorderWidth.overviewDonut, lineCap: .round))
                                 .rotationEffect(.degrees(StudioTheme.Angles.overviewProgressStart))
                         )
+                        .padding(.trailing, StudioTheme.Spacing.smallMedium)
+                        .padding(.vertical, StudioTheme.Spacing.smallMedium)
                 }
             }
             .frame(maxWidth: .infinity, minHeight: StudioTheme.Layout.overviewPrimaryMinHeight)
             .background(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.overviewActivityFill))
             .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
 
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
-                    GridItem(.flexible(), spacing: StudioTheme.Spacing.medium)
-                ],
-                alignment: .leading,
-                spacing: StudioTheme.Spacing.medium
-            ) {
-                homeMiniMetric(icon: "clock", value: "\(viewModel.transcriptionMinutesText) min", title: L("home.metric.totalDictation"))
-                homeMiniMetric(icon: "mic", value: "\(viewModel.statsTotalCharacters)", title: L("home.metric.charactersDictated"))
-                homeMiniMetric(icon: "hourglass", value: "\(viewModel.statsSavedMinutes) min", title: L("home.metric.timeSaved"))
-                homeMiniMetric(icon: "bolt", value: viewModel.statsAveragePaceWPM > 0 ? "\(viewModel.statsAveragePaceWPM) wpm" : "--", title: L("home.metric.averagePace"))
+            GeometryReader { proxy in
+                let spacing = StudioTheme.Spacing.medium
+                let cardWidth = max((proxy.size.width - spacing) / 2, 0)
+                let cardHeight = max((proxy.size.height - spacing) / 2, 0)
+
+                VStack(spacing: spacing) {
+                    HStack(spacing: spacing) {
+                        homeMiniMetric(
+                            icon: "clock",
+                            value: "\(viewModel.transcriptionMinutesText) min",
+                            title: L("home.metric.totalDictation"),
+                            size: CGSize(width: cardWidth, height: cardHeight)
+                        )
+                        homeMiniMetric(
+                            icon: "mic",
+                            value: "\(viewModel.statsTotalCharacters)",
+                            title: L("home.metric.charactersDictated"),
+                            size: CGSize(width: cardWidth, height: cardHeight)
+                        )
+                    }
+
+                    HStack(spacing: spacing) {
+                        homeMiniMetric(
+                            icon: "hourglass",
+                            value: "\(viewModel.statsSavedMinutes) min",
+                            title: L("home.metric.timeSaved"),
+                            size: CGSize(width: cardWidth, height: cardHeight)
+                        )
+                        homeMiniMetric(
+                            icon: "bolt",
+                            value: viewModel.statsAveragePaceWPM > 0 ? "\(viewModel.statsAveragePaceWPM) wpm" : "--",
+                            title: L("home.metric.averagePace"),
+                            size: CGSize(width: cardWidth, height: cardHeight)
+                        )
+                    }
+                }
             }
             .frame(
                 minWidth: StudioTheme.Layout.overviewSideMetricsWidth,
@@ -1700,9 +1726,9 @@ struct StudioView: View {
         }
     }
 
-    private func homeMiniMetric(icon: String, value: String, title: String) -> some View {
+    private func homeMiniMetric(icon: String, value: String, title: String, size: CGSize) -> some View {
         StudioCard(padding: StudioTheme.Insets.cardCompact) {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
+            VStack(alignment: .center, spacing: StudioTheme.Spacing.smallMedium) {
                 RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.miniMetricIcon, style: .continuous)
                     .fill(StudioTheme.surfaceMuted)
                     .frame(width: StudioTheme.ControlSize.overviewMiniIcon, height: StudioTheme.ControlSize.overviewMiniIcon)
@@ -1715,18 +1741,16 @@ struct StudioView: View {
                 Text(value)
                     .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .bold))
                     .foregroundStyle(StudioTheme.textPrimary)
+                    .multilineTextAlignment(.center)
 
                 Text(title)
                     .font(.studioBody(StudioTheme.Typography.bodySmall))
                     .foregroundStyle(StudioTheme.textSecondary)
+                    .multilineTextAlignment(.center)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
-        .frame(maxWidth: .infinity, minHeight: overviewMiniMetricHeight, maxHeight: overviewMiniMetricHeight, alignment: .topLeading)
-    }
-
-    private var overviewMiniMetricHeight: CGFloat {
-        let totalSpacing = StudioTheme.Spacing.medium
-        return (StudioTheme.Layout.overviewPrimaryMinHeight - totalSpacing) / 2
+        .frame(width: size.width, height: size.height, alignment: .center)
     }
 
     private func sectionHeader(
