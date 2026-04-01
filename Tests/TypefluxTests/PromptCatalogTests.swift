@@ -35,9 +35,11 @@ final class PromptCatalogTests: XCTestCase {
         let prompts = PromptCatalog.rewritePrompts(for: request)
 
         XCTAssertTrue(prompts.system.contains("polished final copy"))
-        XCTAssertTrue(prompts.system.contains(PromptCatalog.languageConsistencyRule(for: "source text")))
-        XCTAssertTrue(prompts.system.contains("\"Section A - Raw transcript\" is the source content to rewrite"))
-        XCTAssertTrue(prompts.user.contains("Section B - Persona requirements (style constraints, not source content):\nformal and concise"))
+        XCTAssertFalse(prompts.system.contains(PromptCatalog.languageConsistencyRule(for: "source text")))
+        XCTAssertTrue(prompts.system.contains("\"<raw_transcript>\" is the source content to rewrite"))
+        XCTAssertTrue(prompts.user.contains("<raw_transcript>\nraw text\n</raw_transcript>"))
+        XCTAssertTrue(prompts.user.contains("<persona_definition>\nformal and concise\n</persona_definition>"))
+        XCTAssertTrue(prompts.user.contains(PromptCatalog.languageConsistencyRule(for: "source text")))
     }
 
     func testRewritePromptsIncludeLanguageConsistencyForSelectionEditing() {
@@ -50,8 +52,9 @@ final class PromptCatalogTests: XCTestCase {
 
         let prompts = PromptCatalog.rewritePrompts(for: request)
 
-        XCTAssertTrue(prompts.system.contains(PromptCatalog.languageConsistencyRule(for: "selected text")))
+        XCTAssertFalse(prompts.system.contains(PromptCatalog.languageConsistencyRule(for: "selected text")))
         XCTAssertTrue(prompts.system.contains("text editing assistant"))
+        XCTAssertTrue(prompts.user.contains(PromptCatalog.languageConsistencyRule(for: "selected text")))
     }
 
     func testSelectionEditingPromptKeepsLanguageAlignedToSelectedText() {
@@ -64,8 +67,11 @@ final class PromptCatalogTests: XCTestCase {
 
         let prompts = PromptCatalog.rewritePrompts(for: request)
 
-        XCTAssertTrue(prompts.system.contains("original language of the selected text"))
-        XCTAssertFalse(prompts.system.contains("latest input language"))
+        XCTAssertTrue(prompts.user.contains("original language of the selected text"))
+        XCTAssertFalse(prompts.user.contains("latest input language"))
+        XCTAssertTrue(prompts.user.contains("<selected_text>\nPlease send the proposal today.\n</selected_text>"))
+        XCTAssertTrue(prompts.user.contains("<spoken_instruction>\n让语气更礼貌一些\n</spoken_instruction>"))
+        XCTAssertTrue(prompts.user.contains("<persona_definition>\nRespond like a concise assistant.\n</persona_definition>"))
     }
 
     func testMultimodalTranscriptionPromptIncludesLanguageConsistencyRule() {

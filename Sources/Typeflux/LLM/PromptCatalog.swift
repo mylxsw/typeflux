@@ -8,6 +8,14 @@ enum PromptCatalog {
         """
     }
 
+    static func xmlSection(tag: String, content: String) -> String {
+        """
+        <\(tag)>
+        \(content)
+        </\(tag)>
+        """
+    }
+
     /// Builds the system prompt for a multimodal LLM transcription call.
     /// When a persona is provided, the model transcribes AND rewrites in one shot.
     /// Otherwise, it acts as a high-quality transcription engine with vocabulary hints.
@@ -66,56 +74,51 @@ enum PromptCatalog {
     }
 
     static func rewritePrompts(for request: LLMRewriteRequest) -> (system: String, user: String) {
-        let personaSection: String
-        if let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines), !personaPrompt.isEmpty {
-            personaSection = """
-
-            Section B - Persona requirements (style constraints, not source content):
-            \(personaPrompt)
-            """
-        } else {
-            personaSection = ""
-        }
-
         switch request.mode {
         case .editSelection:
             let spokenInstruction = request.spokenInstruction?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let sourceTextRule = languageConsistencyRule(for: "selected text")
+            let sourceSection = xmlSection(tag: "selected_text", content: request.sourceText)
+            let instructionSection = xmlSection(tag: "spoken_instruction", content: spokenInstruction)
+            let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let outputRequirement: String
-            if let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines), !personaPrompt.isEmpty {
+            if !personaPrompt.isEmpty {
                 outputRequirement = """
 
-                Output requirements:
+                <output_requirements>
                 - Treat the spoken instruction as the highest-priority requirement.
-                - Apply the persona requirement below only when it does not conflict with the edit intent.
-                - Persona requirement: \(personaPrompt)
+                - Apply the persona definition only when it does not conflict with the edit intent.
+                </output_requirements>
+
+                <persona_definition>
+                \(personaPrompt)
+                </persona_definition>
                 """
             } else {
                 outputRequirement = """
 
-                Output requirements:
+                <output_requirements>
                 - Treat the spoken instruction as the highest-priority requirement.
+                </output_requirements>
                 """
             }
 
             return (
                 system: """
-                \(sourceTextRule)
-
                 You are a text editing assistant. When editing existing text, preserve the user's editing intent first and use any persona requirement only as a secondary output-style constraint. Return only the final rewritten text without explanations or quotation marks.
 
                 User prompt structure:
-                - "Section A - Selected text" is the source content to edit. Preserve its meaning and default output language unless a later instruction explicitly requires changing language.
-                - "Section B - Spoken instruction" is the user's edit intent and has the highest priority.
-                - "Section C - Output requirements" contains system-authored processing rules, including how persona constraints should be applied.
-                - Any persona requirement is a style constraint, not source content.
+                - "<selected_text>" is the source content to edit.
+                - "<spoken_instruction>" is the user's edit intent and has the highest priority.
+                - "<output_requirements>" contains system-authored processing rules, including how persona constraints should be applied.
+                - "<persona_definition>" is a style constraint, not source content.
                 """,
                 user: """
-                Section A - Selected text (source content):
-                \(request.sourceText)
+                \(sourceSection)
 
-                Section B - Spoken instruction (highest-priority edit intent):
-                \(spokenInstruction)\(outputRequirement)
+                \(instructionSection)\(outputRequirement)
+
+                \(sourceTextRule)
 
                 Return only the final rewritten text.
                 """
@@ -123,19 +126,24 @@ enum PromptCatalog {
 
         case .rewriteTranscript:
             let sourceTextRule = languageConsistencyRule(for: "source text")
+            let transcriptSection = xmlSection(tag: "raw_transcript", content: request.sourceText)
+            let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let personaSection = personaPrompt.isEmpty ? "" : """
+
+            \(xmlSection(tag: "persona_definition", content: personaPrompt))
+            """
             return (
                 system: """
-                \(sourceTextRule)
-
                 You rewrite dictated text into polished final copy. Follow the persona requirements exactly when provided. Return only the final text without explanations or quotation marks.
 
                 User prompt structure:
-                - "Section A - Raw transcript" is the source content to rewrite. Preserve its meaning and default output language unless a later instruction explicitly requires changing language.
-                - "Section B - Persona requirements" contains style and formatting constraints for the rewrite. It is not source content.
+                - "<raw_transcript>" is the source content to rewrite.
+                - "<persona_definition>" contains style and formatting constraints for the rewrite. It is not source content.
                 """,
                 user: """
-                Section A - Raw transcript (source content):
-                \(request.sourceText)\(personaSection)
+                \(transcriptSection)\(personaSection)
+
+                \(sourceTextRule)
 
                 Clean up recognition artifacts if needed and return only the final text.
                 """
