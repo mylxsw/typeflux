@@ -175,6 +175,20 @@ final class OverlayController {
         refreshWindow()
     }
 
+    func showRetryableFailure(message: String) {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.showRetryableFailure(message: message) }
+            return
+        }
+        dismissWorkItem?.cancel()
+        ensureWindow()
+        model.presentation = .failure
+        model.statusText = L("overlay.failure.title")
+        model.detailText = message
+        model.failureRetryable = true
+        refreshWindow()
+    }
+
     func showTimeoutFailure() {
         if !Thread.isMainThread {
             DispatchQueue.main.async { [weak self] in self?.showTimeoutFailure() }

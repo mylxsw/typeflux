@@ -55,7 +55,7 @@ final class WorkflowController {
     private var automaticVocabularyObservationTask: Task<Void, Never>?
     private var processingSessionID = UUID()
     private var activeProcessingRecordID: UUID?
-    private var lastTimeoutRecord: HistoryRecord?
+    private var lastRetryableFailureRecord: HistoryRecord?
     private var lastDialogResultText: String?
     private var isPersonaPickerPresented = false
     private var personaPickerItems: [PersonaPickerEntry] = []
@@ -111,7 +111,7 @@ final class WorkflowController {
         )
         self.overlayController.setFailureRetryHandler(
             onRetry: { [weak self] in
-                guard let self, let record = self.lastTimeoutRecord else { return }
+                guard let self, let record = self.lastRetryableFailureRecord else { return }
                 self.retry(record: record)
             }
         )
@@ -222,7 +222,7 @@ final class WorkflowController {
             timeoutRecord = historyStore.record(id: recordID)
         }
         Task { @MainActor in
-            self.lastTimeoutRecord = timeoutRecord
+            self.lastRetryableFailureRecord = timeoutRecord
             self.soundEffectPlayer.play(.error)
             self.appState.setStatus(.failed(message: L("workflow.timeout.status")))
             self.overlayController.showTimeoutFailure()
@@ -336,6 +336,7 @@ final class WorkflowController {
     private func beginRecording() async {
         isRecording = true
         recordingMode = .holdToTalk
+        lastRetryableFailureRecord = nil
         NSLog("[Workflow] Recording started")
         await MainActor.run {
             self.soundEffectPlayer.play(.start)
@@ -601,6 +602,9 @@ final class WorkflowController {
         mutableRecord.applyStatus = .pending
         saveHistoryRecord(mutableRecord)
         activeProcessingRecordID = mutableRecord.id
+        await MainActor.run {
+            self.lastRetryableFailureRecord = nil
+        }
 
         let audioFile = AudioFile(fileURL: audioURL, duration: 0)
         let selectedText = mutableRecord.selectionOriginalText?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -777,6 +781,7 @@ final class WorkflowController {
 
             await MainActor.run {
                 if self.processingSessionID == sessionID {
+                    self.lastRetryableFailureRecord = nil
                     self.appState.setStatus(.idle)
                     if let finalText = retryResultText, !finalText.isEmpty {
                         self.lastDialogResultText = finalText
@@ -797,13 +802,19 @@ final class WorkflowController {
             saveHistoryRecord(record)
             UsageStatsStore.shared.recordSession(record: record)
             enforceHistoryRetentionPolicy()
+            let retryableFailureRecord = record.audioFilePath == nil ? nil : record
 
             await MainActor.run {
                 if self.processingSessionID == sessionID {
+                    self.lastRetryableFailureRecord = retryableFailureRecord
                     self.soundEffectPlayer.play(.error)
                     self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
-                    self.overlayController.showFailure(message: msg)
-                    self.overlayController.dismiss(after: 3.0)
+                    if retryableFailureRecord == nil {
+                        self.overlayController.showFailure(message: msg)
+                        self.overlayController.dismiss(after: 3.0)
+                    } else {
+                        self.overlayController.showRetryableFailure(message: msg)
+                    }
                 }
             }
         }
@@ -823,6 +834,7 @@ final class WorkflowController {
         saveHistoryRecord(mutableRecord)
 
         await MainActor.run {
+            self.lastRetryableFailureRecord = nil
             self.soundEffectPlayer.play(.error)
             self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
             self.overlayController.showFailure(message: message)
@@ -891,6 +903,7 @@ final class WorkflowController {
         processingTask?.cancel()
         processingTask = nil
         cancelProcessingTimeout()
+        lastRetryableFailureRecord = nil
 
         if let activeProcessingRecordID,
            var record = historyStore.record(id: activeProcessingRecordID) {
