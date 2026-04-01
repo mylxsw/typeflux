@@ -746,6 +746,7 @@ struct StudioHistoryRow: View {
                     historyDetailSection(title: L("history.detail.personaResult"), content: record.personaResultText)
                     historyDetailSection(title: L("history.detail.selectionOriginal"), content: record.selectionOriginalText)
                     historyDetailSection(title: L("history.detail.selectionEdited"), content: record.selectionEditedText)
+                    historyDetailSection(title: L("history.detail.pipelineStats"), content: record.pipelineTimingDetails)
                     historyDetailSection(title: L("history.detail.error"), content: record.errorMessage, emphasize: true)
                 }
                 .padding(.top, StudioTheme.Spacing.xSmall)

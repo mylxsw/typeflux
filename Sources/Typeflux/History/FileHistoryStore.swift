@@ -106,6 +106,17 @@ final class FileHistoryStore: HistoryStore {
             if let transcriptText = r.transcriptText, !transcriptText.isEmpty {
                 md += "\n### Transcript\n\n\(transcriptText)\n"
             }
+            if let pipelineTiming = r.pipelineTiming, pipelineTiming.hasData {
+                md += "\n### Pipeline Stats\n\n"
+                md += "- Recording stopped: \(pipelineTiming.recordingStoppedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- Audio file ready: \(pipelineTiming.audioFileReadyAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- STT started: \(pipelineTiming.transcriptionStartedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- STT completed: \(pipelineTiming.transcriptionCompletedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- LLM started: \(pipelineTiming.llmProcessingStartedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- LLM completed: \(pipelineTiming.llmProcessingCompletedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- Apply started: \(pipelineTiming.applyStartedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- Apply completed: \(pipelineTiming.applyCompletedAt?.ISO8601Format() ?? "<none>")\n"
+            }
             if let personaResultText = r.personaResultText, !personaResultText.isEmpty {
                 md += "\n### Persona Result\n\n\(personaResultText)\n"
             }
