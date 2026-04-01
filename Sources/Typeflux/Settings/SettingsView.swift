@@ -1690,7 +1690,13 @@ struct StudioView: View {
                 homeMiniMetric(icon: "hourglass", value: "\(viewModel.statsSavedMinutes) min", title: L("home.metric.timeSaved"))
                 homeMiniMetric(icon: "bolt", value: viewModel.statsAveragePaceWPM > 0 ? "\(viewModel.statsAveragePaceWPM) wpm" : "--", title: L("home.metric.averagePace"))
             }
-            .frame(width: StudioTheme.Layout.overviewSideMetricsWidth)
+            .frame(
+                minWidth: StudioTheme.Layout.overviewSideMetricsWidth,
+                maxWidth: .infinity,
+                minHeight: StudioTheme.Layout.overviewPrimaryMinHeight,
+                maxHeight: StudioTheme.Layout.overviewPrimaryMinHeight,
+                alignment: .top
+            )
         }
     }
 
@@ -1715,7 +1721,12 @@ struct StudioView: View {
                     .foregroundStyle(StudioTheme.textSecondary)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: StudioTheme.Layout.compactMetricMinHeight, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: overviewMiniMetricHeight, maxHeight: overviewMiniMetricHeight, alignment: .topLeading)
+    }
+
+    private var overviewMiniMetricHeight: CGFloat {
+        let totalSpacing = StudioTheme.Spacing.medium
+        return (StudioTheme.Layout.overviewPrimaryMinHeight - totalSpacing) / 2
     }
 
     private func sectionHeader(
