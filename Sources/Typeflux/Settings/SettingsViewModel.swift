@@ -1478,6 +1478,7 @@ final class StudioViewModel: ObservableObject {
             personaResultText: record.personaResultText,
             selectionOriginalText: record.selectionOriginalText,
             selectionEditedText: record.selectionEditedText,
+            pipelineTimingDetails: historyPipelineTimingDetails(record.pipelineTiming),
             errorMessage: record.errorMessage,
             applyMessage: record.applyMessage,
             hasTranscriptToCopy: !(record.transcriptText?.isEmpty ?? true),
@@ -1487,5 +1488,57 @@ final class StudioViewModel: ObservableObject {
             accentName: iconData.0,
             accentColorName: iconData.1
         )
+    }
+
+    private func historyPipelineTimingDetails(_ timing: HistoryPipelineTiming?) -> String? {
+        guard let timing, timing.hasData else { return nil }
+
+        let timestampRows: [(String, Date?)] = [
+            (L("history.stats.recordingStoppedAt"), timing.recordingStoppedAt),
+            (L("history.stats.audioFileReadyAt"), timing.audioFileReadyAt),
+            (L("history.stats.transcriptionStartedAt"), timing.transcriptionStartedAt),
+            (L("history.stats.transcriptionCompletedAt"), timing.transcriptionCompletedAt),
+            (L("history.stats.llmProcessingStartedAt"), timing.llmProcessingStartedAt),
+            (L("history.stats.llmProcessingCompletedAt"), timing.llmProcessingCompletedAt),
+            (L("history.stats.applyStartedAt"), timing.applyStartedAt),
+            (L("history.stats.applyCompletedAt"), timing.applyCompletedAt)
+        ]
+
+        let durationRows: [(String, Int?)] = [
+            (L("history.stats.stopToAudioReady"), timing.millisecondsBetween(timing.recordingStoppedAt, timing.audioFileReadyAt)),
+            (L("history.stats.transcriptionDuration"), timing.millisecondsBetween(timing.transcriptionStartedAt, timing.transcriptionCompletedAt)),
+            (L("history.stats.stopToTranscriptionCompleted"), timing.millisecondsBetween(timing.recordingStoppedAt, timing.transcriptionCompletedAt)),
+            (L("history.stats.transcriptToLLMStart"), timing.millisecondsBetween(timing.transcriptionCompletedAt, timing.llmProcessingStartedAt)),
+            (L("history.stats.llmDuration"), timing.millisecondsBetween(timing.llmProcessingStartedAt, timing.llmProcessingCompletedAt)),
+            (L("history.stats.applyDuration"), timing.millisecondsBetween(timing.applyStartedAt, timing.applyCompletedAt)),
+            (L("history.stats.endToEnd"), timing.millisecondsBetween(
+                timing.recordingStoppedAt,
+                timing.applyCompletedAt ?? timing.llmProcessingCompletedAt ?? timing.transcriptionCompletedAt
+            ))
+        ]
+
+        let lines = timestampRows.map { label, date in
+            "\(label): \(historyTimestampText(date))"
+        } + durationRows.compactMap { label, value in
+            guard let value else { return nil }
+            return "\(label): \(historyDurationText(milliseconds: value))"
+        }
+
+        return lines.isEmpty ? nil : lines.joined(separator: "\n")
+    }
+
+    private func historyTimestampText(_ date: Date?) -> String {
+        guard let date else { return L("history.stats.notAvailable") }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        return formatter.string(from: date)
+    }
+
+    private func historyDurationText(milliseconds: Int) -> String {
+        if milliseconds >= 1000 {
+            return String(format: L("history.stats.durationSecondsFormat"), Double(milliseconds) / 1000.0)
+        }
+
+        return String(format: L("history.stats.durationMillisecondsFormat"), milliseconds)
     }
 }

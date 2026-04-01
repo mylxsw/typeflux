@@ -428,18 +428,24 @@ final class WorkflowController {
         recordingTimeoutTask?.cancel()
         recordingTimeoutTask = nil
         NSLog("[Workflow] Recording stopped")
+        let recordingStoppedAt = Date()
 
         Task { [weak self] in
             guard let self else { return }
-            await self.finishRecordingAndProcess()
+            await self.finishRecordingAndProcess(recordingStoppedAt: recordingStoppedAt)
         }
+    }
+
+    private struct RewriteGenerationResult {
+        let text: String
+        let completedAt: Date
     }
 
     private func generateRewrite(
         request: LLMRewriteRequest,
         sessionID: UUID,
         showsStreamingPreview: Bool = true
-    ) async throws -> String {
+    ) async throws -> RewriteGenerationResult {
         var buffer = ""
         var lastChunkAt = Date()
 
@@ -461,7 +467,10 @@ final class WorkflowController {
             }
         }
 
-        return buffer.trimmingCharacters(in: .whitespacesAndNewlines)
+        return RewriteGenerationResult(
+            text: buffer.trimmingCharacters(in: .whitespacesAndNewlines),
+            completedAt: Date()
+        )
     }
 
     private func requiresRewrite(selectedText: String?, personaPrompt: String?) -> Bool {
@@ -497,9 +506,10 @@ final class WorkflowController {
         }
     }
 
-    private func finishRecordingAndProcess() async {
+    private func finishRecordingAndProcess(recordingStoppedAt: Date) async {
         do {
             let audioFile = try audioRecorder.stop()
+            let audioFileReadyAt = Date()
             await MainActor.run {
                 self.soundEffectPlayer.play(.done)
             }
@@ -527,12 +537,17 @@ final class WorkflowController {
                 personaPrompt: personaPrompt,
                 selectionOriginalText: selectedText,
                 recordingDurationSeconds: audioFile.duration,
+                pipelineTiming: HistoryPipelineTiming(
+                    recordingStoppedAt: recordingStoppedAt,
+                    audioFileReadyAt: audioFileReadyAt
+                ),
                 recordingStatus: .succeeded,
                 transcriptionStatus: .running,
                 processingStatus: .pending,
                 applyStatus: .pending
             )
             saveHistoryRecord(record)
+            logPipelineEvent("audio-file-ready", for: record)
             activeProcessingRecordID = record.id
             let sessionID = beginProcessingSession()
 
@@ -600,7 +615,12 @@ final class WorkflowController {
         mutableRecord.transcriptionStatus = .running
         mutableRecord.processingStatus = .pending
         mutableRecord.applyStatus = .pending
+        mutableRecord.pipelineTiming = HistoryPipelineTiming(
+            recordingStoppedAt: Date(),
+            audioFileReadyAt: Date()
+        )
         saveHistoryRecord(mutableRecord)
+        logPipelineEvent("retry-restarted", for: mutableRecord)
         activeProcessingRecordID = mutableRecord.id
         await MainActor.run {
             self.lastRetryableFailureRecord = nil
@@ -639,6 +659,7 @@ final class WorkflowController {
         var record = record
         do {
             try ensureProcessingIsActive(sessionID)
+            var pipelineTiming = record.pipelineTiming ?? HistoryPipelineTiming()
 
             // When using multimodal and there is no selected text to edit, the transcriber applies
             // persona internally in one shot — no separate LLM rewrite is needed afterwards.
@@ -651,6 +672,11 @@ final class WorkflowController {
             let shouldKeepProcessingCapsule = requiresRewrite(selectedText: selectedText, personaPrompt: personaPrompt)
                 && !multimodalHandlesPersona
 
+            pipelineTiming.transcriptionStartedAt = Date()
+            record.pipelineTiming = pipelineTiming
+            saveHistoryRecord(record)
+            logPipelineEvent("transcription-started", for: record)
+
             let transcribedText = try await sttRouter.transcribeStream(audioFile: audioFile) { [weak self] snapshot in
                 guard let self, !snapshot.text.isEmpty else { return }
                 guard !shouldKeepProcessingCapsule else { return }
@@ -661,9 +687,12 @@ final class WorkflowController {
                 }
             }
             try ensureProcessingIsActive(sessionID)
+            pipelineTiming.transcriptionCompletedAt = Date()
+            record.pipelineTiming = pipelineTiming
             record.transcriptText = transcribedText
             record.transcriptionStatus = .succeeded
             saveHistoryRecord(record)
+            logPipelineEvent("transcription-completed", for: record)
 
             let normalizedTranscript = transcribedText.trimmingCharacters(in: .whitespacesAndNewlines)
             if normalizedTranscript.isEmpty {
@@ -687,7 +716,12 @@ final class WorkflowController {
                 saveHistoryRecord(record)
                 let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
 
-                let finalText = try await generateRewrite(
+                pipelineTiming.llmProcessingStartedAt = Date()
+                record.pipelineTiming = pipelineTiming
+                saveHistoryRecord(record)
+                logPipelineEvent("llm-processing-started", for: record)
+
+                let rewriteResult = try await generateRewrite(
                     request: LLMRewriteRequest(
                         mode: .editSelection,
                         sourceText: selectedText,
@@ -699,12 +733,17 @@ final class WorkflowController {
                 )
 
                 try ensureProcessingIsActive(sessionID)
-                record.selectionEditedText = finalText
+                pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
+                record.pipelineTiming = pipelineTiming
+                record.selectionEditedText = rewriteResult.text
                 record.processingStatus = .succeeded
                 record.applyStatus = .running
                 saveHistoryRecord(record)
+                logPipelineEvent("llm-processing-completed", for: record)
 
                 try ensureProcessingIsActive(sessionID)
+                pipelineTiming.applyStartedAt = Date()
+                record.pipelineTiming = pipelineTiming
                 let outcome: ApplyOutcome
                 NetworkDebugLogger.logMessage(
                     "[Apply Decision] mode=editSelection hasSelection=\(selectionSnapshot.hasSelection) " +
@@ -713,13 +752,15 @@ final class WorkflowController {
                 )
                 if shouldShowResultDialog {
                     await MainActor.run {
-                        self.lastDialogResultText = finalText
-                        self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: finalText)
+                        self.lastDialogResultText = rewriteResult.text
+                        self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: rewriteResult.text)
                     }
                     outcome = .copiedToClipboard
                 } else {
-                    outcome = applyText(finalText, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
+                    outcome = applyText(rewriteResult.text, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
                 }
+                pipelineTiming.applyCompletedAt = Date()
+                record.pipelineTiming = pipelineTiming
                 record.applyStatus = .succeeded
                 record.applyMessage = outcome.message
             } else if let personaPrompt, !personaPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -733,14 +774,23 @@ final class WorkflowController {
                     saveHistoryRecord(record)
 
                     try ensureProcessingIsActive(sessionID)
+                    pipelineTiming.applyStartedAt = Date()
+                    record.pipelineTiming = pipelineTiming
                     let outcome = applyText(transcribedText, replace: false)
+                    pipelineTiming.applyCompletedAt = Date()
+                    record.pipelineTiming = pipelineTiming
                     record.applyStatus = .succeeded
                     record.applyMessage = outcome.message
                 } else {
                     record.processingStatus = .running
                     saveHistoryRecord(record)
 
-                    let finalText = try await generateRewrite(
+                    pipelineTiming.llmProcessingStartedAt = Date()
+                    record.pipelineTiming = pipelineTiming
+                    saveHistoryRecord(record)
+                    logPipelineEvent("llm-processing-started", for: record)
+
+                    let rewriteResult = try await generateRewrite(
                         request: LLMRewriteRequest(
                             mode: .rewriteTranscript,
                             sourceText: transcribedText,
@@ -751,13 +801,20 @@ final class WorkflowController {
                     )
 
                     try ensureProcessingIsActive(sessionID)
-                    record.personaResultText = finalText
+                    pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
+                    record.pipelineTiming = pipelineTiming
+                    record.personaResultText = rewriteResult.text
                     record.processingStatus = .succeeded
                     record.applyStatus = .running
                     saveHistoryRecord(record)
+                    logPipelineEvent("llm-processing-completed", for: record)
 
                     try ensureProcessingIsActive(sessionID)
-                    let outcome = applyText(finalText, replace: false)
+                    pipelineTiming.applyStartedAt = Date()
+                    record.pipelineTiming = pipelineTiming
+                    let outcome = applyText(rewriteResult.text, replace: false)
+                    pipelineTiming.applyCompletedAt = Date()
+                    record.pipelineTiming = pipelineTiming
                     record.applyStatus = .succeeded
                     record.applyMessage = outcome.message
                 }
@@ -768,13 +825,18 @@ final class WorkflowController {
                 saveHistoryRecord(record)
 
                 try ensureProcessingIsActive(sessionID)
+                pipelineTiming.applyStartedAt = Date()
+                record.pipelineTiming = pipelineTiming
                 let outcome = applyText(transcribedText, replace: false)
+                pipelineTiming.applyCompletedAt = Date()
+                record.pipelineTiming = pipelineTiming
                 record.applyStatus = .succeeded
                 record.applyMessage = outcome.message
             }
 
             try ensureProcessingIsActive(sessionID)
             saveHistoryRecord(record)
+            logPipelineEvent("pipeline-completed", for: record)
             UsageStatsStore.shared.recordSession(record: record)
             enforceHistoryRetentionPolicy()
             let retryResultText = forceResultDialogOnSuccess ? record.finalText : nil
@@ -794,12 +856,14 @@ final class WorkflowController {
         } catch is CancellationError {
             markCancelled(&record)
             saveHistoryRecord(record)
+            logPipelineEvent("pipeline-cancelled", for: record)
             enforceHistoryRetentionPolicy()
         } catch {
             let msg = "Processing failed: \(error.localizedDescription)"
             ErrorLogStore.shared.log(msg)
             markFailure(&record, message: msg)
             saveHistoryRecord(record)
+            logPipelineEvent("pipeline-failed", for: record)
             UsageStatsStore.shared.recordSession(record: record)
             enforceHistoryRetentionPolicy()
             let retryableFailureRecord = record.audioFilePath == nil ? nil : record
@@ -1371,7 +1435,7 @@ final class WorkflowController {
             guard let self else { return }
 
             do {
-                let finalText = try await self.generateRewrite(
+                let rewriteResult = try await self.generateRewrite(
                     request: LLMRewriteRequest(
                         mode: .rewriteTranscript,
                         sourceText: context.selectedText,
@@ -1383,7 +1447,7 @@ final class WorkflowController {
                 )
                 try self.ensureProcessingIsActive(sessionID)
 
-                record.selectionEditedText = finalText
+                record.selectionEditedText = rewriteResult.text
                 record.processingStatus = .succeeded
                 record.applyStatus = .running
                 self.saveHistoryRecord(record)
@@ -1391,12 +1455,12 @@ final class WorkflowController {
                 let outcome: ApplyOutcome
                 if shouldShowResultDialog {
                     await MainActor.run {
-                        self.lastDialogResultText = finalText
-                        self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: finalText)
+                        self.lastDialogResultText = rewriteResult.text
+                        self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: rewriteResult.text)
                     }
                     outcome = .copiedToClipboard
                 } else {
-                    outcome = self.applyText(finalText, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
+                    outcome = self.applyText(rewriteResult.text, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
                 }
 
                 try self.ensureProcessingIsActive(sessionID)
@@ -1452,6 +1516,32 @@ final class WorkflowController {
 
     private func saveHistoryRecord(_ record: HistoryRecord) {
         historyStore.save(record: record)
+    }
+
+    private func logPipelineEvent(_ event: String, for record: HistoryRecord) {
+        guard let timing = record.pipelineTiming, timing.hasData else { return }
+
+        let durations: [(String, Int?)] = [
+            ("stop_to_audio_ms", timing.millisecondsBetween(timing.recordingStoppedAt, timing.audioFileReadyAt)),
+            ("stt_ms", timing.millisecondsBetween(timing.transcriptionStartedAt, timing.transcriptionCompletedAt)),
+            ("stop_to_stt_ms", timing.millisecondsBetween(timing.recordingStoppedAt, timing.transcriptionCompletedAt)),
+            ("transcript_to_llm_ms", timing.millisecondsBetween(timing.transcriptionCompletedAt, timing.llmProcessingStartedAt)),
+            ("llm_ms", timing.millisecondsBetween(timing.llmProcessingStartedAt, timing.llmProcessingCompletedAt)),
+            ("apply_ms", timing.millisecondsBetween(timing.applyStartedAt, timing.applyCompletedAt)),
+            ("end_to_end_ms", timing.millisecondsBetween(
+                timing.recordingStoppedAt,
+                timing.applyCompletedAt ?? timing.llmProcessingCompletedAt ?? timing.transcriptionCompletedAt
+            ))
+        ]
+
+        let durationSummary = durations
+            .compactMap { label, value in value.map { "\(label)=\($0)" } }
+            .joined(separator: " ")
+
+        NetworkDebugLogger.logMessage(
+            "[Voice Pipeline] event=\(event) record_id=\(record.id.uuidString) mode=\(record.mode.rawValue) \(durationSummary)"
+                .trimmingCharacters(in: .whitespaces)
+        )
     }
 
     private func enforceHistoryRetentionPolicy() {

@@ -164,6 +164,7 @@ struct HistoryPresentationRecord: Identifiable {
     let personaResultText: String?
     let selectionOriginalText: String?
     let selectionEditedText: String?
+    let pipelineTimingDetails: String?
     let errorMessage: String?
     let applyMessage: String?
     let hasTranscriptToCopy: Bool
