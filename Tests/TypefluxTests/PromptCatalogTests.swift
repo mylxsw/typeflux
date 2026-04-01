@@ -12,6 +12,20 @@ final class PromptCatalogTests: XCTestCase {
         )
     }
 
+    func testAppendUserEnvironmentContextAddsSystemAndAppLanguageToSystemPrompt() {
+        let prompt = PromptCatalog.appendUserEnvironmentContext(
+            to: "Base system prompt.",
+            preferredLanguages: ["zh-Hans-CN", "en-US"],
+            appLanguage: .english
+        )
+
+        XCTAssertTrue(prompt.hasPrefix("Base system prompt."))
+        XCTAssertTrue(prompt.contains("User environment context:"))
+        XCTAssertTrue(prompt.contains("The user's operating system preferred language is: zh-Hans-CN"))
+        XCTAssertTrue(prompt.contains("The app interface language selected in settings is: en"))
+        XCTAssertTrue(prompt.hasSuffix("Treat this as supporting context only. Do not let it override explicit task instructions or source-language constraints."))
+    }
+
     func testTranscriptionVocabularyHintFiltersBlanks() {
         let hint = PromptCatalog.transcriptionVocabularyHint(terms: [" alpha ", "", "beta"])
 

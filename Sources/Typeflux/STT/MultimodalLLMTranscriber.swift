@@ -84,6 +84,10 @@ final class MultimodalLLMTranscriber: Transcriber {
             personaPrompt: personaPrompt,
             vocabularyTerms: vocabularyTerms
         )
+        let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
+            to: systemPrompt,
+            appLanguage: settingsStore.appLanguage
+        )
 
         // Encode audio as base64 (done on current async context, not main thread)
         let audioData = try Data(contentsOf: audioFile.fileURL)
@@ -105,7 +109,7 @@ final class MultimodalLLMTranscriber: Transcriber {
         let request = try makeRequest(
             baseURL: baseURL,
             model: model,
-            systemPrompt: systemPrompt,
+            systemPrompt: effectiveSystemPrompt,
             base64Audio: base64Audio,
             audioFormat: audioFormat
         )
@@ -115,7 +119,7 @@ final class MultimodalLLMTranscriber: Transcriber {
           "model": "\(model)",
           "stream": true,
           "messages": [
-            {"role": "system", "content": "\(systemPrompt)"},
+            {"role": "system", "content": "\(effectiveSystemPrompt)"},
             {"role": "user", "content": [{"type": "input_audio", "format": "\(audioFormat)", "data": "<\(base64Audio.count) chars base64>"}]}
           ]
         }

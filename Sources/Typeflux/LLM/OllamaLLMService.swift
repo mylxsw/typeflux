@@ -26,6 +26,10 @@ final class OllamaLLMService: LLMService {
 
     func complete(systemPrompt: String, userPrompt: String) async throws -> String {
         try await modelManager.ensureModelReady(settingsStore: settingsStore)
+        let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
+            to: systemPrompt,
+            appLanguage: settingsStore.appLanguage
+        )
 
         let base = settingsStore.ollamaBaseURL.isEmpty ? "http://127.0.0.1:11434" : settingsStore.ollamaBaseURL
         guard let baseURL = URL(string: base) else {
@@ -44,7 +48,7 @@ final class OllamaLLMService: LLMService {
             "model": settingsStore.ollamaModel,
             "stream": false,
             "messages": [
-                ["role": "system", "content": systemPrompt],
+                ["role": "system", "content": effectiveSystemPrompt],
                 ["role": "user", "content": userPrompt]
             ],
             "options": [
@@ -97,11 +101,15 @@ final class OllamaLLMService: LLMService {
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let prompts = PromptCatalog.rewritePrompts(for: request)
+        let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
+            to: prompts.system,
+            appLanguage: settingsStore.appLanguage
+        )
         let body: [String: Any] = [
             "model": settingsStore.ollamaModel,
             "stream": true,
             "messages": [
-                ["role": "system", "content": prompts.system],
+                ["role": "system", "content": effectiveSystemPrompt],
                 ["role": "user", "content": prompts.user]
             ],
             "options": [
