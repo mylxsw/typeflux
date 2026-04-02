@@ -179,6 +179,7 @@
 "provider.stt.doubaoRealtime" = "Doubao Realtime ASR";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
 "provider.llm.custom" = "Custom";
+"provider.llm.freeModel" = "Free Models";
 "provider.llm.openRouter" = "OpenRouter";
 "provider.llm.ollama" = "Local Ollama";
 
@@ -431,6 +432,7 @@
 "settings.models.card.ollama.summary" = "Runs rewrite and edit commands locally, with optional automatic model preparation.";
 "settings.models.card.openAICompatible.summary" = "Connect remote chat-completions providers for persona rewriting and editing workflows.";
 "settings.models.card.custom.summary" = "Configure any compatible endpoint manually with your own base URL, model, and API key.";
+"settings.models.card.freeModel.summary" = "Pick from code-configured free model sources. Users only need to enter the model name.";
 "settings.models.card.openRouter.summary" = "OpenRouter's unified OpenAI-compatible API with a prefilled official endpoint and flexible model routing.";
 "settings.models.card.openAI.summary" = "OpenAI-hosted models with a fixed endpoint and built-in model suggestions.";
 "settings.models.card.anthropic.summary" = "Claude models through Anthropic's native Messages API with a simplified API key setup.";
@@ -440,6 +442,15 @@
 "settings.models.card.qwen.summary" = "Alibaba Cloud Qwen models through the DashScope compatible endpoint.";
 "settings.models.card.zhipu.summary" = "Zhipu GLM models through the BigModel compatible endpoint.";
 "settings.models.card.minimax.summary" = "MiniMax models through its OpenAI-compatible endpoint, with separate international and China API URLs.";
+"settings.models.badge.free" = "Free";
+"settings.models.freeModel.modelName" = "Model Name";
+"settings.models.freeModel.placeholder" = "Enter a configured free model";
+"settings.models.freeModel.hint" = "Free-model endpoints are resolved from code. Users only need the model name here.";
+"settings.models.freeModel.noSources" = "No free model source is configured yet. Add an implementation under Sources/Typeflux/LLM/FreeModels.";
+"settings.models.freeModel.availableSources" = "Configured Sources";
+"settings.models.freeModel.validation.emptyModel" = "Enter a model name before testing or saving.";
+"settings.models.freeModel.validation.unsupportedModel" = "The free model \"%@\" is not registered in code.";
+"settings.models.freeModel.validation.invalidEndpoint" = "The resolved free-model endpoint is invalid.";
 "settings.models.badge.native" = "Native API";
 "settings.models.endpointPreset.international" = "International URL";
 "settings.models.endpointPreset.china" = "China URL";

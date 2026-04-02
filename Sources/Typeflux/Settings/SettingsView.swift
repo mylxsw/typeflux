@@ -1680,31 +1680,62 @@ struct StudioView: View {
     private var llmRemoteProviderForm: some View {
         if let provider = focusedLLMRemoteProvider {
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                StudioTextInputCard(
-                    label: L("common.apiKey"),
-                    placeholder: provider == .gemini ? "AIza..." : "sk-...",
-                    text: Binding(get: { viewModel.llmAPIKey }, set: viewModel.setLLMAPIKey),
-                    secure: true
-                )
+                if provider == .freeModel {
+                    StudioSuggestedTextInputCard(
+                        label: L("settings.models.freeModel.modelName"),
+                        placeholder: L("settings.models.freeModel.placeholder"),
+                        text: Binding(get: { viewModel.llmModel }, set: viewModel.setLLMModel),
+                        suggestions: FreeLLMModelRegistry.suggestedModelNames
+                    )
 
-                StudioSuggestedTextInputCard(
-                    label: L("settings.models.apiEndpoint"),
-                    placeholder: provider.defaultBaseURL.isEmpty
-                        ? "https://api.openai.com/v1" : provider.defaultBaseURL,
-                    text: Binding(get: { viewModel.llmBaseURL }, set: viewModel.setLLMBaseURL),
-                    suggestions: llmEndpointSuggestions(for: provider)
-                )
+                    Text(L("settings.models.freeModel.hint"))
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textSecondary)
 
-                StudioSuggestedTextInputCard(
-                    label: L("common.model"),
-                    placeholder: provider.defaultModel,
-                    text: Binding(get: { viewModel.llmModel }, set: viewModel.setLLMModel),
-                    suggestions: remoteLLMModelSuggestions
-                )
+                    if FreeLLMModelRegistry.sources.isEmpty {
+                        Text(L("settings.models.freeModel.noSources"))
+                            .font(.studioBody(StudioTheme.Typography.caption))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                    } else {
+                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                            Text(L("settings.models.freeModel.availableSources"))
+                                .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                                .foregroundStyle(StudioTheme.textSecondary)
 
-                Text(L("settings.models.llm.providerEndpointHint", provider.displayName))
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                            ForEach(FreeLLMModelRegistry.sourceSummaryLines(), id: \.self) { line in
+                                Text(line)
+                                    .font(.studioMono(StudioTheme.Typography.caption))
+                                    .foregroundStyle(StudioTheme.textTertiary)
+                            }
+                        }
+                    }
+                } else {
+                    StudioTextInputCard(
+                        label: L("common.apiKey"),
+                        placeholder: provider == .gemini ? "AIza..." : "sk-...",
+                        text: Binding(get: { viewModel.llmAPIKey }, set: viewModel.setLLMAPIKey),
+                        secure: true
+                    )
+
+                    StudioSuggestedTextInputCard(
+                        label: L("settings.models.apiEndpoint"),
+                        placeholder: provider.defaultBaseURL.isEmpty
+                            ? "https://api.openai.com/v1" : provider.defaultBaseURL,
+                        text: Binding(get: { viewModel.llmBaseURL }, set: viewModel.setLLMBaseURL),
+                        suggestions: llmEndpointSuggestions(for: provider)
+                    )
+
+                    StudioSuggestedTextInputCard(
+                        label: L("common.model"),
+                        placeholder: provider.defaultModel,
+                        text: Binding(get: { viewModel.llmModel }, set: viewModel.setLLMModel),
+                        suggestions: remoteLLMModelSuggestions
+                    )
+
+                    Text(L("settings.models.llm.providerEndpointHint", provider.displayName))
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
             }
         }
     }
@@ -2301,7 +2332,9 @@ struct StudioView: View {
                         id: provider.studioProviderID.rawValue,
                         name: provider.displayName,
                         summary: L("settings.models.card.\(provider.rawValue).summary"),
-                        badge: provider.apiStyle == .openAICompatible
+                        badge: provider == .freeModel
+                            ? L("settings.models.badge.free")
+                            : provider.apiStyle == .openAICompatible
                             ? L("settings.models.badge.api") : L("settings.models.badge.native"),
                         metadata: metadata(for: provider),
                         isSelected: viewModel.llmProvider == .openAICompatible
@@ -2694,7 +2727,7 @@ struct StudioView: View {
                 )
                 .toggleStyle(.switch)
 
-            case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen,
+            case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen,
                 .zhipu, .minimax:
                 llmRemoteProviderForm
 
@@ -2999,6 +3032,8 @@ struct StudioView: View {
             return "openai"
         case .ollama:
             return "ollama"
+        case .freeModel:
+            return nil
         case .openRouter:
             return "openrouter"
         case .openAI:
@@ -3125,6 +3160,9 @@ struct StudioView: View {
             return !viewModel.whisperBaseURL.isEmpty
         case .ollama:
             return !viewModel.ollamaModel.isEmpty
+        case .freeModel:
+            return !viewModel.llmModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && FreeLLMModelRegistry.resolve(modelName: viewModel.llmModel) != nil
         case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
             .minimax:
             return !viewModel.llmAPIKey.isEmpty && !viewModel.llmBaseURL.isEmpty
@@ -3161,7 +3199,7 @@ struct StudioView: View {
                 suggestedModel: viewModel.ollamaModel.isEmpty ? "qwen2.5:7b" : viewModel.ollamaModel
             )
             viewModel.prepareOllamaModel()
-        case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
             .minimax:
             if let provider = focusedLLMRemoteProvider {
                 viewModel.applyModelConfiguration(shouldShowToast: false)
@@ -3192,6 +3230,8 @@ struct StudioView: View {
             return "dot.radiowaves.left.and.right"
         case .ollama:
             return "cpu"
+        case .freeModel:
+            return "giftcard"
         case .customLLM:
             return "xmark.triangle.circle.square.fill"
         case .openRouter:
@@ -3247,7 +3287,7 @@ struct StudioView: View {
             return L("settings.models.overview.whisper")
         case .ollama:
             return L("settings.models.overview.ollama")
-        case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
             .minimax:
             return L("settings.models.overview.remoteProvider", activeLLMRemoteProvider.displayName)
         case .multimodalLLM:
@@ -3269,7 +3309,7 @@ struct StudioView: View {
             return STTProvider.whisperAPI.displayName
         case .ollama:
             return LLMProvider.ollama.displayName
-        case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
             .minimax:
             return activeLLMRemoteProvider.displayName
         case .multimodalLLM:
@@ -3285,7 +3325,7 @@ struct StudioView: View {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
             return L("settings.models.mode.local")
-        case .whisperAPI, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+        case .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
             .qwen, .zhipu, .minimax, .multimodalLLM, .aliCloud, .doubaoRealtime:
             return L("settings.models.mode.remote")
         }
@@ -3295,7 +3335,7 @@ struct StudioView: View {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
             return StudioTheme.success
-        case .whisperAPI, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+        case .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
             .qwen, .zhipu, .minimax, .multimodalLLM, .aliCloud, .doubaoRealtime:
             return StudioTheme.accent
         }
@@ -3305,7 +3345,7 @@ struct StudioView: View {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
             return StudioTheme.success.opacity(0.12)
-        case .whisperAPI, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+        case .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
             .qwen, .zhipu, .minimax, .multimodalLLM, .aliCloud, .doubaoRealtime:
             return StudioTheme.accentSoft
         }
@@ -3332,7 +3372,7 @@ struct StudioView: View {
                 ? OpenAIAudioModelCatalog.whisperModels[0] : viewModel.whisperModel
         case .ollama:
             return viewModel.ollamaModel.isEmpty ? "qwen2.5:7b" : viewModel.ollamaModel
-        case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
             .minimax:
             return viewModel.llmModel.isEmpty
                 ? activeLLMRemoteProvider.defaultModel : viewModel.llmModel
@@ -3361,7 +3401,7 @@ struct StudioView: View {
             return STTProvider.whisperAPI.displayName
         case .ollama:
             return LLMProvider.ollama.displayName
-        case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
             .minimax:
             return focusedLLMRemoteProvider?.displayName ?? LLMProvider.openAICompatible.displayName
         case .multimodalLLM:
@@ -3383,7 +3423,7 @@ struct StudioView: View {
             return L("settings.models.focused.whisper")
         case .ollama:
             return L("settings.models.focused.ollama")
-        case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
             .minimax:
             return L(
                 "settings.models.focused.remoteProvider",
@@ -3413,7 +3453,7 @@ struct StudioView: View {
             return L("settings.models.routing.whisper")
         case .ollama:
             return L("settings.models.routing.ollama")
-        case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
             .minimax:
             return L("settings.models.routing.remoteProvider", activeLLMRemoteProvider.displayName)
         case .multimodalLLM:

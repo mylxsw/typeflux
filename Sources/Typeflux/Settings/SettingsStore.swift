@@ -327,6 +327,9 @@ final class SettingsStore {
     }
 
     func llmBaseURL(for provider: LLMRemoteProvider) -> String {
+        if provider == .freeModel {
+            return FreeLLMModelRegistry.resolve(modelName: llmModel(for: provider))?.baseURL ?? ""
+        }
         let key = llmRemoteKey(provider, suffix: "baseURL")
         if let stored = defaults.string(forKey: key), !stored.isEmpty {
             return stored
@@ -349,6 +352,9 @@ final class SettingsStore {
         if let stored = defaults.string(forKey: key), !stored.isEmpty {
             return stored
         }
+        if provider == .freeModel {
+            return FreeLLMModelRegistry.suggestedModelNames.first ?? ""
+        }
         if provider == .custom {
             return defaults.string(forKey: "llm.model") ?? ""
         }
@@ -363,6 +369,9 @@ final class SettingsStore {
     }
 
     func llmAPIKey(for provider: LLMRemoteProvider) -> String {
+        if provider == .freeModel {
+            return FreeLLMModelRegistry.resolve(modelName: llmModel(for: provider))?.apiKey ?? ""
+        }
         let key = llmRemoteKey(provider, suffix: "apiKey")
         if let stored = defaults.string(forKey: key), !stored.isEmpty {
             return stored

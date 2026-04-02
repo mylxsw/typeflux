@@ -60,9 +60,16 @@ final class LLMRemoteProviderTests: XCTestCase {
     func testStructuredOutputSupportIsOptInPerProvider() {
         XCTAssertTrue(LLMRemoteProvider.openAI.supportsNativeStructuredOutput)
         XCTAssertTrue(LLMRemoteProvider.gemini.supportsNativeStructuredOutput)
+        XCTAssertFalse(LLMRemoteProvider.freeModel.supportsNativeStructuredOutput)
         XCTAssertFalse(LLMRemoteProvider.custom.supportsNativeStructuredOutput)
         XCTAssertFalse(LLMRemoteProvider.openRouter.supportsNativeStructuredOutput)
         XCTAssertFalse(LLMRemoteProvider.deepSeek.supportsNativeStructuredOutput)
+    }
+
+    func testFreeModelProviderUsesRegistryDrivenDefaults() {
+        XCTAssertEqual(LLMRemoteProvider.freeModel.defaultBaseURL, "")
+        XCTAssertEqual(LLMRemoteProvider.freeModel.defaultModel, "")
+        XCTAssertEqual(LLMRemoteProvider.freeModel.apiStyle, .openAICompatible)
     }
 
     func testProvidersWithRegionalEndpointsExposeOfficialPresets() {
