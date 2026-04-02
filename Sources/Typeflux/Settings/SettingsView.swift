@@ -42,6 +42,14 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
     }
 }
 
+private struct ViewHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct StudioView: View {
     private enum ShortcutRecordingTarget {
         case activation
@@ -59,6 +67,8 @@ struct StudioView: View {
     @State private var localSTTPendingDelete: LocalSTTModel? = nil
     @State private var localSTTPendingRedownload: LocalSTTModel? = nil
     @State private var llmActivationMissingAPIKeyProviderName: String?
+    @State private var pageHeaderHeight: CGFloat = 0
+    @State private var modelTabsHeight: CGFloat = 0
     @ObservedObject private var localization = AppLocalization.shared
 
     var body: some View {
@@ -69,11 +79,11 @@ struct StudioView: View {
             onSendFeedback: sendFeedbackEmail,
             searchText: $viewModel.searchQuery,
             searchPlaceholder: viewModel.currentSection.searchPlaceholder
-        ) {
+        ) { viewportSize in
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.heroSection) {
                 pageHeader
 
-                currentPage
+                currentPage(viewportHeight: viewportContentHeight(from: viewportSize))
             }
             .id(viewModel.currentSection)
             .transition(.opacity)
@@ -181,15 +191,24 @@ struct StudioView: View {
                 }
             }
         }
+        .background(
+            GeometryReader { proxy in
+                Color.clear
+                    .preference(key: ViewHeightPreferenceKey.self, value: proxy.size.height)
+            }
+        )
+        .onPreferenceChange(ViewHeightPreferenceKey.self) { height in
+            pageHeaderHeight = height
+        }
     }
 
     @ViewBuilder
-    private var currentPage: some View {
+    private func currentPage(viewportHeight: CGFloat) -> some View {
         switch viewModel.currentSection {
         case .home:
             homePage
         case .models:
-            modelsPage
+            modelsPage(viewportHeight: viewportHeight)
         case .personas:
             personasPage
         case .vocabulary:
@@ -217,8 +236,17 @@ struct StudioView: View {
         }
     }
 
-    private var modelsPage: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
+    private func modelsPage(viewportHeight: CGFloat) -> some View {
+        let pageHeight = max(
+            viewportHeight - pageHeaderHeight - StudioTheme.Spacing.heroSection,
+            StudioTheme.Layout.settingsWindowMinHeight * 0.5
+        )
+        let contentHeight = max(
+            pageHeight - modelTabsHeight - StudioTheme.Spacing.pageGroup,
+            320
+        )
+
+        return VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             HStack(spacing: StudioTheme.Spacing.xSmall) {
                 ForEach(StudioModelDomain.allCases) { domain in
                     Button {
@@ -245,21 +273,40 @@ struct StudioView: View {
                     .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.segmentedControlFill))
             )
             .frame(minHeight: StudioTheme.Layout.modelTabsMinHeight, alignment: .leading)
+            .background(
+                GeometryReader { proxy in
+                    Color.clear
+                        .preference(key: ViewHeightPreferenceKey.self, value: proxy.size.height)
+                }
+            )
+            .onPreferenceChange(ViewHeightPreferenceKey.self) { height in
+                modelTabsHeight = height
+            }
 
             HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+                ScrollView {
                     LazyVStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
                         ForEach(modelProviderCards) { card in
                             modelProviderSelectionCard(card)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(width: StudioTheme.Layout.modelProviderListWidth, alignment: .leading)
+                .frame(maxHeight: .infinity, alignment: .top)
 
                 focusedProviderConfigurationPanel
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
+            .frame(height: contentHeight, alignment: .top)
         }
+    }
+
+    private func viewportContentHeight(from viewportSize: CGSize) -> CGFloat {
+        max(
+            viewportSize.height - StudioTheme.Layout.shellContentTopInset - StudioTheme.Layout.shellContentBottomInset,
+            0
+        )
     }
 
     private func modelDomainTabTitle(for domain: StudioModelDomain) -> String {

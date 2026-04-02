@@ -130,7 +130,7 @@ struct StudioShell<Content: View>: View {
     let onSendFeedback: () -> Void
     let searchText: Binding<String>
     let searchPlaceholder: String
-    let content: Content
+    let content: (CGSize) -> Content
 
     init(
         currentSection: StudioSection,
@@ -139,7 +139,7 @@ struct StudioShell<Content: View>: View {
         onSendFeedback: @escaping () -> Void,
         searchText: Binding<String>,
         searchPlaceholder: String,
-        @ViewBuilder content: () -> Content
+        @ViewBuilder content: @escaping (CGSize) -> Content
     ) {
         self.currentSection = currentSection
         self.onSelect = onSelect
@@ -147,7 +147,7 @@ struct StudioShell<Content: View>: View {
         self.onSendFeedback = onSendFeedback
         self.searchText = searchText
         self.searchPlaceholder = searchPlaceholder
-        self.content = content()
+        self.content = content
     }
 
     var body: some View {
@@ -164,24 +164,26 @@ struct StudioShell<Content: View>: View {
                 )
                     .frame(width: StudioTheme.sidebarWidth)
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.section) {
-                        content
+                GeometryReader { proxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.section) {
+                            content(proxy.size)
+                        }
+                        .frame(maxWidth: StudioTheme.contentMaxWidth, alignment: .leading)
+                        .padding(.horizontal, StudioTheme.contentInset)
+                        .padding(.top, StudioTheme.Layout.shellContentTopInset)
+                        .padding(.bottom, StudioTheme.Layout.shellContentBottomInset)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
                     }
-                    .frame(maxWidth: StudioTheme.contentMaxWidth, alignment: .leading)
-                    .padding(.horizontal, StudioTheme.contentInset)
-                    .padding(.top, StudioTheme.Layout.shellContentTopInset)
-                    .padding(.bottom, StudioTheme.Layout.shellContentBottomInset)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .background(
+                        RoundedRectangle(cornerRadius: StudioTheme.Layout.shellCornerRadius, style: .continuous)
+                            .fill(StudioTheme.surface)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: StudioTheme.Layout.shellCornerRadius, style: .continuous)
+                            .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.shellBorder), lineWidth: StudioTheme.BorderWidth.thin)
+                    )
                 }
-                .background(
-                    RoundedRectangle(cornerRadius: StudioTheme.Layout.shellCornerRadius, style: .continuous)
-                        .fill(StudioTheme.surface)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: StudioTheme.Layout.shellCornerRadius, style: .continuous)
-                        .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.shellBorder), lineWidth: StudioTheme.BorderWidth.thin)
-                )
                 .padding(.vertical, StudioTheme.Layout.contentCardInset)
                 .padding(.trailing, StudioTheme.Layout.contentCardInset)
                 .padding(.leading, StudioTheme.Layout.shellContentLeadingInset)
