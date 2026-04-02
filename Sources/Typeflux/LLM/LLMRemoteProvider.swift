@@ -62,7 +62,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
     var defaultBaseURL: String {
         switch self {
         case .custom:
-            return ""
+            return "https://api.openai.com/v1"
         case .openRouter:
             return "https://openrouter.ai/api/v1"
         case .openAI:
@@ -116,15 +116,11 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
     var suggestedModels: [String] {
         switch self {
         case .custom:
-            return [
-                "gpt-5",
-                "claude-sonnet-4.6",
-                "gemini-2.5-pro",
-                "deepseek-chat",
-                "kimi-k2.5",
-                "qwen-max",
-                "glm-4.7",
-            ]
+            let allModels = LLMRemoteProvider.allCases
+                .filter { $0 != .custom }
+                .flatMap { $0.suggestedModels }
+            var seen = Set<String>()
+            return allModels.filter { seen.insert($0).inserted }
         case .openRouter:
             return [
                 "openrouter/auto",
