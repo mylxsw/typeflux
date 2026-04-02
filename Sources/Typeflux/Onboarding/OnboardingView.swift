@@ -553,11 +553,18 @@ struct OnboardingView: View {
         StudioCard(padding: 16) {
             VStack(spacing: 12) {
                 if viewModel.llmRemoteProvider == .freeModel {
-                    StudioTextInputCard(
-                        label: L("settings.models.freeModel.modelName"),
-                        placeholder: L("settings.models.freeModel.placeholder"),
-                        text: $viewModel.llmModel
-                    )
+                    if FreeLLMModelRegistry.suggestedModelNames.isEmpty {
+                        Text(L("settings.models.freeModel.noSources"))
+                            .font(.studioBody(12))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        StudioMenuPicker(
+                            options: FreeLLMModelRegistry.suggestedModelNames.map { ($0, $0) },
+                            selection: $viewModel.llmModel,
+                            width: 320
+                        )
+                    }
                     Text(L("settings.models.freeModel.hint"))
                         .font(.studioBody(12))
                         .foregroundStyle(StudioTheme.textTertiary)

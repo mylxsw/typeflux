@@ -374,7 +374,7 @@
 "settings.permissions.reviewInSystemSettings" = "請在系統設定中檢查 %@。";
 
 "settings.models.domain.stt" = "語音提供方";
-"settings.models.domain.llm" = "LLM 提供方";
+"settings.models.domain.llm" = "大語言模型提供方";
 "settings.models.configuration" = "配置";
 "settings.models.activation" = "啟用";
 "settings.models.customArchitecture.title" = "自訂架構？";
@@ -434,7 +434,7 @@
 "settings.models.card.ollama.summary" = "在本地執行改寫與編輯任務，並可選擇自動準備模型。";
 "settings.models.card.openAICompatible.summary" = "接入遠端 chat-completions 提供方，完成人設改寫與編輯流程。";
 "settings.models.card.custom.summary" = "手動設定任意相容端點，自訂 Base URL、模型與 API Key。";
-"settings.models.card.freeModel.summary" = "使用程式碼中設定好的免費模型來源，使用者只需要填入模型名稱。";
+"settings.models.card.freeModel.summary" = "從程式碼中設定好的免費模型清單中選擇可用模型。";
 "settings.models.card.openRouter.summary" = "使用 OpenRouter 統一的 OpenAI 相容 API，預填官方網址，並支援靈活選擇與路由模型。";
 "settings.models.card.openAI.summary" = "使用 OpenAI 官方託管模型，內建固定網址與常用模型建議。";
 "settings.models.card.anthropic.summary" = "透過 Anthropic 原生 Messages API 使用 Claude 模型，只需填入 API Key。";
@@ -455,18 +455,18 @@
 "settings.models.focused.freeSTT" = "從程式碼註冊的免費語音模型中選擇一個可用項。";
 "settings.models.routing.freeSTT" = "免費語音轉寫來源";
 "settings.models.freeModel.modelName" = "模型名稱";
-"settings.models.freeModel.placeholder" = "輸入已設定的免費模型";
-"settings.models.freeModel.hint" = "免費模型的端點資訊由程式碼設定解析，這裡只需要填入模型名稱。";
+"settings.models.freeModel.placeholder" = "選擇已設定的免費模型";
+"settings.models.freeModel.hint" = "免費模型的端點資訊由程式碼設定解析，使用者只能從已設定的模型清單中選擇。";
 "settings.models.freeModel.noSources" = "目前還沒有設定任何免費模型來源。請在 Sources/Typeflux/LLM/FreeModels 下新增實作。";
 "settings.models.freeModel.availableSources" = "已設定來源";
-"settings.models.freeModel.validation.emptyModel" = "請先填入模型名稱，再進行儲存或測試。";
+"settings.models.freeModel.validation.emptyModel" = "請先選擇免費模型，再進行儲存或測試。";
 "settings.models.freeModel.validation.unsupportedModel" = "免費模型“%@”尚未在程式碼設定中註冊。";
 "settings.models.freeModel.validation.invalidEndpoint" = "解析出的免費模型端點無效。";
 "settings.models.badge.native" = "原生 API";
 "settings.models.endpointPreset.international" = "國際版 URL";
 "settings.models.endpointPreset.china" = "中國版 URL";
 "settings.models.providers.stt" = "語音提供方";
-"settings.models.providers.llm" = "LLM 提供方";
+"settings.models.providers.llm" = "大語言模型提供方";
 "settings.models.providers.sttSubtitle" = "選擇預設辨識器，並在目前頁面完成憑證與回退配置。";
 "settings.models.providers.llmSubtitle" = "選擇改寫與編輯流程的執行環境，並在右側微調本地或遠端設定。";
 "settings.models.overview.sttTitle" = "預設轉寫堆疊";

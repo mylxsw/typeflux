@@ -374,7 +374,7 @@
 "settings.permissions.reviewInSystemSettings" = "请在系统设置中检查 %@。";
 
 "settings.models.domain.stt" = "语音提供方";
-"settings.models.domain.llm" = "LLM 提供方";
+"settings.models.domain.llm" = "大语言模型提供方";
 "settings.models.configuration" = "配置";
 "settings.models.activation" = "激活";
 "settings.models.customArchitecture.title" = "自定义架构？";
@@ -434,7 +434,7 @@
 "settings.models.card.ollama.summary" = "本地执行改写和编辑任务，并可选自动准备模型。";
 "settings.models.card.openAICompatible.summary" = "接入远程 chat-completions 提供方，完成人设改写和编辑工作流。";
 "settings.models.card.custom.summary" = "手动配置任意兼容端点，自定义 Base URL、模型和 API Key。";
-"settings.models.card.freeModel.summary" = "使用代码中配置好的免费模型源，用户只需要填写模型名称。";
+"settings.models.card.freeModel.summary" = "从代码中配置好的免费模型列表中选择可用模型。";
 "settings.models.card.openRouter.summary" = "使用 OpenRouter 统一的 OpenAI 兼容 API，预填官方地址，并支持灵活选择与路由模型。";
 "settings.models.card.openAI.summary" = "使用 OpenAI 官方托管模型，内置固定地址和常用模型建议。";
 "settings.models.card.anthropic.summary" = "通过 Anthropic 原生 Messages API 使用 Claude 模型，只需填写 API Key。";
@@ -455,18 +455,18 @@
 "settings.models.focused.freeSTT" = "从代码注册的免费语音模型中选择一个可用项。";
 "settings.models.routing.freeSTT" = "免费语音转写来源";
 "settings.models.freeModel.modelName" = "模型名称";
-"settings.models.freeModel.placeholder" = "输入已配置的免费模型";
-"settings.models.freeModel.hint" = "免费模型的接口信息由代码配置解析，这里只需要填写模型名称。";
+"settings.models.freeModel.placeholder" = "选择已配置的免费模型";
+"settings.models.freeModel.hint" = "免费模型的接口信息由代码配置解析，用户只能从已配置的模型列表中选择。";
 "settings.models.freeModel.noSources" = "当前还没有配置任何免费模型源。请在 Sources/Typeflux/LLM/FreeModels 下添加实现。";
 "settings.models.freeModel.availableSources" = "已配置来源";
-"settings.models.freeModel.validation.emptyModel" = "请先填写模型名称，再进行保存或测试。";
+"settings.models.freeModel.validation.emptyModel" = "请先选择免费模型，再进行保存或测试。";
 "settings.models.freeModel.validation.unsupportedModel" = "免费模型“%@”尚未在代码配置中注册。";
 "settings.models.freeModel.validation.invalidEndpoint" = "解析出的免费模型接口地址无效。";
 "settings.models.badge.native" = "原生 API";
 "settings.models.endpointPreset.international" = "国际版 URL";
 "settings.models.endpointPreset.china" = "中国版 URL";
 "settings.models.providers.stt" = "语音提供方";
-"settings.models.providers.llm" = "LLM 提供方";
+"settings.models.providers.llm" = "大语言模型提供方";
 "settings.models.providers.sttSubtitle" = "选择默认识别器，并在当前页面完成凭证和回退配置。";
 "settings.models.providers.llmSubtitle" = "选择改写与编辑流程的运行时，并在右侧微调本地或远程设置。";
 "settings.models.overview.sttTitle" = "默认转写栈";

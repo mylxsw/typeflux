@@ -1681,22 +1681,23 @@ struct StudioView: View {
         if let provider = focusedLLMRemoteProvider {
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
                 if provider == .freeModel {
-                    StudioSuggestedTextInputCard(
-                        label: L("settings.models.freeModel.modelName"),
-                        placeholder: L("settings.models.freeModel.placeholder"),
-                        text: Binding(get: { viewModel.llmModel }, set: viewModel.setLLMModel),
-                        suggestions: FreeLLMModelRegistry.suggestedModelNames
-                    )
+                    if FreeLLMModelRegistry.suggestedModelNames.isEmpty {
+                        Text(L("settings.models.freeModel.noSources"))
+                            .font(.studioBody(StudioTheme.Typography.caption))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                    } else {
+                        StudioMenuPicker(
+                            options: FreeLLMModelRegistry.suggestedModelNames.map { ($0, $0) },
+                            selection: Binding(get: { viewModel.llmModel }, set: viewModel.setLLMModel),
+                            width: 320
+                        )
+                    }
 
                     Text(L("settings.models.freeModel.hint"))
                         .font(.studioBody(StudioTheme.Typography.caption))
                         .foregroundStyle(StudioTheme.textSecondary)
 
-                    if FreeLLMModelRegistry.sources.isEmpty {
-                        Text(L("settings.models.freeModel.noSources"))
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                    } else {
+                    if !FreeLLMModelRegistry.sources.isEmpty {
                         VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
                             Text(L("settings.models.freeModel.availableSources"))
                                 .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
