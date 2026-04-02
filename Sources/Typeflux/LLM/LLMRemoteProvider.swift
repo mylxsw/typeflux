@@ -95,7 +95,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
                 LLMRemoteEndpointPreset(
                     labelKey: "settings.models.endpointPreset.china",
                     url: "https://open.bigmodel.cn/api/paas/v4"
-                )
+                ),
             ]
         case .minimax:
             return [
@@ -106,7 +106,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
                 LLMRemoteEndpointPreset(
                     labelKey: "settings.models.endpointPreset.china",
                     url: "https://api.minimaxi.com/v1"
-                )
+                ),
             ]
         default:
             return []
@@ -116,25 +116,87 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
     var suggestedModels: [String] {
         switch self {
         case .custom:
-            return ["gpt-4o-mini", "deepseek-chat", "kimi-k2.5", "qwen-plus", "glm-4.7"]
+            return [
+                "gpt-5",
+                "claude-sonnet-4.6",
+                "gemini-2.5-pro",
+                "deepseek-chat",
+                "kimi-k2.5",
+                "qwen-max",
+                "glm-4.7",
+            ]
         case .openRouter:
-            return ["openrouter/auto", "openai/gpt-4o-mini", "anthropic/claude-3.5-haiku", "google/gemini-2.5-flash"]
+            return [
+                "openrouter/auto",
+                "openai/gpt-5.4",
+                "openai/gpt-5.4-mini",
+                "openai/gpt-5.4-nano",
+                "anthropic/claude-opus-4.6",
+                "anthropic/claude-sonnet-4.6",
+                "anthropic/claude-haiku-4.5",
+                "google/gemini-3-flash-preview",
+                "google/gemini-3.1-pro-preview",
+                "google/gemini-3.1-flash-lite-preview",
+                "x-ai/grok-4.1-fast",
+                "x-ai/grok-4",
+                "x-ai/grok-4.20",
+                "moonshotai/kimi-k2.5",
+                "minimax/minimax-m2.7",
+                "z-ai/glm-5-turbo",
+                "z-ai/glm-5",
+                "z-ai/glm-4.5-air",
+                "qwen/qwen3.5-flash-02-23",
+                "deepseek/deepseek-v3.2",
+            ]
         case .openAI:
-            return ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"]
+            return [
+                "gpt-5.4",
+                "gpt-5.4-mini",
+                "gpt-5.4-nano",
+                "gpt-5.3-codex",
+            ]
         case .anthropic:
-            return ["claude-sonnet-4-20250514", "claude-3-7-sonnet-20250219", "claude-3-5-haiku-20241022"]
+            return [
+                "claude-opus-4-6",
+                "claude-sonnet-4-6",
+                "claude-haiku-4-5",
+            ]
         case .gemini:
-            return ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"]
+            return [
+                "gemini-3.1-pro-preview",
+                "gemini-3-flash-preview",
+                "gemini-3.1-flash-lite-preview",
+                "gemini-2.5-flash",
+                "gemini-2.5-pro",
+            ]
         case .deepSeek:
-            return ["deepseek-chat", "deepseek-reasoner"]
+            return [
+                "deepseek-chat",
+                "deepseek-reasoner",
+            ]
         case .kimi:
-            return ["kimi-k2.5", "kimi-k2", "kimi-k2-thinking"]
+            return [
+                "kimi-k2.5",
+                "kimi-k2-turbo-preview",
+            ]
         case .qwen:
-            return ["qwen-max", "qwen-plus", "qwen-turbo"]
+            return [
+                "qwen3.6-plus",
+                "qwen3-max",
+                "qwen3.5-flash",
+            ]
         case .zhipu:
-            return ["glm-4.7", "glm-4.7-flash", "glm-4.5-air"]
+            return [
+                "glm-5",
+                "glm-5-turbo",
+                "glm-4.7-flash",
+                "glm-4.5-air",
+            ]
         case .minimax:
-            return ["MiniMax-M2.5", "MiniMax-M2.5-highspeed", "MiniMax-M2.1"]
+            return [
+                "MiniMax-M2.7",
+                "MiniMax-M2.7-highspeed",
+            ]
         }
     }
 

@@ -6,9 +6,9 @@ enum OpenAIAudioModelCatalog {
     ]
 
     static let whisperModels = [
+        "gpt-4o-transcribe",
         "gpt-4o-mini-transcribe",
         "whisper-1",
-        "gpt-4o-transcribe"
     ]
 
     static let multimodalEndpoints = [
@@ -16,8 +16,7 @@ enum OpenAIAudioModelCatalog {
     ]
 
     static let multimodalModels = [
-        "gpt-4o-mini-audio-preview",
         "gpt-4o-audio-preview",
-        "gpt-audio-mini"
+        "gpt-4o-mini-audio-preview",
     ]
 }
