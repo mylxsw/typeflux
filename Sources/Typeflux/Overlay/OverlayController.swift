@@ -77,15 +77,16 @@ final class OverlayController {
         model.onFailureRetryRequested = onRetry
     }
 
-    func show() {
+    func show(hintText: String? = nil) {
         if !Thread.isMainThread {
-            DispatchQueue.main.async { [weak self] in self?.show() }
+            DispatchQueue.main.async { [weak self] in self?.show(hintText: hintText) }
             return
         }
         ensureWindow()
         model.presentation = .recordingHold
         model.statusText = L("overlay.recording.listening")
         model.detailText = ""
+        model.recordingHintText = hintText ?? ""
         model.processingProgress = 0
         refreshWindow()
     }
@@ -118,13 +119,14 @@ final class OverlayController {
         }
     }
 
-    func showLockedRecording() {
+    func showLockedRecording(hintText: String? = nil) {
         if !Thread.isMainThread {
-            DispatchQueue.main.async { [weak self] in self?.showLockedRecording() }
+            DispatchQueue.main.async { [weak self] in self?.showLockedRecording(hintText: hintText) }
             return
         }
         ensureWindow()
         model.presentation = .recordingLocked
+        model.recordingHintText = hintText ?? ""
         refreshWindow()
     }
 
@@ -157,6 +159,7 @@ final class OverlayController {
         model.presentation = .processing
         model.statusText = L("overlay.processing.thinking")
         model.detailText = ""
+        model.recordingHintText = ""
         model.processingProgress = 0
         refreshWindow()
     }
@@ -642,6 +645,7 @@ final class OverlayViewModel: ObservableObject {
     @Published var presentation: Presentation = .recordingHold
     @Published var statusText: String = ""
     @Published var detailText: String = ""
+    @Published var recordingHintText: String = ""
     @Published var level: Float = 0
     @Published var processingProgress: CGFloat = 0
     @Published var personaItems: [OverlayController.PersonaPickerItem] = []
@@ -708,13 +712,13 @@ private struct OverlayView: View {
             Group {
                 switch model.presentation {
                 case .recordingHold:
-                    recordingCapsule
+                    recordingStack { recordingCapsule }
                 case .recordingHoldPreview:
-                    recordingPreviewCard(showControls: false)
+                    recordingStack { recordingPreviewCard(showControls: false) }
                 case .recordingLocked:
-                    lockedRecordingCapsule
+                    recordingStack { lockedRecordingCapsule }
                 case .recordingLockedPreview:
-                    recordingPreviewCard(showControls: true)
+                    recordingStack { recordingPreviewCard(showControls: true) }
                 case .processing:
                     processingCapsule
                 case .transcriptPreview:
@@ -733,13 +737,13 @@ private struct OverlayView: View {
             Group {
                 switch model.presentation {
                 case .recordingHold:
-                    recordingCapsule
+                    recordingStack { recordingCapsule }
                 case .recordingHoldPreview:
-                    recordingPreviewCard(showControls: false)
+                    recordingStack { recordingPreviewCard(showControls: false) }
                 case .recordingLocked:
-                    lockedRecordingCapsule
+                    recordingStack { lockedRecordingCapsule }
                 case .recordingLockedPreview:
-                    recordingPreviewCard(showControls: true)
+                    recordingStack { recordingPreviewCard(showControls: true) }
                 case .processing:
                     processingCapsule
                 case .transcriptPreview:
@@ -799,6 +803,35 @@ private struct OverlayView: View {
             LevelWaveform(level: model.level, activeColor: Color.white.opacity(0.95))
                 .frame(width: 38, height: 14)
         }
+    }
+
+    private func recordingStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(spacing: 10) {
+            if !model.recordingHintText.isEmpty {
+                recordingHintBanner
+            }
+            content()
+        }
+    }
+
+    private var recordingHintBanner: some View {
+        Text(model.recordingHintText)
+            .font(.system(size: 12.5, weight: .semibold))
+            .foregroundStyle(Color.white.opacity(0.92))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color.black.opacity(0.34))
+                    .background(
+                        .ultraThinMaterial,
+                        in: Capsule(style: .continuous)
+                    )
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(Color.white.opacity(0.14), lineWidth: 0.8)
+            )
     }
 
     private var processingCapsule: some View {

@@ -203,6 +203,7 @@
 "modelDomain.llm.subtitle" = "Large language model";
 
 "overlay.recording.listening" = "Listening";
+"overlay.ask.guidance" = "Ask anything about the selected text";
 "overlay.processing.thinking" = "Thinking";
 "overlay.failure.title" = "Processing failed";
 "overlay.timeout.title" = "Processing timed out";
