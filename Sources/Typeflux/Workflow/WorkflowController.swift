@@ -663,7 +663,9 @@ final class WorkflowController {
                 ? selectionSnapshot.selectedText?.trimmingCharacters(in: .whitespacesAndNewlines)
                 : nil
             currentSelectedText = selectedText
-            let personaPrompt = settingsStore.activePersona?.prompt
+            let personaPrompt = recordingIntent == .askSelection
+                ? nil
+                : settingsStore.activePersona?.prompt
 
             NetworkDebugLogger.logMessage(selectionSnapshotLog(selectionSnapshot))
             let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
@@ -780,7 +782,9 @@ final class WorkflowController {
 
         let audioFile = AudioFile(fileURL: audioURL, duration: 0)
         let selectedText = mutableRecord.selectionOriginalText?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let personaPrompt = personaPrompt(for: mutableRecord)
+        let personaPrompt = mutableRecord.mode == .editSelection || mutableRecord.mode == .askAnswer
+            ? nil
+            : personaPrompt(for: mutableRecord)
         await process(
             audioFile: audioFile,
             record: mutableRecord,
@@ -817,7 +821,8 @@ final class WorkflowController {
             try ensureProcessingIsActive(sessionID)
             var pipelineTiming = record.pipelineTiming ?? HistoryPipelineTiming()
 
-            let isAskSelectionFlow = recordingIntent == .askSelection && selectedText != nil
+            let isAskSelectionFlow = recordingIntent == .askSelection
+                && !(askContextText?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
 
             // When using multimodal and there is no selected text to edit, the transcriber applies
             // persona internally in one shot — no separate LLM rewrite is needed afterwards.
@@ -868,7 +873,7 @@ final class WorkflowController {
                 return
             }
 
-            if isAskSelectionFlow, let selectedText, !selectedText.isEmpty {
+            if isAskSelectionFlow, let askContextText, !askContextText.isEmpty {
                 record.processingStatus = .running
                 saveHistoryRecord(record)
 
@@ -878,7 +883,7 @@ final class WorkflowController {
                 logPipelineEvent("llm-processing-started", for: record)
 
                 let askDecisionResult = try await decideAskSelection(
-                    selectedText: selectedText,
+                    selectedText: askContextText,
                     spokenInstruction: transcribedText,
                     personaPrompt: personaPrompt,
                     sessionID: sessionID
@@ -919,7 +924,7 @@ final class WorkflowController {
                     let rewriteResult = try await generateRewrite(
                         request: LLMRewriteRequest(
                             mode: .editSelection,
-                            sourceText: selectedText,
+                            sourceText: askContextText,
                             spokenInstruction: transcribedText,
                             personaPrompt: personaPrompt
                         ),
@@ -1315,23 +1320,26 @@ final class WorkflowController {
     }
 
     private func shouldPresentResultDialog(for snapshot: TextSelectionSnapshot) -> Bool {
-        isSelectionEligibleForEditing(snapshot) && !snapshot.isEditable
+        hasAskSelectionContext(snapshot) && !canReplaceActiveSelection(for: snapshot)
     }
 
     private func editingSelectedText(from snapshot: TextSelectionSnapshot) -> String? {
-        guard isSelectionEligibleForEditing(snapshot) else { return nil }
+        guard canReplaceActiveSelection(for: snapshot) else { return nil }
         return snapshot.selectedText?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func shouldReplaceActiveSelection(for snapshot: TextSelectionSnapshot) -> Bool {
-        isSelectionEligibleForEditing(snapshot) && snapshot.isEditable
+        canReplaceActiveSelection(for: snapshot)
     }
 
-    private func isSelectionEligibleForEditing(_ snapshot: TextSelectionSnapshot) -> Bool {
-        guard snapshot.source == "accessibility" else { return false }
+    private func hasAskSelectionContext(_ snapshot: TextSelectionSnapshot) -> Bool {
         guard snapshot.isFocusedTarget else { return false }
-        guard snapshot.selectedRange != nil else { return false }
         return snapshot.hasSelection
+    }
+
+    private func canReplaceActiveSelection(for snapshot: TextSelectionSnapshot) -> Bool {
+        guard hasAskSelectionContext(snapshot) else { return false }
+        return snapshot.isEditable
     }
 
     private func dismissOverlayForExternalReplacement() {

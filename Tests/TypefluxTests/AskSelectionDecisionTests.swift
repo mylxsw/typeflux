@@ -30,6 +30,45 @@ final class AskSelectionDecisionTests: XCTestCase {
         XCTAssertNil(AskSelectionDecision.parse(from: response))
     }
 
+    func testParseAcceptsFencedJSONDecision() {
+        let response = """
+        ```json
+        {
+          "action": "edit",
+          "response": ""
+        }
+        ```
+        """
+
+        let decision = AskSelectionDecision.parse(from: response)
+
+        XCTAssertEqual(decision, AskSelectionDecision(action: .edit, response: ""))
+    }
+
+    func testParseAcceptsJSONEmbeddedInSurroundingText() {
+        let response = """
+        Here is the result:
+        {"action":"answer","response":"Translated text goes here."}
+        """
+
+        let decision = AskSelectionDecision.parse(from: response)
+
+        XCTAssertEqual(decision, AskSelectionDecision(action: .answer, response: "Translated text goes here."))
+    }
+
+    func testParseAcceptsDecisionAliasKey() {
+        let response = """
+        {
+          "decision": "edit",
+          "response": ""
+        }
+        """
+
+        let decision = AskSelectionDecision.parse(from: response)
+
+        XCTAssertEqual(decision, AskSelectionDecision(action: .edit, response: ""))
+    }
+
     func testParseOrDefaultToAnswerFallsBackForPlainText() {
         let response = "This paragraph sounds hesitant because it overuses qualifiers."
 

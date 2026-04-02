@@ -32,9 +32,11 @@ struct AskSelectionDecision: Equatable {
     )
 
     static func parse(from response: String) -> AskSelectionDecision? {
-        guard let data = response.data(using: .utf8),
+        let normalized = normalizedJSONString(from: response)
+
+        guard let data = normalized.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let actionRaw = json["action"] as? String,
+              let actionRaw = (json["action"] as? String) ?? (json["decision"] as? String),
               let action = Action(rawValue: actionRaw),
               let answer = json["response"] as? String else {
             return nil
@@ -51,5 +53,31 @@ struct AskSelectionDecision: Equatable {
         let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         return AskSelectionDecision(action: .answer, response: trimmed)
+    }
+
+    private static func normalizedJSONString(from response: String) -> String {
+        let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return trimmed }
+
+        if trimmed.hasPrefix("```") {
+            let lines = trimmed.components(separatedBy: .newlines)
+            if lines.count >= 3, lines.last?.trimmingCharacters(in: .whitespacesAndNewlines) == "```" {
+                let body = lines.dropFirst().dropLast().joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+                if body.hasPrefix("{"), body.hasSuffix("}") {
+                    if body.lowercased().hasPrefix("json\n") {
+                        return String(body.dropFirst(5)).trimmingCharacters(in: .whitespacesAndNewlines)
+                    }
+                    return body
+                }
+            }
+        }
+
+        if let start = trimmed.firstIndex(of: "{"),
+           let end = trimmed.lastIndex(of: "}"),
+           start <= end {
+            return String(trimmed[start...end])
+        }
+
+        return trimmed
     }
 }
