@@ -138,6 +138,14 @@ final class WorkflowController {
     }
 
     private func presentAskAnswer(question: String, selectedText: String?, answerMarkdown: String) {
+        NetworkDebugLogger.logMessage(
+            """
+            [Ask Answer] Sending content to window
+            Question: \(question)
+            Selected Text: \(selectedText ?? "<empty>")
+            Answer Markdown: \(answerMarkdown)
+            """
+        )
         overlayController.dismissImmediately()
         askAnswerWindowController.show(
             title: L("workflow.ask.answerTitle"),
@@ -624,6 +632,15 @@ final class WorkflowController {
                 userInfo: [NSLocalizedDescriptionKey: "Ask anything answer was empty."]
             )
         }
+
+        NetworkDebugLogger.logMessage(
+            """
+            [Ask Answer] Raw LLM answer
+            Selected Text: \(selectedText ?? "<empty>")
+            Spoken Instruction: \(spokenInstruction)
+            Answer Markdown: \(trimmed)
+            """
+        )
 
         return RewriteGenerationResult(text: trimmed, completedAt: Date())
     }
