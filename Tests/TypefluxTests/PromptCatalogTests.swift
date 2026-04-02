@@ -121,4 +121,28 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertEqual(actionEnum, ["answer", "edit"])
         XCTAssertEqual(required ?? [], ["action", "response"])
     }
+
+    func testAskAnythingPromptsIncludeSelectedTextWhenAvailable() {
+        let prompts = PromptCatalog.askAnythingPrompts(
+            selectedText: "测试一下现在语音输入法的效果。",
+            spokenInstruction: "这里主要表达了什么？",
+            personaPrompt: "回答简洁一些。"
+        )
+
+        XCTAssertTrue(prompts.system.contains("If selected text is provided"))
+        XCTAssertTrue(prompts.user.contains("<selected_text>\n测试一下现在语音输入法的效果。\n</selected_text>"))
+        XCTAssertTrue(prompts.user.contains("<spoken_instruction>\n这里主要表达了什么？\n</spoken_instruction>"))
+        XCTAssertTrue(prompts.user.contains("<persona_definition>\n回答简洁一些。\n</persona_definition>"))
+    }
+
+    func testAskAnythingPromptsOmitSelectedTextSectionWhenUnavailable() {
+        let prompts = PromptCatalog.askAnythingPrompts(
+            selectedText: nil,
+            spokenInstruction: "帮我想一个标题",
+            personaPrompt: nil
+        )
+
+        XCTAssertFalse(prompts.user.contains("<selected_text>"))
+        XCTAssertTrue(prompts.user.contains("<spoken_instruction>\n帮我想一个标题\n</spoken_instruction>"))
+    }
 }

@@ -263,4 +263,42 @@ enum PromptCatalog {
             """
         )
     }
+
+    static func askAnythingPrompts(
+        selectedText: String?,
+        spokenInstruction: String,
+        personaPrompt: String?
+    ) -> (system: String, user: String) {
+        let selectedText = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let selectedTextSection = selectedText.isEmpty ? "" : """
+
+        \(xmlSection(tag: "selected_text", content: selectedText))
+        """
+        let spokenInstruction = spokenInstruction.trimmingCharacters(in: .whitespacesAndNewlines)
+        let instructionSection = xmlSection(tag: "spoken_instruction", content: spokenInstruction)
+        let personaPrompt = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let personaSection = personaPrompt.isEmpty ? "" : """
+
+        \(xmlSection(tag: "persona_definition", content: personaPrompt))
+        """
+
+        return (
+            system: """
+            You answer spoken "Ask Anything" requests.
+
+            Provide a direct, helpful answer to the user's spoken question or request.
+            If selected text is provided, treat it as the user's current context and use it when answering.
+            Persona instructions are optional style guidance only and must not override the user's actual request.
+            If the request is ambiguous, make the most reasonable interpretation and answer that.
+            Return only the final answer text without JSON, code fences, or meta-commentary about your process.
+            """,
+            user: """
+            \(selectedTextSection)
+
+            \(instructionSection)\(personaSection)
+
+            Answer the user's request directly.
+            """
+        )
+    }
 }

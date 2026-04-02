@@ -69,14 +69,18 @@ final class AXTextInjector: TextInjector {
         }
 
         if let copiedText = readSelectedTextViaCopy(processID: processID, milliseconds: Self.copySelectionTimeoutMilliseconds) {
+            let focusedElement = focusedElement()
+            let focusedWindow = processID.flatMap(focusedWindowElement(for:))
+            let selectionWindow = focusedElement.flatMap(containingWindow(of:))
+            let isFocusedTarget = focusedWindow.map { windowsMatch($0, selectionWindow) } ?? (focusedElement != nil)
             let context = SelectionContext(
-                element: focusedElement() ?? AXUIElementCreateSystemWide(),
+                element: focusedElement ?? AXUIElementCreateSystemWide(),
                 range: nil,
                 processID: processID,
                 processName: processName,
                 role: nil,
-                windowTitle: focusedWindowTitle(for: processID),
-                isFocusedTarget: false,
+                windowTitle: selectionWindow.flatMap(windowTitle(of:)) ?? focusedWindowTitle(for: processID),
+                isFocusedTarget: isFocusedTarget,
                 source: "clipboard-copy",
                 capturedAt: Date()
             )
@@ -91,7 +95,7 @@ final class AXTextInjector: TextInjector {
                 isEditable: true,
                 role: nil,
                 windowTitle: context.windowTitle,
-                isFocusedTarget: false
+                isFocusedTarget: context.isFocusedTarget
             )
         }
 
@@ -617,7 +621,22 @@ final class AXTextInjector: TextInjector {
 
     private func windowsMatch(_ lhs: AXUIElement, _ rhs: AXUIElement?) -> Bool {
         guard let rhs else { return false }
-        return CFEqual(lhs, rhs)
+        if CFEqual(lhs, rhs) {
+            return true
+        }
+
+        let lhsTitle = windowTitle(of: lhs)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let rhsTitle = windowTitle(of: rhs)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let lhsTitle, let rhsTitle, !lhsTitle.isEmpty, lhsTitle == rhsTitle {
+            return true
+        }
+
+        let lhsPosition = copyCGPointAttribute(kAXPositionAttribute as String, from: lhs)
+        let rhsPosition = copyCGPointAttribute(kAXPositionAttribute as String, from: rhs)
+        let lhsSize = copyCGSizeAttribute(kAXSizeAttribute as String, from: lhs)
+        let rhsSize = copyCGSizeAttribute(kAXSizeAttribute as String, from: rhs)
+
+        return lhsPosition == rhsPosition && lhsSize == rhsSize
     }
 
     private func copyBooleanAttribute(_ attribute: String, from element: AXUIElement) -> Bool? {
@@ -625,6 +644,34 @@ final class AXTextInjector: TextInjector {
         let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
         guard result == .success, let number = value as? NSNumber else { return nil }
         return number.boolValue
+    }
+
+    private func copyCGPointAttribute(_ attribute: String, from element: AXUIElement) -> CGPoint? {
+        var value: AnyObject?
+        let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
+        guard result == .success, let axValue = value else { return nil }
+        guard CFGetTypeID(axValue) == AXValueGetTypeID() else { return nil }
+
+        let typedValue = axValue as! AXValue
+        guard AXValueGetType(typedValue) == .cgPoint else { return nil }
+
+        var output = CGPoint.zero
+        guard AXValueGetValue(typedValue, .cgPoint, &output) else { return nil }
+        return output
+    }
+
+    private func copyCGSizeAttribute(_ attribute: String, from element: AXUIElement) -> CGSize? {
+        var value: AnyObject?
+        let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
+        guard result == .success, let axValue = value else { return nil }
+        guard CFGetTypeID(axValue) == AXValueGetTypeID() else { return nil }
+
+        let typedValue = axValue as! AXValue
+        guard AXValueGetType(typedValue) == .cgSize else { return nil }
+
+        var output = CGSize.zero
+        guard AXValueGetValue(typedValue, .cgSize, &output) else { return nil }
+        return output
     }
 
     private func readSelectedTextViaCopy(processID: pid_t?, milliseconds: Int) -> String? {

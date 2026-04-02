@@ -572,6 +572,39 @@ final class WorkflowController {
         return AskSelectionDecisionResult(decision: decision, completedAt: Date())
     }
 
+    private func answerAskAnything(
+        selectedText: String?,
+        spokenInstruction: String,
+        personaPrompt: String?,
+        sessionID: UUID
+    ) async throws -> RewriteGenerationResult {
+        let prompts = PromptCatalog.askAnythingPrompts(
+            selectedText: selectedText,
+            spokenInstruction: spokenInstruction,
+            personaPrompt: personaPrompt
+        )
+
+        let response = try await RequestRetry.perform(operationName: "Ask anything answer") { [self] in
+            try await self.llmService.complete(
+                systemPrompt: prompts.system,
+                userPrompt: prompts.user
+            )
+        }
+
+        try ensureProcessingIsActive(sessionID)
+
+        let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw NSError(
+                domain: "WorkflowController",
+                code: 3003,
+                userInfo: [NSLocalizedDescriptionKey: "Ask anything answer was empty."]
+            )
+        }
+
+        return RewriteGenerationResult(text: trimmed, completedAt: Date())
+    }
+
     private func requiresRewrite(selectedText: String?, personaPrompt: String?) -> Bool {
         if let selectedText, !selectedText.isEmpty {
             return true
@@ -626,19 +659,14 @@ final class WorkflowController {
             let selectedText = recordingIntent == .askSelection
                 ? editingSelectedText(from: selectionSnapshot)
                 : nil
+            let askContextText = recordingIntent == .askSelection
+                ? selectionSnapshot.selectedText?.trimmingCharacters(in: .whitespacesAndNewlines)
+                : nil
             currentSelectedText = selectedText
             let personaPrompt = settingsStore.activePersona?.prompt
 
             NetworkDebugLogger.logMessage(selectionSnapshotLog(selectionSnapshot))
             let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
-
-            if recordingIntent == .askSelection && selectedText == nil {
-                await MainActor.run {
-                    self.appState.setStatus(.idle)
-                    self.overlayController.showNotice(message: L("workflow.ask.selectionRequired"))
-                }
-                return
-            }
 
             if !shouldShowResultDialog {
                 await MainActor.run {
@@ -681,6 +709,7 @@ final class WorkflowController {
                     record: record,
                     selectionSnapshot: selectionSnapshot,
                     selectedText: selectedText,
+                    askContextText: askContextText,
                     personaPrompt: personaPrompt,
                     recordingIntent: recordingIntent,
                     sessionID: sessionID
@@ -764,6 +793,7 @@ final class WorkflowController {
                 isEditable: false
             ),
             selectedText: selectedText,
+            askContextText: selectedText,
             personaPrompt: personaPrompt,
             recordingIntent: mutableRecord.mode == .editSelection || mutableRecord.mode == .askAnswer ? .askSelection : .dictation,
             sessionID: sessionID,
@@ -776,6 +806,7 @@ final class WorkflowController {
         record: HistoryRecord,
         selectionSnapshot: TextSelectionSnapshot,
         selectedText: String?,
+        askContextText: String?,
         personaPrompt: String?,
         recordingIntent: RecordingIntent,
         sessionID: UUID,
@@ -928,6 +959,46 @@ final class WorkflowController {
                     record.applyStatus = .succeeded
                     record.applyMessage = outcome.message
                 }
+            } else if recordingIntent == .askSelection {
+                record.processingStatus = .running
+                saveHistoryRecord(record)
+
+                pipelineTiming.llmProcessingStartedAt = Date()
+                record.pipelineTiming = pipelineTiming
+                saveHistoryRecord(record)
+                logPipelineEvent("llm-processing-started", for: record)
+
+                let answerResult = try await answerAskAnything(
+                    selectedText: askContextText,
+                    spokenInstruction: transcribedText,
+                    personaPrompt: personaPrompt,
+                    sessionID: sessionID
+                )
+
+                try ensureProcessingIsActive(sessionID)
+                pipelineTiming.llmProcessingCompletedAt = answerResult.completedAt
+                record.pipelineTiming = pipelineTiming
+                logPipelineEvent("llm-processing-completed", for: record)
+                record.mode = .askAnswer
+                record.personaResultText = answerResult.text
+                record.processingStatus = .succeeded
+                record.applyStatus = .running
+                saveHistoryRecord(record)
+
+                try ensureProcessingIsActive(sessionID)
+                pipelineTiming.applyStartedAt = Date()
+                record.pipelineTiming = pipelineTiming
+                await MainActor.run {
+                    self.lastDialogResultText = answerResult.text
+                    self.overlayController.showResultDialog(
+                        title: L("workflow.ask.answerTitle"),
+                        message: answerResult.text
+                    )
+                }
+                pipelineTiming.applyCompletedAt = Date()
+                record.pipelineTiming = pipelineTiming
+                record.applyStatus = .succeeded
+                record.applyMessage = L("workflow.ask.answerPresented")
             } else if let personaPrompt, !personaPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 record.mode = .personaRewrite
 
