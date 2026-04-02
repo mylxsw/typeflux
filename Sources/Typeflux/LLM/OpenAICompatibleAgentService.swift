@@ -13,23 +13,24 @@ final class OpenAICompatibleAgentService: LLMAgentService {
         }
 
         let remoteProvider = settingsStore.llmRemoteProvider
-        let configuredBaseURL = settingsStore.llmBaseURL
-        guard let baseURL = URL(string: configuredBaseURL), !configuredBaseURL.isEmpty else {
-            throw NSError(domain: "LLMAgent", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid LLM base URL."])
-        }
-
-        let model = settingsStore.llmModel.isEmpty ? remoteProvider.defaultModel : settingsStore.llmModel
+        let connection = try LLMConnectionResolver.resolve(
+            provider: remoteProvider,
+            baseURL: settingsStore.llmBaseURL,
+            model: settingsStore.llmModel,
+            apiKey: settingsStore.llmAPIKey
+        )
         let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: request.systemPrompt,
             appLanguage: settingsStore.appLanguage
         )
 
-        return try await RequestRetry.perform(operationName: "LLM agent tool call") { [self] in
+        return try await RequestRetry.perform(operationName: "LLM agent tool call") {
             try await RemoteAgentClient.runTool(
-                provider: remoteProvider,
-                baseURL: baseURL,
-                model: model,
-                apiKey: self.settingsStore.llmAPIKey,
+                provider: connection.provider,
+                baseURL: connection.baseURL,
+                model: connection.model,
+                apiKey: connection.apiKey,
+                additionalHeaders: connection.additionalHeaders,
                 request: LLMAgentRequest(
                     systemPrompt: effectiveSystemPrompt,
                     userPrompt: request.userPrompt,
@@ -48,6 +49,7 @@ enum RemoteAgentClient {
         baseURL: URL,
         model: String,
         apiKey: String,
+        additionalHeaders: [String: String] = [:],
         request: LLMAgentRequest,
         decoding type: T.Type
     ) async throws -> T {
@@ -57,6 +59,7 @@ enum RemoteAgentClient {
                 baseURL: baseURL,
                 model: model,
                 apiKey: apiKey,
+                additionalHeaders: additionalHeaders,
                 request: request,
                 decoding: type
             )
@@ -65,6 +68,7 @@ enum RemoteAgentClient {
                 baseURL: baseURL,
                 model: model,
                 apiKey: apiKey,
+                additionalHeaders: additionalHeaders,
                 request: request,
                 decoding: type
             )
@@ -73,6 +77,7 @@ enum RemoteAgentClient {
                 baseURL: baseURL,
                 model: model,
                 apiKey: apiKey,
+                additionalHeaders: additionalHeaders,
                 request: request,
                 decoding: type
             )
@@ -83,6 +88,7 @@ enum RemoteAgentClient {
         baseURL: URL,
         model: String,
         apiKey: String,
+        additionalHeaders: [String: String],
         request: LLMAgentRequest,
         decoding type: T.Type
     ) async throws -> T {
@@ -93,6 +99,9 @@ enum RemoteAgentClient {
             urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         }
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        for (field, value) in additionalHeaders {
+            urlRequest.setValue(value, forHTTPHeaderField: field)
+        }
 
         var body = LLMAgentResponseSupport.openAICompatibleToolBody(
             model: model,
@@ -120,6 +129,7 @@ enum RemoteAgentClient {
         baseURL: URL,
         model: String,
         apiKey: String,
+        additionalHeaders: [String: String],
         request: LLMAgentRequest,
         decoding type: T.Type
     ) async throws -> T {
@@ -129,6 +139,9 @@ enum RemoteAgentClient {
         urlRequest.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         urlRequest.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        for (field, value) in additionalHeaders {
+            urlRequest.setValue(value, forHTTPHeaderField: field)
+        }
         let body = LLMAgentResponseSupport.anthropicToolBody(
             model: model,
             systemPrompt: request.systemPrompt,
@@ -154,6 +167,7 @@ enum RemoteAgentClient {
         baseURL: URL,
         model: String,
         apiKey: String,
+        additionalHeaders: [String: String],
         request: LLMAgentRequest,
         decoding type: T.Type
     ) async throws -> T {
@@ -171,6 +185,9 @@ enum RemoteAgentClient {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        for (field, value) in additionalHeaders {
+            urlRequest.setValue(value, forHTTPHeaderField: field)
+        }
         let body = LLMAgentResponseSupport.geminiToolBody(
             systemPrompt: request.systemPrompt,
             userPrompt: request.userPrompt,

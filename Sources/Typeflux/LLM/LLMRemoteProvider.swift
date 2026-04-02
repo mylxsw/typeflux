@@ -12,6 +12,7 @@ struct LLMRemoteEndpointPreset: Equatable {
 }
 
 enum LLMRemoteProvider: String, CaseIterable, Codable {
+    case freeModel
     case openRouter
     case openAI
     case anthropic
@@ -25,6 +26,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
+        case .freeModel:
+            return L("provider.llm.freeModel")
         case .custom:
             return L("provider.llm.custom")
         case .openRouter:
@@ -54,13 +57,15 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return .anthropic
         case .gemini:
             return .gemini
-        case .custom, .openRouter, .openAI, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
+        case .freeModel, .custom, .openRouter, .openAI, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
             return .openAICompatible
         }
     }
 
     var defaultBaseURL: String {
         switch self {
+        case .freeModel:
+            return ""
         case .custom:
             return "https://api.openai.com/v1"
         case .openRouter:
@@ -86,6 +91,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
 
     var endpointPresets: [LLMRemoteEndpointPreset] {
         switch self {
+        case .freeModel:
+            return []
         case .zhipu:
             return [
                 LLMRemoteEndpointPreset(
@@ -117,10 +124,12 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
         switch self {
         case .custom:
             let allModels = LLMRemoteProvider.allCases
-                .filter { $0 != .custom }
+                .filter { $0 != .custom && $0 != .freeModel }
                 .flatMap { $0.suggestedModels }
             var seen = Set<String>()
             return allModels.filter { seen.insert($0).inserted }
+        case .freeModel:
+            return FreeLLMModelRegistry.suggestedModelNames
         case .openRouter:
             return [
                 "openrouter/auto",
@@ -204,13 +213,15 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
         switch self {
         case .openAI, .gemini:
             return true
-        case .custom, .openRouter, .anthropic, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
+        case .freeModel, .custom, .openRouter, .anthropic, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
             return false
         }
     }
 
     var studioProviderID: StudioModelProviderID {
         switch self {
+        case .freeModel:
+            return .freeModel
         case .custom:
             return .customLLM
         case .openRouter:
@@ -236,6 +247,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
 
     static func from(providerID: StudioModelProviderID) -> LLMRemoteProvider? {
         switch providerID {
+        case .freeModel:
+            return .freeModel
         case .customLLM:
             return .custom
         case .openRouter:

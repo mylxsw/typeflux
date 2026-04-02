@@ -281,7 +281,9 @@ struct OnboardingView: View {
                         providerID: provider.studioProviderID,
                         title: provider.displayName,
                         description: L("settings.models.card.\(provider.rawValue).summary"),
-                        badge: provider.apiStyle == .openAICompatible
+                        badge: provider == .freeModel
+                            ? L("settings.models.badge.free")
+                            : provider.apiStyle == .openAICompatible
                             ? L("settings.models.badge.api")
                             : L("settings.models.badge.native"),
                         isSelected: isSelected
@@ -315,7 +317,7 @@ struct OnboardingView: View {
             if viewModel.llmProvider == .ollama {
                 ollamaConfigFields
             } else {
-                openAICompatibleConfigFields
+                llmRemoteConfigFields
             }
         }
     }
@@ -351,6 +353,7 @@ struct OnboardingView: View {
 
     private func llmRemoteProviderIcon(_ provider: LLMRemoteProvider) -> String {
         switch provider {
+        case .freeModel: return "giftcard"
         case .custom: return "xmark.triangle.circle.square.fill"
         case .openRouter: return "arrow.triangle.branch"
         case .openAI: return "circle.hexagongrid"
@@ -517,25 +520,37 @@ struct OnboardingView: View {
         }
     }
 
-    private var openAICompatibleConfigFields: some View {
+    private var llmRemoteConfigFields: some View {
         StudioCard(padding: 16) {
             VStack(spacing: 12) {
-                StudioTextInputCard(
-                    label: L("settings.models.remote.baseURL"),
-                    placeholder: "https://api.openai.com/v1",
-                    text: $viewModel.llmBaseURL
-                )
-                StudioTextInputCard(
-                    label: L("common.apiKey"),
-                    placeholder: "sk-...",
-                    text: $viewModel.llmAPIKey,
-                    secure: true
-                )
-                StudioTextInputCard(
-                    label: L("common.model"),
-                    placeholder: "gpt-4o-mini",
-                    text: $viewModel.llmModel
-                )
+                if viewModel.llmRemoteProvider == .freeModel {
+                    StudioTextInputCard(
+                        label: L("settings.models.freeModel.modelName"),
+                        placeholder: L("settings.models.freeModel.placeholder"),
+                        text: $viewModel.llmModel
+                    )
+                    Text(L("settings.models.freeModel.hint"))
+                        .font(.studioBody(12))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    StudioTextInputCard(
+                        label: L("settings.models.remote.baseURL"),
+                        placeholder: "https://api.openai.com/v1",
+                        text: $viewModel.llmBaseURL
+                    )
+                    StudioTextInputCard(
+                        label: L("common.apiKey"),
+                        placeholder: "sk-...",
+                        text: $viewModel.llmAPIKey,
+                        secure: true
+                    )
+                    StudioTextInputCard(
+                        label: L("common.model"),
+                        placeholder: "gpt-4o-mini",
+                        text: $viewModel.llmModel
+                    )
+                }
             }
         }
     }
@@ -585,6 +600,7 @@ struct OnboardingView: View {
         switch providerID {
         case .whisperAPI, .multimodalLLM: return "openai"
         case .ollama: return "ollama"
+        case .freeModel: return nil
         case .openRouter: return "openrouter"
         case .openAI: return "openai"
         case .anthropic: return "claude-color"
@@ -606,6 +622,7 @@ struct OnboardingView: View {
         case .localSTT: return "laptopcomputer.and.arrow.down"
         case .whisperAPI: return "dot.radiowaves.left.and.right"
         case .ollama: return "cpu"
+        case .freeModel: return "giftcard"
         case .customLLM: return "slider.horizontal.3"
         case .openRouter: return "arrow.triangle.branch"
         case .openAI: return "circle.hexagongrid"

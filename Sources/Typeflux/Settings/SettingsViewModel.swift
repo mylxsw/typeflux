@@ -1118,11 +1118,11 @@ final class StudioViewModel: ObservableObject {
 
     func applyModelConfiguration(shouldShowToast: Bool = true) {
         switch focusedModelProvider {
-        case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
             let remoteProvider = LLMRemoteProvider.from(providerID: focusedModelProvider) ?? llmRemoteProvider
             settingsStore.setLLMBaseURL(llmBaseURL, for: remoteProvider)
             settingsStore.setLLMModel(llmModel, for: remoteProvider)
-            settingsStore.setLLMAPIKey(llmAPIKey, for: remoteProvider)
+            settingsStore.setLLMAPIKey(remoteProvider == .freeModel ? "" : llmAPIKey, for: remoteProvider)
             if llmProvider == .openAICompatible && llmRemoteProvider == remoteProvider {
                 settingsStore.llmRemoteProvider = remoteProvider
             }
@@ -1154,6 +1154,7 @@ final class StudioViewModel: ObservableObject {
     func focusedLLMProviderMissingAPIKey() -> Bool {
         guard focusedModelProvider.domain == .llm else { return false }
         guard focusedModelProvider != .ollama else { return false }
+        guard focusedModelProvider != .freeModel else { return false }
         return llmAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
@@ -1164,7 +1165,7 @@ final class StudioViewModel: ObservableObject {
         let capturedProvider = focusedModelProvider
         let capturedRemoteProvider = LLMRemoteProvider.from(providerID: capturedProvider) ?? llmRemoteProvider
         let capturedBaseURL = llmBaseURL
-        let capturedModel = llmModel.isEmpty ? capturedRemoteProvider.defaultModel : llmModel
+        let capturedModel = llmModel
         let capturedAPIKey = llmAPIKey
         let capturedOllamaURL = ollamaBaseURL.isEmpty ? "http://127.0.0.1:11434" : ollamaBaseURL
         let capturedOllamaModel = ollamaModel
@@ -1176,15 +1177,19 @@ final class StudioViewModel: ObservableObject {
 
             do {
                 switch capturedProvider {
-                case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
-                    guard !capturedBaseURL.isEmpty, let baseURL = URL(string: capturedBaseURL) else {
-                        throw NSError(domain: "LLMTest", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid base URL. Please enter a valid endpoint."])
-                    }
-                    let preview = try await RemoteLLMClient.previewConnection(
+                case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
+                    let connection = try LLMConnectionResolver.resolve(
                         provider: capturedRemoteProvider,
-                        baseURL: baseURL,
+                        baseURL: capturedBaseURL,
                         model: capturedModel,
                         apiKey: capturedAPIKey
+                    )
+                    let preview = try await RemoteLLMClient.previewConnection(
+                        provider: connection.provider,
+                        baseURL: connection.baseURL,
+                        model: connection.model,
+                        apiKey: connection.apiKey,
+                        additionalHeaders: connection.additionalHeaders
                     )
                     if !preview.isEmpty {
                         firstTokenDate = Date()
