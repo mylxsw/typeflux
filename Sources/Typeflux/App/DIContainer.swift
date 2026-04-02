@@ -9,6 +9,7 @@ final class DIContainer {
     let hotkeyService: HotkeyService
     let audioRecorder: AudioRecorder
     let overlayController: OverlayController
+    let askAnswerWindowController: AskAnswerWindowController
     let soundEffectPlayer: SoundEffectPlayer
     let clipboard: ClipboardService
     let textInjector: TextInjector
@@ -25,8 +26,9 @@ final class DIContainer {
             audioDeviceManager: audioDeviceManager
         )
         overlayController = OverlayController(appState: appState)
-        soundEffectPlayer = SoundEffectPlayer(settingsStore: settingsStore)
         clipboard = SystemClipboardService()
+        askAnswerWindowController = AskAnswerWindowController(clipboard: clipboard)
+        soundEffectPlayer = SoundEffectPlayer(settingsStore: settingsStore)
         textInjector = AXTextInjector()
         historyStore = SQLiteHistoryStore()
         ollamaModelManager = OllamaLocalModelManager()

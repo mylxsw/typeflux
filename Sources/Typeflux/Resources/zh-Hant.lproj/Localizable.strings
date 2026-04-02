@@ -230,6 +230,7 @@
 "workflow.transcription.noSpeech" = "未辨識到有效語音內容";
 "workflow.result.copyTitle" = "複製結果";
 "workflow.ask.answerTitle" = "隨便問";
+"workflow.ask.answerSectionTitle" = "回答";
 "workflow.ask.answerPresented" = "已顯示回答";
 "workflow.result.copied" = "已複製到剪貼簿";
 "workflow.persona.finishRecordingFirst" = "請先完成目前錄音，再切換人設。";

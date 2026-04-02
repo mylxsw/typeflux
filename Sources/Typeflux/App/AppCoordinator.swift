@@ -19,6 +19,7 @@ final class AppCoordinator {
             clipboard: di.clipboard,
             historyStore: di.historyStore,
             overlayController: di.overlayController,
+            askAnswerWindowController: di.askAnswerWindowController,
             soundEffectPlayer: di.soundEffectPlayer
         )
         self.workflowController = workflowController
