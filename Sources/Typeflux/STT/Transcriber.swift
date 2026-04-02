@@ -32,6 +32,7 @@ extension Transcriber {
 final class STTRouter {
     private let settingsStore: SettingsStore
     private let whisper: Transcriber
+    private let freeSTT: Transcriber
     private let appleSpeech: Transcriber
     private let localModel: Transcriber
     private let multimodal: Transcriber
@@ -41,6 +42,7 @@ final class STTRouter {
     init(
         settingsStore: SettingsStore,
         whisper: Transcriber,
+        freeSTT: Transcriber,
         appleSpeech: Transcriber,
         localModel: Transcriber,
         multimodal: Transcriber,
@@ -49,6 +51,7 @@ final class STTRouter {
     ) {
         self.settingsStore = settingsStore
         self.whisper = whisper
+        self.freeSTT = freeSTT
         self.appleSpeech = appleSpeech
         self.localModel = localModel
         self.multimodal = multimodal
@@ -83,6 +86,19 @@ final class STTRouter {
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         switch settingsStore.sttProvider {
+        case .freeModel:
+            do {
+                return try await RequestRetry.perform(operationName: "Free STT request") { [self] in
+                    try await self.freeSTT.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                }
+            } catch {
+                NetworkDebugLogger.logError(context: "Free STT failed", error: error)
+                if settingsStore.useAppleSpeechFallback {
+                    NetworkDebugLogger.logMessage("Falling back to Apple Speech after free STT failure")
+                    return try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                }
+                throw error
+            }
         case .whisperAPI:
             if !settingsStore.whisperBaseURL.isEmpty {
                 do {

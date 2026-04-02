@@ -25,6 +25,7 @@ final class OnboardingViewModel: ObservableObject {
     @Published var whisperBaseURL: String
     @Published var whisperAPIKey: String
     @Published var whisperModel: String
+    @Published var freeSTTModel: String
     @Published var localSTTModel: LocalSTTModel
     @Published var multimodalLLMBaseURL: String
     @Published var multimodalLLMAPIKey: String
@@ -63,6 +64,7 @@ final class OnboardingViewModel: ObservableObject {
         whisperBaseURL = settingsStore.whisperBaseURL
         whisperAPIKey = settingsStore.whisperAPIKey
         whisperModel = settingsStore.whisperModel
+        freeSTTModel = settingsStore.freeSTTModel
         localSTTModel = settingsStore.localSTTModel
         multimodalLLMBaseURL = settingsStore.multimodalLLMBaseURL
         multimodalLLMAPIKey = settingsStore.multimodalLLMAPIKey
@@ -179,6 +181,8 @@ final class OnboardingViewModel: ObservableObject {
             settingsStore.sttProvider = sttProvider
         case .sttConfig:
             switch sttProvider {
+            case .freeModel:
+                settingsStore.freeSTTModel = freeSTTModel
             case .whisperAPI:
                 settingsStore.whisperBaseURL = whisperBaseURL
                 settingsStore.whisperAPIKey = whisperAPIKey
