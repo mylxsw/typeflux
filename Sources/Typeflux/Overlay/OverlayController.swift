@@ -425,19 +425,19 @@ final class OverlayController {
         switch presentation {
         case .recordingHold:
             return OverlayMetrics(
-                size: NSSize(width: 118, height: 72), anchor: .bottom, offset: 24,
+                size: recordingOverlaySize(baseWidth: 118, baseHeight: 72), anchor: .bottom, offset: 24,
                 interactive: false)
         case .recordingHoldPreview:
             return OverlayMetrics(
-                size: NSSize(width: 344, height: 118), anchor: .bottom, offset: 24,
+                size: recordingOverlaySize(baseWidth: 344, baseHeight: 118), anchor: .bottom, offset: 24,
                 interactive: false)
         case .recordingLocked:
             return OverlayMetrics(
-                size: NSSize(width: 158, height: 66), anchor: .bottom, offset: 26, interactive: true
+                size: recordingOverlaySize(baseWidth: 158, baseHeight: 66), anchor: .bottom, offset: 26, interactive: true
             )
         case .recordingLockedPreview:
             return OverlayMetrics(
-                size: NSSize(width: 344, height: 124), anchor: .bottom, offset: 24,
+                size: recordingOverlaySize(baseWidth: 344, baseHeight: 124), anchor: .bottom, offset: 24,
                 interactive: true)
         case .processing:
             return OverlayMetrics(
@@ -466,6 +466,15 @@ final class OverlayController {
                 size: NSSize(width: 446, height: 236), anchor: .bottom, offset: 36,
                 interactive: true)
         }
+    }
+
+    private func recordingOverlaySize(baseWidth: CGFloat, baseHeight: CGFloat) -> NSSize {
+        guard !model.recordingHintText.isEmpty else {
+            return NSSize(width: baseWidth, height: baseHeight)
+        }
+
+        let estimatedHintWidth = min(360, max(baseWidth, CGFloat(model.recordingHintText.count) * 10.0 + 44))
+        return NSSize(width: estimatedHintWidth, height: baseHeight + 36)
     }
 
     private func updateKeyMonitoring() {
@@ -812,6 +821,7 @@ private struct OverlayView: View {
             }
             content()
         }
+        .fixedSize(horizontal: true, vertical: true)
     }
 
     private var recordingHintBanner: some View {
@@ -832,6 +842,7 @@ private struct OverlayView: View {
                 Capsule(style: .continuous)
                     .stroke(Color.white.opacity(0.14), lineWidth: 0.8)
             )
+            .fixedSize(horizontal: true, vertical: true)
     }
 
     private var processingCapsule: some View {
