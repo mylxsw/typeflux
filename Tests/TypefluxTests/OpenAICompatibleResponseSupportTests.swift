@@ -22,6 +22,22 @@ final class OpenAICompatibleResponseSupportTests: XCTestCase {
         XCTAssertEqual(OpenAICompatibleResponseSupport.extractTextDelta(from: data), "hello world")
     }
 
+    func testExtractsStructuredMarkdownBlocksWithoutFlatteningParagraphs() throws {
+        let data = try jsonData([
+            "choices": [
+                ["message": ["content": [
+                    ["type": "text", "text": "## Summary"],
+                    ["type": "text", "text": "- first item\n- second item"]
+                ]]]
+            ]
+        ])
+
+        XCTAssertEqual(
+            OpenAICompatibleResponseSupport.extractTextDelta(from: data),
+            "## Summary\n\n- first item\n- second item"
+        )
+    }
+
     func testDetectsReasoningOnlyDelta() throws {
         let data = try jsonData([
             "choices": [

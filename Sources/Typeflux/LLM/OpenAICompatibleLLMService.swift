@@ -391,10 +391,10 @@ enum RemoteLLMClient {
             return ""
         }
 
-        return content.compactMap { item -> String? in
+        return joinTextBlocks(content.compactMap { item -> String? in
             guard (item["type"] as? String) == "text" else { return nil }
             return item["text"] as? String
-        }.joined()
+        })
     }
 
     private static func requestGemini(
@@ -449,7 +449,7 @@ enum RemoteLLMClient {
             return ""
         }
 
-        return parts.compactMap { $0["text"] as? String }.joined()
+        return joinTextBlocks(parts.compactMap { $0["text"] as? String })
     }
 
     private static func providerSupportsResponseFormat(baseURL: URL) -> Bool {
@@ -476,6 +476,21 @@ enum RemoteLLMClient {
 
         Return only valid JSON matching the required schema.
         """
+    }
+
+    private static func joinTextBlocks(_ parts: [String]) -> String {
+        guard !parts.isEmpty else { return "" }
+
+        return parts.enumerated().reduce(into: "") { partial, item in
+            let segment = item.element.trimmingCharacters(in: .newlines)
+            guard !segment.isEmpty else { return }
+
+            if item.offset == 0 {
+                partial = segment
+            } else {
+                partial += "\n\n" + segment
+            }
+        }
     }
 
     static func performJSONRequest(_ request: URLRequest) async throws -> Data {

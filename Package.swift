@@ -10,9 +10,15 @@ let package = Package(
     products: [
         .executable(name: "Typeflux", targets: ["Typeflux"])
     ],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-markdown.git", from: "0.3.0")
+    ],
     targets: [
         .executableTarget(
             name: "Typeflux",
+            dependencies: [
+                .product(name: "Markdown", package: "swift-markdown")
+            ],
             path: "Sources/Typeflux",
             exclude: [
                 "Resources/Info.plist"

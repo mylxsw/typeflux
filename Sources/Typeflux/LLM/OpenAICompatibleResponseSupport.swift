@@ -61,7 +61,7 @@ enum OpenAICompatibleResponseSupport {
             return string.isEmpty ? nil : string
 
         case let parts as [[String: Any]]:
-            let text = parts
+            let segments = parts
                 .compactMap { part -> String? in
                     if let type = part["type"] as? String, type != "text", type != "output_text" {
                         return nil
@@ -74,11 +74,11 @@ enum OpenAICompatibleResponseSupport {
                     }
                     return nil
                 }
-                .joined()
+            let text = joinSegmentsPreservingBlocks(segments)
             return text.isEmpty ? nil : text
 
         case let parts as [Any]:
-            let text = parts
+            let segments = parts
                 .compactMap { item -> String? in
                     if let text = item as? String {
                         return text
@@ -88,7 +88,7 @@ enum OpenAICompatibleResponseSupport {
                     }
                     return nil
                 }
-                .joined()
+            let text = joinSegmentsPreservingBlocks(segments)
             return text.isEmpty ? nil : text
 
         case let dict as [String: Any]:
@@ -103,5 +103,53 @@ enum OpenAICompatibleResponseSupport {
         default:
             return nil
         }
+    }
+
+    private static func joinSegmentsPreservingBlocks(_ segments: [String]) -> String {
+        guard !segments.isEmpty else { return "" }
+
+        return segments.enumerated().reduce(into: "") { partial, item in
+            let segment = item.element
+            guard !segment.isEmpty else { return }
+
+            if item.offset == 0 {
+                partial = segment
+                return
+            }
+
+            let previous = partial
+            let separator: String
+
+            if previous.hasSuffix("\n") || segment.hasPrefix("\n") {
+                separator = ""
+            } else if beginsMarkdownBlock(segment) || endsAsParagraph(previous) {
+                separator = "\n\n"
+            } else {
+                separator = ""
+            }
+
+            partial += separator + segment
+        }
+    }
+
+    private static func beginsMarkdownBlock(_ string: String) -> Bool {
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let first = trimmed.first else { return false }
+
+        if ["#", "-", "*", ">", "`"].contains(first) {
+            return true
+        }
+
+        if first.isNumber {
+            let prefix = trimmed.prefix(4)
+            return prefix.contains(".")
+        }
+
+        return false
+    }
+
+    private static func endsAsParagraph(_ string: String) -> Bool {
+        guard let last = string.trimmingCharacters(in: .whitespacesAndNewlines).last else { return false }
+        return [".", "!", "?", "。", "！", "？", ":" , "："].contains(last)
     }
 }
