@@ -65,6 +65,23 @@ final class LLMRemoteProviderTests: XCTestCase {
         XCTAssertFalse(LLMRemoteProvider.deepSeek.supportsNativeStructuredOutput)
     }
 
+    func testProvidersWithRegionalEndpointsExposeOfficialPresets() {
+        XCTAssertEqual(
+            LLMRemoteProvider.zhipu.endpointPresets.map(\.url),
+            [
+                "https://api.z.ai/api/paas/v4",
+                "https://open.bigmodel.cn/api/paas/v4",
+            ]
+        )
+        XCTAssertEqual(
+            LLMRemoteProvider.minimax.endpointPresets.map(\.url),
+            [
+                "https://api.minimax.io/v1",
+                "https://api.minimaxi.com/v1",
+            ]
+        )
+    }
+
     private func clearLLMKeys() {
         for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("llm.") {
             defaults.removeObject(forKey: key)
