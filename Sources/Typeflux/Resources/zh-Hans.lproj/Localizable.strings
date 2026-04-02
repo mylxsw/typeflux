@@ -438,7 +438,10 @@
 "settings.models.card.kimi.summary" = "使用 Moonshot Kimi 模型，提供固定兼容地址和内置模型预设。";
 "settings.models.card.qwen.summary" = "通过 DashScope 兼容端点使用阿里云 Qwen 模型。";
 "settings.models.card.zhipu.summary" = "通过 BigModel 兼容端点使用智谱 GLM 模型。";
+"settings.models.card.minimax.summary" = "通过 MiniMax 的 OpenAI 兼容端点使用其模型，并提供国际版与中国版 URL 选择。";
 "settings.models.badge.native" = "原生 API";
+"settings.models.endpointPreset.international" = "国际版 URL";
+"settings.models.endpointPreset.china" = "中国版 URL";
 "settings.models.providers.stt" = "语音提供方";
 "settings.models.providers.llm" = "LLM 提供方";
 "settings.models.providers.sttSubtitle" = "选择默认识别器，并在当前页面完成凭证和回退配置。";

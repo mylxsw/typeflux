@@ -6,6 +6,11 @@ enum LLMRemoteAPIStyle {
     case gemini
 }
 
+struct LLMRemoteEndpointPreset: Equatable {
+    let labelKey: String
+    let url: String
+}
+
 enum LLMRemoteProvider: String, CaseIterable, Codable {
     case custom
     case openRouter
@@ -16,6 +21,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
     case kimi
     case qwen
     case zhipu
+    case minimax
 
     var displayName: String {
         switch self {
@@ -37,6 +43,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return "Qwen"
         case .zhipu:
             return "Zhipu"
+        case .minimax:
+            return "MiniMax"
         }
     }
 
@@ -46,7 +54,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return .anthropic
         case .gemini:
             return .gemini
-        case .custom, .openRouter, .openAI, .deepSeek, .kimi, .qwen, .zhipu:
+        case .custom, .openRouter, .openAI, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
             return .openAICompatible
         }
     }
@@ -71,6 +79,37 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return "https://dashscope.aliyuncs.com/compatible-mode/v1"
         case .zhipu:
             return "https://open.bigmodel.cn/api/paas/v4"
+        case .minimax:
+            return "https://api.minimax.io/v1"
+        }
+    }
+
+    var endpointPresets: [LLMRemoteEndpointPreset] {
+        switch self {
+        case .zhipu:
+            return [
+                LLMRemoteEndpointPreset(
+                    labelKey: "settings.models.endpointPreset.international",
+                    url: "https://api.z.ai/api/paas/v4"
+                ),
+                LLMRemoteEndpointPreset(
+                    labelKey: "settings.models.endpointPreset.china",
+                    url: "https://open.bigmodel.cn/api/paas/v4"
+                )
+            ]
+        case .minimax:
+            return [
+                LLMRemoteEndpointPreset(
+                    labelKey: "settings.models.endpointPreset.international",
+                    url: "https://api.minimax.io/v1"
+                ),
+                LLMRemoteEndpointPreset(
+                    labelKey: "settings.models.endpointPreset.china",
+                    url: "https://api.minimaxi.com/v1"
+                )
+            ]
+        default:
+            return []
         }
     }
 
@@ -94,6 +133,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return ["qwen-max", "qwen-plus", "qwen-turbo"]
         case .zhipu:
             return ["glm-4.7", "glm-4.7-flash", "glm-4.5-air"]
+        case .minimax:
+            return ["MiniMax-M2.5", "MiniMax-M2.5-highspeed", "MiniMax-M2.1"]
         }
     }
 
@@ -105,7 +146,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
         switch self {
         case .openAI, .gemini:
             return true
-        case .custom, .openRouter, .anthropic, .deepSeek, .kimi, .qwen, .zhipu:
+        case .custom, .openRouter, .anthropic, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
             return false
         }
     }
@@ -130,6 +171,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return .qwen
         case .zhipu:
             return .zhipu
+        case .minimax:
+            return .minimax
         }
     }
 
@@ -153,6 +196,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return .qwen
         case .zhipu:
             return .zhipu
+        case .minimax:
+            return .minimax
         default:
             return nil
         }

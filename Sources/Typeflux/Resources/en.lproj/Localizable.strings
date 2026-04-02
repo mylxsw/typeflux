@@ -438,7 +438,10 @@
 "settings.models.card.kimi.summary" = "Moonshot Kimi models with an OpenAI-compatible endpoint and built-in model presets.";
 "settings.models.card.qwen.summary" = "Alibaba Cloud Qwen models through the DashScope compatible endpoint.";
 "settings.models.card.zhipu.summary" = "Zhipu GLM models through the BigModel compatible endpoint.";
+"settings.models.card.minimax.summary" = "MiniMax models through its OpenAI-compatible endpoint, with separate international and China API URLs.";
 "settings.models.badge.native" = "Native API";
+"settings.models.endpointPreset.international" = "International URL";
+"settings.models.endpointPreset.china" = "China URL";
 "settings.models.providers.stt" = "Speech providers";
 "settings.models.providers.llm" = "LLM providers";
 "settings.models.providers.sttSubtitle" = "Choose the recognizer you want to default to, then configure credentials and fallback without leaving this page.";
