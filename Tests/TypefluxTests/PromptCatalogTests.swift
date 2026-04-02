@@ -107,6 +107,7 @@ final class PromptCatalogTests: XCTestCase {
         )
 
         XCTAssertTrue(prompts.system.contains("Default to \"answer\" whenever the intent is ambiguous."))
+        XCTAssertTrue(prompts.system.contains("respond by calling the provided tool"))
         XCTAssertTrue(prompts.user.contains("<selected_text>\nWe should probably move the launch by two weeks.\n</selected_text>"))
         XCTAssertTrue(prompts.user.contains("<spoken_instruction>\nWhat risks do you see here?\n</spoken_instruction>"))
         XCTAssertTrue(prompts.user.contains("<persona_definition>\nBe concise.\n</persona_definition>"))

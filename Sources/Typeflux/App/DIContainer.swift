@@ -15,6 +15,7 @@ final class DIContainer {
     let textInjector: TextInjector
     let historyStore: HistoryStore
     let llmService: LLMService
+    let llmAgentService: LLMAgentService
     let sttRouter: STTRouter
     let ollamaModelManager: OllamaLocalModelManager
     let localSTTServiceManager: LocalSTTServiceManager
@@ -33,6 +34,11 @@ final class DIContainer {
         historyStore = SQLiteHistoryStore()
         ollamaModelManager = OllamaLocalModelManager()
         localSTTServiceManager = LocalSTTServiceManager()
+        llmAgentService = LLMAgentRouter(
+            settingsStore: settingsStore,
+            remote: OpenAICompatibleAgentService(settingsStore: settingsStore),
+            ollama: OllamaAgentService()
+        )
         llmService = LLMRouter(
             settingsStore: settingsStore,
             openAICompatible: OpenAICompatibleLLMService(settingsStore: settingsStore),
