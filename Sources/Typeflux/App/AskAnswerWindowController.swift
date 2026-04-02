@@ -12,7 +12,7 @@ final class AskAnswerWindowController: NSObject {
         static let outerTopPadding: CGFloat = 8
         static let outerBottomPadding: CGFloat = 10
         static let sectionSpacing: CGFloat = 10
-        static let headerButtonSize: CGFloat = 30
+        static let headerButtonSize: CGFloat = 24
         static let questionIconWidth: CGFloat = 20
         static let contentCardCornerRadius: CGFloat = 12
         static let answerHeaderHorizontalPadding: CGFloat = 12
@@ -198,9 +198,12 @@ private struct AskAnswerWindowView: View {
 
             Button(action: { model.onCopyRequested?() }) {
                 Image(systemName: "doc.on.doc")
-                    .font(.system(size: StudioTheme.Typography.iconMedium, weight: .semibold))
+                    .font(.system(size: StudioTheme.Typography.iconRegular, weight: .semibold))
                     .foregroundStyle(StudioTheme.textSecondary)
-                    .frame(width: 28, height: 28)
+                    .frame(
+                        width: AskAnswerWindowController.Metrics.headerButtonSize,
+                        height: AskAnswerWindowController.Metrics.headerButtonSize
+                    )
             }
             .buttonStyle(.plain)
             .help(L("common.copy"))
@@ -211,16 +214,19 @@ private struct AskAnswerWindowView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Label(L("workflow.ask.answerSectionTitle"), systemImage: "sparkles")
-                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
 
                 Spacer()
 
                 Button(action: { model.onCopyRequested?() }) {
                     Image(systemName: "doc.on.doc")
-                        .font(.system(size: StudioTheme.Typography.iconMedium, weight: .semibold))
+                        .font(.system(size: StudioTheme.Typography.iconRegular, weight: .semibold))
                         .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(width: 28, height: 28)
+                        .frame(
+                            width: AskAnswerWindowController.Metrics.headerButtonSize,
+                            height: AskAnswerWindowController.Metrics.headerButtonSize
+                        )
                 }
                 .buttonStyle(.plain)
                 .help(L("common.copy"))
@@ -365,10 +371,8 @@ private struct MarkdownTextView: NSViewRepresentable {
     private func normalizedMarkdownText() -> String {
         var normalized = markdown.replacingOccurrences(of: "\r\n", with: "\n")
         normalized = normalized.replacingOccurrences(of: "\r", with: "\n")
-
-        if !normalized.contains("\n") && normalized.contains("\\n") {
-            normalized = normalized.replacingOccurrences(of: "\\n", with: "\n")
-        }
+        normalized = normalized.replacingOccurrences(of: "\\n", with: "\n")
+        normalized = normalized.replacingOccurrences(of: "\\t", with: "    ")
 
         return normalized
     }

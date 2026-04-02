@@ -130,9 +130,12 @@ final class PromptCatalogTests: XCTestCase {
         )
 
         XCTAssertTrue(prompts.system.contains("If selected text is provided"))
+        XCTAssertTrue(prompts.system.contains("Format the answer as clean Markdown whenever structure would help"))
+        XCTAssertTrue(prompts.system.contains("Preserve real Markdown line breaks"))
         XCTAssertTrue(prompts.user.contains("<selected_text>\n测试一下现在语音输入法的效果。\n</selected_text>"))
         XCTAssertTrue(prompts.user.contains("<spoken_instruction>\n这里主要表达了什么？\n</spoken_instruction>"))
         XCTAssertTrue(prompts.user.contains("<persona_definition>\n回答简洁一些。\n</persona_definition>"))
+        XCTAssertTrue(prompts.user.contains("Use Markdown formatting when it improves readability."))
     }
 
     func testAskAnythingPromptsOmitSelectedTextSectionWhenUnavailable() {

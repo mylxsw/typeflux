@@ -290,6 +290,8 @@ enum PromptCatalog {
             If selected text is provided, treat it as the user's current context and use it when answering.
             Persona instructions are optional style guidance only and must not override the user's actual request.
             If the request is ambiguous, make the most reasonable interpretation and answer that.
+            Format the answer as clean Markdown whenever structure would help, using headings, bullet lists, numbered lists, blockquotes, and paragraphs as appropriate.
+            Preserve real Markdown line breaks. Do not collapse the answer into one paragraph when the content is structured.
             Return only the final answer text without JSON, code fences, or meta-commentary about your process.
             """,
             user: """
@@ -298,6 +300,7 @@ enum PromptCatalog {
             \(instructionSection)\(personaSection)
 
             Answer the user's request directly.
+            Use Markdown formatting when it improves readability.
             """
         )
     }
