@@ -41,7 +41,7 @@ final class HotkeyGestureArbiterTests: XCTestCase {
             askHotkey: ask
         )
 
-        XCTAssertTrue(releaseEvents.isEmpty)
+        XCTAssertEqual(releaseEvents, [.activationTapped])
         XCTAssertEqual(arbiter.phase, .idle)
         XCTAssertTrue(arbiter.handlePendingModifierActivationTimeout().isEmpty)
     }
@@ -168,5 +168,24 @@ final class HotkeyGestureArbiterTests: XCTestCase {
         )
 
         XCTAssertTrue(shouldConsume)
+    }
+
+    func testShortFnTapBecomesActivationTap() {
+        var arbiter = HotkeyGestureArbiter()
+        _ = arbiter.handleFlagsChanged(
+            keyCode: HotkeyBinding.functionKeyCode,
+            modifierFlags: activation.modifierFlags,
+            activationHotkey: activation,
+            askHotkey: ask
+        )
+
+        let events = arbiter.handleFlagsChanged(
+            keyCode: HotkeyBinding.functionKeyCode,
+            modifierFlags: 0,
+            activationHotkey: activation,
+            askHotkey: ask
+        )
+
+        XCTAssertEqual(events, [.activationTapped])
     }
 }

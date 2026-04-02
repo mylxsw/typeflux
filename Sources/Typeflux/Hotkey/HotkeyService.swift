@@ -7,6 +7,7 @@ enum HotkeyAction {
 }
 
 protocol HotkeyService: AnyObject {
+    var onActivationTap: (() -> Void)? { get set }
     var onActivationPressBegan: (() -> Void)? { get set }
     var onActivationPressEnded: (() -> Void)? { get set }
     var onAskPressBegan: (() -> Void)? { get set }

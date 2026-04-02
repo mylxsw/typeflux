@@ -13,8 +13,9 @@ private func hotkeyEventTapCallback(
 }
 
 final class EventTapHotkeyService: HotkeyService {
-    private static let modifierActivationArbitrationDelay: TimeInterval = 0.12
+    private static let modifierActivationHoldDelay: TimeInterval = 0.22
 
+    var onActivationTap: (() -> Void)?
     var onActivationPressBegan: (() -> Void)?
     var onActivationPressEnded: (() -> Void)?
     var onAskPressBegan: (() -> Void)?
@@ -234,6 +235,11 @@ final class EventTapHotkeyService: HotkeyService {
 
         for event in events {
             switch event {
+            case .activationTapped:
+                ErrorLogStore.shared.log("Hotkey(NSEvent): activation tap")
+                DispatchQueue.main.async { [weak self] in
+                    self?.onActivationTap?()
+                }
             case .begin(.activation):
                 ErrorLogStore.shared.log("Hotkey(NSEvent): activation down")
                 DispatchQueue.main.async { [weak self] in
@@ -281,7 +287,7 @@ final class EventTapHotkeyService: HotkeyService {
         }
         pendingModifierActivationWorkItem = workItem
         DispatchQueue.main.asyncAfter(
-            deadline: .now() + Self.modifierActivationArbitrationDelay,
+            deadline: .now() + Self.modifierActivationHoldDelay,
             execute: workItem
         )
     }

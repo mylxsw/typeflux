@@ -131,14 +131,17 @@ final class WorkflowController {
     }
 
     func start() {
+        hotkeyService.onActivationTap = { [weak self] in
+            self?.handleActivationTap()
+        }
         hotkeyService.onActivationPressBegan = { [weak self] in
-            self?.handlePressBegan(intent: .dictation)
+            self?.handlePressBegan(intent: .dictation, startLocked: false)
         }
         hotkeyService.onActivationPressEnded = { [weak self] in
             self?.handlePressEnded()
         }
         hotkeyService.onAskPressBegan = { [weak self] in
-            self?.handlePressBegan(intent: .askSelection)
+            self?.handlePressBegan(intent: .askSelection, startLocked: true)
         }
         hotkeyService.onAskPressEnded = { [weak self] in
             self?.handleAskPressEnded()
@@ -242,7 +245,11 @@ final class WorkflowController {
         }
     }
 
-    private func handlePressBegan(intent: RecordingIntent) {
+    private func handleActivationTap() {
+        handlePressBegan(intent: .dictation, startLocked: true)
+    }
+
+    private func handlePressBegan(intent: RecordingIntent, startLocked: Bool) {
         if isPersonaPickerPresented {
             dismissPersonaPicker()
         }
@@ -259,7 +266,7 @@ final class WorkflowController {
             return
         }
 
-        hotkeyPressedAt = Date()
+        hotkeyPressedAt = startLocked ? nil : Date()
 
         if isRecording {
             guard recordingMode == .locked else {
@@ -273,7 +280,7 @@ final class WorkflowController {
 
         cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.newRecording"))
         Task { [weak self] in
-            await self?.beginRecording(intent: intent)
+            await self?.beginRecording(intent: intent, startLocked: startLocked)
         }
     }
 
@@ -346,9 +353,9 @@ final class WorkflowController {
         }
     }
 
-    private func beginRecording(intent: RecordingIntent) async {
+    private func beginRecording(intent: RecordingIntent, startLocked: Bool) async {
         isRecording = true
-        recordingMode = intent == .askSelection ? .locked : .holdToTalk
+        recordingMode = startLocked ? .locked : .holdToTalk
         recordingIntent = intent
         lastRetryableFailureRecord = nil
         NSLog("[Workflow] Recording started")

@@ -7,6 +7,7 @@ enum HotkeyPhysicalEventType: Equatable {
 }
 
 enum HotkeyGestureEvent: Equatable {
+    case activationTapped
     case begin(HotkeyAction)
     case end(HotkeyAction)
     case personaRequested
@@ -145,7 +146,7 @@ struct HotkeyGestureArbiter {
         switch phase {
         case .pendingModifierActivation:
             phase = .idle
-            return []
+            return [.activationTapped]
         case .active(.activation):
             phase = .idle
             return [.end(.activation)]
