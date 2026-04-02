@@ -110,4 +110,63 @@ final class HotkeyGestureArbiterTests: XCTestCase {
         XCTAssertEqual(events, [.begin(.activation)])
         XCTAssertEqual(arbiter.phase, .active(.activation))
     }
+
+    func testShouldConsumeAskSpaceKeyDownDuringChord() {
+        let arbiter = HotkeyGestureArbiter()
+
+        let shouldConsume = arbiter.shouldConsume(
+            eventType: .keyDown,
+            keyCode: ask.keyCode,
+            modifierFlags: ask.modifierFlags,
+            activationHotkey: activation,
+            askHotkey: ask,
+            personaHotkey: persona
+        )
+
+        XCTAssertTrue(shouldConsume)
+    }
+
+    func testShouldConsumeRepeatedAskSpaceWhileAskIsActive() {
+        var arbiter = HotkeyGestureArbiter()
+        _ = arbiter.handleFlagsChanged(
+            keyCode: HotkeyBinding.functionKeyCode,
+            modifierFlags: activation.modifierFlags,
+            activationHotkey: activation,
+            askHotkey: ask
+        )
+        _ = arbiter.handleKeyDown(
+            keyCode: ask.keyCode,
+            modifierFlags: ask.modifierFlags,
+            isRepeat: false,
+            activationHotkey: activation,
+            askHotkey: ask,
+            personaHotkey: persona
+        )
+
+        let shouldConsume = arbiter.shouldConsume(
+            eventType: .keyDown,
+            keyCode: ask.keyCode,
+            modifierFlags: ask.modifierFlags,
+            activationHotkey: activation,
+            askHotkey: ask,
+            personaHotkey: persona
+        )
+
+        XCTAssertTrue(shouldConsume)
+    }
+
+    func testShouldConsumeModifierFlagsChangedForFunctionTrigger() {
+        let arbiter = HotkeyGestureArbiter()
+
+        let shouldConsume = arbiter.shouldConsume(
+            eventType: .flagsChanged,
+            keyCode: activation.keyCode,
+            modifierFlags: activation.modifierFlags,
+            activationHotkey: activation,
+            askHotkey: ask,
+            personaHotkey: persona
+        )
+
+        XCTAssertTrue(shouldConsume)
+    }
 }

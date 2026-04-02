@@ -1,6 +1,17 @@
 import AppKit
 import Foundation
 
+private func hotkeyEventTapCallback(
+    proxy: CGEventTapProxy,
+    type: CGEventType,
+    event: CGEvent,
+    refcon: UnsafeMutableRawPointer?
+) -> Unmanaged<CGEvent>? {
+    guard let refcon else { return Unmanaged.passUnretained(event) }
+    let service = Unmanaged<EventTapHotkeyService>.fromOpaque(refcon).takeUnretainedValue()
+    return service.handleEventTapEvent(type: type, event: event)
+}
+
 final class EventTapHotkeyService: HotkeyService {
     private static let modifierActivationArbitrationDelay: TimeInterval = 0.12
 
@@ -13,6 +24,8 @@ final class EventTapHotkeyService: HotkeyService {
 
     private let settingsStore: SettingsStore
 
+    private var eventTap: CFMachPort?
+    private var runLoopSource: CFRunLoopSource?
     private var globalMonitor: Any?
     private var localMonitor: Any?
     private var arbiter = HotkeyGestureArbiter()
@@ -28,24 +41,25 @@ final class EventTapHotkeyService: HotkeyService {
         NSLog("[Hotkey] Starting event tap service...")
         ErrorLogStore.shared.log("Hotkey: starting")
 
-        // Fallback: NSEvent global monitor (more reliable than CGEventTap in some environments)
-        // Note: global monitor will not receive events while app is in secure input contexts, but works for most cases.
-        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { [weak self] event in
-            self?.handleNSEvent(event)
-        }
-        localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { [weak self] event in
-            self?.handleNSEvent(event)
-            return event
-        }
+        installEventTapIfPossible()
     }
 
     func stop() {
+        if let tap = eventTap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+            if let source = runLoopSource {
+                CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+            }
+            CFMachPortInvalidate(tap)
+        }
         if let globalMonitor {
             NSEvent.removeMonitor(globalMonitor)
         }
         if let localMonitor {
             NSEvent.removeMonitor(localMonitor)
         }
+        eventTap = nil
+        runLoopSource = nil
         globalMonitor = nil
         localMonitor = nil
         pendingModifierActivationWorkItem?.cancel()
@@ -53,65 +67,166 @@ final class EventTapHotkeyService: HotkeyService {
         arbiter = HotkeyGestureArbiter()
     }
 
-    private func handleNSEvent(_ event: NSEvent) {
-        switch event.type {
-        case .keyDown:
-            handleKeyDown(event)
-        case .keyUp:
-            handleKeyUp(event)
-        case .flagsChanged:
-            handleFlagsChanged(event)
-        default:
+    private func installEventTapIfPossible() {
+        let mask =
+            (1 << CGEventType.keyDown.rawValue)
+            | (1 << CGEventType.keyUp.rawValue)
+            | (1 << CGEventType.flagsChanged.rawValue)
+        let selfPointer = Unmanaged.passUnretained(self).toOpaque()
+
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: CGEventMask(mask),
+            callback: hotkeyEventTapCallback,
+            userInfo: selfPointer
+        ) else {
+            ErrorLogStore.shared.log("Hotkey: failed to create CGEventTap, using NSEvent fallback")
+            installNSEventMonitorFallback()
             return
+        }
+
+        eventTap = tap
+        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+        runLoopSource = source
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        CGEvent.tapEnable(tap: tap, enable: true)
+    }
+
+    private func installNSEventMonitorFallback() {
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { [weak self] event in
+            _ = self?.processNSEvent(event, canConsume: false)
+        }
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { [weak self] event in
+            guard let self else { return event }
+            let shouldConsume = self.processNSEvent(event, canConsume: true)
+            return shouldConsume ? nil : event
         }
     }
 
-    private func handleKeyDown(_ event: NSEvent) {
-        let keyCode = Int(event.keyCode)
-        let flags = filteredFlags(event.modifierFlags)
+    private func handleNSEvent(_ event: NSEvent) {
+        _ = processNSEvent(event, canConsume: false)
+    }
+
+    private func processNSEvent(_ event: NSEvent, canConsume: Bool) -> Bool {
+        processPhysicalEvent(
+            eventType: physicalEventType(for: event.type),
+            keyCode: Int(event.keyCode),
+            modifierFlags: filteredFlags(event.modifierFlags),
+            isRepeat: event.isARepeat,
+            canConsume: canConsume
+        )
+    }
+
+    fileprivate func handleEventTapEvent(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let tap = eventTap {
+                CGEvent.tapEnable(tap: tap, enable: true)
+            }
+            return Unmanaged.passUnretained(event)
+        }
+
+        guard let eventType = physicalEventType(for: type) else {
+            return Unmanaged.passUnretained(event)
+        }
+
+        let keyCode = Int(event.getIntegerValueField(.keyboardEventKeycode))
+        let flags = filteredFlags(NSEvent.ModifierFlags(rawValue: UInt(event.flags.rawValue)))
+        let isRepeat = eventType == .keyDown && event.getIntegerValueField(.keyboardEventAutorepeat) != 0
+        let shouldConsume = processPhysicalEvent(
+            eventType: eventType,
+            keyCode: keyCode,
+            modifierFlags: flags,
+            isRepeat: isRepeat,
+            canConsume: true
+        )
+        return shouldConsume ? nil : Unmanaged.passUnretained(event)
+    }
+
+    private func processPhysicalEvent(
+        eventType: HotkeyPhysicalEventType?,
+        keyCode: Int,
+        modifierFlags: UInt,
+        isRepeat: Bool,
+        canConsume: Bool
+    ) -> Bool {
+        guard let eventType else { return false }
+
         let activationHotkey = settingsStore.activationHotkey
         let askHotkey = settingsStore.askHotkey
         let personaHotkey = settingsStore.personaHotkey
-        handleGestureEvents(
-            arbiter.handleKeyDown(
-                keyCode: keyCode,
-                modifierFlags: flags,
-                isRepeat: event.isARepeat,
-                activationHotkey: activationHotkey,
-                askHotkey: askHotkey,
-                personaHotkey: personaHotkey
-            )
+        let shouldConsume = canConsume && arbiter.shouldConsume(
+            eventType: eventType,
+            keyCode: keyCode,
+            modifierFlags: modifierFlags,
+            activationHotkey: activationHotkey,
+            askHotkey: askHotkey,
+            personaHotkey: personaHotkey
         )
-    }
 
-    private func handleKeyUp(_ event: NSEvent) {
-        let keyCode = Int(event.keyCode)
-        let activationHotkey = settingsStore.activationHotkey
-        let askHotkey = settingsStore.askHotkey
-        handleGestureEvents(
-            arbiter.handleKeyUp(
-                keyCode: keyCode,
-                activationHotkey: activationHotkey,
-                askHotkey: askHotkey
+        switch eventType {
+        case .keyDown:
+            handleGestureEvents(
+                arbiter.handleKeyDown(
+                    keyCode: keyCode,
+                    modifierFlags: modifierFlags,
+                    isRepeat: isRepeat,
+                    activationHotkey: activationHotkey,
+                    askHotkey: askHotkey,
+                    personaHotkey: personaHotkey
+                )
             )
-        )
-    }
+        case .keyUp:
+            handleGestureEvents(
+                arbiter.handleKeyUp(
+                    keyCode: keyCode,
+                    activationHotkey: activationHotkey,
+                    askHotkey: askHotkey
+                )
+            )
+        case .flagsChanged:
+            handleGestureEvents(
+                arbiter.handleFlagsChanged(
+                    keyCode: keyCode,
+                    modifierFlags: modifierFlags,
+                    activationHotkey: activationHotkey,
+                    askHotkey: askHotkey
+                )
+            )
+        }
 
-    private func handleFlagsChanged(_ event: NSEvent) {
-        let activationHotkey = settingsStore.activationHotkey
-        let askHotkey = settingsStore.askHotkey
-        handleGestureEvents(
-            arbiter.handleFlagsChanged(
-                keyCode: Int(event.keyCode),
-                modifierFlags: filteredFlags(event.modifierFlags),
-                activationHotkey: activationHotkey,
-                askHotkey: askHotkey
-            )
-        )
+        return shouldConsume
     }
 
     private func filteredFlags(_ flags: NSEvent.ModifierFlags) -> UInt {
         UInt(flags.intersection([.command, .shift, .control, .option, .function]).rawValue)
+    }
+
+    private func physicalEventType(for type: NSEvent.EventType) -> HotkeyPhysicalEventType? {
+        switch type {
+        case .keyDown:
+            return .keyDown
+        case .keyUp:
+            return .keyUp
+        case .flagsChanged:
+            return .flagsChanged
+        default:
+            return nil
+        }
+    }
+
+    private func physicalEventType(for type: CGEventType) -> HotkeyPhysicalEventType? {
+        switch type {
+        case .keyDown:
+            return .keyDown
+        case .keyUp:
+            return .keyUp
+        case .flagsChanged:
+            return .flagsChanged
+        default:
+            return nil
+        }
     }
 
     private func handleGestureEvents(_ events: [HotkeyGestureEvent]) {

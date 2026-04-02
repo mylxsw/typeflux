@@ -1,5 +1,11 @@
 import Foundation
 
+enum HotkeyPhysicalEventType: Equatable {
+    case keyDown
+    case keyUp
+    case flagsChanged
+}
+
 enum HotkeyGestureEvent: Equatable {
     case begin(HotkeyAction)
     case end(HotkeyAction)
@@ -17,6 +23,50 @@ struct HotkeyGestureArbiter {
 
     var hasPendingModifierActivation: Bool {
         phase == .pendingModifierActivation
+    }
+
+    func shouldConsume(
+        eventType: HotkeyPhysicalEventType,
+        keyCode: Int,
+        modifierFlags: UInt,
+        activationHotkey: HotkeyBinding,
+        askHotkey: HotkeyBinding,
+        personaHotkey: HotkeyBinding
+    ) -> Bool {
+        switch eventType {
+        case .flagsChanged:
+            return activationHotkey.isModifierOnlyTrigger && keyCode == activationHotkey.keyCode
+        case .keyDown:
+            if askHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags) {
+                return true
+            }
+            if !activationHotkey.isModifierOnlyTrigger,
+               activationHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags) {
+                return true
+            }
+            if personaHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags) {
+                return true
+            }
+            if case .active(.ask) = phase, askHotkey.keyCode == keyCode {
+                return true
+            }
+            if case .active(.activation) = phase,
+               !activationHotkey.isModifierOnlyTrigger,
+               activationHotkey.keyCode == keyCode {
+                return true
+            }
+            return false
+        case .keyUp:
+            if case .active(.ask) = phase, askHotkey.keyCode == keyCode {
+                return true
+            }
+            if case .active(.activation) = phase,
+               !activationHotkey.isModifierOnlyTrigger,
+               activationHotkey.keyCode == keyCode {
+                return true
+            }
+            return false
+        }
     }
 
     mutating func handleKeyDown(
