@@ -15,6 +15,7 @@ final class AppCoordinator {
             audioRecorder: di.audioRecorder,
             sttRouter: di.sttRouter,
             llmService: di.llmService,
+            llmAgentService: di.llmAgentService,
             textInjector: di.textInjector,
             clipboard: di.clipboard,
             historyStore: di.historyStore,

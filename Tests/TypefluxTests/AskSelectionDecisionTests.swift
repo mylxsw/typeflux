@@ -2,88 +2,36 @@ import XCTest
 @testable import Typeflux
 
 final class AskSelectionDecisionTests: XCTestCase {
-    func testParseAnswerDecision() {
-        let response = #"{"action":"answer","response":"This sentence is too informal."}"#
-
-        let decision = AskSelectionDecision.parse(from: response)
-
-        XCTAssertEqual(decision, AskSelectionDecision(action: .answer, response: "This sentence is too informal."))
+    func testAnswerDecisionRequiresNonEmptyResponse() {
+        XCTAssertTrue(AskSelectionDecision(action: .answer, response: "Final answer").isValid)
+        XCTAssertFalse(AskSelectionDecision(action: .answer, response: "  ").isValid)
     }
 
-    func testParseEditDecisionAllowsEmptyResponse() {
-        let response = #"{"action":"edit","response":""}"#
-
-        let decision = AskSelectionDecision.parse(from: response)
-
-        XCTAssertEqual(decision, AskSelectionDecision(action: .edit, response: ""))
+    func testEditDecisionRequiresEmptyResponse() {
+        XCTAssertTrue(AskSelectionDecision(action: .edit, response: "").isValid)
+        XCTAssertTrue(AskSelectionDecision(action: .edit, response: "   ").isValid)
+        XCTAssertFalse(AskSelectionDecision(action: .edit, response: "rewrite me").isValid)
     }
 
-    func testParseRejectsUnknownAction() {
-        let response = #"{"action":"rewrite","response":"nope"}"#
+    func testDecodesFromToolArgumentsJSON() throws {
+        let data = Data(#"{"action":"answer","response":"This sentence is too informal."}"#.utf8)
 
-        XCTAssertNil(AskSelectionDecision.parse(from: response))
-    }
-
-    func testParseRejectsMissingResponseField() {
-        let response = #"{"action":"answer"}"#
-
-        XCTAssertNil(AskSelectionDecision.parse(from: response))
-    }
-
-    func testParseAcceptsFencedJSONDecision() {
-        let response = """
-        ```json
-        {
-          "action": "edit",
-          "response": ""
-        }
-        ```
-        """
-
-        let decision = AskSelectionDecision.parse(from: response)
-
-        XCTAssertEqual(decision, AskSelectionDecision(action: .edit, response: ""))
-    }
-
-    func testParseAcceptsJSONEmbeddedInSurroundingText() {
-        let response = """
-        Here is the result:
-        {"action":"answer","response":"Translated text goes here."}
-        """
-
-        let decision = AskSelectionDecision.parse(from: response)
-
-        XCTAssertEqual(decision, AskSelectionDecision(action: .answer, response: "Translated text goes here."))
-    }
-
-    func testParseAcceptsDecisionAliasKey() {
-        let response = """
-        {
-          "decision": "edit",
-          "response": ""
-        }
-        """
-
-        let decision = AskSelectionDecision.parse(from: response)
-
-        XCTAssertEqual(decision, AskSelectionDecision(action: .edit, response: ""))
-    }
-
-    func testParseOrDefaultToAnswerFallsBackForPlainText() {
-        let response = "This paragraph sounds hesitant because it overuses qualifiers."
-
-        let decision = AskSelectionDecision.parseOrDefaultToAnswer(from: response)
+        let decision = try JSONDecoder().decode(AskSelectionDecision.self, from: data)
 
         XCTAssertEqual(
             decision,
-            AskSelectionDecision(
-                action: .answer,
-                response: "This paragraph sounds hesitant because it overuses qualifiers."
-            )
+            AskSelectionDecision(action: .answer, response: "This sentence is too informal.")
         )
     }
 
-    func testParseOrDefaultToAnswerRejectsBlankFallback() {
-        XCTAssertNil(AskSelectionDecision.parseOrDefaultToAnswer(from: "   \n  "))
+    func testToolSchemaRequiresActionAndResponse() {
+        let properties = AskSelectionDecision.schema.jsonObject["properties"] as? [String: Any]
+        let actionSchema = properties?["action"] as? [String: Any]
+        let actionEnum = actionSchema?["enum"] as? [String]
+        let required = AskSelectionDecision.schema.jsonObject["required"] as? [String]
+
+        XCTAssertEqual(AskSelectionDecision.tool.name, "answer_or_edit_selection")
+        XCTAssertEqual(actionEnum, ["answer", "edit"])
+        XCTAssertEqual(required ?? [], ["action", "response"])
     }
 }

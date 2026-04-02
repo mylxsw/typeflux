@@ -44,6 +44,7 @@ final class WorkflowController {
     private let audioRecorder: AudioRecorder
     private let sttRouter: STTRouter
     private let llmService: LLMService
+    private let llmAgentService: LLMAgentService
     private let textInjector: TextInjector
     private let clipboard: ClipboardService
     private let historyStore: HistoryStore
@@ -93,6 +94,7 @@ final class WorkflowController {
         audioRecorder: AudioRecorder,
         sttRouter: STTRouter,
         llmService: LLMService,
+        llmAgentService: LLMAgentService,
         textInjector: TextInjector,
         clipboard: ClipboardService,
         historyStore: HistoryStore,
@@ -106,6 +108,7 @@ final class WorkflowController {
         self.audioRecorder = audioRecorder
         self.sttRouter = sttRouter
         self.llmService = llmService
+        self.llmAgentService = llmAgentService
         self.textInjector = textInjector
         self.clipboard = clipboard
         self.historyStore = historyStore
@@ -554,27 +557,25 @@ final class WorkflowController {
             spokenInstruction: spokenInstruction,
             personaPrompt: personaPrompt
         )
-        let response = try await RequestRetry.perform(operationName: "Ask selection decision") { [self] in
-            try await self.llmService.completeJSON(
-                systemPrompt: prompts.system,
-                userPrompt: prompts.user,
-                schema: AskSelectionDecision.schema
+        let decision = try await RequestRetry.perform(operationName: "Ask selection decision") { [self] in
+            try await self.llmAgentService.runTool(
+                request: LLMAgentRequest(
+                    systemPrompt: prompts.system,
+                    userPrompt: prompts.user,
+                    tools: [AskSelectionDecision.tool],
+                    forcedToolName: AskSelectionDecision.tool.name
+                ),
+                decoding: AskSelectionDecision.self
             )
         }
 
         try ensureProcessingIsActive(sessionID)
 
-        guard let decision = AskSelectionDecision.parseOrDefaultToAnswer(from: response) else {
+        guard decision.isValid else {
             throw NSError(
                 domain: "WorkflowController",
                 code: 3001,
-                userInfo: [NSLocalizedDescriptionKey: "Ask selection decision returned invalid JSON."]
-            )
-        }
-
-        if AskSelectionDecision.parse(from: response) == nil {
-            NetworkDebugLogger.logMessage(
-                "[Ask Selection] Invalid JSON decision response; defaulting to read-only answer."
+                userInfo: [NSLocalizedDescriptionKey: "Ask selection decision returned invalid tool arguments."]
             )
         }
 

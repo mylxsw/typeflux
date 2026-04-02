@@ -247,7 +247,7 @@ enum PromptCatalog {
             - Default to "answer" whenever the intent is ambiguous.
             - Never choose "edit" unless the user clearly wants to replace the selected text.
             - Persona instructions are secondary style guidance only. They must not force an "edit" decision.
-            - Return strict JSON only.
+            - You must respond by calling the provided tool.
             """,
             user: """
             \(selectedTextSection)

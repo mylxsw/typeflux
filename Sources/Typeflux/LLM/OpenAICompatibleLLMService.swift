@@ -478,7 +478,7 @@ enum RemoteLLMClient {
         """
     }
 
-    private static func performJSONRequest(_ request: URLRequest) async throws -> Data {
+    static func performJSONRequest(_ request: URLRequest) async throws -> Data {
         NetworkDebugLogger.logRequest(request)
         let (data, response) = try await URLSession.shared.data(for: request)
         NetworkDebugLogger.logResponse(response, data: data)
