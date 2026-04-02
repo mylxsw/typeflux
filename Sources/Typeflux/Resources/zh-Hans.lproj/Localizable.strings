@@ -547,6 +547,11 @@
 "onboarding.models.badge.apiKey" = "需要密钥";
 "onboarding.models.badge.local" = "本地";
 
+"onboarding.sttProvider.subtitle" = "选择将语音转换为文字的引擎";
+"onboarding.sttConfig.subtitle" = "配置凭据与偏好设置";
+"onboarding.llmProvider.subtitle" = "选择用于润色和优化你语音内容的模型";
+"onboarding.llmConfig.subtitle" = "配置凭据与偏好设置";
+
 "onboarding.permissions.title" = "授予权限";
 "onboarding.permissions.subtitle" = "Typeflux 需要少量系统权限，用于录制语音并将文字输入到其他应用。";
 
