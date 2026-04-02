@@ -42,14 +42,6 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
     }
 }
 
-private struct ViewHeightPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
 struct StudioView: View {
     private enum ShortcutRecordingTarget {
         case activation
@@ -67,8 +59,6 @@ struct StudioView: View {
     @State private var localSTTPendingDelete: LocalSTTModel? = nil
     @State private var localSTTPendingRedownload: LocalSTTModel? = nil
     @State private var llmActivationMissingAPIKeyProviderName: String?
-    @State private var pageHeaderHeight: CGFloat = 0
-    @State private var modelTabsHeight: CGFloat = 0
     @ObservedObject private var localization = AppLocalization.shared
 
     var body: some View {
@@ -80,11 +70,20 @@ struct StudioView: View {
             searchText: $viewModel.searchQuery,
             searchPlaceholder: viewModel.currentSection.searchPlaceholder
         ) { viewportSize in
+            let viewportHeight = viewportContentHeight(from: viewportSize)
+
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.heroSection) {
                 pageHeader
 
-                currentPage(viewportHeight: viewportContentHeight(from: viewportSize))
+                if viewModel.currentSection == .models {
+                    GeometryReader { proxy in
+                        modelsPage(viewportHeight: proxy.size.height)
+                    }
+                } else {
+                    currentPage
+                }
             }
+            .frame(height: viewModel.currentSection == .models ? viewportHeight : nil, alignment: .top)
             .id(viewModel.currentSection)
             .transition(.opacity)
             .animation(.easeInOut(duration: 0.15), value: viewModel.currentSection)
@@ -191,24 +190,15 @@ struct StudioView: View {
                 }
             }
         }
-        .background(
-            GeometryReader { proxy in
-                Color.clear
-                    .preference(key: ViewHeightPreferenceKey.self, value: proxy.size.height)
-            }
-        )
-        .onPreferenceChange(ViewHeightPreferenceKey.self) { height in
-            pageHeaderHeight = height
-        }
     }
 
     @ViewBuilder
-    private func currentPage(viewportHeight: CGFloat) -> some View {
+    private var currentPage: some View {
         switch viewModel.currentSection {
         case .home:
             homePage
         case .models:
-            modelsPage(viewportHeight: viewportHeight)
+            EmptyView()
         case .personas:
             personasPage
         case .vocabulary:
@@ -237,15 +227,6 @@ struct StudioView: View {
     }
 
     private func modelsPage(viewportHeight: CGFloat) -> some View {
-        let pageHeight = max(
-            viewportHeight - pageHeaderHeight - StudioTheme.Spacing.heroSection,
-            StudioTheme.Layout.settingsWindowMinHeight * 0.5
-        )
-        let contentHeight = max(
-            pageHeight - modelTabsHeight - StudioTheme.Spacing.pageGroup,
-            320
-        )
-
         return VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             HStack(spacing: StudioTheme.Spacing.xSmall) {
                 ForEach(StudioModelDomain.allCases) { domain in
@@ -273,33 +254,27 @@ struct StudioView: View {
                     .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.segmentedControlFill))
             )
             .frame(minHeight: StudioTheme.Layout.modelTabsMinHeight, alignment: .leading)
-            .background(
-                GeometryReader { proxy in
-                    Color.clear
-                        .preference(key: ViewHeightPreferenceKey.self, value: proxy.size.height)
-                }
-            )
-            .onPreferenceChange(ViewHeightPreferenceKey.self) { height in
-                modelTabsHeight = height
-            }
 
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-                        ForEach(modelProviderCards) { card in
-                            modelProviderSelectionCard(card)
+            GeometryReader { proxy in
+                HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
+                            ForEach(modelProviderCards) { card in
+                                modelProviderSelectionCard(card)
+                            }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(width: StudioTheme.Layout.modelProviderListWidth, alignment: .leading)
-                .frame(maxHeight: .infinity, alignment: .top)
+                    .frame(width: StudioTheme.Layout.modelProviderListWidth, height: proxy.size.height, alignment: .leading)
+                    .frame(maxHeight: .infinity, alignment: .top)
 
-                focusedProviderConfigurationPanel
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    focusedProviderConfigurationPanel
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
             }
-            .frame(height: contentHeight, alignment: .top)
         }
+        .frame(height: viewportHeight, alignment: .top)
     }
 
     private func viewportContentHeight(from viewportSize: CGSize) -> CGFloat {
