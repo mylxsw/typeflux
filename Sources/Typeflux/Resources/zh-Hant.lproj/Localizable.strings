@@ -81,6 +81,7 @@
 "menu.personas" = "人設";
 "menu.appearance" = "外觀";
 "menu.settings" = "設定…";
+"menu.setupGuide" = "新手引導…";
 "menu.about" = "關於 Typeflux";
 "menu.checkForUpdates" = "檢查更新…";
 "menu.quit" = "結束";

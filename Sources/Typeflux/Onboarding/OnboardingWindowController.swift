@@ -10,6 +10,11 @@ final class OnboardingWindowController: NSObject {
     private var viewModel: OnboardingViewModel?
     private var onCompleteHandler: (() -> Void)?
 
+    func bringToFront() {
+        window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
     func show(settingsStore: SettingsStore, onComplete: @escaping () -> Void) {
         if let window {
             window.makeKeyAndOrderFront(nil)

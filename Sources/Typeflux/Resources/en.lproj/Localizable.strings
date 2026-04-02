@@ -81,6 +81,7 @@
 "menu.personas" = "Personas";
 "menu.appearance" = "Appearance";
 "menu.settings" = "Settings…";
+"menu.setupGuide" = "Setup Guide…";
 "menu.about" = "About Typeflux";
 "menu.checkForUpdates" = "Check for Updates…";
 "menu.quit" = "Quit";

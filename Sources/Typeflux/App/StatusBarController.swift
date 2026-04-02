@@ -7,6 +7,7 @@ final class StatusBarController: NSObject {
     private let settingsStore: SettingsStore
     private let historyStore: HistoryStore
     private let onRetryHistory: (HistoryRecord) -> Void
+    private let onOpenOnboarding: () -> Void
 
     private var statusItem: NSStatusItem?
     private var menu: NSMenu?
@@ -17,12 +18,14 @@ final class StatusBarController: NSObject {
         appState: AppStateStore,
         settingsStore: SettingsStore,
         historyStore: HistoryStore,
-        onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in }
+        onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
+        onOpenOnboarding: @escaping () -> Void = {}
     ) {
         self.appState = appState
         self.settingsStore = settingsStore
         self.historyStore = historyStore
         self.onRetryHistory = onRetryHistory
+        self.onOpenOnboarding = onOpenOnboarding
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)
     }
 
@@ -103,6 +106,7 @@ final class StatusBarController: NSObject {
         menu.addItem(appearanceItem)
         menu.addItem(makeItem(title: L("menu.checkForUpdates"), action: #selector(checkUpdates)))
         menu.addItem(NSMenuItem.separator())
+        menu.addItem(makeItem(title: L("menu.setupGuide"), action: #selector(openOnboarding)))
         menu.addItem(makeItem(title: L("menu.about"), action: #selector(openAbout)))
         menu.addItem(NSMenuItem.separator())
 
@@ -181,6 +185,10 @@ final class StatusBarController: NSObject {
 
     @objc private func checkUpdates() {
         AutoUpdater.checkForUpdates()
+    }
+
+    @objc private func openOnboarding() {
+        onOpenOnboarding()
     }
 
     @objc private func openAbout() {

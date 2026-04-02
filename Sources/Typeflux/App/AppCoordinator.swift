@@ -32,6 +32,9 @@ final class AppCoordinator {
             historyStore: di.historyStore,
             onRetryHistory: { [weak self] record in
                 self?.workflowController?.retry(record: record)
+            },
+            onOpenOnboarding: { [weak self] in
+                self?.showOnboarding()
             }
         )
         statusBarController?.start()
@@ -57,6 +60,16 @@ final class AppCoordinator {
             self?.onboardingWindowController = nil
             self?.presentPermissionGuidanceIfNeeded()
         }
+    }
+
+    func showOnboarding() {
+        // Reset the flag so the onboarding starts fresh from step 1
+        di.settingsStore.isOnboardingCompleted = false
+        if let existing = onboardingWindowController {
+            existing.bringToFront()
+            return
+        }
+        presentOnboarding()
     }
 
     private func presentPermissionGuidanceIfNeeded() {
