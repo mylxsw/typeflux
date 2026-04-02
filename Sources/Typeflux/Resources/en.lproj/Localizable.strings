@@ -562,7 +562,7 @@
 "onboarding.shortcuts.persona.hint" = "Switch or apply a writing persona";
 "onboarding.shortcuts.changeInSettings" = "You can customize shortcuts anytime in Settings → Voice Shortcuts.";
 
-"onboarding.action.back" = "Back";
-"onboarding.action.continue" = "Continue";
+"onboarding.action.back" = "Previous";
+"onboarding.action.continue" = "Next";
 "onboarding.action.skip" = "Skip";
 "onboarding.action.getStarted" = "Get Started";

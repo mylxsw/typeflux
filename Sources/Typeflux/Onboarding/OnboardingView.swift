@@ -209,7 +209,7 @@ struct OnboardingView: View {
                 ]
                 ForEach(sttProviders, id: \.self) { provider in
                     modelProviderCard(
-                        icon: sttProviderIcon(provider),
+                        providerID: sttProviderToID(provider),
                         title: provider.displayName,
                         description: sttProviderDescription(provider),
                         badge: sttProviderBadge(provider),
@@ -263,7 +263,7 @@ struct OnboardingView: View {
 
             VStack(spacing: 8) {
                 modelProviderCard(
-                    icon: "cpu",
+                    providerID: .ollama,
                     title: L("provider.llm.ollama"),
                     description: L("settings.models.card.ollama.summary"),
                     badge: L("settings.models.badge.local"),
@@ -278,7 +278,7 @@ struct OnboardingView: View {
                     let isSelected = viewModel.llmProvider == .openAICompatible
                         && viewModel.llmRemoteProvider == provider
                     modelProviderCard(
-                        icon: llmRemoteProviderIcon(provider),
+                        providerID: provider.studioProviderID,
                         title: provider.displayName,
                         description: L("settings.models.card.\(provider.rawValue).summary"),
                         badge: provider.apiStyle == .openAICompatible
@@ -388,38 +388,78 @@ struct OnboardingView: View {
     }
 
     private var localSTTConfigFields: some View {
-        StudioCard(padding: 16) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(L("settings.models.localSpeechModels"))
-                    .font(.studioBody(11, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
-
-                ForEach(LocalSTTModel.allCases, id: \.self) { model in
-                    Button {
-                        viewModel.localSTTModel = model
-                    } label: {
-                        HStack(spacing: 10) {
+        VStack(spacing: 10) {
+            ForEach(LocalSTTModel.allCases, id: \.self) { model in
+                let isSelected = viewModel.localSTTModel == model
+                Button {
+                    viewModel.localSTTModel = model
+                } label: {
+                    HStack(spacing: 14) {
+                        // Radio indicator
+                        ZStack {
                             Circle()
-                                .fill(viewModel.localSTTModel == model ? StudioTheme.accent : StudioTheme.border.opacity(0.5))
-                                .frame(width: 10, height: 10)
-                            Text(model.displayName)
-                                .font(.studioBody(13, weight: .medium))
-                                .foregroundStyle(StudioTheme.textPrimary)
-                            Spacer()
-                            Text(model.specs.sizeValue)
-                                .font(.studioBody(11))
-                                .foregroundStyle(StudioTheme.textTertiary)
+                                .stroke(
+                                    isSelected ? StudioTheme.accent : StudioTheme.border.opacity(0.55),
+                                    lineWidth: 1.5
+                                )
+                                .frame(width: 20, height: 20)
+                            if isSelected {
+                                Circle()
+                                    .fill(StudioTheme.accent)
+                                    .frame(width: 10, height: 10)
+                            }
                         }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
 
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(model.displayName)
+                                .font(.studioBody(14, weight: .semibold))
+                                .foregroundStyle(isSelected ? StudioTheme.accent : StudioTheme.textPrimary)
+                            Text(model.specs.summary)
+                                .font(.studioBody(12))
+                                .foregroundStyle(StudioTheme.textSecondary)
+                                .lineLimit(1)
+                        }
+
+                        Spacer()
+
+                        Text(model.specs.sizeValue)
+                            .font(.studioBody(11, weight: .medium))
+                            .foregroundStyle(isSelected ? StudioTheme.accent : StudioTheme.textTertiary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .fill(isSelected ? StudioTheme.accentSoft : StudioTheme.surfaceMuted)
+                            )
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(isSelected ? StudioTheme.accentSoft.opacity(0.6) : StudioTheme.surface)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(
+                                isSelected ? StudioTheme.accent.opacity(0.45) : StudioTheme.border.opacity(0.55),
+                                lineWidth: isSelected ? 1.5 : 1
+                            )
+                    )
+                    .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(StudioInteractiveButtonStyle())
+            }
+
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 12))
+                    .foregroundStyle(StudioTheme.textTertiary)
                 Text(L("onboarding.models.stt.local.hint"))
-                    .font(.studioBody(11))
+                    .font(.studioBody(12))
                     .foregroundStyle(StudioTheme.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(.top, 6)
         }
     }
 
@@ -517,8 +557,75 @@ struct OnboardingView: View {
         }
     }
 
+    // MARK: - Provider Logo Helpers
+
+    private func sttProviderToID(_ provider: STTProvider) -> StudioModelProviderID {
+        switch provider {
+        case .whisperAPI: return .whisperAPI
+        case .localModel: return .localSTT
+        case .multimodalLLM: return .multimodalLLM
+        case .aliCloud: return .aliCloud
+        case .doubaoRealtime: return .doubaoRealtime
+        case .appleSpeech: return .appleSpeech
+        }
+    }
+
+    private func loadProviderLogo(for providerID: StudioModelProviderID) -> NSImage? {
+        guard let name = providerLogoResourceName(for: providerID) else { return nil }
+        let url = Bundle.module.url(
+            forResource: name, withExtension: "png", subdirectory: "Resources/Providers"
+        )
+        ?? Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Providers")
+        ?? Bundle.module.url(forResource: name, withExtension: "png")
+        guard let url else { return nil }
+        return NSImage(contentsOf: url)
+    }
+
+    private func providerLogoResourceName(for providerID: StudioModelProviderID) -> String? {
+        switch providerID {
+        case .whisperAPI, .multimodalLLM: return "openai"
+        case .ollama: return "ollama"
+        case .openRouter: return "openrouter"
+        case .openAI: return "openai"
+        case .anthropic: return "claude-color"
+        case .gemini: return "gemini-color"
+        case .deepSeek: return "deepseek-color"
+        case .kimi: return "moonshot"
+        case .qwen: return "qwen-color"
+        case .zhipu: return "zhipu-color"
+        case .minimax: return "minimax-color"
+        case .aliCloud: return "bailian-color"
+        case .doubaoRealtime: return "doubao-color"
+        default: return nil
+        }
+    }
+
+    private func providerSymbol(for providerID: StudioModelProviderID) -> String {
+        switch providerID {
+        case .appleSpeech: return "waveform"
+        case .localSTT: return "laptopcomputer.and.arrow.down"
+        case .whisperAPI: return "dot.radiowaves.left.and.right"
+        case .ollama: return "cpu"
+        case .customLLM: return "slider.horizontal.3"
+        case .openRouter: return "arrow.triangle.branch"
+        case .openAI: return "circle.hexagongrid"
+        case .anthropic: return "sun.max"
+        case .gemini: return "diamond"
+        case .deepSeek: return "bird"
+        case .kimi: return "moon.stars"
+        case .qwen: return "cloud"
+        case .zhipu: return "dot.scope"
+        case .minimax: return "sparkles"
+        case .multimodalLLM: return "brain.filled.head.profile"
+        case .aliCloud: return "antenna.radiowaves.left.and.right"
+        case .doubaoRealtime: return "bolt.horizontal.circle"
+        }
+    }
+
+    // MARK: - Provider Card
+
     private func modelProviderCard(
-        icon: String,
+        providerID: StudioModelProviderID,
         title: String,
         description: String,
         badge: String,
@@ -531,9 +638,19 @@ struct OnboardingView: View {
                     .fill(isSelected ? StudioTheme.accentSoft : StudioTheme.surfaceMuted)
                     .frame(width: 38, height: 38)
                     .overlay(
-                        Image(systemName: icon)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(isSelected ? StudioTheme.accent : StudioTheme.textSecondary)
+                        Group {
+                            if let image = loadProviderLogo(for: providerID) {
+                                Image(nsImage: image)
+                                    .resizable()
+                                    .interpolation(.high)
+                                    .scaledToFit()
+                                    .padding(7)
+                            } else {
+                                Image(systemName: providerSymbol(for: providerID))
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(isSelected ? StudioTheme.accent : StudioTheme.textSecondary)
+                            }
+                        }
                     )
 
                 VStack(alignment: .leading, spacing: 3) {
