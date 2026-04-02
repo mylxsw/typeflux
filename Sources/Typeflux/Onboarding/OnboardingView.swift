@@ -136,10 +136,6 @@ struct OnboardingView: View {
             }
         } label: {
             HStack(spacing: 14) {
-                Text(languageFlag(language))
-                    .font(.system(size: 22))
-                    .frame(width: 36, height: 36)
-
                 VStack(alignment: .leading, spacing: 2) {
                     Text(languageNativeName(language))
                         .font(.studioBody(15, weight: .semibold))
@@ -173,14 +169,6 @@ struct OnboardingView: View {
             .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(StudioInteractiveButtonStyle())
-    }
-
-    private func languageFlag(_ language: AppLanguage) -> String {
-        switch language {
-        case .english: return "🇺🇸"
-        case .simplifiedChinese: return "🇨🇳"
-        case .traditionalChinese: return "🇹🇼"
-        }
     }
 
     private func languageNativeName(_ language: AppLanguage) -> String {
@@ -218,39 +206,20 @@ struct OnboardingView: View {
                 )
 
                 VStack(spacing: 8) {
-                    modelProviderCard(
-                        icon: "apple.logo",
-                        title: L("provider.stt.appleSpeech"),
-                        description: L("onboarding.models.stt.apple.description"),
-                        badge: L("onboarding.models.badge.noSetup"),
-                        isSelected: viewModel.sttProvider == .appleSpeech
-                    ) {
-                        withAnimation(.easeOut(duration: 0.18)) {
-                            viewModel.sttProvider = .appleSpeech
-                        }
-                    }
-
-                    modelProviderCard(
-                        icon: "cloud",
-                        title: L("provider.stt.whisperAPI"),
-                        description: L("onboarding.models.stt.whisper.description"),
-                        badge: L("onboarding.models.badge.apiKey"),
-                        isSelected: viewModel.sttProvider == .whisperAPI
-                    ) {
-                        withAnimation(.easeOut(duration: 0.18)) {
-                            viewModel.sttProvider = .whisperAPI
-                        }
-                    }
-
-                    modelProviderCard(
-                        icon: "internaldrive",
-                        title: L("provider.stt.localModel"),
-                        description: L("onboarding.models.stt.local.description"),
-                        badge: L("onboarding.models.badge.local"),
-                        isSelected: viewModel.sttProvider == .localModel
-                    ) {
-                        withAnimation(.easeOut(duration: 0.18)) {
-                            viewModel.sttProvider = .localModel
+                    let sttProviders: [STTProvider] = [
+                        .whisperAPI, .localModel, .multimodalLLM, .aliCloud, .doubaoRealtime
+                    ]
+                    ForEach(sttProviders, id: \.self) { provider in
+                        modelProviderCard(
+                            icon: sttProviderIcon(provider),
+                            title: provider.displayName,
+                            description: sttProviderDescription(provider),
+                            badge: sttProviderBadge(provider),
+                            isSelected: viewModel.sttProvider == provider
+                        ) {
+                            withAnimation(.easeOut(duration: 0.18)) {
+                                viewModel.sttProvider = provider
+                            }
                         }
                     }
                 }
@@ -261,6 +230,15 @@ struct OnboardingView: View {
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 } else if viewModel.sttProvider == .localModel {
                     localSTTConfigFields
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                } else if viewModel.sttProvider == .multimodalLLM {
+                    multimodalLLMConfigFields
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                } else if viewModel.sttProvider == .aliCloud {
+                    aliCloudConfigFields
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                } else if viewModel.sttProvider == .doubaoRealtime {
+                    doubaoConfigFields
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
@@ -274,27 +252,35 @@ struct OnboardingView: View {
                 )
 
                 VStack(spacing: 8) {
+                    // Ollama (local)
                     modelProviderCard(
-                        icon: "link",
-                        title: L("onboarding.models.llm.openai.title"),
-                        description: L("onboarding.models.llm.openai.description"),
-                        badge: L("onboarding.models.badge.apiKey"),
-                        isSelected: viewModel.llmProvider == .openAICompatible
-                    ) {
-                        withAnimation(.easeOut(duration: 0.18)) {
-                            viewModel.llmProvider = .openAICompatible
-                        }
-                    }
-
-                    modelProviderCard(
-                        icon: "desktopcomputer",
-                        title: L("onboarding.models.llm.ollama.title"),
-                        description: L("onboarding.models.llm.ollama.description"),
-                        badge: L("onboarding.models.badge.local"),
+                        icon: "cpu",
+                        title: L("provider.llm.ollama"),
+                        description: L("settings.models.card.ollama.summary"),
+                        badge: L("settings.models.badge.local"),
                         isSelected: viewModel.llmProvider == .ollama
                     ) {
                         withAnimation(.easeOut(duration: 0.18)) {
-                            viewModel.llmProvider = .ollama
+                            viewModel.selectOllama()
+                        }
+                    }
+
+                    // Remote providers
+                    ForEach(LLMRemoteProvider.allCases, id: \.self) { provider in
+                        let isSelected = viewModel.llmProvider == .openAICompatible
+                            && viewModel.llmRemoteProvider == provider
+                        modelProviderCard(
+                            icon: llmRemoteProviderIcon(provider),
+                            title: provider.displayName,
+                            description: L("settings.models.card.\(provider.rawValue).summary"),
+                            badge: provider.apiStyle == .openAICompatible
+                                ? L("settings.models.badge.api")
+                                : L("settings.models.badge.native"),
+                            isSelected: isSelected
+                        ) {
+                            withAnimation(.easeOut(duration: 0.18)) {
+                                viewModel.selectLLMRemoteProvider(provider)
+                            }
                         }
                     }
                 }
@@ -311,6 +297,51 @@ struct OnboardingView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.sttProvider)
         .animation(.easeInOut(duration: 0.2), value: viewModel.llmProvider)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.llmRemoteProvider)
+    }
+
+    private func sttProviderIcon(_ provider: STTProvider) -> String {
+        switch provider {
+        case .whisperAPI: return "dot.radiowaves.left.and.right"
+        case .localModel: return "laptopcomputer.and.arrow.down"
+        case .multimodalLLM: return "brain.filled.head.profile"
+        case .aliCloud: return "antenna.radiowaves.left.and.right"
+        case .doubaoRealtime: return "bolt.horizontal.circle"
+        case .appleSpeech: return "waveform"
+        }
+    }
+
+    private func sttProviderBadge(_ provider: STTProvider) -> String {
+        switch provider {
+        case .localModel: return L("settings.models.badge.local")
+        default: return L("settings.models.badge.api")
+        }
+    }
+
+    private func sttProviderDescription(_ provider: STTProvider) -> String {
+        switch provider {
+        case .whisperAPI: return L("settings.models.card.whisper.summary")
+        case .localModel: return L("settings.models.card.localSTT.summary")
+        case .multimodalLLM: return L("settings.models.card.multimodal.summary")
+        case .aliCloud: return L("settings.models.card.aliCloud.summary")
+        case .doubaoRealtime: return L("settings.models.card.doubao.summary")
+        case .appleSpeech: return ""
+        }
+    }
+
+    private func llmRemoteProviderIcon(_ provider: LLMRemoteProvider) -> String {
+        switch provider {
+        case .custom: return "xmark.triangle.circle.square.fill"
+        case .openRouter: return "arrow.triangle.branch"
+        case .openAI: return "circle.hexagongrid"
+        case .anthropic: return "sun.max"
+        case .gemini: return "diamond"
+        case .deepSeek: return "bird"
+        case .kimi: return "moon.stars"
+        case .qwen: return "cloud"
+        case .zhipu: return "dot.scope"
+        case .minimax: return "sparkles"
+        }
     }
 
     private var whisperConfigFields: some View {
@@ -368,6 +399,60 @@ struct OnboardingView: View {
                     .font(.studioBody(11))
                     .foregroundStyle(StudioTheme.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var multimodalLLMConfigFields: some View {
+        StudioCard(padding: 16) {
+            VStack(spacing: 12) {
+                StudioTextInputCard(
+                    label: L("settings.models.remote.baseURL"),
+                    placeholder: "https://api.openai.com/v1",
+                    text: $viewModel.multimodalLLMBaseURL
+                )
+                StudioTextInputCard(
+                    label: L("common.apiKey"),
+                    placeholder: "sk-...",
+                    text: $viewModel.multimodalLLMAPIKey,
+                    secure: true
+                )
+                StudioTextInputCard(
+                    label: L("common.model"),
+                    placeholder: "gpt-4o",
+                    text: $viewModel.multimodalLLMModel
+                )
+            }
+        }
+    }
+
+    private var aliCloudConfigFields: some View {
+        StudioCard(padding: 16) {
+            VStack(spacing: 12) {
+                StudioTextInputCard(
+                    label: L("common.apiKey"),
+                    placeholder: "sk-...",
+                    text: $viewModel.aliCloudAPIKey,
+                    secure: true
+                )
+            }
+        }
+    }
+
+    private var doubaoConfigFields: some View {
+        StudioCard(padding: 16) {
+            VStack(spacing: 12) {
+                StudioTextInputCard(
+                    label: L("settings.models.doubao.appID"),
+                    placeholder: "",
+                    text: $viewModel.doubaoAppID
+                )
+                StudioTextInputCard(
+                    label: L("settings.models.doubao.accessToken"),
+                    placeholder: "",
+                    text: $viewModel.doubaoAccessToken,
+                    secure: true
+                )
             }
         }
     }
@@ -678,7 +763,7 @@ struct OnboardingView: View {
                 StudioButton(
                     title: L("onboarding.action.skip"),
                     systemImage: nil,
-                    variant: .ghost
+                    variant: .secondary
                 ) {
                     viewModel.skip()
                 }

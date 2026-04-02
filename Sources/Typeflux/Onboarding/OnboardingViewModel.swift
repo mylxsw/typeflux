@@ -32,9 +32,17 @@ final class OnboardingViewModel: ObservableObject {
     @Published var whisperAPIKey: String
     @Published var whisperModel: String
     @Published var localSTTModel: LocalSTTModel
+    @Published var multimodalLLMBaseURL: String
+    @Published var multimodalLLMAPIKey: String
+    @Published var multimodalLLMModel: String
+    @Published var aliCloudAPIKey: String
+    @Published var doubaoAppID: String
+    @Published var doubaoAccessToken: String
+    @Published var doubaoResourceID: String
 
     // LLM Config
     @Published var llmProvider: LLMProvider
+    @Published var llmRemoteProvider: LLMRemoteProvider
     @Published var llmBaseURL: String
     @Published var llmModel: String
     @Published var llmAPIKey: String
@@ -55,21 +63,26 @@ final class OnboardingViewModel: ObservableObject {
         appLanguage = settingsStore.appLanguage
         sttProvider = {
             let p = settingsStore.sttProvider
-            // Onboarding only shows 3 main STT options
-            switch p {
-            case .appleSpeech, .whisperAPI, .localModel: return p
-            default: return .appleSpeech
-            }
+            // Never show Apple Speech in onboarding
+            return p == .appleSpeech ? .whisperAPI : p
         }()
         whisperBaseURL = settingsStore.whisperBaseURL
         whisperAPIKey = settingsStore.whisperAPIKey
         whisperModel = settingsStore.whisperModel
         localSTTModel = settingsStore.localSTTModel
+        multimodalLLMBaseURL = settingsStore.multimodalLLMBaseURL
+        multimodalLLMAPIKey = settingsStore.multimodalLLMAPIKey
+        multimodalLLMModel = settingsStore.multimodalLLMModel
+        aliCloudAPIKey = settingsStore.aliCloudAPIKey
+        doubaoAppID = settingsStore.doubaoAppID
+        doubaoAccessToken = settingsStore.doubaoAccessToken
+        doubaoResourceID = settingsStore.doubaoResourceID
 
         llmProvider = settingsStore.llmProvider
-        llmBaseURL = settingsStore.llmBaseURL
-        llmModel = settingsStore.llmModel
-        llmAPIKey = settingsStore.llmAPIKey
+        llmRemoteProvider = settingsStore.llmRemoteProvider
+        llmBaseURL = settingsStore.llmBaseURL(for: settingsStore.llmRemoteProvider)
+        llmModel = settingsStore.llmModel(for: settingsStore.llmRemoteProvider)
+        llmAPIKey = settingsStore.llmAPIKey(for: settingsStore.llmRemoteProvider)
         ollamaBaseURL = settingsStore.ollamaBaseURL
         ollamaModel = settingsStore.ollamaModel
 
@@ -117,6 +130,18 @@ final class OnboardingViewModel: ObservableObject {
         settingsStore.isOnboardingCompleted = true
     }
 
+    func selectOllama() {
+        llmProvider = .ollama
+    }
+
+    func selectLLMRemoteProvider(_ provider: LLMRemoteProvider) {
+        llmProvider = .openAICompatible
+        llmRemoteProvider = provider
+        llmBaseURL = settingsStore.llmBaseURL(for: provider)
+        llmAPIKey = settingsStore.llmAPIKey(for: provider)
+        llmModel = settingsStore.llmModel(for: provider)
+    }
+
     func setLanguage(_ language: AppLanguage) {
         appLanguage = language
         settingsStore.appLanguage = language
@@ -148,12 +173,22 @@ final class OnboardingViewModel: ObservableObject {
             settingsStore.whisperAPIKey = whisperAPIKey
             settingsStore.whisperModel = whisperModel
             settingsStore.localSTTModel = localSTTModel
+            settingsStore.multimodalLLMBaseURL = multimodalLLMBaseURL
+            settingsStore.multimodalLLMAPIKey = multimodalLLMAPIKey
+            settingsStore.multimodalLLMModel = multimodalLLMModel
+            settingsStore.aliCloudAPIKey = aliCloudAPIKey
+            settingsStore.doubaoAppID = doubaoAppID
+            settingsStore.doubaoAccessToken = doubaoAccessToken
+            settingsStore.doubaoResourceID = doubaoResourceID
             settingsStore.llmProvider = llmProvider
-            settingsStore.llmBaseURL = llmBaseURL
-            settingsStore.llmModel = llmModel
-            settingsStore.llmAPIKey = llmAPIKey
             settingsStore.ollamaBaseURL = ollamaBaseURL
             settingsStore.ollamaModel = ollamaModel
+            if llmProvider == .openAICompatible {
+                settingsStore.llmRemoteProvider = llmRemoteProvider
+                settingsStore.setLLMBaseURL(llmBaseURL, for: llmRemoteProvider)
+                settingsStore.setLLMAPIKey(llmAPIKey, for: llmRemoteProvider)
+                settingsStore.setLLMModel(llmModel, for: llmRemoteProvider)
+            }
         case .permissions, .shortcuts:
             break
         }
