@@ -203,6 +203,7 @@
 "modelDomain.llm.subtitle" = "文字生成與改寫";
 
 "overlay.recording.listening" = "正在聆聽";
+"overlay.ask.guidance" = "你可以詢問任何問題";
 "overlay.processing.thinking" = "處理中";
 "overlay.failure.title" = "處理失敗";
 "overlay.timeout.title" = "處理逾時";

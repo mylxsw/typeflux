@@ -366,7 +366,7 @@ final class WorkflowController {
         Task { @MainActor in
             appState.setStatus(.recording)
             if intent == .askSelection {
-                overlayController.showLockedRecording()
+                overlayController.showLockedRecording(hintText: L("overlay.ask.guidance"))
             } else {
                 overlayController.show()
             }
