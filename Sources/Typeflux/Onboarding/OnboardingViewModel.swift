@@ -6,18 +6,12 @@ import SwiftUI
 final class OnboardingViewModel: ObservableObject {
     enum Step: Int, CaseIterable {
         case language = 0
-        case models = 1
-        case permissions = 2
-        case shortcuts = 3
-
-        var stepLabel: String {
-            switch self {
-            case .language: return L("onboarding.step.language")
-            case .models: return L("onboarding.step.models")
-            case .permissions: return L("onboarding.step.permissions")
-            case .shortcuts: return L("onboarding.step.shortcuts")
-            }
-        }
+        case sttProvider = 1
+        case sttConfig = 2
+        case llmProvider = 3
+        case llmConfig = 4
+        case permissions = 5
+        case shortcuts = 6
     }
 
     @Published var currentStep: Step = .language
@@ -91,7 +85,14 @@ final class OnboardingViewModel: ObservableObject {
 
     var canGoBack: Bool { currentStep != .language }
     var isLastStep: Bool { currentStep == .shortcuts }
-    var isSkippable: Bool { currentStep == .models || currentStep == .shortcuts }
+    var isSkippable: Bool {
+        switch currentStep {
+        case .language, .sttConfig, .llmConfig, .permissions:
+            return true
+        case .sttProvider, .llmProvider, .shortcuts:
+            return false
+        }
+    }
 
     var allRequiredPermissionsGranted: Bool {
         let required = PrivacyGuard.requiredPermissionIDs(settingsStore: settingsStore)
@@ -121,7 +122,14 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     func skip() {
-        complete()
+        if isLastStep {
+            complete()
+        } else {
+            stepDirection = 1
+            withAnimation(.easeInOut(duration: 0.22)) {
+                currentStep = Step(rawValue: currentStep.rawValue + 1) ?? .shortcuts
+            }
+        }
     }
 
     /// Marks onboarding as complete without triggering the completion callback.
@@ -167,27 +175,42 @@ final class OnboardingViewModel: ObservableObject {
         case .language:
             settingsStore.appLanguage = appLanguage
             AppLocalization.shared.setLanguage(appLanguage)
-        case .models:
+        case .sttProvider:
             settingsStore.sttProvider = sttProvider
-            settingsStore.whisperBaseURL = whisperBaseURL
-            settingsStore.whisperAPIKey = whisperAPIKey
-            settingsStore.whisperModel = whisperModel
-            settingsStore.localSTTModel = localSTTModel
-            settingsStore.multimodalLLMBaseURL = multimodalLLMBaseURL
-            settingsStore.multimodalLLMAPIKey = multimodalLLMAPIKey
-            settingsStore.multimodalLLMModel = multimodalLLMModel
-            settingsStore.aliCloudAPIKey = aliCloudAPIKey
-            settingsStore.doubaoAppID = doubaoAppID
-            settingsStore.doubaoAccessToken = doubaoAccessToken
-            settingsStore.doubaoResourceID = doubaoResourceID
+        case .sttConfig:
+            switch sttProvider {
+            case .whisperAPI:
+                settingsStore.whisperBaseURL = whisperBaseURL
+                settingsStore.whisperAPIKey = whisperAPIKey
+                settingsStore.whisperModel = whisperModel
+            case .localModel:
+                settingsStore.localSTTModel = localSTTModel
+            case .multimodalLLM:
+                settingsStore.multimodalLLMBaseURL = multimodalLLMBaseURL
+                settingsStore.multimodalLLMAPIKey = multimodalLLMAPIKey
+                settingsStore.multimodalLLMModel = multimodalLLMModel
+            case .aliCloud:
+                settingsStore.aliCloudAPIKey = aliCloudAPIKey
+            case .doubaoRealtime:
+                settingsStore.doubaoAppID = doubaoAppID
+                settingsStore.doubaoAccessToken = doubaoAccessToken
+                settingsStore.doubaoResourceID = doubaoResourceID
+            case .appleSpeech:
+                break
+            }
+        case .llmProvider:
             settingsStore.llmProvider = llmProvider
-            settingsStore.ollamaBaseURL = ollamaBaseURL
-            settingsStore.ollamaModel = ollamaModel
             if llmProvider == .openAICompatible {
                 settingsStore.llmRemoteProvider = llmRemoteProvider
+            }
+        case .llmConfig:
+            if llmProvider == .openAICompatible {
                 settingsStore.setLLMBaseURL(llmBaseURL, for: llmRemoteProvider)
                 settingsStore.setLLMAPIKey(llmAPIKey, for: llmRemoteProvider)
                 settingsStore.setLLMModel(llmModel, for: llmRemoteProvider)
+            } else {
+                settingsStore.ollamaBaseURL = ollamaBaseURL
+                settingsStore.ollamaModel = ollamaModel
             }
         case .permissions, .shortcuts:
             break

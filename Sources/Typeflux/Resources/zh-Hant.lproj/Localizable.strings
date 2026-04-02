@@ -547,6 +547,11 @@
 "onboarding.models.badge.apiKey" = "需要金鑰";
 "onboarding.models.badge.local" = "本機";
 
+"onboarding.sttProvider.subtitle" = "選擇將語音轉換為文字的引擎";
+"onboarding.sttConfig.subtitle" = "設定憑據與偏好設定";
+"onboarding.llmProvider.subtitle" = "選擇用於潤色和優化語音內容的模型";
+"onboarding.llmConfig.subtitle" = "設定憑據與偏好設定";
+
 "onboarding.permissions.title" = "授予權限";
 "onboarding.permissions.subtitle" = "Typeflux 需要少量系統權限，用於錄製語音並將文字輸入其他應用程式。";
 

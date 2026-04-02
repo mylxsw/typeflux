@@ -101,8 +101,14 @@ struct OnboardingView: View {
         switch viewModel.currentStep {
         case .language:
             languageStep
-        case .models:
-            modelsStep
+        case .sttProvider:
+            sttProviderStep
+        case .sttConfig:
+            sttConfigStep
+        case .llmProvider:
+            llmProviderStep
+        case .llmConfig:
+            llmConfigStep
         case .permissions:
             permissionsStep
         case .shortcuts:
@@ -187,117 +193,131 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 2: Models
+    // MARK: - Step 2: STT Provider Selection
 
-    private var modelsStep: some View {
+    private var sttProviderStep: some View {
         VStack(alignment: .leading, spacing: 28) {
             stepHeader(
-                icon: "cpu",
-                title: L("onboarding.models.title"),
-                subtitle: L("onboarding.models.subtitle")
+                icon: "waveform",
+                title: L("onboarding.models.stt.title"),
+                subtitle: L("onboarding.sttProvider.subtitle")
             )
 
-            // STT Section
-            VStack(alignment: .leading, spacing: 12) {
-                sectionLabel(
-                    icon: "waveform",
-                    title: L("onboarding.models.stt.title"),
-                    subtitle: L("onboarding.models.stt.subtitle")
-                )
-
-                VStack(spacing: 8) {
-                    let sttProviders: [STTProvider] = [
-                        .whisperAPI, .localModel, .multimodalLLM, .aliCloud, .doubaoRealtime
-                    ]
-                    ForEach(sttProviders, id: \.self) { provider in
-                        modelProviderCard(
-                            icon: sttProviderIcon(provider),
-                            title: provider.displayName,
-                            description: sttProviderDescription(provider),
-                            badge: sttProviderBadge(provider),
-                            isSelected: viewModel.sttProvider == provider
-                        ) {
-                            withAnimation(.easeOut(duration: 0.18)) {
-                                viewModel.sttProvider = provider
-                            }
-                        }
-                    }
-                }
-
-                // Contextual STT config
-                if viewModel.sttProvider == .whisperAPI {
-                    whisperConfigFields
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                } else if viewModel.sttProvider == .localModel {
-                    localSTTConfigFields
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                } else if viewModel.sttProvider == .multimodalLLM {
-                    multimodalLLMConfigFields
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                } else if viewModel.sttProvider == .aliCloud {
-                    aliCloudConfigFields
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                } else if viewModel.sttProvider == .doubaoRealtime {
-                    doubaoConfigFields
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                }
-            }
-
-            // LLM Section
-            VStack(alignment: .leading, spacing: 12) {
-                sectionLabel(
-                    icon: "sparkles",
-                    title: L("onboarding.models.llm.title"),
-                    subtitle: L("onboarding.models.llm.subtitle")
-                )
-
-                VStack(spacing: 8) {
-                    // Ollama (local)
+            VStack(spacing: 8) {
+                let sttProviders: [STTProvider] = [
+                    .whisperAPI, .localModel, .multimodalLLM, .aliCloud, .doubaoRealtime
+                ]
+                ForEach(sttProviders, id: \.self) { provider in
                     modelProviderCard(
-                        icon: "cpu",
-                        title: L("provider.llm.ollama"),
-                        description: L("settings.models.card.ollama.summary"),
-                        badge: L("settings.models.badge.local"),
-                        isSelected: viewModel.llmProvider == .ollama
+                        icon: sttProviderIcon(provider),
+                        title: provider.displayName,
+                        description: sttProviderDescription(provider),
+                        badge: sttProviderBadge(provider),
+                        isSelected: viewModel.sttProvider == provider
                     ) {
                         withAnimation(.easeOut(duration: 0.18)) {
-                            viewModel.selectOllama()
+                            viewModel.sttProvider = provider
                         }
                     }
-
-                    // Remote providers
-                    ForEach(LLMRemoteProvider.allCases, id: \.self) { provider in
-                        let isSelected = viewModel.llmProvider == .openAICompatible
-                            && viewModel.llmRemoteProvider == provider
-                        modelProviderCard(
-                            icon: llmRemoteProviderIcon(provider),
-                            title: provider.displayName,
-                            description: L("settings.models.card.\(provider.rawValue).summary"),
-                            badge: provider.apiStyle == .openAICompatible
-                                ? L("settings.models.badge.api")
-                                : L("settings.models.badge.native"),
-                            isSelected: isSelected
-                        ) {
-                            withAnimation(.easeOut(duration: 0.18)) {
-                                viewModel.selectLLMRemoteProvider(provider)
-                            }
-                        }
-                    }
-                }
-
-                // Contextual LLM config
-                if viewModel.llmProvider == .openAICompatible {
-                    openAICompatibleConfigFields
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                } else if viewModel.llmProvider == .ollama {
-                    ollamaConfigFields
-                        .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: viewModel.sttProvider)
-        .animation(.easeInOut(duration: 0.2), value: viewModel.llmProvider)
-        .animation(.easeInOut(duration: 0.2), value: viewModel.llmRemoteProvider)
+    }
+
+    // MARK: - Step 3: STT Configuration
+
+    private var sttConfigStep: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            stepHeader(
+                icon: sttProviderIcon(viewModel.sttProvider),
+                title: viewModel.sttProvider.displayName,
+                subtitle: L("onboarding.sttConfig.subtitle")
+            )
+
+            switch viewModel.sttProvider {
+            case .whisperAPI:
+                whisperConfigFields
+            case .localModel:
+                localSTTConfigFields
+            case .multimodalLLM:
+                multimodalLLMConfigFields
+            case .aliCloud:
+                aliCloudConfigFields
+            case .doubaoRealtime:
+                doubaoConfigFields
+            case .appleSpeech:
+                EmptyView()
+            }
+        }
+    }
+
+    // MARK: - Step 4: LLM Provider Selection
+
+    private var llmProviderStep: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            stepHeader(
+                icon: "sparkles",
+                title: L("onboarding.models.llm.title"),
+                subtitle: L("onboarding.llmProvider.subtitle")
+            )
+
+            VStack(spacing: 8) {
+                modelProviderCard(
+                    icon: "cpu",
+                    title: L("provider.llm.ollama"),
+                    description: L("settings.models.card.ollama.summary"),
+                    badge: L("settings.models.badge.local"),
+                    isSelected: viewModel.llmProvider == .ollama
+                ) {
+                    withAnimation(.easeOut(duration: 0.18)) {
+                        viewModel.selectOllama()
+                    }
+                }
+
+                ForEach(LLMRemoteProvider.allCases, id: \.self) { provider in
+                    let isSelected = viewModel.llmProvider == .openAICompatible
+                        && viewModel.llmRemoteProvider == provider
+                    modelProviderCard(
+                        icon: llmRemoteProviderIcon(provider),
+                        title: provider.displayName,
+                        description: L("settings.models.card.\(provider.rawValue).summary"),
+                        badge: provider.apiStyle == .openAICompatible
+                            ? L("settings.models.badge.api")
+                            : L("settings.models.badge.native"),
+                        isSelected: isSelected
+                    ) {
+                        withAnimation(.easeOut(duration: 0.18)) {
+                            viewModel.selectLLMRemoteProvider(provider)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Step 5: LLM Configuration
+
+    private var llmConfigStep: some View {
+        let providerName = viewModel.llmProvider == .ollama
+            ? L("provider.llm.ollama")
+            : viewModel.llmRemoteProvider.displayName
+        let providerIcon = viewModel.llmProvider == .ollama
+            ? "cpu"
+            : llmRemoteProviderIcon(viewModel.llmRemoteProvider)
+
+        return VStack(alignment: .leading, spacing: 28) {
+            stepHeader(
+                icon: providerIcon,
+                title: providerName,
+                subtitle: L("onboarding.llmConfig.subtitle")
+            )
+
+            if viewModel.llmProvider == .ollama {
+                ollamaConfigFields
+            } else {
+                openAICompatibleConfigFields
+            }
+        }
     }
 
     private func sttProviderIcon(_ provider: STTProvider) -> String {

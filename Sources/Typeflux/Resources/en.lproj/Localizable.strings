@@ -547,6 +547,11 @@
 "onboarding.models.badge.apiKey" = "API key";
 "onboarding.models.badge.local" = "Local";
 
+"onboarding.sttProvider.subtitle" = "Choose the engine that converts your voice to text";
+"onboarding.sttConfig.subtitle" = "Configure credentials and preferences";
+"onboarding.llmProvider.subtitle" = "Choose the model that rewrites and refines your dictation";
+"onboarding.llmConfig.subtitle" = "Configure credentials and preferences";
+
 "onboarding.permissions.title" = "Grant permissions";
 "onboarding.permissions.subtitle" = "Typeflux needs a few system permissions to capture your voice and insert text into other apps.";
 
