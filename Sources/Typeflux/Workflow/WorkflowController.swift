@@ -25,14 +25,14 @@ final class WorkflowController {
 
     private enum ApplyOutcome {
         case inserted
-        case copiedToClipboard
+        case presentedInDialog
 
         var message: String {
             switch self {
             case .inserted:
                 return L("workflow.apply.inserted")
-            case .copiedToClipboard:
-                return L("workflow.apply.copiedToClipboard")
+            case .presentedInDialog:
+                return L("workflow.apply.presentedInDialog")
             }
         }
     }
@@ -618,8 +618,6 @@ final class WorkflowController {
     }
 
     private func applyText(_ text: String, replace: Bool, fallbackTitle: String = L("workflow.result.copyTitle")) -> ApplyOutcome {
-        clipboard.write(text: text)
-
         do {
             if replace {
                 dismissOverlayForExternalReplacement()
@@ -634,7 +632,7 @@ final class WorkflowController {
                 self.lastDialogResultText = text
                 self.overlayController.showResultDialog(title: fallbackTitle, message: text)
             }
-            return .copiedToClipboard
+            return .presentedInDialog
         }
     }
 
@@ -955,7 +953,7 @@ final class WorkflowController {
                             self.lastDialogResultText = rewriteResult.text
                             self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: rewriteResult.text)
                         }
-                        outcome = .copiedToClipboard
+                        outcome = .presentedInDialog
                     } else {
                         outcome = applyText(rewriteResult.text, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
                     }
@@ -1737,7 +1735,7 @@ final class WorkflowController {
                         self.lastDialogResultText = rewriteResult.text
                         self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: rewriteResult.text)
                     }
-                    outcome = .copiedToClipboard
+                    outcome = .presentedInDialog
                 } else {
                     outcome = self.applyText(rewriteResult.text, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
                 }

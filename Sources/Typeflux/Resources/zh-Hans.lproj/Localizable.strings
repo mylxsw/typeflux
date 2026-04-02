@@ -215,7 +215,7 @@
 "overlay.personaPicker.applyInstructions" = "选择一个人设来改写当前选中文本。按回车应用，按 Esc 取消。";
 
 "workflow.apply.inserted" = "已应用到当前活动应用。";
-"workflow.apply.copiedToClipboard" = "由于无法直接插入，结果已复制到剪贴板。";
+"workflow.apply.presentedInDialog" = "由于无法直接插入，结果已显示在提示框中。";
 "workflow.cancel.stopping" = "停止应用时已取消。";
 "workflow.cancel.retry" = "由于重试已取消。";
 "workflow.cancel.newRecording" = "已被新的录音任务取消。";

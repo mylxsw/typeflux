@@ -215,7 +215,7 @@
 "overlay.personaPicker.applyInstructions" = "選擇一個人設來改寫目前選取的文字。按 Enter 套用，按 Esc 取消。";
 
 "workflow.apply.inserted" = "已套用到目前活動應用。";
-"workflow.apply.copiedToClipboard" = "因無法直接插入，結果已複製到剪貼簿。";
+"workflow.apply.presentedInDialog" = "因無法直接插入，結果已顯示在提示框中。";
 "workflow.cancel.stopping" = "停止應用時已取消。";
 "workflow.cancel.retry" = "因重試已取消。";
 "workflow.cancel.newRecording" = "已被新的錄音任務取消。";

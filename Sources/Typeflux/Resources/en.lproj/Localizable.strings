@@ -215,7 +215,7 @@
 "overlay.personaPicker.applyInstructions" = "Choose a persona to rewrite the selected text. Press Return to apply or Esc to cancel.";
 
 "workflow.apply.inserted" = "Applied to the active app.";
-"workflow.apply.copiedToClipboard" = "Copied to the clipboard because direct insertion was unavailable.";
+"workflow.apply.presentedInDialog" = "Direct insertion was unavailable, so the result was shown in a dialog.";
 "workflow.cancel.stopping" = "Cancelled while stopping.";
 "workflow.cancel.retry" = "Cancelled due to retry.";
 "workflow.cancel.newRecording" = "Cancelled by a new recording.";

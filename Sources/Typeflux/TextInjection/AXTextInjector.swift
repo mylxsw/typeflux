@@ -3,6 +3,14 @@ import ApplicationServices
 import Foundation
 
 final class AXTextInjector: TextInjector {
+    private struct PasteboardItemSnapshot {
+        let representations: [(type: NSPasteboard.PasteboardType, data: Data)]
+    }
+
+    private struct PasteboardSnapshot {
+        let items: [PasteboardItemSnapshot]
+    }
+
     private struct SelectionContext {
         let element: AXUIElement
         let range: CFRange?
@@ -400,7 +408,7 @@ final class AXTextInjector: TextInjector {
 
     private func setTextViaPaste(_ text: String, replaceSelection: Bool, contextAlreadyRestored: Bool = false) throws {
         let pasteboard = NSPasteboard.general
-        let previousString = pasteboard.string(forType: .string)
+        let previousSnapshot = capturePasteboardSnapshot(from: pasteboard)
         let targetPID: pid_t?
 
         if replaceSelection, let context = activeSelectionContext() {
@@ -430,7 +438,7 @@ final class AXTextInjector: TextInjector {
             vUp?.post(tap: .cghidEventTap)
         }
 
-        restorePasteboardAfterPaste(previousString)
+        restorePasteboardAfterPaste(previousSnapshot)
     }
 
     private func copyStringAttribute(_ attribute: String, from element: AXUIElement) -> String? {
@@ -676,7 +684,7 @@ final class AXTextInjector: TextInjector {
 
     private func readSelectedTextViaCopy(processID: pid_t?, milliseconds: Int) -> String? {
         let pasteboard = NSPasteboard.general
-        let previousString = pasteboard.string(forType: .string)
+        let previousSnapshot = capturePasteboardSnapshot(from: pasteboard)
         let previousChangeCount = pasteboard.changeCount
 
         sendCopyShortcut(to: processID)
@@ -685,14 +693,14 @@ final class AXTextInjector: TextInjector {
         while Date() < timeout {
             if pasteboard.changeCount != previousChangeCount {
                 let copiedText = pasteboard.string(forType: .string)
-                restorePasteboardAfterPaste(previousString)
+                restorePasteboardAfterPaste(previousSnapshot)
                 let trimmed = copiedText?.trimmingCharacters(in: .whitespacesAndNewlines)
                 return (trimmed?.isEmpty == false) ? trimmed : nil
             }
             usleep(10_000)
         }
 
-        restorePasteboardAfterPaste(previousString)
+        restorePasteboardAfterPaste(previousSnapshot)
         return nil
     }
 
@@ -751,15 +759,38 @@ final class AXTextInjector: TextInjector {
         }
     }
 
-    private func restorePasteboardAfterPaste(_ previousString: String?) {
+    private func capturePasteboardSnapshot(from pasteboard: NSPasteboard) -> PasteboardSnapshot {
+        let items = (pasteboard.pasteboardItems ?? []).map { item in
+            let representations = item.types.compactMap { type -> (type: NSPasteboard.PasteboardType, data: Data)? in
+                guard let data = item.data(forType: type) else { return nil }
+                return (type: type, data: data)
+            }
+            return PasteboardItemSnapshot(representations: representations)
+        }
+        return PasteboardSnapshot(items: items)
+    }
+
+    private func restorePasteboard(_ snapshot: PasteboardSnapshot, to pasteboard: NSPasteboard) {
+        pasteboard.clearContents()
+
+        guard !snapshot.items.isEmpty else { return }
+
+        let restoredItems = snapshot.items.map { snapshotItem in
+            let item = NSPasteboardItem()
+            for representation in snapshotItem.representations {
+                item.setData(representation.data, forType: representation.type)
+            }
+            return item
+        }
+        pasteboard.writeObjects(restoredItems)
+    }
+
+    private func restorePasteboardAfterPaste(_ previousSnapshot: PasteboardSnapshot) {
         Task.detached {
             try? await Task.sleep(nanoseconds: Self.pasteRestoreDelayNanoseconds)
             await MainActor.run {
                 let pasteboard = NSPasteboard.general
-                pasteboard.clearContents()
-                if let previousString {
-                    pasteboard.setString(previousString, forType: .string)
-                }
+                self.restorePasteboard(previousSnapshot, to: pasteboard)
             }
         }
     }
