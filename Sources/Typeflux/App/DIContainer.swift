@@ -27,7 +27,7 @@ final class DIContainer {
         )
         overlayController = OverlayController(appState: appState)
         clipboard = SystemClipboardService()
-        askAnswerWindowController = AskAnswerWindowController(clipboard: clipboard)
+        askAnswerWindowController = AskAnswerWindowController(clipboard: clipboard, settingsStore: settingsStore)
         soundEffectPlayer = SoundEffectPlayer(settingsStore: settingsStore)
         textInjector = AXTextInjector()
         historyStore = SQLiteHistoryStore()

@@ -1,14 +1,28 @@
 import AppKit
 import SwiftUI
 
-final class AskAnswerWindowController {
-    private final class AskAnswerPanel: NSPanel {
-        override var canBecomeKey: Bool { true }
-        override var canBecomeMain: Bool { true }
+final class AskAnswerWindowController: NSObject {
+    fileprivate enum Metrics {
+        static let windowWidth: CGFloat = 820
+        static let windowHeight: CGFloat = 520
+        static let minWindowWidth: CGFloat = 760
+        static let minWindowHeight: CGFloat = 480
+        static let outerCornerRadius: CGFloat = 12
+        static let outerHorizontalPadding: CGFloat = 14
+        static let outerTopPadding: CGFloat = 8
+        static let outerBottomPadding: CGFloat = 10
+        static let sectionSpacing: CGFloat = 10
+        static let headerButtonSize: CGFloat = 30
+        static let questionIconWidth: CGFloat = 20
+        static let contentCardCornerRadius: CGFloat = 12
+        static let answerHeaderHorizontalPadding: CGFloat = 12
+        static let answerHeaderVerticalPadding: CGFloat = 8
+        static let answerContentHorizontalPadding: CGFloat = 14
+        static let answerContentVerticalPadding: CGFloat = 12
+        static let selectedTextMaxLines: Int = 4
     }
 
     fileprivate final class Model: ObservableObject {
-        @Published var title: String = ""
         @Published var question: String = ""
         @Published var selectedText: String = ""
         @Published var answerMarkdown: String = ""
@@ -17,11 +31,33 @@ final class AskAnswerWindowController {
     }
 
     private let clipboard: ClipboardService
+    private let settingsStore: SettingsStore
     private let model = Model()
-    private var window: NSPanel?
 
-    init(clipboard: ClipboardService) {
+    private var window: NSWindow?
+    private var hostingView: NSHostingView<AskAnswerWindowView>?
+    private var appearanceObserver: NSObjectProtocol?
+
+    init(clipboard: ClipboardService, settingsStore: SettingsStore) {
         self.clipboard = clipboard
+        self.settingsStore = settingsStore
+        super.init()
+
+        appearanceObserver = NotificationCenter.default.addObserver(
+            forName: .appearanceModeDidChange,
+            object: settingsStore,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self, let window = self.window else { return }
+            self.hostingView?.rootView = AskAnswerWindowView(model: self.model)
+            self.applyAppearance(to: window)
+        }
+    }
+
+    deinit {
+        if let appearanceObserver {
+            NotificationCenter.default.removeObserver(appearanceObserver)
+        }
     }
 
     func show(title: String, question: String, selectedText: String?, answerMarkdown: String) {
@@ -39,7 +75,6 @@ final class AskAnswerWindowController {
         guard !trimmedAnswer.isEmpty else { return }
 
         ensureWindow()
-        model.title = title
         model.question = trimmedQuestion
         model.selectedText = trimmedSelectedText
         model.answerMarkdown = trimmedAnswer
@@ -48,9 +83,14 @@ final class AskAnswerWindowController {
             self?.clipboard.write(text: trimmedAnswer)
         }
 
-        centerWindow()
+        guard let window else { return }
+        hostingView?.rootView = AskAnswerWindowView(model: model)
+        applyAppearance(to: window)
+        if !window.isVisible {
+            window.center()
+        }
+        window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        window?.makeKeyAndOrderFront(nil)
     }
 
     func dismiss() {
@@ -66,46 +106,40 @@ final class AskAnswerWindowController {
 
         let rootView = AskAnswerWindowView(model: model)
         let hosting = NSHostingView(rootView: rootView)
-        hosting.wantsLayer = true
-        hosting.layer?.backgroundColor = NSColor.clear.cgColor
-
-        let panel = AskAnswerPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 1120, height: 760),
-            styleMask: [.titled, .closable, .fullSizeContentView],
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: Metrics.windowWidth, height: Metrics.windowHeight),
+            styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
-        panel.titleVisibility = .hidden
-        panel.titlebarAppearsTransparent = true
-        panel.isMovableByWindowBackground = true
-        panel.isFloatingPanel = true
-        panel.level = .statusBar
-        panel.collectionBehavior = [.moveToActiveSpace, .transient, .fullScreenAuxiliary]
-        panel.backgroundColor = .clear
-        panel.isOpaque = false
-        panel.hasShadow = true
-        panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
-        panel.standardWindowButton(.zoomButton)?.isHidden = true
-        panel.contentView = hosting
-        panel.contentView?.wantsLayer = true
-        panel.contentView?.layer?.backgroundColor = NSColor.clear.cgColor
 
-        window = panel
+        window.title = L("workflow.ask.answerTitle")
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.isMovableByWindowBackground = true
+        window.isReleasedWhenClosed = false
+        window.delegate = self
+        window.minSize = NSSize(width: Metrics.minWindowWidth, height: Metrics.minWindowHeight)
+        window.backgroundColor = NSColor(StudioTheme.windowBackground)
+        window.contentView = hosting
+        window.level = .normal
+        window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
+        applyAppearance(to: window)
+
+        self.hostingView = hosting
+        self.window = window
     }
 
-    private func centerWindow() {
-        guard let window else { return }
+    private func applyAppearance(to window: NSWindow) {
+        window.appearance = AppAppearance.nsAppearance(for: settingsStore.appearanceMode)
+        window.backgroundColor = NSColor(StudioTheme.windowBackground)
+    }
+}
 
-        if let screen = NSScreen.main ?? NSScreen.screens.first {
-            let visible = screen.visibleFrame
-            let origin = NSPoint(
-                x: visible.midX - window.frame.width / 2,
-                y: visible.midY - window.frame.height / 2
-            )
-            window.setFrameOrigin(origin)
-        } else {
-            window.center()
-        }
+extension AskAnswerWindowController: NSWindowDelegate {
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        dismiss()
+        return false
     }
 }
 
@@ -114,94 +148,62 @@ private struct AskAnswerWindowView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.985, green: 0.982, blue: 0.972),
-                    Color(red: 0.972, green: 0.968, blue: 0.955)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            StudioTheme.windowBackground
 
-            VStack(alignment: .leading, spacing: 26) {
-                header
+            VStack(alignment: .leading, spacing: AskAnswerWindowController.Metrics.sectionSpacing) {
                 promptSection
                 answerSection
             }
-            .padding(.horizontal, 34)
-            .padding(.top, 24)
-            .padding(.bottom, 28)
+            .padding(.horizontal, AskAnswerWindowController.Metrics.outerHorizontalPadding)
+            .padding(.top, AskAnswerWindowController.Metrics.outerTopPadding)
+            .padding(.bottom, AskAnswerWindowController.Metrics.outerBottomPadding)
         }
-        .frame(width: 1120, height: 760)
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+        .frame(
+            minWidth: AskAnswerWindowController.Metrics.minWindowWidth,
+            idealWidth: AskAnswerWindowController.Metrics.windowWidth,
+            maxWidth: .infinity,
+            minHeight: AskAnswerWindowController.Metrics.minWindowHeight,
+            idealHeight: AskAnswerWindowController.Metrics.windowHeight,
+            maxHeight: .infinity
         )
-        .background(Color.clear)
-    }
-
-    private var header: some View {
-        HStack {
-            Spacer()
-
-            Text(model.title)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Color.black.opacity(0.92))
-
-            Spacer()
-
-            Button(action: { model.onDismissRequested?() }) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Color.black.opacity(0.5))
-                    .frame(width: 34, height: 34)
-                    .background(
-                        Circle()
-                            .fill(Color.black.opacity(0.08))
-                    )
-            }
-            .buttonStyle(.plain)
-        }
     }
 
     private var promptSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 14) {
-                Image(systemName: "mic")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.44, green: 0.53, blue: 0.96))
-                    .frame(width: 28)
+        HStack(alignment: .top, spacing: StudioTheme.Spacing.smallMedium) {
+            Image(systemName: "mic")
+                .font(.system(size: StudioTheme.Typography.iconMedium, weight: .semibold))
+                .foregroundStyle(StudioTheme.accent)
+                .frame(width: AskAnswerWindowController.Metrics.questionIconWidth)
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(model.question)
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(Color.black.opacity(0.88))
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.textCompact) {
+                Text(model.question)
+                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if !model.selectedText.isEmpty {
+                    Text(model.selectedText)
+                        .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .medium))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .lineLimit(AskAnswerWindowController.Metrics.selectedTextMaxLines)
                         .frame(maxWidth: .infinity, alignment: .leading)
-
-                    if !model.selectedText.isEmpty {
-                        Text(model.selectedText)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(Color.black.opacity(0.56))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.leading, 14)
-                            .overlay(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                                    .fill(Color.black.opacity(0.14))
-                                    .frame(width: 3)
-                            }
-                    }
+                        .padding(.leading, StudioTheme.Spacing.small)
+                        .overlay(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                                .fill(StudioTheme.border.opacity(0.9))
+                                .frame(width: 3)
+                        }
                 }
-
-                Button(action: { model.onCopyRequested?() }) {
-                    Image(systemName: "doc.on.doc")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color.black.opacity(0.52))
-                        .frame(width: 28, height: 28)
-                }
-                .buttonStyle(.plain)
-                .help(L("common.copy"))
             }
+
+            Button(action: { model.onCopyRequested?() }) {
+                Image(systemName: "doc.on.doc")
+                    .font(.system(size: StudioTheme.Typography.iconMedium, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.plain)
+            .help(L("common.copy"))
         }
     }
 
@@ -209,65 +211,165 @@ private struct AskAnswerWindowView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Label(L("workflow.ask.answerSectionTitle"), systemImage: "sparkles")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color.black.opacity(0.86))
+                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
 
                 Spacer()
 
                 Button(action: { model.onCopyRequested?() }) {
                     Image(systemName: "doc.on.doc")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(Color.black.opacity(0.5))
+                        .font(.system(size: StudioTheme.Typography.iconMedium, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textSecondary)
                         .frame(width: 28, height: 28)
                 }
                 .buttonStyle(.plain)
                 .help(L("common.copy"))
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 18)
+            .padding(.horizontal, AskAnswerWindowController.Metrics.answerHeaderHorizontalPadding)
+            .padding(.vertical, AskAnswerWindowController.Metrics.answerHeaderVerticalPadding)
 
             Divider()
-                .overlay(Color.black.opacity(0.06))
+                .overlay(StudioTheme.border.opacity(0.8))
 
-            ScrollView(showsIndicators: true) {
-                MarkdownRenderedText(markdown: model.answerMarkdown)
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 24)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            MarkdownTextView(markdown: model.answerMarkdown)
+                .padding(.horizontal, AskAnswerWindowController.Metrics.answerContentHorizontalPadding)
+                .padding(.vertical, AskAnswerWindowController.Metrics.answerContentVerticalPadding)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color.white.opacity(0.94))
+            RoundedRectangle(
+                cornerRadius: AskAnswerWindowController.Metrics.contentCardCornerRadius,
+                style: .continuous
+            )
+            .fill(StudioTheme.surface)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(
+                cornerRadius: AskAnswerWindowController.Metrics.contentCardCornerRadius,
+                style: .continuous
+            )
+            .stroke(StudioTheme.border.opacity(0.85), lineWidth: 1)
         )
     }
 }
 
-private struct MarkdownRenderedText: View {
+private struct MarkdownTextView: NSViewRepresentable {
     let markdown: String
 
-    var body: some View {
-        Group {
-            if let attributed = try? AttributedString(
-                markdown: markdown,
-                options: AttributedString.MarkdownParsingOptions(
-                    interpretedSyntax: .full,
-                    failurePolicy: .returnPartiallyParsedIfPossible
-                )
-            ) {
-                Text(attributed)
-            } else {
-                Text(markdown)
-            }
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSScrollView()
+        scrollView.drawsBackground = false
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = true
+        scrollView.borderType = .noBorder
+
+        let textView = NSTextView()
+        textView.drawsBackground = false
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.textContainerInset = NSSize(width: 0, height: 0)
+        textView.textContainer?.lineFragmentPadding = 0
+        textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.containerSize = NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.minSize = .zero
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        textView.autoresizingMask = [.width]
+        scrollView.documentView = textView
+        update(textView: textView)
+        return scrollView
+    }
+
+    func updateNSView(_ nsView: NSScrollView, context: Context) {
+        guard let textView = nsView.documentView as? NSTextView else { return }
+        update(textView: textView)
+    }
+
+    private func update(textView: NSTextView) {
+        textView.textStorage?.setAttributedString(renderedMarkdown())
+        textView.setNeedsDisplay(textView.bounds)
+    }
+
+    private func renderedMarkdown() -> NSAttributedString {
+        let normalizedMarkdown = normalizedMarkdownText()
+        let baseFont = NSFont.systemFont(ofSize: StudioTheme.Typography.bodyLarge, weight: .medium)
+        let bodyParagraph = NSMutableParagraphStyle()
+        bodyParagraph.lineSpacing = 2
+        bodyParagraph.paragraphSpacing = 10
+
+        let fallback = NSAttributedString(
+            string: normalizedMarkdown,
+            attributes: [
+                NSAttributedString.Key.font: baseFont,
+                NSAttributedString.Key.foregroundColor: NSColor(StudioTheme.textPrimary),
+                NSAttributedString.Key.paragraphStyle: bodyParagraph
+            ]
+        )
+
+        guard let parsed = try? AttributedString(
+            markdown: normalizedMarkdown,
+            options: AttributedString.MarkdownParsingOptions(
+                interpretedSyntax: .full,
+                failurePolicy: .returnPartiallyParsedIfPossible
+            )
+        ) else {
+            return fallback
         }
-        .font(.system(size: 18, weight: .medium))
-        .foregroundStyle(Color.black.opacity(0.9))
-        .textSelection(.enabled)
-        .frame(maxWidth: .infinity, alignment: .leading)
+
+        let attributed = NSMutableAttributedString(attributedString: NSAttributedString(parsed))
+        let fullRange = NSRange(location: 0, length: attributed.length)
+        attributed.beginEditing()
+
+        attributed.enumerateAttribute(NSAttributedString.Key.paragraphStyle, in: fullRange) { value, range, _ in
+            let style = (value as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+            style.lineSpacing = 2
+            style.paragraphSpacing = max(style.paragraphSpacing, 10)
+            attributed.addAttribute(NSAttributedString.Key.paragraphStyle, value: style, range: range)
+        }
+
+        attributed.enumerateAttribute(NSAttributedString.Key.font, in: fullRange) { value, range, _ in
+            guard let font = value as? NSFont else {
+                attributed.addAttribute(NSAttributedString.Key.font, value: baseFont, range: range)
+                return
+            }
+
+            let descriptor = font.fontDescriptor
+            let traits = descriptor.symbolicTraits
+            let targetSize: CGFloat
+
+            if font.pointSize >= 22 {
+                targetSize = StudioTheme.Typography.sectionTitle
+            } else if font.pointSize >= 18 {
+                targetSize = StudioTheme.Typography.subsectionTitle
+            } else {
+                targetSize = StudioTheme.Typography.bodyLarge
+            }
+
+            let updatedDescriptor = descriptor.withSymbolicTraits(traits)
+            let updatedFont = NSFont(descriptor: updatedDescriptor, size: targetSize) ?? font
+            attributed.addAttribute(NSAttributedString.Key.font, value: updatedFont, range: range)
+        }
+
+        attributed.addAttribute(
+            NSAttributedString.Key.foregroundColor,
+            value: NSColor(StudioTheme.textPrimary),
+            range: fullRange
+        )
+
+        attributed.endEditing()
+        return attributed
+    }
+
+    private func normalizedMarkdownText() -> String {
+        var normalized = markdown.replacingOccurrences(of: "\r\n", with: "\n")
+        normalized = normalized.replacingOccurrences(of: "\r", with: "\n")
+
+        if !normalized.contains("\n") && normalized.contains("\\n") {
+            normalized = normalized.replacingOccurrences(of: "\\n", with: "\n")
+        }
+
+        return normalized
     }
 }
