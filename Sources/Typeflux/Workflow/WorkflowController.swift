@@ -48,6 +48,7 @@ final class WorkflowController {
     private let clipboard: ClipboardService
     private let historyStore: HistoryStore
     private let overlayController: OverlayController
+    private let askAnswerWindowController: AskAnswerWindowController
     private let soundEffectPlayer: SoundEffectPlayer
 
     private var currentSelectedText: String?
@@ -96,6 +97,7 @@ final class WorkflowController {
         clipboard: ClipboardService,
         historyStore: HistoryStore,
         overlayController: OverlayController,
+        askAnswerWindowController: AskAnswerWindowController,
         soundEffectPlayer: SoundEffectPlayer
     ) {
         self.appState = appState
@@ -108,6 +110,7 @@ final class WorkflowController {
         self.clipboard = clipboard
         self.historyStore = historyStore
         self.overlayController = overlayController
+        self.askAnswerWindowController = askAnswerWindowController
         self.soundEffectPlayer = soundEffectPlayer
         self.overlayController.setRecordingActionHandlers(
             onCancel: { [weak self] in self?.cancelRecording() },
@@ -128,6 +131,16 @@ final class WorkflowController {
             onSelect: { [weak self] index in self?.selectPersonaSelection(at: index) },
             onConfirm: { [weak self] in self?.confirmPersonaSelection() },
             onCancel: { [weak self] in self?.dismissPersonaPicker() }
+        )
+    }
+
+    private func presentAskAnswer(question: String, selectedText: String?, answerMarkdown: String) {
+        overlayController.dismissImmediately()
+        askAnswerWindowController.show(
+            title: L("workflow.ask.answerTitle"),
+            question: question,
+            selectedText: selectedText,
+            answerMarkdown: answerMarkdown
         )
     }
 
@@ -167,6 +180,7 @@ final class WorkflowController {
     func stop() {
         hotkeyService.stop()
         dismissPersonaPicker()
+        askAnswerWindowController.dismiss()
         cancelRecording()
         cancelCurrentProcessing(resetUI: true, reason: L("workflow.cancel.stopping"))
         automaticVocabularyObservationTask?.cancel()
@@ -922,10 +936,10 @@ final class WorkflowController {
                     pipelineTiming.applyStartedAt = Date()
                     record.pipelineTiming = pipelineTiming
                     await MainActor.run {
-                        self.lastDialogResultText = askDecisionResult.decision.trimmedResponse
-                        self.overlayController.showResultDialog(
-                            title: L("workflow.ask.answerTitle"),
-                            message: askDecisionResult.decision.trimmedResponse
+                        self.presentAskAnswer(
+                            question: transcribedText,
+                            selectedText: askContextText,
+                            answerMarkdown: askDecisionResult.decision.trimmedResponse
                         )
                     }
                     pipelineTiming.applyCompletedAt = Date()
@@ -1011,10 +1025,10 @@ final class WorkflowController {
                 pipelineTiming.applyStartedAt = Date()
                 record.pipelineTiming = pipelineTiming
                 await MainActor.run {
-                    self.lastDialogResultText = answerResult.text
-                    self.overlayController.showResultDialog(
-                        title: L("workflow.ask.answerTitle"),
-                        message: answerResult.text
+                    self.presentAskAnswer(
+                        question: transcribedText,
+                        selectedText: askContextText,
+                        answerMarkdown: answerResult.text
                     )
                 }
                 pipelineTiming.applyCompletedAt = Date()
@@ -1116,14 +1130,25 @@ final class WorkflowController {
             UsageStatsStore.shared.recordSession(record: record)
             enforceHistoryRetentionPolicy()
             let retryResultText = forceResultDialogOnSuccess ? record.finalText : nil
+            let finalMode = record.mode
+            let finalTranscriptText = record.transcriptText
+            let finalSelectionOriginalText = record.selectionOriginalText
 
             await MainActor.run {
                 if self.processingSessionID == sessionID {
                     self.lastRetryableFailureRecord = nil
                     self.appState.setStatus(.idle)
                     if let finalText = retryResultText, !finalText.isEmpty {
-                        self.lastDialogResultText = finalText
-                        self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: finalText)
+                        if finalMode == .askAnswer {
+                            self.presentAskAnswer(
+                                question: finalTranscriptText ?? "",
+                                selectedText: finalSelectionOriginalText,
+                                answerMarkdown: finalText
+                            )
+                        } else {
+                            self.lastDialogResultText = finalText
+                            self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: finalText)
+                        }
                     } else {
                         self.overlayController.dismissSoon()
                     }

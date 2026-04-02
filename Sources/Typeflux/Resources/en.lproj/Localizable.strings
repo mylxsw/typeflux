@@ -230,6 +230,7 @@
 "workflow.transcription.noSpeech" = "No valid speech content was detected.";
 "workflow.result.copyTitle" = "Copy Result";
 "workflow.ask.answerTitle" = "Ask Anything";
+"workflow.ask.answerSectionTitle" = "Answer";
 "workflow.ask.answerPresented" = "Answer shown";
 "workflow.result.copied" = "Copied to clipboard";
 "workflow.persona.finishRecordingFirst" = "Finish the current recording before switching persona.";
