@@ -205,7 +205,7 @@ struct OnboardingView: View {
 
             VStack(spacing: 8) {
                 let sttProviders: [STTProvider] = [
-                    .whisperAPI, .localModel, .multimodalLLM, .aliCloud, .doubaoRealtime
+                    .freeModel, .whisperAPI, .localModel, .multimodalLLM, .aliCloud, .doubaoRealtime
                 ]
                 ForEach(sttProviders, id: \.self) { provider in
                     modelProviderCard(
@@ -235,6 +235,8 @@ struct OnboardingView: View {
             )
 
             switch viewModel.sttProvider {
+            case .freeModel:
+                freeSTTConfigFields
             case .whisperAPI:
                 whisperConfigFields
             case .localModel:
@@ -324,6 +326,7 @@ struct OnboardingView: View {
 
     private func sttProviderIcon(_ provider: STTProvider) -> String {
         switch provider {
+        case .freeModel: return "giftcard"
         case .whisperAPI: return "dot.radiowaves.left.and.right"
         case .localModel: return "laptopcomputer.and.arrow.down"
         case .multimodalLLM: return "brain.filled.head.profile"
@@ -336,12 +339,14 @@ struct OnboardingView: View {
     private func sttProviderBadge(_ provider: STTProvider) -> String {
         switch provider {
         case .localModel: return L("settings.models.badge.local")
+        case .freeModel: return L("settings.models.badge.free")
         default: return L("settings.models.badge.api")
         }
     }
 
     private func sttProviderDescription(_ provider: STTProvider) -> String {
         switch provider {
+        case .freeModel: return L("settings.models.card.freeSTT.summary")
         case .whisperAPI: return L("settings.models.card.whisper.summary")
         case .localModel: return L("settings.models.card.localSTT.summary")
         case .multimodalLLM: return L("settings.models.card.multimodal.summary")
@@ -386,6 +391,30 @@ struct OnboardingView: View {
                     placeholder: "whisper-1",
                     text: $viewModel.whisperModel
                 )
+            }
+        }
+    }
+
+    private var freeSTTConfigFields: some View {
+        StudioCard(padding: 16) {
+            VStack(spacing: 12) {
+                if FreeSTTModelRegistry.suggestedModelNames.isEmpty {
+                    Text(L("settings.models.freeSTT.noSources"))
+                        .font(.studioBody(12))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    StudioMenuPicker(
+                        options: FreeSTTModelRegistry.suggestedModelNames.map { ($0, $0) },
+                        selection: $viewModel.freeSTTModel,
+                        width: 320
+                    )
+                }
+
+                Text(L("settings.models.freeSTT.hint"))
+                    .font(.studioBody(12))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
@@ -576,6 +605,7 @@ struct OnboardingView: View {
 
     private func sttProviderToID(_ provider: STTProvider) -> StudioModelProviderID {
         switch provider {
+        case .freeModel: return .freeSTT
         case .whisperAPI: return .whisperAPI
         case .localModel: return .localSTT
         case .multimodalLLM: return .multimodalLLM
@@ -598,6 +628,7 @@ struct OnboardingView: View {
 
     private func providerLogoResourceName(for providerID: StudioModelProviderID) -> String? {
         switch providerID {
+        case .freeSTT: return nil
         case .whisperAPI, .multimodalLLM: return "openai"
         case .ollama: return "ollama"
         case .freeModel: return nil
@@ -620,6 +651,7 @@ struct OnboardingView: View {
         switch providerID {
         case .appleSpeech: return "waveform"
         case .localSTT: return "laptopcomputer.and.arrow.down"
+        case .freeSTT: return "giftcard"
         case .whisperAPI: return "dot.radiowaves.left.and.right"
         case .ollama: return "cpu"
         case .freeModel: return "giftcard"

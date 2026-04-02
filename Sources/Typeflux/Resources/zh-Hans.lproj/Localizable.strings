@@ -172,6 +172,7 @@
 "updater.latest.message" = "你当前运行的是最新版本的 Typeflux。";
 
 "provider.stt.whisperAPI" = "Whisper API";
+"provider.stt.freeModel" = "免费模型";
 "provider.stt.appleSpeech" = "Apple Speech";
 "provider.stt.localModel" = "本地模型";
 "provider.stt.multimodalLLM" = "多模态 LLM";
@@ -425,6 +426,7 @@
 "settings.models.builtInDefaultModel" = "内置默认模型";
 "settings.models.builtInDefaultProfile" = "内置默认配置";
 "settings.models.card.whisper.summary" = "通过 OpenAI 兼容接口执行远程转写，模型选择更灵活。";
+"settings.models.card.freeSTT.summary" = "从代码中配置好的免费语音转写模型里选择，用户不需要手动填写接口或密钥。";
 "settings.models.card.localSTT.summary" = "通过内嵌运行时在本地运行 Whisper、SenseVoice Small 或 Qwen3-ASR。";
 "settings.models.card.multimodal.summary" = "音频直接发送给多模态模型，在一次 API 调用内完成转写和人设改写。";
 "settings.models.card.aliCloud.summary" = "通过 DashScope 执行实时流式识别，低延迟 WebSocket 传输。";
@@ -443,6 +445,15 @@
 "settings.models.card.zhipu.summary" = "通过 BigModel 兼容端点使用智谱 GLM 模型。";
 "settings.models.card.minimax.summary" = "通过 MiniMax 的 OpenAI 兼容端点使用其模型，并提供国际版与中国版 URL 选择。";
 "settings.models.badge.free" = "免费";
+"settings.models.freeSTT.hint" = "免费语音模型由代码配置管理，用户只能从已配置的模型列表中选择。";
+"settings.models.freeSTT.noSources" = "当前还没有配置任何免费语音模型源。请在 Sources/Typeflux/STT/FreeModels 下添加实现。";
+"settings.models.freeSTT.availableSources" = "已配置语音来源";
+"settings.models.freeSTT.validation.emptyModel" = "请先选择免费语音模型，再进行保存或测试。";
+"settings.models.freeSTT.validation.unsupportedModel" = "免费语音模型“%@”尚未在代码配置中注册。";
+"settings.models.freeSTT.validation.invalidEndpoint" = "解析出的免费语音接口地址无效。";
+"settings.models.overview.freeSTT" = "当前使用代码配置的免费语音转写来源。";
+"settings.models.focused.freeSTT" = "从代码注册的免费语音模型中选择一个可用项。";
+"settings.models.routing.freeSTT" = "免费语音转写来源";
 "settings.models.freeModel.modelName" = "模型名称";
 "settings.models.freeModel.placeholder" = "输入已配置的免费模型";
 "settings.models.freeModel.hint" = "免费模型的接口信息由代码配置解析，这里只需要填写模型名称。";

@@ -47,6 +47,7 @@ final class StudioViewModel: ObservableObject {
     @Published var whisperBaseURL: String
     @Published var whisperModel: String
     @Published var whisperAPIKey: String
+    @Published var freeSTTModel: String
 
     @Published var multimodalLLMBaseURL: String
     @Published var multimodalLLMModel: String
@@ -142,6 +143,8 @@ final class StudioViewModel: ObservableObject {
         llmProvider = settingsStore.llmProvider
         llmRemoteProvider = initialLLMRemoteProvider
         switch initialSTTProvider {
+        case .freeModel:
+            focusedModelProvider = .freeSTT
         case .appleSpeech:
             focusedModelProvider = .appleSpeech
         case .localModel:
@@ -169,6 +172,7 @@ final class StudioViewModel: ObservableObject {
         whisperBaseURL = settingsStore.whisperBaseURL
         whisperModel = settingsStore.whisperModel
         whisperAPIKey = settingsStore.whisperAPIKey
+        freeSTTModel = settingsStore.freeSTTModel
         multimodalLLMBaseURL = settingsStore.multimodalLLMBaseURL
         multimodalLLMModel = settingsStore.multimodalLLMModel
         multimodalLLMAPIKey = settingsStore.multimodalLLMAPIKey
@@ -471,7 +475,7 @@ final class StudioViewModel: ObservableObject {
             switch sttProvider {
             case .appleSpeech, .localModel:
                 return "Local Processing"
-            case .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime:
+            case .freeModel, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime:
                 return "Remote API"
             }
         case .llm:
@@ -483,6 +487,8 @@ final class StudioViewModel: ObservableObject {
         switch modelDomain {
         case .stt:
             switch sttProvider {
+            case .freeModel:
+                return "Using a code-configured free speech-to-text endpoint."
             case .appleSpeech:
                 return "Using on-device speech recognition."
             case .localModel:
@@ -620,6 +626,8 @@ final class StudioViewModel: ObservableObject {
         sttProvider = provider
         settingsStore.sttProvider = provider
         switch provider {
+        case .freeModel:
+            focusedModelProvider = .freeSTT
         case .appleSpeech:
             focusedModelProvider = .appleSpeech
         case .localModel:
@@ -657,7 +665,10 @@ final class StudioViewModel: ObservableObject {
 
     func setSTTModelSelection(_ provider: STTProvider, suggestedModel: String) {
         setSTTProvider(provider)
-        if provider == .whisperAPI {
+        if provider == .freeModel {
+            freeSTTModel = suggestedModel
+            settingsStore.freeSTTModel = suggestedModel
+        } else if provider == .whisperAPI {
             whisperModel = suggestedModel
             settingsStore.whisperModel = suggestedModel
         } else if provider == .multimodalLLM {
@@ -727,6 +738,7 @@ final class StudioViewModel: ObservableObject {
     func setWhisperBaseURL(_ value: String) { whisperBaseURL = value; sttConnectionTestState = .idle }
     func setWhisperModel(_ value: String) { whisperModel = value; sttConnectionTestState = .idle }
     func setWhisperAPIKey(_ value: String) { whisperAPIKey = value; sttConnectionTestState = .idle }
+    func setFreeSTTModel(_ value: String) { freeSTTModel = value; sttConnectionTestState = .idle }
     func setMultimodalLLMBaseURL(_ value: String) { multimodalLLMBaseURL = value; sttConnectionTestState = .idle }
     func setMultimodalLLMModel(_ value: String) { multimodalLLMModel = value; sttConnectionTestState = .idle }
     func setMultimodalLLMAPIKey(_ value: String) { multimodalLLMAPIKey = value; sttConnectionTestState = .idle }
@@ -1129,6 +1141,8 @@ final class StudioViewModel: ObservableObject {
         case .ollama:
             settingsStore.ollamaBaseURL = ollamaBaseURL
             settingsStore.ollamaModel = ollamaModel
+        case .freeSTT:
+            settingsStore.freeSTTModel = freeSTTModel
         case .whisperAPI:
             settingsStore.whisperBaseURL = whisperBaseURL
             settingsStore.whisperModel = whisperModel
@@ -1177,6 +1191,8 @@ final class StudioViewModel: ObservableObject {
 
             do {
                 switch capturedProvider {
+                case .freeSTT:
+                    return
                 case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
                     let connection = try LLMConnectionResolver.resolve(
                         provider: capturedRemoteProvider,
@@ -1271,6 +1287,7 @@ final class StudioViewModel: ObservableObject {
         sttConnectionTestState = .testing
 
         let capturedProvider = focusedModelProvider
+        let capturedFreeSTTModel = freeSTTModel
         let capturedWhisperBaseURL = whisperBaseURL
         let capturedWhisperModel = whisperModel
         let capturedWhisperAPIKey = whisperAPIKey
@@ -1288,6 +1305,8 @@ final class StudioViewModel: ObservableObject {
             do {
                 let preview: String
                 switch capturedProvider {
+                case .freeSTT:
+                    preview = try await FreeSTTTranscriber.testConnection(modelName: capturedFreeSTTModel)
                 case .whisperAPI:
                     preview = try await WhisperAPITranscriber.testConnection(
                         baseURL: capturedWhisperBaseURL,
@@ -1423,6 +1442,8 @@ final class StudioViewModel: ObservableObject {
         switch domain {
         case .stt:
             switch sttProvider {
+            case .freeModel:
+                return .freeSTT
             case .appleSpeech:
                 return .appleSpeech
             case .localModel:

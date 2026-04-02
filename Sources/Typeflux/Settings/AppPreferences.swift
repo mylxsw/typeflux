@@ -5,6 +5,7 @@ enum AliCloudASRDefaults {
 }
 
 enum STTProvider: String, CaseIterable, Codable {
+    case freeModel
     case whisperAPI
     case appleSpeech
     case localModel
@@ -14,6 +15,8 @@ enum STTProvider: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
+        case .freeModel:
+            return L("provider.stt.freeModel")
         case .whisperAPI:
             return L("provider.stt.whisperAPI")
         case .appleSpeech:

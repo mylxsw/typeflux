@@ -2237,6 +2237,8 @@ struct StudioView: View {
         switch viewModel.modelDomain {
         case .stt:
             switch viewModel.sttProvider {
+            case .freeModel:
+                return .freeSTT
             case .appleSpeech:
                 return .appleSpeech
             case .localModel:
@@ -2260,6 +2262,17 @@ struct StudioView: View {
         switch viewModel.modelDomain {
         case .stt:
             return [
+                StudioModelCard(
+                    id: StudioModelProviderID.freeSTT.rawValue,
+                    name: STTProvider.freeModel.displayName,
+                    summary: L("settings.models.card.freeSTT.summary"),
+                    badge: L("settings.models.badge.free"),
+                    metadata: viewModel.freeSTTModel.isEmpty
+                        ? L("settings.models.modelNotConfigured") : viewModel.freeSTTModel,
+                    isSelected: viewModel.sttProvider == .freeModel,
+                    isMuted: false,
+                    actionTitle: L("settings.models.useRemote")
+                ),
                 StudioModelCard(
                     id: StudioModelProviderID.whisperAPI.rawValue,
                     name: STTProvider.whisperAPI.displayName,
@@ -2447,7 +2460,7 @@ struct StudioView: View {
                 focusedProviderForm
 
                 if [
-                    StudioModelProviderID.whisperAPI, .multimodalLLM, .ollama, .aliCloud,
+                    StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .ollama, .aliCloud,
                     .doubaoRealtime,
                 ].contains(viewModel.focusedModelProvider) || focusedLLMRemoteProvider != nil {
                     HStack(spacing: StudioTheme.Spacing.small) {
@@ -2471,7 +2484,7 @@ struct StudioView: View {
                                 viewModel.testLLMConnection()
                             }
                         } else if [
-                            StudioModelProviderID.whisperAPI, .multimodalLLM, .aliCloud,
+                            StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
                             .doubaoRealtime,
                         ].contains(viewModel.focusedModelProvider) {
                             StudioButton(
@@ -2493,7 +2506,7 @@ struct StudioView: View {
                     {
                         connectionTestResultView(viewModel.llmConnectionTestState)
                     } else if [
-                        StudioModelProviderID.whisperAPI, .multimodalLLM, .aliCloud,
+                        StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
                         .doubaoRealtime,
                     ].contains(viewModel.focusedModelProvider) {
                         connectionTestResultView(viewModel.sttConnectionTestState)
@@ -2632,6 +2645,41 @@ struct StudioView: View {
                 Text(L("settings.models.appleSpeech.quickest"))
                     .font(.studioBody(StudioTheme.Typography.caption))
                     .foregroundStyle(StudioTheme.textSecondary)
+
+            case .freeSTT:
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    if FreeSTTModelRegistry.suggestedModelNames.isEmpty {
+                        Text(L("settings.models.freeSTT.noSources"))
+                            .font(.studioBody(StudioTheme.Typography.caption))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                    } else {
+                        StudioMenuPicker(
+                            options: FreeSTTModelRegistry.suggestedModelNames.map { ($0, $0) },
+                            selection: Binding(
+                                get: { viewModel.freeSTTModel },
+                                set: viewModel.setFreeSTTModel
+                            ),
+                            width: 320
+                        )
+                    }
+
+                    Text(L("settings.models.freeSTT.hint"))
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textSecondary)
+
+                    if !FreeSTTModelRegistry.sources.isEmpty {
+                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                            Text(L("settings.models.freeSTT.availableSources"))
+                                .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                                .foregroundStyle(StudioTheme.textSecondary)
+                            ForEach(FreeSTTModelRegistry.sourceSummaryLines(), id: \.self) { line in
+                                Text(line)
+                                    .font(.studioMono(StudioTheme.Typography.caption))
+                                    .foregroundStyle(StudioTheme.textTertiary)
+                            }
+                        }
+                    }
+                }
 
             case .localSTT:
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
@@ -3028,6 +3076,8 @@ struct StudioView: View {
 
     private func providerLogoResourceName(for provider: StudioModelProviderID) -> String? {
         switch provider {
+        case .freeSTT:
+            return nil
         case .whisperAPI, .multimodalLLM:
             return "openai"
         case .ollama:
@@ -3156,6 +3206,9 @@ struct StudioView: View {
             return true
         case .localSTT:
             return true
+        case .freeSTT:
+            return !viewModel.freeSTTModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && FreeSTTModelRegistry.resolve(modelName: viewModel.freeSTTModel) != nil
         case .whisperAPI:
             return !viewModel.whisperBaseURL.isEmpty
         case .ollama:
@@ -3187,6 +3240,8 @@ struct StudioView: View {
             viewModel.setSTTModelSelection(.appleSpeech, suggestedModel: viewModel.whisperModel)
         case .localSTT:
             viewModel.setSTTProvider(.localModel)
+        case .freeSTT:
+            viewModel.setSTTModelSelection(.freeModel, suggestedModel: viewModel.freeSTTModel)
         case .whisperAPI:
             viewModel.setSTTModelSelection(
                 .whisperAPI,
@@ -3226,6 +3281,8 @@ struct StudioView: View {
             return "waveform"
         case .localSTT:
             return "laptopcomputer.and.arrow.down"
+        case .freeSTT:
+            return "giftcard"
         case .whisperAPI:
             return "dot.radiowaves.left.and.right"
         case .ollama:
@@ -3283,6 +3340,8 @@ struct StudioView: View {
             return L("settings.models.overview.appleSpeech")
         case .localSTT:
             return L("settings.models.overview.localSTT")
+        case .freeSTT:
+            return L("settings.models.overview.freeSTT")
         case .whisperAPI:
             return L("settings.models.overview.whisper")
         case .ollama:
@@ -3305,6 +3364,8 @@ struct StudioView: View {
             return STTProvider.appleSpeech.displayName
         case .localSTT:
             return STTProvider.localModel.displayName
+        case .freeSTT:
+            return STTProvider.freeModel.displayName
         case .whisperAPI:
             return STTProvider.whisperAPI.displayName
         case .ollama:
@@ -3325,7 +3386,7 @@ struct StudioView: View {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
             return L("settings.models.mode.local")
-        case .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+        case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
             .qwen, .zhipu, .minimax, .multimodalLLM, .aliCloud, .doubaoRealtime:
             return L("settings.models.mode.remote")
         }
@@ -3335,7 +3396,7 @@ struct StudioView: View {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
             return StudioTheme.success
-        case .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+        case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
             .qwen, .zhipu, .minimax, .multimodalLLM, .aliCloud, .doubaoRealtime:
             return StudioTheme.accent
         }
@@ -3345,7 +3406,7 @@ struct StudioView: View {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
             return StudioTheme.success.opacity(0.12)
-        case .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+        case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
             .qwen, .zhipu, .minimax, .multimodalLLM, .aliCloud, .doubaoRealtime:
             return StudioTheme.accentSoft
         }
@@ -3367,6 +3428,9 @@ struct StudioView: View {
             return STTProvider.appleSpeech.displayName
         case .localSTT:
             return viewModel.localSTTModel.displayName
+        case .freeSTT:
+            return viewModel.freeSTTModel.isEmpty
+                ? L("settings.models.modelNotConfigured") : viewModel.freeSTTModel
         case .whisperAPI:
             return viewModel.whisperModel.isEmpty
                 ? OpenAIAudioModelCatalog.whisperModels[0] : viewModel.whisperModel
@@ -3397,6 +3461,8 @@ struct StudioView: View {
             return STTProvider.appleSpeech.displayName
         case .localSTT:
             return L("settings.models.localSpeechModels")
+        case .freeSTT:
+            return STTProvider.freeModel.displayName
         case .whisperAPI:
             return STTProvider.whisperAPI.displayName
         case .ollama:
@@ -3419,6 +3485,8 @@ struct StudioView: View {
             return L("settings.models.focused.appleSpeech")
         case .localSTT:
             return L("settings.models.focused.localSTT")
+        case .freeSTT:
+            return L("settings.models.focused.freeSTT")
         case .whisperAPI:
             return L("settings.models.focused.whisper")
         case .ollama:
@@ -3449,6 +3517,8 @@ struct StudioView: View {
             return L("settings.models.routing.appleSpeech")
         case .localSTT:
             return L("settings.models.routing.localSTT")
+        case .freeSTT:
+            return L("settings.models.routing.freeSTT")
         case .whisperAPI:
             return L("settings.models.routing.whisper")
         case .ollama:

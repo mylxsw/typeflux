@@ -172,6 +172,7 @@
 "updater.latest.message" = "You are running the latest version of Typeflux.";
 
 "provider.stt.whisperAPI" = "Whisper API";
+"provider.stt.freeModel" = "Free Models";
 "provider.stt.appleSpeech" = "Apple Speech";
 "provider.stt.localModel" = "Local Model";
 "provider.stt.multimodalLLM" = "Multimodal LLM";
@@ -425,6 +426,7 @@
 "settings.models.builtInDefaultModel" = "Built-in default model";
 "settings.models.builtInDefaultProfile" = "Built-in default profile";
 "settings.models.card.whisper.summary" = "Remote transcription through OpenAI-compatible endpoints with better model flexibility.";
+"settings.models.card.freeSTT.summary" = "Choose from code-configured free speech-to-text models. No endpoint or API key is entered manually.";
 "settings.models.card.localSTT.summary" = "Run Whisper, SenseVoice Small, or Qwen3-ASR locally through an embedded service runtime.";
 "settings.models.card.multimodal.summary" = "Send audio directly to a multimodal model. Transcription and persona rewriting happen in a single API call for a faster end-to-end path.";
 "settings.models.card.aliCloud.summary" = "Real-time streaming recognition via DashScope with low-latency WebSocket streaming.";
@@ -443,6 +445,15 @@
 "settings.models.card.zhipu.summary" = "Zhipu GLM models through the BigModel compatible endpoint.";
 "settings.models.card.minimax.summary" = "MiniMax models through its OpenAI-compatible endpoint, with separate international and China API URLs.";
 "settings.models.badge.free" = "Free";
+"settings.models.freeSTT.hint" = "Free speech models are managed in code. Users can only pick from the configured model list.";
+"settings.models.freeSTT.noSources" = "No free speech model source is configured yet. Add an implementation under Sources/Typeflux/STT/FreeModels.";
+"settings.models.freeSTT.availableSources" = "Configured Speech Sources";
+"settings.models.freeSTT.validation.emptyModel" = "Select a free speech model before testing or saving.";
+"settings.models.freeSTT.validation.unsupportedModel" = "The free speech model \"%@\" is not registered in code.";
+"settings.models.freeSTT.validation.invalidEndpoint" = "The resolved free speech endpoint is invalid.";
+"settings.models.overview.freeSTT" = "Using a code-configured free speech-to-text source.";
+"settings.models.focused.freeSTT" = "Pick one of the built-in free speech models registered in code.";
+"settings.models.routing.freeSTT" = "Free speech-to-text source";
 "settings.models.freeModel.modelName" = "Model Name";
 "settings.models.freeModel.placeholder" = "Enter a configured free model";
 "settings.models.freeModel.hint" = "Free-model endpoints are resolved from code. Users only need the model name here.";

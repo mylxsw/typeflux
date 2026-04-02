@@ -194,6 +194,11 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "stt.whisper.apiKey") }
     }
 
+    var freeSTTModel: String {
+        get { defaults.string(forKey: "stt.free.model") ?? (FreeSTTModelRegistry.suggestedModelNames.first ?? "") }
+        set { defaults.set(newValue, forKey: "stt.free.model") }
+    }
+
     var localSTTModel: LocalSTTModel {
         get {
             let raw =
