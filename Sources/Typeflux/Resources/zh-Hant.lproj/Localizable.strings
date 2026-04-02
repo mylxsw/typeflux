@@ -562,7 +562,7 @@
 "onboarding.shortcuts.persona.hint" = "切換或套用寫作人設";
 "onboarding.shortcuts.changeInSettings" = "隨時可在 設定 → 語音快捷鍵 中自訂快捷鍵。";
 
-"onboarding.action.back" = "返回";
-"onboarding.action.continue" = "繼續";
+"onboarding.action.back" = "上一步";
+"onboarding.action.continue" = "下一步";
 "onboarding.action.skip" = "略過";
 "onboarding.action.getStarted" = "開始使用";

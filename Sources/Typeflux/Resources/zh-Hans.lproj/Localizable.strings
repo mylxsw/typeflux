@@ -562,7 +562,7 @@
 "onboarding.shortcuts.persona.hint" = "切换或应用写作人设";
 "onboarding.shortcuts.changeInSettings" = "随时可以在 设置 → 语音快捷键 中自定义快捷键。";
 
-"onboarding.action.back" = "返回";
-"onboarding.action.continue" = "继续";
+"onboarding.action.back" = "上一步";
+"onboarding.action.continue" = "下一步";
 "onboarding.action.skip" = "跳过";
 "onboarding.action.getStarted" = "开始使用";

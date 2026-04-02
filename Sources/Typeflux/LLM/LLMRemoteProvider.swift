@@ -12,7 +12,6 @@ struct LLMRemoteEndpointPreset: Equatable {
 }
 
 enum LLMRemoteProvider: String, CaseIterable, Codable {
-    case custom
     case openRouter
     case openAI
     case anthropic
@@ -22,6 +21,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
     case qwen
     case zhipu
     case minimax
+    case custom
 
     var displayName: String {
         switch self {
