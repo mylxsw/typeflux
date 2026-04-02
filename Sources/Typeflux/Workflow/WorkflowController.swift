@@ -141,7 +141,7 @@ final class WorkflowController {
             self?.handlePressBegan(intent: .askSelection)
         }
         hotkeyService.onAskPressEnded = { [weak self] in
-            self?.handlePressEnded()
+            self?.handleAskPressEnded()
         }
         hotkeyService.onPersonaPickerRequested = { [weak self] in
             self?.handlePersonaPickerRequested()
@@ -348,7 +348,7 @@ final class WorkflowController {
 
     private func beginRecording(intent: RecordingIntent) async {
         isRecording = true
-        recordingMode = .holdToTalk
+        recordingMode = intent == .askSelection ? .locked : .holdToTalk
         recordingIntent = intent
         lastRetryableFailureRecord = nil
         NSLog("[Workflow] Recording started")
@@ -358,7 +358,11 @@ final class WorkflowController {
 
         Task { @MainActor in
             appState.setStatus(.recording)
-            overlayController.show()
+            if intent == .askSelection {
+                overlayController.showLockedRecording()
+            } else {
+                overlayController.show()
+            }
         }
 
         selectionTask = Task { [weak self] in
@@ -426,6 +430,11 @@ final class WorkflowController {
         }
 
         finishRecordingFromCurrentMode()
+    }
+
+    private func handleAskPressEnded() {
+        guard isRecording, recordingIntent == .askSelection else { return }
+        // Ask recordings are toggle-based; release should not end the recording.
     }
 
     private func confirmLockedRecording() {
