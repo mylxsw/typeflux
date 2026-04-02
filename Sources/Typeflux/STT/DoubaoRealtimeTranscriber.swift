@@ -1,9 +1,11 @@
 import AVFoundation
 import Compression
+import Darwin
 import Foundation
 
-final class DoubaoRealtimeTranscriber: Transcriber {
+final class DoubaoRealtimeTranscriber: RecordingPrewarmingTranscriber {
     private let settingsStore: SettingsStore
+    private let connectionCoordinator = DoubaoPreparedConnectionCoordinator()
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
@@ -41,27 +43,32 @@ final class DoubaoRealtimeTranscriber: Transcriber {
         try await transcribeStream(audioFile: audioFile) { _ in }
     }
 
+    func prepareForRecording() async {
+        guard let configuration = currentConfiguration() else { return }
+        do {
+            _ = try await connectionCoordinator.prepareConnection(
+                appID: configuration.appID,
+                accessToken: configuration.accessToken,
+                resourceID: configuration.resourceID
+            )
+        } catch {
+            NetworkDebugLogger.logError(context: "Doubao realtime preconnect failed", error: error)
+        }
+    }
+
+    func cancelPreparedRecording() async {
+        await connectionCoordinator.cancelPreparedConnection()
+    }
+
     func transcribeStream(
         audioFile: AudioFile,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
-        let appID = settingsStore.doubaoAppID.trimmingCharacters(in: .whitespacesAndNewlines)
-        let accessToken = settingsStore.doubaoAccessToken.trimmingCharacters(in: .whitespacesAndNewlines)
-        let resourceID = settingsStore.doubaoResourceID.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !appID.isEmpty else {
+        guard let configuration = currentConfiguration() else {
             throw NSError(
                 domain: "DoubaoRealtimeTranscriber",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Doubao App ID is not configured."]
-            )
-        }
-
-        guard !accessToken.isEmpty else {
-            throw NSError(
-                domain: "DoubaoRealtimeTranscriber",
-                code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Doubao access token is not configured."]
+                userInfo: [NSLocalizedDescriptionKey: "Doubao credentials are not configured."]
             )
         }
 
@@ -70,12 +77,136 @@ final class DoubaoRealtimeTranscriber: Transcriber {
 
         return try await DoubaoRealtimeSession.run(
             pcmData: pcmData,
-            appID: appID,
-            accessToken: accessToken,
-            resourceID: resourceID.isEmpty ? "volc.seedasr.sauc.duration" : resourceID,
+            appID: configuration.appID,
+            accessToken: configuration.accessToken,
+            resourceID: configuration.resourceID,
             hotwords: hotwords,
+            connectionCoordinator: connectionCoordinator,
             onUpdate: onUpdate
         )
+    }
+
+    private func currentConfiguration() -> DoubaoConnectionConfiguration? {
+        let appID = settingsStore.doubaoAppID.trimmingCharacters(in: .whitespacesAndNewlines)
+        let accessToken = settingsStore.doubaoAccessToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resourceID = settingsStore.doubaoResourceID.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !appID.isEmpty else { return nil }
+        guard !accessToken.isEmpty else { return nil }
+        return DoubaoConnectionConfiguration(
+            appID: appID,
+            accessToken: accessToken,
+            resourceID: resourceID.isEmpty ? "volc.seedasr.sauc.duration" : resourceID
+        )
+    }
+}
+
+private struct DoubaoConnectionConfiguration: Equatable {
+    let appID: String
+    let accessToken: String
+    let resourceID: String
+}
+
+private final class DoubaoPreparedConnection {
+    let configuration: DoubaoConnectionConfiguration
+    let urlSession: URLSession
+    let socketTask: URLSessionWebSocketTask
+
+    init(
+        configuration: DoubaoConnectionConfiguration,
+        urlSession: URLSession,
+        socketTask: URLSessionWebSocketTask
+    ) {
+        self.configuration = configuration
+        self.urlSession = urlSession
+        self.socketTask = socketTask
+    }
+
+    func close() {
+        socketTask.cancel(with: .normalClosure, reason: nil)
+        urlSession.invalidateAndCancel()
+    }
+}
+
+private actor DoubaoPreparedConnectionCoordinator {
+    private var preparedConnection: DoubaoPreparedConnection?
+
+    func prepareConnection(
+        appID: String,
+        accessToken: String,
+        resourceID: String
+    ) async throws -> DoubaoPreparedConnection {
+        let configuration = DoubaoConnectionConfiguration(
+            appID: appID,
+            accessToken: accessToken,
+            resourceID: resourceID
+        )
+
+        if let preparedConnection, preparedConnection.configuration == configuration {
+            return preparedConnection
+        }
+
+        preparedConnection?.close()
+        let connection = try await DoubaoConnectionFactory.open(configuration: configuration)
+        preparedConnection = connection
+        return connection
+    }
+
+    func takePreparedConnection(
+        appID: String,
+        accessToken: String,
+        resourceID: String
+    ) -> DoubaoPreparedConnection? {
+        let configuration = DoubaoConnectionConfiguration(
+            appID: appID,
+            accessToken: accessToken,
+            resourceID: resourceID
+        )
+        guard let preparedConnection, preparedConnection.configuration == configuration else {
+            return nil
+        }
+        self.preparedConnection = nil
+        return preparedConnection
+    }
+
+    func cancelPreparedConnection() {
+        preparedConnection?.close()
+        preparedConnection = nil
+    }
+}
+
+private enum DoubaoConnectionFactory {
+    static func open(configuration: DoubaoConnectionConfiguration) async throws -> DoubaoPreparedConnection {
+        var request = URLRequest(url: URL(string: "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async")!)
+        request.setValue(configuration.appID, forHTTPHeaderField: "X-Api-App-Key")
+        request.setValue(configuration.accessToken, forHTTPHeaderField: "X-Api-Access-Key")
+        request.setValue(configuration.resourceID, forHTTPHeaderField: "X-Api-Resource-Id")
+        request.setValue(UUID().uuidString, forHTTPHeaderField: "X-Api-Connect-Id")
+        NetworkDebugLogger.logRequest(request, bodyDescription: "<websocket handshake>")
+        NetworkDebugLogger.logWebSocketEvent(
+            provider: "Doubao Realtime ASR",
+            phase: "connect",
+            details: "resourceID=\(configuration.resourceID)"
+        )
+
+        let delegate = DoubaoWSDelegate()
+        let urlSession = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+        let socketTask = urlSession.webSocketTask(with: request)
+        socketTask.resume()
+
+        do {
+            try await delegate.waitUntilOpen(timeout: .seconds(10))
+            NetworkDebugLogger.logWebSocketEvent(provider: "Doubao Realtime ASR", phase: "open")
+            return DoubaoPreparedConnection(
+                configuration: configuration,
+                urlSession: urlSession,
+                socketTask: socketTask
+            )
+        } catch {
+            socketTask.cancel(with: .normalClosure, reason: nil)
+            urlSession.invalidateAndCancel()
+            throw error
+        }
     }
 }
 
@@ -258,6 +389,7 @@ private actor DoubaoRealtimeSession {
         accessToken: String,
         resourceID: String,
         hotwords: [String],
+        connectionCoordinator: DoubaoPreparedConnectionCoordinator,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         let session = DoubaoRealtimeSession(
@@ -266,6 +398,7 @@ private actor DoubaoRealtimeSession {
             accessToken: accessToken,
             resourceID: resourceID,
             hotwords: hotwords,
+            connectionCoordinator: connectionCoordinator,
             onUpdate: onUpdate
         )
         return try await session.execute()
@@ -276,12 +409,15 @@ private actor DoubaoRealtimeSession {
     private let accessToken: String
     private let resourceID: String
     private let hotwords: [String]
+    private let connectionCoordinator: DoubaoPreparedConnectionCoordinator
     private let onUpdate: @Sendable (TranscriptionSnapshot) async -> Void
 
     private var didFinish = false
     private var sessionError: Error?
     private var finishContinuation: CheckedContinuation<Void, Error>?
     private var lastSnapshot = TranscriptionSnapshot(text: "", isFinal: false)
+    private var activeConnection: DoubaoPreparedConnection?
+    private var receiveTask: Task<Void, Never>?
 
     private init(
         pcmData: Data,
@@ -289,6 +425,7 @@ private actor DoubaoRealtimeSession {
         accessToken: String,
         resourceID: String,
         hotwords: [String],
+        connectionCoordinator: DoubaoPreparedConnectionCoordinator,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) {
         self.pcmData = pcmData
@@ -296,35 +433,18 @@ private actor DoubaoRealtimeSession {
         self.accessToken = accessToken
         self.resourceID = resourceID
         self.hotwords = hotwords
+        self.connectionCoordinator = connectionCoordinator
         self.onUpdate = onUpdate
     }
 
     private func execute() async throws -> String {
-        var request = URLRequest(url: URL(string: "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async")!)
-        request.setValue(appID, forHTTPHeaderField: "X-Api-App-Key")
-        request.setValue(accessToken, forHTTPHeaderField: "X-Api-Access-Key")
-        request.setValue(resourceID, forHTTPHeaderField: "X-Api-Resource-Id")
-        request.setValue(UUID().uuidString, forHTTPHeaderField: "X-Api-Connect-Id")
-        NetworkDebugLogger.logRequest(request, bodyDescription: "<websocket handshake>")
-        NetworkDebugLogger.logWebSocketEvent(provider: "Doubao Realtime ASR", phase: "connect", details: "resourceID=\(resourceID)")
-
-        let delegate = DoubaoWSDelegate()
-        let urlSession = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
-        let socketTask = urlSession.webSocketTask(with: request)
-        socketTask.resume()
-
         defer {
-            socketTask.cancel(with: .normalClosure, reason: nil)
-            urlSession.invalidateAndCancel()
+            receiveTask?.cancel()
+            activeConnection?.close()
+            activeConnection = nil
         }
 
-        try await delegate.waitUntilOpen(timeout: .seconds(10))
-        NetworkDebugLogger.logWebSocketEvent(provider: "Doubao Realtime ASR", phase: "open")
-
-        let receiveTask = Task { [weak self] in
-            await self?.receiveLoop(socketTask: socketTask)
-        }
-        defer { receiveTask.cancel() }
+        try await prepareActiveConnection(preferPrepared: true)
 
         let payload = DoubaoProtocol.buildClientRequest(uid: UUID().uuidString, hotwords: hotwords)
         let requestMessage = DoubaoProtocol.encodeMessage(
@@ -341,14 +461,17 @@ private actor DoubaoRealtimeSession {
             phase: "send",
             details: "client_request hotwords=\(hotwords.count)"
         )
-        try await socketTask.send(.data(requestMessage))
+        try await sendWithRetry(.data(requestMessage), description: "client_request")
 
         var offset = 0
         var chunkCount = 0
         while offset < pcmData.count {
             let end = min(offset + DoubaoAudioConverter.chunkSize, pcmData.count)
             let chunk = pcmData[offset..<end]
-            try await socketTask.send(.data(DoubaoProtocol.encodeAudioPacket(audioData: Data(chunk), isLast: false)))
+            try await sendWithRetry(
+                .data(DoubaoProtocol.encodeAudioPacket(audioData: Data(chunk), isLast: false)),
+                description: "audio_chunk_\(chunkCount + 1)"
+            )
             offset = end
             chunkCount += 1
         }
@@ -358,7 +481,10 @@ private actor DoubaoRealtimeSession {
             details: "audio_chunks=\(chunkCount) audio_bytes=\(pcmData.count)"
         )
         NetworkDebugLogger.logWebSocketEvent(provider: "Doubao Realtime ASR", phase: "send", details: "audio_end")
-        try await socketTask.send(.data(DoubaoProtocol.encodeAudioPacket(audioData: Data(), isLast: true)))
+        try await sendWithRetry(
+            .data(DoubaoProtocol.encodeAudioPacket(audioData: Data(), isLast: true)),
+            description: "audio_end"
+        )
 
         try await waitForCompletion()
 
@@ -367,6 +493,72 @@ private actor DoubaoRealtimeSession {
             await onUpdate(TranscriptionSnapshot(text: finalText, isFinal: true))
         }
         return finalText
+    }
+
+    private func prepareActiveConnection(preferPrepared: Bool) async throws {
+        if preferPrepared,
+           let preparedConnection = await connectionCoordinator.takePreparedConnection(
+                appID: appID,
+                accessToken: accessToken,
+                resourceID: resourceID
+           ) {
+            activeConnection = preparedConnection
+        } else {
+            activeConnection = try await DoubaoConnectionFactory.open(
+                configuration: DoubaoConnectionConfiguration(
+                    appID: appID,
+                    accessToken: accessToken,
+                    resourceID: resourceID
+                )
+            )
+        }
+
+        guard let socketTask = activeConnection?.socketTask else {
+            throw NSError(
+                domain: "DoubaoRealtimeSession",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Doubao WebSocket connection is unavailable."]
+            )
+        }
+
+        receiveTask?.cancel()
+        receiveTask = Task { [weak self] in
+            await self?.receiveLoop(socketTask: socketTask)
+        }
+    }
+
+    private func sendWithRetry(
+        _ message: URLSessionWebSocketTask.Message,
+        description: String
+    ) async throws {
+        let retryDelays: [Duration] = [.zero, .milliseconds(120), .milliseconds(300)]
+
+        for (attempt, delay) in retryDelays.enumerated() {
+            if attempt > 0 {
+                try await Task.sleep(for: delay)
+            }
+
+            do {
+                guard let socketTask = activeConnection?.socketTask else {
+                    throw NSError(
+                        domain: "DoubaoRealtimeSession",
+                        code: 2,
+                        userInfo: [NSLocalizedDescriptionKey: "Doubao WebSocket connection was not ready."]
+                    )
+                }
+                try await socketTask.send(message)
+                return
+            } catch {
+                guard isRetriableSocketConnectionError(error), attempt < retryDelays.count - 1 else {
+                    throw error
+                }
+
+                NetworkDebugLogger.logError(
+                    context: "Doubao realtime send \(description) failed before socket was ready; retrying",
+                    error: error
+                )
+            }
+        }
     }
 
     private func receiveLoop(socketTask: URLSessionWebSocketTask) async {
@@ -478,6 +670,16 @@ private actor DoubaoRealtimeSession {
         }
 
         return "type=\(header.messageType) flags=\(header.flags) bytes=\(data.count)"
+    }
+
+    private func isRetriableSocketConnectionError(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        if nsError.domain == NSPOSIXErrorDomain && nsError.code == Int(ENOTCONN) {
+            return true
+        }
+
+        let message = error.localizedDescription.lowercased()
+        return message.contains("socket is not connected") || message.contains("not connected")
     }
 }
 
