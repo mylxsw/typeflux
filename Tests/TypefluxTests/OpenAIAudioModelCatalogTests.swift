@@ -1,18 +1,19 @@
 import XCTest
+
 @testable import Typeflux
 
 final class OpenAIAudioModelCatalogTests: XCTestCase {
     func testWhisperBuiltInOptionsMatchSupportedValues() {
         XCTAssertEqual(
             OpenAIAudioModelCatalog.whisperModels,
-            ["gpt-4o-mini-transcribe", "whisper-1", "gpt-4o-transcribe"]
+            ["gpt-5-transcribe", "gpt-4o-transcribe", "gpt-4o-mini-transcribe", "whisper-1"]
         )
     }
 
     func testMultimodalBuiltInModelsMatchSupportedValues() {
         XCTAssertEqual(
             OpenAIAudioModelCatalog.multimodalModels,
-            ["gpt-4o-mini-audio-preview", "gpt-4o-audio-preview", "gpt-audio-mini"]
+            ["gpt-5-audio", "gpt-4o-audio-preview", "gpt-4o-mini-audio-preview"]
         )
     }
 

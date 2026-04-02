@@ -170,7 +170,7 @@ final class SettingsStore {
     }
 
     var ollamaModel: String {
-        get { defaults.string(forKey: "llm.ollama.model") ?? "qwen2.5:7b" }
+        get { defaults.string(forKey: "llm.ollama.model") ?? "qwen3.5:7b" }
         set { defaults.set(newValue, forKey: "llm.ollama.model") }
     }
 
