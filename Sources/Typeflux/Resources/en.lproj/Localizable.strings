@@ -219,6 +219,7 @@
 "workflow.cancel.stopping" = "Cancelled while stopping.";
 "workflow.cancel.retry" = "Cancelled due to retry.";
 "workflow.cancel.newRecording" = "Cancelled by a new recording.";
+"workflow.cancel.userCancelled" = "Cancelled by user.";
 "workflow.timeout.reason" = "Processing timed out after 120 seconds.";
 "workflow.timeout.status" = "Processing timed out";
 "workflow.devApp.requiredMessage" = "Please run via scripts/run_dev_app.sh (app bundle required for privacy permissions)";

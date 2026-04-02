@@ -575,7 +575,7 @@ final class OverlayController {
     }
 
     fileprivate func handleKeyCode(_ keyCode: Int) -> Bool {
-        if model.presentation == .recordingLocked || model.presentation == .recordingLockedPreview {
+        if model.presentation == .recordingHold || model.presentation == .recordingHoldPreview || model.presentation == .recordingLocked || model.presentation == .recordingLockedPreview {
             if keyCode == 53 {
                 model.requestCancel()
                 return true
@@ -584,6 +584,12 @@ final class OverlayController {
         }
 
         switch model.presentation {
+        case .processing:
+            if keyCode == 53 {
+                model.requestCancel()
+                return true
+            }
+            return false
         case .failure:
             if keyCode == 53 {
                 model.requestDismiss()

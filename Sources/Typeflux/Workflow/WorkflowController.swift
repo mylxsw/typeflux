@@ -116,7 +116,14 @@ final class WorkflowController {
         self.askAnswerWindowController = askAnswerWindowController
         self.soundEffectPlayer = soundEffectPlayer
         self.overlayController.setRecordingActionHandlers(
-            onCancel: { [weak self] in self?.cancelRecording() },
+            onCancel: { [weak self] in
+                guard let self else { return }
+                if self.isRecording {
+                    self.cancelRecording()
+                } else {
+                    self.cancelCurrentProcessing(resetUI: true, reason: L("workflow.cancel.userCancelled"))
+                }
+            },
             onConfirm: { [weak self] in self?.confirmLockedRecording() }
         )
         self.overlayController.setResultDialogHandler(

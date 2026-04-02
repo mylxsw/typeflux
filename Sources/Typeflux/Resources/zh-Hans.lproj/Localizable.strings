@@ -219,6 +219,7 @@
 "workflow.cancel.stopping" = "停止应用时已取消。";
 "workflow.cancel.retry" = "由于重试已取消。";
 "workflow.cancel.newRecording" = "已被新的录音任务取消。";
+"workflow.cancel.userCancelled" = "已被用户取消。";
 "workflow.timeout.reason" = "处理超时（超过 120 秒）。";
 "workflow.timeout.status" = "处理超时";
 "workflow.devApp.requiredMessage" = "请通过 scripts/run_dev_app.sh 运行（隐私权限需要 .app 包）";
