@@ -13,6 +13,11 @@ protocol Transcriber {
     ) async throws -> String
 }
 
+protocol RecordingPrewarmingTranscriber: Transcriber {
+    func prepareForRecording() async
+    func cancelPreparedRecording() async
+}
+
 extension Transcriber {
     func transcribeStream(
         audioFile: AudioFile,
@@ -53,6 +58,24 @@ final class STTRouter {
 
     func transcribe(audioFile: AudioFile) async throws -> String {
         try await transcribeStream(audioFile: audioFile) { _ in }
+    }
+
+    func prepareForRecording() async {
+        switch settingsStore.sttProvider {
+        case .doubaoRealtime:
+            await (doubaoRealtime as? RecordingPrewarmingTranscriber)?.prepareForRecording()
+        default:
+            break
+        }
+    }
+
+    func cancelPreparedRecording() async {
+        switch settingsStore.sttProvider {
+        case .doubaoRealtime:
+            await (doubaoRealtime as? RecordingPrewarmingTranscriber)?.cancelPreparedRecording()
+        default:
+            break
+        }
     }
 
     func transcribeStream(

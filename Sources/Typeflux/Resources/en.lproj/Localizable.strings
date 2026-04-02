@@ -225,6 +225,7 @@
 "workflow.devApp.requiredStatus" = "Run as .app";
 "workflow.audioStart.failedStatus" = "Audio start failed";
 "workflow.processing.failed" = "Processing failed";
+"workflow.recording.tooShort" = "Recording was too short.";
 "workflow.transcription.emptySkipped" = "Skipped because transcription was empty.";
 "workflow.transcription.noSpeech" = "No valid speech content was detected.";
 "workflow.result.copyTitle" = "Copy Result";

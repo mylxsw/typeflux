@@ -4,6 +4,7 @@ final class WorkflowController {
     private static let recordingTimeoutNanoseconds: UInt64 = 600_000_000_000 // 10 minutes
     private static let processingTimeoutNanoseconds: UInt64 = 120_000_000_000 // 2 minutes
     private static let tapToLockThreshold: TimeInterval = 0.22
+    private static let minimumRecordingDuration: TimeInterval = 0.35
     private static let selectionRestoreDelayMicroseconds: useconds_t = 120_000
     private static let automaticVocabularyObservationWindow: TimeInterval = 30
     private static let automaticVocabularyPollInterval: Duration = .seconds(1)
@@ -205,6 +206,9 @@ final class WorkflowController {
         recordingTimeoutTask?.cancel()
         recordingTimeoutTask = nil
         _ = try? audioRecorder.stop()
+        Task {
+            await sttRouter.cancelPreparedRecording()
+        }
         selectionTask?.cancel()
         selectionTask = nil
         Task { @MainActor in
@@ -384,6 +388,10 @@ final class WorkflowController {
                 },
                 audioBufferHandler: { _ in }
             )
+
+            Task { [weak self] in
+                await self?.sttRouter.prepareForRecording()
+            }
 
             // Set a timeout to auto-stop recording after 10 minutes
             recordingTimeoutTask?.cancel()
@@ -647,13 +655,24 @@ final class WorkflowController {
         do {
             let audioFile = try audioRecorder.stop()
             let audioFileReadyAt = Date()
-            await MainActor.run {
-                self.soundEffectPlayer.play(.done)
-            }
             let recordingIntent = self.recordingIntent
             self.recordingIntent = .dictation
             let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
             selectionTask = nil
+
+            if audioFile.duration < Self.minimumRecordingDuration {
+                try? FileManager.default.removeItem(at: audioFile.fileURL)
+                await sttRouter.cancelPreparedRecording()
+                await MainActor.run {
+                    self.appState.setStatus(.idle)
+                    self.overlayController.showNotice(message: L("workflow.recording.tooShort"))
+                }
+                return
+            }
+
+            await MainActor.run {
+                self.soundEffectPlayer.play(.done)
+            }
             let selectedText = recordingIntent == .askSelection
                 ? editingSelectedText(from: selectionSnapshot)
                 : nil
