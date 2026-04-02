@@ -541,6 +541,11 @@ final class SettingsStore {
         "\(name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())::\(prompt.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())"
     }
 
+    var isOnboardingCompleted: Bool {
+        get { defaults.object(forKey: "onboarding.completed") as? Bool ?? false }
+        set { defaults.set(newValue, forKey: "onboarding.completed") }
+    }
+
     private func llmRemoteKey(_ provider: LLMRemoteProvider, suffix: String) -> String {
         "llm.remote.\(provider.rawValue).\(suffix)"
     }

@@ -518,3 +518,45 @@
 "settings.advanced.autoVocabulary.subtitle" = "语音输入插入后，继续监听当前输入框 30 秒。如果你手动修正了某个词，应用会调用模型判断是否应自动加入生词本。";
 "workflow.vocabulary.autoAdded.single" = "已自动将 %@ 添加到生词本。";
 "workflow.vocabulary.autoAdded.multiple" = "已自动将 %d 个词添加到生词本。";
+
+"onboarding.window.title" = "欢迎使用 Typeflux";
+"onboarding.step.language" = "语言";
+"onboarding.step.models" = "模型";
+"onboarding.step.permissions" = "权限";
+"onboarding.step.shortcuts" = "快捷键";
+
+"onboarding.language.title" = "选择语言";
+"onboarding.language.subtitle" = "选择 Typeflux 界面的显示语言。";
+
+"onboarding.models.title" = "配置模型";
+"onboarding.models.subtitle" = "选择语音识别引擎和语言模型，稍后可以在设置中随时更改。";
+"onboarding.models.stt.title" = "语音识别";
+"onboarding.models.stt.subtitle" = "将你的语音转换为文字";
+"onboarding.models.llm.title" = "语言模型";
+"onboarding.models.llm.subtitle" = "改写和润色你的语音输入";
+"onboarding.models.stt.apple.description" = "本地运行，无需配置";
+"onboarding.models.stt.whisper.description" = "远程 API，需要接口地址和密钥";
+"onboarding.models.stt.local.description" = "下载后本地运行";
+"onboarding.models.stt.local.hint" = "所选模型将在首次使用时自动下载。";
+"onboarding.models.llm.openai.title" = "OpenAI 兼容接口";
+"onboarding.models.llm.openai.description" = "任意远程聊天 API — OpenAI、Claude、DeepSeek…";
+"onboarding.models.llm.ollama.title" = "本地 Ollama";
+"onboarding.models.llm.ollama.description" = "完全在你的 Mac 上本地运行，保护隐私";
+"onboarding.models.badge.noSetup" = "免配置";
+"onboarding.models.badge.apiKey" = "需要密钥";
+"onboarding.models.badge.local" = "本地";
+
+"onboarding.permissions.title" = "授予权限";
+"onboarding.permissions.subtitle" = "Typeflux 需要少量系统权限，用于录制语音并将文字输入到其他应用。";
+
+"onboarding.shortcuts.title" = "键盘快捷键";
+"onboarding.shortcuts.subtitle" = "以下是默认快捷键设置，无需修改即可使用。";
+"onboarding.shortcuts.activation.hint" = "按住录音，轻点锁定录制";
+"onboarding.shortcuts.ask.hint" = "针对已选文字提问";
+"onboarding.shortcuts.persona.hint" = "切换或应用写作人设";
+"onboarding.shortcuts.changeInSettings" = "随时可以在 设置 → 语音快捷键 中自定义快捷键。";
+
+"onboarding.action.back" = "返回";
+"onboarding.action.continue" = "继续";
+"onboarding.action.skip" = "跳过";
+"onboarding.action.getStarted" = "开始使用";

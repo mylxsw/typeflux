@@ -6,6 +6,7 @@ final class AppCoordinator {
 
     private var statusBarController: StatusBarController?
     private var workflowController: WorkflowController?
+    private var onboardingWindowController: OnboardingWindowController?
 
     func start() {
         let workflowController = WorkflowController(
@@ -36,12 +37,26 @@ final class AppCoordinator {
         statusBarController?.start()
         self.workflowController?.start()
         UsageStatsStore.shared.backfillIfNeeded(from: di.historyStore)
-        presentPermissionGuidanceIfNeeded()
+
+        if !di.settingsStore.isOnboardingCompleted {
+            presentOnboarding()
+        } else {
+            presentPermissionGuidanceIfNeeded()
+        }
     }
 
     func stop() {
         workflowController?.stop()
         statusBarController?.stop()
+    }
+
+    private func presentOnboarding() {
+        let controller = OnboardingWindowController()
+        self.onboardingWindowController = controller
+        controller.show(settingsStore: di.settingsStore) { [weak self] in
+            self?.onboardingWindowController = nil
+            self?.presentPermissionGuidanceIfNeeded()
+        }
     }
 
     private func presentPermissionGuidanceIfNeeded() {

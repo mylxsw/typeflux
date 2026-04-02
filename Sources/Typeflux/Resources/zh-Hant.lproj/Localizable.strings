@@ -518,3 +518,45 @@
 "settings.advanced.autoVocabulary.subtitle" = "語音輸入插入後，繼續監聽目前輸入框 30 秒。如果你手動修正了某個詞，應用會呼叫模型判斷是否應自動加入生詞本。";
 "workflow.vocabulary.autoAdded.single" = "已自動將 %@ 加入生詞本。";
 "workflow.vocabulary.autoAdded.multiple" = "已自動將 %d 個詞加入生詞本。";
+
+"onboarding.window.title" = "歡迎使用 Typeflux";
+"onboarding.step.language" = "語言";
+"onboarding.step.models" = "模型";
+"onboarding.step.permissions" = "權限";
+"onboarding.step.shortcuts" = "快捷鍵";
+
+"onboarding.language.title" = "選擇語言";
+"onboarding.language.subtitle" = "選擇 Typeflux 介面的顯示語言。";
+
+"onboarding.models.title" = "設定模型";
+"onboarding.models.subtitle" = "選擇語音辨識引擎和語言模型，稍後可在設定中隨時更改。";
+"onboarding.models.stt.title" = "語音辨識";
+"onboarding.models.stt.subtitle" = "將你的語音轉換為文字";
+"onboarding.models.llm.title" = "語言模型";
+"onboarding.models.llm.subtitle" = "改寫和潤飾你的語音輸入";
+"onboarding.models.stt.apple.description" = "本機執行，無需設定";
+"onboarding.models.stt.whisper.description" = "遠端 API，需要端點位址和金鑰";
+"onboarding.models.stt.local.description" = "下載後在本機執行";
+"onboarding.models.stt.local.hint" = "所選模型將在首次使用時自動下載。";
+"onboarding.models.llm.openai.title" = "OpenAI 相容介面";
+"onboarding.models.llm.openai.description" = "任意遠端聊天 API — OpenAI、Claude、DeepSeek…";
+"onboarding.models.llm.ollama.title" = "本機 Ollama";
+"onboarding.models.llm.ollama.description" = "完全在你的 Mac 上本機執行，保護隱私";
+"onboarding.models.badge.noSetup" = "免設定";
+"onboarding.models.badge.apiKey" = "需要金鑰";
+"onboarding.models.badge.local" = "本機";
+
+"onboarding.permissions.title" = "授予權限";
+"onboarding.permissions.subtitle" = "Typeflux 需要少量系統權限，用於錄製語音並將文字輸入其他應用程式。";
+
+"onboarding.shortcuts.title" = "鍵盤快捷鍵";
+"onboarding.shortcuts.subtitle" = "以下是預設快捷鍵設定，無需修改即可使用。";
+"onboarding.shortcuts.activation.hint" = "按住錄音，輕點鎖定錄製";
+"onboarding.shortcuts.ask.hint" = "針對已選取文字提問";
+"onboarding.shortcuts.persona.hint" = "切換或套用寫作人設";
+"onboarding.shortcuts.changeInSettings" = "隨時可在 設定 → 語音快捷鍵 中自訂快捷鍵。";
+
+"onboarding.action.back" = "返回";
+"onboarding.action.continue" = "繼續";
+"onboarding.action.skip" = "略過";
+"onboarding.action.getStarted" = "開始使用";

@@ -518,3 +518,45 @@
 "settings.advanced.autoVocabulary.subtitle" = "After voice input is inserted, watch the current field for 30 seconds. If you manually correct a term, the app can ask the model whether it should be added to your vocabulary automatically.";
 "workflow.vocabulary.autoAdded.single" = "Added %@ to vocabulary.";
 "workflow.vocabulary.autoAdded.multiple" = "Added %d terms to vocabulary.";
+
+"onboarding.window.title" = "Welcome to Typeflux";
+"onboarding.step.language" = "Language";
+"onboarding.step.models" = "Models";
+"onboarding.step.permissions" = "Permissions";
+"onboarding.step.shortcuts" = "Shortcuts";
+
+"onboarding.language.title" = "Choose your language";
+"onboarding.language.subtitle" = "Select the display language for the Typeflux interface.";
+
+"onboarding.models.title" = "Set up your models";
+"onboarding.models.subtitle" = "Pick a voice recognizer and a language model. You can change these anytime in Settings.";
+"onboarding.models.stt.title" = "Voice Recognition";
+"onboarding.models.stt.subtitle" = "Converts your speech to text";
+"onboarding.models.llm.title" = "Language Model";
+"onboarding.models.llm.subtitle" = "Rewrites and refines your dictation";
+"onboarding.models.stt.apple.description" = "On-device, no setup required";
+"onboarding.models.stt.whisper.description" = "Remote API — needs endpoint & key";
+"onboarding.models.stt.local.description" = "Download and run locally";
+"onboarding.models.stt.local.hint" = "The model will be downloaded automatically on first use.";
+"onboarding.models.llm.openai.title" = "OpenAI-Compatible";
+"onboarding.models.llm.openai.description" = "Any remote chat API — OpenAI, Claude, Deepseek…";
+"onboarding.models.llm.ollama.title" = "Local Ollama";
+"onboarding.models.llm.ollama.description" = "Private, runs entirely on your Mac";
+"onboarding.models.badge.noSetup" = "No setup";
+"onboarding.models.badge.apiKey" = "API key";
+"onboarding.models.badge.local" = "Local";
+
+"onboarding.permissions.title" = "Grant permissions";
+"onboarding.permissions.subtitle" = "Typeflux needs a few system permissions to capture your voice and insert text into other apps.";
+
+"onboarding.shortcuts.title" = "Keyboard shortcuts";
+"onboarding.shortcuts.subtitle" = "These are the default shortcuts. You're all set — no changes required.";
+"onboarding.shortcuts.activation.hint" = "Hold to talk, tap to lock recording";
+"onboarding.shortcuts.ask.hint" = "Ask about selected text";
+"onboarding.shortcuts.persona.hint" = "Switch or apply a writing persona";
+"onboarding.shortcuts.changeInSettings" = "You can customize shortcuts anytime in Settings → Voice Shortcuts.";
+
+"onboarding.action.back" = "Back";
+"onboarding.action.continue" = "Continue";
+"onboarding.action.skip" = "Skip";
+"onboarding.action.getStarted" = "Get Started";
