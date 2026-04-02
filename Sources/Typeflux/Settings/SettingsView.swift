@@ -1468,20 +1468,14 @@ struct StudioView: View {
         OpenAIAudioModelCatalog.whisperModels
     }
 
-    private var llmEndpointSuggestions: [String] {
-        uniqueSuggestions([
-            viewModel.llmBaseURL,
-            viewModel.whisperBaseURL,
-            viewModel.multimodalLLMBaseURL,
-            "https://openrouter.ai/api/v1",
-            "https://api.openai.com/v1",
-            "https://api.minimax.io/v1",
-            "https://api.minimaxi.com/v1",
-            "https://api.z.ai/api/paas/v4",
-            "https://open.bigmodel.cn/api/paas/v4",
-            "https://dashscope.aliyuncs.com/compatible-mode/v1",
-            "http://127.0.0.1:11434/v1"
-        ])
+    private func llmEndpointSuggestions(for provider: LLMRemoteProvider?) -> [String] {
+        guard let provider else {
+            return uniqueSuggestions([viewModel.llmBaseURL])
+        }
+
+        return uniqueSuggestions(
+            [viewModel.llmBaseURL, provider.defaultBaseURL] + provider.endpointPresets.map(\.url)
+        )
     }
 
     private var llmModelSuggestions: [String] {
@@ -1504,19 +1498,6 @@ struct StudioView: View {
     private var remoteLLMModelSuggestions: [String] {
         guard let provider = focusedLLMRemoteProvider else { return llmModelSuggestions }
         return uniqueSuggestions([viewModel.llmModel] + provider.suggestedModels)
-    }
-
-    private var selectedLLMEndpointPreset: LLMRemoteEndpointPreset? {
-        guard let provider = focusedLLMRemoteProvider else { return nil }
-        let trimmedBaseURL = viewModel.llmBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        return provider.endpointPresets.first { $0.url == trimmedBaseURL }
-    }
-
-    private var llmEndpointPresetPickerOptions: [(label: String, value: String)] {
-        guard let provider = focusedLLMRemoteProvider else { return [] }
-        return provider.endpointPresets.map { preset in
-            (label: L(preset.labelKey), value: preset.url)
-        }
     }
 
     private var ollamaEndpointSuggestions: [String] {
@@ -1559,23 +1540,8 @@ struct StudioView: View {
                     label: L("settings.models.apiEndpoint"),
                     placeholder: provider.defaultBaseURL.isEmpty ? "https://api.openai.com/v1" : provider.defaultBaseURL,
                     text: Binding(get: { viewModel.llmBaseURL }, set: viewModel.setLLMBaseURL),
-                    suggestions: uniqueSuggestions([viewModel.llmBaseURL, provider.defaultBaseURL] + provider.endpointPresets.map(\.url) + llmEndpointSuggestions)
-                ) {
-                    if !llmEndpointPresetPickerOptions.isEmpty {
-                        StudioMenuPicker(
-                            options: llmEndpointPresetPickerOptions,
-                            selection: Binding(
-                                get: {
-                                    selectedLLMEndpointPreset?.url
-                                        ?? llmEndpointPresetPickerOptions.first?.value
-                                        ?? provider.defaultBaseURL
-                                },
-                                set: { viewModel.setLLMBaseURL($0) }
-                            ),
-                            width: 150
-                        )
-                    }
-                }
+                    suggestions: llmEndpointSuggestions(for: provider)
+                )
 
                 StudioSuggestedTextInputCard(
                     label: L("common.model"),
@@ -1628,7 +1594,7 @@ struct StudioView: View {
                         label: L("settings.models.remote.baseURL"),
                         placeholder: "https://api.openai.com/v1",
                         text: Binding(get: { viewModel.llmBaseURL }, set: viewModel.setLLMBaseURL),
-                        suggestions: llmEndpointSuggestions
+                        suggestions: llmEndpointSuggestions(for: focusedLLMRemoteProvider)
                     )
                     StudioSuggestedTextInputCard(
                         label: L("common.model"),
