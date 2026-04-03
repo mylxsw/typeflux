@@ -373,8 +373,8 @@
 "settings.permissions.ready" = "%@ is ready.";
 "settings.permissions.reviewInSystemSettings" = "Review %@ in System Settings.";
 
-"settings.models.domain.stt" = "Speech Providers";
-"settings.models.domain.llm" = "Language Model Providers";
+"settings.models.domain.stt" = "Speech Recognition";
+"settings.models.domain.llm" = "Large Language Model";
 "settings.models.configuration" = "Configuration";
 "settings.models.activation" = "Activation";
 "settings.models.customArchitecture.title" = "Custom Architecture?";

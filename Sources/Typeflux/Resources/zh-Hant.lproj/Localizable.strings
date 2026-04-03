@@ -373,8 +373,8 @@
 "settings.permissions.ready" = "%@ 已就緒。";
 "settings.permissions.reviewInSystemSettings" = "請在系統設定中檢查 %@。";
 
-"settings.models.domain.stt" = "語音提供方";
-"settings.models.domain.llm" = "大語言模型提供方";
+"settings.models.domain.stt" = "語音識別模型";
+"settings.models.domain.llm" = "大語言模型";
 "settings.models.configuration" = "配置";
 "settings.models.activation" = "啟用";
 "settings.models.customArchitecture.title" = "自訂架構？";
