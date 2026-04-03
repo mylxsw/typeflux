@@ -27,7 +27,7 @@ final class AXTextInjector: TextInjector {
     }
 
     private static var didRequestAccessibility = false
-    private static let pasteRestoreDelayNanoseconds: UInt64 = 180_000_000
+    private static let pasteRestoreDelayNanoseconds: UInt64 = 500_000_000
     private static let focusRestoreDelayMicroseconds: useconds_t = 250_000
     private static let selectedTextTimeoutMilliseconds = 200
     private static let copySelectionTimeoutMilliseconds = 180

@@ -709,10 +709,7 @@ final class WorkflowController {
             scheduleAutomaticVocabularyObservation(for: text)
             return .inserted
         } catch {
-            Task { @MainActor in
-                self.lastDialogResultText = text
-                self.overlayController.showResultDialog(title: fallbackTitle, message: text)
-            }
+            presentResultDialog(title: fallbackTitle, text: text)
             return .presentedInDialog
         }
     }
@@ -1622,6 +1619,20 @@ final class WorkflowController {
         guard let lastDialogResultText, !lastDialogResultText.isEmpty else { return }
         clipboard.write(text: lastDialogResultText)
         overlayController.showNotice(message: L("workflow.result.copied"))
+    }
+
+    private func presentResultDialog(title: String, text: String) {
+        let work = { [weak self] in
+            guard let self else { return }
+            self.lastDialogResultText = text
+            self.overlayController.showResultDialog(title: title, message: text)
+        }
+
+        if Thread.isMainThread {
+            work()
+        } else {
+            DispatchQueue.main.sync(execute: work)
+        }
     }
 
     private func scheduleAutomaticVocabularyObservation(for insertedText: String) {
