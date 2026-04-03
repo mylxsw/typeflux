@@ -15,6 +15,16 @@ enum AppLanguage: String, CaseIterable, Codable, Identifiable {
 
     var localeIdentifier: String { rawValue }
 
+    /// ISO 639-1 language code accepted by WhisperKit's DecodingOptions.
+    var whisperKitLanguageCode: String {
+        switch self {
+        case .english: return "en"
+        case .simplifiedChinese, .traditionalChinese: return "zh"
+        case .japanese: return "ja"
+        case .korean: return "ko"
+        }
+    }
+
     var bundleLocalizationName: String {
         rawValue.lowercased()
     }

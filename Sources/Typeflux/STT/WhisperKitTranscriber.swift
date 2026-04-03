@@ -23,10 +23,11 @@ final class WhisperKitTranscriber: Transcriber {
     ) async throws -> String {
         let pipe = try await ensurePipeline()
 
+        let language = AppLocalization.shared.language.whisperKitLanguageCode
         let options = DecodingOptions(
             verbose: false,
             task: .transcribe,
-            language: nil,  // auto-detect from audio; system locale is unreliable
+            language: language,
             withoutTimestamps: true
         )
 
