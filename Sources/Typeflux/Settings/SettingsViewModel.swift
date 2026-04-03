@@ -442,14 +442,14 @@ final class StudioViewModel: ObservableObject {
         case .stt:
             return [
                 StudioModelCard(
-                    id: "apple-speech",
-                    name: "Apple Speech",
-                    summary: "On-device system recognizer for low-friction local transcription.",
-                    badge: "Local",
-                    metadata: "Built-in • Offline friendly",
-                    isSelected: sttProvider == .appleSpeech,
+                    id: "free-stt",
+                    name: STTProvider.freeModel.displayName,
+                    summary: "Use code-configured free speech-to-text endpoints.",
+                    badge: "Free",
+                    metadata: freeSTTModel.isEmpty ? "Model not set" : freeSTTModel,
+                    isSelected: sttProvider == .freeModel,
                     isMuted: false,
-                    actionTitle: sttProvider == .appleSpeech ? "Selected" : "Use Local"
+                    actionTitle: sttProvider == .freeModel ? "Selected" : "Use Free"
                 ),
                 StudioModelCard(
                     id: "local-stt",
@@ -460,6 +460,16 @@ final class StudioViewModel: ObservableObject {
                     isSelected: sttProvider == .localModel,
                     isMuted: false,
                     actionTitle: sttProvider == .localModel ? "Selected" : "Use Local"
+                ),
+                StudioModelCard(
+                    id: "apple-speech",
+                    name: "Apple Speech",
+                    summary: "On-device system recognizer for low-friction local transcription.",
+                    badge: "Local",
+                    metadata: "Built-in • Offline friendly",
+                    isSelected: sttProvider == .appleSpeech,
+                    isMuted: false,
+                    actionTitle: sttProvider == .appleSpeech ? "Selected" : "Use Local"
                 ),
                 StudioModelCard(
                     id: "whisper-api",
@@ -485,6 +495,17 @@ final class StudioViewModel: ObservableObject {
 
         case .llm:
             return [
+                StudioModelCard(
+                    id: "free-model",
+                    name: LLMRemoteProvider.freeModel.displayName,
+                    summary: "Use code-configured free LLM endpoints.",
+                    badge: "Free",
+                    metadata: llmModel.isEmpty ? "Model not set" : llmModel,
+                    isSelected: llmProvider == .openAICompatible && llmRemoteProvider == .freeModel,
+                    isMuted: false,
+                    actionTitle: llmProvider == .openAICompatible && llmRemoteProvider == .freeModel
+                        ? "Selected" : "Use Free"
+                ),
                 StudioModelCard(
                     id: "ollama-local",
                     name: "Local Ollama",

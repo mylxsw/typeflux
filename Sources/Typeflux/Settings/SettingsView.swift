@@ -2641,6 +2641,16 @@ struct StudioView: View {
                     actionTitle: L("settings.models.useRemote")
                 ),
                 StudioModelCard(
+                    id: StudioModelProviderID.localSTT.rawValue,
+                    name: L("settings.models.localModels"),
+                    summary: L("settings.models.card.localSTT.summary"),
+                    badge: L("settings.models.badge.local"),
+                    metadata: viewModel.localSTTModel.displayName,
+                    isSelected: viewModel.sttProvider == .localModel,
+                    isMuted: false,
+                    actionTitle: L("settings.models.useLocal")
+                ),
+                StudioModelCard(
                     id: StudioModelProviderID.whisperAPI.rawValue,
                     name: STTProvider.whisperAPI.displayName,
                     summary: L("settings.models.card.whisper.summary"),
@@ -2650,16 +2660,6 @@ struct StudioView: View {
                     isSelected: viewModel.sttProvider == .whisperAPI,
                     isMuted: false,
                     actionTitle: L("settings.models.useRemote")
-                ),
-                StudioModelCard(
-                    id: StudioModelProviderID.localSTT.rawValue,
-                    name: L("settings.models.localModels"),
-                    summary: L("settings.models.card.localSTT.summary"),
-                    badge: L("settings.models.badge.local"),
-                    metadata: viewModel.localSTTModel.displayName,
-                    isSelected: viewModel.sttProvider == .localModel,
-                    isMuted: false,
-                    actionTitle: L("settings.models.useLocal")
                 ),
                 StudioModelCard(
                     id: StudioModelProviderID.multimodalLLM.rawValue,
@@ -2696,6 +2696,17 @@ struct StudioView: View {
         case .llm:
             return [
                 StudioModelCard(
+                    id: LLMRemoteProvider.freeModel.studioProviderID.rawValue,
+                    name: LLMRemoteProvider.freeModel.displayName,
+                    summary: L("settings.models.card.\(LLMRemoteProvider.freeModel.rawValue).summary"),
+                    badge: L("settings.models.badge.free"),
+                    metadata: metadata(for: .freeModel),
+                    isSelected: viewModel.llmProvider == .openAICompatible
+                        && viewModel.llmRemoteProvider == .freeModel,
+                    isMuted: false,
+                    actionTitle: L("settings.models.useRemote")
+                ),
+                StudioModelCard(
                     id: StudioModelProviderID.ollama.rawValue,
                     name: LLMProvider.ollama.displayName,
                     summary: L("settings.models.card.ollama.summary"),
@@ -2705,24 +2716,23 @@ struct StudioView: View {
                     isSelected: viewModel.llmProvider == .ollama,
                     isMuted: false,
                     actionTitle: L("settings.models.useLocal")
+                ),
+            ] + LLMRemoteProvider.allCases
+                .filter { $0 != .freeModel }
+                .map { provider in
+                StudioModelCard(
+                    id: provider.studioProviderID.rawValue,
+                    name: provider.displayName,
+                    summary: L("settings.models.card.\(provider.rawValue).summary"),
+                    badge: provider.apiStyle == .openAICompatible
+                        ? L("settings.models.badge.api") : L("settings.models.badge.native"),
+                    metadata: metadata(for: provider),
+                    isSelected: viewModel.llmProvider == .openAICompatible
+                        && viewModel.llmRemoteProvider == provider,
+                    isMuted: false,
+                    actionTitle: L("settings.models.useRemote")
                 )
-            ]
-                + LLMRemoteProvider.allCases.map { provider in
-                    StudioModelCard(
-                        id: provider.studioProviderID.rawValue,
-                        name: provider.displayName,
-                        summary: L("settings.models.card.\(provider.rawValue).summary"),
-                        badge: provider == .freeModel
-                            ? L("settings.models.badge.free")
-                            : provider.apiStyle == .openAICompatible
-                            ? L("settings.models.badge.api") : L("settings.models.badge.native"),
-                        metadata: metadata(for: provider),
-                        isSelected: viewModel.llmProvider == .openAICompatible
-                            && viewModel.llmRemoteProvider == provider,
-                        isMuted: false,
-                        actionTitle: L("settings.models.useRemote")
-                    )
-                }
+            }
         }
     }
 

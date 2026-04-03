@@ -41,7 +41,7 @@ private final class TooltipWindowController {
     private let panel = TooltipFloatingPanel()
     private var hostingView: NSHostingView<AnyView>?
 
-    func show(text: String, screenFrame: NSRect) {
+    func show(text: String, screenFrame: NSRect, yOffset: CGFloat) {
         let tooltipView = AnyView(
             Text(text)
                 .font(.studioBody(StudioTheme.Typography.tooltip, weight: .semibold))
@@ -67,10 +67,11 @@ private final class TooltipWindowController {
         guard let hosting = hostingView else { return }
         let size = hosting.fittingSize
 
-        // Position above the anchor (screen coordinates, macOS y-up)
+        // Match the old overlay tooltip behavior: yOffset controls how far the
+        // tooltip's top edge sits above the anchor's top edge.
         var origin = NSPoint(
             x: screenFrame.midX - size.width / 2,
-            y: screenFrame.maxY + 4
+            y: screenFrame.maxY + yOffset - size.height
         )
 
         // Clamp to the screen that contains the mouse
@@ -80,8 +81,7 @@ private final class TooltipWindowController {
         if let bounds = screen?.frame {
             origin.x = max(bounds.minX + 4, min(origin.x, bounds.maxX - size.width - 4))
             if origin.y + size.height > bounds.maxY {
-                // Flip below when there is no room above
-                origin.y = screenFrame.minY - size.height - 4
+                origin.y = screenFrame.minY - yOffset
             }
         }
 
@@ -132,7 +132,7 @@ private struct ScreenFrameAnchor: NSViewRepresentable {
 
 private struct StudioTooltipModifier: ViewModifier {
     let text: String
-    var yOffset: CGFloat = 10  // kept for API compatibility
+    var yOffset: CGFloat = 10
 
     @State private var screenFrame: NSRect = .zero
 
@@ -145,7 +145,11 @@ private struct StudioTooltipModifier: ViewModifier {
             )
             .onHover { hovering in
                 if hovering {
-                    TooltipWindowController.shared.show(text: text, screenFrame: screenFrame)
+                    TooltipWindowController.shared.show(
+                        text: text,
+                        screenFrame: screenFrame,
+                        yOffset: yOffset
+                    )
                 } else {
                     TooltipWindowController.shared.hide()
                 }

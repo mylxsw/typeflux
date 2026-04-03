@@ -404,7 +404,7 @@ final class WorkflowController {
                 selectionSnapshot = TextSelectionSnapshot()
             }
 
-            logger.debug("snapshot: isFocusedTarget=\(selectionSnapshot.isFocusedTarget) isEditable=\(selectionSnapshot.isEditable) hasSelection=\(selectionSnapshot.hasSelection) source=\(selectionSnapshot.source ?? "nil") selectedText=\(selectionSnapshot.selectedText?.prefix(32) ?? "nil")")
+            logger.debug("snapshot: isFocusedTarget=\(selectionSnapshot.isFocusedTarget) isEditable=\(selectionSnapshot.isEditable) hasSelection=\(selectionSnapshot.hasSelection) source=\(selectionSnapshot.source) selectedText=\(selectionSnapshot.selectedText?.prefix(32) ?? "nil")")
 
             let selectedText = editingSelectedText(from: selectionSnapshot)
             let mode: PersonaPickerMode
