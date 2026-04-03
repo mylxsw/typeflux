@@ -5,8 +5,9 @@ struct AboutView: View {
     let appearanceMode: AppearanceMode
     @ObservedObject private var localization = AppLocalization.shared
 
-    private let websiteURL = URL(string: "https://github.com/mylxsw")!
-    private let projectURL = URL(string: "https://github.com/mylxsw/voice-input")!
+    private let developerURL = URL(string: "https://gulu.ai")!
+    private let websiteURL = URL(string: "https://typeflux.gulu.ai")!
+    private let projectURL = URL(string: "https://github.com/mylxsw/typeflux")!
 
     var body: some View {
         ZStack {
@@ -78,11 +79,12 @@ struct AboutView: View {
         StudioCard {
             StudioSectionTitle(title: L("about.details"))
 
-            detailRow(
+            detailLinkRow(
                 icon: "person.crop.circle",
                 title: L("about.developer"),
                 value: "@mylxsw",
-                subtitle: L("about.developer.subtitle")
+                subtitle: developerURL.absoluteString,
+                url: developerURL
             )
 
             divider
@@ -90,7 +92,7 @@ struct AboutView: View {
             detailLinkRow(
                 icon: "globe",
                 title: L("about.website"),
-                value: "github.com/mylxsw",
+                value: "typeflux.gulu.ai",
                 subtitle: websiteURL.absoluteString,
                 url: websiteURL
             )
