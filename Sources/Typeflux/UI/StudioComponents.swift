@@ -721,7 +721,7 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
                                 .frame(width: 12, height: 12)
                         }
                         .menuStyle(.borderlessButton)
-                        .help(L("common.selectSuggestedValue"))
+                        .studioTooltip(L("common.selectSuggestedValue"), yOffset: 28)
                     }
                     .padding(.trailing, 12)
                 }
@@ -769,7 +769,7 @@ struct StudioHistoryRow: View {
                                 .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
                                 .foregroundStyle(StudioTheme.danger)
                                 .padding(.top, 3)
-                                .help(record.failureMessage ?? L("workflow.processing.failed"))
+                                .studioTooltip(record.failureMessage ?? L("workflow.processing.failed"), yOffset: 28)
                         }
                     }
                 }

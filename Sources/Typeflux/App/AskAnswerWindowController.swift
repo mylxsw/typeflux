@@ -307,7 +307,7 @@ private struct AskAnswerWindowView: View {
                 )
         }
         .buttonStyle(.plain)
-        .help(L("common.copy"))
+        .studioTooltip(L("common.copy"), yOffset: 30)
         .opacity(isVisible ? 1 : 0)
         .allowsHitTesting(isVisible)
         .animation(.easeOut(duration: 0.12), value: isVisible)
