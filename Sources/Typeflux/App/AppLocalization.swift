@@ -8,6 +8,8 @@ enum AppLanguage: String, CaseIterable, Codable, Identifiable {
     case english = "en"
     case simplifiedChinese = "zh-Hans"
     case traditionalChinese = "zh-Hant"
+    case japanese = "ja"
+    case korean = "ko"
 
     var id: String { rawValue }
 
@@ -25,6 +27,10 @@ enum AppLanguage: String, CaseIterable, Codable, Identifiable {
             return L("language.option.simplifiedChinese")
         case .traditionalChinese:
             return L("language.option.traditionalChinese")
+        case .japanese:
+            return L("language.option.japanese")
+        case .korean:
+            return L("language.option.korean")
         }
     }
 
@@ -39,6 +45,14 @@ enum AppLanguage: String, CaseIterable, Codable, Identifiable {
 
         if language.hasPrefix("zh") {
             return .simplifiedChinese
+        }
+
+        if language.hasPrefix("ja") {
+            return .japanese
+        }
+
+        if language.hasPrefix("ko") {
+            return .korean
         }
 
         return .english

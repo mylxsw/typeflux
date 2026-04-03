@@ -182,6 +182,8 @@ struct OnboardingView: View {
         case .english: return "English"
         case .simplifiedChinese: return "简体中文"
         case .traditionalChinese: return "繁體中文"
+        case .japanese: return "日本語"
+        case .korean: return "한국어"
         }
     }
 
@@ -190,6 +192,8 @@ struct OnboardingView: View {
         case .english: return "English"
         case .simplifiedChinese: return "Simplified Chinese"
         case .traditionalChinese: return "Traditional Chinese"
+        case .japanese: return "Japanese"
+        case .korean: return "Korean"
         }
     }
 
