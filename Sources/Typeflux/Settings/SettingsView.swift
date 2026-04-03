@@ -2285,76 +2285,76 @@ struct StudioView: View {
     private var overviewPanel: some View {
         HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
             StudioCard(padding: StudioTheme.Insets.cardDense) {
-                HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                        HStack(spacing: StudioTheme.Spacing.small) {
-                            RoundedRectangle(
-                                cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous
-                            )
-                            .fill(StudioTheme.surfaceMuted)
-                            .frame(
-                                width: StudioTheme.ControlSize.overviewBadge,
-                                height: StudioTheme.ControlSize.overviewBadge
-                            )
-                            .overlay(
-                                Image(systemName: "waveform.and.magnifyingglass")
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
+                    HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
+                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                            HStack(spacing: StudioTheme.Spacing.small) {
+                                RoundedRectangle(
+                                    cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous
+                                )
+                                .fill(StudioTheme.surfaceMuted)
+                                .frame(
+                                    width: StudioTheme.ControlSize.overviewBadge,
+                                    height: StudioTheme.ControlSize.overviewBadge
+                                )
+                                .overlay(
+                                    Image(systemName: "waveform.and.magnifyingglass")
+                                        .font(
+                                            .system(
+                                                size: StudioTheme.Typography.iconSmall,
+                                                weight: .semibold)
+                                        )
+                                        .foregroundStyle(StudioTheme.textSecondary)
+                                )
+                                Text(L("home.activity.title"))
                                     .font(
-                                        .system(
-                                            size: StudioTheme.Typography.iconSmall,
-                                            weight: .semibold)
+                                        .studioBody(StudioTheme.Typography.bodySmall, weight: .semibold)
                                     )
                                     .foregroundStyle(StudioTheme.textSecondary)
-                            )
-                            Text(L("home.activity.title"))
+                            }
+
+                            Text("\(viewModel.statsCompletionRate)%")
                                 .font(
-                                    .studioBody(StudioTheme.Typography.bodySmall, weight: .semibold)
+                                    .studioDisplay(StudioTheme.Typography.displayLarge, weight: .bold)
                                 )
+                                .foregroundStyle(StudioTheme.textPrimary)
+
+                            Text(L("home.activity.completionRate"))
+                                .font(.studioBody(StudioTheme.Typography.body))
                                 .foregroundStyle(StudioTheme.textSecondary)
                         }
 
-                        Text("\(viewModel.statsCompletionRate)%")
-                            .font(
-                                .studioDisplay(StudioTheme.Typography.displayLarge, weight: .bold)
+                        Spacer(minLength: StudioTheme.Spacing.medium)
+
+                        Circle()
+                            .stroke(
+                                StudioTheme.surfaceMuted,
+                                lineWidth: StudioTheme.BorderWidth.overviewDonut
                             )
-                            .foregroundStyle(StudioTheme.textPrimary)
-
-                        Text(L("home.activity.completionRate"))
-                            .font(.studioBody(StudioTheme.Typography.body))
-                            .foregroundStyle(StudioTheme.textSecondary)
-
-                        Spacer(minLength: StudioTheme.Spacing.smallMedium)
-
-                        Text(L("home.activity.privacy"))
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                            .frame(maxWidth: 240, alignment: .leading)
+                            .frame(
+                                width: StudioTheme.Layout.overviewDonutSize,
+                                height: StudioTheme.Layout.overviewDonutSize
+                            )
+                            .overlay(
+                                Circle()
+                                    .trim(from: 0, to: CGFloat(viewModel.statsCompletionRate) / 100)
+                                    .stroke(
+                                        StudioTheme.accent.opacity(
+                                            StudioTheme.Opacity.overviewProgress),
+                                        style: StrokeStyle(
+                                            lineWidth: StudioTheme.BorderWidth.overviewDonut,
+                                            lineCap: .round)
+                                    )
+                                    .rotationEffect(.degrees(StudioTheme.Angles.overviewProgressStart))
+                            )
+                            .padding(.trailing, StudioTheme.Spacing.smallMedium)
+                            .padding(.vertical, StudioTheme.Spacing.smallMedium)
                     }
 
-                    Spacer(minLength: StudioTheme.Spacing.medium)
-
-                    Circle()
-                        .stroke(
-                            StudioTheme.surfaceMuted,
-                            lineWidth: StudioTheme.BorderWidth.overviewDonut
-                        )
-                        .frame(
-                            width: StudioTheme.Layout.overviewDonutSize,
-                            height: StudioTheme.Layout.overviewDonutSize
-                        )
-                        .overlay(
-                            Circle()
-                                .trim(from: 0, to: CGFloat(viewModel.statsCompletionRate) / 100)
-                                .stroke(
-                                    StudioTheme.accent.opacity(
-                                        StudioTheme.Opacity.overviewProgress),
-                                    style: StrokeStyle(
-                                        lineWidth: StudioTheme.BorderWidth.overviewDonut,
-                                        lineCap: .round)
-                                )
-                                .rotationEffect(.degrees(StudioTheme.Angles.overviewProgressStart))
-                        )
-                        .padding(.trailing, StudioTheme.Spacing.smallMedium)
-                        .padding(.vertical, StudioTheme.Spacing.smallMedium)
+                    Text(L("home.activity.privacy"))
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .frame(maxWidth: .infinity, minHeight: StudioTheme.Layout.overviewPrimaryMinHeight)
