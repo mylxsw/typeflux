@@ -344,8 +344,10 @@ struct StudioView: View {
                     )
                     .frame(maxHeight: .infinity, alignment: .top)
 
-                    focusedProviderConfigurationPanel
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    ScrollView {
+                        focusedProviderConfigurationPanel
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
             }

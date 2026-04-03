@@ -285,7 +285,7 @@ final class SettingsStore {
     }
 
     var personaHotkeyAppliesToSelection: Bool {
-        get { defaults.object(forKey: "persona.hotkeyAppliesToSelection") as? Bool ?? false }
+        get { defaults.object(forKey: "persona.hotkeyAppliesToSelection") as? Bool ?? true }
         set { defaults.set(newValue, forKey: "persona.hotkeyAppliesToSelection") }
     }
 
