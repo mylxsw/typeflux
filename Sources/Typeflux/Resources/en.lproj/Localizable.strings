@@ -347,8 +347,8 @@
 "settings.shortcuts.activation.subtitle" = "Use one shortcut to start voice input. Hold to talk, or tap quickly to lock the recording session. If text is selected, the transcript replaces that selection directly.";
 "settings.shortcuts.activation.footnote" = "Default is Fn. This shortcut is now dedicated to text insertion only and no longer switches into selected-text Q&A or rewrite flows.";
 "settings.shortcuts.ask.title" = "Ask Anything";
-"settings.shortcuts.ask.subtitle" = "Press once to start recording about the current selection. Ask questions to open a result dialog, or give an explicit edit request to rewrite the selected text.";
-"settings.shortcuts.ask.footnote" = "Default is Fn + Space. Select text first. Press Fn + Space again, or press Fn, to stop recording. Ambiguous requests stay read-only.";
+"settings.shortcuts.ask.subtitle" = "Press once to start recording and ask anything. Answers appear in a popup. If text is selected, explicit edit requests can also rewrite it directly.";
+"settings.shortcuts.ask.footnote" = "";
 "settings.shortcuts.persona.title" = "Persona switcher";
 "settings.shortcuts.persona.subtitle" = "Open a centered picker. With selected text, it can also apply a persona directly to that selection.";
 "settings.shortcuts.persona.footnote" = "When the advanced option is on, the shortcut rewrites selected text with the chosen persona. Otherwise it behaves as a pure persona switcher.";
@@ -580,7 +580,7 @@
 "onboarding.shortcuts.title" = "Keyboard shortcuts";
 "onboarding.shortcuts.subtitle" = "These are the default shortcuts. You're all set — no changes required.";
 "onboarding.shortcuts.activation.hint" = "Hold to talk, tap to lock recording";
-"onboarding.shortcuts.ask.hint" = "Ask about selected text";
+"onboarding.shortcuts.ask.hint" = "Ask anything, or rewrite selected text";
 "onboarding.shortcuts.persona.hint" = "Switch or apply a writing persona";
 "onboarding.shortcuts.changeInSettings" = "You can customize shortcuts anytime in Settings → Voice Shortcuts.";
 

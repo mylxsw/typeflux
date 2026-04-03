@@ -347,8 +347,8 @@
 "settings.shortcuts.activation.subtitle" = "使用一組快捷鍵開始語音輸入。可按住說話，也可快速輕觸後鎖定錄音。若目前已有選取內容，識別結果會直接覆蓋該選取範圍。";
 "settings.shortcuts.activation.footnote" = "預設是 Fn。它現在只負責輸入文字，不再依照選取文字切換到問答或改寫流程。";
 "settings.shortcuts.ask.title" = "隨便問";
-"settings.shortcuts.ask.subtitle" = "按一次即可圍繞目前選取的文字開始錄音。提問會打開回答視窗，只有明確的編輯需求才會改寫選取文字。";
-"settings.shortcuts.ask.footnote" = "預設是 Fn + Space。使用前請先選取文字。再次按 Fn + Space，或按 Fn，可停止錄音。意圖不明確時會保持唯讀。";
+"settings.shortcuts.ask.subtitle" = "按一次即可開始錄音提問，回答會在視窗中展示。若有選取文字，明確的編輯請求也可以直接改寫選取範圍。";
+"settings.shortcuts.ask.footnote" = "";
 "settings.shortcuts.persona.title" = "人設切換器";
 "settings.shortcuts.persona.subtitle" = "打開置中的選擇器；如果目前有選取文字，也可以直接把所選人設套用到這段文字。";
 "settings.shortcuts.persona.footnote" = "開啟進階選項後，快捷鍵會優先檢查選取文字並執行人設改寫；關閉後則維持為純粹的人設切換器。";
@@ -580,7 +580,7 @@
 "onboarding.shortcuts.title" = "鍵盤快捷鍵";
 "onboarding.shortcuts.subtitle" = "以下是預設快捷鍵設定，無需修改即可使用。";
 "onboarding.shortcuts.activation.hint" = "按住錄音，輕點鎖定錄製";
-"onboarding.shortcuts.ask.hint" = "針對已選取文字提問";
+"onboarding.shortcuts.ask.hint" = "隨時提問，可選取文字改寫";
 "onboarding.shortcuts.persona.hint" = "切換或套用寫作人設";
 "onboarding.shortcuts.changeInSettings" = "隨時可在 設定 → 語音快捷鍵 中自訂快捷鍵。";
 
