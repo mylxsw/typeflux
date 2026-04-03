@@ -3,6 +3,7 @@ import Foundation
 final class LocalModelTranscriber: Transcriber {
     private let settingsStore: SettingsStore
     private let modelManager: LocalModelManager
+    private let whisperKitCacheLock = NSLock()
     /// Single active WhisperKit pipeline cache keyed by model name + resolved model folder.
     /// WhisperKit keeps CoreML graphs resident after the first load, so we drop stale
     /// entries on model switch to release memory from the previously selected model.
@@ -44,24 +45,20 @@ final class LocalModelTranscriber: Transcriber {
             return try await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
 
         case .senseVoiceSmall:
-            whisperKitCache.removeAll(keepingCapacity: false)
-            let modelFolder = modelManager.storagePath(
-                for: LocalSTTConfiguration(settingsStore: settingsStore)
-            )
+            removeWhisperKitCache(keepingCapacity: false)
+            let modelInfo = try await preparedModelInfo()
             let transcriber = SenseVoiceTranscriber(
                 modelIdentifier: model,
-                modelFolder: modelFolder
+                modelFolder: modelInfo.storagePath
             )
             return try await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
 
         case .qwen3ASR:
-            whisperKitCache.removeAll(keepingCapacity: false)
-            let modelFolder = modelManager.storagePath(
-                for: LocalSTTConfiguration(settingsStore: settingsStore)
-            )
+            removeWhisperKitCache(keepingCapacity: false)
+            let modelInfo = try await preparedModelInfo()
             let transcriber = Qwen3ASRTranscriber(
                 modelIdentifier: model,
-                modelFolder: modelFolder
+                modelFolder: modelInfo.storagePath
             )
             return try await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
         }
@@ -90,12 +87,23 @@ final class LocalModelTranscriber: Transcriber {
             ? String(identifier.dropFirst("whisperkit-".count))
             : identifier
         let cacheKey = "\(modelName)|\(modelFolder)"
-        if let cached = whisperKitCache[cacheKey] { return cached }
+        whisperKitCacheLock.lock()
+        if let cached = whisperKitCache[cacheKey] {
+            whisperKitCacheLock.unlock()
+            return cached
+        }
 
         whisperKitCache.removeAll(keepingCapacity: true)
         let transcriber = WhisperKitTranscriber(modelName: modelName, modelFolder: modelFolder)
         whisperKitCache[cacheKey] = transcriber
+        whisperKitCacheLock.unlock()
         return transcriber
+    }
+
+    private func removeWhisperKitCache(keepingCapacity: Bool) {
+        whisperKitCacheLock.lock()
+        whisperKitCache.removeAll(keepingCapacity: keepingCapacity)
+        whisperKitCacheLock.unlock()
     }
 
     private func vocabularyPromptText() -> String? {
@@ -131,7 +139,7 @@ extension LocalModelTranscriber: RecordingPrewarmingTranscriber {
     /// real transcription call doesn't pay the cold-start penalty.
     func prepareForRecording() async {
         guard settingsStore.localSTTModel == .whisperLocal else {
-            whisperKitCache.removeAll(keepingCapacity: false)
+            removeWhisperKitCache(keepingCapacity: false)
             return
         }
         guard let modelInfo = modelManager.preparedModelInfo(settingsStore: settingsStore) else { return }

@@ -16,6 +16,7 @@ final class WorkflowController {
     private static let automaticVocabularyBaselineRetryCount = 3
     private static let automaticVocabularySettleDelay: TimeInterval = 2.5
     private static let automaticVocabularyMaxAnalysesPerSession = 3
+    private static let localModelPreheatDebounce: Duration = .milliseconds(180)
 
     private enum RecordingMode {
         case holdToTalk
@@ -69,6 +70,8 @@ final class WorkflowController {
     private var activeProcessingRecordID: UUID?
     private var lastRetryableFailureRecord: HistoryRecord?
     private var lastDialogResultText: String?
+    private var localModelPreheatTask: Task<Void, Never>?
+    private var lastLocalModelPreheatConfiguration: LocalSTTConfiguration?
     private var localModelPreheatObserver: NSObjectProtocol?
     private var isPersonaPickerPresented = false
     private var personaPickerItems: [PersonaPickerEntry] = []
@@ -204,16 +207,38 @@ final class WorkflowController {
         localModelPreheatObserver = NotificationCenter.default.addObserver(
             forName: UserDefaults.didChangeNotification,
             object: nil,
-            queue: nil
+            queue: .main
         ) { [weak self] _ in
-            guard let self, self.settingsStore.sttProvider == .localModel else { return }
-            self.preheatLocalModelIfNeeded()
+            self?.preheatLocalModelIfNeeded()
         }
     }
 
     private func preheatLocalModelIfNeeded() {
-        guard settingsStore.sttProvider == .localModel else { return }
-        Task { [weak self] in await self?.sttRouter.prepareForRecording() }
+        guard settingsStore.sttProvider == .localModel else {
+            localModelPreheatTask?.cancel()
+            localModelPreheatTask = nil
+            lastLocalModelPreheatConfiguration = nil
+            Task { [weak self] in await self?.sttRouter.cancelPreparedRecording() }
+            return
+        }
+
+        let configuration = LocalSTTConfiguration(settingsStore: settingsStore)
+        guard configuration != lastLocalModelPreheatConfiguration else {
+            return
+        }
+
+        lastLocalModelPreheatConfiguration = configuration
+        localModelPreheatTask?.cancel()
+        localModelPreheatTask = Task { [weak self, configuration] in
+            try? await Task.sleep(for: Self.localModelPreheatDebounce)
+            guard let self, !Task.isCancelled else { return }
+            guard self.settingsStore.sttProvider == .localModel,
+                  LocalSTTConfiguration(settingsStore: self.settingsStore) == configuration
+            else {
+                return
+            }
+            await self.sttRouter.prepareForRecording()
+        }
     }
 
     func stop() {
@@ -224,6 +249,9 @@ final class WorkflowController {
         cancelCurrentProcessing(resetUI: true, reason: L("workflow.cancel.stopping"))
         automaticVocabularyObservationTask?.cancel()
         automaticVocabularyObservationTask = nil
+        localModelPreheatTask?.cancel()
+        localModelPreheatTask = nil
+        lastLocalModelPreheatConfiguration = nil
         if let obs = localModelPreheatObserver {
             NotificationCenter.default.removeObserver(obs)
             localModelPreheatObserver = nil

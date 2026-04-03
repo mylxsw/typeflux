@@ -8,7 +8,9 @@ final class WhisperKitTranscriber: Transcriber {
     private let modelName: String
     private let downloadBase: URL?
     private let modelFolder: String?
+    private let pipelineLock = NSLock()
     private var pipeline: WhisperKit?
+    private var pipelineLoadTask: Task<WhisperKit, Error>?
 
     /// - Parameters:
     ///   - modelName: WhisperKit model name, e.g. "small", "base", "large-v3".
@@ -21,7 +23,10 @@ final class WhisperKitTranscriber: Transcriber {
     }
 
     var resolvedModelFolderPath: String? {
-        pipeline?.modelFolder?.path ?? modelFolder
+        pipelineLock.lock()
+        let path = pipeline?.modelFolder?.path ?? modelFolder
+        pipelineLock.unlock()
+        return path
     }
 
     func transcribe(audioFile: AudioFile) async throws -> String {
@@ -65,29 +70,71 @@ final class WhisperKitTranscriber: Transcriber {
     /// Safe to call before transcribing to pre-warm the model.
     /// - Parameter onProgress: Called with (0…1 progress, status message).
     func prepare(onProgress: ((Double, String) -> Void)? = nil) async throws {
-        guard pipeline == nil else { return }
+        if currentPipeline() != nil {
+            return
+        }
         onProgress?(0.1, L("localSTT.prepare.whisperInitializing", modelName))
-        let pipe = try await WhisperKit(WhisperKitConfig(
-            model: modelName,
-            downloadBase: downloadBase,
-            modelFolder: modelFolder,
-            verbose: false
-        ))
-        pipeline = pipe
+        _ = try await ensurePipeline()
         onProgress?(1.0, L("localSTT.prepare.whisperReady", modelName))
     }
 
     // MARK: - Private
 
     private func ensurePipeline() async throws -> WhisperKit {
-        if let p = pipeline { return p }
-        let pipe = try await WhisperKit(WhisperKitConfig(
-            model: modelName,
-            downloadBase: downloadBase,
-            modelFolder: modelFolder,
-            verbose: false
-        ))
-        pipeline = pipe
+        if let pipe = currentPipeline() {
+            return pipe
+        }
+
+        let loadTask = pipelineInitializationTask()
+        do {
+            let pipe = try await loadTask.value
+
+            storePipeline(pipe)
+
+            return pipe
+        } catch {
+            clearPipelineLoadTask()
+            throw error
+        }
+    }
+
+    private func currentPipeline() -> WhisperKit? {
+        pipelineLock.lock()
+        let pipe = pipeline
+        pipelineLock.unlock()
         return pipe
+    }
+
+    private func pipelineInitializationTask() -> Task<WhisperKit, Error> {
+        pipelineLock.lock()
+        if let existingTask = pipelineLoadTask {
+            pipelineLock.unlock()
+            return existingTask
+        }
+
+        let task = Task { [modelName, downloadBase, modelFolder] in
+            try await WhisperKit(WhisperKitConfig(
+                model: modelName,
+                downloadBase: downloadBase,
+                modelFolder: modelFolder,
+                verbose: false
+            ))
+        }
+        pipelineLoadTask = task
+        pipelineLock.unlock()
+        return task
+    }
+
+    private func storePipeline(_ pipe: WhisperKit) {
+        pipelineLock.lock()
+        pipeline = pipe
+        pipelineLoadTask = nil
+        pipelineLock.unlock()
+    }
+
+    private func clearPipelineLoadTask() {
+        pipelineLock.lock()
+        pipelineLoadTask = nil
+        pipelineLock.unlock()
     }
 }

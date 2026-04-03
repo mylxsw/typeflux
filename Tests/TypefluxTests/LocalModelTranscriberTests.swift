@@ -85,10 +85,12 @@ final class LocalModelTranscriberTests: XCTestCase {
         settingsStore.localSTTDownloadSource = .huggingFace
         settingsStore.localSTTAutoSetup = true
 
+        let appSupportURL = makeTemporaryApplicationSupportURL()
         let fakeInstaller = FakeSherpaOnnxInstaller()
         let manager = LocalModelManager(
             fileManager: .default,
-            sherpaOnnxInstaller: fakeInstaller
+            sherpaOnnxInstaller: fakeInstaller,
+            applicationSupportURL: appSupportURL
         )
 
         let updates = PreparationUpdateRecorder()
@@ -105,6 +107,7 @@ final class LocalModelTranscriberTests: XCTestCase {
         )
         XCTAssertEqual(fakeInstaller.lastPreparedModel, .senseVoiceSmall)
         XCTAssertEqual(fakeInstaller.lastStorageURL?.path, prepared?.storagePath)
+        XCTAssertTrue((prepared?.storagePath ?? "").hasPrefix(appSupportURL.path))
         XCTAssertTrue(updates.values().contains(where: { $0.message == "fake sherpa ready" }))
     }
 
@@ -119,10 +122,12 @@ final class LocalModelTranscriberTests: XCTestCase {
         settingsStore.localSTTDownloadSource = .huggingFace
         settingsStore.localSTTAutoSetup = true
 
+        let appSupportURL = makeTemporaryApplicationSupportURL()
         let fakeInstaller = FakeSherpaOnnxInstaller()
         let manager = LocalModelManager(
             fileManager: .default,
-            sherpaOnnxInstaller: fakeInstaller
+            sherpaOnnxInstaller: fakeInstaller,
+            applicationSupportURL: appSupportURL
         )
 
         try await manager.prepareModel(settingsStore: settingsStore)
@@ -131,6 +136,43 @@ final class LocalModelTranscriberTests: XCTestCase {
         XCTAssertNotNil(prepared)
         XCTAssertEqual(prepared?.storagePath, fakeInstaller.lastStorageURL?.path)
         XCTAssertEqual(fakeInstaller.lastPreparedModel, .qwen3ASR)
+        XCTAssertTrue((prepared?.storagePath ?? "").hasPrefix(appSupportURL.path))
+    }
+
+    func testLocalModelTranscriberAutoPreparesQwen3BeforeTranscribing() async throws {
+        let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.sttProvider = .localModel
+        settingsStore.localSTTModel = .qwen3ASR
+        settingsStore.localSTTModelIdentifier = LocalSTTModel.qwen3ASR.defaultModelIdentifier
+        settingsStore.localSTTDownloadSource = .huggingFace
+        settingsStore.localSTTAutoSetup = true
+
+        let manager = LocalModelManager(
+            fileManager: .default,
+            sherpaOnnxInstaller: FakeSherpaOnnxInstaller(),
+            applicationSupportURL: makeTemporaryApplicationSupportURL()
+        )
+        let transcriber = LocalModelTranscriber(
+            settingsStore: settingsStore,
+            modelManager: manager
+        )
+
+        let text = try await transcriber.transcribe(audioFile: makeTestWAVFile())
+
+        XCTAssertEqual(text, "test")
+        XCTAssertNotNil(manager.preparedModelInfo(settingsStore: settingsStore))
+    }
+
+    func testSherpaLayoutRejectsASCIIExecutableFixture() throws {
+        let modelFolder = try makeSherpaModelFolder(for: .qwen3ASR, useMachORuntime: false)
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .qwen3ASR))
+
+        XCTAssertFalse(layout.isInstalled(storageURL: modelFolder, fileManager: .default))
+        XCTAssertFalse(layout.hasUsableRuntimeExecutable(storageURL: modelFolder, fileManager: .default))
     }
 
     func testSherpaInstallerRetriesTransientArchiveDownloadFailures() async throws {
@@ -180,7 +222,7 @@ final class LocalModelTranscriberTests: XCTestCase {
         XCTAssertTrue(layout.isInstalled(storageURL: installRoot, fileManager: .default))
     }
 
-    func testSherpaInstallerReinstallsZeroByteRuntimeExecutable() async throws {
+    func testSherpaInstallerReinstallsInvalidRuntimeExecutable() async throws {
         let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .qwen3ASR))
         let fixturesRoot = FileManager.default.temporaryDirectory
             .appendingPathComponent("typeflux-sherpa-fixtures-\(UUID().uuidString)", isDirectory: true)
@@ -215,7 +257,7 @@ final class LocalModelTranscriberTests: XCTestCase {
             at: badExecutableURL.deletingLastPathComponent(),
             withIntermediateDirectories: true
         )
-        try Data().write(to: badExecutableURL)
+        try Data("fixture".utf8).write(to: badExecutableURL)
         try FileManager.default.setAttributes(
             [.posixPermissions: NSNumber(value: Int16(0o755))],
             ofItemAtPath: badExecutableURL.path
@@ -242,6 +284,13 @@ final class LocalModelTranscriberTests: XCTestCase {
     }
 
     private func makeSherpaModelFolder(for model: LocalSTTModel) throws -> URL {
+        try makeSherpaModelFolder(for: model, useMachORuntime: true)
+    }
+
+    private func makeSherpaModelFolder(
+        for model: LocalSTTModel,
+        useMachORuntime: Bool
+    ) throws -> URL {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("typeflux-tests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -260,13 +309,15 @@ final class LocalModelTranscriberTests: XCTestCase {
         try FileManager.default.createDirectory(at: runtimeLibURL, withIntermediateDirectories: true)
 
         let executableURL = runtimeBinURL.appendingPathComponent("sherpa-onnx-offline", isDirectory: false)
-        try Data("#!/bin/sh\necho test\n".utf8).write(to: executableURL)
+        try sherpaRuntimeFixtureData(useMachO: useMachORuntime).write(to: executableURL)
         try FileManager.default.setAttributes(
             [.posixPermissions: NSNumber(value: Int16(0o755))],
             ofItemAtPath: executableURL.path
         )
-        try Data("fixture".utf8).write(to: runtimeLibURL.appendingPathComponent("libsherpa-onnx-c-api.dylib"))
-        try Data("fixture".utf8).write(to: runtimeLibURL.appendingPathComponent("libonnxruntime.dylib"))
+        try sherpaRuntimeFixtureData(useMachO: useMachORuntime)
+            .write(to: runtimeLibURL.appendingPathComponent("libsherpa-onnx-c-api.dylib"))
+        try sherpaRuntimeFixtureData(useMachO: useMachORuntime)
+            .write(to: runtimeLibURL.appendingPathComponent("libonnxruntime.dylib"))
 
         let modelDirectory = root.appendingPathComponent(layout.modelRootDirectory, isDirectory: true)
         try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
@@ -311,12 +362,16 @@ final class LocalModelTranscriberTests: XCTestCase {
                 at: fileURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
-            try Data("fixture".utf8).write(to: fileURL)
             if fileURL.lastPathComponent == "sherpa-onnx-offline" {
+                try sherpaRuntimeFixtureData(useMachO: true).write(to: fileURL)
                 try FileManager.default.setAttributes(
                     [.posixPermissions: NSNumber(value: Int16(0o755))],
                     ofItemAtPath: fileURL.path
                 )
+            } else if fileURL.pathExtension == "dylib" {
+                try sherpaRuntimeFixtureData(useMachO: true).write(to: fileURL)
+            } else {
+                try Data("fixture".utf8).write(to: fileURL)
             }
         }
 
@@ -333,6 +388,17 @@ final class LocalModelTranscriberTests: XCTestCase {
         )
         return archiveURL
     }
+
+    private func sherpaRuntimeFixtureData(useMachO: Bool) -> Data {
+        useMachO
+            ? Data([0xCF, 0xFA, 0xED, 0xFE, 0x46, 0x49, 0x58, 0x54, 0x55, 0x52, 0x45])
+            : Data("fixture".utf8)
+    }
+}
+
+private func makeTemporaryApplicationSupportURL() -> URL {
+    FileManager.default.temporaryDirectory
+        .appendingPathComponent("typeflux-app-support-\(UUID().uuidString)", isDirectory: true)
 }
 
 private final class CapturingProcessRunner: ProcessCommandRunning {
@@ -394,12 +460,17 @@ private final class FakeSherpaOnnxInstaller: SherpaOnnxModelInstalling {
                     withIntermediateDirectories: true
                 )
             } else {
-                try Data("fixture".utf8).write(to: fileURL)
                 if fileURL.lastPathComponent == "sherpa-onnx-offline" {
+                    try Data("#!/bin/sh\necho test\n".utf8).write(to: fileURL)
                     try FileManager.default.setAttributes(
                         [.posixPermissions: NSNumber(value: Int16(0o755))],
                         ofItemAtPath: fileURL.path
                     )
+                } else {
+                    let payload = fileURL.pathExtension == "dylib"
+                        ? Data([0xCF, 0xFA, 0xED, 0xFE, 0x46, 0x49, 0x58, 0x54, 0x55, 0x52, 0x45])
+                        : Data("fixture".utf8)
+                    try payload.write(to: fileURL)
                 }
             }
         }
