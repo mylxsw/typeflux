@@ -229,6 +229,7 @@ struct OnboardingView: View {
     private var sttConfigStep: some View {
         VStack(alignment: .leading, spacing: 28) {
             stepHeader(
+                providerID: sttProviderToID(viewModel.sttProvider),
                 icon: sttProviderIcon(viewModel.sttProvider),
                 title: viewModel.sttProvider.displayName,
                 subtitle: L("onboarding.sttConfig.subtitle")
@@ -308,9 +309,13 @@ struct OnboardingView: View {
         let providerIcon = viewModel.llmProvider == .ollama
             ? "cpu"
             : llmRemoteProviderIcon(viewModel.llmRemoteProvider)
+        let llmProviderID: StudioModelProviderID? = viewModel.llmProvider == .ollama
+            ? .ollama
+            : viewModel.llmRemoteProvider.studioProviderID
 
         return VStack(alignment: .leading, spacing: 28) {
             stepHeader(
+                providerID: llmProviderID,
                 icon: providerIcon,
                 title: providerName,
                 subtitle: L("onboarding.llmConfig.subtitle")
@@ -375,10 +380,11 @@ struct OnboardingView: View {
     private var whisperConfigFields: some View {
         StudioCard(padding: 16) {
             VStack(spacing: 12) {
-                StudioTextInputCard(
+                StudioSuggestedTextInputCard(
                     label: L("settings.models.whisper.endpoint"),
-                    placeholder: "https://api.openai.com/v1",
-                    text: $viewModel.whisperBaseURL
+                    placeholder: OpenAIAudioModelCatalog.whisperEndpoints[0],
+                    text: $viewModel.whisperBaseURL,
+                    suggestions: OpenAIAudioModelCatalog.whisperEndpoints
                 )
                 StudioTextInputCard(
                     label: L("common.apiKey"),
@@ -386,10 +392,11 @@ struct OnboardingView: View {
                     text: $viewModel.whisperAPIKey,
                     secure: true
                 )
-                StudioTextInputCard(
+                StudioSuggestedTextInputCard(
                     label: L("common.model"),
-                    placeholder: "whisper-1",
-                    text: $viewModel.whisperModel
+                    placeholder: OpenAIAudioModelCatalog.whisperModels[0],
+                    text: $viewModel.whisperModel,
+                    suggestions: OpenAIAudioModelCatalog.whisperModels
                 )
             }
         }
@@ -498,10 +505,11 @@ struct OnboardingView: View {
     private var multimodalLLMConfigFields: some View {
         StudioCard(padding: 16) {
             VStack(spacing: 12) {
-                StudioTextInputCard(
+                StudioSuggestedTextInputCard(
                     label: L("settings.models.remote.baseURL"),
-                    placeholder: "https://api.openai.com/v1",
-                    text: $viewModel.multimodalLLMBaseURL
+                    placeholder: OpenAIAudioModelCatalog.multimodalEndpoints[0],
+                    text: $viewModel.multimodalLLMBaseURL,
+                    suggestions: OpenAIAudioModelCatalog.multimodalEndpoints
                 )
                 StudioTextInputCard(
                     label: L("common.apiKey"),
@@ -509,10 +517,11 @@ struct OnboardingView: View {
                     text: $viewModel.multimodalLLMAPIKey,
                     secure: true
                 )
-                StudioTextInputCard(
+                StudioSuggestedTextInputCard(
                     label: L("common.model"),
-                    placeholder: "gpt-4o",
-                    text: $viewModel.multimodalLLMModel
+                    placeholder: OpenAIAudioModelCatalog.multimodalModels[0],
+                    text: $viewModel.multimodalLLMModel,
+                    suggestions: OpenAIAudioModelCatalog.multimodalModels
                 )
             }
         }
@@ -550,9 +559,16 @@ struct OnboardingView: View {
     }
 
     private var llmRemoteConfigFields: some View {
-        StudioCard(padding: 16) {
+        let provider = viewModel.llmRemoteProvider
+        let endpointSuggestions = ([viewModel.llmBaseURL, provider.defaultBaseURL]
+            + provider.endpointPresets.map(\.url))
+            .filter { !$0.isEmpty }
+        let modelSuggestions = ([viewModel.llmModel] + provider.suggestedModels)
+            .filter { !$0.isEmpty }
+
+        return StudioCard(padding: 16) {
             VStack(spacing: 12) {
-                if viewModel.llmRemoteProvider == .freeModel {
+                if provider == .freeModel {
                     if FreeLLMModelRegistry.suggestedModelNames.isEmpty {
                         Text(L("settings.models.freeModel.noSources"))
                             .font(.studioBody(12))
@@ -571,20 +587,23 @@ struct OnboardingView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     StudioTextInputCard(
-                        label: L("settings.models.remote.baseURL"),
-                        placeholder: "https://api.openai.com/v1",
-                        text: $viewModel.llmBaseURL
-                    )
-                    StudioTextInputCard(
                         label: L("common.apiKey"),
-                        placeholder: "sk-...",
+                        placeholder: provider == .gemini ? "AIza..." : "sk-...",
                         text: $viewModel.llmAPIKey,
                         secure: true
                     )
-                    StudioTextInputCard(
+                    StudioSuggestedTextInputCard(
+                        label: L("settings.models.remote.baseURL"),
+                        placeholder: provider.defaultBaseURL.isEmpty
+                            ? "https://api.openai.com/v1" : provider.defaultBaseURL,
+                        text: $viewModel.llmBaseURL,
+                        suggestions: endpointSuggestions
+                    )
+                    StudioSuggestedTextInputCard(
                         label: L("common.model"),
-                        placeholder: "gpt-4o-mini",
-                        text: $viewModel.llmModel
+                        placeholder: provider.defaultModel,
+                        text: $viewModel.llmModel,
+                        suggestions: modelSuggestions
                     )
                 }
             }
@@ -594,15 +613,19 @@ struct OnboardingView: View {
     private var ollamaConfigFields: some View {
         StudioCard(padding: 16) {
             VStack(spacing: 12) {
-                StudioTextInputCard(
+                StudioSuggestedTextInputCard(
                     label: L("settings.models.ollama.baseURL"),
                     placeholder: "http://127.0.0.1:11434",
-                    text: $viewModel.ollamaBaseURL
+                    text: $viewModel.ollamaBaseURL,
+                    suggestions: [viewModel.ollamaBaseURL, "http://127.0.0.1:11434", "http://localhost:11434"]
+                        .filter { !$0.isEmpty }
                 )
-                StudioTextInputCard(
+                StudioSuggestedTextInputCard(
                     label: L("common.model"),
                     placeholder: "qwen2.5:7b",
-                    text: $viewModel.ollamaModel
+                    text: $viewModel.ollamaModel,
+                    suggestions: [viewModel.ollamaModel, "qwen2.5:7b", "llama3.2:3b", "gemma3:4b"]
+                        .filter { !$0.isEmpty }
                 )
             }
         }
@@ -910,19 +933,23 @@ struct OnboardingView: View {
 
             Spacer()
 
-            Text(HotkeyFormat.display(binding))
-                .font(.studioMono(13, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(StudioTheme.surfaceMuted)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(StudioTheme.border.opacity(0.55), lineWidth: 1)
-                )
+            HStack(spacing: 4) {
+                ForEach(HotkeyFormat.components(binding), id: \.self) { key in
+                    Text(key)
+                        .font(.studioBody(13, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(StudioTheme.surface)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .stroke(StudioTheme.border.opacity(0.75), lineWidth: 1)
+                        )
+                }
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -982,14 +1009,34 @@ struct OnboardingView: View {
     // MARK: - Shared Components
 
     private func stepHeader(icon: String, title: String, subtitle: String) -> some View {
-        HStack(alignment: .top, spacing: 14) {
+        stepHeader(providerID: nil, icon: icon, title: title, subtitle: subtitle)
+    }
+
+    private func stepHeader(
+        providerID: StudioModelProviderID?,
+        icon: String,
+        title: String,
+        subtitle: String
+    ) -> some View {
+        let logoImage = providerID.flatMap { loadProviderLogo(for: $0) }
+        return HStack(alignment: .top, spacing: 14) {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(StudioTheme.accentSoft)
+                .fill(logoImage != nil ? Color.white.opacity(0.95) : StudioTheme.accentSoft)
                 .frame(width: 48, height: 48)
                 .overlay(
-                    Image(systemName: icon)
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(StudioTheme.accent)
+                    Group {
+                        if let logo = logoImage {
+                            Image(nsImage: logo)
+                                .resizable()
+                                .interpolation(.high)
+                                .scaledToFit()
+                                .padding(8)
+                        } else {
+                            Image(systemName: icon)
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundStyle(StudioTheme.accent)
+                        }
+                    }
                 )
 
             VStack(alignment: .leading, spacing: 4) {
