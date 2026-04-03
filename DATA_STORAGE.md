@@ -333,13 +333,16 @@ static func activeTerms() -> [String]
 | `stats.totalSessions` | Int | 总会话数 |
 | `stats.successfulSessions` | Int | 成功会话数 |
 | `stats.failedSessions` | Int | 失败会话数 |
-| `stats.totalRecordingSeconds` | Double | 总录音时长（秒） |
-| `stats.totalCharacters` | Int | 总字符数 |
-| `stats.totalWords` | Int | 总词数 |
+| `stats.totalRecordingSeconds` | Double | 成功语音会话的用户感知总耗时（录音时长 + 说完后的整体等待时长，秒） |
+| `stats.estimatedTypingSeconds` | Double | 以最终输出文本估算的手动输入耗时基线（秒） |
+| `stats.totalCharacters` | Int | 用户最终实际获得的输出字符数；问答答案不计入“听写字符数”，选区编辑优先用 LCS diff 只计入相对原文的新增/替换内容，超大文本自动降级为前后缀启发式 |
+| `stats.totalWords` | Int | 与 `stats.totalCharacters` 同口径的输出词数 |
 | `stats.dictationCount` | Int | 听写模式次数 |
 | `stats.personaRewriteCount` | Int | 角色重写次数 |
 | `stats.editSelectionCount` | Int | 选中文本编辑次数 |
+| `stats.askAnswerCount` | Int | 语音问答次数 |
 | `stats.didBackfill` | Bool | 是否已完成数据回填 |
+| `stats.calculationVersion` | Int | 当前统计口径版本，用于算法升级后触发历史重算 |
 
 ### 5.3 计算指标
 
@@ -352,7 +355,7 @@ var averagePaceWPM: Int          // 平均语速（词/分钟）
 
 ### 5.4 数据回填
 
-首次启用统计时，从历史记录回填数据：
+首次启用统计时会从历史记录回填数据；如果统计口径升级，也会根据 `stats.calculationVersion` 自动重算历史指标：
 ```swift
 func backfillIfNeeded(from historyStore: HistoryStore)
 ```
