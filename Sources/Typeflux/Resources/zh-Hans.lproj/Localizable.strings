@@ -598,7 +598,7 @@
 "studio.search.agent" = "搜索 Agent 设置...";
 
 "settings.advanced.agentFramework.title" = "启用 Agent 框架";
-"settings.advanced.agentFramework.subtitle" = "为"随便问"功能启用多轮 Agent 循环，支持工具调用和 MCP 服务器集成。";
+"settings.advanced.agentFramework.subtitle" = "为「随便问」功能启用多轮 Agent 循环，支持工具调用和 MCP 服务器集成。";
 
 "agent.section.general" = "通用";
 "agent.general.stepLogging.title" = "Agent 步骤日志";
