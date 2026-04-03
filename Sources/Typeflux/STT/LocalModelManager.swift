@@ -93,6 +93,12 @@ final class LocalModelManager {
             ))
         }
 
+        // Create the storagePath directory so preparedModelInfo's fileExists check passes.
+        try fileManager.createDirectory(
+            at: URL(fileURLWithPath: storagePath, isDirectory: true),
+            withIntermediateDirectories: true
+        )
+
         let record = LocalModelPreparedRecord(
             model: configuration.model.rawValue,
             modelIdentifier: configuration.modelIdentifier,

@@ -26,7 +26,7 @@ final class WhisperKitTranscriber: Transcriber {
         let options = DecodingOptions(
             verbose: false,
             task: .transcribe,
-            language: TranscriptionLanguageHints.whisperKitLanguageCode(),
+            language: nil,  // auto-detect from audio; system locale is unreliable
             withoutTimestamps: true
         )
 
@@ -70,19 +70,3 @@ final class WhisperKitTranscriber: Transcriber {
     }
 }
 
-// MARK: - Language hint helper
-
-extension TranscriptionLanguageHints {
-    /// Returns a BCP-47 language code suitable for WhisperKit, derived from the
-    /// system's preferred languages. Returns nil to let WhisperKit auto-detect.
-    static func whisperKitLanguageCode() -> String? {
-        guard let tag = Locale.preferredLanguages.first else { return nil }
-        let lower = tag.lowercased()
-        if lower.hasPrefix("zh-hant") || lower.hasPrefix("zh-tw") || lower.hasPrefix("zh-hk") {
-            return "zh"
-        }
-        if lower.hasPrefix("zh") { return "zh" }
-        // WhisperKit accepts ISO 639-1 codes; strip region suffix
-        return tag.split(separator: "-").first.map(String.init)
-    }
-}
