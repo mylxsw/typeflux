@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 final class DIContainer {
     let appState = AppStateStore()
@@ -31,6 +32,7 @@ final class DIContainer {
         askAnswerWindowController = AskAnswerWindowController(clipboard: clipboard, settingsStore: settingsStore)
         soundEffectPlayer = SoundEffectPlayer(settingsStore: settingsStore)
         textInjector = AXTextInjector()
+        Logger(subsystem: "dev.typeflux", category: "DIContainer").debug("DIContainer initialized — Logger test message")
         historyStore = SQLiteHistoryStore()
         ollamaModelManager = OllamaLocalModelManager()
         llmAgentService = LLMAgentRouter(

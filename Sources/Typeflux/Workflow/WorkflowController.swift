@@ -1,6 +1,9 @@
 import Foundation
+import os
 
 final class WorkflowController {
+
+    private let logger = Logger(subsystem: "dev.typeflux", category: "WorkflowController")
     private static let recordingTimeoutNanoseconds: UInt64 = 600_000_000_000 // 10 minutes
     private static let processingTimeoutNanoseconds: UInt64 = 120_000_000_000 // 2 minutes
     private static let tapToLockThreshold: TimeInterval = 0.22
@@ -362,6 +365,7 @@ final class WorkflowController {
             return
         }
 
+        logger.debug("handlePersonaPickerRequested — personaHotkeyAppliesToSelection=\(self.settingsStore.personaHotkeyAppliesToSelection)")
         Task { [weak self] in
             guard let self else { return }
 
@@ -372,14 +376,18 @@ final class WorkflowController {
                 selectionSnapshot = TextSelectionSnapshot()
             }
 
+            logger.debug("snapshot: isFocusedTarget=\(selectionSnapshot.isFocusedTarget) isEditable=\(selectionSnapshot.isEditable) hasSelection=\(selectionSnapshot.hasSelection) source=\(selectionSnapshot.source ?? "nil") selectedText=\(selectionSnapshot.selectedText?.prefix(32) ?? "nil")")
+
             let selectedText = editingSelectedText(from: selectionSnapshot)
             let mode: PersonaPickerMode
             let items: [PersonaPickerEntry]
 
             if let selectedText, !selectedText.isEmpty, self.settingsStore.personaHotkeyAppliesToSelection {
+                logger.debug("mode=applySelection")
                 mode = .applySelection(PersonaSelectionContext(snapshot: selectionSnapshot, selectedText: selectedText))
                 items = self.personaPickerEntries(includeNoneOption: false)
             } else {
+                logger.debug("mode=switchDefault  selectedText=\(selectedText ?? "nil")  hotkeyApplies=\(self.settingsStore.personaHotkeyAppliesToSelection)")
                 mode = .switchDefault
                 items = self.personaPickerEntries(includeNoneOption: true)
             }
