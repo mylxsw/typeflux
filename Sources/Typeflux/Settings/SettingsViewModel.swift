@@ -1796,12 +1796,8 @@ final class StudioViewModel: ObservableObject {
         guard let stats, stats.hasData else { return [] }
 
         let durationRows: [(String, Int?)] = [
-            (L("history.stats.stopToAudioReady"), stats.stopToAudioReadyMilliseconds),
             (L("history.stats.transcriptionDuration"), stats.transcriptionDurationMilliseconds),
-            (L("history.stats.stopToTranscriptionCompleted"), stats.stopToTranscriptionCompletedMilliseconds),
-            (L("history.stats.transcriptToLLMStart"), stats.transcriptToLLMStartMilliseconds),
             (L("history.stats.llmDuration"), stats.llmDurationMilliseconds),
-            (L("history.stats.applyDuration"), stats.applyDurationMilliseconds),
             (L("history.stats.endToEnd"), stats.endToEndMilliseconds)
         ]
 
