@@ -86,7 +86,41 @@ struct SherpaOnnxModelLayout {
 
         let attributes = try? fileManager.attributesOfItem(atPath: url.path)
         let fileSize = attributes?[.size] as? NSNumber
-        return (fileSize?.int64Value ?? 0) > 0
+        guard (fileSize?.int64Value ?? 0) > 0 else {
+            return false
+        }
+
+        guard url.lastPathComponent == "sherpa-onnx-offline" || url.pathExtension == "dylib" else {
+            return true
+        }
+
+        return hasExecutableFileFormat(at: url)
+    }
+
+    private func hasExecutableFileFormat(at url: URL) -> Bool {
+        guard let handle = try? FileHandle(forReadingFrom: url) else {
+            return false
+        }
+        defer { try? handle.close() }
+
+        let prefix = try? handle.read(upToCount: 4)
+        guard let bytes = prefix, !bytes.isEmpty else {
+            return false
+        }
+
+        if bytes.starts(with: [0x23, 0x21]) {
+            return true
+        }
+
+        let machOMagics: Set<[UInt8]> = [
+            [0xCA, 0xFE, 0xBA, 0xBE],
+            [0xBE, 0xBA, 0xFE, 0xCA],
+            [0xFE, 0xED, 0xFA, 0xCE],
+            [0xCE, 0xFA, 0xED, 0xFE],
+            [0xFE, 0xED, 0xFA, 0xCF],
+            [0xCF, 0xFA, 0xED, 0xFE]
+        ]
+        return machOMagics.contains(Array(bytes.prefix(4)))
     }
 }
 

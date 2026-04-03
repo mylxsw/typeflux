@@ -46,14 +46,16 @@ final class LocalModelManager {
 
     init(
         fileManager: FileManager = .default,
-        sherpaOnnxInstaller: SherpaOnnxModelInstalling? = nil
+        sherpaOnnxInstaller: SherpaOnnxModelInstalling? = nil,
+        applicationSupportURL: URL? = nil
     ) {
         self.fileManager = fileManager
         self.sherpaOnnxInstaller = sherpaOnnxInstaller ?? SherpaOnnxModelInstaller(
             fileManager: fileManager
         )
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        let base = applicationSupportURL
+            ?? fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support", isDirectory: true)
         self._modelsRootURL = base.appendingPathComponent("Typeflux/LocalModels", isDirectory: true)
         self._legacyRuntimeURL = base.appendingPathComponent("Typeflux/STT/Runtime", isDirectory: true)
