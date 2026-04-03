@@ -140,7 +140,7 @@ final class StudioViewModel: ObservableObject {
     private let settingsStore: SettingsStore
     private let historyStore: HistoryStore
     private let modelManager: OllamaLocalModelManager
-    private let localSTTServiceManager: LocalSTTServiceManager
+    private let localModelManager: LocalModelManager
     private let audioDeviceManager: AudioDeviceManager
     private let onRetryHistory: (HistoryRecord) -> Void
     private var historyObserver: NSObjectProtocol?
@@ -157,13 +157,13 @@ final class StudioViewModel: ObservableObject {
         initialSection: StudioSection,
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
         modelManager: OllamaLocalModelManager = OllamaLocalModelManager(),
-        localSTTServiceManager: LocalSTTServiceManager = LocalSTTServiceManager(),
+        localModelManager: LocalModelManager = LocalModelManager(),
         audioDeviceManager: AudioDeviceManager = AudioDeviceManager()
     ) {
         self.settingsStore = settingsStore
         self.historyStore = historyStore
         self.modelManager = modelManager
-        self.localSTTServiceManager = localSTTServiceManager
+        self.localModelManager = localModelManager
         self.audioDeviceManager = audioDeviceManager
         self.onRetryHistory = onRetryHistory
 
@@ -217,7 +217,7 @@ final class StudioViewModel: ObservableObject {
         doubaoAccessToken = settingsStore.doubaoAccessToken
         doubaoResourceID = settingsStore.doubaoResourceID
         localSTTModel = settingsStore.localSTTModel
-        localSTTModelIdentifier = settingsStore.localSTTModel.defaultModelIdentifier
+        localSTTModelIdentifier = settingsStore.localSTTModelIdentifier
         localSTTDownloadSource = settingsStore.localSTTDownloadSource
         localSTTAutoSetup = true
         localSTTStoragePath = ""
@@ -454,7 +454,7 @@ final class StudioViewModel: ObservableObject {
                 StudioModelCard(
                     id: "local-stt",
                     name: "Local Models",
-                    summary: "Run curated local speech models such as Whisper, SenseVoice, or Qwen3-ASR through an embedded service.",
+                    summary: "Run curated local speech models such as WhisperKit, SenseVoice, or Qwen3-ASR in a native Swift runtime.",
                     badge: "Local",
                     metadata: localSTTModel.displayName,
                     isSelected: sttProvider == .localModel,
@@ -532,7 +532,7 @@ final class StudioViewModel: ObservableObject {
             case .appleSpeech:
                 return "Using on-device speech recognition."
             case .localModel:
-                return "Using a local Python-backed speech model."
+                return "Using a native local speech pipeline."
             case .whisperAPI:
                 return "Using OpenAI-compatible transcription services."
             case .multimodalLLM:
@@ -1223,7 +1223,7 @@ final class StudioViewModel: ObservableObject {
         localSTTAutoSetup = true
         settingsStore.localSTTAutoSetup = true
 
-        if localSTTServiceManager.preparedModelInfo(settingsStore: settingsStore) != nil {
+        if localModelManager.preparedModelInfo(settingsStore: settingsStore) != nil {
             refreshLocalSTTPreparedState()
             showToast(L("settings.models.localSTT.ready"))
             return
@@ -1244,7 +1244,7 @@ final class StudioViewModel: ObservableObject {
 
         Task {
             do {
-                try await localSTTServiceManager.prepareModel(settingsStore: settingsStore) { [weak self] update in
+                try await localModelManager.prepareModel(settingsStore: settingsStore) { [weak self] update in
                     Task { @MainActor in
                         self?.localSTTPreparationProgress = update.progress
                         self?.localSTTPreparationDetail = update.message
@@ -1271,12 +1271,12 @@ final class StudioViewModel: ObservableObject {
     }
 
     func isModelDownloaded(_ model: LocalSTTModel) -> Bool {
-        localSTTServiceManager.isModelDownloaded(model)
+        localModelManager.isModelDownloaded(model)
     }
 
     func deleteLocalSTTModel(_ model: LocalSTTModel) {
         do {
-            try localSTTServiceManager.deleteModelFiles(model)
+            try localModelManager.deleteModelFiles(model)
             if model == localSTTModel {
                 isLocalSTTPrepared = false
                 localSTTPreparationProgress = 0
@@ -1290,7 +1290,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func redownloadLocalSTTModel(_ model: LocalSTTModel) {
-        try? localSTTServiceManager.deleteModelFiles(model)
+        try? localModelManager.deleteModelFiles(model)
         if localSTTModel != model {
             setLocalSTTModel(model)
         } else {
@@ -1722,35 +1722,23 @@ final class StudioViewModel: ObservableObject {
     }
 
     private func refreshLocalSTTStoragePath() {
-        let identifier = localSTTModelIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? localSTTModel.defaultModelIdentifier
-            : localSTTModelIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        switch localSTTModel {
-        case .whisperLocal:
-            localSTTStoragePath = URL(fileURLWithPath: localSTTServiceManager.modelsRootPath)
-                .appendingPathComponent("\(identifier).pt", isDirectory: false)
-                .path
-        case .senseVoiceSmall, .qwen3ASR:
-            localSTTStoragePath = URL(fileURLWithPath: localSTTServiceManager.modelsRootPath)
-                .appendingPathComponent(identifier.replacingOccurrences(of: "/", with: "--"), isDirectory: true)
-                .path
-        }
+        let configuration = LocalSTTConfiguration(settingsStore: settingsStore)
+        localSTTStoragePath = localModelManager.storagePath(for: configuration)
     }
 
     private func refreshLocalSTTPreparedState() {
-        if let prepared = localSTTServiceManager.preparedModelInfo(settingsStore: settingsStore) {
+        if let prepared = localModelManager.preparedModelInfo(settingsStore: settingsStore) {
             isLocalSTTPrepared = true
             localSTTPreparedSource = prepared.sourceDisplayName
             localSTTStoragePath = prepared.storagePath
             localSTTStatus = "\(localSTTModel.displayName) is ready."
-            localSTTPreparationDetail = "Download complete. Local speech model is ready."
+            localSTTPreparationDetail = "Native local speech runtime is ready."
             localSTTPreparationProgress = 1
         } else {
             isLocalSTTPrepared = false
             localSTTPreparedSource = "Automatic"
             localSTTStatus = "Local speech model has not been prepared yet."
-            localSTTPreparationDetail = "The selected local speech model will be prepared automatically when needed."
+            localSTTPreparationDetail = "The selected local speech model will be activated automatically when needed."
             localSTTPreparationProgress = 0
         }
     }

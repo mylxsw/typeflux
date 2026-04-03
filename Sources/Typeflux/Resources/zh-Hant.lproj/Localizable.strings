@@ -189,11 +189,11 @@
 "downloadSource.modelScope" = "ModelScope";
 "downloadSource.huggingFace" = "Hugging Face";
 
-"localSTT.whisperLocal.name" = "Whisper Local";
+"localSTT.whisperLocal.name" = "WhisperKit";
 "localSTT.whisperLocal.summary" = "均衡的本地 ASR，英文與多語言聽寫表現穩定，適合多數離線轉寫情境。";
 "localSTT.whisperLocal.parameterValue" = "244M";
 "localSTT.whisperLocal.sizeValue" = "460 MB";
-"localSTT.senseVoiceSmall.name" = "SenseVoice Small";
+"localSTT.senseVoiceSmall.name" = "SenseVoice";
 "localSTT.senseVoiceSmall.summary" = "快速的多語言語音辨識，對普通話、粵語、英語、日語與韓語支援較強。";
 "localSTT.senseVoiceSmall.parameterValue" = "234M";
 "localSTT.senseVoiceSmall.sizeValue" = "1.1 GB";
@@ -429,7 +429,7 @@
 "settings.models.builtInDefaultProfile" = "內建預設設定";
 "settings.models.card.whisper.summary" = "透過 OpenAI 相容介面執行遠端轉寫，模型選擇更靈活。";
 "settings.models.card.freeSTT.summary" = "從程式碼中設定好的免費語音轉寫模型中選擇，使用者不需要手動填寫端點或金鑰。";
-"settings.models.card.localSTT.summary" = "透過內嵌執行環境在本地執行 Whisper、SenseVoice Small 或 Qwen3-ASR。";
+"settings.models.card.localSTT.summary" = "透過原生 Swift 執行環境在本地執行 WhisperKit、SenseVoice 或 Qwen3-ASR。";
 "settings.models.card.multimodal.summary" = "音訊直接傳送給多模態模型，在一次 API 呼叫中完成轉寫與人設改寫。";
 "settings.models.card.aliCloud.summary" = "透過 DashScope 執行即時串流辨識，低延遲 WebSocket 傳輸。";
 "settings.models.card.doubao.summary" = "透過豆包語音辨識 2.0 與位元組原生二進位 WebSocket 協議進行低延遲串流辨識。";
@@ -526,9 +526,9 @@
 "settings.models.ollama.ready" = "本地模型已就緒。";
 "settings.models.ollama.prepareFailed" = "本地模型準備失敗。";
 "settings.models.localSTT.notPrepared" = "本地語音模型尚未準備。";
-"settings.models.localSTT.autoPrepareHint" = "所選本地語音模型會在需要時自動準備。";
-"settings.models.localSTT.preparing" = "正在準備本地語音模型...";
-"settings.models.localSTT.downloadComplete" = "下載完成，本地語音模型已就緒。";
+"settings.models.localSTT.autoPrepareHint" = "所選本地語音模型會在需要時自動啟用。";
+"settings.models.localSTT.preparing" = "正在準備原生本地語音執行環境...";
+"settings.models.localSTT.downloadComplete" = "原生本地語音執行環境已就緒。";
 "settings.models.localSTT.ready" = "本地語音模型已就緒。";
 "settings.models.localSTT.readyNamed" = "%@ 已就緒。";
 "settings.models.localSTT.prepareFailed" = "本地語音模型準備失敗。";

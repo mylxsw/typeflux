@@ -189,11 +189,11 @@
 "downloadSource.modelScope" = "ModelScope";
 "downloadSource.huggingFace" = "Hugging Face";
 
-"localSTT.whisperLocal.name" = "Whisper Local";
+"localSTT.whisperLocal.name" = "WhisperKit";
 "localSTT.whisperLocal.summary" = "Balanced local ASR with stable English and multilingual dictation, suitable for most offline transcription needs.";
 "localSTT.whisperLocal.parameterValue" = "244M";
 "localSTT.whisperLocal.sizeValue" = "460 MB";
-"localSTT.senseVoiceSmall.name" = "SenseVoice Small";
+"localSTT.senseVoiceSmall.name" = "SenseVoice";
 "localSTT.senseVoiceSmall.summary" = "Fast multilingual speech recognition with strong Mandarin, Cantonese, English, Japanese, and Korean support.";
 "localSTT.senseVoiceSmall.parameterValue" = "234M";
 "localSTT.senseVoiceSmall.sizeValue" = "1.1 GB";
@@ -429,7 +429,7 @@
 "settings.models.builtInDefaultProfile" = "Built-in default profile";
 "settings.models.card.whisper.summary" = "Remote transcription through OpenAI-compatible endpoints with better model flexibility.";
 "settings.models.card.freeSTT.summary" = "Choose from code-configured free speech-to-text models. No endpoint or API key is entered manually.";
-"settings.models.card.localSTT.summary" = "Run Whisper, SenseVoice Small, or Qwen3-ASR locally through an embedded service runtime.";
+"settings.models.card.localSTT.summary" = "Run WhisperKit, SenseVoice, or Qwen3-ASR locally through the native Swift runtime.";
 "settings.models.card.multimodal.summary" = "Send audio directly to a multimodal model. Transcription and persona rewriting happen in a single API call for a faster end-to-end path.";
 "settings.models.card.aliCloud.summary" = "Real-time streaming recognition via DashScope with low-latency WebSocket streaming.";
 "settings.models.card.doubao.summary" = "Low-latency streaming recognition through Doubao Speech Recognition 2.0 with ByteDance's native binary WebSocket protocol.";
@@ -526,9 +526,9 @@
 "settings.models.ollama.ready" = "Local model is ready.";
 "settings.models.ollama.prepareFailed" = "Local model preparation failed.";
 "settings.models.localSTT.notPrepared" = "Local speech model has not been prepared yet.";
-"settings.models.localSTT.autoPrepareHint" = "The selected local speech model will be prepared automatically when needed.";
-"settings.models.localSTT.preparing" = "Preparing local speech model...";
-"settings.models.localSTT.downloadComplete" = "Download complete. Local speech model is ready.";
+"settings.models.localSTT.autoPrepareHint" = "The selected local speech model will be activated automatically when needed.";
+"settings.models.localSTT.preparing" = "Preparing native local speech runtime...";
+"settings.models.localSTT.downloadComplete" = "Native local speech runtime is ready.";
 "settings.models.localSTT.ready" = "Local speech model is ready.";
 "settings.models.localSTT.readyNamed" = "%@ is ready.";
 "settings.models.localSTT.prepareFailed" = "Local speech model preparation failed.";
