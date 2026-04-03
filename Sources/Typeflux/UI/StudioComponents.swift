@@ -233,55 +233,21 @@ struct StudioSidebar: View {
             .padding(.top, StudioTheme.Insets.sidebarHeaderTop)
 
             VStack(spacing: StudioTheme.Spacing.xxSmall) {
-                ForEach(StudioSection.sidebarNavigationCases, id: \.self) { section in
-                    Button(action: { onSelect(section) }) {
-                        HStack(spacing: StudioTheme.Spacing.medium) {
-                            Image(systemName: section.iconName)
-                                .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
-                                .frame(width: StudioTheme.ControlSize.sidebarNavigationIcon)
-
-                            Text(section.title)
-                                .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
-
-                            Spacer()
-                        }
-                        .foregroundStyle(section == currentSection ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                        .padding(.horizontal, StudioTheme.Insets.sidebarItemHorizontal)
-                        .padding(.vertical, StudioTheme.Insets.sidebarItemVertical)
-                        .background(
-                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                                .fill(section == currentSection ? StudioTheme.sidebarSelection : Color.clear)
-                        )
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(StudioInteractiveButtonStyle())
+                ForEach(StudioSection.sidebarUpperCases, id: \.self) { section in
+                    sidebarNavigationButton(for: section)
                 }
             }
 
             Spacer()
 
-            if agentEnabled {
-                Button(action: { onSelect(.agent) }) {
-                    HStack(spacing: StudioTheme.Spacing.medium) {
-                        Image(systemName: StudioSection.agent.iconName)
-                            .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
-                            .frame(width: StudioTheme.ControlSize.sidebarNavigationIcon)
-
-                        Text(StudioSection.agent.title)
-                            .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
-
-                        Spacer()
-                    }
-                    .foregroundStyle(currentSection == .agent ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                    .padding(.horizontal, StudioTheme.Insets.sidebarItemHorizontal)
-                    .padding(.vertical, StudioTheme.Insets.sidebarItemVertical)
-                    .background(
-                        RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                            .fill(currentSection == .agent ? StudioTheme.sidebarSelection : Color.clear)
-                    )
-                    .contentShape(Rectangle())
+            VStack(spacing: StudioTheme.Spacing.xxSmall) {
+                ForEach(StudioSection.sidebarLowerCases, id: \.self) { section in
+                    sidebarNavigationButton(for: section)
                 }
-                .buttonStyle(StudioInteractiveButtonStyle())
+
+                if agentEnabled {
+                    sidebarNavigationButton(for: .agent)
+                }
             }
 
             Rectangle()
@@ -316,6 +282,30 @@ struct StudioSidebar: View {
         .padding(.horizontal, StudioTheme.Insets.sidebarOuterHorizontal)
         .padding(.vertical, StudioTheme.Insets.sidebarOuterVertical)
         .environment(\.locale, localization.locale)
+    }
+
+    private func sidebarNavigationButton(for section: StudioSection) -> some View {
+        Button(action: { onSelect(section) }) {
+            HStack(spacing: StudioTheme.Spacing.medium) {
+                Image(systemName: section.iconName)
+                    .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
+                    .frame(width: StudioTheme.ControlSize.sidebarNavigationIcon)
+
+                Text(section.title)
+                    .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
+
+                Spacer()
+            }
+            .foregroundStyle(section == currentSection ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+            .padding(.horizontal, StudioTheme.Insets.sidebarItemHorizontal)
+            .padding(.vertical, StudioTheme.Insets.sidebarItemVertical)
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                    .fill(section == currentSection ? StudioTheme.sidebarSelection : Color.clear)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(StudioInteractiveButtonStyle())
     }
 }
 
