@@ -169,7 +169,7 @@ enum StudioTheme {
     }
 
     enum Count {
-        static let homeRecentRecords: Int = 4
+        static let homeRecentRecords: Int = 10
         static let personaInitials: Int = 2
     }
 

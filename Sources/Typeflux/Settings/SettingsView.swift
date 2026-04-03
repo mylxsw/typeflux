@@ -262,13 +262,21 @@ struct StudioView: View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             overviewPanel
 
-            sectionHeader(
-                title: L("home.recentTranscriptions"),
-                secondaryButtonTitle: L("home.exportAll"),
-                secondaryAction: { viewModel.exportHistory() },
-                primaryButtonTitle: L("home.openHistory"),
-                primaryAction: { viewModel.navigate(to: .history) }
-            )
+            HStack {
+                Text(L("home.recentTranscriptions"))
+                    .font(.studioDisplay(StudioTheme.Typography.subsectionTitle, weight: .bold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Spacer()
+                Button {
+                    viewModel.navigate(to: .history)
+                } label: {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: StudioTheme.Typography.iconSmall, weight: .medium))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .studioTooltip(L("home.openHistory"), yOffset: 28)
+            }
 
             sessionStream(
                 records: Array(
