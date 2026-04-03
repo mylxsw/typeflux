@@ -91,6 +91,7 @@ enum StudioTheme {
         static let architectureOption: CGFloat = 12
         static let segmentedControl: CGFloat = 12
         static let segmentedItem: CGFloat = 12
+        static let tooltip: CGFloat = 10
     }
 
     enum BorderWidth {
@@ -130,6 +131,7 @@ enum StudioTheme {
         static let iconSmall: CGFloat = 13
         static let iconXSmall: CGFloat = 11
         static let iconTiny: CGFloat = 10
+        static let tooltip: CGFloat = 12
     }
 
     enum Opacity {
@@ -238,6 +240,8 @@ enum StudioTheme {
         static let overlay: CGFloat = 14
         static let errorEmptyVertical: CGFloat = 18
         static let windowContent: CGFloat = 12
+        static let tooltipHorizontal: CGFloat = 12
+        static let tooltipVertical: CGFloat = 8
     }
 
     enum Colors {
@@ -273,6 +277,7 @@ enum StudioTheme {
     static let success = dynamic(light: NSColor(calibratedRed: 0.12, green: 0.67, blue: 0.39, alpha: 1), dark: NSColor(calibratedRed: 0.25, green: 0.82, blue: 0.52, alpha: 1))
     static let warning = dynamic(light: NSColor(calibratedRed: 0.93, green: 0.55, blue: 0.16, alpha: 1), dark: NSColor(calibratedRed: 1.0, green: 0.68, blue: 0.24, alpha: 1))
     static let danger = dynamic(light: NSColor(calibratedRed: 0.85, green: 0.22, blue: 0.22, alpha: 1), dark: NSColor(calibratedRed: 1.0, green: 0.40, blue: 0.40, alpha: 1))
+    static let tooltipBackground = dynamic(light: NSColor(calibratedWhite: 0.12, alpha: 1), dark: NSColor(calibratedWhite: 0.16, alpha: 1))
 
     static func dynamic(light: NSColor, dark: NSColor) -> Color {
         Color(
