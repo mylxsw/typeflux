@@ -44,7 +44,7 @@
 "studio.subheading.home" = "用更安静、更统一的控制界面保持整个桌面体验一致。";
 "studio.subheading.models" = "选择转写和改写流程中使用的本地与远程引擎。";
 "studio.subheading.personas" = "创建可复用的写作风格，让常用提示词随时可用。";
-"studio.subheading.vocabulary" = "管理在语音输入时需要更稳定识别的词汇和名称。";
+"studio.subheading.vocabulary" = "帮助 Typeflux 更稳定地识别人名、产品名和领域词汇。";
 "studio.subheading.history" = "查看最近会话，检查识别文本，并导出历史归档。";
 "studio.subheading.settings" = "在同一个界面中调整快捷键、外观和行为。";
 "studio.search.home" = "搜索活动...";
