@@ -216,9 +216,9 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
         case .grok:
             return [
                 "grok-4-1-fast-reasoning",
-                "grok-4",
-                "grok-3",
-                "grok-3-mini",
+                "grok-4-1-fast-non-reasoning",
+                "grok-4.20-0309-reasoning",
+                "grok-4.20-0309-non-reasoning",
             ]
         case .xiaomi:
             return [
