@@ -6,8 +6,33 @@ struct ProcessCommandResult {
     let exitCode: Int32
 }
 
-final class ProcessCommandRunner {
+protocol ProcessCommandRunning {
+    func run(
+        executablePath: String,
+        arguments: [String],
+        environment: [String: String]?,
+        currentDirectoryURL: URL?
+    ) async throws -> ProcessCommandResult
+}
+
+extension ProcessCommandRunning {
     func run(executablePath: String, arguments: [String]) async throws -> ProcessCommandResult {
+        try await run(
+            executablePath: executablePath,
+            arguments: arguments,
+            environment: nil,
+            currentDirectoryURL: nil
+        )
+    }
+}
+
+final class ProcessCommandRunner: ProcessCommandRunning {
+    func run(
+        executablePath: String,
+        arguments: [String],
+        environment: [String: String]? = nil,
+        currentDirectoryURL: URL? = nil
+    ) async throws -> ProcessCommandResult {
         try await withCheckedThrowingContinuation { continuation in
             let process = Process()
             let stdoutPipe = Pipe()
@@ -15,6 +40,14 @@ final class ProcessCommandRunner {
 
             process.executableURL = URL(fileURLWithPath: executablePath)
             process.arguments = arguments
+            if let environment {
+                var mergedEnvironment = ProcessInfo.processInfo.environment
+                environment.forEach { key, value in mergedEnvironment[key] = value }
+                process.environment = mergedEnvironment
+            }
+            if let currentDirectoryURL {
+                process.currentDirectoryURL = currentDirectoryURL
+            }
             process.standardOutput = stdoutPipe
             process.standardError = stderrPipe
 

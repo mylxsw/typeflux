@@ -203,6 +203,9 @@
 "localSTT.qwen3ASR.sizeValue" = "1.6 GB";
 "localSTT.prepare.runtimePreparing" = "Preparing native local speech runtime...";
 "localSTT.prepare.cleaningLegacyRuntime" = "Cleaning legacy Python runtime...";
+"localSTT.prepare.runtimeDownloading" = "Downloading Sherpa-ONNX native runtime...";
+"localSTT.prepare.modelDownloading" = "Downloading %@ speech model...";
+"localSTT.prepare.modelReady" = "%@ model package is ready.";
 "localSTT.prepare.runtimeReady" = "%@ is ready in the native runtime.";
 "localSTT.prepare.whisperDownloading" = "Downloading WhisperKit model %@...";
 "localSTT.prepare.whisperInitializing" = "Initialising WhisperKit model %@...";
@@ -211,6 +214,8 @@
 "localSTT.error.runtimeUnavailable" = "Native local speech inference is not yet available for %@. Please use a different STT provider.";
 "localSTT.error.preparedPathUnavailable" = "Local STT model setup finished, but the prepared model path could not be verified.";
 "localSTT.error.whisperModelMissing" = "WhisperKit model download finished, but no usable CoreML model files were found.";
+"localSTT.error.modelAssetsMissing" = "%@ model download finished, but required runtime/model files are missing.";
+"localSTT.error.sherpaRuntimeMissing" = "Sherpa-ONNX runtime executable was not found at %@.";
 
 "modelDomain.stt.title" = "Voice Transcription";
 "modelDomain.stt.subtitle" = "Speech to text";

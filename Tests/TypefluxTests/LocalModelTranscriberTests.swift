@@ -2,45 +2,276 @@
 import XCTest
 
 final class LocalModelTranscriberTests: XCTestCase {
-    func testSenseVoiceTranscriberReportsUnavailableNativeRuntime() async {
+    func testSenseVoiceTranscriberUsesChineseLanguageHintAndParsesTranscript() async throws {
+        let originalLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(originalLanguage) }
+
+        let modelFolder = try makeSherpaModelFolder(for: .senseVoiceSmall)
+        let runner = CapturingProcessRunner(stdout: "ignored log\n你好 Typeflux\n")
         let transcriber = SenseVoiceTranscriber(
             modelIdentifier: LocalSTTModel.senseVoiceSmall.defaultModelIdentifier,
-            modelFolder: "/tmp/sensevoice"
+            modelFolder: modelFolder.path,
+            processRunner: runner
         )
-        let audioFile = AudioFile(fileURL: URL(fileURLWithPath: "/tmp/test.wav"), duration: 1.0)
+        let audioFile = try makeTestWAVFile()
 
-        do {
-            _ = try await transcriber.transcribe(audioFile: audioFile)
-            XCTFail("Expected SenseVoiceTranscriber to throw")
-        } catch {
-            XCTAssertEqual(
-                error.localizedDescription,
-                L(
-                    "localSTT.error.runtimeUnavailable",
-                    LocalSTTModel.senseVoiceSmall.displayName
-                )
-            )
-        }
+        let text = try await transcriber.transcribe(audioFile: audioFile)
+
+        XCTAssertEqual(text, "你好 Typeflux")
+        XCTAssertEqual(runner.lastExecutablePath, modelFolder.appendingPathComponent("sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/bin/sherpa-onnx-offline").path)
+        XCTAssertEqual(runner.lastEnvironment?["DYLD_LIBRARY_PATH"], modelFolder.appendingPathComponent("sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib").path)
+        XCTAssertTrue(runner.lastArguments.contains("--sense-voice-language=zh"))
+        XCTAssertTrue(runner.lastArguments.contains("--sense-voice-use-itn=true"))
+        XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--sense-voice-model=") }))
+        XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--tokens=") }))
+        XCTAssertEqual(runner.lastArguments.last, audioFile.fileURL.path)
     }
 
-    func testQwen3ASRTranscriberReportsUnavailableNativeRuntime() async {
+    func testSenseVoiceTranscriberUsesEnglishLanguageHint() async throws {
+        let originalLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.english)
+        defer { AppLocalization.shared.setLanguage(originalLanguage) }
+
+        let modelFolder = try makeSherpaModelFolder(for: .senseVoiceSmall)
+        let runner = CapturingProcessRunner(stdout: "hello Typeflux\n")
+        let transcriber = SenseVoiceTranscriber(
+            modelIdentifier: LocalSTTModel.senseVoiceSmall.defaultModelIdentifier,
+            modelFolder: modelFolder.path,
+            processRunner: runner
+        )
+
+        _ = try await transcriber.transcribe(audioFile: makeTestWAVFile())
+
+        XCTAssertTrue(runner.lastArguments.contains("--sense-voice-language=en"))
+    }
+
+    func testQwen3ASRTranscriberUsesQwen3ModelArguments() async throws {
+        let modelFolder = try makeSherpaModelFolder(for: .qwen3ASR)
+        let runner = CapturingProcessRunner(stdout: "Qwen3 says hello\n")
         let transcriber = Qwen3ASRTranscriber(
             modelIdentifier: LocalSTTModel.qwen3ASR.defaultModelIdentifier,
-            modelFolder: "/tmp/qwen3-asr"
+            modelFolder: modelFolder.path,
+            processRunner: runner
         )
-        let audioFile = AudioFile(fileURL: URL(fileURLWithPath: "/tmp/test.wav"), duration: 1.0)
+        let audioFile = try makeTestWAVFile()
 
-        do {
-            _ = try await transcriber.transcribe(audioFile: audioFile)
-            XCTFail("Expected Qwen3ASRTranscriber to throw")
-        } catch {
-            XCTAssertEqual(
-                error.localizedDescription,
-                L(
-                    "localSTT.error.runtimeUnavailable",
-                    LocalSTTModel.qwen3ASR.displayName
-                )
+        let text = try await transcriber.transcribe(audioFile: audioFile)
+
+        XCTAssertEqual(text, "Qwen3 says hello")
+        XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--qwen3-asr-conv-frontend=") }))
+        XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--qwen3-asr-encoder=") }))
+        XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--qwen3-asr-decoder=") }))
+        XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--qwen3-asr-tokenizer=") }))
+        XCTAssertTrue(runner.lastArguments.contains("--qwen3-asr-max-total-len=512"))
+        XCTAssertTrue(runner.lastArguments.contains("--qwen3-asr-max-new-tokens=128"))
+        XCTAssertEqual(runner.lastArguments.last, audioFile.fileURL.path)
+    }
+
+    func testLocalModelManagerPersistsSenseVoicePreparedModelInfo() async throws {
+        let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.localSTTModel = .senseVoiceSmall
+        settingsStore.localSTTModelIdentifier = LocalSTTModel.senseVoiceSmall.defaultModelIdentifier
+        settingsStore.localSTTDownloadSource = .huggingFace
+        settingsStore.localSTTAutoSetup = true
+
+        let fakeInstaller = FakeSherpaOnnxInstaller()
+        let manager = LocalModelManager(
+            fileManager: .default,
+            sherpaOnnxInstaller: fakeInstaller
+        )
+
+        let updates = PreparationUpdateRecorder()
+        try await manager.prepareModel(settingsStore: settingsStore) { update in
+            updates.append(update)
+        }
+
+        let prepared = manager.preparedModelInfo(settingsStore: settingsStore)
+        XCTAssertNotNil(prepared)
+        XCTAssertEqual(prepared?.sourceDisplayName, ModelDownloadSource.huggingFace.displayName)
+        XCTAssertEqual(
+            prepared?.storagePath,
+            manager.storagePath(for: LocalSTTConfiguration(settingsStore: settingsStore))
+        )
+        XCTAssertEqual(fakeInstaller.lastPreparedModel, .senseVoiceSmall)
+        XCTAssertEqual(fakeInstaller.lastStorageURL?.path, prepared?.storagePath)
+        XCTAssertTrue(updates.values().contains(where: { $0.message == "fake sherpa ready" }))
+    }
+
+    func testLocalModelManagerPersistsQwen3PreparedModelInfo() async throws {
+        let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.localSTTModel = .qwen3ASR
+        settingsStore.localSTTModelIdentifier = LocalSTTModel.qwen3ASR.defaultModelIdentifier
+        settingsStore.localSTTDownloadSource = .huggingFace
+        settingsStore.localSTTAutoSetup = true
+
+        let fakeInstaller = FakeSherpaOnnxInstaller()
+        let manager = LocalModelManager(
+            fileManager: .default,
+            sherpaOnnxInstaller: fakeInstaller
+        )
+
+        try await manager.prepareModel(settingsStore: settingsStore)
+
+        let prepared = manager.preparedModelInfo(settingsStore: settingsStore)
+        XCTAssertNotNil(prepared)
+        XCTAssertEqual(prepared?.storagePath, fakeInstaller.lastStorageURL?.path)
+        XCTAssertEqual(fakeInstaller.lastPreparedModel, .qwen3ASR)
+    }
+
+    private func makeSherpaModelFolder(for model: LocalSTTModel) throws -> URL {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-tests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+
+        guard let layout = SherpaOnnxModelLayout.layout(for: model) else {
+            return root
+        }
+
+        let runtimeBinURL = root
+            .appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+            .appendingPathComponent("bin", isDirectory: true)
+        let runtimeLibURL = root
+            .appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+            .appendingPathComponent("lib", isDirectory: true)
+        try FileManager.default.createDirectory(at: runtimeBinURL, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: runtimeLibURL, withIntermediateDirectories: true)
+
+        let executableURL = runtimeBinURL.appendingPathComponent("sherpa-onnx-offline", isDirectory: false)
+        try Data("#!/bin/sh\necho test\n".utf8).write(to: executableURL)
+        try FileManager.default.setAttributes(
+            [.posixPermissions: NSNumber(value: Int16(0o755))],
+            ofItemAtPath: executableURL.path
+        )
+        try Data().write(to: runtimeLibURL.appendingPathComponent("libsherpa-onnx-c-api.dylib"))
+        try Data().write(to: runtimeLibURL.appendingPathComponent("libonnxruntime.dylib"))
+
+        let modelDirectory = root.appendingPathComponent(layout.modelRootDirectory, isDirectory: true)
+        try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+        switch model {
+        case .whisperLocal:
+            break
+        case .senseVoiceSmall:
+            try Data().write(to: modelDirectory.appendingPathComponent("model.int8.onnx"))
+            try Data().write(to: modelDirectory.appendingPathComponent("tokens.txt"))
+        case .qwen3ASR:
+            try Data().write(to: modelDirectory.appendingPathComponent("conv_frontend.onnx"))
+            try Data().write(to: modelDirectory.appendingPathComponent("encoder.int8.onnx"))
+            try Data().write(to: modelDirectory.appendingPathComponent("decoder.int8.onnx"))
+            try FileManager.default.createDirectory(
+                at: modelDirectory.appendingPathComponent("tokenizer", isDirectory: true),
+                withIntermediateDirectories: true
             )
         }
+
+        return root
+    }
+
+    private func makeTestWAVFile() throws -> AudioFile {
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-tests-\(UUID().uuidString)", isDirectory: false)
+            .appendingPathExtension("wav")
+        try Data().write(to: fileURL)
+        return AudioFile(fileURL: fileURL, duration: 1)
+    }
+
+}
+
+private final class CapturingProcessRunner: ProcessCommandRunning {
+    let stdout: String
+    var lastExecutablePath: String?
+    var lastArguments: [String] = []
+    var lastEnvironment: [String: String]?
+
+    init(stdout: String) {
+        self.stdout = stdout
+    }
+
+    func run(
+        executablePath: String,
+        arguments: [String],
+        environment: [String: String]?,
+        currentDirectoryURL: URL?
+    ) async throws -> ProcessCommandResult {
+        _ = currentDirectoryURL
+        lastExecutablePath = executablePath
+        lastArguments = arguments
+        lastEnvironment = environment
+        return ProcessCommandResult(stdout: stdout, stderr: "", exitCode: 0)
+    }
+}
+
+private final class FakeSherpaOnnxInstaller: SherpaOnnxModelInstalling {
+    var lastPreparedModel: LocalSTTModel?
+    var lastStorageURL: URL?
+
+    func prepareModel(
+        _ model: LocalSTTModel,
+        at storageURL: URL,
+        onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)?
+    ) async throws -> String {
+        lastPreparedModel = model
+        lastStorageURL = storageURL
+
+        onUpdate?(LocalSTTPreparationUpdate(
+            message: "fake sherpa ready",
+            progress: 0.9,
+            storagePath: storageURL.path,
+            source: nil
+        ))
+
+        guard let layout = SherpaOnnxModelLayout.layout(for: model) else {
+            return storageURL.path
+        }
+
+        for relativePath in layout.requiredRelativePaths {
+            let fileURL = storageURL.appendingPathComponent(relativePath)
+            try FileManager.default.createDirectory(
+                at: fileURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            if relativePath.hasSuffix("/tokenizer") {
+                try FileManager.default.createDirectory(
+                    at: fileURL,
+                    withIntermediateDirectories: true
+                )
+            } else {
+                try Data().write(to: fileURL)
+                if fileURL.lastPathComponent == "sherpa-onnx-offline" {
+                    try FileManager.default.setAttributes(
+                        [.posixPermissions: NSNumber(value: Int16(0o755))],
+                        ofItemAtPath: fileURL.path
+                    )
+                }
+            }
+        }
+
+        return storageURL.path
+    }
+}
+
+private final class PreparationUpdateRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var updates: [LocalSTTPreparationUpdate] = []
+
+    func append(_ update: LocalSTTPreparationUpdate) {
+        lock.lock()
+        updates.append(update)
+        lock.unlock()
+    }
+
+    func values() -> [LocalSTTPreparationUpdate] {
+        lock.lock()
+        let current = updates
+        lock.unlock()
+        return current
     }
 }
