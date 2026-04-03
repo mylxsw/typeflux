@@ -75,6 +75,10 @@ final class StudioViewModel: ObservableObject {
     @Published var appleSpeechFallback: Bool
     @Published var automaticVocabularyCollectionEnabled: Bool
 
+    @Published var agentFrameworkEnabled: Bool
+    @Published var agentStepLoggingEnabled: Bool
+    @Published var mcpServers: [MCPServerConfig]
+
     @Published var personaRewriteEnabled: Bool
     @Published var personaHotkeyAppliesToSelection: Bool
     @Published var personas: [PersonaProfile]
@@ -187,6 +191,9 @@ final class StudioViewModel: ObservableObject {
         localSTTStoragePath = ""
         appleSpeechFallback = settingsStore.useAppleSpeechFallback
         automaticVocabularyCollectionEnabled = settingsStore.automaticVocabularyCollectionEnabled
+        agentFrameworkEnabled = settingsStore.agentFrameworkEnabled
+        agentStepLoggingEnabled = settingsStore.agentStepLoggingEnabled
+        mcpServers = settingsStore.mcpServers
         personaRewriteEnabled = settingsStore.personaRewriteEnabled
         personaHotkeyAppliesToSelection = settingsStore.personaHotkeyAppliesToSelection
         personas = currentPersonas
@@ -762,6 +769,87 @@ final class StudioViewModel: ObservableObject {
         automaticVocabularyCollectionEnabled = value
         settingsStore.automaticVocabularyCollectionEnabled = value
     }
+
+    // MARK: - Agent Framework
+
+    func setAgentFrameworkEnabled(_ value: Bool) {
+        agentFrameworkEnabled = value
+        settingsStore.agentFrameworkEnabled = value
+    }
+
+    func setAgentStepLoggingEnabled(_ value: Bool) {
+        agentStepLoggingEnabled = value
+        settingsStore.agentStepLoggingEnabled = value
+    }
+
+    func addNewMCPServer() {
+        let server = MCPServerConfig(
+            name: "",
+            transport: .stdio(MCPStdioTransportConfig(command: ""))
+        )
+        mcpServers.append(server)
+        settingsStore.mcpServers = mcpServers
+    }
+
+    func removeMCPServer(id: UUID) {
+        mcpServers.removeAll { $0.id == id }
+        settingsStore.mcpServers = mcpServers
+    }
+
+    func updateMCPServerEnabled(id: UUID, enabled: Bool) {
+        guard let idx = mcpServers.firstIndex(where: { $0.id == id }) else { return }
+        mcpServers[idx].enabled = enabled
+        settingsStore.mcpServers = mcpServers
+    }
+
+    func updateMCPServerName(id: UUID, name: String) {
+        guard let idx = mcpServers.firstIndex(where: { $0.id == id }) else { return }
+        mcpServers[idx].name = name
+        settingsStore.mcpServers = mcpServers
+    }
+
+    func updateMCPServerAutoConnect(id: UUID, autoConnect: Bool) {
+        guard let idx = mcpServers.firstIndex(where: { $0.id == id }) else { return }
+        mcpServers[idx].autoConnect = autoConnect
+        settingsStore.mcpServers = mcpServers
+    }
+
+    func updateMCPServerStdioCommand(id: UUID, command: String) {
+        guard let idx = mcpServers.firstIndex(where: { $0.id == id }) else { return }
+        if case .stdio(var config) = mcpServers[idx].transport {
+            config = MCPStdioTransportConfig(command: command, args: config.args, env: config.env)
+            mcpServers[idx].transport = .stdio(config)
+            settingsStore.mcpServers = mcpServers
+        }
+    }
+
+    func updateMCPServerStdioArgs(id: UUID, args: String) {
+        guard let idx = mcpServers.firstIndex(where: { $0.id == id }) else { return }
+        if case .stdio(var config) = mcpServers[idx].transport {
+            config.args = args.split(separator: " ").map(String.init)
+            mcpServers[idx].transport = .stdio(config)
+            settingsStore.mcpServers = mcpServers
+        }
+    }
+
+    func updateMCPServerHTTPURL(id: UUID, url: String) {
+        guard let idx = mcpServers.firstIndex(where: { $0.id == id }) else { return }
+        if case .http(var config) = mcpServers[idx].transport {
+            config.url = url
+            mcpServers[idx].transport = .http(config)
+            settingsStore.mcpServers = mcpServers
+        }
+    }
+
+    func updateMCPServerHTTPAPIKey(id: UUID, apiKey: String) {
+        guard let idx = mcpServers.firstIndex(where: { $0.id == id }) else { return }
+        if case .http(var config) = mcpServers[idx].transport {
+            config.apiKey = apiKey.isEmpty ? nil : apiKey
+            mcpServers[idx].transport = .http(config)
+            settingsStore.mcpServers = mcpServers
+        }
+    }
+
     func setLaunchAtLogin(_ value: Bool) { launchAtLogin = value; LaunchAtLoginManager.setEnabled(value) }
     func setPersonaRewriteEnabled(_ value: Bool) {
         personaRewriteEnabled = value

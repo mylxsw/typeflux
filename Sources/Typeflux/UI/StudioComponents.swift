@@ -130,6 +130,7 @@ struct StudioShell<Content: View>: View {
     let onSendFeedback: () -> Void
     let searchText: Binding<String>
     let searchPlaceholder: String
+    let agentEnabled: Bool
     let content: (CGSize) -> Content
 
     init(
@@ -139,6 +140,7 @@ struct StudioShell<Content: View>: View {
         onSendFeedback: @escaping () -> Void,
         searchText: Binding<String>,
         searchPlaceholder: String,
+        agentEnabled: Bool = false,
         @ViewBuilder content: @escaping (CGSize) -> Content
     ) {
         self.currentSection = currentSection
@@ -147,6 +149,7 @@ struct StudioShell<Content: View>: View {
         self.onSendFeedback = onSendFeedback
         self.searchText = searchText
         self.searchPlaceholder = searchPlaceholder
+        self.agentEnabled = agentEnabled
         self.content = content
     }
 
@@ -160,7 +163,8 @@ struct StudioShell<Content: View>: View {
                     currentSection: currentSection,
                     onSelect: onSelect,
                     onSendFeedback: onSendFeedback,
-                    onOpenAbout: onOpenAbout
+                    onOpenAbout: onOpenAbout,
+                    agentEnabled: agentEnabled
                 )
                     .frame(width: StudioTheme.sidebarWidth)
 
@@ -198,6 +202,7 @@ struct StudioSidebar: View {
     let onSelect: (StudioSection) -> Void
     let onSendFeedback: () -> Void
     let onOpenAbout: () -> Void
+    let agentEnabled: Bool
     @ObservedObject private var localization = AppLocalization.shared
 
     var body: some View {
@@ -228,7 +233,7 @@ struct StudioSidebar: View {
             .padding(.top, StudioTheme.Insets.sidebarHeaderTop)
 
             VStack(spacing: StudioTheme.Spacing.xxSmall) {
-                ForEach(StudioSection.allCases.filter { $0 != .settings }) { section in
+                ForEach(StudioSection.sidebarNavigationCases, id: \.self) { section in
                     Button(action: { onSelect(section) }) {
                         HStack(spacing: StudioTheme.Spacing.medium) {
                             Image(systemName: section.iconName)
@@ -254,6 +259,30 @@ struct StudioSidebar: View {
             }
 
             Spacer()
+
+            if agentEnabled {
+                Button(action: { onSelect(.agent) }) {
+                    HStack(spacing: StudioTheme.Spacing.medium) {
+                        Image(systemName: StudioSection.agent.iconName)
+                            .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
+                            .frame(width: StudioTheme.ControlSize.sidebarNavigationIcon)
+
+                        Text(StudioSection.agent.title)
+                            .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
+
+                        Spacer()
+                    }
+                    .foregroundStyle(currentSection == .agent ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    .padding(.horizontal, StudioTheme.Insets.sidebarItemHorizontal)
+                    .padding(.vertical, StudioTheme.Insets.sidebarItemVertical)
+                    .background(
+                        RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                            .fill(currentSection == .agent ? StudioTheme.sidebarSelection : Color.clear)
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(StudioInteractiveButtonStyle())
+            }
 
             Rectangle()
                 .fill(StudioTheme.border.opacity(0.5))

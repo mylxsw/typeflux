@@ -68,7 +68,8 @@ struct StudioView: View {
             onOpenAbout: { AboutWindowController.shared.show() },
             onSendFeedback: sendFeedbackEmail,
             searchText: $viewModel.searchQuery,
-            searchPlaceholder: viewModel.currentSection.searchPlaceholder
+            searchPlaceholder: viewModel.currentSection.searchPlaceholder,
+            agentEnabled: viewModel.agentFrameworkEnabled
         ) { viewportSize in
             let viewportHeight = viewportContentHeight(from: viewportSize)
 
@@ -216,6 +217,8 @@ struct StudioView: View {
             historyPage
         case .settings:
             settingsPage
+        case .agent:
+            agentPage
         }
     }
 
@@ -1138,8 +1141,207 @@ struct StudioView: View {
                         .labelsHidden()
                         .toggleStyle(.switch)
                     }
+
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                    StudioSettingRow(
+                        title: L("settings.advanced.agentFramework.title"),
+                        subtitle: L("settings.advanced.agentFramework.subtitle"),
+                        badge: "Beta"
+                    ) {
+                        Toggle(
+                            "",
+                            isOn: Binding(
+                                get: { viewModel.agentFrameworkEnabled },
+                                set: viewModel.setAgentFrameworkEnabled
+                            )
+                        )
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
                 }
             }
+        }
+    }
+
+    // MARK: - Agent Page
+
+    private var agentPage: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
+            // General agent settings
+            StudioSectionTitle(title: L("agent.section.general"))
+
+            StudioCard {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                    StudioSettingRow(
+                        title: L("agent.general.stepLogging.title"),
+                        subtitle: L("agent.general.stepLogging.subtitle")
+                    ) {
+                        Toggle(
+                            "",
+                            isOn: Binding(
+                                get: { viewModel.agentStepLoggingEnabled },
+                                set: viewModel.setAgentStepLoggingEnabled
+                            )
+                        )
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
+                }
+            }
+
+            // MCP Servers
+            StudioSectionTitle(title: L("agent.section.mcpServers"))
+
+            if viewModel.mcpServers.isEmpty {
+                StudioCard {
+                    VStack(spacing: StudioTheme.Spacing.medium) {
+                        Image(systemName: "server.rack")
+                            .font(.system(size: 28, weight: .light))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                        Text(L("agent.mcp.empty"))
+                            .font(.studioBody(StudioTheme.Typography.body, weight: .regular))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, StudioTheme.Spacing.large)
+                }
+            } else {
+                ForEach(viewModel.mcpServers) { server in
+                    mcpServerCard(server)
+                }
+            }
+
+            StudioButton(
+                title: L("agent.mcp.addServer"),
+                systemImage: "plus.circle.fill",
+                variant: .secondary
+            ) {
+                viewModel.addNewMCPServer()
+            }
+        }
+    }
+
+    private func mcpServerCard(_ server: MCPServerConfig) -> some View {
+        StudioCard {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                        HStack(spacing: StudioTheme.Spacing.small) {
+                            Text(server.name.isEmpty ? L("agent.mcp.untitled") : server.name)
+                                .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
+                                .foregroundStyle(StudioTheme.textPrimary)
+
+                            StudioPill(title: mcpTransportLabel(for: server))
+                        }
+                        Text(mcpTransportDetail(for: server))
+                            .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Toggle("", isOn: Binding(
+                        get: { server.enabled },
+                        set: { viewModel.updateMCPServerEnabled(id: server.id, enabled: $0) }
+                    ))
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                }
+
+                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                StudioTextInputCard(
+                    label: L("agent.mcp.name"),
+                    placeholder: L("agent.mcp.namePlaceholder"),
+                    text: Binding(
+                        get: { server.name },
+                        set: { viewModel.updateMCPServerName(id: server.id, name: $0) }
+                    )
+                )
+
+                mcpTransportForm(server)
+
+                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                StudioSettingRow(
+                    title: L("agent.mcp.autoConnect.title"),
+                    subtitle: L("agent.mcp.autoConnect.subtitle")
+                ) {
+                    Toggle("", isOn: Binding(
+                        get: { server.autoConnect },
+                        set: { viewModel.updateMCPServerAutoConnect(id: server.id, autoConnect: $0) }
+                    ))
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                }
+
+                HStack {
+                    Spacer()
+                    StudioButton(
+                        title: L("common.delete"),
+                        systemImage: "trash",
+                        variant: .ghost
+                    ) {
+                        viewModel.removeMCPServer(id: server.id)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func mcpTransportForm(_ server: MCPServerConfig) -> some View {
+        switch server.transport {
+        case .stdio(let config):
+            StudioTextInputCard(
+                label: L("agent.mcp.stdio.command"),
+                placeholder: "/usr/local/bin/my-mcp-server",
+                text: Binding(
+                    get: { config.command },
+                    set: { viewModel.updateMCPServerStdioCommand(id: server.id, command: $0) }
+                )
+            )
+            StudioTextInputCard(
+                label: L("agent.mcp.stdio.args"),
+                placeholder: "--port 3000 --verbose",
+                text: Binding(
+                    get: { config.args.joined(separator: " ") },
+                    set: { viewModel.updateMCPServerStdioArgs(id: server.id, args: $0) }
+                )
+            )
+        case .http(let config):
+            StudioTextInputCard(
+                label: L("agent.mcp.http.url"),
+                placeholder: "https://mcp.example.com/api",
+                text: Binding(
+                    get: { config.url },
+                    set: { viewModel.updateMCPServerHTTPURL(id: server.id, url: $0) }
+                )
+            )
+            StudioTextInputCard(
+                label: L("agent.mcp.http.apiKey"),
+                placeholder: L("agent.mcp.http.apiKeyPlaceholder"),
+                text: Binding(
+                    get: { config.apiKey ?? "" },
+                    set: { viewModel.updateMCPServerHTTPAPIKey(id: server.id, apiKey: $0) }
+                ),
+                secure: true
+            )
+        }
+    }
+
+    private func mcpTransportLabel(for server: MCPServerConfig) -> String {
+        switch server.transport {
+        case .stdio: return "stdio"
+        case .http: return "HTTP"
+        }
+    }
+
+    private func mcpTransportDetail(for server: MCPServerConfig) -> String {
+        switch server.transport {
+        case .stdio(let config): return config.command
+        case .http(let config): return config.url
         }
     }
 

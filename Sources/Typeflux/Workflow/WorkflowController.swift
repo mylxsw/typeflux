@@ -39,14 +39,14 @@ final class WorkflowController {
     }
 
     private let appState: AppStateStore
-    private let settingsStore: SettingsStore
+    let settingsStore: SettingsStore
     private let hotkeyService: HotkeyService
     private let audioRecorder: AudioRecorder
     private let sttRouter: STTRouter
     private let llmService: LLMService
     private let llmAgentService: LLMAgentService
     private let textInjector: TextInjector
-    private let clipboard: ClipboardService
+    let clipboard: ClipboardService
     private let historyStore: HistoryStore
     private let overlayController: OverlayController
     private let askAnswerWindowController: AskAnswerWindowController
@@ -942,21 +942,184 @@ final class WorkflowController {
                 saveHistoryRecord(record)
                 logPipelineEvent("llm-processing-started", for: record)
 
-                let askDecisionResult = try await decideAskSelection(
-                    selectedText: askContextText,
-                    spokenInstruction: transcribedText,
-                    personaPrompt: personaPrompt,
-                    sessionID: sessionID
-                )
-
-                switch askDecisionResult.decision.action {
-                case .answer:
+                if settingsStore.agentFrameworkEnabled {
+                    let agentResult = try await runAskAgent(
+                        selectedText: askContextText,
+                        spokenInstruction: transcribedText,
+                        personaPrompt: personaPrompt
+                    )
                     try ensureProcessingIsActive(sessionID)
-                    pipelineTiming.llmProcessingCompletedAt = askDecisionResult.completedAt
+                    pipelineTiming.llmProcessingCompletedAt = Date()
                     record.pipelineTiming = pipelineTiming
                     logPipelineEvent("llm-processing-completed", for: record)
+
+                    switch agentResult {
+                    case .answer(let text):
+                        record.mode = .askAnswer
+                        record.personaResultText = text
+                        record.processingStatus = .succeeded
+                        record.applyStatus = .running
+                        saveHistoryRecord(record)
+
+                        try ensureProcessingIsActive(sessionID)
+                        pipelineTiming.applyStartedAt = Date()
+                        record.pipelineTiming = pipelineTiming
+                        await MainActor.run {
+                            self.presentAskAnswer(
+                                question: transcribedText,
+                                selectedText: askContextText,
+                                answerMarkdown: text
+                            )
+                        }
+                        pipelineTiming.applyCompletedAt = Date()
+                        record.pipelineTiming = pipelineTiming
+                        record.applyStatus = .succeeded
+                        record.applyMessage = L("workflow.ask.answerPresented")
+
+                    case .edit(let text):
+                        record.mode = .editSelection
+                        record.selectionEditedText = text
+                        record.processingStatus = .succeeded
+                        record.applyStatus = .running
+                        saveHistoryRecord(record)
+
+                        try ensureProcessingIsActive(sessionID)
+                        pipelineTiming.applyStartedAt = Date()
+                        record.pipelineTiming = pipelineTiming
+                        let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
+                        let outcome: ApplyOutcome
+                        NetworkDebugLogger.logMessage(
+                            "[Apply Decision] mode=editSelection hasSelection=\(selectionSnapshot.hasSelection) " +
+                            "isEditable=\(selectionSnapshot.isEditable) hasRange=\(selectionSnapshot.selectedRange != nil) " +
+                            "showResultDialog=\(shouldShowResultDialog)"
+                        )
+                        if shouldShowResultDialog {
+                            await MainActor.run {
+                                self.lastDialogResultText = text
+                                self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: text)
+                            }
+                            outcome = .presentedInDialog
+                        } else {
+                            outcome = applyText(text, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
+                        }
+                        pipelineTiming.applyCompletedAt = Date()
+                        record.pipelineTiming = pipelineTiming
+                        record.applyStatus = .succeeded
+                        record.applyMessage = outcome.message
+                    }
+                } else {
+                    // Legacy two-step flow: decision → execution
+                    let askDecisionResult = try await decideAskSelection(
+                        selectedText: askContextText,
+                        spokenInstruction: transcribedText,
+                        personaPrompt: personaPrompt,
+                        sessionID: sessionID
+                    )
+
+                    switch askDecisionResult.decision.action {
+                    case .answer:
+                        try ensureProcessingIsActive(sessionID)
+                        pipelineTiming.llmProcessingCompletedAt = askDecisionResult.completedAt
+                        record.pipelineTiming = pipelineTiming
+                        logPipelineEvent("llm-processing-completed", for: record)
+                        record.mode = .askAnswer
+                        record.personaResultText = askDecisionResult.decision.trimmedResponse
+                        record.processingStatus = .succeeded
+                        record.applyStatus = .running
+                        saveHistoryRecord(record)
+
+                        try ensureProcessingIsActive(sessionID)
+                        pipelineTiming.applyStartedAt = Date()
+                        record.pipelineTiming = pipelineTiming
+                        await MainActor.run {
+                            self.presentAskAnswer(
+                                question: transcribedText,
+                                selectedText: askContextText,
+                                answerMarkdown: askDecisionResult.decision.trimmedResponse
+                            )
+                        }
+                        pipelineTiming.applyCompletedAt = Date()
+                        record.pipelineTiming = pipelineTiming
+                        record.applyStatus = .succeeded
+                        record.applyMessage = L("workflow.ask.answerPresented")
+                    case .edit:
+                        record.mode = .editSelection
+                        record.applyStatus = .pending
+                        saveHistoryRecord(record)
+
+                        let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
+                        let rewriteResult = try await generateRewrite(
+                            request: LLMRewriteRequest(
+                                mode: .editSelection,
+                                sourceText: askContextText,
+                                spokenInstruction: transcribedText,
+                                personaPrompt: personaPrompt
+                            ),
+                            sessionID: sessionID,
+                            showsStreamingPreview: !shouldShowResultDialog
+                        )
+
+                        try ensureProcessingIsActive(sessionID)
+                        pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
+                        record.pipelineTiming = pipelineTiming
+                        logPipelineEvent("llm-processing-completed", for: record)
+                        record.selectionEditedText = rewriteResult.text
+                        record.processingStatus = .succeeded
+                        record.applyStatus = .running
+                        saveHistoryRecord(record)
+
+                        try ensureProcessingIsActive(sessionID)
+                        pipelineTiming.applyStartedAt = Date()
+                        record.pipelineTiming = pipelineTiming
+                        let outcome: ApplyOutcome
+                        NetworkDebugLogger.logMessage(
+                            "[Apply Decision] mode=editSelection hasSelection=\(selectionSnapshot.hasSelection) " +
+                            "isEditable=\(selectionSnapshot.isEditable) hasRange=\(selectionSnapshot.selectedRange != nil) " +
+                            "showResultDialog=\(shouldShowResultDialog)"
+                        )
+                        if shouldShowResultDialog {
+                            await MainActor.run {
+                                self.lastDialogResultText = rewriteResult.text
+                                self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: rewriteResult.text)
+                            }
+                            outcome = .presentedInDialog
+                        } else {
+                            outcome = applyText(rewriteResult.text, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
+                        }
+                        pipelineTiming.applyCompletedAt = Date()
+                        record.pipelineTiming = pipelineTiming
+                        record.applyStatus = .succeeded
+                        record.applyMessage = outcome.message
+                    }
+                }
+            } else if recordingIntent == .askSelection {
+                record.processingStatus = .running
+                saveHistoryRecord(record)
+
+                pipelineTiming.llmProcessingStartedAt = Date()
+                record.pipelineTiming = pipelineTiming
+                saveHistoryRecord(record)
+                logPipelineEvent("llm-processing-started", for: record)
+
+                if settingsStore.agentFrameworkEnabled {
+                    let agentResult = try await runAskAgent(
+                        selectedText: nil,
+                        spokenInstruction: transcribedText,
+                        personaPrompt: personaPrompt
+                    )
+                    try ensureProcessingIsActive(sessionID)
+                    pipelineTiming.llmProcessingCompletedAt = Date()
+                    record.pipelineTiming = pipelineTiming
+                    logPipelineEvent("llm-processing-completed", for: record)
+
+                    let answerText: String
+                    switch agentResult {
+                    case .answer(let text): answerText = text
+                    case .edit(let text): answerText = text
+                    }
+
                     record.mode = .askAnswer
-                    record.personaResultText = askDecisionResult.decision.trimmedResponse
+                    record.personaResultText = answerText
                     record.processingStatus = .succeeded
                     record.applyStatus = .running
                     saveHistoryRecord(record)
@@ -968,35 +1131,28 @@ final class WorkflowController {
                         self.presentAskAnswer(
                             question: transcribedText,
                             selectedText: askContextText,
-                            answerMarkdown: askDecisionResult.decision.trimmedResponse
+                            answerMarkdown: answerText
                         )
                     }
                     pipelineTiming.applyCompletedAt = Date()
                     record.pipelineTiming = pipelineTiming
                     record.applyStatus = .succeeded
                     record.applyMessage = L("workflow.ask.answerPresented")
-                case .edit:
-                    record.mode = .editSelection
-                    record.applyStatus = .pending
-                    saveHistoryRecord(record)
-
-                    let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
-                    let rewriteResult = try await generateRewrite(
-                        request: LLMRewriteRequest(
-                            mode: .editSelection,
-                            sourceText: askContextText,
-                            spokenInstruction: transcribedText,
-                            personaPrompt: personaPrompt
-                        ),
-                        sessionID: sessionID,
-                        showsStreamingPreview: !shouldShowResultDialog
+                } else {
+                    // Legacy simple answer flow
+                    let answerResult = try await answerAskAnything(
+                        selectedText: askContextText,
+                        spokenInstruction: transcribedText,
+                        personaPrompt: personaPrompt,
+                        sessionID: sessionID
                     )
 
                     try ensureProcessingIsActive(sessionID)
-                    pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
+                    pipelineTiming.llmProcessingCompletedAt = answerResult.completedAt
                     record.pipelineTiming = pipelineTiming
                     logPipelineEvent("llm-processing-completed", for: record)
-                    record.selectionEditedText = rewriteResult.text
+                    record.mode = .askAnswer
+                    record.personaResultText = answerResult.text
                     record.processingStatus = .succeeded
                     record.applyStatus = .running
                     saveHistoryRecord(record)
@@ -1004,66 +1160,18 @@ final class WorkflowController {
                     try ensureProcessingIsActive(sessionID)
                     pipelineTiming.applyStartedAt = Date()
                     record.pipelineTiming = pipelineTiming
-                    let outcome: ApplyOutcome
-                    NetworkDebugLogger.logMessage(
-                        "[Apply Decision] mode=editSelection hasSelection=\(selectionSnapshot.hasSelection) " +
-                        "isEditable=\(selectionSnapshot.isEditable) hasRange=\(selectionSnapshot.selectedRange != nil) " +
-                        "showResultDialog=\(shouldShowResultDialog)"
-                    )
-                    if shouldShowResultDialog {
-                        await MainActor.run {
-                            self.lastDialogResultText = rewriteResult.text
-                            self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: rewriteResult.text)
-                        }
-                        outcome = .presentedInDialog
-                    } else {
-                        outcome = applyText(rewriteResult.text, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
+                    await MainActor.run {
+                        self.presentAskAnswer(
+                            question: transcribedText,
+                            selectedText: askContextText,
+                            answerMarkdown: answerResult.text
+                        )
                     }
                     pipelineTiming.applyCompletedAt = Date()
                     record.pipelineTiming = pipelineTiming
                     record.applyStatus = .succeeded
-                    record.applyMessage = outcome.message
+                    record.applyMessage = L("workflow.ask.answerPresented")
                 }
-            } else if recordingIntent == .askSelection {
-                record.processingStatus = .running
-                saveHistoryRecord(record)
-
-                pipelineTiming.llmProcessingStartedAt = Date()
-                record.pipelineTiming = pipelineTiming
-                saveHistoryRecord(record)
-                logPipelineEvent("llm-processing-started", for: record)
-
-                let answerResult = try await answerAskAnything(
-                    selectedText: askContextText,
-                    spokenInstruction: transcribedText,
-                    personaPrompt: personaPrompt,
-                    sessionID: sessionID
-                )
-
-                try ensureProcessingIsActive(sessionID)
-                pipelineTiming.llmProcessingCompletedAt = answerResult.completedAt
-                record.pipelineTiming = pipelineTiming
-                logPipelineEvent("llm-processing-completed", for: record)
-                record.mode = .askAnswer
-                record.personaResultText = answerResult.text
-                record.processingStatus = .succeeded
-                record.applyStatus = .running
-                saveHistoryRecord(record)
-
-                try ensureProcessingIsActive(sessionID)
-                pipelineTiming.applyStartedAt = Date()
-                record.pipelineTiming = pipelineTiming
-                await MainActor.run {
-                    self.presentAskAnswer(
-                        question: transcribedText,
-                        selectedText: askContextText,
-                        answerMarkdown: answerResult.text
-                    )
-                }
-                pipelineTiming.applyCompletedAt = Date()
-                record.pipelineTiming = pipelineTiming
-                record.applyStatus = .succeeded
-                record.applyMessage = L("workflow.ask.answerPresented")
             } else if let personaPrompt, !personaPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 record.mode = .personaRewrite
 
