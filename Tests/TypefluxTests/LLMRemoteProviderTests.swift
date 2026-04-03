@@ -94,7 +94,12 @@ final class LLMRemoteProviderTests: XCTestCase {
         XCTAssertEqual(LLMRemoteProvider.grok.defaultBaseURL, "https://api.x.ai/v1")
         XCTAssertEqual(
             LLMRemoteProvider.grok.suggestedModels,
-            ["grok-4-1-fast-reasoning", "grok-4", "grok-3", "grok-3-mini"]
+            [
+                "grok-4-1-fast-reasoning",
+                "grok-4-1-fast-non-reasoning",
+                "grok-4.20-0309-reasoning",
+                "grok-4.20-0309-non-reasoning",
+            ]
         )
 
         XCTAssertEqual(LLMRemoteProvider.xiaomi.apiStyle, .openAICompatible)
@@ -103,6 +108,46 @@ final class LLMRemoteProviderTests: XCTestCase {
             LLMRemoteProvider.xiaomi.suggestedModels,
             ["mimo-v2-pro", "mimo-v2-flash", "mimo-v2-omni"]
         )
+    }
+
+    func testTextLLMConfigurationFallsBackToMultimodalSTTSettingsWhenRemoteLLMIsIncomplete() {
+        let store = SettingsStore()
+        store.sttProvider = .multimodalLLM
+        store.multimodalLLMBaseURL = "https://api.example.com/v1"
+        store.multimodalLLMModel = "gpt-4o-audio-preview"
+        store.multimodalLLMAPIKey = "sk-multimodal"
+        store.llmProvider = .openAICompatible
+        store.llmRemoteProvider = .custom
+        store.setLLMBaseURL("", for: .custom)
+        store.setLLMModel("", for: .custom)
+        store.setLLMAPIKey("", for: .custom)
+
+        let config = store.textLLMConfiguration()
+
+        XCTAssertEqual(config.provider, .custom)
+        XCTAssertEqual(config.baseURL, "https://api.example.com/v1")
+        XCTAssertEqual(config.model, "gpt-4o-audio-preview")
+        XCTAssertEqual(config.apiKey, "sk-multimodal")
+    }
+
+    func testTextLLMConfigurationKeepsDedicatedRemoteLLMSettingsWhenComplete() {
+        let store = SettingsStore()
+        store.sttProvider = .multimodalLLM
+        store.multimodalLLMBaseURL = "https://api.example.com/v1"
+        store.multimodalLLMModel = "gpt-4o-audio-preview"
+        store.multimodalLLMAPIKey = "sk-multimodal"
+        store.llmProvider = .openAICompatible
+        store.llmRemoteProvider = .custom
+        store.setLLMBaseURL("https://llm.example.com/v1", for: .custom)
+        store.setLLMModel("text-model", for: .custom)
+        store.setLLMAPIKey("", for: .custom)
+
+        let config = store.textLLMConfiguration()
+
+        XCTAssertEqual(config.provider, .custom)
+        XCTAssertEqual(config.baseURL, "https://llm.example.com/v1")
+        XCTAssertEqual(config.model, "text-model")
+        XCTAssertEqual(config.apiKey, "")
     }
 
     private func clearLLMKeys() {

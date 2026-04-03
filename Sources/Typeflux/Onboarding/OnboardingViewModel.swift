@@ -86,7 +86,16 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     var canGoBack: Bool { currentStep != .language }
-    var isLastStep: Bool { currentStep == .shortcuts }
+    var isLastStep: Bool { currentStep == visibleSteps.last }
+    var visibleSteps: [Step] {
+        if sttProvider == .multimodalLLM {
+            return Step.allCases.filter { step in
+                step != .llmProvider && step != .llmConfig
+            }
+        }
+
+        return Step.allCases
+    }
     var isSkippable: Bool {
         switch currentStep {
         case .language, .sttConfig, .llmConfig, .permissions:
@@ -105,9 +114,10 @@ final class OnboardingViewModel: ObservableObject {
 
     func goBack() {
         guard canGoBack else { return }
+        let previousStep = adjacentStep(offset: -1) ?? .language
         stepDirection = -1
         withAnimation(.easeInOut(duration: 0.22)) {
-            currentStep = Step(rawValue: currentStep.rawValue - 1) ?? .language
+            currentStep = previousStep
         }
     }
 
@@ -116,9 +126,10 @@ final class OnboardingViewModel: ObservableObject {
         if isLastStep {
             complete()
         } else {
+            let nextStep = adjacentStep(offset: 1) ?? .shortcuts
             stepDirection = 1
             withAnimation(.easeInOut(duration: 0.22)) {
-                currentStep = Step(rawValue: currentStep.rawValue + 1) ?? .shortcuts
+                currentStep = nextStep
             }
         }
     }
@@ -127,9 +138,10 @@ final class OnboardingViewModel: ObservableObject {
         if isLastStep {
             complete()
         } else {
+            let nextStep = adjacentStep(offset: 1) ?? .shortcuts
             stepDirection = 1
             withAnimation(.easeInOut(duration: 0.22)) {
-                currentStep = Step(rawValue: currentStep.rawValue + 1) ?? .shortcuts
+                currentStep = nextStep
             }
         }
     }
@@ -224,5 +236,19 @@ final class OnboardingViewModel: ObservableObject {
     private func complete() {
         settingsStore.isOnboardingCompleted = true
         onComplete()
+    }
+
+    private func adjacentStep(offset: Int) -> Step? {
+        let steps = visibleSteps
+        guard let index = steps.firstIndex(of: currentStep) else {
+            if offset > 0 {
+                return steps.first(where: { $0.rawValue > currentStep.rawValue }) ?? steps.last
+            }
+            return steps.last(where: { $0.rawValue < currentStep.rawValue }) ?? steps.first
+        }
+
+        let nextIndex = index + offset
+        guard steps.indices.contains(nextIndex) else { return nil }
+        return steps[nextIndex]
     }
 }

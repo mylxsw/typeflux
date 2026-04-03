@@ -6,11 +6,12 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         tools: [LLMAgentTool],
         config: LLMCallConfig
     ) async throws -> AgentTurn {
+        let llmConfig = settingsStore.textLLMConfiguration()
         let connection = try LLMConnectionResolver.resolve(
-            provider: settingsStore.llmRemoteProvider,
-            baseURL: settingsStore.llmBaseURL,
-            model: settingsStore.llmModel,
-            apiKey: settingsStore.llmAPIKey
+            provider: llmConfig.provider,
+            baseURL: llmConfig.baseURL,
+            model: llmConfig.model,
+            apiKey: llmConfig.apiKey
         )
 
         return try await RequestRetry.perform(operationName: "LLM multi-turn complete") {

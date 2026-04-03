@@ -77,14 +77,14 @@ struct OnboardingView: View {
 
     private var stepIndicator: some View {
         HStack(spacing: 6) {
-            ForEach(OnboardingViewModel.Step.allCases, id: \.rawValue) { step in
+            ForEach(Array(viewModel.visibleSteps.enumerated()), id: \.element.rawValue) { index, step in
                 if step == viewModel.currentStep {
                     Capsule()
                         .fill(StudioTheme.accent)
                         .frame(width: 20, height: 6)
                 } else {
                     Circle()
-                        .fill(step.rawValue < viewModel.currentStep.rawValue
+                        .fill(index < (viewModel.visibleSteps.firstIndex(of: viewModel.currentStep) ?? 0)
                               ? StudioTheme.accent.opacity(0.45)
                               : StudioTheme.border.opacity(0.7))
                         .frame(width: 6, height: 6)
