@@ -10,6 +10,46 @@ struct StudioInteractiveButtonStyle: ButtonStyle {
     }
 }
 
+private struct StudioTooltipModifier: ViewModifier {
+    let text: String
+    var yOffset: CGFloat = 10
+
+    @State private var isPresented = false
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .top) {
+                if isPresented {
+                    Text(text)
+                        .font(.studioBody(StudioTheme.Typography.tooltip, weight: .semibold))
+                        .foregroundStyle(StudioTheme.Colors.white)
+                        .lineLimit(1)
+                        .padding(.horizontal, StudioTheme.Insets.tooltipHorizontal)
+                        .padding(.vertical, StudioTheme.Insets.tooltipVertical)
+                        .background(
+                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.tooltip, style: .continuous)
+                                .fill(StudioTheme.tooltipBackground)
+                        )
+                        .fixedSize()
+                        .offset(y: -yOffset)
+                        .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .bottom)))
+                        .allowsHitTesting(false)
+                }
+            }
+            .onHover { hovering in
+                withAnimation(.easeOut(duration: 0.12)) {
+                    isPresented = hovering
+                }
+            }
+    }
+}
+
+extension View {
+    func studioTooltip(_ text: String, yOffset: CGFloat = 10) -> some View {
+        modifier(StudioTooltipModifier(text: text, yOffset: yOffset))
+    }
+}
+
 private struct StudioButtonChromeModifier: ViewModifier {
     let variant: StudioButton.Variant
     let isDisabled: Bool
@@ -314,22 +354,24 @@ private struct StudioSidebarIconButton: View {
     let systemImage: String
     let accessibilityLabel: String
     let action: () -> Void
+    @State private var isHovered = false
 
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .medium))
-                .foregroundStyle(StudioTheme.textTertiary.opacity(0.9))
+                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
+                .foregroundStyle(StudioTheme.textSecondary)
                 .frame(width: StudioTheme.ControlSize.sidebarUtilityButton, height: StudioTheme.ControlSize.sidebarUtilityButton)
                 .background(
                     Circle()
-                        .fill(Color.clear)
+                        .fill(isHovered ? StudioTheme.sidebarSelection : Color.clear)
                 )
                 .contentShape(Circle())
         }
         .buttonStyle(StudioInteractiveButtonStyle())
         .accessibilityLabel(accessibilityLabel)
-        .help(accessibilityLabel)
+        .studioTooltip(accessibilityLabel, yOffset: 34)
+        .onHover { isHovered = $0 }
     }
 }
 
@@ -792,7 +834,7 @@ struct StudioHistoryRow: View {
 
     private func historyIconButton(systemImage: String, helpText: String, action: @escaping () -> Void) -> some View {
         StudioIconButton(systemImage: systemImage, action: action)
-            .help(helpText)
+            .studioTooltip(helpText, yOffset: 42)
     }
 
     @ViewBuilder
@@ -881,7 +923,7 @@ struct StudioHistoryRow: View {
 
                     if let copyAction {
                         StudioIconButton(systemImage: "doc.on.doc", frame: 24, action: copyAction)
-                            .help(L("history.action.copyTranscript"))
+                            .studioTooltip(L("history.action.copyTranscript"), yOffset: 34)
                     }
                 }
 
