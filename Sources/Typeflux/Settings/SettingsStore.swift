@@ -62,6 +62,13 @@ enum HistoryRetentionPolicy: String, CaseIterable, Identifiable {
 }
 
 final class SettingsStore {
+    struct TextLLMConfiguration {
+        let provider: LLMRemoteProvider
+        let baseURL: String
+        let model: String
+        let apiKey: String
+    }
+
     let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -394,6 +401,25 @@ final class SettingsStore {
         }
     }
 
+    func textLLMConfiguration() -> TextLLMConfiguration {
+        if shouldUseMultimodalTextLLMFallback {
+            let fallbackModel = multimodalLLMModel.trimmingCharacters(in: .whitespacesAndNewlines)
+            return TextLLMConfiguration(
+                provider: .custom,
+                baseURL: multimodalLLMBaseURL,
+                model: fallbackModel.isEmpty ? OpenAIAudioModelCatalog.multimodalModels[0] : fallbackModel,
+                apiKey: multimodalLLMAPIKey
+            )
+        }
+
+        return TextLLMConfiguration(
+            provider: llmRemoteProvider,
+            baseURL: llmBaseURL,
+            model: llmModel,
+            apiKey: llmAPIKey
+        )
+    }
+
     var useAppleSpeechFallback: Bool {
         get { defaults.object(forKey: "stt.appleSpeech.enabled") as? Bool ?? false }
         set { defaults.set(newValue, forKey: "stt.appleSpeech.enabled") }
@@ -562,5 +588,26 @@ final class SettingsStore {
 
     private func llmRemoteKey(_ provider: LLMRemoteProvider, suffix: String) -> String {
         "llm.remote.\(provider.rawValue).\(suffix)"
+    }
+
+    private var shouldUseMultimodalTextLLMFallback: Bool {
+        guard sttProvider == .multimodalLLM else { return false }
+        guard llmProvider == .openAICompatible else { return false }
+        guard !multimodalLLMBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return false
+        }
+
+        if llmBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return true
+        }
+
+        if llmModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return true
+        }
+
+        let providerRequiresAPIKey = llmRemoteProvider != .custom && llmRemoteProvider != .freeModel
+        return providerRequiresAPIKey
+            && llmAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !multimodalLLMAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }

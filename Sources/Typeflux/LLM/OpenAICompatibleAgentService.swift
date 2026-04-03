@@ -12,12 +12,12 @@ final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
             throw LLMAgentError.noToolsConfigured
         }
 
-        let remoteProvider = settingsStore.llmRemoteProvider
+        let llmConfig = settingsStore.textLLMConfiguration()
         let connection = try LLMConnectionResolver.resolve(
-            provider: remoteProvider,
-            baseURL: settingsStore.llmBaseURL,
-            model: settingsStore.llmModel,
-            apiKey: settingsStore.llmAPIKey
+            provider: llmConfig.provider,
+            baseURL: llmConfig.baseURL,
+            model: llmConfig.model,
+            apiKey: llmConfig.apiKey
         )
         let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: request.systemPrompt,

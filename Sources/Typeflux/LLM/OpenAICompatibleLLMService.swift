@@ -96,12 +96,12 @@ final class OpenAICompatibleLLMService: LLMService {
     }
 
     func complete(systemPrompt: String, userPrompt: String) async throws -> String {
-        let remoteProvider = settingsStore.llmRemoteProvider
+        let llmConfig = settingsStore.textLLMConfiguration()
         let connection = try LLMConnectionResolver.resolve(
-            provider: remoteProvider,
-            baseURL: settingsStore.llmBaseURL,
-            model: settingsStore.llmModel,
-            apiKey: settingsStore.llmAPIKey
+            provider: llmConfig.provider,
+            baseURL: llmConfig.baseURL,
+            model: llmConfig.model,
+            apiKey: llmConfig.apiKey
         )
         let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: systemPrompt,
@@ -122,12 +122,12 @@ final class OpenAICompatibleLLMService: LLMService {
     }
 
     func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
-        let remoteProvider = settingsStore.llmRemoteProvider
+        let llmConfig = settingsStore.textLLMConfiguration()
         let connection = try LLMConnectionResolver.resolve(
-            provider: remoteProvider,
-            baseURL: settingsStore.llmBaseURL,
-            model: settingsStore.llmModel,
-            apiKey: settingsStore.llmAPIKey
+            provider: llmConfig.provider,
+            baseURL: llmConfig.baseURL,
+            model: llmConfig.model,
+            apiKey: llmConfig.apiKey
         )
         let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: systemPrompt,
@@ -151,12 +151,12 @@ final class OpenAICompatibleLLMService: LLMService {
         request rewriteRequest: LLMRewriteRequest,
         continuation: AsyncThrowingStream<String, Error>.Continuation
     ) async throws -> String {
-        let remoteProvider = settingsStore.llmRemoteProvider
+        let llmConfig = settingsStore.textLLMConfiguration()
         let connection = try LLMConnectionResolver.resolve(
-            provider: remoteProvider,
-            baseURL: settingsStore.llmBaseURL,
-            model: settingsStore.llmModel,
-            apiKey: settingsStore.llmAPIKey
+            provider: llmConfig.provider,
+            baseURL: llmConfig.baseURL,
+            model: llmConfig.model,
+            apiKey: llmConfig.apiKey
         )
 
         let prompts = PromptCatalog.rewritePrompts(for: rewriteRequest)
