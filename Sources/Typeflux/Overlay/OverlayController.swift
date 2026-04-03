@@ -82,6 +82,8 @@ final class OverlayController {
             DispatchQueue.main.async { [weak self] in self?.show(hintText: hintText) }
             return
         }
+        dismissWorkItem?.cancel()
+        dismissWorkItem = nil
         ensureWindow()
         model.presentation = .recordingHold
         model.statusText = L("overlay.recording.listening")
@@ -124,6 +126,8 @@ final class OverlayController {
             DispatchQueue.main.async { [weak self] in self?.showLockedRecording(hintText: hintText) }
             return
         }
+        dismissWorkItem?.cancel()
+        dismissWorkItem = nil
         ensureWindow()
         model.presentation = .recordingLocked
         model.recordingHintText = hintText ?? ""
@@ -155,6 +159,8 @@ final class OverlayController {
             DispatchQueue.main.async { [weak self] in self?.showProcessing() }
             return
         }
+        dismissWorkItem?.cancel()
+        dismissWorkItem = nil
         ensureWindow()
         model.presentation = .processing
         model.statusText = L("overlay.processing.thinking")
