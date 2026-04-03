@@ -10,35 +10,144 @@ struct StudioInteractiveButtonStyle: ButtonStyle {
     }
 }
 
+// MARK: - Floating Tooltip Panel
+
+private final class TooltipFloatingPanel: NSPanel {
+    init() {
+        super.init(
+            contentRect: .zero,
+            styleMask: [.nonactivatingPanel, .borderless],
+            backing: .buffered,
+            defer: false
+        )
+        isFloatingPanel = true
+        // Stay above the statusBar-level overlay panel
+        level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 2)
+        backgroundColor = .clear
+        hasShadow = false
+        isOpaque = false
+        ignoresMouseEvents = true
+        collectionBehavior = [.canJoinAllSpaces, .transient, .fullScreenAuxiliary]
+        animationBehavior = .none
+    }
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+}
+
+@MainActor
+private final class TooltipWindowController {
+    static let shared = TooltipWindowController()
+
+    private let panel = TooltipFloatingPanel()
+    private var hostingView: NSHostingView<AnyView>?
+
+    func show(text: String, screenFrame: NSRect) {
+        let tooltipView = AnyView(
+            Text(text)
+                .font(.studioBody(StudioTheme.Typography.tooltip, weight: .semibold))
+                .foregroundStyle(StudioTheme.Colors.white)
+                .lineLimit(1)
+                .padding(.horizontal, StudioTheme.Insets.tooltipHorizontal)
+                .padding(.vertical, StudioTheme.Insets.tooltipVertical)
+                .background(
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.tooltip, style: .continuous)
+                        .fill(StudioTheme.tooltipBackground)
+                )
+                .fixedSize()
+        )
+
+        if let existing = hostingView {
+            existing.rootView = tooltipView
+        } else {
+            let hosting = NSHostingView(rootView: tooltipView)
+            panel.contentView = hosting
+            hostingView = hosting
+        }
+
+        guard let hosting = hostingView else { return }
+        let size = hosting.fittingSize
+
+        // Position above the anchor (screen coordinates, macOS y-up)
+        var origin = NSPoint(
+            x: screenFrame.midX - size.width / 2,
+            y: screenFrame.maxY + 4
+        )
+
+        // Clamp to the screen that contains the mouse
+        let screen = NSScreen.screens.first(where: {
+            NSMouseInRect(NSEvent.mouseLocation, $0.frame, false)
+        }) ?? NSScreen.main
+        if let bounds = screen?.frame {
+            origin.x = max(bounds.minX + 4, min(origin.x, bounds.maxX - size.width - 4))
+            if origin.y + size.height > bounds.maxY {
+                // Flip below when there is no room above
+                origin.y = screenFrame.minY - size.height - 4
+            }
+        }
+
+        panel.setFrame(NSRect(origin: origin, size: size), display: false)
+        panel.orderFront(nil)
+    }
+
+    func hide() {
+        panel.orderOut(nil)
+    }
+}
+
+// Invisible NSView that reports its screen-space frame via a callback.
+private final class ScreenAnchorNSView: NSView {
+    var onFrame: ((NSRect) -> Void)?
+
+    override func layout() {
+        super.layout()
+        reportFrame()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        reportFrame()
+    }
+
+    private func reportFrame() {
+        guard let window else { return }
+        let frameInWindow = convert(bounds, to: nil)
+        let screenFrame = window.convertToScreen(frameInWindow)
+        onFrame?(screenFrame)
+    }
+}
+
+private struct ScreenFrameAnchor: NSViewRepresentable {
+    let onFrame: (NSRect) -> Void
+
+    func makeNSView(context: Context) -> ScreenAnchorNSView {
+        let view = ScreenAnchorNSView()
+        view.onFrame = onFrame
+        return view
+    }
+
+    func updateNSView(_ nsView: ScreenAnchorNSView, context: Context) {
+        nsView.onFrame = onFrame
+    }
+}
+
 private struct StudioTooltipModifier: ViewModifier {
     let text: String
-    var yOffset: CGFloat = 10
+    var yOffset: CGFloat = 10  // kept for API compatibility
 
-    @State private var isPresented = false
+    @State private var screenFrame: NSRect = .zero
 
     func body(content: Content) -> some View {
         content
-            .overlay(alignment: .top) {
-                if isPresented {
-                    Text(text)
-                        .font(.studioBody(StudioTheme.Typography.tooltip, weight: .semibold))
-                        .foregroundStyle(StudioTheme.Colors.white)
-                        .lineLimit(1)
-                        .padding(.horizontal, StudioTheme.Insets.tooltipHorizontal)
-                        .padding(.vertical, StudioTheme.Insets.tooltipVertical)
-                        .background(
-                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.tooltip, style: .continuous)
-                                .fill(StudioTheme.tooltipBackground)
-                        )
-                        .fixedSize()
-                        .offset(y: -yOffset)
-                        .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .bottom)))
-                        .allowsHitTesting(false)
+            .background(
+                ScreenFrameAnchor { frame in
+                    screenFrame = frame
                 }
-            }
+            )
             .onHover { hovering in
-                withAnimation(.easeOut(duration: 0.12)) {
-                    isPresented = hovering
+                if hovering {
+                    TooltipWindowController.shared.show(text: text, screenFrame: screenFrame)
+                } else {
+                    TooltipWindowController.shared.hide()
                 }
             }
     }
