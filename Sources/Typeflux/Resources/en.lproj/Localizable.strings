@@ -615,8 +615,8 @@
 "agent.mcp.stdio.command" = "Command";
 "agent.mcp.stdio.args" = "Arguments";
 "agent.mcp.http.url" = "Server URL";
-"agent.mcp.http.apiKey" = "API Key";
-"agent.mcp.http.apiKeyPlaceholder" = "Optional";
+"agent.mcp.http.headers" = "Request Headers";
+"agent.mcp.http.headersHint" = "One header per line, format: KEY=VALUE";
 "agent.mcp.testConnection" = "Test Connection";
 "agent.mcp.testing" = "Testing...";
 "agent.mcp.testSuccess" = "Connected — %d tools available";

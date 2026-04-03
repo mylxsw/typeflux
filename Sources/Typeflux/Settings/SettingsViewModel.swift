@@ -102,7 +102,7 @@ final class StudioViewModel: ObservableObject {
     @Published var mcpDraftStdioArgs: String = ""
     @Published var mcpDraftStdioEnv: String = ""
     @Published var mcpDraftHTTPURL: String = ""
-    @Published var mcpDraftHTTPAPIKey: String = ""
+    @Published var mcpDraftHTTPHeaders: String = ""
     @Published var mcpDraftEnabled: Bool = true
     @Published var mcpDraftAutoConnect: Bool = false
     @Published var mcpDraftEditingServerID: UUID? = nil
@@ -841,7 +841,7 @@ final class StudioViewModel: ObservableObject {
         mcpDraftStdioArgs = ""
         mcpDraftStdioEnv = ""
         mcpDraftHTTPURL = ""
-        mcpDraftHTTPAPIKey = ""
+        mcpDraftHTTPHeaders = ""
         mcpDraftEnabled = true
         mcpDraftAutoConnect = false
         mcpConnectionTestState = .idle
@@ -860,14 +860,14 @@ final class StudioViewModel: ObservableObject {
             mcpDraftStdioArgs = config.args.joined(separator: " ")
             mcpDraftStdioEnv = config.env.map { "\($0.key)=\($0.value)" }.joined(separator: "\n")
             mcpDraftHTTPURL = ""
-            mcpDraftHTTPAPIKey = ""
+            mcpDraftHTTPHeaders = ""
         case .http(let config):
             mcpDraftTransportType = .http
             mcpDraftStdioCommand = ""
             mcpDraftStdioArgs = ""
             mcpDraftStdioEnv = ""
             mcpDraftHTTPURL = config.url
-            mcpDraftHTTPAPIKey = config.apiKey ?? ""
+            mcpDraftHTTPHeaders = config.headers.map { "\($0.key)=\($0.value)" }.joined(separator: "\n")
         }
     }
 
@@ -882,9 +882,10 @@ final class StudioViewModel: ObservableObject {
                 env: envDict
             ))
         case .http:
+            let headersDict = parseMCPEnvString(mcpDraftHTTPHeaders)
             transport = .http(MCPHTTPTransportConfig(
                 url: mcpDraftHTTPURL.trimmingCharacters(in: .whitespacesAndNewlines),
-                apiKey: mcpDraftHTTPAPIKey.isEmpty ? nil : mcpDraftHTTPAPIKey
+                headers: headersDict
             ))
         }
 
@@ -935,9 +936,10 @@ final class StudioViewModel: ObservableObject {
                 env: envDict
             ))
         case .http:
+            let headersDict = parseMCPEnvString(mcpDraftHTTPHeaders)
             transport = .http(MCPHTTPTransportConfig(
                 url: mcpDraftHTTPURL.trimmingCharacters(in: .whitespacesAndNewlines),
-                apiKey: mcpDraftHTTPAPIKey.isEmpty ? nil : mcpDraftHTTPAPIKey
+                headers: headersDict
             ))
         }
         testMCPConnectionWithConfig(transport)
@@ -961,7 +963,7 @@ final class StudioViewModel: ObservableObject {
                         }
                         return
                     }
-                    client = HTTPMCPClient(config: MCPHTTPConfig(url: url, apiKey: config.apiKey))
+                    client = HTTPMCPClient(config: MCPHTTPConfig(url: url, headers: config.headers))
                 }
                 try await client.connect()
                 let tools = try await client.listTools()

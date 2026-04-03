@@ -2,11 +2,11 @@ import Foundation
 
 struct MCPHTTPConfig: Sendable {
     let url: URL
-    let apiKey: String?
+    let headers: [String: String]
 
-    init(url: URL, apiKey: String? = nil) {
+    init(url: URL, headers: [String: String] = [:]) {
         self.url = url
-        self.apiKey = apiKey
+        self.headers = headers
     }
 }
 
@@ -87,8 +87,8 @@ actor HTTPMCPClient: MCPClient {
         var request = URLRequest(url: config.url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let apiKey = config.apiKey {
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        for (key, value) in config.headers {
+            request.setValue(value, forHTTPHeaderField: key)
         }
         request.httpBody = try JSONEncoder().encode(message)
 

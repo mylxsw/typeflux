@@ -64,7 +64,7 @@ actor MCPRegistry {
             ))
         case .http(let httpConfig):
             let url = URL(string: httpConfig.url) ?? URL(string: "http://localhost")!
-            return HTTPMCPClient(config: MCPHTTPConfig(url: url, apiKey: httpConfig.apiKey))
+            return HTTPMCPClient(config: MCPHTTPConfig(url: url, headers: httpConfig.headers))
         }
     }
 

@@ -1318,7 +1318,7 @@ struct StudioView: View {
 
                 StudioSegmentedPicker(
                     options: [
-                        (label: "stdio", value: MCPTransportType.stdio),
+                        (label: "STDIO", value: MCPTransportType.stdio),
                         (label: "HTTP/SSE", value: MCPTransportType.http)
                     ],
                     selection: $viewModel.mcpDraftTransportType
@@ -1336,40 +1336,21 @@ struct StudioView: View {
                     placeholder: "--port 3000 --verbose",
                     text: $viewModel.mcpDraftStdioArgs
                 )
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    Text(L("agent.mcp.stdio.env"))
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                    TextEditor(text: $viewModel.mcpDraftStdioEnv)
-                        .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .scrollContentBackground(.hidden)
-                        .frame(minHeight: 60, maxHeight: 100)
-                        .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
-                        .padding(.vertical, StudioTheme.Insets.textFieldVertical)
-                        .background(
-                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                                .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                                .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
-                        )
-                    Text(L("agent.mcp.stdio.envHint"))
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
+                mcpKeyValueEditor(
+                    label: L("agent.mcp.stdio.env"),
+                    hint: L("agent.mcp.stdio.envHint"),
+                    text: $viewModel.mcpDraftStdioEnv
+                )
             } else {
                 StudioTextInputCard(
                     label: L("agent.mcp.http.url"),
                     placeholder: "https://mcp.example.com/sse",
                     text: $viewModel.mcpDraftHTTPURL
                 )
-                StudioTextInputCard(
-                    label: L("agent.mcp.http.apiKey"),
-                    placeholder: L("agent.mcp.http.apiKeyPlaceholder"),
-                    text: $viewModel.mcpDraftHTTPAPIKey,
-                    secure: true
+                mcpKeyValueEditor(
+                    label: L("agent.mcp.http.headers"),
+                    hint: L("agent.mcp.http.headersHint"),
+                    text: $viewModel.mcpDraftHTTPHeaders
                 )
             }
 
@@ -1398,10 +1379,10 @@ struct StudioView: View {
             Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
             HStack {
-                Spacer()
                 StudioButton(title: L("common.cancel"), systemImage: nil, variant: .secondary) {
                     isMCPServerDialogPresented = false
                 }
+                Spacer()
                 StudioButton(
                     title: viewModel.mcpConnectionTestState == .testing
                         ? L("agent.mcp.testing") : L("agent.mcp.testConnection"),
@@ -1423,8 +1404,34 @@ struct StudioView: View {
                 }
             }
         }
-        .padding(StudioTheme.Spacing.large)
-        .frame(minWidth: 480)
+        .padding(32)
+        .frame(width: 520)
+    }
+
+    private func mcpKeyValueEditor(label: String, hint: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            Text(label)
+                .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                .foregroundStyle(StudioTheme.textSecondary)
+            TextEditor(text: text)
+                .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: 60, maxHeight: 100)
+                .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
+                .padding(.vertical, StudioTheme.Insets.textFieldVertical)
+                .background(
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                        .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                        .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
+                )
+            Text(hint)
+                .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
+                .foregroundStyle(StudioTheme.textTertiary)
+        }
     }
 
     @ViewBuilder
@@ -1495,8 +1502,8 @@ struct StudioView: View {
 
     private func mcpTransportLabel(for server: MCPServerConfig) -> String {
         switch server.transport {
-        case .stdio: return "stdio"
-        case .http: return "HTTP"
+        case .stdio: return "STDIO"
+        case .http: return "HTTP/SSE"
         }
     }
 
