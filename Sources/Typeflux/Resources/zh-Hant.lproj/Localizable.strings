@@ -461,6 +461,8 @@
 "settings.models.card.qwen.summary" = "透過 DashScope 相容端點使用阿里雲 Qwen 模型。";
 "settings.models.card.zhipu.summary" = "透過 BigModel 相容端點使用智譜 GLM 模型。";
 "settings.models.card.minimax.summary" = "透過 MiniMax 的 OpenAI 相容端點使用其模型，並提供國際版與中國版 URL 選擇。";
+"settings.models.card.grok.summary" = "透過 xAI 的 OpenAI 相容端點使用 Grok 模型。";
+"settings.models.card.xiaomi.summary" = "透過小米 MiMo 的 OpenAI 相容端點使用 mimo-v2 系列模型。";
 "settings.models.badge.free" = "免費";
 "settings.models.freeSTT.hint" = "免費語音模型由程式碼設定管理，使用者只能從已設定的模型清單中選擇。";
 "settings.models.freeSTT.noSources" = "目前還沒有設定任何免費語音模型來源。請在 Sources/Typeflux/STT/FreeModels 下新增實作。";

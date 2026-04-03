@@ -1375,7 +1375,8 @@ final class StudioViewModel: ObservableObject {
 
     func applyModelConfiguration(shouldShowToast: Bool = true) {
         switch focusedModelProvider {
-        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+            .qwen, .zhipu, .minimax, .grok, .xiaomi:
             let remoteProvider = LLMRemoteProvider.from(providerID: focusedModelProvider) ?? llmRemoteProvider
             settingsStore.setLLMBaseURL(llmBaseURL, for: remoteProvider)
             settingsStore.setLLMModel(llmModel, for: remoteProvider)
@@ -1438,7 +1439,8 @@ final class StudioViewModel: ObservableObject {
                 switch capturedProvider {
                 case .freeSTT:
                     return
-                case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
+                case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
+                    .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi:
                     let connection = try LLMConnectionResolver.resolve(
                         provider: capturedRemoteProvider,
                         baseURL: capturedBaseURL,

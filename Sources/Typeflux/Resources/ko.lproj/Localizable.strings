@@ -461,6 +461,8 @@
 "settings.models.card.qwen.summary" = "Alibaba Cloud Qwen은 DashScope 호환 엔드포인트를 통해 모델링합니다.";
 "settings.models.card.zhipu.summary" = "BigModel 호환 엔드포인트를 통한 Zhipu GLM 모델.";
 "settings.models.card.minimax.summary" = "MiniMax는 별도의 국제 및 중국 API URL을 사용하여 OpenAI 호환 엔드포인트를 통해 모델을 만듭니다.";
+"settings.models.card.grok.summary" = "xAI의 OpenAI 호환 엔드포인트를 통한 Grok 모델.";
+"settings.models.card.xiaomi.summary" = "Xiaomi의 OpenAI 호환 엔드포인트를 통한 MiMo mimo-v2 모델.";
 "settings.models.badge.free" = "무료";
 "settings.models.freeSTT.hint" = "무료 모델은 코드로 관리됩니다. 사용자는 구성된 모델 목록에서만 선택할 수 있습니다.";
 "settings.models.freeSTT.noSources" = "아직 구성된 무료 모델 소스가 없습니다. Sources/Typeflux/STT/FreeModels 아래에 구현을 추가합니다.";

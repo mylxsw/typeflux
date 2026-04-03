@@ -22,6 +22,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
     case qwen
     case zhipu
     case minimax
+    case grok
+    case xiaomi
     case custom
 
     var displayName: String {
@@ -48,6 +50,10 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return "Zhipu"
         case .minimax:
             return "MiniMax"
+        case .grok:
+            return "Grok"
+        case .xiaomi:
+            return "Xiaomi MiMo"
         }
     }
 
@@ -57,7 +63,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return .anthropic
         case .gemini:
             return .gemini
-        case .freeModel, .custom, .openRouter, .openAI, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
+        case .freeModel, .custom, .openRouter, .openAI, .deepSeek, .kimi, .qwen, .zhipu, .minimax,
+            .grok, .xiaomi:
             return .openAICompatible
         }
     }
@@ -86,6 +93,10 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return "https://open.bigmodel.cn/api/paas/v4"
         case .minimax:
             return "https://api.minimax.io/v1"
+        case .grok:
+            return "https://api.x.ai/v1"
+        case .xiaomi:
+            return "https://api.xiaomimimo.com/v1"
         }
     }
 
@@ -202,6 +213,19 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
                 "MiniMax-M2.7",
                 "MiniMax-M2.7-highspeed",
             ]
+        case .grok:
+            return [
+                "grok-4-1-fast-reasoning",
+                "grok-4",
+                "grok-3",
+                "grok-3-mini",
+            ]
+        case .xiaomi:
+            return [
+                "mimo-v2-pro",
+                "mimo-v2-flash",
+                "mimo-v2-omni",
+            ]
         }
     }
 
@@ -213,7 +237,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
         switch self {
         case .openAI, .gemini:
             return true
-        case .freeModel, .custom, .openRouter, .anthropic, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
+        case .freeModel, .custom, .openRouter, .anthropic, .deepSeek, .kimi, .qwen, .zhipu, .minimax,
+            .grok, .xiaomi:
             return false
         }
     }
@@ -242,6 +267,10 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return .zhipu
         case .minimax:
             return .minimax
+        case .grok:
+            return .grok
+        case .xiaomi:
+            return .xiaomi
         }
     }
 
@@ -269,6 +298,10 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return .zhipu
         case .minimax:
             return .minimax
+        case .grok:
+            return .grok
+        case .xiaomi:
+            return .xiaomi
         default:
             return nil
         }

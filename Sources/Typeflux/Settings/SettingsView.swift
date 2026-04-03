@@ -3142,8 +3142,8 @@ struct StudioView: View {
                 )
                 .toggleStyle(.switch)
 
-            case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen,
-                .zhipu, .minimax:
+            case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
+                .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi:
                 llmRemoteProviderForm
 
             case .multimodalLLM:
@@ -3469,6 +3469,10 @@ struct StudioView: View {
             return "zhipu-color"
         case .minimax:
             return "minimax-color"
+        case .grok:
+            return "grok"
+        case .xiaomi:
+            return "xiaomimimo"
         case .aliCloud:
             return "bailian-color"
         case .doubaoRealtime:
@@ -3584,7 +3588,7 @@ struct StudioView: View {
             return !viewModel.llmModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && FreeLLMModelRegistry.resolve(modelName: viewModel.llmModel) != nil
         case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
-            .minimax:
+            .minimax, .grok, .xiaomi:
             return !viewModel.llmAPIKey.isEmpty && !viewModel.llmBaseURL.isEmpty
                 && !viewModel.llmModel.isEmpty
         case .multimodalLLM:
@@ -3621,8 +3625,8 @@ struct StudioView: View {
                 suggestedModel: viewModel.ollamaModel.isEmpty ? "qwen2.5:7b" : viewModel.ollamaModel
             )
             viewModel.prepareOllamaModel()
-        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
-            .minimax:
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+            .qwen, .zhipu, .minimax, .grok, .xiaomi:
             if let provider = focusedLLMRemoteProvider {
                 viewModel.applyModelConfiguration(shouldShowToast: false)
                 viewModel.setLLMRemoteProvider(provider)
@@ -3676,6 +3680,10 @@ struct StudioView: View {
             return "dot.scope"
         case .minimax:
             return "sparkles"
+        case .grok:
+            return "bolt.circle"
+        case .xiaomi:
+            return "circle.grid.cross"
         case .multimodalLLM:
             return "brain.filled.head.profile"
         case .aliCloud:
@@ -3713,8 +3721,8 @@ struct StudioView: View {
             return L("settings.models.overview.whisper")
         case .ollama:
             return L("settings.models.overview.ollama")
-        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
-            .minimax:
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+            .qwen, .zhipu, .minimax, .grok, .xiaomi:
             return L("settings.models.overview.remoteProvider", activeLLMRemoteProvider.displayName)
         case .multimodalLLM:
             return L("settings.models.overview.multimodal")
@@ -3737,8 +3745,8 @@ struct StudioView: View {
             return STTProvider.whisperAPI.displayName
         case .ollama:
             return LLMProvider.ollama.displayName
-        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
-            .minimax:
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+            .qwen, .zhipu, .minimax, .grok, .xiaomi:
             return activeLLMRemoteProvider.displayName
         case .multimodalLLM:
             return STTProvider.multimodalLLM.displayName
@@ -3753,8 +3761,9 @@ struct StudioView: View {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
             return L("settings.models.mode.local")
-        case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-            .qwen, .zhipu, .minimax, .multimodalLLM, .aliCloud, .doubaoRealtime:
+        case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
+            .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi,
+            .multimodalLLM, .aliCloud, .doubaoRealtime:
             return L("settings.models.mode.remote")
         }
     }
@@ -3763,8 +3772,9 @@ struct StudioView: View {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
             return StudioTheme.success
-        case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-            .qwen, .zhipu, .minimax, .multimodalLLM, .aliCloud, .doubaoRealtime:
+        case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
+            .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi,
+            .multimodalLLM, .aliCloud, .doubaoRealtime:
             return StudioTheme.accent
         }
     }
@@ -3773,8 +3783,9 @@ struct StudioView: View {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
             return StudioTheme.success.opacity(0.12)
-        case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-            .qwen, .zhipu, .minimax, .multimodalLLM, .aliCloud, .doubaoRealtime:
+        case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
+            .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi,
+            .multimodalLLM, .aliCloud, .doubaoRealtime:
             return StudioTheme.accentSoft
         }
     }
@@ -3803,8 +3814,8 @@ struct StudioView: View {
                 ? OpenAIAudioModelCatalog.whisperModels[0] : viewModel.whisperModel
         case .ollama:
             return viewModel.ollamaModel.isEmpty ? "qwen2.5:7b" : viewModel.ollamaModel
-        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
-            .minimax:
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+            .qwen, .zhipu, .minimax, .grok, .xiaomi:
             return viewModel.llmModel.isEmpty
                 ? activeLLMRemoteProvider.defaultModel : viewModel.llmModel
         case .multimodalLLM:
@@ -3834,8 +3845,8 @@ struct StudioView: View {
             return STTProvider.whisperAPI.displayName
         case .ollama:
             return LLMProvider.ollama.displayName
-        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
-            .minimax:
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+            .qwen, .zhipu, .minimax, .grok, .xiaomi:
             return focusedLLMRemoteProvider?.displayName ?? LLMProvider.openAICompatible.displayName
         case .multimodalLLM:
             return STTProvider.multimodalLLM.displayName
@@ -3858,8 +3869,8 @@ struct StudioView: View {
             return L("settings.models.focused.whisper")
         case .ollama:
             return L("settings.models.focused.ollama")
-        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
-            .minimax:
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+            .qwen, .zhipu, .minimax, .grok, .xiaomi:
             return L(
                 "settings.models.focused.remoteProvider",
                 focusedLLMRemoteProvider?.displayName ?? LLMProvider.openAICompatible.displayName)
@@ -3890,8 +3901,8 @@ struct StudioView: View {
             return L("settings.models.routing.whisper")
         case .ollama:
             return L("settings.models.routing.ollama")
-        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
-            .minimax:
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
+            .qwen, .zhipu, .minimax, .grok, .xiaomi:
             return L("settings.models.routing.remoteProvider", activeLLMRemoteProvider.displayName)
         case .multimodalLLM:
             return L("settings.models.routing.multimodal")

@@ -461,6 +461,8 @@
 "settings.models.card.qwen.summary" = "DashScope 互換エンドポイントを介した Alibaba Cloud Qwen モデル。";
 "settings.models.card.zhipu.summary" = "Zhipu GLM は、BigModel 互換エンドポイントを介してモデル化します。";
 "settings.models.card.minimax.summary" = "MiniMax は、国際および中国の API URL を使用して、OpenAI 互換エンドポイントを介してモデル化します。";
+"settings.models.card.grok.summary" = "xAI の OpenAI 互換エンドポイント経由で Grok モデルを使用します。";
+"settings.models.card.xiaomi.summary" = "Xiaomi の OpenAI 互換エンドポイント経由で MiMo mimo-v2 モデルを使用します。";
 "settings.models.badge.free" = "無料";
 "settings.models.freeSTT.hint" = "言論の自由モデルはコードで管理されます。ユーザーは、構成されたモデルのリストからのみ選択できます。";
 "settings.models.freeSTT.noSources" = "フリースピーチモデルソースがまだ設定されていません。 Sources/Typeflux/STT/FreeModels に実装を追加します。";
