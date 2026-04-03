@@ -66,7 +66,7 @@ final class WhisperKitTranscriber: Transcriber {
     /// - Parameter onProgress: Called with (0…1 progress, status message).
     func prepare(onProgress: ((Double, String) -> Void)? = nil) async throws {
         guard pipeline == nil else { return }
-        onProgress?(0.1, "Initialising WhisperKit model \(modelName)…")
+        onProgress?(0.1, L("localSTT.prepare.whisperInitializing", modelName))
         let pipe = try await WhisperKit(WhisperKitConfig(
             model: modelName,
             downloadBase: downloadBase,
@@ -74,7 +74,7 @@ final class WhisperKitTranscriber: Transcriber {
             verbose: false
         ))
         pipeline = pipe
-        onProgress?(1.0, "WhisperKit model \(modelName) is ready.")
+        onProgress?(1.0, L("localSTT.prepare.whisperReady", modelName))
     }
 
     // MARK: - Private

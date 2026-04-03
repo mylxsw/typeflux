@@ -1731,14 +1731,14 @@ final class StudioViewModel: ObservableObject {
             isLocalSTTPrepared = true
             localSTTPreparedSource = prepared.sourceDisplayName
             localSTTStoragePath = prepared.storagePath
-            localSTTStatus = "\(localSTTModel.displayName) is ready."
-            localSTTPreparationDetail = "Native local speech runtime is ready."
+            localSTTStatus = L("settings.models.localSTT.readyNamed", localSTTModel.displayName)
+            localSTTPreparationDetail = L("settings.models.localSTT.downloadComplete")
             localSTTPreparationProgress = 1
         } else {
             isLocalSTTPrepared = false
-            localSTTPreparedSource = "Automatic"
-            localSTTStatus = "Local speech model has not been prepared yet."
-            localSTTPreparationDetail = "The selected local speech model will be activated automatically when needed."
+            localSTTPreparedSource = L("common.automatic")
+            localSTTStatus = L("settings.models.localSTT.notPrepared")
+            localSTTPreparationDetail = L("settings.models.localSTT.autoPrepareHint")
             localSTTPreparationProgress = 0
         }
     }

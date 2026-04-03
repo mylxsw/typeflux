@@ -201,6 +201,16 @@
 "localSTT.qwen3ASR.summary" = "Larger multilingual ASR model with stronger context understanding and better long-form recognition quality.";
 "localSTT.qwen3ASR.parameterValue" = "0.6B";
 "localSTT.qwen3ASR.sizeValue" = "1.6 GB";
+"localSTT.prepare.runtimePreparing" = "Preparing native local speech runtime...";
+"localSTT.prepare.cleaningLegacyRuntime" = "Cleaning legacy Python runtime...";
+"localSTT.prepare.runtimeReady" = "%@ is ready in the native runtime.";
+"localSTT.prepare.whisperDownloading" = "Downloading WhisperKit model %@...";
+"localSTT.prepare.whisperInitializing" = "Initialising WhisperKit model %@...";
+"localSTT.prepare.whisperReady" = "WhisperKit model %@ is ready.";
+"localSTT.error.notPrepared" = "Local STT model is not ready. Prepare it in Settings first.";
+"localSTT.error.runtimeUnavailable" = "Native local speech inference is not yet available for %@. Please use a different STT provider.";
+"localSTT.error.preparedPathUnavailable" = "Local STT model setup finished, but the prepared model path could not be verified.";
+"localSTT.error.whisperModelMissing" = "WhisperKit model download finished, but no usable CoreML model files were found.";
 
 "modelDomain.stt.title" = "Voice Transcription";
 "modelDomain.stt.subtitle" = "Speech to text";

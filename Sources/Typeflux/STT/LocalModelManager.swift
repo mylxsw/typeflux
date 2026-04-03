@@ -65,7 +65,7 @@ final class LocalModelManager {
         var storagePath = downloadBasePath
 
         onUpdate?(LocalSTTPreparationUpdate(
-            message: "Cleaning legacy Python runtime...",
+            message: L("localSTT.prepare.cleaningLegacyRuntime"),
             progress: 0.05,
             storagePath: storagePath,
             source: nil
@@ -84,14 +84,22 @@ final class LocalModelManager {
                 onUpdate: onUpdate
             )
         case .senseVoiceSmall, .qwen3ASR:
-            // Native runtime not yet available; record as prepared so the UI
-            // can show the "not yet available" error rather than looping on auto-setup.
             onUpdate?(LocalSTTPreparationUpdate(
-                message: "Preparing native local speech runtime...",
+                message: L("localSTT.prepare.runtimePreparing"),
                 progress: 0.9,
                 storagePath: storagePath,
                 source: configuration.downloadSource.displayName
             ))
+            throw NSError(
+                domain: "LocalModelManager",
+                code: 4,
+                userInfo: [
+                    NSLocalizedDescriptionKey: L(
+                        "localSTT.error.runtimeUnavailable",
+                        configuration.model.displayName
+                    )
+                ]
+            )
         }
 
         // Create the storagePath directory so preparedModelInfo's fileExists check passes.
@@ -110,7 +118,7 @@ final class LocalModelManager {
         try savePreparedRecord(record, for: configuration.model)
 
         onUpdate?(LocalSTTPreparationUpdate(
-            message: "\(configuration.model.displayName) is ready in the native runtime.",
+            message: L("localSTT.prepare.runtimeReady", configuration.model.displayName),
             progress: 1,
             storagePath: storagePath,
             source: configuration.downloadSource.displayName
@@ -128,7 +136,7 @@ final class LocalModelManager {
             : identifier
 
         onUpdate?(LocalSTTPreparationUpdate(
-            message: "Downloading WhisperKit model \(modelName)…",
+            message: L("localSTT.prepare.whisperDownloading", modelName),
             progress: 0.2,
             storagePath: downloadBasePath,
             source: configuration.downloadSource.displayName
@@ -155,7 +163,7 @@ final class LocalModelManager {
             throw NSError(
                 domain: "LocalModelManager",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "WhisperKit model download finished, but no usable CoreML model files were found."]
+                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.whisperModelMissing")]
             )
         }
 
@@ -246,7 +254,7 @@ final class LocalModelManager {
         case .whisperLocal:
             return isUsableWhisperKitModelFolder(storagePath)
         case .senseVoiceSmall, .qwen3ASR:
-            return true
+            return false
         }
     }
 
