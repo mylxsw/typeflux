@@ -225,6 +225,15 @@ struct StudioView: View {
                 ) {
                     viewModel.refreshHistoryWithFeedback()
                 }
+            } else if viewModel.currentSection == .vocabulary {
+                Spacer()
+
+                StudioButton(
+                    title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .primary
+                ) {
+                    newVocabularyTerm = ""
+                    isAddingVocabulary = true
+                }
             }
         }
     }
@@ -680,26 +689,6 @@ struct StudioView: View {
 
     private var vocabularyPage: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                    Text(L("vocabulary.intro.title"))
-                        .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                    Text(L("vocabulary.intro.subtitle"))
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
-
-                Spacer()
-
-                StudioButton(
-                    title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .primary
-                ) {
-                    newVocabularyTerm = ""
-                    isAddingVocabulary = true
-                }
-            }
-
             StudioCard {
                 HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
                     HStack(spacing: StudioTheme.Spacing.xSmall) {

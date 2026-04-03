@@ -44,7 +44,7 @@
 "studio.subheading.home" = "Keep the whole desktop experience consistent with a calmer, cleaner control surface.";
 "studio.subheading.models" = "Choose the local and remote engines used for transcription and rewrite flows.";
 "studio.subheading.personas" = "Create reusable writing styles and keep every prompt ready for daily use.";
-"studio.subheading.vocabulary" = "Manage the words and names that should be recognized more reliably during dictation.";
+"studio.subheading.vocabulary" = "Help Typeflux catch names, products, and domain terms more reliably.";
 "studio.subheading.history" = "Review recent sessions, inspect the recognized text, and export your archive.";
 "studio.subheading.settings" = "Adjust shortcuts, appearance, and behavior from one unified interface.";
 "studio.search.home" = "Search activity...";
