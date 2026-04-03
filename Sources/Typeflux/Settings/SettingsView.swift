@@ -636,6 +636,9 @@ struct StudioView: View {
                                 ForEach(section.records) { record in
                                     StudioHistoryRow(
                                         record: record,
+                                        onCopyResult: {
+                                            viewModel.copyHistoryResult(id: record.id)
+                                        },
                                         onCopyTranscript: {
                                             viewModel.copyTranscript(id: record.id)
                                         },
@@ -2234,6 +2237,9 @@ struct StudioView: View {
                     ForEach(records) { record in
                         StudioHistoryRow(
                             record: record,
+                            onCopyResult: {
+                                viewModel.copyHistoryResult(id: record.id)
+                            },
                             onCopyTranscript: {
                                 viewModel.copyTranscript(id: record.id)
                             },
@@ -2454,6 +2460,9 @@ struct StudioView: View {
                     ForEach(records) { record in
                         StudioHistoryRow(
                             record: record,
+                            onCopyResult: {
+                                viewModel.copyHistoryResult(id: record.id)
+                            },
                             onCopyTranscript: {
                                 viewModel.copyTranscript(id: record.id)
                             },
