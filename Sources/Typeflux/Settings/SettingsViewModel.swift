@@ -94,6 +94,7 @@ final class StudioViewModel: ObservableObject {
     @Published var automaticVocabularyCollectionEnabled: Bool
 
     @Published var agentFrameworkEnabled: Bool
+    @Published var agentEnabled: Bool
     @Published var agentStepLoggingEnabled: Bool
     @Published var mcpServers: [MCPServerConfig]
     @Published var mcpDraftName: String = ""
@@ -223,6 +224,7 @@ final class StudioViewModel: ObservableObject {
         appleSpeechFallback = settingsStore.useAppleSpeechFallback
         automaticVocabularyCollectionEnabled = settingsStore.automaticVocabularyCollectionEnabled
         agentFrameworkEnabled = settingsStore.agentFrameworkEnabled
+        agentEnabled = settingsStore.agentEnabled
         agentStepLoggingEnabled = settingsStore.agentStepLoggingEnabled
         mcpServers = settingsStore.mcpServers
         personaRewriteEnabled = settingsStore.personaRewriteEnabled
@@ -806,6 +808,11 @@ final class StudioViewModel: ObservableObject {
     func setAgentFrameworkEnabled(_ value: Bool) {
         agentFrameworkEnabled = value
         settingsStore.agentFrameworkEnabled = value
+    }
+
+    func setAgentEnabled(_ value: Bool) {
+        agentEnabled = value
+        settingsStore.agentEnabled = value
     }
 
     func setAgentStepLoggingEnabled(_ value: Bool) {

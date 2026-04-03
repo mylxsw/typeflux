@@ -602,6 +602,8 @@
 "settings.advanced.agentFramework.subtitle" = "为「随便问」功能启用多轮 Agent 循环，支持工具调用和 MCP 服务器集成。";
 
 "agent.section.general" = "通用";
+"agent.general.enabled.title" = "启用 Agent";
+"agent.general.enabled.subtitle" = "此选项控制「随便问」功能的执行流程。启用后，「随便问」功能将得到显著增强。";
 "agent.general.stepLogging.title" = "Agent 步骤日志";
 "agent.general.stepLogging.subtitle" = "记录 Agent 的每一步推理和工具调用，便于调试。";
 

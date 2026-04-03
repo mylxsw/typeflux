@@ -1189,12 +1189,12 @@ struct StudioView: View {
             StudioCard {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
                     StudioSettingRow(
-                        title: L("agent.general.stepLogging.title"),
-                        subtitle: L("agent.general.stepLogging.subtitle")
+                        title: L("agent.general.enabled.title"),
+                        subtitle: L("agent.general.enabled.subtitle")
                     ) {
                         Toggle("", isOn: Binding(
-                            get: { viewModel.agentStepLoggingEnabled },
-                            set: viewModel.setAgentStepLoggingEnabled
+                            get: { viewModel.agentEnabled },
+                            set: viewModel.setAgentEnabled
                         ))
                         .labelsHidden()
                         .toggleStyle(.switch)

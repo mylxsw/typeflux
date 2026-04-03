@@ -602,6 +602,8 @@
 "settings.advanced.agentFramework.subtitle" = "Use the multi-turn Agent loop for Ask Anything. Supports tool calling and MCP server integration.";
 
 "agent.section.general" = "General";
+"agent.general.enabled.title" = "Enable Agent";
+"agent.general.enabled.subtitle" = "Controls the execution flow of Ask Anything. When enabled, Ask Anything is significantly enhanced.";
 "agent.general.stepLogging.title" = "Agent step logging";
 "agent.general.stepLogging.subtitle" = "Log each Agent reasoning step and tool call for debugging.";
 

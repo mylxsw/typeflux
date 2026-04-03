@@ -942,7 +942,7 @@ final class WorkflowController {
                 saveHistoryRecord(record)
                 logPipelineEvent("llm-processing-started", for: record)
 
-                if settingsStore.agentFrameworkEnabled {
+                if settingsStore.agentFrameworkEnabled && settingsStore.agentEnabled {
                     let agentResult = try await runAskAgent(
                         selectedText: askContextText,
                         spokenInstruction: transcribedText,
@@ -1101,7 +1101,7 @@ final class WorkflowController {
                 saveHistoryRecord(record)
                 logPipelineEvent("llm-processing-started", for: record)
 
-                if settingsStore.agentFrameworkEnabled {
+                if settingsStore.agentFrameworkEnabled && settingsStore.agentEnabled {
                     let agentResult = try await runAskAgent(
                         selectedText: nil,
                         spokenInstruction: transcribedText,

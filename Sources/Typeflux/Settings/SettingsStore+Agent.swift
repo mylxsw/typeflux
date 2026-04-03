@@ -6,6 +6,14 @@ extension SettingsStore {
         set { defaults.set(newValue, forKey: "agent.frameworkEnabled") }
     }
 
+    var agentEnabled: Bool {
+        get {
+            let stored = defaults.object(forKey: "agent.enabled")
+            return stored == nil ? true : defaults.bool(forKey: "agent.enabled")
+        }
+        set { defaults.set(newValue, forKey: "agent.enabled") }
+    }
+
     var agentStepLoggingEnabled: Bool {
         get { defaults.bool(forKey: "agent.stepLoggingEnabled") }
         set { defaults.set(newValue, forKey: "agent.stepLoggingEnabled") }
