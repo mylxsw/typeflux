@@ -201,6 +201,16 @@
 "localSTT.qwen3ASR.summary" = "更大的多语言 ASR 模型，语境理解更强，长语音识别质量更好。";
 "localSTT.qwen3ASR.parameterValue" = "0.6B";
 "localSTT.qwen3ASR.sizeValue" = "1.6 GB";
+"localSTT.prepare.runtimePreparing" = "正在准备原生本地语音运行时...";
+"localSTT.prepare.cleaningLegacyRuntime" = "正在清理旧版 Python 运行时...";
+"localSTT.prepare.runtimeReady" = "%@ 已在原生运行时中准备完成。";
+"localSTT.prepare.whisperDownloading" = "正在下载 WhisperKit 模型 %@...";
+"localSTT.prepare.whisperInitializing" = "正在初始化 WhisperKit 模型 %@...";
+"localSTT.prepare.whisperReady" = "WhisperKit 模型 %@ 已准备完成。";
+"localSTT.error.notPrepared" = "本地语音识别模型尚未准备完成，请先在设置中准备模型。";
+"localSTT.error.runtimeUnavailable" = "%@ 的原生本地语音推理尚不可用，请切换到其他语音识别提供方。";
+"localSTT.error.preparedPathUnavailable" = "本地语音识别模型准备已结束，但无法验证模型路径。";
+"localSTT.error.whisperModelMissing" = "WhisperKit 模型下载已完成，但没有找到可用的 CoreML 模型文件。";
 
 "modelDomain.stt.title" = "语音转写";
 "modelDomain.stt.subtitle" = "语音转文字";

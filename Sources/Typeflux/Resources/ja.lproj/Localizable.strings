@@ -201,6 +201,16 @@
 "localSTT.qwen3ASR.summary" = "より強力なコンテキスト理解とより優れた長文認識品質を備えた、より大規模な多言語 ASR モデル。";
 "localSTT.qwen3ASR.parameterValue" = "0.6B";
 "localSTT.qwen3ASR.sizeValue" = "1.6GB";
+"localSTT.prepare.runtimePreparing" = "ネイティブローカル音声ランタイムを準備しています...";
+"localSTT.prepare.cleaningLegacyRuntime" = "旧 Python ランタイムをクリーンアップしています...";
+"localSTT.prepare.runtimeReady" = "%@ はネイティブランタイムで準備できました。";
+"localSTT.prepare.whisperDownloading" = "WhisperKit モデル %@ をダウンロードしています...";
+"localSTT.prepare.whisperInitializing" = "WhisperKit モデル %@ を初期化しています...";
+"localSTT.prepare.whisperReady" = "WhisperKit モデル %@ の準備が完了しました。";
+"localSTT.error.notPrepared" = "ローカル STT モデルの準備が完了していません。先に設定で準備してください。";
+"localSTT.error.runtimeUnavailable" = "%@ のネイティブローカル音声推論はまだ利用できません。別の STT プロバイダーを使用してください。";
+"localSTT.error.preparedPathUnavailable" = "ローカル STT モデルのセットアップは完了しましたが、準備済みモデルのパスを検証できませんでした。";
+"localSTT.error.whisperModelMissing" = "WhisperKit モデルのダウンロードは完了しましたが、利用可能な CoreML モデルファイルが見つかりませんでした。";
 
 "modelDomain.stt.title" = "音声文字起こし";
 "modelDomain.stt.subtitle" = "音声をテキストに変換";
