@@ -127,6 +127,53 @@ final class LocalModelTranscriberTests: XCTestCase {
         XCTAssertEqual(fakeInstaller.lastPreparedModel, .qwen3ASR)
     }
 
+    func testSherpaInstallerRetriesTransientArchiveDownloadFailures() async throws {
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
+        let fixturesRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-sherpa-fixtures-\(UUID().uuidString)", isDirectory: true)
+        let installRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-sherpa-install-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: fixturesRoot, withIntermediateDirectories: true)
+
+        let runtimeArchiveURL = try await makeArchiveFixture(
+            rootDirectoryName: layout.runtimeRootDirectory,
+            requiredRelativePaths: [
+                "bin/sherpa-onnx-offline",
+                "lib/libsherpa-onnx-c-api.dylib",
+                "lib/libonnxruntime.dylib"
+            ],
+            outputDirectory: fixturesRoot
+        )
+        let modelArchiveURL = try await makeArchiveFixture(
+            rootDirectoryName: layout.modelRootDirectory,
+            requiredRelativePaths: [
+                "model.int8.onnx",
+                "tokens.txt"
+            ],
+            outputDirectory: fixturesRoot
+        )
+
+        let downloader = FlakyArchiveDownloader(
+            archiveMap: [
+                layout.runtimeArchiveURL: runtimeArchiveURL,
+                layout.modelArchiveURL: modelArchiveURL
+            ],
+            failuresBeforeSuccess: 2
+        )
+        let installer = SherpaOnnxModelInstaller(
+            fileManager: .default,
+            processRunner: ProcessCommandRunner(),
+            archiveDownloader: downloader
+        )
+
+        let preparedPath = try await installer.prepareModel(.senseVoiceSmall, at: installRoot)
+        let downloadAttempts = await downloader.downloadAttemptCount()
+
+        XCTAssertEqual(preparedPath, installRoot.path)
+        XCTAssertGreaterThanOrEqual(downloadAttempts, 4)
+        XCTAssertTrue(layout.isInstalled(storageURL: installRoot, fileManager: .default))
+    }
+
     private func makeSherpaModelFolder(for model: LocalSTTModel) throws -> URL {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("typeflux-tests-\(UUID().uuidString)", isDirectory: true)
@@ -183,6 +230,42 @@ final class LocalModelTranscriberTests: XCTestCase {
         return AudioFile(fileURL: fileURL, duration: 1)
     }
 
+    private func makeArchiveFixture(
+        rootDirectoryName: String,
+        requiredRelativePaths: [String],
+        outputDirectory: URL
+    ) async throws -> URL {
+        let packageRoot = outputDirectory.appendingPathComponent(rootDirectoryName, isDirectory: true)
+        try FileManager.default.createDirectory(at: packageRoot, withIntermediateDirectories: true)
+
+        for relativePath in requiredRelativePaths {
+            let fileURL = packageRoot.appendingPathComponent(relativePath)
+            try FileManager.default.createDirectory(
+                at: fileURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try Data("fixture".utf8).write(to: fileURL)
+            if fileURL.lastPathComponent == "sherpa-onnx-offline" {
+                try FileManager.default.setAttributes(
+                    [.posixPermissions: NSNumber(value: Int16(0o755))],
+                    ofItemAtPath: fileURL.path
+                )
+            }
+        }
+
+        let archiveURL = outputDirectory.appendingPathComponent("\(rootDirectoryName).tar.bz2")
+        _ = try await ProcessCommandRunner().run(
+            executablePath: "/usr/bin/tar",
+            arguments: [
+                "-cjf",
+                archiveURL.path,
+                rootDirectoryName
+            ],
+            environment: nil,
+            currentDirectoryURL: outputDirectory
+        )
+        return archiveURL
+    }
 }
 
 private final class CapturingProcessRunner: ProcessCommandRunning {
@@ -255,6 +338,36 @@ private final class FakeSherpaOnnxInstaller: SherpaOnnxModelInstalling {
         }
 
         return storageURL.path
+    }
+}
+
+private actor FlakyArchiveDownloader: SherpaOnnxArchiveDownloading {
+    private let archiveMap: [URL: URL]
+    private var remainingFailures: Int
+    private var attempts = 0
+
+    init(archiveMap: [URL: URL], failuresBeforeSuccess: Int) {
+        self.archiveMap = archiveMap
+        self.remainingFailures = failuresBeforeSuccess
+    }
+
+    func downloadArchive(from url: URL) async throws -> URL {
+        attempts += 1
+        if remainingFailures > 0 {
+            remainingFailures -= 1
+            throw NSError(domain: "FlakyArchiveDownloader", code: 1, userInfo: nil)
+        }
+
+        let sourceURL = try XCTUnwrap(archiveMap[url])
+        let copyURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-copy-\(UUID().uuidString)", isDirectory: false)
+            .appendingPathExtension("tar.bz2")
+        try FileManager.default.copyItem(at: sourceURL, to: copyURL)
+        return copyURL
+    }
+
+    func downloadAttemptCount() -> Int {
+        attempts
     }
 }
 

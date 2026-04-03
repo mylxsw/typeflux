@@ -77,19 +77,36 @@ protocol SherpaOnnxModelInstalling {
     ) async throws -> String
 }
 
+protocol SherpaOnnxArchiveDownloading {
+    func downloadArchive(from url: URL) async throws -> URL
+}
+
+final class URLSessionSherpaOnnxArchiveDownloader: SherpaOnnxArchiveDownloading {
+    private let urlSession: URLSession
+
+    init(urlSession: URLSession = .shared) {
+        self.urlSession = urlSession
+    }
+
+    func downloadArchive(from url: URL) async throws -> URL {
+        let (downloadedURL, _) = try await urlSession.download(from: url)
+        return downloadedURL
+    }
+}
+
 final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
     private let fileManager: FileManager
     private let processRunner: ProcessCommandRunning
-    private let urlSession: URLSession
+    private let archiveDownloader: SherpaOnnxArchiveDownloading
 
     init(
         fileManager: FileManager = .default,
         processRunner: ProcessCommandRunning = ProcessCommandRunner(),
-        urlSession: URLSession = .shared
+        archiveDownloader: SherpaOnnxArchiveDownloading = URLSessionSherpaOnnxArchiveDownloader()
     ) {
         self.fileManager = fileManager
         self.processRunner = processRunner
-        self.urlSession = urlSession
+        self.archiveDownloader = archiveDownloader
     }
 
     func prepareModel(
@@ -157,34 +174,39 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
         destinationURL: URL,
         archiveFileName: String
     ) async throws {
-        let temporaryDirectory = destinationURL.appendingPathComponent(".download", isDirectory: true)
-        try fileManager.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
+        try await RequestRetry.perform(operationName: "Sherpa-ONNX archive download") { [self] in
+            let temporaryDirectory = destinationURL.appendingPathComponent(".download", isDirectory: true)
+            try fileManager.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
 
-        let localArchiveURL = temporaryDirectory.appendingPathComponent(archiveFileName, isDirectory: false)
-        if fileManager.fileExists(atPath: localArchiveURL.path) {
-            try fileManager.removeItem(at: localArchiveURL)
+            let localArchiveURL = temporaryDirectory.appendingPathComponent(
+                archiveFileName,
+                isDirectory: false
+            )
+            if fileManager.fileExists(atPath: localArchiveURL.path) {
+                try fileManager.removeItem(at: localArchiveURL)
+            }
+
+            let downloadedURL = try await archiveDownloader.downloadArchive(from: archiveURL)
+            if fileManager.fileExists(atPath: localArchiveURL.path) {
+                try fileManager.removeItem(at: localArchiveURL)
+            }
+            try fileManager.moveItem(at: downloadedURL, to: localArchiveURL)
+
+            _ = try await processRunner.run(
+                executablePath: "/usr/bin/tar",
+                arguments: [
+                    "-xjf",
+                    localArchiveURL.path,
+                    "-C",
+                    destinationURL.path
+                ],
+                environment: nil,
+                currentDirectoryURL: destinationURL
+            )
+
+            try? fileManager.removeItem(at: localArchiveURL)
+            try? fileManager.removeItem(at: temporaryDirectory)
         }
-
-        let (downloadedURL, _) = try await urlSession.download(from: archiveURL)
-        if fileManager.fileExists(atPath: localArchiveURL.path) {
-            try fileManager.removeItem(at: localArchiveURL)
-        }
-        try fileManager.moveItem(at: downloadedURL, to: localArchiveURL)
-
-        _ = try await processRunner.run(
-            executablePath: "/usr/bin/tar",
-            arguments: [
-                "-xjf",
-                localArchiveURL.path,
-                "-C",
-                destinationURL.path
-            ],
-            environment: nil,
-            currentDirectoryURL: destinationURL
-        )
-
-        try? fileManager.removeItem(at: localArchiveURL)
-        try? fileManager.removeItem(at: temporaryDirectory)
     }
 }
 
