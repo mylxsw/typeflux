@@ -11,9 +11,14 @@ enum StudioSection: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// Sections that appear in the sidebar navigation list (excluding settings/agent which have special placement).
-    static var sidebarNavigationCases: [StudioSection] {
-        [.home, .models, .personas, .vocabulary, .history]
+    /// Sections that appear in the upper sidebar group.
+    static var sidebarUpperCases: [StudioSection] {
+        [.home, .vocabulary, .history]
+    }
+
+    /// Sections that appear in the lower sidebar group.
+    static var sidebarLowerCases: [StudioSection] {
+        [.models, .personas]
     }
 
     var title: String {
