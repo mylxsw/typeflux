@@ -2285,7 +2285,7 @@ struct StudioView: View {
     private var overviewPanel: some View {
         HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
             StudioCard(padding: StudioTheme.Insets.cardDense) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
                     HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
                         VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
                             HStack(spacing: StudioTheme.Spacing.small) {
@@ -2350,6 +2350,8 @@ struct StudioView: View {
                             .padding(.trailing, StudioTheme.Spacing.smallMedium)
                             .padding(.vertical, StudioTheme.Spacing.smallMedium)
                     }
+
+                    Spacer(minLength: StudioTheme.Spacing.smallMedium)
 
                     Text(L("home.activity.privacy"))
                         .font(.studioBody(StudioTheme.Typography.caption))
