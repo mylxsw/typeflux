@@ -32,8 +32,14 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertEqual(
             hint,
             """
-            Recognize these words and phrases accurately, preserving their spelling and casing when possible:
+            <vocabulary_hints>
+            <instruction>
+            Recognize these words and phrases accurately, preserving their spelling and casing when possible. Do not emit any term unless it is actually spoken in the audio.
+            </instruction>
+            <terms>
             alpha, beta
+            </terms>
+            </vocabulary_hints>
             """
         )
     }
@@ -91,12 +97,20 @@ final class PromptCatalogTests: XCTestCase {
     func testMultimodalTranscriptionPromptIncludesLanguageConsistencyRule() {
         let prompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
             personaPrompt: "Use concise business language.",
-            vocabularyTerms: []
+            vocabularyTerms: ["Typeflux"]
         )
 
+        XCTAssertTrue(prompt.contains("You are a multimodal speech transcription and rewrite engine."))
+        XCTAssertTrue(prompt.contains("<rules>"))
+        XCTAssertTrue(prompt.contains("<language_policy>"))
         XCTAssertTrue(prompt.contains(PromptCatalog.languageConsistencyRule(for: "spoken content")))
-        XCTAssertTrue(prompt.contains("Input semantics:"))
-        XCTAssertTrue(prompt.contains("Persona requirements:"))
+        XCTAssertTrue(prompt.contains("<input_semantics>"))
+        XCTAssertTrue(prompt.contains("<task_procedure>"))
+        XCTAssertTrue(prompt.contains("<output_contract>"))
+        XCTAssertTrue(prompt.contains("<persona_definition>\nUse concise business language.\n</persona_definition>"))
+        XCTAssertTrue(prompt.contains("<vocabulary_hints>"))
+        XCTAssertTrue(prompt.contains("<terms>\nTypeflux\n</terms>"))
+        XCTAssertTrue(prompt.contains("Do not output the intermediate transcript."))
     }
 
     func testAskSelectionDecisionPromptDefaultsAmbiguousRequestsToAnswer() {

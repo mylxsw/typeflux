@@ -50,37 +50,48 @@ enum PromptCatalog {
     /// When a persona is provided, the model transcribes AND rewrites in one shot.
     /// Otherwise, it acts as a high-quality transcription engine with vocabulary hints.
     static func multimodalTranscriptionSystemPrompt(personaPrompt: String?, vocabularyTerms: [String]) -> String {
-        var parts: [String] = []
-        let spokenContentRule = languageConsistencyRule(for: "spoken content")
+        let persona = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let hasPersona = !persona.isEmpty
+        let roleDefinition = hasPersona
+            ? "You are a multimodal speech transcription and rewrite engine."
+            : "You are a multimodal speech transcription engine."
+        let taskInstruction = hasPersona
+            ? "First transcribe the provided audio faithfully, then rewrite that transcript according to <persona_definition> while preserving the original meaning."
+            : "Transcribe the provided audio faithfully and preserve the speaker's meaning, wording, and natural phrasing."
+        let outputContract = hasPersona
+            ? """
+              - Return only the final rewritten text.
+              - Do not output the intermediate transcript.
+              - Do not add explanations, labels, quotation marks, Markdown fences, or meta-commentary.
+              """
+            : """
+              - Return only the final transcript text.
+              - Do not add explanations, labels, quotation marks, Markdown fences, or meta-commentary.
+              """
+        let ruleBlock = xmlSection(
+            tag: "rules",
+            content: """
+            <language_policy>
+            \(languageConsistencyRule(for: "spoken content"))
+            </language_policy>
+            <input_semantics>
+            - The audio payload is the only source content. It determines the transcript meaning and default output language.
+            - <persona_definition> is style guidance for rewriting only. It is not source content and must not introduce new facts.
+            - <vocabulary_hints> contains recognition hints only. Use these terms only when they are actually spoken in the audio.
+            </input_semantics>
+            <task_procedure>
+            \(taskInstruction)
+            </task_procedure>
+            <output_contract>
+            \(outputContract)
+            </output_contract>
+            """
+        )
 
-        if let persona = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines), !persona.isEmpty {
-            parts.append("""
-            \(spokenContentRule)
+        var parts: [String] = [roleDefinition, ruleBlock]
 
-            You are a transcription and text-rewriting assistant.
-            Transcribe the audio accurately, then immediately rewrite the result according to the persona requirements below.
-            Return only the final rewritten text — no explanations, no quotation marks, no meta-commentary.
-
-            Input semantics:
-            - The audio is the source content that determines the default output language and meaning.
-            - Persona requirements are style constraints for the final rewrite. They are not source content.
-            - Vocabulary hints are recognition hints only. They are not source content and must not be copied unless spoken.
-
-            Persona requirements:
-            \(persona)
-            """)
-        } else {
-            parts.append("""
-            \(spokenContentRule)
-
-            You are a precise transcription assistant.
-            Transcribe the audio accurately. Preserve the speaker's intent and natural phrasing.
-            Return only the transcribed text — no explanations, no meta-commentary.
-
-            Input semantics:
-            - The audio is the source content that determines the output language and meaning.
-            - Vocabulary hints are recognition hints only. They are not source content and must not be copied unless spoken.
-            """)
+        if hasPersona {
+            parts.append(xmlSection(tag: "persona_definition", content: persona))
         }
 
         if let hint = transcriptionVocabularyHint(terms: vocabularyTerms) {
@@ -97,10 +108,17 @@ enum PromptCatalog {
 
         guard !normalizedTerms.isEmpty else { return nil }
 
-        return """
-        Recognize these words and phrases accurately, preserving their spelling and casing when possible:
-        \(normalizedTerms.joined(separator: ", "))
-        """
+        return xmlSection(
+            tag: "vocabulary_hints",
+            content: """
+            <instruction>
+            Recognize these words and phrases accurately, preserving their spelling and casing when possible. Do not emit any term unless it is actually spoken in the audio.
+            </instruction>
+            <terms>
+            \(normalizedTerms.joined(separator: ", "))
+            </terms>
+            """
+        )
     }
 
     static func rewritePrompts(for request: LLMRewriteRequest) -> (system: String, user: String) {
