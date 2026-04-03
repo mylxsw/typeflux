@@ -38,13 +38,20 @@ struct LocalSTTConfiguration: Equatable {
 
 final class LocalModelManager {
     private let fileManager: FileManager
+    private let sherpaOnnxInstaller: SherpaOnnxModelInstalling
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
     private let _modelsRootURL: URL
     private let _legacyRuntimeURL: URL
 
-    init(fileManager: FileManager = .default) {
+    init(
+        fileManager: FileManager = .default,
+        sherpaOnnxInstaller: SherpaOnnxModelInstalling? = nil
+    ) {
         self.fileManager = fileManager
+        self.sherpaOnnxInstaller = sherpaOnnxInstaller ?? SherpaOnnxModelInstaller(
+            fileManager: fileManager
+        )
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support", isDirectory: true)
@@ -84,22 +91,17 @@ final class LocalModelManager {
                 onUpdate: onUpdate
             )
         case .senseVoiceSmall, .qwen3ASR:
-            onUpdate?(LocalSTTPreparationUpdate(
-                message: L("localSTT.prepare.runtimePreparing"),
-                progress: 0.9,
-                storagePath: storagePath,
-                source: configuration.downloadSource.displayName
-            ))
-            throw NSError(
-                domain: "LocalModelManager",
-                code: 4,
-                userInfo: [
-                    NSLocalizedDescriptionKey: L(
-                        "localSTT.error.runtimeUnavailable",
-                        configuration.model.displayName
-                    )
-                ]
-            )
+            storagePath = try await sherpaOnnxInstaller.prepareModel(
+                configuration.model,
+                at: URL(fileURLWithPath: downloadBasePath, isDirectory: true)
+            ) { update in
+                onUpdate?(LocalSTTPreparationUpdate(
+                    message: update.message,
+                    progress: update.progress,
+                    storagePath: update.storagePath,
+                    source: configuration.downloadSource.displayName
+                ))
+            }
         }
 
         // Create the storagePath directory so preparedModelInfo's fileExists check passes.
@@ -254,7 +256,13 @@ final class LocalModelManager {
         case .whisperLocal:
             return isUsableWhisperKitModelFolder(storagePath)
         case .senseVoiceSmall, .qwen3ASR:
-            return false
+            guard let layout = SherpaOnnxModelLayout.layout(for: model) else {
+                return false
+            }
+            return layout.isInstalled(
+                storageURL: URL(fileURLWithPath: storagePath, isDirectory: true),
+                fileManager: fileManager
+            )
         }
     }
 

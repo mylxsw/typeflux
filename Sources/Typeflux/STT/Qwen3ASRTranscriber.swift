@@ -1,27 +1,22 @@
 import Foundation
 
 final class Qwen3ASRTranscriber: Transcriber {
-    private let modelIdentifier: String
-    private let modelFolder: String
+    private let decoder: SherpaOnnxCommandLineDecoder
 
-    init(modelIdentifier: String, modelFolder: String) {
-        self.modelIdentifier = modelIdentifier
-        self.modelFolder = modelFolder
+    init(
+        modelIdentifier: String,
+        modelFolder: String,
+        processRunner: ProcessCommandRunning = ProcessCommandRunner()
+    ) {
+        self.decoder = SherpaOnnxCommandLineDecoder(
+            model: .qwen3ASR,
+            modelIdentifier: modelIdentifier,
+            modelFolder: modelFolder,
+            processRunner: processRunner
+        )
     }
 
     func transcribe(audioFile: AudioFile) async throws -> String {
-        _ = modelIdentifier
-        _ = modelFolder
-        _ = audioFile
-        throw NSError(
-            domain: "Qwen3ASRTranscriber",
-            code: 1,
-            userInfo: [
-                NSLocalizedDescriptionKey: L(
-                    "localSTT.error.runtimeUnavailable",
-                    LocalSTTModel.qwen3ASR.displayName
-                )
-            ]
-        )
+        try await decoder.decode(audioFile: audioFile)
     }
 }

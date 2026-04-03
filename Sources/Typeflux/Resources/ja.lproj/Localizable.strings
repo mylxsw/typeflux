@@ -203,6 +203,9 @@
 "localSTT.qwen3ASR.sizeValue" = "1.6GB";
 "localSTT.prepare.runtimePreparing" = "ネイティブローカル音声ランタイムを準備しています...";
 "localSTT.prepare.cleaningLegacyRuntime" = "旧 Python ランタイムをクリーンアップしています...";
+"localSTT.prepare.runtimeDownloading" = "Sherpa-ONNX ネイティブランタイムをダウンロードしています...";
+"localSTT.prepare.modelDownloading" = "%@ 音声モデルをダウンロードしています...";
+"localSTT.prepare.modelReady" = "%@ モデルパッケージの準備が完了しました。";
 "localSTT.prepare.runtimeReady" = "%@ はネイティブランタイムで準備できました。";
 "localSTT.prepare.whisperDownloading" = "WhisperKit モデル %@ をダウンロードしています...";
 "localSTT.prepare.whisperInitializing" = "WhisperKit モデル %@ を初期化しています...";
@@ -211,6 +214,8 @@
 "localSTT.error.runtimeUnavailable" = "%@ のネイティブローカル音声推論はまだ利用できません。別の STT プロバイダーを使用してください。";
 "localSTT.error.preparedPathUnavailable" = "ローカル STT モデルのセットアップは完了しましたが、準備済みモデルのパスを検証できませんでした。";
 "localSTT.error.whisperModelMissing" = "WhisperKit モデルのダウンロードは完了しましたが、利用可能な CoreML モデルファイルが見つかりませんでした。";
+"localSTT.error.modelAssetsMissing" = "%@ モデルのダウンロードは完了しましたが、必要なランタイム/モデルファイルが見つかりませんでした。";
+"localSTT.error.sherpaRuntimeMissing" = "%@ に Sherpa-ONNX ランタイム実行ファイルが見つかりませんでした。";
 
 "modelDomain.stt.title" = "音声文字起こし";
 "modelDomain.stt.subtitle" = "音声をテキストに変換";

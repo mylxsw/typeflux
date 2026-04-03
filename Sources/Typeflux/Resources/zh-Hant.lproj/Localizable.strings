@@ -203,6 +203,9 @@
 "localSTT.qwen3ASR.sizeValue" = "1.6 GB";
 "localSTT.prepare.runtimePreparing" = "正在準備原生本地語音執行環境...";
 "localSTT.prepare.cleaningLegacyRuntime" = "正在清理舊版 Python 執行環境...";
+"localSTT.prepare.runtimeDownloading" = "正在下載 Sherpa-ONNX 原生執行環境...";
+"localSTT.prepare.modelDownloading" = "正在下載 %@ 語音模型...";
+"localSTT.prepare.modelReady" = "%@ 模型套件已準備完成。";
 "localSTT.prepare.runtimeReady" = "%@ 已在原生執行環境中準備完成。";
 "localSTT.prepare.whisperDownloading" = "正在下載 WhisperKit 模型 %@...";
 "localSTT.prepare.whisperInitializing" = "正在初始化 WhisperKit 模型 %@...";
@@ -211,6 +214,8 @@
 "localSTT.error.runtimeUnavailable" = "%@ 的原生本地語音推理尚不可用，請切換到其他語音辨識提供者。";
 "localSTT.error.preparedPathUnavailable" = "本地語音辨識模型準備已結束，但無法驗證模型路徑。";
 "localSTT.error.whisperModelMissing" = "WhisperKit 模型下載已完成，但沒有找到可用的 CoreML 模型檔案。";
+"localSTT.error.modelAssetsMissing" = "%@ 模型下載已完成，但缺少必要的執行環境或模型檔案。";
+"localSTT.error.sherpaRuntimeMissing" = "未在 %@ 找到 Sherpa-ONNX 執行檔。";
 
 "modelDomain.stt.title" = "語音轉寫";
 "modelDomain.stt.subtitle" = "語音轉文字";
