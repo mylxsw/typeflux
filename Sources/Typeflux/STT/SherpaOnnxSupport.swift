@@ -62,10 +62,31 @@ struct SherpaOnnxModelLayout {
 
     func isInstalled(storageURL: URL, fileManager: FileManager = .default) -> Bool {
         requiredRelativePaths.allSatisfy { relativePath in
-            fileManager.fileExists(
-                atPath: storageURL.appendingPathComponent(relativePath, isDirectory: false).path
+            hasUsableItem(
+                at: storageURL.appendingPathComponent(relativePath, isDirectory: false),
+                fileManager: fileManager
             )
         }
+    }
+
+    func hasUsableRuntimeExecutable(storageURL: URL, fileManager: FileManager = .default) -> Bool {
+        let executableURL = runtimeExecutableURL(storageURL: storageURL)
+        return fileManager.isExecutableFile(atPath: executableURL.path)
+            && hasUsableItem(at: executableURL, fileManager: fileManager)
+    }
+
+    private func hasUsableItem(at url: URL, fileManager: FileManager) -> Bool {
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
+            return false
+        }
+        guard !isDirectory.boolValue else {
+            return true
+        }
+
+        let attributes = try? fileManager.attributesOfItem(atPath: url.path)
+        let fileSize = attributes?[.size] as? NSNumber
+        return (fileSize?.int64Value ?? 0) > 0
     }
 }
 
@@ -136,6 +157,7 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
         try await downloadAndExtract(
             archiveURL: layout.runtimeArchiveURL,
             destinationURL: storageURL,
+            extractedRootDirectoryName: layout.runtimeRootDirectory,
             archiveFileName: "\(layout.runtimeRootDirectory).tar.bz2"
         )
 
@@ -148,6 +170,7 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
         try await downloadAndExtract(
             archiveURL: layout.modelArchiveURL,
             destinationURL: storageURL,
+            extractedRootDirectoryName: layout.modelRootDirectory,
             archiveFileName: "\(layout.modelRootDirectory).tar.bz2"
         )
 
@@ -172,9 +195,18 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
     private func downloadAndExtract(
         archiveURL: URL,
         destinationURL: URL,
+        extractedRootDirectoryName: String,
         archiveFileName: String
     ) async throws {
         try await RequestRetry.perform(operationName: "Sherpa-ONNX archive download") { [self] in
+            let extractedRootURL = destinationURL.appendingPathComponent(
+                extractedRootDirectoryName,
+                isDirectory: true
+            )
+            if fileManager.fileExists(atPath: extractedRootURL.path) {
+                try fileManager.removeItem(at: extractedRootURL)
+            }
+
             let temporaryDirectory = destinationURL.appendingPathComponent(".download", isDirectory: true)
             try fileManager.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
 
@@ -239,11 +271,19 @@ final class SherpaOnnxCommandLineDecoder {
 
         let storageURL = URL(fileURLWithPath: modelFolder, isDirectory: true)
         let executableURL = layout.runtimeExecutableURL(storageURL: storageURL)
-        guard FileManager.default.isExecutableFile(atPath: executableURL.path) else {
+        guard layout.hasUsableRuntimeExecutable(storageURL: storageURL) else {
             throw NSError(
                 domain: "SherpaOnnxCommandLineDecoder",
                 code: 2,
                 userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.sherpaRuntimeMissing", executableURL.path)]
+            )
+        }
+
+        guard layout.isInstalled(storageURL: storageURL) else {
+            throw NSError(
+                domain: "SherpaOnnxCommandLineDecoder",
+                code: 3,
+                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.modelAssetsMissing", model.displayName)]
             )
         }
 
@@ -271,7 +311,7 @@ final class SherpaOnnxCommandLineDecoder {
         case .whisperLocal:
             throw NSError(
                 domain: "SherpaOnnxCommandLineDecoder",
-                code: 3,
+                code: 4,
                 userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.runtimeUnavailable", model.displayName)]
             )
         case .senseVoiceSmall:
@@ -311,11 +351,27 @@ final class SherpaOnnxCommandLineDecoder {
         guard let transcript = candidates.last else {
             throw NSError(
                 domain: "SherpaOnnxCommandLineDecoder",
-                code: 4,
+                code: 5,
                 userInfo: [NSLocalizedDescriptionKey: L("workflow.transcription.noSpeech")]
             )
         }
 
+        if let jsonTranscript = parseJSONTranscript(stdoutLine: transcript) {
+            return jsonTranscript
+        }
+
         return transcript
+    }
+
+    private func parseJSONTranscript(stdoutLine: String) -> String? {
+        guard stdoutLine.first == "{",
+              let jsonData = stdoutLine.data(using: .utf8),
+              let payload = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
+              let text = payload["text"] as? String
+        else {
+            return nil
+        }
+
+        return text
     }
 }

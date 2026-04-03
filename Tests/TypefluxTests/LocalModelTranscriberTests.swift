@@ -48,7 +48,13 @@ final class LocalModelTranscriberTests: XCTestCase {
 
     func testQwen3ASRTranscriberUsesQwen3ModelArguments() async throws {
         let modelFolder = try makeSherpaModelFolder(for: .qwen3ASR)
-        let runner = CapturingProcessRunner(stdout: "Qwen3 says hello\n")
+        let runner = CapturingProcessRunner(
+            stdout: """
+            log line
+            {"lang": "", "emotion": "", "event": "", "text": "试一下前文三大模型的效果。", "timestamps": [], "durations": [], "tokens":["试", "一下", "前", "文", "三大", "模型", "的效果", "。"], "ys_log_probs": [], "words": []}
+
+            """
+        )
         let transcriber = Qwen3ASRTranscriber(
             modelIdentifier: LocalSTTModel.qwen3ASR.defaultModelIdentifier,
             modelFolder: modelFolder.path,
@@ -58,7 +64,7 @@ final class LocalModelTranscriberTests: XCTestCase {
 
         let text = try await transcriber.transcribe(audioFile: audioFile)
 
-        XCTAssertEqual(text, "Qwen3 says hello")
+        XCTAssertEqual(text, "试一下前文三大模型的效果。")
         XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--qwen3-asr-conv-frontend=") }))
         XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--qwen3-asr-encoder=") }))
         XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--qwen3-asr-decoder=") }))
@@ -174,6 +180,67 @@ final class LocalModelTranscriberTests: XCTestCase {
         XCTAssertTrue(layout.isInstalled(storageURL: installRoot, fileManager: .default))
     }
 
+    func testSherpaInstallerReinstallsZeroByteRuntimeExecutable() async throws {
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .qwen3ASR))
+        let fixturesRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-sherpa-fixtures-\(UUID().uuidString)", isDirectory: true)
+        let installRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-sherpa-install-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: fixturesRoot, withIntermediateDirectories: true)
+
+        let runtimeArchiveURL = try await makeArchiveFixture(
+            rootDirectoryName: layout.runtimeRootDirectory,
+            requiredRelativePaths: [
+                "bin/sherpa-onnx-offline",
+                "lib/libsherpa-onnx-c-api.dylib",
+                "lib/libonnxruntime.dylib"
+            ],
+            outputDirectory: fixturesRoot
+        )
+        let modelArchiveURL = try await makeArchiveFixture(
+            rootDirectoryName: layout.modelRootDirectory,
+            requiredRelativePaths: [
+                "conv_frontend.onnx",
+                "encoder.int8.onnx",
+                "decoder.int8.onnx",
+                "tokenizer/tokenizer.json"
+            ],
+            outputDirectory: fixturesRoot
+        )
+
+        let badExecutableURL = installRoot
+            .appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+            .appendingPathComponent("bin/sherpa-onnx-offline", isDirectory: false)
+        try FileManager.default.createDirectory(
+            at: badExecutableURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data().write(to: badExecutableURL)
+        try FileManager.default.setAttributes(
+            [.posixPermissions: NSNumber(value: Int16(0o755))],
+            ofItemAtPath: badExecutableURL.path
+        )
+        XCTAssertFalse(layout.isInstalled(storageURL: installRoot, fileManager: .default))
+
+        let installer = SherpaOnnxModelInstaller(
+            fileManager: .default,
+            processRunner: ProcessCommandRunner(),
+            archiveDownloader: StaticArchiveDownloader(archiveMap: [
+                layout.runtimeArchiveURL: runtimeArchiveURL,
+                layout.modelArchiveURL: modelArchiveURL
+            ])
+        )
+
+        let preparedPath = try await installer.prepareModel(.qwen3ASR, at: installRoot)
+
+        XCTAssertEqual(preparedPath, installRoot.path)
+        XCTAssertTrue(layout.isInstalled(storageURL: installRoot, fileManager: .default))
+        XCTAssertGreaterThan(
+            ((try? FileManager.default.attributesOfItem(atPath: badExecutableURL.path)[.size] as? NSNumber)?.int64Value ?? 0),
+            0
+        )
+    }
+
     private func makeSherpaModelFolder(for model: LocalSTTModel) throws -> URL {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("typeflux-tests-\(UUID().uuidString)", isDirectory: true)
@@ -198,8 +265,8 @@ final class LocalModelTranscriberTests: XCTestCase {
             [.posixPermissions: NSNumber(value: Int16(0o755))],
             ofItemAtPath: executableURL.path
         )
-        try Data().write(to: runtimeLibURL.appendingPathComponent("libsherpa-onnx-c-api.dylib"))
-        try Data().write(to: runtimeLibURL.appendingPathComponent("libonnxruntime.dylib"))
+        try Data("fixture".utf8).write(to: runtimeLibURL.appendingPathComponent("libsherpa-onnx-c-api.dylib"))
+        try Data("fixture".utf8).write(to: runtimeLibURL.appendingPathComponent("libonnxruntime.dylib"))
 
         let modelDirectory = root.appendingPathComponent(layout.modelRootDirectory, isDirectory: true)
         try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
@@ -207,12 +274,12 @@ final class LocalModelTranscriberTests: XCTestCase {
         case .whisperLocal:
             break
         case .senseVoiceSmall:
-            try Data().write(to: modelDirectory.appendingPathComponent("model.int8.onnx"))
-            try Data().write(to: modelDirectory.appendingPathComponent("tokens.txt"))
+            try Data("fixture".utf8).write(to: modelDirectory.appendingPathComponent("model.int8.onnx"))
+            try Data("fixture".utf8).write(to: modelDirectory.appendingPathComponent("tokens.txt"))
         case .qwen3ASR:
-            try Data().write(to: modelDirectory.appendingPathComponent("conv_frontend.onnx"))
-            try Data().write(to: modelDirectory.appendingPathComponent("encoder.int8.onnx"))
-            try Data().write(to: modelDirectory.appendingPathComponent("decoder.int8.onnx"))
+            try Data("fixture".utf8).write(to: modelDirectory.appendingPathComponent("conv_frontend.onnx"))
+            try Data("fixture".utf8).write(to: modelDirectory.appendingPathComponent("encoder.int8.onnx"))
+            try Data("fixture".utf8).write(to: modelDirectory.appendingPathComponent("decoder.int8.onnx"))
             try FileManager.default.createDirectory(
                 at: modelDirectory.appendingPathComponent("tokenizer", isDirectory: true),
                 withIntermediateDirectories: true
@@ -327,7 +394,7 @@ private final class FakeSherpaOnnxInstaller: SherpaOnnxModelInstalling {
                     withIntermediateDirectories: true
                 )
             } else {
-                try Data().write(to: fileURL)
+                try Data("fixture".utf8).write(to: fileURL)
                 if fileURL.lastPathComponent == "sherpa-onnx-offline" {
                     try FileManager.default.setAttributes(
                         [.posixPermissions: NSNumber(value: Int16(0o755))],
@@ -338,6 +405,23 @@ private final class FakeSherpaOnnxInstaller: SherpaOnnxModelInstalling {
         }
 
         return storageURL.path
+    }
+}
+
+private final class StaticArchiveDownloader: SherpaOnnxArchiveDownloading {
+    private let archiveMap: [URL: URL]
+
+    init(archiveMap: [URL: URL]) {
+        self.archiveMap = archiveMap
+    }
+
+    func downloadArchive(from url: URL) async throws -> URL {
+        let sourceURL = try XCTUnwrap(archiveMap[url])
+        let copyURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-copy-\(UUID().uuidString)", isDirectory: false)
+            .appendingPathExtension("tar.bz2")
+        try FileManager.default.copyItem(at: sourceURL, to: copyURL)
+        return copyURL
     }
 }
 
