@@ -208,10 +208,7 @@ struct OnboardingView: View {
             )
 
             VStack(spacing: 8) {
-                let sttProviders: [STTProvider] = [
-                    .freeModel, .whisperAPI, .localModel, .multimodalLLM, .aliCloud, .doubaoRealtime
-                ]
-                ForEach(sttProviders, id: \.self) { provider in
+                ForEach(STTProvider.settingsDisplayOrder, id: \.self) { provider in
                     modelProviderCard(
                         providerID: sttProviderToID(provider),
                         title: provider.displayName,
@@ -269,6 +266,22 @@ struct OnboardingView: View {
             )
 
             VStack(spacing: 8) {
+                ForEach(LLMRemoteProvider.settingsDisplayOrder.prefix(1), id: \.self) { provider in
+                    let isSelected = viewModel.llmProvider == .openAICompatible
+                        && viewModel.llmRemoteProvider == provider
+                    modelProviderCard(
+                        providerID: provider.studioProviderID,
+                        title: provider.displayName,
+                        description: L("settings.models.card.\(provider.rawValue).summary"),
+                        badge: L("settings.models.badge.free"),
+                        isSelected: isSelected
+                    ) {
+                        withAnimation(.easeOut(duration: 0.18)) {
+                            viewModel.selectLLMRemoteProvider(provider)
+                        }
+                    }
+                }
+
                 modelProviderCard(
                     providerID: .ollama,
                     title: L("provider.llm.ollama"),
@@ -281,16 +294,14 @@ struct OnboardingView: View {
                     }
                 }
 
-                ForEach(LLMRemoteProvider.allCases, id: \.self) { provider in
+                ForEach(LLMRemoteProvider.settingsDisplayOrder.dropFirst(), id: \.self) { provider in
                     let isSelected = viewModel.llmProvider == .openAICompatible
                         && viewModel.llmRemoteProvider == provider
                     modelProviderCard(
                         providerID: provider.studioProviderID,
                         title: provider.displayName,
                         description: L("settings.models.card.\(provider.rawValue).summary"),
-                        badge: provider == .freeModel
-                            ? L("settings.models.badge.free")
-                            : provider.apiStyle == .openAICompatible
+                        badge: provider.apiStyle == .openAICompatible
                             ? L("settings.models.badge.api")
                             : L("settings.models.badge.native"),
                         isSelected: isSelected

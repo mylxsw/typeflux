@@ -13,6 +13,15 @@ enum STTProvider: String, CaseIterable, Codable {
     case aliCloud
     case doubaoRealtime
 
+    static let settingsDisplayOrder: [STTProvider] = [
+        .freeModel,
+        .localModel,
+        .whisperAPI,
+        .multimodalLLM,
+        .aliCloud,
+        .doubaoRealtime,
+    ]
+
     var displayName: String {
         switch self {
         case .freeModel:
