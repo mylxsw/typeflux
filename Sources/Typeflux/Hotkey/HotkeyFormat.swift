@@ -3,15 +3,19 @@ import Foundation
 
 enum HotkeyFormat {
     static func display(_ binding: HotkeyBinding) -> String {
+        components(binding).joined(separator: " ")
+    }
+
+    static func components(_ binding: HotkeyBinding) -> [String] {
         if binding.isRightCommandTrigger {
-            return "Right Command"
+            return ["Right Command"]
         }
         if binding.isFunctionTrigger {
-            return "Fn"
+            return ["Fn"]
         }
 
         let flags: NSEvent.ModifierFlags = NSEvent.ModifierFlags(rawValue: binding.modifierFlags)
-        let modifiers = [
+        var parts = [
             flags.contains(.function) ? "Fn" : nil,
             flags.contains(.control) ? "⌃" : nil,
             flags.contains(.option) ? "⌥" : nil,
@@ -19,12 +23,8 @@ enum HotkeyFormat {
             flags.contains(.command) ? "⌘" : nil
         ].compactMap { $0 }
 
-        let keyName = keyCodeToName(binding.keyCode)
-        if modifiers.isEmpty {
-            return keyName
-        }
-
-        return (modifiers + [keyName]).joined(separator: " ")
+        parts.append(keyCodeToName(binding.keyCode))
+        return parts
     }
 
     private static func keyCodeToName(_ keyCode: Int) -> String {

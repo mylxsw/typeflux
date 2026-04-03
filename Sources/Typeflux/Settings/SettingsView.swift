@@ -850,8 +850,6 @@ struct StudioView: View {
                             }
                         )
 
-                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
                         shortcutConfigurationRow(
                             title: L("settings.shortcuts.ask.title"),
                             subtitle: L("settings.shortcuts.ask.subtitle"),
@@ -872,8 +870,6 @@ struct StudioView: View {
                                 viewModel.resetAskHotkey()
                             }
                         )
-
-                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                         shortcutConfigurationRow(
                             title: L("settings.shortcuts.persona.title"),
@@ -1696,22 +1692,12 @@ struct StudioView: View {
                 .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
                 .foregroundStyle(StudioTheme.accent)
 
-            Text(HotkeyFormat.display(binding))
-                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
+            HStack(spacing: StudioTheme.Spacing.xxxSmall) {
+                ForEach(HotkeyFormat.components(binding), id: \.self) { key in
+                    shortcutKeycap(key)
+                }
+            }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(
-            Capsule(style: .continuous)
-                .fill(StudioTheme.surface)
-        )
-        .overlay(
-            Capsule(style: .continuous)
-                .stroke(
-                    StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
-                    lineWidth: StudioTheme.BorderWidth.thin)
-        )
     }
 
     private func personaSelectionCard(
