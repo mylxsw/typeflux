@@ -41,7 +41,7 @@
 "studio.heading.vocabulary" = "Vocabulary";
 "studio.heading.history" = "History";
 "studio.heading.settings" = "Settings";
-"studio.subheading.home" = "Keep the whole desktop experience consistent with a calmer, cleaner control surface.";
+"studio.subheading.home" = "AI-powered voice input — speak once, get transcribed and refined text delivered to any app on your Mac.";
 "studio.subheading.models" = "Choose the local and remote engines used for transcription and rewrite flows.";
 "studio.subheading.personas" = "Create reusable writing styles and keep every prompt ready for daily use.";
 "studio.subheading.vocabulary" = "Help Typeflux catch names, products, and domain terms more reliably.";

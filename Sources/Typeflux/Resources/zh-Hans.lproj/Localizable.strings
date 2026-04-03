@@ -41,7 +41,7 @@
 "studio.heading.vocabulary" = "词库";
 "studio.heading.history" = "历史";
 "studio.heading.settings" = "设置";
-"studio.subheading.home" = "用更安静、更统一的控制界面保持整个桌面体验一致。";
+"studio.subheading.home" = "AI 驱动的语音输入——说话即输入，自动转写润色，投递到 Mac 上的任意位置。";
 "studio.subheading.models" = "选择转写和改写流程中使用的本地与远程引擎。";
 "studio.subheading.personas" = "创建可复用的写作风格，让常用提示词随时可用。";
 "studio.subheading.vocabulary" = "帮助 Typeflux 更稳定地识别人名、产品名和领域词汇。";

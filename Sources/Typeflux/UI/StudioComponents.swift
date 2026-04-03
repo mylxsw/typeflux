@@ -378,7 +378,7 @@ private struct StudioSidebarIconButton: View {
 struct StudioHeroHeader: View {
     let eyebrow: String
     let title: String
-    let subtitle: String
+    var subtitle: String? = nil
     var badge: String? = nil
 
     var body: some View {
@@ -392,10 +392,12 @@ struct StudioHeroHeader: View {
                     StudioPill(title: badge)
                 }
             }
-            Text(subtitle)
-                .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .frame(maxWidth: StudioTheme.Layout.heroMaxWidth, alignment: .leading)
+            if let subtitle {
+                Text(subtitle)
+                    .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(maxWidth: StudioTheme.Layout.heroMaxWidth, alignment: .leading)
+            }
         }
     }
 }

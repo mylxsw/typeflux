@@ -213,19 +213,7 @@ struct StudioView: View {
                 badge: viewModel.currentSection == .agent ? "Beta" : nil
             )
 
-            if viewModel.currentSection == .history {
-                Spacer()
-
-                StudioButton(
-                    title: viewModel.isRefreshingHistory
-                        ? L("common.refreshing") : L("common.refresh"),
-                    systemImage: "arrow.clockwise",
-                    variant: .secondary,
-                    isLoading: viewModel.isRefreshingHistory
-                ) {
-                    viewModel.refreshHistoryWithFeedback()
-                }
-            } else if viewModel.currentSection == .vocabulary {
+            if viewModel.currentSection == .vocabulary {
                 Spacer()
 
                 StudioButton(
@@ -234,6 +222,20 @@ struct StudioView: View {
                     newVocabularyTerm = ""
                     isAddingVocabulary = true
                 }
+            } else if viewModel.currentSection == .personas {
+                Spacer()
+
+                Button(action: viewModel.beginCreatingPersona) {
+                    Image(systemName: "plus")
+                        .foregroundStyle(.white)
+                        .frame(
+                            width: StudioTheme.ControlSize.personaAddButton,
+                            height: StudioTheme.ControlSize.personaAddButton
+                        )
+                        .background(Circle().fill(StudioTheme.accent))
+                        .contentShape(Circle())
+                }
+                .buttonStyle(StudioInteractiveButtonStyle())
             }
         }
     }
@@ -371,27 +373,6 @@ struct StudioView: View {
     private var personasPage: some View {
         HStack(alignment: .top, spacing: StudioTheme.Spacing.section) {
             StudioCard {
-                HStack {
-                    Text(L("settings.personas.roster"))
-                        .font(
-                            .studioDisplay(
-                                StudioTheme.Typography.subsectionTitle, weight: .semibold)
-                        )
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Spacer()
-                    Button(action: viewModel.beginCreatingPersona) {
-                        Image(systemName: "plus")
-                            .foregroundStyle(.white)
-                            .frame(
-                                width: StudioTheme.ControlSize.personaAddButton,
-                                height: StudioTheme.ControlSize.personaAddButton
-                            )
-                            .background(Circle().fill(StudioTheme.accent))
-                            .contentShape(Circle())
-                    }
-                    .buttonStyle(StudioInteractiveButtonStyle())
-                }
-
                 VStack(spacing: StudioTheme.Spacing.smallMedium) {
                     ForEach(viewModel.filteredPersonas) { persona in
                         Button {
@@ -607,17 +588,20 @@ struct StudioView: View {
                         subtitle: L("history.export.subtitle")
                     ) {
                         HStack(spacing: StudioTheme.Spacing.medium) {
-                            StudioButton(
-                                title: L("history.action.exportMarkdown"),
-                                systemImage: "square.and.arrow.up", variant: .primary
+                            StudioIconButton(
+                                systemImage: "square.and.arrow.up",
+                                variant: .primary
                             ) {
                                 viewModel.exportHistory()
                             }
-                            StudioButton(
-                                title: L("common.clear"), systemImage: "trash", variant: .ghost
+                            .studioTooltip(L("history.action.exportMarkdown"), yOffset: 34)
+                            StudioIconButton(
+                                systemImage: "trash",
+                                variant: .ghost
                             ) {
                                 viewModel.clearHistory()
                             }
+                            .studioTooltip(L("common.clear"), yOffset: 34)
                         }
                     }
                 }

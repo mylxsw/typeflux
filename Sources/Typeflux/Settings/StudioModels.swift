@@ -69,22 +69,22 @@ enum StudioSection: String, CaseIterable, Identifiable {
         }
     }
 
-    var subheading: String {
+    var subheading: String? {
         switch self {
         case .home:
             return L("studio.subheading.home")
         case .models:
-            return L("studio.subheading.models")
+            return nil
         case .personas:
-            return L("studio.subheading.personas")
+            return nil
         case .vocabulary:
             return L("studio.subheading.vocabulary")
         case .history:
-            return L("studio.subheading.history")
+            return nil
         case .agent:
             return L("studio.subheading.agent")
         case .settings:
-            return L("studio.subheading.settings")
+            return nil
         }
     }
 
