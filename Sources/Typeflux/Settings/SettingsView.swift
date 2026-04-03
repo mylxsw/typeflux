@@ -1424,24 +1424,32 @@ struct StudioView: View {
             Text(label)
                 .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
                 .foregroundStyle(StudioTheme.textSecondary)
-            TextEditor(text: text)
-                .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .scrollContentBackground(.hidden)
-                .frame(minHeight: 60, maxHeight: 100)
-                .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
-                .padding(.vertical, StudioTheme.Insets.textFieldVertical)
-                .background(
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                        .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                        .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
-                )
-            Text(hint)
-                .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
-                .foregroundStyle(StudioTheme.textTertiary)
+            ZStack(alignment: .topLeading) {
+                if text.wrappedValue.isEmpty {
+                    Text(hint)
+                        .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal + 4)
+                        .padding(.vertical, StudioTheme.Insets.textFieldVertical + 2)
+                        .allowsHitTesting(false)
+                }
+
+                TextEditor(text: text)
+                    .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .scrollContentBackground(.hidden)
+                    .frame(minHeight: 60, maxHeight: 100)
+                    .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
+                    .padding(.vertical, StudioTheme.Insets.textFieldVertical)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                    .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                    .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
+            )
         }
     }
 

@@ -25,6 +25,65 @@ struct HistoryPipelineTiming: Codable, Equatable {
         guard let start, let end else { return nil }
         return max(0, Int((end.timeIntervalSince(start) * 1000).rounded()))
     }
+
+    func generatedStats() -> HistoryPipelineStats {
+        HistoryPipelineStats(
+            recordingStoppedAt: recordingStoppedAt,
+            audioFileReadyAt: audioFileReadyAt,
+            transcriptionStartedAt: transcriptionStartedAt,
+            transcriptionCompletedAt: transcriptionCompletedAt,
+            llmProcessingStartedAt: llmProcessingStartedAt,
+            llmProcessingCompletedAt: llmProcessingCompletedAt,
+            applyStartedAt: applyStartedAt,
+            applyCompletedAt: applyCompletedAt,
+            stopToAudioReadyMilliseconds: millisecondsBetween(recordingStoppedAt, audioFileReadyAt),
+            transcriptionDurationMilliseconds: millisecondsBetween(transcriptionStartedAt, transcriptionCompletedAt),
+            stopToTranscriptionCompletedMilliseconds: millisecondsBetween(recordingStoppedAt, transcriptionCompletedAt),
+            transcriptToLLMStartMilliseconds: millisecondsBetween(transcriptionCompletedAt, llmProcessingStartedAt),
+            llmDurationMilliseconds: millisecondsBetween(llmProcessingStartedAt, llmProcessingCompletedAt),
+            applyDurationMilliseconds: millisecondsBetween(applyStartedAt, applyCompletedAt),
+            endToEndMilliseconds: millisecondsBetween(
+                recordingStoppedAt,
+                applyCompletedAt ?? llmProcessingCompletedAt ?? transcriptionCompletedAt
+            )
+        )
+    }
+}
+
+struct HistoryPipelineStats: Codable, Equatable {
+    var recordingStoppedAt: Date?
+    var audioFileReadyAt: Date?
+    var transcriptionStartedAt: Date?
+    var transcriptionCompletedAt: Date?
+    var llmProcessingStartedAt: Date?
+    var llmProcessingCompletedAt: Date?
+    var applyStartedAt: Date?
+    var applyCompletedAt: Date?
+    var stopToAudioReadyMilliseconds: Int?
+    var transcriptionDurationMilliseconds: Int?
+    var stopToTranscriptionCompletedMilliseconds: Int?
+    var transcriptToLLMStartMilliseconds: Int?
+    var llmDurationMilliseconds: Int?
+    var applyDurationMilliseconds: Int?
+    var endToEndMilliseconds: Int?
+
+    var hasData: Bool {
+        recordingStoppedAt != nil ||
+        audioFileReadyAt != nil ||
+        transcriptionStartedAt != nil ||
+        transcriptionCompletedAt != nil ||
+        llmProcessingStartedAt != nil ||
+        llmProcessingCompletedAt != nil ||
+        applyStartedAt != nil ||
+        applyCompletedAt != nil ||
+        stopToAudioReadyMilliseconds != nil ||
+        transcriptionDurationMilliseconds != nil ||
+        stopToTranscriptionCompletedMilliseconds != nil ||
+        transcriptToLLMStartMilliseconds != nil ||
+        llmDurationMilliseconds != nil ||
+        applyDurationMilliseconds != nil ||
+        endToEndMilliseconds != nil
+    }
 }
 
 struct HistoryRecord: Codable, Identifiable {
@@ -54,6 +113,7 @@ struct HistoryRecord: Codable, Identifiable {
     var selectionEditedText: String?
     var recordingDurationSeconds: TimeInterval?
     var pipelineTiming: HistoryPipelineTiming?
+    var pipelineStats: HistoryPipelineStats?
     var errorMessage: String?
     var applyMessage: String?
     var recordingStatus: StepStatus
@@ -73,6 +133,7 @@ struct HistoryRecord: Codable, Identifiable {
         selectionEditedText: String? = nil,
         recordingDurationSeconds: TimeInterval? = nil,
         pipelineTiming: HistoryPipelineTiming? = nil,
+        pipelineStats: HistoryPipelineStats? = nil,
         errorMessage: String? = nil,
         applyMessage: String? = nil,
         recordingStatus: StepStatus = .pending,
@@ -91,6 +152,7 @@ struct HistoryRecord: Codable, Identifiable {
         self.selectionEditedText = selectionEditedText
         self.recordingDurationSeconds = recordingDurationSeconds
         self.pipelineTiming = pipelineTiming
+        self.pipelineStats = pipelineStats ?? pipelineTiming?.generatedStats()
         self.errorMessage = errorMessage
         self.applyMessage = applyMessage
         self.recordingStatus = recordingStatus
@@ -121,6 +183,7 @@ struct HistoryRecord: Codable, Identifiable {
         !(selectionOriginalText?.isEmpty ?? true) ||
         !(selectionEditedText?.isEmpty ?? true) ||
         (pipelineTiming?.hasData ?? false) ||
+        (pipelineStats?.hasData ?? false) ||
         !(errorMessage?.isEmpty ?? true) ||
         !(applyMessage?.isEmpty ?? true)
     }
@@ -137,6 +200,7 @@ struct HistoryRecord: Codable, Identifiable {
         case selectionEditedText
         case recordingDurationSeconds
         case pipelineTiming
+        case pipelineStats
         case errorMessage
         case applyMessage
         case recordingStatus
@@ -162,6 +226,8 @@ struct HistoryRecord: Codable, Identifiable {
         selectionEditedText = try container.decodeIfPresent(String.self, forKey: .selectionEditedText)
         recordingDurationSeconds = try container.decodeIfPresent(TimeInterval.self, forKey: .recordingDurationSeconds)
         pipelineTiming = try container.decodeIfPresent(HistoryPipelineTiming.self, forKey: .pipelineTiming)
+        pipelineStats = try container.decodeIfPresent(HistoryPipelineStats.self, forKey: .pipelineStats)
+            ?? pipelineTiming?.generatedStats()
         errorMessage = try container.decodeIfPresent(String.self, forKey: .errorMessage)
         applyMessage = try container.decodeIfPresent(String.self, forKey: .applyMessage)
         recordingStatus = try container.decodeIfPresent(StepStatus.self, forKey: .recordingStatus) ?? .succeeded
@@ -183,6 +249,7 @@ struct HistoryRecord: Codable, Identifiable {
         try container.encodeIfPresent(selectionEditedText, forKey: .selectionEditedText)
         try container.encodeIfPresent(recordingDurationSeconds, forKey: .recordingDurationSeconds)
         try container.encodeIfPresent(pipelineTiming, forKey: .pipelineTiming)
+        try container.encodeIfPresent(pipelineStats, forKey: .pipelineStats)
         try container.encodeIfPresent(errorMessage, forKey: .errorMessage)
         try container.encodeIfPresent(applyMessage, forKey: .applyMessage)
         try container.encode(recordingStatus, forKey: .recordingStatus)

@@ -1973,6 +1973,8 @@ final class WorkflowController {
     }
 
     private func saveHistoryRecord(_ record: HistoryRecord) {
+        var record = record
+        record.pipelineStats = record.pipelineTiming?.generatedStats() ?? record.pipelineStats
         historyStore.save(record: record)
     }
 

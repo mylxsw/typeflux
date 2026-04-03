@@ -1780,7 +1780,7 @@ final class StudioViewModel: ObservableObject {
             personaResultText: record.personaResultText,
             selectionOriginalText: record.selectionOriginalText,
             selectionEditedText: record.selectionEditedText,
-            pipelineTimingDetails: historyPipelineTimingDetails(record.pipelineTiming),
+            pipelineStatItems: historyPipelineStatItems(record.pipelineStats ?? record.pipelineTiming?.generatedStats()),
             errorMessage: record.errorMessage,
             applyMessage: record.applyMessage,
             hasTranscriptToCopy: !(record.transcriptText?.isEmpty ?? true),
@@ -1792,48 +1792,30 @@ final class StudioViewModel: ObservableObject {
         )
     }
 
-    private func historyPipelineTimingDetails(_ timing: HistoryPipelineTiming?) -> String? {
-        guard let timing, timing.hasData else { return nil }
-
-        let timestampRows: [(String, Date?)] = [
-            (L("history.stats.recordingStoppedAt"), timing.recordingStoppedAt),
-            (L("history.stats.audioFileReadyAt"), timing.audioFileReadyAt),
-            (L("history.stats.transcriptionStartedAt"), timing.transcriptionStartedAt),
-            (L("history.stats.transcriptionCompletedAt"), timing.transcriptionCompletedAt),
-            (L("history.stats.llmProcessingStartedAt"), timing.llmProcessingStartedAt),
-            (L("history.stats.llmProcessingCompletedAt"), timing.llmProcessingCompletedAt),
-            (L("history.stats.applyStartedAt"), timing.applyStartedAt),
-            (L("history.stats.applyCompletedAt"), timing.applyCompletedAt)
-        ]
+    private func historyPipelineStatItems(_ stats: HistoryPipelineStats?) -> [HistoryPipelineStatPresentationItem] {
+        guard let stats, stats.hasData else { return [] }
 
         let durationRows: [(String, Int?)] = [
-            (L("history.stats.stopToAudioReady"), timing.millisecondsBetween(timing.recordingStoppedAt, timing.audioFileReadyAt)),
-            (L("history.stats.transcriptionDuration"), timing.millisecondsBetween(timing.transcriptionStartedAt, timing.transcriptionCompletedAt)),
-            (L("history.stats.stopToTranscriptionCompleted"), timing.millisecondsBetween(timing.recordingStoppedAt, timing.transcriptionCompletedAt)),
-            (L("history.stats.transcriptToLLMStart"), timing.millisecondsBetween(timing.transcriptionCompletedAt, timing.llmProcessingStartedAt)),
-            (L("history.stats.llmDuration"), timing.millisecondsBetween(timing.llmProcessingStartedAt, timing.llmProcessingCompletedAt)),
-            (L("history.stats.applyDuration"), timing.millisecondsBetween(timing.applyStartedAt, timing.applyCompletedAt)),
-            (L("history.stats.endToEnd"), timing.millisecondsBetween(
-                timing.recordingStoppedAt,
-                timing.applyCompletedAt ?? timing.llmProcessingCompletedAt ?? timing.transcriptionCompletedAt
-            ))
+            (L("history.stats.stopToAudioReady"), stats.stopToAudioReadyMilliseconds),
+            (L("history.stats.transcriptionDuration"), stats.transcriptionDurationMilliseconds),
+            (L("history.stats.stopToTranscriptionCompleted"), stats.stopToTranscriptionCompletedMilliseconds),
+            (L("history.stats.transcriptToLLMStart"), stats.transcriptToLLMStartMilliseconds),
+            (L("history.stats.llmDuration"), stats.llmDurationMilliseconds),
+            (L("history.stats.applyDuration"), stats.applyDurationMilliseconds),
+            (L("history.stats.endToEnd"), stats.endToEndMilliseconds)
         ]
 
-        let lines = timestampRows.map { label, date in
-            "\(label): \(historyTimestampText(date))"
-        } + durationRows.compactMap { label, value in
-            guard let value else { return nil }
-            return "\(label): \(historyDurationText(milliseconds: value))"
+        return durationRows.enumerated().compactMap { item -> HistoryPipelineStatPresentationItem? in
+            let index = item.offset
+            let row = item.element
+            guard let value = row.1 else { return nil }
+            return HistoryPipelineStatPresentationItem(
+                id: "duration-\(index)",
+                title: row.0,
+                value: historyDurationText(milliseconds: value),
+                style: .duration
+            )
         }
-
-        return lines.isEmpty ? nil : lines.joined(separator: "\n")
-    }
-
-    private func historyTimestampText(_ date: Date?) -> String {
-        guard let date else { return L("history.stats.notAvailable") }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-        return formatter.string(from: date)
     }
 
     private func historyDurationText(milliseconds: Int) -> String {

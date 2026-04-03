@@ -107,15 +107,47 @@ final class FileHistoryStore: HistoryStore {
                 md += "\n### Transcript\n\n\(transcriptText)\n"
             }
             if let pipelineTiming = r.pipelineTiming, pipelineTiming.hasData {
+                let pipelineStats = r.pipelineStats ?? pipelineTiming.generatedStats()
                 md += "\n### Pipeline Stats\n\n"
-                md += "- Recording stopped: \(pipelineTiming.recordingStoppedAt?.ISO8601Format() ?? "<none>")\n"
-                md += "- Audio file ready: \(pipelineTiming.audioFileReadyAt?.ISO8601Format() ?? "<none>")\n"
-                md += "- STT started: \(pipelineTiming.transcriptionStartedAt?.ISO8601Format() ?? "<none>")\n"
-                md += "- STT completed: \(pipelineTiming.transcriptionCompletedAt?.ISO8601Format() ?? "<none>")\n"
-                md += "- LLM started: \(pipelineTiming.llmProcessingStartedAt?.ISO8601Format() ?? "<none>")\n"
-                md += "- LLM completed: \(pipelineTiming.llmProcessingCompletedAt?.ISO8601Format() ?? "<none>")\n"
-                md += "- Apply started: \(pipelineTiming.applyStartedAt?.ISO8601Format() ?? "<none>")\n"
-                md += "- Apply completed: \(pipelineTiming.applyCompletedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- Recording stopped: \(pipelineStats.recordingStoppedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- Audio file ready: \(pipelineStats.audioFileReadyAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- STT started: \(pipelineStats.transcriptionStartedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- STT completed: \(pipelineStats.transcriptionCompletedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- LLM started: \(pipelineStats.llmProcessingStartedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- LLM completed: \(pipelineStats.llmProcessingCompletedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- Apply started: \(pipelineStats.applyStartedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- Apply completed: \(pipelineStats.applyCompletedAt?.ISO8601Format() ?? "<none>")\n"
+                if let value = pipelineStats.stopToAudioReadyMilliseconds {
+                    md += "- Stop -> audio ready: \(value) ms\n"
+                }
+                if let value = pipelineStats.transcriptionDurationMilliseconds {
+                    md += "- STT duration: \(value) ms\n"
+                }
+                if let value = pipelineStats.stopToTranscriptionCompletedMilliseconds {
+                    md += "- Stop -> STT completed: \(value) ms\n"
+                }
+                if let value = pipelineStats.transcriptToLLMStartMilliseconds {
+                    md += "- Transcript -> LLM start: \(value) ms\n"
+                }
+                if let value = pipelineStats.llmDurationMilliseconds {
+                    md += "- LLM duration: \(value) ms\n"
+                }
+                if let value = pipelineStats.applyDurationMilliseconds {
+                    md += "- Apply duration: \(value) ms\n"
+                }
+                if let value = pipelineStats.endToEndMilliseconds {
+                    md += "- End-to-end: \(value) ms\n"
+                }
+            } else if let pipelineStats = r.pipelineStats, pipelineStats.hasData {
+                md += "\n### Pipeline Stats\n\n"
+                md += "- Recording stopped: \(pipelineStats.recordingStoppedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- Audio file ready: \(pipelineStats.audioFileReadyAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- STT started: \(pipelineStats.transcriptionStartedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- STT completed: \(pipelineStats.transcriptionCompletedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- LLM started: \(pipelineStats.llmProcessingStartedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- LLM completed: \(pipelineStats.llmProcessingCompletedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- Apply started: \(pipelineStats.applyStartedAt?.ISO8601Format() ?? "<none>")\n"
+                md += "- Apply completed: \(pipelineStats.applyCompletedAt?.ISO8601Format() ?? "<none>")\n"
             }
             if let personaResultText = r.personaResultText, !personaResultText.isEmpty {
                 md += "\n### Persona Result\n\n\(personaResultText)\n"

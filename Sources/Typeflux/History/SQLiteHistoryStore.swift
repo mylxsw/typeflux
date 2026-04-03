@@ -156,7 +156,10 @@ final class SQLiteHistoryStore: HistoryStore {
                 md += "\n### Transcript\n\n\(transcriptText)\n"
             }
             if let pipelineTiming = r.pipelineTiming, pipelineTiming.hasData {
-                md += "\n### Pipeline Stats\n\n\(markdown(for: pipelineTiming))\n"
+                let pipelineStats = r.pipelineStats ?? pipelineTiming.generatedStats()
+                md += "\n### Pipeline Stats\n\n\(markdown(for: pipelineStats))\n"
+            } else if let pipelineStats = r.pipelineStats, pipelineStats.hasData {
+                md += "\n### Pipeline Stats\n\n\(markdown(for: pipelineStats))\n"
             }
             if let personaResultText = r.personaResultText, !personaResultText.isEmpty {
                 md += "\n### Persona Result\n\n\(personaResultText)\n"
@@ -203,6 +206,7 @@ final class SQLiteHistoryStore: HistoryStore {
             selection_edited_text TEXT,
             recording_duration_seconds REAL,
             pipeline_timing_json TEXT,
+            pipeline_stats_json TEXT,
             error_message TEXT,
             apply_message TEXT,
             recording_status TEXT NOT NULL,
@@ -218,6 +222,7 @@ final class SQLiteHistoryStore: HistoryStore {
 
     private func migrateSchemaIfNeeded() throws {
         try ensureColumnExists(name: "pipeline_timing_json", definition: "TEXT")
+        try ensureColumnExists(name: "pipeline_stats_json", definition: "TEXT")
     }
 
     private func migrateLegacyJSONIfNeeded() throws {
@@ -257,7 +262,7 @@ final class SQLiteHistoryStore: HistoryStore {
         try fetchRecords(
             sql: """
             SELECT id, date, mode, audio_file_path, transcript_text, persona_prompt, persona_result_text,
-                   selection_original_text, selection_edited_text, recording_duration_seconds, pipeline_timing_json,
+                   selection_original_text, selection_edited_text, recording_duration_seconds, pipeline_timing_json, pipeline_stats_json,
                    error_message, apply_message, recording_status, transcription_status, processing_status, apply_status
             FROM history_records
             ORDER BY date DESC;
@@ -271,7 +276,7 @@ final class SQLiteHistoryStore: HistoryStore {
             return try fetchRecords(
                 sql: """
                 SELECT id, date, mode, audio_file_path, transcript_text, persona_prompt, persona_result_text,
-                       selection_original_text, selection_edited_text, recording_duration_seconds, pipeline_timing_json,
+                       selection_original_text, selection_edited_text, recording_duration_seconds, pipeline_timing_json, pipeline_stats_json,
                        error_message, apply_message, recording_status, transcription_status, processing_status, apply_status
                 FROM history_records
                 ORDER BY date DESC
@@ -288,7 +293,7 @@ final class SQLiteHistoryStore: HistoryStore {
         return try fetchRecords(
             sql: """
             SELECT id, date, mode, audio_file_path, transcript_text, persona_prompt, persona_result_text,
-                   selection_original_text, selection_edited_text, recording_duration_seconds, pipeline_timing_json,
+                   selection_original_text, selection_edited_text, recording_duration_seconds, pipeline_timing_json, pipeline_stats_json,
                    error_message, apply_message, recording_status, transcription_status, processing_status, apply_status
             FROM history_records
             WHERE mode LIKE ? COLLATE NOCASE
@@ -317,7 +322,7 @@ final class SQLiteHistoryStore: HistoryStore {
         try fetchRecords(
             sql: """
             SELECT id, date, mode, audio_file_path, transcript_text, persona_prompt, persona_result_text,
-                   selection_original_text, selection_edited_text, recording_duration_seconds, pipeline_timing_json,
+                   selection_original_text, selection_edited_text, recording_duration_seconds, pipeline_timing_json, pipeline_stats_json,
                    error_message, apply_message, recording_status, transcription_status, processing_status, apply_status
             FROM history_records
             WHERE id = ?
@@ -353,9 +358,9 @@ final class SQLiteHistoryStore: HistoryStore {
         let sql = """
         INSERT INTO history_records (
             id, date, mode, audio_file_path, transcript_text, persona_prompt, persona_result_text,
-            selection_original_text, selection_edited_text, recording_duration_seconds, pipeline_timing_json,
+            selection_original_text, selection_edited_text, recording_duration_seconds, pipeline_timing_json, pipeline_stats_json,
             error_message, apply_message, recording_status, transcription_status, processing_status, apply_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             date = excluded.date,
             mode = excluded.mode,
@@ -367,6 +372,7 @@ final class SQLiteHistoryStore: HistoryStore {
             selection_edited_text = excluded.selection_edited_text,
             recording_duration_seconds = excluded.recording_duration_seconds,
             pipeline_timing_json = excluded.pipeline_timing_json,
+            pipeline_stats_json = excluded.pipeline_stats_json,
             error_message = excluded.error_message,
             apply_message = excluded.apply_message,
             recording_status = excluded.recording_status,
@@ -386,13 +392,14 @@ final class SQLiteHistoryStore: HistoryStore {
             self.bind(record.selectionOriginalText, at: 8, in: statement)
             self.bind(record.selectionEditedText, at: 9, in: statement)
             self.bind(record.recordingDurationSeconds, at: 10, in: statement)
-            self.bind(self.encodePipelineTiming(record.pipelineTiming), at: 11, in: statement)
-            self.bind(record.errorMessage, at: 12, in: statement)
-            self.bind(record.applyMessage, at: 13, in: statement)
-            self.bind(record.recordingStatus.rawValue, at: 14, in: statement)
-            self.bind(record.transcriptionStatus.rawValue, at: 15, in: statement)
-            self.bind(record.processingStatus.rawValue, at: 16, in: statement)
-            self.bind(record.applyStatus.rawValue, at: 17, in: statement)
+            self.bind(self.encodeCodable(record.pipelineTiming), at: 11, in: statement)
+            self.bind(self.encodeCodable(record.pipelineStats ?? record.pipelineTiming?.generatedStats()), at: 12, in: statement)
+            self.bind(record.errorMessage, at: 13, in: statement)
+            self.bind(record.applyMessage, at: 14, in: statement)
+            self.bind(record.recordingStatus.rawValue, at: 15, in: statement)
+            self.bind(record.transcriptionStatus.rawValue, at: 16, in: statement)
+            self.bind(record.processingStatus.rawValue, at: 17, in: statement)
+            self.bind(record.applyStatus.rawValue, at: 18, in: statement)
         }
     }
 
@@ -451,13 +458,13 @@ final class SQLiteHistoryStore: HistoryStore {
             let id = UUID(uuidString: idString),
             let modeRaw = string(at: 2, in: statement),
             let mode = HistoryRecord.Mode(rawValue: modeRaw),
-            let recordingStatusRaw = string(at: 13, in: statement),
+            let recordingStatusRaw = string(at: 14, in: statement),
             let recordingStatus = HistoryRecord.StepStatus(rawValue: recordingStatusRaw),
-            let transcriptionStatusRaw = string(at: 14, in: statement),
+            let transcriptionStatusRaw = string(at: 15, in: statement),
             let transcriptionStatus = HistoryRecord.StepStatus(rawValue: transcriptionStatusRaw),
-            let processingStatusRaw = string(at: 15, in: statement),
+            let processingStatusRaw = string(at: 16, in: statement),
             let processingStatus = HistoryRecord.StepStatus(rawValue: processingStatusRaw),
-            let applyStatusRaw = string(at: 16, in: statement),
+            let applyStatusRaw = string(at: 17, in: statement),
             let applyStatus = HistoryRecord.StepStatus(rawValue: applyStatusRaw)
         else {
             throw databaseError(message: "History database returned invalid record data")
@@ -474,9 +481,10 @@ final class SQLiteHistoryStore: HistoryStore {
             selectionOriginalText: string(at: 7, in: statement),
             selectionEditedText: string(at: 8, in: statement),
             recordingDurationSeconds: double(at: 9, in: statement),
-            pipelineTiming: decodePipelineTiming(from: string(at: 10, in: statement)),
-            errorMessage: string(at: 11, in: statement),
-            applyMessage: string(at: 12, in: statement),
+            pipelineTiming: decodeCodable(from: string(at: 10, in: statement), as: HistoryPipelineTiming.self),
+            pipelineStats: decodeCodable(from: string(at: 11, in: statement), as: HistoryPipelineStats.self),
+            errorMessage: string(at: 12, in: statement),
+            applyMessage: string(at: 13, in: statement),
             recordingStatus: recordingStatus,
             transcriptionStatus: transcriptionStatus,
             processingStatus: processingStatus,
@@ -556,57 +564,60 @@ final class SQLiteHistoryStore: HistoryStore {
         return false
     }
 
-    private func encodePipelineTiming(_ timing: HistoryPipelineTiming?) -> String? {
-        guard let timing, timing.hasData else { return nil }
-        guard let data = try? JSONEncoder().encode(timing) else { return nil }
+    private func encodeCodable<T: Codable>(_ value: T?) -> String? {
+        guard let value else { return nil }
+        if let timing = value as? HistoryPipelineTiming, !timing.hasData {
+            return nil
+        }
+        if let stats = value as? HistoryPipelineStats, !stats.hasData {
+            return nil
+        }
+        guard let data = try? JSONEncoder().encode(value) else { return nil }
         return String(data: data, encoding: .utf8)
     }
 
-    private func decodePipelineTiming(from json: String?) -> HistoryPipelineTiming? {
+    private func decodeCodable<T: Decodable>(from json: String?, as type: T.Type) -> T? {
         guard let json, !json.isEmpty else { return nil }
         guard let data = json.data(using: .utf8) else { return nil }
-        return try? JSONDecoder().decode(HistoryPipelineTiming.self, from: data)
+        return try? JSONDecoder().decode(type, from: data)
     }
 
-    private func markdown(for timing: HistoryPipelineTiming) -> String {
+    private func markdown(for stats: HistoryPipelineStats) -> String {
         var lines: [String] = []
 
-        if let value = timing.recordingStoppedAt {
+        if let value = stats.recordingStoppedAt {
             lines.append("- Recording stopped: \(value.ISO8601Format())")
         }
-        if let value = timing.audioFileReadyAt {
+        if let value = stats.audioFileReadyAt {
             lines.append("- Audio file ready: \(value.ISO8601Format())")
         }
-        if let value = timing.transcriptionStartedAt {
+        if let value = stats.transcriptionStartedAt {
             lines.append("- STT started: \(value.ISO8601Format())")
         }
-        if let value = timing.transcriptionCompletedAt {
+        if let value = stats.transcriptionCompletedAt {
             lines.append("- STT completed: \(value.ISO8601Format())")
         }
-        if let value = timing.llmProcessingStartedAt {
+        if let value = stats.llmProcessingStartedAt {
             lines.append("- LLM started: \(value.ISO8601Format())")
         }
-        if let value = timing.llmProcessingCompletedAt {
+        if let value = stats.llmProcessingCompletedAt {
             lines.append("- LLM completed: \(value.ISO8601Format())")
         }
-        if let value = timing.applyStartedAt {
+        if let value = stats.applyStartedAt {
             lines.append("- Apply started: \(value.ISO8601Format())")
         }
-        if let value = timing.applyCompletedAt {
+        if let value = stats.applyCompletedAt {
             lines.append("- Apply completed: \(value.ISO8601Format())")
         }
 
         let durations: [(String, Int?)] = [
-            ("Stop -> audio ready", timing.millisecondsBetween(timing.recordingStoppedAt, timing.audioFileReadyAt)),
-            ("STT duration", timing.millisecondsBetween(timing.transcriptionStartedAt, timing.transcriptionCompletedAt)),
-            ("Stop -> STT completed", timing.millisecondsBetween(timing.recordingStoppedAt, timing.transcriptionCompletedAt)),
-            ("Transcript -> LLM start", timing.millisecondsBetween(timing.transcriptionCompletedAt, timing.llmProcessingStartedAt)),
-            ("LLM duration", timing.millisecondsBetween(timing.llmProcessingStartedAt, timing.llmProcessingCompletedAt)),
-            ("Apply duration", timing.millisecondsBetween(timing.applyStartedAt, timing.applyCompletedAt)),
-            ("End-to-end", timing.millisecondsBetween(
-                timing.recordingStoppedAt,
-                timing.applyCompletedAt ?? timing.llmProcessingCompletedAt ?? timing.transcriptionCompletedAt
-            ))
+            ("Stop -> audio ready", stats.stopToAudioReadyMilliseconds),
+            ("STT duration", stats.transcriptionDurationMilliseconds),
+            ("Stop -> STT completed", stats.stopToTranscriptionCompletedMilliseconds),
+            ("Transcript -> LLM start", stats.transcriptToLLMStartMilliseconds),
+            ("LLM duration", stats.llmDurationMilliseconds),
+            ("Apply duration", stats.applyDurationMilliseconds),
+            ("End-to-end", stats.endToEndMilliseconds)
         ]
 
         for (label, value) in durations {

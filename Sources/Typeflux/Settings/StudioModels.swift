@@ -173,6 +173,18 @@ struct StudioModelCard: Identifiable {
     let actionTitle: String
 }
 
+struct HistoryPipelineStatPresentationItem: Identifiable {
+    enum ValueStyle {
+        case timestamp
+        case duration
+    }
+
+    let id: String
+    let title: String
+    let value: String
+    let style: ValueStyle
+}
+
 struct HistoryPresentationRecord: Identifiable {
     let id: UUID
     let date: Date
@@ -185,7 +197,7 @@ struct HistoryPresentationRecord: Identifiable {
     let personaResultText: String?
     let selectionOriginalText: String?
     let selectionEditedText: String?
-    let pipelineTimingDetails: String?
+    let pipelineStatItems: [HistoryPipelineStatPresentationItem]
     let errorMessage: String?
     let applyMessage: String?
     let hasTranscriptToCopy: Bool
