@@ -13,7 +13,7 @@ final class OpenAIAudioModelCatalogTests: XCTestCase {
     func testMultimodalBuiltInModelsMatchSupportedValues() {
         XCTAssertEqual(
             OpenAIAudioModelCatalog.multimodalModels,
-            ["gpt-4o-audio-preview", "gpt-4o-mini-audio-preview"]
+            ["gpt-4o-audio-preview", "gpt-4o-mini-audio-preview", "mimo-v2-omni"]
         )
     }
 
@@ -24,7 +24,10 @@ final class OpenAIAudioModelCatalogTests: XCTestCase {
         )
         XCTAssertEqual(
             OpenAIAudioModelCatalog.multimodalEndpoints,
-            ["https://api.openai.com/v1/chat/completions"]
+            [
+                "https://api.openai.com/v1/chat/completions",
+                "https://api.xiaomimimo.com/v1/chat/completions",
+            ]
         )
     }
 }
