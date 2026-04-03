@@ -24,6 +24,7 @@ private struct StudioButtonChromeModifier: ViewModifier {
             .background(background)
             .overlay(overlay)
             .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
             .scaleEffect(isPressed ? 0.985 : 1)
             .opacity(opacity)
             .animation(.easeOut(duration: 0.14), value: isPressed)
@@ -336,12 +337,19 @@ struct StudioHeroHeader: View {
     let eyebrow: String
     let title: String
     let subtitle: String
+    var badge: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-            Text(title)
-                .font(.studioDisplay(StudioTheme.Typography.heroTitle, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
+            HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
+                Text(title)
+                    .font(.studioDisplay(StudioTheme.Typography.heroTitle, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+
+                if let badge {
+                    StudioPill(title: badge)
+                }
+            }
             Text(subtitle)
                 .font(.studioBody(StudioTheme.Typography.bodyLarge))
                 .foregroundStyle(StudioTheme.textSecondary)
