@@ -588,3 +588,45 @@
 "onboarding.action.continue" = "下一步";
 "onboarding.action.skip" = "跳过";
 "onboarding.action.getStarted" = "开始使用";
+
+// MARK: - Agent 框架
+
+"studio.section.agent" = "Agent";
+"studio.eyebrow.agent" = "Agent 框架";
+"studio.heading.agent" = "Agent 配置";
+"studio.subheading.agent" = "配置 Agent 框架、MCP 服务器和工具集成。";
+"studio.search.agent" = "搜索 Agent 设置...";
+
+"settings.advanced.agentFramework.title" = "启用 Agent 框架";
+"settings.advanced.agentFramework.subtitle" = "为「随便问」功能启用多轮 Agent 循环，支持工具调用和 MCP 服务器集成。";
+
+"agent.section.general" = "通用";
+"agent.general.stepLogging.title" = "Agent 步骤日志";
+"agent.general.stepLogging.subtitle" = "记录 Agent 的每一步推理和工具调用，便于调试。";
+
+"agent.section.mcpServers" = "MCP 服务器";
+"agent.mcp.empty" = "尚未配置 MCP 服务器。添加服务器以通过外部工具扩展 Agent 能力。";
+"agent.mcp.addServer" = "添加 MCP 服务器";
+"agent.mcp.untitled" = "未命名服务器";
+"agent.mcp.name" = "服务器名称";
+"agent.mcp.namePlaceholder" = "我的 MCP 服务器";
+"agent.mcp.autoConnect.title" = "自动连接";
+"agent.mcp.autoConnect.subtitle" = "Agent 启动时自动连接此服务器。";
+"agent.mcp.stdio.command" = "命令";
+"agent.mcp.stdio.args" = "参数";
+"agent.mcp.http.url" = "服务器 URL";
+"agent.mcp.http.headers" = "请求头";
+"agent.mcp.http.headersHint" = "每行一条，格式：KEY=VALUE";
+"agent.mcp.testConnection" = "测试连接";
+"agent.mcp.testing" = "测试中...";
+"agent.mcp.testSuccess" = "连接成功 — 共 %d 个工具可用";
+"agent.mcp.edit" = "编辑";
+"agent.mcp.dialog.addTitle" = "添加 MCP 服务器";
+"agent.mcp.dialog.editTitle" = "编辑 MCP 服务器";
+"agent.mcp.transportType" = "传输类型";
+"agent.mcp.stdio.env" = "环境变量";
+"agent.mcp.stdio.envHint" = "每行一个变量，格式：KEY=VALUE";
+"agent.mcp.enabled.title" = "启用";
+"agent.mcp.enabled.subtitle" = "启用此 MCP 服务器以供 Agent 工具调用。";
+"agent.mcp.deleteDialog.title" = "删除 MCP 服务器";
+"agent.mcp.deleteDialog.message" = "确定删除「%@」吗？此操作无法撤销。";

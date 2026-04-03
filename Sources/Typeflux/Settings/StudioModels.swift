@@ -6,9 +6,20 @@ enum StudioSection: String, CaseIterable, Identifiable {
     case vocabulary
     case personas
     case models
+    case agent
     case settings
 
     var id: String { rawValue }
+
+    /// Sections that appear in the upper sidebar group.
+    static var sidebarUpperCases: [StudioSection] {
+        [.home, .vocabulary, .history]
+    }
+
+    /// Sections that appear in the lower sidebar group.
+    static var sidebarLowerCases: [StudioSection] {
+        [.models, .personas]
+    }
 
     var title: String {
         switch self {
@@ -17,6 +28,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .personas: return L("studio.section.personas")
         case .vocabulary: return L("studio.section.vocabulary")
         case .history: return L("studio.section.history")
+        case .agent: return L("studio.section.agent")
         case .settings: return L("studio.section.settings")
         }
     }
@@ -28,6 +40,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .personas: return "face.smiling"
         case .vocabulary: return "text.book.closed"
         case .history: return "clock.arrow.circlepath"
+        case .agent: return "puzzlepiece.extension"
         case .settings: return "gearshape.fill"
         }
     }
@@ -39,6 +52,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .personas: return L("studio.eyebrow.personas")
         case .vocabulary: return L("studio.eyebrow.vocabulary")
         case .history: return L("studio.eyebrow.history")
+        case .agent: return L("studio.eyebrow.agent")
         case .settings: return L("studio.eyebrow.settings")
         }
     }
@@ -50,6 +64,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .personas: return L("studio.heading.personas")
         case .vocabulary: return L("studio.heading.vocabulary")
         case .history: return L("studio.heading.history")
+        case .agent: return L("studio.heading.agent")
         case .settings: return L("studio.heading.settings")
         }
     }
@@ -66,6 +81,8 @@ enum StudioSection: String, CaseIterable, Identifiable {
             return L("studio.subheading.vocabulary")
         case .history:
             return L("studio.subheading.history")
+        case .agent:
+            return L("studio.subheading.agent")
         case .settings:
             return L("studio.subheading.settings")
         }
@@ -78,6 +95,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .personas: return L("studio.search.personas")
         case .vocabulary: return L("studio.search.vocabulary")
         case .history: return L("studio.search.history")
+        case .agent: return L("studio.search.agent")
         case .settings: return L("studio.search.settings")
         }
     }

@@ -62,7 +62,7 @@ enum HistoryRetentionPolicy: String, CaseIterable, Identifiable {
 }
 
 final class SettingsStore {
-    private let defaults: UserDefaults
+    let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
