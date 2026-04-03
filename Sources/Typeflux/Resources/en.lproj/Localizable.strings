@@ -345,13 +345,13 @@
 
 "settings.shortcuts.activation.title" = "Voice Input";
 "settings.shortcuts.activation.subtitle" = "Use one shortcut to start voice input. Hold to talk, or tap quickly to lock the recording session. If text is selected, the transcript replaces that selection directly.";
-"settings.shortcuts.activation.footnote" = "Default is Fn. This shortcut is now dedicated to text insertion only and no longer switches into selected-text Q&A or rewrite flows.";
+"settings.shortcuts.activation.footnote" = "";
 "settings.shortcuts.ask.title" = "Ask Anything";
 "settings.shortcuts.ask.subtitle" = "Press once to start recording and ask anything. Answers appear in a popup. If text is selected, explicit edit requests can also rewrite it directly.";
 "settings.shortcuts.ask.footnote" = "";
 "settings.shortcuts.persona.title" = "Persona switcher";
 "settings.shortcuts.persona.subtitle" = "Open a centered picker. With selected text, it can also apply a persona directly to that selection.";
-"settings.shortcuts.persona.footnote" = "When the advanced option is on, the shortcut rewrites selected text with the chosen persona. Otherwise it behaves as a pure persona switcher.";
+"settings.shortcuts.persona.footnote" = "";
 "settings.advanced.personaHotkeyApply.title" = "Apply persona to selected text";
 "settings.advanced.personaHotkeyApply.subtitle" = "When enabled, the persona shortcut checks for selected text first and uses the picker to rewrite that selection instead of only switching the default persona.";
 "settings.shortcuts.recording" = "Recording a new shortcut";

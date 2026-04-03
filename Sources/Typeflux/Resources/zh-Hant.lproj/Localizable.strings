@@ -345,13 +345,13 @@
 
 "settings.shortcuts.activation.title" = "語音輸入";
 "settings.shortcuts.activation.subtitle" = "使用一組快捷鍵開始語音輸入。可按住說話，也可快速輕觸後鎖定錄音。若目前已有選取內容，識別結果會直接覆蓋該選取範圍。";
-"settings.shortcuts.activation.footnote" = "預設是 Fn。它現在只負責輸入文字，不再依照選取文字切換到問答或改寫流程。";
+"settings.shortcuts.activation.footnote" = "";
 "settings.shortcuts.ask.title" = "隨便問";
 "settings.shortcuts.ask.subtitle" = "按一次即可開始錄音提問，回答會在視窗中展示。若有選取文字，明確的編輯請求也可以直接改寫選取範圍。";
 "settings.shortcuts.ask.footnote" = "";
 "settings.shortcuts.persona.title" = "人設切換器";
 "settings.shortcuts.persona.subtitle" = "打開置中的選擇器；如果目前有選取文字，也可以直接把所選人設套用到這段文字。";
-"settings.shortcuts.persona.footnote" = "開啟進階選項後，快捷鍵會優先檢查選取文字並執行人設改寫；關閉後則維持為純粹的人設切換器。";
+"settings.shortcuts.persona.footnote" = "";
 "settings.advanced.personaHotkeyApply.title" = "將人設套用到選取文字";
 "settings.advanced.personaHotkeyApply.subtitle" = "開啟後，人設快捷鍵會先檢查是否有選取文字；如果有，就用所選人設直接改寫該文字，而不只是切換預設人設。";
 "settings.shortcuts.recording" = "正在錄製新的快捷鍵";
