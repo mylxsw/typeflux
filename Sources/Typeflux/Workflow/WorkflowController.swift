@@ -66,6 +66,7 @@ final class WorkflowController {
     private var activeProcessingRecordID: UUID?
     private var lastRetryableFailureRecord: HistoryRecord?
     private var lastDialogResultText: String?
+    private var localModelPreheatObserver: NSObjectProtocol?
     private var isPersonaPickerPresented = false
     private var personaPickerItems: [PersonaPickerEntry] = []
     private var personaPickerSelectedIndex = 0
@@ -193,6 +194,23 @@ final class WorkflowController {
         }
 
         hotkeyService.start()
+
+        // Pre-warm the local STT model on startup, and re-warm whenever
+        // the user switches provider or model in Settings.
+        preheatLocalModelIfNeeded()
+        localModelPreheatObserver = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            guard let self, self.settingsStore.sttProvider == .localModel else { return }
+            self.preheatLocalModelIfNeeded()
+        }
+    }
+
+    private func preheatLocalModelIfNeeded() {
+        guard settingsStore.sttProvider == .localModel else { return }
+        Task { [weak self] in await self?.sttRouter.prepareForRecording() }
     }
 
     func stop() {
@@ -203,6 +221,10 @@ final class WorkflowController {
         cancelCurrentProcessing(resetUI: true, reason: L("workflow.cancel.stopping"))
         automaticVocabularyObservationTask?.cancel()
         automaticVocabularyObservationTask = nil
+        if let obs = localModelPreheatObserver {
+            NotificationCenter.default.removeObserver(obs)
+            localModelPreheatObserver = nil
+        }
     }
 
     func retry(record: HistoryRecord) {
