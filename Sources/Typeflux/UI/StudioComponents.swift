@@ -859,6 +859,7 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
 
 struct StudioHistoryRow: View {
     let record: HistoryPresentationRecord
+    let onCopyResult: (() -> Void)?
     let onCopyTranscript: (() -> Void)?
     let onDownloadAudio: (() -> Void)?
     let onDelete: (() -> Void)?
@@ -895,8 +896,8 @@ struct StudioHistoryRow: View {
                 Spacer(minLength: StudioTheme.Spacing.small)
 
                 HStack(spacing: StudioTheme.Spacing.small) {
-                    if let onCopyTranscript, record.hasTranscriptToCopy {
-                        historyIconButton(systemImage: "doc.on.doc", helpText: L("history.action.copyTranscript"), action: onCopyTranscript)
+                    if let onCopyResult, record.hasTranscriptToCopy {
+                        historyIconButton(systemImage: "doc.on.doc", helpText: L("history.action.copyTranscript"), action: onCopyResult)
                     }
 
                     Menu {
@@ -931,7 +932,11 @@ struct StudioHistoryRow: View {
             if isExpanded {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
                     historyDetailSection(title: L("history.detail.audioPath"), content: record.audioFilePath ?? L("history.detail.noAudioFile"))
-                    historyDetailSection(title: L("history.detail.rawTranscript"), content: record.transcriptText, copyAction: record.hasTranscriptToCopy ? onCopyTranscript : nil)
+                    historyDetailSection(
+                        title: L("history.detail.rawTranscript"),
+                        content: record.transcriptText,
+                        copyAction: (record.transcriptText?.isEmpty ?? true) ? nil : onCopyTranscript
+                    )
                     historyDetailSection(title: L("history.detail.personaResult"), content: record.personaResultText)
                     historyDetailSection(title: L("history.detail.selectionOriginal"), content: record.selectionOriginalText)
                     historyDetailSection(title: L("history.detail.selectionEdited"), content: record.selectionEditedText)

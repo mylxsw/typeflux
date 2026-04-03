@@ -1357,6 +1357,18 @@ final class StudioViewModel: ObservableObject {
         showToast(L("history.toast.transcriptCopied"))
     }
 
+    func copyHistoryResult(id: UUID) {
+        guard
+            let record = historyRecords.first(where: { $0.id == id }),
+            let finalText = record.finalText,
+            !finalText.isEmpty
+        else { return }
+
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(finalText, forType: .string)
+        showToast(L("history.toast.transcriptCopied"))
+    }
+
     func downloadAudio(id: UUID) {
         guard
             let record = historyRecords.first(where: { $0.id == id }),
@@ -1801,7 +1813,7 @@ final class StudioViewModel: ObservableObject {
             pipelineStatItems: historyPipelineStatItems(record.pipelineStats ?? record.pipelineTiming?.generatedStats()),
             errorMessage: record.errorMessage,
             applyMessage: record.applyMessage,
-            hasTranscriptToCopy: !(record.transcriptText?.isEmpty ?? true),
+            hasTranscriptToCopy: !(record.finalText?.isEmpty ?? true),
             canRetry: record.audioFilePath.map { FileManager.default.fileExists(atPath: $0) } == true,
             hasFailure: record.hasFailure,
             failureMessage: record.errorMessage,
