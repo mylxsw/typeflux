@@ -80,7 +80,13 @@ final class AXTextInjector: TextInjector {
             let focusedElement = focusedElement()
             let focusedWindow = processID.flatMap(focusedWindowElement(for:))
             let selectionWindow = focusedElement.flatMap(containingWindow(of:))
-            let isFocusedTarget = focusedWindow.map { windowsMatch($0, selectionWindow) } ?? (focusedElement != nil)
+            // Clipboard copy succeeded → text IS selected in the frontmost app's process.
+            // When selectionWindow is nil (e.g. Electron/Chromium AX hierarchy doesn't expose
+            // a traversable parent chain to the window), we still trust isFocusedTarget = true
+            // because the Cmd+C was sent to processID (the frontmost app) and succeeded.
+            let isFocusedTarget = focusedWindow.map { w in
+                selectionWindow.map { s in windowsMatch(w, s) } ?? true
+            } ?? (focusedElement != nil)
             let context = SelectionContext(
                 element: focusedElement ?? AXUIElementCreateSystemWide(),
                 range: nil,
