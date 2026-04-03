@@ -3,16 +3,14 @@ import Foundation
 final class LocalModelTranscriber: Transcriber {
     private let settingsStore: SettingsStore
     private let modelManager: LocalModelManager
-    private let fallbackTranscriber: Transcriber
+    /// Cached WhisperKitTranscriber instances keyed by WhisperKit model name.
+    /// WhisperKit loads CoreML models into memory on first use; caching avoids
+    /// re-loading when the user transcribes multiple times with the same model.
+    private var whisperKitCache: [String: WhisperKitTranscriber] = [:]
 
-    init(
-        settingsStore: SettingsStore,
-        modelManager: LocalModelManager,
-        fallbackTranscriber: Transcriber = AppleSpeechTranscriber()
-    ) {
+    init(settingsStore: SettingsStore, modelManager: LocalModelManager) {
         self.settingsStore = settingsStore
         self.modelManager = modelManager
-        self.fallbackTranscriber = fallbackTranscriber
     }
 
     func transcribe(audioFile: AudioFile) async throws -> String {
@@ -41,22 +39,40 @@ final class LocalModelTranscriber: Transcriber {
             """
         )
 
-        if modelManager.preparedModelInfo(settingsStore: settingsStore) == nil {
-            guard settingsStore.localSTTAutoSetup else {
-                throw NSError(
-                    domain: "LocalModelTranscriber",
-                    code: 1,
-                    userInfo: [NSLocalizedDescriptionKey: "Local STT model is not ready. Prepare it in Settings first."]
-                )
+        switch settingsStore.localSTTModel {
+        case .whisperLocal:
+            if modelManager.preparedModelInfo(settingsStore: settingsStore) == nil {
+                guard settingsStore.localSTTAutoSetup else {
+                    throw NSError(
+                        domain: "LocalModelTranscriber",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "Local STT model is not ready. Prepare it in Settings first."]
+                    )
+                }
+                try await modelManager.prepareModel(settingsStore: settingsStore)
             }
-            try await modelManager.prepareModel(settingsStore: settingsStore)
-        }
+            let transcriber = whisperKitTranscriber(for: model)
+            return try await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
 
-        let text = try await fallbackTranscriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
-        NetworkDebugLogger.logMessage(
-            "Local native transcription finished with provider \(settingsStore.localSTTModel.rawValue) and model \(model)"
-        )
-        return text
+        case .senseVoiceSmall, .qwen3ASR:
+            throw NSError(
+                domain: "LocalModelTranscriber",
+                code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "Native local speech inference is not yet available for \(settingsStore.localSTTModel.displayName). Please use a different STT provider."]
+            )
+        }
+    }
+
+    // MARK: - Private
+
+    private func whisperKitTranscriber(for identifier: String) -> WhisperKitTranscriber {
+        let modelName = identifier.hasPrefix("whisperkit-")
+            ? String(identifier.dropFirst("whisperkit-".count))
+            : identifier
+        if let cached = whisperKitCache[modelName] { return cached }
+        let transcriber = WhisperKitTranscriber(modelName: modelName)
+        whisperKitCache[modelName] = transcriber
+        return transcriber
     }
 
     private func vocabularyPromptText() -> String? {

@@ -65,26 +65,33 @@ final class LocalModelManager {
 
         onUpdate?(LocalSTTPreparationUpdate(
             message: "Cleaning legacy Python runtime...",
-            progress: 0.15,
+            progress: 0.05,
             storagePath: storagePath,
             source: nil
         ))
         try? cleanupLegacyPythonRuntime()
 
-        onUpdate?(LocalSTTPreparationUpdate(
-            message: "Preparing native local speech runtime...",
-            progress: 0.55,
-            storagePath: storagePath,
-            source: configuration.downloadSource.displayName
-        ))
-
         try fileManager.createDirectory(at: modelsRootURL, withIntermediateDirectories: true)
         let resourceURL = resourceDirectoryURL(for: configuration.model)
         try fileManager.createDirectory(at: resourceURL, withIntermediateDirectories: true)
-        try fileManager.createDirectory(
-            at: URL(fileURLWithPath: storagePath, isDirectory: true),
-            withIntermediateDirectories: true
-        )
+
+        switch configuration.model {
+        case .whisperLocal:
+            try await prepareWhisperKit(
+                configuration: configuration,
+                storagePath: storagePath,
+                onUpdate: onUpdate
+            )
+        case .senseVoiceSmall, .qwen3ASR:
+            // Native runtime not yet available; record as prepared so the UI
+            // can show the "not yet available" error rather than looping on auto-setup.
+            onUpdate?(LocalSTTPreparationUpdate(
+                message: "Preparing native local speech runtime...",
+                progress: 0.9,
+                storagePath: storagePath,
+                source: configuration.downloadSource.displayName
+            ))
+        }
 
         let record = LocalModelPreparedRecord(
             model: configuration.model.rawValue,
@@ -101,6 +108,35 @@ final class LocalModelManager {
             storagePath: storagePath,
             source: configuration.downloadSource.displayName
         ))
+    }
+
+    private func prepareWhisperKit(
+        configuration: LocalSTTConfiguration,
+        storagePath: String,
+        onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)?
+    ) async throws {
+        let identifier = configuration.modelIdentifier
+        let modelName = identifier.hasPrefix("whisperkit-")
+            ? String(identifier.dropFirst("whisperkit-".count))
+            : identifier
+
+        onUpdate?(LocalSTTPreparationUpdate(
+            message: "Downloading WhisperKit model \(modelName)…",
+            progress: 0.2,
+            storagePath: storagePath,
+            source: configuration.downloadSource.displayName
+        ))
+
+        let transcriber = WhisperKitTranscriber(modelName: modelName)
+        try await transcriber.prepare { progress, message in
+            let mapped = 0.2 + progress * 0.75
+            onUpdate?(LocalSTTPreparationUpdate(
+                message: message,
+                progress: mapped,
+                storagePath: storagePath,
+                source: configuration.downloadSource.displayName
+            ))
+        }
     }
 
     func preparedModelInfo(settingsStore: SettingsStore) -> LocalSTTPreparedModelInfo? {

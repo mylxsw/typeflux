@@ -11,13 +11,15 @@ let package = Package(
         .executable(name: "Typeflux", targets: ["Typeflux"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-markdown.git", from: "0.3.0")
+        .package(url: "https://github.com/apple/swift-markdown.git", from: "0.3.0"),
+        .package(url: "https://github.com/argmaxinc/WhisperKit.git", from: "0.9.0")
     ],
     targets: [
         .executableTarget(
             name: "Typeflux",
             dependencies: [
-                .product(name: "Markdown", package: "swift-markdown")
+                .product(name: "Markdown", package: "swift-markdown"),
+                .product(name: "WhisperKit", package: "WhisperKit")
             ],
             path: "Sources/Typeflux",
             exclude: [
