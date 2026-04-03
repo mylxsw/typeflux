@@ -617,3 +617,16 @@
 "agent.mcp.http.url" = "服务器 URL";
 "agent.mcp.http.apiKey" = "API 密钥";
 "agent.mcp.http.apiKeyPlaceholder" = "可选";
+"agent.mcp.testConnection" = "测试连接";
+"agent.mcp.testing" = "测试中...";
+"agent.mcp.testSuccess" = "连接成功 — 共 %d 个工具可用";
+"agent.mcp.edit" = "编辑";
+"agent.mcp.dialog.addTitle" = "添加 MCP 服务器";
+"agent.mcp.dialog.editTitle" = "编辑 MCP 服务器";
+"agent.mcp.transportType" = "传输类型";
+"agent.mcp.stdio.env" = "环境变量";
+"agent.mcp.stdio.envHint" = "每行一个变量，格式：KEY=VALUE";
+"agent.mcp.enabled.title" = "启用";
+"agent.mcp.enabled.subtitle" = "启用此 MCP 服务器以供 Agent 工具调用。";
+"agent.mcp.deleteDialog.title" = "删除 MCP 服务器";
+"agent.mcp.deleteDialog.message" = "确定删除「%@」吗？此操作无法撤销。";

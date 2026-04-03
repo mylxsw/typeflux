@@ -59,6 +59,8 @@ struct StudioView: View {
     @State private var localSTTPendingDelete: LocalSTTModel? = nil
     @State private var localSTTPendingRedownload: LocalSTTModel? = nil
     @State private var llmActivationMissingAPIKeyProviderName: String?
+    @State private var isMCPServerDialogPresented = false
+    @State private var mcpServerPendingDeletion: MCPServerConfig? = nil
     @ObservedObject private var localization = AppLocalization.shared
 
     var body: some View {
@@ -161,6 +163,30 @@ struct StudioView: View {
                 }
             }
         )
+        .sheet(isPresented: $isMCPServerDialogPresented) {
+            mcpServerDialog
+        }
+        .confirmationDialog(
+            L("agent.mcp.deleteDialog.title"),
+            isPresented: Binding(
+                get: { mcpServerPendingDeletion != nil },
+                set: { if !$0 { mcpServerPendingDeletion = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(L("common.delete"), role: .destructive) {
+                guard let server = mcpServerPendingDeletion else { return }
+                viewModel.removeMCPServer(id: server.id)
+                mcpServerPendingDeletion = nil
+            }
+            Button(L("common.cancel"), role: .cancel) {
+                mcpServerPendingDeletion = nil
+            }
+        } message: {
+            if let server = mcpServerPendingDeletion {
+                Text(L("agent.mcp.deleteDialog.message", server.name.isEmpty ? L("agent.mcp.untitled") : server.name))
+            }
+        }
     }
 
     private func sendFeedbackEmail() {
@@ -1168,7 +1194,6 @@ struct StudioView: View {
 
     private var agentPage: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            // General agent settings
             StudioSectionTitle(title: L("agent.section.general"))
 
             StudioCard {
@@ -1177,20 +1202,16 @@ struct StudioView: View {
                         title: L("agent.general.stepLogging.title"),
                         subtitle: L("agent.general.stepLogging.subtitle")
                     ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.agentStepLoggingEnabled },
-                                set: viewModel.setAgentStepLoggingEnabled
-                            )
-                        )
+                        Toggle("", isOn: Binding(
+                            get: { viewModel.agentStepLoggingEnabled },
+                            set: viewModel.setAgentStepLoggingEnabled
+                        ))
                         .labelsHidden()
                         .toggleStyle(.switch)
                     }
                 }
             }
 
-            // MCP Servers
             StudioSectionTitle(title: L("agent.section.mcpServers"))
 
             if viewModel.mcpServers.isEmpty {
@@ -1209,7 +1230,7 @@ struct StudioView: View {
                 }
             } else {
                 ForEach(viewModel.mcpServers) { server in
-                    mcpServerCard(server)
+                    mcpServerListCard(server)
                 }
             }
 
@@ -1218,116 +1239,257 @@ struct StudioView: View {
                 systemImage: "plus.circle.fill",
                 variant: .secondary
             ) {
-                viewModel.addNewMCPServer()
+                viewModel.beginAddMCPServer()
+                isMCPServerDialogPresented = true
             }
         }
     }
 
-    private func mcpServerCard(_ server: MCPServerConfig) -> some View {
+    private func mcpServerListCard(_ server: MCPServerConfig) -> some View {
         StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                HStack(alignment: .center) {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                        HStack(spacing: StudioTheme.Spacing.small) {
-                            Text(server.name.isEmpty ? L("agent.mcp.untitled") : server.name)
-                                .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
-                                .foregroundStyle(StudioTheme.textPrimary)
-
-                            StudioPill(title: mcpTransportLabel(for: server))
-                        }
-                        Text(mcpTransportDetail(for: server))
-                            .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .lineLimit(1)
+            HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                    HStack(spacing: StudioTheme.Spacing.small) {
+                        Text(server.name.isEmpty ? L("agent.mcp.untitled") : server.name)
+                            .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                        StudioPill(title: mcpTransportLabel(for: server))
                     }
-                    Spacer()
-                    Toggle("", isOn: Binding(
-                        get: { server.enabled },
-                        set: { viewModel.updateMCPServerEnabled(id: server.id, enabled: $0) }
-                    ))
-                    .labelsHidden()
-                    .toggleStyle(.switch)
+                    Text(mcpTransportDetail(for: server))
+                        .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .lineLimit(1)
                 }
 
-                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                Spacer()
 
-                StudioTextInputCard(
-                    label: L("agent.mcp.name"),
-                    placeholder: L("agent.mcp.namePlaceholder"),
-                    text: Binding(
-                        get: { server.name },
-                        set: { viewModel.updateMCPServerName(id: server.id, name: $0) }
-                    )
-                )
-
-                mcpTransportForm(server)
-
-                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                StudioSettingRow(
-                    title: L("agent.mcp.autoConnect.title"),
-                    subtitle: L("agent.mcp.autoConnect.subtitle")
+                StudioButton(
+                    title: L("agent.mcp.testConnection"),
+                    systemImage: "network",
+                    variant: .ghost,
+                    isLoading: viewModel.mcpConnectionTestState == .testing
                 ) {
-                    Toggle("", isOn: Binding(
-                        get: { server.autoConnect },
-                        set: { viewModel.updateMCPServerAutoConnect(id: server.id, autoConnect: $0) }
-                    ))
-                    .labelsHidden()
-                    .toggleStyle(.switch)
+                    viewModel.testMCPConnection(for: server)
                 }
 
-                HStack {
-                    Spacer()
-                    StudioButton(
-                        title: L("common.delete"),
-                        systemImage: "trash",
-                        variant: .ghost
-                    ) {
-                        viewModel.removeMCPServer(id: server.id)
-                    }
+                Toggle("", isOn: Binding(
+                    get: { server.enabled },
+                    set: { viewModel.updateMCPServerEnabled(id: server.id, enabled: $0) }
+                ))
+                .labelsHidden()
+                .toggleStyle(.switch)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            viewModel.beginEditMCPServer(server)
+            isMCPServerDialogPresented = true
+        }
+        .contextMenu {
+            Button(L("agent.mcp.edit")) {
+                viewModel.beginEditMCPServer(server)
+                isMCPServerDialogPresented = true
+            }
+            Divider()
+            Button(L("common.delete"), role: .destructive) {
+                mcpServerPendingDeletion = server
+            }
+        }
+    }
+
+    private var mcpServerDialog: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+            Text(viewModel.mcpDraftEditingServerID == nil
+                 ? L("agent.mcp.dialog.addTitle")
+                 : L("agent.mcp.dialog.editTitle"))
+                .font(.studioDisplay(StudioTheme.Typography.pageTitle, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
+
+            StudioTextInputCard(
+                label: L("agent.mcp.name"),
+                placeholder: L("agent.mcp.namePlaceholder"),
+                text: $viewModel.mcpDraftName
+            )
+
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                Text(L("agent.mcp.transportType"))
+                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+
+                StudioSegmentedPicker(
+                    options: [
+                        (label: "stdio", value: MCPTransportType.stdio),
+                        (label: "HTTP/SSE", value: MCPTransportType.http)
+                    ],
+                    selection: $viewModel.mcpDraftTransportType
+                )
+            }
+
+            if viewModel.mcpDraftTransportType == .stdio {
+                StudioTextInputCard(
+                    label: L("agent.mcp.stdio.command"),
+                    placeholder: "/usr/local/bin/my-mcp-server",
+                    text: $viewModel.mcpDraftStdioCommand
+                )
+                StudioTextInputCard(
+                    label: L("agent.mcp.stdio.args"),
+                    placeholder: "--port 3000 --verbose",
+                    text: $viewModel.mcpDraftStdioArgs
+                )
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    Text(L("agent.mcp.stdio.env"))
+                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                    TextEditor(text: $viewModel.mcpDraftStdioEnv)
+                        .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .scrollContentBackground(.hidden)
+                        .frame(minHeight: 60, maxHeight: 100)
+                        .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
+                        .padding(.vertical, StudioTheme.Insets.textFieldVertical)
+                        .background(
+                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                                .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                                .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
+                        )
+                    Text(L("agent.mcp.stdio.envHint"))
+                        .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                }
+            } else {
+                StudioTextInputCard(
+                    label: L("agent.mcp.http.url"),
+                    placeholder: "https://mcp.example.com/sse",
+                    text: $viewModel.mcpDraftHTTPURL
+                )
+                StudioTextInputCard(
+                    label: L("agent.mcp.http.apiKey"),
+                    placeholder: L("agent.mcp.http.apiKeyPlaceholder"),
+                    text: $viewModel.mcpDraftHTTPAPIKey,
+                    secure: true
+                )
+            }
+
+            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+            StudioSettingRow(
+                title: L("agent.mcp.enabled.title"),
+                subtitle: L("agent.mcp.enabled.subtitle")
+            ) {
+                Toggle("", isOn: $viewModel.mcpDraftEnabled)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+            }
+
+            StudioSettingRow(
+                title: L("agent.mcp.autoConnect.title"),
+                subtitle: L("agent.mcp.autoConnect.subtitle")
+            ) {
+                Toggle("", isOn: $viewModel.mcpDraftAutoConnect)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+            }
+
+            mcpConnectionTestResultView
+
+            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+            HStack {
+                Spacer()
+                StudioButton(title: L("common.cancel"), systemImage: nil, variant: .secondary) {
+                    isMCPServerDialogPresented = false
+                }
+                StudioButton(
+                    title: viewModel.mcpConnectionTestState == .testing
+                        ? L("agent.mcp.testing") : L("agent.mcp.testConnection"),
+                    systemImage: viewModel.mcpConnectionTestState == .testing ? nil : "network",
+                    variant: .secondary,
+                    isDisabled: viewModel.mcpConnectionTestState == .testing,
+                    isLoading: viewModel.mcpConnectionTestState == .testing
+                ) {
+                    viewModel.testMCPDraftConnection()
+                }
+                StudioButton(
+                    title: L("common.save"),
+                    systemImage: nil,
+                    variant: .primary,
+                    isDisabled: !viewModel.canSaveMCPDraft
+                ) {
+                    viewModel.saveMCPDraft()
+                    isMCPServerDialogPresented = false
                 }
             }
         }
+        .padding(StudioTheme.Spacing.large)
+        .frame(minWidth: 480)
     }
 
     @ViewBuilder
-    private func mcpTransportForm(_ server: MCPServerConfig) -> some View {
-        switch server.transport {
-        case .stdio(let config):
-            StudioTextInputCard(
-                label: L("agent.mcp.stdio.command"),
-                placeholder: "/usr/local/bin/my-mcp-server",
-                text: Binding(
-                    get: { config.command },
-                    set: { viewModel.updateMCPServerStdioCommand(id: server.id, command: $0) }
-                )
-            )
-            StudioTextInputCard(
-                label: L("agent.mcp.stdio.args"),
-                placeholder: "--port 3000 --verbose",
-                text: Binding(
-                    get: { config.args.joined(separator: " ") },
-                    set: { viewModel.updateMCPServerStdioArgs(id: server.id, args: $0) }
-                )
-            )
-        case .http(let config):
-            StudioTextInputCard(
-                label: L("agent.mcp.http.url"),
-                placeholder: "https://mcp.example.com/api",
-                text: Binding(
-                    get: { config.url },
-                    set: { viewModel.updateMCPServerHTTPURL(id: server.id, url: $0) }
-                )
-            )
-            StudioTextInputCard(
-                label: L("agent.mcp.http.apiKey"),
-                placeholder: L("agent.mcp.http.apiKeyPlaceholder"),
-                text: Binding(
-                    get: { config.apiKey ?? "" },
-                    set: { viewModel.updateMCPServerHTTPAPIKey(id: server.id, apiKey: $0) }
-                ),
-                secure: true
-            )
+    private var mcpConnectionTestResultView: some View {
+        switch viewModel.mcpConnectionTestState {
+        case .idle:
+            EmptyView()
+        case .testing:
+            HStack(spacing: StudioTheme.Spacing.xSmall) {
+                ProgressView().controlSize(.small)
+                Text(L("agent.mcp.testing"))
+                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
+        case .success(let tools):
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                HStack(spacing: StudioTheme.Spacing.xSmall) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(StudioTheme.success)
+                    Text(L("agent.mcp.testSuccess", tools.count))
+                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                }
+                if !tools.isEmpty {
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                        ForEach(tools) { tool in
+                            HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
+                                Image(systemName: "wrench.and.screwdriver")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundStyle(StudioTheme.textTertiary)
+                                    .frame(width: 14, alignment: .center)
+                                    .padding(.top, 2)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(tool.name)
+                                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                                        .foregroundStyle(StudioTheme.textPrimary)
+                                    if !tool.description.isEmpty {
+                                        Text(tool.description)
+                                            .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
+                                            .foregroundStyle(StudioTheme.textSecondary)
+                                            .lineLimit(2)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(StudioTheme.Spacing.small)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
+                            .fill(StudioTheme.surfaceMuted)
+                    )
+                }
+            }
+        case .failure(let message):
+            HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(StudioTheme.danger)
+                Text(message)
+                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 
