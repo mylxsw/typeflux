@@ -378,6 +378,8 @@ struct OnboardingView: View {
         case .qwen: return "cloud"
         case .zhipu: return "dot.scope"
         case .minimax: return "sparkles"
+        case .grok: return "bolt.circle"
+        case .xiaomi: return "circle.grid.cross"
         }
     }
 
@@ -675,6 +677,8 @@ struct OnboardingView: View {
         case .qwen: return "qwen-color"
         case .zhipu: return "zhipu-color"
         case .minimax: return "minimax-color"
+        case .grok: return "grok"
+        case .xiaomi: return "xiaomimimo"
         case .aliCloud: return "bailian-color"
         case .doubaoRealtime: return "doubao-color"
         default: return nil
@@ -699,6 +703,8 @@ struct OnboardingView: View {
         case .qwen: return "cloud"
         case .zhipu: return "dot.scope"
         case .minimax: return "sparkles"
+        case .grok: return "bolt.circle"
+        case .xiaomi: return "circle.grid.cross"
         case .multimodalLLM: return "brain.filled.head.profile"
         case .aliCloud: return "antenna.radiowaves.left.and.right"
         case .doubaoRealtime: return "bolt.horizontal.circle"

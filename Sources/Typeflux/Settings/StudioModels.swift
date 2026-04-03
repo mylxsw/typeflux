@@ -149,6 +149,8 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
     case qwen
     case zhipu
     case minimax
+    case grok
+    case xiaomi
 
     var id: String { rawValue }
 
@@ -156,7 +158,8 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
         switch self {
         case .appleSpeech, .localSTT, .freeSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime:
             return .stt
-        case .ollama, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax:
+        case .ollama, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
+            .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi:
             return .llm
         }
     }

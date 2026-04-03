@@ -89,6 +89,22 @@ final class LLMRemoteProviderTests: XCTestCase {
         )
     }
 
+    func testGrokAndXiaomiProvidersExposeOpenAICompatibleDefaults() {
+        XCTAssertEqual(LLMRemoteProvider.grok.apiStyle, .openAICompatible)
+        XCTAssertEqual(LLMRemoteProvider.grok.defaultBaseURL, "https://api.x.ai/v1")
+        XCTAssertEqual(
+            LLMRemoteProvider.grok.suggestedModels,
+            ["grok-4-1-fast-reasoning", "grok-4", "grok-3", "grok-3-mini"]
+        )
+
+        XCTAssertEqual(LLMRemoteProvider.xiaomi.apiStyle, .openAICompatible)
+        XCTAssertEqual(LLMRemoteProvider.xiaomi.defaultBaseURL, "https://api.xiaomimimo.com/v1")
+        XCTAssertEqual(
+            LLMRemoteProvider.xiaomi.suggestedModels,
+            ["mimo-v2-pro", "mimo-v2-flash", "mimo-v2-omni"]
+        )
+    }
+
     private func clearLLMKeys() {
         for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("llm.") {
             defaults.removeObject(forKey: key)

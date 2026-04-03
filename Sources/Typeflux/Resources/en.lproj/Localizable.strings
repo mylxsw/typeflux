@@ -461,6 +461,8 @@
 "settings.models.card.qwen.summary" = "Alibaba Cloud Qwen models through the DashScope compatible endpoint.";
 "settings.models.card.zhipu.summary" = "Zhipu GLM models through the BigModel compatible endpoint.";
 "settings.models.card.minimax.summary" = "MiniMax models through its OpenAI-compatible endpoint, with separate international and China API URLs.";
+"settings.models.card.grok.summary" = "Grok models through xAI's OpenAI-compatible endpoint.";
+"settings.models.card.xiaomi.summary" = "Xiaomi MiMo mimo-v2 models through Xiaomi's OpenAI-compatible endpoint.";
 "settings.models.badge.free" = "Free";
 "settings.models.freeSTT.hint" = "Free speech models are managed in code. Users can only pick from the configured model list.";
 "settings.models.freeSTT.noSources" = "No free speech model source is configured yet. Add an implementation under Sources/Typeflux/STT/FreeModels.";
