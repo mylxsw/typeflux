@@ -189,11 +189,11 @@
 "downloadSource.modelScope" = "ModelScope";
 "downloadSource.huggingFace" = "Hugging Face";
 
-"localSTT.whisperLocal.name" = "Whisper Local";
+"localSTT.whisperLocal.name" = "WhisperKit";
 "localSTT.whisperLocal.summary" = "均衡的本地 ASR，英文和多语言听写表现稳定，适合大多数离线转写场景。";
 "localSTT.whisperLocal.parameterValue" = "244M";
 "localSTT.whisperLocal.sizeValue" = "460 MB";
-"localSTT.senseVoiceSmall.name" = "SenseVoice Small";
+"localSTT.senseVoiceSmall.name" = "SenseVoice";
 "localSTT.senseVoiceSmall.summary" = "快速的多语言语音识别，对普通话、粤语、英语、日语和韩语支持较强。";
 "localSTT.senseVoiceSmall.parameterValue" = "234M";
 "localSTT.senseVoiceSmall.sizeValue" = "1.1 GB";
@@ -429,7 +429,7 @@
 "settings.models.builtInDefaultProfile" = "内置默认配置";
 "settings.models.card.whisper.summary" = "通过 OpenAI 兼容接口执行远程转写，模型选择更灵活。";
 "settings.models.card.freeSTT.summary" = "从代码中配置好的免费语音转写模型里选择，用户不需要手动填写接口或密钥。";
-"settings.models.card.localSTT.summary" = "通过内嵌运行时在本地运行 Whisper、SenseVoice Small 或 Qwen3-ASR。";
+"settings.models.card.localSTT.summary" = "通过原生 Swift 运行时在本地运行 WhisperKit、SenseVoice 或 Qwen3-ASR。";
 "settings.models.card.multimodal.summary" = "音频直接发送给多模态模型，在一次 API 调用内完成转写和人设改写。";
 "settings.models.card.aliCloud.summary" = "通过 DashScope 执行实时流式识别，低延迟 WebSocket 传输。";
 "settings.models.card.doubao.summary" = "通过豆包语音识别 2.0 和字节原生二进制 WebSocket 协议进行低延迟流式识别。";
@@ -526,9 +526,9 @@
 "settings.models.ollama.ready" = "本地模型已就绪。";
 "settings.models.ollama.prepareFailed" = "本地模型准备失败。";
 "settings.models.localSTT.notPrepared" = "本地语音模型尚未准备。";
-"settings.models.localSTT.autoPrepareHint" = "所选本地语音模型会在需要时自动准备。";
-"settings.models.localSTT.preparing" = "正在准备本地语音模型...";
-"settings.models.localSTT.downloadComplete" = "下载完成，本地语音模型已就绪。";
+"settings.models.localSTT.autoPrepareHint" = "所选本地语音模型会在需要时自动激活。";
+"settings.models.localSTT.preparing" = "正在准备原生本地语音运行时...";
+"settings.models.localSTT.downloadComplete" = "原生本地语音运行时已就绪。";
 "settings.models.localSTT.ready" = "本地语音模型已就绪。";
 "settings.models.localSTT.readyNamed" = "%@ 已就绪。";
 "settings.models.localSTT.prepareFailed" = "本地语音模型准备失败。";

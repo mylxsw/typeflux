@@ -18,7 +18,7 @@ final class DIContainer {
     let llmAgentService: LLMAgentService
     let sttRouter: STTRouter
     let ollamaModelManager: OllamaLocalModelManager
-    let localSTTServiceManager: LocalSTTServiceManager
+    let localModelManager: LocalModelManager
 
     init() {
         hotkeyService = EventTapHotkeyService(settingsStore: settingsStore)
@@ -33,12 +33,12 @@ final class DIContainer {
         textInjector = AXTextInjector()
         historyStore = SQLiteHistoryStore()
         ollamaModelManager = OllamaLocalModelManager()
-        localSTTServiceManager = LocalSTTServiceManager()
         llmAgentService = LLMAgentRouter(
             settingsStore: settingsStore,
             remote: OpenAICompatibleAgentService(settingsStore: settingsStore),
             ollama: OllamaAgentService()
         )
+        localModelManager = LocalModelManager()
         llmService = LLMRouter(
             settingsStore: settingsStore,
             openAICompatible: OpenAICompatibleLLMService(settingsStore: settingsStore),
@@ -49,7 +49,7 @@ final class DIContainer {
             whisper: WhisperAPITranscriber(settingsStore: settingsStore),
             freeSTT: FreeSTTTranscriber(settingsStore: settingsStore),
             appleSpeech: AppleSpeechTranscriber(),
-            localModel: LocalModelTranscriber(settingsStore: settingsStore, serviceManager: localSTTServiceManager),
+            localModel: LocalModelTranscriber(settingsStore: settingsStore, modelManager: localModelManager),
             multimodal: MultimodalLLMTranscriber(settingsStore: settingsStore),
             aliCloud: AliCloudRealtimeTranscriber(settingsStore: settingsStore),
             doubaoRealtime: DoubaoRealtimeTranscriber(settingsStore: settingsStore)

@@ -63,11 +63,11 @@ enum LocalSTTModel: String, CaseIterable, Codable {
     var defaultModelIdentifier: String {
         switch self {
         case .whisperLocal:
-            return "small"
+            return "whisperkit-small"
         case .senseVoiceSmall:
-            return "iic/SenseVoiceSmall"
+            return "sensevoice-small-coreml"
         case .qwen3ASR:
-            return "Qwen/Qwen3-ASR-0.6B"
+            return "mlx-community/Qwen3-ASR-0.6B-bf16"
         }
     }
 
@@ -75,8 +75,10 @@ enum LocalSTTModel: String, CaseIterable, Codable {
         switch self {
         case .whisperLocal:
             return .huggingFace
-        case .senseVoiceSmall, .qwen3ASR:
-            return .modelScope
+        case .senseVoiceSmall:
+            return .huggingFace
+        case .qwen3ASR:
+            return .huggingFace
         }
     }
 
