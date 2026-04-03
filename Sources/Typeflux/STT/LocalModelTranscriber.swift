@@ -3,7 +3,7 @@ import Foundation
 final class LocalModelTranscriber: Transcriber {
     private let settingsStore: SettingsStore
     private let modelManager: LocalModelManager
-    /// Cached WhisperKitTranscriber instances keyed by WhisperKit model name.
+    /// Cached WhisperKitTranscriber instances keyed by model name + resolved model folder.
     /// WhisperKit loads CoreML models into memory on first use; caching avoids
     /// re-loading when the user transcribes multiple times with the same model.
     private var whisperKitCache: [String: WhisperKitTranscriber] = [:]
@@ -41,7 +41,10 @@ final class LocalModelTranscriber: Transcriber {
 
         switch settingsStore.localSTTModel {
         case .whisperLocal:
-            if modelManager.preparedModelInfo(settingsStore: settingsStore) == nil {
+            let modelInfo: LocalSTTPreparedModelInfo
+            if let prepared = modelManager.preparedModelInfo(settingsStore: settingsStore) {
+                modelInfo = prepared
+            } else {
                 guard settingsStore.localSTTAutoSetup else {
                     throw NSError(
                         domain: "LocalModelTranscriber",
@@ -50,8 +53,16 @@ final class LocalModelTranscriber: Transcriber {
                     )
                 }
                 try await modelManager.prepareModel(settingsStore: settingsStore)
+                guard let prepared = modelManager.preparedModelInfo(settingsStore: settingsStore) else {
+                    throw NSError(
+                        domain: "LocalModelTranscriber",
+                        code: 3,
+                        userInfo: [NSLocalizedDescriptionKey: "Local STT model setup finished, but the prepared model path could not be verified."]
+                    )
+                }
+                modelInfo = prepared
             }
-            let transcriber = whisperKitTranscriber(for: model)
+            let transcriber = whisperKitTranscriber(for: model, modelFolder: modelInfo.storagePath)
             return try await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
 
         case .senseVoiceSmall, .qwen3ASR:
@@ -65,15 +76,14 @@ final class LocalModelTranscriber: Transcriber {
 
     // MARK: - Private
 
-    private func whisperKitTranscriber(for identifier: String) -> WhisperKitTranscriber {
+    private func whisperKitTranscriber(for identifier: String, modelFolder: String) -> WhisperKitTranscriber {
         let modelName = identifier.hasPrefix("whisperkit-")
             ? String(identifier.dropFirst("whisperkit-".count))
             : identifier
-        if let cached = whisperKitCache[modelName] { return cached }
-        let configuration = LocalSTTConfiguration(settingsStore: settingsStore)
-        let folder = modelManager.storagePath(for: configuration)
-        let transcriber = WhisperKitTranscriber(modelName: modelName, modelFolder: folder)
-        whisperKitCache[modelName] = transcriber
+        let cacheKey = "\(modelName)|\(modelFolder)"
+        if let cached = whisperKitCache[cacheKey] { return cached }
+        let transcriber = WhisperKitTranscriber(modelName: modelName, modelFolder: modelFolder)
+        whisperKitCache[cacheKey] = transcriber
         return transcriber
     }
 
@@ -89,10 +99,10 @@ extension LocalModelTranscriber: RecordingPrewarmingTranscriber {
     /// real transcription call doesn't pay the cold-start penalty.
     func prepareForRecording() async {
         guard settingsStore.localSTTModel == .whisperLocal else { return }
-        guard modelManager.preparedModelInfo(settingsStore: settingsStore) != nil else { return }
+        guard let modelInfo = modelManager.preparedModelInfo(settingsStore: settingsStore) else { return }
         let identifier = settingsStore.localSTTModelIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
         let model = identifier.isEmpty ? settingsStore.localSTTModel.defaultModelIdentifier : identifier
-        let transcriber = whisperKitTranscriber(for: model)
+        let transcriber = whisperKitTranscriber(for: model, modelFolder: modelInfo.storagePath)
         try? await transcriber.prepare()
     }
 

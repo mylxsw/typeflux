@@ -61,7 +61,8 @@ final class LocalModelManager {
         onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)? = nil
     ) async throws {
         let configuration = LocalSTTConfiguration(settingsStore: settingsStore)
-        let storagePath = storagePath(for: configuration)
+        let downloadBasePath = storagePath(for: configuration)
+        var storagePath = downloadBasePath
 
         onUpdate?(LocalSTTPreparationUpdate(
             message: "Cleaning legacy Python runtime...",
@@ -77,9 +78,9 @@ final class LocalModelManager {
 
         switch configuration.model {
         case .whisperLocal:
-            try await prepareWhisperKit(
+            storagePath = try await prepareWhisperKit(
                 configuration: configuration,
-                storagePath: storagePath,
+                downloadBasePath: downloadBasePath,
                 onUpdate: onUpdate
             )
         case .senseVoiceSmall, .qwen3ASR:
@@ -118,9 +119,9 @@ final class LocalModelManager {
 
     private func prepareWhisperKit(
         configuration: LocalSTTConfiguration,
-        storagePath: String,
+        downloadBasePath: String,
         onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)?
-    ) async throws {
+    ) async throws -> String {
         let identifier = configuration.modelIdentifier
         let modelName = identifier.hasPrefix("whisperkit-")
             ? String(identifier.dropFirst("whisperkit-".count))
@@ -129,20 +130,36 @@ final class LocalModelManager {
         onUpdate?(LocalSTTPreparationUpdate(
             message: "Downloading WhisperKit model \(modelName)…",
             progress: 0.2,
-            storagePath: storagePath,
+            storagePath: downloadBasePath,
             source: configuration.downloadSource.displayName
         ))
 
-        let transcriber = WhisperKitTranscriber(modelName: modelName, modelFolder: storagePath)
+        let transcriber = WhisperKitTranscriber(
+            modelName: modelName,
+            downloadBase: URL(fileURLWithPath: downloadBasePath, isDirectory: true)
+        )
         try await transcriber.prepare { progress, message in
             let mapped = 0.2 + progress * 0.75
             onUpdate?(LocalSTTPreparationUpdate(
                 message: message,
                 progress: mapped,
-                storagePath: storagePath,
+                storagePath: transcriber.resolvedModelFolderPath ?? downloadBasePath,
                 source: configuration.downloadSource.displayName
             ))
         }
+
+        guard
+            let resolvedPath = transcriber.resolvedModelFolderPath,
+            isUsableWhisperKitModelFolder(resolvedPath)
+        else {
+            throw NSError(
+                domain: "LocalModelManager",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "WhisperKit model download finished, but no usable CoreML model files were found."]
+            )
+        }
+
+        return resolvedPath
     }
 
     func preparedModelInfo(settingsStore: SettingsStore) -> LocalSTTPreparedModelInfo? {
@@ -151,7 +168,7 @@ final class LocalModelManager {
             let record = loadPreparedRecord(for: configuration.model),
             record.modelIdentifier == configuration.modelIdentifier,
             record.source == configuration.downloadSource.rawValue,
-            fileManager.fileExists(atPath: record.storagePath)
+            isPreparedStoragePathValid(record.storagePath, for: configuration.model)
         else {
             return nil
         }
@@ -163,7 +180,10 @@ final class LocalModelManager {
     }
 
     func isModelDownloaded(_ model: LocalSTTModel) -> Bool {
-        fileManager.fileExists(atPath: resourceDirectoryURL(for: model).path)
+        guard let record = loadPreparedRecord(for: model) else {
+            return false
+        }
+        return isPreparedStoragePathValid(record.storagePath, for: model)
     }
 
     func deleteModelFiles(_ model: LocalSTTModel) throws {
@@ -215,5 +235,30 @@ final class LocalModelManager {
             return
         }
         try fileManager.removeItem(at: legacyRuntimeURL)
+    }
+
+    private func isPreparedStoragePathValid(_ storagePath: String, for model: LocalSTTModel) -> Bool {
+        guard fileManager.fileExists(atPath: storagePath) else {
+            return false
+        }
+
+        switch model {
+        case .whisperLocal:
+            return isUsableWhisperKitModelFolder(storagePath)
+        case .senseVoiceSmall, .qwen3ASR:
+            return true
+        }
+    }
+
+    private func isUsableWhisperKitModelFolder(_ storagePath: String) -> Bool {
+        ["MelSpectrogram", "AudioEncoder", "TextDecoder"].allSatisfy { modelName in
+            ["mlmodelc", "mlpackage"].contains { ext in
+                fileManager.fileExists(
+                    atPath: URL(fileURLWithPath: storagePath, isDirectory: true)
+                        .appendingPathComponent("\(modelName).\(ext)")
+                        .path
+                )
+            }
+        }
     }
 }
