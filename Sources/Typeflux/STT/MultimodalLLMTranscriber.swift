@@ -7,6 +7,8 @@ import Foundation
 /// Audio is base64-encoded and sent as `input_audio` in the chat completions request.
 /// Supports streaming via SSE for minimal time-to-first-token latency.
 final class MultimodalLLMTranscriber: Transcriber {
+    static let audioProcessingInstructionText = "This input_audio item contains the user's spoken audio. Please process it according to the system prompt and return only the requested final text."
+
     private let settingsStore: SettingsStore
 
     init(settingsStore: SettingsStore) {
@@ -120,7 +122,7 @@ final class MultimodalLLMTranscriber: Transcriber {
           "stream": true,
           "messages": [
             {"role": "system", "content": "\(effectiveSystemPrompt)"},
-            {"role": "user", "content": [{"type": "input_audio", "format": "\(audioFormat)", "data": "<\(base64Audio.count) chars base64>"}]}
+            {"role": "user", "content": [{"type": "input_audio", "format": "\(audioFormat)", "data": "<\(base64Audio.count) chars base64>"}, {"type": "text", "text": "\(Self.audioProcessingInstructionText)"}]}
           ]
         }
         """)
@@ -155,15 +157,10 @@ final class MultimodalLLMTranscriber: Transcriber {
                 ],
                 [
                     "role": "user",
-                    "content": [
-                        [
-                            "type": "input_audio",
-                            "input_audio": [
-                                "data": base64Audio,
-                                "format": audioFormat
-                            ]
-                        ]
-                    ]
+                    "content": Self.makeUserMessageContent(
+                        base64Audio: base64Audio,
+                        audioFormat: audioFormat
+                    )
                 ]
             ]
         ]
@@ -193,15 +190,10 @@ final class MultimodalLLMTranscriber: Transcriber {
                 ],
                 [
                     "role": "user",
-                    "content": [
-                        [
-                            "type": "input_audio",
-                            "input_audio": [
-                                "data": base64Audio,
-                                "format": "wav"
-                            ]
-                        ]
-                    ]
+                    "content": makeUserMessageContent(
+                        base64Audio: base64Audio,
+                        audioFormat: "wav"
+                    )
                 ]
             ]
         ]
@@ -244,6 +236,22 @@ final class MultimodalLLMTranscriber: Transcriber {
 
     private static func extractDelta(from data: Data) -> String? {
         OpenAICompatibleResponseSupport.extractTextDelta(from: data)
+    }
+
+    static func makeUserMessageContent(base64Audio: String, audioFormat: String) -> [[String: Any]] {
+        [
+            [
+                "type": "input_audio",
+                "input_audio": [
+                    "data": base64Audio,
+                    "format": audioFormat
+                ]
+            ],
+            [
+                "type": "text",
+                "text": audioProcessingInstructionText
+            ]
+        ]
     }
 
     /// Maps a file extension to the format string expected by the OpenAI input_audio API.
