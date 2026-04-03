@@ -133,7 +133,7 @@ final class LocalModelManager {
             source: configuration.downloadSource.displayName
         ))
 
-        let transcriber = WhisperKitTranscriber(modelName: modelName)
+        let transcriber = WhisperKitTranscriber(modelName: modelName, modelFolder: storagePath)
         try await transcriber.prepare { progress, message in
             let mapped = 0.2 + progress * 0.75
             onUpdate?(LocalSTTPreparationUpdate(

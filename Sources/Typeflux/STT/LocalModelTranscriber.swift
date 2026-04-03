@@ -70,7 +70,9 @@ final class LocalModelTranscriber: Transcriber {
             ? String(identifier.dropFirst("whisperkit-".count))
             : identifier
         if let cached = whisperKitCache[modelName] { return cached }
-        let transcriber = WhisperKitTranscriber(modelName: modelName)
+        let configuration = LocalSTTConfiguration(settingsStore: settingsStore)
+        let folder = modelManager.storagePath(for: configuration)
+        let transcriber = WhisperKitTranscriber(modelName: modelName, modelFolder: folder)
         whisperKitCache[modelName] = transcriber
         return transcriber
     }

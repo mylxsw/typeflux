@@ -6,11 +6,15 @@ import WhisperKit
 /// and cached across calls so the CoreML models stay loaded in memory.
 final class WhisperKitTranscriber: Transcriber {
     private let modelName: String
+    private let modelFolder: String?
     private var pipeline: WhisperKit?
 
-    /// - Parameter modelName: WhisperKit model name, e.g. "small", "base", "large-v3".
-    init(modelName: String) {
+    /// - Parameters:
+    ///   - modelName: WhisperKit model name, e.g. "small", "base", "large-v3".
+    ///   - modelFolder: Directory where WhisperKit should download/store model files.
+    init(modelName: String, modelFolder: String? = nil) {
         self.modelName = modelName
+        self.modelFolder = modelFolder
     }
 
     func transcribe(audioFile: AudioFile) async throws -> String {
@@ -56,7 +60,7 @@ final class WhisperKitTranscriber: Transcriber {
     func prepare(onProgress: ((Double, String) -> Void)? = nil) async throws {
         guard pipeline == nil else { return }
         onProgress?(0.1, "Initialising WhisperKit model \(modelName)…")
-        let pipe = try await WhisperKit(WhisperKitConfig(model: modelName, verbose: false))
+        let pipe = try await WhisperKit(WhisperKitConfig(model: modelName, modelFolder: modelFolder, verbose: false))
         pipeline = pipe
         onProgress?(1.0, "WhisperKit model \(modelName) is ready.")
     }
@@ -65,7 +69,7 @@ final class WhisperKitTranscriber: Transcriber {
 
     private func ensurePipeline() async throws -> WhisperKit {
         if let p = pipeline { return p }
-        let pipe = try await WhisperKit(WhisperKitConfig(model: modelName, verbose: false))
+        let pipe = try await WhisperKit(WhisperKitConfig(model: modelName, modelFolder: modelFolder, verbose: false))
         pipeline = pipe
         return pipe
     }
