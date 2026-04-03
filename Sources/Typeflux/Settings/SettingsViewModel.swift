@@ -9,6 +9,24 @@ enum ConnectionTestState: Equatable {
     case failure(message: String)
 }
 
+enum MCPTransportType: String, CaseIterable {
+    case stdio
+    case http
+}
+
+enum MCPConnectionTestState: Equatable {
+    case idle
+    case testing
+    case success(tools: [MCPDiscoveredTool])
+    case failure(message: String)
+
+    struct MCPDiscoveredTool: Equatable, Identifiable {
+        let id: String
+        let name: String
+        let description: String
+    }
+}
+
 @MainActor
 final class StudioViewModel: ObservableObject {
     private static let historyPageSize = 100
@@ -78,6 +96,17 @@ final class StudioViewModel: ObservableObject {
     @Published var agentFrameworkEnabled: Bool
     @Published var agentStepLoggingEnabled: Bool
     @Published var mcpServers: [MCPServerConfig]
+    @Published var mcpDraftName: String = ""
+    @Published var mcpDraftTransportType: MCPTransportType = .stdio
+    @Published var mcpDraftStdioCommand: String = ""
+    @Published var mcpDraftStdioArgs: String = ""
+    @Published var mcpDraftStdioEnv: String = ""
+    @Published var mcpDraftHTTPURL: String = ""
+    @Published var mcpDraftHTTPAPIKey: String = ""
+    @Published var mcpDraftEnabled: Bool = true
+    @Published var mcpDraftAutoConnect: Bool = false
+    @Published var mcpDraftEditingServerID: UUID? = nil
+    @Published var mcpConnectionTestState: MCPConnectionTestState = .idle
 
     @Published var personaRewriteEnabled: Bool
     @Published var personaHotkeyAppliesToSelection: Bool
@@ -118,6 +147,7 @@ final class StudioViewModel: ObservableObject {
     private var vocabularyObserver: NSObjectProtocol?
     private var llmTestTask: Task<Void, Never>?
     private var sttTestTask: Task<Void, Never>?
+    private var mcpTestTask: Task<Void, Never>?
 
     init(
         settingsStore: SettingsStore,
@@ -782,15 +812,6 @@ final class StudioViewModel: ObservableObject {
         settingsStore.agentStepLoggingEnabled = value
     }
 
-    func addNewMCPServer() {
-        let server = MCPServerConfig(
-            name: "",
-            transport: .stdio(MCPStdioTransportConfig(command: ""))
-        )
-        mcpServers.append(server)
-        settingsStore.mcpServers = mcpServers
-    }
-
     func removeMCPServer(id: UUID) {
         mcpServers.removeAll { $0.id == id }
         settingsStore.mcpServers = mcpServers
@@ -802,51 +823,165 @@ final class StudioViewModel: ObservableObject {
         settingsStore.mcpServers = mcpServers
     }
 
-    func updateMCPServerName(id: UUID, name: String) {
-        guard let idx = mcpServers.firstIndex(where: { $0.id == id }) else { return }
-        mcpServers[idx].name = name
+    var canSaveMCPDraft: Bool {
+        let nameValid = !mcpDraftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        switch mcpDraftTransportType {
+        case .stdio:
+            return nameValid && !mcpDraftStdioCommand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .http:
+            return nameValid && !mcpDraftHTTPURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
+
+    func beginAddMCPServer() {
+        mcpDraftEditingServerID = nil
+        mcpDraftName = ""
+        mcpDraftTransportType = .stdio
+        mcpDraftStdioCommand = ""
+        mcpDraftStdioArgs = ""
+        mcpDraftStdioEnv = ""
+        mcpDraftHTTPURL = ""
+        mcpDraftHTTPAPIKey = ""
+        mcpDraftEnabled = true
+        mcpDraftAutoConnect = false
+        mcpConnectionTestState = .idle
+    }
+
+    func beginEditMCPServer(_ server: MCPServerConfig) {
+        mcpDraftEditingServerID = server.id
+        mcpDraftName = server.name
+        mcpDraftEnabled = server.enabled
+        mcpDraftAutoConnect = server.autoConnect
+        mcpConnectionTestState = .idle
+        switch server.transport {
+        case .stdio(let config):
+            mcpDraftTransportType = .stdio
+            mcpDraftStdioCommand = config.command
+            mcpDraftStdioArgs = config.args.joined(separator: " ")
+            mcpDraftStdioEnv = config.env.map { "\($0.key)=\($0.value)" }.joined(separator: "\n")
+            mcpDraftHTTPURL = ""
+            mcpDraftHTTPAPIKey = ""
+        case .http(let config):
+            mcpDraftTransportType = .http
+            mcpDraftStdioCommand = ""
+            mcpDraftStdioArgs = ""
+            mcpDraftStdioEnv = ""
+            mcpDraftHTTPURL = config.url
+            mcpDraftHTTPAPIKey = config.apiKey ?? ""
+        }
+    }
+
+    func saveMCPDraft() {
+        let transport: MCPTransportConfig
+        switch mcpDraftTransportType {
+        case .stdio:
+            let envDict = parseMCPEnvString(mcpDraftStdioEnv)
+            transport = .stdio(MCPStdioTransportConfig(
+                command: mcpDraftStdioCommand.trimmingCharacters(in: .whitespacesAndNewlines),
+                args: mcpDraftStdioArgs.split(separator: " ").map(String.init),
+                env: envDict
+            ))
+        case .http:
+            transport = .http(MCPHTTPTransportConfig(
+                url: mcpDraftHTTPURL.trimmingCharacters(in: .whitespacesAndNewlines),
+                apiKey: mcpDraftHTTPAPIKey.isEmpty ? nil : mcpDraftHTTPAPIKey
+            ))
+        }
+
+        if let editingID = mcpDraftEditingServerID,
+           let idx = mcpServers.firstIndex(where: { $0.id == editingID }) {
+            mcpServers[idx].name = mcpDraftName.trimmingCharacters(in: .whitespacesAndNewlines)
+            mcpServers[idx].transport = transport
+            mcpServers[idx].enabled = mcpDraftEnabled
+            mcpServers[idx].autoConnect = mcpDraftAutoConnect
+        } else {
+            let server = MCPServerConfig(
+                name: mcpDraftName.trimmingCharacters(in: .whitespacesAndNewlines),
+                transport: transport,
+                enabled: mcpDraftEnabled,
+                autoConnect: mcpDraftAutoConnect
+            )
+            mcpServers.append(server)
+        }
         settingsStore.mcpServers = mcpServers
     }
 
-    func updateMCPServerAutoConnect(id: UUID, autoConnect: Bool) {
-        guard let idx = mcpServers.firstIndex(where: { $0.id == id }) else { return }
-        mcpServers[idx].autoConnect = autoConnect
-        settingsStore.mcpServers = mcpServers
-    }
-
-    func updateMCPServerStdioCommand(id: UUID, command: String) {
-        guard let idx = mcpServers.firstIndex(where: { $0.id == id }) else { return }
-        if case .stdio(var config) = mcpServers[idx].transport {
-            config = MCPStdioTransportConfig(command: command, args: config.args, env: config.env)
-            mcpServers[idx].transport = .stdio(config)
-            settingsStore.mcpServers = mcpServers
+    private func parseMCPEnvString(_ envString: String) -> [String: String] {
+        var result: [String: String] = [:]
+        for line in envString.split(separator: "\n") {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty else { continue }
+            if let eqIdx = trimmed.firstIndex(of: "=") {
+                let key = String(trimmed[trimmed.startIndex..<eqIdx]).trimmingCharacters(in: .whitespaces)
+                let value = String(trimmed[trimmed.index(after: eqIdx)...]).trimmingCharacters(in: .whitespaces)
+                if !key.isEmpty { result[key] = value }
+            }
         }
+        return result
     }
 
-    func updateMCPServerStdioArgs(id: UUID, args: String) {
-        guard let idx = mcpServers.firstIndex(where: { $0.id == id }) else { return }
-        if case .stdio(var config) = mcpServers[idx].transport {
-            config.args = args.split(separator: " ").map(String.init)
-            mcpServers[idx].transport = .stdio(config)
-            settingsStore.mcpServers = mcpServers
+    func testMCPConnection(for server: MCPServerConfig) {
+        testMCPConnectionWithConfig(server.transport)
+    }
+
+    func testMCPDraftConnection() {
+        let transport: MCPTransportConfig
+        switch mcpDraftTransportType {
+        case .stdio:
+            let envDict = parseMCPEnvString(mcpDraftStdioEnv)
+            transport = .stdio(MCPStdioTransportConfig(
+                command: mcpDraftStdioCommand.trimmingCharacters(in: .whitespacesAndNewlines),
+                args: mcpDraftStdioArgs.split(separator: " ").map(String.init),
+                env: envDict
+            ))
+        case .http:
+            transport = .http(MCPHTTPTransportConfig(
+                url: mcpDraftHTTPURL.trimmingCharacters(in: .whitespacesAndNewlines),
+                apiKey: mcpDraftHTTPAPIKey.isEmpty ? nil : mcpDraftHTTPAPIKey
+            ))
         }
+        testMCPConnectionWithConfig(transport)
     }
 
-    func updateMCPServerHTTPURL(id: UUID, url: String) {
-        guard let idx = mcpServers.firstIndex(where: { $0.id == id }) else { return }
-        if case .http(var config) = mcpServers[idx].transport {
-            config.url = url
-            mcpServers[idx].transport = .http(config)
-            settingsStore.mcpServers = mcpServers
-        }
-    }
+    private func testMCPConnectionWithConfig(_ transport: MCPTransportConfig) {
+        mcpTestTask?.cancel()
+        mcpConnectionTestState = .testing
+        mcpTestTask = Task {
+            do {
+                let client: any MCPClient
+                switch transport {
+                case .stdio(let config):
+                    client = StdioMCPClient(config: MCPStdioConfig(
+                        command: config.command, args: config.args, env: config.env
+                    ))
+                case .http(let config):
+                    guard let url = URL(string: config.url) else {
+                        if !Task.isCancelled {
+                            mcpConnectionTestState = .failure(message: "Invalid URL")
+                        }
+                        return
+                    }
+                    client = HTTPMCPClient(config: MCPHTTPConfig(url: url, apiKey: config.apiKey))
+                }
+                try await client.connect()
+                let tools = try await client.listTools()
+                await client.disconnect()
 
-    func updateMCPServerHTTPAPIKey(id: UUID, apiKey: String) {
-        guard let idx = mcpServers.firstIndex(where: { $0.id == id }) else { return }
-        if case .http(var config) = mcpServers[idx].transport {
-            config.apiKey = apiKey.isEmpty ? nil : apiKey
-            mcpServers[idx].transport = .http(config)
-            settingsStore.mcpServers = mcpServers
+                if !Task.isCancelled {
+                    let discoveredTools = tools.map {
+                        MCPConnectionTestState.MCPDiscoveredTool(
+                            id: $0.name,
+                            name: $0.name,
+                            description: $0.description ?? ""
+                        )
+                    }
+                    mcpConnectionTestState = .success(tools: discoveredTools)
+                }
+            } catch {
+                if !Task.isCancelled {
+                    mcpConnectionTestState = .failure(message: error.localizedDescription)
+                }
+            }
         }
     }
 
