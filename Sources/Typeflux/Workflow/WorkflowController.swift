@@ -703,12 +703,28 @@ final class WorkflowController {
             let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
             selectionTask = nil
 
-            if audioFile.duration < Self.minimumRecordingDuration {
-                try? FileManager.default.removeItem(at: audioFile.fileURL)
+            let audioAnalysis = try AudioContentAnalyzer.analyze(fileURL: audioFile.fileURL)
+            let validatedAudioFile = AudioFile(
+                fileURL: audioFile.fileURL,
+                duration: audioAnalysis.duration
+            )
+
+            if validatedAudioFile.duration < Self.minimumRecordingDuration {
+                try? FileManager.default.removeItem(at: validatedAudioFile.fileURL)
                 await sttRouter.cancelPreparedRecording()
                 await MainActor.run {
                     self.appState.setStatus(.idle)
                     self.overlayController.showNotice(message: L("workflow.recording.tooShort"))
+                }
+                return
+            }
+
+            if !audioAnalysis.containsAudibleSignal {
+                try? FileManager.default.removeItem(at: validatedAudioFile.fileURL)
+                await sttRouter.cancelPreparedRecording()
+                await MainActor.run {
+                    self.appState.setStatus(.idle)
+                    self.overlayController.showNotice(message: L("workflow.transcription.noSpeech"))
                 }
                 return
             }
@@ -744,11 +760,11 @@ final class WorkflowController {
                     personaPrompt: personaPrompt,
                     recordingIntent: recordingIntent
                 ),
-                audioFilePath: audioFile.fileURL.path,
+                audioFilePath: validatedAudioFile.fileURL.path,
                 transcriptText: nil,
                 personaPrompt: personaPrompt,
                 selectionOriginalText: recordingIntent == .askSelection ? selectedText : nil,
-                recordingDurationSeconds: audioFile.duration,
+                recordingDurationSeconds: validatedAudioFile.duration,
                 pipelineTiming: HistoryPipelineTiming(
                     recordingStoppedAt: recordingStoppedAt,
                     audioFileReadyAt: audioFileReadyAt
@@ -767,7 +783,7 @@ final class WorkflowController {
             processingTask = Task { [weak self] in
                 guard let self else { return }
                 await self.process(
-                    audioFile: audioFile,
+                    audioFile: validatedAudioFile,
                     record: record,
                     selectionSnapshot: selectionSnapshot,
                     selectedText: selectedText,
@@ -1297,6 +1313,25 @@ final class WorkflowController {
             logPipelineEvent("pipeline-cancelled", for: record)
             enforceHistoryRetentionPolicy()
         } catch {
+            if shouldTreatAsSkippedSpeechInput(error: error, audioFile: audioFile) {
+                record.transcriptionStatus = .skipped
+                record.processingStatus = .skipped
+                record.applyStatus = .skipped
+                record.applyMessage = L("workflow.transcription.emptySkipped")
+                record.errorMessage = nil
+                saveHistoryRecord(record)
+
+                await MainActor.run {
+                    if self.processingSessionID == sessionID {
+                        self.lastRetryableFailureRecord = nil
+                        self.soundEffectPlayer.play(.done)
+                        self.appState.setStatus(.idle)
+                        self.overlayController.showNotice(message: L("workflow.transcription.noSpeech"))
+                    }
+                }
+                return
+            }
+
             let msg = "Processing failed: \(error.localizedDescription)"
             ErrorLogStore.shared.log(msg)
             markFailure(&record, message: msg)
@@ -1320,6 +1355,15 @@ final class WorkflowController {
                 }
             }
         }
+    }
+
+    private func shouldTreatAsSkippedSpeechInput(error: Error, audioFile: AudioFile) -> Bool {
+        guard audioFile.duration < 1.0 else { return false }
+
+        let message = error.localizedDescription.lowercased()
+        return message.contains("socket is not connected")
+            || message.contains("socket was not connected")
+            || message.contains("not connected")
     }
 
     private func failRetry(record: HistoryRecord, message: String) async {

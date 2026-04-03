@@ -821,17 +821,20 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
                             .fill(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder))
                             .frame(width: 1, height: 18)
 
-                        Menu {
-                            ForEach(normalizedSuggestions, id: \.self) { suggestion in
-                                Button(suggestion) {
-                                    text = suggestion
+                        ZStack {
+                            Menu {
+                                ForEach(normalizedSuggestions, id: \.self) { suggestion in
+                                    Button(suggestion) {
+                                        text = suggestion
+                                    }
                                 }
+                            } label: {
+                                Color.clear
+                                    .frame(width: 12, height: 12)
                             }
-                        } label: {
-                            Color.clear
-                                .frame(width: 12, height: 12)
+                            .menuStyle(.borderlessButton)
                         }
-                        .menuStyle(.borderlessButton)
+                        .frame(width: 24, height: 24)
                         .studioTooltip(L("common.selectSuggestedValue"), yOffset: 28)
                     }
                     .padding(.trailing, 12)

@@ -229,9 +229,9 @@
 "workflow.devApp.requiredStatus" = "請以 .app 執行";
 "workflow.audioStart.failedStatus" = "音訊啟動失敗";
 "workflow.processing.failed" = "處理失敗";
-"workflow.recording.tooShort" = "錄音時間過短";
+"workflow.recording.tooShort" = "說話時間太短，本次轉寫已取消。";
 "workflow.transcription.emptySkipped" = "因轉寫結果為空，已略過後續處理。";
-"workflow.transcription.noSpeech" = "未辨識到有效語音內容";
+"workflow.transcription.noSpeech" = "未偵測到清晰語音，本次轉寫已取消。";
 "workflow.result.copyTitle" = "複製結果";
 "workflow.ask.answerTitle" = "隨便問";
 "workflow.ask.answerSectionTitle" = "回答";
