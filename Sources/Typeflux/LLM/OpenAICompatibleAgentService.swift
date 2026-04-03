@@ -1,7 +1,7 @@
 import Foundation
 
-final class OpenAICompatibleAgentService: LLMAgentService {
-    private let settingsStore: SettingsStore
+final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
+    let settingsStore: SettingsStore
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore

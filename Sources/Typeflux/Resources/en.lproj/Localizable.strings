@@ -588,3 +588,32 @@
 "onboarding.action.continue" = "Next";
 "onboarding.action.skip" = "Skip";
 "onboarding.action.getStarted" = "Get Started";
+
+// MARK: - Agent Framework
+
+"studio.section.agent" = "Agent";
+"studio.eyebrow.agent" = "Agent Framework";
+"studio.heading.agent" = "Agent configuration";
+"studio.subheading.agent" = "Configure the Agent framework, MCP servers, and tool integrations.";
+"studio.search.agent" = "Search agent settings...";
+
+"settings.advanced.agentFramework.title" = "Enable Agent framework";
+"settings.advanced.agentFramework.subtitle" = "Use the multi-turn Agent loop for Ask Anything. Supports tool calling and MCP server integration.";
+
+"agent.section.general" = "General";
+"agent.general.stepLogging.title" = "Agent step logging";
+"agent.general.stepLogging.subtitle" = "Log each Agent reasoning step and tool call for debugging.";
+
+"agent.section.mcpServers" = "MCP Servers";
+"agent.mcp.empty" = "No MCP servers configured. Add a server to extend Agent capabilities with external tools.";
+"agent.mcp.addServer" = "Add MCP Server";
+"agent.mcp.untitled" = "Untitled Server";
+"agent.mcp.name" = "Server Name";
+"agent.mcp.namePlaceholder" = "My MCP Server";
+"agent.mcp.autoConnect.title" = "Auto-connect";
+"agent.mcp.autoConnect.subtitle" = "Automatically connect to this server when the Agent starts.";
+"agent.mcp.stdio.command" = "Command";
+"agent.mcp.stdio.args" = "Arguments";
+"agent.mcp.http.url" = "Server URL";
+"agent.mcp.http.apiKey" = "API Key";
+"agent.mcp.http.apiKeyPlaceholder" = "Optional";
