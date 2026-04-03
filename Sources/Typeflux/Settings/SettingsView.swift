@@ -2726,7 +2726,7 @@ struct StudioView: View {
                     isMuted: false,
                     actionTitle: L("settings.models.useLocal")
                 ),
-            ] + LLMRemoteProvider.allCases
+            ] + LLMRemoteProvider.settingsDisplayOrder
                 .filter { $0 != .freeModel }
                 .map { provider in
                 StudioModelCard(

@@ -26,6 +26,22 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
     case xiaomi
     case custom
 
+    static let settingsDisplayOrder: [LLMRemoteProvider] = [
+        .freeModel,
+        .openRouter,
+        .openAI,
+        .anthropic,
+        .gemini,
+        .deepSeek,
+        .kimi,
+        .qwen,
+        .zhipu,
+        .minimax,
+        .grok,
+        .xiaomi,
+        .custom,
+    ]
+
     var displayName: String {
         switch self {
         case .freeModel:
