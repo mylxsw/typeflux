@@ -57,12 +57,19 @@ final class AXTextInjector: TextInjector {
 
         let processID = frontmostProcessID()
         let processName = frontmostApplicationName()
+        NSLog("[AXTextInjector] getSelectionSnapshot — app: %@ (pid: %@)", processName ?? "?", processID.map(String.init) ?? "?")
 
         if let result = readSelectedTextWithTimeout(milliseconds: Self.selectedTextTimeoutMilliseconds) {
             // Compute editability from the SAME element that produced the text,
             // avoiding a race where a second focusedElement() call returns a different element.
             let editability = isLikelyEditable(element: result.context.element)
             latestSelectionContext = result.context
+            NSLog("[AXTextInjector] source=ax-api  role=%@  range=%@  isEditable=%@  isFocusedTarget=%@  text(32)=%@",
+                  result.context.role ?? "nil",
+                  result.context.range.map { "[\($0.location),\($0.length)]" } ?? "nil",
+                  editability ? "true" : "false",
+                  result.context.isFocusedTarget ? "true" : "false",
+                  String(result.text.prefix(32)))
             return TextSelectionSnapshot(
                 processID: result.context.processID,
                 processName: result.context.processName,
@@ -75,6 +82,7 @@ final class AXTextInjector: TextInjector {
                 isFocusedTarget: result.context.isFocusedTarget
             )
         }
+        NSLog("[AXTextInjector] ax-api returned nil — trying clipboard-copy")
 
         if let copiedText = readSelectedTextViaCopy(processID: processID, milliseconds: Self.copySelectionTimeoutMilliseconds) {
             let focusedElement = focusedElement()
@@ -99,6 +107,11 @@ final class AXTextInjector: TextInjector {
                 capturedAt: Date()
             )
             latestSelectionContext = context
+            NSLog("[AXTextInjector] source=clipboard-copy  focusedWindow=%@  selectionWindow=%@  isFocusedTarget=%@  text(32)=%@",
+                  focusedWindow != nil ? "present" : "nil",
+                  selectionWindow != nil ? "present" : "nil",
+                  isFocusedTarget ? "true" : "false",
+                  String(copiedText.prefix(32)))
             // Cmd+C succeeded → the field accepts clipboard operations → Cmd+V should work.
             return TextSelectionSnapshot(
                 processID: processID,
@@ -112,6 +125,7 @@ final class AXTextInjector: TextInjector {
                 isFocusedTarget: context.isFocusedTarget
             )
         }
+        NSLog("[AXTextInjector] clipboard-copy returned nil — no selection detected")
 
         let focused = focusedElement()
         let editability = focused.map(isLikelyEditable(element:)) ?? false
