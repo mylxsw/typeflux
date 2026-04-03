@@ -67,6 +67,8 @@ final class STTRouter {
         switch settingsStore.sttProvider {
         case .doubaoRealtime:
             await (doubaoRealtime as? RecordingPrewarmingTranscriber)?.prepareForRecording()
+        case .localModel:
+            await (localModel as? RecordingPrewarmingTranscriber)?.prepareForRecording()
         default:
             break
         }
@@ -76,6 +78,8 @@ final class STTRouter {
         switch settingsStore.sttProvider {
         case .doubaoRealtime:
             await (doubaoRealtime as? RecordingPrewarmingTranscriber)?.cancelPreparedRecording()
+        case .localModel:
+            await (localModel as? RecordingPrewarmingTranscriber)?.cancelPreparedRecording()
         default:
             break
         }

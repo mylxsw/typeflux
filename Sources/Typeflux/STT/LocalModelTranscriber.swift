@@ -79,3 +79,22 @@ final class LocalModelTranscriber: Transcriber {
         PromptCatalog.transcriptionVocabularyHint(terms: VocabularyStore.activeTerms())
     }
 }
+
+// MARK: - Pre-warm support
+
+extension LocalModelTranscriber: RecordingPrewarmingTranscriber {
+    /// Eagerly initialises the WhisperKit CoreML pipeline so the first
+    /// real transcription call doesn't pay the cold-start penalty.
+    func prepareForRecording() async {
+        guard settingsStore.localSTTModel == .whisperLocal else { return }
+        guard modelManager.preparedModelInfo(settingsStore: settingsStore) != nil else { return }
+        let identifier = settingsStore.localSTTModelIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        let model = identifier.isEmpty ? settingsStore.localSTTModel.defaultModelIdentifier : identifier
+        let transcriber = whisperKitTranscriber(for: model)
+        try? await transcriber.prepare()
+    }
+
+    func cancelPreparedRecording() async {
+        // WhisperKit stays loaded in memory once initialised; nothing to cancel.
+    }
+}
