@@ -1687,15 +1687,9 @@ struct StudioView: View {
     }
 
     private func shortcutPill(_ binding: HotkeyBinding, accentSymbol: String) -> some View {
-        HStack(spacing: StudioTheme.Spacing.small) {
-            Image(systemName: accentSymbol)
-                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                .foregroundStyle(StudioTheme.accent)
-
-            HStack(spacing: StudioTheme.Spacing.xxxSmall) {
-                ForEach(HotkeyFormat.components(binding), id: \.self) { key in
-                    shortcutKeycap(key)
-                }
+        HStack(spacing: StudioTheme.Spacing.xxxSmall) {
+            ForEach(HotkeyFormat.components(binding), id: \.self) { key in
+                shortcutKeycap(key)
             }
         }
     }
