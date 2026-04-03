@@ -52,7 +52,7 @@ struct MCPServerConfig: Codable, Identifiable, Sendable {
 }
 
 /// MCP 设置存储
-final class MCPSettingsStore: Sendable {
+final class MCPSettingsStore: @unchecked Sendable {
     private let defaults: UserDefaults
     private let serversKey = "mcp.servers"
 

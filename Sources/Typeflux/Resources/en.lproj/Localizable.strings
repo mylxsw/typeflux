@@ -596,6 +596,7 @@
 "studio.heading.agent" = "Agent configuration";
 "studio.subheading.agent" = "Configure the Agent framework, MCP servers, and tool integrations.";
 "studio.search.agent" = "Search agent settings...";
+"agent.beta.notice" = "Agent features are currently in Beta. Stability and behavior may continue to change, so please keep this in mind when using them.";
 
 "settings.advanced.agentFramework.title" = "Enable Agent framework";
 "settings.advanced.agentFramework.subtitle" = "Use the multi-turn Agent loop for Ask Anything. Supports tool calling and MCP server integration.";
@@ -616,16 +617,17 @@
 "agent.mcp.stdio.args" = "Arguments";
 "agent.mcp.http.url" = "Server URL";
 "agent.mcp.http.headers" = "Request Headers";
-"agent.mcp.http.headersHint" = "One header per line, format: KEY=VALUE";
+"agent.mcp.http.headersHint" = "One header per line, format: KEY=VALUE. Example: Authorization=Bearer sk-xxx";
 "agent.mcp.testConnection" = "Test Connection";
 "agent.mcp.testing" = "Testing...";
 "agent.mcp.testSuccess" = "Connected — %d tools available";
 "agent.mcp.edit" = "Edit";
 "agent.mcp.dialog.addTitle" = "Add MCP Server";
 "agent.mcp.dialog.editTitle" = "Edit MCP Server";
+"agent.mcp.dialog.subtitle" = "Configure MCP server connection details, transport, and startup behavior so the Agent can call external tools.";
 "agent.mcp.transportType" = "Transport Type";
 "agent.mcp.stdio.env" = "Environment Variables";
-"agent.mcp.stdio.envHint" = "One variable per line, format: KEY=VALUE";
+"agent.mcp.stdio.envHint" = "One variable per line, format: KEY=VALUE. Example: NODE_ENV=production";
 "agent.mcp.enabled.title" = "Enabled";
 "agent.mcp.enabled.subtitle" = "Enable this MCP server for Agent tool calls.";
 "agent.mcp.deleteDialog.title" = "Delete MCP Server";

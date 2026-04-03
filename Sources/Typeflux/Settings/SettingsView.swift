@@ -209,7 +209,8 @@ struct StudioView: View {
             StudioHeroHeader(
                 eyebrow: viewModel.currentSection.eyebrow,
                 title: viewModel.currentSection.heading,
-                subtitle: viewModel.currentSection.subheading
+                subtitle: viewModel.currentSection.subheading,
+                badge: viewModel.currentSection == .agent ? "Beta" : nil
             )
 
             if viewModel.currentSection == .history {
@@ -1247,37 +1248,46 @@ struct StudioView: View {
 
     private func mcpServerListCard(_ server: MCPServerConfig) -> some View {
         StudioCard {
-            HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                    HStack(spacing: StudioTheme.Spacing.small) {
-                        Text(server.name.isEmpty ? L("agent.mcp.untitled") : server.name)
-                            .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                        StudioPill(title: mcpTransportLabel(for: server))
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+                HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                        HStack(spacing: StudioTheme.Spacing.small) {
+                            Text(server.name.isEmpty ? L("agent.mcp.untitled") : server.name)
+                                .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
+                                .foregroundStyle(StudioTheme.textPrimary)
+                            StudioPill(title: mcpTransportLabel(for: server))
+                        }
+                        Text(mcpTransportDetail(for: server))
+                            .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                            .lineLimit(1)
                     }
-                    Text(mcpTransportDetail(for: server))
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .lineLimit(1)
+
+                    Spacer()
+
+                    StudioButton(
+                        title: viewModel.isTestingMCPServer(server.id)
+                            ? L("agent.mcp.testing") : L("agent.mcp.testConnection"),
+                        systemImage: viewModel.isTestingMCPServer(server.id) ? nil : "network",
+                        variant: .secondary,
+                        isDisabled: viewModel.isTestingMCPServer(server.id),
+                        isLoading: viewModel.isTestingMCPServer(server.id)
+                    ) {
+                        viewModel.testMCPConnection(for: server)
+                    }
+
+                    Toggle("", isOn: Binding(
+                        get: { server.enabled },
+                        set: { viewModel.updateMCPServerEnabled(id: server.id, enabled: $0) }
+                    ))
+                    .labelsHidden()
+                    .toggleStyle(.switch)
                 }
 
-                Spacer()
-
-                StudioButton(
-                    title: L("agent.mcp.testConnection"),
-                    systemImage: "network",
-                    variant: .ghost,
-                    isLoading: viewModel.mcpConnectionTestState == .testing
-                ) {
-                    viewModel.testMCPConnection(for: server)
+                if viewModel.shouldShowMCPConnectionTestResult(for: server.id) {
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                    mcpConnectionTestResultView
                 }
-
-                Toggle("", isOn: Binding(
-                    get: { server.enabled },
-                    set: { viewModel.updateMCPServerEnabled(id: server.id, enabled: $0) }
-                ))
-                .labelsHidden()
-                .toggleStyle(.switch)
             }
         }
         .contentShape(Rectangle())
@@ -1302,87 +1312,99 @@ struct StudioView: View {
             Text(viewModel.mcpDraftEditingServerID == nil
                  ? L("agent.mcp.dialog.addTitle")
                  : L("agent.mcp.dialog.editTitle"))
-                .font(.studioDisplay(StudioTheme.Typography.pageTitle, weight: .semibold))
+                .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
                 .foregroundStyle(StudioTheme.textPrimary)
 
-            StudioTextInputCard(
-                label: L("agent.mcp.name"),
-                placeholder: L("agent.mcp.namePlaceholder"),
-                text: $viewModel.mcpDraftName
-            )
+            Text(L("agent.mcp.dialog.subtitle"))
+                .font(.studioBody(StudioTheme.Typography.body))
+                .foregroundStyle(StudioTheme.textSecondary)
 
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                Text(L("agent.mcp.transportType"))
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
+            StudioCard(padding: StudioTheme.Insets.cardDense) {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                    StudioTextInputCard(
+                        label: L("agent.mcp.name"),
+                        placeholder: L("agent.mcp.namePlaceholder"),
+                        text: $viewModel.mcpDraftName
+                    )
 
-                StudioSegmentedPicker(
-                    options: [
-                        (label: "STDIO", value: MCPTransportType.stdio),
-                        (label: "HTTP/SSE", value: MCPTransportType.http)
-                    ],
-                    selection: $viewModel.mcpDraftTransportType
-                )
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                        Text(L("agent.mcp.transportType"))
+                            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textSecondary)
+
+                        StudioSegmentedPicker(
+                            options: [
+                                (label: "STDIO", value: MCPTransportType.stdio),
+                                (label: "HTTP/SSE", value: MCPTransportType.http)
+                            ],
+                            selection: $viewModel.mcpDraftTransportType
+                        )
+                    }
+
+                    if viewModel.mcpDraftTransportType == .stdio {
+                        StudioTextInputCard(
+                            label: L("agent.mcp.stdio.command"),
+                            placeholder: "/usr/local/bin/my-mcp-server",
+                            text: $viewModel.mcpDraftStdioCommand
+                        )
+                        StudioTextInputCard(
+                            label: L("agent.mcp.stdio.args"),
+                            placeholder: "--port 3000 --verbose",
+                            text: $viewModel.mcpDraftStdioArgs
+                        )
+                        mcpKeyValueEditor(
+                            label: L("agent.mcp.stdio.env"),
+                            hint: L("agent.mcp.stdio.envHint"),
+                            text: $viewModel.mcpDraftStdioEnv
+                        )
+                    } else {
+                        StudioTextInputCard(
+                            label: L("agent.mcp.http.url"),
+                            placeholder: "https://mcp.example.com/sse",
+                            text: $viewModel.mcpDraftHTTPURL
+                        )
+                        mcpKeyValueEditor(
+                            label: L("agent.mcp.http.headers"),
+                            hint: L("agent.mcp.http.headersHint"),
+                            text: $viewModel.mcpDraftHTTPHeaders
+                        )
+                    }
+                }
             }
 
-            if viewModel.mcpDraftTransportType == .stdio {
-                StudioTextInputCard(
-                    label: L("agent.mcp.stdio.command"),
-                    placeholder: "/usr/local/bin/my-mcp-server",
-                    text: $viewModel.mcpDraftStdioCommand
-                )
-                StudioTextInputCard(
-                    label: L("agent.mcp.stdio.args"),
-                    placeholder: "--port 3000 --verbose",
-                    text: $viewModel.mcpDraftStdioArgs
-                )
-                mcpKeyValueEditor(
-                    label: L("agent.mcp.stdio.env"),
-                    hint: L("agent.mcp.stdio.envHint"),
-                    text: $viewModel.mcpDraftStdioEnv
-                )
-            } else {
-                StudioTextInputCard(
-                    label: L("agent.mcp.http.url"),
-                    placeholder: "https://mcp.example.com/sse",
-                    text: $viewModel.mcpDraftHTTPURL
-                )
-                mcpKeyValueEditor(
-                    label: L("agent.mcp.http.headers"),
-                    hint: L("agent.mcp.http.headersHint"),
-                    text: $viewModel.mcpDraftHTTPHeaders
-                )
-            }
+            StudioCard(padding: StudioTheme.Insets.cardDense) {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                    StudioSettingRow(
+                        title: L("agent.mcp.enabled.title"),
+                        subtitle: L("agent.mcp.enabled.subtitle")
+                    ) {
+                        Toggle("", isOn: $viewModel.mcpDraftEnabled)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                    }
 
-            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
-            StudioSettingRow(
-                title: L("agent.mcp.enabled.title"),
-                subtitle: L("agent.mcp.enabled.subtitle")
-            ) {
-                Toggle("", isOn: $viewModel.mcpDraftEnabled)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-            }
-
-            StudioSettingRow(
-                title: L("agent.mcp.autoConnect.title"),
-                subtitle: L("agent.mcp.autoConnect.subtitle")
-            ) {
-                Toggle("", isOn: $viewModel.mcpDraftAutoConnect)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
+                    StudioSettingRow(
+                        title: L("agent.mcp.autoConnect.title"),
+                        subtitle: L("agent.mcp.autoConnect.subtitle")
+                    ) {
+                        Toggle("", isOn: $viewModel.mcpDraftAutoConnect)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                    }
+                }
             }
 
             mcpConnectionTestResultView
-
-            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
             HStack {
                 StudioButton(title: L("common.cancel"), systemImage: nil, variant: .secondary) {
                     isMCPServerDialogPresented = false
                 }
+
                 Spacer()
+
                 StudioButton(
                     title: viewModel.mcpConnectionTestState == .testing
                         ? L("agent.mcp.testing") : L("agent.mcp.testConnection"),
@@ -1404,7 +1426,7 @@ struct StudioView: View {
                 }
             }
         }
-        .padding(32)
+        .padding(StudioTheme.Insets.cardDefault)
         .frame(width: 520)
     }
 

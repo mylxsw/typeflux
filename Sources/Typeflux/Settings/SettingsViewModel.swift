@@ -106,6 +106,7 @@ final class StudioViewModel: ObservableObject {
     @Published var mcpDraftEnabled: Bool = true
     @Published var mcpDraftAutoConnect: Bool = false
     @Published var mcpDraftEditingServerID: UUID? = nil
+    @Published var mcpConnectionTestTargetServerID: UUID? = nil
     @Published var mcpConnectionTestState: MCPConnectionTestState = .idle
 
     @Published var personaRewriteEnabled: Bool
@@ -844,6 +845,7 @@ final class StudioViewModel: ObservableObject {
         mcpDraftHTTPHeaders = ""
         mcpDraftEnabled = true
         mcpDraftAutoConnect = false
+        mcpConnectionTestTargetServerID = nil
         mcpConnectionTestState = .idle
     }
 
@@ -852,6 +854,7 @@ final class StudioViewModel: ObservableObject {
         mcpDraftName = server.name
         mcpDraftEnabled = server.enabled
         mcpDraftAutoConnect = server.autoConnect
+        mcpConnectionTestTargetServerID = nil
         mcpConnectionTestState = .idle
         switch server.transport {
         case .stdio(let config):
@@ -922,10 +925,12 @@ final class StudioViewModel: ObservableObject {
     }
 
     func testMCPConnection(for server: MCPServerConfig) {
+        mcpConnectionTestTargetServerID = server.id
         testMCPConnectionWithConfig(server.transport)
     }
 
     func testMCPDraftConnection() {
+        mcpConnectionTestTargetServerID = nil
         let transport: MCPTransportConfig
         switch mcpDraftTransportType {
         case .stdio:
@@ -943,6 +948,14 @@ final class StudioViewModel: ObservableObject {
             ))
         }
         testMCPConnectionWithConfig(transport)
+    }
+
+    func isTestingMCPServer(_ serverID: UUID) -> Bool {
+        mcpConnectionTestTargetServerID == serverID && mcpConnectionTestState == .testing
+    }
+
+    func shouldShowMCPConnectionTestResult(for serverID: UUID) -> Bool {
+        mcpConnectionTestTargetServerID == serverID && mcpConnectionTestState != .idle
     }
 
     private func testMCPConnectionWithConfig(_ transport: MCPTransportConfig) {
