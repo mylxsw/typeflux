@@ -315,7 +315,9 @@ final class AXTextInjector: TextInjector {
         let processID = frontmostProcessID()
         let focusedWindow = processID.flatMap(focusedWindowElement(for:))
         let selectionWindow = containingWindow(of: element)
-        let isFocusedTarget = focusedWindow.map { windowsMatch($0, selectionWindow) } ?? false
+        let isFocusedTarget = focusedWindow.map { w in
+            selectionWindow.map { s in windowsMatch(w, s) } ?? true
+        } ?? false
 
         let context = SelectionContext(
             element: element,
