@@ -615,8 +615,8 @@
 "agent.mcp.stdio.command" = "指令";
 "agent.mcp.stdio.args" = "參數";
 "agent.mcp.http.url" = "伺服器 URL";
-"agent.mcp.http.apiKey" = "API 金鑰";
-"agent.mcp.http.apiKeyPlaceholder" = "選填";
+"agent.mcp.http.headers" = "請求標頭";
+"agent.mcp.http.headersHint" = "每行一條，格式：KEY=VALUE";
 "agent.mcp.testConnection" = "測試連線";
 "agent.mcp.testing" = "測試中...";
 "agent.mcp.testSuccess" = "連線成功 — 共 %d 個工具可用";

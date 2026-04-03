@@ -70,7 +70,7 @@ final class MCPSettingsTests: XCTestCase {
         )
         let c2 = MCPServerConfig(
             name: "Server2",
-            transport: .http(MCPHTTPTransportConfig(url: "http://localhost:9090", apiKey: "key123")),
+            transport: .http(MCPHTTPTransportConfig(url: "http://localhost:9090", headers: ["Authorization": "Bearer key123"])),
             enabled: false,
             autoConnect: false
         )
@@ -104,7 +104,7 @@ final class MCPSettingsTests: XCTestCase {
         )
         let httpConfig = MCPServerConfig(
             name: "HTTP",
-            transport: .http(MCPHTTPTransportConfig(url: "https://api.example.com", apiKey: "secret")),
+            transport: .http(MCPHTTPTransportConfig(url: "https://api.example.com", headers: ["Authorization": "Bearer secret"])),
             enabled: false,
             autoConnect: false
         )
@@ -126,7 +126,7 @@ final class MCPSettingsTests: XCTestCase {
 
         if case .http(let hc) = decoded[1].transport {
             XCTAssertEqual(hc.url, "https://api.example.com")
-            XCTAssertEqual(hc.apiKey, "secret")
+            XCTAssertEqual(hc.headers["Authorization"], "Bearer secret")
         } else {
             XCTFail("Expected http transport")
         }

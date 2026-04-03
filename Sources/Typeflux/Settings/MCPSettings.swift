@@ -20,7 +20,12 @@ struct MCPStdioTransportConfig: Codable, Sendable {
 
 struct MCPHTTPTransportConfig: Codable, Sendable {
     var url: String
-    var apiKey: String?
+    var headers: [String: String]
+
+    init(url: String, headers: [String: String] = [:]) {
+        self.url = url
+        self.headers = headers
+    }
 }
 
 /// MCP 服务器配置
