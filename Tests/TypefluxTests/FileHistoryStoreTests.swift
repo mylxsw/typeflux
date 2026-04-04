@@ -189,3 +189,73 @@ final class FileHistoryStoreTests: XCTestCase {
         XCTAssertTrue(content.contains("Mode: dictation"))
     }
 }
+
+// MARK: - Extended FileHistoryStore tests
+
+extension FileHistoryStoreTests {
+
+    func testSavePreservesAllFields() {
+        let id = UUID()
+        let date = Date(timeIntervalSince1970: 5000)
+        let record = HistoryRecord(
+            id: id,
+            date: date,
+            mode: .askAnswer,
+            transcriptText: "transcript",
+            personaPrompt: "formal",
+            personaResultText: "Formal transcript.",
+            errorMessage: nil,
+            recordingStatus: .succeeded,
+            transcriptionStatus: .succeeded,
+            processingStatus: .succeeded,
+            applyStatus: .succeeded
+        )
+        store.save(record: record)
+
+        let found = store.record(id: id)
+        XCTAssertEqual(found?.transcriptText, "transcript")
+        XCTAssertEqual(found?.personaPrompt, "formal")
+        XCTAssertEqual(found?.personaResultText, "Formal transcript.")
+        XCTAssertEqual(found?.mode, .askAnswer)
+    }
+
+    func testListIsOrderedByDateDescending() {
+        let now = Date()
+        let oldest = makeRecord(date: now.addingTimeInterval(-100), transcriptText: "oldest")
+        let newest = makeRecord(date: now.addingTimeInterval(100), transcriptText: "newest")
+        store.save(record: oldest)
+        store.save(record: newest)
+
+        let list = store.list()
+        XCTAssertEqual(list.first?.transcriptText, "newest")
+        XCTAssertEqual(list.last?.transcriptText, "oldest")
+    }
+
+    func testListWithOffsetSkipsRecords() {
+        for i in 0..<5 {
+            store.save(record: makeRecord(transcriptText: "record \(i)"))
+        }
+
+        let results = store.list(limit: 10, offset: 3, searchQuery: nil)
+        XCTAssertEqual(results.count, 2)
+    }
+
+    func testSaveAndLoadPersonaRewriteRecord() {
+        let record = HistoryRecord(
+            date: Date(),
+            mode: .personaRewrite,
+            transcriptText: "raw",
+            personaResultText: "polished"
+        )
+        store.save(record: record)
+
+        let list = store.list()
+        XCTAssertEqual(list.first?.mode, .personaRewrite)
+        XCTAssertEqual(list.first?.personaResultText, "polished")
+    }
+
+    func testClearOnEmptyStoreDoesNotCrash() {
+        store.clear()
+        XCTAssertTrue(store.list().isEmpty)
+    }
+}

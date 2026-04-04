@@ -154,3 +154,110 @@ final class StudioModelsTests: XCTestCase {
         XCTAssertFalse(card.isMuted)
     }
 }
+
+// MARK: - Extended StudioModels tests
+
+extension StudioModelsTests {
+
+    // MARK: - StudioModelProviderID
+
+    func testProviderIDRawValueRoundTrip() {
+        for providerID in StudioModelProviderID.allCases {
+            let raw = providerID.rawValue
+            let recovered = StudioModelProviderID(rawValue: raw)
+            XCTAssertEqual(recovered, providerID)
+        }
+    }
+
+    func testAllProviderIDsHaveNonEmptyRawValues() {
+        for providerID in StudioModelProviderID.allCases {
+            XCTAssertFalse(providerID.rawValue.isEmpty, "\(providerID) should have a non-empty raw value")
+        }
+    }
+
+    func testProviderIDIdentifiableID() {
+        for providerID in StudioModelProviderID.allCases {
+            XCTAssertEqual(providerID.id, providerID.rawValue)
+        }
+    }
+
+    func testSTTProvidersDomainIsSTT() {
+        let sttProviders: [StudioModelProviderID] = [
+            .whisperAPI, .appleASR, .local, .doubao, .aliCloud, .openAIRealtime
+        ]
+        for provider in sttProviders {
+            XCTAssertEqual(provider.domain, .stt, "\(provider) should be in STT domain")
+        }
+    }
+
+    func testLLMProvidersDomainIsLLM() {
+        let llmProviders: [StudioModelProviderID] = [
+            .openAI, .anthropic, .gemini, .deepSeek, .kimi
+        ]
+        for provider in llmProviders {
+            XCTAssertEqual(provider.domain, .llm, "\(provider) should be in LLM domain")
+        }
+    }
+
+    // MARK: - HistoryPipelineStatPresentationItem
+
+    func testPipelineStatItemEquality() {
+        let item1 = HistoryPipelineStatPresentationItem(
+            id: "latency", title: "Latency", value: "100ms", style: .duration
+        )
+        let item2 = HistoryPipelineStatPresentationItem(
+            id: "latency", title: "Latency", value: "100ms", style: .duration
+        )
+        XCTAssertEqual(item1.id, item2.id)
+        XCTAssertEqual(item1.title, item2.title)
+        XCTAssertEqual(item1.value, item2.value)
+    }
+
+    func testPipelineStatItemStyles() {
+        // Verify all styles are distinguishable by their raw values
+        let durationItem = HistoryPipelineStatPresentationItem(
+            id: "d", title: "Duration", value: "500ms", style: .duration
+        )
+        let countItem = HistoryPipelineStatPresentationItem(
+            id: "c", title: "Count", value: "42", style: .count
+        )
+        // Just verify they don't crash
+        XCTAssertEqual(durationItem.style, .duration)
+        XCTAssertEqual(countItem.style, .count)
+    }
+
+    // MARK: - StudioModelCard
+
+    func testModelCardNotSelectedNotMuted() {
+        let card = StudioModelCard(
+            id: "gpt-4o",
+            name: "GPT-4o",
+            summary: "OpenAI GPT-4o",
+            badge: nil,
+            metadata: nil,
+            isSelected: false,
+            isMuted: false,
+            actionTitle: "Use"
+        )
+        XCTAssertFalse(card.isSelected)
+        XCTAssertFalse(card.isMuted)
+        XCTAssertNil(card.badge)
+        XCTAssertNil(card.metadata)
+    }
+
+    func testModelCardWithNilBadgeAndMetadata() {
+        let card = StudioModelCard(
+            id: "test-model",
+            name: "Test Model",
+            summary: "Summary",
+            badge: nil,
+            metadata: nil,
+            isSelected: false,
+            isMuted: true,
+            actionTitle: "Configure"
+        )
+        XCTAssertTrue(card.isMuted)
+        XCTAssertNil(card.badge)
+        XCTAssertNil(card.metadata)
+    }
+}

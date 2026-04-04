@@ -522,3 +522,145 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(store.llmAPIKey(for: .deepSeek), "sk-deep")
     }
 }
+
+// MARK: - Extended SettingsStore tests
+
+extension SettingsStoreTests {
+
+    // MARK: - sttProvider
+
+    func testSTTProviderDefaultsToWhisperAPI() {
+        XCTAssertEqual(store.sttProvider, .whisperAPI)
+    }
+
+    func testSTTProviderCanBeChangedToAppleSpeech() {
+        store.sttProvider = .appleSpeech
+        XCTAssertEqual(store.sttProvider, .appleSpeech)
+    }
+
+    func testSTTProviderCanBeChangedToLocalModel() {
+        store.sttProvider = .localModel
+        XCTAssertEqual(store.sttProvider, .localModel)
+    }
+
+    func testSTTProviderCanBeChangedToDoubao() {
+        store.sttProvider = .doubaoRealtime
+        XCTAssertEqual(store.sttProvider, .doubaoRealtime)
+    }
+
+    // MARK: - llmProvider
+
+    func testLLMProviderDefaultsToOpenAICompatible() {
+        XCTAssertEqual(store.llmProvider, .openAICompatible)
+    }
+
+    // MARK: - appLanguage
+
+    func testAppLanguagePersistence() {
+        store.appLanguage = .japanese
+        XCTAssertEqual(store.appLanguage, .japanese)
+
+        store.appLanguage = .simplifiedChinese
+        XCTAssertEqual(store.appLanguage, .simplifiedChinese)
+    }
+
+    // MARK: - textLLMConfiguration for various providers
+
+    func testTextLLMConfigurationForOpenAI() {
+        store.llmProvider = .openAICompatible
+        store.llmRemoteProvider = .openAI
+        store.setLLMBaseURL("https://api.openai.com/v1", for: .openAI)
+        store.setLLMModel("gpt-4o", for: .openAI)
+        store.setLLMAPIKey("sk-openai", for: .openAI)
+
+        let config = store.textLLMConfiguration()
+        XCTAssertEqual(config.provider, .openAI)
+        XCTAssertEqual(config.baseURL, "https://api.openai.com/v1")
+        XCTAssertEqual(config.model, "gpt-4o")
+    }
+
+    func testTextLLMConfigurationForAnthropic() {
+        store.llmProvider = .openAICompatible
+        store.llmRemoteProvider = .anthropic
+        store.setLLMBaseURL("https://api.anthropic.com/v1", for: .anthropic)
+        store.setLLMModel("claude-3-sonnet", for: .anthropic)
+
+        let config = store.textLLMConfiguration()
+        XCTAssertEqual(config.provider, .anthropic)
+        XCTAssertEqual(config.model, "claude-3-sonnet")
+    }
+
+    // MARK: - hotkey settings
+
+    func testHotkeyRoundTrip() {
+        let testHotkey = HotkeyDefinition(
+            modifiers: [.control],
+            keyCode: 49  // Space
+        )
+        store.hotkeyRecordingToggle = testHotkey
+        let loaded = store.hotkeyRecordingToggle
+        XCTAssertEqual(loaded?.keyCode, 49)
+        XCTAssertEqual(loaded?.modifiers, [.control])
+    }
+
+    func testHotkeyDefaultIsNil() {
+        XCTAssertNil(store.hotkeyRecordingToggle)
+    }
+
+    // MARK: - vocabularyTerms
+
+    func testVocabularyTermsRoundTrip() {
+        store.vocabularyTerms = ["TypeFlux", "WhisperKit", "SeedASR"]
+        XCTAssertEqual(store.vocabularyTerms, ["TypeFlux", "WhisperKit", "SeedASR"])
+    }
+
+    func testVocabularyTermsDefaultIsEmpty() {
+        XCTAssertTrue(store.vocabularyTerms.isEmpty)
+    }
+
+    // MARK: - useAppleSpeechFallback
+
+    func testUseAppleSpeechFallbackDefaultIsFalse() {
+        XCTAssertFalse(store.useAppleSpeechFallback)
+    }
+
+    func testUseAppleSpeechFallbackToggle() {
+        store.useAppleSpeechFallback = true
+        XCTAssertTrue(store.useAppleSpeechFallback)
+        store.useAppleSpeechFallback = false
+        XCTAssertFalse(store.useAppleSpeechFallback)
+    }
+
+    // MARK: - LLM config for all providers
+
+    func testLLMBaseURLFallsBackToDefaultForAllProviders() {
+        for provider in LLMRemoteProvider.allCases {
+            let url = store.llmBaseURL(for: provider)
+            XCTAssertFalse(url.isEmpty || provider.defaultBaseURL.isEmpty,
+                           "\(provider) should have a non-empty base URL")
+        }
+    }
+
+    func testLLMModelFallsBackToDefaultForProviderWithDefault() {
+        let model = store.llmModel(for: .gemini)
+        XCTAssertFalse(model.isEmpty || LLMRemoteProvider.gemini.defaultModel.isEmpty)
+    }
+
+    // MARK: - Per-provider settings independence
+
+    func testOpenAIAndAnthropicSettingsAreIndependent() {
+        store.setLLMModel("gpt-4o", for: .openAI)
+        store.setLLMModel("claude-3", for: .anthropic)
+
+        XCTAssertEqual(store.llmModel(for: .openAI), "gpt-4o")
+        XCTAssertEqual(store.llmModel(for: .anthropic), "claude-3")
+    }
+
+    func testAPIKeyIsIndependentPerProvider() {
+        store.setLLMAPIKey("sk-openai", for: .openAI)
+        store.setLLMAPIKey("sk-anthropic", for: .anthropic)
+
+        XCTAssertEqual(store.llmAPIKey(for: .openAI), "sk-openai")
+        XCTAssertEqual(store.llmAPIKey(for: .anthropic), "sk-anthropic")
+    }
+}

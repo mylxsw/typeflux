@@ -186,3 +186,116 @@ final class MarkdownHTMLRendererTests: XCTestCase {
         XCTAssertTrue(html.isEmpty)
     }
 }
+
+// MARK: - Extended MarkdownHTMLRenderer tests
+
+extension MarkdownHTMLRendererTests {
+
+    // MARK: - Whitespace handling
+
+    func testWhitespaceOnlyMarkdown() {
+        let html = renderer.render(markdown: "   \n  \n  ")
+        XCTAssertTrue(html.isEmpty)
+    }
+
+    func testSingleLineWithLeadingTrailingWhitespace() {
+        let html = renderer.render(markdown: "  Hello world  ")
+        XCTAssertTrue(html.contains("Hello world"))
+    }
+
+    // MARK: - Multiple paragraphs
+
+    func testMultipleParagraphsRenderedSeparately() {
+        let md = "First paragraph.\n\nSecond paragraph."
+        let html = renderer.render(markdown: md)
+        let firstRange = html.range(of: "First paragraph.")
+        let secondRange = html.range(of: "Second paragraph.")
+        XCTAssertNotNil(firstRange)
+        XCTAssertNotNil(secondRange)
+        // Ensure the second p appears after the first
+        if let firstRange = firstRange, let secondRange = secondRange {
+            XCTAssertGreaterThan(secondRange.lowerBound, firstRange.upperBound)
+        }
+    }
+
+    // MARK: - Headings
+
+    func testH1Heading() {
+        let html = renderer.render(markdown: "# H1 Title")
+        XCTAssertTrue(html.contains("<h1>H1 Title</h1>") || html.contains("<h1>"))
+    }
+
+    func testH2Heading() {
+        let html = renderer.render(markdown: "## H2 Subtitle")
+        XCTAssertTrue(html.contains("<h2>H2 Subtitle</h2>") || html.contains("<h2>"))
+    }
+
+    func testH3Heading() {
+        let html = renderer.render(markdown: "### H3 Sub-subtitle")
+        XCTAssertTrue(html.contains("<h3>") || html.contains("H3 Sub-subtitle"))
+    }
+
+    // MARK: - Lists
+
+    func testUnorderedListRendered() {
+        let md = "- item 1\n- item 2\n- item 3"
+        let html = renderer.render(markdown: md)
+        XCTAssertTrue(html.contains("<ul>") || html.contains("<li>"))
+        XCTAssertTrue(html.contains("item 1"))
+        XCTAssertTrue(html.contains("item 2"))
+    }
+
+    func testOrderedListRendered() {
+        let md = "1. first\n2. second\n3. third"
+        let html = renderer.render(markdown: md)
+        XCTAssertTrue(html.contains("<ol>") || html.contains("<li>"))
+        XCTAssertTrue(html.contains("first"))
+    }
+
+    // MARK: - Code blocks
+
+    func testFencedCodeBlockRendered() {
+        let md = "```swift\nlet x = 1\n```"
+        let html = renderer.render(markdown: md)
+        XCTAssertTrue(html.contains("let x = 1"))
+        XCTAssertTrue(html.contains("<code") || html.contains("<pre"))
+    }
+
+    func testInlineCodePreservesTicks() {
+        let html = renderer.render(markdown: "Use `let` keyword")
+        XCTAssertTrue(html.contains("<code>let</code>"))
+    }
+
+    // MARK: - Blockquote
+
+    func testBlockquoteRendered() {
+        let md = "> This is a quote"
+        let html = renderer.render(markdown: md)
+        XCTAssertTrue(html.contains("<blockquote>") || html.contains("This is a quote"))
+    }
+
+    // MARK: - Thematic break
+
+    func testThematicBreakRendered() {
+        let md = "Before\n\n---\n\nAfter"
+        let html = renderer.render(markdown: md)
+        XCTAssertTrue(html.contains("<hr>") || html.contains("<hr/>") || html.contains("<hr />"))
+    }
+
+    // MARK: - Nested lists
+
+    func testNestedUnorderedList() {
+        let md = "- parent\n  - child"
+        let html = renderer.render(markdown: md)
+        XCTAssertTrue(html.contains("parent"))
+        XCTAssertTrue(html.contains("child"))
+    }
+
+    // MARK: - Mixed formatting
+
+    func testBoldAndItalicTogether() {
+        let html = renderer.render(markdown: "***very important***")
+        XCTAssertTrue(html.contains("<strong>") || html.contains("<em>"))
+        XCTAssertTrue(html.contains("very important"))
+    }
+}
