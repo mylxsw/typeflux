@@ -11,17 +11,10 @@ final class SQLiteHistoryStore: HistoryStore {
     private let legacyIndexURL: URL
     private var db: OpaquePointer?
 
-    init() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let newBaseDir = appSupport.appendingPathComponent("Typeflux", isDirectory: true)
-        let legacyBaseDir = appSupport.appendingPathComponent("Typeflux", isDirectory: true)
-        if !FileManager.default.fileExists(atPath: newBaseDir.path),
-           FileManager.default.fileExists(atPath: legacyBaseDir.path) {
-            try? FileManager.default.moveItem(at: legacyBaseDir, to: newBaseDir)
-        }
-        baseDir = newBaseDir
-        dbURL = baseDir.appendingPathComponent("history.sqlite")
-        legacyIndexURL = baseDir.appendingPathComponent("history.json")
+    init(baseDir: URL) {
+        self.baseDir = baseDir
+        self.dbURL = baseDir.appendingPathComponent("history.sqlite")
+        self.legacyIndexURL = baseDir.appendingPathComponent("history.json")
 
         try? FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
 
@@ -33,6 +26,17 @@ final class SQLiteHistoryStore: HistoryStore {
         } catch {
             ErrorLogStore.shared.log("History database initialization failed: \(error.localizedDescription)")
         }
+    }
+
+    convenience init() {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let newBaseDir = appSupport.appendingPathComponent("Typeflux", isDirectory: true)
+        let legacyBaseDir = appSupport.appendingPathComponent("Typeflux", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: newBaseDir.path),
+           FileManager.default.fileExists(atPath: legacyBaseDir.path) {
+            try? FileManager.default.moveItem(at: legacyBaseDir, to: newBaseDir)
+        }
+        self.init(baseDir: newBaseDir)
     }
 
     deinit {
