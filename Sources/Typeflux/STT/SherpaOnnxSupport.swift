@@ -366,10 +366,9 @@ final class SherpaOnnxCommandLineDecoder {
                 "--qwen3-asr-encoder=\(modelDirectory.appendingPathComponent("encoder.int8.onnx").path)",
                 "--qwen3-asr-decoder=\(modelDirectory.appendingPathComponent("decoder.int8.onnx").path)",
                 "--qwen3-asr-tokenizer=\(modelDirectory.appendingPathComponent("tokenizer").path)",
-                "--qwen3-asr-max-total-len=512",
-                "--qwen3-asr-max-new-tokens=128",
-                "--qwen3-asr-temperature=1e-06",
-                "--qwen3-asr-top-p=0.8",
+                "--qwen3-asr-max-total-len=1500",
+                "--qwen3-asr-max-new-tokens=512",
+                "--qwen3-asr-temperature=0",
                 "--provider=cpu",
                 audioURL.path
             ]

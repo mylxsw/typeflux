@@ -51,12 +51,43 @@ final class ProcessCommandRunner: ProcessCommandRunning {
             process.standardOutput = stdoutPipe
             process.standardError = stderrPipe
 
+            // Accumulate pipe output concurrently to prevent the child process from
+            // blocking when its output exceeds the kernel pipe buffer (~64 KB).
+            // Reading only in terminationHandler would deadlock: the process blocks
+            // writing to a full pipe and never terminates, so the handler never fires.
+            var stdoutData = Data()
+            var stderrData = Data()
+            let collectionLock = NSLock()
+
+            stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
+                let chunk = handle.availableData
+                collectionLock.lock()
+                stdoutData.append(chunk)
+                collectionLock.unlock()
+            }
+            stderrPipe.fileHandleForReading.readabilityHandler = { handle in
+                let chunk = handle.availableData
+                collectionLock.lock()
+                stderrData.append(chunk)
+                collectionLock.unlock()
+            }
+
             process.terminationHandler = { process in
-                let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-                let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+                // Stop handlers and drain any bytes buffered after the last readability event.
+                stdoutPipe.fileHandleForReading.readabilityHandler = nil
+                stderrPipe.fileHandleForReading.readabilityHandler = nil
+                let remainingStdout = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+                let remainingStderr = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+                collectionLock.lock()
+                stdoutData.append(remainingStdout)
+                stderrData.append(remainingStderr)
+                let finalStdout = stdoutData
+                let finalStderr = stderrData
+                collectionLock.unlock()
+
                 let result = ProcessCommandResult(
-                    stdout: String(decoding: stdoutData, as: UTF8.self),
-                    stderr: String(decoding: stderrData, as: UTF8.self),
+                    stdout: String(decoding: finalStdout, as: UTF8.self),
+                    stderr: String(decoding: finalStderr, as: UTF8.self),
                     exitCode: process.terminationStatus
                 )
 
@@ -78,6 +109,8 @@ final class ProcessCommandRunner: ProcessCommandRunning {
             do {
                 try process.run()
             } catch {
+                stdoutPipe.fileHandleForReading.readabilityHandler = nil
+                stderrPipe.fileHandleForReading.readabilityHandler = nil
                 continuation.resume(throwing: error)
             }
         }

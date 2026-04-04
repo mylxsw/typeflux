@@ -69,8 +69,10 @@ final class LocalModelTranscriberTests: XCTestCase {
         XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--qwen3-asr-encoder=") }))
         XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--qwen3-asr-decoder=") }))
         XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--qwen3-asr-tokenizer=") }))
-        XCTAssertTrue(runner.lastArguments.contains("--qwen3-asr-max-total-len=512"))
-        XCTAssertTrue(runner.lastArguments.contains("--qwen3-asr-max-new-tokens=128"))
+        XCTAssertTrue(runner.lastArguments.contains("--qwen3-asr-max-total-len=1500"))
+        XCTAssertTrue(runner.lastArguments.contains("--qwen3-asr-max-new-tokens=512"))
+        XCTAssertTrue(runner.lastArguments.contains("--qwen3-asr-temperature=0"))
+        XCTAssertFalse(runner.lastArguments.contains(where: { $0.hasPrefix("--qwen3-asr-top-p=") }))
         XCTAssertEqual(runner.lastArguments.last, audioFile.fileURL.path)
     }
 
