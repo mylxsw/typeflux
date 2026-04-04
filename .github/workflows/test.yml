@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run tests with coverage
+        run: swift test --enable-code-coverage
+
+      - name: Generate lcov report
+        run: |
+          PROFDATA=$(find .build -name "*.profdata" | head -1)
+          TEST_BINARY=$(find .build -name "TypefluxTests" -type f | head -1)
+          xcrun llvm-cov export \
+            "$TEST_BINARY" \
+            --instr-profile="$PROFDATA" \
+            --format=lcov \
+            --ignore-filename-regex="\.build|Tests" \
+            > coverage.lcov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.lcov
+          fail_ci_if_error: false
