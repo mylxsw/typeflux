@@ -27,6 +27,24 @@ extension ProcessCommandRunning {
 }
 
 final class ProcessCommandRunner: ProcessCommandRunning {
+    private final class OutputBuffer: @unchecked Sendable {
+        private var data = Data()
+        private let lock = NSLock()
+
+        func append(_ chunk: Data) {
+            lock.lock()
+            data.append(chunk)
+            lock.unlock()
+        }
+
+        func snapshot() -> Data {
+            lock.lock()
+            let snapshot = data
+            lock.unlock()
+            return snapshot
+        }
+    }
+
     func run(
         executablePath: String,
         arguments: [String],
@@ -55,21 +73,16 @@ final class ProcessCommandRunner: ProcessCommandRunning {
             // blocking when its output exceeds the kernel pipe buffer (~64 KB).
             // Reading only in terminationHandler would deadlock: the process blocks
             // writing to a full pipe and never terminates, so the handler never fires.
-            var stdoutData = Data()
-            var stderrData = Data()
-            let collectionLock = NSLock()
+            let stdoutData = OutputBuffer()
+            let stderrData = OutputBuffer()
 
             stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
                 let chunk = handle.availableData
-                collectionLock.lock()
                 stdoutData.append(chunk)
-                collectionLock.unlock()
             }
             stderrPipe.fileHandleForReading.readabilityHandler = { handle in
                 let chunk = handle.availableData
-                collectionLock.lock()
                 stderrData.append(chunk)
-                collectionLock.unlock()
             }
 
             process.terminationHandler = { process in
@@ -78,12 +91,10 @@ final class ProcessCommandRunner: ProcessCommandRunning {
                 stderrPipe.fileHandleForReading.readabilityHandler = nil
                 let remainingStdout = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
                 let remainingStderr = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-                collectionLock.lock()
                 stdoutData.append(remainingStdout)
                 stderrData.append(remainingStderr)
-                let finalStdout = stdoutData
-                let finalStderr = stderrData
-                collectionLock.unlock()
+                let finalStdout = stdoutData.snapshot()
+                let finalStderr = stderrData.snapshot()
 
                 let result = ProcessCommandResult(
                     stdout: String(decoding: finalStdout, as: UTF8.self),
