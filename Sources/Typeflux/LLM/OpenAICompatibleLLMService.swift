@@ -352,6 +352,7 @@ enum RemoteLLMClient {
         NetworkDebugLogger.logRequest(urlRequest)
 
         var final = ""
+        var thinkingFilter = OpenAICompatibleResponseSupport.StreamingThinkingFilter()
 
         do {
             for try await line in try await SSEClient.lines(for: urlRequest) {
@@ -360,11 +361,17 @@ enum RemoteLLMClient {
                 guard let data = line.data(using: .utf8) else { continue }
                 let content = OpenAICompatibleResponseSupport.extractTextDelta(from: data)
                 if let content, !content.isEmpty {
-                    final += content
-                    continuation.yield(content)
+                    if let filtered = thinkingFilter.process(content) {
+                        final += filtered
+                        continuation.yield(filtered)
+                    }
                 } else if OpenAICompatibleResponseSupport.containsReasoningDelta(data) {
                     continue
                 }
+            }
+            if let remaining = thinkingFilter.flush() {
+                final += remaining
+                continuation.yield(remaining)
             }
         } catch {
             NetworkDebugLogger.logError(context: "LLM stream failed", error: error)
@@ -453,8 +460,9 @@ enum RemoteLLMClient {
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let data = try await performJSONRequest(urlRequest)
-        return OpenAICompatibleResponseSupport.extractTextDelta(from: data)?
+        let raw = OpenAICompatibleResponseSupport.extractTextDelta(from: data)?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return OpenAICompatibleResponseSupport.stripLeadingThinkingTags(raw)
     }
 
     private static func requestAnthropic(

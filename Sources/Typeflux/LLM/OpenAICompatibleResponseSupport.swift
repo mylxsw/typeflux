@@ -1,6 +1,93 @@
 import Foundation
 
 enum OpenAICompatibleResponseSupport {
+    // MARK: - Thinking Tag Filtering
+
+    /// Strips a leading <think>...</think> or <thinking>...</thinking> block (plus any
+    /// surrounding whitespace) from the start of a complete response string.
+    /// If the tag does not appear at the head of the content (after trimming whitespace),
+    /// the original text is returned unchanged.
+    static func stripLeadingThinkingTags(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        for openTag in ["<thinking>", "<think>"] {
+            guard trimmed.lowercased().hasPrefix(openTag) else { continue }
+            let closeTag = "</" + openTag.dropFirst()
+            let afterOpenTag = trimmed.dropFirst(openTag.count)
+            if let closeRange = afterOpenTag.range(of: closeTag, options: .caseInsensitive) {
+                let afterClose = afterOpenTag[closeRange.upperBound...]
+                return String(afterClose).trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            break  // Malformed: open tag found but no closing tag — leave as-is
+        }
+        return text
+    }
+
+    /// Stateful filter for streaming responses. Suppresses a leading <think>...</think>
+    /// block that may arrive across multiple SSE chunks. Once the block ends (or it is
+    /// determined that no think block is present), all subsequent chunks pass through
+    /// unchanged.
+    struct StreamingThinkingFilter {
+        private enum State {
+            case initial       // Accumulating until we know if a think block is present
+            case inThinkBlock  // Inside a think block; suppress output
+            case passThrough   // Past the initial section; emit everything
+        }
+
+        private var state: State = .initial
+        private var buffer = ""
+
+        /// Feed the next streaming chunk. Returns the string to emit, or nil if suppressed.
+        mutating func process(_ chunk: String) -> String? {
+            switch state {
+            case .passThrough:
+                return chunk.isEmpty ? nil : chunk
+
+            case .initial:
+                buffer += chunk
+                let trimmed = buffer.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { return nil }  // Still leading whitespace
+
+                let lower = trimmed.lowercased()
+                if lower.hasPrefix("<thinking>") || lower.hasPrefix("<think>") {
+                    state = .inThinkBlock
+                    return drainThinkBlock()
+                } else {
+                    state = .passThrough
+                    let output = buffer
+                    buffer = ""
+                    return output
+                }
+
+            case .inThinkBlock:
+                buffer += chunk
+                return drainThinkBlock()
+            }
+        }
+
+        /// Call after the stream ends to emit any buffered content that was never resolved.
+        mutating func flush() -> String? {
+            guard !buffer.isEmpty else { return nil }
+            let output = buffer
+            buffer = ""
+            return output
+        }
+
+        private mutating func drainThinkBlock() -> String? {
+            for closeTag in ["</thinking>", "</think>"] {
+                if let range = buffer.range(of: closeTag, options: .caseInsensitive) {
+                    let afterClose = String(buffer[range.upperBound...])
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    buffer = ""
+                    state = .passThrough
+                    return afterClose.isEmpty ? nil : afterClose
+                }
+            }
+            return nil  // Still inside think block; keep buffering
+        }
+    }
+
+    // MARK: - Provider Tuning
+
     static func applyProviderTuning(body: inout [String: Any], baseURL: URL, model: String) {
         guard shouldDisableThinking(baseURL: baseURL, model: model) else { return }
         body["thinking"] = ["type": "disabled"]

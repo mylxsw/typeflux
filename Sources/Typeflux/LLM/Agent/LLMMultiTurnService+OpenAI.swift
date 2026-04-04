@@ -124,7 +124,8 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
             return .text("")
         }
 
-        let text = message["content"] as? String ?? ""
+        let rawText = message["content"] as? String ?? ""
+        let text = OpenAICompatibleResponseSupport.stripLeadingThinkingTags(rawText)
         let toolCallsRaw = message["tool_calls"] as? [[String: Any]] ?? []
 
         if toolCallsRaw.isEmpty {
