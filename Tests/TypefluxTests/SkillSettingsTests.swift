@@ -91,7 +91,7 @@ final class SkillSettingsTests: XCTestCase {
         }
 
         store.removeSkill(id: first.id)
-        let updated = store.skills
+        _ = store.skills
         // Builtin skills may come back from merge
         let directLoad = defaults.data(forKey: "agent.skills").flatMap { try? JSONDecoder().decode([AgentSkill].self, from: $0) } ?? []
         XCTAssertFalse(directLoad.contains(where: { $0.id == first.id }))

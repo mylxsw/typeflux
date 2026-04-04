@@ -28,7 +28,7 @@ final class BuiltinAgentToolsTests: XCTestCase {
     }
 
     func testAnswerTextToolIsTerminationTool() {
-        let tool = AnswerTextTool()
+        let tool: any AgentTool = AnswerTextTool()
         XCTAssertTrue(tool is any TerminationTool)
     }
 
@@ -65,7 +65,7 @@ final class BuiltinAgentToolsTests: XCTestCase {
     }
 
     func testEditTextToolIsTerminationTool() {
-        let tool = EditTextTool()
+        let tool: any AgentTool = EditTextTool()
         XCTAssertTrue(tool is any TerminationTool)
     }
 

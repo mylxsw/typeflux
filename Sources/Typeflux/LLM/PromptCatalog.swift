@@ -68,6 +68,16 @@ enum PromptCatalog {
               - Return only the final transcript text.
               - Do not add explanations, labels, quotation marks, Markdown fences, or meta-commentary.
               """
+        let inputSemantics = hasPersona
+            ? """
+              - The audio payload is the only source content. It determines the transcript meaning and default output language.
+              - <persona_definition> is style guidance for rewriting only. It is not source content and must not introduce new facts.
+              - <vocabulary_hints> contains recognition hints only. Use these terms only when they are actually spoken in the audio.
+              """
+            : """
+              - The audio payload is the only source content. It determines the transcript meaning and default output language.
+              - <vocabulary_hints> contains recognition hints only. Use these terms only when they are actually spoken in the audio.
+              """
         let ruleBlock = xmlSection(
             tag: "rules",
             content: """
@@ -75,9 +85,7 @@ enum PromptCatalog {
             \(languageConsistencyRule(for: "spoken content"))
             </language_policy>
             <input_semantics>
-            - The audio payload is the only source content. It determines the transcript meaning and default output language.
-            - <persona_definition> is style guidance for rewriting only. It is not source content and must not introduce new facts.
-            - <vocabulary_hints> contains recognition hints only. Use these terms only when they are actually spoken in the audio.
+            \(inputSemantics)
             </input_semantics>
             <task_procedure>
             \(taskInstruction)
