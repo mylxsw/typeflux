@@ -592,30 +592,36 @@ extension SettingsStoreTests {
 
     // MARK: - hotkey settings
 
-    func testHotkeyRoundTrip() {
-        let testHotkey = HotkeyDefinition(
-            modifiers: [.control],
-            keyCode: 49  // Space
-        )
-        store.hotkeyRecordingToggle = testHotkey
-        let loaded = store.hotkeyRecordingToggle
-        XCTAssertEqual(loaded?.keyCode, 49)
-        XCTAssertEqual(loaded?.modifiers, [.control])
+    func testActivationHotkeyRoundTrip() {
+        let testHotkey = HotkeyBinding(keyCode: 49, modifierFlags: 0)
+        store.activationHotkey = testHotkey
+        let loaded = store.activationHotkey
+        XCTAssertEqual(loaded.keyCode, 49)
     }
 
-    func testHotkeyDefaultIsNil() {
-        XCTAssertNil(store.hotkeyRecordingToggle)
+    func testActivationHotkeyDefaultIsFunctionKey() {
+        let defaultHotkey = store.activationHotkey
+        XCTAssertEqual(defaultHotkey.keyCode, HotkeyBinding.functionKeyCode)
     }
 
-    // MARK: - vocabularyTerms
-
-    func testVocabularyTermsRoundTrip() {
-        store.vocabularyTerms = ["TypeFlux", "WhisperKit", "SeedASR"]
-        XCTAssertEqual(store.vocabularyTerms, ["TypeFlux", "WhisperKit", "SeedASR"])
+    func testAskHotkeyRoundTrip() {
+        let testHotkey = HotkeyBinding(keyCode: 32, modifierFlags: 256)
+        store.askHotkey = testHotkey
+        XCTAssertEqual(store.askHotkey.keyCode, 32)
+        XCTAssertEqual(store.askHotkey.modifierFlags, 256)
     }
 
-    func testVocabularyTermsDefaultIsEmpty() {
-        XCTAssertTrue(store.vocabularyTerms.isEmpty)
+    // MARK: - automaticVocabularyCollectionEnabled
+
+    func testAutomaticVocabularyCollectionEnabledDefaultIsTrue() {
+        XCTAssertTrue(store.automaticVocabularyCollectionEnabled)
+    }
+
+    func testAutomaticVocabularyCollectionEnabledToggle() {
+        store.automaticVocabularyCollectionEnabled = false
+        XCTAssertFalse(store.automaticVocabularyCollectionEnabled)
+        store.automaticVocabularyCollectionEnabled = true
+        XCTAssertTrue(store.automaticVocabularyCollectionEnabled)
     }
 
     // MARK: - useAppleSpeechFallback
