@@ -44,6 +44,46 @@ final class AgentPromptCatalogTests: XCTestCase {
         XCTAssertFalse(prompt.contains("Persona/style guidance"))
     }
 
+    // MARK: - Skill supplements
+
+    func testSystemPromptIncludesSkillSupplements() {
+        let supplements = ["Use shell_command to run commands.", "Use web_fetch to look up URLs."]
+        let prompt = AgentPromptCatalog.askAgentSystemPrompt(
+            personaPrompt: nil,
+            skillSupplements: supplements
+        )
+        XCTAssertTrue(prompt.contains("Use shell_command to run commands."))
+        XCTAssertTrue(prompt.contains("Use web_fetch to look up URLs."))
+    }
+
+    func testSystemPromptWithEmptySkillSupplements() {
+        let prompt = AgentPromptCatalog.askAgentSystemPrompt(
+            personaPrompt: nil,
+            skillSupplements: []
+        )
+        // Should still work normally
+        XCTAssertTrue(prompt.contains("answer_text"))
+    }
+
+    func testSystemPromptSkipsEmptySupplementStrings() {
+        let supplements = ["", "  ", "Valid supplement"]
+        let prompt = AgentPromptCatalog.askAgentSystemPrompt(
+            personaPrompt: nil,
+            skillSupplements: supplements
+        )
+        XCTAssertTrue(prompt.contains("Valid supplement"))
+    }
+
+    func testSystemPromptWithPersonaAndSkillSupplements() {
+        let prompt = AgentPromptCatalog.askAgentSystemPrompt(
+            personaPrompt: "Be concise",
+            skillSupplements: ["Skill guidance here"]
+        )
+        XCTAssertTrue(prompt.contains("Persona/style guidance"))
+        XCTAssertTrue(prompt.contains("Be concise"))
+        XCTAssertTrue(prompt.contains("Skill guidance here"))
+    }
+
     // MARK: - askAgentUserPrompt
 
     func testUserPromptWithInstructionOnly() {

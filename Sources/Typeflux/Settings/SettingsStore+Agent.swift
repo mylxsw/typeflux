@@ -33,4 +33,25 @@ extension SettingsStore {
             }
         }
     }
+
+    var agentSkills: [AgentSkill] {
+        get {
+            guard let data = defaults.data(forKey: "agent.skills"),
+                  let skills = try? JSONDecoder().decode([AgentSkill].self, from: data) else {
+                return BuiltinSkillCatalog.all
+            }
+            // Ensure builtin skills are always present
+            var result = skills
+            let savedNames = Set(skills.map(\.name))
+            for builtin in BuiltinSkillCatalog.all where !savedNames.contains(builtin.name) {
+                result.append(builtin)
+            }
+            return result
+        }
+        set {
+            if let data = try? JSONEncoder().encode(newValue) {
+                defaults.set(data, forKey: "agent.skills")
+            }
+        }
+    }
 }

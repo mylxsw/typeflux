@@ -3,7 +3,7 @@ import Foundation
 /// Agent 专用提示词目录
 enum AgentPromptCatalog {
     /// Agent 系统提示词
-    static func askAgentSystemPrompt(personaPrompt: String?) -> String {
+    static func askAgentSystemPrompt(personaPrompt: String?, skillSupplements: [String] = []) -> String {
         var parts: [String] = [
             """
             You are a helpful AI assistant for the Typeflux voice input app.
@@ -24,6 +24,10 @@ enum AgentPromptCatalog {
             """,
             PromptCatalog.languageConsistencyRule(for: "user's request"),
         ]
+
+        for supplement in skillSupplements where !supplement.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            parts.append(supplement)
+        }
 
         if let persona = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines),
            !persona.isEmpty {

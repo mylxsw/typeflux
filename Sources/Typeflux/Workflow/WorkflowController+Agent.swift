@@ -12,13 +12,18 @@ extension WorkflowController {
         selectedText: String?,
         spokenInstruction: String,
         personaPrompt: String?,
-        mcpTools: [any AgentTool] = []
+        mcpTools: [any AgentTool] = [],
+        skillTools: [any AgentTool] = [],
+        skillPromptSupplements: [String] = []
     ) async throws -> AskAgentResult {
         let registry = AgentToolRegistry()
         await registry.register(AnswerTextTool())
         await registry.register(EditTextTool())
         await registry.register(GetClipboardTool(clipboardService: clipboard))
         for tool in mcpTools {
+            await registry.register(tool)
+        }
+        for tool in skillTools {
             await registry.register(tool)
         }
 
@@ -34,7 +39,10 @@ extension WorkflowController {
         }
 
         let systemPrompt = PromptCatalog.appendUserEnvironmentContext(
-            to: AgentPromptCatalog.askAgentSystemPrompt(personaPrompt: personaPrompt),
+            to: AgentPromptCatalog.askAgentSystemPrompt(
+                personaPrompt: personaPrompt,
+                skillSupplements: skillPromptSupplements
+            ),
             appLanguage: settingsStore.appLanguage
         )
         let userPrompt = AgentPromptCatalog.askAgentUserPrompt(
