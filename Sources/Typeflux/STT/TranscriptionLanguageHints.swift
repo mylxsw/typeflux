@@ -57,7 +57,7 @@ enum TranscriptionLanguageHints {
         }
     }
 
-    private static func mappedLocaleCandidates(from identifier: String) -> [String] {
+    static func mappedLocaleCandidates(from identifier: String) -> [String] {
         let normalized = identifier.replacingOccurrences(of: "_", with: "-")
         let lowercased = normalized.lowercased()
 

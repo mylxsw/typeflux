@@ -2,10 +2,10 @@ import Foundation
 
 final class UsageStatsStore {
     static let shared = UsageStatsStore()
-    private static let calculationVersion = 2
-    private static let maxExactEditDiffCells = 1_000_000
+    static let calculationVersion = 2
+    static let maxExactEditDiffCells = 1_000_000
 
-    private struct SessionContribution {
+    struct SessionContribution {
         var sessions: Int = 0
         var successfulSessions: Int = 0
         var failedSessions: Int = 0
@@ -33,8 +33,12 @@ final class UsageStatsStore {
         }
     }
 
-    private let defaults = UserDefaults.standard
+    let defaults: UserDefaults
     private let queue = DispatchQueue(label: "usage.stats")
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
 
     private enum Key: String {
         case totalSessions = "stats.totalSessions"
@@ -198,7 +202,7 @@ final class UsageStatsStore {
         defaults.set(Self.calculationVersion, forKey: Key.calculationVersion.rawValue)
     }
 
-    private func contribution(for record: HistoryRecord) -> SessionContribution {
+    func contribution(for record: HistoryRecord) -> SessionContribution {
         var contribution = SessionContribution(sessions: 1)
 
         if isSuccessful(record) {
@@ -233,7 +237,7 @@ final class UsageStatsStore {
         return contribution
     }
 
-    private func isSuccessful(_ record: HistoryRecord) -> Bool {
+    func isSuccessful(_ record: HistoryRecord) -> Bool {
         record.applyStatus == .succeeded ||
             (record.applyStatus == .skipped && record.transcriptionStatus == .succeeded)
     }
@@ -264,7 +268,7 @@ final class UsageStatsStore {
         }
     }
 
-    private func editedTextContribution(originalText: String, editedText: String) -> String {
+    func editedTextContribution(originalText: String, editedText: String) -> String {
         guard !editedText.isEmpty else { return "" }
         guard !originalText.isEmpty else { return editedText }
         guard originalText != editedText else { return "" }
@@ -317,7 +321,7 @@ final class UsageStatsStore {
         return String(changedCharacters.reversed()).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func heuristicEditedTextContribution(original: [Character], edited: [Character]) -> String {
+    func heuristicEditedTextContribution(original: [Character], edited: [Character]) -> String {
         var prefixCount = 0
         let prefixLimit = min(original.count, edited.count)
         while prefixCount < prefixLimit, original[prefixCount] == edited[prefixCount] {
@@ -338,7 +342,7 @@ final class UsageStatsStore {
         return String(edited[deltaStart..<deltaEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func estimatedTypingSeconds(for text: String) -> Double {
+    func estimatedTypingSeconds(for text: String) -> Double {
         var cjkCharacters = 0
         var nonCJKCharacters = 0
 
@@ -355,7 +359,7 @@ final class UsageStatsStore {
         return cjkSeconds + latinSeconds
     }
 
-    private func wordCount(_ text: String) -> Int {
+    func wordCount(_ text: String) -> Int {
         var count = 0
         text.enumerateSubstrings(in: text.startIndex..., options: [.byWords, .localized]) { _, _, _, _ in
             count += 1
@@ -365,7 +369,7 @@ final class UsageStatsStore {
 }
 
 extension Unicode.Scalar {
-    fileprivate var isCJKIdeograph: Bool {
+    var isCJKIdeograph: Bool {
         (0x3400...0x4DBF).contains(value) ||
             (0x4E00...0x9FFF).contains(value) ||
             (0xF900...0xFAFF).contains(value) ||
@@ -377,11 +381,11 @@ extension Unicode.Scalar {
             (0x30000...0x3134F).contains(value)
     }
 
-    fileprivate var isKana: Bool {
+    var isKana: Bool {
         (0x3040...0x309F).contains(value) || (0x30A0...0x30FF).contains(value)
     }
 
-    fileprivate var isHangul: Bool {
+    var isHangul: Bool {
         (0xAC00...0xD7AF).contains(value) || (0x1100...0x11FF).contains(value)
     }
 }
