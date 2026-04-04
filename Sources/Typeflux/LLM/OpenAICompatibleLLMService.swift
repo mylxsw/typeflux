@@ -15,6 +15,7 @@ enum LLMConnectionResolver {
         model: String,
         apiKey: String
     ) throws -> ResolvedLLMConnection {
+        let trimmedBaseURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedModel = model.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if provider == .freeModel {
@@ -56,7 +57,13 @@ enum LLMConnectionResolver {
             )
         }
 
-        guard let url = URL(string: baseURL), !baseURL.isEmpty else {
+        guard
+            !trimmedBaseURL.isEmpty,
+            let url = URL(string: trimmedBaseURL),
+            let scheme = url.scheme?.lowercased(),
+            ["http", "https"].contains(scheme),
+            url.host != nil
+        else {
             throw NSError(
                 domain: "LLM",
                 code: 1,
