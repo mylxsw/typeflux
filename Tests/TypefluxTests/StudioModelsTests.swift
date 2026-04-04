@@ -183,7 +183,7 @@ extension StudioModelsTests {
 
     func testSTTProvidersDomainIsSTT() {
         let sttProviders: [StudioModelProviderID] = [
-            .whisperAPI, .appleASR, .local, .doubao, .aliCloud, .openAIRealtime
+            .whisperAPI, .appleSpeech, .localSTT, .doubaoRealtime, .aliCloud, .freeSTT, .multimodalLLM
         ]
         for provider in sttProviders {
             XCTAssertEqual(provider.domain, .stt, "\(provider) should be in STT domain")
@@ -214,16 +214,14 @@ extension StudioModelsTests {
     }
 
     func testPipelineStatItemStyles() {
-        // Verify all styles are distinguishable by their raw values
         let durationItem = HistoryPipelineStatPresentationItem(
             id: "d", title: "Duration", value: "500ms", style: .duration
         )
-        let countItem = HistoryPipelineStatPresentationItem(
-            id: "c", title: "Count", value: "42", style: .count
+        let timestampItem = HistoryPipelineStatPresentationItem(
+            id: "t", title: "Timestamp", value: "12:00", style: .timestamp
         )
-        // Just verify they don't crash
         XCTAssertEqual(durationItem.style, .duration)
-        XCTAssertEqual(countItem.style, .count)
+        XCTAssertEqual(timestampItem.style, .timestamp)
     }
 
     // MARK: - StudioModelCard
@@ -233,16 +231,16 @@ extension StudioModelsTests {
             id: "gpt-4o",
             name: "GPT-4o",
             summary: "OpenAI GPT-4o",
-            badge: nil,
-            metadata: nil,
+            badge: "",
+            metadata: "",
             isSelected: false,
             isMuted: false,
             actionTitle: "Use"
         )
         XCTAssertFalse(card.isSelected)
         XCTAssertFalse(card.isMuted)
-        XCTAssertNil(card.badge)
-        XCTAssertNil(card.metadata)
+        XCTAssertTrue(card.badge.isEmpty)
+        XCTAssertTrue(card.metadata.isEmpty)
     }
 
     func testModelCardWithNilBadgeAndMetadata() {
@@ -250,14 +248,14 @@ extension StudioModelsTests {
             id: "test-model",
             name: "Test Model",
             summary: "Summary",
-            badge: nil,
-            metadata: nil,
+            badge: "",
+            metadata: "",
             isSelected: false,
             isMuted: true,
             actionTitle: "Configure"
         )
         XCTAssertTrue(card.isMuted)
-        XCTAssertNil(card.badge)
-        XCTAssertNil(card.metadata)
+        XCTAssertTrue(card.badge.isEmpty)
+        XCTAssertTrue(card.metadata.isEmpty)
     }
 }
