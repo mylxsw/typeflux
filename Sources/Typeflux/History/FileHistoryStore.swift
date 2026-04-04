@@ -6,7 +6,13 @@ final class FileHistoryStore: HistoryStore {
     private let baseDir: URL
     private let indexURL: URL
 
-    init() {
+    init(baseDir: URL) {
+        self.baseDir = baseDir
+        self.indexURL = baseDir.appendingPathComponent("history.json")
+        try? FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
+    }
+
+    convenience init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let newBaseDir = appSupport.appendingPathComponent("Typeflux", isDirectory: true)
         let legacyBaseDir = appSupport.appendingPathComponent("Typeflux", isDirectory: true)
@@ -14,10 +20,7 @@ final class FileHistoryStore: HistoryStore {
            FileManager.default.fileExists(atPath: legacyBaseDir.path) {
             try? FileManager.default.moveItem(at: legacyBaseDir, to: newBaseDir)
         }
-        baseDir = newBaseDir
-        indexURL = baseDir.appendingPathComponent("history.json")
-
-        try? FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
+        self.init(baseDir: newBaseDir)
     }
 
     func save(record: HistoryRecord) {

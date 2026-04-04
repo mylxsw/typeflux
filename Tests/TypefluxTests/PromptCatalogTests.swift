@@ -163,4 +163,89 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertFalse(prompts.user.contains("<selected_text>"))
         XCTAssertTrue(prompts.user.contains("<spoken_instruction>\n帮我想一个标题\n</spoken_instruction>"))
     }
+
+    // MARK: - xmlSection
+
+    func testXmlSectionWrapsContentInTags() {
+        let result = PromptCatalog.xmlSection(tag: "example", content: "hello")
+        XCTAssertEqual(result, "<example>\nhello\n</example>")
+    }
+
+    // MARK: - userEnvironmentContext
+
+    func testUserEnvironmentContextWithCustomLanguages() {
+        let context = PromptCatalog.userEnvironmentContext(
+            preferredLanguages: ["ja-JP"],
+            appLanguage: .japanese
+        )
+
+        XCTAssertTrue(context.contains("User environment context:"))
+        XCTAssertTrue(context.contains("ja-JP"))
+        XCTAssertTrue(context.contains("ja"))
+    }
+
+    // MARK: - appendUserEnvironmentContext with empty prompt
+
+    func testAppendUserEnvironmentContextWithEmptyPromptReturnsJustEnvironmentContext() {
+        let result = PromptCatalog.appendUserEnvironmentContext(
+            to: "",
+            preferredLanguages: ["en-US"],
+            appLanguage: .english
+        )
+
+        XCTAssertTrue(result.contains("User environment context:"))
+        XCTAssertFalse(result.hasPrefix("\n"))
+    }
+
+    // MARK: - multimodalTranscriptionSystemPrompt without persona
+
+    func testMultimodalTranscriptionPromptWithoutPersona() {
+        let prompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
+            personaPrompt: nil,
+            vocabularyTerms: []
+        )
+
+        XCTAssertTrue(prompt.contains("You are a multimodal speech transcription engine."))
+        XCTAssertFalse(prompt.contains("rewrite engine"))
+        XCTAssertTrue(prompt.contains("Return only the final transcript text."))
+        XCTAssertFalse(prompt.contains("<persona_definition>"))
+    }
+
+    // MARK: - transcriptionVocabularyHint with empty terms
+
+    func testTranscriptionVocabularyHintWithEmptyTermsReturnsNil() {
+        XCTAssertNil(PromptCatalog.transcriptionVocabularyHint(terms: []))
+        XCTAssertNil(PromptCatalog.transcriptionVocabularyHint(terms: ["", "  "]))
+    }
+
+    // MARK: - automaticVocabularyDecisionPrompts
+
+    func testAutomaticVocabularyDecisionPromptsGenerateCorrectContent() {
+        let prompts = PromptCatalog.automaticVocabularyDecisionPrompts(
+            transcript: "I love Typeflux app",
+            oldFragment: "TypeFlux",
+            newFragment: "Typeflux",
+            candidateTerms: ["Typeflux"],
+            existingTerms: ["GPT"]
+        )
+
+        XCTAssertTrue(prompts.system.contains("speech transcription vocabulary"))
+        XCTAssertTrue(prompts.system.contains("{\"terms\":[\"term1\",\"term2\"]}"))
+        XCTAssertTrue(prompts.user.contains("I love Typeflux app"))
+        XCTAssertTrue(prompts.user.contains("TypeFlux"))
+        XCTAssertTrue(prompts.user.contains("Typeflux"))
+        XCTAssertTrue(prompts.user.contains("GPT"))
+    }
+
+    func testAutomaticVocabularyDecisionPromptsHandleEmptyExistingTerms() {
+        let prompts = PromptCatalog.automaticVocabularyDecisionPrompts(
+            transcript: "test",
+            oldFragment: "",
+            newFragment: "fixed",
+            candidateTerms: ["fixed"],
+            existingTerms: []
+        )
+
+        XCTAssertTrue(prompts.user.contains("<empty>"))
+    }
 }

@@ -19,8 +19,16 @@ jobs:
 
       - name: Generate lcov report
         run: |
-          PROFDATA=$(find .build -name "*.profdata" | head -1)
-          TEST_BINARY=$(find .build -name "TypefluxTests" -type f | head -1)
+          BIN_PATH=$(swift build --show-bin-path)
+          PROFDATA=$(find .build -name "default.profdata" -type f 2>/dev/null | head -1)
+          TEST_BINARY=$(find "${BIN_PATH}" -path "*/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests" -type f 2>/dev/null | head -1)
+          if [ -z "$TEST_BINARY" ]; then
+            echo "Error: Could not find TypefluxPackageTests binary"
+            find .build -name "*.xctest" -type d
+            exit 1
+          fi
+          echo "Using binary: $TEST_BINARY"
+          echo "Using profdata: $PROFDATA"
           xcrun llvm-cov export \
             "$TEST_BINARY" \
             --instr-profile="$PROFDATA" \
@@ -32,4 +40,5 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           files: coverage.lcov
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
