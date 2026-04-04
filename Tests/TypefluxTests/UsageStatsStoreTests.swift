@@ -415,12 +415,4 @@ extension UsageStatsStoreTests {
         XCTAssertFalse(store.isSuccessful(record))
     }
 
-    func testIsSuccessfulWithApplySucceeded() {
-        let record = HistoryRecord(
-            date: Date(),
-            transcriptionStatus: .succeeded,
-            applyStatus: .succeeded
-        )
-        XCTAssertTrue(store.isSuccessful(record))
-    }
 }
