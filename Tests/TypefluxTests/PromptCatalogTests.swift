@@ -249,3 +249,188 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertTrue(prompts.user.contains("<empty>"))
     }
 }
+
+// MARK: - Extended PromptCatalog tests
+
+extension PromptCatalogTests {
+
+    // MARK: - xmlSection
+
+    func testXmlSectionWithSimpleContent() {
+        let result = PromptCatalog.xmlSection(tag: "text", content: "hello world")
+        XCTAssertEqual(result, "<text>\nhello world\n</text>")
+    }
+
+    func testXmlSectionWithMultilineContent() {
+        let result = PromptCatalog.xmlSection(tag: "context", content: "line 1\nline 2")
+        XCTAssertTrue(result.hasPrefix("<context>"))
+        XCTAssertTrue(result.hasSuffix("</context>"))
+        XCTAssertTrue(result.contains("line 1"))
+        XCTAssertTrue(result.contains("line 2"))
+    }
+
+    // MARK: - userEnvironmentContext
+
+    func testUserEnvironmentContextIncludesDateAndLanguage() {
+        let context = PromptCatalog.userEnvironmentContext(appLanguage: .english)
+        XCTAssertFalse(context.isEmpty)
+        // Should mention the language
+        XCTAssertTrue(context.lowercased().contains("english") || context.contains("en"))
+    }
+
+    func testUserEnvironmentContextForChineseSimplified() {
+        let context = PromptCatalog.userEnvironmentContext(appLanguage: .simplifiedChinese)
+        XCTAssertFalse(context.isEmpty)
+    }
+
+    // MARK: - transcriptionVocabularyHint
+
+    func testTranscriptionVocabularyHintWithValidTerms() {
+        let hint = PromptCatalog.transcriptionVocabularyHint(terms: ["TypeFlux", "WhisperKit"])
+        XCTAssertNotNil(hint)
+        XCTAssertTrue(hint!.contains("TypeFlux"))
+        XCTAssertTrue(hint!.contains("WhisperKit"))
+    }
+
+    func testTranscriptionVocabularyHintFiltersEmptyTerms() {
+        let hint = PromptCatalog.transcriptionVocabularyHint(terms: ["", "   ", "ValidTerm"])
+        XCTAssertNotNil(hint)
+        XCTAssertTrue(hint!.contains("ValidTerm"))
+    }
+
+    func testTranscriptionVocabularyHintReturnsNilWhenAllTermsEmpty() {
+        let hint = PromptCatalog.transcriptionVocabularyHint(terms: ["", "  "])
+        XCTAssertNil(hint)
+    }
+
+    // MARK: - languageConsistencyRule
+
+    func testLanguageConsistencyRuleIsNonEmpty() {
+        let rule = PromptCatalog.languageConsistencyRule(for: "selected text")
+        XCTAssertFalse(rule.isEmpty)
+    }
+
+    func testLanguageConsistencyRuleIncludesContentDescription() {
+        let rule = PromptCatalog.languageConsistencyRule(for: "user's request")
+        XCTAssertTrue(rule.contains("user's request"))
+    }
+
+    // MARK: - rewritePrompts
+
+    func testRewritePromptsForRewriteTranscriptMode() {
+        let request = LLMRewriteRequest(
+            mode: .rewriteTranscript,
+            sourceText: "hello world",
+            spokenInstruction: nil,
+            personaPrompt: "Be formal"
+        )
+        let prompts = PromptCatalog.rewritePrompts(for: request)
+        XCTAssertFalse(prompts.system.isEmpty)
+        XCTAssertFalse(prompts.user.isEmpty)
+    }
+
+    func testRewritePromptsSystemContainsPersonaWhenSet() {
+        let request = LLMRewriteRequest(
+            mode: .rewriteTranscript,
+            sourceText: "test",
+            spokenInstruction: nil,
+            personaPrompt: "Use emoji"
+        )
+        let prompts = PromptCatalog.rewritePrompts(for: request)
+        XCTAssertTrue(prompts.system.contains("Use emoji"))
+    }
+
+    func testRewritePromptsUserContainsSourceText() {
+        let request = LLMRewriteRequest(
+            mode: .rewriteTranscript,
+            sourceText: "My voice transcript",
+            spokenInstruction: nil,
+            personaPrompt: nil
+        )
+        let prompts = PromptCatalog.rewritePrompts(for: request)
+        XCTAssertTrue(prompts.user.contains("My voice transcript"))
+    }
+
+    // MARK: - multimodalTranscriptionSystemPrompt
+
+    func testMultimodalTranscriptionSystemPromptIncludesPersona() {
+        let prompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
+            personaPrompt: "Be very precise",
+            vocabularyTerms: []
+        )
+        XCTAssertTrue(prompt.contains("Be very precise"))
+    }
+
+    func testMultimodalTranscriptionSystemPromptWithVocabularyTerms() {
+        let prompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
+            personaPrompt: nil,
+            vocabularyTerms: ["SwiftUI", "Combine"]
+        )
+        XCTAssertTrue(prompt.contains("SwiftUI"))
+        XCTAssertTrue(prompt.contains("Combine"))
+    }
+
+    // MARK: - askAnythingPrompts
+
+    func testAskAnythingPromptsWithSelectedTextAndInstruction() {
+        let prompts = PromptCatalog.askAnythingPrompts(
+            selectedText: "Swift is a programming language",
+            spokenInstruction: "Translate to Chinese",
+            personaPrompt: nil
+        )
+        XCTAssertTrue(prompts.user.contains("Swift is a programming language"))
+        XCTAssertTrue(prompts.user.contains("Translate to Chinese"))
+    }
+
+    func testAskAnythingPromptsSystemIsNonEmpty() {
+        let prompts = PromptCatalog.askAnythingPrompts(selectedText: nil, spokenInstruction: "What is AI?", personaPrompt: nil)
+        XCTAssertFalse(prompts.system.isEmpty)
+    }
+
+    // MARK: - AgentPromptCatalog
+
+    func testAskAgentSystemPromptIncludesPersonaPrompt() {
+        let prompt = AgentPromptCatalog.askAgentSystemPrompt(
+            personaPrompt: "Be concise and direct"
+        )
+        XCTAssertTrue(prompt.contains("Be concise and direct"))
+    }
+
+    func testAskAgentSystemPromptIncludesSkillSupplements() {
+        let prompt = AgentPromptCatalog.askAgentSystemPrompt(
+            personaPrompt: nil,
+            skillSupplements: ["You can run shell commands", "You can fetch URLs"]
+        )
+        XCTAssertTrue(prompt.contains("You can run shell commands"))
+        XCTAssertTrue(prompt.contains("You can fetch URLs"))
+    }
+
+    func testAskAgentSystemPromptIgnoresEmptySupplements() {
+        let prompt = AgentPromptCatalog.askAgentSystemPrompt(
+            personaPrompt: nil,
+            skillSupplements: ["  ", "", "\n"]
+        )
+        // Empty supplements should be filtered out
+        XCTAssertFalse(prompt.isEmpty)
+    }
+
+    func testAskAgentUserPromptWithSelectedText() {
+        let prompt = AgentPromptCatalog.askAgentUserPrompt(
+            selectedText: "Hello world",
+            instruction: "Translate to French"
+        )
+        XCTAssertTrue(prompt.contains("Hello world"))
+        XCTAssertTrue(prompt.contains("Translate to French"))
+    }
+
+    func testAskAgentUserPromptWithoutSelectedText() {
+        let prompt = AgentPromptCatalog.askAgentUserPrompt(selectedText: nil, instruction: "What is 2+2?")
+        XCTAssertTrue(prompt.contains("What is 2+2?"))
+        XCTAssertFalse(prompt.contains("Selected text:"))
+    }
+
+    func testAskAgentUserPromptWithEmptySelectedTextOmitsSection() {
+        let prompt = AgentPromptCatalog.askAgentUserPrompt(selectedText: "   ", instruction: "Test")
+        XCTAssertFalse(prompt.contains("Selected text:"))
+    }
+}

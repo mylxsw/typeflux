@@ -408,7 +408,7 @@ private actor AliCloudFunASRSession {
 
 // MARK: - Text Normalizer
 
-private enum AliCloudTextNormalizer {
+enum AliCloudTextNormalizer {
     /// Joins a new segment to existing text with smart spacing:
     /// no space between CJK characters, space between latin words.
     static func normalize(segment: String, after existingText: String) -> String {
@@ -418,20 +418,20 @@ private enum AliCloudTextNormalizer {
 
         // No extra space needed when adjacent to whitespace or punctuation boundaries
         if lastChar.isWhitespace || firstChar.isWhitespace { return segment }
-        if firstChar.isClosingPunctuation || lastChar.isOpeningPunctuation { return segment }
+        if firstChar.isAliCloudClosingPunctuation || lastChar.isAliCloudOpeningPunctuation { return segment }
 
         // No space between CJK ideographs (Chinese/Japanese/Korean)
-        if lastChar.isCJKIdeograph || firstChar.isCJKIdeograph { return segment }
+        if lastChar.isAliCloudCJKIdeograph || firstChar.isAliCloudCJKIdeograph { return segment }
 
         // Default: separate with a space (e.g. English words)
         return " " + segment
     }
 }
 
-private extension Character {
-    var isClosingPunctuation: Bool { ",.!?;:)]}\"'".contains(self) }
-    var isOpeningPunctuation: Bool { "([{/\"'".contains(self) }
-    var isCJKIdeograph: Bool {
+extension Character {
+    var isAliCloudClosingPunctuation: Bool { ",.!?;:)]}\"'".contains(self) }
+    var isAliCloudOpeningPunctuation: Bool { "([{/\"'".contains(self) }
+    var isAliCloudCJKIdeograph: Bool {
         unicodeScalars.contains {
             switch $0.value {
             case 0x3400...0x4DBF, 0x4E00...0x9FFF, 0xF900...0xFAFF: return true

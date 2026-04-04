@@ -335,7 +335,7 @@ final class SherpaOnnxCommandLineDecoder {
         return try parseTranscript(stdout: result.stdout)
     }
 
-    private func commandLineArguments(
+    func commandLineArguments(
         layout: SherpaOnnxModelLayout,
         storageURL: URL,
         audioURL: URL
@@ -375,7 +375,7 @@ final class SherpaOnnxCommandLineDecoder {
         }
     }
 
-    private func parseTranscript(stdout: String) throws -> String {
+    func parseTranscript(stdout: String) throws -> String {
         let candidates = stdout
             .components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -396,7 +396,7 @@ final class SherpaOnnxCommandLineDecoder {
         return transcript
     }
 
-    private func parseJSONTranscript(stdoutLine: String) -> String? {
+    func parseJSONTranscript(stdoutLine: String) -> String? {
         guard stdoutLine.first == "{",
               let jsonData = stdoutLine.data(using: .utf8),
               let payload = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],

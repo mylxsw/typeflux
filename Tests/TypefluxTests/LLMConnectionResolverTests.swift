@@ -109,3 +109,117 @@ final class LLMConnectionResolverTests: XCTestCase {
         XCTAssertFalse(connection.model.isEmpty)
     }
 }
+
+// MARK: - Extended LLMConnectionResolver tests
+
+extension LLMConnectionResolverTests {
+
+    // MARK: - URL trimming
+
+    func testResolveTrimsWhitespaceFromBaseURL() throws {
+        let connection = try LLMConnectionResolver.resolve(
+            provider: .custom,
+            baseURL: "  https://api.example.com/v1  ",
+            model: "model-x",
+            apiKey: "sk-123"
+        )
+        XCTAssertEqual(connection.baseURL.absoluteString, "https://api.example.com/v1")
+    }
+
+    func testResolveTrimsWhitespaceFromModel() throws {
+        let connection = try LLMConnectionResolver.resolve(
+            provider: .openAI,
+            baseURL: "https://api.openai.com/v1",
+            model: "  gpt-4o  ",
+            apiKey: "sk-123"
+        )
+        XCTAssertEqual(connection.model, "gpt-4o")
+    }
+
+    // MARK: - Default model fallback
+
+    func testResolveUsesProviderDefaultModelWhenModelIsEmpty() throws {
+        let connection = try LLMConnectionResolver.resolve(
+            provider: .openAI,
+            baseURL: "https://api.openai.com/v1",
+            model: "",
+            apiKey: "sk-123"
+        )
+        XCTAssertEqual(connection.model, LLMRemoteProvider.openAI.defaultModel)
+    }
+
+    func testResolveUsesProviderDefaultModelWhenModelIsWhitespace() throws {
+        let connection = try LLMConnectionResolver.resolve(
+            provider: .anthropic,
+            baseURL: "https://api.anthropic.com/v1",
+            model: "  ",
+            apiKey: "sk-123"
+        )
+        XCTAssertEqual(connection.model, LLMRemoteProvider.anthropic.defaultModel)
+    }
+
+    // MARK: - Non-HTTP scheme rejection
+
+    func testResolveThrowsForFTPScheme() {
+        XCTAssertThrowsError(try LLMConnectionResolver.resolve(
+            provider: .custom,
+            baseURL: "ftp://api.example.com/v1",
+            model: "m",
+            apiKey: ""
+        ))
+    }
+
+    func testResolveThrowsForFileScheme() {
+        XCTAssertThrowsError(try LLMConnectionResolver.resolve(
+            provider: .custom,
+            baseURL: "file:///some/path",
+            model: "m",
+            apiKey: ""
+        ))
+    }
+
+    // MARK: - ResolvedLLMConnection properties
+
+    func testResolvedConnectionHasCorrectProvider() throws {
+        let connection = try LLMConnectionResolver.resolve(
+            provider: .openRouter,
+            baseURL: "https://openrouter.ai/api/v1",
+            model: "openai/gpt-4o",
+            apiKey: "sk-or-key"
+        )
+        XCTAssertEqual(connection.provider, .openRouter)
+        XCTAssertEqual(connection.apiKey, "sk-or-key")
+    }
+
+    func testResolvedConnectionPreservesAPIKey() throws {
+        let connection = try LLMConnectionResolver.resolve(
+            provider: .anthropic,
+            baseURL: "https://api.anthropic.com/v1",
+            model: "claude-3",
+            apiKey: "sk-ant-xyz"
+        )
+        XCTAssertEqual(connection.apiKey, "sk-ant-xyz")
+    }
+
+    func testResolvedConnectionHTTPSchemeIsAllowed() throws {
+        let connection = try LLMConnectionResolver.resolve(
+            provider: .custom,
+            baseURL: "http://localhost:11434/v1",
+            model: "llama3",
+            apiKey: ""
+        )
+        XCTAssertEqual(connection.baseURL.scheme, "http")
+        XCTAssertEqual(connection.model, "llama3")
+    }
+
+    // MARK: - Free model whitespace handling
+
+    func testFreeModelThrowsForWhitespaceOnlyModel() {
+        XCTAssertThrowsError(try LLMConnectionResolver.resolve(
+            provider: .freeModel,
+            baseURL: "",
+            model: "  ",
+            apiKey: ""
+        ))
+    }
+}

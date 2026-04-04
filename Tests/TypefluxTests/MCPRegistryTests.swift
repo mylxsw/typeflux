@@ -28,3 +28,48 @@ final class MCPRegistryTests: XCTestCase {
         XCTAssertEqual(count, 0)
     }
 }
+
+// MARK: - Extended MCPRegistry tests
+
+final class MCPRegistryExtendedTests: XCTestCase {
+
+    private func makeRegistry() -> MCPRegistry {
+        MCPRegistry(settingsStore: MCPSettingsStore(
+            defaults: UserDefaults(suiteName: "test.mcp.ext.\(UUID().uuidString)")!
+        ))
+    }
+
+    func testRemoveNonExistentServerMultipleTimesIsSafe() async {
+        let registry = makeRegistry()
+        let nonExistentID = UUID()
+        await registry.removeServer(id: nonExistentID)
+        await registry.removeServer(id: nonExistentID)
+        let count = await registry.connectedServerCount
+        XCTAssertEqual(count, 0)
+    }
+
+    func testServerIdForToolWithNoServersReturnsNil() async {
+        let registry = makeRegistry()
+        let result = await registry.serverId(forToolName: "some_tool")
+        XCTAssertNil(result)
+    }
+
+    func testAllMCPToolsReturnsEmptyArrayInitially() async {
+        let registry = makeRegistry()
+        let tools = await registry.allMCPTools()
+        XCTAssertEqual(tools.count, 0)
+    }
+
+    func testConnectedServerCountIsZeroInitially() async {
+        let registry = makeRegistry()
+        let count = await registry.connectedServerCount
+        XCTAssertEqual(count, 0)
+    }
+
+    func testConnectAutoConnectServersWithEmptySettingsDoesNotCrash() async {
+        let registry = makeRegistry()
+        await registry.connectAutoConnectServers()
+        let count = await registry.connectedServerCount
+        XCTAssertEqual(count, 0)
+    }
+}
