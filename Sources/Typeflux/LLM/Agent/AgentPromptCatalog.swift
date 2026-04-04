@@ -25,7 +25,7 @@ enum AgentPromptCatalog {
             PromptCatalog.languageConsistencyRule(for: "user's request"),
         ]
 
-        for supplement in skillSupplements where !supplement.isEmpty {
+        for supplement in skillSupplements where !supplement.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             parts.append(supplement)
         }
 
