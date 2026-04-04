@@ -653,3 +653,7 @@
 "agent.mcp.enabled.subtitle" = "Enable this MCP server for Agent tool calls.";
 "agent.mcp.deleteDialog.title" = "Delete MCP Server";
 "agent.mcp.deleteDialog.message" = "Delete \"%@\"? This action cannot be undone.";
+
+"agent.section.skills" = "Skills";
+"agent.skills.empty" = "No skills configured. Skills provide the Agent with specialized abilities like command execution or web access.";
+"agent.skills.builtinBadge" = "Built-in";

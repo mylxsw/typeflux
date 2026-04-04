@@ -653,3 +653,7 @@
 "agent.mcp.enabled.subtitle" = "에이전트 도구 호출에 대해 이 MCP 서버를 활성화합니다.";
 "agent.mcp.deleteDialog.title" = "MCP 서버 삭제";
 "agent.mcp.deleteDialog.message" = "\"%@\"을(를) 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.";
+
+"agent.section.skills" = "스킬";
+"agent.skills.empty" = "설정된 스킬이 없습니다. 스킬을 통해 Agent에 명령 실행, 웹 접근 등 전문 기능을 제공할 수 있습니다.";
+"agent.skills.builtinBadge" = "기본 제공";
