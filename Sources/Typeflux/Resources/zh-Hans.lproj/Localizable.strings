@@ -653,3 +653,7 @@
 "agent.mcp.enabled.subtitle" = "启用此 MCP 服务器以供 Agent 工具调用。";
 "agent.mcp.deleteDialog.title" = "删除 MCP 服务器";
 "agent.mcp.deleteDialog.message" = "确定删除「%@」吗？此操作无法撤销。";
+
+"agent.section.skills" = "技能";
+"agent.skills.empty" = "暂无技能配置。技能可以为 Agent 提供命令执行、网络访问等专门能力。";
+"agent.skills.builtinBadge" = "内置";

@@ -653,3 +653,7 @@
 "agent.mcp.enabled.subtitle" = "この MCP サーバーをエージェント ツール呼び出しに対して有効にします。";
 "agent.mcp.deleteDialog.title" = "MCPサーバーの削除";
 "agent.mcp.deleteDialog.message" = "「%@」を削除しますか?この操作は元に戻すことができません。";
+
+"agent.section.skills" = "スキル";
+"agent.skills.empty" = "スキルが設定されていません。スキルにより、Agent にコマンド実行やウェブアクセスなどの機能を提供できます。";
+"agent.skills.builtinBadge" = "組み込み";
