@@ -34,7 +34,7 @@ struct ShellCommandTool: AgentTool {
 
     private let runner: CommandRunner
 
-    init(runner: CommandRunner = ProcessCommandRunner()) {
+    init(runner: CommandRunner = ShellCommandRunner()) {
         self.runner = runner
     }
 
@@ -170,7 +170,7 @@ protocol CommandRunner: Sendable {
 }
 
 /// 基于 Process 的默认命令执行器
-struct ProcessCommandRunner: CommandRunner {
+struct ShellCommandRunner: CommandRunner {
     func run(command: String, arguments: [String], timeoutSeconds: Int) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             let process = Process()

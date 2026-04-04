@@ -123,4 +123,52 @@ final class SettingsStoreAgentTests: XCTestCase {
         XCTAssertEqual(loaded[0].name, "server-a")
         XCTAssertEqual(loaded[1].name, "server-b")
     }
+
+    // MARK: - agentSkills
+
+    func testAgentSkillsDefaultsToBuiltins() {
+        let skills = store.agentSkills
+        let names = skills.map(\.name)
+        XCTAssertTrue(names.contains("command_execution"))
+        XCTAssertTrue(names.contains("web_access"))
+    }
+
+    func testAgentSkillsDefaultsAreDisabled() {
+        let skills = store.agentSkills
+        for skill in skills {
+            XCTAssertFalse(skill.enabled, "\(skill.name) should be disabled by default")
+        }
+    }
+
+    func testAgentSkillsSetAndGet() {
+        var skills = store.agentSkills
+        if let idx = skills.firstIndex(where: { $0.name == "command_execution" }) {
+            skills[idx].enabled = true
+        }
+        store.agentSkills = skills
+
+        let loaded = store.agentSkills
+        let cmdSkill = loaded.first(where: { $0.name == "command_execution" })
+        XCTAssertTrue(cmdSkill?.enabled == true)
+    }
+
+    func testAgentSkillsMergesBuiltins() {
+        // Save only one builtin
+        let partial = [BuiltinSkillCatalog.commandExecution()]
+        store.agentSkills = partial
+
+        let loaded = store.agentSkills
+        let names = loaded.map(\.name)
+        XCTAssertTrue(names.contains("command_execution"))
+        XCTAssertTrue(names.contains("web_access"))
+    }
+
+    func testAgentSkillsPreservesCustomSkills() {
+        var skills = store.agentSkills
+        skills.append(AgentSkill(name: "custom", description: "Custom skill"))
+        store.agentSkills = skills
+
+        let loaded = store.agentSkills
+        XCTAssertTrue(loaded.contains(where: { $0.name == "custom" }))
+    }
 }
