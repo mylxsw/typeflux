@@ -1,5 +1,8 @@
 # Typeflux
 
+[![Tests](https://github.com/mylxsw/typeflux/actions/workflows/test.yml/badge.svg)](https://github.com/mylxsw/typeflux/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/mylxsw/typeflux/graph/badge.svg)](https://codecov.io/gh/mylxsw/typeflux)
+
 Typeflux is a macOS menu bar voice input tool built with Swift. It is designed for a fast "hold to talk, release to insert" workflow: press a hotkey, speak naturally, let the app transcribe your speech, and send the resulting text back into the currently focused app.
 
 The project is aimed at people who want voice input to feel like a native part of desktop typing instead of a separate recording workflow. In addition to plain dictation, Typeflux also supports voice-driven text rewriting, streaming transcription previews, clipboard synchronization, and local or remote speech/LLM backends.

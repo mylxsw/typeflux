@@ -4,4 +4,10 @@ run:
 dev:
 	./scripts/run_dev_attached.sh
 
-.PHONY: run dev
+test:
+	swift test
+
+coverage:
+	./scripts/coverage.sh
+
+.PHONY: run dev test coverage
