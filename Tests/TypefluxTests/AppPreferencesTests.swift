@@ -138,3 +138,133 @@ final class AppPreferencesTests: XCTestCase {
         XCTAssertEqual(PersonaProfileKind.custom.rawValue, "custom")
     }
 }
+
+// MARK: - Extended AppPreferences tests
+
+extension AppPreferencesTests {
+
+    // MARK: - STTProvider
+
+    func testSTTProviderAllCasesCount() {
+        XCTAssertGreaterThan(STTProvider.allCases.count, 0)
+    }
+
+    func testSTTProviderRawValueRoundTrip() {
+        for provider in STTProvider.allCases {
+            let raw = provider.rawValue
+            let recovered = STTProvider(rawValue: raw)
+            XCTAssertEqual(recovered, provider)
+        }
+    }
+
+    func testSTTProviderDisplayNamesAreNonEmptyExtended() {
+        for provider in STTProvider.allCases {
+            XCTAssertFalse(provider.displayName.isEmpty, "\(provider) should have a non-empty display name")
+        }
+    }
+
+    func testLocalModelProviderHandlesPersonaInternally() {
+        // localModel does NOT handle persona internally (it's just transcription)
+        XCTAssertFalse(STTProvider.localModel.handlesPersonaInternally)
+    }
+
+    func testWhisperAPIHandlesPersonaInternally() {
+        XCTAssertFalse(STTProvider.whisperAPI.handlesPersonaInternally)
+    }
+
+    // MARK: - LocalSTTModel
+
+    func testLocalSTTModelAllCasesCount() {
+        XCTAssertGreaterThan(LocalSTTModel.allCases.count, 0)
+    }
+
+    func testLocalSTTModelRawValueRoundTrip() {
+        for model in LocalSTTModel.allCases {
+            let raw = model.rawValue
+            let recovered = LocalSTTModel(rawValue: raw)
+            XCTAssertEqual(recovered, model)
+        }
+    }
+
+    func testLocalSTTModelDisplayNamesAreNonEmptyExtended() {
+        for model in LocalSTTModel.allCases {
+            XCTAssertFalse(model.displayName.isEmpty, "\(model) should have a non-empty display name")
+        }
+    }
+
+    func testLocalSTTModelDefaultModelIdentifierIsNonEmpty() {
+        for model in LocalSTTModel.allCases {
+            XCTAssertFalse(model.defaultModelIdentifier.isEmpty, "\(model) should have a non-empty default model identifier")
+        }
+    }
+
+    func testLocalSTTModelSpecsAreValid() {
+        for model in LocalSTTModel.allCases {
+            let specs = model.specs
+            XCTAssertFalse(specs.summary.isEmpty, "\(model) should have a non-empty summary")
+            XCTAssertFalse(specs.sizeValue.isEmpty, "\(model) should have a non-empty size value")
+        }
+    }
+
+    // MARK: - LLMProvider
+
+    func testLLMProviderRawValueRoundTrip() {
+        for provider in LLMProvider.allCases {
+            let raw = provider.rawValue
+            let recovered = LLMProvider(rawValue: raw)
+            XCTAssertEqual(recovered, provider)
+        }
+    }
+
+    func testLLMProviderDisplayNamesAreNonEmptyExtended() {
+        for provider in LLMProvider.allCases {
+            XCTAssertFalse(provider.displayName.isEmpty, "\(provider) should have a non-empty display name")
+        }
+    }
+
+    // MARK: - AppearanceMode
+
+    func testAppearanceModeRawValueRoundTrip() {
+        for mode in AppearanceMode.allCases {
+            let raw = mode.rawValue
+            let recovered = AppearanceMode(rawValue: raw)
+            XCTAssertEqual(recovered, mode)
+        }
+    }
+
+    func testAppearanceModeDisplayNamesAreNonEmptyExtended() {
+        for mode in AppearanceMode.allCases {
+            XCTAssertFalse(mode.displayName.isEmpty, "\(mode) should have a non-empty display name")
+        }
+    }
+
+    // MARK: - PersonaProfile
+
+    func testPersonaProfileDefaultKindIsCustom() {
+        let profile = PersonaProfile(name: "Test", prompt: "Be helpful")
+        XCTAssertEqual(profile.kind, .custom)
+    }
+
+    func testPersonaProfileInitWithAllParameters() {
+        let id = UUID()
+        let profile = PersonaProfile(id: id, name: "Formal", prompt: "Write formally", kind: .system)
+        XCTAssertEqual(profile.id, id)
+        XCTAssertEqual(profile.name, "Formal")
+        XCTAssertEqual(profile.prompt, "Write formally")
+        XCTAssertEqual(profile.kind, .system)
+        XCTAssertTrue(profile.isSystem)
+    }
+
+    func testPersonaProfileUniqueIDsPerInstance() {
+        let p1 = PersonaProfile(name: "A", prompt: "a")
+        let p2 = PersonaProfile(name: "B", prompt: "b")
+        XCTAssertNotEqual(p1.id, p2.id)
+    }
+
+    func testPersonaProfileInequalityOnName() {
+        let id = UUID()
+        let a = PersonaProfile(id: id, name: "A", prompt: "p", kind: .custom)
+        let b = PersonaProfile(id: id, name: "B", prompt: "p", kind: .custom)
+        XCTAssertNotEqual(a, b)
+    }
+}

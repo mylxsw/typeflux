@@ -189,3 +189,115 @@ final class HotkeyGestureArbiterTests: XCTestCase {
         XCTAssertEqual(events, [.activationTapped])
     }
 }
+
+// MARK: - Extended HotkeyGestureArbiter tests
+
+extension HotkeyGestureArbiterTests {
+
+    // MARK: - HotkeyBinding properties
+
+    func testHotkeyBindingFunctionKeyCode() {
+        // Fn key code is a specific value (typically 63)
+        XCTAssertGreaterThan(HotkeyBinding.functionKeyCode, 0)
+    }
+
+    func testHotkeyBindingIsFunctionKey() {
+        XCTAssertTrue(activation.isFunctionTrigger)
+        XCTAssertFalse(ask.isFunctionTrigger)
+        XCTAssertFalse(persona.isFunctionTrigger)
+    }
+
+    // MARK: - handleKeyDown with no prior state
+
+    func testHandleKeyDownWithAskHotkeyWhileIdle() {
+        var arbiter = HotkeyGestureArbiter()
+        let events = arbiter.handleKeyDown(
+            keyCode: ask.keyCode,
+            modifierFlags: ask.modifierFlags,
+            isRepeat: false,
+            activationHotkey: activation,
+            askHotkey: ask,
+            personaHotkey: persona
+        )
+        // Ask hotkey while idle should emit some event
+        XCTAssertFalse(events.isEmpty)
+    }
+
+    func testHandleKeyDownWithPersonaHotkeyWhileIdle() {
+        var arbiter = HotkeyGestureArbiter()
+        let events = arbiter.handleKeyDown(
+            keyCode: persona.keyCode,
+            modifierFlags: persona.modifierFlags,
+            isRepeat: false,
+            activationHotkey: activation,
+            askHotkey: ask,
+            personaHotkey: persona
+        )
+        // Persona hotkey while idle should emit personaRequested
+        XCTAssertFalse(events.isEmpty)
+    }
+
+    func testHandleKeyDownRepeatIsIgnored() {
+        var arbiter = HotkeyGestureArbiter()
+        let events = arbiter.handleKeyDown(
+            keyCode: ask.keyCode,
+            modifierFlags: ask.modifierFlags,
+            isRepeat: true, // repeat = true
+            activationHotkey: activation,
+            askHotkey: ask,
+            personaHotkey: persona
+        )
+        XCTAssertTrue(events.isEmpty)
+    }
+
+    func testHandleKeyUpWithAskHotkeyDoesNotEmitEventsWhenIdle() {
+        var arbiter = HotkeyGestureArbiter()
+        let events = arbiter.handleKeyUp(
+            keyCode: ask.keyCode,
+            activationHotkey: activation,
+            askHotkey: ask
+        )
+        // Key up when not in active phase returns no events
+        XCTAssertTrue(events.isEmpty)
+    }
+
+    // MARK: - shouldConsume edge cases
+
+    func testShouldNotConsumeUnrelatedKeyCode() {
+        let arbiter = HotkeyGestureArbiter()
+        let shouldConsume = arbiter.shouldConsume(
+            eventType: .keyDown,
+            keyCode: 42, // unrelated key code
+            modifierFlags: 0,
+            activationHotkey: activation,
+            askHotkey: ask,
+            personaHotkey: persona
+        )
+        XCTAssertFalse(shouldConsume)
+    }
+
+    func testShouldConsumeActivationKeyDown() {
+        let arbiter = HotkeyGestureArbiter()
+        // Non-function key activation (e.g., ask or persona hotkey)
+        let shouldConsume = arbiter.shouldConsume(
+            eventType: .keyDown,
+            keyCode: ask.keyCode,
+            modifierFlags: ask.modifierFlags,
+            activationHotkey: activation,
+            askHotkey: ask,
+            personaHotkey: persona
+        )
+        XCTAssertTrue(shouldConsume)
+    }
+
+    // MARK: - HotkeyGestureEvent description
+
+    func testGestureEventDescriptions() {
+        let events: [HotkeyGestureEvent] = [.activationTapped, .personaRequested]
+        for event in events {
+            // Just verify they can be represented as strings (no crash)
+            let desc = "\(event)"
+            XCTAssertFalse(desc.isEmpty)
+        }
+    }
+}

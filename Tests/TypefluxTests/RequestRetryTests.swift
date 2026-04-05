@@ -116,3 +116,62 @@ final class RequestRetryTests: XCTestCase {
         XCTAssertTrue(sleptDurations.isEmpty)
     }
 }
+
+// MARK: - Extended RequestRetry tests
+
+extension RequestRetryTests {
+
+    func testRetryDelaysCountIsCorrect() {
+        // The default delays are [.zero, .milliseconds(500), .seconds(2)]
+        XCTAssertEqual(RequestRetry.retryDelays.count, 3)
+    }
+
+    func testFirstRetryDelayIsZero() {
+        let first = RequestRetry.retryDelays[0]
+        XCTAssertEqual(first, .zero)
+    }
+
+    func testSecondRetryDelayIsHalfSecond() {
+        let second = RequestRetry.retryDelays[1]
+        XCTAssertEqual(second, .milliseconds(500))
+    }
+
+    func testThirdRetryDelayIsTwoSeconds() {
+        let third = RequestRetry.retryDelays[2]
+        XCTAssertEqual(third, .seconds(2))
+    }
+
+    func testSucceedsImmediatelyWithoutRetry() async throws {
+        let recorder = Recorder()
+        let result = try await RequestRetry.perform(
+            operationName: "immediate-success",
+            sleep: { _ in }
+        ) {
+            _ = await recorder.incrementAttempt()
+            return "success"
+        }
+        XCTAssertEqual(result, "success")
+        let callCount = await recorder.attemptCount
+        XCTAssertEqual(callCount, 1)
+    }
+
+    func testThrowsAfterExhaustingRetries() async {
+        let recorder = Recorder()
+        do {
+            _ = try await RequestRetry.perform(
+                operationName: "always-fails",
+                sleep: { _ in }
+            ) {
+                let count = await recorder.incrementAttempt()
+                throw NSError(domain: "test", code: count)
+            } as String
+            XCTFail("Expected error to be thrown")
+        } catch {
+            let nsErr = error as NSError
+            let callCount = await recorder.attemptCount
+            // Should have been retried 3 times total (1 original + 3 retries count exceeded)
+            XCTAssertEqual(callCount, 4) // 1 original + 3 retry attempts
+            XCTAssertEqual(nsErr.domain, "test")
+        }
+    }
+}

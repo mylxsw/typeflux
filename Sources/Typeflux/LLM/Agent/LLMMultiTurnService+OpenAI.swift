@@ -80,7 +80,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         return parseOpenAITurn(from: data)
     }
 
-    private func buildOpenAIBody(
+    func buildOpenAIBody(
         model: String,
         messages: [AgentMessage],
         tools: [LLMAgentTool],
@@ -117,7 +117,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         return body
     }
 
-    private func parseOpenAITurn(from data: Data) -> AgentTurn {
+    func parseOpenAITurn(from data: Data) -> AgentTurn {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let choice = (object["choices"] as? [[String: Any]])?.first,
               let message = choice["message"] as? [String: Any] else {
@@ -202,7 +202,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         return parseAnthropicTurn(from: data)
     }
 
-    private func parseAnthropicTurn(from data: Data) -> AgentTurn {
+    func parseAnthropicTurn(from data: Data) -> AgentTurn {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let content = object["content"] as? [[String: Any]] else {
             return .text("")
@@ -308,7 +308,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         return parseGeminiTurn(from: data)
     }
 
-    private func parseGeminiTurn(from data: Data) -> AgentTurn {
+    func parseGeminiTurn(from data: Data) -> AgentTurn {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let candidates = object["candidates"] as? [[String: Any]],
               let content = candidates.first?["content"] as? [String: Any],

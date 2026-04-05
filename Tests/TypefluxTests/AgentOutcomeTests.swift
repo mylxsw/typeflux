@@ -153,3 +153,127 @@ final class AgentOutcomeTests: XCTestCase {
         XCTAssertNil(request.personaPrompt)
     }
 }
+
+// MARK: - Extended AgentOutcome tests
+
+extension AgentOutcomeTests {
+
+    // MARK: - AgentTurn cases
+
+    func testAgentTurnTextCase() {
+        let turn = AgentTurn.text("hello")
+        guard case .text(let text) = turn else {
+            XCTFail("Expected .text")
+            return
+        }
+        XCTAssertEqual(text, "hello")
+    }
+
+    func testAgentTurnToolCallsCase() {
+        let tc = AgentToolCall(id: "tc1", name: "my_tool", argumentsJSON: "{}")
+        let turn = AgentTurn.toolCalls([tc])
+        guard case .toolCalls(let calls) = turn else {
+            XCTFail("Expected .toolCalls")
+            return
+        }
+        XCTAssertEqual(calls.count, 1)
+        XCTAssertEqual(calls[0].id, "tc1")
+    }
+
+    func testAgentTurnTextWithToolCallsCase() {
+        let tc = AgentToolCall(id: "tc2", name: "search", argumentsJSON: #"{"q":"test"}"#)
+        let turn = AgentTurn.textWithToolCalls(text: "Searching...", toolCalls: [tc])
+        guard case .textWithToolCalls(let text, let calls) = turn else {
+            XCTFail("Expected .textWithToolCalls")
+            return
+        }
+        XCTAssertEqual(text, "Searching...")
+        XCTAssertEqual(calls.count, 1)
+    }
+
+    // MARK: - AgentToolCall
+
+    func testAgentToolCallProperties() {
+        let tc = AgentToolCall(id: "unique-id", name: "execute_code", argumentsJSON: #"{"code":"print(1)"}"#)
+        XCTAssertEqual(tc.id, "unique-id")
+        XCTAssertEqual(tc.name, "execute_code")
+        XCTAssertEqual(tc.argumentsJSON, #"{"code":"print(1)"}"#)
+    }
+
+    // MARK: - LLMCallConfig
+
+    func testLLMCallConfigDefaults() {
+        let config = LLMCallConfig(forcedToolName: nil, parallelToolCalls: true, temperature: nil)
+        XCTAssertNil(config.forcedToolName)
+        XCTAssertNil(config.temperature)
+        XCTAssertTrue(config.parallelToolCalls)
+    }
+
+    func testLLMCallConfigCustom() {
+        let config = LLMCallConfig(forcedToolName: "my_tool", parallelToolCalls: false, temperature: 0.5)
+        XCTAssertEqual(config.forcedToolName, "my_tool")
+        XCTAssertFalse(config.parallelToolCalls)
+        XCTAssertEqual(config.temperature, 0.5)
+    }
+
+    // MARK: - AgentMessage
+
+    func testAgentMessageSystemCase() {
+        let msg = AgentMessage.system("You are helpful.")
+        guard case .system(let text) = msg else {
+            XCTFail("Expected .system")
+            return
+        }
+        XCTAssertEqual(text, "You are helpful.")
+    }
+
+    func testAgentMessageUserCase() {
+        let msg = AgentMessage.user("Hello!")
+        guard case .user(let text) = msg else {
+            XCTFail("Expected .user")
+            return
+        }
+        XCTAssertEqual(text, "Hello!")
+    }
+
+    func testAgentMessageAssistantCase() {
+        let am = AgentAssistantMessage(text: "Response", toolCalls: [])
+        let msg = AgentMessage.assistant(am)
+        guard case .assistant(let m) = msg else {
+            XCTFail("Expected .assistant")
+            return
+        }
+        XCTAssertEqual(m.text, "Response")
+    }
+
+    func testAgentMessageToolResultCase() {
+        let tr = AgentToolResult(toolCallId: "tc1", content: "result", isError: false)
+        let msg = AgentMessage.toolResult(tr)
+        guard case .toolResult(let r) = msg else {
+            XCTFail("Expected .toolResult")
+            return
+        }
+        XCTAssertEqual(r.toolCallId, "tc1")
+        XCTAssertEqual(r.content, "result")
+        XCTAssertFalse(r.isError)
+    }
+
+    // MARK: - AgentResult
+
+    func testAgentResultTotalDuration() {
+        let result = AgentResult(outcome: .text("done"), steps: [], totalDurationMs: 1234)
+        XCTAssertEqual(result.totalDurationMs, 1234)
+    }
+
+    func testAgentResultStepsCount() {
+        let assistantMsg = AgentAssistantMessage(text: "thinking", toolCalls: [])
+        let step = AgentStep(
+            stepIndex: 0,
+            assistantMessage: assistantMsg,
+            toolResults: [],
+            durationMs: 50
+        )
+        let result = AgentResult(outcome: .text("done"), steps: [step], totalDurationMs: 100)
+        XCTAssertEqual(result.steps.count, 1)
+    }
+}

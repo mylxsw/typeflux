@@ -193,3 +193,113 @@ final class AgentSkillRegistryTests: XCTestCase {
         XCTAssertFalse(has)
     }
 }
+
+// MARK: - Extended AgentSkillRegistry tests
+
+extension AgentSkillRegistryTests {
+
+    func testRegisterAndRetrieveSkill() async {
+        let registry = AgentSkillRegistry()
+        let skill = AgentSkill(name: "test_skill", description: "Test", enabled: true)
+        await registry.register(skill: skill, tools: [])
+
+        let retrieved = await registry.skill(named: "test_skill")
+        XCTAssertNotNil(retrieved)
+        XCTAssertEqual(retrieved?.name, "test_skill")
+        XCTAssertEqual(retrieved?.description, "Test")
+    }
+
+    func testHasSkillReturnsTrueForRegisteredSkill() async {
+        let registry = AgentSkillRegistry()
+        let skill = AgentSkill(name: "my_skill", description: "Mine", enabled: true)
+        await registry.register(skill: skill, tools: [])
+
+        let hasIt = await registry.hasSkill(name: "my_skill")
+        XCTAssertTrue(hasIt)
+    }
+
+    func testHasSkillReturnsFalseForUnregisteredSkill() async {
+        let registry = AgentSkillRegistry()
+        let result = await registry.hasSkill(name: "absent_skill")
+        XCTAssertFalse(result)
+    }
+
+    func testUnregisterRemovesSkill() async {
+        let registry = AgentSkillRegistry()
+        let skill = AgentSkill(name: "removable", description: "Remove me", enabled: true)
+        await registry.register(skill: skill, tools: [])
+        await registry.unregister(name: "removable")
+
+        let hasIt = await registry.hasSkill(name: "removable")
+        XCTAssertFalse(hasIt)
+    }
+
+    func testSetEnabledChangesSkillEnabledStatus() async {
+        let registry = AgentSkillRegistry()
+        let skill = AgentSkill(name: "toggle_skill", description: "Toggle", enabled: true)
+        await registry.register(skill: skill, tools: [])
+
+        await registry.setEnabled(name: "toggle_skill", enabled: false)
+
+        let retrieved = await registry.skill(named: "toggle_skill")
+        XCTAssertEqual(retrieved?.enabled, false)
+    }
+
+    func testSetEnabledOnNonexistentSkillDoesNotCrash() async {
+        let registry = AgentSkillRegistry()
+        await registry.setEnabled(name: "ghost_skill", enabled: true)
+        // No crash expected
+    }
+
+    func testEnabledSkillsFiltersByEnabledStatus() async {
+        let registry = AgentSkillRegistry()
+        let enabled = AgentSkill(name: "enabled_skill", description: "E", enabled: true)
+        let disabled = AgentSkill(name: "disabled_skill", description: "D", enabled: false)
+        await registry.register(skill: enabled, tools: [])
+        await registry.register(skill: disabled, tools: [])
+
+        let enabledSkills = await registry.enabledSkills
+        XCTAssertEqual(enabledSkills.count, 1)
+        XCTAssertEqual(enabledSkills.first?.name, "enabled_skill")
+    }
+
+    func testAllSkillsReturnsAllRegistered() async {
+        let registry = AgentSkillRegistry()
+        let s1 = AgentSkill(name: "skill_a", description: "A", enabled: true)
+        let s2 = AgentSkill(name: "skill_b", description: "B", enabled: false)
+        await registry.register(skill: s1, tools: [])
+        await registry.register(skill: s2, tools: [])
+
+        let all = await registry.allSkills
+        XCTAssertEqual(all.count, 2)
+    }
+
+    func testEnabledPromptSupplementsReturnsOnlyNonEmptyFromEnabledSkills() async {
+        let registry = AgentSkillRegistry()
+        let withSupplement = AgentSkill(
+            name: "with_supplement",
+            description: "W",
+            enabled: true,
+            systemPromptSupplement: "Use special rules"
+        )
+        let withoutSupplement = AgentSkill(
+            name: "without_supplement",
+            description: "WO",
+            enabled: true,
+            systemPromptSupplement: ""
+        )
+        let disabled = AgentSkill(
+            name: "disabled",
+            description: "D",
+            enabled: false,
+            systemPromptSupplement: "Should not appear"
+        )
+        await registry.register(skill: withSupplement, tools: [])
+        await registry.register(skill: withoutSupplement, tools: [])
+        await registry.register(skill: disabled, tools: [])
+
+        let supplements = await registry.enabledPromptSupplements()
+        XCTAssertEqual(supplements.count, 1)
+        XCTAssertEqual(supplements.first, "Use special rules")
+    }
+}

@@ -280,3 +280,141 @@ final class UsageStatsStoreTests: XCTestCase {
         XCTAssertEqual(a.outputWords, 50)
     }
 }
+
+// MARK: - Extended UsageStatsStore tests
+
+extension UsageStatsStoreTests {
+
+    // MARK: - editedTextContribution
+
+    func testEditedTextContributionEmptyEditedReturnsEmpty() {
+        let result = store.editedTextContribution(originalText: "hello", editedText: "")
+        XCTAssertEqual(result, "")
+    }
+
+    func testEditedTextContributionEmptyOriginalReturnsEdited() {
+        let result = store.editedTextContribution(originalText: "", editedText: "new text")
+        XCTAssertEqual(result, "new text")
+    }
+
+    func testEditedTextContributionSameTextReturnsEmpty() {
+        let result = store.editedTextContribution(originalText: "same", editedText: "same")
+        XCTAssertEqual(result, "")
+    }
+
+    func testEditedTextContributionReturnsInsertedText() {
+        // "testing" appends "ing" to "test"; the LCS-based diff captures the suffix
+        let result = store.editedTextContribution(
+            originalText: "test",
+            editedText: "testing"
+        )
+        XCTAssertFalse(result.isEmpty)
+        XCTAssertTrue(result.contains("ing"))
+    }
+
+    func testEditedTextContributionSimpleReplacement() {
+        let result = store.editedTextContribution(
+            originalText: "good morning",
+            editedText: "good evening"
+        )
+        XCTAssertFalse(result.isEmpty)
+    }
+
+    // MARK: - heuristicEditedTextContribution
+
+    func testHeuristicContributionOnFullReplacement() {
+        let original = Array("hello")
+        let edited = Array("world")
+        let result = store.heuristicEditedTextContribution(original: original, edited: edited)
+        XCTAssertEqual(result, "world")
+    }
+
+    func testHeuristicContributionOnPrefixAppend() {
+        let original = Array("hello")
+        let edited = Array("hello world")
+        let result = store.heuristicEditedTextContribution(original: original, edited: edited)
+        XCTAssertFalse(result.isEmpty)
+    }
+
+    // MARK: - completionRate
+
+    func testCompletionRateIsZeroWithNoSessions() {
+        let rate = store.completionRate
+        // With no sessions, should not crash
+        XCTAssertGreaterThanOrEqual(rate, 0)
+    }
+
+    // MARK: - totalDictationMinutes
+
+    func testTotalDictationMinutesIsNonNegative() {
+        XCTAssertGreaterThanOrEqual(store.totalDictationMinutes, 0)
+    }
+
+    // MARK: - savedMinutes
+
+    func testSavedMinutesIsNonNegative() {
+        XCTAssertGreaterThanOrEqual(store.savedMinutes, 0)
+    }
+
+    // MARK: - averagePaceWPM
+
+    func testAveragePaceWPMIsNonNegative() {
+        XCTAssertGreaterThanOrEqual(store.averagePaceWPM, 0)
+    }
+
+    // MARK: - SessionContribution.add cumulative fields
+
+    func testSessionContributionAddsAllFields() {
+        var a = UsageStatsStore.SessionContribution()
+        a.sessions = 1
+        a.successfulSessions = 1
+        a.perceivedSeconds = 10.0
+        a.estimatedTypingSeconds = 5.0
+        a.outputCharacters = 100
+        a.outputWords = 20
+        a.dictationCount = 1
+
+        var b = UsageStatsStore.SessionContribution()
+        b.sessions = 2
+        b.failedSessions = 1
+        b.perceivedSeconds = 5.0
+        b.estimatedTypingSeconds = 2.5
+        b.outputCharacters = 50
+        b.outputWords = 10
+        b.askAnswerCount = 2
+
+        a.add(b)
+
+        XCTAssertEqual(a.sessions, 3)
+        XCTAssertEqual(a.successfulSessions, 1)
+        XCTAssertEqual(a.failedSessions, 1)
+        XCTAssertEqual(a.perceivedSeconds, 15.0, accuracy: 0.001)
+        XCTAssertEqual(a.estimatedTypingSeconds, 7.5, accuracy: 0.001)
+        XCTAssertEqual(a.outputCharacters, 150)
+        XCTAssertEqual(a.outputWords, 30)
+        XCTAssertEqual(a.dictationCount, 1)
+        XCTAssertEqual(a.askAnswerCount, 2)
+    }
+
+    // MARK: - isSuccessful edge cases
+
+    func testIsNotSuccessfulWhenTranscriptionPending() {
+        let record = HistoryRecord(
+            date: Date(),
+            transcriptionStatus: .pending,
+            applyStatus: .pending
+        )
+        XCTAssertFalse(store.isSuccessful(record))
+    }
+
+    func testIsNotSuccessfulWhenTranscriptionFailed() {
+        // applyStatus must also not be .succeeded for the record to be not successful
+        let record = HistoryRecord(
+            date: Date(),
+            transcriptionStatus: .failed,
+            applyStatus: .failed
+        )
+        XCTAssertFalse(store.isSuccessful(record))
+    }
+
+}

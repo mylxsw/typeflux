@@ -141,3 +141,102 @@ final class MCPMessageTests: XCTestCase {
         XCTAssertEqual(result.serverInfo?.name, "TestServer")
     }
 }
+
+// MARK: - Extended MCPMessage tests
+
+extension MCPMessageTests {
+
+    // MARK: - MCPMessageId
+
+    func testMCPMessageIdEqualityForSameString() {
+        XCTAssertEqual(MCPMessageId.string("a"), MCPMessageId.string("a"))
+    }
+
+    func testMCPMessageIdInequalityBetweenStringAndNumber() {
+        XCTAssertNotEqual(MCPMessageId.string("1"), MCPMessageId.number(1))
+    }
+
+    func testMCPMessageIdStringValueForNumber() {
+        XCTAssertEqual(MCPMessageId.number(99).stringValue, "99")
+    }
+
+    func testMCPMessageIdStringValueForString() {
+        XCTAssertEqual(MCPMessageId.string("req-007").stringValue, "req-007")
+    }
+
+    // MARK: - AnyCodable
+
+    func testAnyCodableEncodesNull() throws {
+        let value = AnyCodable(NSNull())
+        let data = try JSONEncoder().encode(value)
+        let str = String(data: data, encoding: .utf8)
+        XCTAssertEqual(str, "null")
+    }
+
+    func testAnyCodableEncodesBool() throws {
+        let value = AnyCodable(true)
+        let data = try JSONEncoder().encode(value)
+        let decoded = try JSONDecoder().decode(AnyCodable.self, from: data)
+        XCTAssertEqual(decoded.value as? Bool, true)
+    }
+
+    func testAnyCodableEncodesInt() throws {
+        let value = AnyCodable(42)
+        let data = try JSONEncoder().encode(value)
+        let decoded = try JSONDecoder().decode(AnyCodable.self, from: data)
+        XCTAssertEqual(decoded.value as? Int, 42)
+    }
+
+    func testAnyCodableEncodesDouble() throws {
+        let value = AnyCodable(3.14)
+        let data = try JSONEncoder().encode(value)
+        let decoded = try JSONDecoder().decode(AnyCodable.self, from: data)
+        let doubleValue = try XCTUnwrap(decoded.value as? Double)
+        XCTAssertEqual(doubleValue, 3.14, accuracy: 0.001)
+    }
+
+    func testAnyCodableEncodesString() throws {
+        let value = AnyCodable("hello")
+        let data = try JSONEncoder().encode(value)
+        let decoded = try JSONDecoder().decode(AnyCodable.self, from: data)
+        XCTAssertEqual(decoded.value as? String, "hello")
+    }
+
+    func testAnyCodableEncodesArray() throws {
+        let value = AnyCodable([1, 2, 3])
+        let data = try JSONEncoder().encode(value)
+        let decoded = try JSONDecoder().decode(AnyCodable.self, from: data)
+        XCTAssertEqual(decoded.value as? [Int], [1, 2, 3])
+    }
+
+    func testAnyCodableEncodesDictionary() throws {
+        let value = AnyCodable(["key": "val"])
+        let data = try JSONEncoder().encode(value)
+        let decoded = try JSONDecoder().decode(AnyCodable.self, from: data)
+        let dict = decoded.value as? [String: Any]
+        XCTAssertEqual(dict?["key"] as? String, "val")
+    }
+
+    func testAnyCodableDecodesNullFromJSON() throws {
+        let data = Data("null".utf8)
+        let decoded = try JSONDecoder().decode(AnyCodable.self, from: data)
+        XCTAssertTrue(decoded.value is NSNull)
+    }
+
+    func testAnyCodableDecodesBoolFromJSON() throws {
+        let data = Data("false".utf8)
+        let decoded = try JSONDecoder().decode(AnyCodable.self, from: data)
+        XCTAssertEqual(decoded.value as? Bool, false)
+    }
+
+    func testAnyCodableDecodesNestedStructure() throws {
+        let json = """
+        {"name": "test", "count": 5, "active": true, "items": ["a", "b"]}
+        """.data(using: .utf8)!
+        let decoded = try JSONDecoder().decode(AnyCodable.self, from: json)
+        let dict = decoded.value as? [String: Any]
+        XCTAssertEqual(dict?["name"] as? String, "test")
+        XCTAssertEqual(dict?["count"] as? Int, 5)
+        XCTAssertEqual(dict?["active"] as? Bool, true)
+    }
+}

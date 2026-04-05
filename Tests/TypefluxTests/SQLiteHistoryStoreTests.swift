@@ -188,3 +188,199 @@ final class SQLiteHistoryStoreTests: XCTestCase {
         XCTAssertTrue(content.contains("Mode: dictation"))
     }
 }
+
+// MARK: - Extended SQLiteHistoryStore tests
+
+extension SQLiteHistoryStoreTests {
+
+    // MARK: - save with various modes
+
+    func testSaveRecordWithAskAnswerMode() {
+        let record = makeRecord(mode: .askAnswer)
+        store.save(record: record)
+        flush()
+
+        let found = store.record(id: record.id)
+        XCTAssertEqual(found?.mode, .askAnswer)
+    }
+
+    func testSaveRecordWithPersonaRewriteMode() {
+        let record = makeRecord(mode: .personaRewrite)
+        store.save(record: record)
+        flush()
+
+        let found = store.record(id: record.id)
+        XCTAssertEqual(found?.mode, .personaRewrite)
+    }
+
+    func testSaveRecordWithEditSelectionMode() {
+        let record = makeRecord(mode: .editSelection)
+        store.save(record: record)
+        flush()
+
+        let found = store.record(id: record.id)
+        XCTAssertEqual(found?.mode, .editSelection)
+    }
+
+    // MARK: - list ordering
+
+    func testListOrdersByDateDescending() {
+        let now = Date()
+        let older = makeRecord(date: now.addingTimeInterval(-10), transcriptText: "older")
+        let newer = makeRecord(date: now.addingTimeInterval(10), transcriptText: "newer")
+        store.save(record: older)
+        store.save(record: newer)
+        flush()
+
+        let list = store.list()
+        XCTAssertEqual(list.first?.transcriptText, "newer")
+        XCTAssertEqual(list.last?.transcriptText, "older")
+    }
+
+    // MARK: - list(limit:offset:searchQuery:) edge cases
+
+    func testListWithZeroLimitReturnsEmpty() {
+        store.save(record: makeRecord(transcriptText: "some text"))
+        flush()
+
+        let results = store.list(limit: 0, offset: 0, searchQuery: nil)
+        XCTAssertEqual(results.count, 0)
+    }
+
+    func testListWithOffsetBeyondCountReturnsEmpty() {
+        store.save(record: makeRecord(transcriptText: "a"))
+        store.save(record: makeRecord(transcriptText: "b"))
+        flush()
+
+        let results = store.list(limit: 10, offset: 100, searchQuery: nil)
+        XCTAssertEqual(results.count, 0)
+    }
+
+    func testListWithEmptySearchQueryReturnsAll() {
+        store.save(record: makeRecord(transcriptText: "alpha"))
+        store.save(record: makeRecord(transcriptText: "beta"))
+        flush()
+
+        let results = store.list(limit: 10, offset: 0, searchQuery: "")
+        XCTAssertEqual(results.count, 2)
+    }
+
+    func testListWithNilSearchQueryReturnsAll() {
+        store.save(record: makeRecord(transcriptText: "alpha"))
+        store.save(record: makeRecord(transcriptText: "beta"))
+        flush()
+
+        let results = store.list(limit: 10, offset: 0, searchQuery: nil)
+        XCTAssertEqual(results.count, 2)
+    }
+
+    func testListSearchQueryIsCaseInsensitive() {
+        store.save(record: makeRecord(transcriptText: "Hello World"))
+        store.save(record: makeRecord(transcriptText: "Foo Bar"))
+        flush()
+
+        let results = store.list(limit: 10, offset: 0, searchQuery: "hello")
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first?.transcriptText, "Hello World")
+    }
+
+    func testListSearchQueryReturnsEmptyForNoMatch() {
+        store.save(record: makeRecord(transcriptText: "unrelated content"))
+        flush()
+
+        let results = store.list(limit: 10, offset: 0, searchQuery: "xyz123notfound")
+        XCTAssertEqual(results.count, 0)
+    }
+
+    // MARK: - Multiple save/delete cycle
+
+    func testSaveAndDeleteMultipleRecords() {
+        let ids = (0..<5).map { _ in UUID() }
+        for id in ids {
+            store.save(record: makeRecord(id: id, transcriptText: "item \(id)"))
+        }
+        flush()
+        XCTAssertEqual(store.list().count, 5)
+
+        store.delete(id: ids[0])
+        store.delete(id: ids[2])
+        flush()
+        XCTAssertEqual(store.list().count, 3)
+        XCTAssertNil(store.record(id: ids[0]))
+        XCTAssertNil(store.record(id: ids[2]))
+        XCTAssertNotNil(store.record(id: ids[1]))
+    }
+
+    // MARK: - purge edge cases
+
+    func testPurgeWithLargeDayCountKeepsAll() {
+        store.save(record: makeRecord(date: Date(), transcriptText: "recent"))
+        flush()
+
+        store.purge(olderThanDays: 10000)
+        flush()
+
+        XCTAssertEqual(store.list().count, 1)
+    }
+
+    func testPurgeWithZeroDaysRemovesAll() {
+        // purge(olderThanDays: 0) should remove records older than 0 days (i.e., anything older than "now")
+        let past = Date().addingTimeInterval(-1) // 1 second in the past
+        store.save(record: makeRecord(date: past, transcriptText: "past"))
+        flush()
+
+        store.purge(olderThanDays: 0)
+        flush()
+
+        XCTAssertEqual(store.list().count, 0)
+    }
+
+    // MARK: - clear on empty store
+
+    func testClearOnEmptyStoreDoesNotCrash() {
+        store.clear()
+        flush()
+        XCTAssertEqual(store.list().count, 0)
+    }
+
+    // MARK: - exportMarkdown with multiple records
+
+    func testExportMarkdownWithMultipleRecords() throws {
+        store.save(record: makeRecord(transcriptText: "first entry", mode: .dictation))
+        store.save(record: makeRecord(transcriptText: "second entry", mode: .personaRewrite))
+        flush()
+
+        let url = try store.exportMarkdown()
+        let content = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(content.contains("first entry"))
+        XCTAssertTrue(content.contains("second entry"))
+        XCTAssertTrue(content.contains("# Typeflux History"))
+    }
+
+    func testExportMarkdownOnEmptyStoreCreatesFile() throws {
+        let url = try store.exportMarkdown()
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+        let content = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(content.contains("# Typeflux History"))
+    }
+
+    // MARK: - concurrent access safety
+
+    func testConcurrentSavesDoNotCrash() {
+        let expectation = XCTestExpectation(description: "concurrent saves")
+        expectation.expectedFulfillmentCount = 10
+
+        for i in 0..<10 {
+            DispatchQueue.global().async {
+                let record = self.makeRecord(transcriptText: "concurrent item \(i)")
+                self.store.save(record: record)
+                expectation.fulfill()
+            }
+        }
+
+        wait(for: [expectation], timeout: 5.0)
+        flush()
+
+        XCTAssertEqual(store.list().count, 10)
+    }
+}

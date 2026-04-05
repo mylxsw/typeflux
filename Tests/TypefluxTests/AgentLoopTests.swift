@@ -299,3 +299,117 @@ final class MockAgentStepMonitor: AgentStepMonitor, @unchecked Sendable {
         finishedOutcome = outcome
     }
 }
+
+// MARK: - Extended AgentLoop tests
+
+extension AgentLoopTests {
+
+    func testLoopStepsAreCounted() async throws {
+        let mockLLM = MockLLMMultiTurnService()
+        let registry = AgentToolRegistry()
+        let stubTool = StubAgentTool(
+            name: "search",
+            description: "Searches",
+            result: "results found"
+        )
+        await registry.register(stubTool)
+        await registry.register(AnswerTextTool())
+
+        // Tool call -> text response
+        mockLLM.turns = [
+            .toolCalls([AgentToolCall(id: "tc1", name: "search", argumentsJSON: #"{"query":"test"}"#)]),
+            .toolCalls([AgentToolCall(id: "tc2", name: BuiltinAgentToolName.answerText.rawValue, argumentsJSON: #"{"answer":"done"}"#)])
+        ]
+
+        let loop = AgentLoop(llmService: mockLLM, toolRegistry: registry, config: .default)
+        let result = try await loop.run(messages: [.user("search for test")])
+
+        XCTAssertEqual(result.steps.count, 2)
+    }
+
+    func testLoopConfigAllowsCustomMaxSteps() async throws {
+        let mockLLM = MockLLMMultiTurnService()
+        let registry = AgentToolRegistry()
+        await registry.register(AnswerTextTool())
+
+        // Each turn returns a tool call (stub), which will hit max steps
+        let stubTool = StubAgentTool(
+            name: "stub",
+            description: "Stub",
+            result: "ok"
+        )
+        await registry.register(stubTool)
+
+        // Provide only tool call turns (no termination) - should hit maxSteps
+        mockLLM.turns = [
+            .toolCalls([AgentToolCall(id: "tc1", name: "stub", argumentsJSON: "{}")]),
+            .toolCalls([AgentToolCall(id: "tc2", name: "stub", argumentsJSON: "{}")]),
+            .toolCalls([AgentToolCall(id: "tc3", name: "stub", argumentsJSON: "{}")]),
+        ]
+
+        let config = AgentConfig(maxSteps: 2, allowParallelToolCalls: false, temperature: nil, enableStreaming: false)
+        let loop = AgentLoop(llmService: mockLLM, toolRegistry: registry, config: config)
+        let result = try await loop.run(messages: [.user("do things")])
+
+        // Should terminate with maxStepsReached
+        guard case .maxStepsReached = result.outcome else {
+            XCTFail("Expected maxStepsReached outcome")
+            return
+        }
+    }
+
+    func testLoopHandlesTextWithToolCallsTurn() async throws {
+        let mockLLM = MockLLMMultiTurnService()
+        let registry = AgentToolRegistry()
+        await registry.register(AnswerTextTool())
+
+        let stubTool = StubAgentTool(
+            name: "info",
+            description: "Info tool",
+            result: "information"
+        )
+        await registry.register(stubTool)
+
+        mockLLM.turns = [
+            .textWithToolCalls(
+                text: "Let me look that up...",
+                toolCalls: [AgentToolCall(id: "tc1", name: "info", argumentsJSON: "{}")]
+            ),
+            .text("Here is the answer.")
+        ]
+
+        let loop = AgentLoop(llmService: mockLLM, toolRegistry: registry, config: .default)
+        let result = try await loop.run(messages: [.user("what is X?")])
+
+        guard case .text(let text) = result.outcome else {
+            XCTFail("Expected text outcome")
+            return
+        }
+        XCTAssertEqual(text, "Let me look that up...Here is the answer.")
+        XCTAssertEqual(result.steps.count, 1)
+    }
+}
+
+// MARK: - Helper for extended tests
+
+private struct StubAgentTool: AgentTool {
+    let definition: LLMAgentTool
+    let result: String
+
+    init(name: String, description: String, result: String) {
+        self.definition = LLMAgentTool(
+            name: name,
+            description: description,
+            inputSchema: LLMJSONSchema(
+                name: name,
+                schema: ["type": .string("object"), "properties": .object([:])],
+                strict: false
+            )
+        )
+        self.result = result
+    }
+
+    func execute(arguments: String) async throws -> String {
+        return #"{"result": "\#(result)"}"#
+    }
+}

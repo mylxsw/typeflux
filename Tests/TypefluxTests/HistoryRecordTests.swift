@@ -253,3 +253,207 @@ final class HistoryRecordTests: XCTestCase {
         XCTAssertEqual(HistoryRecord.StepStatus.skipped.rawValue, "skipped")
     }
 }
+
+// MARK: - Extended HistoryRecord tests
+
+final class HistoryRecordExtendedTests: XCTestCase {
+
+    // MARK: - HistoryRecord text computed property
+
+    func testTextFallsThroughToTranscriptText() {
+        let record = HistoryRecord(
+            date: Date(),
+            mode: .dictation,
+            transcriptText: "transcript"
+        )
+        XCTAssertEqual(record.text, "transcript")
+    }
+
+    func testTextPrefersPersonaResultOverTranscript() {
+        let record = HistoryRecord(
+            date: Date(),
+            mode: .personaRewrite,
+            transcriptText: "original",
+            personaResultText: "rewritten"
+        )
+        XCTAssertEqual(record.text, "rewritten")
+    }
+
+    func testTextPrefersSelectionEditedOverAll() {
+        let record = HistoryRecord(
+            date: Date(),
+            mode: .editSelection,
+            transcriptText: "original",
+            personaResultText: "persona",
+            selectionEditedText: "edited"
+        )
+        XCTAssertEqual(record.text, "edited")
+    }
+
+    func testTextFallsBackToErrorMessage() {
+        let record = HistoryRecord(
+            date: Date(),
+            mode: .dictation,
+            errorMessage: "Something failed"
+        )
+        XCTAssertEqual(record.text, "Something failed")
+    }
+
+    func testTextReturnsEmptyWhenAllNil() {
+        let record = HistoryRecord(date: Date())
+        XCTAssertEqual(record.text, "")
+    }
+
+    // MARK: - finalText
+
+    func testFinalTextIsNilWhenAllNil() {
+        let record = HistoryRecord(date: Date())
+        XCTAssertNil(record.finalText)
+    }
+
+    func testFinalTextReturnsTranscriptWhenOnlyTranscript() {
+        let record = HistoryRecord(date: Date(), transcriptText: "hello")
+        XCTAssertEqual(record.finalText, "hello")
+    }
+
+    func testFinalTextPrefersEditedText() {
+        let record = HistoryRecord(
+            date: Date(),
+            transcriptText: "original",
+            selectionEditedText: "edited"
+        )
+        XCTAssertEqual(record.finalText, "edited")
+    }
+
+    // MARK: - hasFailure
+
+    func testHasFailureIsFalseWhenAllSucceeded() {
+        let record = HistoryRecord(
+            date: Date(),
+            recordingStatus: .succeeded,
+            transcriptionStatus: .succeeded,
+            processingStatus: .succeeded,
+            applyStatus: .succeeded
+        )
+        XCTAssertFalse(record.hasFailure)
+    }
+
+    func testHasFailureIsTrueWhenRecordingFailed() {
+        let record = HistoryRecord(
+            date: Date(),
+            recordingStatus: .failed
+        )
+        XCTAssertTrue(record.hasFailure)
+    }
+
+    func testHasFailureIsTrueWhenTranscriptionFailed() {
+        let record = HistoryRecord(
+            date: Date(),
+            transcriptionStatus: .failed
+        )
+        XCTAssertTrue(record.hasFailure)
+    }
+
+    func testHasFailureIsTrueWhenErrorMessageIsSet() {
+        let record = HistoryRecord(
+            date: Date(),
+            errorMessage: "unexpected error"
+        )
+        XCTAssertTrue(record.hasFailure)
+    }
+
+    func testHasFailureIsFalseWithEmptyErrorMessage() {
+        let record = HistoryRecord(
+            date: Date(),
+            errorMessage: "",
+            recordingStatus: .succeeded,
+            transcriptionStatus: .succeeded,
+            processingStatus: .succeeded,
+            applyStatus: .succeeded
+        )
+        XCTAssertFalse(record.hasFailure)
+    }
+
+    // MARK: - HistoryPipelineTiming hasData
+
+    func testTimingHasDataWhenTranscriptionSet() {
+        var timing = HistoryPipelineTiming()
+        timing.transcriptionStartedAt = Date()
+        XCTAssertTrue(timing.hasData)
+    }
+
+    func testTimingHasDataWhenLLMSet() {
+        var timing = HistoryPipelineTiming()
+        timing.llmProcessingStartedAt = Date()
+        XCTAssertTrue(timing.hasData)
+    }
+
+    func testTimingHasDataWhenApplySet() {
+        var timing = HistoryPipelineTiming()
+        timing.applyCompletedAt = Date()
+        XCTAssertTrue(timing.hasData)
+    }
+
+    // MARK: - HistoryPipelineStats hasData
+
+    func testStatsHasDataWithDurationFields() {
+        let stats = HistoryPipelineStats(transcriptionDurationMilliseconds: 100)
+        XCTAssertTrue(stats.hasData)
+    }
+
+    func testStatsHasDataWithEndToEnd() {
+        let stats = HistoryPipelineStats(endToEndMilliseconds: 1500)
+        XCTAssertTrue(stats.hasData)
+    }
+
+    // MARK: - HistoryRecord Codable
+
+    func testHistoryRecordCodableRoundTrip() throws {
+        let original = HistoryRecord(
+            id: UUID(),
+            date: Date(timeIntervalSince1970: 1000),
+            mode: .editSelection,
+            transcriptText: "test",
+            selectionOriginalText: "old",
+            selectionEditedText: "new",
+            recordingStatus: .succeeded,
+            transcriptionStatus: .succeeded,
+            processingStatus: .succeeded,
+            applyStatus: .succeeded
+        )
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(HistoryRecord.self, from: data)
+
+        XCTAssertEqual(decoded.id, original.id)
+        XCTAssertEqual(decoded.mode, .editSelection)
+        XCTAssertEqual(decoded.transcriptText, "test")
+        XCTAssertEqual(decoded.selectionOriginalText, "old")
+        XCTAssertEqual(decoded.selectionEditedText, "new")
+    }
+
+    // MARK: - generatedStats end-to-end calculations
+
+    func testGeneratedStatsPreferApplyCompletedForEndToEnd() {
+        let base = Date(timeIntervalSince1970: 0)
+        var timing = HistoryPipelineTiming()
+        timing.recordingStoppedAt = base
+        timing.transcriptionCompletedAt = base.addingTimeInterval(1.0)
+        timing.llmProcessingCompletedAt = base.addingTimeInterval(2.0)
+        timing.applyCompletedAt = base.addingTimeInterval(3.0)
+
+        let stats = timing.generatedStats()
+        XCTAssertEqual(stats.endToEndMilliseconds, 3000)
+    }
+
+    func testGeneratedStatsUsesLLMCompletedWhenApplyMissing() {
+        let base = Date(timeIntervalSince1970: 0)
+        var timing = HistoryPipelineTiming()
+        timing.recordingStoppedAt = base
+        timing.transcriptionCompletedAt = base.addingTimeInterval(1.0)
+        timing.llmProcessingCompletedAt = base.addingTimeInterval(2.5)
+        // applyCompletedAt is nil
+
+        let stats = timing.generatedStats()
+        XCTAssertEqual(stats.endToEndMilliseconds, 2500)
+    }
+}

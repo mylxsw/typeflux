@@ -164,3 +164,143 @@ final class AgentMessageProviderFormatTests: XCTestCase {
         XCTAssertEqual(functionCall?["name"] as? String, "get_clipboard")
     }
 }
+
+// MARK: - Extended AgentMessage format tests
+
+extension AgentMessageProviderFormatTests {
+
+    // MARK: - extractAnthropicSystemPrompt
+
+    func testExtractAnthropicSystemPromptWithNoSystem() {
+        let messages: [AgentMessage] = [.user("hello")]
+        let result = AgentMessage.extractAnthropicSystemPrompt(messages)
+        XCTAssertNil(result)
+    }
+
+    func testExtractAnthropicSystemPromptWithSingleSystem() {
+        let messages: [AgentMessage] = [.system("Be helpful."), .user("hello")]
+        let result = AgentMessage.extractAnthropicSystemPrompt(messages)
+        XCTAssertEqual(result, "Be helpful.")
+    }
+
+    func testExtractAnthropicSystemPromptJoinsMultipleSystemMessages() {
+        let messages: [AgentMessage] = [
+            .system("Rule 1."),
+            .user("hello"),
+            .system("Rule 2.")
+        ]
+        let result = AgentMessage.extractAnthropicSystemPrompt(messages)
+        XCTAssertEqual(result, "Rule 1.\n\nRule 2.")
+    }
+
+    // MARK: - extractGeminiSystemInstruction
+
+    func testExtractGeminiSystemInstructionWithNoSystem() {
+        let messages: [AgentMessage] = [.user("hello")]
+        let result = AgentMessage.extractGeminiSystemInstruction(messages)
+        XCTAssertNil(result)
+    }
+
+    func testExtractGeminiSystemInstructionWithSystemMessage() {
+        let messages: [AgentMessage] = [.system("Be helpful."), .user("hi")]
+        let result = AgentMessage.extractGeminiSystemInstruction(messages)
+        XCTAssertNotNil(result)
+        let parts = result?["parts"] as? [[String: Any]]
+        let textValue = parts?.first?["text"] as? String
+        XCTAssertEqual(textValue, "Be helpful.")
+    }
+
+    // MARK: - toGeminiContents
+
+    func testGeminiSystemMessagesAreSkipped() {
+        let messages: [AgentMessage] = [.system("Skip me."), .user("hello")]
+        let contents = AgentMessage.toGeminiContents(messages)
+        XCTAssertEqual(contents.count, 1)
+        XCTAssertEqual(contents[0]["role"] as? String, "user")
+    }
+
+    func testGeminiUserMessageWithTestInput() {
+        let messages: [AgentMessage] = [.user("test")]
+        let contents = AgentMessage.toGeminiContents(messages)
+        XCTAssertEqual(contents.count, 1)
+        XCTAssertEqual(contents[0]["role"] as? String, "user")
+        let parts = contents[0]["parts"] as? [[String: Any]]
+        XCTAssertEqual(parts?.first?["text"] as? String, "test")
+    }
+
+    func testGeminiAssistantTextOnlyMessage() {
+        let msg = AgentAssistantMessage(text: "Hello!", toolCalls: [])
+        let messages: [AgentMessage] = [.assistant(msg)]
+        let contents = AgentMessage.toGeminiContents(messages)
+        XCTAssertEqual(contents.count, 1)
+        XCTAssertEqual(contents[0]["role"] as? String, "model")
+        let parts = contents[0]["parts"] as? [[String: Any]]
+        XCTAssertEqual(parts?.first?["text"] as? String, "Hello!")
+    }
+
+    func testGeminiAssistantEmptyTextAndNoToolCallsIsSkipped() {
+        let msg = AgentAssistantMessage(text: "", toolCalls: [])
+        let messages: [AgentMessage] = [.assistant(msg)]
+        let contents = AgentMessage.toGeminiContents(messages)
+        // Empty parts -> message is skipped
+        XCTAssertEqual(contents.count, 0)
+    }
+
+    func testGeminiAssistantWithToolCalls() {
+        let tc = AgentToolCall(id: "tc1", name: "search", argumentsJSON: #"{"query":"test"}"#)
+        let msg = AgentAssistantMessage(text: nil, toolCalls: [tc])
+        let messages: [AgentMessage] = [.assistant(msg)]
+        let contents = AgentMessage.toGeminiContents(messages)
+        XCTAssertEqual(contents.count, 1)
+        let parts = contents[0]["parts"] as? [[String: Any]]
+        let functionCall = parts?.first?["functionCall"] as? [String: Any]
+        XCTAssertEqual(functionCall?["name"] as? String, "search")
+    }
+
+    func testGeminiToolResultMessage() {
+        let tr = AgentToolResult(toolCallId: "tc1", content: "result data", isError: false)
+        let messages: [AgentMessage] = [.toolResult(tr)]
+        let contents = AgentMessage.toGeminiContents(messages)
+        XCTAssertEqual(contents.count, 1)
+        XCTAssertEqual(contents[0]["role"] as? String, "user")
+        let parts = contents[0]["parts"] as? [[String: Any]]
+        let funcResponse = parts?.first?["functionResponse"] as? [String: Any]
+        XCTAssertEqual(funcResponse?["name"] as? String, "tc1")
+    }
+
+    // MARK: - toAnthropicMessages
+
+    func testAnthropicSystemMessagesAreSkipped() {
+        let messages: [AgentMessage] = [.system("Skip me."), .user("hello")]
+        let result = AgentMessage.toAnthropicMessages(messages)
+        // system messages are skipped in Anthropic format
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0]["role"] as? String, "user")
+    }
+
+    func testAnthropicToolResultUsesUserRole() {
+        let tr = AgentToolResult(toolCallId: "tc_abc", content: "success", isError: false)
+        let messages: [AgentMessage] = [.toolResult(tr)]
+        let result = AgentMessage.toAnthropicMessages(messages)
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0]["role"] as? String, "user")
+        let content = result[0]["content"] as? [[String: Any]]
+        let first = content?.first
+        XCTAssertEqual(first?["type"] as? String, "tool_result")
+        XCTAssertEqual(first?["tool_use_id"] as? String, "tc_abc")
+    }
+
+    func testAnthropicAssistantWithToolCalls() {
+        let tc = AgentToolCall(id: "tc2", name: "calculator", argumentsJSON: #"{"x":2}"#)
+        let msg = AgentAssistantMessage(text: "Computing...", toolCalls: [tc])
+        let messages: [AgentMessage] = [.assistant(msg)]
+        let result = AgentMessage.toAnthropicMessages(messages)
+        XCTAssertEqual(result.count, 1)
+        let content = result[0]["content"] as? [[String: Any]]
+        // text block + tool_use block
+        let textBlock = content?.first { $0["type"] as? String == "text" }
+        let toolBlock = content?.first { $0["type"] as? String == "tool_use" }
+        XCTAssertEqual(textBlock?["text"] as? String, "Computing...")
+        XCTAssertEqual(toolBlock?["name"] as? String, "calculator")
+    }
+}

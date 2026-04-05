@@ -156,3 +156,152 @@ final class LLMRemoteProviderTests: XCTestCase {
         }
     }
 }
+
+// MARK: - LLMRemoteProvider extended property tests
+
+extension LLMRemoteProviderTests {
+
+    func testAllProviderCasesHaveDisplayNames() {
+        for provider in LLMRemoteProvider.allCases {
+            XCTAssertFalse(provider.displayName.isEmpty, "\(provider) should have a display name")
+        }
+    }
+
+    func testAllProviderCasesHaveAPIStyles() {
+        let validStyles: Set<LLMRemoteAPIStyle> = [.openAICompatible, .anthropic, .gemini]
+        for provider in LLMRemoteProvider.allCases {
+            XCTAssertTrue(validStyles.contains(provider.apiStyle), "\(provider) should have a valid API style")
+        }
+    }
+
+    func testAnthropicUsesAnthropicAPIStyle() {
+        XCTAssertEqual(LLMRemoteProvider.anthropic.apiStyle, .anthropic)
+    }
+
+    func testGeminiUsesGeminiAPIStyle() {
+        XCTAssertEqual(LLMRemoteProvider.gemini.apiStyle, .gemini)
+    }
+
+    func testOpenAIUsesOpenAICompatibleAPIStyle() {
+        XCTAssertEqual(LLMRemoteProvider.openAI.apiStyle, .openAICompatible)
+    }
+
+    func testDeepSeekUsesOpenAICompatibleAPIStyle() {
+        XCTAssertEqual(LLMRemoteProvider.deepSeek.apiStyle, .openAICompatible)
+    }
+
+    func testCustomUsesOpenAICompatibleAPIStyle() {
+        XCTAssertEqual(LLMRemoteProvider.custom.apiStyle, .openAICompatible)
+    }
+
+    func testOpenAIDefaultBaseURL() {
+        XCTAssertEqual(LLMRemoteProvider.openAI.defaultBaseURL, "https://api.openai.com/v1")
+    }
+
+    func testAnthropicDefaultBaseURL() {
+        XCTAssertEqual(LLMRemoteProvider.anthropic.defaultBaseURL, "https://api.anthropic.com/v1")
+    }
+
+    func testGeminiDefaultBaseURL() {
+        XCTAssertEqual(LLMRemoteProvider.gemini.defaultBaseURL, "https://generativelanguage.googleapis.com/v1beta")
+    }
+
+    func testDeepSeekDefaultBaseURL() {
+        XCTAssertEqual(LLMRemoteProvider.deepSeek.defaultBaseURL, "https://api.deepseek.com")
+    }
+
+    func testKimiDefaultBaseURL() {
+        XCTAssertEqual(LLMRemoteProvider.kimi.defaultBaseURL, "https://api.moonshot.cn/v1")
+    }
+
+    func testQwenDefaultBaseURL() {
+        XCTAssertEqual(LLMRemoteProvider.qwen.defaultBaseURL, "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    }
+
+    func testOpenRouterDefaultBaseURL() {
+        XCTAssertEqual(LLMRemoteProvider.openRouter.defaultBaseURL, "https://openrouter.ai/api/v1")
+    }
+
+    func testOpenAISuggestedModelsNotEmpty() {
+        XCTAssertFalse(LLMRemoteProvider.openAI.suggestedModels.isEmpty)
+    }
+
+    func testAnthropicSuggestedModelsNotEmpty() {
+        XCTAssertFalse(LLMRemoteProvider.anthropic.suggestedModels.isEmpty)
+    }
+
+    func testGeminiSuggestedModelsNotEmpty() {
+        XCTAssertFalse(LLMRemoteProvider.gemini.suggestedModels.isEmpty)
+    }
+
+    func testDeepSeekSuggestedModelsContainsDeepseekChat() {
+        XCTAssertTrue(LLMRemoteProvider.deepSeek.suggestedModels.contains("deepseek-chat"))
+    }
+
+    func testOpenAISupportsNativeStructuredOutput() {
+        XCTAssertTrue(LLMRemoteProvider.openAI.supportsNativeStructuredOutput)
+    }
+
+    func testGeminiSupportsNativeStructuredOutput() {
+        XCTAssertTrue(LLMRemoteProvider.gemini.supportsNativeStructuredOutput)
+    }
+
+    func testAnthropicDoesNotSupportNativeStructuredOutput() {
+        XCTAssertFalse(LLMRemoteProvider.anthropic.supportsNativeStructuredOutput)
+    }
+
+    func testFreeModelDoesNotSupportNativeStructuredOutput() {
+        XCTAssertFalse(LLMRemoteProvider.freeModel.supportsNativeStructuredOutput)
+    }
+
+    func testCustomProviderHasEmptyDefaultBaseURL() {
+        XCTAssertEqual(LLMRemoteProvider.custom.defaultBaseURL, "https://api.openai.com/v1")
+    }
+
+    func testCustomProviderHasEmptyDefaultModel() {
+        // Custom provider aggregates suggested models from all other providers, so it is non-empty
+        XCTAssertFalse(LLMRemoteProvider.custom.defaultModel.isEmpty)
+    }
+
+    func testFreeModelDefaultModel() {
+        XCTAssertEqual(LLMRemoteProvider.freeModel.defaultModel, "")
+    }
+
+    func testEndpointPresetsForProviderWithNoPresets() {
+        // Custom provider has no endpoint presets
+        XCTAssertTrue(LLMRemoteProvider.custom.endpointPresets.isEmpty)
+    }
+
+    func testEndpointPresetsForOpenAI() {
+        // OpenAI has no endpoint presets; zhipu has regional presets
+        XCTAssertTrue(LLMRemoteProvider.openAI.endpointPresets.isEmpty)
+        XCTAssertFalse(LLMRemoteProvider.zhipu.endpointPresets.isEmpty)
+    }
+
+    func testProviderRawValueRoundTrip() {
+        for provider in LLMRemoteProvider.allCases {
+            let raw = provider.rawValue
+            let recovered = LLMRemoteProvider(rawValue: raw)
+            XCTAssertEqual(recovered, provider, "\(provider) raw value round trip failed")
+        }
+    }
+
+    func testStudioProviderIDMappingIsComplete() {
+        for provider in LLMRemoteProvider.allCases {
+            let studioID = provider.studioProviderID
+            let recovered = LLMRemoteProvider.from(providerID: studioID)
+            XCTAssertEqual(recovered, provider, "\(provider) studio ID round trip failed")
+        }
+    }
+
+    func testLLMRemoteAPIStyleIsEquatable() {
+        XCTAssertEqual(LLMRemoteAPIStyle.openAICompatible, LLMRemoteAPIStyle.openAICompatible)
+        XCTAssertNotEqual(LLMRemoteAPIStyle.anthropic, LLMRemoteAPIStyle.gemini)
+    }
+
+    func testLLMRemoteEndpointPresetHasLabelKeyAndURL() throws {
+        let preset = try XCTUnwrap(LLMRemoteProvider.zhipu.endpointPresets.first)
+        XCTAssertFalse(preset.url.isEmpty)
+        XCTAssertFalse(preset.labelKey.isEmpty)
+    }
+}
