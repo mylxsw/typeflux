@@ -27,9 +27,15 @@ final class WhisperAPITranscriber: Transcriber {
     private var effectiveAPIKey: String { apiKeyOverride?() ?? settingsStore.whisperAPIKey }
     private var effectiveModel: String {
         if let modelOverride {
-            return OpenAIAudioModelCatalog.resolvedWhisperModel(modelOverride())
+            return OpenAIAudioModelCatalog.resolvedWhisperModel(
+                modelOverride(),
+                endpoint: effectiveBaseURL
+            )
         }
-        return OpenAIAudioModelCatalog.resolvedWhisperModel(settingsStore.whisperModel)
+        return OpenAIAudioModelCatalog.resolvedWhisperModel(
+            settingsStore.whisperModel,
+            endpoint: effectiveBaseURL
+        )
     }
 
     static func testConnection(baseURL: String, model: String, apiKey: String) async throws -> String {
@@ -42,7 +48,10 @@ final class WhisperAPITranscriber: Transcriber {
             )
         }
 
-        let resolvedModel = OpenAIAudioModelCatalog.resolvedWhisperModel(model)
+        let resolvedModel = OpenAIAudioModelCatalog.resolvedWhisperModel(
+            model,
+            endpoint: resolvedEndpoint
+        )
         let request = try makeTestRequest(baseURL: resolvedBaseURL, model: resolvedModel, apiKey: apiKey)
         let (data, response) = try await URLSession.shared.data(for: request)
 

@@ -416,9 +416,13 @@ struct OnboardingView: View {
                 )
                 StudioSuggestedTextInputCard(
                     label: L("common.model"),
-                    placeholder: OpenAIAudioModelCatalog.whisperModels[0],
+                    placeholder: OpenAIAudioModelCatalog.defaultWhisperModel(
+                        forEndpoint: viewModel.whisperBaseURL
+                    ),
                     text: $viewModel.whisperModel,
-                    suggestions: OpenAIAudioModelCatalog.whisperModels
+                    suggestions: OpenAIAudioModelCatalog.suggestedWhisperModels(
+                        forEndpoint: viewModel.whisperBaseURL
+                    )
                 )
             }
         }

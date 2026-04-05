@@ -3,7 +3,10 @@ import Foundation
 
 struct OpenAIRealtimePreviewSupport {
     static func isSupported(baseURL: String, model: String) -> Bool {
-        let normalized = OpenAIAudioModelCatalog.resolvedWhisperModel(model).lowercased()
+        let normalized = OpenAIAudioModelCatalog.resolvedWhisperModel(
+            model,
+            endpoint: baseURL
+        ).lowercased()
         guard !normalized.isEmpty else { return false }
         return OpenAIRealtimeTranscriber.shouldUseRealtime(
             baseURL: OpenAIAudioModelCatalog.resolvedWhisperEndpoint(baseURL),
@@ -13,7 +16,10 @@ struct OpenAIRealtimePreviewSupport {
 
     static func webSocketURL(baseURL: String, model: String) -> URL? {
         let endpoint = OpenAIAudioModelCatalog.resolvedWhisperEndpoint(baseURL)
-        let resolvedModel = OpenAIAudioModelCatalog.resolvedWhisperModel(model)
+        let resolvedModel = OpenAIAudioModelCatalog.resolvedWhisperModel(
+            model,
+            endpoint: baseURL
+        )
         guard var components = URLComponents(string: endpoint) else { return nil }
         switch components.scheme?.lowercased() {
         case "https":
@@ -115,7 +121,8 @@ struct OpenAIRealtimeTranscriptAccumulator {
 
 actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
     private let settingsStore: SettingsStore
-    private var socket: OpenAIRealtimeSocket?
+    private var session: URLSession?
+    private var socketTask: URLSessionWebSocketTask?
     private var receiveTask: Task<Void, Never>?
     private var onTextUpdate: (@Sendable (String) -> Void)?
     private var latestText = ""
@@ -136,7 +143,10 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
     func start(onTextUpdate: @escaping @Sendable (String) -> Void) async throws {
         cancel()
 
-        let model = OpenAIAudioModelCatalog.resolvedWhisperModel(settingsStore.whisperModel)
+        let model = OpenAIAudioModelCatalog.resolvedWhisperModel(
+            settingsStore.whisperModel,
+            endpoint: settingsStore.whisperBaseURL
+        )
         guard let url = OpenAIRealtimePreviewSupport.webSocketURL(
             baseURL: settingsStore.whisperBaseURL,
             model: model
@@ -152,16 +162,20 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
         if !settingsStore.whisperAPIKey.isEmpty {
             request.setValue("Bearer \(settingsStore.whisperAPIKey)", forHTTPHeaderField: "Authorization")
         }
-        let socket = OpenAIRealtimeSocket(request: request, logPrefix: "Realtime preview")
-        try await socket.connect(timeout: .seconds(5))
+        let delegate = WebSocketOpenDelegate()
+        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+        let socketTask = session.webSocketTask(with: request)
+        socketTask.resume()
+        try await delegate.waitUntilOpen(timeout: .seconds(5))
 
-        self.socket = socket
+        self.session = session
+        self.socketTask = socketTask
         self.onTextUpdate = onTextUpdate
         self.latestText = ""
         self.accumulator = OpenAIRealtimeTranscriptAccumulator()
 
         receiveTask = Task { [weak self] in
-            await self?.receiveLoop(socket: socket)
+            await self?.receiveLoop()
         }
 
         let payload = buildSessionUpdatePayload()
@@ -169,7 +183,7 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
     }
 
     func append(_ buffer: AVAudioPCMBuffer) async {
-        guard socket != nil else { return }
+        guard socketTask != nil else { return }
         do {
             let audioData = try encoder.encode(buffer: buffer)
             guard !audioData.isEmpty else { return }
@@ -197,28 +211,37 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
     func cancel() {
         receiveTask?.cancel()
         receiveTask = nil
-        socket?.disconnect()
-        socket = nil
+        socketTask?.cancel(with: .normalClosure, reason: nil)
+        socketTask = nil
+        session?.invalidateAndCancel()
+        session = nil
         onTextUpdate = nil
     }
 
-    private func receiveLoop(socket: OpenAIRealtimeSocket) async {
-        do {
-            for try await data in socket.messages {
+    private func receiveLoop() async {
+        while !Task.isCancelled {
+            do {
+                guard let socketTask else { break }
+                let message = try await socketTask.receive()
+                guard let data = messageData(from: message) else { continue }
                 if let snapshot = try accumulator.process(eventData: data) {
                     latestText = snapshot.text
                     onTextUpdate?(snapshot.text)
                 }
-            }
-        } catch {
-            if !Task.isCancelled {
-                NetworkDebugLogger.logError(context: "Realtime preview receive failed", error: error)
+            } catch {
+                if !Task.isCancelled {
+                    NetworkDebugLogger.logError(context: "Realtime preview receive failed", error: error)
+                }
+                break
             }
         }
     }
 
     private func buildSessionUpdatePayload() -> [String: Any] {
-        let model = OpenAIAudioModelCatalog.resolvedWhisperModel(settingsStore.whisperModel)
+        let model = OpenAIAudioModelCatalog.resolvedWhisperModel(
+            settingsStore.whisperModel,
+            endpoint: settingsStore.whisperBaseURL
+        )
         let prompt = TranscriptionLanguageHints.remotePrompt(vocabularyTerms: VocabularyStore.activeTerms())
 
         var transcriptionPayload: [String: Any] = [
@@ -251,7 +274,7 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
     }
 
     private func send(_ payload: [String: Any]) async throws {
-        guard let socket else { return }
+        guard let socketTask else { return }
         let data = try JSONSerialization.data(withJSONObject: payload)
         guard let text = String(data: data, encoding: .utf8) else {
             throw NSError(
@@ -260,7 +283,166 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
                 userInfo: [NSLocalizedDescriptionKey: "Failed to encode realtime payload."]
             )
         }
-        try await socket.send(text: text)
+        try await sendWithRetry(socketTask: socketTask, message: .string(text))
+    }
+}
+
+private extension OpenAIRealtimePreviewBackend {
+    func messageData(from message: URLSessionWebSocketTask.Message) -> Data? {
+        switch message {
+        case .data(let data):
+            return data
+        case .string(let text):
+            return text.data(using: .utf8)
+        @unknown default:
+            return nil
+        }
+    }
+
+    func sendWithRetry(
+        socketTask: URLSessionWebSocketTask,
+        message: URLSessionWebSocketTask.Message
+    ) async throws {
+        let retryDelays: [Duration] = [.zero, .milliseconds(120), .milliseconds(300)]
+
+        for (attempt, delay) in retryDelays.enumerated() {
+            if attempt > 0 {
+                try await Task.sleep(for: delay)
+            }
+
+            do {
+                try await socketTask.send(message)
+                return
+            } catch {
+                guard isRetriableSocketConnectionError(error), attempt < retryDelays.count - 1 else {
+                    throw error
+                }
+
+                NetworkDebugLogger.logError(
+                    context: "Realtime preview send failed before socket was ready; retrying",
+                    error: error
+                )
+            }
+        }
+    }
+
+    func isRetriableSocketConnectionError(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        if nsError.domain == NSPOSIXErrorDomain && nsError.code == Int(ENOTCONN) {
+            return true
+        }
+
+        let message = error.localizedDescription.lowercased()
+        return message.contains("socket is not connected") || message.contains("not connected")
+    }
+}
+
+private actor WebSocketOpenDelegateState {
+    private var opened = false
+    private var continuation: CheckedContinuation<Void, Error>?
+
+    func waitUntilOpen(timeout: Duration) async throws {
+        if opened { return }
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask {
+                try await withCheckedThrowingContinuation { continuation in
+                    Task {
+                        await self.store(continuation: continuation)
+                    }
+                }
+            }
+            group.addTask {
+                try await Task.sleep(for: timeout)
+                throw NSError(
+                    domain: "OpenAIRealtimePreviewBackend",
+                    code: 3,
+                    userInfo: [NSLocalizedDescriptionKey: "Realtime preview handshake timed out."]
+                )
+            }
+            try await group.next()
+            group.cancelAll()
+        }
+    }
+
+    func markOpened() {
+        opened = true
+        continuation?.resume()
+        continuation = nil
+    }
+
+    func markFailed(_ error: Error) {
+        continuation?.resume(throwing: error)
+        continuation = nil
+    }
+
+    func markClosed(code: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        let description = Self.describeClose(code: code, reason: reason)
+        let error = NSError(
+            domain: "OpenAIRealtimePreviewBackend",
+            code: 4,
+            userInfo: [NSLocalizedDescriptionKey: description]
+        )
+        continuation?.resume(throwing: error)
+        continuation = nil
+    }
+
+    private func store(continuation: CheckedContinuation<Void, Error>) {
+        self.continuation = continuation
+    }
+
+    private static func describeClose(code: URLSessionWebSocketTask.CloseCode, reason: Data?) -> String {
+        let reasonText = reason
+            .flatMap { String(data: $0, encoding: .utf8) }?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if let reasonText, !reasonText.isEmpty {
+            return "Realtime preview WebSocket closed with code \(code.rawValue): \(reasonText)"
+        }
+        return "Realtime preview WebSocket closed with code \(code.rawValue)."
+    }
+}
+
+private final class WebSocketOpenDelegate: NSObject, URLSessionWebSocketDelegate, URLSessionTaskDelegate {
+    private let state = WebSocketOpenDelegateState()
+
+    func waitUntilOpen(timeout: Duration) async throws {
+        try await state.waitUntilOpen(timeout: timeout)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        webSocketTask: URLSessionWebSocketTask,
+        didOpenWithProtocol protocol: String?
+    ) {
+        Task { await state.markOpened() }
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didCompleteWithError error: Error?
+    ) {
+        guard let error else { return }
+        Task { await state.markFailed(error) }
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        webSocketTask: URLSessionWebSocketTask,
+        didCloseWith closeCode: URLSessionWebSocketTask.CloseCode,
+        reason: Data?
+    ) {
+        let reasonText = reason
+            .flatMap { String(data: $0, encoding: .utf8) }?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let suffix = if let reasonText, !reasonText.isEmpty {
+            " reason=\(reasonText)"
+        } else {
+            ""
+        }
+        NetworkDebugLogger.logMessage(
+            "Realtime preview WebSocket closed with code=\(closeCode.rawValue)\(suffix)"
+        )
+        Task { await state.markClosed(code: closeCode, reason: reason) }
     }
 }
 

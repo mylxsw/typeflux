@@ -2046,7 +2046,7 @@ struct StudioView: View {
     }
 
     private var whisperModelSuggestions: [String] {
-        OpenAIAudioModelCatalog.whisperModels
+        OpenAIAudioModelCatalog.suggestedWhisperModels(forEndpoint: viewModel.whisperBaseURL)
     }
 
     private func llmEndpointSuggestions(for provider: LLMRemoteProvider?) -> [String] {
@@ -2184,7 +2184,7 @@ struct StudioView: View {
                 )
                 StudioSuggestedTextInputCard(
                     label: L("settings.models.whisper.model"),
-                    placeholder: OpenAIAudioModelCatalog.whisperModels[0],
+                    placeholder: whisperModelSuggestions[0],
                     text: Binding(get: { viewModel.whisperModel }, set: viewModel.setWhisperModel),
                     suggestions: whisperModelSuggestions
                 )
@@ -2656,7 +2656,9 @@ struct StudioView: View {
             viewModel.setSTTModelSelection(
                 .whisperAPI,
                 suggestedModel: viewModel.whisperModel.isEmpty
-                    ? OpenAIAudioModelCatalog.whisperModels[0] : viewModel.whisperModel)
+                    ? OpenAIAudioModelCatalog.defaultWhisperModel(
+                        forEndpoint: viewModel.whisperBaseURL
+                    ) : viewModel.whisperModel)
         case "ollama-local":
             viewModel.setLLMModelSelection(
                 .ollama,
@@ -3206,7 +3208,7 @@ struct StudioView: View {
                 )
                 StudioSuggestedTextInputCard(
                     label: L("common.model"),
-                    placeholder: OpenAIAudioModelCatalog.whisperModels[0],
+                    placeholder: whisperModelSuggestions[0],
                     text: Binding(get: { viewModel.whisperModel }, set: viewModel.setWhisperModel),
                     suggestions: whisperModelSuggestions
                 )
@@ -3733,7 +3735,9 @@ struct StudioView: View {
             viewModel.setSTTModelSelection(
                 .whisperAPI,
                 suggestedModel: viewModel.whisperModel.isEmpty
-                    ? OpenAIAudioModelCatalog.whisperModels[0] : viewModel.whisperModel)
+                    ? OpenAIAudioModelCatalog.defaultWhisperModel(
+                        forEndpoint: viewModel.whisperBaseURL
+                    ) : viewModel.whisperModel)
         case .ollama:
             viewModel.applyModelConfiguration(shouldShowToast: false)
             viewModel.setLLMModelSelection(
@@ -3937,7 +3941,9 @@ struct StudioView: View {
                 ? L("settings.models.modelNotConfigured") : viewModel.freeSTTModel
         case .whisperAPI:
             return viewModel.whisperModel.isEmpty
-                ? OpenAIAudioModelCatalog.whisperModels[0] : viewModel.whisperModel
+                ? OpenAIAudioModelCatalog.defaultWhisperModel(
+                    forEndpoint: viewModel.whisperBaseURL
+                ) : viewModel.whisperModel
         case .ollama:
             return viewModel.ollamaModel.isEmpty ? "qwen2.5:7b" : viewModel.ollamaModel
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,

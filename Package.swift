@@ -12,16 +12,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-markdown.git", from: "0.3.0"),
-        .package(url: "https://github.com/argmaxinc/WhisperKit.git", from: "0.9.0"),
-        .package(url: "https://github.com/daltoniam/Starscream.git", from: "4.0.6")
+        .package(url: "https://github.com/argmaxinc/WhisperKit.git", from: "0.9.0")
     ],
     targets: [
         .executableTarget(
             name: "Typeflux",
             dependencies: [
                 .product(name: "Markdown", package: "swift-markdown"),
-                .product(name: "WhisperKit", package: "WhisperKit"),
-                .product(name: "Starscream", package: "Starscream")
+                .product(name: "WhisperKit", package: "WhisperKit")
             ],
             path: "Sources/Typeflux",
             exclude: [

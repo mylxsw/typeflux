@@ -241,6 +241,18 @@ final class SettingsStoreTests: XCTestCase {
         )
     }
 
+    func testResolvedDefaultWhisperConfigurationUsesXAIWhisperFallbackForXAIEndpoint() {
+        store.whisperBaseURL = "https://api.x.ai/v1/audio/transcriptions"
+
+        XCTAssertEqual(
+            OpenAIAudioModelCatalog.resolvedWhisperModel(
+                store.whisperModel,
+                endpoint: store.whisperBaseURL
+            ),
+            "whisper-1"
+        )
+    }
+
     func testSetAndGetWhisperAPIKey() {
         store.whisperAPIKey = "sk-test-key"
         XCTAssertEqual(store.whisperAPIKey, "sk-test-key")

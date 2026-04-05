@@ -55,4 +55,16 @@ final class OpenAIRealtimePreviewSupportTests: XCTestCase {
             "wss://api.openai.com/v1/realtime?model=gpt-4o-transcribe"
         )
     }
+
+    func testWebSocketURLUsesXAIWhisperFallbackForXAIEndpoint() {
+        let url = OpenAIRealtimePreviewSupport.webSocketURL(
+            baseURL: "https://api.x.ai/v1/audio/transcriptions",
+            model: " "
+        )
+
+        XCTAssertEqual(
+            url?.absoluteString,
+            "wss://api.x.ai/v1/realtime?model=whisper-1"
+        )
+    }
 }

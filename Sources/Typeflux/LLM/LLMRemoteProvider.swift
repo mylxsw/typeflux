@@ -244,7 +244,10 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             ]
         case .groq:
             return [
-                "llama-3.1-70b-versatile",
+                "groq/compound",
+                "groq/compound-mini",
+                "llama-3.1-8b-instant",
+                "llama-3.3-70b-versatile",
                 "openai/gpt-oss-120b",
                 "openai/gpt-oss-20b",
             ]

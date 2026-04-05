@@ -3,6 +3,7 @@ import Foundation
 enum OpenAIAudioModelCatalog {
     static let defaultWhisperEndpoint = "https://api.openai.com/v1/audio/transcriptions"
     static let defaultWhisperModel = "gpt-4o-transcribe"
+    static let xAIWhisperModel = "whisper-1"
 
     static let whisperEndpoints = [
         defaultWhisperEndpoint
@@ -12,6 +13,10 @@ enum OpenAIAudioModelCatalog {
         defaultWhisperModel,
         "gpt-4o-mini-transcribe",
         "whisper-1",
+    ]
+
+    static let xAIWhisperModels = [
+        xAIWhisperModel
     ]
 
     static let groqWhisperModels = [
@@ -35,8 +40,46 @@ enum OpenAIAudioModelCatalog {
         return trimmed.isEmpty ? defaultWhisperEndpoint : trimmed
     }
 
-    static func resolvedWhisperModel(_ value: String) -> String {
+    static func suggestedWhisperModels(forEndpoint endpoint: String) -> [String] {
+        switch sttEndpointProvider(for: endpoint) {
+        case .xai:
+            return xAIWhisperModels
+        case .openAICompatible:
+            return whisperModels
+        }
+    }
+
+    static func defaultWhisperModel(forEndpoint endpoint: String) -> String {
+        suggestedWhisperModels(forEndpoint: endpoint).first ?? defaultWhisperModel
+    }
+
+    static func resolvedWhisperModel(_ value: String, endpoint: String = "") -> String {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? defaultWhisperModel : trimmed
+        return trimmed.isEmpty ? defaultWhisperModel(forEndpoint: endpoint) : trimmed
+    }
+}
+
+private extension OpenAIAudioModelCatalog {
+    enum STTEndpointProvider {
+        case openAICompatible
+        case xai
+    }
+
+    static func sttEndpointProvider(for endpoint: String) -> STTEndpointProvider {
+        let resolvedEndpoint = resolvedWhisperEndpoint(endpoint)
+        guard
+            let host = URL(string: resolvedEndpoint)?
+                .host?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+        else {
+            return .openAICompatible
+        }
+
+        if host == "api.x.ai" || host.hasSuffix(".x.ai") {
+            return .xai
+        }
+
+        return .openAICompatible
     }
 }

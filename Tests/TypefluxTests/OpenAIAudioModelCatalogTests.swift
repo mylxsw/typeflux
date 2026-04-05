@@ -17,10 +17,24 @@ final class OpenAIAudioModelCatalogTests: XCTestCase {
         )
     }
 
+    func testResolvedWhisperModelFallsBackToXAIDefaultForXAIEndpoint() {
+        XCTAssertEqual(
+            OpenAIAudioModelCatalog.resolvedWhisperModel(" ", endpoint: "https://api.x.ai/v1/audio/transcriptions"),
+            "whisper-1"
+        )
+    }
+
     func testWhisperBuiltInOptionsMatchSupportedValues() {
         XCTAssertEqual(
             OpenAIAudioModelCatalog.whisperModels,
             ["gpt-4o-transcribe", "gpt-4o-mini-transcribe", "whisper-1"]
+        )
+    }
+
+    func testXAIWhisperBuiltInOptionsMatchSupportedValues() {
+        XCTAssertEqual(
+            OpenAIAudioModelCatalog.suggestedWhisperModels(forEndpoint: "https://api.x.ai/v1/audio/transcriptions"),
+            ["whisper-1"]
         )
     }
 
