@@ -191,7 +191,8 @@ extension MCPMessageTests {
         let value = AnyCodable(3.14)
         let data = try JSONEncoder().encode(value)
         let decoded = try JSONDecoder().decode(AnyCodable.self, from: data)
-        XCTAssertEqual(decoded.value as? Double, 3.14, accuracy: 0.001)
+        let doubleValue = try XCTUnwrap(decoded.value as? Double)
+        XCTAssertEqual(doubleValue, 3.14, accuracy: 0.001)
     }
 
     func testAnyCodableEncodesString() throws {

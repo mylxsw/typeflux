@@ -219,7 +219,7 @@ extension AgentMessageProviderFormatTests {
         XCTAssertEqual(contents[0]["role"] as? String, "user")
     }
 
-    func testGeminiUserMessage() {
+    func testGeminiUserMessageWithTestInput() {
         let messages: [AgentMessage] = [.user("test")]
         let contents = AgentMessage.toGeminiContents(messages)
         XCTAssertEqual(contents.count, 1)
