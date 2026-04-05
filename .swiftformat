@@ -1,0 +1,3 @@
+--self remove
+--self-required debug,info,notice,error,fault,critical
+--disable redundantSendable

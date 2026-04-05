@@ -395,7 +395,10 @@ final class WorkflowController {
             return
         }
 
-        logger.debug("handlePersonaPickerRequested — personaHotkeyAppliesToSelection=\(self.settingsStore.personaHotkeyAppliesToSelection)")
+        let personaHotkeyAppliesToSelection = settingsStore.personaHotkeyAppliesToSelection
+        logger.debug(
+            "handlePersonaPickerRequested — personaHotkeyAppliesToSelection=\(personaHotkeyAppliesToSelection)",
+        )
         Task { [weak self] in
             guard let self else { return }
 

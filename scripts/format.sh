@@ -3,11 +3,11 @@
 set -e
 
 echo "🎨 Running SwiftFormat..."
-swiftformat .
+swiftformat . --cache .build/swiftformat.cache
 
 echo ""
 echo "🔍 Running SwiftLint..."
-swiftlint lint Sources --baseline .swiftlint-baseline.json
+swiftlint lint Sources --baseline .swiftlint-baseline.json --cache-path .build/swiftlint-cache
 
 echo ""
 echo "✅ Formatting complete!"
