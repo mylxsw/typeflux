@@ -38,6 +38,13 @@ final class OpenAIAudioModelCatalogTests: XCTestCase {
         )
     }
 
+    func testGroqWhisperBuiltInOptionsPreferTurboByDefault() {
+        XCTAssertEqual(
+            OpenAIAudioModelCatalog.groqWhisperModels,
+            ["whisper-large-v3-turbo", "whisper-large-v3"]
+        )
+    }
+
     func testMultimodalBuiltInModelsMatchSupportedValues() {
         XCTAssertEqual(
             OpenAIAudioModelCatalog.multimodalModels,

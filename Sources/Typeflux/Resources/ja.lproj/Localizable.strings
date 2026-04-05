@@ -173,14 +173,14 @@
 "updater.latest.title" = "最新の状態";
 "updater.latest.message" = "最新バージョンの Typeflux を実行しています。";
 
-"provider.stt.whisperAPI" = "Whisper API";
+"provider.stt.whisperAPI" = "OpenAI";
 "provider.stt.freeModel" = "無料モデル";
 "provider.stt.appleSpeech" = "Apple Speech";
 "provider.stt.localModel" = "ローカルモデル";
 "provider.stt.multimodalLLM" = "Multimodal LLM";
 "provider.stt.aliCloud" = "Alibaba Cloud ASR";
 "provider.stt.doubaoRealtime" = "Doubao Realtime ASR";
-"provider.stt.groq" = "Groq Whisper";
+"provider.stt.groq" = "Groq";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
 "provider.llm.custom" = "カスタム";
 "provider.llm.freeModel" = "無料モデル";
@@ -445,13 +445,13 @@
 "settings.models.modelNotConfigured" = "モデルが設定されていません";
 "settings.models.builtInDefaultModel" = "内蔵デフォルトモデル";
 "settings.models.builtInDefaultProfile" = "組み込みのデフォルトプロファイル";
-"settings.models.card.whisper.summary" = "モデルの柔軟性が向上した OpenAI 互換エンドポイントを介したリモート転写。";
+"settings.models.card.whisper.summary" = "OpenAI の公式音声文字起こしサービス。既定モデルを内蔵。";
 "settings.models.card.freeSTT.summary" = "コードで構成された自由な音声テキスト変換モデルから選択します。エンドポイントまたは API キーは手動で入力されません。";
 "settings.models.card.localSTT.summary" = "Whisper、SenseVoice Small、または Qwen3-ASR を、組み込みサービス ランタイムを通じてローカルで実行します。";
 "settings.models.card.multimodal.summary" = "オーディオをマルチモーダル モデルに直接送信します。トランスクリプションとペルソナの書き換えは単一の API 呼び出しで行われ、エンドツーエンドのパスが高速化されます。";
 "settings.models.card.aliCloud.summary" = "低遅延の WebSocket ストリーミングによる DashScope によるリアルタイムのストリーミング認識。";
 "settings.models.card.doubao.summary" = "ByteDance のネイティブ バイナリ WebSocket プロトコルを使用した Doubao Speech Recognition 2.0 による低遅延ストリーミング認識。";
-"settings.models.card.groq.summary" = "Groq の推論エンドポイントによる高速な Whisper 互換の文字起こし。whisper-large-v3 をサポート。";
+"settings.models.card.groq.summary" = "Groq の推論エンドポイントによる高速な Whisper 文字起こし。既定モデルは whisper-large-v3-turbo。";
 "settings.models.card.ollama.summary" = "オプションの自動モデル準備を使用して、ローカルで書き換えおよび編集コマンドを実行します。";
 "settings.models.card.openAICompatible.summary" = "リモート チャット補完プロバイダーに接続して、ペルソナの書き換えとワークフローの編集を行います。";
 "settings.models.card.custom.summary" = "独自のベース URL、モデル、および API キーを使用して、互換性のあるエンドポイントを手動で構成します。";
@@ -527,7 +527,7 @@
 "settings.models.routing.primaryRuntime" = "プライマリ ランタイム";
 "settings.models.routing.appleSpeech" = "Apple Speech は、Mac 上で直接ディクテーションを処理します。";
 "settings.models.routing.localSTT" = "埋め込まれたローカル STT サービスは、選択したダウンロード可能なモデルによるディクテーションを処理します。";
-"settings.models.routing.whisper" = "Whisper API は、構成された文字起こしエンドポイントを通じてディクテーションを処理します。";
+"settings.models.routing.whisper" = "OpenAI は、設定された文字起こしエンドポイントを通じてディクテーションを処理します。";
 "settings.models.routing.ollama" = "Ollama は、書き換えリクエストと編集リクエストをローカルで処理します。";
 "settings.models.routing.openAICompatible" = "リモート チャット完了エンドポイントは、書き換えリクエストと編集リクエストを処理します。";
 "settings.models.routing.remoteProvider" = "%@ は、構成されたエンドポイントを使用して書き換えおよび編集リクエストを処理します。";

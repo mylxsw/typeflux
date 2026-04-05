@@ -173,14 +173,14 @@
 "updater.latest.title" = "已是最新版本";
 "updater.latest.message" = "你目前執行的是最新版本的 Typeflux。";
 
-"provider.stt.whisperAPI" = "Whisper API";
+"provider.stt.whisperAPI" = "OpenAI";
 "provider.stt.freeModel" = "免費模型";
 "provider.stt.appleSpeech" = "Apple Speech";
 "provider.stt.localModel" = "本地模型";
 "provider.stt.multimodalLLM" = "多模態 LLM";
 "provider.stt.aliCloud" = "阿里雲 ASR";
 "provider.stt.doubaoRealtime" = "豆包即時 ASR";
-"provider.stt.groq" = "Groq Whisper";
+"provider.stt.groq" = "Groq";
 "provider.llm.openAICompatible" = "OpenAI 相容";
 "provider.llm.custom" = "自訂";
 "provider.llm.freeModel" = "免費模型";
@@ -445,13 +445,13 @@
 "settings.models.modelNotConfigured" = "模型未配置";
 "settings.models.builtInDefaultModel" = "內建預設模型";
 "settings.models.builtInDefaultProfile" = "內建預設設定";
-"settings.models.card.whisper.summary" = "透過 OpenAI 相容介面執行遠端轉寫，模型選擇更靈活。";
+"settings.models.card.whisper.summary" = "使用 OpenAI 官方語音轉寫服務，並內建預設模型。";
 "settings.models.card.freeSTT.summary" = "從程式碼中設定好的免費語音轉寫模型中選擇，使用者不需要手動填寫端點或金鑰。";
 "settings.models.card.localSTT.summary" = "透過原生 Swift 執行環境在本地執行 WhisperKit、SenseVoice 或 Qwen3-ASR。";
 "settings.models.card.multimodal.summary" = "音訊直接傳送給多模態模型，在一次 API 呼叫中完成轉寫與人設改寫。";
 "settings.models.card.aliCloud.summary" = "透過 DashScope 執行即時串流辨識，低延遲 WebSocket 傳輸。";
 "settings.models.card.doubao.summary" = "透過豆包語音辨識 2.0 與位元組原生二進位 WebSocket 協議進行低延遲串流辨識。";
-"settings.models.card.groq.summary" = "透過 Groq 推理介面進行快速 Whisper 相容轉寫，支援 whisper-large-v3 模型。";
+"settings.models.card.groq.summary" = "透過 Groq 推理介面進行高速 Whisper 轉寫，預設模型為 whisper-large-v3-turbo。";
 "settings.models.card.ollama.summary" = "在本地執行改寫與編輯任務，並可選擇自動準備模型。";
 "settings.models.card.openAICompatible.summary" = "接入遠端 chat-completions 提供方，完成人設改寫與編輯流程。";
 "settings.models.card.custom.summary" = "手動設定任意相容端點，自訂 Base URL、模型與 API Key。";
@@ -527,7 +527,7 @@
 "settings.models.routing.primaryRuntime" = "主執行環境";
 "settings.models.routing.appleSpeech" = "Apple Speech 會直接在你的 Mac 上完成聽寫。";
 "settings.models.routing.localSTT" = "內嵌本地 STT 服務會使用你選定的可下載模型完成聽寫。";
-"settings.models.routing.whisper" = "Whisper API 會透過你配置的轉寫介面處理聽寫。";
+"settings.models.routing.whisper" = "OpenAI 會透過你配置的轉寫介面處理聽寫。";
 "settings.models.routing.ollama" = "Ollama 會在本地處理改寫與編輯請求。";
 "settings.models.routing.openAICompatible" = "遠端 chat-completions 介面會處理改寫與編輯請求。";
 "settings.models.routing.remoteProvider" = "%@ 會使用目前設定的廠商端點處理改寫與編輯請求。";

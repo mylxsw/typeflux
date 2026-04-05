@@ -173,14 +173,14 @@
 "updater.latest.title" = "Up to Date";
 "updater.latest.message" = "You are running the latest version of Typeflux.";
 
-"provider.stt.whisperAPI" = "Whisper API";
+"provider.stt.whisperAPI" = "OpenAI";
 "provider.stt.freeModel" = "Free Models";
 "provider.stt.appleSpeech" = "Apple Speech";
 "provider.stt.localModel" = "Local Model";
 "provider.stt.multimodalLLM" = "Multimodal LLM";
 "provider.stt.aliCloud" = "Alibaba Cloud ASR";
 "provider.stt.doubaoRealtime" = "Doubao Realtime ASR";
-"provider.stt.groq" = "Groq Whisper";
+"provider.stt.groq" = "Groq";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
 "provider.llm.custom" = "Custom";
 "provider.llm.freeModel" = "Free Models";
@@ -445,13 +445,13 @@
 "settings.models.modelNotConfigured" = "Model not configured";
 "settings.models.builtInDefaultModel" = "Built-in default model";
 "settings.models.builtInDefaultProfile" = "Built-in default profile";
-"settings.models.card.whisper.summary" = "Remote transcription through OpenAI-compatible endpoints with better model flexibility.";
+"settings.models.card.whisper.summary" = "OpenAI-hosted speech transcription with built-in model defaults.";
 "settings.models.card.freeSTT.summary" = "Choose from code-configured free speech-to-text models. No endpoint or API key is entered manually.";
 "settings.models.card.localSTT.summary" = "Run WhisperKit, SenseVoice, or Qwen3-ASR locally through the native Swift runtime.";
 "settings.models.card.multimodal.summary" = "Send audio directly to a multimodal model. Transcription and persona rewriting happen in a single API call for a faster end-to-end path.";
 "settings.models.card.aliCloud.summary" = "Real-time streaming recognition via DashScope with low-latency WebSocket streaming.";
 "settings.models.card.doubao.summary" = "Low-latency streaming recognition through Doubao Speech Recognition 2.0 with ByteDance's native binary WebSocket protocol.";
-"settings.models.card.groq.summary" = "Fast Whisper-compatible transcription via Groq's inference endpoint with whisper-large-v3 support.";
+"settings.models.card.groq.summary" = "Fast Whisper transcription via Groq's inference endpoint with whisper-large-v3-turbo as the default model.";
 "settings.models.card.ollama.summary" = "Runs rewrite and edit commands locally, with optional automatic model preparation.";
 "settings.models.card.openAICompatible.summary" = "Connect remote chat-completions providers for persona rewriting and editing workflows.";
 "settings.models.card.custom.summary" = "Configure any compatible endpoint manually with your own base URL, model, and API key.";
@@ -527,7 +527,7 @@
 "settings.models.routing.primaryRuntime" = "Primary runtime";
 "settings.models.routing.appleSpeech" = "Apple Speech handles dictation directly on your Mac.";
 "settings.models.routing.localSTT" = "The embedded local STT service handles dictation with your selected downloadable model.";
-"settings.models.routing.whisper" = "Whisper API handles dictation through the configured transcription endpoint.";
+"settings.models.routing.whisper" = "OpenAI handles dictation through the configured transcription endpoint.";
 "settings.models.routing.ollama" = "Ollama handles rewrite and edit requests locally.";
 "settings.models.routing.openAICompatible" = "The remote chat-completions endpoint handles rewrite and edit requests.";
 "settings.models.routing.remoteProvider" = "%@ handles rewrite and edit requests with its configured endpoint.";

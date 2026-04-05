@@ -506,8 +506,8 @@ final class StudioViewModel: ObservableObject {
                 ),
                 StudioModelCard(
                     id: "whisper-api",
-                    name: "Whisper API",
-                    summary: "Cloud or gateway-backed transcription using OpenAI-compatible APIs.",
+                    name: STTProvider.whisperAPI.displayName,
+                    summary: "OpenAI-hosted speech transcription with built-in model defaults.",
                     badge: "Remote",
                     metadata: whisperModel.isEmpty ? "Model not set" : whisperModel,
                     isSelected: sttProvider == .whisperAPI,
@@ -588,7 +588,7 @@ final class StudioViewModel: ObservableObject {
             case .localModel:
                 return "Using a native local speech pipeline."
             case .whisperAPI:
-                return "Using OpenAI-compatible transcription services."
+                return "Using OpenAI speech transcription services."
             case .multimodalLLM:
                 return "Using a multimodal LLM for transcription and persona rewriting in one call."
             case .aliCloud:
@@ -596,7 +596,7 @@ final class StudioViewModel: ObservableObject {
             case .doubaoRealtime:
                 return "Streaming audio to Doubao Speech Recognition 2.0 over WebSocket."
             case .groq:
-                return "Streaming audio to Groq via Whisper API for ultra-fast speech recognition."
+                return "Streaming audio to Groq for ultra-fast Whisper transcription."
             }
         case .llm:
             return llmProvider == .ollama ? "Using local Ollama generation." : "Using remote chat-completion endpoints."
