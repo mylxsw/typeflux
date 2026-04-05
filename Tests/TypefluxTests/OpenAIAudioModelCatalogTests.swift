@@ -24,6 +24,13 @@ final class OpenAIAudioModelCatalogTests: XCTestCase {
         )
     }
 
+    func testResolvedWhisperModelFallsBackToGroqDefaultForGroqEndpoint() {
+        XCTAssertEqual(
+            OpenAIAudioModelCatalog.resolvedWhisperModel(" ", endpoint: "https://api.groq.com/openai/v1/audio/transcriptions"),
+            "whisper-large-v3-turbo"
+        )
+    }
+
     func testWhisperBuiltInOptionsMatchSupportedValues() {
         XCTAssertEqual(
             OpenAIAudioModelCatalog.whisperModels,
@@ -41,6 +48,13 @@ final class OpenAIAudioModelCatalogTests: XCTestCase {
     func testGroqWhisperBuiltInOptionsPreferTurboByDefault() {
         XCTAssertEqual(
             OpenAIAudioModelCatalog.groqWhisperModels,
+            ["whisper-large-v3-turbo", "whisper-large-v3"]
+        )
+    }
+
+    func testGroqSuggestedWhisperOptionsUseGroqCatalog() {
+        XCTAssertEqual(
+            OpenAIAudioModelCatalog.suggestedWhisperModels(forEndpoint: "https://api.groq.com/openai/v1/audio/transcriptions"),
             ["whisper-large-v3-turbo", "whisper-large-v3"]
         )
     }

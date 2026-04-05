@@ -42,6 +42,8 @@ enum OpenAIAudioModelCatalog {
 
     static func suggestedWhisperModels(forEndpoint endpoint: String) -> [String] {
         switch sttEndpointProvider(for: endpoint) {
+        case .groq:
+            return groqWhisperModels
         case .xai:
             return xAIWhisperModels
         case .openAICompatible:
@@ -62,6 +64,7 @@ enum OpenAIAudioModelCatalog {
 private extension OpenAIAudioModelCatalog {
     enum STTEndpointProvider {
         case openAICompatible
+        case groq
         case xai
     }
 
@@ -74,6 +77,10 @@ private extension OpenAIAudioModelCatalog {
                 .lowercased()
         else {
             return .openAICompatible
+        }
+
+        if host == "api.groq.com" || host.hasSuffix(".groq.com") {
+            return .groq
         }
 
         if host == "api.x.ai" || host.hasSuffix(".x.ai") {
