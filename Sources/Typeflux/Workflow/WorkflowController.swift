@@ -389,7 +389,7 @@ final class WorkflowController {
         }
 
         if isPersonaPickerPresented {
-            dismissPersonaPicker(closeOverlay: false)
+            dismissPersonaPicker()
             return
         }
 
@@ -426,7 +426,7 @@ final class WorkflowController {
             let selectedIndex = items.firstIndex(where: { $0.id == activeID }) ?? 0
 
             await MainActor.run {
-                guard !self.isRecording, self.processingTask == nil else { return }
+                guard !self.isRecording, self.processingTask == nil, !self.isPersonaPickerPresented else { return }
                 self.personaPickerMode = mode
                 self.personaPickerItems = items
                 self.personaPickerSelectedIndex = selectedIndex
