@@ -121,15 +121,15 @@ final class DoubaoProtocolExtendedTests: XCTestCase {
     func testDoubaoMessageFlagsRawValues() {
         XCTAssertEqual(DoubaoMessageFlags.noSequence.rawValue, 0b0000)
         XCTAssertEqual(DoubaoMessageFlags.lastPacketNoSequence.rawValue, 0b0010)
-        XCTAssertEqual(DoubaoMessageFlags.hasSequence.rawValue, 0b0001)
-        XCTAssertEqual(DoubaoMessageFlags.asyncFinal.rawValue, 0b0011)
+        XCTAssertEqual(DoubaoMessageFlags.positiveSequence.rawValue, 0b0001)
+        XCTAssertEqual(DoubaoMessageFlags.negativeSequenceLast.rawValue, 0b0011)
     }
 
     func testDoubaoMessageFlagsHasSequence() {
         XCTAssertFalse(DoubaoMessageFlags.noSequence.hasSequence)
         XCTAssertFalse(DoubaoMessageFlags.lastPacketNoSequence.hasSequence)
-        XCTAssertTrue(DoubaoMessageFlags.hasSequence.hasSequence)
-        XCTAssertTrue(DoubaoMessageFlags.asyncFinal.hasSequence)
+        XCTAssertTrue(DoubaoMessageFlags.positiveSequence.hasSequence)
+        XCTAssertTrue(DoubaoMessageFlags.negativeSequenceLast.hasSequence)
     }
 
     // MARK: - DoubaoSerialization and DoubaoCompression
@@ -200,7 +200,7 @@ final class DoubaoProtocolExtendedTests: XCTestCase {
     func testEncodeMessageWithSequenceNumber() throws {
         let header = DoubaoHeader(
             messageType: .audioOnlyRequest,
-            flags: .hasSequence,
+            flags: .positiveSequence,
             serialization: .none,
             compression: .none
         )
