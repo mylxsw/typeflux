@@ -337,7 +337,8 @@ extension PromptCatalogTests {
             personaPrompt: "Use emoji"
         )
         let prompts = PromptCatalog.rewritePrompts(for: request)
-        XCTAssertTrue(prompts.system.contains("Use emoji"))
+        // In rewriteTranscript mode the persona goes into the user prompt, not the system prompt
+        XCTAssertTrue(prompts.user.contains("Use emoji"))
     }
 
     func testRewritePromptsUserContainsSourceText() {

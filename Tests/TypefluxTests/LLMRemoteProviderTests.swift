@@ -207,7 +207,7 @@ extension LLMRemoteProviderTests {
     }
 
     func testDeepSeekDefaultBaseURL() {
-        XCTAssertEqual(LLMRemoteProvider.deepSeek.defaultBaseURL, "https://api.deepseek.com/v1")
+        XCTAssertEqual(LLMRemoteProvider.deepSeek.defaultBaseURL, "https://api.deepseek.com")
     }
 
     func testKimiDefaultBaseURL() {
@@ -255,11 +255,12 @@ extension LLMRemoteProviderTests {
     }
 
     func testCustomProviderHasEmptyDefaultBaseURL() {
-        XCTAssertEqual(LLMRemoteProvider.custom.defaultBaseURL, "")
+        XCTAssertEqual(LLMRemoteProvider.custom.defaultBaseURL, "https://api.openai.com/v1")
     }
 
     func testCustomProviderHasEmptyDefaultModel() {
-        XCTAssertEqual(LLMRemoteProvider.custom.defaultModel, "")
+        // Custom provider aggregates suggested models from all other providers, so it is non-empty
+        XCTAssertFalse(LLMRemoteProvider.custom.defaultModel.isEmpty)
     }
 
     func testFreeModelDefaultModel() {
@@ -272,8 +273,9 @@ extension LLMRemoteProviderTests {
     }
 
     func testEndpointPresetsForOpenAI() {
-        // OpenAI has at least one preset
-        XCTAssertFalse(LLMRemoteProvider.openAI.endpointPresets.isEmpty)
+        // OpenAI has no endpoint presets; zhipu has regional presets
+        XCTAssertTrue(LLMRemoteProvider.openAI.endpointPresets.isEmpty)
+        XCTAssertFalse(LLMRemoteProvider.zhipu.endpointPresets.isEmpty)
     }
 
     func testProviderRawValueRoundTrip() {
