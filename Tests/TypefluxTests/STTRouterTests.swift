@@ -74,6 +74,7 @@ final class STTRouterTests: XCTestCase {
     private var multimodal: MockTranscriber!
     private var aliCloud: MockTranscriber!
     private var doubaoRealtime: MockTranscriber!
+    private var groq: MockTranscriber!
 
     override func setUp() {
         super.setUp()
@@ -88,6 +89,7 @@ final class STTRouterTests: XCTestCase {
         multimodal = MockTranscriber()
         aliCloud = MockTranscriber()
         doubaoRealtime = MockTranscriber()
+        groq = MockTranscriber()
     }
 
     override func tearDown() {
@@ -102,6 +104,7 @@ final class STTRouterTests: XCTestCase {
         multimodal = nil
         aliCloud = nil
         doubaoRealtime = nil
+        groq = nil
         super.tearDown()
     }
 
@@ -117,7 +120,8 @@ final class STTRouterTests: XCTestCase {
             localModel: localModelOverride ?? localModel,
             multimodal: multimodal,
             aliCloud: aliCloud,
-            doubaoRealtime: doubaoRealtimeOverride ?? doubaoRealtime
+            doubaoRealtime: doubaoRealtimeOverride ?? doubaoRealtime,
+            groq: groq
         )
     }
 
@@ -196,6 +200,17 @@ final class STTRouterTests: XCTestCase {
         let result = try await router.transcribe(audioFile: dummyAudioFile())
         XCTAssertEqual(result, "doubao result")
         XCTAssertGreaterThan(doubaoRealtime.transcribeCallCount, 0)
+    }
+
+    func testRoutesToGroqWhenAPIKeyIsConfigured() async throws {
+        settings.sttProvider = .groq
+        settings.groqSTTAPIKey = "gsk_test"
+        groq.resultToReturn = "groq result"
+        let router = makeRouter()
+
+        let result = try await router.transcribe(audioFile: dummyAudioFile())
+        XCTAssertEqual(result, "groq result")
+        XCTAssertGreaterThan(groq.transcribeCallCount, 0)
     }
 
     // MARK: - Fallback (localModel is not wrapped in RequestRetry so these are fast)

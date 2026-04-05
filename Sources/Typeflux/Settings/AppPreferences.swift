@@ -12,11 +12,13 @@ enum STTProvider: String, CaseIterable, Codable {
     case multimodalLLM
     case aliCloud
     case doubaoRealtime
+    case groq
 
     static let settingsDisplayOrder: [STTProvider] = [
         .freeModel,
         .localModel,
         .whisperAPI,
+        .groq,
         .multimodalLLM,
         .aliCloud,
         .doubaoRealtime,
@@ -38,6 +40,8 @@ enum STTProvider: String, CaseIterable, Codable {
             return L("provider.stt.aliCloud")
         case .doubaoRealtime:
             return L("provider.stt.doubaoRealtime")
+        case .groq:
+            return L("provider.stt.groq")
         }
     }
 

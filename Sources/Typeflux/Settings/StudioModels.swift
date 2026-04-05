@@ -137,6 +137,7 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
     case multimodalLLM
     case aliCloud
     case doubaoRealtime
+    case groqSTT
     case ollama
     case freeModel
     case customLLM
@@ -151,15 +152,16 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
     case minimax
     case grok
     case xiaomi
+    case groq
 
     var id: String { rawValue }
 
     var domain: StudioModelDomain {
         switch self {
-        case .appleSpeech, .localSTT, .freeSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime:
+        case .appleSpeech, .localSTT, .freeSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT:
             return .stt
         case .ollama, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
-            .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi:
+            .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi, .groq:
             return .llm
         }
     }

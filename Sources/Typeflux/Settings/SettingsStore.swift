@@ -276,6 +276,16 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "stt.doubao.resourceID") }
     }
 
+    var groqSTTAPIKey: String {
+        get { defaults.string(forKey: "stt.groq.apiKey") ?? "" }
+        set { defaults.set(newValue, forKey: "stt.groq.apiKey") }
+    }
+
+    var groqSTTModel: String {
+        get { defaults.string(forKey: "stt.groq.model") ?? "" }
+        set { defaults.set(newValue, forKey: "stt.groq.model") }
+    }
+
     var multimodalLLMModel: String {
         get { defaults.string(forKey: "stt.multimodal.model") ?? "" }
         set { defaults.set(newValue, forKey: "stt.multimodal.model") }

@@ -23,6 +23,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
     case zhipu
     case minimax
     case grok
+    case groq
     case xiaomi
     case custom
 
@@ -33,6 +34,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
         .anthropic,
         .gemini,
         .deepSeek,
+        .groq,
         .kimi,
         .qwen,
         .zhipu,
@@ -68,6 +70,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return "MiniMax"
         case .grok:
             return "Grok"
+        case .groq:
+            return "Groq"
         case .xiaomi:
             return "Xiaomi MiMo"
         }
@@ -80,7 +84,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
         case .gemini:
             return .gemini
         case .freeModel, .custom, .openRouter, .openAI, .deepSeek, .kimi, .qwen, .zhipu, .minimax,
-            .grok, .xiaomi:
+            .grok, .groq, .xiaomi:
             return .openAICompatible
         }
     }
@@ -111,6 +115,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return "https://api.minimax.io/v1"
         case .grok:
             return "https://api.x.ai/v1"
+        case .groq:
+            return "https://api.groq.com/openai/v1"
         case .xiaomi:
             return "https://api.xiaomimimo.com/v1"
         }
@@ -236,6 +242,12 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
                 "grok-4.20-0309-reasoning",
                 "grok-4.20-0309-non-reasoning",
             ]
+        case .groq:
+            return [
+                "llama-3.1-70b-versatile",
+                "openai/gpt-oss-120b",
+                "openai/gpt-oss-20b",
+            ]
         case .xiaomi:
             return [
                 "mimo-v2-pro",
@@ -254,7 +266,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
         case .openAI, .gemini:
             return true
         case .freeModel, .custom, .openRouter, .anthropic, .deepSeek, .kimi, .qwen, .zhipu, .minimax,
-            .grok, .xiaomi:
+            .grok, .groq, .xiaomi:
             return false
         }
     }
@@ -285,6 +297,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return .minimax
         case .grok:
             return .grok
+        case .groq:
+            return .groq
         case .xiaomi:
             return .xiaomi
         }
@@ -316,6 +330,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
             return .minimax
         case .grok:
             return .grok
+        case .groq:
+            return .groq
         case .xiaomi:
             return .xiaomi
         default:

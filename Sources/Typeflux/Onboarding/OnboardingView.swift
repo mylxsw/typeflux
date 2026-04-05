@@ -249,6 +249,8 @@ struct OnboardingView: View {
                 aliCloudConfigFields
             case .doubaoRealtime:
                 doubaoConfigFields
+            case .groq:
+                groqSTTConfigFields
             case .appleSpeech:
                 EmptyView()
             }
@@ -352,6 +354,7 @@ struct OnboardingView: View {
         case .multimodalLLM: return "brain.filled.head.profile"
         case .aliCloud: return "antenna.radiowaves.left.and.right"
         case .doubaoRealtime: return "bolt.horizontal.circle"
+        case .groq: return "bolt.fill"
         case .appleSpeech: return "waveform"
         }
     }
@@ -372,6 +375,7 @@ struct OnboardingView: View {
         case .multimodalLLM: return L("settings.models.card.multimodal.summary")
         case .aliCloud: return L("settings.models.card.aliCloud.summary")
         case .doubaoRealtime: return L("settings.models.card.doubao.summary")
+        case .groq: return L("settings.models.card.groq.summary")
         case .appleSpeech: return ""
         }
     }
@@ -390,6 +394,7 @@ struct OnboardingView: View {
         case .zhipu: return "dot.scope"
         case .minimax: return "sparkles"
         case .grok: return "bolt.circle"
+        case .groq: return "bolt.fill"
         case .xiaomi: return "circle.grid.cross"
         }
     }
@@ -575,6 +580,25 @@ struct OnboardingView: View {
         }
     }
 
+    private var groqSTTConfigFields: some View {
+        StudioCard(padding: 16) {
+            VStack(spacing: 12) {
+                StudioTextInputCard(
+                    label: L("common.apiKey"),
+                    placeholder: "gsk_...",
+                    text: $viewModel.groqSTTAPIKey,
+                    secure: true
+                )
+                StudioSuggestedTextInputCard(
+                    label: L("common.model"),
+                    placeholder: OpenAIAudioModelCatalog.groqWhisperModels[0],
+                    text: $viewModel.groqSTTModel,
+                    suggestions: OpenAIAudioModelCatalog.groqWhisperModels
+                )
+            }
+        }
+    }
+
     private var llmRemoteConfigFields: some View {
         let provider = viewModel.llmRemoteProvider
         let endpointSuggestions = ([viewModel.llmBaseURL, provider.defaultBaseURL]
@@ -658,6 +682,7 @@ struct OnboardingView: View {
         case .multimodalLLM: return .multimodalLLM
         case .aliCloud: return .aliCloud
         case .doubaoRealtime: return .doubaoRealtime
+        case .groq: return .groqSTT
         case .appleSpeech: return .appleSpeech
         }
     }
@@ -689,6 +714,8 @@ struct OnboardingView: View {
         case .zhipu: return "zhipu-color"
         case .minimax: return "minimax-color"
         case .grok: return "grok"
+        case .groq: return "groq"
+        case .groqSTT: return "groq"
         case .xiaomi: return "xiaomimimo"
         case .aliCloud: return "bailian-color"
         case .doubaoRealtime: return "doubao-color"
@@ -715,6 +742,8 @@ struct OnboardingView: View {
         case .zhipu: return "dot.scope"
         case .minimax: return "sparkles"
         case .grok: return "bolt.circle"
+        case .groq: return "bolt.fill"
+        case .groqSTT: return "bolt.fill"
         case .xiaomi: return "circle.grid.cross"
         case .multimodalLLM: return "brain.filled.head.profile"
         case .aliCloud: return "antenna.radiowaves.left.and.right"

@@ -54,7 +54,13 @@ final class DIContainer {
             localModel: LocalModelTranscriber(settingsStore: settingsStore, modelManager: localModelManager),
             multimodal: MultimodalLLMTranscriber(settingsStore: settingsStore),
             aliCloud: AliCloudRealtimeTranscriber(settingsStore: settingsStore),
-            doubaoRealtime: DoubaoRealtimeTranscriber(settingsStore: settingsStore)
+            doubaoRealtime: DoubaoRealtimeTranscriber(settingsStore: settingsStore),
+            groq: WhisperAPITranscriber(
+                settingsStore: settingsStore,
+                baseURLOverride: "https://api.groq.com/openai/v1",
+                apiKeyOverride: { [settingsStore] in settingsStore.groqSTTAPIKey },
+                modelOverride: { [settingsStore] in settingsStore.groqSTTModel }
+            )
         )
     }
 }

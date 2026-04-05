@@ -180,6 +180,7 @@
 "provider.stt.multimodalLLM" = "多模态 LLM";
 "provider.stt.aliCloud" = "阿里云 ASR";
 "provider.stt.doubaoRealtime" = "豆包实时 ASR";
+"provider.stt.groq" = "Groq Whisper";
 "provider.llm.openAICompatible" = "OpenAI 兼容";
 "provider.llm.custom" = "自定义";
 "provider.llm.freeModel" = "免费模型";
@@ -437,6 +438,7 @@
 "settings.models.useMultimodal" = "使用多模态";
 "settings.models.useAliCloud" = "使用阿里云";
 "settings.models.useDoubao" = "使用豆包";
+"settings.models.useGroq" = "使用 Groq";
 "settings.models.badge.local" = "本地";
 "settings.models.badge.api" = "API";
 "settings.models.modelNotConfigured" = "模型未配置";
@@ -448,6 +450,7 @@
 "settings.models.card.multimodal.summary" = "音频直接发送给多模态模型，在一次 API 调用内完成转写和人设改写。";
 "settings.models.card.aliCloud.summary" = "通过 DashScope 执行实时流式识别，低延迟 WebSocket 传输。";
 "settings.models.card.doubao.summary" = "通过豆包语音识别 2.0 和字节原生二进制 WebSocket 协议进行低延迟流式识别。";
+"settings.models.card.groq.summary" = "通过 Groq 推理接口进行快速 Whisper 兼容转写，支持 whisper-large-v3 模型。";
 "settings.models.card.ollama.summary" = "本地执行改写和编辑任务，并可选自动准备模型。";
 "settings.models.card.openAICompatible.summary" = "接入远程 chat-completions 提供方，完成人设改写和编辑工作流。";
 "settings.models.card.custom.summary" = "手动配置任意兼容端点，自定义 Base URL、模型和 API Key。";
@@ -499,6 +502,7 @@
 "settings.models.overview.multimodal" = "音频会直接发送给多模态模型，一次调用完成转写与人设改写。";
 "settings.models.overview.aliCloud" = "语音识别会通过 WebSocket 实时流式发送到阿里云 DashScope。";
 "settings.models.overview.doubao" = "语音识别会通过字节 WebSocket 实时流式发送到豆包语音识别 2.0。";
+"settings.models.overview.groq" = "语音识别由 Groq 的高速推理接口通过 Whisper 模型处理。";
 "settings.models.mode.local" = "本地";
 "settings.models.mode.remote" = "远程";
 "settings.models.fallback.enabled" = "已启用回退";
@@ -516,6 +520,7 @@
 "settings.models.focused.multimodal" = "适合追求端到端最快路径的场景，音频会直接发往多模态模型，一次完成转写和改写。";
 "settings.models.focused.aliCloud" = "适合希望通过阿里云 DashScope 获得低延迟实时流式识别的场景。";
 "settings.models.focused.doubao" = "适合希望通过豆包语音识别 2.0 获得最低延迟云端听写路径的场景。";
+"settings.models.focused.groq" = "适合希望使用 Groq 加速推理进行快速云端转写的场景。";
 "settings.models.routing" = "路由行为";
 "settings.models.routing.primaryRecognizer" = "主识别器";
 "settings.models.routing.primaryRuntime" = "主运行时";
@@ -528,6 +533,7 @@
 "settings.models.routing.multimodal" = "多模态 LLM 会处理完整转写流程。启用人设时，改写也会被折叠进同一次调用。";
 "settings.models.routing.aliCloud" = "阿里云 DashScope 会通过 WebSocket 处理实时流式 ASR。";
 "settings.models.routing.doubao" = "豆包语音识别 2.0 会通过字节二进制 WebSocket 协议处理实时流式 ASR。";
+"settings.models.routing.groq" = "Groq 会通过 Whisper 兼容转写接口以加速推理处理听写。";
 "settings.models.routing.fallback" = "回退策略";
 "settings.models.routing.localSetup" = "本地准备";
 "settings.models.routing.readiness" = "就绪状态";

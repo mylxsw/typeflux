@@ -180,6 +180,7 @@
 "provider.stt.multimodalLLM" = "Multimodal LLM";
 "provider.stt.aliCloud" = "Alibaba Cloud ASR";
 "provider.stt.doubaoRealtime" = "Doubao Realtime ASR";
+"provider.stt.groq" = "Groq Whisper";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
 "provider.llm.custom" = "Custom";
 "provider.llm.freeModel" = "Free Models";
@@ -437,6 +438,7 @@
 "settings.models.useMultimodal" = "Use Multimodal";
 "settings.models.useAliCloud" = "Use Alibaba Cloud";
 "settings.models.useDoubao" = "Use Doubao";
+"settings.models.useGroq" = "Use Groq";
 "settings.models.badge.local" = "Local";
 "settings.models.badge.api" = "API";
 "settings.models.modelNotConfigured" = "Model not configured";
@@ -448,6 +450,7 @@
 "settings.models.card.multimodal.summary" = "Send audio directly to a multimodal model. Transcription and persona rewriting happen in a single API call for a faster end-to-end path.";
 "settings.models.card.aliCloud.summary" = "Real-time streaming recognition via DashScope with low-latency WebSocket streaming.";
 "settings.models.card.doubao.summary" = "Low-latency streaming recognition through Doubao Speech Recognition 2.0 with ByteDance's native binary WebSocket protocol.";
+"settings.models.card.groq.summary" = "Fast Whisper-compatible transcription via Groq's inference endpoint with whisper-large-v3 support.";
 "settings.models.card.ollama.summary" = "Runs rewrite and edit commands locally, with optional automatic model preparation.";
 "settings.models.card.openAICompatible.summary" = "Connect remote chat-completions providers for persona rewriting and editing workflows.";
 "settings.models.card.custom.summary" = "Configure any compatible endpoint manually with your own base URL, model, and API key.";
@@ -499,6 +502,7 @@
 "settings.models.overview.multimodal" = "Audio is sent directly to a multimodal model, with transcription and persona rewriting in one call.";
 "settings.models.overview.aliCloud" = "Speech recognition is streamed in real time to Alibaba Cloud DashScope via WebSocket.";
 "settings.models.overview.doubao" = "Speech recognition is streamed in real time to Doubao Speech Recognition 2.0 via ByteDance WebSocket.";
+"settings.models.overview.groq" = "Speech recognition is handled by Groq's fast inference endpoint using the Whisper model.";
 "settings.models.mode.local" = "Local";
 "settings.models.mode.remote" = "Remote";
 "settings.models.fallback.enabled" = "Fallback enabled";
@@ -516,6 +520,7 @@
 "settings.models.focused.multimodal" = "Use this when you want the fastest end-to-end path, with audio sent directly to a multimodal model that transcribes and rewrites in one shot.";
 "settings.models.focused.aliCloud" = "Use this when you want low-latency real-time streaming recognition via Alibaba Cloud DashScope.";
 "settings.models.focused.doubao" = "Use this when you want the lowest-latency cloud dictation path through Doubao Speech Recognition 2.0.";
+"settings.models.focused.groq" = "Use this when you want fast cloud transcription with Groq's accelerated Whisper inference.";
 "settings.models.routing" = "Routing behaviour";
 "settings.models.routing.primaryRecognizer" = "Primary recognizer";
 "settings.models.routing.primaryRuntime" = "Primary runtime";
@@ -528,6 +533,7 @@
 "settings.models.routing.multimodal" = "A multimodal LLM handles the full transcription pipeline. When a persona is active, rewriting is folded into the same call.";
 "settings.models.routing.aliCloud" = "Alibaba Cloud DashScope handles real-time streaming ASR via WebSocket.";
 "settings.models.routing.doubao" = "Doubao Speech Recognition 2.0 handles real-time streaming ASR via ByteDance's binary WebSocket protocol.";
+"settings.models.routing.groq" = "Groq handles dictation through the Whisper-compatible transcription endpoint with accelerated inference.";
 "settings.models.routing.fallback" = "Fallback";
 "settings.models.routing.localSetup" = "Local setup";
 "settings.models.routing.readiness" = "Readiness";

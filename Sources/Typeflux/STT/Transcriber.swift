@@ -38,6 +38,7 @@ final class STTRouter {
     private let multimodal: Transcriber
     private let aliCloud: Transcriber
     private let doubaoRealtime: Transcriber
+    private let groq: Transcriber
 
     init(
         settingsStore: SettingsStore,
@@ -47,7 +48,8 @@ final class STTRouter {
         localModel: Transcriber,
         multimodal: Transcriber,
         aliCloud: Transcriber,
-        doubaoRealtime: Transcriber
+        doubaoRealtime: Transcriber,
+        groq: Transcriber
     ) {
         self.settingsStore = settingsStore
         self.whisper = whisper
@@ -57,6 +59,7 @@ final class STTRouter {
         self.multimodal = multimodal
         self.aliCloud = aliCloud
         self.doubaoRealtime = doubaoRealtime
+        self.groq = groq
     }
 
     func transcribe(audioFile: AudioFile) async throws -> String {
@@ -175,6 +178,31 @@ final class STTRouter {
                 }
                 throw error
             }
+
+        case .groq:
+            if !settingsStore.groqSTTAPIKey.isEmpty {
+                do {
+                    return try await RequestRetry.perform(operationName: "Groq STT request") { [self] in
+                        try await self.groq.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                    }
+                } catch {
+                    NetworkDebugLogger.logError(context: "Groq STT failed", error: error)
+                    if settingsStore.useAppleSpeechFallback {
+                        NetworkDebugLogger.logMessage("Falling back to Apple Speech after Groq STT failure")
+                        return try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                    }
+                    throw error
+                }
+            }
+            if settingsStore.useAppleSpeechFallback {
+                NetworkDebugLogger.logMessage("Groq STT is not configured, using Apple Speech fallback")
+                return try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+            }
+            throw NSError(
+                domain: "STTRouter",
+                code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "Groq transcription is not configured yet."]
+            )
         }
     }
 }

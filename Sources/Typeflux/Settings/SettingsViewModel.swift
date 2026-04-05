@@ -75,6 +75,8 @@ final class StudioViewModel: ObservableObject {
     @Published var doubaoAppID: String
     @Published var doubaoAccessToken: String
     @Published var doubaoResourceID: String
+    @Published var groqSTTAPIKey: String
+    @Published var groqSTTModel: String
 
     @Published var localSTTModel: LocalSTTModel
     @Published var localSTTModelIdentifier: String
@@ -195,6 +197,8 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .aliCloud
         case .doubaoRealtime:
             focusedModelProvider = .doubaoRealtime
+        case .groq:
+            focusedModelProvider = .groqSTT
         }
         appearanceMode = settingsStore.appearanceMode
         appLanguage = settingsStore.appLanguage
@@ -218,6 +222,8 @@ final class StudioViewModel: ObservableObject {
         doubaoAppID = settingsStore.doubaoAppID
         doubaoAccessToken = settingsStore.doubaoAccessToken
         doubaoResourceID = settingsStore.doubaoResourceID
+        groqSTTAPIKey = settingsStore.groqSTTAPIKey
+        groqSTTModel = settingsStore.groqSTTModel
         localSTTModel = settingsStore.localSTTModel
         localSTTModelIdentifier = settingsStore.localSTTModelIdentifier
         localSTTDownloadSource = settingsStore.localSTTDownloadSource
@@ -539,7 +545,7 @@ final class StudioViewModel: ObservableObject {
             switch sttProvider {
             case .appleSpeech, .localModel:
                 return "Local Processing"
-            case .freeModel, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime:
+            case .freeModel, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .groq:
                 return "Remote API"
             }
         case .llm:
@@ -565,6 +571,8 @@ final class StudioViewModel: ObservableObject {
                 return "Streaming audio to Alibaba Cloud DashScope for real-time speech recognition."
             case .doubaoRealtime:
                 return "Streaming audio to Doubao Speech Recognition 2.0 over WebSocket."
+            case .groq:
+                return "Streaming audio to Groq via Whisper API for ultra-fast speech recognition."
             }
         case .llm:
             return llmProvider == .ollama ? "Using local Ollama generation." : "Using remote chat-completion endpoints."
@@ -709,6 +717,8 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .aliCloud
         case .doubaoRealtime:
             focusedModelProvider = .doubaoRealtime
+        case .groq:
+            focusedModelProvider = .groqSTT
         }
     }
 
@@ -810,6 +820,8 @@ final class StudioViewModel: ObservableObject {
     func setDoubaoAppID(_ value: String) { doubaoAppID = value; sttConnectionTestState = .idle }
     func setDoubaoAccessToken(_ value: String) { doubaoAccessToken = value; sttConnectionTestState = .idle }
     func setDoubaoResourceID(_ value: String) { doubaoResourceID = value; sttConnectionTestState = .idle }
+    func setGroqSTTAPIKey(_ value: String) { groqSTTAPIKey = value; sttConnectionTestState = .idle }
+    func setGroqSTTModel(_ value: String) { groqSTTModel = value; sttConnectionTestState = .idle }
     func setLocalSTTModelIdentifier(_ value: String) {
         let identifier = value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? localSTTModel.defaultModelIdentifier
@@ -1418,7 +1430,7 @@ final class StudioViewModel: ObservableObject {
     func applyModelConfiguration(shouldShowToast: Bool = true) {
         switch focusedModelProvider {
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-            .qwen, .zhipu, .minimax, .grok, .xiaomi:
+            .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
             let remoteProvider = LLMRemoteProvider.from(providerID: focusedModelProvider) ?? llmRemoteProvider
             settingsStore.setLLMBaseURL(llmBaseURL, for: remoteProvider)
             settingsStore.setLLMModel(llmModel, for: remoteProvider)
@@ -1445,6 +1457,9 @@ final class StudioViewModel: ObservableObject {
             settingsStore.doubaoAppID = doubaoAppID
             settingsStore.doubaoAccessToken = doubaoAccessToken
             settingsStore.doubaoResourceID = doubaoResourceID
+        case .groqSTT:
+            settingsStore.groqSTTAPIKey = groqSTTAPIKey
+            settingsStore.groqSTTModel = groqSTTModel
         case .appleSpeech, .localSTT:
             break
         }
@@ -1482,7 +1497,7 @@ final class StudioViewModel: ObservableObject {
                 case .freeSTT:
                     return
                 case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
-                    .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi:
+                    .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
                     let connection = try LLMConnectionResolver.resolve(
                         provider: capturedRemoteProvider,
                         baseURL: capturedBaseURL,
@@ -1551,7 +1566,8 @@ final class StudioViewModel: ObservableObject {
                         }
                         if payload.done || collected.count >= 60 { break }
                     }
-                case .appleSpeech, .localSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime:
+                case .appleSpeech, .localSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime,
+                    .groqSTT:
                     return
                 }
 
@@ -1587,6 +1603,8 @@ final class StudioViewModel: ObservableObject {
         let capturedDoubaoAppID = doubaoAppID
         let capturedDoubaoAccessToken = doubaoAccessToken
         let capturedDoubaoResourceID = doubaoResourceID
+        let capturedGroqSTTAPIKey = groqSTTAPIKey
+        let capturedGroqSTTModel = groqSTTModel
 
         sttTestTask = Task {
             let startDate = Date()
@@ -1615,6 +1633,13 @@ final class StudioViewModel: ObservableObject {
                         appID: capturedDoubaoAppID,
                         accessToken: capturedDoubaoAccessToken,
                         resourceID: capturedDoubaoResourceID
+                    )
+                case .groqSTT:
+                    preview = try await WhisperAPITranscriber.testConnection(
+                        baseURL: "https://api.groq.com/openai/v1",
+                        model: capturedGroqSTTModel.isEmpty
+                            ? OpenAIAudioModelCatalog.groqWhisperModels[0] : capturedGroqSTTModel,
+                        apiKey: capturedGroqSTTAPIKey
                     )
                 default:
                     return
@@ -1745,6 +1770,8 @@ final class StudioViewModel: ObservableObject {
                 return .aliCloud
             case .doubaoRealtime:
                 return .doubaoRealtime
+            case .groq:
+                return .groqSTT
             }
         case .llm:
             return llmProvider == .ollama ? .ollama : llmRemoteProvider.studioProviderID

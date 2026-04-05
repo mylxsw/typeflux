@@ -180,6 +180,7 @@
 "provider.stt.multimodalLLM" = "Multimodal LLM";
 "provider.stt.aliCloud" = "Alibaba Cloud ASR";
 "provider.stt.doubaoRealtime" = "Doubao Realtime ASR";
+"provider.stt.groq" = "Groq Whisper";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
 "provider.llm.custom" = "맞춤";
 "provider.llm.freeModel" = "무료 모델";
@@ -437,6 +438,7 @@
 "settings.models.useMultimodal" = "다중 모드 사용";
 "settings.models.useAliCloud" = "알리바바 클라우드 사용";
 "settings.models.useDoubao" = "두바오 사용";
+"settings.models.useGroq" = "Groq 사용";
 "settings.models.badge.local" = "지역";
 "settings.models.badge.api" = "API";
 "settings.models.modelNotConfigured" = "모델이 구성되지 않았습니다.";
@@ -448,6 +450,7 @@
 "settings.models.card.multimodal.summary" = "오디오를 다중 모드 모델로 직접 보냅니다. 더 빠른 엔드투엔드 경로를 위해 단일 API 호출로 전사 및 페르소나 재작성이 이루어집니다.";
 "settings.models.card.aliCloud.summary" = "대기 시간이 짧은 WebSocket 스트리밍을 사용하는 DashScope를 통한 실시간 스트리밍 인식.";
 "settings.models.card.doubao.summary" = "ByteDance의 기본 바이너리 WebSocket 프로토콜을 사용하는 Doubao Speech Recognition 2.0을 통한 저지연 스트리밍 인식.";
+"settings.models.card.groq.summary" = "whisper-large-v3를 지원하는 Groq 추론 엔드포인트를 통한 빠른 Whisper 호환 전사.";
 "settings.models.card.ollama.summary" = "선택적 자동 모델 준비를 통해 재작성 및 편집 명령을 로컬로 실행합니다.";
 "settings.models.card.openAICompatible.summary" = "페르소나 재작성 및 편집 워크플로를 위해 원격 채팅 완료 공급자를 연결하세요.";
 "settings.models.card.custom.summary" = "자체 기본 URL, 모델 및 API 키를 사용하여 호환 가능한 엔드포인트를 수동으로 구성합니다.";
@@ -499,6 +502,7 @@
 "settings.models.overview.multimodal" = "오디오는 한 번의 호출로 전사 및 페르소나 재작성을 통해 다중 모드 모델로 직접 전송됩니다.";
 "settings.models.overview.aliCloud" = "음성 인식은 WebSocket을 통해 Alibaba Cloud DashScope로 실시간 스트리밍됩니다.";
 "settings.models.overview.doubao" = "음성 인식은 ByteDance WebSocket을 통해 Doubao Speech Recognition 2.0으로 실시간 스트리밍됩니다.";
+"settings.models.overview.groq" = "음성 인식은 Groq의 고속 추론 엔드포인트가 Whisper 모델을 사용하여 처리합니다.";
 "settings.models.mode.local" = "지역";
 "settings.models.mode.remote" = "원격";
 "settings.models.fallback.enabled" = "대체 활성화됨";
@@ -516,6 +520,7 @@
 "settings.models.focused.multimodal" = "한 번에 기록하고 다시 쓰는 다중 모달 모델에 오디오를 직접 전송하여 가장 빠른 종단 간 경로를 원할 때 이 기능을 사용하십시오.";
 "settings.models.focused.aliCloud" = "Alibaba Cloud DashScope를 통해 대기 시간이 짧은 실시간 스트리밍 인식을 원할 때 이 기능을 사용하세요.";
 "settings.models.focused.doubao" = "Doubao Speech Recognition 2.0을 통해 대기 시간이 가장 짧은 클라우드 받아쓰기 경로를 원하는 경우 이 기능을 사용하세요.";
+"settings.models.focused.groq" = "Groq의 고속 추론을 사용한 빠른 클라우드 전사를 원할 때 이 기능을 사용하세요.";
 "settings.models.routing" = "라우팅 동작";
 "settings.models.routing.primaryRecognizer" = "기본 인식기";
 "settings.models.routing.primaryRuntime" = "기본 런타임";
@@ -528,6 +533,7 @@
 "settings.models.routing.multimodal" = "다중 모드 LLM은 전체 전사 파이프라인을 처리합니다. 페르소나가 활성화되면 다시 쓰기가 동일한 호출로 통합됩니다.";
 "settings.models.routing.aliCloud" = "Alibaba Cloud DashScope는 WebSocket을 통해 실시간 스트리밍 ASR을 처리합니다.";
 "settings.models.routing.doubao" = "Doubao Speech Recognition 2.0은 ByteDance의 바이너리 WebSocket 프로토콜을 통해 실시간 스트리밍 ASR을 처리합니다.";
+"settings.models.routing.groq" = "Groq는 Whisper 호환 전사 엔드포인트를 통한 고속 추론으로 받아쓰기를 처리합니다.";
 "settings.models.routing.fallback" = "대체";
 "settings.models.routing.localSetup" = "로컬 설정";
 "settings.models.routing.readiness" = "준비 상태";

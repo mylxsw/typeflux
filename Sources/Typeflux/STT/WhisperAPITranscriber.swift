@@ -2,10 +2,25 @@ import Foundation
 
 final class WhisperAPITranscriber: Transcriber {
     private let settingsStore: SettingsStore
+    private let baseURLOverride: String?
+    private let apiKeyOverride: (() -> String)?
+    private let modelOverride: (() -> String)?
 
-    init(settingsStore: SettingsStore) {
+    init(
+        settingsStore: SettingsStore,
+        baseURLOverride: String? = nil,
+        apiKeyOverride: (() -> String)? = nil,
+        modelOverride: (() -> String)? = nil
+    ) {
         self.settingsStore = settingsStore
+        self.baseURLOverride = baseURLOverride
+        self.apiKeyOverride = apiKeyOverride
+        self.modelOverride = modelOverride
     }
+
+    private var effectiveBaseURL: String { baseURLOverride ?? settingsStore.whisperBaseURL }
+    private var effectiveAPIKey: String { apiKeyOverride?() ?? settingsStore.whisperAPIKey }
+    private var effectiveModel: String { modelOverride?() ?? settingsStore.whisperModel }
 
     static func testConnection(baseURL: String, model: String, apiKey: String) async throws -> String {
         let trimmedBaseURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -52,11 +67,11 @@ final class WhisperAPITranscriber: Transcriber {
         audioFile: AudioFile,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
-        guard let baseURL = URL(string: settingsStore.whisperBaseURL), !settingsStore.whisperBaseURL.isEmpty else {
+        guard let baseURL = URL(string: effectiveBaseURL), !effectiveBaseURL.isEmpty else {
             throw NSError(domain: "WhisperAPITranscriber", code: 1)
         }
 
-        let model = settingsStore.whisperModel.isEmpty ? OpenAIAudioModelCatalog.whisperModels[0] : settingsStore.whisperModel
+        let model = effectiveModel.isEmpty ? OpenAIAudioModelCatalog.whisperModels[0] : effectiveModel
         let vocabularyPrompt = vocabularyPromptText()
         let uploadURL = try preparedUploadURL(for: audioFile)
         let uploadAttributes = try? FileManager.default.attributesOfItem(atPath: uploadURL.path)
@@ -264,8 +279,8 @@ final class WhisperAPITranscriber: Transcriber {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "audio/transcriptions")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        if !settingsStore.whisperAPIKey.isEmpty {
-            request.setValue("Bearer \(settingsStore.whisperAPIKey)", forHTTPHeaderField: "Authorization")
+        if !effectiveAPIKey.isEmpty {
+            request.setValue("Bearer \(effectiveAPIKey)", forHTTPHeaderField: "Authorization")
         }
 
         let boundary = "Boundary-\(UUID().uuidString)"

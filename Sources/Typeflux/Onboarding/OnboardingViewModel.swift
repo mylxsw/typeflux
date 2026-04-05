@@ -34,6 +34,8 @@ final class OnboardingViewModel: ObservableObject {
     @Published var doubaoAppID: String
     @Published var doubaoAccessToken: String
     @Published var doubaoResourceID: String
+    @Published var groqSTTAPIKey: String
+    @Published var groqSTTModel: String
 
     // LLM Config
     @Published var llmProvider: LLMProvider
@@ -73,6 +75,8 @@ final class OnboardingViewModel: ObservableObject {
         doubaoAppID = settingsStore.doubaoAppID
         doubaoAccessToken = settingsStore.doubaoAccessToken
         doubaoResourceID = settingsStore.doubaoResourceID
+        groqSTTAPIKey = settingsStore.groqSTTAPIKey
+        groqSTTModel = settingsStore.groqSTTModel
 
         llmProvider = settingsStore.llmProvider
         llmRemoteProvider = settingsStore.llmRemoteProvider
@@ -211,6 +215,9 @@ final class OnboardingViewModel: ObservableObject {
                 settingsStore.doubaoAppID = doubaoAppID
                 settingsStore.doubaoAccessToken = doubaoAccessToken
                 settingsStore.doubaoResourceID = doubaoResourceID
+            case .groq:
+                settingsStore.groqSTTAPIKey = groqSTTAPIKey
+                settingsStore.groqSTTModel = groqSTTModel
             case .appleSpeech:
                 break
             }

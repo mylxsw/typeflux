@@ -11,6 +11,11 @@ enum OpenAIAudioModelCatalog {
         "whisper-1",
     ]
 
+    static let groqWhisperModels = [
+        "whisper-large-v3-turbo",
+        "whisper-large-v3",
+    ]
+
     static let multimodalEndpoints = [
         "https://api.openai.com/v1/chat/completions",
         "https://api.xiaomimimo.com/v1/chat/completions",

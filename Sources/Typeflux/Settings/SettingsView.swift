@@ -2679,6 +2679,8 @@ struct StudioView: View {
                 return .aliCloud
             case .doubaoRealtime:
                 return .doubaoRealtime
+            case .groq:
+                return .groqSTT
             }
         case .llm:
             return viewModel.llmProvider == .ollama
@@ -2752,6 +2754,17 @@ struct StudioView: View {
                     isSelected: viewModel.sttProvider == .doubaoRealtime,
                     isMuted: false,
                     actionTitle: L("settings.models.useDoubao")
+                ),
+                StudioModelCard(
+                    id: StudioModelProviderID.groqSTT.rawValue,
+                    name: STTProvider.groq.displayName,
+                    summary: L("settings.models.card.groq.summary"),
+                    badge: L("settings.models.badge.api"),
+                    metadata: viewModel.groqSTTModel.isEmpty
+                        ? L("settings.models.modelNotConfigured") : viewModel.groqSTTModel,
+                    isSelected: viewModel.sttProvider == .groq,
+                    isMuted: false,
+                    actionTitle: L("settings.models.useGroq")
                 ),
             ]
         case .llm:
@@ -2899,7 +2912,7 @@ struct StudioView: View {
 
                 if [
                     StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .ollama, .aliCloud,
-                    .doubaoRealtime,
+                    .doubaoRealtime, .groqSTT,
                 ].contains(viewModel.focusedModelProvider) || focusedLLMRemoteProvider != nil {
                     HStack(spacing: StudioTheme.Spacing.small) {
                         StudioButton(
@@ -2923,7 +2936,7 @@ struct StudioView: View {
                             }
                         } else if [
                             StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                            .doubaoRealtime,
+                            .doubaoRealtime, .groqSTT,
                         ].contains(viewModel.focusedModelProvider) {
                             StudioButton(
                                 title: viewModel.sttConnectionTestState == .testing
@@ -2945,7 +2958,7 @@ struct StudioView: View {
                         connectionTestResultView(viewModel.llmConnectionTestState)
                     } else if [
                         StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                        .doubaoRealtime,
+                        .doubaoRealtime, .groqSTT,
                     ].contains(viewModel.focusedModelProvider) {
                         connectionTestResultView(viewModel.sttConnectionTestState)
                     }
@@ -3214,7 +3227,7 @@ struct StudioView: View {
                 .toggleStyle(.switch)
 
             case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
-                .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi:
+                .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
                 llmRemoteProviderForm
 
             case .multimodalLLM:
@@ -3290,6 +3303,21 @@ struct StudioView: View {
                         }
                         .buttonStyle(.plain)
                     }
+                }
+
+            case .groqSTT:
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    StudioTextInputCard(
+                        label: L("common.apiKey"), placeholder: "gsk_...",
+                        text: Binding(get: { viewModel.groqSTTAPIKey }, set: viewModel.setGroqSTTAPIKey),
+                        secure: true
+                    )
+                    StudioSuggestedTextInputCard(
+                        label: L("common.model"),
+                        placeholder: OpenAIAudioModelCatalog.groqWhisperModels[0],
+                        text: Binding(get: { viewModel.groqSTTModel }, set: viewModel.setGroqSTTModel),
+                        suggestions: OpenAIAudioModelCatalog.groqWhisperModels
+                    )
                 }
             }
         }
@@ -3542,6 +3570,10 @@ struct StudioView: View {
             return "minimax-color"
         case .grok:
             return "grok"
+        case .groq:
+            return "groq"
+        case .groqSTT:
+            return "groq"
         case .xiaomi:
             return "xiaomimimo"
         case .aliCloud:
@@ -3659,7 +3691,7 @@ struct StudioView: View {
             return !viewModel.llmModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && FreeLLMModelRegistry.resolve(modelName: viewModel.llmModel) != nil
         case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
-            .minimax, .grok, .xiaomi:
+            .minimax, .grok, .groq, .xiaomi:
             return !viewModel.llmAPIKey.isEmpty && !viewModel.llmBaseURL.isEmpty
                 && !viewModel.llmModel.isEmpty
         case .multimodalLLM:
@@ -3668,6 +3700,8 @@ struct StudioView: View {
             return !viewModel.aliCloudAPIKey.isEmpty
         case .doubaoRealtime:
             return !viewModel.doubaoAppID.isEmpty && !viewModel.doubaoAccessToken.isEmpty
+        case .groqSTT:
+            return !viewModel.groqSTTAPIKey.isEmpty
         }
     }
 
@@ -3697,7 +3731,7 @@ struct StudioView: View {
             )
             viewModel.prepareOllamaModel()
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-            .qwen, .zhipu, .minimax, .grok, .xiaomi:
+            .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
             if let provider = focusedLLMRemoteProvider {
                 viewModel.applyModelConfiguration(shouldShowToast: false)
                 viewModel.setLLMRemoteProvider(provider)
@@ -3714,6 +3748,8 @@ struct StudioView: View {
             viewModel.setSTTProvider(.aliCloud)
         case .doubaoRealtime:
             viewModel.setSTTProvider(.doubaoRealtime)
+        case .groqSTT:
+            viewModel.setSTTProvider(.groq)
         }
     }
 
@@ -3753,6 +3789,10 @@ struct StudioView: View {
             return "sparkles"
         case .grok:
             return "bolt.circle"
+        case .groq:
+            return "bolt.fill"
+        case .groqSTT:
+            return "bolt.fill"
         case .xiaomi:
             return "circle.grid.cross"
         case .multimodalLLM:
@@ -3793,7 +3833,7 @@ struct StudioView: View {
         case .ollama:
             return L("settings.models.overview.ollama")
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-            .qwen, .zhipu, .minimax, .grok, .xiaomi:
+            .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
             return L("settings.models.overview.remoteProvider", activeLLMRemoteProvider.displayName)
         case .multimodalLLM:
             return L("settings.models.overview.multimodal")
@@ -3801,6 +3841,8 @@ struct StudioView: View {
             return L("settings.models.overview.aliCloud")
         case .doubaoRealtime:
             return L("settings.models.overview.doubao")
+        case .groqSTT:
+            return L("settings.models.overview.groq")
         }
     }
 
@@ -3817,7 +3859,7 @@ struct StudioView: View {
         case .ollama:
             return LLMProvider.ollama.displayName
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-            .qwen, .zhipu, .minimax, .grok, .xiaomi:
+            .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
             return activeLLMRemoteProvider.displayName
         case .multimodalLLM:
             return STTProvider.multimodalLLM.displayName
@@ -3825,6 +3867,8 @@ struct StudioView: View {
             return STTProvider.aliCloud.displayName
         case .doubaoRealtime:
             return STTProvider.doubaoRealtime.displayName
+        case .groqSTT:
+            return STTProvider.groq.displayName
         }
     }
 
@@ -3833,8 +3877,8 @@ struct StudioView: View {
         case .appleSpeech, .localSTT, .ollama:
             return L("settings.models.mode.local")
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
-            .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi,
-            .multimodalLLM, .aliCloud, .doubaoRealtime:
+            .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi,
+            .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT:
             return L("settings.models.mode.remote")
         }
     }
@@ -3844,8 +3888,8 @@ struct StudioView: View {
         case .appleSpeech, .localSTT, .ollama:
             return StudioTheme.success
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
-            .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi,
-            .multimodalLLM, .aliCloud, .doubaoRealtime:
+            .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi,
+            .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT:
             return StudioTheme.accent
         }
     }
@@ -3855,8 +3899,8 @@ struct StudioView: View {
         case .appleSpeech, .localSTT, .ollama:
             return StudioTheme.success.opacity(0.12)
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
-            .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi,
-            .multimodalLLM, .aliCloud, .doubaoRealtime:
+            .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi,
+            .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT:
             return StudioTheme.accentSoft
         }
     }
@@ -3886,7 +3930,7 @@ struct StudioView: View {
         case .ollama:
             return viewModel.ollamaModel.isEmpty ? "qwen2.5:7b" : viewModel.ollamaModel
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-            .qwen, .zhipu, .minimax, .grok, .xiaomi:
+            .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
             return viewModel.llmModel.isEmpty
                 ? activeLLMRemoteProvider.defaultModel : viewModel.llmModel
         case .multimodalLLM:
@@ -3896,6 +3940,9 @@ struct StudioView: View {
             return AliCloudASRDefaults.model
         case .doubaoRealtime:
             return L("settings.models.doubao.productName")
+        case .groqSTT:
+            return viewModel.groqSTTModel.isEmpty
+                ? OpenAIAudioModelCatalog.groqWhisperModels[0] : viewModel.groqSTTModel
         }
     }
 
@@ -3917,7 +3964,7 @@ struct StudioView: View {
         case .ollama:
             return LLMProvider.ollama.displayName
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-            .qwen, .zhipu, .minimax, .grok, .xiaomi:
+            .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
             return focusedLLMRemoteProvider?.displayName ?? LLMProvider.openAICompatible.displayName
         case .multimodalLLM:
             return STTProvider.multimodalLLM.displayName
@@ -3925,6 +3972,8 @@ struct StudioView: View {
             return STTProvider.aliCloud.displayName
         case .doubaoRealtime:
             return STTProvider.doubaoRealtime.displayName
+        case .groqSTT:
+            return STTProvider.groq.displayName
         }
     }
 
@@ -3941,7 +3990,7 @@ struct StudioView: View {
         case .ollama:
             return L("settings.models.focused.ollama")
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-            .qwen, .zhipu, .minimax, .grok, .xiaomi:
+            .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
             return L(
                 "settings.models.focused.remoteProvider",
                 focusedLLMRemoteProvider?.displayName ?? LLMProvider.openAICompatible.displayName)
@@ -3951,6 +4000,8 @@ struct StudioView: View {
             return L("settings.models.focused.aliCloud")
         case .doubaoRealtime:
             return L("settings.models.focused.doubao")
+        case .groqSTT:
+            return L("settings.models.focused.groq")
         }
     }
 
@@ -3973,7 +4024,7 @@ struct StudioView: View {
         case .ollama:
             return L("settings.models.routing.ollama")
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-            .qwen, .zhipu, .minimax, .grok, .xiaomi:
+            .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
             return L("settings.models.routing.remoteProvider", activeLLMRemoteProvider.displayName)
         case .multimodalLLM:
             return L("settings.models.routing.multimodal")
@@ -3981,6 +4032,8 @@ struct StudioView: View {
             return L("settings.models.routing.aliCloud")
         case .doubaoRealtime:
             return L("settings.models.routing.doubao")
+        case .groqSTT:
+            return L("settings.models.routing.groq")
         }
     }
 

@@ -180,6 +180,7 @@
 "provider.stt.multimodalLLM" = "Multimodal LLM";
 "provider.stt.aliCloud" = "Alibaba Cloud ASR";
 "provider.stt.doubaoRealtime" = "Doubao Realtime ASR";
+"provider.stt.groq" = "Groq Whisper";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
 "provider.llm.custom" = "カスタム";
 "provider.llm.freeModel" = "無料モデル";
@@ -437,6 +438,7 @@
 "settings.models.useMultimodal" = "マルチモーダルを使用する";
 "settings.models.useAliCloud" = "アリババクラウドを利用する";
 "settings.models.useDoubao" = "豆包を使用する";
+"settings.models.useGroq" = "Groq を使用する";
 "settings.models.badge.local" = "ローカル";
 "settings.models.badge.api" = "API";
 "settings.models.modelNotConfigured" = "モデルが設定されていません";
@@ -448,6 +450,7 @@
 "settings.models.card.multimodal.summary" = "オーディオをマルチモーダル モデルに直接送信します。トランスクリプションとペルソナの書き換えは単一の API 呼び出しで行われ、エンドツーエンドのパスが高速化されます。";
 "settings.models.card.aliCloud.summary" = "低遅延の WebSocket ストリーミングによる DashScope によるリアルタイムのストリーミング認識。";
 "settings.models.card.doubao.summary" = "ByteDance のネイティブ バイナリ WebSocket プロトコルを使用した Doubao Speech Recognition 2.0 による低遅延ストリーミング認識。";
+"settings.models.card.groq.summary" = "Groq の推論エンドポイントによる高速な Whisper 互換の文字起こし。whisper-large-v3 をサポート。";
 "settings.models.card.ollama.summary" = "オプションの自動モデル準備を使用して、ローカルで書き換えおよび編集コマンドを実行します。";
 "settings.models.card.openAICompatible.summary" = "リモート チャット補完プロバイダーに接続して、ペルソナの書き換えとワークフローの編集を行います。";
 "settings.models.card.custom.summary" = "独自のベース URL、モデル、および API キーを使用して、互換性のあるエンドポイントを手動で構成します。";
@@ -499,6 +502,7 @@
 "settings.models.overview.multimodal" = "音声はマルチモーダル モデルに直接送信され、1 回の通話で文字起こしとペルソナの書き換えが行われます。";
 "settings.models.overview.aliCloud" = "音声認識は、WebSocket 経由で Alibaba Cloud DashScope にリアルタイムでストリーミングされます。";
 "settings.models.overview.doubao" = "音声認識は、ByteDance WebSocket 経由で Doubao Speech Recognition 2.0 にリアルタイムでストリーミングされます。";
+"settings.models.overview.groq" = "音声認識は、Groq の高速推論エンドポイントが Whisper モデルを使用して処理します。";
 "settings.models.mode.local" = "ローカル";
 "settings.models.mode.remote" = "リモート";
 "settings.models.fallback.enabled" = "フォールバックが有効になっている";
@@ -516,6 +520,7 @@
 "settings.models.focused.multimodal" = "これは、音声をマルチモーダル モデルに直接送信し、ワンショットで文字起こしと書き換えを行う最速のエンドツーエンド パスが必要な場合に使用します。";
 "settings.models.focused.aliCloud" = "Alibaba Cloud DashScope 経由で低遅延のリアルタイム ストリーミング認識が必要な場合にこれを使用します。";
 "settings.models.focused.doubao" = "Doubao Speech Recognition 2.0 を介した遅延の最も低いクラウド ディクテーション パスが必要な場合は、これを使用します。";
+"settings.models.focused.groq" = "Groq の高速推論を使用した迅速なクラウド文字起こしが必要な場合にこれを使用します。";
 "settings.models.routing" = "ルーティング動作";
 "settings.models.routing.primaryRecognizer" = "一次認識装置";
 "settings.models.routing.primaryRuntime" = "プライマリ ランタイム";
@@ -528,6 +533,7 @@
 "settings.models.routing.multimodal" = "マルチモーダル LLM は完全な転写パイプラインを処理します。ペルソナがアクティブな場合、書き換えは同じ呼び出しに組み込まれます。";
 "settings.models.routing.aliCloud" = "Alibaba Cloud DashScope は、WebSocket 経由でリアルタイム ストリーミング ASR を処理します。";
 "settings.models.routing.doubao" = "Doubao Speech Recognition 2.0 は、ByteDance のバイナリ WebSocket プロトコルを介してリアルタイム ストリーミング ASR を処理します。";
+"settings.models.routing.groq" = "Groq は、Whisper 互換の文字起こしエンドポイントを使用した高速推論でディクテーションを処理します。";
 "settings.models.routing.fallback" = "フォールバック";
 "settings.models.routing.localSetup" = "ローカルセットアップ";
 "settings.models.routing.readiness" = "準備完了";
