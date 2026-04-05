@@ -1011,6 +1011,7 @@ final class WorkflowController {
                 record.processingStatus = .running
                 saveHistoryRecord(record)
 
+                await MainActor.run { self.overlayController.transitionToLLMPhase() }
                 pipelineTiming.llmProcessingStartedAt = Date()
                 record.pipelineTiming = pipelineTiming
                 saveHistoryRecord(record)
@@ -1170,6 +1171,7 @@ final class WorkflowController {
                 record.processingStatus = .running
                 saveHistoryRecord(record)
 
+                await MainActor.run { self.overlayController.transitionToLLMPhase() }
                 pipelineTiming.llmProcessingStartedAt = Date()
                 record.pipelineTiming = pipelineTiming
                 saveHistoryRecord(record)
@@ -1268,6 +1270,7 @@ final class WorkflowController {
                     record.processingStatus = .running
                     saveHistoryRecord(record)
 
+                    await MainActor.run { self.overlayController.transitionToLLMPhase() }
                     pipelineTiming.llmProcessingStartedAt = Date()
                     record.pipelineTiming = pipelineTiming
                     saveHistoryRecord(record)
@@ -2001,7 +2004,7 @@ final class WorkflowController {
 
         Task { @MainActor in
             self.appState.setStatus(.processing)
-            self.overlayController.showProcessing()
+            self.overlayController.showLLMProcessing()
         }
 
         let shouldShowResultDialog = shouldPresentResultDialog(for: context.snapshot)

@@ -163,11 +163,36 @@ final class OverlayController {
         dismissWorkItem = nil
         ensureWindow()
         model.presentation = .processing
+        model.statusText = L("overlay.processing.transcribing")
+        model.detailText = ""
+        model.recordingHintText = ""
+        model.processingProgress = 0
+        refreshWindow()
+    }
+
+    func showLLMProcessing() {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.showLLMProcessing() }
+            return
+        }
+        dismissWorkItem?.cancel()
+        dismissWorkItem = nil
+        ensureWindow()
+        model.presentation = .processing
         model.statusText = L("overlay.processing.thinking")
         model.detailText = ""
         model.recordingHintText = ""
         model.processingProgress = 0
         refreshWindow()
+    }
+
+    func transitionToLLMPhase() {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.transitionToLLMPhase() }
+            return
+        }
+        guard model.presentation == .processing else { return }
+        model.statusText = L("overlay.processing.thinking")
     }
 
     func showFailure(message: String) {
