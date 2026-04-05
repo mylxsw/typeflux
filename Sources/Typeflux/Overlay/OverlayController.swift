@@ -167,6 +167,7 @@ final class OverlayController {
         model.detailText = ""
         model.recordingHintText = ""
         model.processingProgress = 0
+        model.processingPhase = 0
         model.processingEpoch += 1
         refreshWindow()
     }
@@ -184,6 +185,7 @@ final class OverlayController {
         model.detailText = ""
         model.recordingHintText = ""
         model.processingProgress = 0
+        model.processingPhase = 0
         model.processingEpoch += 1
         refreshWindow()
     }
@@ -194,18 +196,9 @@ final class OverlayController {
             return
         }
         guard model.presentation == .processing else { return }
-        // Fill progress bar to completion first, then switch to thinking phase
-        model.processingProgress = 1
-        let epochAtCall = model.processingEpoch
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { [weak self] in
-            guard let self else { return }
-            guard self.model.presentation == .processing else { return }
-            // Skip if another phase transition already happened
-            guard self.model.processingEpoch == epochAtCall else { return }
-            self.model.statusText = L("overlay.processing.thinking")
-            self.model.processingProgress = 0
-            self.model.processingEpoch += 1
-        }
+        guard model.processingPhase == 0 else { return }
+        model.statusText = L("overlay.processing.thinking")
+        model.processingPhase = 1
     }
 
     func showFailure(message: String) {
@@ -741,6 +734,7 @@ final class OverlayViewModel: ObservableObject {
     @Published var level: Float = 0
     @Published var processingProgress: CGFloat = 0
     @Published var processingEpoch: Int = 0
+    @Published var processingPhase: Int = 0
     @Published var personaItems: [OverlayController.PersonaPickerItem] = []
     @Published var personaSelectedIndex: Int = 0
     @Published var personaViewportHeight: CGFloat = 240
@@ -933,7 +927,8 @@ private struct OverlayView: View {
         ThinkingProgressCapsule(
             title: model.statusText.isEmpty ? L("overlay.processing.thinking") : model.statusText,
             progress: model.processingProgress,
-            epoch: model.processingEpoch
+            epoch: model.processingEpoch,
+            phase: model.processingPhase
         )
     }
 
@@ -1364,6 +1359,7 @@ private struct ThinkingProgressCapsule: View {
     let title: String
     let progress: CGFloat
     let epoch: Int
+    let phase: Int
     @State private var displayProgress: CGFloat = 0
 
     var body: some View {
@@ -1399,23 +1395,30 @@ private struct ThinkingProgressCapsule: View {
         .compositingGroup()
         .shadow(color: Color.black.opacity(0.28), radius: 16, x: 0, y: 12)
         .onAppear {
-            startPhase()
+            startTranscribingPhase()
         }
         .onChange(of: epoch) { _ in
-            // New processing phase: reset and start fresh loading animation
+            // Fresh session: reset and start from zero
             displayProgress = 0
-            startPhase()
+            startTranscribingPhase()
+        }
+        .onChange(of: phase) { newPhase in
+            // Seamlessly continue the bar from ~50% toward ~85%
+            guard newPhase == 1, progress < 1 else { return }
+            withAnimation(.easeOut(duration: 2.0)) {
+                displayProgress = 0.85
+            }
         }
         .onChange(of: progress) { newValue in
             if newValue >= 1 {
-                withAnimation(.easeOut(duration: 0.16)) {
+                withAnimation(.easeOut(duration: 0.22)) {
                     displayProgress = 1
                 }
             }
         }
     }
 
-    private func startPhase() {
+    private func startTranscribingPhase() {
         guard progress < 1 else { return }
         withAnimation(.easeOut(duration: 1.5)) {
             displayProgress = 0.5
