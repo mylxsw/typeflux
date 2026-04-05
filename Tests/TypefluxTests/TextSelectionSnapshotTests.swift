@@ -35,23 +35,25 @@ final class TextSelectionSnapshotTests: XCTestCase {
         XCTAssertTrue(snapshot.hasAskSelectionContext)
     }
 
-    func testCanSafelyReplaceSelectionRequiresAccessibilityBackedEditableSelection() {
+    func testCanReplaceSelectionRequiresEditableFocusedSelection() {
         var snapshot = TextSelectionSnapshot()
         snapshot.selectedText = "Editable"
         snapshot.isFocusedTarget = true
         snapshot.isEditable = true
         snapshot.source = "accessibility"
 
-        XCTAssertTrue(snapshot.canSafelyReplaceSelection)
+        XCTAssertTrue(snapshot.canReplaceSelection)
+        XCTAssertTrue(snapshot.canSafelyRestoreSelection)
     }
 
-    func testClipboardSelectionIsNotTreatedAsSafelyReplaceable() {
+    func testClipboardSelectionCanBeReplaceableButNotSafelyRestorable() {
         var snapshot = TextSelectionSnapshot()
         snapshot.selectedText = "Read only selection"
         snapshot.isFocusedTarget = true
         snapshot.isEditable = true
         snapshot.source = "clipboard-copy"
 
-        XCTAssertFalse(snapshot.canSafelyReplaceSelection)
+        XCTAssertTrue(snapshot.canReplaceSelection)
+        XCTAssertFalse(snapshot.canSafelyRestoreSelection)
     }
 }

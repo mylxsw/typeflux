@@ -20,11 +20,15 @@ struct TextSelectionSnapshot {
         isFocusedTarget && hasSelection
     }
 
-    var canSafelyReplaceSelection: Bool {
-        // Only treat Accessibility-backed selections as replaceable. Clipboard-derived
-        // selections prove that text is selected, but not that the target is a writable
-        // input field or that we can restore the exact range safely.
-        hasAskSelectionContext && isEditable && source == "accessibility"
+    var canReplaceSelection: Bool {
+        hasAskSelectionContext && isEditable
+    }
+
+    var canSafelyRestoreSelection: Bool {
+        // Accessibility-backed selections are the only ones we can reliably restore
+        // after focus changes. Other editable selections may still be replaceable if
+        // they remain active when we send the replacement keystrokes.
+        canReplaceSelection && source == "accessibility"
     }
 }
 

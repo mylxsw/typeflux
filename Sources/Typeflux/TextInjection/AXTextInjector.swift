@@ -32,6 +32,8 @@ final class AXTextInjector: TextInjector {
     private static let verifiedPasteRestoreDelayNanoseconds: UInt64 = 1_500_000_000
     private static let pasteVerificationPollIntervalMicroseconds: useconds_t = 120_000
     private static let pasteVerificationAttempts = 4
+    private static let axWriteVerificationPollIntervalMicroseconds: useconds_t = 120_000
+    private static let axWriteVerificationAttempts = 4
     private static let focusRestoreDelayMicroseconds: useconds_t = 250_000
     private static let selectedTextTimeoutMilliseconds = 200
     private static let copySelectionTimeoutMilliseconds = 180
@@ -100,6 +102,7 @@ final class AXTextInjector: TextInjector {
             let focusedElement = focusedElement()
             let focusedWindow = processID.flatMap(focusedWindowElement(for:))
             let selectionWindow = focusedElement.flatMap(containingWindow(of:))
+            let editability = focusedElement.map(isLikelyEditable(element:)) ?? false
             // Clipboard copy succeeded → text IS selected in the frontmost app's process.
             // When selectionWindow is nil (e.g. Electron/Chromium AX hierarchy doesn't expose
             // a traversable parent chain to the window), we still trust isFocusedTarget = true
@@ -120,16 +123,16 @@ final class AXTextInjector: TextInjector {
             )
             latestSelectionContext = context
             logger.debug("source=clipboard-copy  focusedWindow=\(focusedWindow != nil ? "present" : "nil", privacy: .public)  selectionWindow=\(selectionWindow != nil ? "present" : "nil", privacy: .public)  isFocusedTarget=\(isFocusedTarget ? "true" : "false", privacy: .public)  text(32)=\(String(copiedText.prefix(32)), privacy: .public)")
-            // Cmd+C only proves that text is selectable in the frontmost app. It does not
-            // prove that the target is an editable input or that we can restore the same
-            // selection reliably for replacement, so keep this path read-only.
+            // Cmd+C proves that text is currently selected. Editability still comes from
+            // the focused element. This path is replaceable when the target is editable,
+            // but it is not safe to treat it as restorable selection state.
             return TextSelectionSnapshot(
                 processID: processID,
                 processName: processName,
                 selectedRange: nil,
                 selectedText: copiedText,
                 source: "clipboard-copy",
-                isEditable: false,
+                isEditable: editability,
                 role: nil,
                 windowTitle: context.windowTitle,
                 isFocusedTarget: context.isFocusedTarget
@@ -393,19 +396,32 @@ final class AXTextInjector: TextInjector {
         }
 
         var contextRestored = false
+        let beforeSnapshot = readCurrentInputTextSnapshot()
 
         if replaceSelection,
            let context = activeSelectionContext() {
             restoreSelectionContext(context)
             contextRestored = true
             if context.range != nil,
-               try insertTextViaAX(text, into: context.element, replaceSelection: true, selectionRange: context.range) {
+               try insertTextViaAX(
+                text,
+                into: context.element,
+                replaceSelection: true,
+                selectionRange: context.range,
+                beforeSnapshot: beforeSnapshot
+               ) {
                 latestSelectionContext = nil
                 return
             }
         }
 
-        if let element = focusedElement(), try insertTextViaAX(text, into: element, replaceSelection: replaceSelection, selectionRange: nil) {
+        if let element = focusedElement(), try insertTextViaAX(
+            text,
+            into: element,
+            replaceSelection: replaceSelection,
+            selectionRange: nil,
+            beforeSnapshot: beforeSnapshot
+        ) {
             if replaceSelection {
                 latestSelectionContext = nil
             }
@@ -418,7 +434,13 @@ final class AXTextInjector: TextInjector {
         }
     }
 
-    private func insertTextViaAX(_ text: String, into element: AXUIElement, replaceSelection: Bool, selectionRange: CFRange?) throws -> Bool {
+    private func insertTextViaAX(
+        _ text: String,
+        into element: AXUIElement,
+        replaceSelection: Bool,
+        selectionRange: CFRange?,
+        beforeSnapshot: CurrentInputTextSnapshot
+    ) throws -> Bool {
         if replaceSelection {
             if let selectionRange {
                 _ = setSelectedTextRange(selectionRange, on: element)
@@ -429,7 +451,15 @@ final class AXTextInjector: TextInjector {
                 text as CFTypeRef
             )
             if replaceSelectedText == .success {
-                return true
+                if verifyAXWriteApplied(
+                    insertedText: text,
+                    replaceSelection: true,
+                    targetProcessID: frontmostProcessID(),
+                    beforeSnapshot: beforeSnapshot
+                ) {
+                    return true
+                }
+                logger.debug("AX selected text write reported success but could not be verified; falling back")
             }
         }
 
@@ -439,6 +469,36 @@ final class AXTextInjector: TextInjector {
         // String splicing here permanently fuses the user's dictation with the placeholder (e.g. "Ask for follow-up changes")
         // and physically writes it into the document. Furthermore, mutating `kAXValueAttribute` breaks Undo/Redo across macOS.
         // By returning false, we securely delegate all standard insertions to `setTextViaPaste` (Cmd+V), which works natively.
+        return false
+    }
+
+    private func verifyAXWriteApplied(
+        insertedText: String,
+        replaceSelection: Bool,
+        targetProcessID: pid_t?,
+        beforeSnapshot: CurrentInputTextSnapshot
+    ) -> Bool {
+        for _ in 0..<Self.axWriteVerificationAttempts {
+            usleep(Self.axWriteVerificationPollIntervalMicroseconds)
+            let afterSnapshot = readCurrentInputTextSnapshot()
+            let verification = Self.evaluatePasteVerification(
+                insertedText: insertedText,
+                replaceSelection: replaceSelection,
+                targetProcessID: targetProcessID,
+                before: beforeSnapshot.isEditable ? beforeSnapshot : nil,
+                after: afterSnapshot
+            )
+
+            switch verification {
+            case .success:
+                return true
+            case .failure:
+                return false
+            case .indeterminate:
+                continue
+            }
+        }
+
         return false
     }
 
