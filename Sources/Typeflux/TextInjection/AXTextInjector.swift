@@ -27,7 +27,9 @@ final class AXTextInjector: TextInjector {
     }
 
     private static var didRequestAccessibility = false
-    private static let pasteRestoreDelayNanoseconds: UInt64 = 500_000_000
+    private static let pasteRestoreDelayNanoseconds: UInt64 = 1_500_000_000
+    private static let pasteVerificationPollIntervalMicroseconds: useconds_t = 120_000
+    private static let pasteVerificationAttempts = 4
     private static let focusRestoreDelayMicroseconds: useconds_t = 250_000
     private static let selectedTextTimeoutMilliseconds = 200
     private static let copySelectionTimeoutMilliseconds = 180
@@ -36,6 +38,12 @@ final class AXTextInjector: TextInjector {
     private static let focusedDescendantSearchDepth = 6
 
     private var latestSelectionContext: SelectionContext?
+
+    enum PasteVerificationResult: Equatable {
+        case success
+        case failure(String)
+        case indeterminate
+    }
 
     func getSelectionSnapshot() async -> TextSelectionSnapshot {
         guard AXIsProcessTrusted() else {
@@ -142,6 +150,10 @@ final class AXTextInjector: TextInjector {
     }
 
     func currentInputTextSnapshot() async -> CurrentInputTextSnapshot {
+        readCurrentInputTextSnapshot()
+    }
+
+    private func readCurrentInputTextSnapshot() -> CurrentInputTextSnapshot {
         guard AXIsProcessTrusted() else {
             return CurrentInputTextSnapshot(
                 processID: frontmostProcessID(),
@@ -426,6 +438,7 @@ final class AXTextInjector: TextInjector {
         let pasteboard = NSPasteboard.general
         let previousSnapshot = capturePasteboardSnapshot(from: pasteboard)
         let targetPID: pid_t?
+        let beforeSnapshot: CurrentInputTextSnapshot?
 
         if replaceSelection, let context = activeSelectionContext() {
             targetPID = context.processID
@@ -435,6 +448,9 @@ final class AXTextInjector: TextInjector {
         } else {
             targetPID = frontmostProcessID()
         }
+
+        let initialSnapshot = readCurrentInputTextSnapshot()
+        beforeSnapshot = initialSnapshot.isEditable ? initialSnapshot : nil
 
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
@@ -454,7 +470,87 @@ final class AXTextInjector: TextInjector {
             vUp?.post(tap: .cghidEventTap)
         }
 
+        var lastFailureReason: String?
+        for attempt in 0..<Self.pasteVerificationAttempts {
+            usleep(Self.pasteVerificationPollIntervalMicroseconds)
+            let afterSnapshot = readCurrentInputTextSnapshot()
+            let verification = Self.evaluatePasteVerification(
+                insertedText: text,
+                replaceSelection: replaceSelection,
+                targetProcessID: targetPID,
+                before: beforeSnapshot,
+                after: afterSnapshot
+            )
+
+            switch verification {
+            case .success:
+                restorePasteboardAfterPaste(previousSnapshot)
+                return
+            case .failure(let reason):
+                lastFailureReason = reason
+                logger.debug(
+                    "paste verification failed on attempt \(attempt + 1, privacy: .public): \(reason, privacy: .public)"
+                )
+            case .indeterminate:
+                logger.debug(
+                    "paste verification indeterminate on attempt \(attempt + 1, privacy: .public)"
+                )
+            }
+        }
+
         restorePasteboardAfterPaste(previousSnapshot)
+
+        if let lastFailureReason {
+            throw NSError(
+                domain: "AXTextInjector",
+                code: 2,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "Paste insertion could not be verified: \(lastFailureReason)"
+                ]
+            )
+        }
+    }
+
+    static func evaluatePasteVerification(
+        insertedText: String,
+        replaceSelection: Bool,
+        targetProcessID: pid_t?,
+        before: CurrentInputTextSnapshot?,
+        after: CurrentInputTextSnapshot
+    ) -> PasteVerificationResult {
+        let normalizedInsertedText = insertedText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if let targetProcessID, let afterProcessID = after.processID, targetProcessID != afterProcessID {
+            return .failure("focused-process-changed")
+        }
+
+        if let reason = after.failureReason, reason == "no-focused-element" {
+            return .failure(reason)
+        }
+
+        if let afterText = after.text {
+            let normalizedAfterText = afterText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if !normalizedInsertedText.isEmpty, normalizedAfterText.contains(normalizedInsertedText) {
+                return .success
+            }
+
+            if let beforeText = before?.text {
+                let normalizedBeforeText = beforeText.trimmingCharacters(in: .whitespacesAndNewlines)
+                if normalizedBeforeText == normalizedAfterText {
+                    return .failure("input-text-unchanged")
+                }
+            } else if replaceSelection && !normalizedInsertedText.isEmpty && normalizedAfterText != normalizedInsertedText {
+                return .indeterminate
+            }
+        }
+
+        if let reason = after.failureReason,
+           reason == "focused-element-not-editable" || reason == "accessibility-not-trusted" {
+            return .failure(reason)
+        }
+
+        return .indeterminate
     }
 
     private func copyStringAttribute(_ attribute: String, from element: AXUIElement) -> String? {
