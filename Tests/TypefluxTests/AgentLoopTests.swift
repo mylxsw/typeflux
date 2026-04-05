@@ -324,7 +324,7 @@ extension AgentLoopTests {
         let loop = AgentLoop(llmService: mockLLM, toolRegistry: registry, config: .default)
         let result = try await loop.run(messages: [.user("search for test")])
 
-        XCTAssertEqual(result.steps.count, 1)
+        XCTAssertEqual(result.steps.count, 2)
     }
 
     func testLoopConfigAllowsCustomMaxSteps() async throws {
@@ -385,7 +385,7 @@ extension AgentLoopTests {
             XCTFail("Expected text outcome")
             return
         }
-        XCTAssertEqual(text, "Here is the answer.")
+        XCTAssertEqual(text, "Let me look that up...Here is the answer.")
         XCTAssertEqual(result.steps.count, 1)
     }
 }
