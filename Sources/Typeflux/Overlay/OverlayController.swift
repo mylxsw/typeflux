@@ -192,7 +192,13 @@ final class OverlayController {
             return
         }
         guard model.presentation == .processing else { return }
-        model.statusText = L("overlay.processing.thinking")
+        // Fill progress bar to completion first, then switch to thinking phase
+        model.processingProgress = 1
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { [weak self] in
+            guard let self, self.model.presentation == .processing else { return }
+            self.model.statusText = L("overlay.processing.thinking")
+            self.model.processingProgress = 0
+        }
     }
 
     func showFailure(message: String) {
