@@ -125,4 +125,8 @@ The app must run as a `.app` bundle (not a bare CLI binary) for macOS privacy pe
 
 ## Testing
 
-Tests live in `Tests/TypefluxTests/`. The test target imports the main `Typeflux` executable target directly. Run `swift test --filter <TestClassName>` to run a subset. Use `@Sendable` closures with the `Recorder` actor pattern (see `RequestRetryTests`) for concurrency-safe test helpers.
+Tests live in `Tests/TypefluxTests/`. The test target imports the main `Typeflux` executable target directly. All new and modified code must include sufficient unit tests, with a target of 90% unit test coverage. Run `swift test --filter <TestClassName>` to run a subset. Use `@Sendable` closures with the `Recorder` actor pattern (see `RequestRetryTests`) for concurrency-safe test helpers.
+
+## Development Standards
+
+- This is an internationalized project. All code and code comments must be written in English.

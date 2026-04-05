@@ -17,11 +17,11 @@ Use the package manifest in `Package.swift` as the source of truth.
 
 ## Coding Style & Naming Conventions
 
-Follow existing Swift style in the repo: 4-space indentation, one top-level type per file when practical, and small focused extensions such as `WorkflowController+Agent.swift`. Use `UpperCamelCase` for types, `lowerCamelCase` for methods and properties, and descriptive enum cases like `.openAICompatible`. Prefer protocol-backed services and dependency injection through `DIContainer` instead of hard-coded singletons. No repo-wide formatter or linter is configured, so keep changes consistent with nearby code.
+Follow existing Swift style in the repo: 4-space indentation, one top-level type per file when practical, and small focused extensions such as `WorkflowController+Agent.swift`. Use `UpperCamelCase` for types, `lowerCamelCase` for methods and properties, and descriptive enum cases like `.openAICompatible`. This is an internationalized project, so all code and code comments must be written in English. Prefer protocol-backed services and dependency injection through `DIContainer` instead of hard-coded singletons. No repo-wide formatter or linter is configured, so keep changes consistent with nearby code.
 
 ## Testing Guidelines
 
-Add tests in `Tests/TypefluxTests` for logic, routing, parsing, and provider behavior. Match production names where possible, for example `LLMRouter.swift` with `LLMRouterTests.swift`. Keep test names behavior-focused, such as `testCompleteRoutesToOpenAI`. Run `swift test` before opening a PR; run `make coverage` for larger changes that touch core workflow paths.
+Add tests in `Tests/TypefluxTests` for logic, routing, parsing, and provider behavior. Match production names where possible, for example `LLMRouter.swift` with `LLMRouterTests.swift`. Keep test names behavior-focused, such as `testCompleteRoutesToOpenAI`. All new and modified code must include sufficient unit tests, with a target of 90% unit test coverage. Run `swift test` before opening a PR; run `make coverage` for larger changes that touch core workflow paths.
 
 ## Commit & Pull Request Guidelines
 
