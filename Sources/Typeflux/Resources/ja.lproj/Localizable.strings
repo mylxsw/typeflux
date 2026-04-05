@@ -663,3 +663,17 @@
 "agent.section.skills" = "スキル";
 "agent.skills.empty" = "スキルが設定されていません。スキルにより、Agent にコマンド実行やウェブアクセスなどの機能を提供できます。";
 "agent.skills.builtinBadge" = "組み込み";
+
+// Agent Jobs
+"agent.jobs.title" = "ジョブ";
+"agent.jobs.subtitle" = "エージェントタスクの実行履歴。";
+"agent.jobs.empty" = "ジョブはまだありません。Agentを有効にして「何でも聞いて」を使用すると自動的に作成されます。";
+"agent.jobs.clearAll" = "すべて削除";
+"agent.jobs.toolCalls" = "%d ツール";
+"agent.jobs.steps" = "%d ステップ";
+"agent.jobs.detail.prompt" = "プロンプト";
+"agent.jobs.detail.context" = "コンテキスト";
+"agent.jobs.detail.steps" = "実行ステップ";
+"agent.jobs.detail.result" = "結果";
+"agent.jobs.detail.error" = "エラー";
+"agent.jobs.detail.stepNumber" = "ステップ %d";

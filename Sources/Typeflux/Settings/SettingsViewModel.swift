@@ -114,6 +114,14 @@ final class StudioViewModel: ObservableObject {
 
     @Published var agentSkills: [AgentSkill]
 
+    // Agent Jobs
+    @Published private(set) var agentJobs: [AgentJob] = []
+    @Published private(set) var isLoadingJobs = false
+    @Published var showingJobsPage = false
+    @Published var selectedJobID: UUID? = nil
+    @Published private(set) var selectedJobDetail: AgentJob? = nil
+    private static let jobsPageSize = 50
+
     @Published var personaRewriteEnabled: Bool
     @Published var personaHotkeyAppliesToSelection: Bool
     @Published var personas: [PersonaProfile]
@@ -143,6 +151,7 @@ final class StudioViewModel: ObservableObject {
 
     private let settingsStore: SettingsStore
     private let historyStore: HistoryStore
+    let agentJobStore: AgentJobStore
     private let modelManager: OllamaLocalModelManager
     private let localModelManager: LocalModelManager
     private let audioDeviceManager: AudioDeviceManager
@@ -151,6 +160,7 @@ final class StudioViewModel: ObservableObject {
     private var personaSelectionObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
     private var vocabularyObserver: NSObjectProtocol?
+    private var agentJobObserver: NSObjectProtocol?
     private var llmTestTask: Task<Void, Never>?
     private var sttTestTask: Task<Void, Never>?
     private var mcpTestTask: Task<Void, Never>?
@@ -160,12 +170,14 @@ final class StudioViewModel: ObservableObject {
         historyStore: HistoryStore,
         initialSection: StudioSection,
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
+        agentJobStore: AgentJobStore = SQLiteAgentJobStore(),
         modelManager: OllamaLocalModelManager = OllamaLocalModelManager(),
         localModelManager: LocalModelManager = LocalModelManager(),
         audioDeviceManager: AudioDeviceManager = AudioDeviceManager()
     ) {
         self.settingsStore = settingsStore
         self.historyStore = historyStore
+        self.agentJobStore = agentJobStore
         self.modelManager = modelManager
         self.localModelManager = localModelManager
         self.audioDeviceManager = audioDeviceManager
@@ -304,6 +316,15 @@ final class StudioViewModel: ObservableObject {
                 }
             }
         }
+        agentJobObserver = NotificationCenter.default.addObserver(
+            forName: .agentJobStoreDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshAgentJobs()
+            }
+        }
     }
 
     deinit {
@@ -318,6 +339,9 @@ final class StudioViewModel: ObservableObject {
         }
         if let vocabularyObserver {
             NotificationCenter.default.removeObserver(vocabularyObserver)
+        }
+        if let agentJobObserver {
+            NotificationCenter.default.removeObserver(agentJobObserver)
         }
     }
 
@@ -1045,6 +1069,69 @@ final class StudioViewModel: ObservableObject {
                 if !Task.isCancelled {
                     mcpConnectionTestState = .failure(message: error.localizedDescription)
                 }
+            }
+        }
+    }
+
+    // MARK: - Agent Jobs
+
+    func openJobsPage() {
+        showingJobsPage = true
+        refreshAgentJobs()
+    }
+
+    func closeJobsPage() {
+        showingJobsPage = false
+        selectedJobID = nil
+        selectedJobDetail = nil
+    }
+
+    func selectJob(_ job: AgentJob) {
+        selectedJobID = job.id
+        selectedJobDetail = job
+    }
+
+    func closeJobDetail() {
+        selectedJobID = nil
+        selectedJobDetail = nil
+    }
+
+    func refreshAgentJobs() {
+        guard showingJobsPage else { return }
+        isLoadingJobs = true
+        Task {
+            let jobs = (try? await agentJobStore.list(limit: Self.jobsPageSize, offset: 0)) ?? []
+            await MainActor.run {
+                self.agentJobs = jobs
+                self.isLoadingJobs = false
+                // If the currently viewed detail was updated, refresh it
+                if let selectedID = self.selectedJobID {
+                    self.selectedJobDetail = jobs.first { $0.id == selectedID }
+                }
+            }
+        }
+    }
+
+    func deleteAgentJob(id: UUID) {
+        Task {
+            try? await agentJobStore.delete(id: id)
+            await MainActor.run {
+                self.agentJobs.removeAll { $0.id == id }
+                if self.selectedJobID == id {
+                    self.selectedJobID = nil
+                    self.selectedJobDetail = nil
+                }
+            }
+        }
+    }
+
+    func clearAllAgentJobs() {
+        Task {
+            try? await agentJobStore.clear()
+            await MainActor.run {
+                self.agentJobs = []
+                self.selectedJobID = nil
+                self.selectedJobDetail = nil
             }
         }
     }

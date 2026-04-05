@@ -187,6 +187,9 @@ struct StudioView: View {
                 Text(L("agent.mcp.deleteDialog.message", server.name.isEmpty ? L("agent.mcp.untitled") : server.name))
             }
         }
+        .sheet(isPresented: $viewModel.showingJobsPage) {
+            agentJobsSheet
+        }
     }
 
     private func sendFeedbackEmail() {
@@ -221,6 +224,14 @@ struct StudioView: View {
                 ) {
                     newVocabularyTerm = ""
                     isAddingVocabulary = true
+                }
+            } else if viewModel.currentSection == .agent {
+                Spacer()
+
+                StudioButton(
+                    title: L("agent.jobs.title"), systemImage: "list.bullet.rectangle", variant: .secondary
+                ) {
+                    viewModel.openJobsPage()
                 }
             } else if viewModel.currentSection == .personas {
                 Spacer()
@@ -4064,4 +4075,353 @@ struct StudioView: View {
             : L("settings.models.routing.readinessNeedsSetup")
     }
 
+    // MARK: - Agent Jobs Sheet
+
+    private var agentJobsSheet: some View {
+        VStack(spacing: 0) {
+            if let job = viewModel.selectedJobDetail {
+                agentJobDetailView(job: job)
+            } else {
+                agentJobsListView
+            }
+        }
+        .frame(width: 680, height: 560)
+    }
+
+    private var agentJobsListView: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+            // Header
+            HStack {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                    Text(L("agent.jobs.title"))
+                        .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text(L("agent.jobs.subtitle"))
+                        .font(.studioBody(StudioTheme.Typography.body))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
+
+                Spacer()
+
+                if !viewModel.agentJobs.isEmpty {
+                    StudioButton(
+                        title: L("agent.jobs.clearAll"),
+                        systemImage: "trash",
+                        variant: .secondary
+                    ) {
+                        viewModel.clearAllAgentJobs()
+                    }
+                }
+
+                Button(action: viewModel.closeJobsPage) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, StudioTheme.Spacing.large)
+            .padding(.top, StudioTheme.Spacing.large)
+
+            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+            // Jobs list
+            if viewModel.isLoadingJobs && viewModel.agentJobs.isEmpty {
+                Spacer()
+                HStack {
+                    Spacer()
+                    ProgressView()
+                        .controlSize(.small)
+                    Spacer()
+                }
+                Spacer()
+            } else if viewModel.agentJobs.isEmpty {
+                Spacer()
+                VStack(spacing: StudioTheme.Spacing.medium) {
+                    Image(systemName: "tray")
+                        .font(.system(size: 28, weight: .light))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                    Text(L("agent.jobs.empty"))
+                        .font(.studioBody(StudioTheme.Typography.body, weight: .regular))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                Spacer()
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(viewModel.agentJobs) { job in
+                            agentJobRow(job)
+                            if job.id != viewModel.agentJobs.last?.id {
+                                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func agentJobRow(_ job: AgentJob) -> some View {
+        HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
+            Circle()
+                .fill(jobStatusColor(job.status))
+                .frame(width: 8, height: 8)
+                .padding(.top, 6)
+
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                Text(job.displayTitle)
+                    .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .medium))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .lineLimit(1)
+
+                HStack(spacing: StudioTheme.Spacing.small) {
+                    Text(jobTimeText(job.createdAt))
+                        .font(.studioBody(StudioTheme.Typography.bodySmall))
+                        .foregroundStyle(StudioTheme.textTertiary)
+
+                    if let duration = job.formattedDuration {
+                        Text("·")
+                            .foregroundStyle(StudioTheme.textTertiary)
+                        Text(duration)
+                            .font(.studioBody(StudioTheme.Typography.bodySmall))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                    }
+
+                    if job.totalToolCalls > 0 {
+                        Text("·")
+                            .foregroundStyle(StudioTheme.textTertiary)
+                        Label(
+                            L("agent.jobs.toolCalls", job.totalToolCalls),
+                            systemImage: "wrench"
+                        )
+                        .font(.studioBody(StudioTheme.Typography.bodySmall))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                    }
+                }
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
+                .foregroundStyle(StudioTheme.textTertiary)
+        }
+        .padding(.horizontal, StudioTheme.Spacing.large)
+        .padding(.vertical, StudioTheme.Spacing.medium)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            viewModel.selectJob(job)
+        }
+        .contextMenu {
+            Button(L("common.delete"), role: .destructive) {
+                viewModel.deleteAgentJob(id: job.id)
+            }
+        }
+    }
+
+    // MARK: - Agent Job Detail
+
+    private func agentJobDetailView(job: AgentJob) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header with back button
+            HStack {
+                Button(action: viewModel.closeJobDetail) {
+                    HStack(spacing: StudioTheme.Spacing.xSmall) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
+                        Text(L("agent.jobs.title"))
+                            .font(.studioBody(StudioTheme.Typography.body))
+                    }
+                    .foregroundStyle(StudioTheme.accent)
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                Button(action: viewModel.closeJobsPage) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, StudioTheme.Spacing.large)
+            .padding(.top, StudioTheme.Spacing.large)
+            .padding(.bottom, StudioTheme.Spacing.medium)
+
+            // Job title and metadata
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                HStack(spacing: StudioTheme.Spacing.small) {
+                    Circle()
+                        .fill(jobStatusColor(job.status))
+                        .frame(width: 10, height: 10)
+                    Text(job.displayTitle)
+                        .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                }
+
+                HStack(spacing: StudioTheme.Spacing.small) {
+                    Text(jobDetailTimeText(job.createdAt))
+                        .font(.studioBody(StudioTheme.Typography.bodySmall))
+                        .foregroundStyle(StudioTheme.textTertiary)
+
+                    if let duration = job.formattedDuration {
+                        StudioPill(title: duration)
+                    }
+
+                    StudioPill(title: L("agent.jobs.steps", job.steps.count))
+
+                    if job.totalToolCalls > 0 {
+                        StudioPill(title: L("agent.jobs.toolCalls", job.totalToolCalls))
+                    }
+                }
+            }
+            .padding(.horizontal, StudioTheme.Spacing.large)
+            .padding(.bottom, StudioTheme.Spacing.medium)
+
+            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+            // Scrollable content
+            ScrollView {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
+                    jobSection(title: L("agent.jobs.detail.prompt"), icon: "person.fill") {
+                        Text(job.userPrompt)
+                            .font(.studioBody(StudioTheme.Typography.body))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                            .textSelection(.enabled)
+                    }
+
+                    if let selectedText = job.selectedText, !selectedText.isEmpty {
+                        jobSection(title: L("agent.jobs.detail.context"), icon: "text.quote") {
+                            Text(selectedText)
+                                .font(.studioBody(StudioTheme.Typography.bodySmall))
+                                .foregroundStyle(StudioTheme.textSecondary)
+                                .textSelection(.enabled)
+                                .lineLimit(5)
+                        }
+                    }
+
+                    if !job.steps.isEmpty {
+                        jobSection(title: L("agent.jobs.detail.steps"), icon: "list.number") {
+                            ForEach(job.steps) { step in
+                                jobStepView(step, isLast: step.id == job.steps.last?.id)
+                            }
+                        }
+                    }
+
+                    if let result = job.resultText, !result.isEmpty {
+                        jobSection(title: L("agent.jobs.detail.result"), icon: "sparkles") {
+                            Text(result)
+                                .font(.studioBody(StudioTheme.Typography.body))
+                                .foregroundStyle(StudioTheme.textPrimary)
+                                .textSelection(.enabled)
+                        }
+                    }
+
+                    if let error = job.errorMessage, !error.isEmpty {
+                        jobSection(title: L("agent.jobs.detail.error"), icon: "exclamationmark.triangle.fill") {
+                            Text(error)
+                                .font(.studioBody(StudioTheme.Typography.body))
+                                .foregroundStyle(StudioTheme.danger)
+                                .textSelection(.enabled)
+                        }
+                    }
+                }
+                .padding(StudioTheme.Spacing.large)
+            }
+        }
+    }
+
+    private func jobSection<Content: View>(
+        title: String,
+        icon: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            HStack(spacing: StudioTheme.Spacing.xSmall) {
+                Image(systemName: icon)
+                    .font(.system(size: StudioTheme.Typography.iconSmall))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                Text(title)
+                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
+
+            StudioCard {
+                content()
+            }
+        }
+    }
+
+    private func jobStepView(_ step: AgentJobStep, isLast: Bool) -> some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            HStack {
+                Text(L("agent.jobs.detail.stepNumber", step.stepIndex + 1))
+                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+
+                Spacer()
+
+                Text("\(step.durationMs)ms")
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                    .foregroundStyle(StudioTheme.textTertiary)
+            }
+
+            if let text = step.assistantText, !text.isEmpty {
+                Text(text)
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .lineLimit(3)
+            }
+
+            ForEach(step.toolCalls) { toolCall in
+                HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
+                    Image(systemName: toolCall.isError ? "xmark.circle.fill" : "wrench.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(toolCall.isError ? StudioTheme.danger : StudioTheme.accent)
+                        .padding(.top, 3)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(toolCall.name)
+                            .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .medium))
+                            .foregroundStyle(StudioTheme.textPrimary)
+
+                        Text(toolCall.resultContent.prefix(200))
+                            .font(.studioBody(StudioTheme.Typography.caption))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .lineLimit(2)
+                    }
+                }
+            }
+
+            if !isLast {
+                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+            }
+        }
+    }
+
+    // MARK: - Job Helpers
+
+    private func jobStatusColor(_ status: AgentJobStatus) -> Color {
+        switch status {
+        case .running: return StudioTheme.warning
+        case .completed: return StudioTheme.success
+        case .failed: return StudioTheme.danger
+        }
+    }
+
+    private func jobTimeText(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private func jobDetailTimeText(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .medium
+        return formatter.string(from: date)
+    }
 }

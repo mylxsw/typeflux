@@ -663,3 +663,17 @@
 "agent.section.skills" = "技能";
 "agent.skills.empty" = "暂无技能配置。技能可以为 Agent 提供命令执行、网络访问等专门能力。";
 "agent.skills.builtinBadge" = "内置";
+
+// Agent Jobs
+"agent.jobs.title" = "任务记录";
+"agent.jobs.subtitle" = "Agent 任务执行历史。";
+"agent.jobs.empty" = "暂无任务记录。启用 Agent 后使用"随便问"时会自动创建任务。";
+"agent.jobs.clearAll" = "清除全部";
+"agent.jobs.toolCalls" = "%d 个工具";
+"agent.jobs.steps" = "%d 个步骤";
+"agent.jobs.detail.prompt" = "提示词";
+"agent.jobs.detail.context" = "上下文";
+"agent.jobs.detail.steps" = "执行步骤";
+"agent.jobs.detail.result" = "结果";
+"agent.jobs.detail.error" = "错误";
+"agent.jobs.detail.stepNumber" = "步骤 %d";

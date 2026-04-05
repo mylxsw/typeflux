@@ -663,3 +663,17 @@
 "agent.section.skills" = "Skills";
 "agent.skills.empty" = "No skills configured. Skills provide the Agent with specialized abilities like command execution or web access.";
 "agent.skills.builtinBadge" = "Built-in";
+
+// Agent Jobs
+"agent.jobs.title" = "Jobs";
+"agent.jobs.subtitle" = "History of Agent task executions.";
+"agent.jobs.empty" = "No jobs yet. Jobs are created when you use Ask Anything with Agent enabled.";
+"agent.jobs.clearAll" = "Clear All";
+"agent.jobs.toolCalls" = "%d tools";
+"agent.jobs.steps" = "%d steps";
+"agent.jobs.detail.prompt" = "PROMPT";
+"agent.jobs.detail.context" = "CONTEXT";
+"agent.jobs.detail.steps" = "EXECUTION STEPS";
+"agent.jobs.detail.result" = "RESULT";
+"agent.jobs.detail.error" = "ERROR";
+"agent.jobs.detail.stepNumber" = "Step %d";

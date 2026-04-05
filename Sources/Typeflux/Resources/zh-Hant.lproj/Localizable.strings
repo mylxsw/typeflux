@@ -663,3 +663,17 @@
 "agent.section.skills" = "技能";
 "agent.skills.empty" = "尚未配置技能。技能可以為 Agent 提供命令執行、網路存取等專門能力。";
 "agent.skills.builtinBadge" = "內建";
+
+// Agent Jobs
+"agent.jobs.title" = "任務記錄";
+"agent.jobs.subtitle" = "Agent 任務執行歷史。";
+"agent.jobs.empty" = "暫無任務記錄。啟用 Agent 後使用「隨便問」時會自動建立任務。";
+"agent.jobs.clearAll" = "清除全部";
+"agent.jobs.toolCalls" = "%d 個工具";
+"agent.jobs.steps" = "%d 個步驟";
+"agent.jobs.detail.prompt" = "提示詞";
+"agent.jobs.detail.context" = "上下文";
+"agent.jobs.detail.steps" = "執行步驟";
+"agent.jobs.detail.result" = "結果";
+"agent.jobs.detail.error" = "錯誤";
+"agent.jobs.detail.stepNumber" = "步驟 %d";

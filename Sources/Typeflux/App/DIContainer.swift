@@ -20,6 +20,7 @@ final class DIContainer {
     let sttRouter: STTRouter
     let ollamaModelManager: OllamaLocalModelManager
     let localModelManager: LocalModelManager
+    let agentJobStore: AgentJobStore
 
     init() {
         hotkeyService = EventTapHotkeyService(settingsStore: settingsStore)
@@ -34,6 +35,7 @@ final class DIContainer {
         textInjector = AXTextInjector()
         Logger(subsystem: "dev.typeflux", category: "DIContainer").debug("DIContainer initialized — Logger test message")
         historyStore = SQLiteHistoryStore()
+        agentJobStore = SQLiteAgentJobStore()
         ollamaModelManager = OllamaLocalModelManager()
         llmAgentService = LLMAgentRouter(
             settingsStore: settingsStore,

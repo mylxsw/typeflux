@@ -20,6 +20,7 @@ final class AppCoordinator {
             textInjector: di.textInjector,
             clipboard: di.clipboard,
             historyStore: di.historyStore,
+            agentJobStore: di.agentJobStore,
             overlayController: di.overlayController,
             askAnswerWindowController: di.askAnswerWindowController,
             soundEffectPlayer: di.soundEffectPlayer

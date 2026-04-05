@@ -1,13 +1,13 @@
 import Foundation
 
-/// Agent 执行结果（供 WorkflowController 使用）
+/// Agent execution result for the WorkflowController.
 enum AskAgentResult: Sendable {
     case answer(String)
     case edit(String)
 }
 
 extension WorkflowController {
-    /// 使用 Agent 框架处理「随便问」请求
+    /// Run an agent-powered "Ask Anything" request with job recording.
     func runAskAgent(
         selectedText: String?,
         spokenInstruction: String,
@@ -34,9 +34,10 @@ extension WorkflowController {
             config: .default
         )
 
-        if settingsStore.agentStepLoggingEnabled {
-            await loop.setStepMonitor(AgentStepLogger())
-        }
+        // Set up job recorder as the step monitor
+        let jobRecorder = AgentJobRecorder(store: agentJobStore, jobID: UUID())
+        await jobRecorder.beginJob(userPrompt: spokenInstruction, selectedText: selectedText)
+        await loop.setStepMonitor(jobRecorder)
 
         let systemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: AgentPromptCatalog.askAgentSystemPrompt(
@@ -50,10 +51,38 @@ extension WorkflowController {
             instruction: spokenInstruction
         )
 
-        let result = try await loop.run(messages: [
-            .system(systemPrompt),
-            .user(userPrompt),
-        ])
+        let result: AgentResult
+        do {
+            result = try await loop.run(messages: [
+                .system(systemPrompt),
+                .user(userPrompt),
+            ])
+        } catch {
+            await jobRecorder.markFailed(error: error)
+            throw error
+        }
+
+        // Generate a summary title asynchronously (fire-and-forget)
+        let jobID = jobRecorder.recordedJobID
+        let jobStore = agentJobStore
+        let titleLLMService = LLMRouter(
+            settingsStore: settingsStore,
+            openAICompatible: OpenAICompatibleLLMService(settingsStore: settingsStore),
+            ollama: OllamaLLMService(settingsStore: settingsStore, modelManager: OllamaLocalModelManager())
+        )
+        Task.detached {
+            if var job = try? await jobStore.job(id: jobID) {
+                let title = await AgentJobTitleGenerator.generateTitle(
+                    for: job,
+                    using: titleLLMService,
+                    appLanguage: self.settingsStore.appLanguage
+                )
+                if let title {
+                    job.title = title
+                    try? await jobStore.save(job)
+                }
+            }
+        }
 
         switch result.outcome {
         case .text(let text):

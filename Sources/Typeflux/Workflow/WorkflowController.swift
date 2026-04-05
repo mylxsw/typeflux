@@ -52,6 +52,7 @@ final class WorkflowController {
     private let textInjector: TextInjector
     let clipboard: ClipboardService
     private let historyStore: HistoryStore
+    let agentJobStore: AgentJobStore
     private let overlayController: OverlayController
     private let askAnswerWindowController: AskAnswerWindowController
     private let soundEffectPlayer: SoundEffectPlayer
@@ -105,6 +106,7 @@ final class WorkflowController {
         textInjector: TextInjector,
         clipboard: ClipboardService,
         historyStore: HistoryStore,
+        agentJobStore: AgentJobStore,
         overlayController: OverlayController,
         askAnswerWindowController: AskAnswerWindowController,
         soundEffectPlayer: SoundEffectPlayer
@@ -119,6 +121,7 @@ final class WorkflowController {
         self.textInjector = textInjector
         self.clipboard = clipboard
         self.historyStore = historyStore
+        self.agentJobStore = agentJobStore
         self.overlayController = overlayController
         self.askAnswerWindowController = askAnswerWindowController
         self.soundEffectPlayer = soundEffectPlayer

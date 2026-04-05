@@ -663,3 +663,17 @@
 "agent.section.skills" = "스킬";
 "agent.skills.empty" = "설정된 스킬이 없습니다. 스킬을 통해 Agent에 명령 실행, 웹 접근 등 전문 기능을 제공할 수 있습니다.";
 "agent.skills.builtinBadge" = "기본 제공";
+
+// Agent Jobs
+"agent.jobs.title" = "작업";
+"agent.jobs.subtitle" = "에이전트 작업 실행 기록.";
+"agent.jobs.empty" = "아직 작업이 없습니다. Agent를 활성화하고 '아무거나 물어보기'를 사용하면 자동으로 생성됩니다.";
+"agent.jobs.clearAll" = "모두 삭제";
+"agent.jobs.toolCalls" = "%d 도구";
+"agent.jobs.steps" = "%d 단계";
+"agent.jobs.detail.prompt" = "프롬프트";
+"agent.jobs.detail.context" = "컨텍스트";
+"agent.jobs.detail.steps" = "실행 단계";
+"agent.jobs.detail.result" = "결과";
+"agent.jobs.detail.error" = "오류";
+"agent.jobs.detail.stepNumber" = "단계 %d";
