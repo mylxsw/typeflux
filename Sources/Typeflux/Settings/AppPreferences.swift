@@ -4,6 +4,11 @@ enum AliCloudASRDefaults {
     static let model = "fun-asr-realtime"
 }
 
+enum ExperimentalFeatureFlags {
+    /// Keep OpenAI Realtime STT behind an explicit flag until the feature is production ready.
+    static let openAIRealtimeSTTEnabled = false
+}
+
 enum STTProvider: String, CaseIterable, Codable {
     case freeModel
     case whisperAPI

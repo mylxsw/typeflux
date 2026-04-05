@@ -107,29 +107,18 @@ final class STTRouter {
                 throw error
             }
         case .whisperAPI:
-            if !settingsStore.whisperBaseURL.isEmpty {
-                do {
-                    return try await RequestRetry.perform(operationName: "Remote STT request") { [self] in
-                        try await self.whisper.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
-                    }
-                } catch {
-                    NetworkDebugLogger.logError(context: "Remote STT failed", error: error)
-                    if settingsStore.useAppleSpeechFallback {
-                        NetworkDebugLogger.logMessage("Falling back to Apple Speech after remote STT failure")
-                        return try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
-                    }
-                    throw error
+            do {
+                return try await RequestRetry.perform(operationName: "Remote STT request") { [self] in
+                    try await self.whisper.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
                 }
+            } catch {
+                NetworkDebugLogger.logError(context: "Remote STT failed", error: error)
+                if settingsStore.useAppleSpeechFallback {
+                    NetworkDebugLogger.logMessage("Falling back to Apple Speech after remote STT failure")
+                    return try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                }
+                throw error
             }
-            if settingsStore.useAppleSpeechFallback {
-                NetworkDebugLogger.logMessage("Remote STT is not configured, using Apple Speech fallback")
-                return try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
-            }
-            throw NSError(
-                domain: "STTRouter",
-                code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Remote transcription is not configured yet."]
-            )
 
         case .appleSpeech:
             return try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)

@@ -3695,7 +3695,7 @@ struct StudioView: View {
             return !viewModel.freeSTTModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && FreeSTTModelRegistry.resolve(modelName: viewModel.freeSTTModel) != nil
         case .whisperAPI:
-            return !viewModel.whisperBaseURL.isEmpty
+            return !viewModel.whisperAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .ollama:
             return !viewModel.ollamaModel.isEmpty
         case .freeModel:

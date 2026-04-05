@@ -1,12 +1,15 @@
 import Foundation
 
 enum OpenAIAudioModelCatalog {
+    static let defaultWhisperEndpoint = "https://api.openai.com/v1/audio/transcriptions"
+    static let defaultWhisperModel = "gpt-4o-transcribe"
+
     static let whisperEndpoints = [
-        "https://api.openai.com/v1/audio/transcriptions"
+        defaultWhisperEndpoint
     ]
 
     static let whisperModels = [
-        "gpt-4o-transcribe",
+        defaultWhisperModel,
         "gpt-4o-mini-transcribe",
         "whisper-1",
     ]
@@ -26,4 +29,14 @@ enum OpenAIAudioModelCatalog {
         "gpt-4o-mini-audio-preview",
         "mimo-v2-omni",
     ]
+
+    static func resolvedWhisperEndpoint(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? defaultWhisperEndpoint : trimmed
+    }
+
+    static func resolvedWhisperModel(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? defaultWhisperModel : trimmed
+    }
 }

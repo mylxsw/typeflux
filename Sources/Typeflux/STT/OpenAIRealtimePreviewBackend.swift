@@ -3,14 +3,18 @@ import Foundation
 
 struct OpenAIRealtimePreviewSupport {
     static func isSupported(baseURL: String, model: String) -> Bool {
-        guard !baseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
-        let normalized = model.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalized = OpenAIAudioModelCatalog.resolvedWhisperModel(model).lowercased()
         guard !normalized.isEmpty else { return false }
-        return normalized != "whisper-1"
+        return OpenAIRealtimeTranscriber.shouldUseRealtime(
+            baseURL: OpenAIAudioModelCatalog.resolvedWhisperEndpoint(baseURL),
+            model: normalized
+        )
     }
 
     static func webSocketURL(baseURL: String, model: String) -> URL? {
-        guard var components = URLComponents(string: baseURL) else { return nil }
+        let endpoint = OpenAIAudioModelCatalog.resolvedWhisperEndpoint(baseURL)
+        let resolvedModel = OpenAIAudioModelCatalog.resolvedWhisperModel(model)
+        guard var components = URLComponents(string: endpoint) else { return nil }
         switch components.scheme?.lowercased() {
         case "https":
             components.scheme = "wss"
@@ -23,10 +27,14 @@ struct OpenAIRealtimePreviewSupport {
         }
 
         let trimmedPath = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        components.path = "/" + ([trimmedPath, "realtime"].filter { !$0.isEmpty }).joined(separator: "/")
+        let pathComponents = trimmedPath
+            .split(separator: "/")
+            .filter { $0 != "audio" && $0 != "transcriptions" }
+            .map(String.init)
+        components.path = "/" + (pathComponents + ["realtime"]).joined(separator: "/")
         var queryItems = components.queryItems ?? []
         queryItems.removeAll { $0.name == "model" }
-        queryItems.append(URLQueryItem(name: "model", value: model))
+        queryItems.append(URLQueryItem(name: "model", value: resolvedModel))
         components.queryItems = queryItems
         return components.url
     }
@@ -107,8 +115,7 @@ struct OpenAIRealtimeTranscriptAccumulator {
 
 actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
     private let settingsStore: SettingsStore
-    private var session: URLSession?
-    private var socketTask: URLSessionWebSocketTask?
+    private var socket: OpenAIRealtimeSocket?
     private var receiveTask: Task<Void, Never>?
     private var onTextUpdate: (@Sendable (String) -> Void)?
     private var latestText = ""
@@ -122,14 +129,14 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
     static func isSupported(settingsStore: SettingsStore) -> Bool {
         OpenAIRealtimePreviewSupport.isSupported(
             baseURL: settingsStore.whisperBaseURL,
-            model: settingsStore.whisperModel.isEmpty ? OpenAIAudioModelCatalog.whisperModels[0] : settingsStore.whisperModel
+            model: settingsStore.whisperModel
         )
     }
 
     func start(onTextUpdate: @escaping @Sendable (String) -> Void) async throws {
         cancel()
 
-        let model = settingsStore.whisperModel.isEmpty ? OpenAIAudioModelCatalog.whisperModels[0] : settingsStore.whisperModel
+        let model = OpenAIAudioModelCatalog.resolvedWhisperModel(settingsStore.whisperModel)
         guard let url = OpenAIRealtimePreviewSupport.webSocketURL(
             baseURL: settingsStore.whisperBaseURL,
             model: model
@@ -145,22 +152,16 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
         if !settingsStore.whisperAPIKey.isEmpty {
             request.setValue("Bearer \(settingsStore.whisperAPIKey)", forHTTPHeaderField: "Authorization")
         }
-        request.setValue("realtime=v1", forHTTPHeaderField: "OpenAI-Beta")
+        let socket = OpenAIRealtimeSocket(request: request, logPrefix: "Realtime preview")
+        try await socket.connect(timeout: .seconds(5))
 
-        let delegate = WebSocketOpenDelegate()
-        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
-        let socketTask = session.webSocketTask(with: request)
-        socketTask.resume()
-        try await delegate.waitUntilOpen(timeout: .seconds(5))
-
-        self.session = session
-        self.socketTask = socketTask
+        self.socket = socket
         self.onTextUpdate = onTextUpdate
         self.latestText = ""
         self.accumulator = OpenAIRealtimeTranscriptAccumulator()
 
         receiveTask = Task { [weak self] in
-            await self?.receiveLoop()
+            await self?.receiveLoop(socket: socket)
         }
 
         let payload = buildSessionUpdatePayload()
@@ -168,7 +169,7 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
     }
 
     func append(_ buffer: AVAudioPCMBuffer) async {
-        guard socketTask != nil else { return }
+        guard socket != nil else { return }
         do {
             let audioData = try encoder.encode(buffer: buffer)
             guard !audioData.isEmpty else { return }
@@ -196,34 +197,28 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
     func cancel() {
         receiveTask?.cancel()
         receiveTask = nil
-        socketTask?.cancel(with: .normalClosure, reason: nil)
-        socketTask = nil
-        session?.invalidateAndCancel()
-        session = nil
+        socket?.disconnect()
+        socket = nil
         onTextUpdate = nil
     }
 
-    private func receiveLoop() async {
-        while !Task.isCancelled {
-            do {
-                guard let socketTask else { break }
-                let message = try await socketTask.receive()
-                guard let data = messageData(from: message) else { continue }
+    private func receiveLoop(socket: OpenAIRealtimeSocket) async {
+        do {
+            for try await data in socket.messages {
                 if let snapshot = try accumulator.process(eventData: data) {
                     latestText = snapshot.text
                     onTextUpdate?(snapshot.text)
                 }
-            } catch {
-                if !Task.isCancelled {
-                    NetworkDebugLogger.logError(context: "Realtime preview receive failed", error: error)
-                }
-                break
+            }
+        } catch {
+            if !Task.isCancelled {
+                NetworkDebugLogger.logError(context: "Realtime preview receive failed", error: error)
             }
         }
     }
 
     private func buildSessionUpdatePayload() -> [String: Any] {
-        let model = settingsStore.whisperModel.isEmpty ? OpenAIAudioModelCatalog.whisperModels[0] : settingsStore.whisperModel
+        let model = OpenAIAudioModelCatalog.resolvedWhisperModel(settingsStore.whisperModel)
         let prompt = TranscriptionLanguageHints.remotePrompt(vocabularyTerms: VocabularyStore.activeTerms())
 
         var transcriptionPayload: [String: Any] = [
@@ -233,25 +228,30 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
             transcriptionPayload["prompt"] = prompt
         }
 
-        let transcriptionSession: [String: Any] = [
-            "type": "realtime.transcription_session",
-            "input_audio_format": "pcm16",
-            "turn_detection": [
-                "type": "server_vad",
-                "silence_duration_ms": 500,
-                "prefix_padding_ms": 300
-            ],
-            "input_audio_transcription": transcriptionPayload
-        ]
-
         return [
             "type": "session.update",
-            "session": transcriptionSession
+            "session": [
+                "type": "transcription",
+                "audio": [
+                    "input": [
+                        "format": [
+                            "type": "audio/pcm",
+                            "rate": 24_000
+                        ],
+                        "transcription": transcriptionPayload,
+                        "turn_detection": [
+                            "type": "server_vad",
+                            "silence_duration_ms": 500,
+                            "prefix_padding_ms": 300
+                        ]
+                    ]
+                ]
+            ] as [String: Any]
         ]
     }
 
     private func send(_ payload: [String: Any]) async throws {
-        guard let socketTask else { return }
+        guard let socket else { return }
         let data = try JSONSerialization.data(withJSONObject: payload)
         guard let text = String(data: data, encoding: .utf8) else {
             throw NSError(
@@ -260,86 +260,7 @@ actor OpenAIRealtimePreviewBackend: LivePreviewBackend {
                 userInfo: [NSLocalizedDescriptionKey: "Failed to encode realtime payload."]
             )
         }
-        try await socketTask.send(.string(text))
-    }
-
-    private func messageData(from message: URLSessionWebSocketTask.Message) -> Data? {
-        switch message {
-        case .data(let data):
-            return data
-        case .string(let text):
-            return text.data(using: .utf8)
-        @unknown default:
-            return nil
-        }
-    }
-}
-
-private actor WebSocketOpenDelegateState {
-    private var opened = false
-    private var continuation: CheckedContinuation<Void, Error>?
-
-    func waitUntilOpen(timeout: Duration) async throws {
-        if opened { return }
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask {
-                try await withCheckedThrowingContinuation { continuation in
-                    Task {
-                        await self.store(continuation: continuation)
-                    }
-                }
-            }
-            group.addTask {
-                try await Task.sleep(for: timeout)
-                throw NSError(
-                    domain: "OpenAIRealtimePreviewBackend",
-                    code: 3,
-                    userInfo: [NSLocalizedDescriptionKey: "Realtime preview handshake timed out."]
-                )
-            }
-            try await group.next()
-            group.cancelAll()
-        }
-    }
-
-    func markOpened() {
-        opened = true
-        continuation?.resume()
-        continuation = nil
-    }
-
-    func markFailed(_ error: Error) {
-        continuation?.resume(throwing: error)
-        continuation = nil
-    }
-
-    private func store(continuation: CheckedContinuation<Void, Error>) {
-        self.continuation = continuation
-    }
-}
-
-private final class WebSocketOpenDelegate: NSObject, URLSessionWebSocketDelegate, URLSessionTaskDelegate {
-    private let state = WebSocketOpenDelegateState()
-
-    func waitUntilOpen(timeout: Duration) async throws {
-        try await state.waitUntilOpen(timeout: timeout)
-    }
-
-    func urlSession(
-        _ session: URLSession,
-        webSocketTask: URLSessionWebSocketTask,
-        didOpenWithProtocol protocol: String?
-    ) {
-        Task { await state.markOpened() }
-    }
-
-    func urlSession(
-        _ session: URLSession,
-        task: URLSessionTask,
-        didCompleteWithError error: Error?
-    ) {
-        guard let error else { return }
-        Task { await state.markFailed(error) }
+        try await socket.send(text: text)
     }
 }
 

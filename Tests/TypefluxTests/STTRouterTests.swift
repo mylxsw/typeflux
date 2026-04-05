@@ -280,31 +280,32 @@ final class STTRouterTests: XCTestCase {
         }
     }
 
-    // MARK: - WhisperAPI empty baseURL
+    // MARK: - WhisperAPI default OpenAI endpoint
 
-    func testWhisperAPIWithEmptyBaseURLAndFallbackEnabledUsesAppleSpeech() async throws {
+    func testWhisperAPIWithEmptyBaseURLStillRoutesToWhisperTranscriber() async throws {
         settings.sttProvider = .whisperAPI
         settings.whisperBaseURL = ""
-        settings.useAppleSpeechFallback = true
-        appleSpeech.resultToReturn = "apple via empty url"
+        whisper.resultToReturn = "openai default endpoint"
         let router = makeRouter()
 
         let result = try await router.transcribe(audioFile: dummyAudioFile())
-        XCTAssertEqual(result, "apple via empty url")
+        XCTAssertEqual(result, "openai default endpoint")
+        XCTAssertEqual(whisper.transcribeCallCount, 1)
+        XCTAssertEqual(appleSpeech.transcribeCallCount, 0)
     }
 
-    func testWhisperAPIWithEmptyBaseURLAndNoFallbackThrows() async {
+    func testWhisperAPIWithEmptyBaseURLStillFallsBackAfterWhisperFailure() async throws {
         settings.sttProvider = .whisperAPI
         settings.whisperBaseURL = ""
-        settings.useAppleSpeechFallback = false
+        settings.useAppleSpeechFallback = true
+        whisper.errorToThrow = NSError(domain: "test", code: 1)
+        appleSpeech.resultToReturn = "apple fallback"
         let router = makeRouter()
 
-        do {
-            _ = try await router.transcribe(audioFile: dummyAudioFile())
-            XCTFail("Expected error")
-        } catch let error as NSError {
-            XCTAssertEqual(error.domain, "STTRouter")
-        }
+        let result = try await router.transcribe(audioFile: dummyAudioFile())
+        XCTAssertEqual(result, "apple fallback")
+        XCTAssertEqual(whisper.transcribeCallCount, 4)
+        XCTAssertEqual(appleSpeech.transcribeCallCount, 1)
     }
 
     // MARK: - prepareForRecording
