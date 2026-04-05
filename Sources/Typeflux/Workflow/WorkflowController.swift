@@ -1569,16 +1569,16 @@ final class WorkflowController {
     }
 
     private func shouldPresentResultDialog(for snapshot: TextSelectionSnapshot) -> Bool {
-        snapshot.hasAskSelectionContext && !snapshot.canSafelyReplaceSelection
+        snapshot.hasAskSelectionContext && !snapshot.canReplaceSelection
     }
 
     private func editingSelectedText(from snapshot: TextSelectionSnapshot) -> String? {
-        guard snapshot.canSafelyReplaceSelection else { return nil }
+        guard snapshot.canReplaceSelection else { return nil }
         return snapshot.selectedText?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func shouldReplaceActiveSelection(for snapshot: TextSelectionSnapshot) -> Bool {
-        snapshot.canSafelyReplaceSelection
+        snapshot.canReplaceSelection
     }
 
     private func hasAskSelectionContext(_ snapshot: TextSelectionSnapshot) -> Bool {
@@ -1586,7 +1586,7 @@ final class WorkflowController {
     }
 
     private func canReplaceActiveSelection(for snapshot: TextSelectionSnapshot) -> Bool {
-        snapshot.canSafelyReplaceSelection
+        snapshot.canReplaceSelection
     }
 
     private func dismissOverlayForExternalReplacement() {
