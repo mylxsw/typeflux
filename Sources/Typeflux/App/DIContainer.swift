@@ -32,7 +32,7 @@ final class DIContainer {
         clipboard = SystemClipboardService()
         askAnswerWindowController = AskAnswerWindowController(clipboard: clipboard, settingsStore: settingsStore)
         soundEffectPlayer = SoundEffectPlayer(settingsStore: settingsStore)
-        textInjector = AXTextInjector()
+        textInjector = AXTextInjector(settingsStore: settingsStore)
         Logger(subsystem: "dev.typeflux", category: "DIContainer").debug("DIContainer initialized — Logger test message")
         historyStore = SQLiteHistoryStore()
         agentJobStore = SQLiteAgentJobStore()

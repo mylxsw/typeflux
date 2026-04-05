@@ -6,6 +6,7 @@ import os
 final class AXTextInjector: TextInjector {
 
     private let logger = Logger(subsystem: "dev.typeflux", category: "AXTextInjector")
+    private let settingsStore: SettingsStore?
     private struct PasteboardItemSnapshot {
         let representations: [(type: NSPasteboard.PasteboardType, data: Data)]
     }
@@ -27,7 +28,8 @@ final class AXTextInjector: TextInjector {
     }
 
     private static var didRequestAccessibility = false
-    private static let pasteRestoreDelayNanoseconds: UInt64 = 1_500_000_000
+    private static let legacyPasteRestoreDelayNanoseconds: UInt64 = 500_000_000
+    private static let verifiedPasteRestoreDelayNanoseconds: UInt64 = 1_500_000_000
     private static let pasteVerificationPollIntervalMicroseconds: useconds_t = 120_000
     private static let pasteVerificationAttempts = 4
     private static let focusRestoreDelayMicroseconds: useconds_t = 250_000
@@ -43,6 +45,10 @@ final class AXTextInjector: TextInjector {
         case success
         case failure(String)
         case indeterminate
+    }
+
+    init(settingsStore: SettingsStore? = nil) {
+        self.settingsStore = settingsStore
     }
 
     func getSelectionSnapshot() async -> TextSelectionSnapshot {
@@ -439,6 +445,7 @@ final class AXTextInjector: TextInjector {
         let previousSnapshot = capturePasteboardSnapshot(from: pasteboard)
         let targetPID: pid_t?
         let beforeSnapshot: CurrentInputTextSnapshot?
+        let strictFallbackEnabled = settingsStore?.strictEditApplyFallbackEnabled ?? false
 
         if replaceSelection, let context = activeSelectionContext() {
             targetPID = context.processID
@@ -470,6 +477,14 @@ final class AXTextInjector: TextInjector {
             vUp?.post(tap: .cghidEventTap)
         }
 
+        guard strictFallbackEnabled else {
+            restorePasteboardAfterPaste(
+                previousSnapshot,
+                delayNanoseconds: Self.legacyPasteRestoreDelayNanoseconds
+            )
+            return
+        }
+
         var lastFailureReason: String?
         for attempt in 0..<Self.pasteVerificationAttempts {
             usleep(Self.pasteVerificationPollIntervalMicroseconds)
@@ -484,7 +499,10 @@ final class AXTextInjector: TextInjector {
 
             switch verification {
             case .success:
-                restorePasteboardAfterPaste(previousSnapshot)
+                restorePasteboardAfterPaste(
+                    previousSnapshot,
+                    delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds
+                )
                 return
             case .failure(let reason):
                 lastFailureReason = reason
@@ -498,7 +516,10 @@ final class AXTextInjector: TextInjector {
             }
         }
 
-        restorePasteboardAfterPaste(previousSnapshot)
+        restorePasteboardAfterPaste(
+            previousSnapshot,
+            delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds
+        )
 
         if let lastFailureReason {
             throw NSError(
@@ -805,14 +826,20 @@ final class AXTextInjector: TextInjector {
         while Date() < timeout {
             if pasteboard.changeCount != previousChangeCount {
                 let copiedText = pasteboard.string(forType: .string)
-                restorePasteboardAfterPaste(previousSnapshot)
+                restorePasteboardAfterPaste(
+                    previousSnapshot,
+                    delayNanoseconds: Self.legacyPasteRestoreDelayNanoseconds
+                )
                 let trimmed = copiedText?.trimmingCharacters(in: .whitespacesAndNewlines)
                 return (trimmed?.isEmpty == false) ? trimmed : nil
             }
             usleep(10_000)
         }
 
-        restorePasteboardAfterPaste(previousSnapshot)
+        restorePasteboardAfterPaste(
+            previousSnapshot,
+            delayNanoseconds: Self.legacyPasteRestoreDelayNanoseconds
+        )
         return nil
     }
 
@@ -897,9 +924,12 @@ final class AXTextInjector: TextInjector {
         pasteboard.writeObjects(restoredItems)
     }
 
-    private func restorePasteboardAfterPaste(_ previousSnapshot: PasteboardSnapshot) {
+    private func restorePasteboardAfterPaste(
+        _ previousSnapshot: PasteboardSnapshot,
+        delayNanoseconds: UInt64
+    ) {
         Task.detached {
-            try? await Task.sleep(nanoseconds: Self.pasteRestoreDelayNanoseconds)
+            try? await Task.sleep(nanoseconds: delayNanoseconds)
             await MainActor.run {
                 let pasteboard = NSPasteboard.general
                 self.restorePasteboard(previousSnapshot, to: pasteboard)

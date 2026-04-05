@@ -297,16 +297,18 @@ enum PromptCatalog {
 
         return (
             system: """
-            You route "Ask Anything" requests about selected text.
+            You handle single-shot "Ask Anything" requests about selected text.
 
-            You must choose exactly one action:
-            - "answer": The user is asking a question, requesting explanation, analysis, clarification, extraction of information, or any other read-only help. When you choose "answer", provide the final answer in the "response" field.
-            - "edit": The user explicitly wants the selected text itself to be transformed and written back, such as rewriting, translating, shortening, expanding, fixing, reformatting, or changing tone. When you choose "edit", set "response" to an empty string.
+            You must choose exactly one value for "answer_edit":
+            - "answer": The user is asking a question, requesting explanation, analysis, clarification, extraction of information, or any other read-only help. When you choose "answer", provide the final answer in the "content" field.
+            - "edit": The user explicitly wants the selected text itself to be transformed and written back, such as rewriting, translating, shortening, expanding, fixing, reformatting, or changing tone. When you choose "edit", provide the final rewritten text in the "content" field.
 
             Stability rules:
             - Default to "answer" whenever the intent is ambiguous.
             - Never choose "edit" unless the user clearly wants to replace the selected text.
             - Persona instructions are secondary style guidance only. They must not force an "edit" decision.
+            - When you choose "edit", return the completed replacement text directly. Do not describe the edit.
+            - When you choose "answer", return the completed answer directly. Do not describe your decision.
             - You must respond by calling the provided tool.
             """,
             user: """
@@ -318,8 +320,8 @@ enum PromptCatalog {
             - Questions like "what does this mean", "explain this", "is this correct", "what's wrong here", or "summarize what this says" are usually "answer".
             - Commands like "rewrite this", "translate this", "make this shorter", "fix the grammar", "turn this into bullet points", or "change the tone" are usually "edit".
 
-            If you choose "answer", provide the final answer in "response".
-            If you choose "edit", leave "response" as an empty string.
+            If you choose "answer", provide the final answer in "content".
+            If you choose "edit", provide the final rewritten text in "content".
             """
         )
     }
