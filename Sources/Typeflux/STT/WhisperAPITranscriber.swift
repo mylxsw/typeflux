@@ -72,6 +72,28 @@ final class WhisperAPITranscriber: Transcriber {
         }
 
         let model = effectiveModel.isEmpty ? OpenAIAudioModelCatalog.whisperModels[0] : effectiveModel
+
+        // Prefer OpenAI Realtime API when endpoint is OpenAI and model supports it
+        if OpenAIRealtimeTranscriber.shouldUseRealtime(baseURL: effectiveBaseURL, model: model) {
+            do {
+                NetworkDebugLogger.logMessage(
+                    "Attempting OpenAI Realtime API for transcription (model: \(model))"
+                )
+                return try await OpenAIRealtimeTranscriber.transcribe(
+                    audioFile: audioFile,
+                    baseURL: effectiveBaseURL,
+                    apiKey: effectiveAPIKey,
+                    model: model,
+                    onUpdate: onUpdate
+                )
+            } catch {
+                NetworkDebugLogger.logError(
+                    context: "OpenAI Realtime ASR failed, falling back to REST API",
+                    error: error
+                )
+            }
+        }
+
         let vocabularyPrompt = vocabularyPromptText()
         let uploadURL = try preparedUploadURL(for: audioFile)
         let uploadAttributes = try? FileManager.default.attributesOfItem(atPath: uploadURL.path)
