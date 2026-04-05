@@ -120,14 +120,16 @@ final class AXTextInjector: TextInjector {
             )
             latestSelectionContext = context
             logger.debug("source=clipboard-copy  focusedWindow=\(focusedWindow != nil ? "present" : "nil", privacy: .public)  selectionWindow=\(selectionWindow != nil ? "present" : "nil", privacy: .public)  isFocusedTarget=\(isFocusedTarget ? "true" : "false", privacy: .public)  text(32)=\(String(copiedText.prefix(32)), privacy: .public)")
-            // Cmd+C succeeded → the field accepts clipboard operations → Cmd+V should work.
+            // Cmd+C only proves that text is selectable in the frontmost app. It does not
+            // prove that the target is an editable input or that we can restore the same
+            // selection reliably for replacement, so keep this path read-only.
             return TextSelectionSnapshot(
                 processID: processID,
                 processName: processName,
                 selectedRange: nil,
                 selectedText: copiedText,
                 source: "clipboard-copy",
-                isEditable: true,
+                isEditable: false,
                 role: nil,
                 windowTitle: context.windowTitle,
                 isFocusedTarget: context.isFocusedTarget
@@ -458,6 +460,16 @@ final class AXTextInjector: TextInjector {
 
         let initialSnapshot = readCurrentInputTextSnapshot()
         beforeSnapshot = initialSnapshot.isEditable ? initialSnapshot : nil
+
+        if replaceSelection, strictFallbackEnabled, beforeSnapshot == nil {
+            throw NSError(
+                domain: "AXTextInjector",
+                code: 3,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "Replacement target is not a verifiable editable input."
+                ]
+            )
+        }
 
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)

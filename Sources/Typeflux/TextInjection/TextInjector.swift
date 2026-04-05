@@ -15,6 +15,17 @@ struct TextSelectionSnapshot {
         let trimmed = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return !trimmed.isEmpty
     }
+
+    var hasAskSelectionContext: Bool {
+        isFocusedTarget && hasSelection
+    }
+
+    var canSafelyReplaceSelection: Bool {
+        // Only treat Accessibility-backed selections as replaceable. Clipboard-derived
+        // selections prove that text is selected, but not that the target is a writable
+        // input field or that we can restore the exact range safely.
+        hasAskSelectionContext && isEditable && source == "accessibility"
+    }
 }
 
 struct CurrentInputTextSnapshot {

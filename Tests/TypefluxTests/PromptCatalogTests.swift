@@ -117,17 +117,47 @@ final class PromptCatalogTests: XCTestCase {
         let prompts = PromptCatalog.askSelectionDecisionPrompts(
             selectedText: "We should probably move the launch by two weeks.",
             spokenInstruction: "What risks do you see here?",
-            personaPrompt: "Be concise."
+            personaPrompt: "Be concise.",
+            editableTarget: true
         )
 
         XCTAssertTrue(prompts.system.contains("Default to \"answer\" whenever the intent is ambiguous."))
         XCTAssertTrue(prompts.system.contains("single-shot \"Ask Anything\" requests"))
         XCTAssertTrue(prompts.system.contains("final answer in the \"content\" field"))
         XCTAssertTrue(prompts.system.contains("final rewritten text in the \"content\" field"))
+        XCTAssertTrue(prompts.system.contains("If <editable_target> is false, you must choose \"answer\""))
         XCTAssertTrue(prompts.system.contains("respond by calling the provided tool"))
         XCTAssertTrue(prompts.user.contains("<selected_text>\nWe should probably move the launch by two weeks.\n</selected_text>"))
         XCTAssertTrue(prompts.user.contains("<spoken_instruction>\nWhat risks do you see here?\n</spoken_instruction>"))
-        XCTAssertTrue(prompts.user.contains("<persona_definition>\nBe concise.\n</persona_definition>"))
+        XCTAssertTrue(prompts.user.contains("<editable_target>true</editable_target>"))
+        XCTAssertFalse(prompts.user.contains("<persona_definition>"))
+    }
+
+    func testAskSelectionDecisionPromptMarksReadOnlyTargetsAsAnswerOnly() {
+        let prompts = PromptCatalog.askSelectionDecisionPrompts(
+            selectedText: "Please make this more formal.",
+            spokenInstruction: "Rewrite this",
+            personaPrompt: nil,
+            editableTarget: false
+        )
+
+        XCTAssertTrue(prompts.user.contains("<editable_target>false</editable_target>"))
+        XCTAssertTrue(prompts.user.contains("keep \"answer_edit\" set to \"answer\""))
+    }
+
+    func testAskSelectionDecisionPromptTreatsCommandStyleWritingRequestsAsEdit() {
+        let prompts = PromptCatalog.askSelectionDecisionPrompts(
+            selectedText: "This email sounds rough.",
+            spokenInstruction: "Help me polish this",
+            personaPrompt: nil,
+            editableTarget: true
+        )
+
+        XCTAssertTrue(prompts.system.contains("imperative writing or rewriting instruction"))
+        XCTAssertTrue(prompts.system.contains("help me write this"))
+        XCTAssertTrue(prompts.system.contains("帮我改"))
+        XCTAssertTrue(prompts.user.contains("Help me polish this"))
+        XCTAssertTrue(prompts.user.contains("should be treated as \"edit\""))
     }
 
     func testAskSelectionDecisionSchemaRequiresAnswerEditAndContent() {
@@ -144,27 +174,69 @@ final class PromptCatalogTests: XCTestCase {
         let prompts = PromptCatalog.askAnythingPrompts(
             selectedText: "测试一下现在语音输入法的效果。",
             spokenInstruction: "这里主要表达了什么？",
-            personaPrompt: "回答简洁一些。"
+            personaPrompt: "回答简洁一些。",
+            targetContext: PromptCatalog.AskTargetContext(editableTarget: false)
         )
 
         XCTAssertTrue(prompts.system.contains("If selected text is provided"))
+        XCTAssertTrue(prompts.system.contains("Interpret imperative writing or rewriting instructions as requests for final output"))
+        XCTAssertTrue(prompts.system.contains("If <editable_target> is false, you must choose \"answer\""))
         XCTAssertTrue(prompts.system.contains("Format the answer as clean Markdown whenever structure would help"))
         XCTAssertTrue(prompts.system.contains("Preserve real Markdown line breaks"))
         XCTAssertTrue(prompts.user.contains("<selected_text>\n测试一下现在语音输入法的效果。\n</selected_text>"))
         XCTAssertTrue(prompts.user.contains("<spoken_instruction>\n这里主要表达了什么？\n</spoken_instruction>"))
-        XCTAssertTrue(prompts.user.contains("<persona_definition>\n回答简洁一些。\n</persona_definition>"))
+        XCTAssertTrue(prompts.user.contains("<editable_target>false</editable_target>"))
+        XCTAssertFalse(prompts.user.contains("<persona_definition>"))
         XCTAssertTrue(prompts.user.contains("Use Markdown formatting when it improves readability."))
+    }
+
+    func testAskAnythingPromptsReuseSharedWritingIntentGuidance() {
+        let prompts = PromptCatalog.askAnythingPrompts(
+            selectedText: "This draft is awkward.",
+            spokenInstruction: "Help me polish this",
+            personaPrompt: nil,
+            targetContext: PromptCatalog.AskTargetContext(editableTarget: true)
+        )
+
+        XCTAssertTrue(prompts.system.contains("help me polish this"))
+        XCTAssertTrue(prompts.user.contains("If the user is effectively asking you to draft, rewrite, polish, or improve text"))
+        XCTAssertTrue(prompts.user.contains("<selected_text>\nThis draft is awkward.\n</selected_text>"))
+        XCTAssertTrue(prompts.user.contains("<editable_target>true</editable_target>"))
+    }
+
+    func testAskPromptsUseSharedSystemGuidanceWithoutPersonaInstructions() {
+        let decisionPrompts = PromptCatalog.askSelectionDecisionPrompts(
+            selectedText: "Original text",
+            spokenInstruction: "Help me rewrite this",
+            personaPrompt: "Be concise.",
+            editableTarget: true
+        )
+        let answerPrompts = PromptCatalog.askAnythingPrompts(
+            selectedText: "Original text",
+            spokenInstruction: "Help me rewrite this",
+            personaPrompt: "Be concise.",
+            targetContext: PromptCatalog.AskTargetContext(editableTarget: true)
+        )
+
+        XCTAssertTrue(decisionPrompts.system.contains("Interpret imperative writing or rewriting instructions as requests for final output"))
+        XCTAssertTrue(answerPrompts.system.contains("Interpret imperative writing or rewriting instructions as requests for final output"))
+        XCTAssertFalse(decisionPrompts.system.contains("Persona instructions"))
+        XCTAssertFalse(answerPrompts.system.contains("Persona instructions"))
+        XCTAssertFalse(decisionPrompts.user.contains("<persona_definition>"))
+        XCTAssertFalse(answerPrompts.user.contains("<persona_definition>"))
     }
 
     func testAskAnythingPromptsOmitSelectedTextSectionWhenUnavailable() {
         let prompts = PromptCatalog.askAnythingPrompts(
             selectedText: nil,
             spokenInstruction: "帮我想一个标题",
-            personaPrompt: nil
+            personaPrompt: nil,
+            targetContext: PromptCatalog.AskTargetContext(editableTarget: false)
         )
 
         XCTAssertFalse(prompts.user.contains("<selected_text>"))
         XCTAssertTrue(prompts.user.contains("<spoken_instruction>\n帮我想一个标题\n</spoken_instruction>"))
+        XCTAssertTrue(prompts.user.contains("<editable_target>false</editable_target>"))
     }
 
     // MARK: - xmlSection
@@ -400,14 +472,20 @@ extension PromptCatalogTests {
         let prompts = PromptCatalog.askAnythingPrompts(
             selectedText: "Swift is a programming language",
             spokenInstruction: "Translate to Chinese",
-            personaPrompt: nil
+            personaPrompt: nil,
+            targetContext: PromptCatalog.AskTargetContext(editableTarget: true)
         )
         XCTAssertTrue(prompts.user.contains("Swift is a programming language"))
         XCTAssertTrue(prompts.user.contains("Translate to Chinese"))
     }
 
     func testAskAnythingPromptsSystemIsNonEmpty() {
-        let prompts = PromptCatalog.askAnythingPrompts(selectedText: nil, spokenInstruction: "What is AI?", personaPrompt: nil)
+        let prompts = PromptCatalog.askAnythingPrompts(
+            selectedText: nil,
+            spokenInstruction: "What is AI?",
+            personaPrompt: nil,
+            targetContext: PromptCatalog.AskTargetContext(editableTarget: false)
+        )
         XCTAssertFalse(prompts.system.isEmpty)
     }
 

@@ -630,12 +630,14 @@ final class WorkflowController {
         selectedText: String,
         spokenInstruction: String,
         personaPrompt: String?,
+        editableTarget: Bool,
         sessionID: UUID
     ) async throws -> AskSelectionDecisionResult {
         let prompts = PromptCatalog.askSelectionDecisionPrompts(
             selectedText: selectedText,
             spokenInstruction: spokenInstruction,
-            personaPrompt: personaPrompt
+            personaPrompt: personaPrompt,
+            editableTarget: editableTarget
         )
         let decision = try await RequestRetry.perform(operationName: "Ask selection decision") { [self] in
             try await self.llmAgentService.runTool(
@@ -667,19 +669,31 @@ final class WorkflowController {
             )
         }
 
-        return AskSelectionDecisionResult(decision: decision, completedAt: Date())
+        let normalizedDecision: AskSelectionDecision
+        if !editableTarget && decision.answerEdit == .edit {
+            normalizedDecision = AskSelectionDecision(
+                answerEdit: .answer,
+                content: decision.content
+            )
+        } else {
+            normalizedDecision = decision
+        }
+
+        return AskSelectionDecisionResult(decision: normalizedDecision, completedAt: Date())
     }
 
     private func answerAskAnything(
         selectedText: String?,
         spokenInstruction: String,
         personaPrompt: String?,
+        editableTarget: Bool,
         sessionID: UUID
     ) async throws -> RewriteGenerationResult {
         let prompts = PromptCatalog.askAnythingPrompts(
             selectedText: selectedText,
             spokenInstruction: spokenInstruction,
-            personaPrompt: personaPrompt
+            personaPrompt: personaPrompt,
+            targetContext: PromptCatalog.AskTargetContext(editableTarget: editableTarget)
         )
 
         let response = try await RequestRetry.perform(operationName: "Ask anything answer") { [self] in
@@ -1083,6 +1097,7 @@ final class WorkflowController {
                         selectedText: askContextText,
                         spokenInstruction: transcribedText,
                         personaPrompt: personaPrompt,
+                        editableTarget: selectionSnapshot.isEditable,
                         sessionID: sessionID
                     )
 
@@ -1200,6 +1215,7 @@ final class WorkflowController {
                         selectedText: askContextText,
                         spokenInstruction: transcribedText,
                         personaPrompt: personaPrompt,
+                        editableTarget: selectionSnapshot.isEditable,
                         sessionID: sessionID
                     )
 
@@ -1584,26 +1600,24 @@ final class WorkflowController {
     }
 
     private func shouldPresentResultDialog(for snapshot: TextSelectionSnapshot) -> Bool {
-        hasAskSelectionContext(snapshot) && !canReplaceActiveSelection(for: snapshot)
+        snapshot.hasAskSelectionContext && !snapshot.canSafelyReplaceSelection
     }
 
     private func editingSelectedText(from snapshot: TextSelectionSnapshot) -> String? {
-        guard canReplaceActiveSelection(for: snapshot) else { return nil }
+        guard snapshot.canSafelyReplaceSelection else { return nil }
         return snapshot.selectedText?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func shouldReplaceActiveSelection(for snapshot: TextSelectionSnapshot) -> Bool {
-        canReplaceActiveSelection(for: snapshot)
+        snapshot.canSafelyReplaceSelection
     }
 
     private func hasAskSelectionContext(_ snapshot: TextSelectionSnapshot) -> Bool {
-        guard snapshot.isFocusedTarget else { return false }
-        return snapshot.hasSelection
+        snapshot.hasAskSelectionContext
     }
 
     private func canReplaceActiveSelection(for snapshot: TextSelectionSnapshot) -> Bool {
-        guard hasAskSelectionContext(snapshot) else { return false }
-        return snapshot.isEditable
+        snapshot.canSafelyReplaceSelection
     }
 
     private func dismissOverlayForExternalReplacement() {

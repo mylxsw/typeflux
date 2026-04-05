@@ -1,6 +1,27 @@
 import Foundation
 
 enum PromptCatalog {
+    private enum AskPromptMode {
+        case decision
+        case answer
+    }
+
+    struct AskTargetContext {
+        let editableTarget: Bool?
+    }
+
+    private struct AskPromptContext {
+        let selectedTextSection: String
+        let spokenInstructionSection: String
+        let targetContextSection: String
+
+        var userContextBlock: String {
+            [selectedTextSection, spokenInstructionSection, targetContextSection]
+                .filter { !$0.isEmpty }
+                .joined(separator: "\n\n")
+        }
+    }
+
     static func languageConsistencyRule(for contentDescription: String) -> String {
         """
         Language consistency rule:
@@ -285,40 +306,25 @@ enum PromptCatalog {
     static func askSelectionDecisionPrompts(
         selectedText: String,
         spokenInstruction: String,
-        personaPrompt: String?
+        personaPrompt: String?,
+        editableTarget: Bool
     ) -> (system: String, user: String) {
-        let selectedTextSection = xmlSection(tag: "selected_text", content: selectedText)
-        let spokenInstructionSection = xmlSection(tag: "spoken_instruction", content: spokenInstruction)
-        let personaPrompt = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let personaSection = personaPrompt.isEmpty ? "" : """
-
-        \(xmlSection(tag: "persona_definition", content: personaPrompt))
-        """
+        let context = buildAskPromptContext(
+            selectedText: selectedText,
+            spokenInstruction: spokenInstruction,
+            targetContext: AskTargetContext(editableTarget: editableTarget)
+        )
 
         return (
-            system: """
-            You handle single-shot "Ask Anything" requests about selected text.
-
-            You must choose exactly one value for "answer_edit":
-            - "answer": The user is asking a question, requesting explanation, analysis, clarification, extraction of information, or any other read-only help. When you choose "answer", provide the final answer in the "content" field.
-            - "edit": The user explicitly wants the selected text itself to be transformed and written back, such as rewriting, translating, shortening, expanding, fixing, reformatting, or changing tone. When you choose "edit", provide the final rewritten text in the "content" field.
-
-            Stability rules:
-            - Default to "answer" whenever the intent is ambiguous.
-            - Never choose "edit" unless the user clearly wants to replace the selected text.
-            - Persona instructions are secondary style guidance only. They must not force an "edit" decision.
-            - When you choose "edit", return the completed replacement text directly. Do not describe the edit.
-            - When you choose "answer", return the completed answer directly. Do not describe your decision.
-            - You must respond by calling the provided tool.
-            """,
+            system: sharedAskSystemPrompt(mode: .decision),
             user: """
-            \(selectedTextSection)
-
-            \(spokenInstructionSection)\(personaSection)
+            \(context.userContextBlock)
 
             Decision guidance:
             - Questions like "what does this mean", "explain this", "is this correct", "what's wrong here", or "summarize what this says" are usually "answer".
             - Commands like "rewrite this", "translate this", "make this shorter", "fix the grammar", "turn this into bullet points", or "change the tone" are usually "edit".
+            - Imperative requests to produce replacement text, such as "help me write this", "help me improve this", "帮我写一下", "帮我改一下", or "帮我润色一下", should be treated as "edit" when the selected text is the thing to change.
+            - If the target is not editable, still help the user by returning the best read-only answer or rewritten result in "content", but keep "answer_edit" set to "answer".
 
             If you choose "answer", provide the final answer in "content".
             If you choose "edit", provide the final rewritten text in "content".
@@ -329,41 +335,109 @@ enum PromptCatalog {
     static func askAnythingPrompts(
         selectedText: String?,
         spokenInstruction: String,
-        personaPrompt: String?
+        personaPrompt: String?,
+        targetContext: AskTargetContext
     ) -> (system: String, user: String) {
-        let selectedText = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let selectedTextSection = selectedText.isEmpty ? "" : """
-
-        \(xmlSection(tag: "selected_text", content: selectedText))
-        """
-        let spokenInstruction = spokenInstruction.trimmingCharacters(in: .whitespacesAndNewlines)
-        let instructionSection = xmlSection(tag: "spoken_instruction", content: spokenInstruction)
-        let personaPrompt = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let personaSection = personaPrompt.isEmpty ? "" : """
-
-        \(xmlSection(tag: "persona_definition", content: personaPrompt))
-        """
+        let context = buildAskPromptContext(
+            selectedText: selectedText,
+            spokenInstruction: spokenInstruction,
+            targetContext: targetContext
+        )
 
         return (
-            system: """
+            system: sharedAskSystemPrompt(mode: .answer),
+            user: """
+            \(context.userContextBlock)
+
+            Answer the user's request directly.
+            If the user is effectively asking you to draft, rewrite, polish, or improve text, provide that final text directly.
+            Use Markdown formatting when it improves readability.
+            """
+        )
+    }
+
+    private static func buildAskPromptContext(
+        selectedText: String?,
+        spokenInstruction: String,
+        targetContext: AskTargetContext
+    ) -> AskPromptContext {
+        let normalizedSelectedText = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let selectedTextSection = normalizedSelectedText.isEmpty ? "" : xmlSection(tag: "selected_text", content: normalizedSelectedText)
+        let spokenInstructionSection = xmlSection(
+            tag: "spoken_instruction",
+            content: spokenInstruction.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+        let targetContextSection: String
+        if let editableTarget = targetContext.editableTarget {
+            targetContextSection = xmlSection(
+                tag: "target_context",
+                content: """
+                <editable_target>\(editableTarget ? "true" : "false")</editable_target>
+                """
+            )
+        } else {
+            targetContextSection = ""
+        }
+
+        return AskPromptContext(
+            selectedTextSection: selectedTextSection,
+            spokenInstructionSection: spokenInstructionSection,
+            targetContextSection: targetContextSection
+        )
+    }
+
+    private static func askIntentInterpretationGuidance(editableTargetAware: Bool) -> String {
+        var rules = [
+            "Interpret imperative writing or rewriting instructions as requests for final output, not as meta-questions about how to write.",
+            "Treat requests like \"help me write this\", \"help me rewrite this\", \"help me polish this\", \"help me improve this\", \"帮我写\", \"帮我改\", or \"帮我润色\" as direct requests to produce improved text when they target the selected text itself."
+        ]
+
+        if editableTargetAware {
+            rules.insert(
+                "If <editable_target> is false, you must choose \"answer\" even if the user asked for a rewrite. In that case, return a read-only result in \"content\" instead of an edit action.",
+                at: 0
+            )
+            rules.insert(
+                "If <editable_target> is true and the user gives an imperative writing or rewriting instruction, prefer \"edit\" even when the instruction is phrased conversationally instead of as a strict command.",
+                at: 1
+            )
+        }
+
+        return rules.map { "- \($0)" }.joined(separator: "\n")
+    }
+
+    private static func sharedAskSystemPrompt(mode: AskPromptMode) -> String {
+        let sharedGuidance = askIntentInterpretationGuidance(editableTargetAware: true)
+
+        switch mode {
+        case .decision:
+            return """
+            You handle single-shot "Ask Anything" requests about selected text.
+
+            You must choose exactly one value for "answer_edit":
+            - "answer": The user is asking a question, requesting explanation, analysis, clarification, extraction of information, or any other read-only help. When you choose "answer", provide the final answer in the "content" field.
+            - "edit": The user explicitly wants the selected text itself to be transformed and written back, such as rewriting, translating, shortening, expanding, fixing, reformatting, or changing tone. When you choose "edit", provide the final rewritten text in the "content" field.
+
+            Stability rules:
+            - Default to "answer" whenever the intent is ambiguous.
+            - Never choose "edit" unless the user clearly wants to replace the selected text.
+            \(sharedGuidance)
+            - When you choose "edit", return the completed replacement text directly. Do not describe the edit.
+            - When you choose "answer", return the completed answer directly. Do not describe your decision.
+            - You must respond by calling the provided tool.
+            """
+        case .answer:
+            return """
             You answer spoken "Ask Anything" requests.
 
             Provide a direct, helpful answer to the user's spoken question or request.
             If selected text is provided, treat it as the user's current context and use it when answering.
-            Persona instructions are optional style guidance only and must not override the user's actual request.
+            \(sharedGuidance)
             If the request is ambiguous, make the most reasonable interpretation and answer that.
             Format the answer as clean Markdown whenever structure would help, using headings, bullet lists, numbered lists, blockquotes, and paragraphs as appropriate.
             Preserve real Markdown line breaks. Do not collapse the answer into one paragraph when the content is structured.
             Return only the final answer text without JSON, code fences, or meta-commentary about your process.
-            """,
-            user: """
-            \(selectedTextSection)
-
-            \(instructionSection)\(personaSection)
-
-            Answer the user's request directly.
-            Use Markdown formatting when it improves readability.
             """
-        )
+        }
     }
 }
