@@ -1406,15 +1406,8 @@ private struct ThinkingProgressCapsule: View {
     private func advanceProgress() {
         guard progress <= 0.0001 else { return }
 
-        withAnimation(.linear(duration: 0.9)) {
-            displayProgress = 0.68
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
-            guard progress < 0.69, displayProgress < 0.69 else { return }
-            withAnimation(.easeOut(duration: 1.4)) {
-                displayProgress = 0.9
-            }
+        withAnimation(.easeOut(duration: 1.5)) {
+            displayProgress = 0.5
         }
     }
 }
