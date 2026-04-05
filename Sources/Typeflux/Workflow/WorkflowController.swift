@@ -16,6 +16,13 @@ final class WorkflowController {
     private static let automaticVocabularySettleDelay: TimeInterval = 2.5
     private static let automaticVocabularyMaxAnalysesPerSession = 3
     private static let localModelPreheatDebounce: Duration = .milliseconds(180)
+    private static let llmTimeoutAfterTranscriptionSeconds: TimeInterval = 30
+
+    private struct LLMRequestTimeoutError: LocalizedError {
+        var errorDescription: String? {
+            "LLM request timed out after \(Int(WorkflowController.llmTimeoutAfterTranscriptionSeconds)) seconds, using transcript as fallback"
+        }
+    }
 
     private enum RecordingMode {
         case holdToTalk
@@ -586,44 +593,61 @@ final class WorkflowController {
         request: LLMRewriteRequest,
         sessionID: UUID,
         showsStreamingPreview: Bool = true,
+        timeout: TimeInterval? = nil,
     ) async throws -> RewriteGenerationResult {
-        try await RequestRetry.perform(
-            operationName: "LLM rewrite stream",
-            onRetry: { [weak self] _, _, _ in
-                guard let self else { return }
-                guard showsStreamingPreview else { return }
-                await MainActor.run {
-                    if self.processingSessionID == sessionID {
-                        self.overlayController.updateStreamingText("")
+        func performRewrite() async throws -> RewriteGenerationResult {
+            try await RequestRetry.perform(
+                operationName: "LLM rewrite stream",
+                onRetry: { [weak self] _, _, _ in
+                    guard let self else { return }
+                    guard showsStreamingPreview else { return }
+                    await MainActor.run {
+                        if self.processingSessionID == sessionID {
+                            self.overlayController.updateStreamingText("")
+                        }
                     }
-                }
-            },
-        ) { [self] in
-            var buffer = ""
-            var lastChunkAt = Date()
+                },
+            ) { [self] in
+                var buffer = ""
+                var lastChunkAt = Date()
 
-            let stream = llmService.streamRewrite(request: request)
-            for try await chunk in stream {
-                try ensureProcessingIsActive(sessionID)
-                buffer += chunk
-                let now = Date()
-                if now.timeIntervalSince(lastChunkAt) > 0.15 {
-                    lastChunkAt = now
-                    let snapshot = buffer
-                    if showsStreamingPreview {
-                        await MainActor.run {
-                            if self.processingSessionID == sessionID {
-                                self.overlayController.updateStreamingText(snapshot)
+                let stream = llmService.streamRewrite(request: request)
+                for try await chunk in stream {
+                    try ensureProcessingIsActive(sessionID)
+                    buffer += chunk
+                    let now = Date()
+                    if now.timeIntervalSince(lastChunkAt) > 0.15 {
+                        lastChunkAt = now
+                        let snapshot = buffer
+                        if showsStreamingPreview {
+                            await MainActor.run {
+                                if self.processingSessionID == sessionID {
+                                    self.overlayController.updateStreamingText(snapshot)
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            return RewriteGenerationResult(
-                text: buffer.trimmingCharacters(in: .whitespacesAndNewlines),
-                completedAt: Date(),
-            )
+                return RewriteGenerationResult(
+                    text: buffer.trimmingCharacters(in: .whitespacesAndNewlines),
+                    completedAt: Date(),
+                )
+            }
+        }
+
+        guard let timeout else {
+            return try await performRewrite()
+        }
+
+        return try await withThrowingTaskGroup(of: RewriteGenerationResult.self) { group in
+            group.addTask { try await performRewrite() }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                throw LLMRequestTimeoutError()
+            }
+            defer { group.cancelAll() }
+            return try await group.next()!
         }
     }
 
@@ -1266,6 +1290,7 @@ final class WorkflowController {
                                 personaPrompt: personaPrompt,
                             ),
                             sessionID: sessionID,
+                            timeout: Self.llmTimeoutAfterTranscriptionSeconds,
                         )
 
                         try ensureProcessingIsActive(sessionID)
