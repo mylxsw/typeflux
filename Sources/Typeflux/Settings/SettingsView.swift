@@ -3601,7 +3601,7 @@ struct StudioView: View {
         case .minimax:
             return "minimax-color"
         case .grok:
-            return "grok"
+            return "xai"
         case .groq:
             return "groq"
         case .groqSTT:
@@ -3822,7 +3822,7 @@ struct StudioView: View {
         case .minimax:
             return "sparkles"
         case .grok:
-            return "bolt.circle"
+            return "x.circle"
         case .groq:
             return "bolt.fill"
         case .groqSTT:

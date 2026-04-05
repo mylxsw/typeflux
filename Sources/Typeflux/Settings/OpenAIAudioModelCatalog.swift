@@ -59,6 +59,20 @@ enum OpenAIAudioModelCatalog {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? defaultWhisperModel(forEndpoint: endpoint) : trimmed
     }
+
+    static func supportsWhisperStreaming(model: String, endpoint: String) -> Bool {
+        let normalizedModel = model.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if normalizedModel == "whisper-1" {
+            return false
+        }
+
+        switch sttEndpointProvider(for: endpoint) {
+        case .groq:
+            return false
+        case .xai, .openAICompatible:
+            return true
+        }
+    }
 }
 
 private extension OpenAIAudioModelCatalog {
