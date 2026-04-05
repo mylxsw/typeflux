@@ -4,6 +4,21 @@ import Foundation
 import os
 
 final class AXTextInjector: TextInjector {
+    struct FocusResolutionCandidate: Equatable {
+        let role: String?
+        let isEditable: Bool
+        let isFocused: Bool?
+        let selectedRange: CFRange?
+
+        static func == (lhs: FocusResolutionCandidate, rhs: FocusResolutionCandidate) -> Bool {
+            lhs.role == rhs.role &&
+                lhs.isEditable == rhs.isEditable &&
+                lhs.isFocused == rhs.isFocused &&
+                lhs.selectedRange?.location == rhs.selectedRange?.location &&
+                lhs.selectedRange?.length == rhs.selectedRange?.length
+        }
+    }
+
     private let logger = Logger(subsystem: "dev.typeflux", category: "AXTextInjector")
     private let settingsStore: SettingsStore?
     private struct PasteboardItemSnapshot {
@@ -46,6 +61,44 @@ final class AXTextInjector: TextInjector {
         case success
         case failure(String)
         case indeterminate
+    }
+
+    static func shouldPreferEditableDescendant(
+        overWindowRole role: String?,
+        candidate: FocusResolutionCandidate?
+    ) -> Bool {
+        guard role == "AXWindow", let candidate else { return false }
+        guard candidate.isEditable else { return false }
+        guard candidate.isFocused != true else { return false }
+
+        if let selectedRange = candidate.selectedRange {
+            return selectedRange.location >= 0 && selectedRange.length >= 0
+        }
+
+        // Fallback for editable descendants that expose editability but omit selection range.
+        return candidate.role == "AXTextArea" || candidate.role == "AXTextField" || candidate.role == "AXGroup"
+    }
+
+    static func shouldTreatAXValueAsUnreadable(
+        role: String?,
+        value: String,
+        selectedRange: CFRange?
+    ) -> Bool {
+        let nativeTextRoles: Set<String> = [
+            "AXTextArea",
+            "AXTextField",
+            "AXComboBox",
+            "AXSearchField",
+        ]
+
+        let normalizedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard normalizedValue.isEmpty else { return false }
+        guard !nativeTextRoles.contains(role ?? "") else { return false }
+
+        // Generic AX containers in web/electron apps often expose an empty AXValue even when
+        // the actual editor content is not readable through accessibility APIs. Treat those as
+        // unreadable so verification does not incorrectly conclude that the text is unchanged.
+        return selectedRange != nil || role == "AXGroup" || role == "AXWebArea" || role == "AXUnknown"
     }
 
     init(settingsStore: SettingsStore? = nil) {
@@ -190,6 +243,7 @@ final class AXTextInjector: TextInjector {
         let processName = frontmostApplicationName()
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
         let isEditable = isLikelyEditable(element: element)
+        let selectedRange = copySelectedTextRange(from: element)
 
         guard isEditable else {
             return CurrentInputTextSnapshot(
@@ -203,6 +257,16 @@ final class AXTextInjector: TextInjector {
         }
 
         if let value = copyTextAttribute(kAXValueAttribute as String, from: element) {
+            if Self.shouldTreatAXValueAsUnreadable(role: role, value: value, selectedRange: selectedRange) {
+                return CurrentInputTextSnapshot(
+                    processID: processID,
+                    processName: processName,
+                    role: role,
+                    text: nil,
+                    isEditable: true,
+                    failureReason: "missing-ax-value",
+                )
+            }
             if let placeholder = copyTextAttribute(kAXPlaceholderValueAttribute as String, from: element), placeholder == value {
                 return CurrentInputTextSnapshot(
                     processID: processID,
@@ -279,6 +343,15 @@ final class AXTextInjector: TextInjector {
         return "role=\(role) subrole=\(subrole) focused=\(focused) editable=\(editable) selectedRange=\(selectedRange) title=\(title) description=\(description) valuePreview=\(valuePreview) placeholderPreview=\(placeholderPreview)"
     }
 
+    private func focusResolutionCandidate(for element: AXUIElement) -> FocusResolutionCandidate {
+        FocusResolutionCandidate(
+            role: copyStringAttribute(kAXRoleAttribute as String, from: element),
+            isEditable: isLikelyEditable(element: element),
+            isFocused: copyBooleanAttribute(kAXFocusedAttribute as String, from: element),
+            selectedRange: copySelectedTextRange(from: element),
+        )
+    }
+
     private func subtreeSummary(of element: AXUIElement, depthRemaining: Int, maxChildren: Int = 8) -> [String] {
         guard depthRemaining >= 0 else { return [] }
 
@@ -302,14 +375,53 @@ final class AXTextInjector: TextInjector {
         return lines
     }
 
+    private func findBestEditableDescendant(
+        in element: AXUIElement,
+        depthRemaining: Int,
+    ) -> AXUIElement? {
+        guard depthRemaining >= 0 else { return nil }
+
+        let children = copyElementArrayAttribute(kAXChildrenAttribute as String, from: element)
+
+        for child in children {
+            let candidate = focusResolutionCandidate(for: child)
+            if candidate.isEditable, candidate.selectedRange != nil {
+                return child
+            }
+        }
+
+        for child in children {
+            let candidate = focusResolutionCandidate(for: child)
+            if candidate.isEditable {
+                return child
+            }
+        }
+
+        guard depthRemaining > 0 else { return nil }
+
+        for child in children {
+            if let nested = findBestEditableDescendant(in: child, depthRemaining: depthRemaining - 1) {
+                return nested
+            }
+        }
+
+        return nil
+    }
+
     private func logFocusResolution(context: String, rootElement: AXUIElement, resolvedElement: AXUIElement?) {
         let resolvedSummary = resolvedElement.map(elementSummary) ?? "<nil>"
+        let editableCandidate = findBestEditableDescendant(
+            in: rootElement,
+            depthRemaining: Self.focusedDescendantSearchDepth,
+        )
+        let editableCandidateSummary = editableCandidate.map(elementSummary) ?? "<nil>"
         let tree = subtreeSummary(of: rootElement, depthRemaining: 2).joined(separator: "\n")
         NetworkDebugLogger.logMessage(
             """
             [Focus Resolution] \(context)
             root: \(elementSummary(rootElement))
             resolved: \(resolvedSummary)
+            bestEditableDescendant: \(editableCandidateSummary)
             subtree:
             \(tree)
             """
@@ -769,6 +881,12 @@ final class AXTextInjector: TextInjector {
         if let reason = after.failureReason,
            reason == "focused-element-not-editable" || reason == "accessibility-not-trusted"
         {
+            // Some apps accept Cmd+V into a web/editor surface while AX still reports the window
+            // container instead of a readable text field. In plain insertion mode, treat that as
+            // unverifiable rather than a hard failure so we don't incorrectly show the copy dialog.
+            if !replaceSelection, before == nil {
+                return .indeterminate
+            }
             return .failure(reason)
         }
 
@@ -922,6 +1040,30 @@ final class AXTextInjector: TextInjector {
             depthRemaining: Self.focusedDescendantSearchDepth,
         ) {
             return descendant
+        }
+
+        if let editableDescendant = findBestEditableDescendant(
+            in: element,
+            depthRemaining: Self.focusedDescendantSearchDepth,
+        ) {
+            let candidate = focusResolutionCandidate(for: editableDescendant)
+            NetworkDebugLogger.logMessage(
+                """
+                [Focus Resolution] no focused descendant found; editable descendant exists
+                window: \(elementSummary(element))
+                editableDescendant: \(elementSummary(editableDescendant))
+                """
+            )
+            if Self.shouldPreferEditableDescendant(overWindowRole: role, candidate: candidate) {
+                NetworkDebugLogger.logMessage(
+                    """
+                    [Focus Resolution] promoting editable descendant as focused target
+                    window: \(elementSummary(element))
+                    promotedDescendant: \(elementSummary(editableDescendant))
+                    """
+                )
+                return editableDescendant
+            }
         }
 
         return element

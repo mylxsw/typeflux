@@ -22,7 +22,7 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         )
 
         recorder.beginMutedSessionAfterDelayForTesting()
-        await Task.yield()
+        await sleepController.waitUntilSleeping()
         XCTAssertEqual(muter.beginCallCount, 0)
 
         await sleepController.resume()
@@ -49,6 +49,7 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         )
 
         recorder.beginMutedSessionAfterDelayForTesting()
+        await sleepController.waitUntilSleeping()
         recorder.cancelMutedSessionForTesting()
         await sleepController.resume()
         await Task.yield()
@@ -79,10 +80,26 @@ private final class MockSystemAudioOutputMuter: SystemAudioOutputMuting {
 
 private actor SleepController {
     private var continuation: CheckedContinuation<Void, Never>?
+    private var waiters: [CheckedContinuation<Void, Never>] = []
 
     func sleep(for _: Duration) async {
         await withCheckedContinuation { continuation in
             self.continuation = continuation
+            let waiters = self.waiters
+            self.waiters.removeAll()
+            for waiter in waiters {
+                waiter.resume()
+            }
+        }
+    }
+
+    func waitUntilSleeping() async {
+        if continuation != nil {
+            return
+        }
+
+        await withCheckedContinuation { continuation in
+            waiters.append(continuation)
         }
     }
 
