@@ -68,7 +68,7 @@ final class LLMAgentResponseSupportTests: XCTestCase {
                             [
                                 "function": [
                                     "name": "answer_or_edit_selection",
-                                    "arguments": #"{"action":"answer","response":"done"}"#
+                                    "arguments": #"{"answer_edit":"answer","content":"done"}"#
                                 ]
                             ]
                         ]
@@ -83,7 +83,7 @@ final class LLMAgentResponseSupportTests: XCTestCase {
             toolCall,
             LLMAgentToolCall(
                 name: "answer_or_edit_selection",
-                argumentsJSON: #"{"action":"answer","response":"done"}"#
+                argumentsJSON: #"{"answer_edit":"answer","content":"done"}"#
             )
         )
     }
@@ -95,8 +95,8 @@ final class LLMAgentResponseSupportTests: XCTestCase {
                     "type": "tool_use",
                     "name": "answer_or_edit_selection",
                     "input": [
-                        "action": "edit",
-                        "response": ""
+                        "answer_edit": "edit",
+                        "content": "rewritten text"
                     ]
                 ]
             ]
@@ -106,7 +106,7 @@ final class LLMAgentResponseSupportTests: XCTestCase {
         let decision = try JSONDecoder().decode(AskSelectionDecision.self, from: Data(toolCall.argumentsJSON.utf8))
 
         XCTAssertEqual(toolCall.name, "answer_or_edit_selection")
-        XCTAssertEqual(decision, AskSelectionDecision(action: .edit, response: ""))
+        XCTAssertEqual(decision, AskSelectionDecision(answerEdit: .edit, content: "rewritten text"))
     }
 
     func testExtractGeminiToolCall() throws {
@@ -119,8 +119,8 @@ final class LLMAgentResponseSupportTests: XCTestCase {
                                 "functionCall": [
                                     "name": "answer_or_edit_selection",
                                     "args": [
-                                        "action": "answer",
-                                        "response": "done"
+                                        "answer_edit": "answer",
+                                        "content": "done"
                                     ]
                                 ]
                             ]
@@ -134,13 +134,13 @@ final class LLMAgentResponseSupportTests: XCTestCase {
         let decision = try JSONDecoder().decode(AskSelectionDecision.self, from: Data(toolCall.argumentsJSON.utf8))
 
         XCTAssertEqual(toolCall.name, "answer_or_edit_selection")
-        XCTAssertEqual(decision, AskSelectionDecision(action: .answer, response: "done"))
+        XCTAssertEqual(decision, AskSelectionDecision(answerEdit: .answer, content: "done"))
     }
 
     func testDecodeToolArgumentsRejectsUnexpectedToolName() {
         XCTAssertThrowsError(
             try RemoteAgentClient.decodeToolArguments(
-                LLMAgentToolCall(name: "other_tool", argumentsJSON: #"{"action":"answer","response":"done"}"#),
+                LLMAgentToolCall(name: "other_tool", argumentsJSON: #"{"answer_edit":"answer","content":"done"}"#),
                 expectedToolName: "answer_or_edit_selection",
                 as: AskSelectionDecision.self
             )

@@ -121,20 +121,23 @@ final class PromptCatalogTests: XCTestCase {
         )
 
         XCTAssertTrue(prompts.system.contains("Default to \"answer\" whenever the intent is ambiguous."))
+        XCTAssertTrue(prompts.system.contains("single-shot \"Ask Anything\" requests"))
+        XCTAssertTrue(prompts.system.contains("final answer in the \"content\" field"))
+        XCTAssertTrue(prompts.system.contains("final rewritten text in the \"content\" field"))
         XCTAssertTrue(prompts.system.contains("respond by calling the provided tool"))
         XCTAssertTrue(prompts.user.contains("<selected_text>\nWe should probably move the launch by two weeks.\n</selected_text>"))
         XCTAssertTrue(prompts.user.contains("<spoken_instruction>\nWhat risks do you see here?\n</spoken_instruction>"))
         XCTAssertTrue(prompts.user.contains("<persona_definition>\nBe concise.\n</persona_definition>"))
     }
 
-    func testAskSelectionDecisionSchemaRequiresActionAndResponse() {
+    func testAskSelectionDecisionSchemaRequiresAnswerEditAndContent() {
         let properties = AskSelectionDecision.schema.jsonObject["properties"] as? [String: Any]
-        let actionSchema = properties?["action"] as? [String: Any]
+        let actionSchema = properties?["answer_edit"] as? [String: Any]
         let actionEnum = actionSchema?["enum"] as? [String]
         let required = AskSelectionDecision.schema.jsonObject["required"] as? [String]
 
         XCTAssertEqual(actionEnum, ["answer", "edit"])
-        XCTAssertEqual(required ?? [], ["action", "response"])
+        XCTAssertEqual(required ?? [], ["answer_edit", "content"])
     }
 
     func testAskAnythingPromptsIncludeSelectedTextWhenAvailable() {

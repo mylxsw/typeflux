@@ -659,17 +659,12 @@ final class WorkflowController {
             )
         }
 
-        switch decision.action {
-        case .answer:
-            guard !decision.trimmedResponse.isEmpty else {
-                throw NSError(
-                    domain: "WorkflowController",
-                    code: 3002,
-                    userInfo: [NSLocalizedDescriptionKey: "Ask selection answer was empty."]
-                )
-            }
-        case .edit:
-            break
+        guard !decision.trimmedContent.isEmpty else {
+            throw NSError(
+                domain: "WorkflowController",
+                code: 3002,
+                userInfo: [NSLocalizedDescriptionKey: "Ask selection content was empty."]
+            )
         }
 
         return AskSelectionDecisionResult(decision: decision, completedAt: Date())
@@ -1083,7 +1078,7 @@ final class WorkflowController {
                         record.applyMessage = outcome.message
                     }
                 } else {
-                    // Legacy two-step flow: decision → execution
+                    // Legacy non-agent flow: single tool decision plus final content.
                     let askDecisionResult = try await decideAskSelection(
                         selectedText: askContextText,
                         spokenInstruction: transcribedText,
@@ -1091,14 +1086,14 @@ final class WorkflowController {
                         sessionID: sessionID
                     )
 
-                    switch askDecisionResult.decision.action {
+                    switch askDecisionResult.decision.answerEdit {
                     case .answer:
                         try ensureProcessingIsActive(sessionID)
                         pipelineTiming.llmProcessingCompletedAt = askDecisionResult.completedAt
                         record.pipelineTiming = pipelineTiming
                         logPipelineEvent("llm-processing-completed", for: record)
                         record.mode = .askAnswer
-                        record.personaResultText = askDecisionResult.decision.trimmedResponse
+                        record.personaResultText = askDecisionResult.decision.trimmedContent
                         record.processingStatus = .succeeded
                         record.applyStatus = .running
                         saveHistoryRecord(record)
@@ -1110,7 +1105,7 @@ final class WorkflowController {
                             self.presentAskAnswer(
                                 question: transcribedText,
                                 selectedText: askContextText,
-                                answerMarkdown: askDecisionResult.decision.trimmedResponse
+                                answerMarkdown: askDecisionResult.decision.trimmedContent
                             )
                         }
                         pipelineTiming.applyCompletedAt = Date()
@@ -1118,31 +1113,16 @@ final class WorkflowController {
                         record.applyStatus = .succeeded
                         record.applyMessage = L("workflow.ask.answerPresented")
                     case .edit:
-                        record.mode = .editSelection
-                        record.applyStatus = .pending
-                        saveHistoryRecord(record)
-
-                        let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
-                        let rewriteResult = try await generateRewrite(
-                            request: LLMRewriteRequest(
-                                mode: .editSelection,
-                                sourceText: askContextText,
-                                spokenInstruction: transcribedText,
-                                personaPrompt: personaPrompt
-                            ),
-                            sessionID: sessionID,
-                            showsStreamingPreview: !shouldShowResultDialog
-                        )
-
                         try ensureProcessingIsActive(sessionID)
-                        pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
+                        pipelineTiming.llmProcessingCompletedAt = askDecisionResult.completedAt
                         record.pipelineTiming = pipelineTiming
                         logPipelineEvent("llm-processing-completed", for: record)
-                        record.selectionEditedText = rewriteResult.text
+                        record.mode = .editSelection
+                        record.selectionEditedText = askDecisionResult.decision.trimmedContent
                         record.processingStatus = .succeeded
                         record.applyStatus = .running
                         saveHistoryRecord(record)
-
+                        let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
                         try ensureProcessingIsActive(sessionID)
                         pipelineTiming.applyStartedAt = Date()
                         record.pipelineTiming = pipelineTiming
@@ -1154,12 +1134,12 @@ final class WorkflowController {
                         )
                         if shouldShowResultDialog {
                             await MainActor.run {
-                                self.lastDialogResultText = rewriteResult.text
-                                self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: rewriteResult.text)
+                                self.lastDialogResultText = askDecisionResult.decision.trimmedContent
+                                self.overlayController.showResultDialog(title: L("workflow.result.copyTitle"), message: askDecisionResult.decision.trimmedContent)
                             }
                             outcome = .presentedInDialog
                         } else {
-                            outcome = applyText(rewriteResult.text, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
+                            outcome = applyText(askDecisionResult.decision.trimmedContent, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
                         }
                         pipelineTiming.applyCompletedAt = Date()
                         record.pipelineTiming = pipelineTiming

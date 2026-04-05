@@ -1,6 +1,14 @@
 import Foundation
 
 extension SettingsStore {
+    var strictEditApplyFallbackEnabled: Bool {
+        get {
+            let stored = defaults.object(forKey: "feature.strictEditApplyFallbackEnabled")
+            return stored == nil ? true : defaults.bool(forKey: "feature.strictEditApplyFallbackEnabled")
+        }
+        set { defaults.set(newValue, forKey: "feature.strictEditApplyFallbackEnabled") }
+    }
+
     var agentFrameworkEnabled: Bool {
         get { defaults.bool(forKey: "agent.frameworkEnabled") }
         set { defaults.set(newValue, forKey: "agent.frameworkEnabled") }
