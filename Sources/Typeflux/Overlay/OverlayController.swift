@@ -323,6 +323,7 @@ final class OverlayController {
             self.model.level = 0
             self.model.processingProgress = 0
             self.removeKeyMonitoring()
+            self.removeMouseMonitoring()
         }
         if Thread.isMainThread {
             work()
@@ -346,6 +347,7 @@ final class OverlayController {
             self?.model.level = 0
             self?.model.processingProgress = 0
             self?.removeKeyMonitoring()
+            self?.removeMouseMonitoring()
         }
         dismissWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
@@ -494,6 +496,12 @@ final class OverlayController {
         } else {
             removeKeyMonitoring()
         }
+
+        if model.presentation == .personaPicker {
+            installMouseMonitoringIfNeeded()
+        } else {
+            removeMouseMonitoring()
+        }
     }
 
     private func installKeyMonitoringIfNeeded() {
@@ -544,6 +552,25 @@ final class OverlayController {
     }
     private var _fallbackGlobalMonitor: Any?
     private var _fallbackLocalMonitor: Any?
+    private var _mouseOutsideMonitor: Any?
+
+    private func installMouseMonitoringIfNeeded() {
+        guard _mouseOutsideMonitor == nil else { return }
+        _mouseOutsideMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown]
+        ) { [weak self] _ in
+            guard let self, self.model.presentation == .personaPicker else { return }
+            let mouseLocation = NSEvent.mouseLocation
+            if let window = self.window, !window.frame.contains(mouseLocation) {
+                DispatchQueue.main.async { self.model.requestPersonaCancel() }
+            }
+        }
+    }
+
+    private func removeMouseMonitoring() {
+        if let m = _mouseOutsideMonitor { NSEvent.removeMonitor(m) }
+        _mouseOutsideMonitor = nil
+    }
 
     private func removeKeyMonitoring() {
         if let tap = eventTap {
