@@ -4085,21 +4085,16 @@ struct StudioView: View {
                 agentJobsListView
             }
         }
-        .frame(width: 680, height: 560)
+        .frame(width: 820, height: 680)
     }
 
     private var agentJobsListView: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
             // Header
             HStack {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                    Text(L("agent.jobs.title"))
-                        .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text(L("agent.jobs.subtitle"))
-                        .font(.studioBody(StudioTheme.Typography.body))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
+                Text(L("agent.jobs.title"))
+                    .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
 
                 Spacer()
 
@@ -4225,57 +4220,62 @@ struct StudioView: View {
 
     private func agentJobDetailView(job: AgentJob) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header with back button
-            HStack {
-                Button(action: viewModel.closeJobDetail) {
-                    HStack(spacing: StudioTheme.Spacing.xSmall) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-                        Text(L("agent.jobs.title"))
-                            .font(.studioBody(StudioTheme.Typography.body))
+            // Header with centered title, back on the left, close on the right.
+            ZStack {
+                HStack {
+                    Button(action: viewModel.closeJobDetail) {
+                        HStack(spacing: StudioTheme.Spacing.xSmall) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
+                            Text(L("agent.jobs.title"))
+                                .font(.studioBody(StudioTheme.Typography.body))
+                        }
+                        .foregroundStyle(StudioTheme.accent)
+                        .frame(minWidth: 120, alignment: .leading)
                     }
-                    .foregroundStyle(StudioTheme.accent)
-                }
-                .buttonStyle(.plain)
+                    .buttonStyle(.plain)
 
-                Spacer()
+                    Spacer()
 
-                Button(action: viewModel.closeJobsPage) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                    Button(action: viewModel.closeJobsPage) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                            .frame(width: 32, height: 32)
+                    }
+                    .buttonStyle(.plain)
+                    .frame(minWidth: 120, alignment: .trailing)
                 }
-                .buttonStyle(.plain)
+
+                Text(job.displayTitle)
+                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .padding(.horizontal, 140)
             }
             .padding(.horizontal, StudioTheme.Spacing.large)
             .padding(.top, StudioTheme.Spacing.large)
             .padding(.bottom, StudioTheme.Spacing.medium)
 
-            // Job title and metadata
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                HStack(spacing: StudioTheme.Spacing.small) {
-                    Circle()
-                        .fill(jobStatusColor(job.status))
-                        .frame(width: 10, height: 10)
-                    Text(job.displayTitle)
-                        .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
+            // Job metadata
+            HStack(spacing: StudioTheme.Spacing.small) {
+                Circle()
+                    .fill(jobStatusColor(job.status))
+                    .frame(width: 10, height: 10)
+
+                Text(jobDetailTimeText(job.createdAt))
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                    .foregroundStyle(StudioTheme.textTertiary)
+
+                if let duration = job.formattedDuration {
+                    StudioPill(title: duration)
                 }
 
-                HStack(spacing: StudioTheme.Spacing.small) {
-                    Text(jobDetailTimeText(job.createdAt))
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                StudioPill(title: L("agent.jobs.steps", job.steps.count))
 
-                    if let duration = job.formattedDuration {
-                        StudioPill(title: duration)
-                    }
-
-                    StudioPill(title: L("agent.jobs.steps", job.steps.count))
-
-                    if job.totalToolCalls > 0 {
-                        StudioPill(title: L("agent.jobs.toolCalls", job.totalToolCalls))
-                    }
+                if job.totalToolCalls > 0 {
+                    StudioPill(title: L("agent.jobs.toolCalls", job.totalToolCalls))
                 }
             }
             .padding(.horizontal, StudioTheme.Spacing.large)
@@ -4286,7 +4286,7 @@ struct StudioView: View {
             // Scrollable content
             ScrollView {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-                    jobSection(title: L("agent.jobs.detail.prompt"), icon: "person.fill") {
+                    jobSection(title: L("agent.jobs.detail.prompt"), icon: "person.fill", cardPadding: 12) {
                         Text(job.userPrompt)
                             .font(.studioBody(StudioTheme.Typography.body))
                             .foregroundStyle(StudioTheme.textPrimary)
@@ -4294,7 +4294,7 @@ struct StudioView: View {
                     }
 
                     if let selectedText = job.selectedText, !selectedText.isEmpty {
-                        jobSection(title: L("agent.jobs.detail.context"), icon: "text.quote") {
+                        jobSection(title: L("agent.jobs.detail.context"), icon: "text.quote", cardPadding: 12) {
                             Text(selectedText)
                                 .font(.studioBody(StudioTheme.Typography.bodySmall))
                                 .foregroundStyle(StudioTheme.textSecondary)
@@ -4312,7 +4312,7 @@ struct StudioView: View {
                     }
 
                     if let result = job.resultText, !result.isEmpty {
-                        jobSection(title: L("agent.jobs.detail.result"), icon: "sparkles") {
+                        jobSection(title: L("agent.jobs.detail.result"), icon: "sparkles", cardPadding: 12) {
                             Text(result)
                                 .font(.studioBody(StudioTheme.Typography.body))
                                 .foregroundStyle(StudioTheme.textPrimary)
@@ -4321,7 +4321,7 @@ struct StudioView: View {
                     }
 
                     if let error = job.errorMessage, !error.isEmpty {
-                        jobSection(title: L("agent.jobs.detail.error"), icon: "exclamationmark.triangle.fill") {
+                        jobSection(title: L("agent.jobs.detail.error"), icon: "exclamationmark.triangle.fill", cardPadding: 12) {
                             Text(error)
                                 .font(.studioBody(StudioTheme.Typography.body))
                                 .foregroundStyle(StudioTheme.danger)
@@ -4337,6 +4337,7 @@ struct StudioView: View {
     private func jobSection<Content: View>(
         title: String,
         icon: String,
+        cardPadding: CGFloat = StudioTheme.Insets.cardDefault,
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
@@ -4349,7 +4350,7 @@ struct StudioView: View {
                     .foregroundStyle(StudioTheme.textSecondary)
             }
 
-            StudioCard {
+            StudioCard(padding: cardPadding) {
                 content()
             }
         }

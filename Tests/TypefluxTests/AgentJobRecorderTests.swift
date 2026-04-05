@@ -7,55 +7,54 @@ import XCTest
 private final class MockAgentJobStore: AgentJobStore, @unchecked Sendable {
     private let lock = NSLock()
     private var jobs: [UUID: AgentJob] = [:]
+    private var _saveCount = 0
 
     var savedJobs: [AgentJob] {
-        lock.lock()
-        defer { lock.unlock() }
-        return Array(jobs.values)
+        synchronized { Array(jobs.values) }
     }
 
     var saveCount: Int {
-        lock.lock()
-        defer { lock.unlock() }
-        return _saveCount
+        synchronized { _saveCount }
     }
-    private var _saveCount = 0
 
     func save(_ job: AgentJob) async throws {
-        lock.lock()
-        jobs[job.id] = job
-        _saveCount += 1
-        lock.unlock()
+        synchronized {
+            jobs[job.id] = job
+            _saveCount += 1
+        }
     }
 
     func list(limit: Int, offset: Int) async throws -> [AgentJob] {
-        lock.lock()
-        defer { lock.unlock() }
-        return Array(jobs.values.sorted { $0.createdAt > $1.createdAt }.dropFirst(offset).prefix(limit))
+        synchronized {
+            Array(jobs.values.sorted { $0.createdAt > $1.createdAt }.dropFirst(offset).prefix(limit))
+        }
     }
 
     func job(id: UUID) async throws -> AgentJob? {
-        lock.lock()
-        defer { lock.unlock() }
-        return jobs[id]
+        synchronized { jobs[id] }
     }
 
     func delete(id: UUID) async throws {
-        lock.lock()
-        jobs.removeValue(forKey: id)
-        lock.unlock()
+        synchronized {
+            jobs.removeValue(forKey: id)
+        }
     }
 
     func clear() async throws {
-        lock.lock()
-        jobs.removeAll()
-        lock.unlock()
+        synchronized {
+            jobs.removeAll()
+        }
     }
 
     func count() async throws -> Int {
+        synchronized { jobs.count }
+    }
+
+    @discardableResult
+    private func synchronized<T>(_ body: () -> T) -> T {
         lock.lock()
         defer { lock.unlock() }
-        return jobs.count
+        return body()
     }
 }
 

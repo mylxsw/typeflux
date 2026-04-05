@@ -47,10 +47,7 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
             durationMs: step.durationMs
         )
 
-        lock.lock()
-        steps.append(jobStep)
-        let currentSteps = steps
-        lock.unlock()
+        let currentSteps = appendStepAndSnapshot(jobStep)
 
         // Persist intermediate progress
         if var job = try? await store.job(id: jobID) {
@@ -60,9 +57,7 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
     }
 
     func agentDidFinish(outcome: AgentOutcome) async {
-        lock.lock()
-        let finalSteps = steps
-        lock.unlock()
+        let finalSteps = snapshotSteps()
 
         guard var job = try? await store.job(id: jobID) else { return }
 
@@ -118,5 +113,20 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
             return nil
         }
         return dict[field] as? String
+    }
+
+    private func appendStepAndSnapshot(_ step: AgentJobStep) -> [AgentJobStep] {
+        lock.lock()
+        defer { lock.unlock() }
+
+        steps.append(step)
+        return steps
+    }
+
+    private func snapshotSteps() -> [AgentJobStep] {
+        lock.lock()
+        defer { lock.unlock() }
+
+        return steps
     }
 }
