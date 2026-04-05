@@ -304,7 +304,7 @@ enum PromptCatalog {
     }
 
     static func askSelectionDecisionPrompts(
-        selectedText: String,
+        selectedText: String?,
         spokenInstruction: String,
         personaPrompt: String?,
         editableTarget: Bool
