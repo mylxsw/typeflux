@@ -2,6 +2,9 @@ import XCTest
 @testable import Typeflux
 
 final class AppPreferencesTests: XCTestCase {
+    func testOpenAIRealtimeSTTFeatureFlagDefaultsToDisabled() {
+        XCTAssertFalse(ExperimentalFeatureFlags.openAIRealtimeSTTEnabled)
+    }
 
     // MARK: - STTProvider
 

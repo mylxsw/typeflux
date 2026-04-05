@@ -2,6 +2,15 @@ import XCTest
 @testable import Typeflux
 
 final class OpenAIRealtimePreviewSupportTests: XCTestCase {
+    func testSupportUsesOpenAIDefaultWhenEndpointIsEmpty() {
+        XCTAssertFalse(
+            OpenAIRealtimePreviewSupport.isSupported(
+                baseURL: "",
+                model: "gpt-4o-transcribe"
+            )
+        )
+    }
+
     func testSupportRejectsWhisperOne() {
         XCTAssertFalse(
             OpenAIRealtimePreviewSupport.isSupported(
@@ -20,6 +29,30 @@ final class OpenAIRealtimePreviewSupportTests: XCTestCase {
         XCTAssertEqual(
             url?.absoluteString,
             "wss://api.openai.com/v1/realtime?model=gpt-4o-mini-transcribe"
+        )
+    }
+
+    func testWebSocketURLNormalizesOpenAITranscriptionsEndpointToRealtime() {
+        let url = OpenAIRealtimePreviewSupport.webSocketURL(
+            baseURL: "https://api.openai.com/v1/audio/transcriptions",
+            model: "gpt-4o-transcribe"
+        )
+
+        XCTAssertEqual(
+            url?.absoluteString,
+            "wss://api.openai.com/v1/realtime?model=gpt-4o-transcribe"
+        )
+    }
+
+    func testWebSocketURLUsesDefaultEndpointWhenEmpty() {
+        let url = OpenAIRealtimePreviewSupport.webSocketURL(
+            baseURL: "",
+            model: ""
+        )
+
+        XCTAssertEqual(
+            url?.absoluteString,
+            "wss://api.openai.com/v1/realtime?model=gpt-4o-transcribe"
         )
     }
 }

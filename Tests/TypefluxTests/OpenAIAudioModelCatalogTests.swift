@@ -3,6 +3,20 @@ import XCTest
 @testable import Typeflux
 
 final class OpenAIAudioModelCatalogTests: XCTestCase {
+    func testResolvedWhisperEndpointFallsBackToOpenAIDefault() {
+        XCTAssertEqual(
+            OpenAIAudioModelCatalog.resolvedWhisperEndpoint("  "),
+            "https://api.openai.com/v1/audio/transcriptions"
+        )
+    }
+
+    func testResolvedWhisperModelFallsBackToOpenAIDefault() {
+        XCTAssertEqual(
+            OpenAIAudioModelCatalog.resolvedWhisperModel(" "),
+            "gpt-4o-transcribe"
+        )
+    }
+
     func testWhisperBuiltInOptionsMatchSupportedValues() {
         XCTAssertEqual(
             OpenAIAudioModelCatalog.whisperModels,

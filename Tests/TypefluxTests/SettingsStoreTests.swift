@@ -230,6 +230,17 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(store.whisperAPIKey, "")
     }
 
+    func testResolvedDefaultWhisperConfigurationUsesOpenAIDefaults() {
+        XCTAssertEqual(
+            OpenAIAudioModelCatalog.resolvedWhisperEndpoint(store.whisperBaseURL),
+            "https://api.openai.com/v1/audio/transcriptions"
+        )
+        XCTAssertEqual(
+            OpenAIAudioModelCatalog.resolvedWhisperModel(store.whisperModel),
+            "gpt-4o-transcribe"
+        )
+    }
+
     func testSetAndGetWhisperAPIKey() {
         store.whisperAPIKey = "sk-test-key"
         XCTAssertEqual(store.whisperAPIKey, "sk-test-key")

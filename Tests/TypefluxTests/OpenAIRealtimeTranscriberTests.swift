@@ -44,7 +44,7 @@ final class OpenAIRealtimeTranscriberTests: XCTestCase {
     // MARK: - shouldUseRealtime
 
     func testShouldUseRealtimeWithOpenAIAndSupportedModel() {
-        XCTAssertTrue(
+        XCTAssertFalse(
             OpenAIRealtimeTranscriber.shouldUseRealtime(
                 baseURL: "https://api.openai.com/v1",
                 model: "gpt-4o-transcribe"
@@ -53,7 +53,7 @@ final class OpenAIRealtimeTranscriberTests: XCTestCase {
     }
 
     func testShouldUseRealtimeWithOpenAIAndMiniTranscribe() {
-        XCTAssertTrue(
+        XCTAssertFalse(
             OpenAIRealtimeTranscriber.shouldUseRealtime(
                 baseURL: "https://api.openai.com/v1",
                 model: "gpt-4o-mini-transcribe"
@@ -98,7 +98,7 @@ final class OpenAIRealtimeTranscriberTests: XCTestCase {
     }
 
     func testShouldUseRealtimeWithWhitespaceInModel() {
-        XCTAssertTrue(
+        XCTAssertFalse(
             OpenAIRealtimeTranscriber.shouldUseRealtime(
                 baseURL: "https://api.openai.com/v1",
                 model: "  gpt-4o-transcribe  "

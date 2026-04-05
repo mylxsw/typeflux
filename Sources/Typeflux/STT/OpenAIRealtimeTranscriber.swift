@@ -14,6 +14,7 @@ enum OpenAIRealtimeTranscriber {
     }
 
     static func shouldUseRealtime(baseURL: String, model: String) -> Bool {
+        guard ExperimentalFeatureFlags.openAIRealtimeSTTEnabled else { return false }
         guard isOpenAIEndpoint(baseURL) else { return false }
         let normalized = model.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !normalized.isEmpty else { return false }
@@ -41,31 +42,18 @@ enum OpenAIRealtimeTranscriber {
         if !apiKey.isEmpty {
             request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         }
-        request.setValue("realtime=v1", forHTTPHeaderField: "OpenAI-Beta")
-
-        let delegate = RealtimeTranscriberWSDelegate()
-        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
-        let socketTask = session.webSocketTask(with: request)
-        socketTask.resume()
-
-        do {
-            try await delegate.waitUntilOpen(timeout: .seconds(10))
-        } catch {
-            socketTask.cancel(with: .normalClosure, reason: nil)
-            session.invalidateAndCancel()
-            throw error
-        }
+        let socket = OpenAIRealtimeSocket(request: request, logPrefix: "OpenAI Realtime ASR")
+        try await socket.connect(timeout: .seconds(10))
 
         defer {
-            socketTask.cancel(with: .normalClosure, reason: nil)
-            session.invalidateAndCancel()
+            socket.disconnect()
         }
 
         // Configure transcription session without turn detection (manual commit only)
         let prompt = TranscriptionLanguageHints.remotePrompt(
             vocabularyTerms: VocabularyStore.activeTerms()
         )
-        try await sendSessionUpdate(socketTask: socketTask, model: model, prompt: prompt)
+        try await sendSessionUpdate(socket: socket, model: model, prompt: prompt)
 
         // Send audio in chunks (~0.5s each at 24kHz mono 16-bit)
         let chunkBytes = 24_000
@@ -73,7 +61,7 @@ enum OpenAIRealtimeTranscriber {
         while offset < pcmData.count {
             let end = min(offset + chunkBytes, pcmData.count)
             let chunk = pcmData.subdata(in: offset..<end)
-            try await sendPayload(socketTask: socketTask, payload: [
+            try await sendPayload(socket: socket, payload: [
                 "type": "input_audio_buffer.append",
                 "audio": chunk.base64EncodedString(),
             ])
@@ -84,14 +72,11 @@ enum OpenAIRealtimeTranscriber {
             "OpenAI Realtime ASR: sent \(pcmData.count) bytes of PCM16 audio, committing buffer"
         )
 
-        try await sendPayload(
-            socketTask: socketTask,
-            payload: ["type": "input_audio_buffer.commit"]
-        )
+        try await sendPayload(socket: socket, payload: ["type": "input_audio_buffer.commit"])
 
         // Wait for transcription with timeout
         return try await receiveTranscription(
-            socketTask: socketTask,
+            socket: socket,
             timeout: max(30, audioFile.duration * 3),
             onUpdate: onUpdate
         )
@@ -160,36 +145,43 @@ enum OpenAIRealtimeTranscriber {
     // MARK: - WebSocket messaging
 
     private static func sendSessionUpdate(
-        socketTask: URLSessionWebSocketTask,
+        socket: OpenAIRealtimeSocket,
         model: String,
         prompt: String?
     ) async throws {
-        var transcriptionPayload: [String: Any] = ["model": model]
+        var transcriptionPayload: [String: Any] = [
+            "model": model
+        ]
         if let prompt { transcriptionPayload["prompt"] = prompt }
 
         let payload: [String: Any] = [
             "type": "session.update",
             "session": [
-                "type": "realtime.transcription_session",
-                "input_audio_format": "pcm16",
-                "input_audio_transcription": transcriptionPayload,
+                "type": "transcription",
+                "audio": [
+                    "input": [
+                        "format": [
+                            "type": "audio/pcm",
+                            "rate": 24_000
+                        ],
+                        "transcription": transcriptionPayload,
+                        "turn_detection": NSNull()
+                    ]
+                ]
             ] as [String: Any],
         ]
-        try await sendPayload(socketTask: socketTask, payload: payload)
+        try await sendPayload(socket: socket, payload: payload)
     }
 
     private static func receiveTranscription(
-        socketTask: URLSessionWebSocketTask,
+        socket: OpenAIRealtimeSocket,
         timeout: TimeInterval,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         try await withThrowingTaskGroup(of: String.self) { group in
             group.addTask {
                 var accumulator = OpenAIRealtimeTranscriptAccumulator()
-                while true {
-                    let message = try await socketTask.receive()
-                    guard let data = extractData(from: message) else { continue }
-
+                for try await data in socket.messages {
                     if let errorMessage = parseError(from: data) {
                         throw makeError(code: 4, message: "Realtime API error: \(errorMessage)")
                     }
@@ -208,6 +200,7 @@ enum OpenAIRealtimeTranscriber {
                         return finalText
                     }
                 }
+                throw makeError(code: 7, message: "Realtime connection closed before transcription completed.")
             }
 
             group.addTask {
@@ -224,22 +217,14 @@ enum OpenAIRealtimeTranscriber {
     }
 
     private static func sendPayload(
-        socketTask: URLSessionWebSocketTask,
+        socket: OpenAIRealtimeSocket,
         payload: [String: Any]
     ) async throws {
         let data = try JSONSerialization.data(withJSONObject: payload)
         guard let text = String(data: data, encoding: .utf8) else {
             throw makeError(code: 3, message: "Failed to encode realtime payload.")
         }
-        try await socketTask.send(.string(text))
-    }
-
-    private static func extractData(from message: URLSessionWebSocketTask.Message) -> Data? {
-        switch message {
-        case .data(let data): return data
-        case .string(let text): return text.data(using: .utf8)
-        @unknown default: return nil
-        }
+        try await socket.send(text: text)
     }
 
     private static func parseError(from data: Data) -> String? {
@@ -259,75 +244,5 @@ enum OpenAIRealtimeTranscriber {
             code: code,
             userInfo: [NSLocalizedDescriptionKey: message]
         )
-    }
-}
-
-// MARK: - WebSocket delegate
-
-private actor RealtimeTranscriberWSDelegateState {
-    private var opened = false
-    private var continuation: CheckedContinuation<Void, Error>?
-
-    func waitUntilOpen(timeout: Duration) async throws {
-        if opened { return }
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask {
-                try await withCheckedThrowingContinuation { continuation in
-                    Task { await self.store(continuation: continuation) }
-                }
-            }
-            group.addTask {
-                try await Task.sleep(for: timeout)
-                throw NSError(
-                    domain: "OpenAIRealtimeTranscriber",
-                    code: 5,
-                    userInfo: [NSLocalizedDescriptionKey: "WebSocket connection timed out."]
-                )
-            }
-            try await group.next()
-            group.cancelAll()
-        }
-    }
-
-    func markOpened() {
-        opened = true
-        continuation?.resume()
-        continuation = nil
-    }
-
-    func markFailed(_ error: Error) {
-        continuation?.resume(throwing: error)
-        continuation = nil
-    }
-
-    private func store(continuation: CheckedContinuation<Void, Error>) {
-        self.continuation = continuation
-    }
-}
-
-private final class RealtimeTranscriberWSDelegate: NSObject, URLSessionWebSocketDelegate,
-    URLSessionTaskDelegate
-{
-    private let state = RealtimeTranscriberWSDelegateState()
-
-    func waitUntilOpen(timeout: Duration) async throws {
-        try await state.waitUntilOpen(timeout: timeout)
-    }
-
-    func urlSession(
-        _ session: URLSession,
-        webSocketTask: URLSessionWebSocketTask,
-        didOpenWithProtocol protocol: String?
-    ) {
-        Task { await state.markOpened() }
-    }
-
-    func urlSession(
-        _ session: URLSession,
-        task: URLSessionTask,
-        didCompleteWithError error: Error?
-    ) {
-        guard let error else { return }
-        Task { await state.markFailed(error) }
     }
 }

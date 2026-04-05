@@ -18,13 +18,23 @@ final class WhisperAPITranscriber: Transcriber {
         self.modelOverride = modelOverride
     }
 
-    private var effectiveBaseURL: String { baseURLOverride ?? settingsStore.whisperBaseURL }
+    private var effectiveBaseURL: String {
+        if let baseURLOverride {
+            return baseURLOverride.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return OpenAIAudioModelCatalog.resolvedWhisperEndpoint(settingsStore.whisperBaseURL)
+    }
     private var effectiveAPIKey: String { apiKeyOverride?() ?? settingsStore.whisperAPIKey }
-    private var effectiveModel: String { modelOverride?() ?? settingsStore.whisperModel }
+    private var effectiveModel: String {
+        if let modelOverride {
+            return OpenAIAudioModelCatalog.resolvedWhisperModel(modelOverride())
+        }
+        return OpenAIAudioModelCatalog.resolvedWhisperModel(settingsStore.whisperModel)
+    }
 
     static func testConnection(baseURL: String, model: String, apiKey: String) async throws -> String {
-        let trimmedBaseURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedBaseURL.isEmpty, let resolvedBaseURL = URL(string: trimmedBaseURL) else {
+        let resolvedEndpoint = OpenAIAudioModelCatalog.resolvedWhisperEndpoint(baseURL)
+        guard let resolvedBaseURL = URL(string: resolvedEndpoint) else {
             throw NSError(
                 domain: "WhisperAPITranscriber",
                 code: 1001,
@@ -32,9 +42,7 @@ final class WhisperAPITranscriber: Transcriber {
             )
         }
 
-        let resolvedModel = model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? OpenAIAudioModelCatalog.whisperModels[0]
-            : model.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedModel = OpenAIAudioModelCatalog.resolvedWhisperModel(model)
         let request = try makeTestRequest(baseURL: resolvedBaseURL, model: resolvedModel, apiKey: apiKey)
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -67,32 +75,11 @@ final class WhisperAPITranscriber: Transcriber {
         audioFile: AudioFile,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
-        guard let baseURL = URL(string: effectiveBaseURL), !effectiveBaseURL.isEmpty else {
+        guard let baseURL = URL(string: effectiveBaseURL) else {
             throw NSError(domain: "WhisperAPITranscriber", code: 1)
         }
 
-        let model = effectiveModel.isEmpty ? OpenAIAudioModelCatalog.whisperModels[0] : effectiveModel
-
-        // Prefer OpenAI Realtime API when endpoint is OpenAI and model supports it
-        if OpenAIRealtimeTranscriber.shouldUseRealtime(baseURL: effectiveBaseURL, model: model) {
-            do {
-                NetworkDebugLogger.logMessage(
-                    "Attempting OpenAI Realtime API for transcription (model: \(model))"
-                )
-                return try await OpenAIRealtimeTranscriber.transcribe(
-                    audioFile: audioFile,
-                    baseURL: effectiveBaseURL,
-                    apiKey: effectiveAPIKey,
-                    model: model,
-                    onUpdate: onUpdate
-                )
-            } catch {
-                NetworkDebugLogger.logError(
-                    context: "OpenAI Realtime ASR failed, falling back to REST API",
-                    error: error
-                )
-            }
-        }
+        let model = effectiveModel
 
         let vocabularyPrompt = vocabularyPromptText()
         let uploadURL = try preparedUploadURL(for: audioFile)
