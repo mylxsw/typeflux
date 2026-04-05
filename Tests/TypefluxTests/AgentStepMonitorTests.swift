@@ -14,18 +14,21 @@ final class AgentStepMonitorTests: XCTestCase {
             durationMs: 123,
         )
         await logger.agentDidCompleteStep(step)
-        await logger.agentDidFinish(outcome: .text("done"))
+        await logger.agentDidFinish(outcome: .text("done"), totalTokenUsage: nil)
         // No assertion needed — just verifies it doesn't crash
     }
 
     func testStepLoggerAllOutcomes() async {
         let logger = AgentStepLogger()
-        await logger.agentDidFinish(outcome: .text("answer"))
-        await logger.agentDidFinish(outcome: .terminationTool(name: "answer_text", argumentsJSON: "{}"))
-        await logger.agentDidFinish(outcome: .maxStepsReached)
+        await logger.agentDidFinish(outcome: .text("answer"), totalTokenUsage: nil)
+        await logger.agentDidFinish(
+            outcome: .terminationTool(name: "answer_text", argumentsJSON: "{}"),
+            totalTokenUsage: nil,
+        )
+        await logger.agentDidFinish(outcome: .maxStepsReached, totalTokenUsage: nil)
 
         struct DummyError: Error {}
-        await logger.agentDidFinish(outcome: .error(DummyError()))
+        await logger.agentDidFinish(outcome: .error(DummyError()), totalTokenUsage: nil)
     }
 
     func testAgentRealtimeState() {
@@ -78,7 +81,7 @@ final class AgentStepMonitorTests: XCTestCase {
 
         await monitor.agentDidCompleteStep(step1)
         await monitor.agentDidCompleteStep(step2)
-        await monitor.agentDidFinish(outcome: .maxStepsReached)
+        await monitor.agentDidFinish(outcome: .maxStepsReached, totalTokenUsage: nil)
 
         XCTAssertEqual(monitor.completedSteps.count, 2)
         XCTAssertEqual(monitor.completedSteps[0].stepIndex, 0)

@@ -252,6 +252,70 @@ final class AXTextInjector: TextInjector {
         try setText(text, replaceSelection: true)
     }
 
+    private func selectionContextSummary(_ context: SelectionContext?) -> String {
+        guard let context else { return "<nil>" }
+        let range = context.range.map { "[\($0.location),\($0.length)]" } ?? "nil"
+        return "pid=\(context.processID.map(String.init) ?? "nil") process=\(context.processName ?? "nil") role=\(context.role ?? "nil") window=\(context.windowTitle ?? "nil") source=\(context.source) focused=\(context.isFocusedTarget) range=\(range)"
+    }
+
+    private func snapshotSummary(_ snapshot: CurrentInputTextSnapshot) -> String {
+        let preview = snapshot.text.map { String($0.trimmingCharacters(in: .whitespacesAndNewlines).prefix(80)) } ?? "nil"
+        return "pid=\(snapshot.processID.map(String.init) ?? "nil") process=\(snapshot.processName ?? "nil") role=\(snapshot.role ?? "nil") editable=\(snapshot.isEditable) failure=\(snapshot.failureReason ?? "nil") textLength=\(snapshot.text?.count ?? 0) preview=\(preview)"
+    }
+
+    private func elementSummary(_ element: AXUIElement) -> String {
+        let role = copyStringAttribute(kAXRoleAttribute as String, from: element) ?? "nil"
+        let subrole = copyStringAttribute(kAXSubroleAttribute as String, from: element) ?? "nil"
+        let title = copyTextAttribute(kAXTitleAttribute as String, from: element) ?? "nil"
+        let description = copyTextAttribute(kAXDescriptionAttribute as String, from: element) ?? "nil"
+        let value = copyTextAttribute(kAXValueAttribute as String, from: element)
+        let placeholder = copyTextAttribute(kAXPlaceholderValueAttribute as String, from: element)
+        let focused = copyBooleanAttribute(kAXFocusedAttribute as String, from: element).map(String.init) ?? "nil"
+        let editable = isLikelyEditable(element: element)
+        let selectedRange = copySelectedTextRange(from: element).map { "[\($0.location),\($0.length)]" } ?? "nil"
+        let valuePreview = value.map { String($0.trimmingCharacters(in: .whitespacesAndNewlines).prefix(60)) } ?? "nil"
+        let placeholderPreview = placeholder.map { String($0.trimmingCharacters(in: .whitespacesAndNewlines).prefix(60)) } ?? "nil"
+
+        return "role=\(role) subrole=\(subrole) focused=\(focused) editable=\(editable) selectedRange=\(selectedRange) title=\(title) description=\(description) valuePreview=\(valuePreview) placeholderPreview=\(placeholderPreview)"
+    }
+
+    private func subtreeSummary(of element: AXUIElement, depthRemaining: Int, maxChildren: Int = 8) -> [String] {
+        guard depthRemaining >= 0 else { return [] }
+
+        var lines: [String] = [elementSummary(element)]
+        guard depthRemaining > 0 else { return lines }
+
+        let children = copyElementArrayAttribute(kAXChildrenAttribute as String, from: element)
+        if children.isEmpty {
+            return lines
+        }
+
+        for (index, child) in children.prefix(maxChildren).enumerated() {
+            let childLines = subtreeSummary(of: child, depthRemaining: depthRemaining - 1, maxChildren: maxChildren)
+            lines.append(contentsOf: childLines.map { "child[\(index)] " + $0 })
+        }
+
+        if children.count > maxChildren {
+            lines.append("child[+] truncated additionalChildren=\(children.count - maxChildren)")
+        }
+
+        return lines
+    }
+
+    private func logFocusResolution(context: String, rootElement: AXUIElement, resolvedElement: AXUIElement?) {
+        let resolvedSummary = resolvedElement.map(elementSummary) ?? "<nil>"
+        let tree = subtreeSummary(of: rootElement, depthRemaining: 2).joined(separator: "\n")
+        NetworkDebugLogger.logMessage(
+            """
+            [Focus Resolution] \(context)
+            root: \(elementSummary(rootElement))
+            resolved: \(resolvedSummary)
+            subtree:
+            \(tree)
+            """
+        )
+    }
+
     private func focusedElement() -> AXUIElement? {
         if let processID = frontmostProcessID(),
            let focused = focusedElement(for: processID)
@@ -397,10 +461,21 @@ final class AXTextInjector: TextInjector {
 
         var contextRestored = false
         let beforeSnapshot = readCurrentInputTextSnapshot()
+        NetworkDebugLogger.logMessage(
+            """
+            [Text Injection] start
+            replaceSelection: \(replaceSelection)
+            textLength: \(text.count)
+            textPreview: \(String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(120)))
+            beforeSnapshot: \(snapshotSummary(beforeSnapshot))
+            activeSelectionContext: \(selectionContextSummary(activeSelectionContext()))
+            """
+        )
 
         if replaceSelection,
            let context = activeSelectionContext()
         {
+            NetworkDebugLogger.logMessage("[Text Injection] restoring selection context before replace | \(selectionContextSummary(context))")
             restoreSelectionContext(context)
             contextRestored = true
             if context.range != nil,
@@ -412,9 +487,11 @@ final class AXTextInjector: TextInjector {
                    beforeSnapshot: beforeSnapshot,
                )
             {
+                NetworkDebugLogger.logMessage("[Text Injection] replace completed via AX selected-text write")
                 latestSelectionContext = nil
                 return
             }
+            NetworkDebugLogger.logMessage("[Text Injection] AX selected-text write unavailable or unverified, falling back")
         }
 
         if let element = focusedElement(), try insertTextViaAX(
@@ -424,16 +501,19 @@ final class AXTextInjector: TextInjector {
             selectionRange: nil,
             beforeSnapshot: beforeSnapshot,
         ) {
+            NetworkDebugLogger.logMessage("[Text Injection] completed via focused AX path")
             if replaceSelection {
                 latestSelectionContext = nil
             }
             return
         }
 
+        NetworkDebugLogger.logMessage("[Text Injection] falling back to paste path")
         try setTextViaPaste(text, replaceSelection: replaceSelection, contextAlreadyRestored: contextRestored)
         if replaceSelection {
             latestSelectionContext = nil
         }
+        NetworkDebugLogger.logMessage("[Text Injection] paste path completed")
     }
 
     private func insertTextViaAX(
@@ -461,7 +541,16 @@ final class AXTextInjector: TextInjector {
                 ) {
                     return true
                 }
+                let afterSnapshot = readCurrentInputTextSnapshot()
                 logger.debug("AX selected text write reported success but could not be verified; falling back")
+                NetworkDebugLogger.logMessage(
+                    """
+                    [Text Injection] AX write verification failed
+                    replaceSelection: \(replaceSelection)
+                    beforeSnapshot: \(snapshotSummary(beforeSnapshot))
+                    afterSnapshot: \(snapshotSummary(afterSnapshot))
+                    """
+                )
             }
         }
 
@@ -480,7 +569,7 @@ final class AXTextInjector: TextInjector {
         targetProcessID: pid_t?,
         beforeSnapshot: CurrentInputTextSnapshot,
     ) -> Bool {
-        for _ in 0 ..< Self.axWriteVerificationAttempts {
+        for attempt in 0 ..< Self.axWriteVerificationAttempts {
             usleep(Self.axWriteVerificationPollIntervalMicroseconds)
             let afterSnapshot = readCurrentInputTextSnapshot()
             let verification = Self.evaluatePasteVerification(
@@ -489,6 +578,14 @@ final class AXTextInjector: TextInjector {
                 targetProcessID: targetProcessID,
                 before: beforeSnapshot.isEditable ? beforeSnapshot : nil,
                 after: afterSnapshot,
+            )
+            NetworkDebugLogger.logMessage(
+                """
+                [Text Injection] AX verification attempt \(attempt + 1)
+                result: \(String(describing: verification))
+                beforeSnapshot: \(snapshotSummary(beforeSnapshot))
+                afterSnapshot: \(snapshotSummary(afterSnapshot))
+                """
             )
 
             switch verification {
@@ -522,8 +619,20 @@ final class AXTextInjector: TextInjector {
 
         let initialSnapshot = readCurrentInputTextSnapshot()
         beforeSnapshot = initialSnapshot.isEditable ? initialSnapshot : nil
+        NetworkDebugLogger.logMessage(
+            """
+            [Text Injection] paste start
+            replaceSelection: \(replaceSelection)
+            strictFallbackEnabled: \(strictFallbackEnabled)
+            targetPID: \(targetPID.map(String.init) ?? "nil")
+            contextAlreadyRestored: \(contextAlreadyRestored)
+            initialSnapshot: \(snapshotSummary(initialSnapshot))
+            verificationBaseline: \(beforeSnapshot.map(snapshotSummary) ?? "<nil>")
+            """
+        )
 
         if replaceSelection, strictFallbackEnabled, beforeSnapshot == nil {
+            NetworkDebugLogger.logMessage("[Text Injection] paste aborted because replacement target is not verifiable")
             throw NSError(
                 domain: "AXTextInjector",
                 code: 3,
@@ -552,6 +661,7 @@ final class AXTextInjector: TextInjector {
         }
 
         guard strictFallbackEnabled else {
+            NetworkDebugLogger.logMessage("[Text Injection] paste verification skipped because strict fallback is disabled")
             restorePasteboardAfterPaste(
                 previousSnapshot,
                 delayNanoseconds: Self.legacyPasteRestoreDelayNanoseconds,
@@ -569,6 +679,14 @@ final class AXTextInjector: TextInjector {
                 targetProcessID: targetPID,
                 before: beforeSnapshot,
                 after: afterSnapshot,
+            )
+            NetworkDebugLogger.logMessage(
+                """
+                [Text Injection] paste verification attempt \(attempt + 1)
+                result: \(String(describing: verification))
+                baseline: \(beforeSnapshot.map(snapshotSummary) ?? "<nil>")
+                afterSnapshot: \(snapshotSummary(afterSnapshot))
+                """
             )
 
             switch verification {
@@ -596,6 +714,14 @@ final class AXTextInjector: TextInjector {
         )
 
         if let lastFailureReason {
+            let finalSnapshot = readCurrentInputTextSnapshot()
+            NetworkDebugLogger.logMessage(
+                """
+                [Text Injection] paste verification exhausted
+                lastFailureReason: \(lastFailureReason)
+                finalSnapshot: \(snapshotSummary(finalSnapshot))
+                """
+            )
             throw NSError(
                 domain: "AXTextInjector",
                 code: 2,
@@ -740,6 +866,7 @@ final class AXTextInjector: TextInjector {
         if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: system),
            let resolved = resolveFocusedElement(focused)
         {
+            logFocusResolution(context: "systemFocusedElement", rootElement: focused, resolvedElement: resolved)
             return resolved
         }
 
@@ -752,12 +879,14 @@ final class AXTextInjector: TextInjector {
         if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: appElement),
            let resolved = resolveFocusedElement(focused)
         {
+            logFocusResolution(context: "focusedElement(appFocusedUIElement)", rootElement: focused, resolvedElement: resolved)
             return resolved
         }
 
         if let focusedWindow = copyElementAttribute(kAXFocusedWindowAttribute as String, from: appElement),
            let resolved = resolveFocusedElement(focusedWindow)
         {
+            logFocusResolution(context: "focusedElement(focusedWindow)", rootElement: focusedWindow, resolvedElement: resolved)
             return resolved
         }
 
