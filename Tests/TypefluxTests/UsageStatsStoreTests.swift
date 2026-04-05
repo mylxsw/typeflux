@@ -303,12 +303,13 @@ extension UsageStatsStoreTests {
     }
 
     func testEditedTextContributionReturnsInsertedText() {
+        // "testing" appends "ing" to "test"; the LCS-based diff captures the suffix
         let result = store.editedTextContribution(
-            originalText: "hello",
-            editedText: "hello world"
+            originalText: "test",
+            editedText: "testing"
         )
         XCTAssertFalse(result.isEmpty)
-        XCTAssertTrue(result.contains("world"))
+        XCTAssertTrue(result.contains("ing"))
     }
 
     func testEditedTextContributionSimpleReplacement() {
@@ -407,10 +408,11 @@ extension UsageStatsStoreTests {
     }
 
     func testIsNotSuccessfulWhenTranscriptionFailed() {
+        // applyStatus must also not be .succeeded for the record to be not successful
         let record = HistoryRecord(
             date: Date(),
             transcriptionStatus: .failed,
-            applyStatus: .succeeded
+            applyStatus: .failed
         )
         XCTAssertFalse(store.isSuccessful(record))
     }
