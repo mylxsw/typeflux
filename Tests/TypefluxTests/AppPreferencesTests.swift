@@ -201,8 +201,8 @@ extension AppPreferencesTests {
     func testLocalSTTModelSpecsAreValid() {
         for model in LocalSTTModel.allCases {
             let specs = model.specs
-            XCTAssertGreaterThan(specs.diskGB, 0, "\(model) should have positive disk requirement")
-            XCTAssertGreaterThan(specs.ramGB, 0, "\(model) should have positive RAM requirement")
+            XCTAssertFalse(specs.summary.isEmpty, "\(model) should have a non-empty summary")
+            XCTAssertFalse(specs.sizeValue.isEmpty, "\(model) should have a non-empty size value")
         }
     }
 
