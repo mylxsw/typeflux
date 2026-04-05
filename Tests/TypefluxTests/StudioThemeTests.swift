@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class StudioThemeTests: XCTestCase {
-
     // MARK: - Layout Constants
 
     func testLayoutConstantsArePositive() {

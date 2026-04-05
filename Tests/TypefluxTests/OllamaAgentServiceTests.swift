@@ -1,14 +1,13 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class OllamaAgentServiceTests: XCTestCase {
-
     func testOllamaAgentServiceThrowsUnsupported() async {
         let service = OllamaAgentService()
         let request = LLMAgentRequest(
             systemPrompt: "sys",
             userPrompt: "usr",
-            tools: []
+            tools: [],
         )
 
         do {

@@ -33,23 +33,23 @@ enum AppMenuController {
         menu.addItem(
             withTitle: L("appMenu.hide", appName),
             action: #selector(NSApplication.hide(_:)),
-            keyEquivalent: "h"
+            keyEquivalent: "h",
         )
         menu.addItem(
             withTitle: L("appMenu.hideOthers"),
             action: #selector(NSApplication.hideOtherApplications(_:)),
-            keyEquivalent: "h"
+            keyEquivalent: "h",
         ).keyEquivalentModifierMask = [.command, .option]
         menu.addItem(
             withTitle: L("appMenu.showAll"),
             action: #selector(NSApplication.unhideAllApplications(_:)),
-            keyEquivalent: ""
+            keyEquivalent: "",
         )
         menu.addItem(NSMenuItem.separator())
         menu.addItem(
             withTitle: L("appMenu.quit", appName),
             action: #selector(NSApplication.terminate(_:)),
-            keyEquivalent: "q"
+            keyEquivalent: "q",
         )
 
         return menu
@@ -75,7 +75,7 @@ enum AppMenuController {
 private final class AppMenuActionRouter: NSObject {
     static let shared = AppMenuActionRouter()
 
-    @objc func openAbout(_ sender: Any?) {
+    @objc func openAbout(_: Any?) {
         AboutWindowController.shared.show()
     }
 }

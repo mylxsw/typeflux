@@ -15,7 +15,7 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
     private var db: OpaquePointer?
 
     init(baseDir: URL) {
-        self.dbURL = baseDir.appendingPathComponent("agent_jobs.sqlite")
+        dbURL = baseDir.appendingPathComponent("agent_jobs.sqlite")
         try? FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
 
         do {
@@ -215,7 +215,7 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
             bind: { statement in
                 sqlite3_bind_int64(statement, 1, sqlite3_int64(limit))
                 sqlite3_bind_int64(statement, 2, sqlite3_int64(offset))
-            }
+            },
         )
     }
 
@@ -231,13 +231,13 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
             """,
             bind: { statement in
                 self.bind(id.uuidString, at: 1, in: statement)
-            }
+            },
         ).first
     }
 
     private func fetchJobs(
         sql: String,
-        bind: ((OpaquePointer?) -> Void)? = nil
+        bind: ((OpaquePointer?) -> Void)? = nil,
     ) throws -> [AgentJob] {
         var statement: OpaquePointer?
         defer { sqlite3_finalize(statement) }
@@ -250,7 +250,7 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
 
         var jobs: [AgentJob] = []
         while sqlite3_step(statement) == SQLITE_ROW {
-            jobs.append(try decodeJob(from: statement))
+            try jobs.append(decodeJob(from: statement))
         }
         return jobs
     }
@@ -298,7 +298,7 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
             return LLMTokenUsage(
                 promptTokens: prompt,
                 completionTokens: completion,
-                totalTokens: total
+                totalTokens: total,
             )
         }()
 
@@ -315,7 +315,7 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
             steps: decodeSteps(from: string(at: 9, in: statement)),
             totalDurationMs: totalDurationMs,
             outcomeType: string(at: 11, in: statement),
-            totalTokenUsage: totalTokenUsage
+            totalTokenUsage: totalTokenUsage,
         )
     }
 
@@ -347,7 +347,8 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
 
     private func string(at index: Int32, in statement: OpaquePointer?) -> String? {
         guard sqlite3_column_type(statement, index) != SQLITE_NULL,
-              let value = sqlite3_column_text(statement, index) else {
+              let value = sqlite3_column_text(statement, index)
+        else {
             return nil
         }
         return String(cString: value)
@@ -374,7 +375,7 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
         let detail = db.flatMap { sqlite3_errmsg($0) }.map { String(cString: $0) } ?? "unknown"
         let code = db.map { sqlite3_errcode($0) } ?? SQLITE_ERROR
         return NSError(domain: "SQLiteAgentJobStore", code: Int(code), userInfo: [
-            NSLocalizedDescriptionKey: "\(message): \(detail)"
+            NSLocalizedDescriptionKey: "\(message): \(detail)",
         ])
     }
 }

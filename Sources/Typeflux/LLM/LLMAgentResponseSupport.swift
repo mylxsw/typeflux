@@ -11,7 +11,7 @@ enum LLMAgentResponseSupport {
         systemPrompt: String,
         userPrompt: String,
         tools: [LLMAgentTool],
-        forcedToolName: String?
+        forcedToolName: String?,
     ) -> [String: Any] {
         var body: [String: Any] = [
             "model": model,
@@ -48,7 +48,7 @@ enum LLMAgentResponseSupport {
         systemPrompt: String,
         userPrompt: String,
         tools: [LLMAgentTool],
-        forcedToolName: String?
+        forcedToolName: String?,
     ) -> [String: Any] {
         var body: [String: Any] = [
             "model": model,
@@ -58,9 +58,9 @@ enum LLMAgentResponseSupport {
                 [
                     "role": "user",
                     "content": [
-                        ["type": "text", "text": userPrompt]
+                        ["type": "text", "text": userPrompt],
                     ],
-                ]
+                ],
             ],
             "tools": tools.map { tool in
                 [
@@ -85,17 +85,17 @@ enum LLMAgentResponseSupport {
         systemPrompt: String,
         userPrompt: String,
         tools: [LLMAgentTool],
-        forcedToolName: String?
+        forcedToolName: String?,
     ) -> [String: Any] {
         var body: [String: Any] = [
             "systemInstruction": [
-                "parts": [["text": systemPrompt]]
+                "parts": [["text": systemPrompt]],
             ],
             "contents": [
                 [
                     "role": "user",
                     "parts": [["text": userPrompt]],
-                ]
+                ],
             ],
             "generationConfig": [
                 "candidateCount": 1,
@@ -109,8 +109,8 @@ enum LLMAgentResponseSupport {
                             "description": tool.description,
                             "parameters": tool.inputSchema.jsonObject,
                         ]
-                    }
-                ]
+                    },
+                ],
             ],
         ]
 
@@ -119,7 +119,7 @@ enum LLMAgentResponseSupport {
                 "functionCallingConfig": [
                     "mode": "ANY",
                     "allowedFunctionNames": [forcedToolName],
-                ]
+                ],
             ]
         }
 
@@ -128,12 +128,12 @@ enum LLMAgentResponseSupport {
 
     static func extractOpenAICompatibleToolCall(from data: Data) -> LLMAgentToolCall? {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let choice = (object["choices"] as? [[String: Any]])?.first,
-            let message = choice["message"] as? [String: Any],
-            let toolCall = (message["tool_calls"] as? [[String: Any]])?.first,
-            let function = toolCall["function"] as? [String: Any],
-            let name = function["name"] as? String,
-            let arguments = function["arguments"] as? String
+              let choice = (object["choices"] as? [[String: Any]])?.first,
+              let message = choice["message"] as? [String: Any],
+              let toolCall = (message["tool_calls"] as? [[String: Any]])?.first,
+              let function = toolCall["function"] as? [String: Any],
+              let name = function["name"] as? String,
+              let arguments = function["arguments"] as? String
         else {
             return nil
         }
@@ -143,13 +143,13 @@ enum LLMAgentResponseSupport {
 
     static func extractAnthropicToolCall(from data: Data) -> LLMAgentToolCall? {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let content = object["content"] as? [[String: Any]],
-            let toolUse = content.first(where: { ($0["type"] as? String) == "tool_use" }),
-            let name = toolUse["name"] as? String,
-            let input = toolUse["input"],
-            JSONSerialization.isValidJSONObject(input),
-            let inputData = try? JSONSerialization.data(withJSONObject: input),
-            let arguments = String(data: inputData, encoding: .utf8)
+              let content = object["content"] as? [[String: Any]],
+              let toolUse = content.first(where: { ($0["type"] as? String) == "tool_use" }),
+              let name = toolUse["name"] as? String,
+              let input = toolUse["input"],
+              JSONSerialization.isValidJSONObject(input),
+              let inputData = try? JSONSerialization.data(withJSONObject: input),
+              let arguments = String(data: inputData, encoding: .utf8)
         else {
             return nil
         }
@@ -159,24 +159,24 @@ enum LLMAgentResponseSupport {
 
     static func extractGeminiToolCall(from data: Data) -> LLMAgentToolCall? {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let candidates = object["candidates"] as? [[String: Any]],
-            let content = candidates.first?["content"] as? [String: Any],
-            let parts = content["parts"] as? [[String: Any]]
+              let candidates = object["candidates"] as? [[String: Any]],
+              let content = candidates.first?["content"] as? [String: Any],
+              let parts = content["parts"] as? [[String: Any]]
         else {
             return nil
         }
 
         for part in parts {
             guard let functionCall = part["functionCall"] as? [String: Any],
-                let name = functionCall["name"] as? String
+                  let name = functionCall["name"] as? String
             else {
                 continue
             }
 
             let args = functionCall["args"] ?? [:]
             guard JSONSerialization.isValidJSONObject(args),
-                let argsData = try? JSONSerialization.data(withJSONObject: args),
-                let arguments = String(data: argsData, encoding: .utf8)
+                  let argsData = try? JSONSerialization.data(withJSONObject: args),
+                  let arguments = String(data: argsData, encoding: .utf8)
             else {
                 continue
             }

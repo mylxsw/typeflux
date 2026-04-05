@@ -1,6 +1,6 @@
 import AVFoundation
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class LiveTranscriptionPreviewerTests: XCTestCase {
     func testPrepareForStartPreservesPendingBuffersUntilBackendStarts() async throws {
@@ -12,7 +12,7 @@ final class LiveTranscriptionPreviewerTests: XCTestCase {
         let previewer = LiveTranscriptionPreviewer(
             settingsStore: settingsStore,
             openAIBackendFactory: { backend },
-            appleBackendFactory: { backend }
+            appleBackendFactory: { backend },
         )
 
         let buffer = try makeTestBuffer(sampleCount: 4)
@@ -30,9 +30,9 @@ final class LiveTranscriptionPreviewerTests: XCTestCase {
     private func makeTestBuffer(sampleCount: AVAudioFrameCount) throws -> AVAudioPCMBuffer {
         guard let format = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
-            sampleRate: 16_000,
+            sampleRate: 16000,
             channels: 1,
-            interleaved: false
+            interleaved: false,
         ) else {
             throw XCTSkip("Unable to create audio format")
         }
@@ -43,7 +43,7 @@ final class LiveTranscriptionPreviewerTests: XCTestCase {
 
         buffer.frameLength = sampleCount
         if let channel = buffer.floatChannelData?[0] {
-            for index in 0..<Int(sampleCount) {
+            for index in 0 ..< Int(sampleCount) {
                 channel[index] = Float(index) / 10
             }
         }
@@ -54,13 +54,15 @@ final class LiveTranscriptionPreviewerTests: XCTestCase {
 actor MockLivePreviewBackend: LivePreviewBackend {
     private(set) var appendedFrameCounts: [AVAudioFrameCount] = []
 
-    func start(onTextUpdate: @escaping @Sendable (String) -> Void) async throws {}
+    func start(onTextUpdate _: @escaping @Sendable (String) -> Void) async throws {}
 
     func append(_ buffer: AVAudioPCMBuffer) async {
         appendedFrameCounts.append(buffer.frameLength)
     }
 
-    func finish() async -> String { "" }
+    func finish() async -> String {
+        ""
+    }
 
     func cancel() async {}
 }

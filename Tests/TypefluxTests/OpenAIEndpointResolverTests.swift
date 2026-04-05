@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class OpenAIEndpointResolverTests: XCTestCase {
     func testResolveKeepsFullTranscriptionEndpoint() throws {
@@ -30,7 +30,6 @@ final class OpenAIEndpointResolverTests: XCTestCase {
 // MARK: - Extended OpenAIEndpointResolver tests
 
 extension OpenAIEndpointResolverTests {
-
     func testResolveAppendsChatCompletionsToBaseURL() throws {
         let baseURL = try XCTUnwrap(URL(string: "https://api.openai.com/v1"))
         let resolved = OpenAIEndpointResolver.resolve(from: baseURL, path: "chat/completions")

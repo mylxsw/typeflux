@@ -14,7 +14,7 @@ enum FreeSTTConnectionResolver {
             throw NSError(
                 domain: "FreeSTT",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: L("settings.models.freeSTT.validation.emptyModel")]
+                userInfo: [NSLocalizedDescriptionKey: L("settings.models.freeSTT.validation.emptyModel")],
             )
         }
         guard let resolved = FreeSTTModelRegistry.resolve(modelName: trimmedModel) else {
@@ -24,15 +24,16 @@ enum FreeSTTConnectionResolver {
                 userInfo: [
                     NSLocalizedDescriptionKey: L(
                         "settings.models.freeSTT.validation.unsupportedModel",
-                        trimmedModel)
-                ]
+                        trimmedModel,
+                    ),
+                ],
             )
         }
         guard let baseURL = URL(string: resolved.baseURL), !resolved.baseURL.isEmpty else {
             throw NSError(
                 domain: "FreeSTT",
                 code: 3,
-                userInfo: [NSLocalizedDescriptionKey: L("settings.models.freeSTT.validation.invalidEndpoint")]
+                userInfo: [NSLocalizedDescriptionKey: L("settings.models.freeSTT.validation.invalidEndpoint")],
             )
         }
 
@@ -40,7 +41,7 @@ enum FreeSTTConnectionResolver {
             baseURL: baseURL,
             model: resolved.modelName,
             apiKey: resolved.apiKey,
-            additionalHeaders: resolved.additionalHeaders
+            additionalHeaders: resolved.additionalHeaders,
         )
     }
 }
@@ -58,7 +59,7 @@ final class FreeSTTTranscriber: Transcriber {
             baseURL: connection.baseURL,
             model: connection.model,
             apiKey: connection.apiKey,
-            additionalHeaders: connection.additionalHeaders
+            additionalHeaders: connection.additionalHeaders,
         )
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -66,16 +67,16 @@ final class FreeSTTTranscriber: Transcriber {
             throw NSError(
                 domain: "FreeSTTTranscriber",
                 code: 1001,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid response type."]
+                userInfo: [NSLocalizedDescriptionKey: "Invalid response type."],
             )
         }
 
-        guard (200..<300).contains(http.statusCode) else {
+        guard (200 ..< 300).contains(http.statusCode) else {
             let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
             throw NSError(
                 domain: "FreeSTTTranscriber",
                 code: http.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(errorBody)"]
+                userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(errorBody)"],
             )
         }
 
@@ -89,7 +90,7 @@ final class FreeSTTTranscriber: Transcriber {
 
     func transcribeStream(
         audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         let connection = try FreeSTTConnectionResolver.resolve(modelName: settingsStore.freeSTTModel)
         let uploadURL = try preparedUploadURL(for: audioFile)
@@ -98,7 +99,7 @@ final class FreeSTTTranscriber: Transcriber {
             model: connection.model,
             apiKey: connection.apiKey,
             additionalHeaders: connection.additionalHeaders,
-            uploadURL: uploadURL
+            uploadURL: uploadURL,
         )
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -107,18 +108,18 @@ final class FreeSTTTranscriber: Transcriber {
             throw NSError(
                 domain: "FreeSTTTranscriber",
                 code: 4,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid response type."]
+                userInfo: [NSLocalizedDescriptionKey: "Invalid response type."],
             )
         }
 
         NetworkDebugLogger.logResponse(http, data: data)
 
-        guard (200..<300).contains(http.statusCode) else {
+        guard (200 ..< 300).contains(http.statusCode) else {
             let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
             throw NSError(
                 domain: "FreeSTTTranscriber",
                 code: http.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(errorBody)"]
+                userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(errorBody)"],
             )
         }
 
@@ -131,9 +132,9 @@ final class FreeSTTTranscriber: Transcriber {
     private func preparedUploadURL(for audioFile: AudioFile) throws -> URL {
         switch audioFile.fileURL.pathExtension.lowercased() {
         case "wav", "mp3", "m4a", "mp4", "mpeg", "mpga", "webm":
-            return audioFile.fileURL
+            audioFile.fileURL
         default:
-            return try AudioFileTranscoder.wavFileURL(for: audioFile)
+            try AudioFileTranscoder.wavFileURL(for: audioFile)
         }
     }
 
@@ -142,7 +143,7 @@ final class FreeSTTTranscriber: Transcriber {
         model: String,
         apiKey: String,
         additionalHeaders: [String: String],
-        uploadURL: URL
+        uploadURL: URL,
     ) throws -> URLRequest {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "audio/transcriptions")
         var request = URLRequest(url: url)
@@ -164,9 +165,9 @@ final class FreeSTTTranscriber: Transcriber {
                     name: "file",
                     filename: uploadURL.lastPathComponent,
                     mimeType: mimeType(for: uploadURL),
-                    fileURL: uploadURL
-                )
-            ]
+                    fileURL: uploadURL,
+                ),
+            ],
         )
         return request
     }
@@ -175,7 +176,7 @@ final class FreeSTTTranscriber: Transcriber {
         baseURL: URL,
         model: String,
         apiKey: String,
-        additionalHeaders: [String: String]
+        additionalHeaders: [String: String],
     ) throws -> URLRequest {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "audio/transcriptions")
         var request = URLRequest(url: url)
@@ -197,9 +198,9 @@ final class FreeSTTTranscriber: Transcriber {
                     name: "file",
                     filename: "typeflux-stt-test.wav",
                     mimeType: "audio/wav",
-                    data: RemoteSTTTestAudio.wavSilence()
-                )
-            ]
+                    data: RemoteSTTTestAudio.wavSilence(),
+                ),
+            ],
         )
         return request
     }
@@ -207,15 +208,15 @@ final class FreeSTTTranscriber: Transcriber {
     private func mimeType(for fileURL: URL) -> String {
         switch fileURL.pathExtension.lowercased() {
         case "wav":
-            return "audio/wav"
+            "audio/wav"
         case "m4a", "mp4":
-            return "audio/m4a"
+            "audio/m4a"
         case "mp3", "mpeg", "mpga":
-            return "audio/mpeg"
+            "audio/mpeg"
         case "webm":
-            return "audio/webm"
+            "audio/webm"
         default:
-            return "application/octet-stream"
+            "application/octet-stream"
         }
     }
 }

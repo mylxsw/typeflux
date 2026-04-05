@@ -23,7 +23,7 @@ final class AppCoordinator {
             agentJobStore: di.agentJobStore,
             overlayController: di.overlayController,
             askAnswerWindowController: di.askAnswerWindowController,
-            soundEffectPlayer: di.soundEffectPlayer
+            soundEffectPlayer: di.soundEffectPlayer,
         )
         self.workflowController = workflowController
 
@@ -36,7 +36,7 @@ final class AppCoordinator {
             },
             onOpenOnboarding: { [weak self] in
                 self?.showOnboarding()
-            }
+            },
         )
         statusBarController?.start()
         self.workflowController?.start()
@@ -56,7 +56,7 @@ final class AppCoordinator {
 
     private func presentOnboarding() {
         let controller = OnboardingWindowController()
-        self.onboardingWindowController = controller
+        onboardingWindowController = controller
         controller.show(settingsStore: di.settingsStore) { [weak self] in
             self?.onboardingWindowController = nil
             self?.presentPermissionGuidanceIfNeeded()
@@ -85,7 +85,7 @@ final class AppCoordinator {
             initialSection: .settings,
             onRetryHistory: { [weak self] record in
                 self?.workflowController?.retry(record: record)
-            }
+            },
         )
     }
 }

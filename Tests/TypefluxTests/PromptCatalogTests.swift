@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class PromptCatalogTests: XCTestCase {
     func testLanguageConsistencyRuleTargetsProcessedContent() {
@@ -8,7 +8,7 @@ final class PromptCatalogTests: XCTestCase {
             """
             Language consistency rule:
             You must keep the output language consistent with the original language of the selected text by default. Do not translate, paraphrase into another language, or switch languages because of persona defaults, style preferences, or formatting instructions alone. Only change the output language when a later instruction explicitly and clearly requires a different language.
-            """
+            """,
         )
     }
 
@@ -16,7 +16,7 @@ final class PromptCatalogTests: XCTestCase {
         let prompt = PromptCatalog.appendUserEnvironmentContext(
             to: "Base system prompt.",
             preferredLanguages: ["zh-Hans-CN", "en-US"],
-            appLanguage: .english
+            appLanguage: .english,
         )
 
         XCTAssertTrue(prompt.hasPrefix("Base system prompt."))
@@ -40,7 +40,7 @@ final class PromptCatalogTests: XCTestCase {
             alpha, beta
             </terms>
             </vocabulary_hints>
-            """
+            """,
         )
     }
 
@@ -49,7 +49,7 @@ final class PromptCatalogTests: XCTestCase {
             mode: .rewriteTranscript,
             sourceText: "raw text",
             spokenInstruction: nil,
-            personaPrompt: "formal and concise"
+            personaPrompt: "formal and concise",
         )
 
         let prompts = PromptCatalog.rewritePrompts(for: request)
@@ -67,7 +67,7 @@ final class PromptCatalogTests: XCTestCase {
             mode: .editSelection,
             sourceText: "你好，世界",
             spokenInstruction: "改得更自然一点",
-            personaPrompt: "professional but warm"
+            personaPrompt: "professional but warm",
         )
 
         let prompts = PromptCatalog.rewritePrompts(for: request)
@@ -82,7 +82,7 @@ final class PromptCatalogTests: XCTestCase {
             mode: .editSelection,
             sourceText: "Please send the proposal today.",
             spokenInstruction: "让语气更礼貌一些",
-            personaPrompt: "Respond like a concise assistant."
+            personaPrompt: "Respond like a concise assistant.",
         )
 
         let prompts = PromptCatalog.rewritePrompts(for: request)
@@ -97,7 +97,7 @@ final class PromptCatalogTests: XCTestCase {
     func testMultimodalTranscriptionPromptIncludesLanguageConsistencyRule() {
         let prompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
             personaPrompt: "Use concise business language.",
-            vocabularyTerms: ["Typeflux"]
+            vocabularyTerms: ["Typeflux"],
         )
 
         XCTAssertTrue(prompt.contains("You are a multimodal speech transcription and rewrite engine."))
@@ -118,7 +118,7 @@ final class PromptCatalogTests: XCTestCase {
             selectedText: "We should probably move the launch by two weeks.",
             spokenInstruction: "What risks do you see here?",
             personaPrompt: "Be concise.",
-            editableTarget: true
+            editableTarget: true,
         )
 
         XCTAssertTrue(prompts.system.contains("Default to \"answer\" whenever the intent is ambiguous."))
@@ -138,7 +138,7 @@ final class PromptCatalogTests: XCTestCase {
             selectedText: "Please make this more formal.",
             spokenInstruction: "Rewrite this",
             personaPrompt: nil,
-            editableTarget: false
+            editableTarget: false,
         )
 
         XCTAssertTrue(prompts.user.contains("<editable_target>false</editable_target>"))
@@ -150,7 +150,7 @@ final class PromptCatalogTests: XCTestCase {
             selectedText: "This email sounds rough.",
             spokenInstruction: "Help me polish this",
             personaPrompt: nil,
-            editableTarget: true
+            editableTarget: true,
         )
 
         XCTAssertTrue(prompts.system.contains("imperative writing or rewriting instruction"))
@@ -175,7 +175,7 @@ final class PromptCatalogTests: XCTestCase {
             selectedText: "测试一下现在语音输入法的效果。",
             spokenInstruction: "这里主要表达了什么？",
             personaPrompt: "回答简洁一些。",
-            targetContext: PromptCatalog.AskTargetContext(editableTarget: false)
+            targetContext: PromptCatalog.AskTargetContext(editableTarget: false),
         )
 
         XCTAssertTrue(prompts.system.contains("If selected text is provided"))
@@ -195,7 +195,7 @@ final class PromptCatalogTests: XCTestCase {
             selectedText: "This draft is awkward.",
             spokenInstruction: "Help me polish this",
             personaPrompt: nil,
-            targetContext: PromptCatalog.AskTargetContext(editableTarget: true)
+            targetContext: PromptCatalog.AskTargetContext(editableTarget: true),
         )
 
         XCTAssertTrue(prompts.system.contains("help me polish this"))
@@ -209,13 +209,13 @@ final class PromptCatalogTests: XCTestCase {
             selectedText: "Original text",
             spokenInstruction: "Help me rewrite this",
             personaPrompt: "Be concise.",
-            editableTarget: true
+            editableTarget: true,
         )
         let answerPrompts = PromptCatalog.askAnythingPrompts(
             selectedText: "Original text",
             spokenInstruction: "Help me rewrite this",
             personaPrompt: "Be concise.",
-            targetContext: PromptCatalog.AskTargetContext(editableTarget: true)
+            targetContext: PromptCatalog.AskTargetContext(editableTarget: true),
         )
 
         XCTAssertTrue(decisionPrompts.system.contains("Interpret imperative writing or rewriting instructions as requests for final output"))
@@ -231,7 +231,7 @@ final class PromptCatalogTests: XCTestCase {
             selectedText: nil,
             spokenInstruction: "帮我想一个标题",
             personaPrompt: nil,
-            targetContext: PromptCatalog.AskTargetContext(editableTarget: false)
+            targetContext: PromptCatalog.AskTargetContext(editableTarget: false),
         )
 
         XCTAssertFalse(prompts.user.contains("<selected_text>"))
@@ -251,7 +251,7 @@ final class PromptCatalogTests: XCTestCase {
     func testUserEnvironmentContextWithCustomLanguages() {
         let context = PromptCatalog.userEnvironmentContext(
             preferredLanguages: ["ja-JP"],
-            appLanguage: .japanese
+            appLanguage: .japanese,
         )
 
         XCTAssertTrue(context.contains("User environment context:"))
@@ -265,7 +265,7 @@ final class PromptCatalogTests: XCTestCase {
         let result = PromptCatalog.appendUserEnvironmentContext(
             to: "",
             preferredLanguages: ["en-US"],
-            appLanguage: .english
+            appLanguage: .english,
         )
 
         XCTAssertTrue(result.contains("User environment context:"))
@@ -277,7 +277,7 @@ final class PromptCatalogTests: XCTestCase {
     func testMultimodalTranscriptionPromptWithoutPersona() {
         let prompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
             personaPrompt: nil,
-            vocabularyTerms: []
+            vocabularyTerms: [],
         )
 
         XCTAssertTrue(prompt.contains("You are a multimodal speech transcription engine."))
@@ -301,7 +301,7 @@ final class PromptCatalogTests: XCTestCase {
             oldFragment: "TypeFlux",
             newFragment: "Typeflux",
             candidateTerms: ["Typeflux"],
-            existingTerms: ["GPT"]
+            existingTerms: ["GPT"],
         )
 
         XCTAssertTrue(prompts.system.contains("speech transcription vocabulary"))
@@ -321,7 +321,7 @@ final class PromptCatalogTests: XCTestCase {
             oldFragment: "",
             newFragment: "fixed",
             candidateTerms: ["fixed"],
-            existingTerms: []
+            existingTerms: [],
         )
 
         XCTAssertTrue(prompts.user.contains("<previous_edited_fragment>\n<empty>\n</previous_edited_fragment>"))
@@ -334,7 +334,7 @@ final class PromptCatalogTests: XCTestCase {
             oldFragment: "Open AI",
             newFragment: "OpenAI Realtime API",
             candidateTerms: ["OpenAI Realtime API", "Realtime API"],
-            existingTerms: ["SeedASR", "JSONSchema"]
+            existingTerms: ["SeedASR", "JSONSchema"],
         )
 
         XCTAssertTrue(prompts.user.contains("<original_dictated_text>\n请打开 OpenAI Realtime API 文档\n</original_dictated_text>"))
@@ -348,7 +348,6 @@ final class PromptCatalogTests: XCTestCase {
 // MARK: - Extended PromptCatalog tests
 
 extension PromptCatalogTests {
-
     // MARK: - xmlSection
 
     func testXmlSectionWithSimpleContent() {
@@ -380,17 +379,17 @@ extension PromptCatalogTests {
 
     // MARK: - transcriptionVocabularyHint
 
-    func testTranscriptionVocabularyHintWithValidTerms() {
+    func testTranscriptionVocabularyHintWithValidTerms() throws {
         let hint = PromptCatalog.transcriptionVocabularyHint(terms: ["TypeFlux", "WhisperKit"])
         XCTAssertNotNil(hint)
-        XCTAssertTrue(hint!.contains("TypeFlux"))
-        XCTAssertTrue(hint!.contains("WhisperKit"))
+        XCTAssertTrue(try XCTUnwrap(hint?.contains("TypeFlux")))
+        XCTAssertTrue(try XCTUnwrap(hint?.contains("WhisperKit")))
     }
 
-    func testTranscriptionVocabularyHintFiltersEmptyTerms() {
+    func testTranscriptionVocabularyHintFiltersEmptyTerms() throws {
         let hint = PromptCatalog.transcriptionVocabularyHint(terms: ["", "   ", "ValidTerm"])
         XCTAssertNotNil(hint)
-        XCTAssertTrue(hint!.contains("ValidTerm"))
+        XCTAssertTrue(try XCTUnwrap(hint?.contains("ValidTerm")))
     }
 
     func testTranscriptionVocabularyHintReturnsNilWhenAllTermsEmpty() {
@@ -417,7 +416,7 @@ extension PromptCatalogTests {
             mode: .rewriteTranscript,
             sourceText: "hello world",
             spokenInstruction: nil,
-            personaPrompt: "Be formal"
+            personaPrompt: "Be formal",
         )
         let prompts = PromptCatalog.rewritePrompts(for: request)
         XCTAssertFalse(prompts.system.isEmpty)
@@ -429,7 +428,7 @@ extension PromptCatalogTests {
             mode: .rewriteTranscript,
             sourceText: "test",
             spokenInstruction: nil,
-            personaPrompt: "Use emoji"
+            personaPrompt: "Use emoji",
         )
         let prompts = PromptCatalog.rewritePrompts(for: request)
         // In rewriteTranscript mode the persona goes into the user prompt, not the system prompt
@@ -441,7 +440,7 @@ extension PromptCatalogTests {
             mode: .rewriteTranscript,
             sourceText: "My voice transcript",
             spokenInstruction: nil,
-            personaPrompt: nil
+            personaPrompt: nil,
         )
         let prompts = PromptCatalog.rewritePrompts(for: request)
         XCTAssertTrue(prompts.user.contains("My voice transcript"))
@@ -452,7 +451,7 @@ extension PromptCatalogTests {
     func testMultimodalTranscriptionSystemPromptIncludesPersona() {
         let prompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
             personaPrompt: "Be very precise",
-            vocabularyTerms: []
+            vocabularyTerms: [],
         )
         XCTAssertTrue(prompt.contains("Be very precise"))
     }
@@ -460,7 +459,7 @@ extension PromptCatalogTests {
     func testMultimodalTranscriptionSystemPromptWithVocabularyTerms() {
         let prompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
             personaPrompt: nil,
-            vocabularyTerms: ["SwiftUI", "Combine"]
+            vocabularyTerms: ["SwiftUI", "Combine"],
         )
         XCTAssertTrue(prompt.contains("SwiftUI"))
         XCTAssertTrue(prompt.contains("Combine"))
@@ -473,7 +472,7 @@ extension PromptCatalogTests {
             selectedText: "Swift is a programming language",
             spokenInstruction: "Translate to Chinese",
             personaPrompt: nil,
-            targetContext: PromptCatalog.AskTargetContext(editableTarget: true)
+            targetContext: PromptCatalog.AskTargetContext(editableTarget: true),
         )
         XCTAssertTrue(prompts.user.contains("Swift is a programming language"))
         XCTAssertTrue(prompts.user.contains("Translate to Chinese"))
@@ -484,7 +483,7 @@ extension PromptCatalogTests {
             selectedText: nil,
             spokenInstruction: "What is AI?",
             personaPrompt: nil,
-            targetContext: PromptCatalog.AskTargetContext(editableTarget: false)
+            targetContext: PromptCatalog.AskTargetContext(editableTarget: false),
         )
         XCTAssertFalse(prompts.system.isEmpty)
     }
@@ -493,7 +492,7 @@ extension PromptCatalogTests {
 
     func testAskAgentSystemPromptIncludesPersonaPrompt() {
         let prompt = AgentPromptCatalog.askAgentSystemPrompt(
-            personaPrompt: "Be concise and direct"
+            personaPrompt: "Be concise and direct",
         )
         XCTAssertTrue(prompt.contains("Be concise and direct"))
     }
@@ -501,7 +500,7 @@ extension PromptCatalogTests {
     func testAskAgentSystemPromptIncludesSkillSupplements() {
         let prompt = AgentPromptCatalog.askAgentSystemPrompt(
             personaPrompt: nil,
-            skillSupplements: ["You can run shell commands", "You can fetch URLs"]
+            skillSupplements: ["You can run shell commands", "You can fetch URLs"],
         )
         XCTAssertTrue(prompt.contains("You can run shell commands"))
         XCTAssertTrue(prompt.contains("You can fetch URLs"))
@@ -510,7 +509,7 @@ extension PromptCatalogTests {
     func testAskAgentSystemPromptIgnoresEmptySupplements() {
         let prompt = AgentPromptCatalog.askAgentSystemPrompt(
             personaPrompt: nil,
-            skillSupplements: ["  ", "", "\n"]
+            skillSupplements: ["  ", "", "\n"],
         )
         // Empty supplements should be filtered out
         XCTAssertFalse(prompt.isEmpty)
@@ -519,7 +518,7 @@ extension PromptCatalogTests {
     func testAskAgentUserPromptWithSelectedText() {
         let prompt = AgentPromptCatalog.askAgentUserPrompt(
             selectedText: "Hello world",
-            instruction: "Translate to French"
+            instruction: "Translate to French",
         )
         XCTAssertTrue(prompt.contains("Hello world"))
         XCTAssertTrue(prompt.contains("Translate to French"))

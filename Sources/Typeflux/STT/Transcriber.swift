@@ -1,6 +1,6 @@
 import Foundation
 
-struct TranscriptionSnapshot: Sendable {
+struct TranscriptionSnapshot {
     let text: String
     let isFinal: Bool
 }
@@ -9,7 +9,7 @@ protocol Transcriber {
     func transcribe(audioFile: AudioFile) async throws -> String
     func transcribeStream(
         audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String
 }
 
@@ -21,7 +21,7 @@ protocol RecordingPrewarmingTranscriber: Transcriber {
 extension Transcriber {
     func transcribeStream(
         audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         let text = try await transcribe(audioFile: audioFile)
         await onUpdate(TranscriptionSnapshot(text: text, isFinal: true))
@@ -49,7 +49,7 @@ final class STTRouter {
         multimodal: Transcriber,
         aliCloud: Transcriber,
         doubaoRealtime: Transcriber,
-        groq: Transcriber
+        groq: Transcriber,
     ) {
         self.settingsStore = settingsStore
         self.whisper = whisper
@@ -90,13 +90,13 @@ final class STTRouter {
 
     func transcribeStream(
         audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         switch settingsStore.sttProvider {
         case .freeModel:
             do {
                 return try await RequestRetry.perform(operationName: "Free STT request") { [self] in
-                    try await self.freeSTT.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                    try await freeSTT.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
                 }
             } catch {
                 NetworkDebugLogger.logError(context: "Free STT failed", error: error)
@@ -106,10 +106,11 @@ final class STTRouter {
                 }
                 throw error
             }
+
         case .whisperAPI:
             do {
                 return try await RequestRetry.perform(operationName: "Remote STT request") { [self] in
-                    try await self.whisper.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                    try await whisper.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
                 }
             } catch {
                 NetworkDebugLogger.logError(context: "Remote STT failed", error: error)
@@ -137,13 +138,13 @@ final class STTRouter {
 
         case .multimodalLLM:
             return try await RequestRetry.perform(operationName: "Multimodal STT request") { [self] in
-                try await self.multimodal.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                try await multimodal.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
             }
 
         case .aliCloud:
             do {
                 return try await RequestRetry.perform(operationName: "AliCloud STT request") { [self] in
-                    try await self.aliCloud.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                    try await aliCloud.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
                 }
             } catch {
                 NetworkDebugLogger.logError(context: "Alibaba Cloud ASR failed", error: error)
@@ -157,7 +158,7 @@ final class STTRouter {
         case .doubaoRealtime:
             do {
                 return try await RequestRetry.perform(operationName: "Doubao realtime STT request") { [self] in
-                    try await self.doubaoRealtime.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                    try await doubaoRealtime.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
                 }
             } catch {
                 NetworkDebugLogger.logError(context: "Doubao realtime ASR failed", error: error)
@@ -172,7 +173,7 @@ final class STTRouter {
             if !settingsStore.groqSTTAPIKey.isEmpty {
                 do {
                     return try await RequestRetry.perform(operationName: "Groq STT request") { [self] in
-                        try await self.groq.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                        try await groq.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
                     }
                 } catch {
                     NetworkDebugLogger.logError(context: "Groq STT failed", error: error)
@@ -190,7 +191,7 @@ final class STTRouter {
             throw NSError(
                 domain: "STTRouter",
                 code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Groq transcription is not configured yet."]
+                userInfo: [NSLocalizedDescriptionKey: "Groq transcription is not configured yet."],
             )
         }
     }

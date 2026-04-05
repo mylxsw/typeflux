@@ -4,7 +4,7 @@ enum RequestRetry {
     static let retryDelays: [Duration] = [
         .zero,
         .milliseconds(500),
-        .seconds(2)
+        .seconds(2),
     ]
 
     typealias RetryCallback = @Sendable (_ retryNumber: Int, _ error: Error, _ delay: Duration) async -> Void
@@ -14,7 +14,7 @@ enum RequestRetry {
         operationName: String,
         onRetry: RetryCallback? = nil,
         sleep: SleepClosure = { duration in try await defaultSleep(for: duration) },
-        operation: @escaping @Sendable () async throws -> T
+        operation: @escaping @Sendable () async throws -> T,
     ) async throws -> T {
         var attempt = 0
 
@@ -28,7 +28,7 @@ enum RequestRetry {
                 guard attempt < retryDelays.count else {
                     NetworkDebugLogger.logError(
                         context: "\(operationName) failed after \(attempt + 1) attempts",
-                        error: error
+                        error: error,
                     )
                     throw error
                 }
@@ -37,7 +37,7 @@ enum RequestRetry {
                 let delay = retryDelays[attempt]
                 NetworkDebugLogger.logError(
                     context: "\(operationName) attempt \(attempt + 1) failed; scheduling retry \(retryNumber)",
-                    error: error
+                    error: error,
                 )
                 await onRetry?(retryNumber, error, delay)
                 try await sleep(delay)

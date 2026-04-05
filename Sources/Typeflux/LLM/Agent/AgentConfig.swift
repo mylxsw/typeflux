@@ -1,7 +1,7 @@
 import Foundation
 
 /// Agent 配置
-struct AgentConfig: Sendable {
+struct AgentConfig {
     /// 最大执行步数（默认 10）
     let maxSteps: Int
     /// 是否允许 LLM 并行调用多个工具（默认 false）
@@ -15,6 +15,6 @@ struct AgentConfig: Sendable {
         maxSteps: 10,
         allowParallelToolCalls: false,
         temperature: nil,
-        enableStreaming: false
+        enableStreaming: false,
     )
 }

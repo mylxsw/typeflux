@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 // MARK: - MockLLMMultiTurnService
 
@@ -9,9 +9,9 @@ final class MockLLMMultiTurnService: LLMMultiTurnService, @unchecked Sendable {
     private var callCount = 0
 
     func complete(
-        messages: [AgentMessage],
-        tools: [LLMAgentTool],
-        config: LLMCallConfig
+        messages _: [AgentMessage],
+        tools _: [LLMAgentTool],
+        config _: LLMCallConfig,
     ) async throws -> AgentTurnResult {
         guard callCount < turns.count else {
             return AgentTurnResult(turn: .text("fallback"), tokenUsage: nil)
@@ -22,13 +22,14 @@ final class MockLLMMultiTurnService: LLMMultiTurnService, @unchecked Sendable {
         return AgentTurnResult(turn: turn, tokenUsage: usage)
     }
 
-    var totalCalls: Int { callCount }
+    var totalCalls: Int {
+        callCount
+    }
 }
 
 // MARK: - Tests
 
 final class AgentLoopTests: XCTestCase {
-
     func testTerminatesOnPureTextResponse() async throws {
         let mockLLM = MockLLMMultiTurnService()
         mockLLM.turns = [.text("The answer is 42")]
@@ -39,7 +40,7 @@ final class AgentLoopTests: XCTestCase {
         let loop = AgentLoop(llmService: mockLLM, toolRegistry: registry, config: .default)
         let result = try await loop.run(messages: [.system("sys"), .user("user")])
 
-        guard case .text(let text) = result.outcome else {
+        guard case let .text(text) = result.outcome else {
             XCTFail("Expected text outcome")
             return
         }
@@ -50,7 +51,7 @@ final class AgentLoopTests: XCTestCase {
     func testTerminatesOnAnswerTextTool() async throws {
         let mockLLM = MockLLMMultiTurnService()
         mockLLM.turns = [
-            .toolCalls([AgentToolCall(id: "1", name: "answer_text", argumentsJSON: #"{"answer":"42"}"#)])
+            .toolCalls([AgentToolCall(id: "1", name: "answer_text", argumentsJSON: #"{"answer":"42"}"#)]),
         ]
 
         let registry = AgentToolRegistry()
@@ -59,7 +60,7 @@ final class AgentLoopTests: XCTestCase {
         let loop = AgentLoop(llmService: mockLLM, toolRegistry: registry, config: .default)
         let result = try await loop.run(messages: [.system("sys"), .user("user")])
 
-        guard case .terminationTool(let name, _) = result.outcome else {
+        guard case let .terminationTool(name, _) = result.outcome else {
             XCTFail("Expected terminationTool outcome")
             return
         }
@@ -70,7 +71,7 @@ final class AgentLoopTests: XCTestCase {
     func testTerminatesOnEditTextTool() async throws {
         let mockLLM = MockLLMMultiTurnService()
         mockLLM.turns = [
-            .toolCalls([AgentToolCall(id: "1", name: "edit_text", argumentsJSON: #"{"replacement":"new text"}"#)])
+            .toolCalls([AgentToolCall(id: "1", name: "edit_text", argumentsJSON: #"{"replacement":"new text"}"#)]),
         ]
 
         let registry = AgentToolRegistry()
@@ -79,7 +80,7 @@ final class AgentLoopTests: XCTestCase {
         let loop = AgentLoop(llmService: mockLLM, toolRegistry: registry, config: .default)
         let result = try await loop.run(messages: [.system("sys"), .user("user")])
 
-        guard case .terminationTool(let name, let args) = result.outcome else {
+        guard case let .terminationTool(name, args) = result.outcome else {
             XCTFail("Expected terminationTool outcome")
             return
         }
@@ -94,7 +95,7 @@ final class AgentLoopTests: XCTestCase {
         // Always return get_clipboard (non-termination) tool call
         mockLLM.turns = Array(
             repeating: .toolCalls([AgentToolCall(id: "1", name: "get_clipboard", argumentsJSON: "{}")]),
-            count: 20
+            count: 20,
         )
 
         let registry = AgentToolRegistry()
@@ -130,7 +131,7 @@ final class AgentLoopTests: XCTestCase {
 
         // Step 1: get_clipboard, Step 2: answer_text (termination)
         XCTAssertEqual(result.steps.count, 2)
-        guard case .terminationTool(let name, _) = result.outcome else {
+        guard case let .terminationTool(name, _) = result.outcome else {
             XCTFail("Expected terminationTool")
             return
         }
@@ -145,7 +146,7 @@ final class AgentLoopTests: XCTestCase {
         mockLLM.turns = [
             .textWithToolCalls(
                 text: "Let me check...",
-                toolCalls: [AgentToolCall(id: "c1", name: "get_clipboard", argumentsJSON: "{}")]
+                toolCalls: [AgentToolCall(id: "c1", name: "get_clipboard", argumentsJSON: "{}")],
             ),
             .toolCalls([AgentToolCall(id: "a1", name: "answer_text", argumentsJSON: #"{"answer":"found"}"#)]),
         ]
@@ -246,31 +247,31 @@ final class AgentLoopTests: XCTestCase {
         XCTAssertNil(result.totalTokenUsage)
     }
 
-    func testAgentResultAnswerText() throws {
+    func testAgentResultAnswerText() {
         let result = AgentResult(
             outcome: .terminationTool(name: "answer_text", argumentsJSON: #"{"answer":"Hello"}"#),
             steps: [],
-            totalDurationMs: 100
+            totalDurationMs: 100,
         )
         XCTAssertEqual(result.answerText, "Hello")
         XCTAssertNil(result.editedText)
     }
 
-    func testAgentResultEditedText() throws {
+    func testAgentResultEditedText() {
         let result = AgentResult(
             outcome: .terminationTool(name: "edit_text", argumentsJSON: #"{"replacement":"New content"}"#),
             steps: [],
-            totalDurationMs: 100
+            totalDurationMs: 100,
         )
         XCTAssertEqual(result.editedText, "New content")
         XCTAssertNil(result.answerText)
     }
 
-    func testAgentResultTextOutcome() throws {
+    func testAgentResultTextOutcome() {
         let result = AgentResult(
             outcome: .text("Plain answer"),
             steps: [],
-            totalDurationMs: 50
+            totalDurationMs: 50,
         )
         XCTAssertEqual(result.answerText, "Plain answer")
         XCTAssertNil(result.editedText)
@@ -284,7 +285,7 @@ final class AgentLoopTests: XCTestCase {
         mockLLM.turns = [
             .textWithToolCalls(
                 text: "Let me look at clipboard...",
-                toolCalls: [AgentToolCall(id: "c1", name: "get_clipboard", argumentsJSON: "{}")]
+                toolCalls: [AgentToolCall(id: "c1", name: "get_clipboard", argumentsJSON: "{}")],
             ),
             .text("Done"),
         ]
@@ -352,14 +353,13 @@ final class MockAgentStepMonitor: AgentStepMonitor, @unchecked Sendable {
 // MARK: - Extended AgentLoop tests
 
 extension AgentLoopTests {
-
     func testLoopStepsAreCounted() async throws {
         let mockLLM = MockLLMMultiTurnService()
         let registry = AgentToolRegistry()
         let stubTool = StubAgentTool(
             name: "search",
             description: "Searches",
-            result: "results found"
+            result: "results found",
         )
         await registry.register(stubTool)
         await registry.register(AnswerTextTool())
@@ -367,7 +367,7 @@ extension AgentLoopTests {
         // Tool call -> text response
         mockLLM.turns = [
             .toolCalls([AgentToolCall(id: "tc1", name: "search", argumentsJSON: #"{"query":"test"}"#)]),
-            .toolCalls([AgentToolCall(id: "tc2", name: BuiltinAgentToolName.answerText.rawValue, argumentsJSON: #"{"answer":"done"}"#)])
+            .toolCalls([AgentToolCall(id: "tc2", name: BuiltinAgentToolName.answerText.rawValue, argumentsJSON: #"{"answer":"done"}"#)]),
         ]
 
         let loop = AgentLoop(llmService: mockLLM, toolRegistry: registry, config: .default)
@@ -385,7 +385,7 @@ extension AgentLoopTests {
         let stubTool = StubAgentTool(
             name: "stub",
             description: "Stub",
-            result: "ok"
+            result: "ok",
         )
         await registry.register(stubTool)
 
@@ -415,22 +415,22 @@ extension AgentLoopTests {
         let stubTool = StubAgentTool(
             name: "info",
             description: "Info tool",
-            result: "information"
+            result: "information",
         )
         await registry.register(stubTool)
 
         mockLLM.turns = [
             .textWithToolCalls(
                 text: "Let me look that up...",
-                toolCalls: [AgentToolCall(id: "tc1", name: "info", argumentsJSON: "{}")]
+                toolCalls: [AgentToolCall(id: "tc1", name: "info", argumentsJSON: "{}")],
             ),
-            .text("Here is the answer.")
+            .text("Here is the answer."),
         ]
 
         let loop = AgentLoop(llmService: mockLLM, toolRegistry: registry, config: .default)
         let result = try await loop.run(messages: [.user("what is X?")])
 
-        guard case .text(let text) = result.outcome else {
+        guard case let .text(text) = result.outcome else {
             XCTFail("Expected text outcome")
             return
         }
@@ -446,19 +446,19 @@ private struct StubAgentTool: AgentTool {
     let result: String
 
     init(name: String, description: String, result: String) {
-        self.definition = LLMAgentTool(
+        definition = LLMAgentTool(
             name: name,
             description: description,
             inputSchema: LLMJSONSchema(
                 name: name,
                 schema: ["type": .string("object"), "properties": .object([:])],
-                strict: false
-            )
+                strict: false,
+            ),
         )
         self.result = result
     }
 
-    func execute(arguments: String) async throws -> String {
-        return #"{"result": "\#(result)"}"#
+    func execute(arguments _: String) async throws -> String {
+        #"{"result": "\#(result)"}"#
     }
 }

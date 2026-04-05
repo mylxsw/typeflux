@@ -9,7 +9,9 @@ enum StudioSection: String, CaseIterable, Identifiable {
     case agent
     case settings
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     /// Sections that appear in the upper sidebar group.
     static var sidebarUpperCases: [StudioSection] {
@@ -23,80 +25,80 @@ enum StudioSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home: return L("studio.section.home")
-        case .models: return L("studio.section.models")
-        case .personas: return L("studio.section.personas")
-        case .vocabulary: return L("studio.section.vocabulary")
-        case .history: return L("studio.section.history")
-        case .agent: return L("studio.section.agent")
-        case .settings: return L("studio.section.settings")
+        case .home: L("studio.section.home")
+        case .models: L("studio.section.models")
+        case .personas: L("studio.section.personas")
+        case .vocabulary: L("studio.section.vocabulary")
+        case .history: L("studio.section.history")
+        case .agent: L("studio.section.agent")
+        case .settings: L("studio.section.settings")
         }
     }
 
     var iconName: String {
         switch self {
-        case .home: return "house.fill"
-        case .models: return "cpu"
-        case .personas: return "face.smiling"
-        case .vocabulary: return "text.book.closed"
-        case .history: return "clock.arrow.circlepath"
-        case .agent: return "puzzlepiece.extension"
-        case .settings: return "gearshape.fill"
+        case .home: "house.fill"
+        case .models: "cpu"
+        case .personas: "face.smiling"
+        case .vocabulary: "text.book.closed"
+        case .history: "clock.arrow.circlepath"
+        case .agent: "puzzlepiece.extension"
+        case .settings: "gearshape.fill"
         }
     }
 
     var eyebrow: String {
         switch self {
-        case .home: return L("studio.eyebrow.home")
-        case .models: return L("studio.eyebrow.models")
-        case .personas: return L("studio.eyebrow.personas")
-        case .vocabulary: return L("studio.eyebrow.vocabulary")
-        case .history: return L("studio.eyebrow.history")
-        case .agent: return L("studio.eyebrow.agent")
-        case .settings: return L("studio.eyebrow.settings")
+        case .home: L("studio.eyebrow.home")
+        case .models: L("studio.eyebrow.models")
+        case .personas: L("studio.eyebrow.personas")
+        case .vocabulary: L("studio.eyebrow.vocabulary")
+        case .history: L("studio.eyebrow.history")
+        case .agent: L("studio.eyebrow.agent")
+        case .settings: L("studio.eyebrow.settings")
         }
     }
 
     var heading: String {
         switch self {
-        case .home: return L("studio.heading.home")
-        case .models: return L("studio.heading.models")
-        case .personas: return L("studio.heading.personas")
-        case .vocabulary: return L("studio.heading.vocabulary")
-        case .history: return L("studio.heading.history")
-        case .agent: return L("studio.heading.agent")
-        case .settings: return L("studio.heading.settings")
+        case .home: L("studio.heading.home")
+        case .models: L("studio.heading.models")
+        case .personas: L("studio.heading.personas")
+        case .vocabulary: L("studio.heading.vocabulary")
+        case .history: L("studio.heading.history")
+        case .agent: L("studio.heading.agent")
+        case .settings: L("studio.heading.settings")
         }
     }
 
     var subheading: String? {
         switch self {
         case .home:
-            return L("studio.subheading.home")
+            L("studio.subheading.home")
         case .models:
-            return nil
+            nil
         case .personas:
-            return nil
+            nil
         case .vocabulary:
-            return L("studio.subheading.vocabulary")
+            L("studio.subheading.vocabulary")
         case .history:
-            return nil
+            nil
         case .agent:
-            return L("studio.subheading.agent")
+            L("studio.subheading.agent")
         case .settings:
-            return nil
+            nil
         }
     }
 
     var searchPlaceholder: String {
         switch self {
-        case .home: return L("studio.search.home")
-        case .models: return L("studio.search.models")
-        case .personas: return L("studio.search.personas")
-        case .vocabulary: return L("studio.search.vocabulary")
-        case .history: return L("studio.search.history")
-        case .agent: return L("studio.search.agent")
-        case .settings: return L("studio.search.settings")
+        case .home: L("studio.search.home")
+        case .models: L("studio.search.models")
+        case .personas: L("studio.search.personas")
+        case .vocabulary: L("studio.search.vocabulary")
+        case .history: L("studio.search.history")
+        case .agent: L("studio.search.agent")
+        case .settings: L("studio.search.settings")
         }
     }
 }
@@ -105,26 +107,28 @@ enum StudioModelDomain: String, CaseIterable, Identifiable {
     case stt
     case llm
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var title: String {
         switch self {
-        case .stt: return L("modelDomain.stt.title")
-        case .llm: return L("modelDomain.llm.title")
+        case .stt: L("modelDomain.stt.title")
+        case .llm: L("modelDomain.llm.title")
         }
     }
 
     var subtitle: String {
         switch self {
-        case .stt: return L("modelDomain.stt.subtitle")
-        case .llm: return L("modelDomain.llm.subtitle")
+        case .stt: L("modelDomain.stt.subtitle")
+        case .llm: L("modelDomain.llm.subtitle")
         }
     }
 
     var iconName: String {
         switch self {
-        case .stt: return "waveform"
-        case .llm: return "ellipsis.message"
+        case .stt: "waveform"
+        case .llm: "ellipsis.message"
         }
     }
 }
@@ -134,16 +138,18 @@ enum AgentConfigurationTab: String, CaseIterable, Identifiable {
     case mcpServers
     case skills
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var title: String {
         switch self {
         case .general:
-            return L("agent.section.general")
+            L("agent.section.general")
         case .mcpServers:
-            return L("agent.section.mcpServers")
+            L("agent.section.mcpServers")
         case .skills:
-            return L("agent.section.skills")
+            L("agent.section.skills")
         }
     }
 }
@@ -173,15 +179,17 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
     case xiaomi
     case groq
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var domain: StudioModelDomain {
         switch self {
         case .appleSpeech, .localSTT, .freeSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT:
-            return .stt
+            .stt
         case .ollama, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
-            .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi, .groq:
-            return .llm
+             .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi, .groq:
+            .llm
         }
     }
 }

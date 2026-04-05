@@ -1,20 +1,20 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AutomaticVocabularyMonitorTests: XCTestCase {
     func testPendingAnalysisWaitsUntilTextSettles() {
-        let start = Date(timeIntervalSince1970: 1_000)
+        let start = Date(timeIntervalSince1970: 1000)
         var state = AutomaticVocabularyMonitor.makeObservationState(
             baselineText: "hello world",
-            startedAt: start
+            startedAt: start,
         )
 
         XCTAssertTrue(
             AutomaticVocabularyMonitor.observe(
                 text: "hello Doubao",
                 at: start.addingTimeInterval(1),
-                state: &state
-            )
+                state: &state,
+            ),
         )
 
         XCTAssertNil(
@@ -22,15 +22,15 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
                 state: state,
                 now: start.addingTimeInterval(2),
                 settleDelay: 2.5,
-                maxAnalyses: 3
-            )
+                maxAnalyses: 3,
+            ),
         )
 
         let pending = AutomaticVocabularyMonitor.pendingAnalysis(
             state: state,
             now: start.addingTimeInterval(3.6),
             settleDelay: 2.5,
-            maxAnalyses: 3
+            maxAnalyses: 3,
         )
 
         XCTAssertEqual(pending?.previousStableText, "hello world")
@@ -38,21 +38,21 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
     }
 
     func testPendingAnalysisResetsWhenUserKeepsEditing() {
-        let start = Date(timeIntervalSince1970: 2_000)
+        let start = Date(timeIntervalSince1970: 2000)
         var state = AutomaticVocabularyMonitor.makeObservationState(
             baselineText: "hello world",
-            startedAt: start
+            startedAt: start,
         )
 
         _ = AutomaticVocabularyMonitor.observe(
             text: "hello Dou",
             at: start.addingTimeInterval(1),
-            state: &state
+            state: &state,
         )
         _ = AutomaticVocabularyMonitor.observe(
             text: "hello Doubao",
             at: start.addingTimeInterval(2),
-            state: &state
+            state: &state,
         )
 
         XCTAssertNil(
@@ -60,8 +60,8 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
                 state: state,
                 now: start.addingTimeInterval(4),
                 settleDelay: 2.5,
-                maxAnalyses: 3
-            )
+                maxAnalyses: 3,
+            ),
         )
 
         XCTAssertNotNil(
@@ -69,29 +69,29 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
                 state: state,
                 now: start.addingTimeInterval(4.6),
                 settleDelay: 2.5,
-                maxAnalyses: 3
-            )
+                maxAnalyses: 3,
+            ),
         )
     }
 
     func testMarkAnalysisCompletedPreventsDuplicateTriggerForSameStableText() {
-        let start = Date(timeIntervalSince1970: 3_000)
+        let start = Date(timeIntervalSince1970: 3000)
         var state = AutomaticVocabularyMonitor.makeObservationState(
             baselineText: "hello world",
-            startedAt: start
+            startedAt: start,
         )
 
         _ = AutomaticVocabularyMonitor.observe(
             text: "hello Doubao",
             at: start.addingTimeInterval(1),
-            state: &state
+            state: &state,
         )
 
         let pending = AutomaticVocabularyMonitor.pendingAnalysis(
             state: state,
             now: start.addingTimeInterval(4),
             settleDelay: 2.5,
-            maxAnalyses: 3
+            maxAnalyses: 3,
         )
         XCTAssertEqual(pending?.updatedText, "hello Doubao")
 
@@ -102,24 +102,24 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
                 state: state,
                 now: start.addingTimeInterval(6),
                 settleDelay: 2.5,
-                maxAnalyses: 3
-            )
+                maxAnalyses: 3,
+            ),
         )
         XCTAssertEqual(state.analysisCount, 1)
     }
 
     func testPendingAnalysisHonorsMaxAnalysisLimit() {
-        let start = Date(timeIntervalSince1970: 4_000)
+        let start = Date(timeIntervalSince1970: 4000)
         var state = AutomaticVocabularyMonitor.makeObservationState(
             baselineText: "hello world",
-            startedAt: start
+            startedAt: start,
         )
         state.analysisCount = 3
 
         _ = AutomaticVocabularyMonitor.observe(
             text: "hello Doubao",
             at: start.addingTimeInterval(1),
-            state: &state
+            state: &state,
         )
 
         XCTAssertNil(
@@ -127,15 +127,15 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
                 state: state,
                 now: start.addingTimeInterval(5),
                 settleDelay: 2.5,
-                maxAnalyses: 3
-            )
+                maxAnalyses: 3,
+            ),
         )
     }
 
     func testDetectChangeExtractsNewLatinToken() {
         let change = AutomaticVocabularyMonitor.detectChange(
             from: "Please review the prd draft",
-            to: "Please review the PRDPlus draft"
+            to: "Please review the PRDPlus draft",
         )
 
         XCTAssertEqual(change?.oldFragment, "prd")
@@ -146,7 +146,7 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
     func testDetectChangeExpandsIntraWordReplacementToWholeToken() {
         let change = AutomaticVocabularyMonitor.detectChange(
             from: "Please open Redmi docs",
-            to: "Please open Readme docs"
+            to: "Please open Readme docs",
         )
 
         XCTAssertEqual(change?.oldFragment, "Redmi")
@@ -157,7 +157,7 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
     func testDetectChangeExpandsInsertedSuffixToWholeToken() {
         let change = AutomaticVocabularyMonitor.detectChange(
             from: "I meant Readm",
-            to: "I meant Readme"
+            to: "I meant Readme",
         )
 
         XCTAssertEqual(change?.oldFragment, "Readm")
@@ -168,7 +168,7 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
     func testDetectChangeExpandsTechnicalVariantToWholeToken() {
         let change = AutomaticVocabularyMonitor.detectChange(
             from: "Switch to fooBar today",
-            to: "Switch to foo_bar today"
+            to: "Switch to foo_bar today",
         )
 
         XCTAssertEqual(change?.oldFragment, "fooBar")
@@ -179,7 +179,7 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
     func testDetectChangeExtractsNewHanToken() {
         let change = AutomaticVocabularyMonitor.detectChange(
             from: "我在写豆包语音",
-            to: "我在写豆包 SeedASR"
+            to: "我在写豆包 SeedASR",
         )
 
         XCTAssertEqual(change?.candidateTerms, ["SeedASR"])
@@ -187,7 +187,7 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
 
     func testParseAcceptedTermsSupportsJSONObject() {
         let terms = AutomaticVocabularyMonitor.parseAcceptedTerms(
-            from: #"{"terms":["SeedASR","Qwen3-ASR","SeedASR"]}"#
+            from: #"{"terms":["SeedASR","Qwen3-ASR","SeedASR"]}"#,
         )
 
         XCTAssertEqual(terms, ["SeedASR", "Qwen3-ASR"])
@@ -199,7 +199,7 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
             ```json
             {"terms":["mylxsw","cc-src-learning"]}
             ```
-            """
+            """,
         )
 
         XCTAssertEqual(terms, ["mylxsw", "cc-src-learning"])
@@ -207,7 +207,7 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
 
     func testParseAcceptedTermsRejectsInvalidJSONFragments() {
         let terms = AutomaticVocabularyMonitor.parseAcceptedTerms(
-            from: #"{"terms":["```","{","}","terms\":[\"mylxsw\"]","mylxsw"]}"#
+            from: #"{"terms":["```","{","}","terms\":[\"mylxsw\"]","mylxsw"]}"#,
         )
 
         XCTAssertEqual(terms, ["mylxsw"])
@@ -215,7 +215,7 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
 
     func testParseAcceptedTermsKeepsValidTechnicalTermsContainingJSON() {
         let terms = AutomaticVocabularyMonitor.parseAcceptedTerms(
-            from: #"{"terms":["JSONSchema","jsonrpc","fastjson2"]}"#
+            from: #"{"terms":["JSONSchema","jsonrpc","fastjson2"]}"#,
         )
 
         XCTAssertEqual(terms, ["JSONSchema", "jsonrpc", "fastjson2"])
@@ -227,7 +227,7 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
             ```json
             {"terms":["mylxsw","cc-src-learning"]
             ```
-            """
+            """,
         )
 
         XCTAssertTrue(terms.isEmpty)
@@ -237,14 +237,13 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
 // MARK: - Extended AutomaticVocabularyMonitor tests
 
 final class AutomaticVocabularyMonitorExtendedTests: XCTestCase {
-
     // MARK: - makeObservationState
 
     func testMakeObservationStateInitializesCorrectly() {
-        let start = Date(timeIntervalSince1970: 5_000)
+        let start = Date(timeIntervalSince1970: 5000)
         let state = AutomaticVocabularyMonitor.makeObservationState(
             baselineText: "initial text",
-            startedAt: start
+            startedAt: start,
         )
         XCTAssertEqual(state.settledText, "initial text")
         XCTAssertEqual(state.latestObservedText, "initial text")
@@ -265,58 +264,58 @@ final class AutomaticVocabularyMonitorExtendedTests: XCTestCase {
     // MARK: - observe()
 
     func testObserveReturnsFalseWhenTextUnchanged() {
-        let start = Date(timeIntervalSince1970: 6_000)
+        let start = Date(timeIntervalSince1970: 6000)
         var state = AutomaticVocabularyMonitor.makeObservationState(
             baselineText: "same text",
-            startedAt: start
+            startedAt: start,
         )
         let changed = AutomaticVocabularyMonitor.observe(
             text: "same text",
             at: start.addingTimeInterval(1),
-            state: &state
+            state: &state,
         )
         XCTAssertFalse(changed)
     }
 
     func testObserveReturnsTrueWhenTextChanges() {
-        let start = Date(timeIntervalSince1970: 7_000)
+        let start = Date(timeIntervalSince1970: 7000)
         var state = AutomaticVocabularyMonitor.makeObservationState(
             baselineText: "original",
-            startedAt: start
+            startedAt: start,
         )
         let changed = AutomaticVocabularyMonitor.observe(
             text: "changed",
             at: start.addingTimeInterval(1),
-            state: &state
+            state: &state,
         )
         XCTAssertTrue(changed)
     }
 
     func testObserveUpdatesLatestText() {
-        let start = Date(timeIntervalSince1970: 8_000)
+        let start = Date(timeIntervalSince1970: 8000)
         var state = AutomaticVocabularyMonitor.makeObservationState(
             baselineText: "original",
-            startedAt: start
+            startedAt: start,
         )
         _ = AutomaticVocabularyMonitor.observe(
             text: "new text",
             at: start.addingTimeInterval(1),
-            state: &state
+            state: &state,
         )
         XCTAssertEqual(state.latestObservedText, "new text")
     }
 
     func testObserveSetsLastChangedAt() {
-        let start = Date(timeIntervalSince1970: 9_000)
+        let start = Date(timeIntervalSince1970: 9000)
         var state = AutomaticVocabularyMonitor.makeObservationState(
             baselineText: "original",
-            startedAt: start
+            startedAt: start,
         )
         let changeTime = start.addingTimeInterval(2)
         _ = AutomaticVocabularyMonitor.observe(
             text: "different",
             at: changeTime,
-            state: &state
+            state: &state,
         )
         XCTAssertEqual(state.lastChangedAt, changeTime)
     }
@@ -324,15 +323,15 @@ final class AutomaticVocabularyMonitorExtendedTests: XCTestCase {
     // MARK: - markAnalysisCompleted
 
     func testMarkAnalysisCompletedUpdatesState() {
-        let start = Date(timeIntervalSince1970: 10_000)
+        let start = Date(timeIntervalSince1970: 10000)
         var state = AutomaticVocabularyMonitor.makeObservationState(
             baselineText: "original",
-            startedAt: start
+            startedAt: start,
         )
         _ = AutomaticVocabularyMonitor.observe(
             text: "new text",
             at: start.addingTimeInterval(1),
-            state: &state
+            state: &state,
         )
         AutomaticVocabularyMonitor.markAnalysisCompleted(for: "new text", state: &state)
         XCTAssertEqual(state.lastAnalyzedText, "new text")
@@ -345,7 +344,7 @@ final class AutomaticVocabularyMonitorExtendedTests: XCTestCase {
     func testDetectChangeReturnsNilWhenTextsAreIdentical() {
         let change = AutomaticVocabularyMonitor.detectChange(
             from: "identical text",
-            to: "identical text"
+            to: "identical text",
         )
         XCTAssertNil(change)
     }
@@ -355,7 +354,7 @@ final class AutomaticVocabularyMonitorExtendedTests: XCTestCase {
         // contains only "world" which already appears in the old fragment
         let change = AutomaticVocabularyMonitor.detectChange(
             from: "world world",
-            to: "world"
+            to: "world",
         )
         XCTAssertNil(change)
     }
@@ -363,7 +362,7 @@ final class AutomaticVocabularyMonitorExtendedTests: XCTestCase {
     func testDetectChangeHandlesMultipleTokenChanges() {
         let change = AutomaticVocabularyMonitor.detectChange(
             from: "Please check the API documentation",
-            to: "Please check the OpenAI API documentation"
+            to: "Please check the OpenAI API documentation",
         )
         XCTAssertNotNil(change)
         XCTAssertEqual(change?.candidateTerms, ["OpenAI"])
@@ -404,7 +403,7 @@ final class AutomaticVocabularyMonitorExtendedTests: XCTestCase {
 
     func testParseAcceptedTermsDeduplicatesTerms() {
         let terms = AutomaticVocabularyMonitor.parseAcceptedTerms(
-            from: #"{"terms":["SeedASR","SeedASR","Qwen3"]}"#
+            from: #"{"terms":["SeedASR","SeedASR","Qwen3"]}"#,
         )
         XCTAssertEqual(terms, ["SeedASR", "Qwen3"])
     }
@@ -412,7 +411,7 @@ final class AutomaticVocabularyMonitorExtendedTests: XCTestCase {
     func testParseAcceptedTermsFiltersVeryShortTerms() {
         // The schema specifies minLength: 2, so single-character terms should be filtered
         let terms = AutomaticVocabularyMonitor.parseAcceptedTerms(
-            from: #"{"terms":["A","valid-term"]}"#
+            from: #"{"terms":["A","valid-term"]}"#,
         )
         // "A" is length 1, likely filtered
         XCTAssertTrue(terms.contains("valid-term"))
@@ -422,10 +421,10 @@ final class AutomaticVocabularyMonitorExtendedTests: XCTestCase {
     // MARK: - pendingAnalysis with settled text == latest observed
 
     func testPendingAnalysisReturnsNilWhenLatestTextEqualsSettledText() {
-        let start = Date(timeIntervalSince1970: 11_000)
+        let start = Date(timeIntervalSince1970: 11000)
         var state = AutomaticVocabularyMonitor.makeObservationState(
             baselineText: "same",
-            startedAt: start
+            startedAt: start,
         )
         // Force lastChangedAt to be set but keep latestObservedText == settledText
         state.lastChangedAt = start.addingTimeInterval(1)
@@ -434,7 +433,7 @@ final class AutomaticVocabularyMonitorExtendedTests: XCTestCase {
             state: state,
             now: start.addingTimeInterval(5),
             settleDelay: 2.5,
-            maxAnalyses: 3
+            maxAnalyses: 3,
         )
         XCTAssertNil(result)
     }

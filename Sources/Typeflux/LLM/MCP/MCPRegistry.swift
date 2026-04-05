@@ -56,13 +56,13 @@ actor MCPRegistry {
 
     private func makeClient(for config: MCPServerConfig) -> any MCPClient {
         switch config.transport {
-        case .stdio(let stdioConfig):
+        case let .stdio(stdioConfig):
             return StdioMCPClient(config: MCPStdioConfig(
                 command: stdioConfig.command,
                 args: stdioConfig.args,
-                env: stdioConfig.env
+                env: stdioConfig.env,
             ))
-        case .http(let httpConfig):
+        case let .http(httpConfig):
             let url = URL(string: httpConfig.url) ?? URL(string: "http://localhost")!
             return HTTPMCPClient(config: MCPHTTPConfig(url: url, headers: httpConfig.headers))
         }

@@ -1,13 +1,12 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class LLMMultiTurnServiceTests: XCTestCase {
-
     // MARK: - AgentTurn
 
     func testAgentTurnTextCase() {
         let turn = AgentTurn.text("Hello")
-        if case .text(let t) = turn {
+        if case let .text(t) = turn {
             XCTAssertEqual(t, "Hello")
         } else {
             XCTFail("Expected text case")
@@ -17,7 +16,7 @@ final class LLMMultiTurnServiceTests: XCTestCase {
     func testAgentTurnToolCallsCase() {
         let tc = AgentToolCall(id: "1", name: "tool", argumentsJSON: "{}")
         let turn = AgentTurn.toolCalls([tc])
-        if case .toolCalls(let calls) = turn {
+        if case let .toolCalls(calls) = turn {
             XCTAssertEqual(calls.count, 1)
             XCTAssertEqual(calls[0].name, "tool")
         } else {
@@ -28,7 +27,7 @@ final class LLMMultiTurnServiceTests: XCTestCase {
     func testAgentTurnTextWithToolCallsCase() {
         let tc = AgentToolCall(id: "1", name: "tool", argumentsJSON: "{}")
         let turn = AgentTurn.textWithToolCalls(text: "thinking", toolCalls: [tc])
-        if case .textWithToolCalls(let text, let calls) = turn {
+        if case let .textWithToolCalls(text, calls) = turn {
             XCTAssertEqual(text, "thinking")
             XCTAssertEqual(calls.count, 1)
         } else {
@@ -62,7 +61,7 @@ final class LLMMultiTurnServiceTests: XCTestCase {
         let result1 = try await mock.complete(messages: [], tools: [], config: config)
         let result2 = try await mock.complete(messages: [], tools: [], config: config)
 
-        if case .text(let t1) = result1.turn, case .text(let t2) = result2.turn {
+        if case let .text(t1) = result1.turn, case let .text(t2) = result2.turn {
             XCTAssertEqual(t1, "first")
             XCTAssertEqual(t2, "second")
         } else {
@@ -78,7 +77,7 @@ final class LLMMultiTurnServiceTests: XCTestCase {
         _ = try await mock.complete(messages: [], tools: [], config: config)
         let fallback = try await mock.complete(messages: [], tools: [], config: config)
 
-        if case .text(let t) = fallback.turn {
+        if case let .text(t) = fallback.turn {
             XCTAssertEqual(t, "fallback")
         } else {
             XCTFail("Expected fallback text")
@@ -99,7 +98,7 @@ final class LLMMultiTurnServiceTests: XCTestCase {
 
     // MARK: - OpenAI body building (through AgentLoop integration)
 
-    func testOpenAIMessagesIncludeAllRoles() throws {
+    func testOpenAIMessagesIncludeAllRoles() {
         let tc = AgentToolCall(id: "tc1", name: "get_clipboard", argumentsJSON: "{}")
         let messages: [AgentMessage] = [
             .system("system prompt"),
@@ -121,7 +120,7 @@ final class LLMMultiTurnServiceTests: XCTestCase {
         XCTAssertNotNil(assistantWithTools["tool_calls"])
     }
 
-    func testAnthropicMessagesUseContentBlocks() throws {
+    func testAnthropicMessagesUseContentBlocks() {
         let messages: [AgentMessage] = [
             .system("sys"),
             .user("Hello"),
@@ -136,7 +135,7 @@ final class LLMMultiTurnServiceTests: XCTestCase {
         XCTAssertEqual(content?.first?["type"] as? String, "text")
     }
 
-    func testGeminiContentsUseModelRole() throws {
+    func testGeminiContentsUseModelRole() {
         let messages: [AgentMessage] = [
             .user("Hello"),
             .assistant(AgentAssistantMessage(text: "Hi", toolCalls: [])),

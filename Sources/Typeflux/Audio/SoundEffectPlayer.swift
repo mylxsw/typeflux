@@ -10,11 +10,11 @@ final class SoundEffectPlayer {
         var volume: Float {
             switch self {
             case .start:
-                return 0.18
+                0.18
             case .done:
-                return 0.22
+                0.22
             case .error:
-                return 0.26
+                0.26
             }
         }
     }

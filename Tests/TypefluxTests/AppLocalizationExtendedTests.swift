@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AppLocalizationExtendedTests: XCTestCase {
-
     // MARK: - defaultLanguage
 
     func testDefaultLanguageReturnsSimplifiedChineseForZhHans() {
@@ -87,7 +86,6 @@ final class AppLocalizationExtendedTests: XCTestCase {
 // MARK: - AppLocalization singleton tests
 
 final class AppLocalizationInstanceTests: XCTestCase {
-
     // MARK: - locale
 
     func testLocaleReturnsLocaleMatchingCurrentLanguage() {
@@ -125,8 +123,8 @@ final class AppLocalizationInstanceTests: XCTestCase {
         let observer = NotificationCenter.default.addObserver(
             forName: .appLanguageDidChange,
             object: nil,
-            queue: .main
-        ) { notification in
+            queue: .main,
+        ) { _ in
             expectation.fulfill()
         }
         defer { NotificationCenter.default.removeObserver(observer) }
@@ -146,7 +144,7 @@ final class AppLocalizationInstanceTests: XCTestCase {
         let observer = NotificationCenter.default.addObserver(
             forName: .appLanguageDidChange,
             object: nil,
-            queue: .main
+            queue: .main,
         ) { _ in
             notificationCount += 1
         }

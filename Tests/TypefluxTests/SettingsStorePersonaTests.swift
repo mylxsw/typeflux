@@ -1,10 +1,10 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class SettingsStorePersonaTests: XCTestCase {
     func testPersonasAlwaysIncludeSystemProfilesAndPersistOnlyCustomProfiles() throws {
         let suiteName = "SettingsStorePersonaTests.persistOnlyCustom.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defaults.removePersistentDomain(forName: suiteName)
         let store = SettingsStore(defaults: defaults)
 
@@ -25,19 +25,19 @@ final class SettingsStorePersonaTests: XCTestCase {
 
     func testLegacyStoredBuiltInProfilesAreNormalizedWithoutDuplicates() throws {
         let suiteName = "SettingsStorePersonaTests.legacyNormalization.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defaults.removePersistentDomain(forName: suiteName)
         let store = SettingsStore(defaults: defaults)
 
         let legacyBuiltIn = PersonaProfile(
             id: UUID(),
             name: "Professional Assistant",
-            prompt: "Rewrite in professional, clear, and concise Chinese. Improve sentence flow, preserve key information, and make it suitable to send directly to colleagues or clients."
+            prompt: "Rewrite in professional, clear, and concise Chinese. Improve sentence flow, preserve key information, and make it suitable to send directly to colleagues or clients.",
         )
         let legacyCustom = PersonaProfile(
             id: UUID(),
             name: "Founder Voice",
-            prompt: "Rewrite in a calm founder tone."
+            prompt: "Rewrite in a calm founder tone.",
         )
 
         let data = try JSONEncoder().encode([legacyBuiltIn, legacyCustom])
@@ -46,7 +46,7 @@ final class SettingsStorePersonaTests: XCTestCase {
         let personas = store.personas
 
         XCTAssertEqual(personas.filter(\.isSystem).count, 2)
-        XCTAssertEqual(personas.filter { $0.name == legacyBuiltIn.name }.count, 1)
+        XCTAssertEqual(personas.count(where: { $0.name == legacyBuiltIn.name }), 1)
         XCTAssertTrue(personas.contains(where: { $0.name == legacyCustom.name && !$0.isSystem }))
     }
 }

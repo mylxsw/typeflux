@@ -1,11 +1,10 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AVFoundationAudioRecorderTests: XCTestCase {
-
-    func testDelayedMuteBeginsAfterConfiguredSleep() async {
+    func testDelayedMuteBeginsAfterConfiguredSleep() async throws {
         let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
         let settingsStore = SettingsStore(defaults: defaults)
@@ -19,7 +18,7 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
             outputMuter: muter,
             sleep: { duration in
                 await sleepController.sleep(for: duration)
-            }
+            },
         )
 
         recorder.beginMutedSessionAfterDelayForTesting()
@@ -31,9 +30,9 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         XCTAssertEqual(muter.beginCallCount, 1)
     }
 
-    func testStoppingBeforeDelayedMutePreventsMuteSession() async {
+    func testStoppingBeforeDelayedMutePreventsMuteSession() async throws {
         let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
         let settingsStore = SettingsStore(defaults: defaults)
@@ -46,7 +45,7 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
             outputMuter: muter,
             sleep: { duration in
                 await sleepController.sleep(for: duration)
-            }
+            },
         )
 
         recorder.beginMutedSessionAfterDelayForTesting()

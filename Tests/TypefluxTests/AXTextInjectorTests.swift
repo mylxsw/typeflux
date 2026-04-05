@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AXTextInjectorTests: XCTestCase {
     func testEvaluatePasteVerificationReturnsSuccessWhenInsertedTextAppears() {
@@ -9,7 +9,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextArea",
             text: "Hello",
             isEditable: true,
-            failureReason: nil
+            failureReason: nil,
         )
         let after = CurrentInputTextSnapshot(
             processID: 42,
@@ -17,7 +17,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextArea",
             text: "Hello world",
             isEditable: true,
-            failureReason: nil
+            failureReason: nil,
         )
 
         let result = AXTextInjector.evaluatePasteVerification(
@@ -25,7 +25,7 @@ final class AXTextInjectorTests: XCTestCase {
             replaceSelection: false,
             targetProcessID: 42,
             before: before,
-            after: after
+            after: after,
         )
 
         XCTAssertEqual(result, .success)
@@ -38,7 +38,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextArea",
             text: "Hello",
             isEditable: true,
-            failureReason: nil
+            failureReason: nil,
         )
         let after = CurrentInputTextSnapshot(
             processID: 99,
@@ -46,7 +46,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextField",
             text: "Hello",
             isEditable: true,
-            failureReason: nil
+            failureReason: nil,
         )
 
         let result = AXTextInjector.evaluatePasteVerification(
@@ -54,7 +54,7 @@ final class AXTextInjectorTests: XCTestCase {
             replaceSelection: false,
             targetProcessID: 42,
             before: before,
-            after: after
+            after: after,
         )
 
         XCTAssertEqual(result, .failure("focused-process-changed"))
@@ -67,7 +67,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextArea",
             text: "Hello",
             isEditable: true,
-            failureReason: nil
+            failureReason: nil,
         )
         let after = CurrentInputTextSnapshot(
             processID: 42,
@@ -75,7 +75,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextArea",
             text: "Hello",
             isEditable: true,
-            failureReason: nil
+            failureReason: nil,
         )
 
         let result = AXTextInjector.evaluatePasteVerification(
@@ -83,7 +83,7 @@ final class AXTextInjectorTests: XCTestCase {
             replaceSelection: false,
             targetProcessID: 42,
             before: before,
-            after: after
+            after: after,
         )
 
         XCTAssertEqual(result, .failure("input-text-unchanged"))
@@ -96,7 +96,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextArea",
             text: "Hello",
             isEditable: true,
-            failureReason: nil
+            failureReason: nil,
         )
         let after = CurrentInputTextSnapshot(
             processID: 42,
@@ -104,7 +104,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXUnknown",
             text: nil,
             isEditable: true,
-            failureReason: "missing-ax-value"
+            failureReason: "missing-ax-value",
         )
 
         let result = AXTextInjector.evaluatePasteVerification(
@@ -112,7 +112,7 @@ final class AXTextInjectorTests: XCTestCase {
             replaceSelection: false,
             targetProcessID: 42,
             before: before,
-            after: after
+            after: after,
         )
 
         XCTAssertEqual(result, .indeterminate)

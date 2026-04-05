@@ -1,6 +1,6 @@
-import AVFoundation
 import AppKit
 import ApplicationServices
+import AVFoundation
 import Foundation
 import Speech
 
@@ -14,27 +14,29 @@ enum PrivacyGuard {
         case speechRecognition
         case accessibility
 
-        var id: String { rawValue }
+        var id: String {
+            rawValue
+        }
 
         var title: String {
             switch self {
             case .microphone:
-                return L("permission.microphone.title")
+                L("permission.microphone.title")
             case .speechRecognition:
-                return L("permission.speechRecognition.title")
+                L("permission.speechRecognition.title")
             case .accessibility:
-                return L("permission.accessibility.title")
+                L("permission.accessibility.title")
             }
         }
 
         var summary: String {
             switch self {
             case .microphone:
-                return L("permission.microphone.summary")
+                L("permission.microphone.summary")
             case .speechRecognition:
-                return L("permission.speechRecognition.summary")
+                L("permission.speechRecognition.summary")
             case .accessibility:
-                return L("permission.accessibility.summary")
+                L("permission.accessibility.summary")
             }
         }
     }
@@ -49,11 +51,25 @@ enum PrivacyGuard {
         let state: PermissionState
         let detail: String
 
-        var title: String { id.title }
-        var summary: String { id.summary }
-        var isGranted: Bool { state == .granted }
-        var badgeText: String { isGranted ? L("permission.badge.granted") : L("permission.badge.required") }
-        var actionTitle: String { isGranted ? L("permission.action.openSettings") : L("permission.action.grantAccess") }
+        var title: String {
+            id.title
+        }
+
+        var summary: String {
+            id.summary
+        }
+
+        var isGranted: Bool {
+            state == .granted
+        }
+
+        var badgeText: String {
+            isGranted ? L("permission.badge.granted") : L("permission.badge.required")
+        }
+
+        var actionTitle: String {
+            isGranted ? L("permission.action.openSettings") : L("permission.action.grantAccess")
+        }
     }
 
     @MainActor
@@ -64,7 +80,7 @@ enum PrivacyGuard {
             return PermissionSnapshot(
                 id: id,
                 state: status == .authorized ? .granted : .needsAttention,
-                detail: microphoneDetail(for: status)
+                detail: microphoneDetail(for: status),
             )
 
         case .speechRecognition:
@@ -72,7 +88,7 @@ enum PrivacyGuard {
             return PermissionSnapshot(
                 id: id,
                 state: status == .authorized ? .granted : .needsAttention,
-                detail: speechRecognitionDetail(for: status)
+                detail: speechRecognitionDetail(for: status),
             )
 
         case .accessibility:
@@ -82,7 +98,7 @@ enum PrivacyGuard {
                 state: trusted ? .granted : .needsAttention,
                 detail: trusted
                     ? L("permission.accessibility.detail.granted")
-                    : L("permission.accessibility.detail.required")
+                    : L("permission.accessibility.detail.required"),
             )
         }
     }
@@ -141,11 +157,11 @@ enum PrivacyGuard {
     private static func permissionSettingsURL(for id: PermissionID) -> URL? {
         switch id {
         case .microphone:
-            return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
+            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
         case .speechRecognition:
-            return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition")
+            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition")
         case .accessibility:
-            return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
         }
     }
 
@@ -188,7 +204,7 @@ enum PrivacyGuard {
     static func requiredPermissionIDs(settingsStore: SettingsStore) -> [PermissionID] {
         var required: [PermissionID] = [
             .microphone,
-            .accessibility
+            .accessibility,
         ]
 
         if settingsStore.sttProvider == .appleSpeech || settingsStore.useAppleSpeechFallback {

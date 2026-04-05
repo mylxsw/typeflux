@@ -1,13 +1,12 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AgentOutcomeTests: XCTestCase {
-
     // MARK: - AgentOutcome
 
     func testTextOutcome() {
         let outcome = AgentOutcome.text("Hello")
-        if case .text(let text) = outcome {
+        if case let .text(text) = outcome {
             XCTAssertEqual(text, "Hello")
         } else {
             XCTFail("Expected .text outcome")
@@ -16,7 +15,7 @@ final class AgentOutcomeTests: XCTestCase {
 
     func testTerminationToolOutcome() {
         let outcome = AgentOutcome.terminationTool(name: "answer_text", argumentsJSON: "{}")
-        if case .terminationTool(let name, let args) = outcome {
+        if case let .terminationTool(name, args) = outcome {
             XCTAssertEqual(name, "answer_text")
             XCTAssertEqual(args, "{}")
         } else {
@@ -36,7 +35,7 @@ final class AgentOutcomeTests: XCTestCase {
     func testErrorOutcome() {
         struct TestError: Error {}
         let outcome = AgentOutcome.error(TestError())
-        if case .error(let error) = outcome {
+        if case let .error(error) = outcome {
             XCTAssertTrue(error is TestError)
         } else {
             XCTFail("Expected .error outcome")
@@ -50,7 +49,7 @@ final class AgentOutcomeTests: XCTestCase {
             currentStep: 3,
             lastToolCall: nil,
             accumulatedText: "thinking...",
-            toolCallsSoFar: []
+            toolCallsSoFar: [],
         )
         XCTAssertEqual(state.currentStep, 3)
         XCTAssertNil(state.lastToolCall)
@@ -118,11 +117,11 @@ final class AgentOutcomeTests: XCTestCase {
         XCTAssertNotEqual(AgentError.maxStepsExceeded, AgentError.toolNotFound(name: "x"))
         XCTAssertEqual(
             AgentError.toolNotFound(name: "a"),
-            AgentError.toolNotFound(name: "a")
+            AgentError.toolNotFound(name: "a"),
         )
         XCTAssertNotEqual(
             AgentError.toolNotFound(name: "a"),
-            AgentError.toolNotFound(name: "b")
+            AgentError.toolNotFound(name: "b"),
         )
     }
 
@@ -133,7 +132,7 @@ final class AgentOutcomeTests: XCTestCase {
             mode: .editSelection,
             sourceText: "original",
             spokenInstruction: "make it better",
-            personaPrompt: "formal"
+            personaPrompt: "formal",
         )
         if case .editSelection = request.mode {} else { XCTFail("Expected editSelection") }
         XCTAssertEqual(request.sourceText, "original")
@@ -146,7 +145,7 @@ final class AgentOutcomeTests: XCTestCase {
             mode: .rewriteTranscript,
             sourceText: "raw text",
             spokenInstruction: nil,
-            personaPrompt: nil
+            personaPrompt: nil,
         )
         if case .rewriteTranscript = request.mode {} else { XCTFail("Expected rewriteTranscript") }
         XCTAssertNil(request.spokenInstruction)
@@ -157,12 +156,11 @@ final class AgentOutcomeTests: XCTestCase {
 // MARK: - Extended AgentOutcome tests
 
 extension AgentOutcomeTests {
-
     // MARK: - AgentTurn cases
 
     func testAgentTurnTextCase() {
         let turn = AgentTurn.text("hello")
-        guard case .text(let text) = turn else {
+        guard case let .text(text) = turn else {
             XCTFail("Expected .text")
             return
         }
@@ -172,7 +170,7 @@ extension AgentOutcomeTests {
     func testAgentTurnToolCallsCase() {
         let tc = AgentToolCall(id: "tc1", name: "my_tool", argumentsJSON: "{}")
         let turn = AgentTurn.toolCalls([tc])
-        guard case .toolCalls(let calls) = turn else {
+        guard case let .toolCalls(calls) = turn else {
             XCTFail("Expected .toolCalls")
             return
         }
@@ -183,7 +181,7 @@ extension AgentOutcomeTests {
     func testAgentTurnTextWithToolCallsCase() {
         let tc = AgentToolCall(id: "tc2", name: "search", argumentsJSON: #"{"q":"test"}"#)
         let turn = AgentTurn.textWithToolCalls(text: "Searching...", toolCalls: [tc])
-        guard case .textWithToolCalls(let text, let calls) = turn else {
+        guard case let .textWithToolCalls(text, calls) = turn else {
             XCTFail("Expected .textWithToolCalls")
             return
         }
@@ -220,7 +218,7 @@ extension AgentOutcomeTests {
 
     func testAgentMessageSystemCase() {
         let msg = AgentMessage.system("You are helpful.")
-        guard case .system(let text) = msg else {
+        guard case let .system(text) = msg else {
             XCTFail("Expected .system")
             return
         }
@@ -229,7 +227,7 @@ extension AgentOutcomeTests {
 
     func testAgentMessageUserCase() {
         let msg = AgentMessage.user("Hello!")
-        guard case .user(let text) = msg else {
+        guard case let .user(text) = msg else {
             XCTFail("Expected .user")
             return
         }
@@ -239,7 +237,7 @@ extension AgentOutcomeTests {
     func testAgentMessageAssistantCase() {
         let am = AgentAssistantMessage(text: "Response", toolCalls: [])
         let msg = AgentMessage.assistant(am)
-        guard case .assistant(let m) = msg else {
+        guard case let .assistant(m) = msg else {
             XCTFail("Expected .assistant")
             return
         }
@@ -249,7 +247,7 @@ extension AgentOutcomeTests {
     func testAgentMessageToolResultCase() {
         let tr = AgentToolResult(toolCallId: "tc1", content: "result", isError: false)
         let msg = AgentMessage.toolResult(tr)
-        guard case .toolResult(let r) = msg else {
+        guard case let .toolResult(r) = msg else {
             XCTFail("Expected .toolResult")
             return
         }
@@ -271,7 +269,7 @@ extension AgentOutcomeTests {
             stepIndex: 0,
             assistantMessage: assistantMsg,
             toolResults: [],
-            durationMs: 50
+            durationMs: 50,
         )
         let result = AgentResult(outcome: .text("done"), steps: [step], totalDurationMs: 100)
         XCTAssertEqual(result.steps.count, 1)

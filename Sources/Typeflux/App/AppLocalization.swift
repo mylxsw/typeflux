@@ -11,17 +11,21 @@ enum AppLanguage: String, CaseIterable, Codable, Identifiable {
     case japanese = "ja"
     case korean = "ko"
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
-    var localeIdentifier: String { rawValue }
+    var localeIdentifier: String {
+        rawValue
+    }
 
     /// ISO 639-1 language code accepted by WhisperKit's DecodingOptions.
     var whisperKitLanguageCode: String {
         switch self {
-        case .english: return "en"
-        case .simplifiedChinese, .traditionalChinese: return "zh"
-        case .japanese: return "ja"
-        case .korean: return "ko"
+        case .english: "en"
+        case .simplifiedChinese, .traditionalChinese: "zh"
+        case .japanese: "ja"
+        case .korean: "ko"
         }
     }
 
@@ -32,15 +36,15 @@ enum AppLanguage: String, CaseIterable, Codable, Identifiable {
     var displayName: String {
         switch self {
         case .english:
-            return L("language.option.english")
+            L("language.option.english")
         case .simplifiedChinese:
-            return L("language.option.simplifiedChinese")
+            L("language.option.simplifiedChinese")
         case .traditionalChinese:
-            return L("language.option.traditionalChinese")
+            L("language.option.traditionalChinese")
         case .japanese:
-            return L("language.option.japanese")
+            L("language.option.japanese")
         case .korean:
-            return L("language.option.korean")
+            L("language.option.korean")
         }
     }
 
@@ -94,7 +98,7 @@ final class AppLocalization: ObservableObject {
             tableName: nil,
             bundle: bundle(for: language),
             value: key,
-            comment: ""
+            comment: "",
         )
 
         guard !arguments.isEmpty else { return localized }

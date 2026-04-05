@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class WorkflowOverlayPresentationPolicyTests: XCTestCase {
-
     func testShowProcessingAfterRecordingAlwaysLeavesRecordingState() {
         XCTAssertTrue(WorkflowOverlayPresentationPolicy.shouldShowProcessingAfterRecording())
     }

@@ -47,109 +47,109 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .freeModel:
-            return L("provider.llm.freeModel")
+            L("provider.llm.freeModel")
         case .custom:
-            return L("provider.llm.custom")
+            L("provider.llm.custom")
         case .openRouter:
-            return "OpenRouter"
+            "OpenRouter"
         case .openAI:
-            return "OpenAI"
+            "OpenAI"
         case .anthropic:
-            return "Anthropic"
+            "Anthropic"
         case .gemini:
-            return "Gemini"
+            "Gemini"
         case .deepSeek:
-            return "DeepSeek"
+            "DeepSeek"
         case .kimi:
-            return "Kimi"
+            "Kimi"
         case .qwen:
-            return "Qwen"
+            "Qwen"
         case .zhipu:
-            return "Zhipu"
+            "Zhipu"
         case .minimax:
-            return "MiniMax"
+            "MiniMax"
         case .grok:
-            return "xAI"
+            "xAI"
         case .groq:
-            return "Groq"
+            "Groq"
         case .xiaomi:
-            return "Xiaomi MiMo"
+            "Xiaomi MiMo"
         }
     }
 
     var apiStyle: LLMRemoteAPIStyle {
         switch self {
         case .anthropic:
-            return .anthropic
+            .anthropic
         case .gemini:
-            return .gemini
+            .gemini
         case .freeModel, .custom, .openRouter, .openAI, .deepSeek, .kimi, .qwen, .zhipu, .minimax,
-            .grok, .groq, .xiaomi:
-            return .openAICompatible
+             .grok, .groq, .xiaomi:
+            .openAICompatible
         }
     }
 
     var defaultBaseURL: String {
         switch self {
         case .freeModel:
-            return ""
+            ""
         case .custom:
-            return "https://api.openai.com/v1"
+            "https://api.openai.com/v1"
         case .openRouter:
-            return "https://openrouter.ai/api/v1"
+            "https://openrouter.ai/api/v1"
         case .openAI:
-            return "https://api.openai.com/v1"
+            "https://api.openai.com/v1"
         case .anthropic:
-            return "https://api.anthropic.com/v1"
+            "https://api.anthropic.com/v1"
         case .gemini:
-            return "https://generativelanguage.googleapis.com/v1beta"
+            "https://generativelanguage.googleapis.com/v1beta"
         case .deepSeek:
-            return "https://api.deepseek.com"
+            "https://api.deepseek.com"
         case .kimi:
-            return "https://api.moonshot.cn/v1"
+            "https://api.moonshot.cn/v1"
         case .qwen:
-            return "https://dashscope.aliyuncs.com/compatible-mode/v1"
+            "https://dashscope.aliyuncs.com/compatible-mode/v1"
         case .zhipu:
-            return "https://open.bigmodel.cn/api/paas/v4"
+            "https://open.bigmodel.cn/api/paas/v4"
         case .minimax:
-            return "https://api.minimax.io/v1"
+            "https://api.minimax.io/v1"
         case .grok:
-            return "https://api.x.ai/v1"
+            "https://api.x.ai/v1"
         case .groq:
-            return "https://api.groq.com/openai/v1"
+            "https://api.groq.com/openai/v1"
         case .xiaomi:
-            return "https://api.xiaomimimo.com/v1"
+            "https://api.xiaomimimo.com/v1"
         }
     }
 
     var endpointPresets: [LLMRemoteEndpointPreset] {
         switch self {
         case .freeModel:
-            return []
+            []
         case .zhipu:
-            return [
+            [
                 LLMRemoteEndpointPreset(
                     labelKey: "settings.models.endpointPreset.international",
-                    url: "https://api.z.ai/api/paas/v4"
+                    url: "https://api.z.ai/api/paas/v4",
                 ),
                 LLMRemoteEndpointPreset(
                     labelKey: "settings.models.endpointPreset.china",
-                    url: "https://open.bigmodel.cn/api/paas/v4"
+                    url: "https://open.bigmodel.cn/api/paas/v4",
                 ),
             ]
         case .minimax:
-            return [
+            [
                 LLMRemoteEndpointPreset(
                     labelKey: "settings.models.endpointPreset.international",
-                    url: "https://api.minimax.io/v1"
+                    url: "https://api.minimax.io/v1",
                 ),
                 LLMRemoteEndpointPreset(
                     labelKey: "settings.models.endpointPreset.china",
-                    url: "https://api.minimaxi.com/v1"
+                    url: "https://api.minimaxi.com/v1",
                 ),
             ]
         default:
-            return []
+            []
         }
     }
 
@@ -158,7 +158,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
         case .custom:
             let allModels = LLMRemoteProvider.allCases
                 .filter { $0 != .custom && $0 != .freeModel }
-                .flatMap { $0.suggestedModels }
+                .flatMap(\.suggestedModels)
             var seen = Set<String>()
             return allModels.filter { seen.insert($0).inserted }
         case .freeModel:
@@ -267,78 +267,78 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
     var supportsNativeStructuredOutput: Bool {
         switch self {
         case .openAI, .gemini:
-            return true
+            true
         case .freeModel, .custom, .openRouter, .anthropic, .deepSeek, .kimi, .qwen, .zhipu, .minimax,
-            .grok, .groq, .xiaomi:
-            return false
+             .grok, .groq, .xiaomi:
+            false
         }
     }
 
     var studioProviderID: StudioModelProviderID {
         switch self {
         case .freeModel:
-            return .freeModel
+            .freeModel
         case .custom:
-            return .customLLM
+            .customLLM
         case .openRouter:
-            return .openRouter
+            .openRouter
         case .openAI:
-            return .openAI
+            .openAI
         case .anthropic:
-            return .anthropic
+            .anthropic
         case .gemini:
-            return .gemini
+            .gemini
         case .deepSeek:
-            return .deepSeek
+            .deepSeek
         case .kimi:
-            return .kimi
+            .kimi
         case .qwen:
-            return .qwen
+            .qwen
         case .zhipu:
-            return .zhipu
+            .zhipu
         case .minimax:
-            return .minimax
+            .minimax
         case .grok:
-            return .grok
+            .grok
         case .groq:
-            return .groq
+            .groq
         case .xiaomi:
-            return .xiaomi
+            .xiaomi
         }
     }
 
     static func from(providerID: StudioModelProviderID) -> LLMRemoteProvider? {
         switch providerID {
         case .freeModel:
-            return .freeModel
+            .freeModel
         case .customLLM:
-            return .custom
+            .custom
         case .openRouter:
-            return .openRouter
+            .openRouter
         case .openAI:
-            return .openAI
+            .openAI
         case .anthropic:
-            return .anthropic
+            .anthropic
         case .gemini:
-            return .gemini
+            .gemini
         case .deepSeek:
-            return .deepSeek
+            .deepSeek
         case .kimi:
-            return .kimi
+            .kimi
         case .qwen:
-            return .qwen
+            .qwen
         case .zhipu:
-            return .zhipu
+            .zhipu
         case .minimax:
-            return .minimax
+            .minimax
         case .grok:
-            return .grok
+            .grok
         case .groq:
-            return .groq
+            .groq
         case .xiaomi:
-            return .xiaomi
+            .xiaomi
         default:
-            return nil
+            nil
         }
     }
 }

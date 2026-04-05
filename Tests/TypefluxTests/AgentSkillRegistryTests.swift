@@ -1,27 +1,26 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AgentSkillRegistryTests: XCTestCase {
-
     // MARK: - Mock Tool for testing
 
     private struct StubTool: AgentTool {
         let definition: LLMAgentTool
 
         init(name: String) {
-            self.definition = LLMAgentTool(
+            definition = LLMAgentTool(
                 name: name,
                 description: "Stub tool: \(name)",
                 inputSchema: LLMJSONSchema(
                     name: name,
                     schema: ["type": .string("object"), "properties": .object([:])],
-                    strict: false
-                )
+                    strict: false,
+                ),
             )
         }
 
-        func execute(arguments: String) async throws -> String {
-            return #"{"stub": "\#(definition.name)"}"#
+        func execute(arguments _: String) async throws -> String {
+            #"{"stub": "\#(definition.name)"}"#
         }
     }
 
@@ -96,11 +95,11 @@ final class AgentSkillRegistryTests: XCTestCase {
 
         let skill1 = AgentSkill(
             name: "s1", description: "", enabled: true,
-            systemPromptSupplement: "Use tool A carefully"
+            systemPromptSupplement: "Use tool A carefully",
         )
         let skill2 = AgentSkill(
             name: "s2", description: "", enabled: false,
-            systemPromptSupplement: "Use tool B carefully"
+            systemPromptSupplement: "Use tool B carefully",
         )
 
         await registry.register(skill: skill1, tools: [])
@@ -197,7 +196,6 @@ final class AgentSkillRegistryTests: XCTestCase {
 // MARK: - Extended AgentSkillRegistry tests
 
 extension AgentSkillRegistryTests {
-
     func testRegisterAndRetrieveSkill() async {
         let registry = AgentSkillRegistry()
         let skill = AgentSkill(name: "test_skill", description: "Test", enabled: true)
@@ -280,19 +278,19 @@ extension AgentSkillRegistryTests {
             name: "with_supplement",
             description: "W",
             enabled: true,
-            systemPromptSupplement: "Use special rules"
+            systemPromptSupplement: "Use special rules",
         )
         let withoutSupplement = AgentSkill(
             name: "without_supplement",
             description: "WO",
             enabled: true,
-            systemPromptSupplement: ""
+            systemPromptSupplement: "",
         )
         let disabled = AgentSkill(
             name: "disabled",
             description: "D",
             enabled: false,
-            systemPromptSupplement: "Should not appear"
+            systemPromptSupplement: "Should not appear",
         )
         await registry.register(skill: withSupplement, tools: [])
         await registry.register(skill: withoutSupplement, tools: [])

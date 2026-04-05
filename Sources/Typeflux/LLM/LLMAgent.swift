@@ -16,7 +16,7 @@ struct LLMAgentRequest: Sendable {
         systemPrompt: String,
         userPrompt: String,
         tools: [LLMAgentTool],
-        forcedToolName: String? = nil
+        forcedToolName: String? = nil,
     ) {
         self.systemPrompt = systemPrompt
         self.userPrompt = userPrompt
@@ -40,7 +40,7 @@ enum LLMAgentError: LocalizedError, Equatable {
             return "No agent tools were configured."
         case .missingToolCall:
             return "The model did not return a tool call."
-        case .unexpectedToolName(let expected, let actual):
+        case let .unexpectedToolName(expected, actual):
             if let expected {
                 return "Unexpected tool call '\(actual)'; expected '\(expected)'."
             }

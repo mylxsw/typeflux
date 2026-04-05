@@ -25,14 +25,14 @@ actor LiveTranscriptionPreviewer {
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
-        self.openAIBackendFactory = { OpenAIRealtimePreviewBackend(settingsStore: settingsStore) }
-        self.appleBackendFactory = { AppleSpeechPreviewBackend() }
+        openAIBackendFactory = { OpenAIRealtimePreviewBackend(settingsStore: settingsStore) }
+        appleBackendFactory = { AppleSpeechPreviewBackend() }
     }
 
     init(
         settingsStore: SettingsStore,
         openAIBackendFactory: @escaping @Sendable () -> any LivePreviewBackend,
-        appleBackendFactory: @escaping @Sendable () -> any LivePreviewBackend
+        appleBackendFactory: @escaping @Sendable () -> any LivePreviewBackend,
     ) {
         self.settingsStore = settingsStore
         self.openAIBackendFactory = openAIBackendFactory
@@ -120,7 +120,7 @@ actor LiveTranscriptionPreviewer {
 
         if let source = buffer.floatChannelData, let destination = copy.floatChannelData {
             let frameCount = Int(buffer.frameLength)
-            for channel in 0..<Int(buffer.format.channelCount) {
+            for channel in 0 ..< Int(buffer.format.channelCount) {
                 destination[channel].update(from: source[channel], count: frameCount)
             }
             return copy
@@ -128,7 +128,7 @@ actor LiveTranscriptionPreviewer {
 
         if let source = buffer.int16ChannelData, let destination = copy.int16ChannelData {
             let frameCount = Int(buffer.frameLength)
-            for channel in 0..<Int(buffer.format.channelCount) {
+            for channel in 0 ..< Int(buffer.format.channelCount) {
                 destination[channel].update(from: source[channel], count: frameCount)
             }
             return copy
@@ -161,7 +161,7 @@ actor AppleSpeechPreviewBackend: LivePreviewBackend {
             throw NSError(
                 domain: "AppleSpeechPreviewBackend",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Speech recognition not authorized"]
+                userInfo: [NSLocalizedDescriptionKey: "Speech recognition not authorized"],
             )
         }
 
@@ -175,7 +175,7 @@ actor AppleSpeechPreviewBackend: LivePreviewBackend {
             throw NSError(
                 domain: "AppleSpeechPreviewBackend",
                 code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Speech recognizer not available"]
+                userInfo: [NSLocalizedDescriptionKey: "Speech recognizer not available"],
             )
         }
 
@@ -187,7 +187,7 @@ actor AppleSpeechPreviewBackend: LivePreviewBackend {
 
         self.request = request
         self.onTextUpdate = onTextUpdate
-        self.latestText = ""
+        latestText = ""
 
         task = recognizer.recognitionTask(with: request) { [weak self] result, error in
             guard let self else { return }

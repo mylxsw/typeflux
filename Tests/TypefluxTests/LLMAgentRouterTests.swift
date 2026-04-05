@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 // MARK: - Mock Types
 
@@ -8,7 +8,7 @@ private final class MockLLMAgentService: LLMAgentService {
     var resultToReturn: Any?
     var errorToThrow: Error?
 
-    func runTool<T: Decodable & Sendable>(request: LLMAgentRequest, decoding type: T.Type) async throws -> T {
+    func runTool<T: Decodable & Sendable>(request: LLMAgentRequest, decoding _: T.Type) async throws -> T {
         lastRequest = request
         if let error = errorToThrow {
             throw error
@@ -21,7 +21,6 @@ private final class MockLLMAgentService: LLMAgentService {
 }
 
 final class LLMAgentRouterTests: XCTestCase {
-
     private var defaults: UserDefaults!
     private var settings: SettingsStore!
     private var remoteSpy: MockLLMAgentService!

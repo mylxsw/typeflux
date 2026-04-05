@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AppPreferencesTests: XCTestCase {
     func testOpenAIRealtimeSTTFeatureFlagDefaultsToDisabled() {
@@ -111,7 +111,7 @@ final class AppPreferencesTests: XCTestCase {
         let json: [String: Any] = [
             "id": UUID().uuidString,
             "name": "Legacy",
-            "prompt": "Be casual"
+            "prompt": "Be casual",
         ]
         let data = try JSONSerialization.data(withJSONObject: json)
         let decoded = try JSONDecoder().decode(PersonaProfile.self, from: data)
@@ -145,7 +145,6 @@ final class AppPreferencesTests: XCTestCase {
 // MARK: - Extended AppPreferences tests
 
 extension AppPreferencesTests {
-
     // MARK: - STTProvider
 
     func testSTTProviderAllCasesCount() {

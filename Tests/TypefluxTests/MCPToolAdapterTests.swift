@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 // MARK: - Mock MCPClient
 
@@ -10,9 +10,9 @@ actor MockMCPClient: MCPClient {
     private(set) var callToolCallCount = 0
 
     var mockTools: [MCPToolDefinition] = []
-    var mockCallResult: MCPToolsCallResult = MCPToolsCallResult(
+    var mockCallResult: MCPToolsCallResult = .init(
         content: [MCPContentBlock(type: "text", text: "mock result")],
-        isError: false
+        isError: false,
     )
     var shouldFailConnect = false
     var connected = false
@@ -21,11 +21,13 @@ actor MockMCPClient: MCPClient {
         connected ? MCPConnectionInfo(
             name: "MockServer",
             protocolVersion: "2024-11-05",
-            capabilities: MCPServerCapabilities(tools: nil)
+            capabilities: MCPServerCapabilities(tools: nil),
         ) : nil
     }
 
-    var isConnected: Bool { connected }
+    var isConnected: Bool {
+        connected
+    }
 
     func connect() async throws {
         connectCallCount += 1
@@ -50,7 +52,7 @@ actor MockMCPClient: MCPClient {
         return mockTools
     }
 
-    func callTool(name: String, arguments: [String: Any]) async throws -> MCPToolsCallResult {
+    func callTool(name _: String, arguments _: [String: Any]) async throws -> MCPToolsCallResult {
         guard connected else { throw MCPClientError.notConnected }
         callToolCallCount += 1
         return mockCallResult
@@ -64,7 +66,6 @@ actor MockMCPClient: MCPClient {
 // MARK: - MCPToolAdapterTests
 
 final class MCPToolAdapterTests: XCTestCase {
-
     private func makeMockTool() -> MCPToolDefinition {
         MCPToolDefinition(
             name: "mock_tool",
@@ -74,8 +75,8 @@ final class MCPToolAdapterTests: XCTestCase {
                 properties: ["query": AnyCodable(["type": "string"])],
                 required: ["query"],
                 description: nil,
-                additionalProperties: nil
-            )
+                additionalProperties: nil,
+            ),
         )
     }
 
@@ -113,7 +114,7 @@ final class MCPToolAdapterTests: XCTestCase {
         try await client.connect()
         await client.setMockCallResult(MCPToolsCallResult(
             content: [MCPContentBlock(type: "text", text: "something failed")],
-            isError: true
+            isError: true,
         ))
         let toolDef = makeMockTool()
         let adapter = MCPToolAdapter(client: client, toolDef: toolDef)
@@ -149,7 +150,6 @@ final class MCPToolAdapterTests: XCTestCase {
 // MARK: - AgentErrorTests
 
 final class AgentErrorTests: XCTestCase {
-
     func testMaxStepsExceededDescription() {
         let error = AgentError.maxStepsExceeded
         XCTAssertEqual(error.errorDescription, "Agent reached maximum execution steps without terminating.")

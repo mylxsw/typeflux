@@ -16,7 +16,7 @@ final class AliCloudRealtimeTranscriber: Transcriber {
             throw NSError(
                 domain: "AliCloudRealtimeTranscriber",
                 code: 1001,
-                userInfo: [NSLocalizedDescriptionKey: "Alibaba Cloud API key is not configured."]
+                userInfo: [NSLocalizedDescriptionKey: "Alibaba Cloud API key is not configured."],
             )
         }
 
@@ -38,7 +38,7 @@ final class AliCloudRealtimeTranscriber: Transcriber {
 
     func transcribeStream(
         audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         let model = settingsStore.aliCloudModel
         let apiKey = settingsStore.aliCloudAPIKey
@@ -47,7 +47,7 @@ final class AliCloudRealtimeTranscriber: Transcriber {
             throw NSError(
                 domain: "AliCloudRealtimeTranscriber",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Alibaba Cloud API key is not configured."]
+                userInfo: [NSLocalizedDescriptionKey: "Alibaba Cloud API key is not configured."],
             )
         }
 
@@ -55,11 +55,11 @@ final class AliCloudRealtimeTranscriber: Transcriber {
 
         if model.lowercased().hasPrefix("qwen") {
             return try await AliCloudQwenASRSession.run(
-                pcmData: pcmData, model: model, apiKey: apiKey, onUpdate: onUpdate
+                pcmData: pcmData, model: model, apiKey: apiKey, onUpdate: onUpdate,
             )
         } else {
             return try await AliCloudFunASRSession.run(
-                pcmData: pcmData, model: model, apiKey: apiKey, onUpdate: onUpdate
+                pcmData: pcmData, model: model, apiKey: apiKey, onUpdate: onUpdate,
             )
         }
     }
@@ -68,9 +68,9 @@ final class AliCloudRealtimeTranscriber: Transcriber {
 // MARK: - Audio Converter
 
 private enum AliCloudAudioConverter {
-    static let targetSampleRate: Double = 16_000
-    // 100ms of PCM16 at 16kHz mono: 16000 * 0.1 * 2 bytes = 3200
-    static let chunkSize: Int = 3_200
+    static let targetSampleRate: Double = 16000
+    /// 100ms of PCM16 at 16kHz mono: 16000 * 0.1 * 2 bytes = 3200
+    static let chunkSize: Int = 3200
 
     static func convert(url: URL) throws -> Data {
         let sourceFile = try AVAudioFile(forReading: url)
@@ -81,12 +81,12 @@ private enum AliCloudAudioConverter {
             commonFormat: .pcmFormatInt16,
             sampleRate: targetSampleRate,
             channels: 1,
-            interleaved: true
+            interleaved: true,
         ) else {
             throw NSError(
                 domain: "AliCloudAudioConverter",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Failed to create target audio format."]
+                userInfo: [NSLocalizedDescriptionKey: "Failed to create target audio format."],
             )
         }
 
@@ -94,7 +94,7 @@ private enum AliCloudAudioConverter {
             throw NSError(
                 domain: "AliCloudAudioConverter",
                 code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Failed to create audio converter."]
+                userInfo: [NSLocalizedDescriptionKey: "Failed to create audio converter."],
             )
         }
 
@@ -102,7 +102,7 @@ private enum AliCloudAudioConverter {
             throw NSError(
                 domain: "AliCloudAudioConverter",
                 code: 3,
-                userInfo: [NSLocalizedDescriptionKey: "Failed to allocate source buffer."]
+                userInfo: [NSLocalizedDescriptionKey: "Failed to allocate source buffer."],
             )
         }
         try sourceFile.read(into: sourceBuffer)
@@ -113,7 +113,7 @@ private enum AliCloudAudioConverter {
             throw NSError(
                 domain: "AliCloudAudioConverter",
                 code: 4,
-                userInfo: [NSLocalizedDescriptionKey: "Failed to allocate target buffer."]
+                userInfo: [NSLocalizedDescriptionKey: "Failed to allocate target buffer."],
             )
         }
 
@@ -134,7 +134,7 @@ private enum AliCloudAudioConverter {
             throw NSError(
                 domain: "AliCloudAudioConverter",
                 code: 5,
-                userInfo: [NSLocalizedDescriptionKey: "Audio conversion failed."]
+                userInfo: [NSLocalizedDescriptionKey: "Audio conversion failed."],
             )
         }
 
@@ -152,7 +152,7 @@ private actor AliCloudFunASRSession {
         pcmData: Data,
         model: String,
         apiKey: String,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         let session = AliCloudFunASRSession(pcmData: pcmData, model: model, apiKey: apiKey, onUpdate: onUpdate)
         return try await session.execute()
@@ -181,7 +181,7 @@ private actor AliCloudFunASRSession {
         pcmData: Data,
         model: String,
         apiKey: String,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) {
         self.pcmData = pcmData
         self.model = model
@@ -215,7 +215,7 @@ private actor AliCloudFunASRSession {
             "header": [
                 "action": "run-task",
                 "task_id": taskID,
-                "streaming": "duplex"
+                "streaming": "duplex",
             ],
             "payload": [
                 "task_group": "audio",
@@ -227,10 +227,10 @@ private actor AliCloudFunASRSession {
                     "sample_rate": 16000,
                     "semantic_punctuation_enabled": false,
                     "max_sentence_silence": 800,
-                    "heartbeat": false
+                    "heartbeat": false,
                 ],
-                "input": [String: Any]()
-            ]
+                "input": [String: Any](),
+            ],
         ]
         try await sendJSON(runTask, to: socketTask)
 
@@ -246,7 +246,7 @@ private actor AliCloudFunASRSession {
         let chunkSize = AliCloudAudioConverter.chunkSize
         while offset < pcmData.count {
             let end = min(offset + chunkSize, pcmData.count)
-            let chunk = pcmData[offset..<end]
+            let chunk = pcmData[offset ..< end]
             try await socketTask.send(.data(chunk))
             offset = end
         }
@@ -255,9 +255,9 @@ private actor AliCloudFunASRSession {
             "header": [
                 "action": "finish-task",
                 "task_id": taskID,
-                "streaming": "duplex"
+                "streaming": "duplex",
             ],
-            "payload": ["input": [String: Any]()]
+            "payload": ["input": [String: Any]()],
         ]
         try await sendJSON(finishTask, to: socketTask)
 
@@ -270,17 +270,16 @@ private actor AliCloudFunASRSession {
         while !Task.isCancelled {
             do {
                 let message = try await socketTask.receive()
-                let data: Data?
-                switch message {
-                case .data(let d): data = d
-                case .string(let s): data = s.data(using: .utf8)
-                @unknown default: data = nil
+                let data: Data? = switch message {
+                case let .data(d): d
+                case let .string(s): s.data(using: .utf8)
+                @unknown default: nil
                 }
                 guard let data else { continue }
                 NetworkDebugLogger.logWebSocketEvent(
                     provider: "AliCloud FunASR",
                     phase: "receive",
-                    details: String(data: data, encoding: .utf8) ?? "<\(data.count) bytes>"
+                    details: String(data: data, encoding: .utf8) ?? "<\(data.count) bytes>",
                 )
                 handleEvent(data: data)
             } catch {
@@ -347,12 +346,12 @@ private actor AliCloudFunASRSession {
             NetworkDebugLogger.logWebSocketEvent(
                 provider: "AliCloud FunASR",
                 phase: "task-failed",
-                details: "code=\(code) message=\(msg)"
+                details: "code=\(code) message=\(msg)",
             )
             signalError(NSError(
                 domain: "AliCloudFunASR",
                 code: code,
-                userInfo: [NSLocalizedDescriptionKey: msg]
+                userInfo: [NSLocalizedDescriptionKey: msg],
             ))
 
         default:
@@ -398,7 +397,7 @@ private actor AliCloudFunASRSession {
             throw NSError(
                 domain: "AliCloudFunASR",
                 code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Failed to encode JSON payload."]
+                userInfo: [NSLocalizedDescriptionKey: "Failed to encode JSON payload."],
             )
         }
         NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud FunASR", phase: "send", details: text)
@@ -429,13 +428,19 @@ enum AliCloudTextNormalizer {
 }
 
 extension Character {
-    var isAliCloudClosingPunctuation: Bool { ",.!?;:)]}\"'".contains(self) }
-    var isAliCloudOpeningPunctuation: Bool { "([{/\"'".contains(self) }
+    var isAliCloudClosingPunctuation: Bool {
+        ",.!?;:)]}\"'".contains(self)
+    }
+
+    var isAliCloudOpeningPunctuation: Bool {
+        "([{/\"'".contains(self)
+    }
+
     var isAliCloudCJKIdeograph: Bool {
         unicodeScalars.contains {
             switch $0.value {
-            case 0x3400...0x4DBF, 0x4E00...0x9FFF, 0xF900...0xFAFF: return true
-            default: return false
+            case 0x3400 ... 0x4DBF, 0x4E00 ... 0x9FFF, 0xF900 ... 0xFAFF: true
+            default: false
             }
         }
     }
@@ -448,7 +453,7 @@ private actor AliCloudQwenASRSession {
         pcmData: Data,
         model: String,
         apiKey: String,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         let session = AliCloudQwenASRSession(pcmData: pcmData, model: model, apiKey: apiKey, onUpdate: onUpdate)
         return try await session.execute()
@@ -470,7 +475,7 @@ private actor AliCloudQwenASRSession {
         pcmData: Data,
         model: String,
         apiKey: String,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) {
         self.pcmData = pcmData
         self.model = model
@@ -504,8 +509,8 @@ private actor AliCloudQwenASRSession {
                 "modalities": ["text"],
                 "input_audio_format": "pcm",
                 "sample_rate": 16000,
-                "turn_detection": NSNull()
-            ]
+                "turn_detection": NSNull(),
+            ],
         ]
         try await sendJSON(sessionUpdate, to: socketTask)
 
@@ -521,10 +526,10 @@ private actor AliCloudQwenASRSession {
         let chunkSize = AliCloudAudioConverter.chunkSize
         while offset < pcmData.count {
             let end = min(offset + chunkSize, pcmData.count)
-            let chunk = pcmData[offset..<end]
+            let chunk = pcmData[offset ..< end]
             let audioAppend: [String: Any] = [
                 "type": "input_audio_buffer.append",
-                "audio": chunk.base64EncodedString()
+                "audio": chunk.base64EncodedString(),
             ]
             try await sendJSON(audioAppend, to: socketTask)
             offset = end
@@ -542,17 +547,16 @@ private actor AliCloudQwenASRSession {
         while !Task.isCancelled {
             do {
                 let message = try await socketTask.receive()
-                let data: Data?
-                switch message {
-                case .data(let d): data = d
-                case .string(let s): data = s.data(using: .utf8)
-                @unknown default: data = nil
+                let data: Data? = switch message {
+                case let .data(d): d
+                case let .string(s): s.data(using: .utf8)
+                @unknown default: nil
                 }
                 guard let data else { continue }
                 NetworkDebugLogger.logWebSocketEvent(
                     provider: "AliCloud Qwen ASR",
                     phase: "receive",
-                    details: String(data: data, encoding: .utf8) ?? "<\(data.count) bytes>"
+                    details: String(data: data, encoding: .utf8) ?? "<\(data.count) bytes>",
                 )
                 handleEvent(data: data)
             } catch {
@@ -587,12 +591,12 @@ private actor AliCloudQwenASRSession {
             NetworkDebugLogger.logWebSocketEvent(
                 provider: "AliCloud Qwen ASR",
                 phase: "error",
-                details: message
+                details: message,
             )
             signalError(NSError(
                 domain: "AliCloudQwenASR",
                 code: -1,
-                userInfo: [NSLocalizedDescriptionKey: message]
+                userInfo: [NSLocalizedDescriptionKey: message],
             ))
 
         default:
@@ -635,7 +639,7 @@ private actor AliCloudQwenASRSession {
             throw NSError(
                 domain: "AliCloudQwenASR",
                 code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Failed to encode JSON payload."]
+                userInfo: [NSLocalizedDescriptionKey: "Failed to encode JSON payload."],
             )
         }
         NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud Qwen ASR", phase: "send", details: text)
@@ -662,7 +666,7 @@ private actor AliCloudWSDelegateState {
                 throw NSError(
                     domain: "AliCloudWSDelegate",
                     code: 1,
-                    userInfo: [NSLocalizedDescriptionKey: "WebSocket handshake timed out."]
+                    userInfo: [NSLocalizedDescriptionKey: "WebSocket handshake timed out."],
                 )
             }
             try await group.next()
@@ -694,17 +698,17 @@ private final class AliCloudWSDelegate: NSObject, URLSessionWebSocketDelegate, U
     }
 
     func urlSession(
-        _ session: URLSession,
-        webSocketTask: URLSessionWebSocketTask,
-        didOpenWithProtocol protocol: String?
+        _: URLSession,
+        webSocketTask _: URLSessionWebSocketTask,
+        didOpenWithProtocol _: String?,
     ) {
         Task { await state.markOpened() }
     }
 
     func urlSession(
-        _ session: URLSession,
-        task: URLSessionTask,
-        didCompleteWithError error: Error?
+        _: URLSession,
+        task _: URLSessionTask,
+        didCompleteWithError error: Error?,
     ) {
         guard let error else { return }
         Task { await state.markFailed(error) }

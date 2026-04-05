@@ -7,17 +7,17 @@ enum AgentJobTitleGenerator {
     static func generateTitle(
         for job: AgentJob,
         using llmService: LLMService,
-        appLanguage: AppLanguage = .english
+        appLanguage _: AppLanguage = .english,
     ) async -> String? {
         let systemPrompt = """
-            You generate short, descriptive titles for completed AI assistant tasks.
-            Rules:
-            - Return ONLY the title text, nothing else.
-            - Keep it under 50 characters.
-            - Use the same language as the user's request.
-            - Be specific about what was done (e.g., "Translated email to Japanese" not "Processed text").
-            - Do not use quotes, periods, or other punctuation at the end.
-            """
+        You generate short, descriptive titles for completed AI assistant tasks.
+        Rules:
+        - Return ONLY the title text, nothing else.
+        - Keep it under 50 characters.
+        - Use the same language as the user's request.
+        - Be specific about what was done (e.g., "Translated email to Japanese" not "Processed text").
+        - Do not use quotes, periods, or other punctuation at the end.
+        """
 
         var userParts: [String] = []
         userParts.append("User request: \(job.userPrompt)")

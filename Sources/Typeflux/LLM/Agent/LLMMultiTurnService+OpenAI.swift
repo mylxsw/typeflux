@@ -4,47 +4,47 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
     func complete(
         messages: [AgentMessage],
         tools: [LLMAgentTool],
-        config: LLMCallConfig
+        config: LLMCallConfig,
     ) async throws -> AgentTurnResult {
         let llmConfig = settingsStore.textLLMConfiguration()
         let connection = try LLMConnectionResolver.resolve(
             provider: llmConfig.provider,
             baseURL: llmConfig.baseURL,
             model: llmConfig.model,
-            apiKey: llmConfig.apiKey
+            apiKey: llmConfig.apiKey,
         )
 
         return try await RequestRetry.perform(operationName: "LLM multi-turn complete") {
             switch connection.provider.apiStyle {
             case .openAICompatible:
-                return try await self.multiTurnOpenAI(
+                try await self.multiTurnOpenAI(
                     baseURL: connection.baseURL,
                     model: connection.model,
                     apiKey: connection.apiKey,
                     additionalHeaders: connection.additionalHeaders,
                     messages: messages,
                     tools: tools,
-                    config: config
+                    config: config,
                 )
             case .anthropic:
-                return try await self.multiTurnAnthropic(
+                try await self.multiTurnAnthropic(
                     baseURL: connection.baseURL,
                     model: connection.model,
                     apiKey: connection.apiKey,
                     additionalHeaders: connection.additionalHeaders,
                     messages: messages,
                     tools: tools,
-                    config: config
+                    config: config,
                 )
             case .gemini:
-                return try await self.multiTurnGemini(
+                try await self.multiTurnGemini(
                     baseURL: connection.baseURL,
                     model: connection.model,
                     apiKey: connection.apiKey,
                     additionalHeaders: connection.additionalHeaders,
                     messages: messages,
                     tools: tools,
-                    config: config
+                    config: config,
                 )
             }
         }
@@ -59,7 +59,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         additionalHeaders: [String: String],
         messages: [AgentMessage],
         tools: [LLMAgentTool],
-        config: LLMCallConfig
+        config: LLMCallConfig,
     ) async throws -> AgentTurnResult {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "chat/completions")
         var request = URLRequest(url: url)
@@ -84,7 +84,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         model: String,
         messages: [AgentMessage],
         tools: [LLMAgentTool],
-        config: LLMCallConfig
+        config: LLMCallConfig,
     ) -> [String: Any] {
         var body: [String: Any] = [
             "model": model,
@@ -120,7 +120,8 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
     func parseOpenAITurnResult(from data: Data) -> AgentTurnResult {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let choice = (object["choices"] as? [[String: Any]])?.first,
-              let message = choice["message"] as? [String: Any] else {
+              let message = choice["message"] as? [String: Any]
+        else {
             return AgentTurnResult(turn: .text(""), tokenUsage: nil)
         }
 
@@ -137,7 +138,8 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
             let toolCalls = toolCallsRaw.compactMap { raw -> AgentToolCall? in
                 guard let fn = raw["function"] as? [String: Any],
                       let name = fn["name"] as? String,
-                      let args = fn["arguments"] as? String else {
+                      let args = fn["arguments"] as? String
+                else {
                     return nil
                 }
                 let id = raw["id"] as? String ?? UUID().uuidString
@@ -161,14 +163,15 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
     private func parseOpenAITokenUsage(from object: [String: Any]) -> LLMTokenUsage? {
         guard let usage = object["usage"] as? [String: Any],
               let promptTokens = usage["prompt_tokens"] as? Int,
-              let completionTokens = usage["completion_tokens"] as? Int else {
+              let completionTokens = usage["completion_tokens"] as? Int
+        else {
             return nil
         }
         let totalTokens = usage["total_tokens"] as? Int ?? (promptTokens + completionTokens)
         return LLMTokenUsage(
             promptTokens: promptTokens,
             completionTokens: completionTokens,
-            totalTokens: totalTokens
+            totalTokens: totalTokens,
         )
     }
 
@@ -181,7 +184,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         additionalHeaders: [String: String],
         messages: [AgentMessage],
         tools: [LLMAgentTool],
-        config: LLMCallConfig
+        config: LLMCallConfig,
     ) async throws -> AgentTurnResult {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "messages")
         var request = URLRequest(url: url)
@@ -228,7 +231,8 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
 
     func parseAnthropicTurnResult(from data: Data) -> AgentTurnResult {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let content = object["content"] as? [[String: Any]] else {
+              let content = object["content"] as? [[String: Any]]
+        else {
             return AgentTurnResult(turn: .text(""), tokenUsage: nil)
         }
 
@@ -245,7 +249,8 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
                       let input = block["input"],
                       JSONSerialization.isValidJSONObject(input),
                       let inputData = try? JSONSerialization.data(withJSONObject: input),
-                      let argsJSON = String(data: inputData, encoding: .utf8) else {
+                      let argsJSON = String(data: inputData, encoding: .utf8)
+                else {
                     continue
                 }
                 toolCalls.append(AgentToolCall(id: id, name: name, argumentsJSON: argsJSON))
@@ -254,13 +259,12 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
 
         let tokenUsage = parseAnthropicTokenUsage(from: object)
 
-        let turn: AgentTurn
-        if toolCalls.isEmpty {
-            turn = .text(text)
+        let turn: AgentTurn = if toolCalls.isEmpty {
+            .text(text)
         } else if text.isEmpty {
-            turn = .toolCalls(toolCalls)
+            .toolCalls(toolCalls)
         } else {
-            turn = .textWithToolCalls(text: text, toolCalls: toolCalls)
+            .textWithToolCalls(text: text, toolCalls: toolCalls)
         }
 
         return AgentTurnResult(turn: turn, tokenUsage: tokenUsage)
@@ -279,7 +283,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         return LLMTokenUsage(
             promptTokens: inputTokens,
             completionTokens: outputTokens,
-            totalTokens: inputTokens + outputTokens
+            totalTokens: inputTokens + outputTokens,
         )
     }
 
@@ -292,11 +296,11 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         additionalHeaders: [String: String],
         messages: [AgentMessage],
         tools: [LLMAgentTool],
-        config: LLMCallConfig
+        config: LLMCallConfig,
     ) async throws -> AgentTurnResult {
         guard var components = URLComponents(
             url: baseURL.appendingPathComponent("models/\(model):generateContent"),
-            resolvingAgainstBaseURL: false
+            resolvingAgainstBaseURL: false,
         ) else {
             throw AgentError.llmConnectionFailed(reason: "Invalid Gemini endpoint.")
         }
@@ -331,8 +335,8 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
                             "description": tool.description,
                             "parameters": tool.inputSchema.jsonObject,
                         ] as [String: Any]
-                    }
-                ]
+                    },
+                ],
             ],
         ]
 
@@ -345,7 +349,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
                 "functionCallingConfig": [
                     "mode": "ANY",
                     "allowedFunctionNames": [forcedTool],
-                ]
+                ],
             ]
         }
 
@@ -358,7 +362,8 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let candidates = object["candidates"] as? [[String: Any]],
               let content = candidates.first?["content"] as? [String: Any],
-              let parts = content["parts"] as? [[String: Any]] else {
+              let parts = content["parts"] as? [[String: Any]]
+        else {
             return AgentTurnResult(turn: .text(""), tokenUsage: nil)
         }
 
@@ -369,15 +374,16 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
             if let textContent = part["text"] as? String {
                 text += textContent
             } else if let functionCall = part["functionCall"] as? [String: Any],
-                      let name = functionCall["name"] as? String {
+                      let name = functionCall["name"] as? String
+            {
                 let args = functionCall["args"] ?? [:]
-                let argsJSON: String
-                if JSONSerialization.isValidJSONObject(args),
-                   let argsData = try? JSONSerialization.data(withJSONObject: args),
-                   let str = String(data: argsData, encoding: .utf8) {
-                    argsJSON = str
+                let argsJSON: String = if JSONSerialization.isValidJSONObject(args),
+                                          let argsData = try? JSONSerialization.data(withJSONObject: args),
+                                          let str = String(data: argsData, encoding: .utf8)
+                {
+                    str
                 } else {
-                    argsJSON = "{}"
+                    "{}"
                 }
                 let id = "\(name)_\(UUID().uuidString.prefix(8))"
                 toolCalls.append(AgentToolCall(id: id, name: name, argumentsJSON: argsJSON))
@@ -386,13 +392,12 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
 
         let tokenUsage = parseGeminiTokenUsage(from: object)
 
-        let turn: AgentTurn
-        if toolCalls.isEmpty {
-            turn = .text(text)
+        let turn: AgentTurn = if toolCalls.isEmpty {
+            .text(text)
         } else if text.isEmpty {
-            turn = .toolCalls(toolCalls)
+            .toolCalls(toolCalls)
         } else {
-            turn = .textWithToolCalls(text: text, toolCalls: toolCalls)
+            .textWithToolCalls(text: text, toolCalls: toolCalls)
         }
 
         return AgentTurnResult(turn: turn, tokenUsage: tokenUsage)
@@ -412,7 +417,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         return LLMTokenUsage(
             promptTokens: promptTokens,
             completionTokens: completionTokens,
-            totalTokens: totalTokens
+            totalTokens: totalTokens,
         )
     }
 }

@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 // MARK: - Mock LLM Service
 
@@ -18,22 +18,21 @@ private final class MockLLMService: LLMService, @unchecked Sendable {
         return completeResult
     }
 
-    func streamRewrite(request: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
+    func streamRewrite(request _: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { $0.finish() }
     }
 
-    func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
-        return "{}"
+    func completeJSON(systemPrompt _: String, userPrompt _: String, schema _: LLMJSONSchema) async throws -> String {
+        "{}"
     }
 }
 
 final class AgentJobTitleGeneratorTests: XCTestCase {
-
     private func makeJob(
         prompt: String = "Translate this email to Japanese",
         selectedText: String? = "Hello, how are you?",
         resultText: String? = "こんにちは、お元気ですか？",
-        steps: [AgentJobStep] = []
+        steps: [AgentJobStep] = [],
     ) -> AgentJob {
         AgentJob(
             status: .completed,
@@ -41,7 +40,7 @@ final class AgentJobTitleGeneratorTests: XCTestCase {
             userPrompt: prompt,
             selectedText: selectedText,
             resultText: resultText,
-            steps: steps
+            steps: steps,
         )
     }
 
@@ -119,7 +118,7 @@ final class AgentJobTitleGeneratorTests: XCTestCase {
         XCTAssertTrue(mockLLM.capturedUserPrompt?.contains("Tools used:") ?? false)
     }
 
-    func testPromptTruncatesLongSelectedText() async {
+    func testPromptTruncatesLongSelectedText() async throws {
         let mockLLM = MockLLMService()
         let longText = String(repeating: "a", count: 500)
         let job = makeJob(selectedText: longText)
@@ -127,7 +126,7 @@ final class AgentJobTitleGeneratorTests: XCTestCase {
 
         // The selected text in prompt should be truncated to 200 chars
         let prompt = mockLLM.capturedUserPrompt ?? ""
-        let contextRange = prompt.range(of: "Context text: ")!
+        let contextRange = try XCTUnwrap(prompt.range(of: "Context text: "))
         let afterContext = prompt[contextRange.upperBound...]
         let contextLine = afterContext.prefix(while: { $0 != "\n" })
         XCTAssertLessThanOrEqual(contextLine.count, 200)

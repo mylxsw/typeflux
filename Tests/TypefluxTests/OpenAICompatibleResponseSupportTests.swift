@@ -1,12 +1,12 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class OpenAICompatibleResponseSupportTests: XCTestCase {
     func testExtractsPlainStringDelta() throws {
         let data = try jsonData([
             "choices": [
-                ["delta": ["content": "hello"]]
-            ]
+                ["delta": ["content": "hello"]],
+            ],
         ])
 
         XCTAssertEqual(OpenAICompatibleResponseSupport.extractTextDelta(from: data), "hello")
@@ -15,8 +15,8 @@ final class OpenAICompatibleResponseSupportTests: XCTestCase {
     func testExtractsStructuredTextDelta() throws {
         let data = try jsonData([
             "choices": [
-                ["delta": ["content": [["type": "text", "text": "hello"], ["type": "text", "text": " world"]]]]
-            ]
+                ["delta": ["content": [["type": "text", "text": "hello"], ["type": "text", "text": " world"]]]],
+            ],
         ])
 
         XCTAssertEqual(OpenAICompatibleResponseSupport.extractTextDelta(from: data), "hello world")
@@ -27,22 +27,22 @@ final class OpenAICompatibleResponseSupportTests: XCTestCase {
             "choices": [
                 ["message": ["content": [
                     ["type": "text", "text": "## Summary"],
-                    ["type": "text", "text": "- first item\n- second item"]
-                ]]]
-            ]
+                    ["type": "text", "text": "- first item\n- second item"],
+                ]]],
+            ],
         ])
 
         XCTAssertEqual(
             OpenAICompatibleResponseSupport.extractTextDelta(from: data),
-            "## Summary\n\n- first item\n- second item"
+            "## Summary\n\n- first item\n- second item",
         )
     }
 
     func testDetectsReasoningOnlyDelta() throws {
         let data = try jsonData([
             "choices": [
-                ["delta": ["reasoning_content": "step by step"]]
-            ]
+                ["delta": ["reasoning_content": "step by step"]],
+            ],
         ])
 
         XCTAssertNil(OpenAICompatibleResponseSupport.extractTextDelta(from: data))
@@ -51,10 +51,10 @@ final class OpenAICompatibleResponseSupportTests: XCTestCase {
 
     func testProviderTuningDisablesThinkingForDoubaoEndpoints() throws {
         var body: [String: Any] = [:]
-        OpenAICompatibleResponseSupport.applyProviderTuning(
+        try OpenAICompatibleResponseSupport.applyProviderTuning(
             body: &body,
-            baseURL: try XCTUnwrap(URL(string: "https://ark.cn-beijing.volces.com/api/v3")),
-            model: "doubao-seed-1-6"
+            baseURL: XCTUnwrap(URL(string: "https://ark.cn-beijing.volces.com/api/v3")),
+            model: "doubao-seed-1-6",
         )
 
         let thinking = try XCTUnwrap(body["thinking"] as? [String: String])
@@ -69,7 +69,6 @@ final class OpenAICompatibleResponseSupportTests: XCTestCase {
 // MARK: - Extended OpenAICompatibleResponseSupport tests
 
 extension OpenAICompatibleResponseSupportTests {
-
     // MARK: - stripLeadingThinkingTags additional cases
 
     func testStripLeadingThinkingTagsWithEmptyText() {
@@ -166,8 +165,8 @@ extension OpenAICompatibleResponseSupportTests {
     func testExtractTextDeltaFromValidDelta() throws {
         let data = try jsonData([
             "choices": [
-                ["delta": ["content": "partial text"]]
-            ]
+                ["delta": ["content": "partial text"]],
+            ],
         ])
         let result = OpenAICompatibleResponseSupport.extractTextDelta(from: data)
         XCTAssertEqual(result, "partial text")
@@ -176,8 +175,8 @@ extension OpenAICompatibleResponseSupportTests {
     func testExtractTextDeltaFromEmptyDeltaContent() throws {
         let data = try jsonData([
             "choices": [
-                ["delta": ["content": ""]]
-            ]
+                ["delta": ["content": ""]],
+            ],
         ])
         let result = OpenAICompatibleResponseSupport.extractTextDelta(from: data)
         XCTAssertNil(result)
@@ -188,8 +187,8 @@ extension OpenAICompatibleResponseSupportTests {
     func testContainsReasoningDeltaReturnsFalseForTextOnlyDelta() throws {
         let data = try jsonData([
             "choices": [
-                ["delta": ["content": "text content"]]
-            ]
+                ["delta": ["content": "text content"]],
+            ],
         ])
         XCTAssertFalse(OpenAICompatibleResponseSupport.containsReasoningDelta(data))
     }
@@ -202,10 +201,10 @@ extension OpenAICompatibleResponseSupportTests {
 
     func testProviderTuningIsNoOpForNonDoubaoEndpoint() throws {
         var body: [String: Any] = ["model": "gpt-4o"]
-        OpenAICompatibleResponseSupport.applyProviderTuning(
+        try OpenAICompatibleResponseSupport.applyProviderTuning(
             body: &body,
-            baseURL: try XCTUnwrap(URL(string: "https://api.openai.com/v1")),
-            model: "gpt-4o"
+            baseURL: XCTUnwrap(URL(string: "https://api.openai.com/v1")),
+            model: "gpt-4o",
         )
         // For non-Doubao endpoint, "thinking" key should not be added
         XCTAssertNil(body["thinking"])
@@ -213,10 +212,10 @@ extension OpenAICompatibleResponseSupportTests {
 
     func testProviderTuningDoesNotModifyOtherBodyKeys() throws {
         var body: [String: Any] = ["model": "custom-model", "stream": true]
-        OpenAICompatibleResponseSupport.applyProviderTuning(
+        try OpenAICompatibleResponseSupport.applyProviderTuning(
             body: &body,
-            baseURL: try XCTUnwrap(URL(string: "https://api.custom.com/v1")),
-            model: "custom-model"
+            baseURL: XCTUnwrap(URL(string: "https://api.custom.com/v1")),
+            model: "custom-model",
         )
         XCTAssertEqual(body["model"] as? String, "custom-model")
         XCTAssertEqual(body["stream"] as? Bool, true)

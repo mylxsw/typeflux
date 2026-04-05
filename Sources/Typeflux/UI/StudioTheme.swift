@@ -283,7 +283,7 @@ enum StudioTheme {
         Color(
             nsColor: NSColor(name: nil) { appearance in
                 appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
-            }
+            },
         )
     }
 }

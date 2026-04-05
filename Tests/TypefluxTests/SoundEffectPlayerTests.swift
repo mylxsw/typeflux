@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class SoundEffectPlayerTests: XCTestCase {
-
     // MARK: - Effect Raw Values
 
     func testEffectRawValues() {
@@ -29,7 +28,7 @@ final class SoundEffectPlayerTests: XCTestCase {
         let volumes: Set<Float> = [
             SoundEffectPlayer.Effect.start.volume,
             SoundEffectPlayer.Effect.done.volume,
-            SoundEffectPlayer.Effect.error.volume
+            SoundEffectPlayer.Effect.error.volume,
         ]
         XCTAssertEqual(volumes.count, 3)
     }

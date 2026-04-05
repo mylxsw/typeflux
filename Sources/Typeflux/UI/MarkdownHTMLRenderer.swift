@@ -75,15 +75,15 @@ private struct HTMLVisitor: MarkupVisitor {
         "<li>\(renderListItem(listItem))</li>"
     }
 
-    mutating func visitThematicBreak(_ thematicBreak: ThematicBreak) -> String {
+    mutating func visitThematicBreak(_: ThematicBreak) -> String {
         "<hr />"
     }
 
-    mutating func visitSoftBreak(_ softBreak: SoftBreak) -> String {
+    mutating func visitSoftBreak(_: SoftBreak) -> String {
         "\n"
     }
 
-    mutating func visitLineBreak(_ lineBreak: LineBreak) -> String {
+    mutating func visitLineBreak(_: LineBreak) -> String {
         "<br />"
     }
 

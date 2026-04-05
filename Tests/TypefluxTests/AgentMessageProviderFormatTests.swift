@@ -1,11 +1,10 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AgentMessageProviderFormatTests: XCTestCase {
-
     // MARK: - OpenAI Format
 
-    func testOpenAISystemMessage() throws {
+    func testOpenAISystemMessage() {
         let messages: [AgentMessage] = [.system("You are helpful.")]
         let formatted = AgentMessage.toOpenAIMessages(messages)
         XCTAssertEqual(formatted.count, 1)
@@ -13,7 +12,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
         XCTAssertEqual(formatted[0]["content"] as? String, "You are helpful.")
     }
 
-    func testOpenAIUserMessage() throws {
+    func testOpenAIUserMessage() {
         let messages: [AgentMessage] = [.user("Hello!")]
         let formatted = AgentMessage.toOpenAIMessages(messages)
         XCTAssertEqual(formatted.count, 1)
@@ -21,7 +20,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
         XCTAssertEqual(formatted[0]["content"] as? String, "Hello!")
     }
 
-    func testOpenAIAssistantTextOnly() throws {
+    func testOpenAIAssistantTextOnly() {
         let assistantMsg = AgentAssistantMessage(text: "Hi there", toolCalls: [])
         let messages: [AgentMessage] = [.assistant(assistantMsg)]
         let formatted = AgentMessage.toOpenAIMessages(messages)
@@ -30,7 +29,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
         XCTAssertEqual(formatted[0]["content"] as? String, "Hi there")
     }
 
-    func testOpenAIAssistantWithToolCalls() throws {
+    func testOpenAIAssistantWithToolCalls() {
         let tc = AgentToolCall(id: "tc1", name: "get_clipboard", argumentsJSON: "{}")
         let assistantMsg = AgentAssistantMessage(text: nil, toolCalls: [tc])
         let messages: [AgentMessage] = [.assistant(assistantMsg)]
@@ -43,7 +42,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
         XCTAssertEqual(fn?["name"] as? String, "get_clipboard")
     }
 
-    func testOpenAIToolResultMessage() throws {
+    func testOpenAIToolResultMessage() {
         let result = AgentToolResult(toolCallId: "tc1", content: "clipboard data", isError: false)
         let messages: [AgentMessage] = [.toolResult(result)]
         let formatted = AgentMessage.toOpenAIMessages(messages)
@@ -53,7 +52,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
         XCTAssertEqual(formatted[0]["content"] as? String, "clipboard data")
     }
 
-    func testOpenAIMultiTurnConversation() throws {
+    func testOpenAIMultiTurnConversation() {
         let tc = AgentToolCall(id: "tc1", name: "get_clipboard", argumentsJSON: "{}")
         let messages: [AgentMessage] = [
             .system("sys"),
@@ -71,7 +70,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
 
     // MARK: - Anthropic Format
 
-    func testAnthropicSystemExtracted() throws {
+    func testAnthropicSystemExtracted() {
         let messages: [AgentMessage] = [
             .system("You are helpful."),
             .user("Hello!"),
@@ -80,7 +79,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
         XCTAssertEqual(system, "You are helpful.")
     }
 
-    func testAnthropicSystemExcludedFromMessages() throws {
+    func testAnthropicSystemExcludedFromMessages() {
         let messages: [AgentMessage] = [
             .system("sys"),
             .user("Hello!"),
@@ -90,7 +89,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
         XCTAssertEqual(formatted[0]["role"] as? String, "user")
     }
 
-    func testAnthropicUserMessage() throws {
+    func testAnthropicUserMessage() {
         let messages: [AgentMessage] = [.user("Hello!")]
         let formatted = AgentMessage.toAnthropicMessages(messages)
         XCTAssertEqual(formatted.count, 1)
@@ -100,7 +99,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
         XCTAssertEqual(content?.first?["text"] as? String, "Hello!")
     }
 
-    func testAnthropicAssistantWithToolUse() throws {
+    func testAnthropicAssistantWithToolUse() {
         let tc = AgentToolCall(id: "tc1", name: "get_clipboard", argumentsJSON: "{}")
         let assistantMsg = AgentAssistantMessage(text: nil, toolCalls: [tc])
         let messages: [AgentMessage] = [.assistant(assistantMsg)]
@@ -112,7 +111,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
         XCTAssertEqual(content?.first?["name"] as? String, "get_clipboard")
     }
 
-    func testAnthropicToolResult() throws {
+    func testAnthropicToolResult() {
         let result = AgentToolResult(toolCallId: "tc1", content: "data", isError: false)
         let messages: [AgentMessage] = [.toolResult(result)]
         let formatted = AgentMessage.toAnthropicMessages(messages)
@@ -125,7 +124,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
 
     // MARK: - Gemini Format
 
-    func testGeminiSystemExtracted() throws {
+    func testGeminiSystemExtracted() {
         let messages: [AgentMessage] = [.system("You are helpful.")]
         let instruction = AgentMessage.extractGeminiSystemInstruction(messages)
         XCTAssertNotNil(instruction)
@@ -133,7 +132,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
         XCTAssertEqual(parts?.first?["text"] as? String, "You are helpful.")
     }
 
-    func testGeminiSystemExcludedFromContents() throws {
+    func testGeminiSystemExcludedFromContents() {
         let messages: [AgentMessage] = [
             .system("sys"),
             .user("Hello!"),
@@ -143,7 +142,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
         XCTAssertEqual(contents[0]["role"] as? String, "user")
     }
 
-    func testGeminiUserMessage() throws {
+    func testGeminiUserMessage() {
         let messages: [AgentMessage] = [.user("Hello!")]
         let contents = AgentMessage.toGeminiContents(messages)
         XCTAssertEqual(contents.count, 1)
@@ -152,7 +151,7 @@ final class AgentMessageProviderFormatTests: XCTestCase {
         XCTAssertEqual(parts?.first?["text"] as? String, "Hello!")
     }
 
-    func testGeminiAssistantWithFunctionCall() throws {
+    func testGeminiAssistantWithFunctionCall() {
         let tc = AgentToolCall(id: "tc1", name: "get_clipboard", argumentsJSON: "{}")
         let assistantMsg = AgentAssistantMessage(text: nil, toolCalls: [tc])
         let messages: [AgentMessage] = [.assistant(assistantMsg)]
@@ -168,7 +167,6 @@ final class AgentMessageProviderFormatTests: XCTestCase {
 // MARK: - Extended AgentMessage format tests
 
 extension AgentMessageProviderFormatTests {
-
     // MARK: - extractAnthropicSystemPrompt
 
     func testExtractAnthropicSystemPromptWithNoSystem() {
@@ -187,7 +185,7 @@ extension AgentMessageProviderFormatTests {
         let messages: [AgentMessage] = [
             .system("Rule 1."),
             .user("hello"),
-            .system("Rule 2.")
+            .system("Rule 2."),
         ]
         let result = AgentMessage.extractAnthropicSystemPrompt(messages)
         XCTAssertEqual(result, "Rule 1.\n\nRule 2.")

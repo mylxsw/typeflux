@@ -1,7 +1,7 @@
 import Foundation
 
 /// Skill 定义 — 可组合的工具集合 + 提示词补充
-struct AgentSkill: Codable, Identifiable, Sendable {
+struct AgentSkill: Codable, Identifiable {
     let id: UUID
     var name: String
     var description: String
@@ -17,7 +17,7 @@ struct AgentSkill: Codable, Identifiable, Sendable {
         description: String,
         enabled: Bool = true,
         systemPromptSupplement: String = "",
-        toolNames: [String] = []
+        toolNames: [String] = [],
     ) {
         self.id = id
         self.name = name
@@ -29,7 +29,7 @@ struct AgentSkill: Codable, Identifiable, Sendable {
 }
 
 /// 内置 Skill 标识
-enum BuiltinSkillName: String, CaseIterable, Sendable {
+enum BuiltinSkillName: String, CaseIterable {
     case commandExecution = "command_execution"
     case webAccess = "web_access"
 }
@@ -49,7 +49,7 @@ enum BuiltinSkillCatalog {
             - Run simple calculations or data transformations
             Always explain what command you're about to run and why. Prefer safe, read-only commands.
             """,
-            toolNames: [BuiltinToolName.shellCommand.rawValue]
+            toolNames: [BuiltinToolName.shellCommand.rawValue],
         )
     }
 
@@ -66,7 +66,7 @@ enum BuiltinSkillCatalog {
             - Retrieve web page content for analysis
             Always tell the user which URL you're fetching and why.
             """,
-            toolNames: [BuiltinToolName.webFetch.rawValue]
+            toolNames: [BuiltinToolName.webFetch.rawValue],
         )
     }
 

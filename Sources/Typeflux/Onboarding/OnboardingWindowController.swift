@@ -22,7 +22,7 @@ final class OnboardingWindowController: NSObject {
             return
         }
 
-        self.onCompleteHandler = onComplete
+        onCompleteHandler = onComplete
 
         let viewModel = OnboardingViewModel(settingsStore: settingsStore) { [weak self] in
             self?.handleComplete()
@@ -35,7 +35,7 @@ final class OnboardingWindowController: NSObject {
             contentRect: NSRect(x: 0, y: 0, width: Self.windowWidth, height: Self.windowHeight),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
-            defer: false
+            defer: false,
         )
         window.title = L("onboarding.window.title")
         window.center()
@@ -69,7 +69,7 @@ final class OnboardingWindowController: NSObject {
 }
 
 extension OnboardingWindowController: NSWindowDelegate {
-    func windowWillClose(_ notification: Notification) {
+    func windowWillClose(_: Notification) {
         // User closed the window manually without completing onboarding
         // Mark it complete so it doesn't show again, then call the handler
         if onCompleteHandler != nil {

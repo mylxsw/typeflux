@@ -14,34 +14,34 @@ final class LLMRouter: LLMService {
     func streamRewrite(request: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
         switch settingsStore.llmProvider {
         case .openAICompatible:
-            return openAICompatible.streamRewrite(request: request)
+            openAICompatible.streamRewrite(request: request)
         case .ollama:
-            return ollama.streamRewrite(request: request)
+            ollama.streamRewrite(request: request)
         }
     }
 
     func complete(systemPrompt: String, userPrompt: String) async throws -> String {
         switch settingsStore.llmProvider {
         case .openAICompatible:
-            return try await openAICompatible.complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
+            try await openAICompatible.complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
         case .ollama:
-            return try await ollama.complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
+            try await ollama.complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
         }
     }
 
     func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
         switch settingsStore.llmProvider {
         case .openAICompatible:
-            return try await openAICompatible.completeJSON(
+            try await openAICompatible.completeJSON(
                 systemPrompt: systemPrompt,
                 userPrompt: userPrompt,
-                schema: schema
+                schema: schema,
             )
         case .ollama:
-            return try await ollama.completeJSON(
+            try await ollama.completeJSON(
                 systemPrompt: systemPrompt,
                 userPrompt: userPrompt,
-                schema: schema
+                schema: schema,
             )
         }
     }

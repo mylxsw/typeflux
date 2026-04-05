@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class LLMRemoteProviderTests: XCTestCase {
     private let defaults = UserDefaults.standard
@@ -78,14 +78,14 @@ final class LLMRemoteProviderTests: XCTestCase {
             [
                 "https://api.z.ai/api/paas/v4",
                 "https://open.bigmodel.cn/api/paas/v4",
-            ]
+            ],
         )
         XCTAssertEqual(
             LLMRemoteProvider.minimax.endpointPresets.map(\.url),
             [
                 "https://api.minimax.io/v1",
                 "https://api.minimaxi.com/v1",
-            ]
+            ],
         )
     }
 
@@ -102,7 +102,7 @@ final class LLMRemoteProviderTests: XCTestCase {
                 "llama-3.3-70b-versatile",
                 "openai/gpt-oss-120b",
                 "openai/gpt-oss-20b",
-            ]
+            ],
         )
     }
 
@@ -117,14 +117,14 @@ final class LLMRemoteProviderTests: XCTestCase {
                 "grok-4-1-fast-non-reasoning",
                 "grok-4.20-0309-reasoning",
                 "grok-4.20-0309-non-reasoning",
-            ]
+            ],
         )
 
         XCTAssertEqual(LLMRemoteProvider.xiaomi.apiStyle, .openAICompatible)
         XCTAssertEqual(LLMRemoteProvider.xiaomi.defaultBaseURL, "https://api.xiaomimimo.com/v1")
         XCTAssertEqual(
             LLMRemoteProvider.xiaomi.suggestedModels,
-            ["mimo-v2-pro", "mimo-v2-flash", "mimo-v2-omni"]
+            ["mimo-v2-pro", "mimo-v2-flash", "mimo-v2-omni"],
         )
     }
 
@@ -178,7 +178,6 @@ final class LLMRemoteProviderTests: XCTestCase {
 // MARK: - LLMRemoteProvider extended property tests
 
 extension LLMRemoteProviderTests {
-
     func testAllProviderCasesHaveDisplayNames() {
         for provider in LLMRemoteProvider.allCases {
             XCTAssertFalse(provider.displayName.isEmpty, "\(provider) should have a display name")

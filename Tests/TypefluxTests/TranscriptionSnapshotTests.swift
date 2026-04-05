@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class TranscriptionSnapshotTests: XCTestCase {
-
     func testCreateWithIsFinalTrue() {
         let snapshot = TranscriptionSnapshot(text: "Hello world", isFinal: true)
         XCTAssertEqual(snapshot.text, "Hello world")

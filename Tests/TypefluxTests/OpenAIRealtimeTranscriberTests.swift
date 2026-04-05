@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class OpenAIRealtimeTranscriberTests: XCTestCase {
-
     // MARK: - isOpenAIEndpoint
 
     func testIsOpenAIEndpointWithStandardURL() {
@@ -47,8 +46,8 @@ final class OpenAIRealtimeTranscriberTests: XCTestCase {
         XCTAssertFalse(
             OpenAIRealtimeTranscriber.shouldUseRealtime(
                 baseURL: "https://api.openai.com/v1",
-                model: "gpt-4o-transcribe"
-            )
+                model: "gpt-4o-transcribe",
+            ),
         )
     }
 
@@ -56,8 +55,8 @@ final class OpenAIRealtimeTranscriberTests: XCTestCase {
         XCTAssertFalse(
             OpenAIRealtimeTranscriber.shouldUseRealtime(
                 baseURL: "https://api.openai.com/v1",
-                model: "gpt-4o-mini-transcribe"
-            )
+                model: "gpt-4o-mini-transcribe",
+            ),
         )
     }
 
@@ -65,8 +64,8 @@ final class OpenAIRealtimeTranscriberTests: XCTestCase {
         XCTAssertFalse(
             OpenAIRealtimeTranscriber.shouldUseRealtime(
                 baseURL: "https://api.openai.com/v1",
-                model: "whisper-1"
-            )
+                model: "whisper-1",
+            ),
         )
     }
 
@@ -74,8 +73,8 @@ final class OpenAIRealtimeTranscriberTests: XCTestCase {
         XCTAssertFalse(
             OpenAIRealtimeTranscriber.shouldUseRealtime(
                 baseURL: "https://my-proxy.example.com/v1",
-                model: "gpt-4o-transcribe"
-            )
+                model: "gpt-4o-transcribe",
+            ),
         )
     }
 
@@ -83,8 +82,8 @@ final class OpenAIRealtimeTranscriberTests: XCTestCase {
         XCTAssertFalse(
             OpenAIRealtimeTranscriber.shouldUseRealtime(
                 baseURL: "https://api.openai.com/v1",
-                model: ""
-            )
+                model: "",
+            ),
         )
     }
 
@@ -92,8 +91,8 @@ final class OpenAIRealtimeTranscriberTests: XCTestCase {
         XCTAssertFalse(
             OpenAIRealtimeTranscriber.shouldUseRealtime(
                 baseURL: "",
-                model: "gpt-4o-transcribe"
-            )
+                model: "gpt-4o-transcribe",
+            ),
         )
     }
 
@@ -101,8 +100,8 @@ final class OpenAIRealtimeTranscriberTests: XCTestCase {
         XCTAssertFalse(
             OpenAIRealtimeTranscriber.shouldUseRealtime(
                 baseURL: "https://api.openai.com/v1",
-                model: "  gpt-4o-transcribe  "
-            )
+                model: "  gpt-4o-transcribe  ",
+            ),
         )
     }
 
@@ -110,8 +109,8 @@ final class OpenAIRealtimeTranscriberTests: XCTestCase {
         XCTAssertFalse(
             OpenAIRealtimeTranscriber.shouldUseRealtime(
                 baseURL: "https://api.openai.com/v1",
-                model: "Whisper-1"
-            )
+                model: "Whisper-1",
+            ),
         )
     }
 }

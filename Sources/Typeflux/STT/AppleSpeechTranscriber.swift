@@ -8,13 +8,13 @@ final class AppleSpeechTranscriber: Transcriber {
 
     func transcribeStream(
         audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         let auth = await MainActor.run { SFSpeechRecognizer.authorizationStatus() }
         guard auth == .authorized else {
             throw NSError(domain: "AppleSpeechTranscriber", code: 2, userInfo: [NSLocalizedDescriptionKey: "Speech recognition not authorized"])
         }
-        
+
         // Create recognizer on main thread
         let recognizer: SFSpeechRecognizer? = await MainActor.run {
             if let locale = TranscriptionLanguageHints.speechRecognizerLocale() {
@@ -22,7 +22,7 @@ final class AppleSpeechTranscriber: Transcriber {
             }
             return SFSpeechRecognizer()
         }
-        
+
         guard let recognizer else {
             throw NSError(domain: "AppleSpeechTranscriber", code: 1, userInfo: [NSLocalizedDescriptionKey: "Speech recognizer not available"])
         }

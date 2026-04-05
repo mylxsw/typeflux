@@ -29,10 +29,10 @@ struct LocalSTTConfiguration: Equatable {
     init(settingsStore: SettingsStore) {
         let identifier = settingsStore.localSTTModelIdentifier
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        self.model = settingsStore.localSTTModel
-        self.modelIdentifier = identifier.isEmpty ? settingsStore.localSTTModel.defaultModelIdentifier : identifier
-        self.downloadSource = settingsStore.localSTTDownloadSource
-        self.autoSetup = settingsStore.localSTTAutoSetup
+        model = settingsStore.localSTTModel
+        modelIdentifier = identifier.isEmpty ? settingsStore.localSTTModel.defaultModelIdentifier : identifier
+        downloadSource = settingsStore.localSTTDownloadSource
+        autoSetup = settingsStore.localSTTAutoSetup
     }
 }
 
@@ -47,18 +47,18 @@ final class LocalModelManager {
     init(
         fileManager: FileManager = .default,
         sherpaOnnxInstaller: SherpaOnnxModelInstalling? = nil,
-        applicationSupportURL: URL? = nil
+        applicationSupportURL: URL? = nil,
     ) {
         self.fileManager = fileManager
         self.sherpaOnnxInstaller = sherpaOnnxInstaller ?? SherpaOnnxModelInstaller(
-            fileManager: fileManager
+            fileManager: fileManager,
         )
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let base = applicationSupportURL
             ?? fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support", isDirectory: true)
-        self._modelsRootURL = base.appendingPathComponent("Typeflux/LocalModels", isDirectory: true)
-        self._legacyRuntimeURL = base.appendingPathComponent("Typeflux/STT/Runtime", isDirectory: true)
+        _modelsRootURL = base.appendingPathComponent("Typeflux/LocalModels", isDirectory: true)
+        _legacyRuntimeURL = base.appendingPathComponent("Typeflux/STT/Runtime", isDirectory: true)
     }
 
     var modelsRootPath: String {
@@ -67,7 +67,7 @@ final class LocalModelManager {
 
     func prepareModel(
         settingsStore: SettingsStore,
-        onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)? = nil
+        onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)? = nil,
     ) async throws {
         let configuration = LocalSTTConfiguration(settingsStore: settingsStore)
         let downloadBasePath = storagePath(for: configuration)
@@ -77,7 +77,7 @@ final class LocalModelManager {
             message: L("localSTT.prepare.cleaningLegacyRuntime"),
             progress: 0.05,
             storagePath: storagePath,
-            source: nil
+            source: nil,
         ))
         try? cleanupLegacyPythonRuntime()
 
@@ -90,18 +90,18 @@ final class LocalModelManager {
             storagePath = try await prepareWhisperKit(
                 configuration: configuration,
                 downloadBasePath: downloadBasePath,
-                onUpdate: onUpdate
+                onUpdate: onUpdate,
             )
         case .senseVoiceSmall, .qwen3ASR:
             storagePath = try await sherpaOnnxInstaller.prepareModel(
                 configuration.model,
-                at: URL(fileURLWithPath: downloadBasePath, isDirectory: true)
+                at: URL(fileURLWithPath: downloadBasePath, isDirectory: true),
             ) { update in
                 onUpdate?(LocalSTTPreparationUpdate(
                     message: update.message,
                     progress: update.progress,
                     storagePath: update.storagePath,
-                    source: configuration.downloadSource.displayName
+                    source: configuration.downloadSource.displayName,
                 ))
             }
         }
@@ -109,7 +109,7 @@ final class LocalModelManager {
         // Create the storagePath directory so preparedModelInfo's fileExists check passes.
         try fileManager.createDirectory(
             at: URL(fileURLWithPath: storagePath, isDirectory: true),
-            withIntermediateDirectories: true
+            withIntermediateDirectories: true,
         )
 
         let record = LocalModelPreparedRecord(
@@ -117,7 +117,7 @@ final class LocalModelManager {
             modelIdentifier: configuration.modelIdentifier,
             storagePath: storagePath,
             source: configuration.downloadSource.rawValue,
-            preparedAt: Date()
+            preparedAt: Date(),
         )
         try savePreparedRecord(record, for: configuration.model)
 
@@ -125,14 +125,14 @@ final class LocalModelManager {
             message: L("localSTT.prepare.runtimeReady", configuration.model.displayName),
             progress: 1,
             storagePath: storagePath,
-            source: configuration.downloadSource.displayName
+            source: configuration.downloadSource.displayName,
         ))
     }
 
     private func prepareWhisperKit(
         configuration: LocalSTTConfiguration,
         downloadBasePath: String,
-        onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)?
+        onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)?,
     ) async throws -> String {
         let identifier = configuration.modelIdentifier
         let modelName = identifier.hasPrefix("whisperkit-")
@@ -143,12 +143,12 @@ final class LocalModelManager {
             message: L("localSTT.prepare.whisperDownloading", modelName),
             progress: 0.2,
             storagePath: downloadBasePath,
-            source: configuration.downloadSource.displayName
+            source: configuration.downloadSource.displayName,
         ))
 
         let transcriber = WhisperKitTranscriber(
             modelName: modelName,
-            downloadBase: URL(fileURLWithPath: downloadBasePath, isDirectory: true)
+            downloadBase: URL(fileURLWithPath: downloadBasePath, isDirectory: true),
         )
         try await transcriber.prepare { progress, message in
             let mapped = 0.2 + progress * 0.75
@@ -156,7 +156,7 @@ final class LocalModelManager {
                 message: message,
                 progress: mapped,
                 storagePath: transcriber.resolvedModelFolderPath ?? downloadBasePath,
-                source: configuration.downloadSource.displayName
+                source: configuration.downloadSource.displayName,
             ))
         }
 
@@ -167,7 +167,7 @@ final class LocalModelManager {
             throw NSError(
                 domain: "LocalModelManager",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.whisperModelMissing")]
+                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.whisperModelMissing")],
             )
         }
 
@@ -187,7 +187,7 @@ final class LocalModelManager {
 
         return LocalSTTPreparedModelInfo(
             storagePath: record.storagePath,
-            sourceDisplayName: ModelDownloadSource(rawValue: record.source)?.displayName ?? configuration.downloadSource.displayName
+            sourceDisplayName: ModelDownloadSource(rawValue: record.source)?.displayName ?? configuration.downloadSource.displayName,
         )
     }
 
@@ -216,9 +216,13 @@ final class LocalModelManager {
             .path
     }
 
-    private var modelsRootURL: URL { _modelsRootURL }
+    private var modelsRootURL: URL {
+        _modelsRootURL
+    }
 
-    private var legacyRuntimeURL: URL { _legacyRuntimeURL }
+    private var legacyRuntimeURL: URL {
+        _legacyRuntimeURL
+    }
 
     private func resourceDirectoryURL(for model: LocalSTTModel) -> URL {
         modelsRootURL.appendingPathComponent(model.rawValue, isDirectory: true)
@@ -263,7 +267,7 @@ final class LocalModelManager {
             }
             return layout.isInstalled(
                 storageURL: URL(fileURLWithPath: storagePath, isDirectory: true),
-                fileManager: fileManager
+                fileManager: fileManager,
             )
         }
     }
@@ -274,7 +278,7 @@ final class LocalModelManager {
                 fileManager.fileExists(
                     atPath: URL(fileURLWithPath: storagePath, isDirectory: true)
                         .appendingPathComponent("\(modelName).\(ext)")
-                        .path
+                        .path,
                 )
             }
         }

@@ -10,7 +10,7 @@ final class WhisperAPITranscriber: Transcriber {
         settingsStore: SettingsStore,
         baseURLOverride: String? = nil,
         apiKeyOverride: (() -> String)? = nil,
-        modelOverride: (() -> String)? = nil
+        modelOverride: (() -> String)? = nil,
     ) {
         self.settingsStore = settingsStore
         self.baseURLOverride = baseURLOverride
@@ -24,17 +24,21 @@ final class WhisperAPITranscriber: Transcriber {
         }
         return OpenAIAudioModelCatalog.resolvedWhisperEndpoint(settingsStore.whisperBaseURL)
     }
-    private var effectiveAPIKey: String { apiKeyOverride?() ?? settingsStore.whisperAPIKey }
+
+    private var effectiveAPIKey: String {
+        apiKeyOverride?() ?? settingsStore.whisperAPIKey
+    }
+
     private var effectiveModel: String {
         if let modelOverride {
             return OpenAIAudioModelCatalog.resolvedWhisperModel(
                 modelOverride(),
-                endpoint: effectiveBaseURL
+                endpoint: effectiveBaseURL,
             )
         }
         return OpenAIAudioModelCatalog.resolvedWhisperModel(
             settingsStore.whisperModel,
-            endpoint: effectiveBaseURL
+            endpoint: effectiveBaseURL,
         )
     }
 
@@ -44,13 +48,13 @@ final class WhisperAPITranscriber: Transcriber {
             throw NSError(
                 domain: "WhisperAPITranscriber",
                 code: 1001,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid transcription endpoint. Please enter a valid URL."]
+                userInfo: [NSLocalizedDescriptionKey: "Invalid transcription endpoint. Please enter a valid URL."],
             )
         }
 
         let resolvedModel = OpenAIAudioModelCatalog.resolvedWhisperModel(
             model,
-            endpoint: resolvedEndpoint
+            endpoint: resolvedEndpoint,
         )
         let request = try makeTestRequest(baseURL: resolvedBaseURL, model: resolvedModel, apiKey: apiKey)
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -59,16 +63,16 @@ final class WhisperAPITranscriber: Transcriber {
             throw NSError(
                 domain: "WhisperAPITranscriber",
                 code: 1002,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid response type."]
+                userInfo: [NSLocalizedDescriptionKey: "Invalid response type."],
             )
         }
 
-        guard (200..<300).contains(http.statusCode) else {
+        guard (200 ..< 300).contains(http.statusCode) else {
             let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
             throw NSError(
                 domain: "WhisperAPITranscriber",
                 code: http.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(errorBody)"]
+                userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(errorBody)"],
             )
         }
 
@@ -82,7 +86,7 @@ final class WhisperAPITranscriber: Transcriber {
 
     func transcribeStream(
         audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         guard let baseURL = URL(string: effectiveBaseURL) else {
             throw NSError(domain: "WhisperAPITranscriber", code: 1)
@@ -102,7 +106,7 @@ final class WhisperAPITranscriber: Transcriber {
             uploadPath=\(uploadURL.path)
             ext=\(uploadURL.pathExtension.lowercased())
             sizeBytes=\(uploadSize)
-            """
+            """,
         )
 
         let shouldRequestStreaming = supportsServerStream(for: model, endpoint: baseURL)
@@ -111,7 +115,7 @@ final class WhisperAPITranscriber: Transcriber {
             model: model,
             vocabularyPrompt: vocabularyPrompt,
             uploadURL: uploadURL,
-            stream: shouldRequestStreaming
+            stream: shouldRequestStreaming,
         )
 
         NetworkDebugLogger.logRequest(
@@ -128,7 +132,7 @@ final class WhisperAPITranscriber: Transcriber {
                 "sizeBytes": \(request.httpBody?.count ?? 0)
               }
             }
-            """
+            """,
         )
 
         if shouldRequestStreaming {
@@ -147,7 +151,7 @@ final class WhisperAPITranscriber: Transcriber {
             model: model,
             vocabularyPrompt: vocabularyPrompt,
             uploadURL: uploadURL,
-            onUpdate: onUpdate
+            onUpdate: onUpdate,
         )
     }
 
@@ -160,14 +164,14 @@ final class WhisperAPITranscriber: Transcriber {
         model: String,
         vocabularyPrompt: String?,
         uploadURL: URL,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         let nonStreamingRequest = try makeRequest(
             baseURL: baseURL,
             model: model,
             vocabularyPrompt: vocabularyPrompt,
             uploadURL: uploadURL,
-            stream: false
+            stream: false,
         )
 
         let (data, response) = try await URLSession.shared.data(for: nonStreamingRequest)
@@ -178,7 +182,7 @@ final class WhisperAPITranscriber: Transcriber {
 
         NetworkDebugLogger.logResponse(http, data: data)
 
-        guard (200..<300).contains(http.statusCode) else {
+        guard (200 ..< 300).contains(http.statusCode) else {
             let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
             throw NSError(domain: "WhisperAPITranscriber", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(errorBody)"])
         }
@@ -192,18 +196,18 @@ final class WhisperAPITranscriber: Transcriber {
 
     private func streamResponse(
         for request: URLRequest,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw NSError(
                 domain: "WhisperAPITranscriber",
                 code: 3,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid stream response type."]
+                userInfo: [NSLocalizedDescriptionKey: "Invalid stream response type."],
             )
         }
 
-        guard (200..<300).contains(http.statusCode) else {
+        guard (200 ..< 300).contains(http.statusCode) else {
             var errorBody = Data()
             for try await byte in bytes {
                 errorBody.append(byte)
@@ -213,7 +217,7 @@ final class WhisperAPITranscriber: Transcriber {
             throw NSError(
                 domain: "WhisperAPITranscriber",
                 code: http.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(message)"]
+                userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(message)"],
             )
         }
 
@@ -275,8 +279,8 @@ final class WhisperAPITranscriber: Transcriber {
                     userInfo: [
                         NSLocalizedDescriptionKey: "Unable to prepare audio upload file.",
                         NSLocalizedFailureReasonErrorKey: "Audio file transcoding failed for \(audioFile.fileURL.lastPathComponent).",
-                        NSUnderlyingErrorKey: error
-                    ]
+                        NSUnderlyingErrorKey: error,
+                    ],
                 )
             }
         }
@@ -285,7 +289,7 @@ final class WhisperAPITranscriber: Transcriber {
     private func supportsServerStream(for model: String, endpoint: URL) -> Bool {
         OpenAIAudioModelCatalog.supportsWhisperStreaming(
             model: model,
-            endpoint: endpoint.absoluteString
+            endpoint: endpoint.absoluteString,
         )
     }
 
@@ -294,7 +298,7 @@ final class WhisperAPITranscriber: Transcriber {
         model: String,
         vocabularyPrompt: String?,
         uploadURL: URL,
-        stream: Bool
+        stream: Bool,
     ) throws -> URLRequest {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "audio/transcriptions")
         var request = URLRequest(url: url)
@@ -318,8 +322,8 @@ final class WhisperAPITranscriber: Transcriber {
                 name: "file",
                 filename: uploadURL.lastPathComponent,
                 mimeType: mimeType(for: uploadURL),
-                fileURL: uploadURL
-            )
+                fileURL: uploadURL,
+            ),
         )
 
         request.httpBody = try MultipartFormData.build(boundary: boundary, parts: parts)
@@ -344,9 +348,9 @@ final class WhisperAPITranscriber: Transcriber {
                     name: "file",
                     filename: "typeflux-stt-test.wav",
                     mimeType: "audio/wav",
-                    data: RemoteSTTTestAudio.wavSilence()
-                )
-            ]
+                    data: RemoteSTTTestAudio.wavSilence(),
+                ),
+            ],
         )
         return request
     }
@@ -354,15 +358,15 @@ final class WhisperAPITranscriber: Transcriber {
     private func mimeType(for fileURL: URL) -> String {
         switch fileURL.pathExtension.lowercased() {
         case "wav":
-            return "audio/wav"
+            "audio/wav"
         case "m4a", "mp4":
-            return "audio/m4a"
+            "audio/m4a"
         case "mp3", "mpeg", "mpga":
-            return "audio/mpeg"
+            "audio/mpeg"
         case "webm":
-            return "audio/webm"
+            "audio/webm"
         default:
-            return "application/octet-stream"
+            "application/octet-stream"
         }
     }
 }
@@ -381,17 +385,17 @@ enum MultipartFormData {
             data.append("--\(boundary)\r\n".data(using: .utf8)!)
 
             switch part {
-            case .text(let name, let value):
+            case let .text(name, value):
                 data.append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n".data(using: .utf8)!)
                 data.append("\(value)\r\n".data(using: .utf8)!)
 
-            case .file(let name, let filename, let mimeType, let fileURL):
+            case let .file(name, filename, mimeType, fileURL):
                 data.append("Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
                 data.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
-                data.append(try Data(contentsOf: fileURL))
+                try data.append(Data(contentsOf: fileURL))
                 data.append("\r\n".data(using: .utf8)!)
 
-            case .fileData(let name, let filename, let mimeType, let fileData):
+            case let .fileData(name, filename, mimeType, fileData):
                 data.append("Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
                 data.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
                 data.append(fileData)

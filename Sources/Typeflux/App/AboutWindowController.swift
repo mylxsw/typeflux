@@ -16,7 +16,7 @@ final class AboutWindowController: NSObject {
         languageObserver = NotificationCenter.default.addObserver(
             forName: .appLanguageDidChange,
             object: nil,
-            queue: .main
+            queue: .main,
         ) { [weak self] _ in
             Task { @MainActor in
                 guard let self, let window = self.window else { return }
@@ -27,7 +27,7 @@ final class AboutWindowController: NSObject {
         appearanceObserver = NotificationCenter.default.addObserver(
             forName: .appearanceModeDidChange,
             object: settingsStore,
-            queue: .main
+            queue: .main,
         ) { [weak self] _ in
             Task { @MainActor in
                 guard let self, let window = self.window else { return }
@@ -54,7 +54,7 @@ final class AboutWindowController: NSObject {
             contentRect: NSRect(x: 0, y: 0, width: 520, height: 620),
             styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
             backing: .buffered,
-            defer: false
+            defer: false,
         )
         window.title = L("window.about")
         window.titleVisibility = .hidden
@@ -68,7 +68,7 @@ final class AboutWindowController: NSObject {
         window.minSize = NSSize(width: 480, height: 560)
         applyAppearance(to: window)
 
-        self.hostingView = hosting
+        hostingView = hosting
         self.window = window
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -80,7 +80,7 @@ final class AboutWindowController: NSObject {
 }
 
 extension AboutWindowController: NSWindowDelegate {
-    func windowWillClose(_ notification: Notification) {
+    func windowWillClose(_: Notification) {
         window = nil
         hostingView = nil
     }

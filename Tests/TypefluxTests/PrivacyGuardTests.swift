@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class PrivacyGuardTests: XCTestCase {
-
     // MARK: - PermissionID
 
     func testPermissionIDRawValues() {
@@ -39,7 +38,7 @@ final class PrivacyGuardTests: XCTestCase {
         let snapshot = PrivacyGuard.PermissionSnapshot(
             id: .microphone,
             state: .granted,
-            detail: "Microphone access is granted."
+            detail: "Microphone access is granted.",
         )
 
         XCTAssertTrue(snapshot.isGranted)
@@ -51,7 +50,7 @@ final class PrivacyGuardTests: XCTestCase {
         let snapshot = PrivacyGuard.PermissionSnapshot(
             id: .accessibility,
             state: .needsAttention,
-            detail: "Accessibility access is needed."
+            detail: "Accessibility access is needed.",
         )
 
         XCTAssertFalse(snapshot.isGranted)
@@ -62,9 +61,9 @@ final class PrivacyGuardTests: XCTestCase {
     // MARK: - requiredPermissionIDs
 
     @MainActor
-    func testRequiredPermissionIDsAlwaysIncludesMicrophoneAndAccessibility() {
+    func testRequiredPermissionIDsAlwaysIncludesMicrophoneAndAccessibility() throws {
         let suiteName = "PrivacyGuardTests-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         let settings = SettingsStore(defaults: defaults)
         settings.sttProvider = .whisperAPI
         settings.useAppleSpeechFallback = false
@@ -77,9 +76,9 @@ final class PrivacyGuardTests: XCTestCase {
     }
 
     @MainActor
-    func testRequiredPermissionIDsIncludesSpeechRecognitionForAppleSpeech() {
+    func testRequiredPermissionIDsIncludesSpeechRecognitionForAppleSpeech() throws {
         let suiteName = "PrivacyGuardTests-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         let settings = SettingsStore(defaults: defaults)
         settings.sttProvider = .appleSpeech
 
@@ -90,9 +89,9 @@ final class PrivacyGuardTests: XCTestCase {
     }
 
     @MainActor
-    func testRequiredPermissionIDsIncludesSpeechRecognitionWhenFallbackEnabled() {
+    func testRequiredPermissionIDsIncludesSpeechRecognitionWhenFallbackEnabled() throws {
         let suiteName = "PrivacyGuardTests-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         let settings = SettingsStore(defaults: defaults)
         settings.sttProvider = .whisperAPI
         settings.useAppleSpeechFallback = true
@@ -104,9 +103,9 @@ final class PrivacyGuardTests: XCTestCase {
     }
 
     @MainActor
-    func testRequiredPermissionIDsExcludesSpeechRecognitionForOtherProvidersWithoutFallback() {
+    func testRequiredPermissionIDsExcludesSpeechRecognitionForOtherProvidersWithoutFallback() throws {
         let suiteName = "PrivacyGuardTests-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         let settings = SettingsStore(defaults: defaults)
         settings.sttProvider = .localModel
         settings.useAppleSpeechFallback = false

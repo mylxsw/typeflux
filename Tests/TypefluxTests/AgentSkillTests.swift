@@ -1,14 +1,13 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AgentSkillTests: XCTestCase {
-
     // MARK: - AgentSkill Init
 
     func testAgentSkillDefaultInit() {
         let skill = AgentSkill(
             name: "test_skill",
-            description: "A test skill"
+            description: "A test skill",
         )
         XCTAssertFalse(skill.id.uuidString.isEmpty)
         XCTAssertEqual(skill.name, "test_skill")
@@ -26,7 +25,7 @@ final class AgentSkillTests: XCTestCase {
             description: "Custom",
             enabled: false,
             systemPromptSupplement: "Use carefully",
-            toolNames: ["tool_a", "tool_b"]
+            toolNames: ["tool_a", "tool_b"],
         )
         XCTAssertEqual(skill.id, id)
         XCTAssertEqual(skill.name, "custom_skill")
@@ -41,7 +40,7 @@ final class AgentSkillTests: XCTestCase {
             description: "Test codability",
             enabled: true,
             systemPromptSupplement: "Be nice",
-            toolNames: ["tool_x"]
+            toolNames: ["tool_x"],
         )
         let data = try JSONEncoder().encode(skill)
         let decoded = try JSONDecoder().decode(AgentSkill.self, from: data)

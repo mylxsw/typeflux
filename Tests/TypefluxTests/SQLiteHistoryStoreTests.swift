@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class SQLiteHistoryStoreTests: XCTestCase {
-
     private var testDir: URL!
     private var store: SQLiteHistoryStore!
 
@@ -26,13 +25,13 @@ final class SQLiteHistoryStoreTests: XCTestCase {
         id: UUID = UUID(),
         date: Date = Date(),
         transcriptText: String? = nil,
-        mode: HistoryRecord.Mode = .dictation
+        mode: HistoryRecord.Mode = .dictation,
     ) -> HistoryRecord {
         HistoryRecord(
             id: id,
             date: date,
             mode: mode,
-            transcriptText: transcriptText
+            transcriptText: transcriptText,
         )
     }
 
@@ -87,7 +86,7 @@ final class SQLiteHistoryStoreTests: XCTestCase {
 
     func testListWithPagination() {
         let now = Date()
-        for i in 0..<5 {
+        for i in 0 ..< 5 {
             store.save(record: makeRecord(date: now.addingTimeInterval(TimeInterval(i)), transcriptText: "item \(i)"))
             flush()
         }
@@ -175,7 +174,7 @@ final class SQLiteHistoryStoreTests: XCTestCase {
     func testExportMarkdownGeneratesFile() throws {
         store.save(record: makeRecord(
             transcriptText: "hello world",
-            mode: .dictation
+            mode: .dictation,
         ))
         flush()
 
@@ -192,7 +191,6 @@ final class SQLiteHistoryStoreTests: XCTestCase {
 // MARK: - Extended SQLiteHistoryStore tests
 
 extension SQLiteHistoryStoreTests {
-
     // MARK: - save with various modes
 
     func testSaveRecordWithAskAnswerMode() {
@@ -295,7 +293,7 @@ extension SQLiteHistoryStoreTests {
     // MARK: - Multiple save/delete cycle
 
     func testSaveAndDeleteMultipleRecords() {
-        let ids = (0..<5).map { _ in UUID() }
+        let ids = (0 ..< 5).map { _ in UUID() }
         for id in ids {
             store.save(record: makeRecord(id: id, transcriptText: "item \(id)"))
         }
@@ -370,7 +368,7 @@ extension SQLiteHistoryStoreTests {
         let expectation = XCTestExpectation(description: "concurrent saves")
         expectation.expectedFulfillmentCount = 10
 
-        for i in 0..<10 {
+        for i in 0 ..< 10 {
             DispatchQueue.global().async {
                 let record = self.makeRecord(transcriptText: "concurrent item \(i)")
                 self.store.save(record: record)

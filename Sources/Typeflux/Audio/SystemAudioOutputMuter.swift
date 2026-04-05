@@ -34,7 +34,7 @@ final class SystemAudioOutputMuter: SystemAudioOutputMuting {
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultOutputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
+            mElement: kAudioObjectPropertyElementMain,
         )
         var deviceID = AudioDeviceID()
         var size = UInt32(MemoryLayout<AudioDeviceID>.size)
@@ -45,7 +45,7 @@ final class SystemAudioOutputMuter: SystemAudioOutputMuting {
                 0,
                 nil,
                 &size,
-                pointer
+                pointer,
             )
         }
         guard status == noErr else {
@@ -84,7 +84,7 @@ final class SystemAudioOutputMuter: SystemAudioOutputMuting {
         AudioObjectPropertyAddress(
             mSelector: kAudioDevicePropertyMute,
             mScope: kAudioDevicePropertyScopeOutput,
-            mElement: kAudioObjectPropertyElementMain
+            mElement: kAudioObjectPropertyElementMain,
         )
     }
 }

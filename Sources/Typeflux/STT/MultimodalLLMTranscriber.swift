@@ -21,14 +21,14 @@ final class MultimodalLLMTranscriber: Transcriber {
             throw NSError(
                 domain: "MultimodalLLMTranscriber",
                 code: 1001,
-                userInfo: [NSLocalizedDescriptionKey: "Multimodal LLM base URL is not configured."]
+                userInfo: [NSLocalizedDescriptionKey: "Multimodal LLM base URL is not configured."],
             )
         }
         guard let resolvedBaseURL = URL(string: trimmedBaseURL) else {
             throw NSError(
                 domain: "MultimodalLLMTranscriber",
                 code: 1002,
-                userInfo: [NSLocalizedDescriptionKey: "Multimodal LLM base URL is invalid."]
+                userInfo: [NSLocalizedDescriptionKey: "Multimodal LLM base URL is invalid."],
             )
         }
 
@@ -60,20 +60,20 @@ final class MultimodalLLMTranscriber: Transcriber {
 
     func transcribeStream(
         audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         guard !settingsStore.multimodalLLMBaseURL.isEmpty else {
             throw NSError(
                 domain: "MultimodalLLMTranscriber",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Multimodal LLM base URL is not configured."]
+                userInfo: [NSLocalizedDescriptionKey: "Multimodal LLM base URL is not configured."],
             )
         }
         guard let baseURL = URL(string: settingsStore.multimodalLLMBaseURL) else {
             throw NSError(
                 domain: "MultimodalLLMTranscriber",
                 code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Multimodal LLM base URL is invalid."]
+                userInfo: [NSLocalizedDescriptionKey: "Multimodal LLM base URL is invalid."],
             )
         }
 
@@ -84,11 +84,11 @@ final class MultimodalLLMTranscriber: Transcriber {
         let vocabularyTerms = VocabularyStore.activeTerms()
         let systemPrompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
             personaPrompt: personaPrompt,
-            vocabularyTerms: vocabularyTerms
+            vocabularyTerms: vocabularyTerms,
         )
         let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: systemPrompt,
-            appLanguage: settingsStore.appLanguage
+            appLanguage: settingsStore.appLanguage,
         )
 
         // Encode audio as base64 (done on current async context, not main thread)
@@ -105,7 +105,7 @@ final class MultimodalLLMTranscriber: Transcriber {
             audioSizeBytes=\(audioData.count)
             hasPersona=\(personaPrompt != nil)
             vocabularyTerms=\(vocabularyTerms.count)
-            """
+            """,
         )
 
         let request = try makeRequest(
@@ -113,7 +113,7 @@ final class MultimodalLLMTranscriber: Transcriber {
             model: model,
             systemPrompt: effectiveSystemPrompt,
             base64Audio: base64Audio,
-            audioFormat: audioFormat
+            audioFormat: audioFormat,
         )
 
         NetworkDebugLogger.logRequest(request, bodyDescription: """
@@ -137,7 +137,7 @@ final class MultimodalLLMTranscriber: Transcriber {
         model: String,
         systemPrompt: String,
         base64Audio: String,
-        audioFormat: String
+        audioFormat: String,
     ) throws -> URLRequest {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "chat/completions")
         var request = URLRequest(url: url)
@@ -153,16 +153,16 @@ final class MultimodalLLMTranscriber: Transcriber {
             "messages": [
                 [
                     "role": "system",
-                    "content": systemPrompt
+                    "content": systemPrompt,
                 ],
                 [
                     "role": "user",
                     "content": Self.makeUserMessageContent(
                         base64Audio: base64Audio,
-                        audioFormat: audioFormat
-                    )
-                ]
-            ]
+                        audioFormat: audioFormat,
+                    ),
+                ],
+            ],
         ]
         OpenAICompatibleResponseSupport.applyProviderTuning(body: &body, baseURL: baseURL, model: model)
 
@@ -186,16 +186,16 @@ final class MultimodalLLMTranscriber: Transcriber {
             "messages": [
                 [
                     "role": "system",
-                    "content": "You are validating a speech-to-text configuration. Transcribe the provided audio. If it contains no speech, reply with OK."
+                    "content": "You are validating a speech-to-text configuration. Transcribe the provided audio. If it contains no speech, reply with OK.",
                 ],
                 [
                     "role": "user",
                     "content": makeUserMessageContent(
                         base64Audio: base64Audio,
-                        audioFormat: "wav"
-                    )
-                ]
-            ]
+                        audioFormat: "wav",
+                    ),
+                ],
+            ],
         ]
         OpenAICompatibleResponseSupport.applyProviderTuning(body: &body, baseURL: baseURL, model: model)
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -204,7 +204,7 @@ final class MultimodalLLMTranscriber: Transcriber {
 
     private func streamResponse(
         for request: URLRequest,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         var buffer = ""
 
@@ -244,13 +244,13 @@ final class MultimodalLLMTranscriber: Transcriber {
                 "type": "input_audio",
                 "input_audio": [
                     "data": base64Audio,
-                    "format": audioFormat
-                ]
+                    "format": audioFormat,
+                ],
             ],
             [
                 "type": "text",
-                "text": audioProcessingInstructionText
-            ]
+                "text": audioProcessingInstructionText,
+            ],
         ]
     }
 
@@ -259,22 +259,22 @@ final class MultimodalLLMTranscriber: Transcriber {
     private func audioInputFormat(for fileURL: URL) -> String {
         switch fileURL.pathExtension.lowercased() {
         case "mp4", "m4a":
-            return "mp4"
+            "mp4"
         case "wav":
-            return "wav"
+            "wav"
         case "mp3", "mpeg", "mpga":
-            return "mp3"
+            "mp3"
         case "ogg":
-            return "ogg"
+            "ogg"
         case "webm":
-            return "webm"
+            "webm"
         case "flac":
-            return "flac"
+            "flac"
         case "aac":
-            return "aac"
+            "aac"
         default:
             // Default to mp4 since the app records in m4a format
-            return "mp4"
+            "mp4"
         }
     }
 }

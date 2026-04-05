@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class FileHistoryStoreTests: XCTestCase {
-
     private var testDir: URL!
     private var store: FileHistoryStore!
 
@@ -26,13 +25,13 @@ final class FileHistoryStoreTests: XCTestCase {
         id: UUID = UUID(),
         date: Date = Date(),
         transcriptText: String? = nil,
-        mode: HistoryRecord.Mode = .dictation
+        mode: HistoryRecord.Mode = .dictation,
     ) -> HistoryRecord {
         HistoryRecord(
             id: id,
             date: date,
             mode: mode,
-            transcriptText: transcriptText
+            transcriptText: transcriptText,
         )
     }
 
@@ -88,7 +87,7 @@ final class FileHistoryStoreTests: XCTestCase {
 
     func testListWithPagination() {
         let now = Date()
-        for i in 0..<5 {
+        for i in 0 ..< 5 {
             store.save(record: makeRecord(date: now.addingTimeInterval(TimeInterval(i)), transcriptText: "item \(i)"))
             flush()
         }
@@ -176,7 +175,7 @@ final class FileHistoryStoreTests: XCTestCase {
     func testExportMarkdownGeneratesFile() throws {
         store.save(record: makeRecord(
             transcriptText: "hello world",
-            mode: .dictation
+            mode: .dictation,
         ))
         flush()
 
@@ -193,7 +192,6 @@ final class FileHistoryStoreTests: XCTestCase {
 // MARK: - Extended FileHistoryStore tests
 
 extension FileHistoryStoreTests {
-
     func testSavePreservesAllFields() {
         let id = UUID()
         let date = Date(timeIntervalSince1970: 5000)
@@ -208,7 +206,7 @@ extension FileHistoryStoreTests {
             recordingStatus: .succeeded,
             transcriptionStatus: .succeeded,
             processingStatus: .succeeded,
-            applyStatus: .succeeded
+            applyStatus: .succeeded,
         )
         store.save(record: record)
 
@@ -232,7 +230,7 @@ extension FileHistoryStoreTests {
     }
 
     func testListWithOffsetSkipsRecords() {
-        for i in 0..<5 {
+        for i in 0 ..< 5 {
             store.save(record: makeRecord(transcriptText: "record \(i)"))
         }
 
@@ -245,7 +243,7 @@ extension FileHistoryStoreTests {
             date: Date(),
             mode: .personaRewrite,
             transcriptText: "raw",
-            personaResultText: "polished"
+            personaResultText: "polished",
         )
         store.save(record: record)
 

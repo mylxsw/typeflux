@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class HotkeyFormatTests: XCTestCase {
-
     // MARK: - Special triggers
 
     func testDisplayRightCommandTrigger() {
@@ -20,7 +19,7 @@ final class HotkeyFormatTests: XCTestCase {
     func testDisplayCommandModifier() {
         let binding = HotkeyBinding(
             keyCode: 0,
-            modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue)
+            modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue),
         )
         let display = HotkeyFormat.display(binding)
         XCTAssertTrue(display.contains("⌘"))
@@ -30,7 +29,7 @@ final class HotkeyFormatTests: XCTestCase {
     func testDisplayShiftModifier() {
         let binding = HotkeyBinding(
             keyCode: 0,
-            modifierFlags: UInt(NSEvent.ModifierFlags.shift.rawValue)
+            modifierFlags: UInt(NSEvent.ModifierFlags.shift.rawValue),
         )
         let display = HotkeyFormat.display(binding)
         XCTAssertTrue(display.contains("⇧"))
@@ -39,7 +38,7 @@ final class HotkeyFormatTests: XCTestCase {
     func testDisplayControlModifier() {
         let binding = HotkeyBinding(
             keyCode: 0,
-            modifierFlags: UInt(NSEvent.ModifierFlags.control.rawValue)
+            modifierFlags: UInt(NSEvent.ModifierFlags.control.rawValue),
         )
         let display = HotkeyFormat.display(binding)
         XCTAssertTrue(display.contains("⌃"))
@@ -48,7 +47,7 @@ final class HotkeyFormatTests: XCTestCase {
     func testDisplayOptionModifier() {
         let binding = HotkeyBinding(
             keyCode: 0,
-            modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue)
+            modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
         )
         let display = HotkeyFormat.display(binding)
         XCTAssertTrue(display.contains("⌥"))

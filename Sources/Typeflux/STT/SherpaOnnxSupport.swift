@@ -10,9 +10,9 @@ struct SherpaOnnxModelLayout {
     static func layout(for model: LocalSTTModel) -> SherpaOnnxModelLayout? {
         switch model {
         case .whisperLocal:
-            return nil
+            nil
         case .senseVoiceSmall:
-            return SherpaOnnxModelLayout(
+            SherpaOnnxModelLayout(
                 runtimeArchiveURL: URL(string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.35/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts.tar.bz2")!,
                 runtimeRootDirectory: "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts",
                 modelArchiveURL: URL(string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2")!,
@@ -22,11 +22,11 @@ struct SherpaOnnxModelLayout {
                     "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib/libsherpa-onnx-c-api.dylib",
                     "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib/libonnxruntime.dylib",
                     "sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/model.int8.onnx",
-                    "sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/tokens.txt"
-                ]
+                    "sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/tokens.txt",
+                ],
             )
         case .qwen3ASR:
-            return SherpaOnnxModelLayout(
+            SherpaOnnxModelLayout(
                 runtimeArchiveURL: URL(string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.35/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts.tar.bz2")!,
                 runtimeRootDirectory: "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts",
                 modelArchiveURL: URL(string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.tar.bz2")!,
@@ -38,8 +38,8 @@ struct SherpaOnnxModelLayout {
                     "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/conv_frontend.onnx",
                     "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/encoder.int8.onnx",
                     "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/decoder.int8.onnx",
-                    "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/tokenizer"
-                ]
+                    "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/tokenizer",
+                ],
             )
         }
     }
@@ -64,7 +64,7 @@ struct SherpaOnnxModelLayout {
         requiredRelativePaths.allSatisfy { relativePath in
             hasUsableItem(
                 at: storageURL.appendingPathComponent(relativePath, isDirectory: false),
-                fileManager: fileManager
+                fileManager: fileManager,
             )
         }
     }
@@ -118,7 +118,7 @@ struct SherpaOnnxModelLayout {
             [0xFE, 0xED, 0xFA, 0xCE],
             [0xCE, 0xFA, 0xED, 0xFE],
             [0xFE, 0xED, 0xFA, 0xCF],
-            [0xCF, 0xFA, 0xED, 0xFE]
+            [0xCF, 0xFA, 0xED, 0xFE],
         ]
         return machOMagics.contains(Array(bytes.prefix(4)))
     }
@@ -128,7 +128,7 @@ protocol SherpaOnnxModelInstalling {
     func prepareModel(
         _ model: LocalSTTModel,
         at storageURL: URL,
-        onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)?
+        onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)?,
     ) async throws -> String
 }
 
@@ -157,7 +157,7 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
     init(
         fileManager: FileManager = .default,
         processRunner: ProcessCommandRunning = ProcessCommandRunner(),
-        archiveDownloader: SherpaOnnxArchiveDownloading = URLSessionSherpaOnnxArchiveDownloader()
+        archiveDownloader: SherpaOnnxArchiveDownloading = URLSessionSherpaOnnxArchiveDownloader(),
     ) {
         self.fileManager = fileManager
         self.processRunner = processRunner
@@ -167,13 +167,13 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
     func prepareModel(
         _ model: LocalSTTModel,
         at storageURL: URL,
-        onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)? = nil
+        onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)? = nil,
     ) async throws -> String {
         guard let layout = SherpaOnnxModelLayout.layout(for: model) else {
             throw NSError(
                 domain: "SherpaOnnxModelInstaller",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.runtimeUnavailable", model.displayName)]
+                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.runtimeUnavailable", model.displayName)],
             )
         }
 
@@ -186,33 +186,33 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
             message: L("localSTT.prepare.runtimeDownloading"),
             progress: 0.15,
             storagePath: storageURL.path,
-            source: nil
+            source: nil,
         ))
         try await downloadAndExtract(
             archiveURL: layout.runtimeArchiveURL,
             destinationURL: storageURL,
             extractedRootDirectoryName: layout.runtimeRootDirectory,
-            archiveFileName: "\(layout.runtimeRootDirectory).tar.bz2"
+            archiveFileName: "\(layout.runtimeRootDirectory).tar.bz2",
         )
 
         onUpdate?(LocalSTTPreparationUpdate(
             message: L("localSTT.prepare.modelDownloading", model.displayName),
             progress: 0.55,
             storagePath: storageURL.path,
-            source: nil
+            source: nil,
         ))
         try await downloadAndExtract(
             archiveURL: layout.modelArchiveURL,
             destinationURL: storageURL,
             extractedRootDirectoryName: layout.modelRootDirectory,
-            archiveFileName: "\(layout.modelRootDirectory).tar.bz2"
+            archiveFileName: "\(layout.modelRootDirectory).tar.bz2",
         )
 
         guard layout.isInstalled(storageURL: storageURL, fileManager: fileManager) else {
             throw NSError(
                 domain: "SherpaOnnxModelInstaller",
                 code: 2,
-                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.modelAssetsMissing", model.displayName)]
+                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.modelAssetsMissing", model.displayName)],
             )
         }
 
@@ -220,7 +220,7 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
             message: L("localSTT.prepare.modelReady", model.displayName),
             progress: 0.95,
             storagePath: storageURL.path,
-            source: nil
+            source: nil,
         ))
 
         return storageURL.path
@@ -230,12 +230,12 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
         archiveURL: URL,
         destinationURL: URL,
         extractedRootDirectoryName: String,
-        archiveFileName: String
+        archiveFileName: String,
     ) async throws {
         try await RequestRetry.perform(operationName: "Sherpa-ONNX archive download") { [self] in
             let extractedRootURL = destinationURL.appendingPathComponent(
                 extractedRootDirectoryName,
-                isDirectory: true
+                isDirectory: true,
             )
             if fileManager.fileExists(atPath: extractedRootURL.path) {
                 try fileManager.removeItem(at: extractedRootURL)
@@ -246,7 +246,7 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
 
             let localArchiveURL = temporaryDirectory.appendingPathComponent(
                 archiveFileName,
-                isDirectory: false
+                isDirectory: false,
             )
             if fileManager.fileExists(atPath: localArchiveURL.path) {
                 try fileManager.removeItem(at: localArchiveURL)
@@ -264,10 +264,10 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
                     "-xjf",
                     localArchiveURL.path,
                     "-C",
-                    destinationURL.path
+                    destinationURL.path,
                 ],
                 environment: nil,
-                currentDirectoryURL: destinationURL
+                currentDirectoryURL: destinationURL,
             )
 
             try? fileManager.removeItem(at: localArchiveURL)
@@ -286,7 +286,7 @@ final class SherpaOnnxCommandLineDecoder {
         model: LocalSTTModel,
         modelIdentifier: String,
         modelFolder: String,
-        processRunner: ProcessCommandRunning = ProcessCommandRunner()
+        processRunner: ProcessCommandRunning = ProcessCommandRunner(),
     ) {
         self.model = model
         self.modelIdentifier = modelIdentifier
@@ -299,7 +299,7 @@ final class SherpaOnnxCommandLineDecoder {
             throw NSError(
                 domain: "SherpaOnnxCommandLineDecoder",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.runtimeUnavailable", model.displayName)]
+                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.runtimeUnavailable", model.displayName)],
             )
         }
 
@@ -309,7 +309,7 @@ final class SherpaOnnxCommandLineDecoder {
             throw NSError(
                 domain: "SherpaOnnxCommandLineDecoder",
                 code: 2,
-                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.sherpaRuntimeMissing", executableURL.path)]
+                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.sherpaRuntimeMissing", executableURL.path)],
             )
         }
 
@@ -317,7 +317,7 @@ final class SherpaOnnxCommandLineDecoder {
             throw NSError(
                 domain: "SherpaOnnxCommandLineDecoder",
                 code: 3,
-                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.modelAssetsMissing", model.displayName)]
+                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.modelAssetsMissing", model.displayName)],
             )
         }
 
@@ -327,9 +327,9 @@ final class SherpaOnnxCommandLineDecoder {
             executablePath: executableURL.path,
             arguments: arguments,
             environment: [
-                "DYLD_LIBRARY_PATH": layout.runtimeLibraryURL(storageURL: storageURL).path
+                "DYLD_LIBRARY_PATH": layout.runtimeLibraryURL(storageURL: storageURL).path,
             ],
-            currentDirectoryURL: storageURL
+            currentDirectoryURL: storageURL,
         )
 
         return try parseTranscript(stdout: result.stdout)
@@ -338,7 +338,7 @@ final class SherpaOnnxCommandLineDecoder {
     func commandLineArguments(
         layout: SherpaOnnxModelLayout,
         storageURL: URL,
-        audioURL: URL
+        audioURL: URL,
     ) throws -> [String] {
         let modelDirectory = layout.modelDirectoryURL(storageURL: storageURL)
         switch model {
@@ -346,7 +346,7 @@ final class SherpaOnnxCommandLineDecoder {
             throw NSError(
                 domain: "SherpaOnnxCommandLineDecoder",
                 code: 4,
-                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.runtimeUnavailable", model.displayName)]
+                userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.runtimeUnavailable", model.displayName)],
             )
         case .senseVoiceSmall:
             return [
@@ -356,7 +356,7 @@ final class SherpaOnnxCommandLineDecoder {
                 "--sense-voice-language=\(AppLocalization.shared.language.whisperKitLanguageCode)",
                 "--sense-voice-use-itn=true",
                 "--provider=cpu",
-                audioURL.path
+                audioURL.path,
             ]
         case .qwen3ASR:
             _ = modelIdentifier
@@ -370,7 +370,7 @@ final class SherpaOnnxCommandLineDecoder {
                 "--qwen3-asr-max-new-tokens=512",
                 "--qwen3-asr-temperature=0",
                 "--provider=cpu",
-                audioURL.path
+                audioURL.path,
             ]
         }
     }
@@ -385,7 +385,7 @@ final class SherpaOnnxCommandLineDecoder {
             throw NSError(
                 domain: "SherpaOnnxCommandLineDecoder",
                 code: 5,
-                userInfo: [NSLocalizedDescriptionKey: L("workflow.transcription.noSpeech")]
+                userInfo: [NSLocalizedDescriptionKey: L("workflow.transcription.noSpeech")],
             )
         }
 

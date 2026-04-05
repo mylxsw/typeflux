@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AliCloudTextNormalizerTests: XCTestCase {
-
     // MARK: - Empty and trivial cases
 
     func testNormalizeEmptySegmentReturnsEmpty() {

@@ -8,7 +8,7 @@ final class FileHistoryStore: HistoryStore {
 
     init(baseDir: URL) {
         self.baseDir = baseDir
-        self.indexURL = baseDir.appendingPathComponent("history.json")
+        indexURL = baseDir.appendingPathComponent("history.json")
         try? FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
     }
 
@@ -17,7 +17,8 @@ final class FileHistoryStore: HistoryStore {
         let newBaseDir = appSupport.appendingPathComponent("Typeflux", isDirectory: true)
         let legacyBaseDir = appSupport.appendingPathComponent("Typeflux", isDirectory: true)
         if !FileManager.default.fileExists(atPath: newBaseDir.path),
-           FileManager.default.fileExists(atPath: legacyBaseDir.path) {
+           FileManager.default.fileExists(atPath: legacyBaseDir.path)
+        {
             try? FileManager.default.moveItem(at: legacyBaseDir, to: newBaseDir)
         }
         self.init(baseDir: newBaseDir)
@@ -46,7 +47,7 @@ final class FileHistoryStore: HistoryStore {
             let records = filteredIndex(searchQuery: searchQuery)
             guard offset < records.count else { return [] }
             let endIndex = min(offset + limit, records.count)
-            return Array(records[offset..<endIndex])
+            return Array(records[offset ..< endIndex])
         }
     }
 
@@ -184,12 +185,12 @@ final class FileHistoryStore: HistoryStore {
 
         return records.filter {
             $0.mode.rawValue.localizedCaseInsensitiveContains(trimmedQuery) ||
-            $0.text.localizedCaseInsensitiveContains(trimmedQuery) ||
-            ($0.transcriptText?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
-            ($0.personaResultText?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
-            ($0.selectionEditedText?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
-            ($0.errorMessage?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
-            ($0.audioFilePath?.localizedCaseInsensitiveContains(trimmedQuery) ?? false)
+                $0.text.localizedCaseInsensitiveContains(trimmedQuery) ||
+                ($0.transcriptText?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
+                ($0.personaResultText?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
+                ($0.selectionEditedText?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
+                ($0.errorMessage?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
+                ($0.audioFilePath?.localizedCaseInsensitiveContains(trimmedQuery) ?? false)
         }
     }
 

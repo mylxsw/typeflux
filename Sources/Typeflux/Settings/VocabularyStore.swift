@@ -4,21 +4,21 @@ extension Notification.Name {
     static let vocabularyStoreDidChange = Notification.Name("VocabularyStore.didChange")
 }
 
-enum VocabularySource: String, Codable, CaseIterable, Sendable {
+enum VocabularySource: String, Codable, CaseIterable {
     case manual
     case automatic
 
     var displayName: String {
         switch self {
         case .manual:
-            return L("vocabulary.source.manual")
+            L("vocabulary.source.manual")
         case .automatic:
-            return L("vocabulary.source.automatic")
+            L("vocabulary.source.automatic")
         }
     }
 }
 
-struct VocabularyEntry: Codable, Identifiable, Equatable, Sendable {
+struct VocabularyEntry: Codable, Identifiable, Equatable {
     let id: UUID
     let term: String
     let source: VocabularySource
@@ -58,7 +58,7 @@ enum VocabularyStore {
             NotificationCenter.default.post(
                 name: .vocabularyStoreDidChange,
                 object: nil,
-                userInfo: ["entries": deduplicatedEntries]
+                userInfo: ["entries": deduplicatedEntries],
             )
         } catch {
             ErrorLogStore.shared.log("Vocabulary save failed: \(error.localizedDescription)")

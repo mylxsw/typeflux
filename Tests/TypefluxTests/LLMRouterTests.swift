@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 // MARK: - Mock LLM Services
 
@@ -13,19 +13,18 @@ private final class SpyLLMService: LLMService {
         return AsyncThrowingStream { $0.finish() }
     }
 
-    func complete(systemPrompt: String, userPrompt: String) async throws -> String {
+    func complete(systemPrompt _: String, userPrompt _: String) async throws -> String {
         completeCallCount += 1
         return "completed"
     }
 
-    func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
+    func completeJSON(systemPrompt _: String, userPrompt _: String, schema _: LLMJSONSchema) async throws -> String {
         completeJSONCallCount += 1
         return "{}"
     }
 }
 
 final class LLMRouterTests: XCTestCase {
-
     private var defaults: UserDefaults!
     private var settings: SettingsStore!
     private var openAISpy: SpyLLMService!

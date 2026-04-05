@@ -17,7 +17,7 @@ enum OpenAICompatibleResponseSupport {
                 let afterClose = afterOpenTag[closeRange.upperBound...]
                 return String(afterClose).trimmingCharacters(in: .whitespacesAndNewlines)
             }
-            break  // Malformed: open tag found but no closing tag — leave as-is
+            break // Malformed: open tag found but no closing tag — leave as-is
         }
         return text
     }
@@ -28,9 +28,9 @@ enum OpenAICompatibleResponseSupport {
     /// unchanged.
     struct StreamingThinkingFilter {
         private enum State {
-            case initial       // Accumulating until we know if a think block is present
-            case inThinkBlock  // Inside a think block; suppress output
-            case passThrough   // Past the initial section; emit everything
+            case initial // Accumulating until we know if a think block is present
+            case inThinkBlock // Inside a think block; suppress output
+            case passThrough // Past the initial section; emit everything
         }
 
         private var state: State = .initial
@@ -45,7 +45,7 @@ enum OpenAICompatibleResponseSupport {
             case .initial:
                 buffer += chunk
                 let trimmed = buffer.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty else { return nil }  // Still leading whitespace
+                guard !trimmed.isEmpty else { return nil } // Still leading whitespace
 
                 let lower = trimmed.lowercased()
                 if lower.hasPrefix("<thinking>") || lower.hasPrefix("<think>") {
@@ -82,7 +82,7 @@ enum OpenAICompatibleResponseSupport {
                     return afterClose.isEmpty ? nil : afterClose
                 }
             }
-            return nil  // Still inside think block; keep buffering
+            return nil // Still inside think block; keep buffering
         }
     }
 
@@ -95,22 +95,26 @@ enum OpenAICompatibleResponseSupport {
 
     static func extractTextDelta(from data: Data) -> String? {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let choice = (object["choices"] as? [[String: Any]])?.first else {
+              let choice = (object["choices"] as? [[String: Any]])?.first
+        else {
             return nil
         }
 
         if let delta = choice["delta"] as? [String: Any],
-           let text = extractText(from: delta["content"]) {
+           let text = extractText(from: delta["content"])
+        {
             return text
         }
 
         if let delta = choice["delta"] as? [String: Any],
-           let text = extractText(from: delta["text"]) {
+           let text = extractText(from: delta["text"])
+        {
             return text
         }
 
         if let message = choice["message"] as? [String: Any],
-           let text = extractText(from: message["content"]) {
+           let text = extractText(from: message["content"])
+        {
             return text
         }
 
@@ -119,7 +123,8 @@ enum OpenAICompatibleResponseSupport {
 
     static func containsReasoningDelta(_ data: Data) -> Bool {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let delta = ((object["choices"] as? [[String: Any]])?.first)?["delta"] as? [String: Any] else {
+              let delta = ((object["choices"] as? [[String: Any]])?.first)?["delta"] as? [String: Any]
+        else {
             return false
         }
 
@@ -205,14 +210,12 @@ enum OpenAICompatibleResponseSupport {
             }
 
             let previous = partial
-            let separator: String
-
-            if previous.hasSuffix("\n") || segment.hasPrefix("\n") {
-                separator = ""
+            let separator = if previous.hasSuffix("\n") || segment.hasPrefix("\n") {
+                ""
             } else if beginsMarkdownBlock(segment) || endsAsParagraph(previous) {
-                separator = "\n\n"
+                "\n\n"
             } else {
-                separator = ""
+                ""
             }
 
             partial += separator + segment
@@ -237,6 +240,6 @@ enum OpenAICompatibleResponseSupport {
 
     private static func endsAsParagraph(_ string: String) -> Bool {
         guard let last = string.trimmingCharacters(in: .whitespacesAndNewlines).last else { return false }
-        return [".", "!", "?", "。", "！", "？", ":" , "："].contains(last)
+        return [".", "!", "?", "。", "！", "？", ":", "："].contains(last)
     }
 }

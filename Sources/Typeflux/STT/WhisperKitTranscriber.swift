@@ -35,7 +35,7 @@ final class WhisperKitTranscriber: Transcriber {
 
     func transcribeStream(
         audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         let pipe = try await ensurePipeline()
 
@@ -44,12 +44,12 @@ final class WhisperKitTranscriber: Transcriber {
             verbose: false,
             task: .transcribe,
             language: language,
-            withoutTimestamps: true
+            withoutTimestamps: true,
         )
 
         let results: [TranscriptionResult] = try await pipe.transcribe(
             audioPath: audioFile.fileURL.path,
-            decodeOptions: options
+            decodeOptions: options,
         ) { progress in
             // progress.text accumulates the partial transcript window by window
             let partial = progress.text
@@ -117,7 +117,7 @@ final class WhisperKitTranscriber: Transcriber {
                 model: modelName,
                 downloadBase: downloadBase,
                 modelFolder: modelFolder,
-                verbose: false
+                verbose: false,
             ))
         }
         pipelineLoadTask = task

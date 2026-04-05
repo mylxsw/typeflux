@@ -1,7 +1,7 @@
 import Foundation
 
 /// 内置工具标识（扩展 BuiltinAgentToolName 之外的工具名称）
-enum BuiltinToolName: String, CaseIterable, Sendable {
+enum BuiltinToolName: String, CaseIterable {
     case shellCommand = "shell_command"
     case webFetch = "web_fetch"
 }
@@ -28,8 +28,8 @@ struct ShellCommandTool: AgentTool {
                         "description": .string("Timeout in seconds (default: 30, max: 120)"),
                     ]),
                 ]),
-            ]
-        )
+            ],
+        ),
     )
 
     private let runner: CommandRunner
@@ -45,7 +45,8 @@ struct ShellCommandTool: AgentTool {
         }
 
         guard let data = arguments.data(using: .utf8),
-              let args = try? JSONDecoder().decode(Args.self, from: data) else {
+              let args = try? JSONDecoder().decode(Args.self, from: data)
+        else {
             throw AgentError.toolExecutionFailed(name: definition.name, reason: "Invalid arguments: expected JSON with 'command' field")
         }
 
@@ -60,7 +61,7 @@ struct ShellCommandTool: AgentTool {
             let output = try await runner.run(
                 command: "/bin/sh",
                 arguments: ["-c", command],
-                timeoutSeconds: timeoutSeconds
+                timeoutSeconds: timeoutSeconds,
             )
 
             let truncatedOutput = truncateOutput(output, maxLength: 8000)
@@ -109,8 +110,8 @@ struct WebFetchTool: AgentTool {
                         "description": .string("Maximum response length in characters (default: 5000, max: 20000)"),
                     ]),
                 ]),
-            ]
-        )
+            ],
+        ),
     )
 
     private let fetcher: URLFetcher
@@ -126,7 +127,8 @@ struct WebFetchTool: AgentTool {
         }
 
         guard let data = arguments.data(using: .utf8),
-              let args = try? JSONDecoder().decode(Args.self, from: data) else {
+              let args = try? JSONDecoder().decode(Args.self, from: data)
+        else {
             throw AgentError.toolExecutionFailed(name: definition.name, reason: "Invalid arguments: expected JSON with 'url' field")
         }
 
@@ -229,7 +231,7 @@ struct DefaultURLFetcher: URLFetcher {
         request.timeoutInterval = TimeInterval(timeoutSeconds)
         request.setValue(
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Typeflux Agent",
-            forHTTPHeaderField: "User-Agent"
+            forHTTPHeaderField: "User-Agent",
         )
 
         let (data, _) = try await URLSession.shared.data(for: request)

@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class RemoteSTTTestAudioTests: XCTestCase {
-
     // MARK: - PCM silence
 
     func testPCM16MonoSilenceDefaultSize() {
@@ -33,19 +32,19 @@ final class RemoteSTTTestAudioTests: XCTestCase {
         let data = RemoteSTTTestAudio.wavSilence(sampleRate: 16000, durationMs: 100)
 
         // Check RIFF header
-        let riffTag = String(data: data[0..<4], encoding: .ascii)
+        let riffTag = String(data: data[0 ..< 4], encoding: .ascii)
         XCTAssertEqual(riffTag, "RIFF")
 
         // Check WAVE format
-        let waveTag = String(data: data[8..<12], encoding: .ascii)
+        let waveTag = String(data: data[8 ..< 12], encoding: .ascii)
         XCTAssertEqual(waveTag, "WAVE")
 
         // Check fmt  subchunk
-        let fmtTag = String(data: data[12..<16], encoding: .ascii)
+        let fmtTag = String(data: data[12 ..< 16], encoding: .ascii)
         XCTAssertEqual(fmtTag, "fmt ")
 
         // Check data subchunk
-        let dataTag = String(data: data[36..<40], encoding: .ascii)
+        let dataTag = String(data: data[36 ..< 40], encoding: .ascii)
         XCTAssertEqual(dataTag, "data")
     }
 

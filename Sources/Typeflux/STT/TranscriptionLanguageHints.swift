@@ -15,7 +15,7 @@ enum TranscriptionLanguageHints {
     static func remotePrompt(vocabularyTerms: [String]) -> String? {
         let sections = [
             languageBiasPrompt(),
-            PromptCatalog.transcriptionVocabularyHint(terms: vocabularyTerms)
+            PromptCatalog.transcriptionVocabularyHint(terms: vocabularyTerms),
         ]
         .compactMap { section in
             let trimmed = section?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

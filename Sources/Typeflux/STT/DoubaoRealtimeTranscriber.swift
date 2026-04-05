@@ -20,7 +20,7 @@ final class DoubaoRealtimeTranscriber: RecordingPrewarmingTranscriber {
             throw NSError(
                 domain: "DoubaoRealtimeTranscriber",
                 code: 1001,
-                userInfo: [NSLocalizedDescriptionKey: "Doubao App ID is not configured."]
+                userInfo: [NSLocalizedDescriptionKey: "Doubao App ID is not configured."],
             )
         }
 
@@ -28,14 +28,14 @@ final class DoubaoRealtimeTranscriber: RecordingPrewarmingTranscriber {
             throw NSError(
                 domain: "DoubaoRealtimeTranscriber",
                 code: 1002,
-                userInfo: [NSLocalizedDescriptionKey: "Doubao access token is not configured."]
+                userInfo: [NSLocalizedDescriptionKey: "Doubao access token is not configured."],
             )
         }
 
         return try await DoubaoConnectionTester.verify(
             appID: trimmedAppID,
             accessToken: trimmedAccessToken,
-            resourceID: trimmedResourceID.isEmpty ? "volc.seedasr.sauc.duration" : trimmedResourceID
+            resourceID: trimmedResourceID.isEmpty ? "volc.seedasr.sauc.duration" : trimmedResourceID,
         )
     }
 
@@ -49,7 +49,7 @@ final class DoubaoRealtimeTranscriber: RecordingPrewarmingTranscriber {
             _ = try await connectionCoordinator.prepareConnection(
                 appID: configuration.appID,
                 accessToken: configuration.accessToken,
-                resourceID: configuration.resourceID
+                resourceID: configuration.resourceID,
             )
         } catch {
             NetworkDebugLogger.logError(context: "Doubao realtime preconnect failed", error: error)
@@ -62,13 +62,13 @@ final class DoubaoRealtimeTranscriber: RecordingPrewarmingTranscriber {
 
     func transcribeStream(
         audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         guard let configuration = currentConfiguration() else {
             throw NSError(
                 domain: "DoubaoRealtimeTranscriber",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Doubao credentials are not configured."]
+                userInfo: [NSLocalizedDescriptionKey: "Doubao credentials are not configured."],
             )
         }
 
@@ -82,7 +82,7 @@ final class DoubaoRealtimeTranscriber: RecordingPrewarmingTranscriber {
             resourceID: configuration.resourceID,
             hotwords: hotwords,
             connectionCoordinator: connectionCoordinator,
-            onUpdate: onUpdate
+            onUpdate: onUpdate,
         )
     }
 
@@ -96,7 +96,7 @@ final class DoubaoRealtimeTranscriber: RecordingPrewarmingTranscriber {
         return DoubaoConnectionConfiguration(
             appID: appID,
             accessToken: accessToken,
-            resourceID: resourceID.isEmpty ? "volc.seedasr.sauc.duration" : resourceID
+            resourceID: resourceID.isEmpty ? "volc.seedasr.sauc.duration" : resourceID,
         )
     }
 }
@@ -115,7 +115,7 @@ private final class DoubaoPreparedConnection {
     init(
         configuration: DoubaoConnectionConfiguration,
         urlSession: URLSession,
-        socketTask: URLSessionWebSocketTask
+        socketTask: URLSessionWebSocketTask,
     ) {
         self.configuration = configuration
         self.urlSession = urlSession
@@ -134,12 +134,12 @@ private actor DoubaoPreparedConnectionCoordinator {
     func prepareConnection(
         appID: String,
         accessToken: String,
-        resourceID: String
+        resourceID: String,
     ) async throws -> DoubaoPreparedConnection {
         let configuration = DoubaoConnectionConfiguration(
             appID: appID,
             accessToken: accessToken,
-            resourceID: resourceID
+            resourceID: resourceID,
         )
 
         if let preparedConnection, preparedConnection.configuration == configuration {
@@ -155,12 +155,12 @@ private actor DoubaoPreparedConnectionCoordinator {
     func takePreparedConnection(
         appID: String,
         accessToken: String,
-        resourceID: String
+        resourceID: String,
     ) -> DoubaoPreparedConnection? {
         let configuration = DoubaoConnectionConfiguration(
             appID: appID,
             accessToken: accessToken,
-            resourceID: resourceID
+            resourceID: resourceID,
         )
         guard let preparedConnection, preparedConnection.configuration == configuration else {
             return nil
@@ -186,7 +186,7 @@ private enum DoubaoConnectionFactory {
         NetworkDebugLogger.logWebSocketEvent(
             provider: "Doubao Realtime ASR",
             phase: "connect",
-            details: "resourceID=\(configuration.resourceID)"
+            details: "resourceID=\(configuration.resourceID)",
         )
 
         let delegate = DoubaoWSDelegate()
@@ -200,7 +200,7 @@ private enum DoubaoConnectionFactory {
             return DoubaoPreparedConnection(
                 configuration: configuration,
                 urlSession: urlSession,
-                socketTask: socketTask
+                socketTask: socketTask,
             )
         } catch {
             socketTask.cancel(with: .normalClosure, reason: nil)
@@ -211,8 +211,8 @@ private enum DoubaoConnectionFactory {
 }
 
 private enum DoubaoAudioConverter {
-    static let targetSampleRate: Double = 16_000
-    static let chunkSize: Int = 3_200
+    static let targetSampleRate: Double = 16000
+    static let chunkSize: Int = 3200
 
     static func convert(url: URL) throws -> Data {
         let sourceFile = try AVAudioFile(forReading: url)
@@ -223,12 +223,12 @@ private enum DoubaoAudioConverter {
             commonFormat: .pcmFormatInt16,
             sampleRate: targetSampleRate,
             channels: 1,
-            interleaved: true
+            interleaved: true,
         ) else {
             throw NSError(
                 domain: "DoubaoAudioConverter",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Failed to create target audio format."]
+                userInfo: [NSLocalizedDescriptionKey: "Failed to create target audio format."],
             )
         }
 
@@ -236,7 +236,7 @@ private enum DoubaoAudioConverter {
             throw NSError(
                 domain: "DoubaoAudioConverter",
                 code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Failed to create audio converter."]
+                userInfo: [NSLocalizedDescriptionKey: "Failed to create audio converter."],
             )
         }
 
@@ -244,7 +244,7 @@ private enum DoubaoAudioConverter {
             throw NSError(
                 domain: "DoubaoAudioConverter",
                 code: 3,
-                userInfo: [NSLocalizedDescriptionKey: "Failed to allocate source buffer."]
+                userInfo: [NSLocalizedDescriptionKey: "Failed to allocate source buffer."],
             )
         }
         try sourceFile.read(into: sourceBuffer)
@@ -255,7 +255,7 @@ private enum DoubaoAudioConverter {
             throw NSError(
                 domain: "DoubaoAudioConverter",
                 code: 4,
-                userInfo: [NSLocalizedDescriptionKey: "Failed to allocate target buffer."]
+                userInfo: [NSLocalizedDescriptionKey: "Failed to allocate target buffer."],
             )
         }
 
@@ -276,7 +276,7 @@ private enum DoubaoAudioConverter {
             throw NSError(
                 domain: "DoubaoAudioConverter",
                 code: 5,
-                userInfo: [NSLocalizedDescriptionKey: "Audio conversion failed."]
+                userInfo: [NSLocalizedDescriptionKey: "Audio conversion failed."],
             )
         }
 
@@ -316,14 +316,14 @@ private enum DoubaoConnectionTester {
                 messageType: .fullClientRequest,
                 flags: .noSequence,
                 serialization: .json,
-                compression: .none
+                compression: .none,
             ),
-            payload: payload
+            payload: payload,
         )
         NetworkDebugLogger.logWebSocketEvent(
             provider: "Doubao Realtime ASR",
             phase: "send",
-            details: "client_request"
+            details: "client_request",
         )
         try await socketTask.send(.data(requestMessage))
 
@@ -339,7 +339,7 @@ private enum DoubaoConnectionTester {
 
     private static func firstServerMessage(
         from socketTask: URLSessionWebSocketTask,
-        timeout: Duration
+        timeout: Duration,
     ) async throws -> Data {
         try await withThrowingTaskGroup(of: Data.self) { group in
             group.addTask {
@@ -348,7 +348,7 @@ private enum DoubaoConnectionTester {
                     throw NSError(
                         domain: "DoubaoConnectionTester",
                         code: 1,
-                        userInfo: [NSLocalizedDescriptionKey: "Received an empty Doubao server message."]
+                        userInfo: [NSLocalizedDescriptionKey: "Received an empty Doubao server message."],
                     )
                 }
                 let header = try DoubaoHeader.decode(from: data)
@@ -370,9 +370,9 @@ private enum DoubaoConnectionTester {
 
     private static func messageData(from message: URLSessionWebSocketTask.Message) -> Data? {
         switch message {
-        case .data(let data):
+        case let .data(data):
             return data
-        case .string(let string):
+        case let .string(string):
             return string.data(using: .utf8)
         @unknown default:
             return nil
@@ -390,7 +390,7 @@ private actor DoubaoRealtimeSession {
         resourceID: String,
         hotwords: [String],
         connectionCoordinator: DoubaoPreparedConnectionCoordinator,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         let session = DoubaoRealtimeSession(
             pcmData: pcmData,
@@ -399,7 +399,7 @@ private actor DoubaoRealtimeSession {
             resourceID: resourceID,
             hotwords: hotwords,
             connectionCoordinator: connectionCoordinator,
-            onUpdate: onUpdate
+            onUpdate: onUpdate,
         )
         return try await session.execute()
     }
@@ -426,7 +426,7 @@ private actor DoubaoRealtimeSession {
         resourceID: String,
         hotwords: [String],
         connectionCoordinator: DoubaoPreparedConnectionCoordinator,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) {
         self.pcmData = pcmData
         self.appID = appID
@@ -452,14 +452,14 @@ private actor DoubaoRealtimeSession {
                 messageType: .fullClientRequest,
                 flags: .noSequence,
                 serialization: .json,
-                compression: .none
+                compression: .none,
             ),
-            payload: payload
+            payload: payload,
         )
         NetworkDebugLogger.logWebSocketEvent(
             provider: "Doubao Realtime ASR",
             phase: "send",
-            details: "client_request hotwords=\(hotwords.count)"
+            details: "client_request hotwords=\(hotwords.count)",
         )
         try await sendWithRetry(.data(requestMessage), description: "client_request")
 
@@ -467,10 +467,10 @@ private actor DoubaoRealtimeSession {
         var chunkCount = 0
         while offset < pcmData.count {
             let end = min(offset + DoubaoAudioConverter.chunkSize, pcmData.count)
-            let chunk = pcmData[offset..<end]
+            let chunk = pcmData[offset ..< end]
             try await sendWithRetry(
                 .data(DoubaoProtocol.encodeAudioPacket(audioData: Data(chunk), isLast: false)),
-                description: "audio_chunk_\(chunkCount + 1)"
+                description: "audio_chunk_\(chunkCount + 1)",
             )
             offset = end
             chunkCount += 1
@@ -478,12 +478,12 @@ private actor DoubaoRealtimeSession {
         NetworkDebugLogger.logWebSocketEvent(
             provider: "Doubao Realtime ASR",
             phase: "send",
-            details: "audio_chunks=\(chunkCount) audio_bytes=\(pcmData.count)"
+            details: "audio_chunks=\(chunkCount) audio_bytes=\(pcmData.count)",
         )
         NetworkDebugLogger.logWebSocketEvent(provider: "Doubao Realtime ASR", phase: "send", details: "audio_end")
         try await sendWithRetry(
             .data(DoubaoProtocol.encodeAudioPacket(audioData: Data(), isLast: true)),
-            description: "audio_end"
+            description: "audio_end",
         )
 
         try await waitForCompletion()
@@ -498,18 +498,19 @@ private actor DoubaoRealtimeSession {
     private func prepareActiveConnection(preferPrepared: Bool) async throws {
         if preferPrepared,
            let preparedConnection = await connectionCoordinator.takePreparedConnection(
-                appID: appID,
-                accessToken: accessToken,
-                resourceID: resourceID
-           ) {
+               appID: appID,
+               accessToken: accessToken,
+               resourceID: resourceID,
+           )
+        {
             activeConnection = preparedConnection
         } else {
             activeConnection = try await DoubaoConnectionFactory.open(
                 configuration: DoubaoConnectionConfiguration(
                     appID: appID,
                     accessToken: accessToken,
-                    resourceID: resourceID
-                )
+                    resourceID: resourceID,
+                ),
             )
         }
 
@@ -517,7 +518,7 @@ private actor DoubaoRealtimeSession {
             throw NSError(
                 domain: "DoubaoRealtimeSession",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Doubao WebSocket connection is unavailable."]
+                userInfo: [NSLocalizedDescriptionKey: "Doubao WebSocket connection is unavailable."],
             )
         }
 
@@ -529,7 +530,7 @@ private actor DoubaoRealtimeSession {
 
     private func sendWithRetry(
         _ message: URLSessionWebSocketTask.Message,
-        description: String
+        description: String,
     ) async throws {
         let retryDelays: [Duration] = [.zero, .milliseconds(120), .milliseconds(300)]
 
@@ -543,7 +544,7 @@ private actor DoubaoRealtimeSession {
                     throw NSError(
                         domain: "DoubaoRealtimeSession",
                         code: 2,
-                        userInfo: [NSLocalizedDescriptionKey: "Doubao WebSocket connection was not ready."]
+                        userInfo: [NSLocalizedDescriptionKey: "Doubao WebSocket connection was not ready."],
                     )
                 }
                 try await socketTask.send(message)
@@ -555,7 +556,7 @@ private actor DoubaoRealtimeSession {
 
                 NetworkDebugLogger.logError(
                     context: "Doubao realtime send \(description) failed before socket was ready; retrying",
-                    error: error
+                    error: error,
                 )
             }
         }
@@ -569,7 +570,7 @@ private actor DoubaoRealtimeSession {
                 NetworkDebugLogger.logWebSocketEvent(
                     provider: "Doubao Realtime ASR",
                     phase: "receive",
-                    details: describeInboundMessage(data)
+                    details: describeInboundMessage(data),
                 )
                 try await handleMessage(data)
             } catch {
@@ -595,7 +596,7 @@ private actor DoubaoRealtimeSession {
                 NetworkDebugLogger.logWebSocketEvent(
                     provider: "Doubao Realtime ASR",
                     phase: "server_error_after_text",
-                    details: NetworkDebugLogger.describe(error: DoubaoProtocol.decodeServerError(data))
+                    details: NetworkDebugLogger.describe(error: DoubaoProtocol.decodeServerError(data)),
                 )
                 finish()
                 return
@@ -604,7 +605,7 @@ private actor DoubaoRealtimeSession {
             NetworkDebugLogger.logWebSocketEvent(
                 provider: "Doubao Realtime ASR",
                 phase: "server_error",
-                details: NetworkDebugLogger.describe(error: error)
+                details: NetworkDebugLogger.describe(error: error),
             )
             throw error
         }
@@ -623,7 +624,7 @@ private actor DoubaoRealtimeSession {
         NetworkDebugLogger.logWebSocketEvent(
             provider: "Doubao Realtime ASR",
             phase: snapshot.isFinal ? "final" : "partial",
-            details: "text_length=\(snapshot.text.count)"
+            details: "text_length=\(snapshot.text.count)",
         )
         await onUpdate(snapshot)
         if snapshot.isFinal {
@@ -633,9 +634,9 @@ private actor DoubaoRealtimeSession {
 
     private func messageData(from message: URLSessionWebSocketTask.Message) -> Data? {
         switch message {
-        case .data(let data):
+        case let .data(data):
             return data
-        case .string(let string):
+        case let .string(string):
             return string.data(using: .utf8)
         @unknown default:
             return nil
@@ -712,7 +713,7 @@ private actor DoubaoWSDelegateState {
                 throw NSError(
                     domain: "DoubaoWSDelegate",
                     code: 1,
-                    userInfo: [NSLocalizedDescriptionKey: "Doubao WebSocket handshake timed out."]
+                    userInfo: [NSLocalizedDescriptionKey: "Doubao WebSocket handshake timed out."],
                 )
             }
 
@@ -734,9 +735,9 @@ private final class DoubaoWSDelegate: NSObject, URLSessionWebSocketDelegate, URL
     }
 
     func urlSession(
-        _ session: URLSession,
-        webSocketTask: URLSessionWebSocketTask,
-        didOpenWithProtocol protocol: String?
+        _: URLSession,
+        webSocketTask _: URLSessionWebSocketTask,
+        didOpenWithProtocol _: String?,
     ) {
         Task {
             await state.markOpen()
@@ -744,23 +745,23 @@ private final class DoubaoWSDelegate: NSObject, URLSessionWebSocketDelegate, URL
     }
 
     func urlSession(
-        _ session: URLSession,
-        task: URLSessionTask,
-        didCompleteWithError error: Error?
+        _: URLSession,
+        task _: URLSessionTask,
+        didCompleteWithError error: Error?,
     ) {
         guard let error else { return }
         Task { await state.markFailed(error) }
     }
 }
 
-enum DoubaoMessageType: UInt8, Sendable {
+enum DoubaoMessageType: UInt8 {
     case fullClientRequest = 0b0001
     case audioOnlyRequest = 0b0010
     case serverResponse = 0b1001
     case serverError = 0b1111
 }
 
-enum DoubaoMessageFlags: UInt8, Sendable {
+enum DoubaoMessageFlags: UInt8 {
     case noSequence = 0b0000
     case positiveSequence = 0b0001
     case lastPacketNoSequence = 0b0010
@@ -772,17 +773,17 @@ enum DoubaoMessageFlags: UInt8, Sendable {
     }
 }
 
-enum DoubaoSerialization: UInt8, Sendable {
+enum DoubaoSerialization: UInt8 {
     case none = 0b0000
     case json = 0b0001
 }
 
-enum DoubaoCompression: UInt8, Sendable {
+enum DoubaoCompression: UInt8 {
     case none = 0b0000
     case gzip = 0b0001
 }
 
-struct DoubaoHeader: Sendable, Equatable {
+struct DoubaoHeader: Equatable {
     var version: UInt8 = 0b0001
     var headerSize: UInt8 = 0b0001
     var messageType: DoubaoMessageType
@@ -828,12 +829,12 @@ struct DoubaoHeader: Sendable, Equatable {
             flags: flags,
             serialization: serialization,
             compression: compression,
-            reserved: byte3
+            reserved: byte3,
         )
     }
 }
 
-enum DoubaoProtocolError: Error, Sendable, LocalizedError {
+enum DoubaoProtocolError: Error, LocalizedError {
     case headerTooShort
     case unknownMessageType(UInt8)
     case unknownFlags(UInt8)
@@ -845,32 +846,32 @@ enum DoubaoProtocolError: Error, Sendable, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .serverError(let code, let message):
-            return message ?? "Doubao ASR server error (\(code ?? -1))."
+        case let .serverError(code, message):
+            message ?? "Doubao ASR server error (\(code ?? -1))."
         case .headerTooShort:
-            return "Doubao ASR response header is too short."
+            "Doubao ASR response header is too short."
         case .invalidPayload:
-            return "Doubao ASR response payload is invalid."
+            "Doubao ASR response payload is invalid."
         case .decompressionFailed:
-            return "Failed to decompress Doubao ASR payload."
-        case .unknownMessageType(let value):
-            return "Unknown Doubao ASR message type: \(value)."
-        case .unknownFlags(let value):
-            return "Unknown Doubao ASR message flags: \(value)."
-        case .unknownSerialization(let value):
-            return "Unknown Doubao ASR serialization type: \(value)."
-        case .unknownCompression(let value):
-            return "Unknown Doubao ASR compression type: \(value)."
+            "Failed to decompress Doubao ASR payload."
+        case let .unknownMessageType(value):
+            "Unknown Doubao ASR message type: \(value)."
+        case let .unknownFlags(value):
+            "Unknown Doubao ASR message flags: \(value)."
+        case let .unknownSerialization(value):
+            "Unknown Doubao ASR serialization type: \(value)."
+        case let .unknownCompression(value):
+            "Unknown Doubao ASR compression type: \(value)."
         }
     }
 }
 
-struct DoubaoUtterance: Sendable, Equatable {
+struct DoubaoUtterance: Equatable {
     let text: String
     let definite: Bool
 }
 
-struct DoubaoServerResponse: Sendable {
+struct DoubaoServerResponse {
     let snapshot: TranscriptionSnapshot
     let utterances: [DoubaoUtterance]
 }
@@ -878,7 +879,7 @@ struct DoubaoServerResponse: Sendable {
 enum DoubaoProtocol {
     static func buildClientRequest(
         uid: String,
-        hotwords: [String]
+        hotwords: [String],
     ) -> Data {
         var request: [String: Any] = [
             "model_name": "bigmodel",
@@ -887,8 +888,8 @@ enum DoubaoProtocol {
             "enable_nonstream": true,
             "show_utterances": true,
             "result_type": "full",
-            "end_window_size": 3_000,
-            "force_to_speech_time": 1_000
+            "end_window_size": 3000,
+            "force_to_speech_time": 1000,
         ]
 
         if let context = buildContextString(hotwords: hotwords) {
@@ -900,11 +901,11 @@ enum DoubaoProtocol {
             "audio": [
                 "format": "pcm",
                 "codec": "raw",
-                "rate": 16_000,
+                "rate": 16000,
                 "bits": 16,
-                "channel": 1
+                "channel": 1,
             ],
-            "request": request
+            "request": request,
         ]
         return try! JSONSerialization.data(withJSONObject: payload)
     }
@@ -912,7 +913,7 @@ enum DoubaoProtocol {
     static func encodeMessage(
         header: DoubaoHeader,
         payload: Data,
-        sequenceNumber: Int32? = nil
+        sequenceNumber: Int32? = nil,
     ) -> Data {
         var message = header.encode()
         if let sequenceNumber {
@@ -930,7 +931,7 @@ enum DoubaoProtocol {
             messageType: .audioOnlyRequest,
             flags: isLast ? .lastPacketNoSequence : .noSequence,
             serialization: .none,
-            compression: .none
+            compression: .none,
         )
         return encodeMessage(header: header, payload: audioData)
     }
@@ -973,7 +974,7 @@ enum DoubaoProtocol {
         let utterances = utteranceObjects.map {
             DoubaoUtterance(
                 text: ($0["text"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
-                definite: $0["definite"] as? Bool ?? false
+                definite: $0["definite"] as? Bool ?? false,
             )
         }
 
@@ -983,9 +984,9 @@ enum DoubaoProtocol {
         return DoubaoServerResponse(
             snapshot: TranscriptionSnapshot(
                 text: authoritative,
-                isFinal: header.flags == .asyncFinal
+                isFinal: header.flags == .asyncFinal,
             ),
-            utterances: utterances
+            utterances: utterances,
         )
     }
 
@@ -1011,7 +1012,7 @@ enum DoubaoProtocol {
             }
             return DoubaoProtocolError.serverError(
                 code: json["code"] as? Int,
-                message: json["message"] as? String
+                message: json["message"] as? String,
             )
         } catch {
             return error
@@ -1025,7 +1026,7 @@ enum DoubaoProtocol {
         guard !normalized.isEmpty else { return nil }
 
         let context: [String: Any] = [
-            "hotwords": normalized.map { ["word": $0, "scale": 5.0] }
+            "hotwords": normalized.map { ["word": $0, "scale": 5.0] },
         ]
         guard let data = try? JSONSerialization.data(withJSONObject: context) else { return nil }
         return String(data: data, encoding: .utf8)
@@ -1033,7 +1034,7 @@ enum DoubaoProtocol {
 
     private static func gzipDecompress(_ data: Data) throws -> Data {
         guard !data.isEmpty else { return Data() }
-        let pageSize = 16_384
+        let pageSize = 16384
         let destination = UnsafeMutablePointer<UInt8>.allocate(capacity: pageSize)
         defer { destination.deallocate() }
 

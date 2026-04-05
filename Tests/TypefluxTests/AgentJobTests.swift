@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AgentJobTests: XCTestCase {
-
     // MARK: - AgentJobStatus
 
     func testStatusRawValues() {
@@ -26,13 +25,13 @@ final class AgentJobTests: XCTestCase {
 
     func testStepCodable() throws {
         let toolCall = AgentJobToolCall(
-            id: "tc-1", name: "search", argumentsJSON: "{}", resultContent: "ok", isError: false
+            id: "tc-1", name: "search", argumentsJSON: "{}", resultContent: "ok", isError: false,
         )
         let step = AgentJobStep(
             stepIndex: 0,
             toolCalls: [toolCall],
             assistantText: "Thinking...",
-            durationMs: 250
+            durationMs: 250,
         )
 
         let data = try JSONEncoder().encode(step)
@@ -53,7 +52,7 @@ final class AgentJobTests: XCTestCase {
             name: "get_clipboard",
             argumentsJSON: #"{"format":"text"}"#,
             resultContent: "Hello",
-            isError: false
+            isError: false,
         )
         let data = try JSONEncoder().encode(tc)
         let decoded = try JSONDecoder().decode(AgentJobToolCall.self, from: data)
@@ -212,7 +211,7 @@ final class AgentJobTests: XCTestCase {
     }
 
     func testFormattedTotalTokensMillions() {
-        let job = AgentJob(userPrompt: "test", totalTokenUsage: LLMTokenUsage(promptTokens: 900000, completionTokens: 200000, totalTokens: 1100000))
+        let job = AgentJob(userPrompt: "test", totalTokenUsage: LLMTokenUsage(promptTokens: 900_000, completionTokens: 200_000, totalTokens: 1_100_000))
         XCTAssertEqual(job.formattedTotalTokens, "1.1M tokens")
     }
 
@@ -281,7 +280,7 @@ final class AgentJobTests: XCTestCase {
             errorMessage: nil,
             steps: [step],
             totalDurationMs: 1500,
-            outcomeType: "answer_text"
+            outcomeType: "answer_text",
         )
 
         let data = try JSONEncoder().encode(job)

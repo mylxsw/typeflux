@@ -1,9 +1,8 @@
 import AVFoundation
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AudioContentAnalyzerExtendedTests: XCTestCase {
-
     // MARK: - containsAudibleSignal via rmsPower threshold
 
     func testIsAudibleWhenRMSPowerAboveThreshold() {
@@ -13,7 +12,7 @@ final class AudioContentAnalyzerExtendedTests: XCTestCase {
             peakPowerDB: -50,
             audibleDuration: 0,
             audibleFrameRatio: 0,
-            frameCount: 16_000
+            frameCount: 16000,
         )
         XCTAssertTrue(analysis.containsAudibleSignal)
     }
@@ -25,7 +24,7 @@ final class AudioContentAnalyzerExtendedTests: XCTestCase {
             peakPowerDB: -50,
             audibleDuration: 0,
             audibleFrameRatio: 0,
-            frameCount: 16_000
+            frameCount: 16000,
         )
         XCTAssertTrue(analysis.containsAudibleSignal)
     }
@@ -39,7 +38,7 @@ final class AudioContentAnalyzerExtendedTests: XCTestCase {
             peakPowerDB: -30,
             audibleDuration: 0.1,
             audibleFrameRatio: 0.05,
-            frameCount: 16_000
+            frameCount: 16000,
         )
         XCTAssertTrue(analysis.containsAudibleSignal)
     }
@@ -51,7 +50,7 @@ final class AudioContentAnalyzerExtendedTests: XCTestCase {
             peakPowerDB: -30,
             audibleDuration: 0.05,
             audibleFrameRatio: 0.05,
-            frameCount: 16_000
+            frameCount: 16000,
         )
         XCTAssertFalse(analysis.containsAudibleSignal)
     }
@@ -63,7 +62,7 @@ final class AudioContentAnalyzerExtendedTests: XCTestCase {
             peakPowerDB: -30,
             audibleDuration: 0.1,
             audibleFrameRatio: 0.03,
-            frameCount: 16_000
+            frameCount: 16000,
         )
         XCTAssertFalse(analysis.containsAudibleSignal)
     }
@@ -77,7 +76,7 @@ final class AudioContentAnalyzerExtendedTests: XCTestCase {
             peakPowerDB: -50,
             audibleDuration: 0.5,
             audibleFrameRatio: 0.5,
-            frameCount: 16_000
+            frameCount: 16000,
         )
         XCTAssertFalse(analysis.containsAudibleSignal)
     }
@@ -89,7 +88,7 @@ final class AudioContentAnalyzerExtendedTests: XCTestCase {
             peakPowerDB: -5,
             audibleDuration: 0,
             audibleFrameRatio: 0,
-            frameCount: 0
+            frameCount: 0,
         )
         XCTAssertFalse(analysis.containsAudibleSignal)
     }
@@ -103,7 +102,7 @@ final class AudioContentAnalyzerExtendedTests: XCTestCase {
             peakPowerDB: -35,
             audibleDuration: 0.08,
             audibleFrameRatio: 0.04,
-            frameCount: 16_000
+            frameCount: 16000,
         )
         XCTAssertTrue(analysis.containsAudibleSignal)
     }
@@ -115,7 +114,7 @@ final class AudioContentAnalyzerExtendedTests: XCTestCase {
             peakPowerDB: -36,
             audibleDuration: 0.1,
             audibleFrameRatio: 0.05,
-            frameCount: 16_000
+            frameCount: 16000,
         )
         XCTAssertFalse(analysis.containsAudibleSignal)
     }

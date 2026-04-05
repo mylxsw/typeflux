@@ -6,13 +6,13 @@ final class Qwen3ASRTranscriber: Transcriber {
     init(
         modelIdentifier: String,
         modelFolder: String,
-        processRunner: ProcessCommandRunning = ProcessCommandRunner()
+        processRunner: ProcessCommandRunning = ProcessCommandRunner(),
     ) {
-        self.decoder = SherpaOnnxCommandLineDecoder(
+        decoder = SherpaOnnxCommandLineDecoder(
             model: .qwen3ASR,
             modelIdentifier: modelIdentifier,
             modelFolder: modelFolder,
-            processRunner: processRunner
+            processRunner: processRunner,
         )
     }
 

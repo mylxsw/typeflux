@@ -14,7 +14,7 @@ enum AudioFileTranscoder {
 
         try FileManager.default.createDirectory(
             at: outputURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
+            withIntermediateDirectories: true,
         )
 
         if FileManager.default.fileExists(atPath: outputURL.path) {
@@ -26,14 +26,14 @@ enum AudioFileTranscoder {
             commonFormat: .pcmFormatInt16,
             sampleRate: inputFile.processingFormat.sampleRate,
             channels: inputFile.processingFormat.channelCount,
-            interleaved: true
+            interleaved: true,
         )
 
         guard let format else {
             throw NSError(
                 domain: "AudioFileTranscoder",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to create WAV output format."]
+                userInfo: [NSLocalizedDescriptionKey: "Unable to create WAV output format."],
             )
         }
 
@@ -41,27 +41,27 @@ enum AudioFileTranscoder {
             forWriting: outputURL,
             settings: format.settings,
             commonFormat: format.commonFormat,
-            interleaved: format.isInterleaved
+            interleaved: format.isInterleaved,
         )
 
         guard let converter = AVAudioConverter(from: inputFile.processingFormat, to: format) else {
             throw NSError(
                 domain: "AudioFileTranscoder",
                 code: 3,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to create audio converter."]
+                userInfo: [NSLocalizedDescriptionKey: "Unable to create audio converter."],
             )
         }
 
         let inputBuffer = AVAudioPCMBuffer(
             pcmFormat: inputFile.processingFormat,
-            frameCapacity: 8_192
+            frameCapacity: 8192,
         )
 
         guard let inputBuffer else {
             throw NSError(
                 domain: "AudioFileTranscoder",
                 code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to allocate audio buffer."]
+                userInfo: [NSLocalizedDescriptionKey: "Unable to allocate audio buffer."],
             )
         }
 
@@ -71,7 +71,7 @@ enum AudioFileTranscoder {
             throw NSError(
                 domain: "AudioFileTranscoder",
                 code: 4,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to allocate converted audio buffer."]
+                userInfo: [NSLocalizedDescriptionKey: "Unable to allocate converted audio buffer."],
             )
         }
 
@@ -104,7 +104,7 @@ enum AudioFileTranscoder {
                 throw NSError(
                     domain: "AudioFileTranscoder",
                     code: 5,
-                    userInfo: [NSLocalizedDescriptionKey: "Audio conversion failed."]
+                    userInfo: [NSLocalizedDescriptionKey: "Audio conversion failed."],
                 )
             }
 

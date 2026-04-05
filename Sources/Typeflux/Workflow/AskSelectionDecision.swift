@@ -1,7 +1,7 @@
 import Foundation
 
-struct AskSelectionDecision: Codable, Equatable, Sendable {
-    enum AnswerEdit: String, Codable, Equatable, Sendable {
+struct AskSelectionDecision: Codable, Equatable {
+    enum AnswerEdit: String, Codable, Equatable {
         case answer
         case edit
     }
@@ -22,13 +22,13 @@ struct AskSelectionDecision: Codable, Equatable, Sendable {
             "properties": .object([
                 "answer_edit": .object([
                     "type": .string("string"),
-                    "enum": .array([.string("answer"), .string("edit")])
+                    "enum": .array([.string("answer"), .string("edit")]),
                 ]),
                 "content": .object([
-                    "type": .string("string")
-                ])
-            ])
-        ]
+                    "type": .string("string"),
+                ]),
+            ]),
+        ],
     )
 
     static let tool = LLMAgentTool(
@@ -37,7 +37,7 @@ struct AskSelectionDecision: Codable, Equatable, Sendable {
         Decide whether the user wants a read-only answer about the selected text or wants the selected text rewritten in place.
         Return answer_edit=\"answer\" with the final answer in content, or answer_edit=\"edit\" with the final rewritten text in content.
         """,
-        inputSchema: schema
+        inputSchema: schema,
     )
 
     var isValid: Bool {
@@ -54,14 +54,14 @@ struct AskSelectionDecision: Codable, Equatable, Sendable {
 
         if let answerEdit = try container.decodeIfPresent(AnswerEdit.self, forKey: .answerEdit) {
             self.answerEdit = answerEdit
-            self.content = try container.decode(String.self, forKey: .content)
+            content = try container.decode(String.self, forKey: .content)
             return
         }
 
         // Backward-compatible decoding for older provider outputs using action/response.
         let legacy = try decoder.container(keyedBy: LegacyCodingKeys.self)
-        self.answerEdit = try legacy.decode(AnswerEdit.self, forKey: .action)
-        self.content = try legacy.decode(String.self, forKey: .response)
+        answerEdit = try legacy.decode(AnswerEdit.self, forKey: .action)
+        content = try legacy.decode(String.self, forKey: .response)
     }
 
     func encode(to encoder: Encoder) throws {

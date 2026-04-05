@@ -12,13 +12,13 @@ struct HistoryPipelineTiming: Codable, Equatable {
 
     var hasData: Bool {
         recordingStoppedAt != nil ||
-        audioFileReadyAt != nil ||
-        transcriptionStartedAt != nil ||
-        transcriptionCompletedAt != nil ||
-        llmProcessingStartedAt != nil ||
-        llmProcessingCompletedAt != nil ||
-        applyStartedAt != nil ||
-        applyCompletedAt != nil
+            audioFileReadyAt != nil ||
+            transcriptionStartedAt != nil ||
+            transcriptionCompletedAt != nil ||
+            llmProcessingStartedAt != nil ||
+            llmProcessingCompletedAt != nil ||
+            applyStartedAt != nil ||
+            applyCompletedAt != nil
     }
 
     func millisecondsBetween(_ start: Date?, _ end: Date?) -> Int? {
@@ -44,8 +44,8 @@ struct HistoryPipelineTiming: Codable, Equatable {
             applyDurationMilliseconds: millisecondsBetween(applyStartedAt, applyCompletedAt),
             endToEndMilliseconds: millisecondsBetween(
                 recordingStoppedAt,
-                applyCompletedAt ?? llmProcessingCompletedAt ?? transcriptionCompletedAt
-            )
+                applyCompletedAt ?? llmProcessingCompletedAt ?? transcriptionCompletedAt,
+            ),
         )
     }
 }
@@ -69,20 +69,20 @@ struct HistoryPipelineStats: Codable, Equatable {
 
     var hasData: Bool {
         recordingStoppedAt != nil ||
-        audioFileReadyAt != nil ||
-        transcriptionStartedAt != nil ||
-        transcriptionCompletedAt != nil ||
-        llmProcessingStartedAt != nil ||
-        llmProcessingCompletedAt != nil ||
-        applyStartedAt != nil ||
-        applyCompletedAt != nil ||
-        stopToAudioReadyMilliseconds != nil ||
-        transcriptionDurationMilliseconds != nil ||
-        stopToTranscriptionCompletedMilliseconds != nil ||
-        transcriptToLLMStartMilliseconds != nil ||
-        llmDurationMilliseconds != nil ||
-        applyDurationMilliseconds != nil ||
-        endToEndMilliseconds != nil
+            audioFileReadyAt != nil ||
+            transcriptionStartedAt != nil ||
+            transcriptionCompletedAt != nil ||
+            llmProcessingStartedAt != nil ||
+            llmProcessingCompletedAt != nil ||
+            applyStartedAt != nil ||
+            applyCompletedAt != nil ||
+            stopToAudioReadyMilliseconds != nil ||
+            transcriptionDurationMilliseconds != nil ||
+            stopToTranscriptionCompletedMilliseconds != nil ||
+            transcriptToLLMStartMilliseconds != nil ||
+            llmDurationMilliseconds != nil ||
+            applyDurationMilliseconds != nil ||
+            endToEndMilliseconds != nil
     }
 }
 
@@ -139,7 +139,7 @@ struct HistoryRecord: Codable, Identifiable {
         recordingStatus: StepStatus = .pending,
         transcriptionStatus: StepStatus = .pending,
         processingStatus: StepStatus = .pending,
-        applyStatus: StepStatus = .pending
+        applyStatus: StepStatus = .pending,
     ) {
         self.id = id
         self.date = date
@@ -171,21 +171,21 @@ struct HistoryRecord: Codable, Identifiable {
 
     var hasFailure: Bool {
         recordingStatus == .failed ||
-        transcriptionStatus == .failed ||
-        processingStatus == .failed ||
-        applyStatus == .failed ||
-        !(errorMessage?.isEmpty ?? true)
+            transcriptionStatus == .failed ||
+            processingStatus == .failed ||
+            applyStatus == .failed ||
+            !(errorMessage?.isEmpty ?? true)
     }
 
     var hasProcessingDetails: Bool {
         !(transcriptText?.isEmpty ?? true) ||
-        !(personaResultText?.isEmpty ?? true) ||
-        !(selectionOriginalText?.isEmpty ?? true) ||
-        !(selectionEditedText?.isEmpty ?? true) ||
-        (pipelineTiming?.hasData ?? false) ||
-        (pipelineStats?.hasData ?? false) ||
-        !(errorMessage?.isEmpty ?? true) ||
-        !(applyMessage?.isEmpty ?? true)
+            !(personaResultText?.isEmpty ?? true) ||
+            !(selectionOriginalText?.isEmpty ?? true) ||
+            !(selectionEditedText?.isEmpty ?? true) ||
+            (pipelineTiming?.hasData ?? false) ||
+            (pipelineStats?.hasData ?? false) ||
+            !(errorMessage?.isEmpty ?? true) ||
+            !(applyMessage?.isEmpty ?? true)
     }
 
     private enum CodingKeys: String, CodingKey {

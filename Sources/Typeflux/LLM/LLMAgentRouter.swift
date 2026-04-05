@@ -14,15 +14,15 @@ final class LLMAgentRouter: LLMAgentService {
     func runTool<T: Decodable & Sendable>(request: LLMAgentRequest, decoding type: T.Type) async throws -> T {
         switch settingsStore.llmProvider {
         case .openAICompatible:
-            return try await remote.runTool(request: request, decoding: type)
+            try await remote.runTool(request: request, decoding: type)
         case .ollama:
-            return try await ollama.runTool(request: request, decoding: type)
+            try await ollama.runTool(request: request, decoding: type)
         }
     }
 }
 
 final class OllamaAgentService: LLMAgentService {
-    func runTool<T: Decodable & Sendable>(request: LLMAgentRequest, decoding type: T.Type) async throws -> T {
+    func runTool<T: Decodable & Sendable>(request _: LLMAgentRequest, decoding _: T.Type) async throws -> T {
         throw LLMAgentError.unsupportedProvider
     }
 }

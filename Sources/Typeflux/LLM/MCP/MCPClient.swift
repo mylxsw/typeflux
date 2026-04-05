@@ -1,7 +1,7 @@
 import Foundation
 
 /// MCP 服务器连接信息
-struct MCPConnectionInfo: Sendable {
+struct MCPConnectionInfo {
     let name: String
     let protocolVersion: String
     let capabilities: MCPServerCapabilities

@@ -1,14 +1,14 @@
 import Foundation
 
 /// Status of an agent job.
-enum AgentJobStatus: String, Codable, Sendable {
+enum AgentJobStatus: String, Codable {
     case running
     case completed
     case failed
 }
 
 /// A single recorded step within an agent job.
-struct AgentJobStep: Codable, Sendable, Identifiable {
+struct AgentJobStep: Codable, Identifiable {
     let id: String
     let stepIndex: Int
     let toolCalls: [AgentJobToolCall]
@@ -21,9 +21,9 @@ struct AgentJobStep: Codable, Sendable, Identifiable {
         toolCalls: [AgentJobToolCall],
         assistantText: String?,
         durationMs: Int64,
-        tokenUsage: LLMTokenUsage? = nil
+        tokenUsage: LLMTokenUsage? = nil,
     ) {
-        self.id = "\(stepIndex)"
+        id = "\(stepIndex)"
         self.stepIndex = stepIndex
         self.toolCalls = toolCalls
         self.assistantText = assistantText
@@ -39,7 +39,7 @@ struct AgentJobStep: Codable, Sendable, Identifiable {
         if toolCalls.count == 1 {
             return toolCalls[0].name.replacingOccurrences(of: "_", with: " ").capitalized
         }
-        let names = toolCalls.map { $0.name }.joined(separator: ", ")
+        let names = toolCalls.map(\.name).joined(separator: ", ")
         return "\(toolCalls.count) tools: \(names)"
     }
 
@@ -53,7 +53,7 @@ struct AgentJobStep: Codable, Sendable, Identifiable {
 }
 
 /// A recorded tool call within a step.
-struct AgentJobToolCall: Codable, Sendable, Identifiable {
+struct AgentJobToolCall: Codable, Identifiable {
     let id: String
     let name: String
     let argumentsJSON: String
@@ -62,7 +62,7 @@ struct AgentJobToolCall: Codable, Sendable, Identifiable {
 }
 
 /// A complete agent job record.
-struct AgentJob: Codable, Sendable, Identifiable {
+struct AgentJob: Codable, Identifiable {
     let id: UUID
     var createdAt: Date
     var completedAt: Date?
@@ -90,7 +90,7 @@ struct AgentJob: Codable, Sendable, Identifiable {
         steps: [AgentJobStep] = [],
         totalDurationMs: Int64? = nil,
         outcomeType: String? = nil,
-        totalTokenUsage: LLMTokenUsage? = nil
+        totalTokenUsage: LLMTokenUsage? = nil,
     ) {
         self.id = id
         self.createdAt = createdAt

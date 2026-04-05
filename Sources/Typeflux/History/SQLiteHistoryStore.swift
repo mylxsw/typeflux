@@ -13,8 +13,8 @@ final class SQLiteHistoryStore: HistoryStore {
 
     init(baseDir: URL) {
         self.baseDir = baseDir
-        self.dbURL = baseDir.appendingPathComponent("history.sqlite")
-        self.legacyIndexURL = baseDir.appendingPathComponent("history.json")
+        dbURL = baseDir.appendingPathComponent("history.sqlite")
+        legacyIndexURL = baseDir.appendingPathComponent("history.json")
 
         try? FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
 
@@ -33,7 +33,8 @@ final class SQLiteHistoryStore: HistoryStore {
         let newBaseDir = appSupport.appendingPathComponent("Typeflux", isDirectory: true)
         let legacyBaseDir = appSupport.appendingPathComponent("Typeflux", isDirectory: true)
         if !FileManager.default.fileExists(atPath: newBaseDir.path),
-           FileManager.default.fileExists(atPath: legacyBaseDir.path) {
+           FileManager.default.fileExists(atPath: legacyBaseDir.path)
+        {
             try? FileManager.default.moveItem(at: legacyBaseDir, to: newBaseDir)
         }
         self.init(baseDir: newBaseDir)
@@ -97,7 +98,7 @@ final class SQLiteHistoryStore: HistoryStore {
                     sql: "DELETE FROM history_records WHERE id = ?;",
                     bind: { statement in
                         self.bind(id.uuidString, at: 1, in: statement)
-                    }
+                    },
                 )
                 if let audioPath {
                     self.removeAudioFileIfNeeded(at: audioPath)
@@ -118,7 +119,7 @@ final class SQLiteHistoryStore: HistoryStore {
                     sql: "DELETE FROM history_records WHERE date < ?;",
                     bind: { statement in
                         sqlite3_bind_double(statement, 1, cutoff.timeIntervalSince1970)
-                    }
+                    },
                 )
                 staleAudioPaths.forEach(self.removeAudioFileIfNeeded(at:))
                 self.notifyChange()
@@ -270,7 +271,7 @@ final class SQLiteHistoryStore: HistoryStore {
                    error_message, apply_message, recording_status, transcription_status, processing_status, apply_status
             FROM history_records
             ORDER BY date DESC;
-            """
+            """,
         )
     }
 
@@ -289,7 +290,7 @@ final class SQLiteHistoryStore: HistoryStore {
                 bind: { statement in
                     sqlite3_bind_int64(statement, 1, sqlite3_int64(limit))
                     sqlite3_bind_int64(statement, 2, sqlite3_int64(offset))
-                }
+                },
             )
         }
 
@@ -318,7 +319,7 @@ final class SQLiteHistoryStore: HistoryStore {
                 self.bind(wildcardQuery, at: 6, in: statement)
                 sqlite3_bind_int64(statement, 7, sqlite3_int64(limit))
                 sqlite3_bind_int64(statement, 8, sqlite3_int64(offset))
-            }
+            },
         )
     }
 
@@ -334,13 +335,13 @@ final class SQLiteHistoryStore: HistoryStore {
             """,
             bind: { statement in
                 self.bind(id.uuidString, at: 1, in: statement)
-            }
+            },
         ).first
     }
 
     private func fetchRecords(
         sql: String,
-        bind: ((OpaquePointer?) -> Void)? = nil
+        bind: ((OpaquePointer?) -> Void)? = nil,
     ) throws -> [HistoryRecord] {
         var statement: OpaquePointer?
         defer { sqlite3_finalize(statement) }
@@ -353,7 +354,7 @@ final class SQLiteHistoryStore: HistoryStore {
 
         var records: [HistoryRecord] = []
         while sqlite3_step(statement) == SQLITE_ROW {
-            records.append(try decodeRecord(from: statement))
+            try records.append(decodeRecord(from: statement))
         }
         return records
     }
@@ -426,7 +427,7 @@ final class SQLiteHistoryStore: HistoryStore {
             sql: "SELECT audio_file_path FROM history_records WHERE date < ? AND audio_file_path IS NOT NULL;",
             bind: { statement in
                 sqlite3_bind_double(statement, 1, cutoff.timeIntervalSince1970)
-            }
+            },
         )
     }
 
@@ -436,7 +437,7 @@ final class SQLiteHistoryStore: HistoryStore {
 
     private func fetchAudioPaths(
         sql: String,
-        bind: ((OpaquePointer?) -> Void)? = nil
+        bind: ((OpaquePointer?) -> Void)? = nil,
     ) throws -> [String] {
         var statement: OpaquePointer?
         defer { sqlite3_finalize(statement) }
@@ -492,13 +493,13 @@ final class SQLiteHistoryStore: HistoryStore {
             recordingStatus: recordingStatus,
             transcriptionStatus: transcriptionStatus,
             processingStatus: processingStatus,
-            applyStatus: applyStatus
+            applyStatus: applyStatus,
         )
     }
 
     private func execute(
         sql: String,
-        bind: ((OpaquePointer?) -> Void)? = nil
+        bind: ((OpaquePointer?) -> Void)? = nil,
     ) throws {
         var statement: OpaquePointer?
         defer { sqlite3_finalize(statement) }
@@ -535,7 +536,8 @@ final class SQLiteHistoryStore: HistoryStore {
 
     private func string(at index: Int32, in statement: OpaquePointer?) -> String? {
         guard sqlite3_column_type(statement, index) != SQLITE_NULL,
-              let value = sqlite3_column_text(statement, index) else {
+              let value = sqlite3_column_text(statement, index)
+        else {
             return nil
         }
         return String(cString: value)
@@ -568,7 +570,7 @@ final class SQLiteHistoryStore: HistoryStore {
         return false
     }
 
-    private func encodeCodable<T: Codable>(_ value: T?) -> String? {
+    private func encodeCodable(_ value: (some Codable)?) -> String? {
         guard let value else { return nil }
         if let timing = value as? HistoryPipelineTiming, !timing.hasData {
             return nil
@@ -621,7 +623,7 @@ final class SQLiteHistoryStore: HistoryStore {
             ("Transcript -> LLM start", stats.transcriptToLLMStartMilliseconds),
             ("LLM duration", stats.llmDurationMilliseconds),
             ("Apply duration", stats.applyDurationMilliseconds),
-            ("End-to-end", stats.endToEndMilliseconds)
+            ("End-to-end", stats.endToEndMilliseconds),
         ]
 
         for (label, value) in durations {
@@ -648,7 +650,7 @@ final class SQLiteHistoryStore: HistoryStore {
         let detail = db.flatMap { sqlite3_errmsg($0) }.map { String(cString: $0) } ?? "unknown"
         let code = db.map { sqlite3_errcode($0) } ?? SQLITE_ERROR
         return NSError(domain: "SQLiteHistoryStore", code: Int(code), userInfo: [
-            NSLocalizedDescriptionKey: "\(message): \(detail)"
+            NSLocalizedDescriptionKey: "\(message): \(detail)",
         ])
     }
 }

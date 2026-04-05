@@ -261,7 +261,7 @@ final class UsageStatsStore {
         case .editSelection:
             return editedTextContribution(
                 originalText: record.selectionOriginalText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
-                editedText: finalText
+                editedText: finalText,
             )
         case .askAnswer:
             return ""
@@ -282,12 +282,12 @@ final class UsageStatsStore {
 
         var lengths = Array(
             repeating: Array(repeating: 0, count: edited.count + 1),
-            count: original.count + 1
+            count: original.count + 1,
         )
 
-        if !original.isEmpty && !edited.isEmpty {
-            for i in 1...original.count {
-                for j in 1...edited.count {
+        if !original.isEmpty, !edited.isEmpty {
+            for i in 1 ... original.count {
+                for j in 1 ... edited.count {
                     if original[i - 1] == edited[j - 1] {
                         lengths[i][j] = lengths[i - 1][j - 1] + 1
                     } else {
@@ -339,7 +339,7 @@ final class UsageStatsStore {
         let deltaStart = prefixCount
         let deltaEnd = edited.count - suffixCount
         guard deltaStart < deltaEnd else { return "" }
-        return String(edited[deltaStart..<deltaEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
+        return String(edited[deltaStart ..< deltaEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     func estimatedTypingSeconds(for text: String) -> Double {
@@ -370,22 +370,22 @@ final class UsageStatsStore {
 
 extension Unicode.Scalar {
     var isCJKIdeograph: Bool {
-        (0x3400...0x4DBF).contains(value) ||
-            (0x4E00...0x9FFF).contains(value) ||
-            (0xF900...0xFAFF).contains(value) ||
-            (0x20000...0x2A6DF).contains(value) ||
-            (0x2A700...0x2B73F).contains(value) ||
-            (0x2B740...0x2B81F).contains(value) ||
-            (0x2B820...0x2CEAF).contains(value) ||
-            (0x2CEB0...0x2EBEF).contains(value) ||
-            (0x30000...0x3134F).contains(value)
+        (0x3400 ... 0x4DBF).contains(value) ||
+            (0x4E00 ... 0x9FFF).contains(value) ||
+            (0xF900 ... 0xFAFF).contains(value) ||
+            (0x20000 ... 0x2A6DF).contains(value) ||
+            (0x2A700 ... 0x2B73F).contains(value) ||
+            (0x2B740 ... 0x2B81F).contains(value) ||
+            (0x2B820 ... 0x2CEAF).contains(value) ||
+            (0x2CEB0 ... 0x2EBEF).contains(value) ||
+            (0x30000 ... 0x3134F).contains(value)
     }
 
     var isKana: Bool {
-        (0x3040...0x309F).contains(value) || (0x30A0...0x30FF).contains(value)
+        (0x3040 ... 0x309F).contains(value) || (0x30A0 ... 0x30FF).contains(value)
     }
 
     var isHangul: Bool {
-        (0xAC00...0xD7AF).contains(value) || (0x1100...0x11FF).contains(value)
+        (0xAC00 ... 0xD7AF).contains(value) || (0x1100 ... 0x11FF).contains(value)
     }
 }

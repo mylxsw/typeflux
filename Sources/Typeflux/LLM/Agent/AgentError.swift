@@ -1,6 +1,6 @@
 import Foundation
 
-enum AgentError: LocalizedError, Equatable, Sendable {
+enum AgentError: LocalizedError, Equatable {
     case maxStepsExceeded
     case toolNotFound(name: String)
     case toolExecutionFailed(name: String, reason: String)
@@ -12,19 +12,19 @@ enum AgentError: LocalizedError, Equatable, Sendable {
     var errorDescription: String? {
         switch self {
         case .maxStepsExceeded:
-            return "Agent reached maximum execution steps without terminating."
-        case .toolNotFound(let name):
-            return "Tool '\(name)' not found in registry."
-        case .toolExecutionFailed(let name, let reason):
-            return "Tool '\(name)' execution failed: \(reason)"
-        case .mcpConnectionFailed(let serverName, let reason):
-            return "MCP server '\(serverName)' connection failed: \(reason)"
-        case .mcpServerNotFound(let id):
-            return "MCP server with ID \(id) not found."
-        case .invalidAgentState(let reason):
-            return "Invalid agent state: \(reason)"
-        case .llmConnectionFailed(let reason):
-            return "LLM connection failed: \(reason)"
+            "Agent reached maximum execution steps without terminating."
+        case let .toolNotFound(name):
+            "Tool '\(name)' not found in registry."
+        case let .toolExecutionFailed(name, reason):
+            "Tool '\(name)' execution failed: \(reason)"
+        case let .mcpConnectionFailed(serverName, reason):
+            "MCP server '\(serverName)' connection failed: \(reason)"
+        case let .mcpServerNotFound(id):
+            "MCP server with ID \(id) not found."
+        case let .invalidAgentState(reason):
+            "Invalid agent state: \(reason)"
+        case let .llmConnectionFailed(reason):
+            "LLM connection failed: \(reason)"
         }
     }
 }

@@ -21,8 +21,13 @@ protocol FreeLLMModelSource {
 }
 
 extension FreeLLMModelSource {
-    var apiKey: String { "" }
-    var additionalHeaders: [String: String] { [:] }
+    var apiKey: String {
+        ""
+    }
+
+    var additionalHeaders: [String: String] {
+        [:]
+    }
 
     func resolve(modelName: String) -> FreeLLMResolvedModel? {
         let normalizedInput = modelName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -39,7 +44,7 @@ extension FreeLLMModelSource {
             baseURL: baseURL,
             modelName: matchedModel,
             apiKey: apiKey,
-            additionalHeaders: additionalHeaders
+            additionalHeaders: additionalHeaders,
         )
     }
 }
@@ -58,7 +63,7 @@ struct StaticFreeLLMModelSource: FreeLLMModelSource {
         baseURL: String,
         apiKey: String = "",
         additionalHeaders: [String: String] = [:],
-        supportedModels: [String]
+        supportedModels: [String],
     ) {
         self.id = id
         self.displayName = displayName

@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 // MARK: - Mocks
 
@@ -18,7 +18,6 @@ final class MockClipboardService: ClipboardService, @unchecked Sendable {
 // MARK: - Tests
 
 final class BuiltinAgentToolsTests: XCTestCase {
-
     // MARK: AnswerTextTool
 
     func testAnswerTextToolDefinition() {
@@ -114,7 +113,7 @@ final class BuiltinAgentToolsTests: XCTestCase {
         let tool = GetClipboardTool(clipboardService: clipboard)
         let result = try await tool.execute(arguments: "{}")
         // Should be valid JSON
-        let data = result.data(using: .utf8)!
+        let data = try XCTUnwrap(result.data(using: .utf8))
         XCTAssertNoThrow(try JSONSerialization.jsonObject(with: data))
     }
 }

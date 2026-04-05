@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class ConnectionTestStateTests: XCTestCase {
-
     // MARK: - ConnectionTestState
 
     func testConnectionTestStateIdle() {

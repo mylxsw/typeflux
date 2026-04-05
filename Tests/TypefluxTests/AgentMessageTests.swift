@@ -1,11 +1,10 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AgentMessageTests: XCTestCase {
-
     func testSystemMessage() {
         let msg = AgentMessage.system("You are helpful.")
-        if case .system(let text) = msg {
+        if case let .system(text) = msg {
             XCTAssertEqual(text, "You are helpful.")
         } else {
             XCTFail("Expected system message")
@@ -14,7 +13,7 @@ final class AgentMessageTests: XCTestCase {
 
     func testUserMessage() {
         let msg = AgentMessage.user("Hello!")
-        if case .user(let text) = msg {
+        if case let .user(text) = msg {
             XCTAssertEqual(text, "Hello!")
         } else {
             XCTFail("Expected user message")
@@ -24,7 +23,7 @@ final class AgentMessageTests: XCTestCase {
     func testAssistantMessageTextOnly() {
         let assistantMsg = AgentAssistantMessage(text: "Hi there", toolCalls: [])
         let msg = AgentMessage.assistant(assistantMsg)
-        if case .assistant(let m) = msg {
+        if case let .assistant(m) = msg {
             XCTAssertEqual(m.text, "Hi there")
             XCTAssertTrue(m.toolCalls.isEmpty)
         } else {
@@ -36,7 +35,7 @@ final class AgentMessageTests: XCTestCase {
         let toolCall = AgentToolCall(id: "tc1", name: "get_clipboard", argumentsJSON: "{}")
         let assistantMsg = AgentAssistantMessage(text: nil, toolCalls: [toolCall])
         let msg = AgentMessage.assistant(assistantMsg)
-        if case .assistant(let m) = msg {
+        if case let .assistant(m) = msg {
             XCTAssertNil(m.text)
             XCTAssertEqual(m.toolCalls.count, 1)
             XCTAssertEqual(m.toolCalls[0].name, "get_clipboard")
@@ -48,7 +47,7 @@ final class AgentMessageTests: XCTestCase {
     func testToolResultMessage() {
         let result = AgentToolResult(toolCallId: "tc1", content: "clipboard content", isError: false)
         let msg = AgentMessage.toolResult(result)
-        if case .toolResult(let r) = msg {
+        if case let .toolResult(r) = msg {
             XCTAssertEqual(r.toolCallId, "tc1")
             XCTAssertEqual(r.content, "clipboard content")
             XCTAssertFalse(r.isError)

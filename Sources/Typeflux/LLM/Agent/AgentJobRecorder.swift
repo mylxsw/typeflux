@@ -9,7 +9,9 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
     private let lock = NSLock()
 
     /// The job ID being recorded. Use this to link the workflow to the stored job.
-    var recordedJobID: UUID { jobID }
+    var recordedJobID: UUID {
+        jobID
+    }
 
     init(store: AgentJobStore, jobID: UUID) {
         self.store = store
@@ -23,7 +25,7 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
             createdAt: Date(),
             status: .running,
             userPrompt: userPrompt,
-            selectedText: selectedText
+            selectedText: selectedText,
         )
         try? await store.save(job)
     }
@@ -40,12 +42,12 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
                     name: toolCall?.name ?? "unknown",
                     argumentsJSON: toolCall?.argumentsJSON ?? "{}",
                     resultContent: result.content,
-                    isError: result.isError
+                    isError: result.isError,
                 )
             },
             assistantText: step.assistantMessage.text,
             durationMs: step.durationMs,
-            tokenUsage: step.tokenUsage
+            tokenUsage: step.tokenUsage,
         )
 
         let currentSteps = appendStepAndSnapshot(jobStep)
@@ -67,11 +69,11 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
         job.totalTokenUsage = totalTokenUsage
 
         switch outcome {
-        case .text(let text):
+        case let .text(text):
             job.status = .completed
             job.resultText = text
             job.outcomeType = "text"
-        case .terminationTool(let name, let args):
+        case let .terminationTool(name, args):
             job.status = .completed
             job.outcomeType = name
             if name == "answer_text" {
@@ -83,13 +85,13 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
             job.status = .failed
             job.errorMessage = "Maximum steps reached"
             job.outcomeType = "maxStepsReached"
-        case .error(let error):
+        case let .error(error):
             job.status = .failed
             job.errorMessage = error.localizedDescription
             job.outcomeType = "error"
         }
 
-        if let createdAt = (try? await store.job(id: jobID))?.createdAt {
+        if let createdAt = await (try? store.job(id: jobID))?.createdAt {
             job.totalDurationMs = Int64(Date().timeIntervalSince(createdAt) * 1000)
         }
 
@@ -111,7 +113,8 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
 
     private func extractStringField(_ field: String, from json: String) -> String? {
         guard let data = json.data(using: .utf8),
-              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else {
             return nil
         }
         return dict[field] as? String

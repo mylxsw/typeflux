@@ -2,20 +2,24 @@ import AppKit
 import SwiftUI
 
 private final class TransparentHostingView<Content: View>: NSHostingView<Content> {
-    override var isOpaque: Bool { false }
+    override var isOpaque: Bool {
+        false
+    }
 }
 
 private final class OverlayPanel: NSPanel {
-    override var canBecomeKey: Bool { true }
+    override var canBecomeKey: Bool {
+        true
+    }
 }
 
-// CGEventTap callback — intercepts and consumes keyboard events (Return/Esc/arrows)
-// system-wide so the panel never needs to steal focus from the original app.
+/// CGEventTap callback — intercepts and consumes keyboard events (Return/Esc/arrows)
+/// system-wide so the panel never needs to steal focus from the original app.
 private func overlayEventTapCallback(
-    proxy: CGEventTapProxy,
+    proxy _: CGEventTapProxy,
     type: CGEventType,
     event: CGEvent,
-    refcon: UnsafeMutableRawPointer?
+    refcon: UnsafeMutableRawPointer?,
 ) -> Unmanaged<CGEvent>? {
     guard let refcon else { return Unmanaged.passUnretained(event) }
     let controller = Unmanaged<OverlayController>.fromOpaque(refcon).takeUnretainedValue()
@@ -36,7 +40,7 @@ final class OverlayController {
 
     private let model = OverlayViewModel()
     private var dismissWorkItem: DispatchWorkItem?
-    fileprivate var eventTap: CFMachPort?
+    private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
 
     init(appState: AppStateStore) {
@@ -60,7 +64,7 @@ final class OverlayController {
         onMoveDown: (() -> Void)?,
         onSelect: ((Int) -> Void)?,
         onConfirm: (() -> Void)?,
-        onCancel: (() -> Void)?
+        onCancel: (() -> Void)?,
     ) {
         model.onPersonaMoveUpRequested = onMoveUp
         model.onPersonaMoveDownRequested = onMoveDown
@@ -102,7 +106,8 @@ final class OverlayController {
             let metrics = metrics(for: .recordingHold)
             let panel = OverlayPanel(
                 contentRect: NSRect(origin: .zero, size: metrics.size),
-                styleMask: [.nonactivatingPanel, .borderless], backing: .buffered, defer: false)
+                styleMask: [.nonactivatingPanel, .borderless], backing: .buffered, defer: false,
+            )
             panel.isFloatingPanel = true
             panel.level = NSWindow.Level.statusBar
             panel.backgroundColor = NSColor.clear
@@ -292,13 +297,14 @@ final class OverlayController {
     }
 
     func showPersonaPicker(
-        items: [PersonaPickerItem], selectedIndex: Int, title: String, instructions: String
+        items: [PersonaPickerItem], selectedIndex: Int, title: String, instructions: String,
     ) {
         if !Thread.isMainThread {
             DispatchQueue.main.async { [weak self] in
                 self?.showPersonaPicker(
                     items: items, selectedIndex: selectedIndex, title: title,
-                    instructions: instructions)
+                    instructions: instructions,
+                )
             }
             return
         }
@@ -347,14 +353,14 @@ final class OverlayController {
     func dismissImmediately() {
         let work = { [weak self] in
             guard let self else { return }
-            self.dismissWorkItem?.cancel()
-            self.dismissWorkItem = nil
-            self.window?.orderOut(nil)
-            self.model.detailText = ""
-            self.model.level = 0
-            self.model.processingProgress = 0
-            self.removeKeyMonitoring()
-            self.removeMouseMonitoring()
+            dismissWorkItem?.cancel()
+            dismissWorkItem = nil
+            window?.orderOut(nil)
+            model.detailText = ""
+            model.level = 0
+            model.processingProgress = 0
+            removeKeyMonitoring()
+            removeMouseMonitoring()
         }
         if Thread.isMainThread {
             work()
@@ -368,7 +374,7 @@ final class OverlayController {
             DispatchQueue.main.async { [weak self] in self?.dismiss(after: delay) }
             return
         }
-        if model.presentation == .failure && delay > 0 {
+        if model.presentation == .failure, delay > 0 {
             return
         }
         dismissWorkItem?.cancel()
@@ -415,13 +421,12 @@ final class OverlayController {
         }
     }
 
-    private func windowChrome(for presentation: OverlayViewModel.Presentation) -> WindowChromeStyle?
-    {
+    private func windowChrome(for presentation: OverlayViewModel.Presentation) -> WindowChromeStyle? {
         let background = NSColor(
             calibratedRed: 0.13,
             green: 0.11,
             blue: 0.11,
-            alpha: 0.96
+            alpha: 0.96,
         )
 
         switch presentation {
@@ -465,45 +470,54 @@ final class OverlayController {
         case .recordingHold:
             return OverlayMetrics(
                 size: recordingOverlaySize(baseWidth: 118, baseHeight: 72), anchor: .bottom, offset: 24,
-                interactive: false)
+                interactive: false,
+            )
         case .recordingHoldPreview:
             return OverlayMetrics(
                 size: recordingOverlaySize(baseWidth: 344, baseHeight: 118), anchor: .bottom, offset: 24,
-                interactive: false)
+                interactive: false,
+            )
         case .recordingLocked:
             return OverlayMetrics(
-                size: recordingOverlaySize(baseWidth: 158, baseHeight: 66), anchor: .bottom, offset: 26, interactive: true
+                size: recordingOverlaySize(baseWidth: 158, baseHeight: 66), anchor: .bottom, offset: 26, interactive: true,
             )
         case .recordingLockedPreview:
             return OverlayMetrics(
                 size: recordingOverlaySize(baseWidth: 344, baseHeight: 124), anchor: .bottom, offset: 24,
-                interactive: true)
+                interactive: true,
+            )
         case .processing:
             return OverlayMetrics(
                 size: NSSize(width: processingOverlayWidth(), height: 72), anchor: .bottom, offset: 24,
-                interactive: false)
+                interactive: false,
+            )
         case .transcriptPreview:
             return OverlayMetrics(
                 size: NSSize(width: 344, height: 108), anchor: .bottom, offset: 80,
-                interactive: false)
+                interactive: false,
+            )
         case .notice:
             return OverlayMetrics(
                 size: NSSize(width: 344, height: 108), anchor: .bottom, offset: 80,
-                interactive: true)
+                interactive: true,
+            )
         case .failure:
             let failureHeight: CGFloat = model.failureRetryable ? 248 : 216
             return OverlayMetrics(
                 size: NSSize(width: 352, height: failureHeight), anchor: .bottom, offset: 80,
-                interactive: true)
+                interactive: true,
+            )
         case .personaPicker:
             let viewportHeight = min(320, max(180, model.personaViewportHeight))
             return OverlayMetrics(
                 size: NSSize(width: 458, height: viewportHeight + 132), anchor: .center, offset: 36,
-                interactive: true)
+                interactive: true,
+            )
         case .resultDialog:
             return OverlayMetrics(
                 size: NSSize(width: 446, height: 236), anchor: .bottom, offset: 36,
-                interactive: true)
+                interactive: true,
+            )
         }
     }
 
@@ -554,11 +568,11 @@ final class OverlayController {
                 options: .defaultTap,
                 eventsOfInterest: mask,
                 callback: overlayEventTapCallback,
-                userInfo: selfPtr
+                userInfo: selfPtr,
             )
         else {
             NSLog(
-                "[OverlayController] Failed to create CGEventTap — falling back to NSEvent monitors"
+                "[OverlayController] Failed to create CGEventTap — falling back to NSEvent monitors",
             )
             installNSEventMonitorFallback()
             return
@@ -580,13 +594,14 @@ final class OverlayController {
         }
         let localMon = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self else { return event }
-            return self.handleKeyCode(Int(event.keyCode)) ? nil : event
+            return handleKeyCode(Int(event.keyCode)) ? nil : event
         }
         // Store monitors in the eventTap/runLoopSource slots is not possible,
         // so we use associated-object-free approach: keep them as "Any" via a side channel.
         _fallbackGlobalMonitor = globalMon
         _fallbackLocalMonitor = localMon
     }
+
     private var _fallbackGlobalMonitor: Any?
     private var _fallbackLocalMonitor: Any?
     private var _mouseOutsideMonitor: Any?
@@ -594,11 +609,11 @@ final class OverlayController {
     private func installMouseMonitoringIfNeeded() {
         guard _mouseOutsideMonitor == nil else { return }
         _mouseOutsideMonitor = NSEvent.addGlobalMonitorForEvents(
-            matching: [.leftMouseDown, .rightMouseDown]
+            matching: [.leftMouseDown, .rightMouseDown],
         ) { [weak self] _ in
-            guard let self, self.model.presentation == .personaPicker else { return }
+            guard let self, model.presentation == .personaPicker else { return }
             let mouseLocation = NSEvent.mouseLocation
-            if let window = self.window, !window.frame.contains(mouseLocation) {
+            if let window, !window.frame.contains(mouseLocation) {
                 DispatchQueue.main.async { self.model.requestPersonaCancel() }
             }
         }
@@ -639,12 +654,12 @@ final class OverlayController {
 
         let keyCode = Int(event.getIntegerValueField(.keyboardEventKeycode))
         if handleKeyCode(keyCode) {
-            return nil  // consume the event
+            return nil // consume the event
         }
         return Unmanaged.passUnretained(event)
     }
 
-    fileprivate func handleKeyCode(_ keyCode: Int) -> Bool {
+    private func handleKeyCode(_ keyCode: Int) -> Bool {
         if model.presentation == .recordingHold || model.presentation == .recordingHoldPreview || model.presentation == .recordingLocked || model.presentation == .recordingLockedPreview {
             if keyCode == 53 {
                 model.requestCancel()
@@ -853,35 +868,35 @@ private struct OverlayView: View {
     private var usesWindowChrome: Bool {
         switch model.presentation {
         case .recordingHoldPreview, .recordingLockedPreview, .transcriptPreview, .notice, .failure,
-            .personaPicker, .resultDialog:
-            return true
+             .personaPicker, .resultDialog:
+            true
         default:
-            return false
+            false
         }
     }
 
     private var contentAlignment: Alignment {
         switch model.presentation {
         case .recordingHold, .recordingHoldPreview, .recordingLocked, .recordingLockedPreview,
-            .processing, .notice, .transcriptPreview, .failure, .personaPicker, .resultDialog:
-            return .bottom
+             .processing, .notice, .transcriptPreview, .failure, .personaPicker, .resultDialog:
+            .bottom
         }
     }
 
     private var containerPadding: EdgeInsets {
         switch model.presentation {
         case .recordingHold, .processing:
-            return EdgeInsets(top: 16, leading: 18, bottom: 16, trailing: 18)
+            EdgeInsets(top: 16, leading: 18, bottom: 16, trailing: 18)
         case .recordingHoldPreview:
-            return EdgeInsets(top: 12, leading: 16, bottom: 16, trailing: 16)
+            EdgeInsets(top: 12, leading: 16, bottom: 16, trailing: 16)
         case .recordingLocked:
-            return EdgeInsets(top: 15, leading: 14, bottom: 15, trailing: 14)
+            EdgeInsets(top: 15, leading: 14, bottom: 15, trailing: 14)
         case .recordingLockedPreview:
-            return EdgeInsets(top: 12, leading: 16, bottom: 16, trailing: 16)
+            EdgeInsets(top: 12, leading: 16, bottom: 16, trailing: 16)
         case .transcriptPreview, .notice, .failure:
-            return EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16)
+            EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16)
         case .personaPicker, .resultDialog:
-            return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+            EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         }
     }
 
@@ -892,7 +907,7 @@ private struct OverlayView: View {
         }
     }
 
-    private func recordingStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+    private func recordingStack(@ViewBuilder content: () -> some View) -> some View {
         VStack(spacing: 10) {
             if !model.recordingHintText.isEmpty {
                 recordingHintBanner
@@ -913,12 +928,12 @@ private struct OverlayView: View {
                     .fill(Color.black.opacity(0.34))
                     .background(
                         .ultraThinMaterial,
-                        in: Capsule(style: .continuous)
-                    )
+                        in: Capsule(style: .continuous),
+                    ),
             )
             .overlay(
                 Capsule(style: .continuous)
-                    .stroke(Color.white.opacity(0.14), lineWidth: 0.8)
+                    .stroke(Color.white.opacity(0.14), lineWidth: 0.8),
             )
             .fixedSize(horizontal: true, vertical: true)
     }
@@ -928,7 +943,7 @@ private struct OverlayView: View {
             title: model.statusText.isEmpty ? L("overlay.processing.thinking") : model.statusText,
             progress: model.processingProgress,
             epoch: model.processingEpoch,
-            phase: model.processingPhase
+            phase: model.processingPhase,
         )
     }
 
@@ -936,7 +951,7 @@ private struct OverlayView: View {
         LockedRecordingCapsule(
             level: model.level,
             onCancel: model.requestCancel,
-            onConfirm: model.requestConfirm
+            onConfirm: model.requestConfirm,
         )
     }
 
@@ -1004,7 +1019,8 @@ private struct OverlayView: View {
                 cardHeader(
                     icon: "exclamationmark.circle",
                     accent: Color(red: 1.0, green: 0.42, blue: 0.08), title: model.statusText,
-                    dismissible: true)
+                    dismissible: true,
+                )
 
                 ScrollView(showsIndicators: false) {
                     Text(model.detailText)
@@ -1025,7 +1041,9 @@ private struct OverlayView: View {
                             .padding(.vertical, 7)
                             .background(
                                 RoundedRectangle(cornerRadius: 8).fill(
-                                    Color(red: 1.0, green: 0.42, blue: 0.08).opacity(0.55)))
+                                    Color(red: 1.0, green: 0.42, blue: 0.08).opacity(0.55),
+                                ),
+                            )
                     }
                     .buttonStyle(.plain)
                 }
@@ -1041,7 +1059,7 @@ private struct OverlayView: View {
                     accent: Color(red: 0.43, green: 0.56, blue: 1.0),
                     title: model.statusText,
                     dismissible: true,
-                    titleSize: 13.5
+                    titleSize: 13.5,
                 )
 
                 Text(model.detailText)
@@ -1075,11 +1093,11 @@ private struct OverlayView: View {
                         .frame(width: 26, height: 26)
                         .background(
                             Circle()
-                                .fill(Color.white.opacity(0.06))
+                                .fill(Color.white.opacity(0.06)),
                         )
                         .overlay(
                             Circle()
-                                .stroke(Color.white.opacity(0.06), lineWidth: 0.8)
+                                .stroke(Color.white.opacity(0.06), lineWidth: 0.8),
                         )
                 }
                 .buttonStyle(.plain)
@@ -1092,7 +1110,7 @@ private struct OverlayView: View {
                             index, item in
                             personaPickerRow(
                                 item: item, index: index,
-                                isSelected: index == model.personaSelectedIndex
+                                isSelected: index == model.personaSelectedIndex,
                             )
                             .id(index)
                         }
@@ -1117,7 +1135,7 @@ private struct OverlayView: View {
                 .fill(Color.black.opacity(0.52))
                 .background(
                     .regularMaterial,
-                    in: RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    in: RoundedRectangle(cornerRadius: 24, style: .continuous),
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -1128,15 +1146,15 @@ private struct OverlayView: View {
                                     Color.white.opacity(0.05),
                                 ],
                                 startPoint: .top,
-                                endPoint: .bottom
+                                endPoint: .bottom,
                             ),
-                            lineWidth: 0.9
-                        )
+                            lineWidth: 0.9,
+                        ),
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(Color.black.opacity(0.35), lineWidth: 0.6)
-                )
+                        .stroke(Color.black.opacity(0.35), lineWidth: 0.6),
+                ),
         )
     }
 
@@ -1148,7 +1166,7 @@ private struct OverlayView: View {
                     accent: Color(red: 0.43, green: 0.56, blue: 1.0),
                     title: model.statusText,
                     dismissible: true,
-                    titleSize: 13.5
+                    titleSize: 13.5,
                 )
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -1173,11 +1191,11 @@ private struct OverlayView: View {
                                 .padding(.vertical, 9)
                                 .background(
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(Color.white.opacity(0.14))
+                                        .fill(Color.white.opacity(0.14)),
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                        .stroke(Color.white.opacity(0.12), lineWidth: 1),
                                 )
                         }
                         .buttonStyle(.plain)
@@ -1190,20 +1208,20 @@ private struct OverlayView: View {
     }
 
     private func personaPickerRow(
-        item: OverlayController.PersonaPickerItem, index: Int, isSelected: Bool
+        item: OverlayController.PersonaPickerItem, index: Int, isSelected: Bool,
     ) -> some View {
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(
                     isSelected
                         ? Color.accentColor.opacity(0.26)
-                        : Color.white.opacity(0.045)
+                        : Color.white.opacity(0.045),
                 )
                 .frame(width: 40, height: 40)
                 .overlay(
                     Text(String(item.title.prefix(2)).uppercased())
                         .font(.system(size: 11.5, weight: .bold))
-                        .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.7))
+                        .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.7)),
                 )
 
             VStack(alignment: .leading, spacing: 4) {
@@ -1236,15 +1254,15 @@ private struct OverlayView: View {
                 .fill(
                     isSelected
                         ? Color.accentColor.opacity(0.11)
-                        : Color.white.opacity(0.02)
+                        : Color.white.opacity(0.02),
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .stroke(
                             isSelected
                                 ? Color.accentColor.opacity(0.92) : Color.white.opacity(0.045),
-                            lineWidth: isSelected ? 1.15 : 0.8
-                        )
+                            lineWidth: isSelected ? 1.15 : 0.8,
+                        ),
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -1254,10 +1272,10 @@ private struct OverlayView: View {
                                     ? [Color.white.opacity(0.055), Color.white.opacity(0.01)]
                                     : [Color.clear, Color.clear],
                                 startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                )
+                                endPoint: .bottom,
+                            ),
+                        ),
+                ),
         )
         .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .onTapGesture {
@@ -1277,7 +1295,7 @@ private struct OverlayView: View {
         accent: Color,
         title: String,
         dismissible: Bool,
-        titleSize: CGFloat = 16.5
+        titleSize: CGFloat = 16.5,
     ) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
@@ -1298,7 +1316,7 @@ private struct OverlayView: View {
                         .frame(width: 22, height: 22)
                         .background(
                             Circle()
-                                .fill(Color.white.opacity(0.08))
+                                .fill(Color.white.opacity(0.08)),
                         )
                 }
                 .buttonStyle(.plain)
@@ -1332,14 +1350,14 @@ private struct LockedRecordingCapsule: View {
                 .fill(Color.black.opacity(0.9))
                 .overlay(
                     Capsule(style: .continuous)
-                        .stroke(Color.white.opacity(0.22), lineWidth: 1.2)
-                )
+                        .stroke(Color.white.opacity(0.22), lineWidth: 1.2),
+                ),
         )
         .shadow(color: Color.black.opacity(0.28), radius: 16, x: 0, y: 12)
     }
 
     private func roundIconButton(
-        systemName: String, action: @escaping () -> Void, inverted: Bool = false
+        systemName: String, action: @escaping () -> Void, inverted: Bool = false,
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
@@ -1348,7 +1366,7 @@ private struct LockedRecordingCapsule: View {
                 .frame(width: 24, height: 24)
                 .background(
                     Circle()
-                        .fill(inverted ? Color.white.opacity(0.98) : Color.white.opacity(0.22))
+                        .fill(inverted ? Color.white.opacity(0.98) : Color.white.opacity(0.22)),
                 )
         }
         .buttonStyle(.plain)
@@ -1444,8 +1462,8 @@ private struct OverlayCapsule<Content: View>: View {
                     .fill(Color.black.opacity(0.88))
                     .overlay(
                         Capsule()
-                            .stroke(Color.white.opacity(0.22), lineWidth: 1.2)
-                    )
+                            .stroke(Color.white.opacity(0.22), lineWidth: 1.2),
+                    ),
             )
             .shadow(color: Color.black.opacity(0.28), radius: 16, x: 0, y: 12)
     }
@@ -1463,7 +1481,7 @@ private struct OverlayCard<Content: View>: View {
         compact: Bool = false,
         hostedInWindowChrome: Bool = false,
         shadowed: Bool = true,
-        @ViewBuilder content: () -> Content
+        @ViewBuilder content: () -> Content,
     ) {
         self.width = width
         self.compact = compact
@@ -1480,7 +1498,8 @@ private struct OverlayCard<Content: View>: View {
             .background(cardBackground)
             .shadow(
                 color: Color.black.opacity(shadowed ? 0.32 : 0), radius: shadowed ? 26 : 0, x: 0,
-                y: shadowed ? 16 : 0)
+                y: shadowed ? 16 : 0,
+            )
     }
 
     @ViewBuilder
@@ -1492,7 +1511,7 @@ private struct OverlayCard<Content: View>: View {
                 .fill(Color(red: 0.13, green: 0.11, blue: 0.11).opacity(0.96))
                 .overlay(
                     RoundedRectangle(cornerRadius: compact ? 14 : 16, style: .continuous)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1),
                 )
         }
     }
@@ -1517,7 +1536,8 @@ private struct OverlayCompactToast<Content: View>: View {
             .background(toastBackground)
             .shadow(
                 color: Color.black.opacity(hostedInWindowChrome ? 0 : 0.28),
-                radius: hostedInWindowChrome ? 0 : 18, x: 0, y: hostedInWindowChrome ? 0 : 12)
+                radius: hostedInWindowChrome ? 0 : 18, x: 0, y: hostedInWindowChrome ? 0 : 12,
+            )
     }
 
     @ViewBuilder
@@ -1529,7 +1549,7 @@ private struct OverlayCompactToast<Content: View>: View {
                 .fill(Color(red: 0.13, green: 0.11, blue: 0.11).opacity(0.96))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1),
                 )
         }
     }
@@ -1552,7 +1572,7 @@ private struct OverlayButton: View {
             .padding(.vertical, compact ? 8.5 : 10.5)
             .background(
                 Capsule()
-                    .fill(Color.white.opacity(0.14))
+                    .fill(Color.white.opacity(0.14)),
             )
     }
 }
@@ -1563,7 +1583,7 @@ private struct LevelWaveform: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 2.2) {
-            ForEach(0..<9, id: \.self) { index in
+            ForEach(0 ..< 9, id: \.self) { index in
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
                     .fill(activeColor)
                     .frame(width: 2.3, height: barHeight(for: index))

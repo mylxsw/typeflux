@@ -22,11 +22,11 @@ struct AutomaticVocabularyPendingAnalysis: Equatable {
 
 enum AutomaticVocabularyMonitor {
     private static let latinOrNumberRegex = try! NSRegularExpression(
-        pattern: #"[A-Za-z0-9]+(?:[._+\-'][A-Za-z0-9]+)*"#
+        pattern: #"[A-Za-z0-9]+(?:[._+\-'][A-Za-z0-9]+)*"#,
     )
     private static let hanRegex = try! NSRegularExpression(pattern: #"\p{Han}{2,12}"#)
     private static let acceptedTermRegex = try! NSRegularExpression(
-        pattern: #"^[\p{Han}A-Za-z0-9](?:[\p{Han}A-Za-z0-9 ._+\-/']{0,38}[\p{Han}A-Za-z0-9])?$"#
+        pattern: #"^[\p{Han}A-Za-z0-9](?:[\p{Han}A-Za-z0-9 ._+\-/']{0,38}[\p{Han}A-Za-z0-9])?$"#,
     )
     private static let rejectedAcceptedTerms: Set<String> = ["```"]
 
@@ -42,12 +42,12 @@ enum AutomaticVocabularyMonitor {
                     "items": .object([
                         "type": .string("string"),
                         "minLength": .int(2),
-                        "maxLength": .int(40)
+                        "maxLength": .int(40),
                     ]),
-                    "maxItems": .int(8)
-                ])
-            ])
-        ]
+                    "maxItems": .int(8),
+                ]),
+            ]),
+        ],
     )
 
     static func detectChange(from oldText: String, to newText: String) -> AutomaticVocabularyChange? {
@@ -59,7 +59,7 @@ enum AutomaticVocabularyMonitor {
         let sharedSuffixCount = commonSuffixCount(
             oldCharacters,
             newCharacters,
-            excludingSharedPrefix: sharedPrefixCount
+            excludingSharedPrefix: sharedPrefixCount,
         )
 
         let oldEnd = max(sharedPrefixCount, oldCharacters.count - sharedSuffixCount)
@@ -67,12 +67,12 @@ enum AutomaticVocabularyMonitor {
         let oldRange = expandChangedRange(
             in: oldCharacters,
             start: sharedPrefixCount,
-            end: oldEnd
+            end: oldEnd,
         )
         let newRange = expandChangedRange(
             in: newCharacters,
             start: sharedPrefixCount,
-            end: newEnd
+            end: newEnd,
         )
         let oldFragment = String(oldCharacters[oldRange]).trimmingCharacters(in: .whitespacesAndNewlines)
         let newFragment = String(newCharacters[newRange]).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -89,7 +89,7 @@ enum AutomaticVocabularyMonitor {
         return AutomaticVocabularyChange(
             oldFragment: oldFragment,
             newFragment: newFragment,
-            candidateTerms: Array(candidateTerms)
+            candidateTerms: Array(candidateTerms),
         )
     }
 
@@ -99,13 +99,15 @@ enum AutomaticVocabularyMonitor {
         if let jsonPayload = extractJSONObjectOrArray(from: response),
            let data = jsonPayload.data(using: .utf8),
            let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let terms = object["terms"] as? [String] {
+           let terms = object["terms"] as? [String]
+        {
             return sanitizeAcceptedTerms(terms)
         }
 
         if let jsonPayload = extractJSONObjectOrArray(from: response),
            let data = jsonPayload.data(using: .utf8),
-           let terms = try? JSONSerialization.jsonObject(with: data) as? [String] {
+           let terms = try? JSONSerialization.jsonObject(with: data) as? [String]
+        {
             return sanitizeAcceptedTerms(terms)
         }
 
@@ -114,7 +116,7 @@ enum AutomaticVocabularyMonitor {
 
     static func makeObservationState(
         baselineText: String,
-        startedAt: Date = Date()
+        startedAt: Date = Date(),
     ) -> AutomaticVocabularyObservationState {
         AutomaticVocabularyObservationState(
             sessionStartedAt: startedAt,
@@ -122,14 +124,14 @@ enum AutomaticVocabularyMonitor {
             latestObservedText: baselineText,
             lastChangedAt: nil,
             lastAnalyzedText: nil,
-            analysisCount: 0
+            analysisCount: 0,
         )
     }
 
     static func observe(
         text: String,
         at observedAt: Date,
-        state: inout AutomaticVocabularyObservationState
+        state: inout AutomaticVocabularyObservationState,
     ) -> Bool {
         guard text != state.latestObservedText else { return false }
         state.latestObservedText = text
@@ -141,7 +143,7 @@ enum AutomaticVocabularyMonitor {
         state: AutomaticVocabularyObservationState,
         now: Date,
         settleDelay: TimeInterval,
-        maxAnalyses: Int
+        maxAnalyses: Int,
     ) -> AutomaticVocabularyPendingAnalysis? {
         guard state.analysisCount < maxAnalyses else { return nil }
         guard let lastChangedAt = state.lastChangedAt else { return nil }
@@ -151,13 +153,13 @@ enum AutomaticVocabularyMonitor {
 
         return AutomaticVocabularyPendingAnalysis(
             previousStableText: state.settledText,
-            updatedText: state.latestObservedText
+            updatedText: state.latestObservedText,
         )
     }
 
     static func markAnalysisCompleted(
         for stableText: String,
-        state: inout AutomaticVocabularyObservationState
+        state: inout AutomaticVocabularyObservationState,
     ) {
         state.settledText = stableText
         state.latestObservedText = stableText
@@ -167,7 +169,7 @@ enum AutomaticVocabularyMonitor {
     }
 
     private static func tokenize(_ text: String) -> [String] {
-        let nsRange = NSRange(text.startIndex..<text.endIndex, in: text)
+        let nsRange = NSRange(text.startIndex ..< text.endIndex, in: text)
         let latinMatches: [String] = latinOrNumberRegex.matches(in: text, range: nsRange).compactMap { match -> String? in
             guard let range = Range(match.range, in: text) else { return nil }
             let token = String(text[range]).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -215,14 +217,14 @@ enum AutomaticVocabularyMonitor {
             return false
         }
 
-        let nsRange = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
+        let nsRange = NSRange(trimmed.startIndex ..< trimmed.endIndex, in: trimmed)
         guard acceptedTermRegex.firstMatch(in: trimmed, range: nsRange) != nil else {
             return false
         }
 
         return trimmed.rangeOfCharacter(from: .letters) != nil
             || trimmed.rangeOfCharacter(from: .decimalDigits) != nil
-            || trimmed.unicodeScalars.contains(where: { (0x4E00...0x9FFF).contains($0.value) })
+            || trimmed.unicodeScalars.contains(where: { (0x4E00 ... 0x9FFF).contains($0.value) })
     }
 
     private static func extractJSONObjectOrArray(from response: String) -> String? {
@@ -249,7 +251,7 @@ enum AutomaticVocabularyMonitor {
         let innerStart = trimmed.index(after: trimmed.index(after: trimmed.startIndex))
         let contentStart = trimmed[innerStart...].firstIndex(of: "\n") ?? innerStart
         let bodyStart = contentStart < trimmed.endIndex ? trimmed.index(after: contentStart) : contentStart
-        return String(trimmed[bodyStart..<closingRange.lowerBound])
+        return String(trimmed[bodyStart ..< closingRange.lowerBound])
     }
 
     private static func balancedJSONSubstring(in text: String) -> String? {
@@ -284,7 +286,7 @@ enum AutomaticVocabularyMonitor {
                 depth -= 1
                 if depth == 0 {
                     let endIndex = text.index(text.startIndex, offsetBy: index)
-                    return String(text[text.startIndex...endIndex])
+                    return String(text[text.startIndex ... endIndex])
                 }
             }
         }
@@ -304,7 +306,7 @@ enum AutomaticVocabularyMonitor {
     private static func commonSuffixCount(
         _ lhs: [Character],
         _ rhs: [Character],
-        excludingSharedPrefix sharedPrefixCount: Int
+        excludingSharedPrefix sharedPrefixCount: Int,
     ) -> Int {
         let lhsRemaining = lhs.count - sharedPrefixCount
         let rhsRemaining = rhs.count - sharedPrefixCount
@@ -313,7 +315,8 @@ enum AutomaticVocabularyMonitor {
 
         var count = 0
         while count < limit,
-              lhs[lhs.count - 1 - count] == rhs[rhs.count - 1 - count] {
+              lhs[lhs.count - 1 - count] == rhs[rhs.count - 1 - count]
+        {
             count += 1
         }
         return count
@@ -322,9 +325,9 @@ enum AutomaticVocabularyMonitor {
     private static func expandChangedRange(
         in characters: [Character],
         start: Int,
-        end: Int
+        end: Int,
     ) -> Range<Int> {
-        guard !characters.isEmpty else { return start..<end }
+        guard !characters.isEmpty else { return start ..< end }
 
         var lowerBound = max(0, min(start, characters.count))
         var upperBound = max(lowerBound, min(end, characters.count))
@@ -343,9 +346,9 @@ enum AutomaticVocabularyMonitor {
             anchorIndex = nil
         }
 
-        guard let anchorIndex else { return lowerBound..<upperBound }
+        guard let anchorIndex else { return lowerBound ..< upperBound }
         let kind = tokenKind(for: characters[anchorIndex])
-        guard kind != .none else { return lowerBound..<upperBound }
+        guard kind != .none else { return lowerBound ..< upperBound }
 
         while lowerBound > 0, tokenKind(for: characters[lowerBound - 1]) == kind {
             lowerBound -= 1
@@ -355,7 +358,7 @@ enum AutomaticVocabularyMonitor {
             upperBound += 1
         }
 
-        return lowerBound..<upperBound
+        return lowerBound ..< upperBound
     }
 
     private static func tokenKind(for character: Character) -> TokenKind {
@@ -381,7 +384,7 @@ enum AutomaticVocabularyMonitor {
     }
 
     private static func isHanCharacter(_ character: Character) -> Bool {
-        character.unicodeScalars.contains { (0x4E00...0x9FFF).contains($0.value) }
+        character.unicodeScalars.contains { (0x4E00 ... 0x9FFF).contains($0.value) }
     }
 }
 
@@ -391,7 +394,7 @@ private enum TokenKind: Equatable {
     case han
 }
 
-private extension Array where Element == String {
+private extension [String] {
     func uniquedPreservingOrder(by transform: (String) -> String) -> [String] {
         var seen = Set<String>()
         return filter { value in

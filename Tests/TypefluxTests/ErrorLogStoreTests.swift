@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class ErrorLogStoreTests: XCTestCase {
-
     func testLogInsertsEntryAtFront() {
         let store = ErrorLogStore()
         let expectation = XCTestExpectation(description: "Entry inserted")
@@ -75,7 +74,6 @@ final class ErrorLogStoreTests: XCTestCase {
 // MARK: - Extended ErrorLogStore tests
 
 extension ErrorLogStoreTests {
-
     func testLogEntriesHaveCorrectMessages() {
         let store = ErrorLogStore()
         let expectation = XCTestExpectation(description: "Entries with correct messages")
@@ -132,7 +130,7 @@ extension ErrorLogStoreTests {
         let expectation = XCTestExpectation(description: "Max entries enforced")
 
         // Log 105 entries (max is 100)
-        for i in 0..<105 {
+        for i in 0 ..< 105 {
             store.log("entry-\(i)")
         }
 

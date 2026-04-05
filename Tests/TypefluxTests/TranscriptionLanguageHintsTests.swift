@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class TranscriptionLanguageHintsTests: XCTestCase {
-
     // MARK: - mappedLocaleCandidates
 
     func testChineseTraditionalTW() {
@@ -77,7 +76,6 @@ final class TranscriptionLanguageHintsTests: XCTestCase {
 // MARK: - Extended TranscriptionLanguageHints tests
 
 extension TranscriptionLanguageHintsTests {
-
     // MARK: - mappedLocaleCandidates edge cases
 
     func testMappedLocaleForSimplifiedChinese() {

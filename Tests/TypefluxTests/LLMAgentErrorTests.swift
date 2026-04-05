@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class LLMAgentErrorTests: XCTestCase {
-
     func testUnsupportedProviderDescription() {
         let error = LLMAgentError.unsupportedProvider
         XCTAssertTrue(error.errorDescription?.contains("does not support agent tool calls") ?? false)
@@ -43,11 +42,11 @@ final class LLMAgentErrorTests: XCTestCase {
         XCTAssertNotEqual(LLMAgentError.unsupportedProvider, LLMAgentError.missingToolCall)
         XCTAssertEqual(
             LLMAgentError.unexpectedToolName(expected: "a", actual: "b"),
-            LLMAgentError.unexpectedToolName(expected: "a", actual: "b")
+            LLMAgentError.unexpectedToolName(expected: "a", actual: "b"),
         )
         XCTAssertNotEqual(
             LLMAgentError.unexpectedToolName(expected: "a", actual: "b"),
-            LLMAgentError.unexpectedToolName(expected: "a", actual: "c")
+            LLMAgentError.unexpectedToolName(expected: "a", actual: "c"),
         )
     }
 
@@ -57,7 +56,7 @@ final class LLMAgentErrorTests: XCTestCase {
         let tool = LLMAgentTool(
             name: "test_tool",
             description: "A test tool",
-            inputSchema: LLMJSONSchema(name: "test", schema: [:])
+            inputSchema: LLMJSONSchema(name: "test", schema: [:]),
         )
         XCTAssertEqual(tool.name, "test_tool")
         XCTAssertEqual(tool.description, "A test tool")
@@ -69,7 +68,7 @@ final class LLMAgentErrorTests: XCTestCase {
         let request = LLMAgentRequest(
             systemPrompt: "system",
             userPrompt: "user",
-            tools: []
+            tools: [],
         )
         XCTAssertNil(request.forcedToolName)
         XCTAssertEqual(request.systemPrompt, "system")
@@ -82,7 +81,7 @@ final class LLMAgentErrorTests: XCTestCase {
             systemPrompt: "sys",
             userPrompt: "usr",
             tools: [],
-            forcedToolName: "answer_text"
+            forcedToolName: "answer_text",
         )
         XCTAssertEqual(request.forcedToolName, "answer_text")
     }

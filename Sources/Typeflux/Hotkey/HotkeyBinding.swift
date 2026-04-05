@@ -37,11 +37,11 @@ struct HotkeyBinding: Codable, Equatable, Identifiable {
 
     static let defaultActivation = HotkeyBinding(
         keyCode: functionKeyCode,
-        modifierFlags: UInt(NSEvent.ModifierFlags.function.rawValue)
+        modifierFlags: UInt(NSEvent.ModifierFlags.function.rawValue),
     )
     static let defaultAsk = HotkeyBinding(
         keyCode: 49,
-        modifierFlags: UInt(NSEvent.ModifierFlags.function.rawValue)
+        modifierFlags: UInt(NSEvent.ModifierFlags.function.rawValue),
     )
     static let defaultPersona = HotkeyBinding(keyCode: 35, modifierFlags: 1_572_864)
 }

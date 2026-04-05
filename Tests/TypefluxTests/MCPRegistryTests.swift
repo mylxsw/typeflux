@@ -1,28 +1,27 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class MCPRegistryTests: XCTestCase {
-
-    func testRegistryInitializesEmpty() async {
-        let registry = MCPRegistry(settingsStore: MCPSettingsStore(defaults: UserDefaults(suiteName: "test.mcp.registry.\(UUID())")!))
+    func testRegistryInitializesEmpty() async throws {
+        let registry = try MCPRegistry(settingsStore: MCPSettingsStore(defaults: XCTUnwrap(UserDefaults(suiteName: "test.mcp.registry.\(UUID())"))))
         let count = await registry.connectedServerCount
         XCTAssertEqual(count, 0)
     }
 
-    func testAllMCPToolsEmptyByDefault() async {
-        let registry = MCPRegistry(settingsStore: MCPSettingsStore(defaults: UserDefaults(suiteName: "test.mcp.registry.\(UUID())")!))
+    func testAllMCPToolsEmptyByDefault() async throws {
+        let registry = try MCPRegistry(settingsStore: MCPSettingsStore(defaults: XCTUnwrap(UserDefaults(suiteName: "test.mcp.registry.\(UUID())"))))
         let tools = await registry.allMCPTools()
         XCTAssertTrue(tools.isEmpty)
     }
 
-    func testServerIdForUnknownToolReturnsNil() async {
-        let registry = MCPRegistry(settingsStore: MCPSettingsStore(defaults: UserDefaults(suiteName: "test.mcp.registry.\(UUID())")!))
+    func testServerIdForUnknownToolReturnsNil() async throws {
+        let registry = try MCPRegistry(settingsStore: MCPSettingsStore(defaults: XCTUnwrap(UserDefaults(suiteName: "test.mcp.registry.\(UUID())"))))
         let id = await registry.serverId(forToolName: "nonexistent_tool")
         XCTAssertNil(id)
     }
 
-    func testRemoveNonexistentServerDoesNotCrash() async {
-        let registry = MCPRegistry(settingsStore: MCPSettingsStore(defaults: UserDefaults(suiteName: "test.mcp.registry.\(UUID())")!))
+    func testRemoveNonexistentServerDoesNotCrash() async throws {
+        let registry = try MCPRegistry(settingsStore: MCPSettingsStore(defaults: XCTUnwrap(UserDefaults(suiteName: "test.mcp.registry.\(UUID())"))))
         await registry.removeServer(id: UUID())
         let count = await registry.connectedServerCount
         XCTAssertEqual(count, 0)
@@ -32,10 +31,9 @@ final class MCPRegistryTests: XCTestCase {
 // MARK: - Extended MCPRegistry tests
 
 final class MCPRegistryExtendedTests: XCTestCase {
-
     private func makeRegistry() -> MCPRegistry {
         MCPRegistry(settingsStore: MCPSettingsStore(
-            defaults: UserDefaults(suiteName: "test.mcp.ext.\(UUID().uuidString)")!
+            defaults: UserDefaults(suiteName: "test.mcp.ext.\(UUID().uuidString)")!,
         ))
     }
 

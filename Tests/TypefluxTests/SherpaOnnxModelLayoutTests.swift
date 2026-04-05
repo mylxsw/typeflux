@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class SherpaOnnxModelLayoutTests: XCTestCase {
-
     // MARK: - layout(for:)
 
     func testWhisperLocalReturnsNil() {
@@ -35,7 +34,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
         XCTAssertEqual(
             layout.runtimeArchiveURL.absoluteString,
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.35/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts.tar.bz2"
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.35/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts.tar.bz2",
         )
     }
 
@@ -43,7 +42,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
         XCTAssertEqual(
             layout.modelArchiveURL.absoluteString,
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2"
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2",
         )
     }
 
@@ -82,7 +81,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let executableURL = layout.runtimeExecutableURL(storageURL: storage)
         XCTAssertEqual(
             executableURL.path,
-            "/models/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/bin/sherpa-onnx-offline"
+            "/models/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/bin/sherpa-onnx-offline",
         )
     }
 
@@ -92,7 +91,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let libURL = layout.runtimeLibraryURL(storageURL: storage)
         XCTAssertEqual(
             libURL.path,
-            "/models/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib"
+            "/models/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib",
         )
     }
 
@@ -102,7 +101,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let modelDir = layout.modelDirectoryURL(storageURL: storage)
         XCTAssertEqual(
             modelDir.path,
-            "/models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17"
+            "/models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17",
         )
     }
 
@@ -128,7 +127,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
             let fullURL = tmpURL.appendingPathComponent(relativePath, isDirectory: false)
             try FileManager.default.createDirectory(
                 at: fullURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
+                withIntermediateDirectories: true,
             )
             // For token files and model files - create a dummy non-empty file
             let content = Data(repeating: 0xAB, count: 64)
@@ -160,7 +159,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let decoder = SherpaOnnxCommandLineDecoder(
             model: .senseVoiceSmall,
             modelIdentifier: "test",
-            modelFolder: "/tmp/models"
+            modelFolder: "/tmp/models",
         )
         let result = try decoder.parseTranscript(stdout: "hello world\n")
         XCTAssertEqual(result, "hello world")
@@ -170,7 +169,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let decoder = SherpaOnnxCommandLineDecoder(
             model: .senseVoiceSmall,
             modelIdentifier: "test",
-            modelFolder: "/tmp/models"
+            modelFolder: "/tmp/models",
         )
         let result = try decoder.parseTranscript(stdout: "first line\nsecond line\n\n")
         XCTAssertEqual(result, "second line")
@@ -180,7 +179,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let decoder = SherpaOnnxCommandLineDecoder(
             model: .senseVoiceSmall,
             modelIdentifier: "test",
-            modelFolder: "/tmp/models"
+            modelFolder: "/tmp/models",
         )
         let result = try decoder.parseTranscript(stdout: #"{"text": "hello from json", "confidence": 0.95}"#)
         XCTAssertEqual(result, "hello from json")
@@ -190,7 +189,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let decoder = SherpaOnnxCommandLineDecoder(
             model: .senseVoiceSmall,
             modelIdentifier: "test",
-            modelFolder: "/tmp/models"
+            modelFolder: "/tmp/models",
         )
         let result = try decoder.parseTranscript(stdout: "plain text output")
         XCTAssertEqual(result, "plain text output")
@@ -200,7 +199,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let decoder = SherpaOnnxCommandLineDecoder(
             model: .senseVoiceSmall,
             modelIdentifier: "test",
-            modelFolder: "/tmp/models"
+            modelFolder: "/tmp/models",
         )
         XCTAssertThrowsError(try decoder.parseTranscript(stdout: "")) { error in
             let nsError = error as NSError
@@ -213,7 +212,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let decoder = SherpaOnnxCommandLineDecoder(
             model: .senseVoiceSmall,
             modelIdentifier: "test",
-            modelFolder: "/tmp/models"
+            modelFolder: "/tmp/models",
         )
         XCTAssertThrowsError(try decoder.parseTranscript(stdout: "   \n\n  "))
     }
@@ -224,7 +223,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let decoder = SherpaOnnxCommandLineDecoder(
             model: .senseVoiceSmall,
             modelIdentifier: "test",
-            modelFolder: "/tmp/models"
+            modelFolder: "/tmp/models",
         )
         XCTAssertNil(decoder.parseJSONTranscript(stdoutLine: "plain text"))
     }
@@ -233,7 +232,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let decoder = SherpaOnnxCommandLineDecoder(
             model: .senseVoiceSmall,
             modelIdentifier: "test",
-            modelFolder: "/tmp/models"
+            modelFolder: "/tmp/models",
         )
         let result = decoder.parseJSONTranscript(stdoutLine: #"{"text":"hello world"}"#)
         XCTAssertEqual(result, "hello world")
@@ -243,7 +242,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let decoder = SherpaOnnxCommandLineDecoder(
             model: .senseVoiceSmall,
             modelIdentifier: "test",
-            modelFolder: "/tmp/models"
+            modelFolder: "/tmp/models",
         )
         let result = decoder.parseJSONTranscript(stdoutLine: #"{"other":"value"}"#)
         XCTAssertNil(result)
@@ -253,7 +252,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let decoder = SherpaOnnxCommandLineDecoder(
             model: .senseVoiceSmall,
             modelIdentifier: "test",
-            modelFolder: "/tmp/models"
+            modelFolder: "/tmp/models",
         )
         XCTAssertNil(decoder.parseJSONTranscript(stdoutLine: ""))
     }
@@ -262,7 +261,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let decoder = SherpaOnnxCommandLineDecoder(
             model: .senseVoiceSmall,
             modelIdentifier: "test",
-            modelFolder: "/tmp/models"
+            modelFolder: "/tmp/models",
         )
         XCTAssertNil(decoder.parseJSONTranscript(stdoutLine: "{invalid json"))
     }

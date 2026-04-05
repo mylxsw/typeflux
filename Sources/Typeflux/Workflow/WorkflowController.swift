@@ -2,7 +2,6 @@ import Foundation
 import os
 
 final class WorkflowController {
-
     private let logger = Logger(subsystem: "dev.typeflux", category: "WorkflowController")
     private static let recordingTimeoutNanoseconds: UInt64 = 600_000_000_000 // 10 minutes
     private static let processingTimeoutNanoseconds: UInt64 = 120_000_000_000 // 2 minutes
@@ -35,9 +34,9 @@ final class WorkflowController {
         var message: String {
             switch self {
             case .inserted:
-                return L("workflow.apply.inserted")
+                L("workflow.apply.inserted")
             case .presentedInDialog:
-                return L("workflow.apply.presentedInDialog")
+                L("workflow.apply.presentedInDialog")
             }
         }
     }
@@ -109,7 +108,7 @@ final class WorkflowController {
         agentJobStore: AgentJobStore,
         overlayController: OverlayController,
         askAnswerWindowController: AskAnswerWindowController,
-        soundEffectPlayer: SoundEffectPlayer
+        soundEffectPlayer: SoundEffectPlayer,
     ) {
         self.appState = appState
         self.settingsStore = settingsStore
@@ -128,29 +127,29 @@ final class WorkflowController {
         self.overlayController.setRecordingActionHandlers(
             onCancel: { [weak self] in
                 guard let self else { return }
-                if self.isRecording {
-                    self.cancelRecording()
+                if isRecording {
+                    cancelRecording()
                 } else {
-                    self.cancelCurrentProcessing(resetUI: true, reason: L("workflow.cancel.userCancelled"))
+                    cancelCurrentProcessing(resetUI: true, reason: L("workflow.cancel.userCancelled"))
                 }
             },
-            onConfirm: { [weak self] in self?.confirmLockedRecording() }
+            onConfirm: { [weak self] in self?.confirmLockedRecording() },
         )
         self.overlayController.setResultDialogHandler(
-            onCopy: { [weak self] in self?.copyLastResultFromDialog() }
+            onCopy: { [weak self] in self?.copyLastResultFromDialog() },
         )
         self.overlayController.setFailureRetryHandler(
             onRetry: { [weak self] in
-                guard let self, let record = self.lastRetryableFailureRecord else { return }
-                self.retry(record: record)
-            }
+                guard let self, let record = lastRetryableFailureRecord else { return }
+                retry(record: record)
+            },
         )
         self.overlayController.setPersonaPickerHandlers(
             onMoveUp: { [weak self] in self?.movePersonaSelection(delta: -1) },
             onMoveDown: { [weak self] in self?.movePersonaSelection(delta: 1) },
             onSelect: { [weak self] index in self?.selectPersonaSelection(at: index) },
             onConfirm: { [weak self] in self?.confirmPersonaSelection() },
-            onCancel: { [weak self] in self?.dismissPersonaPicker() }
+            onCancel: { [weak self] in self?.dismissPersonaPicker() },
         )
     }
 
@@ -161,14 +160,14 @@ final class WorkflowController {
             Question: \(question)
             Selected Text: \(selectedText ?? "<empty>")
             Answer Markdown: \(answerMarkdown)
-            """
+            """,
         )
         overlayController.dismissImmediately()
         askAnswerWindowController.show(
             title: L("workflow.ask.answerTitle"),
             question: question,
             selectedText: selectedText,
-            answerMarkdown: answerMarkdown
+            answerMarkdown: answerMarkdown,
         )
     }
 
@@ -210,7 +209,7 @@ final class WorkflowController {
         localModelPreheatObserver = NotificationCenter.default.addObserver(
             forName: UserDefaults.didChangeNotification,
             object: nil,
-            queue: .main
+            queue: .main,
         ) { [weak self] _ in
             self?.preheatLocalModelIfNeeded()
         }
@@ -235,12 +234,12 @@ final class WorkflowController {
         localModelPreheatTask = Task { [weak self, configuration] in
             try? await Task.sleep(for: Self.localModelPreheatDebounce)
             guard let self, !Task.isCancelled else { return }
-            guard self.settingsStore.sttProvider == .localModel,
-                  LocalSTTConfiguration(settingsStore: self.settingsStore) == configuration
+            guard settingsStore.sttProvider == .localModel,
+                  LocalSTTConfiguration(settingsStore: settingsStore) == configuration
             else {
                 return
             }
-            await self.sttRouter.prepareForRecording()
+            await sttRouter.prepareForRecording()
         }
     }
 
@@ -273,8 +272,8 @@ final class WorkflowController {
                 self.appState.setStatus(.processing)
                 self.overlayController.showProcessing()
             }
-            await self.reprocess(record: record, sessionID: sessionID)
-            self.cancelProcessingTimeout()
+            await reprocess(record: record, sessionID: sessionID)
+            cancelProcessingTimeout()
             await MainActor.run {
                 if self.processingSessionID == sessionID {
                     self.processingTask = nil
@@ -283,7 +282,7 @@ final class WorkflowController {
             }
         }
     }
-    
+
     /// Force cancel any ongoing recording
     func cancelRecording() {
         guard isRecording else { return }
@@ -400,11 +399,10 @@ final class WorkflowController {
         Task { [weak self] in
             guard let self else { return }
 
-            let selectionSnapshot: TextSelectionSnapshot
-            if self.settingsStore.personaHotkeyAppliesToSelection {
-                selectionSnapshot = await self.textInjector.getSelectionSnapshot()
+            let selectionSnapshot: TextSelectionSnapshot = if settingsStore.personaHotkeyAppliesToSelection {
+                await textInjector.getSelectionSnapshot()
             } else {
-                selectionSnapshot = TextSelectionSnapshot()
+                TextSelectionSnapshot()
             }
 
             logger.debug("snapshot: isFocusedTarget=\(selectionSnapshot.isFocusedTarget) isEditable=\(selectionSnapshot.isEditable) hasSelection=\(selectionSnapshot.hasSelection) source=\(selectionSnapshot.source) selectedText=\(selectionSnapshot.selectedText?.prefix(32) ?? "nil")")
@@ -413,19 +411,19 @@ final class WorkflowController {
             let mode: PersonaPickerMode
             let items: [PersonaPickerEntry]
 
-            if let selectedText, !selectedText.isEmpty, self.settingsStore.personaHotkeyAppliesToSelection {
+            if let selectedText, !selectedText.isEmpty, settingsStore.personaHotkeyAppliesToSelection {
                 logger.debug("mode=applySelection")
                 mode = .applySelection(PersonaSelectionContext(snapshot: selectionSnapshot, selectedText: selectedText))
-                items = self.personaPickerEntries(includeNoneOption: false)
+                items = personaPickerEntries(includeNoneOption: false)
             } else {
-                logger.debug("mode=switchDefault  selectedText=\(selectedText ?? "nil")  hotkeyApplies=\(self.settingsStore.personaHotkeyAppliesToSelection)")
+                logger.debug("mode=switchDefault  selectedText=\(selectedText ?? "nil")  hotkeyApplies=\(settingsStore.personaHotkeyAppliesToSelection)")
                 mode = .switchDefault
-                items = self.personaPickerEntries(includeNoneOption: true)
+                items = personaPickerEntries(includeNoneOption: true)
             }
 
             guard !items.isEmpty else { return }
 
-            let activeID = self.settingsStore.personaRewriteEnabled ? UUID(uuidString: self.settingsStore.activePersonaID) : nil
+            let activeID = settingsStore.personaRewriteEnabled ? UUID(uuidString: settingsStore.activePersonaID) : nil
             let selectedIndex = items.firstIndex(where: { $0.id == activeID }) ?? 0
 
             await MainActor.run {
@@ -439,12 +437,12 @@ final class WorkflowController {
                         OverlayController.PersonaPickerItem(
                             id: $0.id?.uuidString ?? "plain-dictation",
                             title: $0.title,
-                            subtitle: $0.subtitle
+                            subtitle: $0.subtitle,
                         )
                     },
                     selectedIndex: selectedIndex,
                     title: self.personaPickerTitle(for: mode),
-                    instructions: self.personaPickerInstructions(for: mode)
+                    instructions: self.personaPickerInstructions(for: mode),
                 )
             }
         }
@@ -475,7 +473,7 @@ final class WorkflowController {
 
         selectionTask = Task { [weak self] in
             guard let self else { return TextSelectionSnapshot() }
-            return await self.textInjector.getSelectionSnapshot()
+            return await textInjector.getSelectionSnapshot()
         }
 
         do {
@@ -483,7 +481,7 @@ final class WorkflowController {
                 levelHandler: { [weak self] level in
                     self?.overlayController.updateLevel(level)
                 },
-                audioBufferHandler: { _ in }
+                audioBufferHandler: { _ in },
             )
 
             Task { [weak self] in
@@ -506,7 +504,7 @@ final class WorkflowController {
                 recordingStatus: .failed,
                 transcriptionStatus: .skipped,
                 processingStatus: .skipped,
-                applyStatus: .skipped
+                applyStatus: .skipped,
             )
             record.errorMessage = "Audio start failed: \(error.localizedDescription)"
             saveHistoryRecord(record)
@@ -567,7 +565,7 @@ final class WorkflowController {
 
         Task { [weak self] in
             guard let self else { return }
-            await self.finishRecordingAndProcess(recordingStoppedAt: recordingStoppedAt)
+            await finishRecordingAndProcess(recordingStoppedAt: recordingStoppedAt)
         }
     }
 
@@ -584,7 +582,7 @@ final class WorkflowController {
     private func generateRewrite(
         request: LLMRewriteRequest,
         sessionID: UUID,
-        showsStreamingPreview: Bool = true
+        showsStreamingPreview: Bool = true,
     ) async throws -> RewriteGenerationResult {
         try await RequestRetry.perform(
             operationName: "LLM rewrite stream",
@@ -596,14 +594,14 @@ final class WorkflowController {
                         self.overlayController.updateStreamingText("")
                     }
                 }
-            }
+            },
         ) { [self] in
             var buffer = ""
             var lastChunkAt = Date()
 
-            let stream = self.llmService.streamRewrite(request: request)
+            let stream = llmService.streamRewrite(request: request)
             for try await chunk in stream {
-                try self.ensureProcessingIsActive(sessionID)
+                try ensureProcessingIsActive(sessionID)
                 buffer += chunk
                 let now = Date()
                 if now.timeIntervalSince(lastChunkAt) > 0.15 {
@@ -621,7 +619,7 @@ final class WorkflowController {
 
             return RewriteGenerationResult(
                 text: buffer.trimmingCharacters(in: .whitespacesAndNewlines),
-                completedAt: Date()
+                completedAt: Date(),
             )
         }
     }
@@ -631,23 +629,23 @@ final class WorkflowController {
         spokenInstruction: String,
         personaPrompt: String?,
         editableTarget: Bool,
-        sessionID: UUID
+        sessionID: UUID,
     ) async throws -> AskSelectionDecisionResult {
         let prompts = PromptCatalog.askSelectionDecisionPrompts(
             selectedText: selectedText,
             spokenInstruction: spokenInstruction,
             personaPrompt: personaPrompt,
-            editableTarget: editableTarget
+            editableTarget: editableTarget,
         )
         let decision = try await RequestRetry.perform(operationName: "Ask selection decision") { [self] in
-            try await self.llmAgentService.runTool(
+            try await llmAgentService.runTool(
                 request: LLMAgentRequest(
                     systemPrompt: prompts.system,
                     userPrompt: prompts.user,
                     tools: [AskSelectionDecision.tool],
-                    forcedToolName: AskSelectionDecision.tool.name
+                    forcedToolName: AskSelectionDecision.tool.name,
                 ),
-                decoding: AskSelectionDecision.self
+                decoding: AskSelectionDecision.self,
             )
         }
 
@@ -657,7 +655,7 @@ final class WorkflowController {
             throw NSError(
                 domain: "WorkflowController",
                 code: 3001,
-                userInfo: [NSLocalizedDescriptionKey: "Ask selection decision returned invalid tool arguments."]
+                userInfo: [NSLocalizedDescriptionKey: "Ask selection decision returned invalid tool arguments."],
             )
         }
 
@@ -665,18 +663,17 @@ final class WorkflowController {
             throw NSError(
                 domain: "WorkflowController",
                 code: 3002,
-                userInfo: [NSLocalizedDescriptionKey: "Ask selection content was empty."]
+                userInfo: [NSLocalizedDescriptionKey: "Ask selection content was empty."],
             )
         }
 
-        let normalizedDecision: AskSelectionDecision
-        if !editableTarget && decision.answerEdit == .edit {
-            normalizedDecision = AskSelectionDecision(
+        let normalizedDecision: AskSelectionDecision = if !editableTarget, decision.answerEdit == .edit {
+            AskSelectionDecision(
                 answerEdit: .answer,
-                content: decision.content
+                content: decision.content,
             )
         } else {
-            normalizedDecision = decision
+            decision
         }
 
         return AskSelectionDecisionResult(decision: normalizedDecision, completedAt: Date())
@@ -689,7 +686,7 @@ final class WorkflowController {
         selectionSnapshot: TextSelectionSnapshot,
         record: inout HistoryRecord,
         pipelineTiming: inout HistoryPipelineTiming,
-        sessionID: UUID
+        sessionID: UUID,
     ) async throws {
         switch askDecisionResult.decision.answerEdit {
         case .answer:
@@ -710,7 +707,7 @@ final class WorkflowController {
                 self.presentAskAnswer(
                     question: question,
                     selectedText: selectedText,
-                    answerMarkdown: askDecisionResult.decision.trimmedContent
+                    answerMarkdown: askDecisionResult.decision.trimmedContent,
                 )
             }
             pipelineTiming.applyCompletedAt = Date()
@@ -737,15 +734,15 @@ final class WorkflowController {
             let outcome: ApplyOutcome
             NetworkDebugLogger.logMessage(
                 "[Apply Decision] mode=editSelection hasSelection=\(selectionSnapshot.hasSelection) " +
-                "isEditable=\(selectionSnapshot.isEditable) hasRange=\(selectionSnapshot.selectedRange != nil) " +
-                "replaceSelection=\(replaceSelection) showResultDialog=\(shouldShowResultDialog)"
+                    "isEditable=\(selectionSnapshot.isEditable) hasRange=\(selectionSnapshot.selectedRange != nil) " +
+                    "replaceSelection=\(replaceSelection) showResultDialog=\(shouldShowResultDialog)",
             )
             if shouldShowResultDialog {
                 await MainActor.run {
                     self.lastDialogResultText = askDecisionResult.decision.trimmedContent
                     self.overlayController.showResultDialog(
                         title: L("workflow.result.copyTitle"),
-                        message: askDecisionResult.decision.trimmedContent
+                        message: askDecisionResult.decision.trimmedContent,
                     )
                 }
                 outcome = .presentedInDialog
@@ -753,7 +750,7 @@ final class WorkflowController {
                 outcome = applyText(
                     askDecisionResult.decision.trimmedContent,
                     replace: replaceSelection,
-                    fallbackTitle: L("workflow.result.copyTitle")
+                    fallbackTitle: L("workflow.result.copyTitle"),
                 )
             }
             pipelineTiming.applyCompletedAt = Date()
@@ -793,7 +790,7 @@ final class WorkflowController {
 
     private func applyTranscribedText(
         _ text: String,
-        selectionSnapshot: TextSelectionSnapshot
+        selectionSnapshot: TextSelectionSnapshot,
     ) -> ApplyOutcome {
         applyText(text, replace: shouldReplaceActiveSelection(for: selectionSnapshot))
     }
@@ -802,7 +799,7 @@ final class WorkflowController {
         do {
             let audioFile = try audioRecorder.stop()
             let audioFileReadyAt = Date()
-            let recordingIntent = self.recordingIntent
+            let recordingIntent = recordingIntent
             self.recordingIntent = .dictation
             let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
             selectionTask = nil
@@ -810,7 +807,7 @@ final class WorkflowController {
             let audioAnalysis = try AudioContentAnalyzer.analyze(fileURL: audioFile.fileURL)
             let validatedAudioFile = AudioFile(
                 fileURL: audioFile.fileURL,
-                duration: audioAnalysis.duration
+                duration: audioAnalysis.duration,
             )
 
             if validatedAudioFile.duration < Self.minimumRecordingDuration {
@@ -860,7 +857,7 @@ final class WorkflowController {
                 mode: inferredMode(
                     selectedText: selectedText,
                     personaPrompt: personaPrompt,
-                    recordingIntent: recordingIntent
+                    recordingIntent: recordingIntent,
                 ),
                 audioFilePath: validatedAudioFile.fileURL.path,
                 transcriptText: nil,
@@ -869,12 +866,12 @@ final class WorkflowController {
                 recordingDurationSeconds: validatedAudioFile.duration,
                 pipelineTiming: HistoryPipelineTiming(
                     recordingStoppedAt: recordingStoppedAt,
-                    audioFileReadyAt: audioFileReadyAt
+                    audioFileReadyAt: audioFileReadyAt,
                 ),
                 recordingStatus: .succeeded,
                 transcriptionStatus: .running,
                 processingStatus: .pending,
-                applyStatus: .pending
+                applyStatus: .pending,
             )
             saveHistoryRecord(record)
             logPipelineEvent("audio-file-ready", for: record)
@@ -884,7 +881,7 @@ final class WorkflowController {
             startProcessingTimeout(sessionID: sessionID)
             processingTask = Task { [weak self] in
                 guard let self else { return }
-                await self.process(
+                await process(
                     audioFile: validatedAudioFile,
                     record: record,
                     selectionSnapshot: selectionSnapshot,
@@ -892,9 +889,9 @@ final class WorkflowController {
                     askContextText: askContextText,
                     personaPrompt: personaPrompt,
                     recordingIntent: recordingIntent,
-                    sessionID: sessionID
+                    sessionID: sessionID,
                 )
-                self.cancelProcessingTimeout()
+                cancelProcessingTimeout()
                 await MainActor.run {
                     if self.processingSessionID == sessionID {
                         self.processingTask = nil
@@ -911,7 +908,7 @@ final class WorkflowController {
                 recordingStatus: .failed,
                 transcriptionStatus: .skipped,
                 processingStatus: .skipped,
-                applyStatus: .skipped
+                applyStatus: .skipped,
             )
             record.errorMessage = msg
             saveHistoryRecord(record)
@@ -949,7 +946,7 @@ final class WorkflowController {
         mutableRecord.applyStatus = .pending
         mutableRecord.pipelineTiming = HistoryPipelineTiming(
             recordingStoppedAt: Date(),
-            audioFileReadyAt: Date()
+            audioFileReadyAt: Date(),
         )
         saveHistoryRecord(mutableRecord)
         logPipelineEvent("retry-restarted", for: mutableRecord)
@@ -972,14 +969,14 @@ final class WorkflowController {
                 selectedRange: nil,
                 selectedText: selectedText,
                 source: "history-retry",
-                isEditable: false
+                isEditable: false,
             ),
             selectedText: selectedText,
             askContextText: selectedText,
             personaPrompt: personaPrompt,
             recordingIntent: mutableRecord.mode == .editSelection || mutableRecord.mode == .askAnswer ? .askSelection : .dictation,
             sessionID: sessionID,
-            forceResultDialogOnSuccess: true
+            forceResultDialogOnSuccess: true,
         )
     }
 
@@ -992,7 +989,7 @@ final class WorkflowController {
         personaPrompt: String?,
         recordingIntent: RecordingIntent,
         sessionID: UUID,
-        forceResultDialogOnSuccess: Bool = false
+        forceResultDialogOnSuccess: Bool = false,
     ) async {
         var record = record
         do {
@@ -1061,11 +1058,11 @@ final class WorkflowController {
                 saveHistoryRecord(record)
                 logPipelineEvent("llm-processing-started", for: record)
 
-                if settingsStore.agentFrameworkEnabled && settingsStore.agentEnabled {
+                if settingsStore.agentFrameworkEnabled, settingsStore.agentEnabled {
                     let agentResult = try await runAskAgent(
                         selectedText: askContextText,
                         spokenInstruction: transcribedText,
-                        personaPrompt: personaPrompt
+                        personaPrompt: personaPrompt,
                     )
                     try ensureProcessingIsActive(sessionID)
                     pipelineTiming.llmProcessingCompletedAt = Date()
@@ -1073,7 +1070,7 @@ final class WorkflowController {
                     logPipelineEvent("llm-processing-completed", for: record)
 
                     switch agentResult {
-                    case .answer(let text):
+                    case let .answer(text):
                         record.mode = .askAnswer
                         record.personaResultText = text
                         record.processingStatus = .succeeded
@@ -1087,7 +1084,7 @@ final class WorkflowController {
                             self.presentAskAnswer(
                                 question: transcribedText,
                                 selectedText: askContextText,
-                                answerMarkdown: text
+                                answerMarkdown: text,
                             )
                         }
                         pipelineTiming.applyCompletedAt = Date()
@@ -1095,7 +1092,7 @@ final class WorkflowController {
                         record.applyStatus = .succeeded
                         record.applyMessage = L("workflow.ask.answerPresented")
 
-                    case .edit(let text):
+                    case let .edit(text):
                         record.mode = .editSelection
                         record.selectionEditedText = text
                         record.processingStatus = .succeeded
@@ -1109,8 +1106,8 @@ final class WorkflowController {
                         let outcome: ApplyOutcome
                         NetworkDebugLogger.logMessage(
                             "[Apply Decision] mode=editSelection hasSelection=\(selectionSnapshot.hasSelection) " +
-                            "isEditable=\(selectionSnapshot.isEditable) hasRange=\(selectionSnapshot.selectedRange != nil) " +
-                            "showResultDialog=\(shouldShowResultDialog)"
+                                "isEditable=\(selectionSnapshot.isEditable) hasRange=\(selectionSnapshot.selectedRange != nil) " +
+                                "showResultDialog=\(shouldShowResultDialog)",
                         )
                         if shouldShowResultDialog {
                             await MainActor.run {
@@ -1133,7 +1130,7 @@ final class WorkflowController {
                         spokenInstruction: transcribedText,
                         personaPrompt: personaPrompt,
                         editableTarget: selectionSnapshot.isEditable,
-                        sessionID: sessionID
+                        sessionID: sessionID,
                     )
                     try await applyLegacyAskDecision(
                         askDecisionResult,
@@ -1142,7 +1139,7 @@ final class WorkflowController {
                         selectionSnapshot: selectionSnapshot,
                         record: &record,
                         pipelineTiming: &pipelineTiming,
-                        sessionID: sessionID
+                        sessionID: sessionID,
                     )
                 }
             } else if recordingIntent == .askSelection {
@@ -1155,21 +1152,20 @@ final class WorkflowController {
                 saveHistoryRecord(record)
                 logPipelineEvent("llm-processing-started", for: record)
 
-                if settingsStore.agentFrameworkEnabled && settingsStore.agentEnabled {
+                if settingsStore.agentFrameworkEnabled, settingsStore.agentEnabled {
                     let agentResult = try await runAskAgent(
                         selectedText: nil,
                         spokenInstruction: transcribedText,
-                        personaPrompt: personaPrompt
+                        personaPrompt: personaPrompt,
                     )
                     try ensureProcessingIsActive(sessionID)
                     pipelineTiming.llmProcessingCompletedAt = Date()
                     record.pipelineTiming = pipelineTiming
                     logPipelineEvent("llm-processing-completed", for: record)
 
-                    let answerText: String
-                    switch agentResult {
-                    case .answer(let text): answerText = text
-                    case .edit(let text): answerText = text
+                    let answerText: String = switch agentResult {
+                    case let .answer(text): text
+                    case let .edit(text): text
                     }
 
                     record.mode = .askAnswer
@@ -1185,7 +1181,7 @@ final class WorkflowController {
                         self.presentAskAnswer(
                             question: transcribedText,
                             selectedText: askContextText,
-                            answerMarkdown: answerText
+                            answerMarkdown: answerText,
                         )
                     }
                     pipelineTiming.applyCompletedAt = Date()
@@ -1199,7 +1195,7 @@ final class WorkflowController {
                         spokenInstruction: transcribedText,
                         personaPrompt: personaPrompt,
                         editableTarget: selectionSnapshot.isEditable,
-                        sessionID: sessionID
+                        sessionID: sessionID,
                     )
                     try await applyLegacyAskDecision(
                         askDecisionResult,
@@ -1208,7 +1204,7 @@ final class WorkflowController {
                         selectionSnapshot: selectionSnapshot,
                         record: &record,
                         pipelineTiming: &pipelineTiming,
-                        sessionID: sessionID
+                        sessionID: sessionID,
                     )
                 }
             } else if let personaPrompt, !personaPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -1246,9 +1242,9 @@ final class WorkflowController {
                                 mode: .rewriteTranscript,
                                 sourceText: transcribedText,
                                 spokenInstruction: nil,
-                                personaPrompt: personaPrompt
+                                personaPrompt: personaPrompt,
                             ),
-                            sessionID: sessionID
+                            sessionID: sessionID,
                         )
 
                         try ensureProcessingIsActive(sessionID)
@@ -1261,10 +1257,10 @@ final class WorkflowController {
                     } catch {
                         NetworkDebugLogger.logError(
                             context: "Persona rewrite failed, using transcript as fallback",
-                            error: error
+                            error: error,
                         )
                         ErrorLogStore.shared.log(
-                            "Persona rewrite failed, using transcript as fallback: \(error.localizedDescription)"
+                            "Persona rewrite failed, using transcript as fallback: \(error.localizedDescription)",
                         )
                         pipelineTiming.llmProcessingCompletedAt = Date()
                         rewriteOutput = transcribedText
@@ -1320,7 +1316,7 @@ final class WorkflowController {
                             self.presentAskAnswer(
                                 question: finalTranscriptText ?? "",
                                 selectedText: finalSelectionOriginalText,
-                                answerMarkdown: finalText
+                                answerMarkdown: finalText,
                             )
                         } else {
                             self.lastDialogResultText = finalText
@@ -1476,7 +1472,8 @@ final class WorkflowController {
         lastRetryableFailureRecord = nil
 
         if let activeProcessingRecordID,
-           var record = historyStore.record(id: activeProcessingRecordID) {
+           var record = historyStore.record(id: activeProcessingRecordID)
+        {
             record.errorMessage = reason
             if record.transcriptionStatus == .running {
                 record.transcriptionStatus = .failed
@@ -1502,7 +1499,7 @@ final class WorkflowController {
     private func inferredMode(
         selectedText: String?,
         personaPrompt: String?,
-        recordingIntent: RecordingIntent
+        recordingIntent: RecordingIntent,
     ) -> HistoryRecord.Mode {
         if recordingIntent == .askSelection {
             return .askAnswer
@@ -1522,34 +1519,31 @@ final class WorkflowController {
     private func personaPrompt(for record: HistoryRecord) -> String? {
         switch record.mode {
         case .dictation, .editSelection, .personaRewrite, .askAnswer:
-            return record.personaPrompt ?? settingsStore.activePersona?.prompt
+            record.personaPrompt ?? settingsStore.activePersona?.prompt
         }
     }
 
     private func selectionSnapshotLog(_ snapshot: TextSelectionSnapshot) -> String {
-        let processDescription: String
-        if let name = snapshot.processName, let pid = snapshot.processID {
-            processDescription = "\(name) (pid: \(pid))"
+        let processDescription: String = if let name = snapshot.processName, let pid = snapshot.processID {
+            "\(name) (pid: \(pid))"
         } else if let name = snapshot.processName {
-            processDescription = name
+            name
         } else if let pid = snapshot.processID {
-            processDescription = "pid: \(pid)"
+            "pid: \(pid)"
         } else {
-            processDescription = "<unknown>"
+            "<unknown>"
         }
 
-        let rangeDescription: String
-        if let range = snapshot.selectedRange {
-            rangeDescription = "{location: \(range.location), length: \(range.length)}"
+        let rangeDescription = if let range = snapshot.selectedRange {
+            "{location: \(range.location), length: \(range.length)}"
         } else {
-            rangeDescription = "<none>"
+            "<none>"
         }
 
-        let contentDescription: String
-        if let text = snapshot.selectedText, !text.isEmpty {
-            contentDescription = text
+        let contentDescription: String = if let text = snapshot.selectedText, !text.isEmpty {
+            text
         } else {
-            contentDescription = "<none>"
+            "<none>"
         }
 
         return """
@@ -1595,18 +1589,18 @@ final class WorkflowController {
     private func personaPickerTitle(for mode: PersonaPickerMode) -> String {
         switch mode {
         case .switchDefault:
-            return L("overlay.personaPicker.switchTitle")
+            L("overlay.personaPicker.switchTitle")
         case .applySelection:
-            return L("overlay.personaPicker.applyTitle")
+            L("overlay.personaPicker.applyTitle")
         }
     }
 
     private func personaPickerInstructions(for mode: PersonaPickerMode) -> String {
         switch mode {
         case .switchDefault:
-            return L("overlay.personaPicker.switchInstructions")
+            L("overlay.personaPicker.switchInstructions")
         case .applySelection:
-            return L("overlay.personaPicker.applyInstructions")
+            L("overlay.personaPicker.applyInstructions")
         }
     }
 
@@ -1619,8 +1613,8 @@ final class WorkflowController {
     private func presentResultDialog(title: String, text: String) {
         let work = { [weak self] in
             guard let self else { return }
-            self.lastDialogResultText = text
-            self.overlayController.showResultDialog(title: title, message: text)
+            lastDialogResultText = text
+            overlayController.showResultDialog(title: title, message: text)
         }
 
         if Thread.isMainThread {
@@ -1647,9 +1641,9 @@ final class WorkflowController {
 
         logAutomaticVocabulary(
             "session scheduled | insertedText=\(automaticVocabularyPreview(normalizedInsertedText)) " +
-            "| observationWindow=\(Int(Self.automaticVocabularyObservationWindow))s " +
-            "| settleDelay=\(Self.automaticVocabularySettleDelay)s " +
-            "| maxAnalyses=\(Self.automaticVocabularyMaxAnalysesPerSession)"
+                "| observationWindow=\(Int(Self.automaticVocabularyObservationWindow))s " +
+                "| settleDelay=\(Self.automaticVocabularySettleDelay)s " +
+                "| maxAnalyses=\(Self.automaticVocabularyMaxAnalysesPerSession)",
         )
 
         automaticVocabularyObservationTask = Task { [weak self] in
@@ -1658,26 +1652,26 @@ final class WorkflowController {
             do {
                 try await Task.sleep(for: Self.automaticVocabularyStartupDelay)
             } catch {
-                self.logAutomaticVocabulary("session cancelled before startup delay finished")
+                logAutomaticVocabulary("session cancelled before startup delay finished")
                 return
             }
 
             guard !Task.isCancelled else { return }
-            let baselineSnapshot = await self.readAutomaticVocabularyBaselineWithRetry()
+            let baselineSnapshot = await readAutomaticVocabularyBaselineWithRetry()
             guard let baselineText = baselineSnapshot.text else {
-                self.logAutomaticVocabulary(
+                logAutomaticVocabulary(
                     "session aborted: failed to read baseline input text | " +
-                    self.describeCurrentInputTextSnapshot(baselineSnapshot)
+                        describeCurrentInputTextSnapshot(baselineSnapshot),
                 )
                 return
             }
 
             var observationState = AutomaticVocabularyMonitor.makeObservationState(
                 baselineText: baselineText,
-                startedAt: Date()
+                startedAt: Date(),
             )
-            self.logAutomaticVocabulary(
-                "session started | baselineText=\(self.automaticVocabularyPreview(baselineText))"
+            logAutomaticVocabulary(
+                "session started | baselineText=\(automaticVocabularyPreview(baselineText))",
             )
             let deadline = Date().addingTimeInterval(Self.automaticVocabularyObservationWindow)
 
@@ -1685,16 +1679,16 @@ final class WorkflowController {
                 do {
                     try await Task.sleep(for: Self.automaticVocabularyPollInterval)
                 } catch {
-                    self.logAutomaticVocabulary("session cancelled during polling")
+                    logAutomaticVocabulary("session cancelled during polling")
                     return
                 }
 
                 guard !Task.isCancelled else { return }
-                let currentSnapshot = await self.textInjector.currentInputTextSnapshot()
+                let currentSnapshot = await textInjector.currentInputTextSnapshot()
                 guard let currentText = currentSnapshot.text else {
-                    self.logAutomaticVocabulary(
+                    logAutomaticVocabulary(
                         "poll skipped: failed to read current input text | " +
-                        self.describeCurrentInputTextSnapshot(currentSnapshot)
+                            describeCurrentInputTextSnapshot(currentSnapshot),
                     )
                     continue
                 }
@@ -1702,12 +1696,12 @@ final class WorkflowController {
                 let didChange = AutomaticVocabularyMonitor.observe(
                     text: currentText,
                     at: now,
-                    state: &observationState
+                    state: &observationState,
                 )
                 if didChange {
-                    self.logAutomaticVocabulary(
+                    logAutomaticVocabulary(
                         "change observed | analysisCount=\(observationState.analysisCount) " +
-                        "| latestText=\(self.automaticVocabularyPreview(currentText))"
+                            "| latestText=\(automaticVocabularyPreview(currentText))",
                     )
                 }
 
@@ -1715,83 +1709,83 @@ final class WorkflowController {
                     state: observationState,
                     now: now,
                     settleDelay: Self.automaticVocabularySettleDelay,
-                    maxAnalyses: Self.automaticVocabularyMaxAnalysesPerSession
+                    maxAnalyses: Self.automaticVocabularyMaxAnalysesPerSession,
                 ) else {
                     continue
                 }
 
                 AutomaticVocabularyMonitor.markAnalysisCompleted(
                     for: pendingAnalysis.updatedText,
-                    state: &observationState
+                    state: &observationState,
                 )
-                self.logAutomaticVocabulary(
+                logAutomaticVocabulary(
                     "stable change ready for analysis | analysisRound=\(observationState.analysisCount) " +
-                    "| previous=\(self.automaticVocabularyPreview(pendingAnalysis.previousStableText)) " +
-                    "| updated=\(self.automaticVocabularyPreview(pendingAnalysis.updatedText))"
+                        "| previous=\(automaticVocabularyPreview(pendingAnalysis.previousStableText)) " +
+                        "| updated=\(automaticVocabularyPreview(pendingAnalysis.updatedText))",
                 )
 
                 guard let change = AutomaticVocabularyMonitor.detectChange(
                     from: pendingAnalysis.previousStableText,
-                    to: pendingAnalysis.updatedText
+                    to: pendingAnalysis.updatedText,
                 ) else {
-                    self.logAutomaticVocabulary("analysis skipped: no candidate terms found after diff")
+                    logAutomaticVocabulary("analysis skipped: no candidate terms found after diff")
                     continue
                 }
                 let candidateSummary = change.candidateTerms.joined(separator: ", ")
-                self.logAutomaticVocabulary(
-                    "diff detected | oldFragment=\(self.automaticVocabularyPreview(change.oldFragment)) " +
-                    "| newFragment=\(self.automaticVocabularyPreview(change.newFragment)) " +
-                    "| candidates=\(candidateSummary)"
+                logAutomaticVocabulary(
+                    "diff detected | oldFragment=\(automaticVocabularyPreview(change.oldFragment)) " +
+                        "| newFragment=\(automaticVocabularyPreview(change.newFragment)) " +
+                        "| candidates=\(candidateSummary)",
                 )
 
                 do {
-                    let acceptedTerms = try await self.evaluateAutomaticVocabularyCandidates(
+                    let acceptedTerms = try await evaluateAutomaticVocabularyCandidates(
                         transcript: normalizedInsertedText,
-                        change: change
+                        change: change,
                     )
                     let approvedSummary = acceptedTerms.joined(separator: ", ")
-                    self.logAutomaticVocabulary("llm decision received | approvedTerms=\(approvedSummary)")
-                    let addedTerms = self.addAutomaticVocabularyTerms(acceptedTerms)
+                    logAutomaticVocabulary("llm decision received | approvedTerms=\(approvedSummary)")
+                    let addedTerms = addAutomaticVocabularyTerms(acceptedTerms)
                     guard !addedTerms.isEmpty else {
-                        self.logAutomaticVocabulary("analysis completed: no new terms added")
+                        logAutomaticVocabulary("analysis completed: no new terms added")
                         continue
                     }
 
                     let addedSummary = addedTerms.joined(separator: ", ")
-                    self.logAutomaticVocabulary("terms added | addedTerms=\(addedSummary)")
+                    logAutomaticVocabulary("terms added | addedTerms=\(addedSummary)")
 
                     await MainActor.run {
                         self.overlayController.showNotice(message: self.automaticVocabularyNotice(for: addedTerms))
                     }
                 } catch {
-                    self.logAutomaticVocabulary("analysis failed: \(error.localizedDescription)")
+                    logAutomaticVocabulary("analysis failed: \(error.localizedDescription)")
                     ErrorLogStore.shared.log("Automatic vocabulary evaluation failed: \(error.localizedDescription)")
                 }
             }
 
-            self.logAutomaticVocabulary(
-                "session completed | totalAnalyses=\(observationState.analysisCount)"
+            logAutomaticVocabulary(
+                "session completed | totalAnalyses=\(observationState.analysisCount)",
             )
         }
     }
 
     private func evaluateAutomaticVocabularyCandidates(
         transcript: String,
-        change: AutomaticVocabularyChange
+        change: AutomaticVocabularyChange,
     ) async throws -> [String] {
         let prompts = PromptCatalog.automaticVocabularyDecisionPrompts(
             transcript: transcript,
             oldFragment: change.oldFragment,
             newFragment: change.newFragment,
             candidateTerms: change.candidateTerms,
-            existingTerms: VocabularyStore.activeTerms()
+            existingTerms: VocabularyStore.activeTerms(),
         )
         let response = try await llmService.completeJSON(
             systemPrompt: prompts.system,
             userPrompt: prompts.user,
-            schema: AutomaticVocabularyMonitor.decisionSchema
+            schema: AutomaticVocabularyMonitor.decisionSchema,
         )
-        self.logAutomaticVocabulary("llm raw response | response=\(self.automaticVocabularyPreview(response))")
+        logAutomaticVocabulary("llm raw response | response=\(automaticVocabularyPreview(response))")
         return AutomaticVocabularyMonitor.parseAcceptedTerms(from: response)
     }
 
@@ -1824,10 +1818,10 @@ final class WorkflowController {
         var latestSnapshot = await textInjector.currentInputTextSnapshot()
         guard latestSnapshot.text == nil else { return latestSnapshot }
 
-        for attempt in 1...Self.automaticVocabularyBaselineRetryCount {
+        for attempt in 1 ... Self.automaticVocabularyBaselineRetryCount {
             logAutomaticVocabulary(
                 "baseline read retry \(attempt)/\(Self.automaticVocabularyBaselineRetryCount) | " +
-                describeCurrentInputTextSnapshot(latestSnapshot)
+                    describeCurrentInputTextSnapshot(latestSnapshot),
             )
 
             do {
@@ -1840,7 +1834,7 @@ final class WorkflowController {
             if latestSnapshot.text != nil {
                 logAutomaticVocabulary(
                     "baseline read recovered on retry \(attempt) | " +
-                    describeCurrentInputTextSnapshot(latestSnapshot)
+                        describeCurrentInputTextSnapshot(latestSnapshot),
                 )
                 return latestSnapshot
             }
@@ -1877,14 +1871,14 @@ final class WorkflowController {
                 PersonaPickerEntry(
                     id: nil,
                     title: L("persona.none.title"),
-                    subtitle: L("persona.none.subtitle")
-                )
+                    subtitle: L("persona.none.subtitle"),
+                ),
             )
         }
         items.append(
             contentsOf: settingsStore.personas.map {
                 PersonaPickerEntry(id: $0.id, title: $0.name, subtitle: $0.prompt)
-            }
+            },
         )
         return items
     }
@@ -1917,7 +1911,7 @@ final class WorkflowController {
                     self.overlayController.showNotice(message: L("workflow.persona.switchedOff"))
                 }
             }
-        case .applySelection(let context):
+        case let .applySelection(context):
             guard let personaID = selected.id,
                   let persona = settingsStore.personas.first(where: { $0.id == personaID }) else { return }
             applyPersonaToSelection(context, persona: persona)
@@ -1958,7 +1952,7 @@ final class WorkflowController {
             recordingStatus: .skipped,
             transcriptionStatus: .skipped,
             processingStatus: .running,
-            applyStatus: .pending
+            applyStatus: .pending,
         )
         saveHistoryRecord(record)
         activeProcessingRecordID = record.id
@@ -1973,22 +1967,22 @@ final class WorkflowController {
             guard let self else { return }
 
             do {
-                let rewriteResult = try await self.generateRewrite(
+                let rewriteResult = try await generateRewrite(
                     request: LLMRewriteRequest(
                         mode: .rewriteTranscript,
                         sourceText: context.selectedText,
                         spokenInstruction: nil,
-                        personaPrompt: personaPrompt
+                        personaPrompt: personaPrompt,
                     ),
                     sessionID: sessionID,
-                    showsStreamingPreview: !shouldShowResultDialog
+                    showsStreamingPreview: !shouldShowResultDialog,
                 )
-                try self.ensureProcessingIsActive(sessionID)
+                try ensureProcessingIsActive(sessionID)
 
                 record.selectionEditedText = rewriteResult.text
                 record.processingStatus = .succeeded
                 record.applyStatus = .running
-                self.saveHistoryRecord(record)
+                saveHistoryRecord(record)
 
                 let outcome: ApplyOutcome
                 if shouldShowResultDialog {
@@ -1998,15 +1992,15 @@ final class WorkflowController {
                     }
                     outcome = .presentedInDialog
                 } else {
-                    outcome = self.applyText(rewriteResult.text, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
+                    outcome = applyText(rewriteResult.text, replace: true, fallbackTitle: L("workflow.result.copyTitle"))
                 }
 
-                try self.ensureProcessingIsActive(sessionID)
+                try ensureProcessingIsActive(sessionID)
                 record.applyStatus = .succeeded
                 record.applyMessage = outcome.message
-                self.saveHistoryRecord(record)
+                saveHistoryRecord(record)
                 UsageStatsStore.shared.recordSession(record: record)
-                self.enforceHistoryRetentionPolicy()
+                enforceHistoryRetentionPolicy()
 
                 await MainActor.run {
                     if self.processingSessionID == sessionID {
@@ -2019,9 +2013,9 @@ final class WorkflowController {
                     self.activeProcessingRecordID = nil
                 }
             } catch is CancellationError {
-                self.markCancelled(&record)
-                self.saveHistoryRecord(record)
-                self.enforceHistoryRetentionPolicy()
+                markCancelled(&record)
+                saveHistoryRecord(record)
+                enforceHistoryRetentionPolicy()
                 await MainActor.run {
                     if self.processingSessionID == sessionID {
                         self.processingTask = nil
@@ -2031,10 +2025,10 @@ final class WorkflowController {
             } catch {
                 let msg = "Processing failed: \(error.localizedDescription)"
                 ErrorLogStore.shared.log(msg)
-                self.markFailure(&record, message: msg)
-                self.saveHistoryRecord(record)
+                markFailure(&record, message: msg)
+                saveHistoryRecord(record)
                 UsageStatsStore.shared.recordSession(record: record)
-                self.enforceHistoryRetentionPolicy()
+                enforceHistoryRetentionPolicy()
 
                 await MainActor.run {
                     if self.processingSessionID == sessionID {
@@ -2048,7 +2042,7 @@ final class WorkflowController {
                 }
             }
 
-            self.cancelProcessingTimeout()
+            cancelProcessingTimeout()
         }
     }
 
@@ -2070,8 +2064,8 @@ final class WorkflowController {
             ("apply_ms", timing.millisecondsBetween(timing.applyStartedAt, timing.applyCompletedAt)),
             ("end_to_end_ms", timing.millisecondsBetween(
                 timing.recordingStoppedAt,
-                timing.applyCompletedAt ?? timing.llmProcessingCompletedAt ?? timing.transcriptionCompletedAt
-            ))
+                timing.applyCompletedAt ?? timing.llmProcessingCompletedAt ?? timing.transcriptionCompletedAt,
+            )),
         ]
 
         let durationSummary = durations
@@ -2080,7 +2074,7 @@ final class WorkflowController {
 
         NetworkDebugLogger.logMessage(
             "[Voice Pipeline] event=\(event) record_id=\(record.id.uuidString) mode=\(record.mode.rawValue) \(durationSummary)"
-                .trimmingCharacters(in: .whitespaces)
+                .trimmingCharacters(in: .whitespaces),
         )
     }
 

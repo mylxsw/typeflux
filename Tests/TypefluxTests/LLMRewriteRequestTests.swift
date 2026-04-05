@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class LLMRewriteRequestTests: XCTestCase {
-
     func testModeEnumCases() {
         let editSelection = LLMRewriteRequest.Mode.editSelection
         let rewriteTranscript = LLMRewriteRequest.Mode.rewriteTranscript
@@ -16,7 +15,7 @@ final class LLMRewriteRequestTests: XCTestCase {
             mode: .editSelection,
             sourceText: "source",
             spokenInstruction: "make it better",
-            personaPrompt: "formal tone"
+            personaPrompt: "formal tone",
         )
 
         XCTAssertEqual(request.sourceText, "source")
@@ -29,7 +28,7 @@ final class LLMRewriteRequestTests: XCTestCase {
             mode: .rewriteTranscript,
             sourceText: "raw text",
             spokenInstruction: nil,
-            personaPrompt: nil
+            personaPrompt: nil,
         )
 
         XCTAssertEqual(request.sourceText, "raw text")

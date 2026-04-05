@@ -9,7 +9,7 @@ struct AudioFile {
 protocol AudioRecorder {
     func start(
         levelHandler: @escaping (Float) -> Void,
-        audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
+        audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?,
     ) throws
     func stop() throws -> AudioFile
 }

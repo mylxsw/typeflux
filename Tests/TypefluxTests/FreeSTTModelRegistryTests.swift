@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class FreeSTTModelRegistryTests: XCTestCase {
     func testRegistryStartsEmptyUntilConcreteSourcesAreAdded() {
@@ -14,7 +14,7 @@ final class FreeSTTModelRegistryTests: XCTestCase {
             displayName: "Demo Free STT",
             baseURL: "https://example.com/v1",
             additionalHeaders: ["X-Test": "1"],
-            supportedModels: ["demo-stt"]
+            supportedModels: ["demo-stt"],
         )
 
         let resolved = try XCTUnwrap(source.resolve(modelName: "DEMO-STT"))
@@ -26,8 +26,8 @@ final class FreeSTTModelRegistryTests: XCTestCase {
                 baseURL: "https://example.com/v1",
                 modelName: "demo-stt",
                 apiKey: "",
-                additionalHeaders: ["X-Test": "1"]
-            )
+                additionalHeaders: ["X-Test": "1"],
+            ),
         )
     }
 
@@ -38,7 +38,7 @@ final class FreeSTTModelRegistryTests: XCTestCase {
             id: "stt-id",
             displayName: "STT Source",
             baseURL: "https://stt.example.com/v1",
-            supportedModels: ["whisper-large"]
+            supportedModels: ["whisper-large"],
         )
         XCTAssertEqual(source.id, "stt-id")
         XCTAssertEqual(source.displayName, "STT Source")
@@ -50,7 +50,7 @@ final class FreeSTTModelRegistryTests: XCTestCase {
             id: "no-key",
             displayName: "No Key",
             baseURL: "https://example.com",
-            supportedModels: ["m1"]
+            supportedModels: ["m1"],
         )
         XCTAssertEqual(source.apiKey, "")
     }
@@ -60,7 +60,7 @@ final class FreeSTTModelRegistryTests: XCTestCase {
             id: "no-headers",
             displayName: "No Headers",
             baseURL: "https://example.com",
-            supportedModels: ["m1"]
+            supportedModels: ["m1"],
         )
         XCTAssertTrue(source.additionalHeaders.isEmpty)
     }
@@ -71,7 +71,7 @@ final class FreeSTTModelRegistryTests: XCTestCase {
             displayName: "Keyed",
             baseURL: "https://api.example.com",
             apiKey: "stt-key-xyz",
-            supportedModels: ["model-a"]
+            supportedModels: ["model-a"],
         )
         XCTAssertEqual(source.apiKey, "stt-key-xyz")
     }
@@ -82,7 +82,7 @@ final class FreeSTTModelRegistryTests: XCTestCase {
             displayName: "Headers",
             baseURL: "https://api.example.com",
             additionalHeaders: ["X-Provider": "stt", "X-Version": "1"],
-            supportedModels: ["model-b"]
+            supportedModels: ["model-b"],
         )
         XCTAssertEqual(source.additionalHeaders["X-Provider"], "stt")
         XCTAssertEqual(source.additionalHeaders["X-Version"], "1")
@@ -93,7 +93,7 @@ final class FreeSTTModelRegistryTests: XCTestCase {
             id: "multi",
             displayName: "Multi STT",
             baseURL: "https://api.example.com",
-            supportedModels: ["whisper-tiny", "whisper-small", "whisper-medium"]
+            supportedModels: ["whisper-tiny", "whisper-small", "whisper-medium"],
         )
         XCTAssertEqual(source.supportedModels, ["whisper-tiny", "whisper-small", "whisper-medium"])
     }
@@ -105,7 +105,7 @@ final class FreeSTTModelRegistryTests: XCTestCase {
             id: "src",
             displayName: "Source",
             baseURL: "https://example.com",
-            supportedModels: ["known-stt"]
+            supportedModels: ["known-stt"],
         )
         XCTAssertNil(source.resolve(modelName: "unknown-stt"))
     }
@@ -115,7 +115,7 @@ final class FreeSTTModelRegistryTests: XCTestCase {
             id: "src",
             displayName: "Source",
             baseURL: "https://example.com",
-            supportedModels: ["model-a"]
+            supportedModels: ["model-a"],
         )
         XCTAssertNil(source.resolve(modelName: ""))
     }
@@ -125,7 +125,7 @@ final class FreeSTTModelRegistryTests: XCTestCase {
             id: "src",
             displayName: "Source",
             baseURL: "https://example.com",
-            supportedModels: ["model-a"]
+            supportedModels: ["model-a"],
         )
         XCTAssertNil(source.resolve(modelName: "  "))
     }
@@ -135,7 +135,7 @@ final class FreeSTTModelRegistryTests: XCTestCase {
             id: "src",
             displayName: "Source",
             baseURL: "https://example.com",
-            supportedModels: ["Whisper-Large-V3"]
+            supportedModels: ["Whisper-Large-V3"],
         )
         let resolved = try XCTUnwrap(source.resolve(modelName: "whisper-large-v3"))
         XCTAssertEqual(resolved.modelName, "Whisper-Large-V3")
@@ -148,7 +148,7 @@ final class FreeSTTModelRegistryTests: XCTestCase {
             baseURL: "https://stt.full.com/v1",
             apiKey: "sk-stt-abc",
             additionalHeaders: ["X-H": "val"],
-            supportedModels: ["full-stt-model"]
+            supportedModels: ["full-stt-model"],
         )
         let resolved = try XCTUnwrap(source.resolve(modelName: "full-stt-model"))
         XCTAssertEqual(resolved.sourceID, "full-stt")
@@ -171,11 +171,11 @@ final class FreeSTTModelRegistryTests: XCTestCase {
     func testFreeSTTResolvedModelEquality() {
         let m1 = FreeSTTResolvedModel(
             sourceID: "s1", sourceName: "S1", baseURL: "https://a.com",
-            modelName: "m", apiKey: "", additionalHeaders: [:]
+            modelName: "m", apiKey: "", additionalHeaders: [:],
         )
         let m2 = FreeSTTResolvedModel(
             sourceID: "s1", sourceName: "S1", baseURL: "https://a.com",
-            modelName: "m", apiKey: "", additionalHeaders: [:]
+            modelName: "m", apiKey: "", additionalHeaders: [:],
         )
         XCTAssertEqual(m1, m2)
     }
@@ -183,11 +183,11 @@ final class FreeSTTModelRegistryTests: XCTestCase {
     func testFreeSTTResolvedModelInequalityOnBaseURL() {
         let m1 = FreeSTTResolvedModel(
             sourceID: "s1", sourceName: "S1", baseURL: "https://a.com",
-            modelName: "m", apiKey: "", additionalHeaders: [:]
+            modelName: "m", apiKey: "", additionalHeaders: [:],
         )
         let m2 = FreeSTTResolvedModel(
             sourceID: "s1", sourceName: "S1", baseURL: "https://b.com",
-            modelName: "m", apiKey: "", additionalHeaders: [:]
+            modelName: "m", apiKey: "", additionalHeaders: [:],
         )
         XCTAssertNotEqual(m1, m2)
     }
@@ -195,11 +195,11 @@ final class FreeSTTModelRegistryTests: XCTestCase {
     func testFreeSTTResolvedModelInequalityOnModelName() {
         let m1 = FreeSTTResolvedModel(
             sourceID: "s1", sourceName: "S1", baseURL: "https://a.com",
-            modelName: "model-a", apiKey: "", additionalHeaders: [:]
+            modelName: "model-a", apiKey: "", additionalHeaders: [:],
         )
         let m2 = FreeSTTResolvedModel(
             sourceID: "s1", sourceName: "S1", baseURL: "https://a.com",
-            modelName: "model-b", apiKey: "", additionalHeaders: [:]
+            modelName: "model-b", apiKey: "", additionalHeaders: [:],
         )
         XCTAssertNotEqual(m1, m2)
     }

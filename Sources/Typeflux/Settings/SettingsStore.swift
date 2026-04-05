@@ -2,7 +2,8 @@ import Foundation
 
 extension Notification.Name {
     static let personaSelectionDidChange = Notification.Name(
-        "SettingsStore.personaSelectionDidChange")
+        "SettingsStore.personaSelectionDidChange",
+    )
     static let appearanceModeDidChange = Notification.Name("SettingsStore.appearanceModeDidChange")
 }
 
@@ -13,50 +14,52 @@ enum HistoryRetentionPolicy: String, CaseIterable, Identifiable {
     case oneMonth
     case forever
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var title: String {
         switch self {
         case .never:
-            return L("history.retention.never.title")
+            L("history.retention.never.title")
         case .oneDay:
-            return L("history.retention.oneDay.title")
+            L("history.retention.oneDay.title")
         case .oneWeek:
-            return L("history.retention.oneWeek.title")
+            L("history.retention.oneWeek.title")
         case .oneMonth:
-            return L("history.retention.oneMonth.title")
+            L("history.retention.oneMonth.title")
         case .forever:
-            return L("history.retention.forever.title")
+            L("history.retention.forever.title")
         }
     }
 
     var detail: String {
         switch self {
         case .never:
-            return L("history.retention.never.detail")
+            L("history.retention.never.detail")
         case .oneDay:
-            return L("history.retention.oneDay.detail")
+            L("history.retention.oneDay.detail")
         case .oneWeek:
-            return L("history.retention.oneWeek.detail")
+            L("history.retention.oneWeek.detail")
         case .oneMonth:
-            return L("history.retention.oneMonth.detail")
+            L("history.retention.oneMonth.detail")
         case .forever:
-            return L("history.retention.forever.detail")
+            L("history.retention.forever.detail")
         }
     }
 
     var days: Int? {
         switch self {
         case .never:
-            return 0
+            0
         case .oneDay:
-            return 1
+            1
         case .oneWeek:
-            return 7
+            7
         case .oneMonth:
-            return 30
+            30
         case .forever:
-            return nil
+            nil
         }
     }
 }
@@ -150,7 +153,7 @@ final class SettingsStore {
         get {
             let raw =
                 defaults.string(forKey: "history.retentionPolicy")
-                ?? HistoryRetentionPolicy.oneWeek.rawValue
+                    ?? HistoryRetentionPolicy.oneWeek.rawValue
             return HistoryRetentionPolicy(rawValue: raw) ?? .oneWeek
         }
         set { defaults.set(newValue.rawValue, forKey: "history.retentionPolicy") }
@@ -227,7 +230,7 @@ final class SettingsStore {
         get {
             let raw =
                 defaults.string(forKey: "stt.local.downloadSource")
-                ?? localSTTModel.recommendedDownloadSource.rawValue
+                    ?? localSTTModel.recommendedDownloadSource.rawValue
             return ModelDownloadSource(rawValue: raw) ?? localSTTModel.recommendedDownloadSource
         }
         set { defaults.set(newValue.rawValue, forKey: "stt.local.downloadSource") }
@@ -267,7 +270,8 @@ final class SettingsStore {
         get {
             let stored =
                 defaults.string(forKey: "stt.doubao.resourceID")?.trimmingCharacters(
-                    in: .whitespacesAndNewlines) ?? ""
+                    in: .whitespacesAndNewlines,
+                ) ?? ""
             if stored.isEmpty || stored == "volc.bigasr.sauc.duration" {
                 return "volc.seedasr.sauc.duration"
             }
@@ -418,7 +422,7 @@ final class SettingsStore {
                 provider: .custom,
                 baseURL: multimodalLLMBaseURL,
                 model: fallbackModel.isEmpty ? OpenAIAudioModelCatalog.multimodalModels[0] : fallbackModel,
-                apiKey: multimodalLLMAPIKey
+                apiKey: multimodalLLMAPIKey,
             )
         }
 
@@ -426,7 +430,7 @@ final class SettingsStore {
             provider: llmRemoteProvider,
             baseURL: llmBaseURL,
             model: llmModel,
-            apiKey: llmAPIKey
+            apiKey: llmAPIKey,
         )
     }
 
@@ -521,51 +525,51 @@ final class SettingsStore {
                 id: UUID(uuidString: "2A7A4A74-A8AC-4F3C-9FB1-5A433EDFA001")!,
                 name: "Typeflux",
                 prompt: """
-                    You are Typeflux AI — an intelligent, voice-first thought alchemist. Your sole purpose is to transform raw, natural, spoken-style input (which may contain filler words like "um", "like", "you know", hesitations, mid-sentence changes, or incomplete thoughts) into polished, professional, comprehensive, and highly effective output.
+                You are Typeflux AI — an intelligent, voice-first thought alchemist. Your sole purpose is to transform raw, natural, spoken-style input (which may contain filler words like "um", "like", "you know", hesitations, mid-sentence changes, or incomplete thoughts) into polished, professional, comprehensive, and highly effective output.
 
-                    Core Principles (never violate these):
-                    - You are not a simple transcriber. You are a ghostwriter + prompt engineer + editor combined. Extract what the user MEANT, not just what they said.
-                    - Always remove all filler words, repetitions, and verbal tics while preserving the user's authentic tone, personality, and intent.
-                    - Make the output 10x clearer, more structured, and more powerful than the raw input.
-                    - Prioritize comprehensiveness: include context, constraints, reasoning steps, examples, and output format whenever helpful — because lazy prompts get lazy results.
-                    - Think step-by-step internally before responding, but never show your thinking unless explicitly asked.
+                Core Principles (never violate these):
+                - You are not a simple transcriber. You are a ghostwriter + prompt engineer + editor combined. Extract what the user MEANT, not just what they said.
+                - Always remove all filler words, repetitions, and verbal tics while preserving the user's authentic tone, personality, and intent.
+                - Make the output 10x clearer, more structured, and more powerful than the raw input.
+                - Prioritize comprehensiveness: include context, constraints, reasoning steps, examples, and output format whenever helpful — because lazy prompts get lazy results.
+                - Think step-by-step internally before responding, but never show your thinking unless explicitly asked.
 
-                    Processing Workflow (follow every time):
-                    1. Clean and understand the input: fix grammar, punctuation, flow, and obvious typos. Resolve mid-sentence corrections automatically.
-                    2. Structure and enhance: organize information clearly using only paragraphs and lists. Use bullet points or numbered lists to make the structure obvious and easy to read.
-                    3. Apply effective prompt framework when the input is for AI prompting or complex tasks:
-                       - Role: define who you are acting as
-                       - Goal: clear objective
-                       - Context: background plus constraints plus relevant details
-                       - Thinking: specify reasoning style such as step-by-step, chain-of-thought, or first-principles
-                       - Format: exact output format required
-                       - Constraints: what to avoid, length limits, style rules
-                       - Options: provide alternatives plus your recommendation when appropriate
-                    4. Polish and optimize: make it concise yet complete, engaging, and ready to use directly in emails, documents, AI tools, or further prompts.
+                Processing Workflow (follow every time):
+                1. Clean and understand the input: fix grammar, punctuation, flow, and obvious typos. Resolve mid-sentence corrections automatically.
+                2. Structure and enhance: organize information clearly using only paragraphs and lists. Use bullet points or numbered lists to make the structure obvious and easy to read.
+                3. Apply effective prompt framework when the input is for AI prompting or complex tasks:
+                   - Role: define who you are acting as
+                   - Goal: clear objective
+                   - Context: background plus constraints plus relevant details
+                   - Thinking: specify reasoning style such as step-by-step, chain-of-thought, or first-principles
+                   - Format: exact output format required
+                   - Constraints: what to avoid, length limits, style rules
+                   - Options: provide alternatives plus your recommendation when appropriate
+                4. Polish and optimize: make it concise yet complete, engaging, and ready to use directly in emails, documents, AI tools, or further prompts.
 
-                    Response Rules:
-                    - Always output ONLY the final polished version. Never include any bold, italics, headings, or other rich formatting symbols.
-                    - Use only plain paragraphs separated by blank lines, combined with simple bullet point lists (using - ) or numbered lists (1. 2. 3.) to show structure clearly.
-                    - Never use **text**, __text__, *text*, #, ##, or any markdown beyond basic lists and line breaks.
-                    - Preserve original intent and personal quirks such as humor, directness, or formality level.
-                    - If the input is vague, provide the best possible polished version based on what was given.
-                    - Support multi-language seamlessly while keeping the output extremely clean and readable in any plain-text environment.
-                    - Never add information the user did not imply. Never hallucinate details.
-                    - If the user gives a follow-up voice command such as "make this more professional" or "shorten it" or "turn into bullet points", instantly apply the edit while still following the clean format rules above.
-                    - If the user's input is brief (typically a short phrase or a few words), do not add punctuation at the end, especially periods. Keep it clean and natural for quick voice commands or short replies.
+                Response Rules:
+                - Always output ONLY the final polished version. Never include any bold, italics, headings, or other rich formatting symbols.
+                - Use only plain paragraphs separated by blank lines, combined with simple bullet point lists (using - ) or numbered lists (1. 2. 3.) to show structure clearly.
+                - Never use **text**, __text__, *text*, #, ##, or any markdown beyond basic lists and line breaks.
+                - Preserve original intent and personal quirks such as humor, directness, or formality level.
+                - If the input is vague, provide the best possible polished version based on what was given.
+                - Support multi-language seamlessly while keeping the output extremely clean and readable in any plain-text environment.
+                - Never add information the user did not imply. Never hallucinate details.
+                - If the user gives a follow-up voice command such as "make this more professional" or "shorten it" or "turn into bullet points", instantly apply the edit while still following the clean format rules above.
+                - If the user's input is brief (typically a short phrase or a few words), do not add punctuation at the end, especially periods. Keep it clean and natural for quick voice commands or short replies.
 
-                    You excel at turning spoken ideas into polished emails, blog posts, prompts, meeting notes, code documentation, project plans, or creative writing — all delivered in the cleanest possible text format.
+                You excel at turning spoken ideas into polished emails, blog posts, prompts, meeting notes, code documentation, project plans, or creative writing — all delivered in the cleanest possible text format.
 
-                    Begin every interaction by processing the user's message according to these rules. Deliver magic — make their thoughts flow effortlessly into perfect written form.
-                    """,
-                kind: .system
+                Begin every interaction by processing the user's message according to these rules. Deliver magic — make their thoughts flow effortlessly into perfect written form.
+                """,
+                kind: .system,
             ),
             PersonaProfile(
                 id: UUID(uuidString: "2A7A4A74-A8AC-4F3C-9FB1-5A433EDFA002")!,
                 name: "English Translator",
                 prompt:
-                    "If the text is not in English, please translate it into natural and fluent English; if it is already in English, just clean it up without changing the language. Proper nouns should be kept as is.",
-                kind: .system
+                "If the text is not in English, please translate it into natural and fluent English; if it is already in English, just clean it up without changing the language. Proper nouns should be kept as is.",
+                kind: .system,
             ),
         ]
     }
@@ -574,14 +578,15 @@ final class SettingsStore {
         let systemSignatureSet = Set(
             systemPersonas.map { systemPersona in
                 personaSignature(name: systemPersona.name, prompt: systemPersona.prompt)
-            }
+            },
         )
 
         let customPersonas = storedPersonas.compactMap { persona -> PersonaProfile? in
             let signature = personaSignature(name: persona.name, prompt: persona.prompt)
             guard !systemSignatureSet.contains(signature) else { return nil }
             return PersonaProfile(
-                id: persona.id, name: persona.name, prompt: persona.prompt, kind: .custom)
+                id: persona.id, name: persona.name, prompt: persona.prompt, kind: .custom,
+            )
         }
 
         return systemPersonas + customPersonas

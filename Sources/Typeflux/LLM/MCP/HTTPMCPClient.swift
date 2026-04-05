@@ -1,6 +1,6 @@
 import Foundation
 
-struct MCPHTTPConfig: Sendable {
+struct MCPHTTPConfig {
     let url: URL
     let headers: [String: String]
 
@@ -17,8 +17,13 @@ actor HTTPMCPClient: MCPClient {
     private var connectionInfo: MCPConnectionInfo?
     private var messageIdCounter: Int = 0
 
-    var serverInfo: MCPConnectionInfo? { connectionInfo }
-    var isConnected: Bool { session != nil && connectionInfo != nil }
+    var serverInfo: MCPConnectionInfo? {
+        connectionInfo
+    }
+
+    var isConnected: Bool {
+        session != nil && connectionInfo != nil
+    }
 
     init(config: MCPHTTPConfig) {
         self.config = config
@@ -30,7 +35,7 @@ actor HTTPMCPClient: MCPClient {
         let initParams = MCPInitializeParams(
             protocolVersion: "2024-11-05",
             capabilities: MCPServerCapabilities(tools: MCPToolsCapability(listChanged: nil)),
-            clientInfo: MCPClientInfo(name: "Typeflux", version: "1.0.0")
+            clientInfo: MCPClientInfo(name: "Typeflux", version: "1.0.0"),
         )
         let initMsg = try MCPJsonRPCMessage.initializeRequest(id: .string(id), params: initParams)
         let response = try await post(message: initMsg)
@@ -39,7 +44,7 @@ actor HTTPMCPClient: MCPClient {
         connectionInfo = MCPConnectionInfo(
             name: initResult.serverInfo?.name ?? "Unknown",
             protocolVersion: initResult.protocolVersion,
-            capabilities: initResult.capabilities
+            capabilities: initResult.capabilities,
         )
     }
 
@@ -82,7 +87,7 @@ actor HTTPMCPClient: MCPClient {
     }
 
     private func post(message: MCPJsonRPCMessage) async throws -> MCPJsonRPCMessage {
-        guard let session = session else { throw MCPClientError.notConnected }
+        guard let session else { throw MCPClientError.notConnected }
 
         var request = URLRequest(url: config.url)
         request.httpMethod = "POST"
@@ -95,10 +100,11 @@ actor HTTPMCPClient: MCPClient {
         let (data, response) = try await session.data(for: request)
 
         if let httpResponse = response as? HTTPURLResponse,
-           !(200..<300).contains(httpResponse.statusCode) {
+           !(200 ..< 300).contains(httpResponse.statusCode)
+        {
             throw MCPClientError.serverError(
                 code: httpResponse.statusCode,
-                message: "HTTP \(httpResponse.statusCode)"
+                message: "HTTP \(httpResponse.statusCode)",
             )
         }
 

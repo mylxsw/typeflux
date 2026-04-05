@@ -1,7 +1,7 @@
 import Foundation
 import ServiceManagement
 
-struct LaunchAtLoginManager {
+enum LaunchAtLoginManager {
     static var isEnabled: Bool {
         SMAppService.mainApp.status == .enabled
     }

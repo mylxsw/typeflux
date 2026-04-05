@@ -1,9 +1,8 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AgentToolRegistryTests: XCTestCase {
-
-    func testRegisterAndHasTool() async throws {
+    func testRegisterAndHasTool() async {
         let registry = AgentToolRegistry()
         await registry.register(AnswerTextTool())
         let hasTool = await registry.hasTool(name: "answer_text")
@@ -12,7 +11,7 @@ final class AgentToolRegistryTests: XCTestCase {
         XCTAssertFalse(missing)
     }
 
-    func testRegisterAll() async throws {
+    func testRegisterAll() async {
         let registry = AgentToolRegistry()
         let clipboard = MockClipboardService()
         let tools: [any AgentTool] = [
@@ -27,7 +26,7 @@ final class AgentToolRegistryTests: XCTestCase {
         XCTAssertEqual(names, ["answer_text", "edit_text", "get_clipboard"])
     }
 
-    func testUnregister() async throws {
+    func testUnregister() async {
         let registry = AgentToolRegistry()
         await registry.register(AnswerTextTool())
         await registry.unregister(name: "answer_text")
@@ -35,7 +34,7 @@ final class AgentToolRegistryTests: XCTestCase {
         XCTAssertFalse(hasTool)
     }
 
-    func testIsTerminationTool() async throws {
+    func testIsTerminationTool() async {
         let registry = AgentToolRegistry()
         let clipboard = MockClipboardService()
         await registry.register(AnswerTextTool())
@@ -70,7 +69,7 @@ final class AgentToolRegistryTests: XCTestCase {
         do {
             _ = try await registry.execute(name: "nonexistent", arguments: "{}", toolCallId: "tc1")
             XCTFail("Expected toolNotFound error")
-        } catch AgentError.toolNotFound(let name) {
+        } catch let AgentError.toolNotFound(name) {
             XCTAssertEqual(name, "nonexistent")
         }
     }
@@ -85,7 +84,7 @@ final class AgentToolRegistryTests: XCTestCase {
         XCTAssertEqual(result.toolCallId, "tc1")
     }
 
-    func testUnregisterRemovesTerminationStatus() async throws {
+    func testUnregisterRemovesTerminationStatus() async {
         let registry = AgentToolRegistry()
         await registry.register(AnswerTextTool())
         await registry.unregister(name: "answer_text")
@@ -93,7 +92,7 @@ final class AgentToolRegistryTests: XCTestCase {
         XCTAssertFalse(isTermination)
     }
 
-    func testDefinitionsCountMatchesRegistered() async throws {
+    func testDefinitionsCountMatchesRegistered() async {
         let registry = AgentToolRegistry()
         let defsEmpty = await registry.definitions
         XCTAssertTrue(defsEmpty.isEmpty)

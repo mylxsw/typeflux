@@ -21,8 +21,13 @@ protocol FreeSTTModelSource {
 }
 
 extension FreeSTTModelSource {
-    var apiKey: String { "" }
-    var additionalHeaders: [String: String] { [:] }
+    var apiKey: String {
+        ""
+    }
+
+    var additionalHeaders: [String: String] {
+        [:]
+    }
 
     func resolve(modelName: String) -> FreeSTTResolvedModel? {
         let normalizedInput = modelName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -39,7 +44,7 @@ extension FreeSTTModelSource {
             baseURL: baseURL,
             modelName: matchedModel,
             apiKey: apiKey,
-            additionalHeaders: additionalHeaders
+            additionalHeaders: additionalHeaders,
         )
     }
 }
@@ -58,7 +63,7 @@ struct StaticFreeSTTModelSource: FreeSTTModelSource {
         baseURL: String,
         apiKey: String = "",
         additionalHeaders: [String: String] = [:],
-        supportedModels: [String]
+        supportedModels: [String],
     ) {
         self.id = id
         self.displayName = displayName
@@ -109,4 +114,3 @@ enum BuiltInFreeSTTModelSources {
         ]
     }
 }
-

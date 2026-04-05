@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AgentConfigTests: XCTestCase {
-
     func testDefaultConfig() {
         let config = AgentConfig.default
         XCTAssertEqual(config.maxSteps, 10)
@@ -16,7 +15,7 @@ final class AgentConfigTests: XCTestCase {
             maxSteps: 5,
             allowParallelToolCalls: true,
             temperature: 0.7,
-            enableStreaming: true
+            enableStreaming: true,
         )
         XCTAssertEqual(config.maxSteps, 5)
         XCTAssertTrue(config.allowParallelToolCalls)

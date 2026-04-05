@@ -20,7 +20,7 @@ final class LocalModelTranscriber: Transcriber {
 
     func transcribeStream(
         audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         let model = selectedModelIdentifier()
         NetworkDebugLogger.logRequest(
@@ -35,7 +35,7 @@ final class LocalModelTranscriber: Transcriber {
                 "path": "\(audioFile.fileURL.path)"
               }
             }
-            """
+            """,
         )
 
         switch settingsStore.localSTTModel {
@@ -49,7 +49,7 @@ final class LocalModelTranscriber: Transcriber {
             let modelInfo = try await preparedModelInfo()
             let transcriber = SenseVoiceTranscriber(
                 modelIdentifier: model,
-                modelFolder: modelInfo.storagePath
+                modelFolder: modelInfo.storagePath,
             )
             return try await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
 
@@ -58,7 +58,7 @@ final class LocalModelTranscriber: Transcriber {
             let modelInfo = try await preparedModelInfo()
             let transcriber = Qwen3ASRTranscriber(
                 modelIdentifier: model,
-                modelFolder: modelInfo.storagePath
+                modelFolder: modelInfo.storagePath,
             )
             return try await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
         }
@@ -119,7 +119,7 @@ final class LocalModelTranscriber: Transcriber {
         NSError(
             domain: "LocalModelTranscriber",
             code: 1,
-            userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.notPrepared")]
+            userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.notPrepared")],
         )
     }
 
@@ -127,7 +127,7 @@ final class LocalModelTranscriber: Transcriber {
         NSError(
             domain: "LocalModelTranscriber",
             code: 3,
-            userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.preparedPathUnavailable")]
+            userInfo: [NSLocalizedDescriptionKey: L("localSTT.error.preparedPathUnavailable")],
         )
     }
 }

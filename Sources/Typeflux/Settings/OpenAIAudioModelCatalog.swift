@@ -6,7 +6,7 @@ enum OpenAIAudioModelCatalog {
     static let xAIWhisperModel = "whisper-1"
 
     static let whisperEndpoints = [
-        defaultWhisperEndpoint
+        defaultWhisperEndpoint,
     ]
 
     static let whisperModels = [
@@ -16,7 +16,7 @@ enum OpenAIAudioModelCatalog {
     ]
 
     static let xAIWhisperModels = [
-        xAIWhisperModel
+        xAIWhisperModel,
     ]
 
     static let groqWhisperModels = [
@@ -43,11 +43,11 @@ enum OpenAIAudioModelCatalog {
     static func suggestedWhisperModels(forEndpoint endpoint: String) -> [String] {
         switch sttEndpointProvider(for: endpoint) {
         case .groq:
-            return groqWhisperModels
+            groqWhisperModels
         case .xai:
-            return xAIWhisperModels
+            xAIWhisperModels
         case .openAICompatible:
-            return whisperModels
+            whisperModels
         }
     }
 
@@ -86,9 +86,9 @@ private extension OpenAIAudioModelCatalog {
         let resolvedEndpoint = resolvedWhisperEndpoint(endpoint)
         guard
             let host = URL(string: resolvedEndpoint)?
-                .host?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .lowercased()
+            .host?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
         else {
             return .openAICompatible
         }

@@ -41,7 +41,7 @@ enum DevLauncher {
 
         // Try executable path and walk up
         var url = URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent()
-        for _ in 0..<10 {
+        for _ in 0 ..< 10 {
             if FileManager.default.fileExists(atPath: url.appendingPathComponent("Package.swift").path) {
                 return url
             }

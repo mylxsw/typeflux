@@ -17,11 +17,11 @@ final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
             provider: llmConfig.provider,
             baseURL: llmConfig.baseURL,
             model: llmConfig.model,
-            apiKey: llmConfig.apiKey
+            apiKey: llmConfig.apiKey,
         )
         let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: request.systemPrompt,
-            appLanguage: settingsStore.appLanguage
+            appLanguage: settingsStore.appLanguage,
         )
 
         return try await RequestRetry.perform(operationName: "LLM agent tool call") {
@@ -35,9 +35,9 @@ final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
                     systemPrompt: effectiveSystemPrompt,
                     userPrompt: request.userPrompt,
                     tools: request.tools,
-                    forcedToolName: request.forcedToolName
+                    forcedToolName: request.forcedToolName,
                 ),
-                decoding: type
+                decoding: type,
             )
         }
     }
@@ -51,35 +51,35 @@ enum RemoteAgentClient {
         apiKey: String,
         additionalHeaders: [String: String] = [:],
         request: LLMAgentRequest,
-        decoding type: T.Type
+        decoding type: T.Type,
     ) async throws -> T {
         switch provider.apiStyle {
         case .openAICompatible:
-            return try await runOpenAICompatibleTool(
+            try await runOpenAICompatibleTool(
                 baseURL: baseURL,
                 model: model,
                 apiKey: apiKey,
                 additionalHeaders: additionalHeaders,
                 request: request,
-                decoding: type
+                decoding: type,
             )
         case .anthropic:
-            return try await runAnthropicTool(
+            try await runAnthropicTool(
                 baseURL: baseURL,
                 model: model,
                 apiKey: apiKey,
                 additionalHeaders: additionalHeaders,
                 request: request,
-                decoding: type
+                decoding: type,
             )
         case .gemini:
-            return try await runGeminiTool(
+            try await runGeminiTool(
                 baseURL: baseURL,
                 model: model,
                 apiKey: apiKey,
                 additionalHeaders: additionalHeaders,
                 request: request,
-                decoding: type
+                decoding: type,
             )
         }
     }
@@ -90,7 +90,7 @@ enum RemoteAgentClient {
         apiKey: String,
         additionalHeaders: [String: String],
         request: LLMAgentRequest,
-        decoding type: T.Type
+        decoding type: T.Type,
     ) async throws -> T {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "chat/completions")
         var urlRequest = URLRequest(url: url)
@@ -108,7 +108,7 @@ enum RemoteAgentClient {
             systemPrompt: request.systemPrompt,
             userPrompt: request.userPrompt,
             tools: request.tools,
-            forcedToolName: request.forcedToolName
+            forcedToolName: request.forcedToolName,
         )
         OpenAICompatibleResponseSupport.applyProviderTuning(body: &body, baseURL: baseURL, model: model)
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -121,7 +121,7 @@ enum RemoteAgentClient {
         return try decodeToolArguments(
             toolCall,
             expectedToolName: request.forcedToolName,
-            as: type
+            as: type,
         )
     }
 
@@ -131,7 +131,7 @@ enum RemoteAgentClient {
         apiKey: String,
         additionalHeaders: [String: String],
         request: LLMAgentRequest,
-        decoding type: T.Type
+        decoding type: T.Type,
     ) async throws -> T {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "messages")
         var urlRequest = URLRequest(url: url)
@@ -147,7 +147,7 @@ enum RemoteAgentClient {
             systemPrompt: request.systemPrompt,
             userPrompt: request.userPrompt,
             tools: request.tools,
-            forcedToolName: request.forcedToolName
+            forcedToolName: request.forcedToolName,
         )
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -159,7 +159,7 @@ enum RemoteAgentClient {
         return try decodeToolArguments(
             toolCall,
             expectedToolName: request.forcedToolName,
-            as: type
+            as: type,
         )
     }
 
@@ -169,11 +169,11 @@ enum RemoteAgentClient {
         apiKey: String,
         additionalHeaders: [String: String],
         request: LLMAgentRequest,
-        decoding type: T.Type
+        decoding type: T.Type,
     ) async throws -> T {
         guard var components = URLComponents(
             url: baseURL.appendingPathComponent("models/\(model):generateContent"),
-            resolvingAgainstBaseURL: false
+            resolvingAgainstBaseURL: false,
         ) else {
             throw NSError(domain: "LLMAgent", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid Gemini endpoint."])
         }
@@ -192,7 +192,7 @@ enum RemoteAgentClient {
             systemPrompt: request.systemPrompt,
             userPrompt: request.userPrompt,
             tools: request.tools,
-            forcedToolName: request.forcedToolName
+            forcedToolName: request.forcedToolName,
         )
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -204,14 +204,14 @@ enum RemoteAgentClient {
         return try decodeToolArguments(
             toolCall,
             expectedToolName: request.forcedToolName,
-            as: type
+            as: type,
         )
     }
 
     static func decodeToolArguments<T: Decodable & Sendable>(
         _ toolCall: LLMAgentToolCall,
         expectedToolName: String?,
-        as type: T.Type
+        as type: T.Type,
     ) throws -> T {
         guard expectedToolName == nil || toolCall.name == expectedToolName else {
             throw LLMAgentError.unexpectedToolName(expected: expectedToolName, actual: toolCall.name)

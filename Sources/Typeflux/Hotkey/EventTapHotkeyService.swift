@@ -2,10 +2,10 @@ import AppKit
 import Foundation
 
 private func hotkeyEventTapCallback(
-    proxy: CGEventTapProxy,
+    proxy _: CGEventTapProxy,
     type: CGEventType,
     event: CGEvent,
-    refcon: UnsafeMutableRawPointer?
+    refcon: UnsafeMutableRawPointer?,
 ) -> Unmanaged<CGEvent>? {
     guard let refcon else { return Unmanaged.passUnretained(event) }
     let service = Unmanaged<EventTapHotkeyService>.fromOpaque(refcon).takeUnretainedValue()
@@ -38,7 +38,7 @@ final class EventTapHotkeyService: HotkeyService {
 
     func start() {
         stop()
-        
+
         NSLog("[Hotkey] Starting event tap service...")
         ErrorLogStore.shared.log("Hotkey: starting")
 
@@ -71,8 +71,8 @@ final class EventTapHotkeyService: HotkeyService {
     private func installEventTapIfPossible() {
         let mask =
             (1 << CGEventType.keyDown.rawValue)
-            | (1 << CGEventType.keyUp.rawValue)
-            | (1 << CGEventType.flagsChanged.rawValue)
+                | (1 << CGEventType.keyUp.rawValue)
+                | (1 << CGEventType.flagsChanged.rawValue)
         let selfPointer = Unmanaged.passUnretained(self).toOpaque()
 
         guard let tap = CGEvent.tapCreate(
@@ -81,7 +81,7 @@ final class EventTapHotkeyService: HotkeyService {
             options: .defaultTap,
             eventsOfInterest: CGEventMask(mask),
             callback: hotkeyEventTapCallback,
-            userInfo: selfPointer
+            userInfo: selfPointer,
         ) else {
             ErrorLogStore.shared.log("Hotkey: failed to create CGEventTap, using NSEvent fallback")
             installNSEventMonitorFallback()
@@ -101,7 +101,7 @@ final class EventTapHotkeyService: HotkeyService {
         }
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { [weak self] event in
             guard let self else { return event }
-            let shouldConsume = self.processNSEvent(event, canConsume: true)
+            let shouldConsume = processNSEvent(event, canConsume: true)
             return shouldConsume ? nil : event
         }
     }
@@ -116,7 +116,7 @@ final class EventTapHotkeyService: HotkeyService {
             keyCode: Int(event.keyCode),
             modifierFlags: filteredFlags(event.modifierFlags),
             isRepeat: event.isARepeat,
-            canConsume: canConsume
+            canConsume: canConsume,
         )
     }
 
@@ -140,7 +140,7 @@ final class EventTapHotkeyService: HotkeyService {
             keyCode: keyCode,
             modifierFlags: flags,
             isRepeat: isRepeat,
-            canConsume: true
+            canConsume: true,
         )
         return shouldConsume ? nil : Unmanaged.passUnretained(event)
     }
@@ -150,7 +150,7 @@ final class EventTapHotkeyService: HotkeyService {
         keyCode: Int,
         modifierFlags: UInt,
         isRepeat: Bool,
-        canConsume: Bool
+        canConsume: Bool,
     ) -> Bool {
         guard let eventType else { return false }
 
@@ -163,7 +163,7 @@ final class EventTapHotkeyService: HotkeyService {
             modifierFlags: modifierFlags,
             activationHotkey: activationHotkey,
             askHotkey: askHotkey,
-            personaHotkey: personaHotkey
+            personaHotkey: personaHotkey,
         )
 
         switch eventType {
@@ -175,16 +175,16 @@ final class EventTapHotkeyService: HotkeyService {
                     isRepeat: isRepeat,
                     activationHotkey: activationHotkey,
                     askHotkey: askHotkey,
-                    personaHotkey: personaHotkey
-                )
+                    personaHotkey: personaHotkey,
+                ),
             )
         case .keyUp:
             handleGestureEvents(
                 arbiter.handleKeyUp(
                     keyCode: keyCode,
                     activationHotkey: activationHotkey,
-                    askHotkey: askHotkey
-                )
+                    askHotkey: askHotkey,
+                ),
             )
         case .flagsChanged:
             handleGestureEvents(
@@ -192,8 +192,8 @@ final class EventTapHotkeyService: HotkeyService {
                     keyCode: keyCode,
                     modifierFlags: modifierFlags,
                     activationHotkey: activationHotkey,
-                    askHotkey: askHotkey
-                )
+                    askHotkey: askHotkey,
+                ),
             )
         }
 
@@ -207,26 +207,26 @@ final class EventTapHotkeyService: HotkeyService {
     private func physicalEventType(for type: NSEvent.EventType) -> HotkeyPhysicalEventType? {
         switch type {
         case .keyDown:
-            return .keyDown
+            .keyDown
         case .keyUp:
-            return .keyUp
+            .keyUp
         case .flagsChanged:
-            return .flagsChanged
+            .flagsChanged
         default:
-            return nil
+            nil
         }
     }
 
     private func physicalEventType(for type: CGEventType) -> HotkeyPhysicalEventType? {
         switch type {
         case .keyDown:
-            return .keyDown
+            .keyDown
         case .keyUp:
-            return .keyUp
+            .keyUp
         case .flagsChanged:
-            return .flagsChanged
+            .flagsChanged
         default:
-            return nil
+            nil
         }
     }
 
@@ -282,13 +282,13 @@ final class EventTapHotkeyService: HotkeyService {
 
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            self.pendingModifierActivationWorkItem = nil
-            self.handleGestureEvents(self.arbiter.handlePendingModifierActivationTimeout())
+            pendingModifierActivationWorkItem = nil
+            handleGestureEvents(arbiter.handlePendingModifierActivationTimeout())
         }
         pendingModifierActivationWorkItem = workItem
         DispatchQueue.main.asyncAfter(
             deadline: .now() + Self.modifierActivationHoldDelay,
-            execute: workItem
+            execute: workItem,
         )
     }
 }

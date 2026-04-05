@@ -26,7 +26,7 @@ final class DIContainer {
         hotkeyService = EventTapHotkeyService(settingsStore: settingsStore)
         audioRecorder = AVFoundationAudioRecorder(
             settingsStore: settingsStore,
-            audioDeviceManager: audioDeviceManager
+            audioDeviceManager: audioDeviceManager,
         )
         overlayController = OverlayController(appState: appState)
         clipboard = SystemClipboardService()
@@ -40,13 +40,13 @@ final class DIContainer {
         llmAgentService = LLMAgentRouter(
             settingsStore: settingsStore,
             remote: OpenAICompatibleAgentService(settingsStore: settingsStore),
-            ollama: OllamaAgentService()
+            ollama: OllamaAgentService(),
         )
         localModelManager = LocalModelManager()
         llmService = LLMRouter(
             settingsStore: settingsStore,
             openAICompatible: OpenAICompatibleLLMService(settingsStore: settingsStore),
-            ollama: OllamaLLMService(settingsStore: settingsStore, modelManager: ollamaModelManager)
+            ollama: OllamaLLMService(settingsStore: settingsStore, modelManager: ollamaModelManager),
         )
         sttRouter = STTRouter(
             settingsStore: settingsStore,
@@ -61,8 +61,8 @@ final class DIContainer {
                 settingsStore: settingsStore,
                 baseURLOverride: "https://api.groq.com/openai/v1",
                 apiKeyOverride: { [settingsStore] in settingsStore.groqSTTAPIKey },
-                modelOverride: { [settingsStore] in settingsStore.groqSTTModel }
-            )
+                modelOverride: { [settingsStore] in settingsStore.groqSTTModel },
+            ),
         )
     }
 }

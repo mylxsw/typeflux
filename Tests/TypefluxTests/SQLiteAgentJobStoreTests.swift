@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class SQLiteAgentJobStoreTests: XCTestCase {
-
     private var testDir: URL!
     private var store: SQLiteAgentJobStore!
 
@@ -29,7 +28,7 @@ final class SQLiteAgentJobStoreTests: XCTestCase {
         prompt: String = "Test prompt",
         resultText: String? = "Result",
         steps: [AgentJobStep] = [],
-        createdAt: Date = Date()
+        createdAt: Date = Date(),
     ) -> AgentJob {
         AgentJob(
             id: id,
@@ -39,7 +38,7 @@ final class SQLiteAgentJobStoreTests: XCTestCase {
             title: title,
             userPrompt: prompt,
             resultText: resultText,
-            steps: steps
+            steps: steps,
         )
     }
 
@@ -93,11 +92,11 @@ final class SQLiteAgentJobStoreTests: XCTestCase {
     func testListReturnsJobsOrderedByCreatedAtDesc() async throws {
         let older = makeJob(
             prompt: "First",
-            createdAt: Date(timeIntervalSinceNow: -100)
+            createdAt: Date(timeIntervalSinceNow: -100),
         )
         let newer = makeJob(
             prompt: "Second",
-            createdAt: Date(timeIntervalSinceNow: -10)
+            createdAt: Date(timeIntervalSinceNow: -10),
         )
 
         try await store.save(older)
@@ -110,10 +109,10 @@ final class SQLiteAgentJobStoreTests: XCTestCase {
     }
 
     func testListWithLimit() async throws {
-        for i in 0..<5 {
+        for i in 0 ..< 5 {
             try await store.save(makeJob(
                 prompt: "Job \(i)",
-                createdAt: Date(timeIntervalSinceNow: Double(-i * 10))
+                createdAt: Date(timeIntervalSinceNow: Double(-i * 10)),
             ))
         }
 
@@ -122,10 +121,10 @@ final class SQLiteAgentJobStoreTests: XCTestCase {
     }
 
     func testListWithOffset() async throws {
-        for i in 0..<5 {
+        for i in 0 ..< 5 {
             try await store.save(makeJob(
                 prompt: "Job \(i)",
-                createdAt: Date(timeIntervalSinceNow: Double(-i * 10))
+                createdAt: Date(timeIntervalSinceNow: Double(-i * 10)),
             ))
         }
 
@@ -160,7 +159,7 @@ final class SQLiteAgentJobStoreTests: XCTestCase {
     // MARK: - Clear
 
     func testClearRemovesAllJobs() async throws {
-        for _ in 0..<3 {
+        for _ in 0 ..< 3 {
             try await store.save(makeJob())
         }
         let countBefore = try await store.count()
@@ -185,7 +184,7 @@ final class SQLiteAgentJobStoreTests: XCTestCase {
     }
 
     func testCountMultiple() async throws {
-        for _ in 0..<4 {
+        for _ in 0 ..< 4 {
             try await store.save(makeJob())
         }
         let count = try await store.count()
@@ -198,7 +197,7 @@ final class SQLiteAgentJobStoreTests: XCTestCase {
         let jobID = UUID()
         let tc = AgentJobToolCall(
             id: "tc-1", name: "search", argumentsJSON: #"{"q":"swift"}"#,
-            resultContent: "Found results", isError: false
+            resultContent: "Found results", isError: false,
         )
         let step = AgentJobStep(stepIndex: 0, toolCalls: [tc], assistantText: "Searching...", durationMs: 200)
         let job = makeJob(id: jobID, steps: [step])
@@ -231,7 +230,7 @@ final class SQLiteAgentJobStoreTests: XCTestCase {
         let job = AgentJob(
             id: jobID,
             status: .running,
-            userPrompt: "test"
+            userPrompt: "test",
         )
 
         try await store.save(job)
@@ -261,7 +260,7 @@ final class SQLiteAgentJobStoreTests: XCTestCase {
             errorMessage: "Something went wrong",
             steps: [],
             totalDurationMs: 5000,
-            outcomeType: "error"
+            outcomeType: "error",
         )
 
         try await store.save(job)
@@ -322,7 +321,7 @@ final class SQLiteAgentJobStoreTests: XCTestCase {
             title: "翻译邮件为日语 🇯🇵",
             userPrompt: "请帮我翻译这封邮件",
             selectedText: "こんにちは",
-            resultText: "翻译完成 ✅"
+            resultText: "翻译完成 ✅",
         )
         try await store.save(job)
 

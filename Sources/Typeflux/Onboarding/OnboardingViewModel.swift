@@ -15,9 +15,9 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     @Published var currentStep: Step = .language
-    @Published var stepDirection: Int = 1  // 1 = forward, -1 = backward
+    @Published var stepDirection: Int = 1 // 1 = forward, -1 = backward
 
-    // Language
+    /// Language
     @Published var appLanguage: AppLanguage
 
     // STT Config
@@ -89,8 +89,14 @@ final class OnboardingViewModel: ObservableObject {
         permissions = PrivacyGuard.snapshots()
     }
 
-    var canGoBack: Bool { currentStep != .language }
-    var isLastStep: Bool { currentStep == visibleSteps.last }
+    var canGoBack: Bool {
+        currentStep != .language
+    }
+
+    var isLastStep: Bool {
+        currentStep == visibleSteps.last
+    }
+
     var visibleSteps: [Step] {
         if sttProvider == .multimodalLLM {
             return Step.allCases.filter { step in
@@ -100,12 +106,13 @@ final class OnboardingViewModel: ObservableObject {
 
         return Step.allCases
     }
+
     var isSkippable: Bool {
         switch currentStep {
         case .language, .sttConfig, .llmConfig, .permissions:
-            return true
+            true
         case .sttProvider, .llmProvider, .shortcuts:
-            return false
+            false
         }
     }
 

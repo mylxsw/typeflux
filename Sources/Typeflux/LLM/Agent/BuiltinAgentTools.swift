@@ -20,14 +20,15 @@ struct AnswerTextTool: AgentTool, TerminationTool {
                         "enum": .array([.string("markdown"), .string("plain")]),
                     ]),
                 ]),
-            ]
-        )
+            ],
+        ),
     )
 
     func execute(arguments: String) async throws -> String {
         struct Args: Codable { let answer: String; let format: String? }
         guard let data = arguments.data(using: .utf8),
-              (try? JSONDecoder().decode(Args.self, from: data)) != nil else {
+              (try? JSONDecoder().decode(Args.self, from: data)) != nil
+        else {
             throw AgentError.toolExecutionFailed(name: definition.name, reason: "Invalid arguments")
         }
         return arguments
@@ -50,12 +51,12 @@ struct EditTextTool: AgentTool, TerminationTool {
                         "description": .string("用于替换选中文本的新内容"),
                     ]),
                 ]),
-            ]
-        )
+            ],
+        ),
     )
 
     func execute(arguments: String) async throws -> String {
-        return arguments
+        arguments
     }
 }
 
@@ -70,8 +71,8 @@ struct GetClipboardTool: AgentTool {
                 "type": .string("object"),
                 "additionalProperties": .bool(false),
                 "properties": .object([:]),
-            ]
-        )
+            ],
+        ),
     )
 
     private let clipboardService: ClipboardService
@@ -80,7 +81,7 @@ struct GetClipboardTool: AgentTool {
         self.clipboardService = clipboardService
     }
 
-    func execute(arguments: String) async throws -> String {
+    func execute(arguments _: String) async throws -> String {
         guard let content = clipboardService.getString() else {
             return #"{"error": "剪贴板为空或无文本内容"}"#
         }

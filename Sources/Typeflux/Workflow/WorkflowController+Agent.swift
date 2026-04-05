@@ -1,7 +1,7 @@
 import Foundation
 
 /// Agent execution result for the WorkflowController.
-enum AskAgentResult: Sendable {
+enum AskAgentResult {
     case answer(String)
     case edit(String)
 }
@@ -14,7 +14,7 @@ extension WorkflowController {
         personaPrompt: String?,
         mcpTools: [any AgentTool] = [],
         skillTools: [any AgentTool] = [],
-        skillPromptSupplements: [String] = []
+        skillPromptSupplements: [String] = [],
     ) async throws -> AskAgentResult {
         let registry = AgentToolRegistry()
         await registry.register(AnswerTextTool())
@@ -31,7 +31,7 @@ extension WorkflowController {
         let loop = AgentLoop(
             llmService: llmService,
             toolRegistry: registry,
-            config: .default
+            config: .default,
         )
 
         // Set up job recorder as the step monitor
@@ -42,13 +42,13 @@ extension WorkflowController {
         let systemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: AgentPromptCatalog.askAgentSystemPrompt(
                 personaPrompt: personaPrompt,
-                skillSupplements: skillPromptSupplements
+                skillSupplements: skillPromptSupplements,
             ),
-            appLanguage: settingsStore.appLanguage
+            appLanguage: settingsStore.appLanguage,
         )
         let userPrompt = AgentPromptCatalog.askAgentUserPrompt(
             selectedText: selectedText,
-            instruction: spokenInstruction
+            instruction: spokenInstruction,
         )
 
         let result: AgentResult
@@ -68,14 +68,14 @@ extension WorkflowController {
         let titleLLMService = LLMRouter(
             settingsStore: settingsStore,
             openAICompatible: OpenAICompatibleLLMService(settingsStore: settingsStore),
-            ollama: OllamaLLMService(settingsStore: settingsStore, modelManager: OllamaLocalModelManager())
+            ollama: OllamaLLMService(settingsStore: settingsStore, modelManager: OllamaLocalModelManager()),
         )
         Task.detached {
             if var job = try? await jobStore.job(id: jobID) {
                 let title = await AgentJobTitleGenerator.generateTitle(
                     for: job,
                     using: titleLLMService,
-                    appLanguage: self.settingsStore.appLanguage
+                    appLanguage: self.settingsStore.appLanguage,
                 )
                 if let title {
                     job.title = title
@@ -85,15 +85,15 @@ extension WorkflowController {
         }
 
         switch result.outcome {
-        case .text(let text):
+        case let .text(text):
             return .answer(text)
-        case .terminationTool(let name, let args) where name == BuiltinAgentToolName.answerText.rawValue:
+        case let .terminationTool(name, args) where name == BuiltinAgentToolName.answerText.rawValue:
             return .answer(parseStringField("answer", from: args) ?? "")
-        case .terminationTool(let name, let args) where name == BuiltinAgentToolName.editText.rawValue:
+        case let .terminationTool(name, args) where name == BuiltinAgentToolName.editText.rawValue:
             return .edit(parseStringField("replacement", from: args) ?? "")
         case .maxStepsReached:
             throw AgentError.maxStepsExceeded
-        case .error(let error):
+        case let .error(error):
             throw error
         default:
             throw AgentError.invalidAgentState(reason: "Unexpected outcome: \(result.outcome)")
@@ -102,7 +102,8 @@ extension WorkflowController {
 
     private func parseStringField(_ field: String, from json: String) -> String? {
         guard let data = json.data(using: .utf8),
-              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else {
             return nil
         }
         return dict[field] as? String

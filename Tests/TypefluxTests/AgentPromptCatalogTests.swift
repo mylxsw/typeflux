@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AgentPromptCatalogTests: XCTestCase {
-
     // MARK: - askAgentSystemPrompt
 
     func testSystemPromptIncludesToolDescriptions() {
@@ -50,7 +49,7 @@ final class AgentPromptCatalogTests: XCTestCase {
         let supplements = ["Use shell_command to run commands.", "Use web_fetch to look up URLs."]
         let prompt = AgentPromptCatalog.askAgentSystemPrompt(
             personaPrompt: nil,
-            skillSupplements: supplements
+            skillSupplements: supplements,
         )
         XCTAssertTrue(prompt.contains("Use shell_command to run commands."))
         XCTAssertTrue(prompt.contains("Use web_fetch to look up URLs."))
@@ -59,7 +58,7 @@ final class AgentPromptCatalogTests: XCTestCase {
     func testSystemPromptWithEmptySkillSupplements() {
         let prompt = AgentPromptCatalog.askAgentSystemPrompt(
             personaPrompt: nil,
-            skillSupplements: []
+            skillSupplements: [],
         )
         // Should still work normally
         XCTAssertTrue(prompt.contains("answer_text"))
@@ -69,7 +68,7 @@ final class AgentPromptCatalogTests: XCTestCase {
         let supplements = ["", "  ", "Valid supplement"]
         let prompt = AgentPromptCatalog.askAgentSystemPrompt(
             personaPrompt: nil,
-            skillSupplements: supplements
+            skillSupplements: supplements,
         )
         XCTAssertTrue(prompt.contains("Valid supplement"))
     }
@@ -77,7 +76,7 @@ final class AgentPromptCatalogTests: XCTestCase {
     func testSystemPromptWithPersonaAndSkillSupplements() {
         let prompt = AgentPromptCatalog.askAgentSystemPrompt(
             personaPrompt: "Be concise",
-            skillSupplements: ["Skill guidance here"]
+            skillSupplements: ["Skill guidance here"],
         )
         XCTAssertTrue(prompt.contains("Persona/style guidance"))
         XCTAssertTrue(prompt.contains("Be concise"))
@@ -89,7 +88,7 @@ final class AgentPromptCatalogTests: XCTestCase {
     func testUserPromptWithInstructionOnly() {
         let prompt = AgentPromptCatalog.askAgentUserPrompt(
             selectedText: nil,
-            instruction: "What is the weather?"
+            instruction: "What is the weather?",
         )
         XCTAssertTrue(prompt.contains("User request: What is the weather?"))
         XCTAssertFalse(prompt.contains("Selected text:"))
@@ -98,7 +97,7 @@ final class AgentPromptCatalogTests: XCTestCase {
     func testUserPromptWithSelectedText() {
         let prompt = AgentPromptCatalog.askAgentUserPrompt(
             selectedText: "Hello, world!",
-            instruction: "Translate this"
+            instruction: "Translate this",
         )
         XCTAssertTrue(prompt.contains("Selected text:\n---\nHello, world!\n---"))
         XCTAssertTrue(prompt.contains("User request: Translate this"))
@@ -107,7 +106,7 @@ final class AgentPromptCatalogTests: XCTestCase {
     func testUserPromptWithEmptySelectedText() {
         let prompt = AgentPromptCatalog.askAgentUserPrompt(
             selectedText: "  ",
-            instruction: "Do something"
+            instruction: "Do something",
         )
         XCTAssertFalse(prompt.contains("Selected text:"))
     }
@@ -115,7 +114,7 @@ final class AgentPromptCatalogTests: XCTestCase {
     func testUserPromptPartsJoinedWithDoubleNewline() {
         let prompt = AgentPromptCatalog.askAgentUserPrompt(
             selectedText: "some text",
-            instruction: "explain"
+            instruction: "explain",
         )
         XCTAssertTrue(prompt.contains("---\n\nUser request:"))
     }

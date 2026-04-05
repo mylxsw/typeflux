@@ -39,16 +39,16 @@ enum AudioContentAnalyzer {
                 peakPowerDB: -Float.infinity,
                 audibleDuration: 0,
                 audibleFrameRatio: 0,
-                frameCount: totalFrames
+                frameCount: totalFrames,
             )
         }
 
-        let chunkCapacity = AVAudioFrameCount(min(totalFrames, 8_192))
+        let chunkCapacity = AVAudioFrameCount(min(totalFrames, 8192))
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: chunkCapacity) else {
             throw NSError(
                 domain: "AudioContentAnalyzer",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to allocate audio analysis buffer."]
+                userInfo: [NSLocalizedDescriptionKey: "Unable to allocate audio analysis buffer."],
             )
         }
 
@@ -63,9 +63,9 @@ enum AudioContentAnalyzer {
             guard framesInBuffer > 0, let channels = buffer.floatChannelData else { break }
 
             let channelCount = Int(buffer.format.channelCount)
-            for frameIndex in 0..<framesInBuffer {
+            for frameIndex in 0 ..< framesInBuffer {
                 var mixedSample = 0.0
-                for channelIndex in 0..<channelCount {
+                for channelIndex in 0 ..< channelCount {
                     mixedSample += Double(channels[channelIndex][frameIndex])
                 }
                 let sample = mixedSample / Double(channelCount)
@@ -88,7 +88,7 @@ enum AudioContentAnalyzer {
             peakPowerDB: decibels(fromAmplitude: peakAmplitude),
             audibleDuration: Double(audibleFrameCount) / sampleRate,
             audibleFrameRatio: frameCount > 0 ? Double(audibleFrameCount) / Double(frameCount) : 0,
-            frameCount: frameCount
+            frameCount: frameCount,
         )
     }
 

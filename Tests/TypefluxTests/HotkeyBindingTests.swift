@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class HotkeyBindingTests: XCTestCase {
-
     // MARK: - matches()
 
     func testMatchesExact() {

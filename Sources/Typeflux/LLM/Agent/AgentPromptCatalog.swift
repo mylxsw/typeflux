@@ -30,12 +30,14 @@ enum AgentPromptCatalog {
         }
 
         if let persona = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !persona.isEmpty {
+           !persona.isEmpty
+        {
             parts.append(
                 """
                 Persona/style guidance:
                 \(persona)
-                """)
+                """,
+            )
         }
 
         return parts.joined(separator: "\n\n")
@@ -46,7 +48,8 @@ enum AgentPromptCatalog {
         var parts: [String] = []
 
         if let selected = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !selected.isEmpty {
+           !selected.isEmpty
+        {
             parts.append("Selected text:\n---\n\(selected)\n---")
         }
 

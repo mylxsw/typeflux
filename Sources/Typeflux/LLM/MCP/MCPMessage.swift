@@ -51,7 +51,7 @@ struct AnyCodable: Codable, @unchecked Sendable {
         default:
             throw EncodingError.invalidValue(value, EncodingError.Context(
                 codingPath: encoder.codingPath,
-                debugDescription: "AnyCodable: unsupported type \(type(of: value))"
+                debugDescription: "AnyCodable: unsupported type \(type(of: value))",
             ))
         }
     }
@@ -59,7 +59,7 @@ struct AnyCodable: Codable, @unchecked Sendable {
 
 // MARK: - MCPMessageId
 
-enum MCPMessageId: Codable, Sendable, Equatable {
+enum MCPMessageId: Codable, Equatable {
     case string(String)
     case number(Int)
 
@@ -77,48 +77,48 @@ enum MCPMessageId: Codable, Sendable, Equatable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
-        case .string(let s): try container.encode(s)
-        case .number(let n): try container.encode(n)
+        case let .string(s): try container.encode(s)
+        case let .number(n): try container.encode(n)
         }
     }
 
     var stringValue: String {
         switch self {
-        case .string(let s): return s
-        case .number(let n): return String(n)
+        case let .string(s): s
+        case let .number(n): String(n)
         }
     }
 }
 
 // MARK: - MCP Info Structures
 
-struct MCPClientInfo: Codable, Sendable {
+struct MCPClientInfo: Codable {
     let name: String
     let version: String
 }
 
-struct MCPServerInfo: Codable, Sendable {
+struct MCPServerInfo: Codable {
     let name: String
     let version: String
 }
 
-struct MCPToolsCapability: Codable, Sendable {
+struct MCPToolsCapability: Codable {
     let listChanged: Bool?
 }
 
-struct MCPServerCapabilities: Codable, Sendable {
+struct MCPServerCapabilities: Codable {
     let tools: MCPToolsCapability?
 }
 
 // MARK: - Initialize
 
-struct MCPInitializeParams: Codable, Sendable {
+struct MCPInitializeParams: Codable {
     let protocolVersion: String
     let capabilities: MCPServerCapabilities
     let clientInfo: MCPClientInfo
 }
 
-struct MCPInitializeResult: Codable, Sendable {
+struct MCPInitializeResult: Codable {
     let protocolVersion: String
     let capabilities: MCPServerCapabilities
     let serverInfo: MCPServerInfo?
@@ -126,12 +126,14 @@ struct MCPInitializeResult: Codable, Sendable {
 
 // MARK: - Tools List
 
-struct MCPToolsListParams: Codable, Sendable {
+struct MCPToolsListParams: Codable {
     let cursor: String?
-    init(cursor: String? = nil) { self.cursor = cursor }
+    init(cursor: String? = nil) {
+        self.cursor = cursor
+    }
 }
 
-struct MCPObjectSchema: Codable, Sendable {
+struct MCPObjectSchema: Codable {
     let type: String?
     let properties: [String: AnyCodable]?
     let required: [String]?
@@ -143,7 +145,7 @@ struct MCPObjectSchema: Codable, Sendable {
     }
 }
 
-struct MCPToolDefinition: Codable, Sendable {
+struct MCPToolDefinition: Codable {
     let name: String
     let description: String?
     let inputSchema: MCPObjectSchema
@@ -153,40 +155,41 @@ struct MCPToolDefinition: Codable, Sendable {
     }
 }
 
-struct MCPToolsListResult: Codable, Sendable {
+struct MCPToolsListResult: Codable {
     let tools: [MCPToolDefinition]
     let nextCursor: String?
 }
 
 // MARK: - Tools Call
 
-struct MCPToolsCallParams: Codable, Sendable {
+struct MCPToolsCallParams: Codable {
     let name: String
     let arguments: [String: AnyCodable]?
 }
 
-struct MCPContentBlock: Codable, Sendable {
+struct MCPContentBlock: Codable {
     let type: String
     let text: String?
 }
 
-struct MCPToolsCallResult: Codable, Sendable {
+struct MCPToolsCallResult: Codable {
     let content: [MCPContentBlock]
     let isError: Bool?
 }
 
 // MARK: - Error
 
-struct MCPErrorDetail: Codable, Sendable {
+struct MCPErrorDetail: Codable {
     let code: Int
     let message: String
     let data: AnyCodable?
 }
 
 // MARK: - MCPJsonRPCMessage
+
 // Flexible message structure using raw JSON for params/result
 
-struct MCPJsonRPCMessage: Codable, Sendable {
+struct MCPJsonRPCMessage: Codable {
     let jsonrpc: String
     let id: MCPMessageId?
     let method: String?
@@ -200,7 +203,7 @@ struct MCPJsonRPCMessage: Codable, Sendable {
         method: String? = nil,
         params: [String: AnyCodable]? = nil,
         result: [String: AnyCodable]? = nil,
-        error: MCPErrorDetail? = nil
+        error: MCPErrorDetail? = nil,
     ) {
         self.jsonrpc = jsonrpc
         self.id = id
@@ -242,7 +245,7 @@ extension MCPJsonRPCMessage {
 
     /// Parse result as MCPInitializeResult
     func decodeInitializeResult() throws -> MCPInitializeResult {
-        guard let result = result else {
+        guard let result else {
             throw MCPClientError.invalidResponse("No result in message")
         }
         let data = try JSONEncoder().encode(result)
@@ -251,7 +254,7 @@ extension MCPJsonRPCMessage {
 
     /// Parse result as MCPToolsListResult
     func decodeToolsListResult() throws -> MCPToolsListResult {
-        guard let result = result else {
+        guard let result else {
             throw MCPClientError.invalidResponse("No result in message")
         }
         let data = try JSONEncoder().encode(result)
@@ -260,7 +263,7 @@ extension MCPJsonRPCMessage {
 
     /// Parse result as MCPToolsCallResult
     func decodeToolsCallResult() throws -> MCPToolsCallResult {
-        guard let result = result else {
+        guard let result else {
             throw MCPClientError.invalidResponse("No result in message")
         }
         let data = try JSONEncoder().encode(result)
@@ -270,7 +273,7 @@ extension MCPJsonRPCMessage {
 
 // MARK: - MCPClientError
 
-enum MCPClientError: LocalizedError, Sendable {
+enum MCPClientError: LocalizedError {
     case notConnected
     case invalidResponse(String)
     case serverError(code: Int, message: String)
@@ -279,13 +282,13 @@ enum MCPClientError: LocalizedError, Sendable {
     var errorDescription: String? {
         switch self {
         case .notConnected:
-            return "MCP client is not connected."
-        case .invalidResponse(let msg):
-            return "Invalid MCP response: \(msg)"
-        case .serverError(let code, let message):
-            return "MCP server error \(code): \(message)"
-        case .encodingError(let msg):
-            return "MCP encoding error: \(msg)"
+            "MCP client is not connected."
+        case let .invalidResponse(msg):
+            "Invalid MCP response: \(msg)"
+        case let .serverError(code, message):
+            "MCP server error \(code): \(message)"
+        case let .encodingError(msg):
+            "MCP encoding error: \(msg)"
         }
     }
 }

@@ -27,20 +27,20 @@ enum AnySendable: Sendable {
 
     var foundationValue: Any {
         switch self {
-        case .string(let value):
-            return value
-        case .int(let value):
-            return value
-        case .double(let value):
-            return value
-        case .bool(let value):
-            return value
-        case .array(let values):
-            return values.map(\.foundationValue)
-        case .object(let values):
-            return values.mapValues(\.foundationValue)
+        case let .string(value):
+            value
+        case let .int(value):
+            value
+        case let .double(value):
+            value
+        case let .bool(value):
+            value
+        case let .array(values):
+            values.map(\.foundationValue)
+        case let .object(values):
+            values.mapValues(\.foundationValue)
         case .null:
-            return NSNull()
+            NSNull()
         }
     }
 }

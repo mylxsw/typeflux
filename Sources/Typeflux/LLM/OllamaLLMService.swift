@@ -28,10 +28,10 @@ final class OllamaLLMService: LLMService {
         try await modelManager.ensureModelReady(settingsStore: settingsStore)
         let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: systemPrompt,
-            appLanguage: settingsStore.appLanguage
+            appLanguage: settingsStore.appLanguage,
         )
         return try await RequestRetry.perform(operationName: "Ollama completion request") { [self] in
-            try await self.completeInternal(systemPrompt: effectiveSystemPrompt, userPrompt: userPrompt, schema: nil)
+            try await completeInternal(systemPrompt: effectiveSystemPrompt, userPrompt: userPrompt, schema: nil)
         }
     }
 
@@ -39,24 +39,24 @@ final class OllamaLLMService: LLMService {
         try await modelManager.ensureModelReady(settingsStore: settingsStore)
         let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: systemPrompt,
-            appLanguage: settingsStore.appLanguage
+            appLanguage: settingsStore.appLanguage,
         )
         return try await RequestRetry.perform(operationName: "Ollama JSON completion request") { [self] in
-            try await self.completeInternal(systemPrompt: effectiveSystemPrompt, userPrompt: userPrompt, schema: schema)
+            try await completeInternal(systemPrompt: effectiveSystemPrompt, userPrompt: userPrompt, schema: schema)
         }
     }
 
     private func completeInternal(
         systemPrompt: String,
         userPrompt: String,
-        schema: LLMJSONSchema?
+        schema: LLMJSONSchema?,
     ) async throws -> String {
         let base = settingsStore.ollamaBaseURL.isEmpty ? "http://127.0.0.1:11434" : settingsStore.ollamaBaseURL
         guard let baseURL = URL(string: base) else {
             throw NSError(
                 domain: "OllamaLLMService",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama base URL."]
+                userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama base URL."],
             )
         }
 
@@ -69,11 +69,11 @@ final class OllamaLLMService: LLMService {
             "stream": false,
             "messages": [
                 ["role": "system", "content": systemPrompt],
-                ["role": "user", "content": userPrompt]
+                ["role": "user", "content": userPrompt],
             ],
             "options": [
-                "temperature": 0.1
-            ]
+                "temperature": 0.1,
+            ],
         ]
         if let schema {
             body["format"] = schema.jsonObject
@@ -88,32 +88,33 @@ final class OllamaLLMService: LLMService {
             throw NSError(
                 domain: "OllamaLLMService",
                 code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama response."]
+                userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama response."],
             )
         }
 
-        guard (200..<300).contains(http.statusCode) else {
+        guard (200 ..< 300).contains(http.statusCode) else {
             let message = String(data: data, encoding: .utf8) ?? "Unknown error"
             throw NSError(
                 domain: "OllamaLLMService",
                 code: http.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: message]
+                userInfo: [NSLocalizedDescriptionKey: message],
             )
         }
 
         let payload = try JSONDecoder().decode(OllamaChatResponse.self, from: data)
         return payload.message?.content?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
+
     private func streamRewriteInternal(
         request: LLMRewriteRequest,
-        continuation: AsyncThrowingStream<String, Error>.Continuation
+        continuation: AsyncThrowingStream<String, Error>.Continuation,
     ) async throws -> String {
         let base = settingsStore.ollamaBaseURL.isEmpty ? "http://127.0.0.1:11434" : settingsStore.ollamaBaseURL
         guard let baseURL = URL(string: base) else {
             throw NSError(
                 domain: "OllamaLLMService",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama base URL."]
+                userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama base URL."],
             )
         }
 
@@ -125,18 +126,18 @@ final class OllamaLLMService: LLMService {
         let prompts = PromptCatalog.rewritePrompts(for: request)
         let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: prompts.system,
-            appLanguage: settingsStore.appLanguage
+            appLanguage: settingsStore.appLanguage,
         )
         let body: [String: Any] = [
             "model": settingsStore.ollamaModel,
             "stream": true,
             "messages": [
                 ["role": "system", "content": effectiveSystemPrompt],
-                ["role": "user", "content": prompts.user]
+                ["role": "user", "content": prompts.user],
             ],
             "options": [
-                "temperature": 0.4
-            ]
+                "temperature": 0.4,
+            ],
         ]
 
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -147,11 +148,11 @@ final class OllamaLLMService: LLMService {
             throw NSError(
                 domain: "OllamaLLMService",
                 code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama response."]
+                userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama response."],
             )
         }
 
-        guard (200..<300).contains(http.statusCode) else {
+        guard (200 ..< 300).contains(http.statusCode) else {
             var errorData = Data()
             for try await byte in bytes {
                 errorData.append(byte)
@@ -161,7 +162,7 @@ final class OllamaLLMService: LLMService {
             throw NSError(
                 domain: "OllamaLLMService",
                 code: http.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: message]
+                userInfo: [NSLocalizedDescriptionKey: message],
             )
         }
 

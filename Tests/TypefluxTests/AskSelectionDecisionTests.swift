@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AskSelectionDecisionTests: XCTestCase {
     func testAnswerDecisionRequiresNonEmptyContent() {
@@ -20,7 +20,7 @@ final class AskSelectionDecisionTests: XCTestCase {
 
         XCTAssertEqual(
             decision,
-            AskSelectionDecision(answerEdit: .answer, content: "This sentence is too informal.")
+            AskSelectionDecision(answerEdit: .answer, content: "This sentence is too informal."),
         )
     }
 
@@ -31,7 +31,7 @@ final class AskSelectionDecisionTests: XCTestCase {
 
         XCTAssertEqual(
             decision,
-            AskSelectionDecision(answerEdit: .edit, content: "Rewrite result")
+            AskSelectionDecision(answerEdit: .edit, content: "Rewrite result"),
         )
     }
 

@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 // MARK: - Mock Store
 
@@ -59,7 +59,6 @@ private final class MockAgentJobStore: AgentJobStore, @unchecked Sendable {
 }
 
 final class AgentJobRecorderTests: XCTestCase {
-
     private var mockStore: MockAgentJobStore!
     private var recorder: AgentJobRecorder!
     private var jobID: UUID!
@@ -112,17 +111,17 @@ final class AgentJobRecorderTests: XCTestCase {
         let assistantMsg = AgentAssistantMessage(
             text: "Let me search",
             toolCalls: [
-                AgentToolCall(id: "tc-1", name: "search", argumentsJSON: #"{"q":"swift"}"#)
-            ]
+                AgentToolCall(id: "tc-1", name: "search", argumentsJSON: #"{"q":"swift"}"#),
+            ],
         )
         let toolResults = [
-            AgentToolResult(toolCallId: "tc-1", content: "Found results", isError: false)
+            AgentToolResult(toolCallId: "tc-1", content: "Found results", isError: false),
         ]
         let step = AgentStep(
             stepIndex: 0,
             assistantMessage: assistantMsg,
             toolResults: toolResults,
-            durationMs: 150
+            durationMs: 150,
         )
 
         await recorder.agentDidCompleteStep(step)
@@ -141,9 +140,9 @@ final class AgentJobRecorderTests: XCTestCase {
     func testMultipleStepsAccumulate() async throws {
         await recorder.beginJob(userPrompt: "Test", selectedText: nil)
 
-        for i in 0..<3 {
+        for i in 0 ..< 3 {
             let msg = AgentAssistantMessage(text: nil, toolCalls: [
-                AgentToolCall(id: "tc-\(i)", name: "tool_\(i)", argumentsJSON: "{}")
+                AgentToolCall(id: "tc-\(i)", name: "tool_\(i)", argumentsJSON: "{}"),
             ])
             let results = [AgentToolResult(toolCallId: "tc-\(i)", content: "ok", isError: false)]
             let step = AgentStep(stepIndex: i, assistantMessage: msg, toolResults: results, durationMs: Int64(i * 100))
@@ -161,12 +160,12 @@ final class AgentJobRecorderTests: XCTestCase {
         await recorder.beginJob(userPrompt: "Test", selectedText: nil)
 
         let msg = AgentAssistantMessage(text: nil, toolCalls: [
-            AgentToolCall(id: "tc-1", name: "tool_a", argumentsJSON: "{}")
+            AgentToolCall(id: "tc-1", name: "tool_a", argumentsJSON: "{}"),
         ])
         // More tool results than tool calls — the extra result should use toolCallId as fallback
         let results = [
             AgentToolResult(toolCallId: "tc-1", content: "ok1", isError: false),
-            AgentToolResult(toolCallId: "tc-extra", content: "ok2", isError: false)
+            AgentToolResult(toolCallId: "tc-extra", content: "ok2", isError: false),
         ]
         let step = AgentStep(stepIndex: 0, assistantMessage: msg, toolResults: results, durationMs: 50)
         await recorder.agentDidCompleteStep(step)
@@ -249,7 +248,7 @@ final class AgentJobRecorderTests: XCTestCase {
         await recorder.beginJob(userPrompt: "Test", selectedText: nil)
 
         let msg = AgentAssistantMessage(text: "step", toolCalls: [
-            AgentToolCall(id: "tc-1", name: "tool", argumentsJSON: "{}")
+            AgentToolCall(id: "tc-1", name: "tool", argumentsJSON: "{}"),
         ])
         let result = [AgentToolResult(toolCallId: "tc-1", content: "ok", isError: false)]
         await recorder.agentDidCompleteStep(AgentStep(stepIndex: 0, assistantMessage: msg, toolResults: result, durationMs: 100))
@@ -309,7 +308,7 @@ final class AgentJobRecorderTests: XCTestCase {
         await recorder.beginJob(userPrompt: "Test", selectedText: nil)
 
         let msg = AgentAssistantMessage(text: nil, toolCalls: [
-            AgentToolCall(id: "tc-1", name: "search", argumentsJSON: "{}")
+            AgentToolCall(id: "tc-1", name: "search", argumentsJSON: "{}"),
         ])
         let results = [AgentToolResult(toolCallId: "tc-1", content: "ok", isError: false)]
         let usage = LLMTokenUsage(promptTokens: 100, completionTokens: 50, totalTokens: 150)

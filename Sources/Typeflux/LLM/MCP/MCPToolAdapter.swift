@@ -9,27 +9,26 @@ struct MCPToolAdapter: AgentTool {
         LLMAgentTool(
             name: toolDef.name,
             description: toolDef.description ?? "",
-            inputSchema: convertSchema(toolDef.inputSchema)
+            inputSchema: convertSchema(toolDef.inputSchema),
         )
     }
 
     func execute(arguments: String) async throws -> String {
-        let args: [String: Any]
-        if let data = arguments.data(using: .utf8),
-           let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            args = dict
+        let args: [String: Any] = if let data = arguments.data(using: .utf8),
+                                     let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        {
+            dict
         } else {
-            args = [:]
+            [:]
         }
 
         let result = try await client.callTool(name: toolDef.name, arguments: args)
         let content = result.content.map { $0.text ?? "" }.joined(separator: "\n")
 
-        let dict: [String: Any]
-        if result.isError == true {
-            dict = ["error": content]
+        let dict: [String: Any] = if result.isError == true {
+            ["error": content]
         } else {
-            dict = ["result": content]
+            ["result": content]
         }
         let data = try JSONSerialization.data(withJSONObject: dict, options: [])
         return String(data: data, encoding: .utf8) ?? "{}"
@@ -60,19 +59,19 @@ struct MCPToolAdapter: AgentTool {
     private func convertAnyCodable(_ value: AnyCodable) -> AnySendable {
         switch value.value {
         case let str as String:
-            return .string(str)
+            .string(str)
         case let int as Int:
-            return .int(int)
+            .int(int)
         case let double as Double:
-            return .double(double)
+            .double(double)
         case let bool as Bool:
-            return .bool(bool)
+            .bool(bool)
         case let array as [Any]:
-            return .array(array.map { convertAnyCodable(AnyCodable($0)) })
+            .array(array.map { convertAnyCodable(AnyCodable($0)) })
         case let dict as [String: Any]:
-            return .object(dict.mapValues { convertAnyCodable(AnyCodable($0)) })
+            .object(dict.mapValues { convertAnyCodable(AnyCodable($0)) })
         default:
-            return .null
+            .null
         }
     }
 }

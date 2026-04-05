@@ -10,11 +10,11 @@ final class AppLocalizationTests: XCTestCase {
     func testDefaultLanguageKeepsChineseVariantsAndFallsBackToEnglish() {
         XCTAssertEqual(
             AppLanguage.defaultLanguage(preferredLanguages: ["zh-Hant-TW"]),
-            .traditionalChinese
+            .traditionalChinese,
         )
         XCTAssertEqual(
             AppLanguage.defaultLanguage(preferredLanguages: ["zh-CN"]),
-            .simplifiedChinese
+            .simplifiedChinese,
         )
         XCTAssertEqual(AppLanguage.defaultLanguage(preferredLanguages: ["fr-FR"]), .english)
     }

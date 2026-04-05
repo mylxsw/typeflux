@@ -55,7 +55,7 @@ enum NetworkDebugLogger {
     static func logWebSocketEvent(
         provider: String,
         phase: String,
-        details: String? = nil
+        details: String? = nil,
     ) {
         let suffix = details.map { " | \($0)" } ?? ""
         logger.info("[WebSocket] \(provider, privacy: .public) | \(phase, privacy: .public)\(suffix, privacy: .public)")
@@ -112,7 +112,7 @@ enum NetworkDebugLogger {
 
         if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
             components.append(
-                "underlying=\(underlying.domain)(\(underlying.code)): \(underlying.localizedDescription)"
+                "underlying=\(underlying.domain)(\(underlying.code)): \(underlying.localizedDescription)",
             )
         }
 

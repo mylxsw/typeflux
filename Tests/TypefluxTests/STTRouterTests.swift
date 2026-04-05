@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 // MARK: - Mock Types
 
@@ -8,7 +8,7 @@ private final class MockTranscriber: Transcriber {
     var errorToThrow: Error?
     var transcribeCallCount = 0
 
-    func transcribe(audioFile: AudioFile) async throws -> String {
+    func transcribe(audioFile _: AudioFile) async throws -> String {
         transcribeCallCount += 1
         if let error = errorToThrow {
             throw error
@@ -17,8 +17,8 @@ private final class MockTranscriber: Transcriber {
     }
 
     func transcribeStream(
-        audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        audioFile _: AudioFile,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         transcribeCallCount += 1
         if let error = errorToThrow {
@@ -36,15 +36,15 @@ private final class MockRecordingPrewarmingTranscriber: RecordingPrewarmingTrans
     var prepareCallCount = 0
     var cancelCallCount = 0
 
-    func transcribe(audioFile: AudioFile) async throws -> String {
+    func transcribe(audioFile _: AudioFile) async throws -> String {
         transcribeCallCount += 1
         if let error = errorToThrow { throw error }
         return resultToReturn
     }
 
     func transcribeStream(
-        audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        audioFile _: AudioFile,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         transcribeCallCount += 1
         if let error = errorToThrow { throw error }
@@ -62,7 +62,6 @@ private final class MockRecordingPrewarmingTranscriber: RecordingPrewarmingTrans
 }
 
 final class STTRouterTests: XCTestCase {
-
     private var defaults: UserDefaults!
     private var settings: SettingsStore!
     private var suiteName: String!
@@ -110,7 +109,7 @@ final class STTRouterTests: XCTestCase {
 
     private func makeRouter(
         localModelOverride: Transcriber? = nil,
-        doubaoRealtimeOverride: Transcriber? = nil
+        doubaoRealtimeOverride: Transcriber? = nil,
     ) -> STTRouter {
         STTRouter(
             settingsStore: settings,
@@ -121,7 +120,7 @@ final class STTRouterTests: XCTestCase {
             multimodal: multimodal,
             aliCloud: aliCloud,
             doubaoRealtime: doubaoRealtimeOverride ?? doubaoRealtime,
-            groq: groq
+            groq: groq,
         )
     }
 

@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class DoubaoRealtimeProtocolTests: XCTestCase {
     func testBuildClientRequestIncludesHotwordsContext() throws {
@@ -23,9 +23,9 @@ final class DoubaoRealtimeProtocolTests: XCTestCase {
                 "text": "你好世界",
                 "utterances": [
                     ["text": "你好", "definite": true],
-                    ["text": "世界", "definite": true]
-                ]
-            ]
+                    ["text": "世界", "definite": true],
+                ],
+            ],
         ]
         let payloadData = try JSONSerialization.data(withJSONObject: payload)
         let data = DoubaoProtocol.encodeMessage(
@@ -33,9 +33,9 @@ final class DoubaoRealtimeProtocolTests: XCTestCase {
                 messageType: .serverResponse,
                 flags: .asyncFinal,
                 serialization: .json,
-                compression: .none
+                compression: .none,
             ),
-            payload: payloadData
+            payload: payloadData,
         )
 
         let response = try DoubaoProtocol.decodeServerResponse(data)
@@ -48,7 +48,6 @@ final class DoubaoRealtimeProtocolTests: XCTestCase {
 // MARK: - Extended DoubaoProtocol tests
 
 final class DoubaoProtocolExtendedTests: XCTestCase {
-
     // MARK: - DoubaoHeader encode/decode
 
     func testDoubaoHeaderEncodeDecodeRoundTrip() throws {
@@ -56,7 +55,7 @@ final class DoubaoProtocolExtendedTests: XCTestCase {
             messageType: .serverResponse,
             flags: .asyncFinal,
             serialization: .json,
-            compression: .none
+            compression: .none,
         )
         let encoded = original.encode()
         let decoded = try DoubaoHeader.decode(from: encoded)
@@ -72,7 +71,8 @@ final class DoubaoProtocolExtendedTests: XCTestCase {
     func testDoubaoHeaderDecodeThrowsOnTooShortData() {
         XCTAssertThrowsError(try DoubaoHeader.decode(from: Data([0x11]))) { error in
             if let protoError = error as? DoubaoProtocolError,
-               case .headerTooShort = protoError {
+               case .headerTooShort = protoError
+            {
                 // expected
             } else {
                 XCTFail("Expected headerTooShort, got \(error)")
@@ -82,7 +82,7 @@ final class DoubaoProtocolExtendedTests: XCTestCase {
 
     func testDoubaoHeaderDecodeThrowsOnUnknownMessageType() {
         // Build 4 bytes where message type nibble is invalid (0x3 is not a valid DoubaoMessageType)
-        let data = Data([0x11, 0x30, 0x10, 0x00])  // high nibble 0x3 = unknown message type
+        let data = Data([0x11, 0x30, 0x10, 0x00]) // high nibble 0x3 = unknown message type
         XCTAssertThrowsError(try DoubaoHeader.decode(from: data)) { error in
             guard let protoError = error as? DoubaoProtocolError else {
                 XCTFail("Expected DoubaoProtocolError")
@@ -101,7 +101,7 @@ final class DoubaoProtocolExtendedTests: XCTestCase {
             messageType: .audioOnlyRequest,
             flags: .noSequence,
             serialization: .none,
-            compression: .none
+            compression: .none,
         )
         let data = header.encode()
         XCTAssertEqual(data.count, 4)
@@ -160,7 +160,7 @@ final class DoubaoProtocolExtendedTests: XCTestCase {
         let audio = try XCTUnwrap(json["audio"] as? [String: Any])
         XCTAssertEqual(audio["format"] as? String, "pcm")
         XCTAssertEqual(audio["codec"] as? String, "raw")
-        XCTAssertEqual(audio["rate"] as? Int, 16_000)
+        XCTAssertEqual(audio["rate"] as? Int, 16000)
         XCTAssertEqual(audio["bits"] as? Int, 16)
         XCTAssertEqual(audio["channel"] as? Int, 1)
     }
@@ -183,12 +183,12 @@ final class DoubaoProtocolExtendedTests: XCTestCase {
 
     // MARK: - DoubaoProtocol.encodeMessage
 
-    func testEncodeMessageWithoutSequence() throws {
+    func testEncodeMessageWithoutSequence() {
         let header = DoubaoHeader(
             messageType: .audioOnlyRequest,
             flags: .noSequence,
             serialization: .none,
-            compression: .none
+            compression: .none,
         )
         let payload = Data([0x01, 0x02, 0x03])
         let message = DoubaoProtocol.encodeMessage(header: header, payload: payload)
@@ -197,12 +197,12 @@ final class DoubaoProtocolExtendedTests: XCTestCase {
         XCTAssertEqual(message.count, 11)
     }
 
-    func testEncodeMessageWithSequenceNumber() throws {
+    func testEncodeMessageWithSequenceNumber() {
         let header = DoubaoHeader(
             messageType: .audioOnlyRequest,
             flags: .positiveSequence,
             serialization: .none,
-            compression: .none
+            compression: .none,
         )
         let payload = Data([0xAA, 0xBB])
         let message = DoubaoProtocol.encodeMessage(header: header, payload: payload, sequenceNumber: 42)
@@ -246,10 +246,10 @@ final class DoubaoProtocolExtendedTests: XCTestCase {
         XCTAssertEqual(error.errorDescription, "Internal server error")
     }
 
-    func testDoubaoProtocolErrorServerErrorWithNilMessage() {
+    func testDoubaoProtocolErrorServerErrorWithNilMessage() throws {
         let error = DoubaoProtocolError.serverError(code: 404, message: nil)
         XCTAssertNotNil(error.errorDescription)
-        XCTAssertTrue(error.errorDescription!.contains("404"))
+        XCTAssertTrue(try XCTUnwrap(error.errorDescription?.contains("404")))
     }
 
     // MARK: - DoubaoUtterance

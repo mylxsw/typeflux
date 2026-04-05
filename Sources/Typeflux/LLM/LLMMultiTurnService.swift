@@ -1,7 +1,7 @@
 import Foundation
 
 /// 单轮 LLM 输出
-enum AgentTurn: Sendable {
+enum AgentTurn {
     /// 纯文本回复
     case text(String)
     /// 工具调用
@@ -11,7 +11,7 @@ enum AgentTurn: Sendable {
 }
 
 /// Token usage information from a single LLM API call.
-struct LLMTokenUsage: Codable, Sendable, Equatable {
+struct LLMTokenUsage: Codable, Equatable {
     let promptTokens: Int
     let completionTokens: Int
     let totalTokens: Int
@@ -20,19 +20,19 @@ struct LLMTokenUsage: Codable, Sendable, Equatable {
         LLMTokenUsage(
             promptTokens: lhs.promptTokens + rhs.promptTokens,
             completionTokens: lhs.completionTokens + rhs.completionTokens,
-            totalTokens: lhs.totalTokens + rhs.totalTokens
+            totalTokens: lhs.totalTokens + rhs.totalTokens,
         )
     }
 }
 
 /// Result of a single LLM turn, including optional token usage.
-struct AgentTurnResult: Sendable {
+struct AgentTurnResult {
     let turn: AgentTurn
     let tokenUsage: LLMTokenUsage?
 }
 
 /// 调用配置
-struct LLMCallConfig: Sendable {
+struct LLMCallConfig {
     /// 强制使用某个工具（nil 表示模型自由选择）
     let forcedToolName: String?
     /// 允许并行工具调用
@@ -52,6 +52,6 @@ protocol LLMMultiTurnService: Sendable {
     func complete(
         messages: [AgentMessage],
         tools: [LLMAgentTool],
-        config: LLMCallConfig
+        config: LLMCallConfig,
     ) async throws -> AgentTurnResult
 }

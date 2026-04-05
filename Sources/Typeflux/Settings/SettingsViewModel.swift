@@ -39,6 +39,7 @@ final class StudioViewModel: ObservableObject {
             }
         }
     }
+
     @Published var modelDomain: StudioModelDomain = .stt
     @Published var focusedModelProvider: StudioModelProviderID
 
@@ -173,7 +174,7 @@ final class StudioViewModel: ObservableObject {
         agentJobStore: AgentJobStore = SQLiteAgentJobStore(),
         modelManager: OllamaLocalModelManager = OllamaLocalModelManager(),
         localModelManager: LocalModelManager = LocalModelManager(),
-        audioDeviceManager: AudioDeviceManager = AudioDeviceManager()
+        audioDeviceManager: AudioDeviceManager = AudioDeviceManager(),
     ) {
         self.settingsStore = settingsStore
         self.historyStore = historyStore
@@ -277,7 +278,7 @@ final class StudioViewModel: ObservableObject {
         historyObserver = NotificationCenter.default.addObserver(
             forName: .historyStoreDidChange,
             object: nil,
-            queue: .main
+            queue: .main,
         ) { [weak self] _ in
             Task { @MainActor in
                 self?.refreshHistory()
@@ -286,7 +287,7 @@ final class StudioViewModel: ObservableObject {
         personaSelectionObserver = NotificationCenter.default.addObserver(
             forName: .personaSelectionDidChange,
             object: settingsStore,
-            queue: .main
+            queue: .main,
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.syncPersonaSelectionFromStore()
@@ -295,31 +296,31 @@ final class StudioViewModel: ObservableObject {
         appearanceObserver = NotificationCenter.default.addObserver(
             forName: .appearanceModeDidChange,
             object: settingsStore,
-            queue: .main
+            queue: .main,
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                self.appearanceMode = self.settingsStore.appearanceMode
+                appearanceMode = self.settingsStore.appearanceMode
             }
         }
         vocabularyObserver = NotificationCenter.default.addObserver(
             forName: .vocabularyStoreDidChange,
             object: nil,
-            queue: .main
+            queue: .main,
         ) { [weak self] notification in
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 if let entries = notification.userInfo?["entries"] as? [VocabularyEntry] {
-                    self.vocabularyEntries = entries
+                    vocabularyEntries = entries
                 } else {
-                    self.vocabularyEntries = VocabularyStore.load()
+                    vocabularyEntries = VocabularyStore.load()
                 }
             }
         }
         agentJobObserver = NotificationCenter.default.addObserver(
             forName: .agentJobStoreDidChange,
             object: nil,
-            queue: .main
+            queue: .main,
         ) { [weak self] _ in
             Task { @MainActor in
                 self?.refreshAgentJobs()
@@ -347,9 +348,9 @@ final class StudioViewModel: ObservableObject {
 
     var preferredColorScheme: ColorScheme? {
         switch appearanceMode {
-        case .system: return nil
-        case .light: return .light
-        case .dark: return .dark
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
         }
     }
 
@@ -435,7 +436,7 @@ final class StudioViewModel: ObservableObject {
         guard !searchQuery.isEmpty else { return personas }
         return personas.filter {
             $0.name.localizedCaseInsensitiveContains(searchQuery) ||
-            $0.prompt.localizedCaseInsensitiveContains(searchQuery)
+                $0.prompt.localizedCaseInsensitiveContains(searchQuery)
         }
     }
 
@@ -473,7 +474,7 @@ final class StudioViewModel: ObservableObject {
     var architectureCards: [StudioModelCard] {
         switch modelDomain {
         case .stt:
-            return [
+            [
                 StudioModelCard(
                     id: "free-stt",
                     name: STTProvider.freeModel.displayName,
@@ -482,7 +483,7 @@ final class StudioViewModel: ObservableObject {
                     metadata: freeSTTModel.isEmpty ? "Model not set" : freeSTTModel,
                     isSelected: sttProvider == .freeModel,
                     isMuted: false,
-                    actionTitle: sttProvider == .freeModel ? "Selected" : "Use Free"
+                    actionTitle: sttProvider == .freeModel ? "Selected" : "Use Free",
                 ),
                 StudioModelCard(
                     id: "local-stt",
@@ -492,7 +493,7 @@ final class StudioViewModel: ObservableObject {
                     metadata: localSTTModel.displayName,
                     isSelected: sttProvider == .localModel,
                     isMuted: false,
-                    actionTitle: sttProvider == .localModel ? "Selected" : "Use Local"
+                    actionTitle: sttProvider == .localModel ? "Selected" : "Use Local",
                 ),
                 StudioModelCard(
                     id: "apple-speech",
@@ -502,7 +503,7 @@ final class StudioViewModel: ObservableObject {
                     metadata: "Built-in • Offline friendly",
                     isSelected: sttProvider == .appleSpeech,
                     isMuted: false,
-                    actionTitle: sttProvider == .appleSpeech ? "Selected" : "Use Local"
+                    actionTitle: sttProvider == .appleSpeech ? "Selected" : "Use Local",
                 ),
                 StudioModelCard(
                     id: "whisper-api",
@@ -512,7 +513,7 @@ final class StudioViewModel: ObservableObject {
                     metadata: whisperModel.isEmpty ? "Model not set" : whisperModel,
                     isSelected: sttProvider == .whisperAPI,
                     isMuted: false,
-                    actionTitle: sttProvider == .whisperAPI ? "Selected" : "Use Remote"
+                    actionTitle: sttProvider == .whisperAPI ? "Selected" : "Use Remote",
                 ),
                 StudioModelCard(
                     id: "multimodal-llm",
@@ -522,12 +523,12 @@ final class StudioViewModel: ObservableObject {
                     metadata: multimodalLLMModel.isEmpty ? "Model not configured" : multimodalLLMModel,
                     isSelected: sttProvider == .multimodalLLM,
                     isMuted: false,
-                    actionTitle: sttProvider == .multimodalLLM ? "Selected" : "Use Multimodal"
-                )
+                    actionTitle: sttProvider == .multimodalLLM ? "Selected" : "Use Multimodal",
+                ),
             ]
 
         case .llm:
-            return [
+            [
                 StudioModelCard(
                     id: "free-model",
                     name: LLMRemoteProvider.freeModel.displayName,
@@ -537,7 +538,7 @@ final class StudioViewModel: ObservableObject {
                     isSelected: llmProvider == .openAICompatible && llmRemoteProvider == .freeModel,
                     isMuted: false,
                     actionTitle: llmProvider == .openAICompatible && llmRemoteProvider == .freeModel
-                        ? "Selected" : "Use Free"
+                        ? "Selected" : "Use Free",
                 ),
                 StudioModelCard(
                     id: "ollama-local",
@@ -547,7 +548,7 @@ final class StudioViewModel: ObservableObject {
                     metadata: ollamaModel,
                     isSelected: llmProvider == .ollama,
                     isMuted: false,
-                    actionTitle: llmProvider == .ollama ? "Selected" : "Use Local"
+                    actionTitle: llmProvider == .ollama ? "Selected" : "Use Local",
                 ),
                 StudioModelCard(
                     id: "openai-compatible",
@@ -557,8 +558,8 @@ final class StudioViewModel: ObservableObject {
                     metadata: llmModel.isEmpty ? "Model not set" : llmModel,
                     isSelected: llmProvider == .openAICompatible,
                     isMuted: false,
-                    actionTitle: llmProvider == .openAICompatible ? "Selected" : "Use Remote"
-                )
+                    actionTitle: llmProvider == .openAICompatible ? "Selected" : "Use Remote",
+                ),
             ]
         }
     }
@@ -568,12 +569,12 @@ final class StudioViewModel: ObservableObject {
         case .stt:
             switch sttProvider {
             case .appleSpeech, .localModel:
-                return "Local Processing"
+                "Local Processing"
             case .freeModel, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .groq:
-                return "Remote API"
+                "Remote API"
             }
         case .llm:
-            return llmProvider == .ollama ? "Local Processing" : "Remote API"
+            llmProvider == .ollama ? "Local Processing" : "Remote API"
         }
     }
 
@@ -582,24 +583,24 @@ final class StudioViewModel: ObservableObject {
         case .stt:
             switch sttProvider {
             case .freeModel:
-                return "Using a code-configured free speech-to-text endpoint."
+                "Using a code-configured free speech-to-text endpoint."
             case .appleSpeech:
-                return "Using on-device speech recognition."
+                "Using on-device speech recognition."
             case .localModel:
-                return "Using a native local speech pipeline."
+                "Using a native local speech pipeline."
             case .whisperAPI:
-                return "Using OpenAI speech transcription services."
+                "Using OpenAI speech transcription services."
             case .multimodalLLM:
-                return "Using a multimodal LLM for transcription and persona rewriting in one call."
+                "Using a multimodal LLM for transcription and persona rewriting in one call."
             case .aliCloud:
-                return "Streaming audio to Alibaba Cloud DashScope for real-time speech recognition."
+                "Streaming audio to Alibaba Cloud DashScope for real-time speech recognition."
             case .doubaoRealtime:
-                return "Streaming audio to Doubao Speech Recognition 2.0 over WebSocket."
+                "Streaming audio to Doubao Speech Recognition 2.0 over WebSocket."
             case .groq:
-                return "Streaming audio to Groq for ultra-fast Whisper transcription."
+                "Streaming audio to Groq for ultra-fast Whisper transcription."
             }
         case .llm:
-            return llmProvider == .ollama ? "Using local Ollama generation." : "Using remote chat-completion endpoints."
+            llmProvider == .ollama ? "Using local Ollama generation." : "Using remote chat-completion endpoints."
         }
     }
 
@@ -622,7 +623,7 @@ final class StudioViewModel: ObservableObject {
         let records = historyStore.list(
             limit: Self.historyPageSize,
             offset: 0,
-            searchQuery: historySearchQuery
+            searchQuery: historySearchQuery,
         )
         historyRecords = records
         displayedHistory = records.map(makeHistoryPresentation)
@@ -637,7 +638,7 @@ final class StudioViewModel: ObservableObject {
         let nextPage = historyStore.list(
             limit: Self.historyPageSize,
             offset: historyRecords.count,
-            searchQuery: historySearchQuery
+            searchQuery: historySearchQuery,
         )
 
         if nextPage.isEmpty {
@@ -688,7 +689,8 @@ final class StudioViewModel: ObservableObject {
         availableMicrophones = devices
 
         if !preferredMicrophoneID.isEmpty,
-           devices.contains(where: { $0.id == preferredMicrophoneID }) == false {
+           devices.contains(where: { $0.id == preferredMicrophoneID }) == false
+        {
             preferredMicrophoneID = AudioDeviceManager.automaticDeviceID
             settingsStore.preferredMicrophoneID = AudioDeviceManager.automaticDeviceID
             showToast(L("settings.audio.microphone.unavailable"))
@@ -730,7 +732,7 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .localSTT
             settingsStore.localSTTAutoSetup = true
             localSTTAutoSetup = true
-            if !isLocalSTTPrepared && !isPreparingLocalSTT {
+            if !isLocalSTTPrepared, !isPreparingLocalSTT {
                 prepareLocalSTTModel()
             }
         case .whisperAPI:
@@ -827,25 +829,82 @@ final class StudioViewModel: ObservableObject {
         sttConnectionTestState = .idle
     }
 
-    func setLLMBaseURL(_ value: String) { llmBaseURL = value; llmConnectionTestState = .idle }
-    func setLLMModel(_ value: String) { llmModel = value; llmConnectionTestState = .idle }
-    func setLLMAPIKey(_ value: String) { llmAPIKey = value; llmConnectionTestState = .idle }
-    func setOllamaBaseURL(_ value: String) { ollamaBaseURL = value; llmConnectionTestState = .idle }
-    func setOllamaModel(_ value: String) { ollamaModel = value; llmConnectionTestState = .idle }
-    func setOllamaAutoSetup(_ value: Bool) { ollamaAutoSetup = value; settingsStore.ollamaAutoSetup = value }
-    func setWhisperBaseURL(_ value: String) { whisperBaseURL = value; sttConnectionTestState = .idle }
-    func setWhisperModel(_ value: String) { whisperModel = value; sttConnectionTestState = .idle }
-    func setWhisperAPIKey(_ value: String) { whisperAPIKey = value; sttConnectionTestState = .idle }
-    func setFreeSTTModel(_ value: String) { freeSTTModel = value; sttConnectionTestState = .idle }
-    func setMultimodalLLMBaseURL(_ value: String) { multimodalLLMBaseURL = value; sttConnectionTestState = .idle }
-    func setMultimodalLLMModel(_ value: String) { multimodalLLMModel = value; sttConnectionTestState = .idle }
-    func setMultimodalLLMAPIKey(_ value: String) { multimodalLLMAPIKey = value; sttConnectionTestState = .idle }
-    func setAliCloudAPIKey(_ value: String) { aliCloudAPIKey = value; sttConnectionTestState = .idle }
-    func setDoubaoAppID(_ value: String) { doubaoAppID = value; sttConnectionTestState = .idle }
-    func setDoubaoAccessToken(_ value: String) { doubaoAccessToken = value; sttConnectionTestState = .idle }
-    func setDoubaoResourceID(_ value: String) { doubaoResourceID = value; sttConnectionTestState = .idle }
-    func setGroqSTTAPIKey(_ value: String) { groqSTTAPIKey = value; sttConnectionTestState = .idle }
-    func setGroqSTTModel(_ value: String) { groqSTTModel = value; sttConnectionTestState = .idle }
+    func setLLMBaseURL(_ value: String) {
+        llmBaseURL = value; llmConnectionTestState = .idle
+    }
+
+    func setLLMModel(_ value: String) {
+        llmModel = value; llmConnectionTestState = .idle
+    }
+
+    func setLLMAPIKey(_ value: String) {
+        llmAPIKey = value; llmConnectionTestState = .idle
+    }
+
+    func setOllamaBaseURL(_ value: String) {
+        ollamaBaseURL = value; llmConnectionTestState = .idle
+    }
+
+    func setOllamaModel(_ value: String) {
+        ollamaModel = value; llmConnectionTestState = .idle
+    }
+
+    func setOllamaAutoSetup(_ value: Bool) {
+        ollamaAutoSetup = value; settingsStore.ollamaAutoSetup = value
+    }
+
+    func setWhisperBaseURL(_ value: String) {
+        whisperBaseURL = value; sttConnectionTestState = .idle
+    }
+
+    func setWhisperModel(_ value: String) {
+        whisperModel = value; sttConnectionTestState = .idle
+    }
+
+    func setWhisperAPIKey(_ value: String) {
+        whisperAPIKey = value; sttConnectionTestState = .idle
+    }
+
+    func setFreeSTTModel(_ value: String) {
+        freeSTTModel = value; sttConnectionTestState = .idle
+    }
+
+    func setMultimodalLLMBaseURL(_ value: String) {
+        multimodalLLMBaseURL = value; sttConnectionTestState = .idle
+    }
+
+    func setMultimodalLLMModel(_ value: String) {
+        multimodalLLMModel = value; sttConnectionTestState = .idle
+    }
+
+    func setMultimodalLLMAPIKey(_ value: String) {
+        multimodalLLMAPIKey = value; sttConnectionTestState = .idle
+    }
+
+    func setAliCloudAPIKey(_ value: String) {
+        aliCloudAPIKey = value; sttConnectionTestState = .idle
+    }
+
+    func setDoubaoAppID(_ value: String) {
+        doubaoAppID = value; sttConnectionTestState = .idle
+    }
+
+    func setDoubaoAccessToken(_ value: String) {
+        doubaoAccessToken = value; sttConnectionTestState = .idle
+    }
+
+    func setDoubaoResourceID(_ value: String) {
+        doubaoResourceID = value; sttConnectionTestState = .idle
+    }
+
+    func setGroqSTTAPIKey(_ value: String) {
+        groqSTTAPIKey = value; sttConnectionTestState = .idle
+    }
+
+    func setGroqSTTModel(_ value: String) {
+        groqSTTModel = value; sttConnectionTestState = .idle
+    }
+
     func setLocalSTTModelIdentifier(_ value: String) {
         let identifier = value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? localSTTModel.defaultModelIdentifier
@@ -855,9 +914,19 @@ final class StudioViewModel: ObservableObject {
         refreshLocalSTTStoragePath()
         refreshLocalSTTPreparedState()
     }
-    func setLocalSTTDownloadSource(_ value: ModelDownloadSource) { localSTTDownloadSource = value; settingsStore.localSTTDownloadSource = value }
-    func setLocalSTTAutoSetup(_ value: Bool) { localSTTAutoSetup = value; settingsStore.localSTTAutoSetup = value }
-    func setAppleSpeechFallback(_ value: Bool) { appleSpeechFallback = value; settingsStore.useAppleSpeechFallback = value }
+
+    func setLocalSTTDownloadSource(_ value: ModelDownloadSource) {
+        localSTTDownloadSource = value; settingsStore.localSTTDownloadSource = value
+    }
+
+    func setLocalSTTAutoSetup(_ value: Bool) {
+        localSTTAutoSetup = value; settingsStore.localSTTAutoSetup = value
+    }
+
+    func setAppleSpeechFallback(_ value: Bool) {
+        appleSpeechFallback = value; settingsStore.useAppleSpeechFallback = value
+    }
+
     func setAutomaticVocabularyCollectionEnabled(_ value: Bool) {
         automaticVocabularyCollectionEnabled = value
         settingsStore.automaticVocabularyCollectionEnabled = value
@@ -930,14 +999,14 @@ final class StudioViewModel: ObservableObject {
         mcpConnectionTestTargetServerID = nil
         mcpConnectionTestState = .idle
         switch server.transport {
-        case .stdio(let config):
+        case let .stdio(config):
             mcpDraftTransportType = .stdio
             mcpDraftStdioCommand = config.command
             mcpDraftStdioArgs = config.args.joined(separator: " ")
             mcpDraftStdioEnv = config.env.map { "\($0.key)=\($0.value)" }.joined(separator: "\n")
             mcpDraftHTTPURL = ""
             mcpDraftHTTPHeaders = ""
-        case .http(let config):
+        case let .http(config):
             mcpDraftTransportType = .http
             mcpDraftStdioCommand = ""
             mcpDraftStdioArgs = ""
@@ -955,18 +1024,19 @@ final class StudioViewModel: ObservableObject {
             transport = .stdio(MCPStdioTransportConfig(
                 command: mcpDraftStdioCommand.trimmingCharacters(in: .whitespacesAndNewlines),
                 args: mcpDraftStdioArgs.split(separator: " ").map(String.init),
-                env: envDict
+                env: envDict,
             ))
         case .http:
             let headersDict = parseMCPEnvString(mcpDraftHTTPHeaders)
             transport = .http(MCPHTTPTransportConfig(
                 url: mcpDraftHTTPURL.trimmingCharacters(in: .whitespacesAndNewlines),
-                headers: headersDict
+                headers: headersDict,
             ))
         }
 
         if let editingID = mcpDraftEditingServerID,
-           let idx = mcpServers.firstIndex(where: { $0.id == editingID }) {
+           let idx = mcpServers.firstIndex(where: { $0.id == editingID })
+        {
             mcpServers[idx].name = mcpDraftName.trimmingCharacters(in: .whitespacesAndNewlines)
             mcpServers[idx].transport = transport
             mcpServers[idx].enabled = mcpDraftEnabled
@@ -976,7 +1046,7 @@ final class StudioViewModel: ObservableObject {
                 name: mcpDraftName.trimmingCharacters(in: .whitespacesAndNewlines),
                 transport: transport,
                 enabled: mcpDraftEnabled,
-                autoConnect: mcpDraftAutoConnect
+                autoConnect: mcpDraftAutoConnect,
             )
             mcpServers.append(server)
         }
@@ -989,7 +1059,7 @@ final class StudioViewModel: ObservableObject {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { continue }
             if let eqIdx = trimmed.firstIndex(of: "=") {
-                let key = String(trimmed[trimmed.startIndex..<eqIdx]).trimmingCharacters(in: .whitespaces)
+                let key = String(trimmed[trimmed.startIndex ..< eqIdx]).trimmingCharacters(in: .whitespaces)
                 let value = String(trimmed[trimmed.index(after: eqIdx)...]).trimmingCharacters(in: .whitespaces)
                 if !key.isEmpty { result[key] = value }
             }
@@ -1011,13 +1081,13 @@ final class StudioViewModel: ObservableObject {
             transport = .stdio(MCPStdioTransportConfig(
                 command: mcpDraftStdioCommand.trimmingCharacters(in: .whitespacesAndNewlines),
                 args: mcpDraftStdioArgs.split(separator: " ").map(String.init),
-                env: envDict
+                env: envDict,
             ))
         case .http:
             let headersDict = parseMCPEnvString(mcpDraftHTTPHeaders)
             transport = .http(MCPHTTPTransportConfig(
                 url: mcpDraftHTTPURL.trimmingCharacters(in: .whitespacesAndNewlines),
-                headers: headersDict
+                headers: headersDict,
             ))
         }
         testMCPConnectionWithConfig(transport)
@@ -1038,11 +1108,11 @@ final class StudioViewModel: ObservableObject {
             do {
                 let client: any MCPClient
                 switch transport {
-                case .stdio(let config):
+                case let .stdio(config):
                     client = StdioMCPClient(config: MCPStdioConfig(
-                        command: config.command, args: config.args, env: config.env
+                        command: config.command, args: config.args, env: config.env,
                     ))
-                case .http(let config):
+                case let .http(config):
                     guard let url = URL(string: config.url) else {
                         if !Task.isCancelled {
                             mcpConnectionTestState = .failure(message: "Invalid URL")
@@ -1060,7 +1130,7 @@ final class StudioViewModel: ObservableObject {
                         MCPConnectionTestState.MCPDiscoveredTool(
                             id: $0.name,
                             name: $0.name,
-                            description: $0.description ?? ""
+                            description: $0.description ?? "",
                         )
                     }
                     mcpConnectionTestState = .success(tools: discoveredTools)
@@ -1100,7 +1170,7 @@ final class StudioViewModel: ObservableObject {
         guard showingJobsPage else { return }
         isLoadingJobs = true
         Task {
-            let jobs = (try? await agentJobStore.list(limit: Self.jobsPageSize, offset: 0)) ?? []
+            let jobs = await (try? agentJobStore.list(limit: Self.jobsPageSize, offset: 0)) ?? []
             await MainActor.run {
                 self.agentJobs = jobs
                 self.isLoadingJobs = false
@@ -1136,11 +1206,15 @@ final class StudioViewModel: ObservableObject {
         }
     }
 
-    func setLaunchAtLogin(_ value: Bool) { launchAtLogin = value; LaunchAtLoginManager.setEnabled(value) }
+    func setLaunchAtLogin(_ value: Bool) {
+        launchAtLogin = value; LaunchAtLoginManager.setEnabled(value)
+    }
+
     func setPersonaRewriteEnabled(_ value: Bool) {
         personaRewriteEnabled = value
         settingsStore.personaRewriteEnabled = value
     }
+
     func setPersonaHotkeyAppliesToSelection(_ value: Bool) {
         personaHotkeyAppliesToSelection = value
         settingsStore.personaHotkeyAppliesToSelection = value
@@ -1177,7 +1251,8 @@ final class StudioViewModel: ObservableObject {
 
     func setActivationHotkey(_ binding: HotkeyBinding) {
         guard binding.signature != personaHotkey.signature,
-              binding.signature != askHotkey.signature else {
+              binding.signature != askHotkey.signature
+        else {
             showToast(L("settings.shortcuts.activationConflict"))
             return
         }
@@ -1193,7 +1268,8 @@ final class StudioViewModel: ObservableObject {
 
     func setAskHotkey(_ binding: HotkeyBinding) {
         guard binding.signature != activationHotkey.signature,
-              binding.signature != personaHotkey.signature else {
+              binding.signature != personaHotkey.signature
+        else {
             showToast(L("settings.shortcuts.askConflict"))
             return
         }
@@ -1209,7 +1285,8 @@ final class StudioViewModel: ObservableObject {
 
     func setPersonaHotkey(_ binding: HotkeyBinding) {
         guard binding.signature != activationHotkey.signature,
-              binding.signature != askHotkey.signature else {
+              binding.signature != askHotkey.signature
+        else {
             showToast(L("settings.shortcuts.personaConflict"))
             return
         }
@@ -1517,12 +1594,12 @@ final class StudioViewModel: ObservableObject {
     func applyModelConfiguration(shouldShowToast: Bool = true) {
         switch focusedModelProvider {
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-            .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
+             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
             let remoteProvider = LLMRemoteProvider.from(providerID: focusedModelProvider) ?? llmRemoteProvider
             settingsStore.setLLMBaseURL(llmBaseURL, for: remoteProvider)
             settingsStore.setLLMModel(llmModel, for: remoteProvider)
             settingsStore.setLLMAPIKey(remoteProvider == .freeModel ? "" : llmAPIKey, for: remoteProvider)
-            if llmProvider == .openAICompatible && llmRemoteProvider == remoteProvider {
+            if llmProvider == .openAICompatible, llmRemoteProvider == remoteProvider {
                 settingsStore.llmRemoteProvider = remoteProvider
             }
         case .ollama:
@@ -1584,25 +1661,24 @@ final class StudioViewModel: ObservableObject {
                 case .freeSTT:
                     return
                 case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
-                    .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
+                     .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
                     let connection = try LLMConnectionResolver.resolve(
                         provider: capturedRemoteProvider,
                         baseURL: capturedBaseURL,
                         model: capturedModel,
-                        apiKey: capturedAPIKey
+                        apiKey: capturedAPIKey,
                     )
                     let preview = try await RemoteLLMClient.previewConnection(
                         provider: connection.provider,
                         baseURL: connection.baseURL,
                         model: connection.model,
                         apiKey: connection.apiKey,
-                        additionalHeaders: connection.additionalHeaders
+                        additionalHeaders: connection.additionalHeaders,
                     )
                     if !preview.isEmpty {
                         firstTokenDate = Date()
                     }
                     collected = preview
-
                 case .ollama:
                     guard let baseURL = URL(string: capturedOllamaURL) else {
                         throw NSError(domain: "LLMTest", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama base URL."])
@@ -1615,7 +1691,7 @@ final class StudioViewModel: ObservableObject {
                         "model": capturedOllamaModel,
                         "stream": true,
                         "messages": [["role": "user", "content": "Hello"]],
-                        "options": ["num_predict": 50]
+                        "options": ["num_predict": 50],
                     ]
                     urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -1623,9 +1699,11 @@ final class StudioViewModel: ObservableObject {
                     guard let http = response as? HTTPURLResponse else {
                         throw NSError(domain: "LLMTest", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response."])
                     }
-                    guard (200..<300).contains(http.statusCode) else {
+                    guard (200 ..< 300).contains(http.statusCode) else {
                         var errorData = Data()
-                        for try await byte in bytes { errorData.append(byte) }
+                        for try await byte in bytes {
+                            errorData.append(byte)
+                        }
                         let message = String(data: errorData, encoding: .utf8) ?? "Unknown error"
                         throw NSError(domain: "LLMTest", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(message)"])
                     }
@@ -1654,7 +1732,7 @@ final class StudioViewModel: ObservableObject {
                         if payload.done || collected.count >= 60 { break }
                     }
                 case .appleSpeech, .localSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime,
-                    .groqSTT:
+                     .groqSTT:
                     return
                 }
 
@@ -1664,7 +1742,7 @@ final class StudioViewModel: ObservableObject {
                 llmConnectionTestState = .success(
                     firstTokenMs: firstMs,
                     totalMs: totalMs,
-                    preview: String(collected.trimmingCharacters(in: .whitespacesAndNewlines).prefix(120))
+                    preview: String(collected.trimmingCharacters(in: .whitespacesAndNewlines).prefix(120)),
                 )
             } catch {
                 if !Task.isCancelled {
@@ -1705,13 +1783,13 @@ final class StudioViewModel: ObservableObject {
                     preview = try await WhisperAPITranscriber.testConnection(
                         baseURL: capturedWhisperBaseURL,
                         model: capturedWhisperModel,
-                        apiKey: capturedWhisperAPIKey
+                        apiKey: capturedWhisperAPIKey,
                     )
                 case .multimodalLLM:
                     preview = try await MultimodalLLMTranscriber.testConnection(
                         baseURL: capturedMultimodalBaseURL,
                         model: capturedMultimodalModel,
-                        apiKey: capturedMultimodalAPIKey
+                        apiKey: capturedMultimodalAPIKey,
                     )
                 case .aliCloud:
                     preview = try await AliCloudRealtimeTranscriber.testConnection(apiKey: capturedAliCloudAPIKey)
@@ -1719,14 +1797,14 @@ final class StudioViewModel: ObservableObject {
                     preview = try await DoubaoRealtimeTranscriber.testConnection(
                         appID: capturedDoubaoAppID,
                         accessToken: capturedDoubaoAccessToken,
-                        resourceID: capturedDoubaoResourceID
+                        resourceID: capturedDoubaoResourceID,
                     )
                 case .groqSTT:
                     preview = try await WhisperAPITranscriber.testConnection(
                         baseURL: "https://api.groq.com/openai/v1",
                         model: capturedGroqSTTModel.isEmpty
                             ? OpenAIAudioModelCatalog.groqWhisperModels[0] : capturedGroqSTTModel,
-                        apiKey: capturedGroqSTTAPIKey
+                        apiKey: capturedGroqSTTAPIKey,
                     )
                 default:
                     return
@@ -1737,7 +1815,7 @@ final class StudioViewModel: ObservableObject {
                 sttConnectionTestState = .success(
                     firstTokenMs: totalMs,
                     totalMs: totalMs,
-                    preview: String(preview.prefix(120))
+                    preview: String(preview.prefix(120)),
                 )
             } catch {
                 if !Task.isCancelled {
@@ -1772,7 +1850,7 @@ final class StudioViewModel: ObservableObject {
                 detail: snapshot.detail,
                 isGranted: snapshot.isGranted,
                 badgeText: snapshot.badgeText,
-                actionTitle: snapshot.actionTitle
+                actionTitle: snapshot.actionTitle,
             )
         }
     }
@@ -1844,24 +1922,24 @@ final class StudioViewModel: ObservableObject {
         case .stt:
             switch sttProvider {
             case .freeModel:
-                return .freeSTT
+                .freeSTT
             case .appleSpeech:
-                return .appleSpeech
+                .appleSpeech
             case .localModel:
-                return .localSTT
+                .localSTT
             case .whisperAPI:
-                return .whisperAPI
+                .whisperAPI
             case .multimodalLLM:
-                return .multimodalLLM
+                .multimodalLLM
             case .aliCloud:
-                return .aliCloud
+                .aliCloud
             case .doubaoRealtime:
-                return .doubaoRealtime
+                .doubaoRealtime
             case .groq:
-                return .groqSTT
+                .groqSTT
             }
         case .llm:
-            return llmProvider == .ollama ? .ollama : llmRemoteProvider.studioProviderID
+            llmProvider == .ollama ? .ollama : llmRemoteProvider.studioProviderID
         }
     }
 
@@ -1909,16 +1987,15 @@ final class StudioViewModel: ObservableObject {
         let preview = record.text.replacingOccurrences(of: "\n", with: " ")
 
         let fileExtension = record.audioFilePath.map { URL(fileURLWithPath: $0).pathExtension.lowercased() } ?? ""
-        let iconData: (String, String)
-        switch fileExtension {
+        let iconData = switch fileExtension {
         case "wav":
-            iconData = ("mic.fill", "purple")
+            ("mic.fill", "purple")
         case "mp4":
-            iconData = ("play.rectangle.fill", "green")
+            ("play.rectangle.fill", "green")
         case "m4a":
-            iconData = ("waveform", "orange")
+            ("waveform", "orange")
         default:
-            iconData = ("doc.text.fill", "blue")
+            ("doc.text.fill", "blue")
         }
 
         return HistoryPresentationRecord(
@@ -1941,7 +2018,7 @@ final class StudioViewModel: ObservableObject {
             hasFailure: record.hasFailure,
             failureMessage: record.errorMessage,
             accentName: iconData.0,
-            accentColorName: iconData.1
+            accentColorName: iconData.1,
         )
     }
 
@@ -1951,7 +2028,7 @@ final class StudioViewModel: ObservableObject {
         let durationRows: [(String, Int?)] = [
             (L("history.stats.transcriptionDuration"), stats.transcriptionDurationMilliseconds),
             (L("history.stats.llmDuration"), stats.llmDurationMilliseconds),
-            (L("history.stats.endToEnd"), stats.endToEndMilliseconds)
+            (L("history.stats.endToEnd"), stats.endToEndMilliseconds),
         ]
 
         return durationRows.enumerated().compactMap { item -> HistoryPipelineStatPresentationItem? in
@@ -1962,7 +2039,7 @@ final class StudioViewModel: ObservableObject {
                 id: "duration-\(index)",
                 title: row.0,
                 value: historyDurationText(milliseconds: value),
-                style: .duration
+                style: .duration,
             )
         }
     }

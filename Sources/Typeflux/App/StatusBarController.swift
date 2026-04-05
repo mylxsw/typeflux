@@ -19,7 +19,7 @@ final class StatusBarController: NSObject {
         settingsStore: SettingsStore,
         historyStore: HistoryStore,
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
-        onOpenOnboarding: @escaping () -> Void = {}
+        onOpenOnboarding: @escaping () -> Void = {},
     ) {
         self.appState = appState
         self.settingsStore = settingsStore
@@ -36,7 +36,7 @@ final class StatusBarController: NSObject {
         languageObserver = NotificationCenter.default.addObserver(
             forName: .appLanguageDidChange,
             object: nil,
-            queue: .main
+            queue: .main,
         ) { [weak self] _ in
             Task { @MainActor in
                 self?.rebuildMenu()
@@ -68,23 +68,21 @@ final class StatusBarController: NSObject {
     private func updateTitle() {
         guard let button = statusItem?.button else { return }
         let symbolConfig = NSImage.SymbolConfiguration(pointSize: 3, weight: .medium)
-        let accessibilityTitle: String
-
-        switch appState.status {
+        let accessibilityTitle: String = switch appState.status {
         case .idle:
-            accessibilityTitle = L("menu.status.ready")
+            L("menu.status.ready")
         case .recording:
-            accessibilityTitle = L("menu.status.recording")
+            L("menu.status.recording")
         case .processing:
-            accessibilityTitle = L("menu.status.processing")
-        case .failed(let message):
-            accessibilityTitle = L("menu.status.failed", message)
+            L("menu.status.processing")
+        case let .failed(message):
+            L("menu.status.failed", message)
         }
 
         button.title = ""
         let image = NSImage(
             systemSymbolName: StudioTheme.Symbol.brand,
-            accessibilityDescription: accessibilityTitle
+            accessibilityDescription: accessibilityTitle,
         )?.withSymbolConfiguration(symbolConfig)
         image?.isTemplate = true
         button.image = image
@@ -113,7 +111,7 @@ final class StatusBarController: NSObject {
         menu.addItem(makeItem(title: L("menu.quit"), action: #selector(quit), keyEquivalent: "q"))
 
         self.menu = menu
-        self.statusItem?.menu = menu
+        statusItem?.menu = menu
     }
 
     private func buildAppearanceMenu() -> NSMenu {
@@ -149,7 +147,7 @@ final class StatusBarController: NSObject {
                 settingsStore: settingsStore,
                 historyStore: historyStore,
                 initialSection: section,
-                onRetryHistory: onRetryHistory
+                onRetryHistory: onRetryHistory,
             )
         }
     }
@@ -167,7 +165,7 @@ final class StatusBarController: NSObject {
             settingsStore: settingsStore,
             historyStore: historyStore,
             initialSection: .history,
-            onRetryHistory: onRetryHistory
+            onRetryHistory: onRetryHistory,
         )
     }
 

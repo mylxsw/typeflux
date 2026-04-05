@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class OnboardingViewModelTests: XCTestCase {
     private var suiteName: String!

@@ -66,7 +66,7 @@ struct OnboardingView: View {
         .padding(.vertical, 16)
         .background(
             Rectangle()
-                .fill(StudioTheme.surface.opacity(0.0))
+                .fill(StudioTheme.surface.opacity(0.0)),
         )
         .overlay(alignment: .bottom) {
             Rectangle()
@@ -85,8 +85,8 @@ struct OnboardingView: View {
                 } else {
                     Circle()
                         .fill(index < (viewModel.visibleSteps.firstIndex(of: viewModel.currentStep) ?? 0)
-                              ? StudioTheme.accent.opacity(0.45)
-                              : StudioTheme.border.opacity(0.7))
+                            ? StudioTheme.accent.opacity(0.45)
+                            : StudioTheme.border.opacity(0.7))
                         .frame(width: 6, height: 6)
                 }
             }
@@ -123,7 +123,7 @@ struct OnboardingView: View {
             stepHeader(
                 icon: "globe",
                 title: L("onboarding.language.title"),
-                subtitle: L("onboarding.language.subtitle")
+                subtitle: L("onboarding.language.subtitle"),
             )
 
             VStack(spacing: 10) {
@@ -163,14 +163,14 @@ struct OnboardingView: View {
             .padding(.vertical, 14)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isSelected ? StudioTheme.accentSoft : StudioTheme.surface)
+                    .fill(isSelected ? StudioTheme.accentSoft : StudioTheme.surface),
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(
                         isSelected ? StudioTheme.accent.opacity(0.5) : StudioTheme.border.opacity(0.55),
-                        lineWidth: isSelected ? 1.5 : 1
-                    )
+                        lineWidth: isSelected ? 1.5 : 1,
+                    ),
             )
             .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
@@ -179,21 +179,21 @@ struct OnboardingView: View {
 
     private func languageNativeName(_ language: AppLanguage) -> String {
         switch language {
-        case .english: return "English"
-        case .simplifiedChinese: return "简体中文"
-        case .traditionalChinese: return "繁體中文"
-        case .japanese: return "日本語"
-        case .korean: return "한국어"
+        case .english: "English"
+        case .simplifiedChinese: "简体中文"
+        case .traditionalChinese: "繁體中文"
+        case .japanese: "日本語"
+        case .korean: "한국어"
         }
     }
 
     private func languageEnglishName(_ language: AppLanguage) -> String {
         switch language {
-        case .english: return "English"
-        case .simplifiedChinese: return "Simplified Chinese"
-        case .traditionalChinese: return "Traditional Chinese"
-        case .japanese: return "Japanese"
-        case .korean: return "Korean"
+        case .english: "English"
+        case .simplifiedChinese: "Simplified Chinese"
+        case .traditionalChinese: "Traditional Chinese"
+        case .japanese: "Japanese"
+        case .korean: "Korean"
         }
     }
 
@@ -204,7 +204,7 @@ struct OnboardingView: View {
             stepHeader(
                 icon: "waveform",
                 title: L("onboarding.models.stt.title"),
-                subtitle: L("onboarding.sttProvider.subtitle")
+                subtitle: L("onboarding.sttProvider.subtitle"),
             )
 
             VStack(spacing: 8) {
@@ -214,7 +214,7 @@ struct OnboardingView: View {
                         title: provider.displayName,
                         description: sttProviderDescription(provider),
                         badge: sttProviderBadge(provider),
-                        isSelected: viewModel.sttProvider == provider
+                        isSelected: viewModel.sttProvider == provider,
                     ) {
                         withAnimation(.easeOut(duration: 0.18)) {
                             viewModel.sttProvider = provider
@@ -233,7 +233,7 @@ struct OnboardingView: View {
                 providerID: sttProviderToID(viewModel.sttProvider),
                 icon: sttProviderIcon(viewModel.sttProvider),
                 title: viewModel.sttProvider.displayName,
-                subtitle: L("onboarding.sttConfig.subtitle")
+                subtitle: L("onboarding.sttConfig.subtitle"),
             )
 
             switch viewModel.sttProvider {
@@ -264,7 +264,7 @@ struct OnboardingView: View {
             stepHeader(
                 icon: "sparkles",
                 title: L("onboarding.models.llm.title"),
-                subtitle: L("onboarding.llmProvider.subtitle")
+                subtitle: L("onboarding.llmProvider.subtitle"),
             )
 
             VStack(spacing: 8) {
@@ -276,7 +276,7 @@ struct OnboardingView: View {
                         title: provider.displayName,
                         description: L("settings.models.card.\(provider.rawValue).summary"),
                         badge: L("settings.models.badge.free"),
-                        isSelected: isSelected
+                        isSelected: isSelected,
                     ) {
                         withAnimation(.easeOut(duration: 0.18)) {
                             viewModel.selectLLMRemoteProvider(provider)
@@ -289,7 +289,7 @@ struct OnboardingView: View {
                     title: L("provider.llm.ollama"),
                     description: L("settings.models.card.ollama.summary"),
                     badge: L("settings.models.badge.local"),
-                    isSelected: viewModel.llmProvider == .ollama
+                    isSelected: viewModel.llmProvider == .ollama,
                 ) {
                     withAnimation(.easeOut(duration: 0.18)) {
                         viewModel.selectOllama()
@@ -306,7 +306,7 @@ struct OnboardingView: View {
                         badge: provider.apiStyle == .openAICompatible
                             ? L("settings.models.badge.api")
                             : L("settings.models.badge.native"),
-                        isSelected: isSelected
+                        isSelected: isSelected,
                     ) {
                         withAnimation(.easeOut(duration: 0.18)) {
                             viewModel.selectLLMRemoteProvider(provider)
@@ -335,7 +335,7 @@ struct OnboardingView: View {
                 providerID: llmProviderID,
                 icon: providerIcon,
                 title: providerName,
-                subtitle: L("onboarding.llmConfig.subtitle")
+                subtitle: L("onboarding.llmConfig.subtitle"),
             )
 
             if viewModel.llmProvider == .ollama {
@@ -348,54 +348,54 @@ struct OnboardingView: View {
 
     private func sttProviderIcon(_ provider: STTProvider) -> String {
         switch provider {
-        case .freeModel: return "giftcard"
-        case .whisperAPI: return "dot.radiowaves.left.and.right"
-        case .localModel: return "laptopcomputer.and.arrow.down"
-        case .multimodalLLM: return "brain.filled.head.profile"
-        case .aliCloud: return "antenna.radiowaves.left.and.right"
-        case .doubaoRealtime: return "bolt.horizontal.circle"
-        case .groq: return "bolt.fill"
-        case .appleSpeech: return "waveform"
+        case .freeModel: "giftcard"
+        case .whisperAPI: "dot.radiowaves.left.and.right"
+        case .localModel: "laptopcomputer.and.arrow.down"
+        case .multimodalLLM: "brain.filled.head.profile"
+        case .aliCloud: "antenna.radiowaves.left.and.right"
+        case .doubaoRealtime: "bolt.horizontal.circle"
+        case .groq: "bolt.fill"
+        case .appleSpeech: "waveform"
         }
     }
 
     private func sttProviderBadge(_ provider: STTProvider) -> String {
         switch provider {
-        case .localModel: return L("settings.models.badge.local")
-        case .freeModel: return L("settings.models.badge.free")
-        default: return L("settings.models.badge.api")
+        case .localModel: L("settings.models.badge.local")
+        case .freeModel: L("settings.models.badge.free")
+        default: L("settings.models.badge.api")
         }
     }
 
     private func sttProviderDescription(_ provider: STTProvider) -> String {
         switch provider {
-        case .freeModel: return L("settings.models.card.freeSTT.summary")
-        case .whisperAPI: return L("settings.models.card.whisper.summary")
-        case .localModel: return L("settings.models.card.localSTT.summary")
-        case .multimodalLLM: return L("settings.models.card.multimodal.summary")
-        case .aliCloud: return L("settings.models.card.aliCloud.summary")
-        case .doubaoRealtime: return L("settings.models.card.doubao.summary")
-        case .groq: return L("settings.models.card.groq.summary")
-        case .appleSpeech: return ""
+        case .freeModel: L("settings.models.card.freeSTT.summary")
+        case .whisperAPI: L("settings.models.card.whisper.summary")
+        case .localModel: L("settings.models.card.localSTT.summary")
+        case .multimodalLLM: L("settings.models.card.multimodal.summary")
+        case .aliCloud: L("settings.models.card.aliCloud.summary")
+        case .doubaoRealtime: L("settings.models.card.doubao.summary")
+        case .groq: L("settings.models.card.groq.summary")
+        case .appleSpeech: ""
         }
     }
 
     private func llmRemoteProviderIcon(_ provider: LLMRemoteProvider) -> String {
         switch provider {
-        case .freeModel: return "giftcard"
-        case .custom: return "xmark.triangle.circle.square.fill"
-        case .openRouter: return "arrow.triangle.branch"
-        case .openAI: return "circle.hexagongrid"
-        case .anthropic: return "sun.max"
-        case .gemini: return "diamond"
-        case .deepSeek: return "bird"
-        case .kimi: return "moon.stars"
-        case .qwen: return "cloud"
-        case .zhipu: return "dot.scope"
-        case .minimax: return "sparkles"
-        case .grok: return "x.circle"
-        case .groq: return "bolt.fill"
-        case .xiaomi: return "circle.grid.cross"
+        case .freeModel: "giftcard"
+        case .custom: "xmark.triangle.circle.square.fill"
+        case .openRouter: "arrow.triangle.branch"
+        case .openAI: "circle.hexagongrid"
+        case .anthropic: "sun.max"
+        case .gemini: "diamond"
+        case .deepSeek: "bird"
+        case .kimi: "moon.stars"
+        case .qwen: "cloud"
+        case .zhipu: "dot.scope"
+        case .minimax: "sparkles"
+        case .grok: "x.circle"
+        case .groq: "bolt.fill"
+        case .xiaomi: "circle.grid.cross"
         }
     }
 
@@ -406,23 +406,23 @@ struct OnboardingView: View {
                     label: L("settings.models.whisper.endpoint"),
                     placeholder: OpenAIAudioModelCatalog.whisperEndpoints[0],
                     text: $viewModel.whisperBaseURL,
-                    suggestions: OpenAIAudioModelCatalog.whisperEndpoints
+                    suggestions: OpenAIAudioModelCatalog.whisperEndpoints,
                 )
                 StudioTextInputCard(
                     label: L("common.apiKey"),
                     placeholder: "sk-...",
                     text: $viewModel.whisperAPIKey,
-                    secure: true
+                    secure: true,
                 )
                 StudioSuggestedTextInputCard(
                     label: L("common.model"),
                     placeholder: OpenAIAudioModelCatalog.defaultWhisperModel(
-                        forEndpoint: viewModel.whisperBaseURL
+                        forEndpoint: viewModel.whisperBaseURL,
                     ),
                     text: $viewModel.whisperModel,
                     suggestions: OpenAIAudioModelCatalog.suggestedWhisperModels(
-                        forEndpoint: viewModel.whisperBaseURL
-                    )
+                        forEndpoint: viewModel.whisperBaseURL,
+                    ),
                 )
             }
         }
@@ -440,7 +440,7 @@ struct OnboardingView: View {
                     StudioMenuPicker(
                         options: FreeSTTModelRegistry.suggestedModelNames.map { ($0, $0) },
                         selection: $viewModel.freeSTTModel,
-                        width: 320
+                        width: 320,
                     )
                 }
 
@@ -465,7 +465,7 @@ struct OnboardingView: View {
                             Circle()
                                 .stroke(
                                     isSelected ? StudioTheme.accent : StudioTheme.border.opacity(0.55),
-                                    lineWidth: 1.5
+                                    lineWidth: 1.5,
                                 )
                                 .frame(width: 20, height: 20)
                             if isSelected {
@@ -494,21 +494,21 @@ struct OnboardingView: View {
                             .padding(.vertical, 4)
                             .background(
                                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .fill(isSelected ? StudioTheme.accentSoft : StudioTheme.surfaceMuted)
+                                    .fill(isSelected ? StudioTheme.accentSoft : StudioTheme.surfaceMuted),
                             )
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                     .background(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(isSelected ? StudioTheme.accentSoft.opacity(0.6) : StudioTheme.surface)
+                            .fill(isSelected ? StudioTheme.accentSoft.opacity(0.6) : StudioTheme.surface),
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .stroke(
                                 isSelected ? StudioTheme.accent.opacity(0.45) : StudioTheme.border.opacity(0.55),
-                                lineWidth: isSelected ? 1.5 : 1
-                            )
+                                lineWidth: isSelected ? 1.5 : 1,
+                            ),
                     )
                     .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
@@ -535,19 +535,19 @@ struct OnboardingView: View {
                     label: L("settings.models.remote.baseURL"),
                     placeholder: OpenAIAudioModelCatalog.multimodalEndpoints[0],
                     text: $viewModel.multimodalLLMBaseURL,
-                    suggestions: OpenAIAudioModelCatalog.multimodalEndpoints
+                    suggestions: OpenAIAudioModelCatalog.multimodalEndpoints,
                 )
                 StudioTextInputCard(
                     label: L("common.apiKey"),
                     placeholder: "sk-...",
                     text: $viewModel.multimodalLLMAPIKey,
-                    secure: true
+                    secure: true,
                 )
                 StudioSuggestedTextInputCard(
                     label: L("common.model"),
                     placeholder: OpenAIAudioModelCatalog.multimodalModels[0],
                     text: $viewModel.multimodalLLMModel,
-                    suggestions: OpenAIAudioModelCatalog.multimodalModels
+                    suggestions: OpenAIAudioModelCatalog.multimodalModels,
                 )
             }
         }
@@ -560,7 +560,7 @@ struct OnboardingView: View {
                     label: L("common.apiKey"),
                     placeholder: "sk-...",
                     text: $viewModel.aliCloudAPIKey,
-                    secure: true
+                    secure: true,
                 )
             }
         }
@@ -572,13 +572,13 @@ struct OnboardingView: View {
                 StudioTextInputCard(
                     label: L("settings.models.doubao.appID"),
                     placeholder: "",
-                    text: $viewModel.doubaoAppID
+                    text: $viewModel.doubaoAppID,
                 )
                 StudioTextInputCard(
                     label: L("settings.models.doubao.accessToken"),
                     placeholder: "",
                     text: $viewModel.doubaoAccessToken,
-                    secure: true
+                    secure: true,
                 )
             }
         }
@@ -591,13 +591,13 @@ struct OnboardingView: View {
                     label: L("common.apiKey"),
                     placeholder: "gsk_...",
                     text: $viewModel.groqSTTAPIKey,
-                    secure: true
+                    secure: true,
                 )
                 StudioSuggestedTextInputCard(
                     label: L("common.model"),
                     placeholder: OpenAIAudioModelCatalog.groqWhisperModels[0],
                     text: $viewModel.groqSTTModel,
-                    suggestions: OpenAIAudioModelCatalog.groqWhisperModels
+                    suggestions: OpenAIAudioModelCatalog.groqWhisperModels,
                 )
             }
         }
@@ -623,7 +623,7 @@ struct OnboardingView: View {
                         StudioMenuPicker(
                             options: FreeLLMModelRegistry.suggestedModelNames.map { ($0, $0) },
                             selection: $viewModel.llmModel,
-                            width: 320
+                            width: 320,
                         )
                     }
                     Text(L("settings.models.freeModel.hint"))
@@ -635,20 +635,20 @@ struct OnboardingView: View {
                         label: L("common.apiKey"),
                         placeholder: provider == .gemini ? "AIza..." : "sk-...",
                         text: $viewModel.llmAPIKey,
-                        secure: true
+                        secure: true,
                     )
                     StudioSuggestedTextInputCard(
                         label: L("settings.models.remote.baseURL"),
                         placeholder: provider.defaultBaseURL.isEmpty
                             ? "https://api.openai.com/v1" : provider.defaultBaseURL,
                         text: $viewModel.llmBaseURL,
-                        suggestions: endpointSuggestions
+                        suggestions: endpointSuggestions,
                     )
                     StudioSuggestedTextInputCard(
                         label: L("common.model"),
                         placeholder: provider.defaultModel,
                         text: $viewModel.llmModel,
-                        suggestions: modelSuggestions
+                        suggestions: modelSuggestions,
                     )
                 }
             }
@@ -663,14 +663,14 @@ struct OnboardingView: View {
                     placeholder: "http://127.0.0.1:11434",
                     text: $viewModel.ollamaBaseURL,
                     suggestions: [viewModel.ollamaBaseURL, "http://127.0.0.1:11434", "http://localhost:11434"]
-                        .filter { !$0.isEmpty }
+                        .filter { !$0.isEmpty },
                 )
                 StudioSuggestedTextInputCard(
                     label: L("common.model"),
                     placeholder: "qwen2.5:7b",
                     text: $viewModel.ollamaModel,
                     suggestions: [viewModel.ollamaModel, "qwen2.5:7b", "llama3.2:3b", "gemma3:4b"]
-                        .filter { !$0.isEmpty }
+                        .filter { !$0.isEmpty },
                 )
             }
         }
@@ -680,78 +680,78 @@ struct OnboardingView: View {
 
     private func sttProviderToID(_ provider: STTProvider) -> StudioModelProviderID {
         switch provider {
-        case .freeModel: return .freeSTT
-        case .whisperAPI: return .whisperAPI
-        case .localModel: return .localSTT
-        case .multimodalLLM: return .multimodalLLM
-        case .aliCloud: return .aliCloud
-        case .doubaoRealtime: return .doubaoRealtime
-        case .groq: return .groqSTT
-        case .appleSpeech: return .appleSpeech
+        case .freeModel: .freeSTT
+        case .whisperAPI: .whisperAPI
+        case .localModel: .localSTT
+        case .multimodalLLM: .multimodalLLM
+        case .aliCloud: .aliCloud
+        case .doubaoRealtime: .doubaoRealtime
+        case .groq: .groqSTT
+        case .appleSpeech: .appleSpeech
         }
     }
 
     private func loadProviderLogo(for providerID: StudioModelProviderID) -> NSImage? {
         guard let name = providerLogoResourceName(for: providerID) else { return nil }
         let url = Bundle.module.url(
-            forResource: name, withExtension: "png", subdirectory: "Resources/Providers"
+            forResource: name, withExtension: "png", subdirectory: "Resources/Providers",
         )
-        ?? Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Providers")
-        ?? Bundle.module.url(forResource: name, withExtension: "png")
+            ?? Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Providers")
+            ?? Bundle.module.url(forResource: name, withExtension: "png")
         guard let url else { return nil }
         return NSImage(contentsOf: url)
     }
 
     private func providerLogoResourceName(for providerID: StudioModelProviderID) -> String? {
         switch providerID {
-        case .freeSTT: return nil
-        case .whisperAPI, .multimodalLLM: return "openai"
-        case .ollama: return "ollama"
-        case .freeModel: return nil
-        case .openRouter: return "openrouter"
-        case .openAI: return "openai"
-        case .anthropic: return "claude-color"
-        case .gemini: return "gemini-color"
-        case .deepSeek: return "deepseek-color"
-        case .kimi: return "moonshot"
-        case .qwen: return "qwen-color"
-        case .zhipu: return "zhipu-color"
-        case .minimax: return "minimax-color"
-        case .grok: return "xai"
-        case .groq: return "groq"
-        case .groqSTT: return "groq"
-        case .xiaomi: return "xiaomimimo"
-        case .aliCloud: return "bailian-color"
-        case .doubaoRealtime: return "doubao-color"
-        default: return nil
+        case .freeSTT: nil
+        case .whisperAPI, .multimodalLLM: "openai"
+        case .ollama: "ollama"
+        case .freeModel: nil
+        case .openRouter: "openrouter"
+        case .openAI: "openai"
+        case .anthropic: "claude-color"
+        case .gemini: "gemini-color"
+        case .deepSeek: "deepseek-color"
+        case .kimi: "moonshot"
+        case .qwen: "qwen-color"
+        case .zhipu: "zhipu-color"
+        case .minimax: "minimax-color"
+        case .grok: "xai"
+        case .groq: "groq"
+        case .groqSTT: "groq"
+        case .xiaomi: "xiaomimimo"
+        case .aliCloud: "bailian-color"
+        case .doubaoRealtime: "doubao-color"
+        default: nil
         }
     }
 
     private func providerSymbol(for providerID: StudioModelProviderID) -> String {
         switch providerID {
-        case .appleSpeech: return "waveform"
-        case .localSTT: return "laptopcomputer.and.arrow.down"
-        case .freeSTT: return "giftcard"
-        case .whisperAPI: return "dot.radiowaves.left.and.right"
-        case .ollama: return "cpu"
-        case .freeModel: return "giftcard"
-        case .customLLM: return "slider.horizontal.3"
-        case .openRouter: return "arrow.triangle.branch"
-        case .openAI: return "circle.hexagongrid"
-        case .anthropic: return "sun.max"
-        case .gemini: return "diamond"
-        case .deepSeek: return "bird"
-        case .kimi: return "moon.stars"
-        case .qwen: return "cloud"
-        case .zhipu: return "dot.scope"
-        case .minimax: return "sparkles"
-        case .grok: return "x.circle"
-        case .groq: return "bolt.fill"
-        case .groqSTT: return "bolt.fill"
-        case .xiaomi: return "circle.grid.cross"
-        case .multimodalLLM: return "brain.filled.head.profile"
-        case .aliCloud: return "antenna.radiowaves.left.and.right"
-        case .doubaoRealtime: return "bolt.horizontal.circle"
+        case .appleSpeech: "waveform"
+        case .localSTT: "laptopcomputer.and.arrow.down"
+        case .freeSTT: "giftcard"
+        case .whisperAPI: "dot.radiowaves.left.and.right"
+        case .ollama: "cpu"
+        case .freeModel: "giftcard"
+        case .customLLM: "slider.horizontal.3"
+        case .openRouter: "arrow.triangle.branch"
+        case .openAI: "circle.hexagongrid"
+        case .anthropic: "sun.max"
+        case .gemini: "diamond"
+        case .deepSeek: "bird"
+        case .kimi: "moon.stars"
+        case .qwen: "cloud"
+        case .zhipu: "dot.scope"
+        case .minimax: "sparkles"
+        case .grok: "x.circle"
+        case .groq: "bolt.fill"
+        case .groqSTT: "bolt.fill"
+        case .xiaomi: "circle.grid.cross"
+        case .multimodalLLM: "brain.filled.head.profile"
+        case .aliCloud: "antenna.radiowaves.left.and.right"
+        case .doubaoRealtime: "bolt.horizontal.circle"
         }
     }
 
@@ -763,7 +763,7 @@ struct OnboardingView: View {
         description: String,
         badge: String,
         isSelected: Bool,
-        action: @escaping () -> Void
+        action: @escaping () -> Void,
     ) -> some View {
         Button(action: action) {
             HStack(spacing: 14) {
@@ -783,7 +783,7 @@ struct OnboardingView: View {
                                     .font(.system(size: 15, weight: .medium))
                                     .foregroundStyle(isSelected ? StudioTheme.accent : StudioTheme.textSecondary)
                             }
-                        }
+                        },
                     )
 
                 VStack(alignment: .leading, spacing: 3) {
@@ -801,7 +801,7 @@ struct OnboardingView: View {
                 StudioPill(
                     title: badge,
                     tone: isSelected ? StudioTheme.accent : StudioTheme.textTertiary,
-                    fill: isSelected ? StudioTheme.accentSoft : StudioTheme.surfaceMuted
+                    fill: isSelected ? StudioTheme.accentSoft : StudioTheme.surfaceMuted,
                 )
 
                 if isSelected {
@@ -814,14 +814,14 @@ struct OnboardingView: View {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isSelected ? StudioTheme.accentSoft.opacity(0.6) : StudioTheme.surface)
+                    .fill(isSelected ? StudioTheme.accentSoft.opacity(0.6) : StudioTheme.surface),
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(
                         isSelected ? StudioTheme.accent.opacity(0.45) : StudioTheme.border.opacity(0.55),
-                        lineWidth: isSelected ? 1.5 : 1
-                    )
+                        lineWidth: isSelected ? 1.5 : 1,
+                    ),
             )
             .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
@@ -835,7 +835,7 @@ struct OnboardingView: View {
             stepHeader(
                 icon: "lock.shield",
                 title: L("onboarding.permissions.title"),
-                subtitle: L("onboarding.permissions.subtitle")
+                subtitle: L("onboarding.permissions.subtitle"),
             )
 
             VStack(spacing: 10) {
@@ -860,7 +860,7 @@ struct OnboardingView: View {
                 .overlay(
                     Image(systemName: permissionIcon(snapshot.id))
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(isGranted ? StudioTheme.success : StudioTheme.textSecondary)
+                        .foregroundStyle(isGranted ? StudioTheme.success : StudioTheme.textSecondary),
                 )
 
             VStack(alignment: .leading, spacing: 4) {
@@ -872,7 +872,7 @@ struct OnboardingView: View {
                     StudioPill(
                         title: snapshot.badgeText,
                         tone: isGranted ? StudioTheme.success : StudioTheme.warning,
-                        fill: isGranted ? StudioTheme.success.opacity(0.12) : StudioTheme.warning.opacity(0.1)
+                        fill: isGranted ? StudioTheme.success.opacity(0.12) : StudioTheme.warning.opacity(0.1),
                     )
                 }
 
@@ -889,7 +889,7 @@ struct OnboardingView: View {
                     title: snapshot.actionTitle,
                     systemImage: nil,
                     variant: .primary,
-                    isLoading: isRequesting
+                    isLoading: isRequesting,
                 ) {
                     viewModel.requestPermission(snapshot.id)
                 }
@@ -899,22 +899,22 @@ struct OnboardingView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(StudioTheme.surface)
+                .fill(StudioTheme.surface),
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(
                     isGranted ? StudioTheme.success.opacity(0.3) : StudioTheme.border.opacity(0.55),
-                    lineWidth: 1
-                )
+                    lineWidth: 1,
+                ),
         )
     }
 
     private func permissionIcon(_ id: PrivacyGuard.PermissionID) -> String {
         switch id {
-        case .microphone: return "mic.fill"
-        case .speechRecognition: return "waveform"
-        case .accessibility: return "hand.raised.fill"
+        case .microphone: "mic.fill"
+        case .speechRecognition: "waveform"
+        case .accessibility: "hand.raised.fill"
         }
     }
 
@@ -925,7 +925,7 @@ struct OnboardingView: View {
             stepHeader(
                 icon: "keyboard",
                 title: L("onboarding.shortcuts.title"),
-                subtitle: L("onboarding.shortcuts.subtitle")
+                subtitle: L("onboarding.shortcuts.subtitle"),
             )
 
             VStack(spacing: 10) {
@@ -933,19 +933,19 @@ struct OnboardingView: View {
                     icon: "mic.fill",
                     title: L("settings.shortcuts.activation.title"),
                     subtitle: L("onboarding.shortcuts.activation.hint"),
-                    binding: HotkeyBinding.defaultActivation
+                    binding: HotkeyBinding.defaultActivation,
                 )
                 shortcutRow(
                     icon: "text.quote",
                     title: L("settings.shortcuts.ask.title"),
                     subtitle: L("onboarding.shortcuts.ask.hint"),
-                    binding: HotkeyBinding.defaultAsk
+                    binding: HotkeyBinding.defaultAsk,
                 )
                 shortcutRow(
                     icon: "person.crop.circle",
                     title: L("settings.shortcuts.persona.title"),
                     subtitle: L("onboarding.shortcuts.persona.hint"),
-                    binding: HotkeyBinding.defaultPersona
+                    binding: HotkeyBinding.defaultPersona,
                 )
             }
 
@@ -964,7 +964,7 @@ struct OnboardingView: View {
         icon: String,
         title: String,
         subtitle: String,
-        binding: HotkeyBinding
+        binding: HotkeyBinding,
     ) -> some View {
         HStack(spacing: 14) {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -973,7 +973,7 @@ struct OnboardingView: View {
                 .overlay(
                     Image(systemName: icon)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(StudioTheme.textSecondary),
                 )
 
             VStack(alignment: .leading, spacing: 3) {
@@ -996,11 +996,11 @@ struct OnboardingView: View {
                         .padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(StudioTheme.surface)
+                                .fill(StudioTheme.surface),
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .stroke(StudioTheme.border.opacity(0.75), lineWidth: 1)
+                                .stroke(StudioTheme.border.opacity(0.75), lineWidth: 1),
                         )
                 }
             }
@@ -1009,11 +1009,11 @@ struct OnboardingView: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(StudioTheme.surface)
+                .fill(StudioTheme.surface),
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(StudioTheme.border.opacity(0.55), lineWidth: 1)
+                .stroke(StudioTheme.border.opacity(0.55), lineWidth: 1),
         )
     }
 
@@ -1025,7 +1025,7 @@ struct OnboardingView: View {
                 StudioButton(
                     title: L("onboarding.action.back"),
                     systemImage: "chevron.left",
-                    variant: .secondary
+                    variant: .secondary,
                 ) {
                     viewModel.goBack()
                 }
@@ -1037,7 +1037,7 @@ struct OnboardingView: View {
                 StudioButton(
                     title: L("onboarding.action.skip"),
                     systemImage: nil,
-                    variant: .secondary
+                    variant: .secondary,
                 ) {
                     viewModel.skip()
                 }
@@ -1046,7 +1046,7 @@ struct OnboardingView: View {
             StudioButton(
                 title: viewModel.isLastStep ? L("onboarding.action.getStarted") : L("onboarding.action.continue"),
                 systemImage: viewModel.isLastStep ? "checkmark" : "chevron.right",
-                variant: .primary
+                variant: .primary,
             ) {
                 viewModel.advance()
             }
@@ -1070,7 +1070,7 @@ struct OnboardingView: View {
         providerID: StudioModelProviderID?,
         icon: String,
         title: String,
-        subtitle: String
+        subtitle: String,
     ) -> some View {
         let logoImage = providerID.flatMap { loadProviderLogo(for: $0) }
         return HStack(alignment: .top, spacing: 14) {
@@ -1090,7 +1090,7 @@ struct OnboardingView: View {
                                 .font(.system(size: 20, weight: .medium))
                                 .foregroundStyle(StudioTheme.accent)
                         }
-                    }
+                    },
                 )
 
             VStack(alignment: .leading, spacing: 4) {

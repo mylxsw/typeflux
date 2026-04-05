@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class TextSelectionSnapshotTests: XCTestCase {
-
     func testHasSelectionIsFalseWhenSelectedTextIsNil() {
         var snapshot = TextSelectionSnapshot()
         snapshot.selectedText = nil

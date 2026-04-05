@@ -4,11 +4,11 @@ enum AppAppearance {
     static func nsAppearance(for mode: AppearanceMode) -> NSAppearance? {
         switch mode {
         case .system:
-            return nil
+            nil
         case .light:
-            return NSAppearance(named: .aqua)
+            NSAppearance(named: .aqua)
         case .dark:
-            return NSAppearance(named: .darkAqua)
+            NSAppearance(named: .darkAqua)
         }
     }
 

@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class FreeLLMModelRegistryTests: XCTestCase {
     func testRegistryStartsEmptyUntilConcreteSourcesAreAdded() {
@@ -14,7 +14,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             displayName: "Demo Free Source",
             baseURL: "https://example.com/v1",
             additionalHeaders: ["X-Test": "1"],
-            supportedModels: ["demo-model"]
+            supportedModels: ["demo-model"],
         )
 
         let resolved = try XCTUnwrap(source.resolve(modelName: "DEMO-MODEL"))
@@ -26,8 +26,8 @@ final class FreeLLMModelRegistryTests: XCTestCase {
                 baseURL: "https://example.com/v1",
                 modelName: "demo-model",
                 apiKey: "",
-                additionalHeaders: ["X-Test": "1"]
-            )
+                additionalHeaders: ["X-Test": "1"],
+            ),
         )
     }
 
@@ -38,7 +38,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             id: "test-id",
             displayName: "Test Source",
             baseURL: "https://api.test.com/v1",
-            supportedModels: ["model-a"]
+            supportedModels: ["model-a"],
         )
         XCTAssertEqual(source.id, "test-id")
         XCTAssertEqual(source.displayName, "Test Source")
@@ -50,7 +50,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             id: "empty-key",
             displayName: "No Key Source",
             baseURL: "https://example.com",
-            supportedModels: ["m1"]
+            supportedModels: ["m1"],
         )
         XCTAssertEqual(source.apiKey, "")
     }
@@ -60,7 +60,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             id: "no-headers",
             displayName: "No Headers",
             baseURL: "https://example.com",
-            supportedModels: ["m1"]
+            supportedModels: ["m1"],
         )
         XCTAssertTrue(source.additionalHeaders.isEmpty)
     }
@@ -71,7 +71,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             displayName: "Keyed Source",
             baseURL: "https://api.example.com",
             apiKey: "sk-1234",
-            supportedModels: ["model-b"]
+            supportedModels: ["model-b"],
         )
         XCTAssertEqual(source.apiKey, "sk-1234")
     }
@@ -82,7 +82,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             displayName: "Headers Source",
             baseURL: "https://api.example.com",
             additionalHeaders: ["X-Custom": "value", "X-Version": "2"],
-            supportedModels: ["model-c"]
+            supportedModels: ["model-c"],
         )
         XCTAssertEqual(source.additionalHeaders["X-Custom"], "value")
         XCTAssertEqual(source.additionalHeaders["X-Version"], "2")
@@ -93,7 +93,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             id: "multi",
             displayName: "Multi Model",
             baseURL: "https://api.example.com",
-            supportedModels: ["model-a", "model-b", "model-c"]
+            supportedModels: ["model-a", "model-b", "model-c"],
         )
         XCTAssertEqual(source.supportedModels, ["model-a", "model-b", "model-c"])
     }
@@ -105,7 +105,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             id: "src",
             displayName: "Source",
             baseURL: "https://example.com",
-            supportedModels: ["known-model"]
+            supportedModels: ["known-model"],
         )
         XCTAssertNil(source.resolve(modelName: "unknown-model"))
     }
@@ -115,7 +115,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             id: "src",
             displayName: "Source",
             baseURL: "https://example.com",
-            supportedModels: ["model-a"]
+            supportedModels: ["model-a"],
         )
         XCTAssertNil(source.resolve(modelName: ""))
     }
@@ -125,7 +125,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             id: "src",
             displayName: "Source",
             baseURL: "https://example.com",
-            supportedModels: ["model-a"]
+            supportedModels: ["model-a"],
         )
         XCTAssertNil(source.resolve(modelName: "   "))
     }
@@ -135,7 +135,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             id: "src",
             displayName: "Source",
             baseURL: "https://example.com",
-            supportedModels: ["GPT-4o-mini"]
+            supportedModels: ["GPT-4o-mini"],
         )
         let resolved = try XCTUnwrap(source.resolve(modelName: "gpt-4o-mini"))
         // The original model name (from source list) is preserved
@@ -149,7 +149,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             baseURL: "https://api.full.com/v1",
             apiKey: "sk-abc",
             additionalHeaders: ["H": "V"],
-            supportedModels: ["full-model"]
+            supportedModels: ["full-model"],
         )
         let resolved = try XCTUnwrap(source.resolve(modelName: "full-model"))
         XCTAssertEqual(resolved.sourceID, "full-src")
@@ -176,7 +176,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             baseURL: "https://example.com",
             modelName: "model-a",
             apiKey: "key1",
-            additionalHeaders: [:]
+            additionalHeaders: [:],
         )
         let model2 = FreeLLMResolvedModel(
             sourceID: "s1",
@@ -184,7 +184,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             baseURL: "https://example.com",
             modelName: "model-a",
             apiKey: "key1",
-            additionalHeaders: [:]
+            additionalHeaders: [:],
         )
         XCTAssertEqual(model1, model2)
     }
@@ -196,7 +196,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             baseURL: "https://example.com",
             modelName: "model-a",
             apiKey: "key1",
-            additionalHeaders: [:]
+            additionalHeaders: [:],
         )
         let model2 = FreeLLMResolvedModel(
             sourceID: "s2",
@@ -204,7 +204,7 @@ final class FreeLLMModelRegistryTests: XCTestCase {
             baseURL: "https://example.com",
             modelName: "model-a",
             apiKey: "key1",
-            additionalHeaders: [:]
+            additionalHeaders: [:],
         )
         XCTAssertNotEqual(model1, model2)
     }
@@ -212,11 +212,11 @@ final class FreeLLMModelRegistryTests: XCTestCase {
     func testFreeLLMResolvedModelInequalityOnModelName() {
         let model1 = FreeLLMResolvedModel(
             sourceID: "s1", sourceName: "S1", baseURL: "https://example.com",
-            modelName: "model-a", apiKey: "", additionalHeaders: [:]
+            modelName: "model-a", apiKey: "", additionalHeaders: [:],
         )
         let model2 = FreeLLMResolvedModel(
             sourceID: "s1", sourceName: "S1", baseURL: "https://example.com",
-            modelName: "model-b", apiKey: "", additionalHeaders: [:]
+            modelName: "model-b", apiKey: "", additionalHeaders: [:],
         )
         XCTAssertNotEqual(model1, model2)
     }
@@ -224,11 +224,11 @@ final class FreeLLMModelRegistryTests: XCTestCase {
     func testFreeLLMResolvedModelInequalityOnAPIKey() {
         let model1 = FreeLLMResolvedModel(
             sourceID: "s1", sourceName: "S1", baseURL: "https://example.com",
-            modelName: "model-a", apiKey: "key1", additionalHeaders: [:]
+            modelName: "model-a", apiKey: "key1", additionalHeaders: [:],
         )
         let model2 = FreeLLMResolvedModel(
             sourceID: "s1", sourceName: "S1", baseURL: "https://example.com",
-            modelName: "model-a", apiKey: "key2", additionalHeaders: [:]
+            modelName: "model-a", apiKey: "key2", additionalHeaders: [:],
         )
         XCTAssertNotEqual(model1, model2)
     }

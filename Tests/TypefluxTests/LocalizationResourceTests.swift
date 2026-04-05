@@ -1,6 +1,6 @@
 import Foundation
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class LocalizationResourceTests: XCTestCase {
     func testLocalizedStringTablesParseForAllSupportedLanguages() throws {
@@ -11,7 +11,7 @@ final class LocalizationResourceTests: XCTestCase {
 
             XCTAssertNoThrow(
                 try PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-                "Failed to parse Localizable.strings for \(language.rawValue)"
+                "Failed to parse Localizable.strings for \(language.rawValue)",
             )
         }
     }
@@ -24,7 +24,7 @@ final class LocalizationResourceTests: XCTestCase {
             XCTAssertNotEqual(
                 localized,
                 "settings.general",
-                "Missing localized value for \(language.rawValue)"
+                "Missing localized value for \(language.rawValue)",
             )
         }
     }
@@ -48,7 +48,7 @@ final class LocalizationResourceTests: XCTestCase {
     private func localizationBundle(for language: AppLanguage) throws -> Bundle {
         let path = try XCTUnwrap(
             Bundle.module.path(forResource: language.bundleLocalizationName, ofType: "lproj"),
-            "Missing bundle path for \(language.rawValue)"
+            "Missing bundle path for \(language.rawValue)",
         )
 
         return try XCTUnwrap(Bundle(path: path), "Missing bundle for \(language.rawValue)")

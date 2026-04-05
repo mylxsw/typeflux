@@ -4,7 +4,6 @@ import Foundation
 import os
 
 final class AXTextInjector: TextInjector {
-
     private let logger = Logger(subsystem: "dev.typeflux", category: "AXTextInjector")
     private let settingsStore: SettingsStore?
     private struct PasteboardItemSnapshot {
@@ -70,7 +69,7 @@ final class AXTextInjector: TextInjector {
                 isEditable: false,
                 role: nil,
                 windowTitle: nil,
-                isFocusedTarget: false
+                isFocusedTarget: false,
             )
         }
 
@@ -93,7 +92,7 @@ final class AXTextInjector: TextInjector {
                 isEditable: editability,
                 role: result.context.role,
                 windowTitle: result.context.windowTitle,
-                isFocusedTarget: result.context.isFocusedTarget
+                isFocusedTarget: result.context.isFocusedTarget,
             )
         }
         logger.debug("ax-api returned nil — trying clipboard-copy")
@@ -119,7 +118,7 @@ final class AXTextInjector: TextInjector {
                 windowTitle: selectionWindow.flatMap(windowTitle(of:)) ?? focusedWindowTitle(for: processID),
                 isFocusedTarget: isFocusedTarget,
                 source: "clipboard-copy",
-                capturedAt: Date()
+                capturedAt: Date(),
             )
             latestSelectionContext = context
             logger.debug("source=clipboard-copy  focusedWindow=\(focusedWindow != nil ? "present" : "nil", privacy: .public)  selectionWindow=\(selectionWindow != nil ? "present" : "nil", privacy: .public)  isFocusedTarget=\(isFocusedTarget ? "true" : "false", privacy: .public)  text(32)=\(String(copiedText.prefix(32)), privacy: .public)")
@@ -135,7 +134,7 @@ final class AXTextInjector: TextInjector {
                 isEditable: editability,
                 role: nil,
                 windowTitle: context.windowTitle,
-                isFocusedTarget: context.isFocusedTarget
+                isFocusedTarget: context.isFocusedTarget,
             )
         }
         logger.debug("clipboard-copy returned nil — no selection detected")
@@ -152,7 +151,7 @@ final class AXTextInjector: TextInjector {
             isEditable: editability,
             role: focused.flatMap { copyStringAttribute(kAXRoleAttribute as String, from: $0) },
             windowTitle: focused.flatMap(containingWindowTitle(of:)),
-            isFocusedTarget: false
+            isFocusedTarget: false,
         )
     }
 
@@ -172,7 +171,7 @@ final class AXTextInjector: TextInjector {
                 role: nil,
                 text: nil,
                 isEditable: false,
-                failureReason: "accessibility-not-trusted"
+                failureReason: "accessibility-not-trusted",
             )
         }
 
@@ -183,7 +182,7 @@ final class AXTextInjector: TextInjector {
                 role: nil,
                 text: nil,
                 isEditable: false,
-                failureReason: "no-focused-element"
+                failureReason: "no-focused-element",
             )
         }
 
@@ -199,7 +198,7 @@ final class AXTextInjector: TextInjector {
                 role: role,
                 text: nil,
                 isEditable: false,
-                failureReason: "focused-element-not-editable"
+                failureReason: "focused-element-not-editable",
             )
         }
 
@@ -211,7 +210,7 @@ final class AXTextInjector: TextInjector {
                     role: role,
                     text: nil,
                     isEditable: true,
-                    failureReason: "value-matched-placeholder"
+                    failureReason: "value-matched-placeholder",
                 )
             }
             if let title = copyTextAttribute(kAXTitleAttribute as String, from: element), title == value {
@@ -221,7 +220,7 @@ final class AXTextInjector: TextInjector {
                     role: role,
                     text: nil,
                     isEditable: true,
-                    failureReason: "value-matched-title"
+                    failureReason: "value-matched-title",
                 )
             }
 
@@ -231,7 +230,7 @@ final class AXTextInjector: TextInjector {
                 role: role,
                 text: value,
                 isEditable: true,
-                failureReason: nil
+                failureReason: nil,
             )
         }
 
@@ -241,7 +240,7 @@ final class AXTextInjector: TextInjector {
             role: role,
             text: nil,
             isEditable: true,
-            failureReason: "missing-ax-value"
+            failureReason: "missing-ax-value",
         )
     }
 
@@ -255,7 +254,8 @@ final class AXTextInjector: TextInjector {
 
     private func focusedElement() -> AXUIElement? {
         if let processID = frontmostProcessID(),
-           let focused = focusedElement(for: processID) {
+           let focused = focusedElement(for: processID)
+        {
             return focused
         }
 
@@ -289,19 +289,19 @@ final class AXTextInjector: TextInjector {
         }
 
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
-        let nativeTextRoles: Set<String> = [
+        let nativeTextRoles: Set = [
             "AXTextArea",
             "AXTextField",
             "AXComboBox",
-            "AXSearchField"
+            "AXSearchField",
         ]
         let isNativeText = role != nil && nativeTextRoles.contains(role!)
 
         let isSettable = isAttributeSettable(kAXSelectedTextRangeAttribute as CFString, on: element)
-                      || isAttributeSettable(kAXValueAttribute as CFString, on: element)
-                      || isAttributeSettable(kAXSelectedTextAttribute as CFString, on: element)
+            || isAttributeSettable(kAXValueAttribute as CFString, on: element)
+            || isAttributeSettable(kAXSelectedTextAttribute as CFString, on: element)
 
-        if !isNativeText && !isSettable {
+        if !isNativeText, !isSettable {
             return nil
         }
 
@@ -327,7 +327,7 @@ final class AXTextInjector: TextInjector {
 
         // Electron Bug Defense 2: Fake selection matches the entire node's value, but the node refuses to provide a selection range.
         // This usually happens when an Electron WebArea focuses a block but hasn't actually selected any text inside it.
-        if range == nil && (role == "AXWebArea" || role == "AXGroup" || role == "AXUnknown") {
+        if range == nil, role == "AXWebArea" || role == "AXGroup" || role == "AXUnknown" {
             if let value = copyStringAttribute(kAXValueAttribute as String, from: element), value == text {
                 return nil
             }
@@ -351,7 +351,7 @@ final class AXTextInjector: TextInjector {
             windowTitle: selectionWindow.flatMap(windowTitle(of:)),
             isFocusedTarget: isFocusedTarget,
             source: "accessibility",
-            capturedAt: Date()
+            capturedAt: Date(),
         )
 
         return (text, context)
@@ -365,11 +365,11 @@ final class AXTextInjector: TextInjector {
 
     private func isLikelyEditable(element: AXUIElement) -> Bool {
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
-        let nativeTextRoles: Set<String> = [
+        let nativeTextRoles: Set = [
             "AXTextArea",
             "AXTextField",
             "AXComboBox",
-            "AXSearchField"
+            "AXSearchField",
         ]
         if let role, nativeTextRoles.contains(role) {
             return true
@@ -391,7 +391,7 @@ final class AXTextInjector: TextInjector {
             throw NSError(
                 domain: "AXTextInjector",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Accessibility permission required"]
+                userInfo: [NSLocalizedDescriptionKey: "Accessibility permission required"],
             )
         }
 
@@ -399,17 +399,19 @@ final class AXTextInjector: TextInjector {
         let beforeSnapshot = readCurrentInputTextSnapshot()
 
         if replaceSelection,
-           let context = activeSelectionContext() {
+           let context = activeSelectionContext()
+        {
             restoreSelectionContext(context)
             contextRestored = true
             if context.range != nil,
                try insertTextViaAX(
-                text,
-                into: context.element,
-                replaceSelection: true,
-                selectionRange: context.range,
-                beforeSnapshot: beforeSnapshot
-               ) {
+                   text,
+                   into: context.element,
+                   replaceSelection: true,
+                   selectionRange: context.range,
+                   beforeSnapshot: beforeSnapshot,
+               )
+            {
                 latestSelectionContext = nil
                 return
             }
@@ -420,7 +422,7 @@ final class AXTextInjector: TextInjector {
             into: element,
             replaceSelection: replaceSelection,
             selectionRange: nil,
-            beforeSnapshot: beforeSnapshot
+            beforeSnapshot: beforeSnapshot,
         ) {
             if replaceSelection {
                 latestSelectionContext = nil
@@ -439,7 +441,7 @@ final class AXTextInjector: TextInjector {
         into element: AXUIElement,
         replaceSelection: Bool,
         selectionRange: CFRange?,
-        beforeSnapshot: CurrentInputTextSnapshot
+        beforeSnapshot: CurrentInputTextSnapshot,
     ) throws -> Bool {
         if replaceSelection {
             if let selectionRange {
@@ -448,14 +450,14 @@ final class AXTextInjector: TextInjector {
             let replaceSelectedText = AXUIElementSetAttributeValue(
                 element,
                 kAXSelectedTextAttribute as CFString,
-                text as CFTypeRef
+                text as CFTypeRef,
             )
             if replaceSelectedText == .success {
                 if verifyAXWriteApplied(
                     insertedText: text,
                     replaceSelection: true,
                     targetProcessID: frontmostProcessID(),
-                    beforeSnapshot: beforeSnapshot
+                    beforeSnapshot: beforeSnapshot,
                 ) {
                     return true
                 }
@@ -463,7 +465,7 @@ final class AXTextInjector: TextInjector {
             }
         }
 
-        // EXTREMELY DANGEROUS: 
+        // EXTREMELY DANGEROUS:
         // We previously attempted to read `kAXValueAttribute`, string-splice the new text into it, and set it back.
         // However, many Electron apps (like Codex) expose their placeholder text inside `kAXValueAttribute` when empty.
         // String splicing here permanently fuses the user's dictation with the placeholder (e.g. "Ask for follow-up changes")
@@ -476,9 +478,9 @@ final class AXTextInjector: TextInjector {
         insertedText: String,
         replaceSelection: Bool,
         targetProcessID: pid_t?,
-        beforeSnapshot: CurrentInputTextSnapshot
+        beforeSnapshot: CurrentInputTextSnapshot,
     ) -> Bool {
-        for _ in 0..<Self.axWriteVerificationAttempts {
+        for _ in 0 ..< Self.axWriteVerificationAttempts {
             usleep(Self.axWriteVerificationPollIntervalMicroseconds)
             let afterSnapshot = readCurrentInputTextSnapshot()
             let verification = Self.evaluatePasteVerification(
@@ -486,7 +488,7 @@ final class AXTextInjector: TextInjector {
                 replaceSelection: replaceSelection,
                 targetProcessID: targetProcessID,
                 before: beforeSnapshot.isEditable ? beforeSnapshot : nil,
-                after: afterSnapshot
+                after: afterSnapshot,
             )
 
             switch verification {
@@ -526,8 +528,8 @@ final class AXTextInjector: TextInjector {
                 domain: "AXTextInjector",
                 code: 3,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "Replacement target is not a verifiable editable input."
-                ]
+                    NSLocalizedDescriptionKey: "Replacement target is not a verifiable editable input.",
+                ],
             )
         }
 
@@ -552,13 +554,13 @@ final class AXTextInjector: TextInjector {
         guard strictFallbackEnabled else {
             restorePasteboardAfterPaste(
                 previousSnapshot,
-                delayNanoseconds: Self.legacyPasteRestoreDelayNanoseconds
+                delayNanoseconds: Self.legacyPasteRestoreDelayNanoseconds,
             )
             return
         }
 
         var lastFailureReason: String?
-        for attempt in 0..<Self.pasteVerificationAttempts {
+        for attempt in 0 ..< Self.pasteVerificationAttempts {
             usleep(Self.pasteVerificationPollIntervalMicroseconds)
             let afterSnapshot = readCurrentInputTextSnapshot()
             let verification = Self.evaluatePasteVerification(
@@ -566,31 +568,31 @@ final class AXTextInjector: TextInjector {
                 replaceSelection: replaceSelection,
                 targetProcessID: targetPID,
                 before: beforeSnapshot,
-                after: afterSnapshot
+                after: afterSnapshot,
             )
 
             switch verification {
             case .success:
                 restorePasteboardAfterPaste(
                     previousSnapshot,
-                    delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds
+                    delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds,
                 )
                 return
-            case .failure(let reason):
+            case let .failure(reason):
                 lastFailureReason = reason
                 logger.debug(
-                    "paste verification failed on attempt \(attempt + 1, privacy: .public): \(reason, privacy: .public)"
+                    "paste verification failed on attempt \(attempt + 1, privacy: .public): \(reason, privacy: .public)",
                 )
             case .indeterminate:
                 logger.debug(
-                    "paste verification indeterminate on attempt \(attempt + 1, privacy: .public)"
+                    "paste verification indeterminate on attempt \(attempt + 1, privacy: .public)",
                 )
             }
         }
 
         restorePasteboardAfterPaste(
             previousSnapshot,
-            delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds
+            delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds,
         )
 
         if let lastFailureReason {
@@ -598,8 +600,8 @@ final class AXTextInjector: TextInjector {
                 domain: "AXTextInjector",
                 code: 2,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "Paste insertion could not be verified: \(lastFailureReason)"
-                ]
+                    NSLocalizedDescriptionKey: "Paste insertion could not be verified: \(lastFailureReason)",
+                ],
             )
         }
     }
@@ -609,7 +611,7 @@ final class AXTextInjector: TextInjector {
         replaceSelection: Bool,
         targetProcessID: pid_t?,
         before: CurrentInputTextSnapshot?,
-        after: CurrentInputTextSnapshot
+        after: CurrentInputTextSnapshot,
     ) -> PasteVerificationResult {
         let normalizedInsertedText = insertedText.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -633,13 +635,14 @@ final class AXTextInjector: TextInjector {
                 if normalizedBeforeText == normalizedAfterText {
                     return .failure("input-text-unchanged")
                 }
-            } else if replaceSelection && !normalizedInsertedText.isEmpty && normalizedAfterText != normalizedInsertedText {
+            } else if replaceSelection, !normalizedInsertedText.isEmpty, normalizedAfterText != normalizedInsertedText {
                 return .indeterminate
             }
         }
 
         if let reason = after.failureReason,
-           reason == "focused-element-not-editable" || reason == "accessibility-not-trusted" {
+           reason == "focused-element-not-editable" || reason == "accessibility-not-trusted"
+        {
             return .failure(reason)
         }
 
@@ -708,7 +711,7 @@ final class AXTextInjector: TextInjector {
         let result = AXUIElementSetAttributeValue(
             element,
             kAXSelectedTextRangeAttribute as CFString,
-            axRange
+            axRange,
         )
         return result == .success
     }
@@ -719,7 +722,7 @@ final class AXTextInjector: TextInjector {
         let result = AXUIElementSetAttributeValue(
             element,
             kAXFocusedAttribute as CFString,
-            value
+            value,
         )
         return result == .success
     }
@@ -735,7 +738,8 @@ final class AXTextInjector: TextInjector {
     private func systemFocusedElement() -> AXUIElement? {
         let system = AXUIElementCreateSystemWide()
         if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: system),
-           let resolved = resolveFocusedElement(focused) {
+           let resolved = resolveFocusedElement(focused)
+        {
             return resolved
         }
 
@@ -746,12 +750,14 @@ final class AXTextInjector: TextInjector {
         let appElement = AXUIElementCreateApplication(processID)
 
         if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: appElement),
-           let resolved = resolveFocusedElement(focused) {
+           let resolved = resolveFocusedElement(focused)
+        {
             return resolved
         }
 
         if let focusedWindow = copyElementAttribute(kAXFocusedWindowAttribute as String, from: appElement),
-           let resolved = resolveFocusedElement(focusedWindow) {
+           let resolved = resolveFocusedElement(focusedWindow)
+        {
             return resolved
         }
 
@@ -777,13 +783,14 @@ final class AXTextInjector: TextInjector {
 
         if let nestedFocused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: element),
            nestedFocused != element,
-           let resolved = resolveFocusedElement(nestedFocused) {
+           let resolved = resolveFocusedElement(nestedFocused)
+        {
             return resolved
         }
 
         if let descendant = findFocusedDescendant(
             in: element,
-            depthRemaining: Self.focusedDescendantSearchDepth
+            depthRemaining: Self.focusedDescendantSearchDepth,
         ) {
             return descendant
         }
@@ -900,17 +907,17 @@ final class AXTextInjector: TextInjector {
                 let copiedText = pasteboard.string(forType: .string)
                 restorePasteboardAfterPaste(
                     previousSnapshot,
-                    delayNanoseconds: Self.legacyPasteRestoreDelayNanoseconds
+                    delayNanoseconds: Self.legacyPasteRestoreDelayNanoseconds,
                 )
                 let trimmed = copiedText?.trimmingCharacters(in: .whitespacesAndNewlines)
                 return (trimmed?.isEmpty == false) ? trimmed : nil
             }
-            usleep(10_000)
+            usleep(10000)
         }
 
         restorePasteboardAfterPaste(
             previousSnapshot,
-            delayNanoseconds: Self.legacyPasteRestoreDelayNanoseconds
+            delayNanoseconds: Self.legacyPasteRestoreDelayNanoseconds,
         )
         return nil
     }
@@ -942,7 +949,8 @@ final class AXTextInjector: TextInjector {
 
     private func restoreSelectionContext(_ context: SelectionContext) {
         if let processID = context.processID,
-           let app = NSRunningApplication(processIdentifier: processID) {
+           let app = NSRunningApplication(processIdentifier: processID)
+        {
             app.activate(options: [.activateIgnoringOtherApps])
 
             // Wait for the target app to actually become frontmost.
@@ -950,7 +958,7 @@ final class AXTextInjector: TextInjector {
             let deadline = Date().addingTimeInterval(0.8)
             var activated = false
             while Date() < deadline {
-                usleep(50_000) // 50ms per check
+                usleep(50000) // 50ms per check
                 if NSWorkspace.shared.frontmostApplication?.processIdentifier == processID {
                     activated = true
                     break
@@ -998,7 +1006,7 @@ final class AXTextInjector: TextInjector {
 
     private func restorePasteboardAfterPaste(
         _ previousSnapshot: PasteboardSnapshot,
-        delayNanoseconds: UInt64
+        delayNanoseconds: UInt64,
     ) {
         Task.detached {
             try? await Task.sleep(nanoseconds: delayNanoseconds)

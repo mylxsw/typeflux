@@ -1,5 +1,5 @@
-import Foundation
 import AppKit
+import Foundation
 
 /// A mock implementation of an auto-updater.
 /// To be replaced with a real API later.
@@ -10,10 +10,10 @@ enum AutoUpdater {
             let hasUpdate = true // Mock data: always has update for now
             let mockVersion = "2.0.0"
             let mockReleaseNotes = """
-- Added new awesome feature
-- Fixed several bugs
-"""
-            
+            - Added new awesome feature
+            - Fixed several bugs
+            """
+
             DispatchQueue.main.async {
                 if hasUpdate {
                     let alert = NSAlert()
@@ -21,7 +21,7 @@ enum AutoUpdater {
                     alert.informativeText = L("updater.available.message", mockVersion, mockReleaseNotes)
                     alert.addButton(withTitle: L("updater.action.download"))
                     alert.addButton(withTitle: L("updater.action.later"))
-                    
+
                     let response = alert.runModal()
                     if response == .alertFirstButtonReturn {
                         // Open mock download URL

@@ -1,11 +1,11 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class LLMAgentResponseSupportTests: XCTestCase {
     private let tool = LLMAgentTool(
         name: "answer_or_edit_selection",
         description: "Decide whether to answer or edit.",
-        inputSchema: AskSelectionDecision.schema
+        inputSchema: AskSelectionDecision.schema,
     )
 
     func testOpenAICompatibleToolBodyForcesSpecificTool() throws {
@@ -14,7 +14,7 @@ final class LLMAgentResponseSupportTests: XCTestCase {
             systemPrompt: "system",
             userPrompt: "user",
             tools: [tool],
-            forcedToolName: tool.name
+            forcedToolName: tool.name,
         )
 
         let toolChoice = try XCTUnwrap(body["tool_choice"] as? [String: Any])
@@ -31,7 +31,7 @@ final class LLMAgentResponseSupportTests: XCTestCase {
             systemPrompt: "system",
             userPrompt: "user",
             tools: [tool],
-            forcedToolName: tool.name
+            forcedToolName: tool.name,
         )
 
         let toolChoice = try XCTUnwrap(body["tool_choice"] as? [String: String])
@@ -48,7 +48,7 @@ final class LLMAgentResponseSupportTests: XCTestCase {
             systemPrompt: "system",
             userPrompt: "user",
             tools: [tool],
-            forcedToolName: tool.name
+            forcedToolName: tool.name,
         )
 
         let toolConfig = try XCTUnwrap(body["toolConfig"] as? [String: Any])
@@ -68,13 +68,13 @@ final class LLMAgentResponseSupportTests: XCTestCase {
                             [
                                 "function": [
                                     "name": "answer_or_edit_selection",
-                                    "arguments": #"{"answer_edit":"answer","content":"done"}"#
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]
+                                    "arguments": #"{"answer_edit":"answer","content":"done"}"#,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
         ])
 
         let toolCall = LLMAgentResponseSupport.extractOpenAICompatibleToolCall(from: data)
@@ -83,8 +83,8 @@ final class LLMAgentResponseSupportTests: XCTestCase {
             toolCall,
             LLMAgentToolCall(
                 name: "answer_or_edit_selection",
-                argumentsJSON: #"{"answer_edit":"answer","content":"done"}"#
-            )
+                argumentsJSON: #"{"answer_edit":"answer","content":"done"}"#,
+            ),
         )
     }
 
@@ -96,10 +96,10 @@ final class LLMAgentResponseSupportTests: XCTestCase {
                     "name": "answer_or_edit_selection",
                     "input": [
                         "answer_edit": "edit",
-                        "content": "rewritten text"
-                    ]
-                ]
-            ]
+                        "content": "rewritten text",
+                    ],
+                ],
+            ],
         ])
 
         let toolCall = try XCTUnwrap(LLMAgentResponseSupport.extractAnthropicToolCall(from: data))
@@ -120,14 +120,14 @@ final class LLMAgentResponseSupportTests: XCTestCase {
                                     "name": "answer_or_edit_selection",
                                     "args": [
                                         "answer_edit": "answer",
-                                        "content": "done"
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]
+                                        "content": "done",
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
         ])
 
         let toolCall = try XCTUnwrap(LLMAgentResponseSupport.extractGeminiToolCall(from: data))
@@ -142,12 +142,12 @@ final class LLMAgentResponseSupportTests: XCTestCase {
             try RemoteAgentClient.decodeToolArguments(
                 LLMAgentToolCall(name: "other_tool", argumentsJSON: #"{"answer_edit":"answer","content":"done"}"#),
                 expectedToolName: "answer_or_edit_selection",
-                as: AskSelectionDecision.self
-            )
+                as: AskSelectionDecision.self,
+            ),
         ) { error in
             XCTAssertEqual(
                 error as? LLMAgentError,
-                .unexpectedToolName(expected: "answer_or_edit_selection", actual: "other_tool")
+                .unexpectedToolName(expected: "answer_or_edit_selection", actual: "other_tool"),
             )
         }
     }
@@ -157,8 +157,8 @@ final class LLMAgentResponseSupportTests: XCTestCase {
             try RemoteAgentClient.decodeToolArguments(
                 LLMAgentToolCall(name: "answer_or_edit_selection", argumentsJSON: "{not-json}"),
                 expectedToolName: "answer_or_edit_selection",
-                as: AskSelectionDecision.self
-            )
+                as: AskSelectionDecision.self,
+            ),
         ) { error in
             XCTAssertEqual(error as? LLMAgentError, .invalidToolArguments)
         }

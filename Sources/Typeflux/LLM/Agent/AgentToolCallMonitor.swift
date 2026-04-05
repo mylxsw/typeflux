@@ -1,7 +1,7 @@
 import Foundation
 
 /// Agent 执行的终止原因
-enum AgentOutcome: Sendable {
+enum AgentOutcome {
     /// 模型直接返回文本（无工具调用）
     case text(String)
     /// 调用了终止工具
@@ -13,7 +13,7 @@ enum AgentOutcome: Sendable {
 }
 
 /// 单个执行步骤的记录
-struct AgentStep: Sendable {
+struct AgentStep {
     let stepIndex: Int
     let assistantMessage: AgentAssistantMessage
     let toolResults: [AgentToolResult]
@@ -25,7 +25,7 @@ struct AgentStep: Sendable {
         assistantMessage: AgentAssistantMessage,
         toolResults: [AgentToolResult],
         durationMs: Int64,
-        tokenUsage: LLMTokenUsage? = nil
+        tokenUsage: LLMTokenUsage? = nil,
     ) {
         self.stepIndex = stepIndex
         self.assistantMessage = assistantMessage
@@ -44,7 +44,7 @@ protocol AgentStepMonitor: AnyObject, Sendable {
 }
 
 /// 用于 UI 展示的实时状态
-struct AgentRealtimeState: Sendable {
+struct AgentRealtimeState {
     let currentStep: Int
     let lastToolCall: AgentToolCall?
     let accumulatedText: String
@@ -62,13 +62,13 @@ final class AgentStepLogger: AgentStepMonitor {
     func agentDidFinish(outcome: AgentOutcome, totalTokenUsage: LLMTokenUsage?) async {
         let tokenInfo = totalTokenUsage.map { " totalTokens=\($0.totalTokens)" } ?? ""
         switch outcome {
-        case .text(let text):
+        case let .text(text):
             print("[AgentStepLogger] Finished with text: \(text.prefix(80))\(tokenInfo)")
-        case .terminationTool(let name, _):
+        case let .terminationTool(name, _):
             print("[AgentStepLogger] Finished with termination tool: \(name)\(tokenInfo)")
         case .maxStepsReached:
             print("[AgentStepLogger] Finished: max steps reached\(tokenInfo)")
-        case .error(let error):
+        case let .error(error):
             print("[AgentStepLogger] Finished with error: \(error)\(tokenInfo)")
         }
     }

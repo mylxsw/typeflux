@@ -21,7 +21,7 @@ final class HotkeyRecorder: ObservableObject {
             if event.type == .flagsChanged {
                 guard binding.isRightCommandTrigger || binding.isFunctionTrigger else { return event }
                 onRecorded(binding)
-                self.stop()
+                stop()
                 return nil
             }
 
@@ -32,7 +32,7 @@ final class HotkeyRecorder: ObservableObject {
             if flags.isEmpty { return nil }
 
             onRecorded(binding)
-            self.stop()
+            stop()
             return nil
         }
     }

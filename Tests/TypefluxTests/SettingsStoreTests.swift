@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class SettingsStoreTests: XCTestCase {
-
     private var defaults: UserDefaults!
     private var store: SettingsStore!
 
@@ -66,7 +65,7 @@ final class SettingsStoreTests: XCTestCase {
         let observer = NotificationCenter.default.addObserver(
             forName: .appearanceModeDidChange,
             object: nil,
-            queue: nil
+            queue: nil,
         ) { _ in
             expectation.fulfill()
         }
@@ -83,7 +82,7 @@ final class SettingsStoreTests: XCTestCase {
         let observer = NotificationCenter.default.addObserver(
             forName: .appearanceModeDidChange,
             object: nil,
-            queue: nil
+            queue: nil,
         ) { _ in
             notificationFired = true
         }
@@ -233,11 +232,11 @@ final class SettingsStoreTests: XCTestCase {
     func testResolvedDefaultWhisperConfigurationUsesOpenAIDefaults() {
         XCTAssertEqual(
             OpenAIAudioModelCatalog.resolvedWhisperEndpoint(store.whisperBaseURL),
-            "https://api.openai.com/v1/audio/transcriptions"
+            "https://api.openai.com/v1/audio/transcriptions",
         )
         XCTAssertEqual(
             OpenAIAudioModelCatalog.resolvedWhisperModel(store.whisperModel),
-            "gpt-4o-transcribe"
+            "gpt-4o-transcribe",
         )
     }
 
@@ -247,9 +246,9 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(
             OpenAIAudioModelCatalog.resolvedWhisperModel(
                 store.whisperModel,
-                endpoint: store.whisperBaseURL
+                endpoint: store.whisperBaseURL,
             ),
-            "whisper-1"
+            "whisper-1",
         )
     }
 
@@ -426,15 +425,15 @@ final class SettingsStoreTests: XCTestCase {
 
     // MARK: - Active Persona
 
-    func testActivePersonaReturnsNilWhenDisabled() {
-        let persona = store.personas.first!
+    func testActivePersonaReturnsNilWhenDisabled() throws {
+        let persona = try XCTUnwrap(store.personas.first)
         store.activePersonaID = persona.id.uuidString
         store.personaRewriteEnabled = false
         XCTAssertNil(store.activePersona)
     }
 
-    func testActivePersonaReturnsMatchWhenEnabled() {
-        let persona = store.personas.first!
+    func testActivePersonaReturnsMatchWhenEnabled() throws {
+        let persona = try XCTUnwrap(store.personas.first)
         store.activePersonaID = persona.id.uuidString
         store.personaRewriteEnabled = true
         XCTAssertEqual(store.activePersona?.id, persona.id)
@@ -450,7 +449,7 @@ final class SettingsStoreTests: XCTestCase {
         let observer = NotificationCenter.default.addObserver(
             forName: .personaSelectionDidChange,
             object: nil,
-            queue: nil
+            queue: nil,
         ) { _ in
             expectation.fulfill()
         }
@@ -470,7 +469,7 @@ final class SettingsStoreTests: XCTestCase {
         let observer = NotificationCenter.default.addObserver(
             forName: .personaSelectionDidChange,
             object: nil,
-            queue: nil
+            queue: nil,
         ) { _ in
             expectation.fulfill()
         }
@@ -549,7 +548,6 @@ final class SettingsStoreTests: XCTestCase {
 // MARK: - Extended SettingsStore tests
 
 extension SettingsStoreTests {
-
     // MARK: - sttProvider
 
     func testSTTProviderDefaultsToWhisperAPI() {

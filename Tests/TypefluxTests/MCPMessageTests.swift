@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class MCPMessageTests: XCTestCase {
-
     func testMCPMessageIdStringCodable() throws {
         let id = MCPMessageId.string("test-id")
         let data = try JSONEncoder().encode(id)
@@ -29,7 +28,7 @@ final class MCPMessageTests: XCTestCase {
             method: "initialize",
             params: nil,
             result: nil,
-            error: nil
+            error: nil,
         )
         let data = try JSONEncoder().encode(message)
         let decoded = try JSONDecoder().decode(MCPJsonRPCMessage.self, from: data)
@@ -53,7 +52,7 @@ final class MCPMessageTests: XCTestCase {
             }
         }
         """
-        let data = jsonStr.data(using: .utf8)!
+        let data = try XCTUnwrap(jsonStr.data(using: .utf8))
         let tool = try JSONDecoder().decode(MCPToolDefinition.self, from: data)
         XCTAssertEqual(tool.name, "my_tool")
         XCTAssertEqual(tool.description, "Does something useful")
@@ -70,7 +69,7 @@ final class MCPMessageTests: XCTestCase {
             "isError": false
         }
         """
-        let data = jsonStr.data(using: .utf8)!
+        let data = try XCTUnwrap(jsonStr.data(using: .utf8))
         let result = try JSONDecoder().decode(MCPToolsCallResult.self, from: data)
         XCTAssertEqual(result.content.count, 2)
         XCTAssertEqual(result.content[0].text, "Hello from tool")
@@ -118,7 +117,7 @@ final class MCPMessageTests: XCTestCase {
         let params = MCPInitializeParams(
             protocolVersion: "2024-11-05",
             capabilities: MCPServerCapabilities(tools: MCPToolsCapability(listChanged: nil)),
-            clientInfo: MCPClientInfo(name: "Test", version: "1.0")
+            clientInfo: MCPClientInfo(name: "Test", version: "1.0"),
         )
         let msg = try MCPJsonRPCMessage.initializeRequest(id: .string("1"), params: params)
         XCTAssertEqual(msg.jsonrpc, "2.0")
@@ -135,7 +134,7 @@ final class MCPMessageTests: XCTestCase {
             "serverInfo": {"name": "TestServer", "version": "2.0"}
         }
         """
-        let data = jsonStr.data(using: .utf8)!
+        let data = try XCTUnwrap(jsonStr.data(using: .utf8))
         let result = try JSONDecoder().decode(MCPInitializeResult.self, from: data)
         XCTAssertEqual(result.protocolVersion, "2024-11-05")
         XCTAssertEqual(result.serverInfo?.name, "TestServer")
@@ -145,7 +144,6 @@ final class MCPMessageTests: XCTestCase {
 // MARK: - Extended MCPMessage tests
 
 extension MCPMessageTests {
-
     // MARK: - MCPMessageId
 
     func testMCPMessageIdEqualityForSameString() {

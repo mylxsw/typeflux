@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class UsageStatsStoreTests: XCTestCase {
-
     private var defaults: UserDefaults!
     private var store: UsageStatsStore!
 
@@ -199,22 +198,22 @@ final class UsageStatsStoreTests: XCTestCase {
 
     // MARK: - Unicode.Scalar extensions
 
-    func testCJKIdeographDetection() {
-        XCTAssertTrue(Unicode.Scalar(0x4E00)!.isCJKIdeograph)  // 一
-        XCTAssertTrue(Unicode.Scalar(0x9FFF)!.isCJKIdeograph)  // End of CJK Unified
-        XCTAssertFalse(Unicode.Scalar(0x0041)!.isCJKIdeograph) // A
+    func testCJKIdeographDetection() throws {
+        XCTAssertTrue(try XCTUnwrap(Unicode.Scalar(0x4E00)?.isCJKIdeograph)) // 一
+        XCTAssertTrue(try XCTUnwrap(Unicode.Scalar(0x9FFF)?.isCJKIdeograph)) // End of CJK Unified
+        XCTAssertFalse(try XCTUnwrap(Unicode.Scalar(0x0041)?.isCJKIdeograph)) // A
     }
 
-    func testKanaDetection() {
-        XCTAssertTrue(Unicode.Scalar(0x3042)!.isKana)  // あ (Hiragana)
-        XCTAssertTrue(Unicode.Scalar(0x30A2)!.isKana)  // ア (Katakana)
-        XCTAssertFalse(Unicode.Scalar(0x0041)!.isKana) // A
+    func testKanaDetection() throws {
+        XCTAssertTrue(try XCTUnwrap(Unicode.Scalar(0x3042)?.isKana)) // あ (Hiragana)
+        XCTAssertTrue(try XCTUnwrap(Unicode.Scalar(0x30A2)?.isKana)) // ア (Katakana)
+        XCTAssertFalse(try XCTUnwrap(Unicode.Scalar(0x0041)?.isKana)) // A
     }
 
-    func testHangulDetection() {
-        XCTAssertTrue(Unicode.Scalar(0xAC00)!.isHangul)  // 가
-        XCTAssertTrue(Unicode.Scalar(0x1100)!.isHangul)   // ᄀ (Hangul Jamo)
-        XCTAssertFalse(Unicode.Scalar(0x0041)!.isHangul)  // A
+    func testHangulDetection() throws {
+        XCTAssertTrue(try XCTUnwrap(Unicode.Scalar(0xAC00)?.isHangul)) // 가
+        XCTAssertTrue(try XCTUnwrap(Unicode.Scalar(0x1100)?.isHangul)) // ᄀ (Hangul Jamo)
+        XCTAssertFalse(try XCTUnwrap(Unicode.Scalar(0x0041)?.isHangul)) // A
     }
 
     // MARK: - contribution / isSuccessful
@@ -222,7 +221,7 @@ final class UsageStatsStoreTests: XCTestCase {
     func testIsSuccessfulWithApplySucceeded() {
         let record = HistoryRecord(
             date: Date(),
-            applyStatus: .succeeded
+            applyStatus: .succeeded,
         )
         XCTAssertTrue(store.isSuccessful(record))
     }
@@ -231,7 +230,7 @@ final class UsageStatsStoreTests: XCTestCase {
         let record = HistoryRecord(
             date: Date(),
             transcriptionStatus: .succeeded,
-            applyStatus: .skipped
+            applyStatus: .skipped,
         )
         XCTAssertTrue(store.isSuccessful(record))
     }
@@ -260,7 +259,7 @@ final class UsageStatsStoreTests: XCTestCase {
         let failedRecord = HistoryRecord(
             date: Date(),
             recordingStatus: .failed,
-            applyStatus: .succeeded
+            applyStatus: .succeeded,
         )
         let contrib = store.contribution(for: failedRecord)
         XCTAssertEqual(contrib.sessions, 1)
@@ -284,7 +283,6 @@ final class UsageStatsStoreTests: XCTestCase {
 // MARK: - Extended UsageStatsStore tests
 
 extension UsageStatsStoreTests {
-
     // MARK: - editedTextContribution
 
     func testEditedTextContributionEmptyEditedReturnsEmpty() {
@@ -306,7 +304,7 @@ extension UsageStatsStoreTests {
         // "testing" appends "ing" to "test"; the LCS-based diff captures the suffix
         let result = store.editedTextContribution(
             originalText: "test",
-            editedText: "testing"
+            editedText: "testing",
         )
         XCTAssertFalse(result.isEmpty)
         XCTAssertTrue(result.contains("ing"))
@@ -315,7 +313,7 @@ extension UsageStatsStoreTests {
     func testEditedTextContributionSimpleReplacement() {
         let result = store.editedTextContribution(
             originalText: "good morning",
-            editedText: "good evening"
+            editedText: "good evening",
         )
         XCTAssertFalse(result.isEmpty)
     }
@@ -402,7 +400,7 @@ extension UsageStatsStoreTests {
         let record = HistoryRecord(
             date: Date(),
             transcriptionStatus: .pending,
-            applyStatus: .pending
+            applyStatus: .pending,
         )
         XCTAssertFalse(store.isSuccessful(record))
     }
@@ -412,9 +410,8 @@ extension UsageStatsStoreTests {
         let record = HistoryRecord(
             date: Date(),
             transcriptionStatus: .failed,
-            applyStatus: .failed
+            applyStatus: .failed,
         )
         XCTAssertFalse(store.isSuccessful(record))
     }
-
 }

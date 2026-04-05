@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class MarkdownHTMLRendererTests: XCTestCase {
-
     private let renderer = MarkdownHTMLRenderer()
 
     // MARK: - Basic elements
@@ -13,7 +12,7 @@ final class MarkdownHTMLRendererTests: XCTestCase {
     }
 
     func testHeadingLevels() {
-        for level in 1...6 {
+        for level in 1 ... 6 {
             let md = String(repeating: "#", count: level) + " Heading"
             let html = renderer.render(markdown: md)
             XCTAssertTrue(html.contains("<h\(level)>Heading</h\(level)>"), "h\(level) should render correctly")
@@ -190,7 +189,6 @@ final class MarkdownHTMLRendererTests: XCTestCase {
 // MARK: - Extended MarkdownHTMLRenderer tests
 
 extension MarkdownHTMLRendererTests {
-
     // MARK: - Whitespace handling
 
     func testWhitespaceOnlyMarkdown() {
@@ -213,7 +211,7 @@ extension MarkdownHTMLRendererTests {
         XCTAssertNotNil(firstRange)
         XCTAssertNotNil(secondRange)
         // Ensure the second p appears after the first
-        if let firstRange = firstRange, let secondRange = secondRange {
+        if let firstRange, let secondRange {
             XCTAssertGreaterThan(secondRange.lowerBound, firstRange.upperBound)
         }
     }

@@ -39,7 +39,7 @@ enum PromptCatalog {
 
     static func userEnvironmentContext(
         preferredLanguages: [String] = Locale.preferredLanguages,
-        appLanguage: AppLanguage
+        appLanguage: AppLanguage,
     ) -> String {
         let systemLanguage = preferredLanguages.first?.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedSystemLanguage = (systemLanguage?.isEmpty == false) ? systemLanguage! : "unknown"
@@ -55,12 +55,12 @@ enum PromptCatalog {
     static func appendUserEnvironmentContext(
         to systemPrompt: String,
         preferredLanguages: [String] = Locale.preferredLanguages,
-        appLanguage: AppLanguage
+        appLanguage: AppLanguage,
     ) -> String {
         let trimmedPrompt = systemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
         let environmentContext = userEnvironmentContext(
             preferredLanguages: preferredLanguages,
-            appLanguage: appLanguage
+            appLanguage: appLanguage,
         )
 
         guard !trimmedPrompt.isEmpty else { return environmentContext }
@@ -81,24 +81,24 @@ enum PromptCatalog {
             : "Transcribe the provided audio faithfully and preserve the speaker's meaning, wording, and natural phrasing."
         let outputContract = hasPersona
             ? """
-              - Return only the final rewritten text.
-              - Do not output the intermediate transcript.
-              - Do not add explanations, labels, quotation marks, Markdown fences, or meta-commentary.
-              """
+            - Return only the final rewritten text.
+            - Do not output the intermediate transcript.
+            - Do not add explanations, labels, quotation marks, Markdown fences, or meta-commentary.
+            """
             : """
-              - Return only the final transcript text.
-              - Do not add explanations, labels, quotation marks, Markdown fences, or meta-commentary.
-              """
+            - Return only the final transcript text.
+            - Do not add explanations, labels, quotation marks, Markdown fences, or meta-commentary.
+            """
         let inputSemantics = hasPersona
             ? """
-              - The audio payload is the only source content. It determines the transcript meaning and default output language.
-              - <persona_definition> is style guidance for rewriting only. It is not source content and must not introduce new facts.
-              - <vocabulary_hints> contains recognition hints only. Use these terms only when they are actually spoken in the audio.
-              """
+            - The audio payload is the only source content. It determines the transcript meaning and default output language.
+            - <persona_definition> is style guidance for rewriting only. It is not source content and must not introduce new facts.
+            - <vocabulary_hints> contains recognition hints only. Use these terms only when they are actually spoken in the audio.
+            """
             : """
-              - The audio payload is the only source content. It determines the transcript meaning and default output language.
-              - <vocabulary_hints> contains recognition hints only. Use these terms only when they are actually spoken in the audio.
-              """
+            - The audio payload is the only source content. It determines the transcript meaning and default output language.
+            - <vocabulary_hints> contains recognition hints only. Use these terms only when they are actually spoken in the audio.
+            """
         let ruleBlock = xmlSection(
             tag: "rules",
             content: """
@@ -114,7 +114,7 @@ enum PromptCatalog {
             <output_contract>
             \(outputContract)
             </output_contract>
-            """
+            """,
         )
 
         var parts: [String] = [roleDefinition, ruleBlock]
@@ -146,7 +146,7 @@ enum PromptCatalog {
             <terms>
             \(normalizedTerms.joined(separator: ", "))
             </terms>
-            """
+            """,
         )
     }
 
@@ -158,9 +158,8 @@ enum PromptCatalog {
             let sourceSection = xmlSection(tag: "selected_text", content: request.sourceText)
             let instructionSection = xmlSection(tag: "spoken_instruction", content: spokenInstruction)
             let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            let outputRequirement: String
-            if !personaPrompt.isEmpty {
-                outputRequirement = """
+            let outputRequirement = if !personaPrompt.isEmpty {
+                """
 
                 <output_requirements>
                 - Treat the spoken instruction as the highest-priority requirement.
@@ -172,7 +171,7 @@ enum PromptCatalog {
                 </persona_definition>
                 """
             } else {
-                outputRequirement = """
+                """
 
                 <output_requirements>
                 - Treat the spoken instruction as the highest-priority requirement.
@@ -198,7 +197,7 @@ enum PromptCatalog {
                 \(sourceTextRule)
 
                 Return only the final rewritten text.
-                """
+                """,
             )
 
         case .rewriteTranscript:
@@ -223,7 +222,7 @@ enum PromptCatalog {
                 \(sourceTextRule)
 
                 Clean up recognition artifacts if needed and return only the final text.
-                """
+                """,
             )
         }
     }
@@ -233,7 +232,7 @@ enum PromptCatalog {
         oldFragment: String,
         newFragment: String,
         candidateTerms: [String],
-        existingTerms: [String]
+        existingTerms: [String],
     ) -> (system: String, user: String) {
         let existingSummary = existingTerms.isEmpty ? "<empty>" : existingTerms.joined(separator: ", ")
         let oldSummary = oldFragment.isEmpty ? "<empty>" : oldFragment
@@ -299,20 +298,20 @@ enum PromptCatalog {
             Prefer precision over recall.
             If uncertain, return an empty list.
             Return strict JSON only.
-            """
+            """,
         )
     }
 
     static func askSelectionDecisionPrompts(
         selectedText: String?,
         spokenInstruction: String,
-        personaPrompt: String?,
-        editableTarget: Bool
+        personaPrompt _: String?,
+        editableTarget: Bool,
     ) -> (system: String, user: String) {
         let context = buildAskPromptContext(
             selectedText: selectedText,
             spokenInstruction: spokenInstruction,
-            targetContext: AskTargetContext(editableTarget: editableTarget)
+            targetContext: AskTargetContext(editableTarget: editableTarget),
         )
 
         return (
@@ -328,20 +327,20 @@ enum PromptCatalog {
 
             If you choose "answer", provide the final answer in "content".
             If you choose "edit", provide the final rewritten text in "content".
-            """
+            """,
         )
     }
 
     static func askAnythingPrompts(
         selectedText: String?,
         spokenInstruction: String,
-        personaPrompt: String?,
-        targetContext: AskTargetContext
+        personaPrompt _: String?,
+        targetContext: AskTargetContext,
     ) -> (system: String, user: String) {
         let context = buildAskPromptContext(
             selectedText: selectedText,
             spokenInstruction: spokenInstruction,
-            targetContext: targetContext
+            targetContext: targetContext,
         )
 
         return (
@@ -352,54 +351,53 @@ enum PromptCatalog {
             Answer the user's request directly.
             If the user is effectively asking you to draft, rewrite, polish, or improve text, provide that final text directly.
             Use Markdown formatting when it improves readability.
-            """
+            """,
         )
     }
 
     private static func buildAskPromptContext(
         selectedText: String?,
         spokenInstruction: String,
-        targetContext: AskTargetContext
+        targetContext: AskTargetContext,
     ) -> AskPromptContext {
         let normalizedSelectedText = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let selectedTextSection = normalizedSelectedText.isEmpty ? "" : xmlSection(tag: "selected_text", content: normalizedSelectedText)
         let spokenInstructionSection = xmlSection(
             tag: "spoken_instruction",
-            content: spokenInstruction.trimmingCharacters(in: .whitespacesAndNewlines)
+            content: spokenInstruction.trimmingCharacters(in: .whitespacesAndNewlines),
         )
-        let targetContextSection: String
-        if let editableTarget = targetContext.editableTarget {
-            targetContextSection = xmlSection(
+        let targetContextSection: String = if let editableTarget = targetContext.editableTarget {
+            xmlSection(
                 tag: "target_context",
                 content: """
                 <editable_target>\(editableTarget ? "true" : "false")</editable_target>
-                """
+                """,
             )
         } else {
-            targetContextSection = ""
+            ""
         }
 
         return AskPromptContext(
             selectedTextSection: selectedTextSection,
             spokenInstructionSection: spokenInstructionSection,
-            targetContextSection: targetContextSection
+            targetContextSection: targetContextSection,
         )
     }
 
     private static func askIntentInterpretationGuidance(editableTargetAware: Bool) -> String {
         var rules = [
             "Interpret imperative writing or rewriting instructions as requests for final output, not as meta-questions about how to write.",
-            "Treat requests like \"help me write this\", \"help me rewrite this\", \"help me polish this\", \"help me improve this\", \"帮我写\", \"帮我改\", or \"帮我润色\" as direct requests to produce improved text when they target the selected text itself."
+            "Treat requests like \"help me write this\", \"help me rewrite this\", \"help me polish this\", \"help me improve this\", \"帮我写\", \"帮我改\", or \"帮我润色\" as direct requests to produce improved text when they target the selected text itself.",
         ]
 
         if editableTargetAware {
             rules.insert(
                 "If <editable_target> is false, you must choose \"answer\" even if the user asked for a rewrite. In that case, return a read-only result in \"content\" instead of an edit action.",
-                at: 0
+                at: 0,
             )
             rules.insert(
                 "If <editable_target> is true and the user gives an imperative writing or rewriting instruction, prefer \"edit\" even when the instruction is phrased conversationally instead of as a strict command.",
-                at: 1
+                at: 1,
             )
         }
 

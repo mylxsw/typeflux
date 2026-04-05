@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class SkillSettingsTests: XCTestCase {
-
     private var defaults: UserDefaults!
     private var store: SkillSettingsStore!
     private var suiteName: String!
@@ -139,7 +138,7 @@ final class SkillSettingsTests: XCTestCase {
             description: "Testing persistence",
             enabled: true,
             systemPromptSupplement: "Be careful",
-            toolNames: ["tool_1", "tool_2"]
+            toolNames: ["tool_1", "tool_2"],
         )
         store.skills = [skill]
 

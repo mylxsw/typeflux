@@ -48,12 +48,12 @@ final class AskAnswerWindowController: NSObject {
         appearanceObserver = NotificationCenter.default.addObserver(
             forName: .appearanceModeDidChange,
             object: settingsStore,
-            queue: .main
+            queue: .main,
         ) { [weak self] _ in
-            guard let self, let window = self.window else { return }
-            self.model.appearanceMode = self.settingsStore.appearanceMode
-            self.hostingView?.rootView = AskAnswerWindowView(model: self.model)
-            self.applyAppearance(to: window)
+            guard let self, let window else { return }
+            model.appearanceMode = self.settingsStore.appearanceMode
+            hostingView?.rootView = AskAnswerWindowView(model: model)
+            applyAppearance(to: window)
         }
     }
 
@@ -98,7 +98,7 @@ final class AskAnswerWindowController: NSObject {
             Question: \(trimmedQuestion)
             Selected Text: \(trimmedSelectedText.isEmpty ? "<empty>" : trimmedSelectedText)
             Answer Markdown: \(trimmedAnswer)
-            """
+            """,
         )
 
         guard let window else { return }
@@ -130,7 +130,7 @@ final class AskAnswerWindowController: NSObject {
             contentRect: NSRect(x: 0, y: 0, width: Metrics.windowWidth, height: Metrics.windowHeight),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
-            defer: false
+            defer: false,
         )
 
         window.title = L("workflow.ask.answerTitle")
@@ -146,7 +146,7 @@ final class AskAnswerWindowController: NSObject {
         window.collectionBehavior = [.moveToActiveSpace, .fullScreenPrimary]
         applyAppearance(to: window)
 
-        self.hostingView = hosting
+        hostingView = hosting
         self.window = window
     }
 
@@ -157,7 +157,7 @@ final class AskAnswerWindowController: NSObject {
 }
 
 extension AskAnswerWindowController: NSWindowDelegate {
-    func windowShouldClose(_ sender: NSWindow) -> Bool {
+    func windowShouldClose(_: NSWindow) -> Bool {
         dismiss()
         return false
     }
@@ -189,7 +189,7 @@ private struct AskAnswerWindowView: View {
             maxWidth: .infinity,
             minHeight: AskAnswerWindowController.Metrics.minWindowHeight,
             idealHeight: AskAnswerWindowController.Metrics.windowHeight,
-            maxHeight: .infinity
+            maxHeight: .infinity,
         )
     }
 
@@ -269,7 +269,7 @@ private struct AskAnswerWindowView: View {
 
             MarkdownWebView(
                 markdown: model.answerMarkdown,
-                appearanceMode: model.appearanceMode
+                appearanceMode: model.appearanceMode,
             )
             .padding(.horizontal, AskAnswerWindowController.Metrics.answerContentHorizontalPadding)
             .padding(.vertical, AskAnswerWindowController.Metrics.answerContentVerticalPadding)
@@ -278,20 +278,20 @@ private struct AskAnswerWindowView: View {
         .background(
             RoundedRectangle(
                 cornerRadius: AskAnswerWindowController.Metrics.contentCardCornerRadius,
-                style: .continuous
+                style: .continuous,
             )
-            .fill(StudioTheme.surface)
+            .fill(StudioTheme.surface),
         )
         .overlay(
             RoundedRectangle(
                 cornerRadius: AskAnswerWindowController.Metrics.contentCardCornerRadius,
-                style: .continuous
+                style: .continuous,
             )
-            .stroke(StudioTheme.border.opacity(0.85), lineWidth: 1)
+            .stroke(StudioTheme.border.opacity(0.85), lineWidth: 1),
         )
         .contentShape(RoundedRectangle(
             cornerRadius: AskAnswerWindowController.Metrics.contentCardCornerRadius,
-            style: .continuous
+            style: .continuous,
         ))
         .onHover { isAnswerHovered = $0 }
     }
@@ -303,7 +303,7 @@ private struct AskAnswerWindowView: View {
                 .foregroundStyle(StudioTheme.textSecondary)
                 .frame(
                     width: AskAnswerWindowController.Metrics.headerButtonSize,
-                    height: AskAnswerWindowController.Metrics.headerButtonSize
+                    height: AskAnswerWindowController.Metrics.headerButtonSize,
                 )
         }
         .buttonStyle(.plain)
@@ -467,11 +467,11 @@ private struct MarkdownWebView: NSViewRepresentable {
     private var colorSchemeValue: String {
         switch appearanceMode {
         case .dark:
-            return "dark"
+            "dark"
         case .light:
-            return "light"
+            "light"
         case .system:
-            return "light dark"
+            "light dark"
         }
     }
 
@@ -486,7 +486,7 @@ private struct MarkdownWebView: NSViewRepresentable {
             """
             [Ask Answer] Markdown passed to WebView:
             \(normalized)
-            """
+            """,
         )
 
         return normalized
@@ -500,12 +500,13 @@ private struct MarkdownWebView: NSViewRepresentable {
         var lastHTML: String?
 
         func webView(
-            _ webView: WKWebView,
+            _: WKWebView,
             decidePolicyFor navigationAction: WKNavigationAction,
-            decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+            decisionHandler: @escaping (WKNavigationActionPolicy) -> Void,
         ) {
             if navigationAction.navigationType == .linkActivated,
-               let url = navigationAction.request.url {
+               let url = navigationAction.request.url
+            {
                 NSWorkspace.shared.open(url)
                 decisionHandler(.cancel)
                 return

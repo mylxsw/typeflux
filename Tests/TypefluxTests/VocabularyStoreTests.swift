@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class VocabularyStoreTests: XCTestCase {
     override func setUp() {
@@ -31,7 +31,7 @@ final class VocabularyStoreTests: XCTestCase {
         let viewModel = StudioViewModel(
             settingsStore: settingsStore,
             historyStore: historyStore,
-            initialSection: .vocabulary
+            initialSection: .vocabulary,
         )
 
         XCTAssertTrue(viewModel.vocabularyEntries.isEmpty)
@@ -45,14 +45,25 @@ final class VocabularyStoreTests: XCTestCase {
 }
 
 private final class InMemoryHistoryStore: HistoryStore {
-    func save(record: HistoryRecord) {}
-    func list() -> [HistoryRecord] { [] }
-    func list(limit: Int, offset: Int, searchQuery: String?) -> [HistoryRecord] { [] }
-    func record(id: UUID) -> HistoryRecord? { nil }
-    func delete(id: UUID) {}
-    func purge(olderThanDays days: Int) {}
+    func save(record _: HistoryRecord) {}
+    func list() -> [HistoryRecord] {
+        []
+    }
+
+    func list(limit _: Int, offset _: Int, searchQuery _: String?) -> [HistoryRecord] {
+        []
+    }
+
+    func record(id _: UUID) -> HistoryRecord? {
+        nil
+    }
+
+    func delete(id _: UUID) {}
+    func purge(olderThanDays _: Int) {}
     func clear() {}
-    func exportMarkdown() throws -> URL { URL(fileURLWithPath: "/tmp/typeflux-history.md") }
+    func exportMarkdown() throws -> URL {
+        URL(fileURLWithPath: "/tmp/typeflux-history.md")
+    }
 }
 
 // MARK: - Extended VocabularyStore tests
@@ -90,7 +101,7 @@ final class VocabularyStoreExtendedTests: XCTestCase {
     func testSaveAndLoadRoundTrip() {
         let entries = [
             VocabularyEntry(term: "Combine", source: .manual),
-            VocabularyEntry(term: "XCTest", source: .automatic)
+            VocabularyEntry(term: "XCTest", source: .automatic),
         ]
         VocabularyStore.save(entries)
         let loaded = VocabularyStore.load()
@@ -103,7 +114,7 @@ final class VocabularyStoreExtendedTests: XCTestCase {
     func testSaveDeduplicate() {
         let entries = [
             VocabularyEntry(term: "duplicate", source: .manual),
-            VocabularyEntry(term: "duplicate", source: .manual)
+            VocabularyEntry(term: "duplicate", source: .manual),
         ]
         VocabularyStore.save(entries)
         let loaded = VocabularyStore.load()
@@ -136,9 +147,9 @@ final class VocabularyStoreExtendedTests: XCTestCase {
 
     // MARK: - remove
 
-    func testRemoveDeletesEntry() {
+    func testRemoveDeletesEntry() throws {
         let result = VocabularyStore.add(term: "DeleteMe", source: .manual)
-        let id = result.first(where: { $0.term == "DeleteMe" })!.id
+        let id = try XCTUnwrap(result.first(where: { $0.term == "DeleteMe" })?.id)
         let afterRemove = VocabularyStore.remove(id: id)
         XCTAssertFalse(afterRemove.contains(where: { $0.term == "DeleteMe" }))
     }

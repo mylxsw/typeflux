@@ -1,12 +1,12 @@
 import Foundation
 
 /// MCP 服务器传输配置
-enum MCPTransportConfig: Codable, Sendable {
+enum MCPTransportConfig: Codable {
     case stdio(MCPStdioTransportConfig)
     case http(MCPHTTPTransportConfig)
 }
 
-struct MCPStdioTransportConfig: Codable, Sendable {
+struct MCPStdioTransportConfig: Codable {
     let command: String
     var args: [String]
     var env: [String: String]
@@ -18,7 +18,7 @@ struct MCPStdioTransportConfig: Codable, Sendable {
     }
 }
 
-struct MCPHTTPTransportConfig: Codable, Sendable {
+struct MCPHTTPTransportConfig: Codable {
     var url: String
     var headers: [String: String]
 
@@ -29,7 +29,7 @@ struct MCPHTTPTransportConfig: Codable, Sendable {
 }
 
 /// MCP 服务器配置
-struct MCPServerConfig: Codable, Identifiable, Sendable {
+struct MCPServerConfig: Codable, Identifiable {
     let id: UUID
     var name: String
     var transport: MCPTransportConfig
@@ -41,7 +41,7 @@ struct MCPServerConfig: Codable, Identifiable, Sendable {
         name: String,
         transport: MCPTransportConfig,
         enabled: Bool = true,
-        autoConnect: Bool = false
+        autoConnect: Bool = false,
     ) {
         self.id = id
         self.name = name
@@ -63,7 +63,8 @@ final class MCPSettingsStore: @unchecked Sendable {
     var servers: [MCPServerConfig] {
         get {
             guard let data = defaults.data(forKey: serversKey),
-                  let configs = try? JSONDecoder().decode([MCPServerConfig].self, from: data) else {
+                  let configs = try? JSONDecoder().decode([MCPServerConfig].self, from: data)
+            else {
                 return []
             }
             return configs

@@ -13,7 +13,7 @@ enum LLMConnectionResolver {
         provider: LLMRemoteProvider,
         baseURL: String,
         model: String,
-        apiKey: String
+        apiKey: String,
     ) throws -> ResolvedLLMConnection {
         let trimmedBaseURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedModel = model.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -24,8 +24,8 @@ enum LLMConnectionResolver {
                     domain: "LLM",
                     code: 1,
                     userInfo: [
-                        NSLocalizedDescriptionKey: L("settings.models.freeModel.validation.emptyModel")
-                    ]
+                        NSLocalizedDescriptionKey: L("settings.models.freeModel.validation.emptyModel"),
+                    ],
                 )
             }
             guard let resolved = FreeLLMModelRegistry.resolve(modelName: trimmedModel) else {
@@ -35,8 +35,9 @@ enum LLMConnectionResolver {
                     userInfo: [
                         NSLocalizedDescriptionKey: L(
                             "settings.models.freeModel.validation.unsupportedModel",
-                            trimmedModel)
-                    ]
+                            trimmedModel,
+                        ),
+                    ],
                 )
             }
             guard let url = URL(string: resolved.baseURL), !resolved.baseURL.isEmpty else {
@@ -44,8 +45,8 @@ enum LLMConnectionResolver {
                     domain: "LLM",
                     code: 1,
                     userInfo: [
-                        NSLocalizedDescriptionKey: L("settings.models.freeModel.validation.invalidEndpoint")
-                    ]
+                        NSLocalizedDescriptionKey: L("settings.models.freeModel.validation.invalidEndpoint"),
+                    ],
                 )
             }
             return ResolvedLLMConnection(
@@ -53,7 +54,7 @@ enum LLMConnectionResolver {
                 baseURL: url,
                 model: resolved.modelName,
                 apiKey: resolved.apiKey,
-                additionalHeaders: resolved.additionalHeaders
+                additionalHeaders: resolved.additionalHeaders,
             )
         }
 
@@ -67,7 +68,7 @@ enum LLMConnectionResolver {
             throw NSError(
                 domain: "LLM",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid LLM base URL."]
+                userInfo: [NSLocalizedDescriptionKey: "Invalid LLM base URL."],
             )
         }
 
@@ -76,7 +77,7 @@ enum LLMConnectionResolver {
             baseURL: url,
             model: trimmedModel.isEmpty ? provider.defaultModel : trimmedModel,
             apiKey: apiKey,
-            additionalHeaders: [:]
+            additionalHeaders: [:],
         )
     }
 }
@@ -108,11 +109,11 @@ final class OpenAICompatibleLLMService: LLMService {
             provider: llmConfig.provider,
             baseURL: llmConfig.baseURL,
             model: llmConfig.model,
-            apiKey: llmConfig.apiKey
+            apiKey: llmConfig.apiKey,
         )
         let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: systemPrompt,
-            appLanguage: settingsStore.appLanguage
+            appLanguage: settingsStore.appLanguage,
         )
         return try await RequestRetry.perform(operationName: "LLM completion request") {
             try await RemoteLLMClient.complete(
@@ -123,7 +124,7 @@ final class OpenAICompatibleLLMService: LLMService {
                 additionalHeaders: connection.additionalHeaders,
                 systemPrompt: effectiveSystemPrompt,
                 userPrompt: userPrompt,
-                schema: nil
+                schema: nil,
             )
         }
     }
@@ -134,11 +135,11 @@ final class OpenAICompatibleLLMService: LLMService {
             provider: llmConfig.provider,
             baseURL: llmConfig.baseURL,
             model: llmConfig.model,
-            apiKey: llmConfig.apiKey
+            apiKey: llmConfig.apiKey,
         )
         let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: systemPrompt,
-            appLanguage: settingsStore.appLanguage
+            appLanguage: settingsStore.appLanguage,
         )
         return try await RequestRetry.perform(operationName: "LLM JSON completion request") {
             try await RemoteLLMClient.complete(
@@ -149,27 +150,27 @@ final class OpenAICompatibleLLMService: LLMService {
                 additionalHeaders: connection.additionalHeaders,
                 systemPrompt: effectiveSystemPrompt,
                 userPrompt: userPrompt,
-                schema: schema
+                schema: schema,
             )
         }
     }
 
     private func streamRewriteInternal(
         request rewriteRequest: LLMRewriteRequest,
-        continuation: AsyncThrowingStream<String, Error>.Continuation
+        continuation: AsyncThrowingStream<String, Error>.Continuation,
     ) async throws -> String {
         let llmConfig = settingsStore.textLLMConfiguration()
         let connection = try LLMConnectionResolver.resolve(
             provider: llmConfig.provider,
             baseURL: llmConfig.baseURL,
             model: llmConfig.model,
-            apiKey: llmConfig.apiKey
+            apiKey: llmConfig.apiKey,
         )
 
         let prompts = PromptCatalog.rewritePrompts(for: rewriteRequest)
         let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: prompts.system,
-            appLanguage: settingsStore.appLanguage
+            appLanguage: settingsStore.appLanguage,
         )
 
         let final = try await RemoteLLMClient.streamRewrite(
@@ -180,7 +181,7 @@ final class OpenAICompatibleLLMService: LLMService {
             additionalHeaders: connection.additionalHeaders,
             systemPrompt: effectiveSystemPrompt,
             userPrompt: prompts.user,
-            continuation: continuation
+            continuation: continuation,
         )
 
         NetworkDebugLogger.logMessage("LLM final result: \(final.isEmpty ? "<empty stream result>" : final)")
@@ -198,7 +199,7 @@ enum RemoteLLMClient {
         additionalHeaders: [String: String] = [:],
         systemPrompt: String,
         userPrompt: String,
-        continuation: AsyncThrowingStream<String, Error>.Continuation
+        continuation: AsyncThrowingStream<String, Error>.Continuation,
     ) async throws -> String {
         switch provider.apiStyle {
         case .openAICompatible:
@@ -210,7 +211,7 @@ enum RemoteLLMClient {
                 additionalHeaders: additionalHeaders,
                 systemPrompt: systemPrompt,
                 userPrompt: userPrompt,
-                continuation: continuation
+                continuation: continuation,
             )
         case .anthropic:
             let text = try await requestAnthropic(
@@ -220,7 +221,7 @@ enum RemoteLLMClient {
                 additionalHeaders: additionalHeaders,
                 systemPrompt: systemPrompt,
                 userPrompt: userPrompt,
-                schema: nil
+                schema: nil,
             )
             if !text.isEmpty {
                 continuation.yield(text)
@@ -234,7 +235,7 @@ enum RemoteLLMClient {
                 additionalHeaders: additionalHeaders,
                 systemPrompt: systemPrompt,
                 userPrompt: userPrompt,
-                schema: nil
+                schema: nil,
             )
             if !text.isEmpty {
                 continuation.yield(text)
@@ -248,36 +249,36 @@ enum RemoteLLMClient {
         baseURL: URL,
         model: String,
         apiKey: String,
-        additionalHeaders: [String: String] = [:]
+        additionalHeaders: [String: String] = [:],
     ) async throws -> String {
         switch provider.apiStyle {
         case .openAICompatible:
-            return try await previewOpenAICompatible(
+            try await previewOpenAICompatible(
                 provider: provider,
                 baseURL: baseURL,
                 model: model,
                 apiKey: apiKey,
-                additionalHeaders: additionalHeaders
+                additionalHeaders: additionalHeaders,
             )
         case .anthropic:
-            return try await requestAnthropic(
+            try await requestAnthropic(
                 baseURL: baseURL,
                 model: model,
                 apiKey: apiKey,
                 additionalHeaders: additionalHeaders,
                 systemPrompt: "Reply with a short greeting.",
                 userPrompt: "Hello",
-                schema: nil
+                schema: nil,
             )
         case .gemini:
-            return try await requestGemini(
+            try await requestGemini(
                 baseURL: baseURL,
                 model: model,
                 apiKey: apiKey,
                 additionalHeaders: additionalHeaders,
                 systemPrompt: "Reply with a short greeting.",
                 userPrompt: "Hello",
-                schema: nil
+                schema: nil,
             )
         }
     }
@@ -290,51 +291,51 @@ enum RemoteLLMClient {
         additionalHeaders: [String: String] = [:],
         systemPrompt: String,
         userPrompt: String,
-        schema: LLMJSONSchema?
+        schema: LLMJSONSchema?,
     ) async throws -> String {
         switch provider.apiStyle {
         case .openAICompatible:
-            return try await requestOpenAICompatible(
+            try await requestOpenAICompatible(
                 baseURL: baseURL,
                 model: model,
                 apiKey: apiKey,
                 additionalHeaders: additionalHeaders,
                 systemPrompt: systemPrompt,
                 userPrompt: userPrompt,
-                schema: schema
+                schema: schema,
             )
         case .anthropic:
-            return try await requestAnthropic(
+            try await requestAnthropic(
                 baseURL: baseURL,
                 model: model,
                 apiKey: apiKey,
                 additionalHeaders: additionalHeaders,
                 systemPrompt: systemPrompt,
                 userPrompt: userPrompt,
-                schema: schema
+                schema: schema,
             )
         case .gemini:
-            return try await requestGemini(
+            try await requestGemini(
                 baseURL: baseURL,
                 model: model,
                 apiKey: apiKey,
                 additionalHeaders: additionalHeaders,
                 systemPrompt: systemPrompt,
                 userPrompt: userPrompt,
-                schema: schema
+                schema: schema,
             )
         }
     }
 
     private static func streamOpenAICompatible(
-        provider: LLMRemoteProvider,
+        provider _: LLMRemoteProvider,
         baseURL: URL,
         model: String,
         apiKey: String,
         additionalHeaders: [String: String],
         systemPrompt: String,
         userPrompt: String,
-        continuation: AsyncThrowingStream<String, Error>.Continuation
+        continuation: AsyncThrowingStream<String, Error>.Continuation,
     ) async throws -> String {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "chat/completions")
         var urlRequest = URLRequest(url: url)
@@ -350,8 +351,8 @@ enum RemoteLLMClient {
             "stream": true,
             "messages": [
                 ["role": "system", "content": systemPrompt],
-                ["role": "user", "content": userPrompt]
-            ]
+                ["role": "user", "content": userPrompt],
+            ],
         ]
         OpenAICompatibleResponseSupport.applyProviderTuning(body: &body, baseURL: baseURL, model: model)
 
@@ -389,11 +390,11 @@ enum RemoteLLMClient {
     }
 
     private static func previewOpenAICompatible(
-        provider: LLMRemoteProvider,
+        provider _: LLMRemoteProvider,
         baseURL: URL,
         model: String,
         apiKey: String,
-        additionalHeaders: [String: String]
+        additionalHeaders: [String: String],
     ) async throws -> String {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "chat/completions")
         var urlRequest = URLRequest(url: url)
@@ -408,7 +409,7 @@ enum RemoteLLMClient {
             "model": model,
             "stream": true,
             "max_completion_tokens": 50,
-            "messages": [["role": "user", "content": "Hello"]]
+            "messages": [["role": "user", "content": "Hello"]],
         ]
         OpenAICompatibleResponseSupport.applyProviderTuning(body: &body, baseURL: baseURL, model: model)
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -434,7 +435,7 @@ enum RemoteLLMClient {
         additionalHeaders: [String: String],
         systemPrompt: String,
         userPrompt: String,
-        schema: LLMJSONSchema?
+        schema: LLMJSONSchema?,
     ) async throws -> String {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "chat/completions")
         var urlRequest = URLRequest(url: url)
@@ -450,8 +451,8 @@ enum RemoteLLMClient {
             "stream": false,
             "messages": [
                 ["role": "system", "content": systemPrompt],
-                ["role": "user", "content": userPrompt]
-            ]
+                ["role": "user", "content": userPrompt],
+            ],
         ]
         if let schema, providerSupportsResponseFormat(baseURL: baseURL) {
             body["response_format"] = [
@@ -459,8 +460,8 @@ enum RemoteLLMClient {
                 "json_schema": [
                     "name": schema.name,
                     "strict": schema.strict,
-                    "schema": schema.jsonObject
-                ]
+                    "schema": schema.jsonObject,
+                ],
             ]
         }
         OpenAICompatibleResponseSupport.applyProviderTuning(body: &body, baseURL: baseURL, model: model)
@@ -479,7 +480,7 @@ enum RemoteLLMClient {
         additionalHeaders: [String: String],
         systemPrompt: String,
         userPrompt: String,
-        schema: LLMJSONSchema?
+        schema: LLMJSONSchema?,
     ) async throws -> String {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "messages")
         var urlRequest = URLRequest(url: url)
@@ -496,16 +497,17 @@ enum RemoteLLMClient {
                 [
                     "role": "user",
                     "content": [
-                        ["type": "text", "text": anthropicUserPrompt(userPrompt: userPrompt, schema: schema)]
-                    ]
-                ]
-            ]
+                        ["type": "text", "text": anthropicUserPrompt(userPrompt: userPrompt, schema: schema)],
+                    ],
+                ],
+            ],
         ]
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let data = try await performJSONRequest(urlRequest)
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let content = object["content"] as? [[String: Any]] else {
+              let content = object["content"] as? [[String: Any]]
+        else {
             return ""
         }
 
@@ -522,7 +524,7 @@ enum RemoteLLMClient {
         additionalHeaders: [String: String],
         systemPrompt: String,
         userPrompt: String,
-        schema: LLMJSONSchema?
+        schema: LLMJSONSchema?,
     ) async throws -> String {
         guard var components = URLComponents(url: baseURL.appendingPathComponent("models/\(model):generateContent"), resolvingAgainstBaseURL: false) else {
             throw NSError(domain: "LLM", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid Gemini endpoint."])
@@ -538,25 +540,25 @@ enum RemoteLLMClient {
         applyAdditionalHeaders(additionalHeaders, to: &urlRequest)
         var body: [String: Any] = [
             "systemInstruction": [
-                "parts": [["text": systemPrompt]]
+                "parts": [["text": systemPrompt]],
             ],
             "contents": [
                 [
                     "role": "user",
-                    "parts": [["text": userPrompt]]
-                ]
+                    "parts": [["text": userPrompt]],
+                ],
             ],
             "generationConfig": [
                 "candidateCount": 1,
-                "maxOutputTokens": 1024
-            ]
+                "maxOutputTokens": 1024,
+            ],
         ]
         if let schema {
             body["generationConfig"] = [
                 "candidateCount": 1,
                 "maxOutputTokens": 1024,
                 "responseMimeType": "application/json",
-                "responseSchema": schema.jsonObject
+                "responseSchema": schema.jsonObject,
             ]
         }
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -565,7 +567,8 @@ enum RemoteLLMClient {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let candidates = object["candidates"] as? [[String: Any]],
               let content = candidates.first?["content"] as? [String: Any],
-              let parts = content["parts"] as? [[String: Any]] else {
+              let parts = content["parts"] as? [[String: Any]]
+        else {
             return ""
         }
 
@@ -615,7 +618,7 @@ enum RemoteLLMClient {
 
     private static func applyAdditionalHeaders(
         _ headers: [String: String],
-        to request: inout URLRequest
+        to request: inout URLRequest,
     ) {
         for (field, value) in headers {
             request.setValue(value, forHTTPHeaderField: field)
@@ -629,7 +632,7 @@ enum RemoteLLMClient {
         guard let http = response as? HTTPURLResponse else {
             throw NSError(domain: "LLM", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid response."])
         }
-        guard (200..<300).contains(http.statusCode) else {
+        guard (200 ..< 300).contains(http.statusCode) else {
             let message = String(data: data, encoding: .utf8) ?? "Unknown error"
             throw NSError(domain: "LLM", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(message)"])
         }
@@ -645,7 +648,7 @@ enum SSEClient {
             throw NSError(domain: "SSE", code: 1)
         }
 
-        if !(200..<300).contains(http.statusCode) {
+        if !(200 ..< 300).contains(http.statusCode) {
             var errorBodyData = Data()
             for try await byte in bytes {
                 errorBodyData.append(byte)
@@ -661,7 +664,7 @@ enum SSEClient {
     }
 
     static func lines(for bytes: URLSession.AsyncBytes) -> AsyncThrowingStream<String, Error> {
-        return AsyncThrowingStream { continuation in
+        AsyncThrowingStream { continuation in
             Task {
                 do {
                     var buffer = Data()
@@ -702,11 +705,12 @@ enum SSEClient {
     }
 }
 
-private extension Dictionary where Key == String, Value == Any {
+private extension [String: Any] {
     var prettyPrintedJSONString: String? {
         guard JSONSerialization.isValidJSONObject(self),
               let data = try? JSONSerialization.data(withJSONObject: self, options: [.prettyPrinted]),
-              let string = String(data: data, encoding: .utf8) else {
+              let string = String(data: data, encoding: .utf8)
+        else {
             return nil
         }
         return string

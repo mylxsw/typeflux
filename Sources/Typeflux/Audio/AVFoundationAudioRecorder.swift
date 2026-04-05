@@ -22,7 +22,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         outputMuter: SystemAudioOutputMuting = SystemAudioOutputMuter(),
         sleep: @escaping @Sendable (Duration) async -> Void = { duration in
             try? await Task.sleep(for: duration)
-        }
+        },
     ) {
         self.settingsStore = settingsStore
         self.audioDeviceManager = audioDeviceManager
@@ -32,7 +32,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
 
     func start(
         levelHandler: @escaping (Float) -> Void,
-        audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
+        audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?,
     ) throws {
         stopInternal()
 
@@ -53,14 +53,14 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             AVLinearPCMBitDepthKey: 16,
             AVLinearPCMIsBigEndianKey: false,
             AVLinearPCMIsFloatKey: false,
-            AVLinearPCMIsNonInterleaved: false
+            AVLinearPCMIsNonInterleaved: false,
         ]
 
         audioFile = try AVAudioFile(forWriting: url, settings: outputSettings)
         startedAt = Date()
 
         inputNode.removeTap(onBus: 0)
-        inputNode.installTap(onBus: 0, bufferSize: 2_048, format: inputFormat) { [weak self] buffer, _ in
+        inputNode.installTap(onBus: 0, bufferSize: 2048, format: inputFormat) { [weak self] buffer, _ in
             self?.handleInputBuffer(buffer)
         }
 
@@ -84,10 +84,10 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         let fileURL = audioFile.url
 
         self.audioFile = nil
-        self.startedAt = nil
-        self.levelHandler = nil
-        self.audioBufferHandler = nil
-        self.isRecording = false
+        startedAt = nil
+        levelHandler = nil
+        audioBufferHandler = nil
+        isRecording = false
         muteTask?.cancel()
         muteTask = nil
         outputMuter.endMutedSession()
@@ -114,25 +114,25 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         muteTask?.cancel()
         muteTask = Task { [weak self] in
             guard let self else { return }
-            await self.sleep(Self.outputMuteDelay)
-            guard !Task.isCancelled, self.isRecording else { return }
-            self.outputMuter.beginMutedSession()
+            await sleep(Self.outputMuteDelay)
+            guard !Task.isCancelled, isRecording else { return }
+            outputMuter.beginMutedSession()
         }
     }
 
-#if DEBUG
-    func beginMutedSessionAfterDelayForTesting() {
-        isRecording = true
-        scheduleMutedSessionStart()
-    }
+    #if DEBUG
+        func beginMutedSessionAfterDelayForTesting() {
+            isRecording = true
+            scheduleMutedSessionStart()
+        }
 
-    func cancelMutedSessionForTesting() {
-        isRecording = false
-        muteTask?.cancel()
-        muteTask = nil
-        outputMuter.endMutedSession()
-    }
-#endif
+        func cancelMutedSessionForTesting() {
+            isRecording = false
+            muteTask?.cancel()
+            muteTask = nil
+            outputMuter.endMutedSession()
+        }
+    #endif
 
     private func configureInputDeviceIfNeeded(for inputNode: AVAudioInputNode) throws {
         let preferredID = settingsStore.preferredMicrophoneID
@@ -162,12 +162,12 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             commonFormat: .pcmFormatFloat32,
             sampleRate: buffer.format.sampleRate,
             channels: 1,
-            interleaved: false
+            interleaved: false,
         ) else {
             throw NSError(
                 domain: "AudioRecorder",
                 code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to create mono audio format."]
+                userInfo: [NSLocalizedDescriptionKey: "Unable to create mono audio format."],
             )
         }
 
@@ -176,7 +176,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
                 throw NSError(
                     domain: "AudioRecorder",
                     code: 3,
-                    userInfo: [NSLocalizedDescriptionKey: "Unable to clone mono audio buffer."]
+                    userInfo: [NSLocalizedDescriptionKey: "Unable to clone mono audio buffer."],
                 )
             }
             return clone
@@ -186,18 +186,18 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             throw NSError(
                 domain: "AudioRecorder",
                 code: 4,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to create audio converter."]
+                userInfo: [NSLocalizedDescriptionKey: "Unable to create audio converter."],
             )
         }
 
         guard let outputBuffer = AVAudioPCMBuffer(
             pcmFormat: monoFormat,
-            frameCapacity: buffer.frameCapacity
+            frameCapacity: buffer.frameCapacity,
         ) else {
             throw NSError(
                 domain: "AudioRecorder",
                 code: 5,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to allocate mono audio buffer."]
+                userInfo: [NSLocalizedDescriptionKey: "Unable to allocate mono audio buffer."],
             )
         }
 
@@ -222,7 +222,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             throw NSError(
                 domain: "AudioRecorder",
                 code: 6,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to convert input audio."]
+                userInfo: [NSLocalizedDescriptionKey: "Unable to convert input audio."],
             )
         }
 
@@ -246,7 +246,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
 
         let frameCount = Int(buffer.frameLength)
         let channelCount = Int(targetFormat.channelCount)
-        for channel in 0..<channelCount {
+        for channel in 0 ..< channelCount {
             destination[channel].update(from: source[min(channel, Int(buffer.format.channelCount) - 1)], count: frameCount)
         }
 
@@ -260,7 +260,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         guard count > 0 else { return -60 }
 
         var sum: Float = 0
-        for index in 0..<count {
+        for index in 0 ..< count {
             let sample = samples[index]
             sum += sample * sample
         }

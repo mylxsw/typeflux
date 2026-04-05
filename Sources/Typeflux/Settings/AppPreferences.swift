@@ -32,27 +32,27 @@ enum STTProvider: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .freeModel:
-            return L("provider.stt.freeModel")
+            L("provider.stt.freeModel")
         case .whisperAPI:
-            return L("provider.stt.whisperAPI")
+            L("provider.stt.whisperAPI")
         case .appleSpeech:
-            return L("provider.stt.appleSpeech")
+            L("provider.stt.appleSpeech")
         case .localModel:
-            return L("provider.stt.localModel")
+            L("provider.stt.localModel")
         case .multimodalLLM:
-            return L("provider.stt.multimodalLLM")
+            L("provider.stt.multimodalLLM")
         case .aliCloud:
-            return L("provider.stt.aliCloud")
+            L("provider.stt.aliCloud")
         case .doubaoRealtime:
-            return L("provider.stt.doubaoRealtime")
+            L("provider.stt.doubaoRealtime")
         case .groq:
-            return L("provider.stt.groq")
+            L("provider.stt.groq")
         }
     }
 
     /// Whether this provider handles persona rewriting internally (no separate LLM rewrite step needed).
     var handlesPersonaInternally: Bool {
-        return self == .multimodalLLM
+        self == .multimodalLLM
     }
 }
 
@@ -70,55 +70,55 @@ enum LocalSTTModel: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .whisperLocal:
-            return L("localSTT.whisperLocal.name")
+            L("localSTT.whisperLocal.name")
         case .senseVoiceSmall:
-            return L("localSTT.senseVoiceSmall.name")
+            L("localSTT.senseVoiceSmall.name")
         case .qwen3ASR:
-            return L("localSTT.qwen3ASR.name")
+            L("localSTT.qwen3ASR.name")
         }
     }
 
     var defaultModelIdentifier: String {
         switch self {
         case .whisperLocal:
-            return "whisperkit-small"
+            "whisperkit-small"
         case .senseVoiceSmall:
-            return "sensevoice-small-coreml"
+            "sensevoice-small-coreml"
         case .qwen3ASR:
-            return "mlx-community/Qwen3-ASR-0.6B-bf16"
+            "mlx-community/Qwen3-ASR-0.6B-bf16"
         }
     }
 
     var recommendedDownloadSource: ModelDownloadSource {
         switch self {
         case .whisperLocal:
-            return .huggingFace
+            .huggingFace
         case .senseVoiceSmall:
-            return .huggingFace
+            .huggingFace
         case .qwen3ASR:
-            return .huggingFace
+            .huggingFace
         }
     }
 
     var specs: Specs {
         switch self {
         case .whisperLocal:
-            return Specs(
+            Specs(
                 summary: L("localSTT.whisperLocal.summary"),
                 parameterValue: L("localSTT.whisperLocal.parameterValue"),
-                sizeValue: L("localSTT.whisperLocal.sizeValue")
+                sizeValue: L("localSTT.whisperLocal.sizeValue"),
             )
         case .senseVoiceSmall:
-            return Specs(
+            Specs(
                 summary: L("localSTT.senseVoiceSmall.summary"),
                 parameterValue: L("localSTT.senseVoiceSmall.parameterValue"),
-                sizeValue: L("localSTT.senseVoiceSmall.sizeValue")
+                sizeValue: L("localSTT.senseVoiceSmall.sizeValue"),
             )
         case .qwen3ASR:
-            return Specs(
+            Specs(
                 summary: L("localSTT.qwen3ASR.summary"),
                 parameterValue: L("localSTT.qwen3ASR.parameterValue"),
-                sizeValue: L("localSTT.qwen3ASR.sizeValue")
+                sizeValue: L("localSTT.qwen3ASR.sizeValue"),
             )
         }
     }
@@ -131,9 +131,9 @@ enum ModelDownloadSource: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .modelScope:
-            return L("downloadSource.modelScope")
+            L("downloadSource.modelScope")
         case .huggingFace:
-            return L("downloadSource.huggingFace")
+            L("downloadSource.huggingFace")
         }
     }
 }
@@ -145,9 +145,9 @@ enum LLMProvider: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .openAICompatible:
-            return L("provider.llm.custom")
+            L("provider.llm.custom")
         case .ollama:
-            return L("provider.llm.ollama")
+            L("provider.llm.ollama")
         }
     }
 }
@@ -160,11 +160,11 @@ enum AppearanceMode: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .system:
-            return L("appearance.system")
+            L("appearance.system")
         case .light:
-            return L("appearance.light")
+            L("appearance.light")
         case .dark:
-            return L("appearance.dark")
+            L("appearance.dark")
         }
     }
 }
@@ -180,7 +180,9 @@ struct PersonaProfile: Codable, Identifiable, Equatable {
     var prompt: String
     var kind: PersonaProfileKind
 
-    var isSystem: Bool { kind == .system }
+    var isSystem: Bool {
+        kind == .system
+    }
 
     init(id: UUID = UUID(), name: String, prompt: String, kind: PersonaProfileKind = .custom) {
         self.id = id

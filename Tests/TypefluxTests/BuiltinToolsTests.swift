@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 // MARK: - Mock CommandRunner
 
@@ -42,7 +42,6 @@ final class MockURLFetcher: URLFetcher, @unchecked Sendable {
 // MARK: - ShellCommandTool Tests
 
 final class ShellCommandToolTests: XCTestCase {
-
     // MARK: Definition
 
     func testShellCommandToolDefinitionName() {
@@ -162,7 +161,7 @@ final class ShellCommandToolTests: XCTestCase {
         let tool = ShellCommandTool(runner: runner)
 
         let result = try await tool.execute(arguments: #"{"command": "echo test"}"#)
-        let data = result.data(using: .utf8)!
+        let data = try XCTUnwrap(result.data(using: .utf8))
         XCTAssertNoThrow(try JSONSerialization.jsonObject(with: data))
     }
 }
@@ -170,7 +169,6 @@ final class ShellCommandToolTests: XCTestCase {
 // MARK: - WebFetchTool Tests
 
 final class WebFetchToolTests: XCTestCase {
-
     // MARK: Definition
 
     func testWebFetchToolDefinitionName() {
@@ -294,7 +292,7 @@ final class WebFetchToolTests: XCTestCase {
         let tool = WebFetchTool(fetcher: fetcher)
 
         let result = try await tool.execute(arguments: #"{"url": "https://example.com"}"#)
-        let data = result.data(using: .utf8)!
+        let data = try XCTUnwrap(result.data(using: .utf8))
         XCTAssertNoThrow(try JSONSerialization.jsonObject(with: data))
     }
 

@@ -1,8 +1,7 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class AppStateStoreTests: XCTestCase {
-
     func testInitialStatusIsIdle() {
         let store = AppStateStore()
         XCTAssertEqual(store.status, .idle)
@@ -23,7 +22,7 @@ final class AppStateStoreTests: XCTestCase {
     func testSetStatusToFailed() {
         let store = AppStateStore()
         store.setStatus(.failed(message: "Something went wrong"))
-        if case .failed(let msg) = store.status {
+        if case let .failed(msg) = store.status {
             XCTAssertEqual(msg, "Something went wrong")
         } else {
             XCTFail("Expected .failed status")

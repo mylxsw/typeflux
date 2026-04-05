@@ -6,13 +6,13 @@ final class SenseVoiceTranscriber: Transcriber {
     init(
         modelIdentifier: String,
         modelFolder: String,
-        processRunner: ProcessCommandRunning = ProcessCommandRunner()
+        processRunner: ProcessCommandRunning = ProcessCommandRunner(),
     ) {
-        self.decoder = SherpaOnnxCommandLineDecoder(
+        decoder = SherpaOnnxCommandLineDecoder(
             model: .senseVoiceSmall,
             modelIdentifier: modelIdentifier,
             modelFolder: modelFolder,
-            processRunner: processRunner
+            processRunner: processRunner,
         )
     }
 

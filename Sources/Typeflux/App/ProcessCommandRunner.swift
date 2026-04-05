@@ -11,7 +11,7 @@ protocol ProcessCommandRunning {
         executablePath: String,
         arguments: [String],
         environment: [String: String]?,
-        currentDirectoryURL: URL?
+        currentDirectoryURL: URL?,
     ) async throws -> ProcessCommandResult
 }
 
@@ -21,7 +21,7 @@ extension ProcessCommandRunning {
             executablePath: executablePath,
             arguments: arguments,
             environment: nil,
-            currentDirectoryURL: nil
+            currentDirectoryURL: nil,
         )
     }
 }
@@ -49,7 +49,7 @@ final class ProcessCommandRunner: ProcessCommandRunning {
         executablePath: String,
         arguments: [String],
         environment: [String: String]? = nil,
-        currentDirectoryURL: URL? = nil
+        currentDirectoryURL: URL? = nil,
     ) async throws -> ProcessCommandResult {
         try await withCheckedThrowingContinuation { continuation in
             let process = Process()
@@ -99,7 +99,7 @@ final class ProcessCommandRunner: ProcessCommandRunning {
                 let result = ProcessCommandResult(
                     stdout: String(decoding: finalStdout, as: UTF8.self),
                     stderr: String(decoding: finalStderr, as: UTF8.self),
-                    exitCode: process.terminationStatus
+                    exitCode: process.terminationStatus,
                 )
 
                 if process.terminationStatus == 0 {
@@ -110,9 +110,9 @@ final class ProcessCommandRunner: ProcessCommandRunning {
                             domain: "ProcessCommandRunner",
                             code: Int(process.terminationStatus),
                             userInfo: [
-                                NSLocalizedDescriptionKey: result.stderr.isEmpty ? result.stdout : result.stderr
-                            ]
-                        )
+                                NSLocalizedDescriptionKey: result.stderr.isEmpty ? result.stdout : result.stderr,
+                            ],
+                        ),
                     )
                 }
             }

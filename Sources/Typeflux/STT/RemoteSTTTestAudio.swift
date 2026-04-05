@@ -1,12 +1,12 @@
 import Foundation
 
 enum RemoteSTTTestAudio {
-    static func pcm16MonoSilence(sampleRate: Int = 16_000, durationMs: Int = 320) -> Data {
-        let frameCount = max(1, sampleRate * durationMs / 1_000)
+    static func pcm16MonoSilence(sampleRate: Int = 16000, durationMs: Int = 320) -> Data {
+        let frameCount = max(1, sampleRate * durationMs / 1000)
         return Data(count: frameCount * MemoryLayout<Int16>.size)
     }
 
-    static func wavSilence(sampleRate: Int = 16_000, durationMs: Int = 320) -> Data {
+    static func wavSilence(sampleRate: Int = 16000, durationMs: Int = 320) -> Data {
         let pcmData = pcm16MonoSilence(sampleRate: sampleRate, durationMs: durationMs)
         return wavFile(fromPCM16Mono: pcmData, sampleRate: sampleRate)
     }

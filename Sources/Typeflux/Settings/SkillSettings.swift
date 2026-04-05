@@ -12,7 +12,8 @@ final class SkillSettingsStore: @unchecked Sendable {
     var skills: [AgentSkill] {
         get {
             guard let data = defaults.data(forKey: skillsKey),
-                  let saved = try? JSONDecoder().decode([AgentSkill].self, from: data) else {
+                  let saved = try? JSONDecoder().decode([AgentSkill].self, from: data)
+            else {
                 return BuiltinSkillCatalog.all
             }
             return mergeWithBuiltins(saved)

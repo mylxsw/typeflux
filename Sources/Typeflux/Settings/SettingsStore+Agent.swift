@@ -30,7 +30,8 @@ extension SettingsStore {
     var mcpServers: [MCPServerConfig] {
         get {
             guard let data = defaults.data(forKey: "agent.mcpServers"),
-                  let servers = try? JSONDecoder().decode([MCPServerConfig].self, from: data) else {
+                  let servers = try? JSONDecoder().decode([MCPServerConfig].self, from: data)
+            else {
                 return []
             }
             return servers
@@ -45,7 +46,8 @@ extension SettingsStore {
     var agentSkills: [AgentSkill] {
         get {
             guard let data = defaults.data(forKey: "agent.skills"),
-                  let skills = try? JSONDecoder().decode([AgentSkill].self, from: data) else {
+                  let skills = try? JSONDecoder().decode([AgentSkill].self, from: data)
+            else {
                 return BuiltinSkillCatalog.all
             }
             // Ensure builtin skills are always present
