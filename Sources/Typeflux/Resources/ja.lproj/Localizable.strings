@@ -225,7 +225,8 @@
 
 "overlay.recording.listening" = "リスニング";
 "overlay.ask.guidance" = "選択したテキストについて何でも質問してください";
-"overlay.processing.thinking" = "考える";
+"overlay.processing.transcribing" = "処理中";
+"overlay.processing.thinking" = "思考中";
 "overlay.failure.title" = "処理に失敗しました";
 "overlay.timeout.title" = "処理がタイムアウトしました";
 "overlay.timeout.message" = "処理に 120 秒以上かかりました。もう一度試してください。";

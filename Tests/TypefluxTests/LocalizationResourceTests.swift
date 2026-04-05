@@ -29,6 +29,22 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testOverlayProcessingPhaseKeysExistForAllSupportedLanguages() throws {
+        let keys = [
+            "overlay.processing.transcribing",
+            "overlay.processing.thinking",
+        ]
+
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+
+            for key in keys {
+                let localized = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(localized, key, "Missing localized value for \(key) in \(language.rawValue)")
+            }
+        }
+    }
+
     private func localizationBundle(for language: AppLanguage) throws -> Bundle {
         let path = try XCTUnwrap(
             Bundle.module.path(forResource: language.bundleLocalizationName, ofType: "lproj"),

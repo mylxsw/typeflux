@@ -474,7 +474,7 @@ final class OverlayController {
                 interactive: true)
         case .processing:
             return OverlayMetrics(
-                size: NSSize(width: 118, height: 72), anchor: .bottom, offset: 24,
+                size: NSSize(width: processingOverlayWidth(), height: 72), anchor: .bottom, offset: 24,
                 interactive: false)
         case .transcriptPreview:
             return OverlayMetrics(
@@ -508,6 +508,12 @@ final class OverlayController {
 
         let estimatedHintWidth = min(360, max(baseWidth, CGFloat(model.recordingHintText.count) * 10.0 + 44))
         return NSSize(width: estimatedHintWidth, height: baseHeight + 36)
+    }
+
+    private func processingOverlayWidth() -> CGFloat {
+        let title = model.statusText.isEmpty ? L("overlay.processing.thinking") : model.statusText
+        let estimatedTextWidth = CGFloat(title.count) * 8.5 + 52
+        return min(188, max(118, estimatedTextWidth))
     }
 
     private func updateKeyMonitoring() {
@@ -1370,10 +1376,10 @@ private struct ThinkingProgressCapsule: View {
                 .font(.system(size: 11.5, weight: .semibold))
                 .foregroundStyle(Color.white.opacity(0.92))
                 .lineLimit(1)
-                .minimumScaleFactor(0.78)
+                .minimumScaleFactor(0.9)
                 .padding(.horizontal, 12)
         }
-        .frame(width: 78, height: 35)
+        .frame(maxWidth: .infinity, minHeight: 35, maxHeight: 35)
         .compositingGroup()
         .shadow(color: Color.black.opacity(0.28), radius: 16, x: 0, y: 12)
         .onAppear {

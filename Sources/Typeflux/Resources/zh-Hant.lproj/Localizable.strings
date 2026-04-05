@@ -225,7 +225,8 @@
 
 "overlay.recording.listening" = "正在聆聽";
 "overlay.ask.guidance" = "你可以詢問任何問題";
-"overlay.processing.thinking" = "處理中";
+"overlay.processing.transcribing" = "處理中";
+"overlay.processing.thinking" = "思考中";
 "overlay.failure.title" = "處理失敗";
 "overlay.timeout.title" = "處理逾時";
 "overlay.timeout.message" = "處理時間超過 120 秒，請重試。";

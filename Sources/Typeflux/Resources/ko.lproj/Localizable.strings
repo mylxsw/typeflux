@@ -225,7 +225,8 @@
 
 "overlay.recording.listening" = "듣기";
 "overlay.ask.guidance" = "선택한 텍스트에 관해 무엇이든 물어보세요";
-"overlay.processing.thinking" = "생각";
+"overlay.processing.transcribing" = "처리 중";
+"overlay.processing.thinking" = "생각 중";
 "overlay.failure.title" = "처리 실패";
 "overlay.timeout.title" = "처리 시간이 초과되었습니다.";
 "overlay.timeout.message" = "처리하는 데 120초 이상이 걸렸습니다. 다시 시도해 주세요.";
