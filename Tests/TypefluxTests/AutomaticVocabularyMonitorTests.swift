@@ -351,12 +351,12 @@ final class AutomaticVocabularyMonitorExtendedTests: XCTestCase {
     }
 
     func testDetectChangeReturnsNilWhenOnlyDeletionOccurs() {
-        // "hello world" -> "hello" — no new term added
+        // "world world" -> "world" — deleted duplicate; expanded new fragment
+        // contains only "world" which already appears in the old fragment
         let change = AutomaticVocabularyMonitor.detectChange(
-            from: "hello world",
-            to: "hello"
+            from: "world world",
+            to: "world"
         )
-        // Deletion only, new fragment is empty
         XCTAssertNil(change)
     }
 

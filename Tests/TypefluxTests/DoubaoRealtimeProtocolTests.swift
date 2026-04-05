@@ -81,8 +81,8 @@ final class DoubaoProtocolExtendedTests: XCTestCase {
     }
 
     func testDoubaoHeaderDecodeThrowsOnUnknownMessageType() {
-        // Build 4 bytes where message type nibble is invalid
-        var data = Data([0x11, 0xF0, 0x10, 0x00])  // 0xF high nibble = 0xF message type
+        // Build 4 bytes where message type nibble is invalid (0x3 is not a valid DoubaoMessageType)
+        let data = Data([0x11, 0x30, 0x10, 0x00])  // high nibble 0x3 = unknown message type
         XCTAssertThrowsError(try DoubaoHeader.decode(from: data)) { error in
             guard let protoError = error as? DoubaoProtocolError else {
                 XCTFail("Expected DoubaoProtocolError")
@@ -110,8 +110,8 @@ final class DoubaoProtocolExtendedTests: XCTestCase {
     // MARK: - DoubaoMessageType raw values
 
     func testDoubaoMessageTypeRawValues() {
-        XCTAssertEqual(DoubaoMessageType.audioOnlyRequest.rawValue, 0b0001)
-        XCTAssertEqual(DoubaoMessageType.fullClientRequest.rawValue, 0b0010)
+        XCTAssertEqual(DoubaoMessageType.fullClientRequest.rawValue, 0b0001)
+        XCTAssertEqual(DoubaoMessageType.audioOnlyRequest.rawValue, 0b0010)
         XCTAssertEqual(DoubaoMessageType.serverResponse.rawValue, 0b1001)
         XCTAssertEqual(DoubaoMessageType.serverError.rawValue, 0b1111)
     }
