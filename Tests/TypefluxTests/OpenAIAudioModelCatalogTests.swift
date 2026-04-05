@@ -59,6 +59,33 @@ final class OpenAIAudioModelCatalogTests: XCTestCase {
         )
     }
 
+    func testWhisperStreamingSupportDisablesStreamForWhisperOne() {
+        XCTAssertFalse(
+            OpenAIAudioModelCatalog.supportsWhisperStreaming(
+                model: "whisper-1",
+                endpoint: "https://api.openai.com/v1/audio/transcriptions"
+            )
+        )
+    }
+
+    func testWhisperStreamingSupportDisablesStreamForGroqWhisperEndpoints() {
+        XCTAssertFalse(
+            OpenAIAudioModelCatalog.supportsWhisperStreaming(
+                model: "whisper-large-v3-turbo",
+                endpoint: "https://api.groq.com/openai/v1/audio/transcriptions"
+            )
+        )
+    }
+
+    func testWhisperStreamingSupportAllowsOpenAITranscribeModels() {
+        XCTAssertTrue(
+            OpenAIAudioModelCatalog.supportsWhisperStreaming(
+                model: "gpt-4o-transcribe",
+                endpoint: "https://api.openai.com/v1/audio/transcriptions"
+            )
+        )
+    }
+
     func testMultimodalBuiltInModelsMatchSupportedValues() {
         XCTAssertEqual(
             OpenAIAudioModelCatalog.multimodalModels,

@@ -105,7 +105,7 @@ final class WhisperAPITranscriber: Transcriber {
             """
         )
 
-        let shouldRequestStreaming = supportsServerStream(for: model)
+        let shouldRequestStreaming = supportsServerStream(for: model, endpoint: baseURL)
         let request = try makeRequest(
             baseURL: baseURL,
             model: model,
@@ -282,9 +282,11 @@ final class WhisperAPITranscriber: Transcriber {
         }
     }
 
-    private func supportsServerStream(for model: String) -> Bool {
-        let normalized = model.lowercased()
-        return normalized != "whisper-1"
+    private func supportsServerStream(for model: String, endpoint: URL) -> Bool {
+        OpenAIAudioModelCatalog.supportsWhisperStreaming(
+            model: model,
+            endpoint: endpoint.absoluteString
+        )
     }
 
     private func makeRequest(

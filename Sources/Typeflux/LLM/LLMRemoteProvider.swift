@@ -69,7 +69,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
         case .minimax:
             return "MiniMax"
         case .grok:
-            return "Grok"
+            return "xAI"
         case .groq:
             return "Groq"
         case .xiaomi:

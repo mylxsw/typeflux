@@ -96,7 +96,10 @@ final class LLMRemoteProviderTests: XCTestCase {
         XCTAssertEqual(
             LLMRemoteProvider.groq.suggestedModels,
             [
-                "llama-3.1-70b-versatile",
+                "groq/compound",
+                "groq/compound-mini",
+                "llama-3.1-8b-instant",
+                "llama-3.3-70b-versatile",
                 "openai/gpt-oss-120b",
                 "openai/gpt-oss-20b",
             ]
@@ -104,6 +107,7 @@ final class LLMRemoteProviderTests: XCTestCase {
     }
 
     func testGrokAndXiaomiProvidersExposeOpenAICompatibleDefaults() {
+        XCTAssertEqual(LLMRemoteProvider.grok.displayName, "xAI")
         XCTAssertEqual(LLMRemoteProvider.grok.apiStyle, .openAICompatible)
         XCTAssertEqual(LLMRemoteProvider.grok.defaultBaseURL, "https://api.x.ai/v1")
         XCTAssertEqual(
