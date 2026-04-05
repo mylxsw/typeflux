@@ -1373,7 +1373,7 @@ private struct ThinkingProgressCapsule: View {
                 .stroke(Color.white.opacity(0.22), lineWidth: 1.2)
 
             Text(title)
-                .font(.system(size: 11.5, weight: .semibold))
+                .font(.system(size: 12.5, weight: .semibold))
                 .foregroundStyle(Color.white.opacity(0.92))
                 .lineLimit(1)
                 .minimumScaleFactor(0.9)
