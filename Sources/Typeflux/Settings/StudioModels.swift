@@ -129,6 +129,25 @@ enum StudioModelDomain: String, CaseIterable, Identifiable {
     }
 }
 
+enum AgentConfigurationTab: String, CaseIterable, Identifiable {
+    case general
+    case mcpServers
+    case skills
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .general:
+            return L("agent.section.general")
+        case .mcpServers:
+            return L("agent.section.mcpServers")
+        case .skills:
+            return L("agent.section.skills")
+        }
+    }
+}
+
 enum StudioModelProviderID: String, CaseIterable, Identifiable {
     case appleSpeech
     case localSTT

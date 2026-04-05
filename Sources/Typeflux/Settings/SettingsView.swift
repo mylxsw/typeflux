@@ -61,6 +61,7 @@ struct StudioView: View {
     @State private var llmActivationMissingAPIKeyProviderName: String?
     @State private var isMCPServerDialogPresented = false
     @State private var mcpServerPendingDeletion: MCPServerConfig? = nil
+    @State private var agentConfigurationTab: AgentConfigurationTab = .general
     @ObservedObject private var localization = AppLocalization.shared
 
     var body: some View {
@@ -1188,26 +1189,42 @@ struct StudioView: View {
 
     private var agentPage: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            StudioSectionTitle(title: L("agent.section.general"))
+            StudioSegmentedPicker(
+                options: AgentConfigurationTab.allCases.map { (label: $0.title, value: $0) },
+                selection: $agentConfigurationTab
+            )
 
-            StudioCard {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSettingRow(
-                        title: L("agent.general.enabled.title"),
-                        subtitle: L("agent.general.enabled.subtitle")
-                    ) {
-                        Toggle("", isOn: Binding(
-                            get: { viewModel.agentEnabled },
-                            set: viewModel.setAgentEnabled
-                        ))
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
+            switch agentConfigurationTab {
+            case .general:
+                agentGeneralTabContent
+            case .mcpServers:
+                agentMCPServersTabContent
+            case .skills:
+                agentSkillsTabContent
+            }
+        }
+    }
+
+    private var agentGeneralTabContent: some View {
+        StudioCard {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                StudioSettingRow(
+                    title: L("agent.general.enabled.title"),
+                    subtitle: L("agent.general.enabled.subtitle")
+                ) {
+                    Toggle("", isOn: Binding(
+                        get: { viewModel.agentEnabled },
+                        set: viewModel.setAgentEnabled
+                    ))
+                    .labelsHidden()
+                    .toggleStyle(.switch)
                 }
             }
+        }
+    }
 
-            StudioSectionTitle(title: L("agent.section.mcpServers"))
-
+    private var agentMCPServersTabContent: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             if viewModel.mcpServers.isEmpty {
                 StudioCard {
                     VStack(spacing: StudioTheme.Spacing.medium) {
@@ -1236,9 +1253,11 @@ struct StudioView: View {
                 viewModel.beginAddMCPServer()
                 isMCPServerDialogPresented = true
             }
+        }
+    }
 
-            StudioSectionTitle(title: L("agent.section.skills"))
-
+    private var agentSkillsTabContent: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             if viewModel.agentSkills.isEmpty {
                 StudioCard {
                     VStack(spacing: StudioTheme.Spacing.medium) {

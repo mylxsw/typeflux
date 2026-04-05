@@ -94,6 +94,24 @@ final class StudioModelsTests: XCTestCase {
         XCTAssertEqual(StudioModelDomain.llm.iconName, "ellipsis.message")
     }
 
+    // MARK: - AgentConfigurationTab
+
+    func testAgentConfigurationTabCount() {
+        XCTAssertEqual(AgentConfigurationTab.allCases.count, 3)
+    }
+
+    func testAgentConfigurationTabId() {
+        for tab in AgentConfigurationTab.allCases {
+            XCTAssertEqual(tab.id, tab.rawValue)
+        }
+    }
+
+    func testAgentConfigurationTabTitlesAreNonEmpty() {
+        for tab in AgentConfigurationTab.allCases {
+            XCTAssertFalse(tab.title.isEmpty, "\(tab) title should not be empty")
+        }
+    }
+
     // MARK: - StudioModelProviderID
 
     func testSTTProvidersDomain() {
