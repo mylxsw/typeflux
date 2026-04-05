@@ -225,8 +225,8 @@
 
 "overlay.recording.listening" = "Listening";
 "overlay.ask.guidance" = "Ask anything about the selected text";
-"overlay.processing.transcribing" = "processing";
-"overlay.processing.thinking" = "thinking";
+"overlay.processing.transcribing" = "Processing";
+"overlay.processing.thinking" = "Thinking";
 "overlay.failure.title" = "Processing failed";
 "overlay.timeout.title" = "Processing timed out";
 "overlay.timeout.message" = "Processing took longer than 120 seconds. Please try again.";
