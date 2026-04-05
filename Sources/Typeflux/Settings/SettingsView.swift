@@ -4111,14 +4111,15 @@ struct StudioView: View {
             }
         }
         .frame(width: 820, height: 680)
+        .background(StudioTheme.background)
     }
 
     private var agentJobsListView: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
             // Header
-            HStack {
+            HStack(alignment: .center) {
                 Text(L("agent.jobs.title"))
-                    .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
+                    .font(.studioDisplay(StudioTheme.Typography.subsectionTitle, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
 
                 Spacer()
@@ -4133,12 +4134,7 @@ struct StudioView: View {
                     }
                 }
 
-                Button(action: viewModel.closeJobsPage) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-                .buttonStyle(.plain)
+                jobsCloseButton(action: viewModel.closeJobsPage)
             }
             .padding(.horizontal, StudioTheme.Spacing.large)
             .padding(.top, StudioTheme.Spacing.large)
@@ -4257,19 +4253,14 @@ struct StudioView: View {
                         }
                         .foregroundStyle(StudioTheme.accent)
                         .frame(minWidth: 120, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
 
                     Spacer()
 
-                    Button(action: viewModel.closeJobsPage) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.plain)
-                    .frame(minWidth: 120, alignment: .trailing)
+                    jobsCloseButton(action: viewModel.closeJobsPage)
+                        .frame(minWidth: 120, alignment: .trailing)
                 }
 
                 Text(job.displayTitle)
@@ -4429,6 +4420,18 @@ struct StudioView: View {
     }
 
     // MARK: - Job Helpers
+
+    private func jobsCloseButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "xmark")
+                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .bold))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(StudioTheme.surfaceMuted))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+    }
 
     private func jobStatusColor(_ status: AgentJobStatus) -> Color {
         switch status {
