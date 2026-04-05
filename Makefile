@@ -10,4 +10,7 @@ test:
 coverage:
 	./scripts/coverage.sh
 
-.PHONY: run dev test coverage
+format:
+	./scripts/format.sh
+
+.PHONY: run dev test coverage format
