@@ -776,6 +776,16 @@ final class WorkflowController {
     }
 
     private func applyText(_ text: String, replace: Bool, fallbackTitle: String = L("workflow.result.copyTitle")) -> ApplyOutcome {
+        let normalizedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        NetworkDebugLogger.logMessage(
+            """
+            [Apply Text] start
+            replace: \(replace)
+            fallbackTitle: \(fallbackTitle)
+            textLength: \(text.count)
+            normalizedPreview: \(String(normalizedText.prefix(120)))
+            """
+        )
         do {
             if replace {
                 dismissOverlayForExternalReplacement()
@@ -784,8 +794,16 @@ final class WorkflowController {
                 try textInjector.insert(text: text)
             }
             scheduleAutomaticVocabularyObservation(for: text)
+            NetworkDebugLogger.logMessage(
+                """
+                [Apply Text] success
+                replace: \(replace)
+                textLength: \(text.count)
+                """
+            )
             return .inserted
         } catch {
+            NetworkDebugLogger.logError(context: "[Apply Text] fallback to result dialog", error: error)
             presentResultDialog(title: fallbackTitle, text: text)
             return .presentedInDialog
         }
@@ -1614,6 +1632,14 @@ final class WorkflowController {
     }
 
     private func presentResultDialog(title: String, text: String) {
+        NetworkDebugLogger.logMessage(
+            """
+            [Result Dialog] presenting
+            title: \(title)
+            textLength: \(text.count)
+            preview: \(String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(120)))
+            """
+        )
         let work = { [weak self] in
             guard let self else { return }
             lastDialogResultText = text
