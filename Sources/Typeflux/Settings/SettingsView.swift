@@ -4390,7 +4390,8 @@ struct StudioView: View {
                 Text(text)
                     .font(.studioBody(StudioTheme.Typography.bodySmall))
                     .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
             }
 
             ForEach(step.toolCalls) { toolCall in
@@ -4399,17 +4400,21 @@ struct StudioView: View {
                         .font(.system(size: 10))
                         .foregroundStyle(toolCall.isError ? StudioTheme.danger : StudioTheme.accent)
                         .padding(.top, 3)
+                        .frame(width: 10)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(toolCall.name)
                             .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .medium))
                             .foregroundStyle(StudioTheme.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
 
-                        Text(toolCall.resultContent.prefix(200))
+                        Text(toolCall.resultContent)
                             .font(.studioBody(StudioTheme.Typography.caption))
                             .foregroundStyle(StudioTheme.textTertiary)
-                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
 
