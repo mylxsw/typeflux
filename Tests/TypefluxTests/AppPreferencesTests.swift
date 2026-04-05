@@ -157,7 +157,7 @@ extension AppPreferencesTests {
         }
     }
 
-    func testSTTProviderDisplayNamesAreNonEmpty() {
+    func testSTTProviderDisplayNamesAreNonEmptyExtended() {
         for provider in STTProvider.allCases {
             XCTAssertFalse(provider.displayName.isEmpty, "\(provider) should have a non-empty display name")
         }
@@ -186,7 +186,7 @@ extension AppPreferencesTests {
         }
     }
 
-    func testLocalSTTModelDisplayNamesAreNonEmpty() {
+    func testLocalSTTModelDisplayNamesAreNonEmptyExtended() {
         for model in LocalSTTModel.allCases {
             XCTAssertFalse(model.displayName.isEmpty, "\(model) should have a non-empty display name")
         }
@@ -216,7 +216,7 @@ extension AppPreferencesTests {
         }
     }
 
-    func testLLMProviderDisplayNamesAreNonEmpty() {
+    func testLLMProviderDisplayNamesAreNonEmptyExtended() {
         for provider in LLMProvider.allCases {
             XCTAssertFalse(provider.displayName.isEmpty, "\(provider) should have a non-empty display name")
         }
@@ -232,7 +232,7 @@ extension AppPreferencesTests {
         }
     }
 
-    func testAppearanceModeDisplayNamesAreNonEmpty() {
+    func testAppearanceModeDisplayNamesAreNonEmptyExtended() {
         for mode in AppearanceMode.allCases {
             XCTAssertFalse(mode.displayName.isEmpty, "\(mode) should have a non-empty display name")
         }
