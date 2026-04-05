@@ -216,33 +216,67 @@ enum PromptCatalog {
     ) -> (system: String, user: String) {
         let existingSummary = existingTerms.isEmpty ? "<empty>" : existingTerms.joined(separator: ", ")
         let oldSummary = oldFragment.isEmpty ? "<empty>" : oldFragment
+        let candidateSummary = candidateTerms.joined(separator: ", ")
 
         return (
             system: """
             You decide whether user-corrected terms should be added to a speech transcription vocabulary.
-            Only keep terms that are likely proper nouns, domain terms, product names, code identifiers, uncommon transliterations, or deliberate spellings that speech recognition should preserve.
-            Exclude common everyday words, generic rewrites, punctuation-only changes, and phrases that do not look like vocabulary terms.
+            Your goal is to keep only stable vocabulary entries that are likely to improve future speech recognition accuracy.
+            You may keep a candidate only if it clearly belongs to one of these two categories:
+            1. A word or short phrase that speech recognition is likely to mishear or misspell.
+            2. A professional term, product name, model name, framework name, API name, protocol name, command, code identifier, or other domain-specific term.
+            Reject anything that does not clearly match the two categories above.
+            Always reject:
+            - common everyday words
+            - generic rewrites or paraphrases
+            - filler words or conversational fragments
+            - punctuation-only changes
+            - grammar fixes
+            - complete clauses or sentence fragments
+            - long phrases or copied chunks of text
+            - content added only to clarify meaning, tone, or context
+            - anything uncertain or ambiguous
+            A valid vocabulary entry must be short and term-like:
+            - usually 1 term or a very short phrase
+            - not a full sentence
+            - not a large text span
+            - not more than 3 English words
+            - not more than 8 Chinese characters unless it is clearly a fixed technical term
+            Good examples:
+            - PRDPlus
+            - SeedASR
+            - OpenAI Realtime API
+            - JSONSchema
+            - 向量数据库
+            - 声纹识别
+            Bad examples:
+            - 我刚刚的意思是
+            - 这个方案也可以
+            - 请帮我改一下
+            - today afternoon meeting
+            - let me explain this
+            - a whole sentence copied from the transcript
+            If a candidate is not clearly suitable, reject it.
             Return strict JSON only in the form {"terms":["term1","term2"]}.
+            Return at most 3 terms.
+            If nothing qualifies, return {"terms":[]}.
             Never wrap the JSON in Markdown code fences.
             Never include commentary, explanation, or any keys other than "terms".
             """,
             user: """
-            Original dictated text:
-            \(transcript)
+            \(xmlSection(tag: "original_dictated_text", content: transcript))
 
-            Previous edited fragment:
-            \(oldSummary)
+            \(xmlSection(tag: "previous_edited_fragment", content: oldSummary))
 
-            Current edited fragment:
-            \(newFragment)
+            \(xmlSection(tag: "current_edited_fragment", content: newFragment))
 
-            Candidate terms:
-            \(candidateTerms.joined(separator: ", "))
+            \(xmlSection(tag: "candidate_terms", content: candidateSummary))
 
-            Existing vocabulary:
-            \(existingSummary)
+            \(xmlSection(tag: "existing_vocabulary", content: existingSummary))
 
-            Keep only the candidates that should be added to the vocabulary.
+            Keep only the candidates that are strong long-term vocabulary entries for speech recognition.
+            Prefer precision over recall.
+            If uncertain, return an empty list.
             Return strict JSON only.
             """
         )

@@ -231,10 +231,13 @@ final class PromptCatalogTests: XCTestCase {
 
         XCTAssertTrue(prompts.system.contains("speech transcription vocabulary"))
         XCTAssertTrue(prompts.system.contains("{\"terms\":[\"term1\",\"term2\"]}"))
-        XCTAssertTrue(prompts.user.contains("I love Typeflux app"))
-        XCTAssertTrue(prompts.user.contains("TypeFlux"))
-        XCTAssertTrue(prompts.user.contains("Typeflux"))
-        XCTAssertTrue(prompts.user.contains("GPT"))
+        XCTAssertTrue(prompts.system.contains("likely to mishear or misspell"))
+        XCTAssertTrue(prompts.system.contains("Return at most 3 terms."))
+        XCTAssertTrue(prompts.user.contains("<original_dictated_text>\nI love Typeflux app\n</original_dictated_text>"))
+        XCTAssertTrue(prompts.user.contains("<previous_edited_fragment>\nTypeFlux\n</previous_edited_fragment>"))
+        XCTAssertTrue(prompts.user.contains("<current_edited_fragment>\nTypeflux\n</current_edited_fragment>"))
+        XCTAssertTrue(prompts.user.contains("<candidate_terms>\nTypeflux\n</candidate_terms>"))
+        XCTAssertTrue(prompts.user.contains("<existing_vocabulary>\nGPT\n</existing_vocabulary>"))
     }
 
     func testAutomaticVocabularyDecisionPromptsHandleEmptyExistingTerms() {
@@ -246,7 +249,24 @@ final class PromptCatalogTests: XCTestCase {
             existingTerms: []
         )
 
-        XCTAssertTrue(prompts.user.contains("<empty>"))
+        XCTAssertTrue(prompts.user.contains("<previous_edited_fragment>\n<empty>\n</previous_edited_fragment>"))
+        XCTAssertTrue(prompts.user.contains("<existing_vocabulary>\n<empty>\n</existing_vocabulary>"))
+    }
+
+    func testAutomaticVocabularyDecisionPromptsUseXMLSectionsForInsertedContent() {
+        let prompts = PromptCatalog.automaticVocabularyDecisionPrompts(
+            transcript: "请打开 OpenAI Realtime API 文档",
+            oldFragment: "Open AI",
+            newFragment: "OpenAI Realtime API",
+            candidateTerms: ["OpenAI Realtime API", "Realtime API"],
+            existingTerms: ["SeedASR", "JSONSchema"]
+        )
+
+        XCTAssertTrue(prompts.user.contains("<original_dictated_text>\n请打开 OpenAI Realtime API 文档\n</original_dictated_text>"))
+        XCTAssertTrue(prompts.user.contains("<previous_edited_fragment>\nOpen AI\n</previous_edited_fragment>"))
+        XCTAssertTrue(prompts.user.contains("<current_edited_fragment>\nOpenAI Realtime API\n</current_edited_fragment>"))
+        XCTAssertTrue(prompts.user.contains("<candidate_terms>\nOpenAI Realtime API, Realtime API\n</candidate_terms>"))
+        XCTAssertTrue(prompts.user.contains("<existing_vocabulary>\nSeedASR, JSONSchema\n</existing_vocabulary>"))
     }
 }
 
