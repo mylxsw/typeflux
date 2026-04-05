@@ -848,9 +848,7 @@ final class WorkflowController {
                 : settingsStore.activePersona?.prompt
 
             NetworkDebugLogger.logMessage(selectionSnapshotLog(selectionSnapshot))
-            let shouldShowResultDialog = shouldPresentResultDialog(for: selectionSnapshot)
-
-            if !shouldShowResultDialog {
+            if WorkflowOverlayPresentationPolicy.shouldShowProcessingAfterRecording() {
                 await MainActor.run {
                     self.appState.setStatus(.processing)
                     self.overlayController.showProcessing()
@@ -1569,7 +1567,7 @@ final class WorkflowController {
     }
 
     private func shouldPresentResultDialog(for snapshot: TextSelectionSnapshot) -> Bool {
-        snapshot.hasAskSelectionContext && !snapshot.canReplaceSelection
+        WorkflowOverlayPresentationPolicy.shouldPresentResultDialog(for: snapshot)
     }
 
     private func editingSelectedText(from snapshot: TextSelectionSnapshot) -> String? {
