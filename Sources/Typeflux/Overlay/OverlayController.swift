@@ -167,6 +167,7 @@ final class OverlayController {
         model.detailText = ""
         model.recordingHintText = ""
         model.processingProgress = 0
+        model.processingEpoch += 1
         refreshWindow()
     }
 
@@ -183,6 +184,7 @@ final class OverlayController {
         model.detailText = ""
         model.recordingHintText = ""
         model.processingProgress = 0
+        model.processingEpoch += 1
         refreshWindow()
     }
 
@@ -194,10 +196,15 @@ final class OverlayController {
         guard model.presentation == .processing else { return }
         // Fill progress bar to completion first, then switch to thinking phase
         model.processingProgress = 1
+        let epochAtCall = model.processingEpoch
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { [weak self] in
-            guard let self, self.model.presentation == .processing else { return }
+            guard let self else { return }
+            guard self.model.presentation == .processing else { return }
+            // Skip if another phase transition already happened
+            guard self.model.processingEpoch == epochAtCall else { return }
             self.model.statusText = L("overlay.processing.thinking")
             self.model.processingProgress = 0
+            self.model.processingEpoch += 1
         }
     }
 
@@ -733,6 +740,7 @@ final class OverlayViewModel: ObservableObject {
     @Published var recordingHintText: String = ""
     @Published var level: Float = 0
     @Published var processingProgress: CGFloat = 0
+    @Published var processingEpoch: Int = 0
     @Published var personaItems: [OverlayController.PersonaPickerItem] = []
     @Published var personaSelectedIndex: Int = 0
     @Published var personaViewportHeight: CGFloat = 240
@@ -924,7 +932,8 @@ private struct OverlayView: View {
     private var processingCapsule: some View {
         ThinkingProgressCapsule(
             title: model.statusText.isEmpty ? L("overlay.processing.thinking") : model.statusText,
-            progress: model.processingProgress
+            progress: model.processingProgress,
+            epoch: model.processingEpoch
         )
     }
 
@@ -1354,6 +1363,7 @@ private struct LockedRecordingCapsule: View {
 private struct ThinkingProgressCapsule: View {
     let title: String
     let progress: CGFloat
+    let epoch: Int
     @State private var displayProgress: CGFloat = 0
 
     var body: some View {
@@ -1389,23 +1399,24 @@ private struct ThinkingProgressCapsule: View {
         .compositingGroup()
         .shadow(color: Color.black.opacity(0.28), radius: 16, x: 0, y: 12)
         .onAppear {
-            advanceProgress()
+            startPhase()
+        }
+        .onChange(of: epoch) { _ in
+            // New processing phase: reset and start fresh loading animation
+            displayProgress = 0
+            startPhase()
         }
         .onChange(of: progress) { newValue in
             if newValue >= 1 {
                 withAnimation(.easeOut(duration: 0.16)) {
                     displayProgress = 1
                 }
-            } else if newValue <= 0.0001 {
-                displayProgress = 0
-                advanceProgress()
             }
         }
     }
 
-    private func advanceProgress() {
-        guard progress <= 0.0001 else { return }
-
+    private func startPhase() {
+        guard progress < 1 else { return }
         withAnimation(.easeOut(duration: 1.5)) {
             displayProgress = 0.5
         }
