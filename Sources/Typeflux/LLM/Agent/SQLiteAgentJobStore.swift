@@ -107,10 +107,40 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
                 error_message TEXT,
                 steps_json TEXT,
                 total_duration_ms INTEGER,
-                outcome_type TEXT
+                outcome_type TEXT,
+                total_prompt_tokens INTEGER,
+                total_completion_tokens INTEGER,
+                total_tokens INTEGER
             );
         """)
         try execute(sql: "CREATE INDEX IF NOT EXISTS idx_agent_jobs_created_at ON agent_jobs(created_at DESC);")
+        // Migrate existing databases that lack the token columns.
+        try migrateAddTokenColumns()
+    }
+
+    private func migrateAddTokenColumns() throws {
+        // Query existing columns; skip ALTER TABLE if they already exist.
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "PRAGMA table_info(agent_jobs);", -1, &statement, nil) == SQLITE_OK else {
+            return
+        }
+        defer { sqlite3_finalize(statement) }
+
+        var existingColumns: Set<String> = []
+        while sqlite3_step(statement) == SQLITE_ROW {
+            if let namePtr = sqlite3_column_text(statement, 1) {
+                existingColumns.insert(String(cString: namePtr))
+            }
+        }
+
+        let newColumns = [
+            ("total_prompt_tokens", "INTEGER"),
+            ("total_completion_tokens", "INTEGER"),
+            ("total_tokens", "INTEGER"),
+        ]
+        for (column, type) in newColumns where !existingColumns.contains(column) {
+            try? execute(sql: "ALTER TABLE agent_jobs ADD COLUMN \(column) \(type);")
+        }
     }
 
     // MARK: - CRUD
@@ -119,8 +149,9 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
         let sql = """
             INSERT INTO agent_jobs (
                 id, created_at, completed_at, status, title, user_prompt, selected_text,
-                result_text, error_message, steps_json, total_duration_ms, outcome_type
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                result_text, error_message, steps_json, total_duration_ms, outcome_type,
+                total_prompt_tokens, total_completion_tokens, total_tokens
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 created_at = excluded.created_at,
                 completed_at = excluded.completed_at,
@@ -132,7 +163,10 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
                 error_message = excluded.error_message,
                 steps_json = excluded.steps_json,
                 total_duration_ms = excluded.total_duration_ms,
-                outcome_type = excluded.outcome_type;
+                outcome_type = excluded.outcome_type,
+                total_prompt_tokens = excluded.total_prompt_tokens,
+                total_completion_tokens = excluded.total_completion_tokens,
+                total_tokens = excluded.total_tokens;
         """
 
         try execute(sql: sql) { statement in
@@ -156,6 +190,15 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
                 sqlite3_bind_null(statement, 11)
             }
             self.bind(job.outcomeType, at: 12, in: statement)
+            if let usage = job.totalTokenUsage {
+                sqlite3_bind_int64(statement, 13, sqlite3_int64(usage.promptTokens))
+                sqlite3_bind_int64(statement, 14, sqlite3_int64(usage.completionTokens))
+                sqlite3_bind_int64(statement, 15, sqlite3_int64(usage.totalTokens))
+            } else {
+                sqlite3_bind_null(statement, 13)
+                sqlite3_bind_null(statement, 14)
+                sqlite3_bind_null(statement, 15)
+            }
         }
     }
 
@@ -163,7 +206,8 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
         try fetchJobs(
             sql: """
                 SELECT id, created_at, completed_at, status, title, user_prompt, selected_text,
-                       result_text, error_message, steps_json, total_duration_ms, outcome_type
+                       result_text, error_message, steps_json, total_duration_ms, outcome_type,
+                       total_prompt_tokens, total_completion_tokens, total_tokens
                 FROM agent_jobs
                 ORDER BY created_at DESC
                 LIMIT ? OFFSET ?;
@@ -179,7 +223,8 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
         try fetchJobs(
             sql: """
                 SELECT id, created_at, completed_at, status, title, user_prompt, selected_text,
-                       result_text, error_message, steps_json, total_duration_ms, outcome_type
+                       result_text, error_message, steps_json, total_duration_ms, outcome_type,
+                       total_prompt_tokens, total_completion_tokens, total_tokens
                 FROM agent_jobs
                 WHERE id = ?
                 LIMIT 1;
@@ -244,6 +289,19 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
             ? sqlite3_column_int64(statement, 10)
             : nil
 
+        // Columns 12, 13, 14: total_prompt_tokens, total_completion_tokens, total_tokens
+        let totalTokenUsage: LLMTokenUsage? = {
+            guard sqlite3_column_type(statement, 14) != SQLITE_NULL else { return nil }
+            let prompt = Int(sqlite3_column_int64(statement, 12))
+            let completion = Int(sqlite3_column_int64(statement, 13))
+            let total = Int(sqlite3_column_int64(statement, 14))
+            return LLMTokenUsage(
+                promptTokens: prompt,
+                completionTokens: completion,
+                totalTokens: total
+            )
+        }()
+
         return AgentJob(
             id: id,
             createdAt: Date(timeIntervalSince1970: sqlite3_column_double(statement, 1)),
@@ -256,7 +314,8 @@ final class SQLiteAgentJobStore: AgentJobStore, @unchecked Sendable {
             errorMessage: string(at: 8, in: statement),
             steps: decodeSteps(from: string(at: 9, in: statement)),
             totalDurationMs: totalDurationMs,
-            outcomeType: string(at: 11, in: statement)
+            outcomeType: string(at: 11, in: statement),
+            totalTokenUsage: totalTokenUsage
         )
     }
 

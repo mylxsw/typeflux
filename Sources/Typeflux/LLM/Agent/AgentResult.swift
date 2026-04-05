@@ -5,6 +5,19 @@ struct AgentResult: Sendable {
     let outcome: AgentOutcome
     let steps: [AgentStep]
     let totalDurationMs: Int64
+    let totalTokenUsage: LLMTokenUsage?
+
+    init(
+        outcome: AgentOutcome,
+        steps: [AgentStep],
+        totalDurationMs: Int64,
+        totalTokenUsage: LLMTokenUsage? = nil
+    ) {
+        self.outcome = outcome
+        self.steps = steps
+        self.totalDurationMs = totalDurationMs
+        self.totalTokenUsage = totalTokenUsage
+    }
 
     /// 提取最终答案文本（用于 answer_text 工具）
     var answerText: String? {

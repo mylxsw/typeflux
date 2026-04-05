@@ -189,6 +189,81 @@ final class AgentJobTests: XCTestCase {
         XCTAssertEqual(job.formattedDuration, "999ms")
     }
 
+    // MARK: - formattedTotalTokens
+
+    func testFormattedTotalTokensNil() {
+        let job = AgentJob(userPrompt: "test")
+        XCTAssertNil(job.formattedTotalTokens)
+    }
+
+    func testFormattedTotalTokensZero() {
+        let job = AgentJob(userPrompt: "test", totalTokenUsage: LLMTokenUsage(promptTokens: 0, completionTokens: 0, totalTokens: 0))
+        XCTAssertNil(job.formattedTotalTokens)
+    }
+
+    func testFormattedTotalTokensSmall() {
+        let job = AgentJob(userPrompt: "test", totalTokenUsage: LLMTokenUsage(promptTokens: 100, completionTokens: 50, totalTokens: 150))
+        XCTAssertEqual(job.formattedTotalTokens, "150 tokens")
+    }
+
+    func testFormattedTotalTokensThousands() {
+        let job = AgentJob(userPrompt: "test", totalTokenUsage: LLMTokenUsage(promptTokens: 1500, completionTokens: 500, totalTokens: 2000))
+        XCTAssertEqual(job.formattedTotalTokens, "2.0K tokens")
+    }
+
+    func testFormattedTotalTokensMillions() {
+        let job = AgentJob(userPrompt: "test", totalTokenUsage: LLMTokenUsage(promptTokens: 900000, completionTokens: 200000, totalTokens: 1100000))
+        XCTAssertEqual(job.formattedTotalTokens, "1.1M tokens")
+    }
+
+    // MARK: - AgentJobStep stepDescription
+
+    func testStepDescriptionNoTools() {
+        let step = AgentJobStep(stepIndex: 0, toolCalls: [], assistantText: "Hello", durationMs: 100)
+        XCTAssertEqual(step.stepDescription, "Generating response")
+    }
+
+    func testStepDescriptionNoToolsNoText() {
+        let step = AgentJobStep(stepIndex: 0, toolCalls: [], assistantText: nil, durationMs: 100)
+        XCTAssertEqual(step.stepDescription, "Processing")
+    }
+
+    func testStepDescriptionSingleTool() {
+        let tc = AgentJobToolCall(id: "1", name: "web_search", argumentsJSON: "{}", resultContent: "", isError: false)
+        let step = AgentJobStep(stepIndex: 0, toolCalls: [tc], assistantText: nil, durationMs: 100)
+        XCTAssertEqual(step.stepDescription, "Web Search")
+    }
+
+    func testStepDescriptionMultipleTools() {
+        let tc1 = AgentJobToolCall(id: "1", name: "search", argumentsJSON: "{}", resultContent: "", isError: false)
+        let tc2 = AgentJobToolCall(id: "2", name: "fetch", argumentsJSON: "{}", resultContent: "", isError: false)
+        let step = AgentJobStep(stepIndex: 0, toolCalls: [tc1, tc2], assistantText: nil, durationMs: 100)
+        XCTAssertEqual(step.stepDescription, "2 tools: search, fetch")
+    }
+
+    // MARK: - AgentJobStep formattedDuration
+
+    func testStepFormattedDurationMs() {
+        let step = AgentJobStep(stepIndex: 0, toolCalls: [], assistantText: nil, durationMs: 500)
+        XCTAssertEqual(step.formattedDuration, "500ms")
+    }
+
+    func testStepFormattedDurationSeconds() {
+        let step = AgentJobStep(stepIndex: 0, toolCalls: [], assistantText: nil, durationMs: 2500)
+        XCTAssertEqual(step.formattedDuration, "2.5s")
+    }
+
+    // MARK: - LLMTokenUsage arithmetic
+
+    func testTokenUsageAddition() {
+        let a = LLMTokenUsage(promptTokens: 100, completionTokens: 50, totalTokens: 150)
+        let b = LLMTokenUsage(promptTokens: 200, completionTokens: 80, totalTokens: 280)
+        let sum = a + b
+        XCTAssertEqual(sum.promptTokens, 300)
+        XCTAssertEqual(sum.completionTokens, 130)
+        XCTAssertEqual(sum.totalTokens, 430)
+    }
+
     // MARK: - Codable round-trip
 
     func testAgentJobCodable() throws {

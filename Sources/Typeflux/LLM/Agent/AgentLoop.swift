@@ -35,6 +35,7 @@ actor AgentLoop {
         var accumulatedText = ""
         var steps: [AgentStep] = []
         let startTime = DispatchTime.now()
+        var cumulativeTokenUsage: LLMTokenUsage? = nil
 
         for stepIndex in 0..<config.maxSteps {
             let stepStart = DispatchTime.now()
@@ -45,24 +46,30 @@ actor AgentLoop {
                 temperature: config.temperature
             )
 
-            let turn = try await llmService.complete(
+            let turnResult = try await llmService.complete(
                 messages: accumulatedMessages,
                 tools: await toolRegistry.definitions,
                 config: callConfig
             )
 
-            switch turn {
+            // Accumulate token usage across all LLM calls
+            if let usage = turnResult.tokenUsage {
+                cumulativeTokenUsage = cumulativeTokenUsage.map { $0 + usage } ?? usage
+            }
+
+            switch turnResult.turn {
             case .text(let text):
                 if !text.isEmpty {
                     accumulatedText += text
                     streamHandler?(text)
                 }
                 let outcome = AgentOutcome.text(accumulatedText)
-                await stepMonitor?.agentDidFinish(outcome: outcome)
+                await stepMonitor?.agentDidFinish(outcome: outcome, totalTokenUsage: cumulativeTokenUsage)
                 return AgentResult(
                     outcome: outcome,
                     steps: steps,
-                    totalDurationMs: elapsedMs(from: startTime)
+                    totalDurationMs: elapsedMs(from: startTime),
+                    totalTokenUsage: cumulativeTokenUsage
                 )
 
             case .toolCalls(let toolCalls):
@@ -71,13 +78,15 @@ actor AgentLoop {
                     assistantText: nil,
                     stepIndex: stepIndex,
                     stepStart: stepStart,
+                    tokenUsage: turnResult.tokenUsage,
                     accumulatedMessages: &accumulatedMessages,
                     steps: steps,
-                    totalStart: startTime
+                    totalStart: startTime,
+                    cumulativeTokenUsage: cumulativeTokenUsage
                 )
                 steps = newSteps
                 if let result = terminationResult {
-                    await stepMonitor?.agentDidFinish(outcome: result.outcome)
+                    await stepMonitor?.agentDidFinish(outcome: result.outcome, totalTokenUsage: result.totalTokenUsage)
                     return result
                 }
 
@@ -91,24 +100,27 @@ actor AgentLoop {
                     assistantText: text.isEmpty ? nil : text,
                     stepIndex: stepIndex,
                     stepStart: stepStart,
+                    tokenUsage: turnResult.tokenUsage,
                     accumulatedMessages: &accumulatedMessages,
                     steps: steps,
-                    totalStart: startTime
+                    totalStart: startTime,
+                    cumulativeTokenUsage: cumulativeTokenUsage
                 )
                 steps = newSteps
                 if let result = terminationResult {
-                    await stepMonitor?.agentDidFinish(outcome: result.outcome)
+                    await stepMonitor?.agentDidFinish(outcome: result.outcome, totalTokenUsage: result.totalTokenUsage)
                     return result
                 }
             }
         }
 
         let outcome = AgentOutcome.maxStepsReached
-        await stepMonitor?.agentDidFinish(outcome: outcome)
+        await stepMonitor?.agentDidFinish(outcome: outcome, totalTokenUsage: cumulativeTokenUsage)
         return AgentResult(
             outcome: outcome,
             steps: steps,
-            totalDurationMs: elapsedMs(from: startTime)
+            totalDurationMs: elapsedMs(from: startTime),
+            totalTokenUsage: cumulativeTokenUsage
         )
     }
 
@@ -119,9 +131,11 @@ actor AgentLoop {
         assistantText: String?,
         stepIndex: Int,
         stepStart: DispatchTime,
+        tokenUsage: LLMTokenUsage?,
         accumulatedMessages: inout [AgentMessage],
         steps: [AgentStep],
-        totalStart: DispatchTime
+        totalStart: DispatchTime,
+        cumulativeTokenUsage: LLMTokenUsage?
     ) async throws -> ([AgentStep], AgentResult?) {
         var updatedSteps = steps
         let assistantMsg = AgentAssistantMessage(text: assistantText, toolCalls: toolCalls)
@@ -134,7 +148,8 @@ actor AgentLoop {
                     stepIndex: stepIndex,
                     assistantMessage: assistantMsg,
                     toolResults: [],
-                    durationMs: elapsedMs(from: stepStart)
+                    durationMs: elapsedMs(from: stepStart),
+                    tokenUsage: tokenUsage
                 )
                 updatedSteps.append(step)
                 await stepMonitor?.agentDidCompleteStep(step)
@@ -145,7 +160,8 @@ actor AgentLoop {
                 return (updatedSteps, AgentResult(
                     outcome: outcome,
                     steps: updatedSteps,
-                    totalDurationMs: elapsedMs(from: totalStart)
+                    totalDurationMs: elapsedMs(from: totalStart),
+                    totalTokenUsage: cumulativeTokenUsage
                 ))
             }
         }
@@ -176,7 +192,8 @@ actor AgentLoop {
             stepIndex: stepIndex,
             assistantMessage: assistantMsg,
             toolResults: toolResults,
-            durationMs: elapsedMs(from: stepStart)
+            durationMs: elapsedMs(from: stepStart),
+            tokenUsage: tokenUsage
         )
         updatedSteps.append(step)
         await stepMonitor?.agentDidCompleteStep(step)

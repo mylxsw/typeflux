@@ -59,10 +59,10 @@ final class LLMMultiTurnServiceTests: XCTestCase {
         mock.turns = [.text("first"), .text("second")]
         let config = LLMCallConfig(forcedToolName: nil, parallelToolCalls: false, temperature: nil)
 
-        let turn1 = try await mock.complete(messages: [], tools: [], config: config)
-        let turn2 = try await mock.complete(messages: [], tools: [], config: config)
+        let result1 = try await mock.complete(messages: [], tools: [], config: config)
+        let result2 = try await mock.complete(messages: [], tools: [], config: config)
 
-        if case .text(let t1) = turn1, case .text(let t2) = turn2 {
+        if case .text(let t1) = result1.turn, case .text(let t2) = result2.turn {
             XCTAssertEqual(t1, "first")
             XCTAssertEqual(t2, "second")
         } else {
@@ -78,7 +78,7 @@ final class LLMMultiTurnServiceTests: XCTestCase {
         _ = try await mock.complete(messages: [], tools: [], config: config)
         let fallback = try await mock.complete(messages: [], tools: [], config: config)
 
-        if case .text(let t) = fallback {
+        if case .text(let t) = fallback.turn {
             XCTAssertEqual(t, "fallback")
         } else {
             XCTFail("Expected fallback text")

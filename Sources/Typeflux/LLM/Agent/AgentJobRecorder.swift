@@ -44,7 +44,8 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
                 )
             },
             assistantText: step.assistantMessage.text,
-            durationMs: step.durationMs
+            durationMs: step.durationMs,
+            tokenUsage: step.tokenUsage
         )
 
         let currentSteps = appendStepAndSnapshot(jobStep)
@@ -56,13 +57,14 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
         }
     }
 
-    func agentDidFinish(outcome: AgentOutcome) async {
+    func agentDidFinish(outcome: AgentOutcome, totalTokenUsage: LLMTokenUsage?) async {
         let finalSteps = snapshotSteps()
 
         guard var job = try? await store.job(id: jobID) else { return }
 
         job.steps = finalSteps
         job.completedAt = Date()
+        job.totalTokenUsage = totalTokenUsage
 
         switch outcome {
         case .text(let text):

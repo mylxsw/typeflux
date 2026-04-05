@@ -4215,6 +4215,14 @@ struct StudioView: View {
                         .font(.studioBody(StudioTheme.Typography.bodySmall))
                         .foregroundStyle(StudioTheme.textTertiary)
                     }
+
+                    if let tokens = job.formattedTotalTokens {
+                        Text("·")
+                            .foregroundStyle(StudioTheme.textTertiary)
+                        Text(tokens)
+                            .font(.studioBody(StudioTheme.Typography.bodySmall))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                    }
                 }
             }
 
@@ -4292,6 +4300,10 @@ struct StudioView: View {
 
                 if job.totalToolCalls > 0 {
                     StudioPill(title: L("agent.jobs.toolCalls", job.totalToolCalls))
+                }
+
+                if let tokens = job.formattedTotalTokens {
+                    StudioPill(title: tokens)
                 }
             }
             .padding(.horizontal, StudioTheme.Spacing.large)
@@ -4374,24 +4386,55 @@ struct StudioView: View {
 
     private func jobStepView(_ step: AgentJobStep, isLast: Bool) -> some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            HStack {
+            // Step header: number, description, timing
+            HStack(spacing: StudioTheme.Spacing.xSmall) {
                 Text(L("agent.jobs.detail.stepNumber", step.stepIndex + 1))
                     .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
                     .foregroundStyle(StudioTheme.textSecondary)
 
+                Text("·")
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                    .foregroundStyle(StudioTheme.textTertiary)
+
+                Text(step.stepDescription)
+                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .medium))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .lineLimit(1)
+
                 Spacer()
 
-                Text("\(step.durationMs)ms")
+                // Token usage badge for this step
+                if let usage = step.tokenUsage, usage.totalTokens > 0 {
+                    Text(L("agent.jobs.detail.stepTokens", usage.totalTokens))
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                }
+
+                Text(step.formattedDuration)
                     .font(.studioBody(StudioTheme.Typography.bodySmall))
                     .foregroundStyle(StudioTheme.textTertiary)
             }
 
+            // Assistant reasoning/decision text
             if let text = step.assistantText, !text.isEmpty {
-                Text(text)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .textSelection(.enabled)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: StudioTheme.Spacing.xSmall) {
+                        Image(systemName: "quote.bubble")
+                            .font(.system(size: 10))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                        Text(L("agent.jobs.detail.reasoning"))
+                            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                    }
+                    Text(text)
+                        .font(.studioBody(StudioTheme.Typography.bodySmall))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
+                }
+                .padding(8)
+                .background(StudioTheme.surface.opacity(0.5))
+                .cornerRadius(6)
             }
 
             ForEach(step.toolCalls) { toolCall in

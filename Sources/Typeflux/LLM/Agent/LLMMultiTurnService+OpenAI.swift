@@ -5,7 +5,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         messages: [AgentMessage],
         tools: [LLMAgentTool],
         config: LLMCallConfig
-    ) async throws -> AgentTurn {
+    ) async throws -> AgentTurnResult {
         let llmConfig = settingsStore.textLLMConfiguration()
         let connection = try LLMConnectionResolver.resolve(
             provider: llmConfig.provider,
@@ -60,7 +60,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         messages: [AgentMessage],
         tools: [LLMAgentTool],
         config: LLMCallConfig
-    ) async throws -> AgentTurn {
+    ) async throws -> AgentTurnResult {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "chat/completions")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -77,7 +77,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let data = try await RemoteLLMClient.performJSONRequest(request)
-        return parseOpenAITurn(from: data)
+        return parseOpenAITurnResult(from: data)
     }
 
     func buildOpenAIBody(
@@ -117,35 +117,59 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         return body
     }
 
-    func parseOpenAITurn(from data: Data) -> AgentTurn {
+    func parseOpenAITurnResult(from data: Data) -> AgentTurnResult {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let choice = (object["choices"] as? [[String: Any]])?.first,
               let message = choice["message"] as? [String: Any] else {
-            return .text("")
+            return AgentTurnResult(turn: .text(""), tokenUsage: nil)
         }
 
         let rawText = message["content"] as? String ?? ""
         let text = OpenAICompatibleResponseSupport.stripLeadingThinkingTags(rawText)
         let toolCallsRaw = message["tool_calls"] as? [[String: Any]] ?? []
 
+        let tokenUsage = parseOpenAITokenUsage(from: object)
+
+        let turn: AgentTurn
         if toolCallsRaw.isEmpty {
-            return .text(text)
-        }
-
-        let toolCalls = toolCallsRaw.compactMap { raw -> AgentToolCall? in
-            guard let fn = raw["function"] as? [String: Any],
-                  let name = fn["name"] as? String,
-                  let args = fn["arguments"] as? String else {
-                return nil
+            turn = .text(text)
+        } else {
+            let toolCalls = toolCallsRaw.compactMap { raw -> AgentToolCall? in
+                guard let fn = raw["function"] as? [String: Any],
+                      let name = fn["name"] as? String,
+                      let args = fn["arguments"] as? String else {
+                    return nil
+                }
+                let id = raw["id"] as? String ?? UUID().uuidString
+                return AgentToolCall(id: id, name: name, argumentsJSON: args)
             }
-            let id = raw["id"] as? String ?? UUID().uuidString
-            return AgentToolCall(id: id, name: name, argumentsJSON: args)
+            if text.isEmpty {
+                turn = .toolCalls(toolCalls)
+            } else {
+                turn = .textWithToolCalls(text: text, toolCalls: toolCalls)
+            }
         }
 
-        if text.isEmpty {
-            return .toolCalls(toolCalls)
+        return AgentTurnResult(turn: turn, tokenUsage: tokenUsage)
+    }
+
+    /// Legacy helper kept for backward compatibility with tests.
+    func parseOpenAITurn(from data: Data) -> AgentTurn {
+        parseOpenAITurnResult(from: data).turn
+    }
+
+    private func parseOpenAITokenUsage(from object: [String: Any]) -> LLMTokenUsage? {
+        guard let usage = object["usage"] as? [String: Any],
+              let promptTokens = usage["prompt_tokens"] as? Int,
+              let completionTokens = usage["completion_tokens"] as? Int else {
+            return nil
         }
-        return .textWithToolCalls(text: text, toolCalls: toolCalls)
+        let totalTokens = usage["total_tokens"] as? Int ?? (promptTokens + completionTokens)
+        return LLMTokenUsage(
+            promptTokens: promptTokens,
+            completionTokens: completionTokens,
+            totalTokens: totalTokens
+        )
     }
 
     // MARK: - Anthropic
@@ -158,7 +182,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         messages: [AgentMessage],
         tools: [LLMAgentTool],
         config: LLMCallConfig
-    ) async throws -> AgentTurn {
+    ) async throws -> AgentTurnResult {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "messages")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -199,13 +223,13 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let data = try await RemoteLLMClient.performJSONRequest(request)
-        return parseAnthropicTurn(from: data)
+        return parseAnthropicTurnResult(from: data)
     }
 
-    func parseAnthropicTurn(from data: Data) -> AgentTurn {
+    func parseAnthropicTurnResult(from data: Data) -> AgentTurnResult {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let content = object["content"] as? [[String: Any]] else {
-            return .text("")
+            return AgentTurnResult(turn: .text(""), tokenUsage: nil)
         }
 
         var text = ""
@@ -228,13 +252,35 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
             }
         }
 
+        let tokenUsage = parseAnthropicTokenUsage(from: object)
+
+        let turn: AgentTurn
         if toolCalls.isEmpty {
-            return .text(text)
+            turn = .text(text)
+        } else if text.isEmpty {
+            turn = .toolCalls(toolCalls)
+        } else {
+            turn = .textWithToolCalls(text: text, toolCalls: toolCalls)
         }
-        if text.isEmpty {
-            return .toolCalls(toolCalls)
-        }
-        return .textWithToolCalls(text: text, toolCalls: toolCalls)
+
+        return AgentTurnResult(turn: turn, tokenUsage: tokenUsage)
+    }
+
+    /// Legacy helper kept for backward compatibility with tests.
+    func parseAnthropicTurn(from data: Data) -> AgentTurn {
+        parseAnthropicTurnResult(from: data).turn
+    }
+
+    private func parseAnthropicTokenUsage(from object: [String: Any]) -> LLMTokenUsage? {
+        guard let usage = object["usage"] as? [String: Any] else { return nil }
+        let inputTokens = usage["input_tokens"] as? Int ?? 0
+        let outputTokens = usage["output_tokens"] as? Int ?? 0
+        guard inputTokens > 0 || outputTokens > 0 else { return nil }
+        return LLMTokenUsage(
+            promptTokens: inputTokens,
+            completionTokens: outputTokens,
+            totalTokens: inputTokens + outputTokens
+        )
     }
 
     // MARK: - Gemini
@@ -247,7 +293,7 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         messages: [AgentMessage],
         tools: [LLMAgentTool],
         config: LLMCallConfig
-    ) async throws -> AgentTurn {
+    ) async throws -> AgentTurnResult {
         guard var components = URLComponents(
             url: baseURL.appendingPathComponent("models/\(model):generateContent"),
             resolvingAgainstBaseURL: false
@@ -305,15 +351,15 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let data = try await RemoteLLMClient.performJSONRequest(request)
-        return parseGeminiTurn(from: data)
+        return parseGeminiTurnResult(from: data)
     }
 
-    func parseGeminiTurn(from data: Data) -> AgentTurn {
+    func parseGeminiTurnResult(from data: Data) -> AgentTurnResult {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let candidates = object["candidates"] as? [[String: Any]],
               let content = candidates.first?["content"] as? [String: Any],
               let parts = content["parts"] as? [[String: Any]] else {
-            return .text("")
+            return AgentTurnResult(turn: .text(""), tokenUsage: nil)
         }
 
         var text = ""
@@ -338,12 +384,35 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
             }
         }
 
+        let tokenUsage = parseGeminiTokenUsage(from: object)
+
+        let turn: AgentTurn
         if toolCalls.isEmpty {
-            return .text(text)
+            turn = .text(text)
+        } else if text.isEmpty {
+            turn = .toolCalls(toolCalls)
+        } else {
+            turn = .textWithToolCalls(text: text, toolCalls: toolCalls)
         }
-        if text.isEmpty {
-            return .toolCalls(toolCalls)
-        }
-        return .textWithToolCalls(text: text, toolCalls: toolCalls)
+
+        return AgentTurnResult(turn: turn, tokenUsage: tokenUsage)
+    }
+
+    /// Legacy helper kept for backward compatibility with tests.
+    func parseGeminiTurn(from data: Data) -> AgentTurn {
+        parseGeminiTurnResult(from: data).turn
+    }
+
+    private func parseGeminiTokenUsage(from object: [String: Any]) -> LLMTokenUsage? {
+        guard let meta = object["usageMetadata"] as? [String: Any] else { return nil }
+        let promptTokens = meta["promptTokenCount"] as? Int ?? 0
+        let completionTokens = meta["candidatesTokenCount"] as? Int ?? 0
+        let totalTokens = meta["totalTokenCount"] as? Int ?? (promptTokens + completionTokens)
+        guard totalTokens > 0 else { return nil }
+        return LLMTokenUsage(
+            promptTokens: promptTokens,
+            completionTokens: completionTokens,
+            totalTokens: totalTokens
+        )
     }
 }

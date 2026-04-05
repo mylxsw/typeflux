@@ -182,7 +182,7 @@ final class AgentJobRecorderTests: XCTestCase {
 
     func testFinishWithTextOutcome() async throws {
         await recorder.beginJob(userPrompt: "Test", selectedText: nil)
-        await recorder.agentDidFinish(outcome: .text("The answer"))
+        await recorder.agentDidFinish(outcome: .text("The answer"), totalTokenUsage: nil)
 
         let job = try await mockStore.job(id: jobID)
         XCTAssertEqual(job?.status, .completed)
@@ -195,7 +195,7 @@ final class AgentJobRecorderTests: XCTestCase {
     func testFinishWithAnswerTextTool() async throws {
         await recorder.beginJob(userPrompt: "Test", selectedText: nil)
         let argsJSON = #"{"answer":"42 is the answer"}"#
-        await recorder.agentDidFinish(outcome: .terminationTool(name: "answer_text", argumentsJSON: argsJSON))
+        await recorder.agentDidFinish(outcome: .terminationTool(name: "answer_text", argumentsJSON: argsJSON), totalTokenUsage: nil)
 
         let job = try await mockStore.job(id: jobID)
         XCTAssertEqual(job?.status, .completed)
@@ -206,7 +206,7 @@ final class AgentJobRecorderTests: XCTestCase {
     func testFinishWithEditTextTool() async throws {
         await recorder.beginJob(userPrompt: "Test", selectedText: nil)
         let argsJSON = #"{"replacement":"Edited text here"}"#
-        await recorder.agentDidFinish(outcome: .terminationTool(name: "edit_text", argumentsJSON: argsJSON))
+        await recorder.agentDidFinish(outcome: .terminationTool(name: "edit_text", argumentsJSON: argsJSON), totalTokenUsage: nil)
 
         let job = try await mockStore.job(id: jobID)
         XCTAssertEqual(job?.status, .completed)
@@ -216,7 +216,7 @@ final class AgentJobRecorderTests: XCTestCase {
 
     func testFinishWithUnknownTerminationTool() async throws {
         await recorder.beginJob(userPrompt: "Test", selectedText: nil)
-        await recorder.agentDidFinish(outcome: .terminationTool(name: "custom_tool", argumentsJSON: "{}"))
+        await recorder.agentDidFinish(outcome: .terminationTool(name: "custom_tool", argumentsJSON: "{}"), totalTokenUsage: nil)
 
         let job = try await mockStore.job(id: jobID)
         XCTAssertEqual(job?.status, .completed)
@@ -226,7 +226,7 @@ final class AgentJobRecorderTests: XCTestCase {
 
     func testFinishWithMaxStepsReached() async throws {
         await recorder.beginJob(userPrompt: "Test", selectedText: nil)
-        await recorder.agentDidFinish(outcome: .maxStepsReached)
+        await recorder.agentDidFinish(outcome: .maxStepsReached, totalTokenUsage: nil)
 
         let job = try await mockStore.job(id: jobID)
         XCTAssertEqual(job?.status, .failed)
@@ -237,7 +237,7 @@ final class AgentJobRecorderTests: XCTestCase {
     func testFinishWithError() async throws {
         await recorder.beginJob(userPrompt: "Test", selectedText: nil)
         let error = NSError(domain: "test", code: 42, userInfo: [NSLocalizedDescriptionKey: "Something broke"])
-        await recorder.agentDidFinish(outcome: .error(error))
+        await recorder.agentDidFinish(outcome: .error(error), totalTokenUsage: nil)
 
         let job = try await mockStore.job(id: jobID)
         XCTAssertEqual(job?.status, .failed)
@@ -254,7 +254,7 @@ final class AgentJobRecorderTests: XCTestCase {
         let result = [AgentToolResult(toolCallId: "tc-1", content: "ok", isError: false)]
         await recorder.agentDidCompleteStep(AgentStep(stepIndex: 0, assistantMessage: msg, toolResults: result, durationMs: 100))
 
-        await recorder.agentDidFinish(outcome: .text("Done"))
+        await recorder.agentDidFinish(outcome: .text("Done"), totalTokenUsage: nil)
 
         let job = try await mockStore.job(id: jobID)
         XCTAssertEqual(job?.steps.count, 1)
@@ -280,7 +280,7 @@ final class AgentJobRecorderTests: XCTestCase {
 
     func testFinishWithInvalidJSON() async throws {
         await recorder.beginJob(userPrompt: "Test", selectedText: nil)
-        await recorder.agentDidFinish(outcome: .terminationTool(name: "answer_text", argumentsJSON: "not json"))
+        await recorder.agentDidFinish(outcome: .terminationTool(name: "answer_text", argumentsJSON: "not json"), totalTokenUsage: nil)
 
         let job = try await mockStore.job(id: jobID)
         XCTAssertEqual(job?.status, .completed)
@@ -289,7 +289,7 @@ final class AgentJobRecorderTests: XCTestCase {
 
     func testFinishWithMissingFieldInJSON() async throws {
         await recorder.beginJob(userPrompt: "Test", selectedText: nil)
-        await recorder.agentDidFinish(outcome: .terminationTool(name: "answer_text", argumentsJSON: #"{"other":"value"}"#))
+        await recorder.agentDidFinish(outcome: .terminationTool(name: "answer_text", argumentsJSON: #"{"other":"value"}"#), totalTokenUsage: nil)
 
         let job = try await mockStore.job(id: jobID)
         XCTAssertNil(job?.resultText)
@@ -297,9 +297,48 @@ final class AgentJobRecorderTests: XCTestCase {
 
     func testFinishWithNonStringFieldInJSON() async throws {
         await recorder.beginJob(userPrompt: "Test", selectedText: nil)
-        await recorder.agentDidFinish(outcome: .terminationTool(name: "answer_text", argumentsJSON: #"{"answer":42}"#))
+        await recorder.agentDidFinish(outcome: .terminationTool(name: "answer_text", argumentsJSON: #"{"answer":42}"#), totalTokenUsage: nil)
 
         let job = try await mockStore.job(id: jobID)
         XCTAssertNil(job?.resultText)
+    }
+
+    // MARK: - Token usage
+
+    func testTokenUsageStoredPerStep() async throws {
+        await recorder.beginJob(userPrompt: "Test", selectedText: nil)
+
+        let msg = AgentAssistantMessage(text: nil, toolCalls: [
+            AgentToolCall(id: "tc-1", name: "search", argumentsJSON: "{}")
+        ])
+        let results = [AgentToolResult(toolCallId: "tc-1", content: "ok", isError: false)]
+        let usage = LLMTokenUsage(promptTokens: 100, completionTokens: 50, totalTokens: 150)
+        let step = AgentStep(stepIndex: 0, assistantMessage: msg, toolResults: results, durationMs: 200, tokenUsage: usage)
+
+        await recorder.agentDidCompleteStep(step)
+
+        let job = try await mockStore.job(id: jobID)
+        XCTAssertEqual(job?.steps[0].tokenUsage?.totalTokens, 150)
+        XCTAssertEqual(job?.steps[0].tokenUsage?.promptTokens, 100)
+        XCTAssertEqual(job?.steps[0].tokenUsage?.completionTokens, 50)
+    }
+
+    func testTotalTokenUsageStoredOnFinish() async throws {
+        await recorder.beginJob(userPrompt: "Test", selectedText: nil)
+        let totalUsage = LLMTokenUsage(promptTokens: 300, completionTokens: 130, totalTokens: 430)
+        await recorder.agentDidFinish(outcome: .text("Done"), totalTokenUsage: totalUsage)
+
+        let job = try await mockStore.job(id: jobID)
+        XCTAssertEqual(job?.totalTokenUsage?.totalTokens, 430)
+        XCTAssertEqual(job?.totalTokenUsage?.promptTokens, 300)
+        XCTAssertEqual(job?.totalTokenUsage?.completionTokens, 130)
+    }
+
+    func testNilTokenUsagePreserved() async throws {
+        await recorder.beginJob(userPrompt: "Test", selectedText: nil)
+        await recorder.agentDidFinish(outcome: .text("Done"), totalTokenUsage: nil)
+
+        let job = try await mockStore.job(id: jobID)
+        XCTAssertNil(job?.totalTokenUsage)
     }
 }

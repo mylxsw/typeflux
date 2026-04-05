@@ -14,13 +14,41 @@ struct AgentJobStep: Codable, Sendable, Identifiable {
     let toolCalls: [AgentJobToolCall]
     let assistantText: String?
     let durationMs: Int64
+    let tokenUsage: LLMTokenUsage?
 
-    init(stepIndex: Int, toolCalls: [AgentJobToolCall], assistantText: String?, durationMs: Int64) {
+    init(
+        stepIndex: Int,
+        toolCalls: [AgentJobToolCall],
+        assistantText: String?,
+        durationMs: Int64,
+        tokenUsage: LLMTokenUsage? = nil
+    ) {
         self.id = "\(stepIndex)"
         self.stepIndex = stepIndex
         self.toolCalls = toolCalls
         self.assistantText = assistantText
         self.durationMs = durationMs
+        self.tokenUsage = tokenUsage
+    }
+
+    /// Human-readable description of what this step did.
+    var stepDescription: String {
+        if toolCalls.isEmpty {
+            return assistantText != nil ? "Generating response" : "Processing"
+        }
+        if toolCalls.count == 1 {
+            return toolCalls[0].name.replacingOccurrences(of: "_", with: " ").capitalized
+        }
+        let names = toolCalls.map { $0.name }.joined(separator: ", ")
+        return "\(toolCalls.count) tools: \(names)"
+    }
+
+    /// Formatted duration: shows ms for under 1 s, seconds otherwise.
+    var formattedDuration: String {
+        if durationMs < 1000 {
+            return "\(durationMs)ms"
+        }
+        return String(format: "%.1fs", Double(durationMs) / 1000.0)
     }
 }
 
@@ -47,6 +75,7 @@ struct AgentJob: Codable, Sendable, Identifiable {
     var steps: [AgentJobStep]
     var totalDurationMs: Int64?
     var outcomeType: String?
+    var totalTokenUsage: LLMTokenUsage?
 
     init(
         id: UUID = UUID(),
@@ -60,7 +89,8 @@ struct AgentJob: Codable, Sendable, Identifiable {
         errorMessage: String? = nil,
         steps: [AgentJobStep] = [],
         totalDurationMs: Int64? = nil,
-        outcomeType: String? = nil
+        outcomeType: String? = nil,
+        totalTokenUsage: LLMTokenUsage? = nil
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -74,6 +104,7 @@ struct AgentJob: Codable, Sendable, Identifiable {
         self.steps = steps
         self.totalDurationMs = totalDurationMs
         self.outcomeType = outcomeType
+        self.totalTokenUsage = totalTokenUsage
     }
 
     /// Display title: generated title or truncated user prompt.
@@ -103,5 +134,18 @@ struct AgentJob: Codable, Sendable, Identifiable {
         }
         let seconds = Double(ms) / 1000.0
         return String(format: "%.1fs", seconds)
+    }
+
+    /// Formatted total token count for display.
+    var formattedTotalTokens: String? {
+        guard let usage = totalTokenUsage, usage.totalTokens > 0 else { return nil }
+        let total = usage.totalTokens
+        if total >= 1_000_000 {
+            return String(format: "%.1fM tokens", Double(total) / 1_000_000.0)
+        }
+        if total >= 1000 {
+            return String(format: "%.1fK tokens", Double(total) / 1000.0)
+        }
+        return "\(total) tokens"
     }
 }

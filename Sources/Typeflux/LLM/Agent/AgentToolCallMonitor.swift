@@ -18,14 +18,29 @@ struct AgentStep: Sendable {
     let assistantMessage: AgentAssistantMessage
     let toolResults: [AgentToolResult]
     let durationMs: Int64
+    let tokenUsage: LLMTokenUsage?
+
+    init(
+        stepIndex: Int,
+        assistantMessage: AgentAssistantMessage,
+        toolResults: [AgentToolResult],
+        durationMs: Int64,
+        tokenUsage: LLMTokenUsage? = nil
+    ) {
+        self.stepIndex = stepIndex
+        self.assistantMessage = assistantMessage
+        self.toolResults = toolResults
+        self.durationMs = durationMs
+        self.tokenUsage = tokenUsage
+    }
 }
 
 /// 步骤监控器协议
 protocol AgentStepMonitor: AnyObject, Sendable {
     /// 每一步执行完成后调用
     func agentDidCompleteStep(_ step: AgentStep) async
-    /// Agent 完成后调用
-    func agentDidFinish(outcome: AgentOutcome) async
+    /// Agent 完成后调用，totalTokenUsage 为全程累计 token 用量
+    func agentDidFinish(outcome: AgentOutcome, totalTokenUsage: LLMTokenUsage?) async
 }
 
 /// 用于 UI 展示的实时状态
@@ -40,19 +55,21 @@ struct AgentRealtimeState: Sendable {
 final class AgentStepLogger: AgentStepMonitor {
     func agentDidCompleteStep(_ step: AgentStep) async {
         let toolNames = step.assistantMessage.toolCalls.map(\.name).joined(separator: ", ")
-        print("[AgentStepLogger] Step \(step.stepIndex): tools=[\(toolNames)], duration=\(step.durationMs)ms")
+        let tokenInfo = step.tokenUsage.map { " tokens=\($0.totalTokens)" } ?? ""
+        print("[AgentStepLogger] Step \(step.stepIndex): tools=[\(toolNames)], duration=\(step.durationMs)ms\(tokenInfo)")
     }
 
-    func agentDidFinish(outcome: AgentOutcome) async {
+    func agentDidFinish(outcome: AgentOutcome, totalTokenUsage: LLMTokenUsage?) async {
+        let tokenInfo = totalTokenUsage.map { " totalTokens=\($0.totalTokens)" } ?? ""
         switch outcome {
         case .text(let text):
-            print("[AgentStepLogger] Finished with text: \(text.prefix(80))")
+            print("[AgentStepLogger] Finished with text: \(text.prefix(80))\(tokenInfo)")
         case .terminationTool(let name, _):
-            print("[AgentStepLogger] Finished with termination tool: \(name)")
+            print("[AgentStepLogger] Finished with termination tool: \(name)\(tokenInfo)")
         case .maxStepsReached:
-            print("[AgentStepLogger] Finished: max steps reached")
+            print("[AgentStepLogger] Finished: max steps reached\(tokenInfo)")
         case .error(let error):
-            print("[AgentStepLogger] Finished with error: \(error)")
+            print("[AgentStepLogger] Finished with error: \(error)\(tokenInfo)")
         }
     }
 }

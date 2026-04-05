@@ -5,19 +5,21 @@ import XCTest
 
 final class MockLLMMultiTurnService: LLMMultiTurnService, @unchecked Sendable {
     var turns: [AgentTurn] = []
+    var tokenUsagePerTurn: [LLMTokenUsage?] = []
     private var callCount = 0
 
     func complete(
         messages: [AgentMessage],
         tools: [LLMAgentTool],
         config: LLMCallConfig
-    ) async throws -> AgentTurn {
+    ) async throws -> AgentTurnResult {
         guard callCount < turns.count else {
-            return .text("fallback")
+            return AgentTurnResult(turn: .text("fallback"), tokenUsage: nil)
         }
         let turn = turns[callCount]
+        let usage = callCount < tokenUsagePerTurn.count ? tokenUsagePerTurn[callCount] : nil
         callCount += 1
-        return turn
+        return AgentTurnResult(turn: turn, tokenUsage: usage)
     }
 
     var totalCalls: Int { callCount }
@@ -199,6 +201,51 @@ final class AgentLoopTests: XCTestCase {
         XCTAssertNotNil(monitor.finishedOutcome)
     }
 
+    func testTokenUsageAccumulatesAcrossSteps() async throws {
+        let mockLLM = MockLLMMultiTurnService()
+        let clipboard = MockClipboardService()
+        clipboard.storedText = "data"
+
+        mockLLM.turns = [
+            .toolCalls([AgentToolCall(id: "c1", name: "get_clipboard", argumentsJSON: "{}")]),
+            .toolCalls([AgentToolCall(id: "a1", name: "answer_text", argumentsJSON: #"{"answer":"done"}"#)]),
+        ]
+        mockLLM.tokenUsagePerTurn = [
+            LLMTokenUsage(promptTokens: 100, completionTokens: 50, totalTokens: 150),
+            LLMTokenUsage(promptTokens: 200, completionTokens: 80, totalTokens: 280),
+        ]
+
+        let registry = AgentToolRegistry()
+        await registry.register(GetClipboardTool(clipboardService: clipboard))
+        await registry.register(AnswerTextTool())
+
+        let monitor = MockAgentStepMonitor()
+        let loop = AgentLoop(llmService: mockLLM, toolRegistry: registry, config: .default)
+        await loop.setStepMonitor(monitor)
+
+        let result = try await loop.run(messages: [.system("sys"), .user("user")])
+
+        XCTAssertEqual(result.totalTokenUsage?.promptTokens, 300)
+        XCTAssertEqual(result.totalTokenUsage?.completionTokens, 130)
+        XCTAssertEqual(result.totalTokenUsage?.totalTokens, 430)
+        XCTAssertEqual(monitor.finishedTotalTokenUsage?.totalTokens, 430)
+
+        // Per-step token usage
+        XCTAssertEqual(result.steps[0].tokenUsage?.totalTokens, 150)
+        XCTAssertEqual(result.steps[1].tokenUsage?.totalTokens, 280)
+    }
+
+    func testTokenUsageNilWhenNotProvided() async throws {
+        let mockLLM = MockLLMMultiTurnService()
+        mockLLM.turns = [.text("hello")]
+
+        let registry = AgentToolRegistry()
+        let loop = AgentLoop(llmService: mockLLM, toolRegistry: registry, config: .default)
+
+        let result = try await loop.run(messages: [.user("hi")])
+        XCTAssertNil(result.totalTokenUsage)
+    }
+
     func testAgentResultAnswerText() throws {
         let result = AgentResult(
             outcome: .terminationTool(name: "answer_text", argumentsJSON: #"{"answer":"Hello"}"#),
@@ -290,13 +337,15 @@ final class AgentLoopTests: XCTestCase {
 final class MockAgentStepMonitor: AgentStepMonitor, @unchecked Sendable {
     var completedSteps: [AgentStep] = []
     var finishedOutcome: AgentOutcome?
+    var finishedTotalTokenUsage: LLMTokenUsage?
 
     func agentDidCompleteStep(_ step: AgentStep) async {
         completedSteps.append(step)
     }
 
-    func agentDidFinish(outcome: AgentOutcome) async {
+    func agentDidFinish(outcome: AgentOutcome, totalTokenUsage: LLMTokenUsage?) async {
         finishedOutcome = outcome
+        finishedTotalTokenUsage = totalTokenUsage
     }
 }
 

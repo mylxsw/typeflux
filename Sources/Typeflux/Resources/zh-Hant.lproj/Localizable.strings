@@ -678,3 +678,5 @@
 "agent.jobs.detail.result" = "結果";
 "agent.jobs.detail.error" = "錯誤";
 "agent.jobs.detail.stepNumber" = "步驟 %d";
+"agent.jobs.detail.reasoning" = "推理過程";
+"agent.jobs.detail.stepTokens" = "%d tokens";

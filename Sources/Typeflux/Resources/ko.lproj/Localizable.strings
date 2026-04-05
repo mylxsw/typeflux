@@ -678,3 +678,5 @@
 "agent.jobs.detail.result" = "결과";
 "agent.jobs.detail.error" = "오류";
 "agent.jobs.detail.stepNumber" = "단계 %d";
+"agent.jobs.detail.reasoning" = "추론 과정";
+"agent.jobs.detail.stepTokens" = "%d 토큰";

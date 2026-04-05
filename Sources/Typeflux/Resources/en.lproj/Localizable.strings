@@ -678,3 +678,5 @@
 "agent.jobs.detail.result" = "RESULT";
 "agent.jobs.detail.error" = "ERROR";
 "agent.jobs.detail.stepNumber" = "Step %d";
+"agent.jobs.detail.reasoning" = "REASONING";
+"agent.jobs.detail.stepTokens" = "%d tokens";
