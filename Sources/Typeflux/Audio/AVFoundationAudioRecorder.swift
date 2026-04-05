@@ -2,24 +2,32 @@ import AVFoundation
 import Foundation
 
 final class AVFoundationAudioRecorder: AudioRecorder {
+    private static let outputMuteDelay: Duration = .milliseconds(180)
+
     private let engine = AVAudioEngine()
     private let settingsStore: SettingsStore
     private let audioDeviceManager: AudioDeviceManager
-    private let outputMuter: SystemAudioOutputMuter
+    private let outputMuter: SystemAudioOutputMuting
+    private let sleep: @Sendable (Duration) async -> Void
     private var audioFile: AVAudioFile?
     private var startedAt: Date?
     private var levelHandler: ((Float) -> Void)?
     private var audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
+    private var muteTask: Task<Void, Never>?
     private var isRecording = false
 
     init(
         settingsStore: SettingsStore,
         audioDeviceManager: AudioDeviceManager = AudioDeviceManager(),
-        outputMuter: SystemAudioOutputMuter = SystemAudioOutputMuter()
+        outputMuter: SystemAudioOutputMuting = SystemAudioOutputMuter(),
+        sleep: @escaping @Sendable (Duration) async -> Void = { duration in
+            try? await Task.sleep(for: duration)
+        }
     ) {
         self.settingsStore = settingsStore
         self.audioDeviceManager = audioDeviceManager
         self.outputMuter = outputMuter
+        self.sleep = sleep
     }
 
     func start(
@@ -59,7 +67,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         engine.prepare()
         try engine.start()
         if settingsStore.muteSystemOutputDuringRecording {
-            outputMuter.beginMutedSession()
+            scheduleMutedSessionStart()
         }
         isRecording = true
     }
@@ -80,6 +88,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         self.levelHandler = nil
         self.audioBufferHandler = nil
         self.isRecording = false
+        muteTask?.cancel()
+        muteTask = nil
         outputMuter.endMutedSession()
 
         return AudioFile(fileURL: fileURL, duration: duration)
@@ -95,8 +105,34 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         levelHandler = nil
         audioBufferHandler = nil
         isRecording = false
+        muteTask?.cancel()
+        muteTask = nil
         outputMuter.endMutedSession()
     }
+
+    private func scheduleMutedSessionStart() {
+        muteTask?.cancel()
+        muteTask = Task { [weak self] in
+            guard let self else { return }
+            await self.sleep(Self.outputMuteDelay)
+            guard !Task.isCancelled, self.isRecording else { return }
+            self.outputMuter.beginMutedSession()
+        }
+    }
+
+#if DEBUG
+    func beginMutedSessionAfterDelayForTesting() {
+        isRecording = true
+        scheduleMutedSessionStart()
+    }
+
+    func cancelMutedSessionForTesting() {
+        isRecording = false
+        muteTask?.cancel()
+        muteTask = nil
+        outputMuter.endMutedSession()
+    }
+#endif
 
     private func configureInputDeviceIfNeeded(for inputNode: AVAudioInputNode) throws {
         let preferredID = settingsStore.preferredMicrophoneID

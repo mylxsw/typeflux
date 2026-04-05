@@ -1,7 +1,12 @@
 import CoreAudio
 import Foundation
 
-final class SystemAudioOutputMuter {
+protocol SystemAudioOutputMuting: AnyObject {
+    func beginMutedSession()
+    func endMutedSession()
+}
+
+final class SystemAudioOutputMuter: SystemAudioOutputMuting {
     private struct State {
         let deviceID: AudioDeviceID
         let wasMuted: UInt32
