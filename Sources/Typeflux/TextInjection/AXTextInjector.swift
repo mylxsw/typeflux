@@ -95,8 +95,8 @@ final class AXTextInjector: TextInjector {
     }
 
     static var didRequestAccessibility = false
-    static let legacyPasteRestoreDelayNanoseconds: UInt64 = 500_000_000
-    static let verifiedPasteRestoreDelayNanoseconds: UInt64 = 1_500_000_000
+    static let legacyPasteRestoreDelayNanoseconds: UInt64 = 150_000_000
+    static let verifiedPasteRestoreDelayNanoseconds: UInt64 = 150_000_000
     static let pasteVerificationPollIntervalMicroseconds: useconds_t = 120_000
     static let pasteVerificationAttempts = 4
     static let axWriteVerificationPollIntervalMicroseconds: useconds_t = 120_000
