@@ -21,7 +21,10 @@ struct TextSelectionSnapshot {
     }
 
     var canReplaceSelection: Bool {
-        hasAskSelectionContext && isEditable
+        hasAskSelectionContext && (
+            isEditable ||
+                source == "clipboard-copy"
+        )
     }
 
     var canSafelyRestoreSelection: Bool {

@@ -655,9 +655,17 @@ final class WorkflowController {
         selectedText: String?,
         spokenInstruction: String,
         personaPrompt: String?,
-        editableTarget: Bool,
+        editableTarget: Bool?,
         sessionID: UUID,
     ) async throws -> AskSelectionDecisionResult {
+        NetworkDebugLogger.logMessage(
+            """
+            [Ask Decision] request
+            editableTarget: \(editableTarget.map { $0 ? "true" : "false" } ?? "<unknown>")
+            selectedTextLength: \(selectedText?.count ?? 0)
+            spokenInstruction: \(spokenInstruction)
+            """
+        )
         let prompts = PromptCatalog.askSelectionDecisionPrompts(
             selectedText: selectedText,
             spokenInstruction: spokenInstruction,
@@ -694,7 +702,7 @@ final class WorkflowController {
             )
         }
 
-        let normalizedDecision: AskSelectionDecision = if !editableTarget, decision.answerEdit == .edit {
+        let normalizedDecision: AskSelectionDecision = if editableTarget == false, decision.answerEdit == .edit {
             AskSelectionDecision(
                 answerEdit: .answer,
                 content: decision.content,
@@ -702,6 +710,16 @@ final class WorkflowController {
         } else {
             decision
         }
+
+        NetworkDebugLogger.logMessage(
+            """
+            [Ask Decision] response
+            requestedEditableTarget: \(editableTarget.map { $0 ? "true" : "false" } ?? "<unknown>")
+            modelDecision: \(decision.answerEdit.rawValue)
+            normalizedDecision: \(normalizedDecision.answerEdit.rawValue)
+            contentPreview: \(String(normalizedDecision.trimmedContent.prefix(120)))
+            """
+        )
 
         return AskSelectionDecisionResult(decision: normalizedDecision, completedAt: Date())
     }
@@ -1094,6 +1112,14 @@ final class WorkflowController {
             }
 
             if isAskSelectionFlow, let askContextText, !askContextText.isEmpty {
+                NetworkDebugLogger.logMessage(
+                    """
+                    [Ask Flow] selected-text context
+                    snapshot: \(askSelectionSnapshotSummary(selectionSnapshot))
+                    selectedTextLength: \(askContextText.count)
+                    instruction: \(transcribedText)
+                    """
+                )
                 record.processingStatus = .running
                 saveHistoryRecord(record)
 
@@ -1174,7 +1200,7 @@ final class WorkflowController {
                         selectedText: askContextText,
                         spokenInstruction: transcribedText,
                         personaPrompt: personaPrompt,
-                        editableTarget: selectionSnapshot.isEditable,
+                        editableTarget: askEditableTargetContext(for: selectionSnapshot),
                         sessionID: sessionID,
                     )
                     try await applyLegacyAskDecision(
@@ -1188,6 +1214,13 @@ final class WorkflowController {
                     )
                 }
             } else if recordingIntent == .askSelection {
+                NetworkDebugLogger.logMessage(
+                    """
+                    [Ask Flow] no selected-text context
+                    snapshot: \(askSelectionSnapshotSummary(selectionSnapshot))
+                    instruction: \(transcribedText)
+                    """
+                )
                 record.processingStatus = .running
                 saveHistoryRecord(record)
 
@@ -1239,7 +1272,7 @@ final class WorkflowController {
                         selectedText: askContextText,
                         spokenInstruction: transcribedText,
                         personaPrompt: personaPrompt,
-                        editableTarget: selectionSnapshot.isEditable,
+                        editableTarget: askEditableTargetContext(for: selectionSnapshot),
                         sessionID: sessionID,
                     )
                     try await applyLegacyAskDecision(
@@ -1608,6 +1641,26 @@ final class WorkflowController {
 
     private func shouldPresentResultDialog(for snapshot: TextSelectionSnapshot) -> Bool {
         WorkflowOverlayPresentationPolicy.shouldPresentResultDialog(for: snapshot)
+    }
+
+    private func askEditableTargetContext(for snapshot: TextSelectionSnapshot) -> Bool? {
+        if snapshot.isEditable {
+            return true
+        }
+
+        if snapshot.source == "clipboard-copy", snapshot.hasAskSelectionContext {
+            return nil
+        }
+
+        return false
+    }
+
+    private func askSelectionSnapshotSummary(_ snapshot: TextSelectionSnapshot) -> String {
+        let rangeDescription = snapshot.selectedRange.map { "[\($0.location),\($0.length)]" } ?? "<none>"
+        return "source=\(snapshot.source) focused=\(snapshot.isFocusedTarget) editable=\(snapshot.isEditable) " +
+            "hasSelection=\(snapshot.hasSelection) canReplace=\(snapshot.canReplaceSelection) " +
+            "canSafelyRestore=\(snapshot.canSafelyRestoreSelection) range=\(rangeDescription) " +
+            "window=\(snapshot.windowTitle ?? "<unknown>")"
     }
 
     private func editingSelectedText(from snapshot: TextSelectionSnapshot) -> String? {

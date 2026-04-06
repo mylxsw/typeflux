@@ -4,6 +4,58 @@ import Foundation
 import os
 
 final class AXTextInjector: TextInjector {
+    private static let nativeEditableRoles: Set<String> = [
+        "AXTextArea",
+        "AXTextField",
+        "AXComboBox",
+        "AXSearchField",
+    ]
+
+    private static let genericEditableRoles: Set<String> = [
+        "AXGroup",
+        "AXWebArea",
+        "AXUnknown",
+    ]
+
+    private static let nonEditableFalsePositiveRoles: Set<String> = [
+        "AXButton",
+        "AXCheckBox",
+        "AXCloseButton",
+        "AXColorWell",
+        "AXColumn",
+        "AXDisclosureTriangle",
+        "AXDrawer",
+        "AXGrid",
+        "AXImage",
+        "AXIncrementor",
+        "AXLayoutArea",
+        "AXLevelIndicator",
+        "AXLink",
+        "AXList",
+        "AXMenuBar",
+        "AXMenuBarItem",
+        "AXMenuButton",
+        "AXOutline",
+        "AXPopUpButton",
+        "AXProgressIndicator",
+        "AXRadioButton",
+        "AXRow",
+        "AXRuler",
+        "AXScrollArea",
+        "AXScrollBar",
+        "AXSheet",
+        "AXSlider",
+        "AXSplitGroup",
+        "AXSplitter",
+        "AXStaticText",
+        "AXSwitch",
+        "AXTabGroup",
+        "AXTable",
+        "AXToolbar",
+        "AXValueIndicator",
+        "AXWindow",
+    ]
+
     struct FocusResolutionCandidate: Equatable {
         let role: String?
         let isEditable: Bool
@@ -63,6 +115,16 @@ final class AXTextInjector: TextInjector {
         case indeterminate
     }
 
+    static func shouldAllowClipboardSelectionReplacementWithoutAXBaseline(
+        replaceSelection: Bool,
+        selectionSource: String?,
+        focusMatched: Bool,
+        baselineAvailable: Bool
+    ) -> Bool {
+        guard replaceSelection, !baselineAvailable else { return false }
+        return selectionSource == "clipboard-copy" && focusMatched
+    }
+
     static func shouldPreferEditableDescendant(
         overWindowRole role: String?,
         candidate: FocusResolutionCandidate?
@@ -70,13 +132,15 @@ final class AXTextInjector: TextInjector {
         guard role == "AXWindow", let candidate else { return false }
         guard candidate.isEditable else { return false }
         guard candidate.isFocused != true else { return false }
+        guard editableCandidateScore(for: candidate) > 0 else { return false }
 
         if let selectedRange = candidate.selectedRange {
             return selectedRange.location >= 0 && selectedRange.length >= 0
         }
 
         // Fallback for editable descendants that expose editability but omit selection range.
-        return candidate.role == "AXTextArea" || candidate.role == "AXTextField" || candidate.role == "AXGroup"
+        return Self.nativeEditableRoles.contains(candidate.role ?? "")
+            || Self.genericEditableRoles.contains(candidate.role ?? "")
     }
 
     static func shouldTreatAXValueAsUnreadable(
@@ -84,21 +148,46 @@ final class AXTextInjector: TextInjector {
         value: String,
         selectedRange: CFRange?
     ) -> Bool {
-        let nativeTextRoles: Set<String> = [
-            "AXTextArea",
-            "AXTextField",
-            "AXComboBox",
-            "AXSearchField",
-        ]
-
         let normalizedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedValue.isEmpty else { return false }
-        guard !nativeTextRoles.contains(role ?? "") else { return false }
+        guard !Self.nativeEditableRoles.contains(role ?? "") else { return false }
 
         // Generic AX containers in web/electron apps often expose an empty AXValue even when
         // the actual editor content is not readable through accessibility APIs. Treat those as
         // unreadable so verification does not incorrectly conclude that the text is unchanged.
         return selectedRange != nil || role == "AXGroup" || role == "AXWebArea" || role == "AXUnknown"
+    }
+
+    static func editableCandidateScore(for candidate: FocusResolutionCandidate) -> Int {
+        guard candidate.isEditable else { return 0 }
+
+        let role = candidate.role ?? "AXUnknown"
+        if nonEditableFalsePositiveRoles.contains(role) {
+            return 0
+        }
+
+        var score = 1
+
+        if nativeEditableRoles.contains(role) {
+            score += 5
+        } else if genericEditableRoles.contains(role) {
+            score += 3
+        } else {
+            return 0
+        }
+
+        if let selectedRange = candidate.selectedRange,
+           selectedRange.location >= 0,
+           selectedRange.length >= 0
+        {
+            score += 4
+        }
+
+        if candidate.isFocused == true {
+            score += 2
+        }
+
+        return score
     }
 
     init(settingsStore: SettingsStore? = nil) {
@@ -382,30 +471,32 @@ final class AXTextInjector: TextInjector {
         guard depthRemaining >= 0 else { return nil }
 
         let children = copyElementArrayAttribute(kAXChildrenAttribute as String, from: element)
+        var bestElement: AXUIElement?
+        var bestScore = 0
 
         for child in children {
             let candidate = focusResolutionCandidate(for: child)
-            if candidate.isEditable, candidate.selectedRange != nil {
-                return child
+            let score = Self.editableCandidateScore(for: candidate)
+            if score > bestScore {
+                bestScore = score
+                bestElement = child
+            }
+
+            guard depthRemaining > 0,
+                  let nested = findBestEditableDescendant(in: child, depthRemaining: depthRemaining - 1)
+            else {
+                continue
+            }
+
+            let nestedCandidate = focusResolutionCandidate(for: nested)
+            let nestedScore = Self.editableCandidateScore(for: nestedCandidate)
+            if nestedScore > bestScore {
+                bestScore = nestedScore
+                bestElement = nested
             }
         }
 
-        for child in children {
-            let candidate = focusResolutionCandidate(for: child)
-            if candidate.isEditable {
-                return child
-            }
-        }
-
-        guard depthRemaining > 0 else { return nil }
-
-        for child in children {
-            if let nested = findBestEditableDescendant(in: child, depthRemaining: depthRemaining - 1) {
-                return nested
-            }
-        }
-
-        return nil
+        return bestElement
     }
 
     private func logFocusResolution(context: String, rootElement: AXUIElement, resolvedElement: AXUIElement?) {
@@ -465,13 +556,7 @@ final class AXTextInjector: TextInjector {
         }
 
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
-        let nativeTextRoles: Set = [
-            "AXTextArea",
-            "AXTextField",
-            "AXComboBox",
-            "AXSearchField",
-        ]
-        let isNativeText = role != nil && nativeTextRoles.contains(role!)
+        let isNativeText = Self.nativeEditableRoles.contains(role ?? "")
 
         let isSettable = isAttributeSettable(kAXSelectedTextRangeAttribute as CFString, on: element)
             || isAttributeSettable(kAXValueAttribute as CFString, on: element)
@@ -541,19 +626,25 @@ final class AXTextInjector: TextInjector {
 
     private func isLikelyEditable(element: AXUIElement) -> Bool {
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
-        let nativeTextRoles: Set = [
-            "AXTextArea",
-            "AXTextField",
-            "AXComboBox",
-            "AXSearchField",
-        ]
-        if let role, nativeTextRoles.contains(role) {
+        let selectedRange = copySelectedTextRange(from: element)
+
+        if Self.nativeEditableRoles.contains(role ?? "") {
             return true
         }
 
-        return isAttributeSettable(kAXSelectedTextRangeAttribute as CFString, on: element)
+        if let role, Self.nonEditableFalsePositiveRoles.contains(role) {
+            return false
+        }
+
+        let hasSettableTextAttributes = isAttributeSettable(kAXSelectedTextRangeAttribute as CFString, on: element)
             || isAttributeSettable(kAXValueAttribute as CFString, on: element)
             || isAttributeSettable(kAXSelectedTextAttribute as CFString, on: element)
+
+        if Self.genericEditableRoles.contains(role ?? "") {
+            return selectedRange != nil || hasSettableTextAttributes
+        }
+
+        return selectedRange != nil && hasSettableTextAttributes
     }
 
     private func setText(_ text: String, replaceSelection: Bool) throws {
@@ -719,8 +810,9 @@ final class AXTextInjector: TextInjector {
         let targetPID: pid_t?
         let beforeSnapshot: CurrentInputTextSnapshot?
         let strictFallbackEnabled = settingsStore?.strictEditApplyFallbackEnabled ?? false
+        let replacementContext = replaceSelection ? activeSelectionContext() : nil
 
-        if replaceSelection, let context = activeSelectionContext() {
+        if let context = replacementContext {
             targetPID = context.processID
             if !contextAlreadyRestored {
                 restoreSelectionContext(context)
@@ -731,6 +823,12 @@ final class AXTextInjector: TextInjector {
 
         let initialSnapshot = readCurrentInputTextSnapshot()
         beforeSnapshot = initialSnapshot.isEditable ? initialSnapshot : nil
+        let allowClipboardSelectionReplacementWithoutAXBaseline = Self.shouldAllowClipboardSelectionReplacementWithoutAXBaseline(
+            replaceSelection: replaceSelection,
+            selectionSource: replacementContext?.source,
+            focusMatched: replacementContext?.isFocusedTarget ?? false,
+            baselineAvailable: beforeSnapshot != nil,
+        )
         NetworkDebugLogger.logMessage(
             """
             [Text Injection] paste start
@@ -740,10 +838,11 @@ final class AXTextInjector: TextInjector {
             contextAlreadyRestored: \(contextAlreadyRestored)
             initialSnapshot: \(snapshotSummary(initialSnapshot))
             verificationBaseline: \(beforeSnapshot.map(snapshotSummary) ?? "<nil>")
+            allowClipboardSelectionReplacementWithoutAXBaseline: \(allowClipboardSelectionReplacementWithoutAXBaseline)
             """
         )
 
-        if replaceSelection, strictFallbackEnabled, beforeSnapshot == nil {
+        if replaceSelection, strictFallbackEnabled, beforeSnapshot == nil, !allowClipboardSelectionReplacementWithoutAXBaseline {
             NetworkDebugLogger.logMessage("[Text Injection] paste aborted because replacement target is not verifiable")
             throw NSError(
                 domain: "AXTextInjector",
@@ -770,6 +869,17 @@ final class AXTextInjector: TextInjector {
         } else {
             vDown?.post(tap: .cghidEventTap)
             vUp?.post(tap: .cghidEventTap)
+        }
+
+        if allowClipboardSelectionReplacementWithoutAXBaseline {
+            NetworkDebugLogger.logMessage(
+                "[Text Injection] paste verification skipped because clipboard-backed selection cannot provide AX baseline",
+            )
+            restorePasteboardAfterPaste(
+                previousSnapshot,
+                delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds,
+            )
+            return
         }
 
         guard strictFallbackEnabled else {
