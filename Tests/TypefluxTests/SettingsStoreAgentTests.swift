@@ -122,5 +122,4 @@ final class SettingsStoreAgentTests: XCTestCase {
         XCTAssertEqual(loaded[0].name, "server-a")
         XCTAssertEqual(loaded[1].name, "server-b")
     }
-
 }

@@ -42,5 +42,4 @@ extension SettingsStore {
             }
         }
     }
-
 }

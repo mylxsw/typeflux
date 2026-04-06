@@ -48,7 +48,7 @@ final class AgentPromptCatalogTests: XCTestCase {
     func testRouterUserPromptWithInstructionOnly() {
         let prompt = AgentPromptCatalog.routerUserPrompt(
             selectedText: nil,
-            instruction: "What is the weather?"
+            instruction: "What is the weather?",
         )
         XCTAssertTrue(prompt.contains("<spoken_request>\nWhat is the weather?\n</spoken_request>"))
         XCTAssertFalse(prompt.contains("<selected_text>"))
@@ -57,7 +57,7 @@ final class AgentPromptCatalogTests: XCTestCase {
     func testRouterUserPromptWithSelectedText() {
         let prompt = AgentPromptCatalog.routerUserPrompt(
             selectedText: "Hello, world!",
-            instruction: "Translate this"
+            instruction: "Translate this",
         )
         XCTAssertTrue(prompt.contains("<selected_text>\nHello, world!\n</selected_text>"))
         XCTAssertTrue(prompt.contains("<spoken_request>\nTranslate this\n</spoken_request>"))
@@ -66,7 +66,7 @@ final class AgentPromptCatalogTests: XCTestCase {
     func testRouterUserPromptWithEmptySelectedText() {
         let prompt = AgentPromptCatalog.routerUserPrompt(
             selectedText: "  ",
-            instruction: "Do something"
+            instruction: "Do something",
         )
         XCTAssertFalse(prompt.contains("<selected_text>"))
     }
@@ -117,7 +117,7 @@ final class AgentPromptCatalogTests: XCTestCase {
         let prompt = AgentPromptCatalog.agentUserPrompt(
             selectedText: nil,
             spokenInstruction: "What is the weather?",
-            detailedInstruction: "Provide the current weather."
+            detailedInstruction: "Provide the current weather.",
         )
         XCTAssertTrue(prompt.contains("<original_request>\nWhat is the weather?\n</original_request>"))
         XCTAssertTrue(prompt.contains("<task_instruction>\nProvide the current weather.\n</task_instruction>"))
@@ -128,7 +128,7 @@ final class AgentPromptCatalogTests: XCTestCase {
         let prompt = AgentPromptCatalog.agentUserPrompt(
             selectedText: "Hello, world!",
             spokenInstruction: "Translate this",
-            detailedInstruction: "Translate to French"
+            detailedInstruction: "Translate to French",
         )
         XCTAssertTrue(prompt.contains("<selected_text>\nHello, world!\n</selected_text>"))
         XCTAssertTrue(prompt.contains("<original_request>\nTranslate this\n</original_request>"))
@@ -139,7 +139,7 @@ final class AgentPromptCatalogTests: XCTestCase {
         let prompt = AgentPromptCatalog.agentUserPrompt(
             selectedText: "  ",
             spokenInstruction: "Do something",
-            detailedInstruction: "Detailed do something"
+            detailedInstruction: "Detailed do something",
         )
         XCTAssertFalse(prompt.contains("<selected_text>"))
     }

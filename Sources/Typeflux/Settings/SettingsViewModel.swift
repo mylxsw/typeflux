@@ -2,6 +2,7 @@ import AppKit
 import Foundation
 import SwiftUI
 
+// swiftlint:disable file_length
 enum ConnectionTestState: Equatable {
     case idle
     case testing
@@ -28,6 +29,7 @@ enum MCPConnectionTestState: Equatable {
 }
 
 @MainActor
+// swiftlint:disable:next type_body_length
 final class StudioViewModel: ObservableObject {
     private static let historyPageSize = 100
 
@@ -164,6 +166,7 @@ final class StudioViewModel: ObservableObject {
     private var sttTestTask: Task<Void, Never>?
     private var mcpTestTask: Task<Void, Never>?
 
+    // swiftlint:disable:next function_body_length
     init(
         settingsStore: SettingsStore,
         historyStore: HistoryStore,

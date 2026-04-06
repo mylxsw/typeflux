@@ -525,7 +525,7 @@ extension PromptCatalogTests {
 
     func testAskAgentSystemPromptIncludesPersonaPrompt() {
         let prompt = AgentPromptCatalog.routerSystemPrompt(
-            personaPrompt: "Be concise and direct"
+            personaPrompt: "Be concise and direct",
         )
         XCTAssertTrue(prompt.contains("Be concise and direct"))
     }
@@ -533,7 +533,7 @@ extension PromptCatalogTests {
     func testAskAgentUserPromptWithSelectedText() {
         let prompt = AgentPromptCatalog.routerUserPrompt(
             selectedText: "Hello world",
-            instruction: "Translate to French"
+            instruction: "Translate to French",
         )
         XCTAssertTrue(prompt.contains("Hello world"))
         XCTAssertTrue(prompt.contains("Translate to French"))

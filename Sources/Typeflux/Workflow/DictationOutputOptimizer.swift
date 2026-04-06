@@ -11,7 +11,7 @@ enum DictationOutputOptimizer {
 
         guard startTrimmedIndex <= endTrimmedIndex else { return text }
 
-        let trimmed = String(text[startTrimmedIndex...endTrimmedIndex])
+        let trimmed = String(text[startTrimmedIndex ... endTrimmedIndex])
         guard shouldRemoveTrailingPunctuation(from: trimmed) else { return text }
 
         let body = removingTrailingSentencePunctuation(from: trimmed)

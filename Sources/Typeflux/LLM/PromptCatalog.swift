@@ -1,5 +1,7 @@
 import Foundation
 
+// swiftlint:disable file_length function_body_length line_length
+// swiftlint:disable:next type_body_length
 enum PromptCatalog {
     private enum AskPromptMode {
         case decision
@@ -77,8 +79,14 @@ enum PromptCatalog {
             ? "You are a multimodal speech transcription and rewrite engine."
             : "You are a multimodal speech transcription engine."
         let taskInstruction = hasPersona
-            ? "First transcribe the provided audio faithfully, then rewrite that transcript according to <persona_definition> while preserving the original meaning, intent, and critical details."
-            : "Transcribe the provided audio faithfully and preserve the speaker's meaning, intent, wording, and natural phrasing."
+            ? """
+            First transcribe the provided audio faithfully, then rewrite that transcript according to \
+            <persona_definition> while preserving the original meaning, intent, and critical details.
+            """
+            : """
+            Transcribe the provided audio faithfully and preserve the speaker's meaning, intent, wording, \
+            and natural phrasing.
+            """
         let outputContract = hasPersona
             ? """
             - Return only the final rewritten text.
@@ -114,9 +122,13 @@ enum PromptCatalog {
             <fidelity_requirements>
             - Preserve all critical information from the speech, including names, numbers, dates, times, places, negations, requests, decisions, and action items.
             - Do not compress, generalize, or omit specific details just to sound cleaner or shorter.
-            - Preserve the speaker's speech act: if the user sounds like they are asking, instructing, reminding, confirming, correcting, or drafting a message, keep that intent explicit in the final text.
-            - For very short or fragmentary utterances, prefer a complete and faithful rendering of the likely intent over an overly terse rewrite.
-            - You may fix obvious recognition errors, punctuation, and casing, and you may add only the minimal connecting words needed to make a brief utterance usable, but do not add new facts, requests, or context.
+            - Preserve the speaker's speech act: if the user sounds like they are asking, instructing, reminding,
+              confirming, correcting, or drafting a message, keep that intent explicit in the final text.
+            - For very short or fragmentary utterances, prefer a complete and faithful rendering of the likely intent
+              over an overly terse rewrite.
+            - You may fix obvious recognition errors, punctuation, and casing, and you may add only the minimal
+              connecting words needed to make a brief utterance usable, but do not add new facts, requests, or
+              context.
             - When persona style conflicts with completeness or fidelity, preserve completeness and fidelity first.
             </fidelity_requirements>
             <output_contract>
@@ -218,7 +230,10 @@ enum PromptCatalog {
             """
             return (
                 system: """
-                You rewrite dictated text into polished final copy. Treat the transcript as source content that may contain recognition noise, but preserve the user's full intent and every critical detail. Follow the persona requirements exactly when provided, unless they would cause information loss or change the user's meaning. Return only the final text without explanations or quotation marks.
+                You rewrite dictated text into polished final copy. Treat the transcript as source content that may \
+                contain recognition noise, but preserve the user's full intent and every critical detail. Follow the \
+                persona requirements exactly when provided, unless they would cause information loss or change the \
+                user's meaning. Return only the final text without explanations or quotation marks.
 
                 User prompt structure:
                 - "<raw_transcript>" is the source content to rewrite.
@@ -232,7 +247,8 @@ enum PromptCatalog {
                 Rewrite requirements:
                 - Preserve all critical information, including names, numbers, dates, times, negations, commitments, requests, and action items.
                 - Keep the original speech act intact. Questions should stay questions, requests should stay requests, and draft messages should remain usable as messages.
-                - For very short transcripts, be especially careful not to over-compress. If needed, add only the minimal wording required to make the intent complete and clear.
+                - For very short transcripts, be especially careful not to over-compress. If needed, add only the \
+                  minimal wording required to make the intent complete and clear.
                 - Clean up recognition artifacts, punctuation, casing, and obvious filler if needed, but do not introduce new facts or remove meaningful details.
 
                 Return only the final text.
@@ -453,3 +469,5 @@ enum PromptCatalog {
         }
     }
 }
+
+// swiftlint:enable file_length function_body_length line_length

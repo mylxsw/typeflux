@@ -27,11 +27,11 @@ extension WorkflowController {
         automaticVocabularyObservationTask = Task { [weak self] in
             guard let self else { return }
 
-            let initialSnapshot = await self.textInjector.currentInputTextSnapshot()
+            let initialSnapshot = await textInjector.currentInputTextSnapshot()
             guard initialSnapshot.isEditable else {
-                self.logAutomaticVocabulary(
+                logAutomaticVocabulary(
                     "session aborted: context is not editable | "
-                        + self.describeCurrentInputTextSnapshot(initialSnapshot)
+                        + describeCurrentInputTextSnapshot(initialSnapshot),
                 )
                 return
             }
