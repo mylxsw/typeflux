@@ -1219,8 +1219,6 @@ struct StudioView: View {
                 agentGeneralTabContent
             case .mcpServers:
                 agentMCPServersTabContent
-            case .skills:
-                agentSkillsTabContent
             }
         }
     }
@@ -1272,60 +1270,6 @@ struct StudioView: View {
             ) {
                 viewModel.beginAddMCPServer()
                 isMCPServerDialogPresented = true
-            }
-        }
-    }
-
-    private var agentSkillsTabContent: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            if viewModel.agentSkills.isEmpty {
-                StudioCard {
-                    VStack(spacing: StudioTheme.Spacing.medium) {
-                        Image(systemName: "puzzlepiece.extension")
-                            .font(.system(size: 28, weight: .light))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                        Text(L("agent.skills.empty"))
-                            .font(.studioBody(StudioTheme.Typography.body, weight: .regular))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, StudioTheme.Spacing.large)
-                }
-            } else {
-                ForEach(viewModel.agentSkills) { skill in
-                    skillListCard(skill)
-                }
-            }
-        }
-    }
-
-    private func skillListCard(_ skill: AgentSkill) -> some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
-                HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                        HStack(spacing: StudioTheme.Spacing.small) {
-                            Text(skill.name)
-                                .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
-                                .foregroundStyle(StudioTheme.textPrimary)
-                            StudioPill(title: L("agent.skills.builtinBadge"))
-                        }
-                        Text(skill.description)
-                            .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .lineLimit(2)
-                    }
-
-                    Spacer()
-
-                    Toggle("", isOn: Binding(
-                        get: { skill.enabled },
-                        set: { viewModel.updateSkillEnabled(name: skill.name, enabled: $0) },
-                    ))
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                }
             }
         }
     }

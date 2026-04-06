@@ -113,8 +113,6 @@ final class StudioViewModel: ObservableObject {
     @Published var mcpConnectionTestTargetServerID: UUID? = nil
     @Published var mcpConnectionTestState: MCPConnectionTestState = .idle
 
-    @Published var agentSkills: [AgentSkill]
-
     // Agent Jobs
     @Published private(set) var agentJobs: [AgentJob] = []
     @Published private(set) var isLoadingJobs = false
@@ -248,7 +246,6 @@ final class StudioViewModel: ObservableObject {
         agentEnabled = settingsStore.agentEnabled
         agentStepLoggingEnabled = settingsStore.agentStepLoggingEnabled
         mcpServers = settingsStore.mcpServers
-        agentSkills = settingsStore.agentSkills
         personaRewriteEnabled = settingsStore.personaRewriteEnabled
         personaHotkeyAppliesToSelection = settingsStore.personaHotkeyAppliesToSelection
         personas = currentPersonas
@@ -947,12 +944,6 @@ final class StudioViewModel: ObservableObject {
     func setAgentStepLoggingEnabled(_ value: Bool) {
         agentStepLoggingEnabled = value
         settingsStore.agentStepLoggingEnabled = value
-    }
-
-    func updateSkillEnabled(name: String, enabled: Bool) {
-        guard let idx = agentSkills.firstIndex(where: { $0.name == name }) else { return }
-        agentSkills[idx].enabled = enabled
-        settingsStore.agentSkills = agentSkills
     }
 
     func removeMCPServer(id: UUID) {

@@ -136,7 +136,6 @@ enum StudioModelDomain: String, CaseIterable, Identifiable {
 enum AgentConfigurationTab: String, CaseIterable, Identifiable {
     case general
     case mcpServers
-    case skills
 
     var id: String {
         rawValue
@@ -148,8 +147,6 @@ enum AgentConfigurationTab: String, CaseIterable, Identifiable {
             L("agent.section.general")
         case .mcpServers:
             L("agent.section.mcpServers")
-        case .skills:
-            L("agent.section.skills")
         }
     }
 }
