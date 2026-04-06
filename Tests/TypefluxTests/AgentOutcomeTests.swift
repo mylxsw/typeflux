@@ -66,7 +66,7 @@ final class AgentOutcomeTests: XCTestCase {
     }
 
     func testBuiltinToolNameCaseIterable() {
-        XCTAssertEqual(BuiltinAgentToolName.allCases.count, 3)
+        XCTAssertEqual(BuiltinAgentToolName.allCases.count, 4)
     }
 
     // MARK: - AgentError (additional coverage beyond MCPToolAdapterTests)

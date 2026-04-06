@@ -2,80 +2,145 @@
 import XCTest
 
 final class AgentPromptCatalogTests: XCTestCase {
-    // MARK: - askAgentSystemPrompt
+    // MARK: - routerSystemPrompt
 
-    func testSystemPromptIncludesToolDescriptions() {
-        let prompt = AgentPromptCatalog.askAgentSystemPrompt(personaPrompt: nil)
+    func testRouterSystemPromptIncludesToolDescriptions() {
+        let prompt = AgentPromptCatalog.routerSystemPrompt(personaPrompt: nil)
         XCTAssertTrue(prompt.contains("answer_text"))
         XCTAssertTrue(prompt.contains("edit_text"))
-        XCTAssertTrue(prompt.contains("get_clipboard"))
+        XCTAssertTrue(prompt.contains("run_agent"))
     }
 
-    func testSystemPromptIncludesDecisionRules() {
-        let prompt = AgentPromptCatalog.askAgentSystemPrompt(personaPrompt: nil)
+    func testRouterSystemPromptIncludesDecisionRules() {
+        let prompt = AgentPromptCatalog.routerSystemPrompt(personaPrompt: nil)
         XCTAssertTrue(prompt.contains("Default to answer_text"))
-        XCTAssertTrue(prompt.contains("prefer answer_text"))
+        XCTAssertTrue(prompt.contains("Use run_agent only when the task truly cannot be done in a single response"))
     }
 
-    func testSystemPromptIncludesLanguageConsistencyRule() {
-        let prompt = AgentPromptCatalog.askAgentSystemPrompt(personaPrompt: nil)
+    func testRouterSystemPromptIncludesLanguageConsistencyRule() {
+        let prompt = AgentPromptCatalog.routerSystemPrompt(personaPrompt: nil)
         XCTAssertTrue(prompt.contains("Language consistency rule"))
     }
 
-    func testSystemPromptWithPersona() {
-        let prompt = AgentPromptCatalog.askAgentSystemPrompt(personaPrompt: "Be formal and concise")
-        XCTAssertTrue(prompt.contains("Persona/style guidance"))
+    func testRouterSystemPromptWithPersona() {
+        let prompt = AgentPromptCatalog.routerSystemPrompt(personaPrompt: "Be formal and concise")
+        XCTAssertTrue(prompt.contains("<persona_definition>"))
         XCTAssertTrue(prompt.contains("Be formal and concise"))
     }
 
-    func testSystemPromptWithNilPersona() {
-        let prompt = AgentPromptCatalog.askAgentSystemPrompt(personaPrompt: nil)
-        XCTAssertFalse(prompt.contains("Persona/style guidance"))
+    func testRouterSystemPromptWithNilPersona() {
+        let prompt = AgentPromptCatalog.routerSystemPrompt(personaPrompt: nil)
+        XCTAssertFalse(prompt.contains("<persona_definition>"))
     }
 
-    func testSystemPromptWithEmptyPersona() {
-        let prompt = AgentPromptCatalog.askAgentSystemPrompt(personaPrompt: "  ")
-        XCTAssertFalse(prompt.contains("Persona/style guidance"))
+    func testRouterSystemPromptWithEmptyPersona() {
+        let prompt = AgentPromptCatalog.routerSystemPrompt(personaPrompt: "  ")
+        XCTAssertFalse(prompt.contains("<persona_definition>"))
     }
 
-    func testSystemPromptWithWhitespaceOnlyPersona() {
-        let prompt = AgentPromptCatalog.askAgentSystemPrompt(personaPrompt: "\n\t\n")
-        XCTAssertFalse(prompt.contains("Persona/style guidance"))
+    func testRouterSystemPromptWithWhitespaceOnlyPersona() {
+        let prompt = AgentPromptCatalog.routerSystemPrompt(personaPrompt: "\n\t\n")
+        XCTAssertFalse(prompt.contains("<persona_definition>"))
     }
 
-    // MARK: - askAgentUserPrompt
+    // MARK: - routerUserPrompt
 
-    func testUserPromptWithInstructionOnly() {
-        let prompt = AgentPromptCatalog.askAgentUserPrompt(
+    func testRouterUserPromptWithInstructionOnly() {
+        let prompt = AgentPromptCatalog.routerUserPrompt(
             selectedText: nil,
-            instruction: "What is the weather?",
+            instruction: "What is the weather?"
         )
-        XCTAssertTrue(prompt.contains("User request: What is the weather?"))
-        XCTAssertFalse(prompt.contains("Selected text:"))
+        XCTAssertTrue(prompt.contains("<spoken_request>\nWhat is the weather?\n</spoken_request>"))
+        XCTAssertFalse(prompt.contains("<selected_text>"))
     }
 
-    func testUserPromptWithSelectedText() {
-        let prompt = AgentPromptCatalog.askAgentUserPrompt(
+    func testRouterUserPromptWithSelectedText() {
+        let prompt = AgentPromptCatalog.routerUserPrompt(
             selectedText: "Hello, world!",
-            instruction: "Translate this",
+            instruction: "Translate this"
         )
-        XCTAssertTrue(prompt.contains("Selected text:\n---\nHello, world!\n---"))
-        XCTAssertTrue(prompt.contains("User request: Translate this"))
+        XCTAssertTrue(prompt.contains("<selected_text>\nHello, world!\n</selected_text>"))
+        XCTAssertTrue(prompt.contains("<spoken_request>\nTranslate this\n</spoken_request>"))
     }
 
-    func testUserPromptWithEmptySelectedText() {
-        let prompt = AgentPromptCatalog.askAgentUserPrompt(
+    func testRouterUserPromptWithEmptySelectedText() {
+        let prompt = AgentPromptCatalog.routerUserPrompt(
             selectedText: "  ",
-            instruction: "Do something",
+            instruction: "Do something"
         )
-        XCTAssertFalse(prompt.contains("Selected text:"))
+        XCTAssertFalse(prompt.contains("<selected_text>"))
     }
 
-    func testUserPromptPartsJoinedWithDoubleNewline() {
-        let prompt = AgentPromptCatalog.askAgentUserPrompt(
-            selectedText: "some text",
-            instruction: "explain",
+    // MARK: - agentSystemPrompt
+
+    func testAgentSystemPromptIncludesToolDescriptions() {
+        let prompt = AgentPromptCatalog.agentSystemPrompt(personaPrompt: nil)
+        XCTAssertTrue(prompt.contains("answer_text"))
+        XCTAssertTrue(prompt.contains("edit_text"))
+    }
+
+    func testAgentSystemPromptIncludesDecisionRules() {
+        let prompt = AgentPromptCatalog.agentSystemPrompt(personaPrompt: nil)
+        XCTAssertTrue(prompt.contains("Default to answer_text"))
+        XCTAssertTrue(prompt.contains("prefer answer_text over edit_text"))
+    }
+
+    func testAgentSystemPromptIncludesLanguageConsistencyRule() {
+        let prompt = AgentPromptCatalog.agentSystemPrompt(personaPrompt: nil)
+        XCTAssertTrue(prompt.contains("Language consistency rule"))
+    }
+
+    func testAgentSystemPromptWithPersona() {
+        let prompt = AgentPromptCatalog.agentSystemPrompt(personaPrompt: "Be formal and concise")
+        XCTAssertTrue(prompt.contains("<persona_definition>"))
+        XCTAssertTrue(prompt.contains("Be formal and concise"))
+    }
+
+    func testAgentSystemPromptWithNilPersona() {
+        let prompt = AgentPromptCatalog.agentSystemPrompt(personaPrompt: nil)
+        XCTAssertFalse(prompt.contains("<persona_definition>"))
+    }
+
+    func testAgentSystemPromptWithEmptyPersona() {
+        let prompt = AgentPromptCatalog.agentSystemPrompt(personaPrompt: "  ")
+        XCTAssertFalse(prompt.contains("<persona_definition>"))
+    }
+
+    func testAgentSystemPromptWithWhitespaceOnlyPersona() {
+        let prompt = AgentPromptCatalog.agentSystemPrompt(personaPrompt: "\n\t\n")
+        XCTAssertFalse(prompt.contains("<persona_definition>"))
+    }
+
+    // MARK: - agentUserPrompt
+
+    func testAgentUserPromptWithInstructionOnly() {
+        let prompt = AgentPromptCatalog.agentUserPrompt(
+            selectedText: nil,
+            spokenInstruction: "What is the weather?",
+            detailedInstruction: "Provide the current weather."
         )
-        XCTAssertTrue(prompt.contains("---\n\nUser request:"))
+        XCTAssertTrue(prompt.contains("<original_request>\nWhat is the weather?\n</original_request>"))
+        XCTAssertTrue(prompt.contains("<task_instruction>\nProvide the current weather.\n</task_instruction>"))
+        XCTAssertFalse(prompt.contains("<selected_text>"))
+    }
+
+    func testAgentUserPromptWithSelectedText() {
+        let prompt = AgentPromptCatalog.agentUserPrompt(
+            selectedText: "Hello, world!",
+            spokenInstruction: "Translate this",
+            detailedInstruction: "Translate to French"
+        )
+        XCTAssertTrue(prompt.contains("<selected_text>\nHello, world!\n</selected_text>"))
+        XCTAssertTrue(prompt.contains("<original_request>\nTranslate this\n</original_request>"))
+        XCTAssertTrue(prompt.contains("<task_instruction>\nTranslate to French\n</task_instruction>"))
+    }
+
+    func testAgentUserPromptWithEmptySelectedText() {
+        let prompt = AgentPromptCatalog.agentUserPrompt(
+            selectedText: "  ",
+            spokenInstruction: "Do something",
+            detailedInstruction: "Detailed do something"
+        )
+        XCTAssertFalse(prompt.contains("<selected_text>"))
     }
 }
