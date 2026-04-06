@@ -27,6 +27,15 @@ extension WorkflowController {
         automaticVocabularyObservationTask = Task { [weak self] in
             guard let self else { return }
 
+            let initialSnapshot = await self.textInjector.currentInputTextSnapshot()
+            guard initialSnapshot.isEditable else {
+                self.logAutomaticVocabulary(
+                    "session aborted: context is not editable | "
+                        + self.describeCurrentInputTextSnapshot(initialSnapshot)
+                )
+                return
+            }
+
             do {
                 try await Task.sleep(for: Self.automaticVocabularyStartupDelay)
             } catch {
@@ -106,6 +115,11 @@ extension WorkflowController {
                     to: pendingAnalysis.updatedText,
                 ) else {
                     logAutomaticVocabulary("analysis skipped: no candidate terms found after diff")
+                    continue
+                }
+
+                if change.newFragment == normalizedInsertedText {
+                    logAutomaticVocabulary("analysis skipped: change resembles initial text insertion")
                     continue
                 }
 
