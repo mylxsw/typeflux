@@ -306,7 +306,7 @@ enum PromptCatalog {
         selectedText: String?,
         spokenInstruction: String,
         personaPrompt _: String?,
-        editableTarget: Bool,
+        editableTarget: Bool?,
     ) -> (system: String, user: String) {
         let context = buildAskPromptContext(
             selectedText: selectedText,

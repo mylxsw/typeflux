@@ -55,4 +55,15 @@ final class TextSelectionSnapshotTests: XCTestCase {
         XCTAssertTrue(snapshot.canReplaceSelection)
         XCTAssertFalse(snapshot.canSafelyRestoreSelection)
     }
+
+    func testClipboardSelectionCanAttemptReplacementWhenEditabilityIsUnknown() {
+        var snapshot = TextSelectionSnapshot()
+        snapshot.selectedText = "Selected from web editor"
+        snapshot.isFocusedTarget = true
+        snapshot.isEditable = false
+        snapshot.source = "clipboard-copy"
+
+        XCTAssertTrue(snapshot.canReplaceSelection)
+        XCTAssertFalse(snapshot.canSafelyRestoreSelection)
+    }
 }

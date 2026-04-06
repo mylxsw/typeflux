@@ -66,6 +66,22 @@ final class AXTextInjectorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testShouldNotPreferEditableDescendantForScrollbarFalsePositive() {
+        let candidate = AXTextInjector.FocusResolutionCandidate(
+            role: "AXScrollBar",
+            isEditable: true,
+            isFocused: false,
+            selectedRange: nil,
+        )
+
+        let result = AXTextInjector.shouldPreferEditableDescendant(
+            overWindowRole: "AXWindow",
+            candidate: candidate,
+        )
+
+        XCTAssertFalse(result)
+    }
+
     func testShouldTreatEmptyValueOnGenericEditableRoleAsUnreadable() {
         let result = AXTextInjector.shouldTreatAXValueAsUnreadable(
             role: "AXGroup",
@@ -81,6 +97,50 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextField",
             value: "",
             selectedRange: CFRange(location: 0, length: 0),
+        )
+
+        XCTAssertFalse(result)
+    }
+
+    func testEditableCandidateScoreRejectsScrollbarFalsePositive() {
+        let candidate = AXTextInjector.FocusResolutionCandidate(
+            role: "AXScrollBar",
+            isEditable: true,
+            isFocused: false,
+            selectedRange: nil,
+        )
+
+        XCTAssertEqual(AXTextInjector.editableCandidateScore(for: candidate), 0)
+    }
+
+    func testEditableCandidateScorePrefersGenericEditorWithCaret() {
+        let candidate = AXTextInjector.FocusResolutionCandidate(
+            role: "AXGroup",
+            isEditable: true,
+            isFocused: false,
+            selectedRange: CFRange(location: 0, length: 0),
+        )
+
+        XCTAssertGreaterThan(AXTextInjector.editableCandidateScore(for: candidate), 0)
+    }
+
+    func testShouldAllowClipboardSelectionReplacementWithoutAXBaseline() {
+        let result = AXTextInjector.shouldAllowClipboardSelectionReplacementWithoutAXBaseline(
+            replaceSelection: true,
+            selectionSource: "clipboard-copy",
+            focusMatched: true,
+            baselineAvailable: false,
+        )
+
+        XCTAssertTrue(result)
+    }
+
+    func testShouldNotAllowClipboardSelectionReplacementWithoutFocusMatch() {
+        let result = AXTextInjector.shouldAllowClipboardSelectionReplacementWithoutAXBaseline(
+            replaceSelection: true,
+            selectionSource: "clipboard-copy",
+            focusMatched: false,
+            baselineAvailable: false,
         )
 
         XCTAssertFalse(result)

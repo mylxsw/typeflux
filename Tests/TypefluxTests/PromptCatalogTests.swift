@@ -145,6 +145,17 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertTrue(prompts.user.contains("keep \"answer_edit\" set to \"answer\""))
     }
 
+    func testAskSelectionDecisionPromptOmitsEditableTargetWhenUnknown() {
+        let prompts = PromptCatalog.askSelectionDecisionPrompts(
+            selectedText: "Please make this more formal.",
+            spokenInstruction: "Rewrite this",
+            personaPrompt: nil,
+            editableTarget: nil,
+        )
+
+        XCTAssertFalse(prompts.user.contains("<editable_target>"))
+    }
+
     func testAskSelectionDecisionPromptTreatsCommandStyleWritingRequestsAsEdit() {
         let prompts = PromptCatalog.askSelectionDecisionPrompts(
             selectedText: "This email sounds rough.",
