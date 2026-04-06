@@ -21,6 +21,7 @@ final class DIContainer {
     let ollamaModelManager: OllamaLocalModelManager
     let localModelManager: LocalModelManager
     let agentJobStore: AgentJobStore
+    let mcpRegistry: MCPRegistry
 
     init() {
         hotkeyService = EventTapHotkeyService(settingsStore: settingsStore)
@@ -36,6 +37,7 @@ final class DIContainer {
         Logger(subsystem: "dev.typeflux", category: "DIContainer").debug("DIContainer initialized — Logger test message")
         historyStore = SQLiteHistoryStore()
         agentJobStore = SQLiteAgentJobStore()
+        mcpRegistry = MCPRegistry()
         ollamaModelManager = OllamaLocalModelManager()
         llmAgentService = LLMAgentRouter(
             settingsStore: settingsStore,

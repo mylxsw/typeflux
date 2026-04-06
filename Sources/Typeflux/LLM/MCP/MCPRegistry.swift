@@ -47,6 +47,14 @@ actor MCPRegistry {
         }
     }
 
+    /// 连接给定列表中所有 enabled 的服务器（已连接的跳过）
+    func connectEnabledServers(_ configs: [MCPServerConfig]) async {
+        for config in configs where config.enabled {
+            guard servers[config.id] == nil else { continue }
+            try? await addServer(config)
+        }
+    }
+
     /// 获取已连接服务器数量
     var connectedServerCount: Int {
         servers.count

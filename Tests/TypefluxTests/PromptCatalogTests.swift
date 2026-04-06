@@ -508,24 +508,6 @@ extension PromptCatalogTests {
         XCTAssertTrue(prompt.contains("Be concise and direct"))
     }
 
-    func testAskAgentSystemPromptIncludesSkillSupplements() {
-        let prompt = AgentPromptCatalog.askAgentSystemPrompt(
-            personaPrompt: nil,
-            skillSupplements: ["You can run shell commands", "You can fetch URLs"],
-        )
-        XCTAssertTrue(prompt.contains("You can run shell commands"))
-        XCTAssertTrue(prompt.contains("You can fetch URLs"))
-    }
-
-    func testAskAgentSystemPromptIgnoresEmptySupplements() {
-        let prompt = AgentPromptCatalog.askAgentSystemPrompt(
-            personaPrompt: nil,
-            skillSupplements: ["  ", "", "\n"],
-        )
-        // Empty supplements should be filtered out
-        XCTAssertFalse(prompt.isEmpty)
-    }
-
     func testAskAgentUserPromptWithSelectedText() {
         let prompt = AgentPromptCatalog.askAgentUserPrompt(
             selectedText: "Hello world",

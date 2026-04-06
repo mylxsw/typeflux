@@ -21,6 +21,7 @@ final class AppCoordinator {
             clipboard: di.clipboard,
             historyStore: di.historyStore,
             agentJobStore: di.agentJobStore,
+            mcpRegistry: di.mcpRegistry,
             overlayController: di.overlayController,
             askAnswerWindowController: di.askAnswerWindowController,
             soundEffectPlayer: di.soundEffectPlayer,

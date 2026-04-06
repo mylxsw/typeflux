@@ -60,6 +60,7 @@ final class WorkflowController {
     let clipboard: ClipboardService
     let historyStore: HistoryStore
     let agentJobStore: AgentJobStore
+    let mcpRegistry: MCPRegistry
     let overlayController: OverlayController
     let askAnswerWindowController: AskAnswerWindowController
     let soundEffectPlayer: SoundEffectPlayer
@@ -114,6 +115,7 @@ final class WorkflowController {
         clipboard: ClipboardService,
         historyStore: HistoryStore,
         agentJobStore: AgentJobStore,
+        mcpRegistry: MCPRegistry,
         overlayController: OverlayController,
         askAnswerWindowController: AskAnswerWindowController,
         soundEffectPlayer: SoundEffectPlayer,
@@ -129,6 +131,7 @@ final class WorkflowController {
         self.clipboard = clipboard
         self.historyStore = historyStore
         self.agentJobStore = agentJobStore
+        self.mcpRegistry = mcpRegistry
         self.overlayController = overlayController
         self.askAnswerWindowController = askAnswerWindowController
         self.soundEffectPlayer = soundEffectPlayer

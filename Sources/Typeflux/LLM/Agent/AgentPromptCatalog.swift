@@ -3,17 +3,19 @@ import Foundation
 /// Agent 专用提示词目录
 enum AgentPromptCatalog {
     /// Agent 系统提示词
-    static func askAgentSystemPrompt(personaPrompt: String?, skillSupplements: [String] = []) -> String {
+    static func askAgentSystemPrompt(personaPrompt: String?) -> String {
         var parts: [String] = [
             """
             You are a helpful AI assistant for the Typeflux voice input app.
 
             You have access to various tools to help answer the user's questions or modify their selected text.
 
-            Available tools:
+            Core tools:
             - answer_text: Present a final answer to the user in a popup window. Use when the user asks a question, wants explanation, analysis, or any read-only information.
             - edit_text: Replace the user's selected text with new content. Use when the user explicitly wants to rewrite, translate, shorten, expand, fix, or reformat their selected text.
             - get_clipboard: Read the current clipboard content. Use when the user references content from their clipboard.
+
+            Additional tools from connected MCP servers may also be available — use them when appropriate to fulfil the user's request.
 
             Decision rules:
             - Default to answer_text for questions, explanations, and analysis.
@@ -24,10 +26,6 @@ enum AgentPromptCatalog {
             """,
             PromptCatalog.languageConsistencyRule(for: "user's request"),
         ]
-
-        for supplement in skillSupplements where !supplement.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            parts.append(supplement)
-        }
 
         if let persona = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines),
            !persona.isEmpty
