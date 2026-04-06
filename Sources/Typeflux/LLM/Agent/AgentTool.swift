@@ -18,4 +18,5 @@ enum BuiltinAgentToolName: String, CaseIterable {
     case answerText = "answer_text"
     case editText = "edit_text"
     case getClipboard = "get_clipboard"
+    case runAgent = "run_agent"
 }

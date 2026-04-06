@@ -524,29 +524,29 @@ extension PromptCatalogTests {
     // MARK: - AgentPromptCatalog
 
     func testAskAgentSystemPromptIncludesPersonaPrompt() {
-        let prompt = AgentPromptCatalog.askAgentSystemPrompt(
-            personaPrompt: "Be concise and direct",
+        let prompt = AgentPromptCatalog.routerSystemPrompt(
+            personaPrompt: "Be concise and direct"
         )
         XCTAssertTrue(prompt.contains("Be concise and direct"))
     }
 
     func testAskAgentUserPromptWithSelectedText() {
-        let prompt = AgentPromptCatalog.askAgentUserPrompt(
+        let prompt = AgentPromptCatalog.routerUserPrompt(
             selectedText: "Hello world",
-            instruction: "Translate to French",
+            instruction: "Translate to French"
         )
         XCTAssertTrue(prompt.contains("Hello world"))
         XCTAssertTrue(prompt.contains("Translate to French"))
     }
 
     func testAskAgentUserPromptWithoutSelectedText() {
-        let prompt = AgentPromptCatalog.askAgentUserPrompt(selectedText: nil, instruction: "What is 2+2?")
+        let prompt = AgentPromptCatalog.routerUserPrompt(selectedText: nil, instruction: "What is 2+2?")
         XCTAssertTrue(prompt.contains("What is 2+2?"))
-        XCTAssertFalse(prompt.contains("Selected text:"))
+        XCTAssertFalse(prompt.contains("<selected_text>"))
     }
 
     func testAskAgentUserPromptWithEmptySelectedTextOmitsSection() {
-        let prompt = AgentPromptCatalog.askAgentUserPrompt(selectedText: "   ", instruction: "Test")
-        XCTAssertFalse(prompt.contains("Selected text:"))
+        let prompt = AgentPromptCatalog.routerUserPrompt(selectedText: "   ", instruction: "Test")
+        XCTAssertFalse(prompt.contains("<selected_text>"))
     }
 }

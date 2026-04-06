@@ -60,6 +60,33 @@ struct EditTextTool: AgentTool, TerminationTool {
     }
 }
 
+/// Phase 1 termination tool that delegates execution to the full agent loop.
+/// The model uses this when the task requires multiple steps, external tool calls,
+/// or complex reasoning that cannot be completed in a single response.
+struct RunAgentTool: AgentTool, TerminationTool {
+    let definition = LLMAgentTool(
+        name: BuiltinAgentToolName.runAgent.rawValue,
+        description: "Delegate to the full agent loop when the task requires multiple steps, external tool access (files, clipboard, web), or complex reasoning that cannot be completed in one response. Rewrite the user's intent into a precise, unambiguous, and actionable instruction for the agent.",
+        inputSchema: LLMJSONSchema(
+            name: BuiltinAgentToolName.runAgent.rawValue,
+            schema: [
+                "type": .string("object"),
+                "required": .array([.string("detailed_instruction")]),
+                "properties": .object([
+                    "detailed_instruction": .object([
+                        "type": .string("string"),
+                        "description": .string("A clarified, precise restatement of the user's goal — unambiguous and directly actionable by the agent. Resolve any implicit assumptions and specify the expected output if relevant."),
+                    ]),
+                ]),
+            ],
+        ),
+    )
+
+    func execute(arguments: String) async throws -> String {
+        arguments
+    }
+}
+
 /// Intermediate tool for reading clipboard content.
 struct GetClipboardTool: AgentTool {
     let definition = LLMAgentTool(
