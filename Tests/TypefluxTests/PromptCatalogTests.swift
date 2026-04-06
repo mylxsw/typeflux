@@ -106,11 +106,15 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertTrue(prompt.contains(PromptCatalog.languageConsistencyRule(for: "spoken content")))
         XCTAssertTrue(prompt.contains("<input_semantics>"))
         XCTAssertTrue(prompt.contains("<task_procedure>"))
+        XCTAssertTrue(prompt.contains("<fidelity_requirements>"))
         XCTAssertTrue(prompt.contains("<output_contract>"))
         XCTAssertTrue(prompt.contains("<persona_definition>\nUse concise business language.\n</persona_definition>"))
         XCTAssertTrue(prompt.contains("<vocabulary_hints>"))
         XCTAssertTrue(prompt.contains("<terms>\nTypeflux\n</terms>"))
         XCTAssertTrue(prompt.contains("Do not output the intermediate transcript."))
+        XCTAssertTrue(prompt.contains("Preserve all critical information from the speech"))
+        XCTAssertTrue(prompt.contains("For very short or fragmentary utterances"))
+        XCTAssertTrue(prompt.contains("When persona style conflicts with completeness or fidelity"))
     }
 
     func testAskSelectionDecisionPromptDefaultsAmbiguousRequestsToAnswer() {
@@ -294,7 +298,25 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertTrue(prompt.contains("You are a multimodal speech transcription engine."))
         XCTAssertFalse(prompt.contains("rewrite engine"))
         XCTAssertTrue(prompt.contains("Return only the final transcript text."))
+        XCTAssertTrue(prompt.contains("preserve the speaker's meaning, intent, wording, and natural phrasing"))
         XCTAssertFalse(prompt.contains("<persona_definition>"))
+    }
+
+    func testRewriteTranscriptPromptProtectsShortUtteranceIntent() {
+        let request = LLMRewriteRequest(
+            mode: .rewriteTranscript,
+            sourceText: "send today",
+            spokenInstruction: nil,
+            personaPrompt: "Make it polished and concise.",
+        )
+
+        let prompts = PromptCatalog.rewritePrompts(for: request)
+
+        XCTAssertTrue(prompts.system.contains("preserve the user's full intent and every critical detail"))
+        XCTAssertTrue(prompts.system.contains("unless they would cause information loss or change the user's meaning"))
+        XCTAssertTrue(prompts.user.contains("For very short transcripts, be especially careful not to over-compress."))
+        XCTAssertTrue(prompts.user.contains("Keep the original speech act intact."))
+        XCTAssertTrue(prompts.user.contains("do not introduce new facts or remove meaningful details"))
     }
 
     // MARK: - transcriptionVocabularyHint with empty terms
