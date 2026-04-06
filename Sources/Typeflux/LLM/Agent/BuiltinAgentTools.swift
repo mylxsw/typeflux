@@ -1,10 +1,10 @@
 import Foundation
 
-/// 向用户展示答案的终止工具
+/// Termination tool for presenting an answer to the user.
 struct AnswerTextTool: AgentTool, TerminationTool {
     let definition = LLMAgentTool(
         name: BuiltinAgentToolName.answerText.rawValue,
-        description: "当用户想要获取关于选中文本的问题答案时使用。在弹窗中向用户展示最终答案。",
+        description: "Use when the user asks a question about selected text and expects an answer. Present the final answer in a popup window.",
         inputSchema: LLMJSONSchema(
             name: BuiltinAgentToolName.answerText.rawValue,
             schema: [
@@ -13,7 +13,7 @@ struct AnswerTextTool: AgentTool, TerminationTool {
                 "properties": .object([
                     "answer": .object([
                         "type": .string("string"),
-                        "description": .string("要向用户展示的最终答案"),
+                        "description": .string("Final answer to show to the user"),
                     ]),
                     "format": .object([
                         "type": .string("string"),
@@ -35,11 +35,11 @@ struct AnswerTextTool: AgentTool, TerminationTool {
     }
 }
 
-/// 替换选中文本的终止工具
+/// Termination tool for replacing selected text.
 struct EditTextTool: AgentTool, TerminationTool {
     let definition = LLMAgentTool(
         name: BuiltinAgentToolName.editText.rawValue,
-        description: "当用户想要重写、翻译、改写或以其他方式修改选中文本时使用。用新文本替换用户之前选中的文本。",
+        description: "Use when the user wants to rewrite, translate, rephrase, or otherwise modify selected text. Replace the previously selected text with new content.",
         inputSchema: LLMJSONSchema(
             name: BuiltinAgentToolName.editText.rawValue,
             schema: [
@@ -48,7 +48,7 @@ struct EditTextTool: AgentTool, TerminationTool {
                 "properties": .object([
                     "replacement": .object([
                         "type": .string("string"),
-                        "description": .string("用于替换选中文本的新内容"),
+                        "description": .string("New content to replace the selected text"),
                     ]),
                 ]),
             ],
@@ -60,11 +60,11 @@ struct EditTextTool: AgentTool, TerminationTool {
     }
 }
 
-/// 读取剪贴板内容的中间工具
+/// Intermediate tool for reading clipboard content.
 struct GetClipboardTool: AgentTool {
     let definition = LLMAgentTool(
         name: BuiltinAgentToolName.getClipboard.rawValue,
-        description: "读取当前系统剪贴板的内容。当用户提到「剪贴板里的内容」或需要引用之前复制的内容时使用。",
+        description: "Read the current system clipboard content. Use when the user refers to clipboard content or needs to reference previously copied text.",
         inputSchema: LLMJSONSchema(
             name: BuiltinAgentToolName.getClipboard.rawValue,
             schema: [
@@ -83,7 +83,7 @@ struct GetClipboardTool: AgentTool {
 
     func execute(arguments _: String) async throws -> String {
         guard let content = clipboardService.getString() else {
-            return #"{"error": "剪贴板为空或无文本内容"}"#
+            return #"{"error": "Clipboard is empty or does not contain text"}"#
         }
         let dict: [String: Any] = ["content": content]
         let data = try JSONSerialization.data(withJSONObject: dict, options: [])

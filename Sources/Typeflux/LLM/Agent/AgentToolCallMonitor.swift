@@ -1,18 +1,18 @@
 import Foundation
 
-/// Agent 执行的终止原因
+/// Termination reasons for agent execution.
 enum AgentOutcome {
-    /// 模型直接返回文本（无工具调用）
+    /// The model returned text directly (no tool call).
     case text(String)
-    /// 调用了终止工具
+    /// A termination tool was called.
     case terminationTool(name: String, argumentsJSON: String)
-    /// 达到最大步数
+    /// Maximum steps were reached.
     case maxStepsReached
-    /// 执行出错
+    /// Execution failed.
     case error(Error)
 }
 
-/// 单个执行步骤的记录
+/// Record for a single execution step.
 struct AgentStep {
     let stepIndex: Int
     let assistantMessage: AgentAssistantMessage
@@ -35,15 +35,15 @@ struct AgentStep {
     }
 }
 
-/// 步骤监控器协议
+/// Step monitor protocol.
 protocol AgentStepMonitor: AnyObject, Sendable {
-    /// 每一步执行完成后调用
+    /// Called after each step finishes.
     func agentDidCompleteStep(_ step: AgentStep) async
-    /// Agent 完成后调用，totalTokenUsage 为全程累计 token 用量
+    /// Called when the agent finishes, where totalTokenUsage is cumulative across the whole run.
     func agentDidFinish(outcome: AgentOutcome, totalTokenUsage: LLMTokenUsage?) async
 }
 
-/// 用于 UI 展示的实时状态
+/// Real-time state for UI display.
 struct AgentRealtimeState {
     let currentStep: Int
     let lastToolCall: AgentToolCall?
@@ -51,7 +51,7 @@ struct AgentRealtimeState {
     let toolCallsSoFar: [AgentToolCall]
 }
 
-/// 简单的日志步骤监控器
+/// Simple logging step monitor.
 final class AgentStepLogger: AgentStepMonitor {
     func agentDidCompleteStep(_ step: AgentStep) async {
         let toolNames = step.assistantMessage.toolCalls.map(\.name).joined(separator: ", ")

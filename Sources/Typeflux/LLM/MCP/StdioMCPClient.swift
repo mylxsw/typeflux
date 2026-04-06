@@ -12,7 +12,7 @@ struct MCPStdioConfig {
     }
 }
 
-/// Stdio 传输 MCP 客户端
+/// MCP client over stdio transport.
 actor StdioMCPClient: MCPClient {
     private let config: MCPStdioConfig
     private var process: Process?

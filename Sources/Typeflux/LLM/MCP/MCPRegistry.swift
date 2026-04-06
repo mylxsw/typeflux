@@ -1,6 +1,6 @@
 import Foundation
 
-/// MCP 服务器注册表 actor
+/// MCP server registry actor.
 actor MCPRegistry {
     private var servers: [UUID: any MCPClient] = [:]
     private var serverConfigs: [UUID: MCPServerConfig] = [:]
@@ -12,7 +12,7 @@ actor MCPRegistry {
         self.settingsStore = settingsStore
     }
 
-    /// 注册 MCP 服务器
+    /// Registers an MCP server.
     func addServer(_ config: MCPServerConfig) async throws {
         let client = makeClient(for: config)
         try await client.connect()
@@ -21,7 +21,7 @@ actor MCPRegistry {
         try await refreshTools(for: config.id)
     }
 
-    /// 移除 MCP 服务器
+    /// Removes an MCP server.
     func removeServer(id: UUID) async {
         await servers[id]?.disconnect()
         servers.removeValue(forKey: id)
@@ -29,17 +29,17 @@ actor MCPRegistry {
         cachedTools = cachedTools.filter { $0.value.1 != id }
     }
 
-    /// 获取所有 MCP 工具
+    /// Returns all MCP tools.
     func allMCPTools() async -> [any AgentTool] {
         cachedTools.map(\.value.0)
     }
 
-    /// 查找工具所属服务器 ID
+    /// Finds the server ID that owns a tool.
     func serverId(forToolName name: String) -> UUID? {
         cachedTools[name]?.1
     }
 
-    /// 重新连接所有启用了 autoConnect 的服务器
+    /// Reconnects all servers with autoConnect enabled.
     func connectAutoConnectServers() async {
         for config in settingsStore.servers where config.enabled && config.autoConnect {
             guard servers[config.id] == nil else { continue }
@@ -47,7 +47,7 @@ actor MCPRegistry {
         }
     }
 
-    /// 连接给定列表中所有 enabled 的服务器（已连接的跳过）
+    /// Connects all enabled servers in the given list (skips already-connected ones).
     func connectEnabledServers(_ configs: [MCPServerConfig]) async {
         for config in configs where config.enabled {
             guard servers[config.id] == nil else { continue }
@@ -55,7 +55,7 @@ actor MCPRegistry {
         }
     }
 
-    /// 获取已连接服务器数量
+    /// Returns the number of connected servers.
     var connectedServerCount: Int {
         servers.count
     }

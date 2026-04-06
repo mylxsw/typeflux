@@ -1,19 +1,19 @@
 import Foundation
 
-/// Agent 工具协议
+/// Agent tool protocol.
 protocol AgentTool: Sendable {
-    /// 工具定义（名称、描述、输入 Schema）
+    /// Tool definition (name, description, input schema).
     var definition: LLMAgentTool { get }
-    /// 执行工具
-    /// - Parameter arguments: JSON 字符串参数
-    /// - Returns: 执行结果（文本或 JSON 字符串）
+    /// Executes the tool.
+    /// - Parameter arguments: JSON string arguments.
+    /// - Returns: Execution result (text or JSON string).
     func execute(arguments: String) async throws -> String
 }
 
-/// 终止工具标记协议
+/// Marker protocol for termination tools.
 protocol TerminationTool: AgentTool {}
 
-/// 内置工具标识
+/// Built-in tool identifiers.
 enum BuiltinAgentToolName: String, CaseIterable {
     case answerText = "answer_text"
     case editText = "edit_text"

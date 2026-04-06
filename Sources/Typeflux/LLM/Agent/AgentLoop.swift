@@ -1,6 +1,6 @@
 import Foundation
 
-/// AgentLoop — 核心执行引擎
+/// AgentLoop - core execution engine.
 actor AgentLoop {
     private let llmService: LLMMultiTurnService
     private let toolRegistry: AgentToolRegistry
@@ -17,16 +17,16 @@ actor AgentLoop {
         self.config = config
     }
 
-    /// 设置步骤监控器
+    /// Sets the step monitor.
     func setStepMonitor(_ monitor: (any AgentStepMonitor)?) {
         stepMonitor = monitor
     }
 
-    /// 运行 Agent
+    /// Runs the agent.
     /// - Parameters:
-    ///   - messages: 初始消息（通常为 system + user）
-    ///   - streamHandler: 流式文本输出回调（可选）
-    /// - Returns: Agent 执行结果
+    ///   - messages: Initial messages (usually system + user).
+    ///   - streamHandler: Streaming text output callback (optional).
+    /// - Returns: Agent execution result.
     func run(
         messages: [AgentMessage],
         streamHandler: ((String) -> Void)? = nil,

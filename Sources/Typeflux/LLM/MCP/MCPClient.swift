@@ -1,29 +1,29 @@
 import Foundation
 
-/// MCP 服务器连接信息
+/// MCP server connection info.
 struct MCPConnectionInfo {
     let name: String
     let protocolVersion: String
     let capabilities: MCPServerCapabilities
 }
 
-/// MCP 客户端协议
+/// MCP client protocol.
 protocol MCPClient: Actor {
     var serverInfo: MCPConnectionInfo? { get }
     var isConnected: Bool { get }
 
-    /// 连接到 MCP 服务器
+    /// Connects to an MCP server.
     func connect() async throws
 
-    /// 断开连接
+    /// Disconnects.
     func disconnect() async
 
-    /// 获取可用工具列表
+    /// Returns available tools.
     func listTools() async throws -> [MCPToolDefinition]
 
-    /// 调用工具
+    /// Calls a tool.
     func callTool(name: String, arguments: [String: Any]) async throws -> MCPToolsCallResult
 
-    /// 测试连接（发送 ping）
+    /// Tests connectivity (sends ping).
     func ping() async throws
 }

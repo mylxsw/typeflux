@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - AnyCodable
 
-/// 类型擦除的 Codable 值，用于处理任意 JSON 数据
+/// Type-erased Codable value for handling arbitrary JSON data.
 struct AnyCodable: Codable, @unchecked Sendable {
     let value: Any
 
