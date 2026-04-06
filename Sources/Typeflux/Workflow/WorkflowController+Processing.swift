@@ -2,6 +2,11 @@
 import Foundation
 
 extension WorkflowController {
+    enum AskWithoutSelectionAgentDisposition: Equatable {
+        case answer(String)
+        case insert(String)
+    }
+
     struct RewriteGenerationResult {
         let text: String
         let completedAt: Date
@@ -831,31 +836,48 @@ extension WorkflowController {
             record.pipelineTiming = pipelineTiming
             logPipelineEvent("llm-processing-completed", for: record)
 
-            let answerText: String = switch agentResult {
-            case let .answer(text), let .edit(text):
-                text
-            }
+            switch Self.askWithoutSelectionAgentDisposition(for: agentResult) {
+            case let .answer(answerText):
+                record.mode = .askAnswer
+                record.personaResultText = answerText
+                record.processingStatus = .succeeded
+                record.applyStatus = .running
+                saveHistoryRecord(record)
 
-            record.mode = .askAnswer
-            record.personaResultText = answerText
-            record.processingStatus = .succeeded
-            record.applyStatus = .running
-            saveHistoryRecord(record)
+                try ensureProcessingIsActive(sessionID)
+                pipelineTiming.applyStartedAt = Date()
+                record.pipelineTiming = pipelineTiming
+                await MainActor.run {
+                    self.presentAskAnswer(
+                        question: transcribedText,
+                        selectedText: askContextText,
+                        answerMarkdown: answerText,
+                    )
+                }
+                pipelineTiming.applyCompletedAt = Date()
+                record.pipelineTiming = pipelineTiming
+                record.applyStatus = .succeeded
+                record.applyMessage = L("workflow.ask.answerPresented")
+            case let .insert(text):
+                record.mode = .editSelection
+                record.selectionEditedText = text
+                record.processingStatus = .succeeded
+                record.applyStatus = .running
+                saveHistoryRecord(record)
 
-            try ensureProcessingIsActive(sessionID)
-            pipelineTiming.applyStartedAt = Date()
-            record.pipelineTiming = pipelineTiming
-            await MainActor.run {
-                self.presentAskAnswer(
-                    question: transcribedText,
-                    selectedText: askContextText,
-                    answerMarkdown: answerText,
+                try ensureProcessingIsActive(sessionID)
+                pipelineTiming.applyStartedAt = Date()
+                record.pipelineTiming = pipelineTiming
+                let outcome = applyText(
+                    text,
+                    replace: false,
+                    fallbackTitle: L("workflow.result.copyTitle"),
                 )
+                pipelineTiming.applyCompletedAt = Date()
+                record.pipelineTiming = pipelineTiming
+                record.applyStatus = .succeeded
+                record.applyMessage = outcome.message
             }
-            pipelineTiming.applyCompletedAt = Date()
-            record.pipelineTiming = pipelineTiming
-            record.applyStatus = .succeeded
-            record.applyMessage = L("workflow.ask.answerPresented")
             return
         }
 
@@ -1200,6 +1222,15 @@ extension WorkflowController {
 
     func shouldReplaceActiveSelection(for snapshot: TextSelectionSnapshot) -> Bool {
         snapshot.canReplaceSelection
+    }
+
+    static func askWithoutSelectionAgentDisposition(for result: AskAgentResult) -> AskWithoutSelectionAgentDisposition {
+        switch result {
+        case let .answer(text):
+            .answer(text)
+        case let .edit(text):
+            .insert(text)
+        }
     }
 
     func hasAskSelectionContext(_ snapshot: TextSelectionSnapshot) -> Bool {
