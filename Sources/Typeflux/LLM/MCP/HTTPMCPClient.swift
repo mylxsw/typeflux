@@ -10,7 +10,7 @@ struct MCPHTTPConfig {
     }
 }
 
-/// HTTP 传输 MCP 客户端
+/// MCP client over HTTP transport.
 actor HTTPMCPClient: MCPClient {
     private let config: MCPHTTPConfig
     private var session: URLSession?

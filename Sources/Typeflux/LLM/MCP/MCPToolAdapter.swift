@@ -1,6 +1,6 @@
 import Foundation
 
-/// MCP 工具到 AgentTool 的适配器
+/// Adapter from MCP tools to AgentTool.
 struct MCPToolAdapter: AgentTool {
     let client: any MCPClient
     let toolDef: MCPToolDefinition

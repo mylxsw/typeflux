@@ -1,8 +1,8 @@
 import Foundation
 
-/// Agent 专用提示词目录
+/// Prompt catalog dedicated to the agent.
 enum AgentPromptCatalog {
-    /// Agent 系统提示词
+    /// Agent system prompt.
     static func askAgentSystemPrompt(personaPrompt: String?) -> String {
         var parts: [String] = [
             """
@@ -41,7 +41,7 @@ enum AgentPromptCatalog {
         return parts.joined(separator: "\n\n")
     }
 
-    /// Agent 用户提示词
+    /// Agent user prompt.
     static func askAgentUserPrompt(selectedText: String?, instruction: String) -> String {
         var parts: [String] = []
 

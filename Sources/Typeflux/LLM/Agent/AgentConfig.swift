@@ -1,14 +1,14 @@
 import Foundation
 
-/// Agent 配置
+/// Agent configuration.
 struct AgentConfig {
-    /// 最大执行步数（默认 10）
+    /// Maximum execution steps (default: 10).
     let maxSteps: Int
-    /// 是否允许 LLM 并行调用多个工具（默认 false）
+    /// Whether to allow the LLM to call multiple tools in parallel (default: false).
     let allowParallelToolCalls: Bool
-    /// 温度参数
+    /// Temperature parameter.
     let temperature: Double?
-    /// 是否启用流式输出回调
+    /// Whether to enable streaming output callbacks.
     let enableStreaming: Bool
 
     static let `default` = AgentConfig(

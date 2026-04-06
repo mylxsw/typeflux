@@ -1,6 +1,6 @@
 import Foundation
 
-/// Agent 执行结果
+/// Agent execution result.
 struct AgentResult {
     let outcome: AgentOutcome
     let steps: [AgentStep]
@@ -19,7 +19,7 @@ struct AgentResult {
         self.totalTokenUsage = totalTokenUsage
     }
 
-    /// 提取最终答案文本（用于 answer_text 工具）
+    /// Extracts the final answer text (used by the answer_text tool).
     var answerText: String? {
         switch outcome {
         case let .text(text):
@@ -31,7 +31,7 @@ struct AgentResult {
         }
     }
 
-    /// 提取要替换的文本（用于 edit_text 工具）
+    /// Extracts replacement text (used by the edit_text tool).
     var editedText: String? {
         guard case let .terminationTool(name, args) = outcome,
               name == BuiltinAgentToolName.editText.rawValue

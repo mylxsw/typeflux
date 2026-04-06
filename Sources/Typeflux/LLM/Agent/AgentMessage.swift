@@ -1,6 +1,6 @@
 import Foundation
 
-/// 消息角色
+/// Message role.
 enum AgentMessageRole: String, Codable {
     case system
     case user
@@ -8,27 +8,27 @@ enum AgentMessageRole: String, Codable {
     case tool
 }
 
-/// 单个工具调用
+/// A single tool call.
 struct AgentToolCall: Equatable, Codable {
     let id: String
     let name: String
     let argumentsJSON: String
 }
 
-/// 工具执行结果
+/// Tool execution result.
 struct AgentToolResult: Equatable, Codable {
     let toolCallId: String
     let content: String
     let isError: Bool
 }
 
-/// 助手消息（文本 + 工具调用）
+/// Assistant message (text + tool calls).
 struct AgentAssistantMessage: Equatable, Codable {
     let text: String?
     let toolCalls: [AgentToolCall]
 }
 
-/// 单条消息联合类型
+/// Union type for a single message.
 enum AgentMessage: Equatable {
     case system(String)
     case user(String)

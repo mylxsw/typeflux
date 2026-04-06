@@ -1,6 +1,6 @@
 import Foundation
 
-/// 工具注册表 actor
+/// Tool registry actor.
 actor AgentToolRegistry {
     private var tools: [String: any AgentTool] = [:]
     private var terminationToolNames: Set<String> = []
@@ -23,7 +23,7 @@ actor AgentToolRegistry {
         terminationToolNames.remove(name)
     }
 
-    /// 执行工具
+    /// Executes a tool.
     func execute(name: String, arguments: String, toolCallId: String) async throws -> AgentToolResult {
         guard let tool = tools[name] else {
             throw AgentError.toolNotFound(name: name)
@@ -36,17 +36,17 @@ actor AgentToolRegistry {
         }
     }
 
-    /// 获取所有工具定义（用于 LLM 调用）
+    /// Returns all tool definitions (for LLM calls).
     var definitions: [LLMAgentTool] {
         tools.values.map(\.definition)
     }
 
-    /// 检查是否为终止工具
+    /// Checks whether a tool is a termination tool.
     func isTerminationTool(name: String) -> Bool {
         terminationToolNames.contains(name)
     }
 
-    /// 检查工具是否存在
+    /// Checks whether a tool exists.
     func hasTool(name: String) -> Bool {
         tools[name] != nil
     }

@@ -3,7 +3,7 @@ import Foundation
 extension AgentMessage {
     // MARK: - OpenAI Compatible Format
 
-    /// 转换为 OpenAI 兼容格式的消息列表
+    /// Converts messages to OpenAI-compatible format.
     static func toOpenAIMessages(_ messages: [AgentMessage]) -> [[String: Any]] {
         var result: [[String: Any]] = []
         for message in messages {
@@ -52,14 +52,14 @@ extension AgentMessage {
 
     // MARK: - Anthropic Format
 
-    /// 转换为 Anthropic 格式的消息列表
-    /// 注意：system 消息应单独提取，不放入 messages 数组
+    /// Converts messages to Anthropic format.
+    /// Note: system messages should be extracted separately, not placed in the messages array.
     static func toAnthropicMessages(_ messages: [AgentMessage]) -> [[String: Any]] {
         var result: [[String: Any]] = []
         for message in messages {
             switch message {
             case .system:
-                // system 消息在 Anthropic 格式中单独处理，不在 messages 中
+                // System messages are handled separately in Anthropic format, not in messages.
                 continue
             case let .user(text):
                 result.append([
@@ -104,7 +104,7 @@ extension AgentMessage {
         return result
     }
 
-    /// 从消息列表中提取 Anthropic system prompt
+    /// Extracts the Anthropic system prompt from the message list.
     static func extractAnthropicSystemPrompt(_ messages: [AgentMessage]) -> String? {
         let systemMessages = messages.compactMap { msg -> String? in
             if case let .system(text) = msg { return text }
@@ -115,13 +115,13 @@ extension AgentMessage {
 
     // MARK: - Gemini Format
 
-    /// 转换为 Gemini 格式的 contents 列表
+    /// Converts messages to Gemini contents format.
     static func toGeminiContents(_ messages: [AgentMessage]) -> [[String: Any]] {
         var result: [[String: Any]] = []
         for message in messages {
             switch message {
             case .system:
-                // system 消息在 Gemini 格式中通过 systemInstruction 处理
+                // System messages are handled via systemInstruction in Gemini format.
                 continue
             case let .user(text):
                 result.append([
@@ -171,7 +171,7 @@ extension AgentMessage {
         return result
     }
 
-    /// 从消息列表中提取 Gemini systemInstruction
+    /// Extracts Gemini systemInstruction from the message list.
     static func extractGeminiSystemInstruction(_ messages: [AgentMessage]) -> [String: Any]? {
         let systemTexts = messages.compactMap { msg -> String? in
             if case let .system(text) = msg { return text }
