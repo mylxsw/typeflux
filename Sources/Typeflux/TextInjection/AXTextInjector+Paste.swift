@@ -372,6 +372,9 @@ extension AXTextInjector {
             if let beforeText = before?.text {
                 let normalizedBeforeText = beforeText.trimmingCharacters(in: .whitespacesAndNewlines)
                 if normalizedBeforeText == normalizedAfterText {
+                    if !after.isFocusedTarget || before?.isFocusedTarget == false {
+                        return .indeterminate
+                    }
                     return .failure("input-text-unchanged")
                 }
             } else if replaceSelection,

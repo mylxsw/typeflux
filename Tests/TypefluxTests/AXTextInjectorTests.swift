@@ -163,6 +163,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextArea",
             text: "Hello",
             isEditable: true,
+            isFocusedTarget: true,
             failureReason: nil,
         )
         let after = CurrentInputTextSnapshot(
@@ -171,6 +172,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextArea",
             text: "Hello world",
             isEditable: true,
+            isFocusedTarget: true,
             failureReason: nil,
         )
 
@@ -192,6 +194,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextArea",
             text: "Hello",
             isEditable: true,
+            isFocusedTarget: true,
             failureReason: nil,
         )
         let after = CurrentInputTextSnapshot(
@@ -200,6 +203,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextField",
             text: "Hello",
             isEditable: true,
+            isFocusedTarget: true,
             failureReason: nil,
         )
 
@@ -221,6 +225,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextArea",
             text: "Hello",
             isEditable: true,
+            isFocusedTarget: true,
             failureReason: nil,
         )
         let after = CurrentInputTextSnapshot(
@@ -229,6 +234,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextArea",
             text: "Hello",
             isEditable: true,
+            isFocusedTarget: true,
             failureReason: nil,
         )
 
@@ -250,6 +256,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXTextArea",
             text: "Hello",
             isEditable: true,
+            isFocusedTarget: true,
             failureReason: nil,
         )
         let after = CurrentInputTextSnapshot(
@@ -258,6 +265,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXUnknown",
             text: nil,
             isEditable: true,
+            isFocusedTarget: true,
             failureReason: "missing-ax-value",
         )
 
@@ -279,6 +287,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXWindow",
             text: nil,
             isEditable: false,
+            isFocusedTarget: false,
             failureReason: "focused-element-not-editable",
         )
 
@@ -300,6 +309,7 @@ final class AXTextInjectorTests: XCTestCase {
             role: "AXWindow",
             text: nil,
             isEditable: false,
+            isFocusedTarget: false,
             failureReason: "focused-element-not-editable",
         )
 
@@ -312,5 +322,36 @@ final class AXTextInjectorTests: XCTestCase {
         )
 
         XCTAssertEqual(result, .failure("focused-element-not-editable"))
+    }
+
+    func testEvaluatePasteVerificationIsIndeterminateWhenReadableTextIsUnchangedOnHeuristicTarget() {
+        let before = CurrentInputTextSnapshot(
+            processID: 42,
+            processName: "Google Chrome",
+            role: "AXTextField",
+            text: "x.com/home",
+            isEditable: true,
+            isFocusedTarget: false,
+            failureReason: nil,
+        )
+        let after = CurrentInputTextSnapshot(
+            processID: 42,
+            processName: "Google Chrome",
+            role: "AXTextField",
+            text: "x.com/home",
+            isEditable: true,
+            isFocusedTarget: false,
+            failureReason: nil,
+        )
+
+        let result = AXTextInjector.evaluatePasteVerification(
+            insertedText: "The input method is not feasible in this scenario.",
+            replaceSelection: false,
+            targetProcessID: 42,
+            before: before,
+            after: after,
+        )
+
+        XCTAssertEqual(result, .indeterminate)
     }
 }

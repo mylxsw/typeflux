@@ -314,6 +314,7 @@ final class AXTextInjector: TextInjector {
                 role: nil,
                 text: nil,
                 isEditable: false,
+                isFocusedTarget: false,
                 failureReason: "accessibility-not-trusted",
             )
         }
@@ -325,6 +326,7 @@ final class AXTextInjector: TextInjector {
                 role: nil,
                 text: nil,
                 isEditable: false,
+                isFocusedTarget: false,
                 failureReason: "no-focused-element",
             )
         }
@@ -333,6 +335,7 @@ final class AXTextInjector: TextInjector {
         let processName = frontmostApplicationName()
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
         let isEditable = isLikelyEditable(element: element)
+        let isFocusedTarget = copyBooleanAttribute(kAXFocusedAttribute as String, from: element) ?? false
         let selectedRange = copySelectedTextRange(from: element)
 
         guard isEditable else {
@@ -342,6 +345,7 @@ final class AXTextInjector: TextInjector {
                 role: role,
                 text: nil,
                 isEditable: false,
+                isFocusedTarget: isFocusedTarget,
                 failureReason: "focused-element-not-editable",
             )
         }
@@ -354,6 +358,7 @@ final class AXTextInjector: TextInjector {
                     role: role,
                     text: nil,
                     isEditable: true,
+                    isFocusedTarget: isFocusedTarget,
                     failureReason: "missing-ax-value",
                 )
             }
@@ -364,6 +369,7 @@ final class AXTextInjector: TextInjector {
                     role: role,
                     text: nil,
                     isEditable: true,
+                    isFocusedTarget: isFocusedTarget,
                     failureReason: "value-matched-placeholder",
                 )
             }
@@ -374,6 +380,7 @@ final class AXTextInjector: TextInjector {
                     role: role,
                     text: nil,
                     isEditable: true,
+                    isFocusedTarget: isFocusedTarget,
                     failureReason: "value-matched-title",
                 )
             }
@@ -384,6 +391,7 @@ final class AXTextInjector: TextInjector {
                 role: role,
                 text: value,
                 isEditable: true,
+                isFocusedTarget: isFocusedTarget,
                 failureReason: nil,
             )
         }
@@ -394,6 +402,7 @@ final class AXTextInjector: TextInjector {
             role: role,
             text: nil,
             isEditable: true,
+            isFocusedTarget: isFocusedTarget,
             failureReason: "missing-ax-value",
         )
     }
@@ -422,6 +431,7 @@ final class AXTextInjector: TextInjector {
         return
             "pid=\(snapshot.processID.map(String.init) ?? "nil") process=\(snapshot.processName ?? "nil") "
                 + "role=\(snapshot.role ?? "nil") editable=\(snapshot.isEditable) "
+                + "focused=\(snapshot.isFocusedTarget) "
                 + "failure=\(snapshot.failureReason ?? "nil") textLength=\(snapshot.text?.count ?? 0) "
                 + "preview=\(preview)"
     }

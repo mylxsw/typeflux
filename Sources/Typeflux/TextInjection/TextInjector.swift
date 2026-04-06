@@ -41,6 +41,7 @@ struct CurrentInputTextSnapshot {
     var role: String?
     var text: String?
     var isEditable: Bool = false
+    var isFocusedTarget: Bool = false
     var failureReason: String?
 }
 
