@@ -30,13 +30,23 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
         try? await store.save(job)
     }
 
-    /// Record Phase 1 routing decision as step 0 before the Phase 2 loop begins.
-    func addPhase1Step(toolCallName: String, toolCallArgumentsJSON: String, durationMs: Int64) async {
+    /// Record Phase 1 routing decision as step 0.
+    /// - Parameters:
+    ///   - toolCallName: The tool chosen by Phase 1 (e.g. "answer_text", "run_agent").
+    ///   - toolCallArgumentsJSON: Raw arguments JSON from the Phase 1 LLM call.
+    ///   - resultContent: The resolved value for display (answer text, replacement, or "").
+    ///   - durationMs: Elapsed time for the Phase 1 LLM call.
+    func addPhase1Step(
+        toolCallName: String,
+        toolCallArgumentsJSON: String,
+        resultContent: String,
+        durationMs: Int64,
+    ) async {
         let phase1ToolCall = AgentJobToolCall(
             id: "phase1-routing",
             name: toolCallName,
             argumentsJSON: toolCallArgumentsJSON,
-            resultContent: "",
+            resultContent: resultContent,
             isError: false,
         )
         let step = AgentJobStep(
@@ -52,6 +62,21 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
             job.steps = currentSteps
             try? await store.save(job)
         }
+    }
+
+    /// Complete the job when Phase 1 is the final handler (answer_text or edit_text).
+    /// No Phase 2 loop follows.
+    func completeWithPhase1Result(resultText: String, outcomeType: String) async {
+        guard var job = try? await store.job(id: jobID) else { return }
+
+        job.steps = snapshotSteps()
+        job.status = .completed
+        job.completedAt = Date()
+        job.resultText = resultText
+        job.outcomeType = outcomeType
+        job.totalDurationMs = Int64(Date().timeIntervalSince(job.createdAt) * 1000)
+
+        try? await store.save(job)
     }
 
     func agentDidCompleteStep(_ step: AgentStep) async {
