@@ -969,6 +969,7 @@ extension WorkflowController {
         record: inout HistoryRecord,
         pipelineTiming: inout HistoryPipelineTiming,
     ) throws {
+        let optimizedText = DictationOutputOptimizer.optimize(transcribedText)
         record.mode = .dictation
         record.processingStatus = .skipped
         record.applyStatus = .running
@@ -977,7 +978,7 @@ extension WorkflowController {
         try ensureProcessingIsActive(sessionID)
         pipelineTiming.applyStartedAt = Date()
         record.pipelineTiming = pipelineTiming
-        let outcome = applyTranscribedText(transcribedText, selectionSnapshot: selectionSnapshot)
+        let outcome = applyTranscribedText(optimizedText, selectionSnapshot: selectionSnapshot)
         pipelineTiming.applyCompletedAt = Date()
         record.pipelineTiming = pipelineTiming
         record.applyStatus = .succeeded
