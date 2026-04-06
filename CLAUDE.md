@@ -31,6 +31,9 @@ make dev
 
 # Generate code coverage report (HTML output in coverage-report/)
 make coverage
+
+# Format code (runs scripts/format.sh)
+make format
 ```
 
 ## Architecture
@@ -51,7 +54,7 @@ make coverage
 5. Injects text via `TextInjector` (AX accessibility API) with clipboard fallback
 6. Saves results to `HistoryStore`
 
-`WorkflowController+Agent.swift` extends the controller for agent (ask/answer) mode without modifying the core file.
+`WorkflowController` is split into focused extension files to manage complexity: `+Agent.swift` for the ask/answer mode, `+Processing.swift` for LLM rewrite/generation logic, `+Persona.swift` for persona handling, and `+AutomaticVocabulary.swift` for vocabulary monitoring. Add new concerns as similarly named extensions rather than expanding the core file.
 
 ### STT Layer (`Sources/Typeflux/STT/`)
 
@@ -129,4 +132,8 @@ Tests live in `Tests/TypefluxTests/`. The test target imports the main `Typeflux
 
 ## Development Standards
 
-- This is an internationalized project. All code and code comments must be written in English.
+- All code and code comments must be written in English (internationalized project).
+- Follow existing Swift style: 4-space indentation, `UpperCamelCase` types, `lowerCamelCase` methods/properties, one top-level type per file when practical.
+- Prefer protocol-backed services with dependency injection through `DIContainer` over singletons.
+- SwiftLint is configured; use `// swiftlint:disable file_length` at the top of intentionally large files.
+- Commit subjects should be short and imperative (e.g. `feat(ax): improve editable target detection`). PRs should note user-visible impact and include screenshots when changing overlay, settings, or menu bar UI.
