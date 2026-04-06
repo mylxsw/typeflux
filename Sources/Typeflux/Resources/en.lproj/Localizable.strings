@@ -680,3 +680,5 @@
 "agent.jobs.detail.stepNumber" = "Step %d";
 "agent.jobs.detail.reasoning" = "REASONING";
 "agent.jobs.detail.stepTokens" = "%d tokens";
+"agent.jobs.detail.context.showMore" = "Show More";
+"agent.jobs.detail.context.showLess" = "Show Less";
