@@ -680,3 +680,5 @@
 "agent.jobs.detail.stepNumber" = "ステップ %d";
 "agent.jobs.detail.reasoning" = "推論過程";
 "agent.jobs.detail.stepTokens" = "%d トークン";
+"agent.jobs.detail.context.showMore" = "すべて表示";
+"agent.jobs.detail.context.showLess" = "折りたたむ";

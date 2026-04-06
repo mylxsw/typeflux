@@ -680,3 +680,5 @@
 "agent.jobs.detail.stepNumber" = "步驟 %d";
 "agent.jobs.detail.reasoning" = "推理過程";
 "agent.jobs.detail.stepTokens" = "%d tokens";
+"agent.jobs.detail.context.showMore" = "展開全部";
+"agent.jobs.detail.context.showLess" = "收起";

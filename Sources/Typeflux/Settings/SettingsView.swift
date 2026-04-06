@@ -4338,11 +4338,7 @@ struct StudioView: View {
 
                     if let selectedText = job.selectedText, !selectedText.isEmpty {
                         jobSection(title: L("agent.jobs.detail.context"), icon: "text.quote", cardPadding: 12) {
-                            Text(selectedText)
-                                .font(.studioBody(StudioTheme.Typography.bodySmall))
-                                .foregroundStyle(StudioTheme.textSecondary)
-                                .textSelection(.enabled)
-                                .lineLimit(5)
+                            ExpandableContextView(text: selectedText)
                         }
                     }
 
@@ -4495,6 +4491,60 @@ struct StudioView: View {
         formatter.dateStyle = .medium
         formatter.timeStyle = .medium
         return formatter.string(from: date)
+    }
+}
+
+/// Context text that collapses to 5 lines by default with an expand/collapse toggle.
+/// Only shows the toggle when the text actually exceeds the collapsed line limit.
+private struct ExpandableContextView: View {
+    let text: String
+
+    private static let collapsedLineLimit = 5
+
+    @State private var isExpanded = false
+    @State private var isTruncated = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(text)
+                .font(.studioBody(StudioTheme.Typography.bodySmall))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .textSelection(.enabled)
+                .lineLimit(isExpanded ? nil : Self.collapsedLineLimit)
+                .fixedSize(horizontal: false, vertical: true)
+                .background(
+                    // Invisible full-text view used to detect truncation
+                    GeometryReader { fullGeo in
+                        Text(text)
+                            .font(.studioBody(StudioTheme.Typography.bodySmall))
+                            .lineLimit(Self.collapsedLineLimit)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .background(
+                                GeometryReader { truncGeo in
+                                    Color.clear.onAppear {
+                                        isTruncated = truncGeo.size.height < fullGeo.size.height
+                                    }
+                                }
+                            )
+                            .hidden()
+                    }
+                )
+
+            if isTruncated {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    Text(isExpanded
+                        ? L("agent.jobs.detail.context.showLess")
+                        : L("agent.jobs.detail.context.showMore"))
+                        .font(.studioBody(StudioTheme.Typography.caption, weight: .medium))
+                        .foregroundStyle(StudioTheme.accent)
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 }
 

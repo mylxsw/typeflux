@@ -680,3 +680,5 @@
 "agent.jobs.detail.stepNumber" = "단계 %d";
 "agent.jobs.detail.reasoning" = "추론 과정";
 "agent.jobs.detail.stepTokens" = "%d 토큰";
+"agent.jobs.detail.context.showMore" = "더 보기";
+"agent.jobs.detail.context.showLess" = "접기";
