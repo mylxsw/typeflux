@@ -14,6 +14,20 @@ struct AgentConfig {
     /// recorded as step 0, so Phase 2 steps are numbered starting from 1.
     let initialStepIndex: Int
 
+    init(
+        maxSteps: Int,
+        allowParallelToolCalls: Bool,
+        temperature: Double?,
+        enableStreaming: Bool,
+        initialStepIndex: Int = 0,
+    ) {
+        self.maxSteps = maxSteps
+        self.allowParallelToolCalls = allowParallelToolCalls
+        self.temperature = temperature
+        self.enableStreaming = enableStreaming
+        self.initialStepIndex = initialStepIndex
+    }
+
     static let `default` = AgentConfig(
         maxSteps: 10,
         allowParallelToolCalls: false,
