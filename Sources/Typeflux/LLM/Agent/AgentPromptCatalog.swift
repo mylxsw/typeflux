@@ -13,12 +13,12 @@ enum AgentPromptCatalog {
             Analyze the user's spoken request and select exactly one action by calling the corresponding tool:
 
             - answer_text: The request can be fully resolved in a single response — questions, explanations, analysis, summaries, or text transformations that require no external tools.
-            - edit_text: The user wants their selected text replaced — rewrites, translations, reformatting, grammar fixes, or any direct text modification.
+            - edit_text: The user wants their selected text replaced (rewrites, translations, reformatting, grammar fixes), OR wants to generate and insert new content directly into the current input field (drafting a message, composing text at the cursor).
             - run_agent: The task genuinely requires multiple steps, external tool access (files, clipboard, web search), or complex reasoning that cannot be completed in one shot. When choosing this, rewrite the user's intent into a precise, unambiguous, and actionable instruction for the agent.
 
             Decision rules:
             - Default to answer_text for questions and explanations.
-            - Use edit_text only when the user wants the selected text replaced.
+            - Use edit_text when the user wants to replace selected text or generate/insert content into the active input field.
             - Use run_agent only when the task truly cannot be done in a single response. Do not delegate simple tasks.
             - When you choose run_agent, write a detailed_instruction that: restates the goal precisely, resolves any implicit assumptions, and specifies the expected output format if relevant.
             """,
@@ -73,7 +73,7 @@ enum AgentPromptCatalog {
 
             Decision rules:
             - Default to answer_text for questions, explanations, and read-only results.
-            - Use edit_text only when the task explicitly requires replacing the selected text.
+            - Use edit_text when the task requires replacing the selected text, or inserting generated content into the current input field.
             - If unsure, prefer answer_text over edit_text.
             """,
             PromptCatalog.languageConsistencyRule(for: "task_instruction and original_request"),
