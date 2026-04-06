@@ -35,11 +35,11 @@ struct AnswerTextTool: AgentTool, TerminationTool {
     }
 }
 
-/// Termination tool for replacing selected text.
+/// Termination tool for replacing selected text or inserting generated content into the current input field.
 struct EditTextTool: AgentTool, TerminationTool {
     let definition = LLMAgentTool(
         name: BuiltinAgentToolName.editText.rawValue,
-        description: "Use when the user wants to rewrite, translate, rephrase, or otherwise modify selected text. Replace the previously selected text with new content.",
+        description: "Use when the user wants to rewrite, translate, rephrase, or otherwise modify selected text, OR when the user wants to generate and insert new content directly into the current input field (e.g. drafting a message, composing text at the cursor position). Provide the final text to insert or replace.",
         inputSchema: LLMJSONSchema(
             name: BuiltinAgentToolName.editText.rawValue,
             schema: [
@@ -48,7 +48,7 @@ struct EditTextTool: AgentTool, TerminationTool {
                 "properties": .object([
                     "replacement": .object([
                         "type": .string("string"),
-                        "description": .string("New content to replace the selected text"),
+                        "description": .string("The final text to replace the selected text with, or to insert into the current input field"),
                     ]),
                 ]),
             ],
