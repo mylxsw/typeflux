@@ -56,11 +56,10 @@ extension WorkflowController {
         }
 
         // Record Phase 1 as step 0 in all cases.
-        let phase1ResultContent: String
-        switch phase1Result.decision {
-        case let .answer(text): phase1ResultContent = text
-        case let .edit(text): phase1ResultContent = text
-        case .runAgent: phase1ResultContent = ""
+        let phase1ResultContent: String = switch phase1Result.decision {
+        case let .answer(text): text
+        case let .edit(text): text
+        case .runAgent: ""
         }
         await jobRecorder.addPhase1Step(
             toolCallName: phase1Result.toolCallName,
@@ -146,6 +145,7 @@ extension WorkflowController {
 
     // MARK: - Phase 2
 
+    // swiftlint:disable:next function_body_length function_parameter_count
     private func runPhase2AgentLoop(
         selectedText: String?,
         spokenInstruction: String,

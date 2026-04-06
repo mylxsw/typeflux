@@ -1,4 +1,5 @@
-// swiftlint:disable file_length
+// swiftlint:disable file_length function_body_length function_parameter_count line_length
+// swiftlint:disable multiple_closures_with_trailing_closure opening_brace trailing_comma
 import Foundation
 
 extension WorkflowController {
@@ -290,7 +291,6 @@ extension WorkflowController {
         applyText(text, replace: shouldReplaceActiveSelection(for: selectionSnapshot))
     }
 
-    // swiftlint:disable:next function_body_length
     func finishRecordingAndProcess(recordingStoppedAt: Date) async {
         do {
             let audioFile = try audioRecorder.stop()
@@ -479,7 +479,7 @@ extension WorkflowController {
         )
     }
 
-    // swiftlint:disable:next function_body_length cyclomatic_complexity function_parameter_count
+    // swiftlint:disable:next cyclomatic_complexity
     func process(
         audioFile: AudioFile,
         record: HistoryRecord,
@@ -1314,3 +1314,6 @@ extension WorkflowController {
         historyStore.purge(olderThanDays: days)
     }
 }
+
+// swiftlint:enable multiple_closures_with_trailing_closure opening_brace trailing_comma
+// swiftlint:enable file_length function_body_length function_parameter_count line_length

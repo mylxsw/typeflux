@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 
+// swiftlint:disable file_length
 private enum VocabularyFilter: String, CaseIterable, Identifiable {
     case all
     case automatic
@@ -44,6 +45,7 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
     }
 }
 
+// swiftlint:disable:next type_body_length
 struct StudioView: View {
     private enum ShortcutRecordingTarget {
         case activation
@@ -4262,6 +4264,7 @@ struct StudioView: View {
 
     // MARK: - Agent Job Detail
 
+    // swiftlint:disable:next function_body_length
     private func agentJobDetailView(job: AgentJob) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header with centered title, back on the left, close on the right.
@@ -4524,10 +4527,10 @@ private struct ExpandableContextView: View {
                                     Color.clear.onAppear {
                                         isTruncated = truncGeo.size.height < fullGeo.size.height
                                     }
-                                }
+                                },
                             )
                             .hidden()
-                    }
+                    },
                 )
 
             if isTruncated {

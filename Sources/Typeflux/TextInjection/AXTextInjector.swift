@@ -1,4 +1,4 @@
-// swiftlint:disable file_length type_body_length
+// swiftlint:disable file_length function_body_length identifier_name line_length trailing_comma type_body_length
 import AppKit
 import ApplicationServices
 import Foundation
@@ -455,3 +455,5 @@ final class AXTextInjector: TextInjector {
                 + "valuePreview=\(valuePreview) placeholderPreview=\(placeholderPreview)"
     }
 }
+
+// swiftlint:enable file_length function_body_length identifier_name line_length trailing_comma type_body_length

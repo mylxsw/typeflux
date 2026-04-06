@@ -2,6 +2,8 @@ import AppKit
 import ApplicationServices
 import Foundation
 
+// swiftlint:disable closure_parameter_position file_length function_body_length
+// swiftlint:disable identifier_name line_length opening_brace trailing_comma
 extension AXTextInjector {
     func setText(_ text: String, replaceSelection: Bool) throws {
         if !AXIsProcessTrusted() {
@@ -489,3 +491,6 @@ extension AXTextInjector {
         }
     }
 }
+
+// swiftlint:enable identifier_name line_length opening_brace trailing_comma
+// swiftlint:enable closure_parameter_position file_length function_body_length

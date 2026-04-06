@@ -2,6 +2,7 @@ import AppKit
 import ApplicationServices
 import Foundation
 
+// swiftlint:disable file_length function_body_length opening_brace
 extension AXTextInjector {
     func focusResolutionCandidate(for element: AXUIElement) -> FocusResolutionCandidate {
         FocusResolutionCandidate(
@@ -426,3 +427,5 @@ extension AXTextInjector {
         }
     }
 }
+
+// swiftlint:enable file_length function_body_length opening_brace

@@ -1,5 +1,7 @@
 import Foundation
 
+// swiftlint:disable opening_brace trailing_comma
+
 /// Prompt catalog dedicated to the agent.
 enum AgentPromptCatalog {
     // MARK: - Phase 1: Router prompts
@@ -12,15 +14,23 @@ enum AgentPromptCatalog {
 
             Analyze the user's spoken request and select exactly one action by calling the corresponding tool:
 
-            - answer_text: The request can be fully resolved in a single response — questions, explanations, analysis, summaries, or text transformations that require no external tools.
-            - edit_text: The user wants their selected text replaced (rewrites, translations, reformatting, grammar fixes), OR wants to generate and insert new content directly into the current input field (drafting a message, composing text at the cursor).
-            - run_agent: The task genuinely requires multiple steps, external tool access (files, clipboard, web search), or complex reasoning that cannot be completed in one shot. When choosing this, rewrite the user's intent into a precise, unambiguous, and actionable instruction for the agent.
+            - answer_text: The request can be fully resolved in a single response - questions, explanations,
+              analysis, summaries, or text transformations that require no external tools.
+            - edit_text: The user wants their selected text replaced (rewrites, translations, reformatting, grammar
+              fixes), OR wants to generate and insert new content directly into the current input field (drafting a
+              message, composing text at the cursor).
+            - run_agent: The task genuinely requires multiple steps, external tool access (files, clipboard, web
+              search), or complex reasoning that cannot be completed in one shot. When choosing this, rewrite the
+              user's intent into a precise, unambiguous, and actionable instruction for the agent.
 
             Decision rules:
             - Default to answer_text for questions and explanations.
-            - Use edit_text when the user wants to replace selected text or generate/insert content into the active input field.
-            - Use run_agent only when the task truly cannot be done in a single response. Do not delegate simple tasks.
-            - When you choose run_agent, write a detailed_instruction that: restates the goal precisely, resolves any implicit assumptions, and specifies the expected output format if relevant.
+            - Use edit_text when the user wants to replace selected text or generate/insert content into the active
+              input field.
+            - Use run_agent only when the task truly cannot be done in a single response. Do not delegate simple
+              tasks.
+            - When you choose run_agent, write a detailed_instruction that: restates the goal precisely, resolves any
+              implicit assumptions, and specifies the expected output format if relevant.
             """,
             PromptCatalog.languageConsistencyRule(for: "user's request"),
         ]
@@ -28,9 +38,7 @@ enum AgentPromptCatalog {
         if let persona = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines),
            !persona.isEmpty
         {
-            parts.append(
-                PromptCatalog.xmlSection(tag: "persona_definition", content: persona),
-            )
+            parts.append(PromptCatalog.xmlSection(tag: "persona_definition", content: persona))
         }
 
         return parts.joined(separator: "\n\n")
@@ -60,20 +68,25 @@ enum AgentPromptCatalog {
     static func agentSystemPrompt(personaPrompt: String?) -> String {
         var parts: [String] = [
             """
-            You are a capable AI agent for the Typeflux voice input assistant. You have access to tools and can execute multi-step tasks.
+            You are a capable AI agent for the Typeflux voice input assistant. You have access to tools and can
+            execute multi-step tasks.
 
             Your inputs are organized using XML tags:
-            - <task_instruction>: The primary instruction to execute. This is a clarified and precise version of the user's intent — treat it as the authoritative task definition.
+            - <task_instruction>: The primary instruction to execute. This is a clarified and precise version of the
+              user's intent - treat it as the authoritative task definition.
             - <original_request>: The user's original spoken request, provided for reference and context only.
             - <selected_text>: Text the user had selected when making the request (if any).
 
-            When you use tools, structure intermediate reasoning clearly. Call answer_text to present a final answer to the user, or edit_text to replace their selected text.
+            When you use tools, structure intermediate reasoning clearly. Call answer_text to present a final answer
+            to the user, or edit_text to replace their selected text.
 
-            Additional tools from connected MCP servers may also be available — use them when appropriate to fulfil the task.
+            Additional tools from connected MCP servers may also be available - use them when appropriate to fulfil
+            the task.
 
             Decision rules:
             - Default to answer_text for questions, explanations, and read-only results.
-            - Use edit_text when the task requires replacing the selected text, or inserting generated content into the current input field.
+            - Use edit_text when the task requires replacing the selected text, or inserting generated content into
+              the current input field.
             - If unsure, prefer answer_text over edit_text.
             """,
             PromptCatalog.languageConsistencyRule(for: "task_instruction and original_request"),
@@ -82,9 +95,7 @@ enum AgentPromptCatalog {
         if let persona = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines),
            !persona.isEmpty
         {
-            parts.append(
-                PromptCatalog.xmlSection(tag: "persona_definition", content: persona),
-            )
+            parts.append(PromptCatalog.xmlSection(tag: "persona_definition", content: persona))
         }
 
         return parts.joined(separator: "\n\n")
@@ -121,3 +132,5 @@ enum AgentPromptCatalog {
         return parts.joined(separator: "\n\n")
     }
 }
+
+// swiftlint:enable opening_brace trailing_comma

@@ -1,10 +1,15 @@
 import Foundation
 
+// swiftlint:disable trailing_comma
+
 /// Termination tool for presenting an answer to the user.
 struct AnswerTextTool: AgentTool, TerminationTool {
     let definition = LLMAgentTool(
         name: BuiltinAgentToolName.answerText.rawValue,
-        description: "Use when the user asks a question about selected text and expects an answer. Present the final answer in a popup window.",
+        description: """
+        Use when the user asks a question about selected text and expects an answer. Present the final answer in a
+        popup window.
+        """,
         inputSchema: LLMJSONSchema(
             name: BuiltinAgentToolName.answerText.rawValue,
             schema: [
@@ -39,7 +44,11 @@ struct AnswerTextTool: AgentTool, TerminationTool {
 struct EditTextTool: AgentTool, TerminationTool {
     let definition = LLMAgentTool(
         name: BuiltinAgentToolName.editText.rawValue,
-        description: "Use when the user wants to rewrite, translate, rephrase, or otherwise modify selected text, OR when the user wants to generate and insert new content directly into the current input field (e.g. drafting a message, composing text at the cursor position). Provide the final text to insert or replace.",
+        description: """
+        Use when the user wants to rewrite, translate, rephrase, or otherwise modify selected text, OR when the user
+        wants to generate and insert new content directly into the current input field (e.g. drafting a message,
+        composing text at the cursor position). Provide the final text to insert or replace.
+        """,
         inputSchema: LLMJSONSchema(
             name: BuiltinAgentToolName.editText.rawValue,
             schema: [
@@ -48,7 +57,11 @@ struct EditTextTool: AgentTool, TerminationTool {
                 "properties": .object([
                     "replacement": .object([
                         "type": .string("string"),
-                        "description": .string("The final text to replace the selected text with, or to insert into the current input field"),
+                        "description": .string(
+                            """
+                            The final text to replace the selected text with, or to insert into the current input field
+                            """,
+                        ),
                     ]),
                 ]),
             ],
@@ -66,7 +79,11 @@ struct EditTextTool: AgentTool, TerminationTool {
 struct RunAgentTool: AgentTool, TerminationTool {
     let definition = LLMAgentTool(
         name: BuiltinAgentToolName.runAgent.rawValue,
-        description: "Delegate to the full agent loop when the task requires multiple steps, external tool access (files, clipboard, web), or complex reasoning that cannot be completed in one response. Rewrite the user's intent into a precise, unambiguous, and actionable instruction for the agent.",
+        description: """
+        Delegate to the full agent loop when the task requires multiple steps, external tool access (files, clipboard,
+        web), or complex reasoning that cannot be completed in one response. Rewrite the user's intent into a precise,
+        unambiguous, and actionable instruction for the agent.
+        """,
         inputSchema: LLMJSONSchema(
             name: BuiltinAgentToolName.runAgent.rawValue,
             schema: [
@@ -75,7 +92,12 @@ struct RunAgentTool: AgentTool, TerminationTool {
                 "properties": .object([
                     "detailed_instruction": .object([
                         "type": .string("string"),
-                        "description": .string("A clarified, precise restatement of the user's goal — unambiguous and directly actionable by the agent. Resolve any implicit assumptions and specify the expected output if relevant."),
+                        "description": .string(
+                            """
+                            A clarified, precise restatement of the user's goal - unambiguous and directly actionable
+                            by the agent. Resolve any implicit assumptions and specify the expected output if relevant.
+                            """,
+                        ),
                     ]),
                 ]),
             ],
@@ -91,7 +113,10 @@ struct RunAgentTool: AgentTool, TerminationTool {
 struct GetClipboardTool: AgentTool {
     let definition = LLMAgentTool(
         name: BuiltinAgentToolName.getClipboard.rawValue,
-        description: "Read the current system clipboard content. Use when the user refers to clipboard content or needs to reference previously copied text.",
+        description: """
+        Read the current system clipboard content. Use when the user refers to clipboard content or needs to reference
+        previously copied text.
+        """,
         inputSchema: LLMJSONSchema(
             name: BuiltinAgentToolName.getClipboard.rawValue,
             schema: [
@@ -117,3 +142,5 @@ struct GetClipboardTool: AgentTool {
         return String(data: data, encoding: .utf8) ?? #"{"error": "encoding failed"}"#
     }
 }
+
+// swiftlint:enable trailing_comma

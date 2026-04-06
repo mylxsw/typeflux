@@ -1,4 +1,4 @@
-// swiftlint:disable file_length type_body_length
+// swiftlint:disable file_length function_body_length line_length type_body_length
 import Foundation
 import os
 
@@ -583,3 +583,5 @@ final class WorkflowController {
         }
     }
 }
+
+// swiftlint:enable file_length function_body_length line_length type_body_length
