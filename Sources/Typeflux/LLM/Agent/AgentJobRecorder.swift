@@ -30,6 +30,30 @@ final class AgentJobRecorder: AgentStepMonitor, @unchecked Sendable {
         try? await store.save(job)
     }
 
+    /// Record Phase 1 routing decision as step 0 before the Phase 2 loop begins.
+    func addPhase1Step(toolCallName: String, toolCallArgumentsJSON: String, durationMs: Int64) async {
+        let phase1ToolCall = AgentJobToolCall(
+            id: "phase1-routing",
+            name: toolCallName,
+            argumentsJSON: toolCallArgumentsJSON,
+            resultContent: "",
+            isError: false,
+        )
+        let step = AgentJobStep(
+            stepIndex: 0,
+            toolCalls: [phase1ToolCall],
+            assistantText: nil,
+            durationMs: durationMs,
+        )
+
+        let currentSteps = appendStepAndSnapshot(step)
+
+        if var job = try? await store.job(id: jobID) {
+            job.steps = currentSteps
+            try? await store.save(job)
+        }
+    }
+
     func agentDidCompleteStep(_ step: AgentStep) async {
         let jobStep = AgentJobStep(
             stepIndex: step.stepIndex,

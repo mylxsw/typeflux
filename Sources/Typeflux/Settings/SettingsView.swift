@@ -4453,27 +4453,7 @@ struct StudioView: View {
             }
 
             ForEach(step.toolCalls) { toolCall in
-                HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
-                    Image(systemName: toolCall.isError ? "xmark.circle.fill" : "wrench.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(toolCall.isError ? StudioTheme.danger : StudioTheme.accent)
-                        .padding(.top, 3)
-                        .frame(width: 10)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(toolCall.name)
-                            .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .medium))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        Text(toolCall.resultContent)
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .textSelection(.enabled)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
+                JobToolCallRow(toolCall: toolCall)
             }
 
             if !isLast {
@@ -4515,5 +4495,61 @@ struct StudioView: View {
         formatter.dateStyle = .medium
         formatter.timeStyle = .medium
         return formatter.string(from: date)
+    }
+}
+
+/// A single tool call row in the agent job step detail.
+/// Clicking the function name toggles visibility of the function parameters (argumentsJSON).
+private struct JobToolCallRow: View {
+    let toolCall: AgentJobToolCall
+
+    @State private var showParameters = false
+
+    var body: some View {
+        HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
+            Image(systemName: toolCall.isError ? "xmark.circle.fill" : "wrench.fill")
+                .font(.system(size: 10))
+                .foregroundStyle(toolCall.isError ? StudioTheme.danger : StudioTheme.accent)
+                .padding(.top, 3)
+                .frame(width: 10)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        showParameters.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(toolCall.name)
+                            .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .medium))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                        Image(systemName: showParameters ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                if showParameters, !toolCall.argumentsJSON.isEmpty, toolCall.argumentsJSON != "{}" {
+                    Text(toolCall.argumentsJSON)
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
+                        .padding(6)
+                        .background(StudioTheme.surface.opacity(0.5))
+                        .cornerRadius(4)
+                }
+
+                if !toolCall.resultContent.isEmpty {
+                    Text(toolCall.resultContent)
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }

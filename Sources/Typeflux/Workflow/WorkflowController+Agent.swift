@@ -13,6 +13,14 @@ private enum Phase1Decision {
     case runAgent(detailedInstruction: String)
 }
 
+/// Captures Phase 1 execution metadata for inclusion in the Phase 2 job record.
+private struct Phase1RouterResult {
+    let decision: Phase1Decision
+    let toolCallName: String
+    let toolCallArgumentsJSON: String
+    let durationMs: Int64
+}
+
 extension WorkflowController {
     /// Run an agent-powered "Ask Anything" request using a two-phase approach:
     ///
@@ -29,26 +37,28 @@ extension WorkflowController {
         let llmService = OpenAICompatibleAgentService(settingsStore: settingsStore)
 
         // Phase 1: single tool call, no MCP, no job recording
-        let phase1 = try await runPhase1Router(
+        let phase1Result = try await runPhase1Router(
             selectedText: selectedText,
             spokenInstruction: spokenInstruction,
             personaPrompt: personaPrompt,
             llmService: llmService,
         )
 
-        switch phase1 {
+        switch phase1Result.decision {
         case let .answer(text):
             return .answer(text)
         case let .edit(text):
             return .edit(text)
         case let .runAgent(detailedInstruction):
-            // Phase 2: full agent loop with MCP and job recording
+            // Phase 2: full agent loop with MCP and job recording; Phase 1 metadata
+            // is recorded as step 0 in the same job.
             return try await runPhase2AgentLoop(
                 selectedText: selectedText,
                 spokenInstruction: spokenInstruction,
                 detailedInstruction: detailedInstruction,
                 personaPrompt: personaPrompt,
                 llmService: llmService,
+                phase1Result: phase1Result,
             )
         }
     }
@@ -60,7 +70,7 @@ extension WorkflowController {
         spokenInstruction: String,
         personaPrompt: String?,
         llmService: OpenAICompatibleAgentService,
-    ) async throws -> Phase1Decision {
+    ) async throws -> Phase1RouterResult {
         let systemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: AgentPromptCatalog.routerSystemPrompt(personaPrompt: personaPrompt),
             appLanguage: settingsStore.appLanguage,
@@ -71,6 +81,7 @@ extension WorkflowController {
         )
         let tools = [AnswerTextTool().definition, EditTextTool().definition, RunAgentTool().definition]
 
+        let start = DispatchTime.now()
         let toolCall = try await llmService.runAnyTool(
             request: LLMAgentRequest(
                 systemPrompt: systemPrompt,
@@ -78,21 +89,31 @@ extension WorkflowController {
                 tools: tools,
             ),
         )
+        let end = DispatchTime.now()
+        let durationMs = Int64((end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000)
 
+        let decision: Phase1Decision
         switch toolCall.name {
         case BuiltinAgentToolName.answerText.rawValue:
             let text = parseStringField("answer", from: toolCall.argumentsJSON) ?? ""
-            return .answer(text)
+            decision = .answer(text)
         case BuiltinAgentToolName.editText.rawValue:
             let text = parseStringField("replacement", from: toolCall.argumentsJSON) ?? ""
-            return .edit(text)
+            decision = .edit(text)
         case BuiltinAgentToolName.runAgent.rawValue:
             let instruction = parseStringField("detailed_instruction", from: toolCall.argumentsJSON)
                 ?? spokenInstruction
-            return .runAgent(detailedInstruction: instruction)
+            decision = .runAgent(detailedInstruction: instruction)
         default:
             throw AgentError.invalidAgentState(reason: "Unexpected Phase 1 tool: \(toolCall.name)")
         }
+
+        return Phase1RouterResult(
+            decision: decision,
+            toolCallName: toolCall.name,
+            toolCallArgumentsJSON: toolCall.argumentsJSON,
+            durationMs: durationMs,
+        )
     }
 
     // MARK: - Phase 2
@@ -103,6 +124,7 @@ extension WorkflowController {
         detailedInstruction: String,
         personaPrompt: String?,
         llmService: OpenAICompatibleAgentService,
+        phase1Result: Phase1RouterResult,
     ) async throws -> AskAgentResult {
         // Connect MCP servers (only in Phase 2)
         await mcpRegistry.connectEnabledServers(settingsStore.mcpServers)
@@ -116,15 +138,29 @@ extension WorkflowController {
             await registry.register(tool)
         }
 
+        // Phase 2 steps start at index 1 because index 0 is reserved for the Phase 1 step.
+        let phase2Config = AgentConfig(
+            maxSteps: AgentConfig.default.maxSteps,
+            allowParallelToolCalls: AgentConfig.default.allowParallelToolCalls,
+            temperature: AgentConfig.default.temperature,
+            enableStreaming: AgentConfig.default.enableStreaming,
+            initialStepIndex: 1,
+        )
+
         let loop = AgentLoop(
             llmService: llmService,
             toolRegistry: registry,
-            config: .default,
+            config: phase2Config,
         )
 
-        // Set up job recorder for Phase 2 only
+        // Create the job recorder, seed Phase 1 as step 0, then run Phase 2.
         let jobRecorder = AgentJobRecorder(store: agentJobStore, jobID: UUID())
         await jobRecorder.beginJob(userPrompt: spokenInstruction, selectedText: selectedText)
+        await jobRecorder.addPhase1Step(
+            toolCallName: phase1Result.toolCallName,
+            toolCallArgumentsJSON: phase1Result.toolCallArgumentsJSON,
+            durationMs: phase1Result.durationMs,
+        )
         await loop.setStepMonitor(jobRecorder)
 
         let systemPrompt = PromptCatalog.appendUserEnvironmentContext(

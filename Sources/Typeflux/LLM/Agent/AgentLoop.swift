@@ -37,7 +37,7 @@ actor AgentLoop {
         let startTime = DispatchTime.now()
         var cumulativeTokenUsage: LLMTokenUsage? = nil
 
-        for stepIndex in 0 ..< config.maxSteps {
+        for stepIndex in config.initialStepIndex ..< (config.initialStepIndex + config.maxSteps) {
             let stepStart = DispatchTime.now()
 
             let callConfig = LLMCallConfig(
