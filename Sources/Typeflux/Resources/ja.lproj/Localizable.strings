@@ -574,6 +574,14 @@
 "onboarding.step.permissions" = "権限";
 "onboarding.step.shortcuts" = "ショートカット";
 
+"onboarding.welcome.tagline" = "すべてのアプリに音声入力を。";
+"onboarding.welcome.feature1.title" = "押して話す";
+"onboarding.welcome.feature1.desc" = "ホットキーを押して録音し、離すと文字起こし — テキストがどのアプリにも入力されます。";
+"onboarding.welcome.feature2.title" = "どこでも使える";
+"onboarding.welcome.feature2.desc" = "アクセシビリティ API を使ってあらゆる macOS アプリにテキストを挿入します。";
+"onboarding.welcome.feature3.title" = "AI リライト";
+"onboarding.welcome.feature3.desc" = "オプションの言語モデルがディクテーションをリアルタイムで改善します。";
+
 "onboarding.language.title" = "言語を選択してください";
 "onboarding.language.subtitle" = "Typeflux インターフェイスの表示言語を選択します。";
 

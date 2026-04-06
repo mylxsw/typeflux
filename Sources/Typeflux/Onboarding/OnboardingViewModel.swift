@@ -5,16 +5,15 @@ import SwiftUI
 @MainActor
 final class OnboardingViewModel: ObservableObject {
     enum Step: Int, CaseIterable {
-        case language = 0
-        case sttProvider = 1
-        case sttConfig = 2
-        case llmProvider = 3
-        case llmConfig = 4
-        case permissions = 5
-        case shortcuts = 6
+        case welcome = 0
+        case language = 1
+        case stt = 2
+        case llm = 3
+        case permissions = 4
+        case shortcuts = 5
     }
 
-    @Published var currentStep: Step = .language
+    @Published var currentStep: Step = .welcome
     @Published var stepDirection: Int = 1 // 1 = forward, -1 = backward
 
     /// Language
@@ -90,7 +89,7 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     var canGoBack: Bool {
-        currentStep != .language
+        currentStep != .welcome
     }
 
     var isLastStep: Bool {
@@ -99,19 +98,16 @@ final class OnboardingViewModel: ObservableObject {
 
     var visibleSteps: [Step] {
         if sttProvider == .multimodalLLM {
-            return Step.allCases.filter { step in
-                step != .llmProvider && step != .llmConfig
-            }
+            return Step.allCases.filter { $0 != .llm }
         }
-
         return Step.allCases
     }
 
     var isSkippable: Bool {
         switch currentStep {
-        case .language, .sttConfig, .llmConfig, .permissions:
+        case .language, .stt, .llm, .permissions:
             true
-        case .sttProvider, .llmProvider, .shortcuts:
+        case .welcome, .shortcuts:
             false
         }
     }
@@ -125,7 +121,7 @@ final class OnboardingViewModel: ObservableObject {
 
     func goBack() {
         guard canGoBack else { return }
-        let previousStep = adjacentStep(offset: -1) ?? .language
+        let previousStep = adjacentStep(offset: -1) ?? .welcome
         stepDirection = -1
         withAnimation(.easeInOut(duration: 0.22)) {
             currentStep = previousStep
@@ -197,12 +193,13 @@ final class OnboardingViewModel: ObservableObject {
 
     private func saveCurrentStepSettings() {
         switch currentStep {
+        case .welcome:
+            break
         case .language:
             settingsStore.appLanguage = appLanguage
             AppLocalization.shared.setLanguage(appLanguage)
-        case .sttProvider:
+        case .stt:
             settingsStore.sttProvider = sttProvider
-        case .sttConfig:
             switch sttProvider {
             case .freeModel:
                 settingsStore.freeSTTModel = freeSTTModel
@@ -228,13 +225,10 @@ final class OnboardingViewModel: ObservableObject {
             case .appleSpeech:
                 break
             }
-        case .llmProvider:
+        case .llm:
             settingsStore.llmProvider = llmProvider
             if llmProvider == .openAICompatible {
                 settingsStore.llmRemoteProvider = llmRemoteProvider
-            }
-        case .llmConfig:
-            if llmProvider == .openAICompatible {
                 settingsStore.setLLMBaseURL(llmBaseURL, for: llmRemoteProvider)
                 settingsStore.setLLMAPIKey(llmAPIKey, for: llmRemoteProvider)
                 settingsStore.setLLMModel(llmModel, for: llmRemoteProvider)

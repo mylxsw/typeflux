@@ -22,21 +22,17 @@ final class OnboardingViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testMultimodalSTTSkipsLLMSteps() {
+    func testMultimodalSTTSkipsLLMStep() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
 
-        viewModel.currentStep = .sttProvider
+        viewModel.currentStep = .stt
         viewModel.sttProvider = .multimodalLLM
 
         viewModel.advance()
-        XCTAssertEqual(viewModel.currentStep, .sttConfig)
-
-        viewModel.advance()
         XCTAssertEqual(viewModel.currentStep, .permissions)
-        XCTAssertFalse(viewModel.visibleSteps.contains(.llmProvider))
-        XCTAssertFalse(viewModel.visibleSteps.contains(.llmConfig))
+        XCTAssertFalse(viewModel.visibleSteps.contains(.llm))
 
         viewModel.goBack()
-        XCTAssertEqual(viewModel.currentStep, .sttConfig)
+        XCTAssertEqual(viewModel.currentStep, .stt)
     }
 }

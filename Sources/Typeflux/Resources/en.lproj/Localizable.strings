@@ -574,6 +574,14 @@
 "onboarding.step.permissions" = "Permissions";
 "onboarding.step.shortcuts" = "Shortcuts";
 
+"onboarding.welcome.tagline" = "Voice input for every app.";
+"onboarding.welcome.feature1.title" = "Hold to talk";
+"onboarding.welcome.feature1.desc" = "Hold your hotkey to record, release to transcribe — text appears in any app instantly.";
+"onboarding.welcome.feature2.title" = "Works everywhere";
+"onboarding.welcome.feature2.desc" = "Inserts text into any macOS app via the Accessibility API.";
+"onboarding.welcome.feature3.title" = "AI rewriting";
+"onboarding.welcome.feature3.desc" = "An optional language model refines your dictation on the fly.";
+
 "onboarding.language.title" = "Choose your language";
 "onboarding.language.subtitle" = "Select the display language for the Typeflux interface.";
 

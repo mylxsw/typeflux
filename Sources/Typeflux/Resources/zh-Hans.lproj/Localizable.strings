@@ -574,6 +574,14 @@
 "onboarding.step.permissions" = "权限";
 "onboarding.step.shortcuts" = "快捷键";
 
+"onboarding.welcome.tagline" = "为每个应用提供语音输入。";
+"onboarding.welcome.feature1.title" = "按住说话";
+"onboarding.welcome.feature1.desc" = "按住快捷键录音，松手即完成转录 — 文字自动插入任何应用。";
+"onboarding.welcome.feature2.title" = "随处可用";
+"onboarding.welcome.feature2.desc" = "通过无障碍 API 向任意 macOS 应用注入文字。";
+"onboarding.welcome.feature3.title" = "AI 润色";
+"onboarding.welcome.feature3.desc" = "可选的语言模型实时优化你的听写内容。";
+
 "onboarding.language.title" = "选择语言";
 "onboarding.language.subtitle" = "选择 Typeflux 界面的显示语言。";
 

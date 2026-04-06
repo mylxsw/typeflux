@@ -574,6 +574,14 @@
 "onboarding.step.permissions" = "權限";
 "onboarding.step.shortcuts" = "快捷鍵";
 
+"onboarding.welcome.tagline" = "為每個應用提供語音輸入。";
+"onboarding.welcome.feature1.title" = "按住說話";
+"onboarding.welcome.feature1.desc" = "按住快捷鍵錄音，放開即完成轉錄 — 文字自動插入任何應用。";
+"onboarding.welcome.feature2.title" = "隨處可用";
+"onboarding.welcome.feature2.desc" = "透過無障礙 API 向任意 macOS 應用注入文字。";
+"onboarding.welcome.feature3.title" = "AI 潤色";
+"onboarding.welcome.feature3.desc" = "可選的語言模型即時優化您的聽寫內容。";
+
 "onboarding.language.title" = "選擇語言";
 "onboarding.language.subtitle" = "選擇 Typeflux 介面的顯示語言。";
 

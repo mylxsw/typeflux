@@ -574,6 +574,14 @@
 "onboarding.step.permissions" = "권한";
 "onboarding.step.shortcuts" = "단축키";
 
+"onboarding.welcome.tagline" = "모든 앱에 음성 입력을.";
+"onboarding.welcome.feature1.title" = "누르고 말하기";
+"onboarding.welcome.feature1.desc" = "핫키를 누르면 녹음, 떼면 변환 — 텍스트가 어느 앱에나 입력됩니다.";
+"onboarding.welcome.feature2.title" = "어디서나 사용";
+"onboarding.welcome.feature2.desc" = "접근성 API를 이용해 모든 macOS 앱에 텍스트를 삽입합니다.";
+"onboarding.welcome.feature3.title" = "AI 재작성";
+"onboarding.welcome.feature3.desc" = "선택적 언어 모델이 받아쓰기를 실시간으로 다듬어 줍니다.";
+
 "onboarding.language.title" = "언어를 선택하세요";
 "onboarding.language.subtitle" = "Typeflux 인터페이스의 표시 언어를 선택하세요.";
 

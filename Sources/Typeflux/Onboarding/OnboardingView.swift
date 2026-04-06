@@ -1,15 +1,10 @@
 import AppKit
 import SwiftUI
 
+// swiftlint:disable file_length
 struct OnboardingView: View {
     @ObservedObject var viewModel: OnboardingViewModel
     @ObservedObject private var localization = AppLocalization.shared
-    @StateObject private var hotkeyRecorder = HotkeyRecorder()
-    @State private var recordingTarget: OnboardingHotkeyTarget?
-
-    private enum OnboardingHotkeyTarget {
-        case activation, ask, persona
-    }
 
     var body: some View {
         ZStack {
@@ -59,7 +54,7 @@ struct OnboardingView: View {
 
             Spacer()
 
-            // Step dots
+            // Step dots + count
             stepIndicator
         }
         .padding(.horizontal, 28)
@@ -76,22 +71,31 @@ struct OnboardingView: View {
     }
 
     private var stepIndicator: some View {
-        HStack(spacing: 6) {
-            ForEach(Array(viewModel.visibleSteps.enumerated()), id: \.element.rawValue) { index, step in
-                if step == viewModel.currentStep {
-                    Capsule()
-                        .fill(StudioTheme.accent)
-                        .frame(width: 20, height: 6)
-                } else {
-                    Circle()
-                        .fill(index < (viewModel.visibleSteps.firstIndex(of: viewModel.currentStep) ?? 0)
-                            ? StudioTheme.accent.opacity(0.45)
-                            : StudioTheme.border.opacity(0.7))
-                        .frame(width: 6, height: 6)
+        HStack(spacing: 10) {
+            HStack(spacing: 6) {
+                ForEach(Array(viewModel.visibleSteps.enumerated()), id: \.element.rawValue) { index, step in
+                    if step == viewModel.currentStep {
+                        Capsule()
+                            .fill(StudioTheme.accent)
+                            .frame(width: 20, height: 6)
+                    } else {
+                        Circle()
+                            .fill(index < (viewModel.visibleSteps.firstIndex(of: viewModel.currentStep) ?? 0)
+                                ? StudioTheme.accent.opacity(0.45)
+                                : StudioTheme.border.opacity(0.7))
+                            .frame(width: 6, height: 6)
+                    }
                 }
             }
+            .animation(.spring(response: 0.3, dampingFraction: 0.75), value: viewModel.currentStep)
+
+            if let currentIndex = viewModel.visibleSteps.firstIndex(of: viewModel.currentStep) {
+                Text("\(currentIndex + 1) / \(viewModel.visibleSteps.count)")
+                    .font(.studioBody(11))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .monospacedDigit()
+            }
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.75), value: viewModel.currentStep)
     }
 
     // MARK: - Step Content
@@ -99,21 +103,107 @@ struct OnboardingView: View {
     @ViewBuilder
     private var stepContent: some View {
         switch viewModel.currentStep {
+        case .welcome:
+            welcomeStep
         case .language:
             languageStep
-        case .sttProvider:
-            sttProviderStep
-        case .sttConfig:
-            sttConfigStep
-        case .llmProvider:
-            llmProviderStep
-        case .llmConfig:
-            llmConfigStep
+        case .stt:
+            sttStep
+        case .llm:
+            llmStep
         case .permissions:
             permissionsStep
         case .shortcuts:
             shortcutsStep
         }
+    }
+
+    // MARK: - Step 0: Welcome
+
+    private var welcomeStep: some View {
+        VStack(spacing: 0) {
+            Spacer().frame(height: 12)
+
+            // App icon
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(StudioTheme.accentSoft)
+                .frame(width: 80, height: 80)
+                .overlay(
+                    Image(systemName: StudioTheme.Symbol.brand)
+                        .font(.system(size: 36, weight: .medium))
+                        .foregroundStyle(StudioTheme.accent),
+                )
+                .padding(.bottom, 20)
+
+            // Title + tagline
+            VStack(spacing: 8) {
+                Text(L("sidebar.appName"))
+                    .font(.studioDisplay(28, weight: .bold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Text(L("onboarding.welcome.tagline"))
+                    .font(.studioBody(15))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.bottom, 36)
+
+            // Feature highlights
+            VStack(spacing: 10) {
+                welcomeFeatureRow(
+                    icon: "mic.fill",
+                    color: StudioTheme.accent,
+                    title: L("onboarding.welcome.feature1.title"),
+                    desc: L("onboarding.welcome.feature1.desc"),
+                )
+                welcomeFeatureRow(
+                    icon: "app.connected.to.app.below.fill",
+                    color: Color(red: 0.45, green: 0.35, blue: 0.95),
+                    title: L("onboarding.welcome.feature2.title"),
+                    desc: L("onboarding.welcome.feature2.desc"),
+                )
+                welcomeFeatureRow(
+                    icon: "sparkles",
+                    color: Color(red: 0.95, green: 0.55, blue: 0.2),
+                    title: L("onboarding.welcome.feature3.title"),
+                    desc: L("onboarding.welcome.feature3.desc"),
+                )
+            }
+
+            Spacer().frame(height: 16)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func welcomeFeatureRow(icon: String, color: Color, title: String, desc: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(color.opacity(0.12))
+                .frame(width: 40, height: 40)
+                .overlay(
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(color),
+                )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.studioBody(14, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Text(desc)
+                    .font(.studioBody(12))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(StudioTheme.surface),
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(StudioTheme.border.opacity(0.45), lineWidth: 1),
+        )
     }
 
     // MARK: - Step 1: Language
@@ -197,9 +287,9 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 2: STT Provider Selection
+    // MARK: - Step 2: STT (provider selection + inline config)
 
-    private var sttProviderStep: some View {
+    private var sttStep: some View {
         VStack(alignment: .leading, spacing: 28) {
             stepHeader(
                 icon: "waveform",
@@ -209,15 +299,25 @@ struct OnboardingView: View {
 
             VStack(spacing: 8) {
                 ForEach(STTProvider.settingsDisplayOrder, id: \.self) { provider in
-                    modelProviderCard(
-                        providerID: sttProviderToID(provider),
-                        title: provider.displayName,
-                        description: sttProviderDescription(provider),
-                        badge: sttProviderBadge(provider),
-                        isSelected: viewModel.sttProvider == provider,
-                    ) {
-                        withAnimation(.easeOut(duration: 0.18)) {
-                            viewModel.sttProvider = provider
+                    VStack(spacing: 8) {
+                        modelProviderCard(
+                            providerID: sttProviderToID(provider),
+                            title: provider.displayName,
+                            description: sttProviderDescription(provider),
+                            badge: sttProviderBadge(provider),
+                            isSelected: viewModel.sttProvider == provider,
+                        ) {
+                            withAnimation(.easeOut(duration: 0.18)) {
+                                viewModel.sttProvider = provider
+                            }
+                        }
+
+                        if viewModel.sttProvider == provider {
+                            sttInlineConfig(for: provider)
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .move(edge: .top)),
+                                    removal: .opacity,
+                                ))
                         }
                     }
                 }
@@ -225,41 +325,31 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 3: STT Configuration
-
-    private var sttConfigStep: some View {
-        VStack(alignment: .leading, spacing: 28) {
-            stepHeader(
-                providerID: sttProviderToID(viewModel.sttProvider),
-                icon: sttProviderIcon(viewModel.sttProvider),
-                title: viewModel.sttProvider.displayName,
-                subtitle: L("onboarding.sttConfig.subtitle"),
-            )
-
-            switch viewModel.sttProvider {
-            case .freeModel:
-                freeSTTConfigFields
-            case .whisperAPI:
-                whisperConfigFields
-            case .localModel:
-                localSTTConfigFields
-            case .multimodalLLM:
-                multimodalLLMConfigFields
-            case .aliCloud:
-                aliCloudConfigFields
-            case .doubaoRealtime:
-                doubaoConfigFields
-            case .groq:
-                groqSTTConfigFields
-            case .appleSpeech:
-                EmptyView()
-            }
+    @ViewBuilder
+    private func sttInlineConfig(for provider: STTProvider) -> some View {
+        switch provider {
+        case .freeModel:
+            freeSTTConfigFields
+        case .whisperAPI:
+            whisperConfigFields
+        case .localModel:
+            localSTTConfigFields
+        case .multimodalLLM:
+            multimodalLLMConfigFields
+        case .aliCloud:
+            aliCloudConfigFields
+        case .doubaoRealtime:
+            doubaoConfigFields
+        case .groq:
+            groqSTTConfigFields
+        case .appleSpeech:
+            EmptyView()
         }
     }
 
-    // MARK: - Step 4: LLM Provider Selection
+    // MARK: - Step 3: LLM (provider selection + inline config)
 
-    private var llmProviderStep: some View {
+    private var llmStep: some View {
         VStack(alignment: .leading, spacing: 28) {
             stepHeader(
                 icon: "sparkles",
@@ -268,80 +358,81 @@ struct OnboardingView: View {
             )
 
             VStack(spacing: 8) {
+                // Free model (first in list)
                 ForEach(LLMRemoteProvider.settingsDisplayOrder.prefix(1), id: \.self) { provider in
                     let isSelected = viewModel.llmProvider == .openAICompatible
                         && viewModel.llmRemoteProvider == provider
-                    modelProviderCard(
-                        providerID: provider.studioProviderID,
-                        title: provider.displayName,
-                        description: L("settings.models.card.\(provider.rawValue).summary"),
-                        badge: L("settings.models.badge.free"),
-                        isSelected: isSelected,
-                    ) {
-                        withAnimation(.easeOut(duration: 0.18)) {
-                            viewModel.selectLLMRemoteProvider(provider)
+                    VStack(spacing: 8) {
+                        modelProviderCard(
+                            providerID: provider.studioProviderID,
+                            title: provider.displayName,
+                            description: L("settings.models.card.\(provider.rawValue).summary"),
+                            badge: L("settings.models.badge.free"),
+                            isSelected: isSelected,
+                        ) {
+                            withAnimation(.easeOut(duration: 0.18)) {
+                                viewModel.selectLLMRemoteProvider(provider)
+                            }
+                        }
+                        if isSelected {
+                            llmRemoteConfigFields
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .move(edge: .top)),
+                                    removal: .opacity,
+                                ))
                         }
                     }
                 }
 
-                modelProviderCard(
-                    providerID: .ollama,
-                    title: L("provider.llm.ollama"),
-                    description: L("settings.models.card.ollama.summary"),
-                    badge: L("settings.models.badge.local"),
-                    isSelected: viewModel.llmProvider == .ollama,
-                ) {
-                    withAnimation(.easeOut(duration: 0.18)) {
-                        viewModel.selectOllama()
+                // Ollama
+                VStack(spacing: 8) {
+                    modelProviderCard(
+                        providerID: .ollama,
+                        title: L("provider.llm.ollama"),
+                        description: L("settings.models.card.ollama.summary"),
+                        badge: L("settings.models.badge.local"),
+                        isSelected: viewModel.llmProvider == .ollama,
+                    ) {
+                        withAnimation(.easeOut(duration: 0.18)) {
+                            viewModel.selectOllama()
+                        }
+                    }
+                    if viewModel.llmProvider == .ollama {
+                        ollamaConfigFields
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .move(edge: .top)),
+                                removal: .opacity,
+                            ))
                     }
                 }
 
+                // Other remote providers
                 ForEach(LLMRemoteProvider.settingsDisplayOrder.dropFirst(), id: \.self) { provider in
                     let isSelected = viewModel.llmProvider == .openAICompatible
                         && viewModel.llmRemoteProvider == provider
-                    modelProviderCard(
-                        providerID: provider.studioProviderID,
-                        title: provider.displayName,
-                        description: L("settings.models.card.\(provider.rawValue).summary"),
-                        badge: provider.apiStyle == .openAICompatible
-                            ? L("settings.models.badge.api")
-                            : L("settings.models.badge.native"),
-                        isSelected: isSelected,
-                    ) {
-                        withAnimation(.easeOut(duration: 0.18)) {
-                            viewModel.selectLLMRemoteProvider(provider)
+                    VStack(spacing: 8) {
+                        modelProviderCard(
+                            providerID: provider.studioProviderID,
+                            title: provider.displayName,
+                            description: L("settings.models.card.\(provider.rawValue).summary"),
+                            badge: provider.apiStyle == .openAICompatible
+                                ? L("settings.models.badge.api")
+                                : L("settings.models.badge.native"),
+                            isSelected: isSelected,
+                        ) {
+                            withAnimation(.easeOut(duration: 0.18)) {
+                                viewModel.selectLLMRemoteProvider(provider)
+                            }
+                        }
+                        if isSelected {
+                            llmRemoteConfigFields
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .move(edge: .top)),
+                                    removal: .opacity,
+                                ))
                         }
                     }
                 }
-            }
-        }
-    }
-
-    // MARK: - Step 5: LLM Configuration
-
-    private var llmConfigStep: some View {
-        let providerName = viewModel.llmProvider == .ollama
-            ? L("provider.llm.ollama")
-            : viewModel.llmRemoteProvider.displayName
-        let providerIcon = viewModel.llmProvider == .ollama
-            ? "cpu"
-            : llmRemoteProviderIcon(viewModel.llmRemoteProvider)
-        let llmProviderID: StudioModelProviderID? = viewModel.llmProvider == .ollama
-            ? .ollama
-            : viewModel.llmRemoteProvider.studioProviderID
-
-        return VStack(alignment: .leading, spacing: 28) {
-            stepHeader(
-                providerID: llmProviderID,
-                icon: providerIcon,
-                title: providerName,
-                subtitle: L("onboarding.llmConfig.subtitle"),
-            )
-
-            if viewModel.llmProvider == .ollama {
-                ollamaConfigFields
-            } else {
-                llmRemoteConfigFields
             }
         }
     }
@@ -828,7 +919,7 @@ struct OnboardingView: View {
         .buttonStyle(StudioInteractiveButtonStyle())
     }
 
-    // MARK: - Step 3: Permissions
+    // MARK: - Permissions Step
 
     private var permissionsStep: some View {
         VStack(alignment: .leading, spacing: 28) {
@@ -918,7 +1009,7 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 4: Shortcuts
+    // MARK: - Shortcuts Step
 
     private var shortcutsStep: some View {
         VStack(alignment: .leading, spacing: 28) {
@@ -1101,24 +1192,6 @@ struct OnboardingView: View {
                     .font(.studioBody(13))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-    }
-
-    private func sectionLabel(icon: String, title: String, subtitle: String) -> some View {
-        HStack(alignment: .center, spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(StudioTheme.accent)
-                .frame(width: 18)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title)
-                    .font(.studioBody(13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Text(subtitle)
-                    .font(.studioBody(11))
-                    .foregroundStyle(StudioTheme.textTertiary)
             }
         }
     }
