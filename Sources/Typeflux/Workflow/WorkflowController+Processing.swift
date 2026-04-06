@@ -288,7 +288,8 @@ extension WorkflowController {
         _ text: String,
         selectionSnapshot: TextSelectionSnapshot,
     ) -> ApplyOutcome {
-        applyText(text, replace: shouldReplaceActiveSelection(for: selectionSnapshot))
+        let optimizedText = DictationOutputOptimizer.optimize(text)
+        return applyText(optimizedText, replace: shouldReplaceActiveSelection(for: selectionSnapshot))
     }
 
     func finishRecordingAndProcess(recordingStoppedAt: Date) async {
@@ -991,7 +992,6 @@ extension WorkflowController {
         record: inout HistoryRecord,
         pipelineTiming: inout HistoryPipelineTiming,
     ) throws {
-        let optimizedText = DictationOutputOptimizer.optimize(transcribedText)
         record.mode = .dictation
         record.processingStatus = .skipped
         record.applyStatus = .running
@@ -1000,7 +1000,7 @@ extension WorkflowController {
         try ensureProcessingIsActive(sessionID)
         pipelineTiming.applyStartedAt = Date()
         record.pipelineTiming = pipelineTiming
-        let outcome = applyTranscribedText(optimizedText, selectionSnapshot: selectionSnapshot)
+        let outcome = applyTranscribedText(transcribedText, selectionSnapshot: selectionSnapshot)
         pipelineTiming.applyCompletedAt = Date()
         record.pipelineTiming = pipelineTiming
         record.applyStatus = .succeeded

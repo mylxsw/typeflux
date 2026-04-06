@@ -2,12 +2,20 @@
 import XCTest
 
 final class DictationOutputOptimizerTests: XCTestCase {
-    func testOptimizeRemovesTrailingPeriodFromShortSentence() {
+    func testOptimizeRemovesTrailingPeriodFromSingleWord() {
+        XCTAssertEqual(DictationOutputOptimizer.optimize("Hello."), "Hello")
+    }
+
+    func testOptimizeRemovesTrailingPunctuationFromShortPhrase() {
+        XCTAssertEqual(DictationOutputOptimizer.optimize("in progress!"), "in progress")
+    }
+
+    func testOptimizeRemovesTrailingPunctuationFromCompleteSentence() {
         XCTAssertEqual(DictationOutputOptimizer.optimize("Hello world."), "Hello world")
     }
 
-    func testOptimizeRemovesTrailingChinesePeriodFromShortSentence() {
-        XCTAssertEqual(DictationOutputOptimizer.optimize("你好。"), "你好")
+    func testOptimizeRemovesTrailingChinesePeriodFromSingleSentenceShortText() {
+        XCTAssertEqual(DictationOutputOptimizer.optimize("你好，这是短句。"), "你好，这是短句")
     }
 
     func testOptimizeLeavesTextUnchangedWhenNoTrailingPunctuationExists() {
