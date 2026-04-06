@@ -36,29 +36,57 @@ extension WorkflowController {
     ) async throws -> AskAgentResult {
         let llmService = OpenAICompatibleAgentService(settingsStore: settingsStore)
 
-        // Phase 1: single tool call, no MCP, no job recording
-        let phase1Result = try await runPhase1Router(
-            selectedText: selectedText,
-            spokenInstruction: spokenInstruction,
-            personaPrompt: personaPrompt,
-            llmService: llmService,
+        // Create the job recorder upfront so every invocation—regardless of routing
+        // decision—produces a history record.
+        let jobRecorder = AgentJobRecorder(store: agentJobStore, jobID: UUID())
+        await jobRecorder.beginJob(userPrompt: spokenInstruction, selectedText: selectedText)
+
+        // Phase 1: single LLM tool call that routes to answer_text, edit_text, or run_agent.
+        let phase1Result: Phase1RouterResult
+        do {
+            phase1Result = try await runPhase1Router(
+                selectedText: selectedText,
+                spokenInstruction: spokenInstruction,
+                personaPrompt: personaPrompt,
+                llmService: llmService,
+            )
+        } catch {
+            await jobRecorder.markFailed(error: error)
+            throw error
+        }
+
+        // Record Phase 1 as step 0 in all cases.
+        let phase1ResultContent: String
+        switch phase1Result.decision {
+        case let .answer(text): phase1ResultContent = text
+        case let .edit(text): phase1ResultContent = text
+        case .runAgent: phase1ResultContent = ""
+        }
+        await jobRecorder.addPhase1Step(
+            toolCallName: phase1Result.toolCallName,
+            toolCallArgumentsJSON: phase1Result.toolCallArgumentsJSON,
+            resultContent: phase1ResultContent,
+            durationMs: phase1Result.durationMs,
         )
 
         switch phase1Result.decision {
         case let .answer(text):
+            await jobRecorder.completeWithPhase1Result(resultText: text, outcomeType: "answer_text")
+            scheduleJobTitle(for: jobRecorder.recordedJobID)
             return .answer(text)
         case let .edit(text):
+            await jobRecorder.completeWithPhase1Result(resultText: text, outcomeType: "edit_text")
+            scheduleJobTitle(for: jobRecorder.recordedJobID)
             return .edit(text)
         case let .runAgent(detailedInstruction):
-            // Phase 2: full agent loop with MCP and job recording; Phase 1 metadata
-            // is recorded as step 0 in the same job.
+            // Phase 2: full agent loop continues in the same job; steps start at index 1.
             return try await runPhase2AgentLoop(
                 selectedText: selectedText,
                 spokenInstruction: spokenInstruction,
                 detailedInstruction: detailedInstruction,
                 personaPrompt: personaPrompt,
                 llmService: llmService,
-                phase1Result: phase1Result,
+                jobRecorder: jobRecorder,
             )
         }
     }
@@ -124,7 +152,7 @@ extension WorkflowController {
         detailedInstruction: String,
         personaPrompt: String?,
         llmService: OpenAICompatibleAgentService,
-        phase1Result: Phase1RouterResult,
+        jobRecorder: AgentJobRecorder,
     ) async throws -> AskAgentResult {
         // Connect MCP servers (only in Phase 2)
         await mcpRegistry.connectEnabledServers(settingsStore.mcpServers)
@@ -138,7 +166,7 @@ extension WorkflowController {
             await registry.register(tool)
         }
 
-        // Phase 2 steps start at index 1 because index 0 is reserved for the Phase 1 step.
+        // Phase 2 steps start at index 1; index 0 is the Phase 1 routing step.
         let phase2Config = AgentConfig(
             maxSteps: AgentConfig.default.maxSteps,
             allowParallelToolCalls: AgentConfig.default.allowParallelToolCalls,
@@ -151,15 +179,6 @@ extension WorkflowController {
             llmService: llmService,
             toolRegistry: registry,
             config: phase2Config,
-        )
-
-        // Create the job recorder, seed Phase 1 as step 0, then run Phase 2.
-        let jobRecorder = AgentJobRecorder(store: agentJobStore, jobID: UUID())
-        await jobRecorder.beginJob(userPrompt: spokenInstruction, selectedText: selectedText)
-        await jobRecorder.addPhase1Step(
-            toolCallName: phase1Result.toolCallName,
-            toolCallArgumentsJSON: phase1Result.toolCallArgumentsJSON,
-            durationMs: phase1Result.durationMs,
         )
         await loop.setStepMonitor(jobRecorder)
 
@@ -184,8 +203,26 @@ extension WorkflowController {
             throw error
         }
 
-        // Generate a summary title asynchronously (fire-and-forget)
-        let jobID = jobRecorder.recordedJobID
+        scheduleJobTitle(for: jobRecorder.recordedJobID)
+
+        switch result.outcome {
+        case let .text(text):
+            return .answer(text)
+        case let .terminationTool(name, args) where name == BuiltinAgentToolName.answerText.rawValue:
+            return .answer(parseStringField("answer", from: args) ?? "")
+        case let .terminationTool(name, args) where name == BuiltinAgentToolName.editText.rawValue:
+            return .edit(parseStringField("replacement", from: args) ?? "")
+        case .maxStepsReached:
+            throw AgentError.maxStepsExceeded
+        case let .error(error):
+            throw error
+        default:
+            throw AgentError.invalidAgentState(reason: "Unexpected outcome: \(result.outcome)")
+        }
+    }
+
+    /// Asynchronously generates and saves a summary title for the given job.
+    private func scheduleJobTitle(for jobID: UUID) {
         let jobStore = agentJobStore
         let titleLLMService = LLMRouter(
             settingsStore: settingsStore,
@@ -204,21 +241,6 @@ extension WorkflowController {
                     try? await jobStore.save(job)
                 }
             }
-        }
-
-        switch result.outcome {
-        case let .text(text):
-            return .answer(text)
-        case let .terminationTool(name, args) where name == BuiltinAgentToolName.answerText.rawValue:
-            return .answer(parseStringField("answer", from: args) ?? "")
-        case let .terminationTool(name, args) where name == BuiltinAgentToolName.editText.rawValue:
-            return .edit(parseStringField("replacement", from: args) ?? "")
-        case .maxStepsReached:
-            throw AgentError.maxStepsExceeded
-        case let .error(error):
-            throw error
-        default:
-            throw AgentError.invalidAgentState(reason: "Unexpected outcome: \(result.outcome)")
         }
     }
 
