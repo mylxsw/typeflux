@@ -866,6 +866,7 @@ struct StudioView: View {
                             binding: viewModel.activationHotkey,
                             isDefault: viewModel.activationHotkey?.signature
                                 == HotkeyBinding.defaultActivation.signature,
+                            isThisRecording: recordingTarget == .activation,
                             onStartRecording: {
                                 recordingTarget = .activation
                                 recorder.start { binding in
@@ -890,6 +891,7 @@ struct StudioView: View {
                             binding: viewModel.askHotkey,
                             isDefault: viewModel.askHotkey?.signature
                                 == HotkeyBinding.defaultAsk.signature,
+                            isThisRecording: recordingTarget == .ask,
                             onStartRecording: {
                                 recordingTarget = .ask
                                 recorder.start { binding in
@@ -914,6 +916,7 @@ struct StudioView: View {
                             binding: viewModel.personaHotkey,
                             isDefault: viewModel.personaHotkey?.signature
                                 == HotkeyBinding.defaultPersona.signature,
+                            isThisRecording: recordingTarget == .persona,
                             onStartRecording: {
                                 recordingTarget = .persona
                                 recorder.start { binding in
@@ -1591,6 +1594,7 @@ struct StudioView: View {
         badgeSymbol: String,
         binding: HotkeyBinding?,
         isDefault: Bool,
+        isThisRecording: Bool,
         onStartRecording: @escaping () -> Void,
         onReset: @escaping () -> Void,
         onUnset: @escaping () -> Void,
@@ -1634,6 +1638,7 @@ struct StudioView: View {
             shortcutActionButtons(
                 isDefault: isDefault,
                 isUnset: binding == nil,
+                isThisRecording: isThisRecording,
                 onStart: onStartRecording,
                 onReset: onReset,
                 onUnset: onUnset,
@@ -1719,23 +1724,27 @@ struct StudioView: View {
     private func shortcutActionButtons(
         isDefault: Bool,
         isUnset: Bool,
+        isThisRecording: Bool,
         onStart: @escaping () -> Void,
         onReset: @escaping () -> Void,
         onUnset: @escaping () -> Void,
     ) -> some View {
         HStack(spacing: StudioTheme.Spacing.xSmall) {
             StudioIconButton(
-                systemImage: recorder.isRecording ? "stop.circle.fill" : "keyboard",
-                variant: recorder.isRecording ? .secondary : .primary,
+                systemImage: isThisRecording ? "stop.circle.fill" : "keyboard",
+                variant: isThisRecording ? .secondary : .primary,
             ) {
-                if recorder.isRecording {
+                if isThisRecording {
                     recorder.stop()
                     recordingTarget = nil
                 } else {
                     onStart()
                 }
             }
-            .help(recorder.isRecording ? L("settings.shortcuts.stopRecording") : L("settings.shortcuts.record"))
+            .studioTooltip(
+                isThisRecording ? L("settings.shortcuts.stopRecording") : L("settings.shortcuts.record"),
+                yOffset: 38,
+            )
 
             StudioIconButton(
                 systemImage: "arrow.counterclockwise",
@@ -1744,7 +1753,7 @@ struct StudioView: View {
             ) {
                 onReset()
             }
-            .help(L("common.reset"))
+            .studioTooltip(L("common.reset"), yOffset: 38)
 
             StudioIconButton(
                 systemImage: "xmark.circle",
@@ -1753,7 +1762,7 @@ struct StudioView: View {
             ) {
                 onUnset()
             }
-            .help(L("settings.shortcuts.unset"))
+            .studioTooltip(L("settings.shortcuts.unset"), yOffset: 38)
         }
     }
 
