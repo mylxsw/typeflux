@@ -613,12 +613,16 @@
 
 "onboarding.permissions.title" = "授予權限";
 "onboarding.permissions.subtitle" = "Typeflux 需要少量系統權限，用於錄製語音並將文字輸入其他應用程式。";
+"onboarding.permissions.privacyCallout.title" = "隱私優先";
+"onboarding.permissions.privacyCallout.subtitle" = "你的音訊資料會盡可能在本機處理。未經你明確授權，我們不會儲存任何錄音。";
 
 "onboarding.shortcuts.title" = "鍵盤快捷鍵";
 "onboarding.shortcuts.subtitle" = "以下是預設快捷鍵設定，無需修改即可使用。";
 "onboarding.shortcuts.activation.hint" = "按住錄音，輕點鎖定錄製";
 "onboarding.shortcuts.ask.hint" = "隨時提問，可選取文字改寫";
 "onboarding.shortcuts.persona.hint" = "切換或套用寫作人設";
+"onboarding.shortcuts.hero.title" = "精準工作流";
+"onboarding.shortcuts.hero.subtitle" = "為高頻鍵盤使用者而設計。Typeflux 快捷鍵會自然融入你既有的操作習慣，讓雙手始終停留在鍵盤上，思路不中斷。";
 "onboarding.shortcuts.changeInSettings" = "隨時可在 設定 → 語音快捷鍵 中自訂快捷鍵。";
 
 "onboarding.action.back" = "上一步";

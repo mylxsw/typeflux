@@ -613,12 +613,16 @@
 
 "onboarding.permissions.title" = "権限を付与する";
 "onboarding.permissions.subtitle" = "Typeflux では、音声をキャプチャして他のアプリにテキストを挿入するには、いくつかのシステム権限が必要です。";
+"onboarding.permissions.privacyCallout.title" = "プライバシー重視";
+"onboarding.permissions.privacyCallout.subtitle" = "音声データは可能な限りローカルで処理されます。明確な同意がない限り、録音を保存することはありません。";
 
 "onboarding.shortcuts.title" = "キーボードショートカット";
 "onboarding.shortcuts.subtitle" = "これらはデフォルトのショートカットです。これで準備は完了です。変更は必要ありません。";
 "onboarding.shortcuts.activation.hint" = "押し続けて話す、タップして録音をロックする";
 "onboarding.shortcuts.ask.hint" = "何か質問するか、選択したテキストを書き換えます";
 "onboarding.shortcuts.persona.hint" = "書き込みペルソナを切り替えるか適用する";
+"onboarding.shortcuts.hero.title" = "精密ワークフロー";
+"onboarding.shortcuts.hero.subtitle" = "キーボード中心の作業に合わせて設計されています。Typeflux のショートカットは既存の操作習慣になじみ、手をキーボードから離さずに集中を保てます。";
 "onboarding.shortcuts.changeInSettings" = "「設定」→「音声ショートカット」でいつでもショートカットをカスタマイズできます。";
 
 "onboarding.action.back" = "前へ";

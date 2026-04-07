@@ -613,12 +613,16 @@
 
 "onboarding.permissions.title" = "授予权限";
 "onboarding.permissions.subtitle" = "Typeflux 需要少量系统权限，用于录制语音并将文字输入到其他应用。";
+"onboarding.permissions.privacyCallout.title" = "隐私优先";
+"onboarding.permissions.privacyCallout.subtitle" = "你的音频数据会尽可能在本地处理。未经你明确授权，我们不会存储任何录音。";
 
 "onboarding.shortcuts.title" = "键盘快捷键";
 "onboarding.shortcuts.subtitle" = "以下是默认快捷键设置，无需修改即可使用。";
 "onboarding.shortcuts.activation.hint" = "按住录音，轻点锁定录制";
 "onboarding.shortcuts.ask.hint" = "随时提问，可选中文字改写";
 "onboarding.shortcuts.persona.hint" = "切换或应用写作人设";
+"onboarding.shortcuts.hero.title" = "精准工作流";
+"onboarding.shortcuts.hero.subtitle" = "为高频键盘用户而设计。Typeflux 快捷键会自然融入你现有的操作习惯，让双手始终停留在键盘上，思路不断档。";
 "onboarding.shortcuts.changeInSettings" = "随时可以在 设置 → 语音快捷键 中自定义快捷键。";
 
 "onboarding.action.back" = "上一步";

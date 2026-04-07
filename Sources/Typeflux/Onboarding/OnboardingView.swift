@@ -66,7 +66,7 @@ struct OnboardingView: View {
                 canvasTopBar
 
                 ScrollView(showsIndicators: false) {
-                    stepContent
+                    stepContent(in: size)
                         .padding(.horizontal, horizontalPadding(for: size.width))
                         .padding(.top, 18)
                         .padding(.bottom, 110)
@@ -132,26 +132,30 @@ struct OnboardingView: View {
     }
 
     @ViewBuilder
-    private var stepContent: some View {
+    private func stepContent(in size: CGSize) -> some View {
         switch viewModel.currentStep {
         case .welcome:
-            welcomeStep
+            welcomeStep(contentHeight: availableContentHeight(in: size))
         case .language:
-            languageStep
+            languageStep(contentHeight: availableContentHeight(in: size))
         case .stt:
             sttStep
         case .llm:
             llmStep
         case .permissions:
-            permissionsStep
+            permissionsStep(contentHeight: availableContentHeight(in: size))
         case .shortcuts:
             shortcutsStep
         }
     }
 
-    private var welcomeStep: some View {
+    private func availableContentHeight(in size: CGSize) -> CGFloat {
+        max(420, size.height - 220)
+    }
+
+    private func welcomeStep(contentHeight: CGFloat) -> some View {
         VStack(spacing: 0) {
-            Spacer(minLength: 20)
+            Spacer(minLength: 0)
 
             VStack(spacing: 12) {
                 appIconBadge(size: 84, iconSize: 54)
@@ -188,9 +192,9 @@ struct OnboardingView: View {
             }
             .padding(.top, 26)
 
-            Spacer(minLength: 18)
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(minHeight: contentHeight)
         .frame(maxWidth: 860)
         .frame(maxWidth: .infinity)
     }
@@ -243,25 +247,30 @@ struct OnboardingView: View {
         .shadow(color: .black.opacity(0.26), radius: 20, x: 0, y: 10)
     }
 
-    private var languageStep: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            editorialStepHeader(
-                title: L("onboarding.language.title"),
-                subtitle: L("onboarding.language.subtitle"),
-                alignCenter: false,
-            )
+    private func languageStep(contentHeight: CGFloat) -> some View {
+        VStack {
+            Spacer(minLength: 0)
 
-            LazyVGrid(columns: languageColumns, alignment: .leading, spacing: 18) {
-                ForEach(AppLanguage.allCases) { language in
-                    languageCard(language)
-                        .gridCellColumns(language == .korean ? 2 : 1)
+            VStack(alignment: .leading, spacing: 22) {
+                editorialStepHeader(
+                    title: L("onboarding.language.title"),
+                    subtitle: L("onboarding.language.subtitle"),
+                    alignCenter: false,
+                )
+
+                LazyVGrid(columns: languageColumns, alignment: .leading, spacing: 18) {
+                    ForEach(AppLanguage.allCases) { language in
+                        languageCard(language)
+                            .gridCellColumns(language == .korean ? 2 : 1)
+                    }
                 }
             }
+            .frame(maxWidth: 740, alignment: .leading)
+            .frame(maxWidth: .infinity)
 
-            Spacer(minLength: 20)
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: 740, alignment: .leading)
-        .frame(maxWidth: .infinity)
+        .frame(minHeight: contentHeight)
     }
 
     private func languageCard(_ language: AppLanguage) -> some View {
@@ -374,7 +383,7 @@ struct OnboardingView: View {
                         }
                     }
                 }
-                .frame(width: 430)
+                .frame(width: OnboardingProviderStyle.listColumnWidth)
 
                 sttConfigPanel
                     .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -480,7 +489,7 @@ struct OnboardingView: View {
                         }
                     }
                 }
-                .frame(width: 430)
+                .frame(width: OnboardingProviderStyle.listColumnWidth)
 
                 llmConfigPanel
                     .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -936,24 +945,7 @@ struct OnboardingView: View {
     ) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(isSelected ? 0.08 : 0.05))
-                    .frame(width: 38, height: 38)
-                    .overlay(
-                        Group {
-                            if let image = loadProviderLogo(for: providerID) {
-                                Image(nsImage: image)
-                                    .resizable()
-                                    .interpolation(.high)
-                                    .scaledToFit()
-                                    .padding(6)
-                            } else {
-                                Image(systemName: providerSymbol(for: providerID))
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(isSelected ? StudioTheme.accent : Color.white.opacity(0.62))
-                            }
-                        },
-                    )
+                providerIconBadge(for: providerID, isSelected: isSelected)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
@@ -991,27 +983,85 @@ struct OnboardingView: View {
         .buttonStyle(StudioInteractiveButtonStyle())
     }
 
-    private var permissionsStep: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            editorialStepHeader(
-                title: L("onboarding.permissions.title"),
-                subtitle: L("onboarding.permissions.subtitle"),
-                alignCenter: true,
+    private func providerIconBadge(for providerID: StudioModelProviderID, isSelected: Bool) -> some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(providerIconBadgeBackground(for: providerID, isSelected: isSelected))
+            .frame(width: 38, height: 38)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(providerIconBadgeBorder(for: providerID, isSelected: isSelected), lineWidth: 1),
             )
+            .overlay(
+                Group {
+                    if let image = loadProviderLogo(for: providerID) {
+                        Image(nsImage: image)
+                            .resizable()
+                            .interpolation(.high)
+                            .scaledToFit()
+                            .padding(6)
+                    } else {
+                        Image(systemName: providerSymbol(for: providerID))
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(isSelected ? StudioTheme.accent : Color.white.opacity(0.62))
+                    }
+                },
+            )
+    }
 
-            VStack(spacing: 10) {
-                ForEach(PrivacyGuard.PermissionID.allCases) { permissionID in
-                    if let snapshot = viewModel.permissions.first(where: { $0.id == permissionID }) {
-                        permissionCard(snapshot)
+    private func providerIconBadgeBackground(for providerID: StudioModelProviderID, isSelected: Bool) -> LinearGradient {
+        switch OnboardingProviderStyle.iconPlateStyle(for: providerID) {
+        case .light:
+            let top = isSelected
+                ? Color(red: 0.96, green: 0.98, blue: 1.0).opacity(0.96)
+                : Color.white.opacity(0.92)
+            let bottom = isSelected
+                ? Color(red: 0.82, green: 0.89, blue: 1.0).opacity(0.88)
+                : Color(red: 0.84, green: 0.87, blue: 0.93).opacity(0.84)
+            return LinearGradient(colors: [top, bottom], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .neutral:
+            let top = Color.white.opacity(isSelected ? 0.1 : 0.07)
+            let bottom = Color(red: 0.12, green: 0.13, blue: 0.17).opacity(isSelected ? 0.72 : 0.82)
+            return LinearGradient(colors: [top, bottom], startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
+    }
+
+    private func providerIconBadgeBorder(for providerID: StudioModelProviderID, isSelected: Bool) -> Color {
+        switch OnboardingProviderStyle.iconPlateStyle(for: providerID) {
+        case .light:
+            return Color.white.opacity(isSelected ? 0.28 : 0.18)
+        case .neutral:
+            return Color.white.opacity(isSelected ? 0.12 : 0.08)
+        }
+    }
+
+    private func permissionsStep(contentHeight: CGFloat) -> some View {
+        VStack {
+            Spacer(minLength: 0)
+
+            VStack(alignment: .leading, spacing: 18) {
+                editorialStepHeader(
+                    title: L("onboarding.permissions.title"),
+                    subtitle: L("onboarding.permissions.subtitle"),
+                    alignCenter: false,
+                )
+
+                VStack(spacing: 10) {
+                    ForEach(PrivacyGuard.PermissionID.allCases) { permissionID in
+                        if let snapshot = viewModel.permissions.first(where: { $0.id == permissionID }) {
+                            permissionCard(snapshot)
+                        }
                     }
                 }
-            }
 
-            privacyCallout
-                .padding(.top, 8)
+                privacyCallout
+                    .padding(.top, 8)
+            }
+            .frame(maxWidth: 980, alignment: .leading)
+            .frame(maxWidth: .infinity)
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: 860)
-        .frame(maxWidth: .infinity)
+        .frame(minHeight: contentHeight)
     }
 
     private func permissionCard(_ snapshot: PrivacyGuard.PermissionSnapshot) -> some View {
@@ -1085,29 +1135,43 @@ struct OnboardingView: View {
 
     private var privacyCallout: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "shield.lefthalf.filled")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color(red: 0.74, green: 0.84, blue: 1.0))
-                .frame(width: 24, height: 24)
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(red: 0.11, green: 0.23, blue: 0.20).opacity(0.9))
+                    .frame(width: 34, height: 34)
+
+                Image(systemName: "shield.lefthalf.filled")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.56, green: 0.93, blue: 0.79))
+            }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Privacy Centric")
+                Text(L("onboarding.permissions.privacyCallout.title"))
                     .font(.studioBody(13, weight: .semibold))
                     .foregroundStyle(Color.white.opacity(0.9))
-                Text("Your audio data is processed locally whenever possible. We never store recordings without your explicit consent.")
+                Text(L("onboarding.permissions.privacyCallout.subtitle"))
                     .font(.studioBody(12))
-                    .foregroundStyle(Color.white.opacity(0.46))
+                    .foregroundStyle(Color.white.opacity(0.58))
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(18)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(red: 0.08, green: 0.10, blue: 0.16).opacity(0.9)),
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.08, green: 0.14, blue: 0.13).opacity(0.96),
+                            Color(red: 0.07, green: 0.11, blue: 0.12).opacity(0.92),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing,
+                    ),
+                ),
         )
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1),
+                .stroke(Color(red: 0.30, green: 0.58, blue: 0.49).opacity(0.32), lineWidth: 1),
         )
     }
 
@@ -1122,35 +1186,31 @@ struct OnboardingView: View {
     private var shortcutsStep: some View {
         VStack(alignment: .leading, spacing: 16) {
             editorialStepHeader(
-                title: "Keyboard Shortcuts",
-                subtitle: "Default shortcuts are set, customize if needed.",
+                title: L("onboarding.shortcuts.title"),
+                subtitle: L("onboarding.shortcuts.subtitle"),
                 alignCenter: false,
             )
 
             VStack(spacing: 12) {
                 HStack(alignment: .top, spacing: 12) {
                     shortcutCard(
-                        eyebrow: "Interaction",
                         title: L("settings.shortcuts.activation.title"),
-                        icon: "mic.fill",
+                        subtitle: L("onboarding.shortcuts.activation.hint"),
                         binding: HotkeyBinding.defaultActivation,
                         expanded: true,
                     )
 
                     shortcutCard(
-                        eyebrow: "Universal",
                         title: L("settings.shortcuts.ask.title"),
-                        icon: "sparkles",
+                        subtitle: L("onboarding.shortcuts.ask.hint"),
                         binding: HotkeyBinding.defaultAsk,
-                        expanded: false,
+                        expanded: true,
                     )
-                    .frame(width: 264)
                 }
 
                 shortcutWideCard(
-                    eyebrow: "Navigation",
                     title: L("settings.shortcuts.persona.title"),
-                    icon: "person.crop.circle.fill",
+                    subtitle: L("onboarding.shortcuts.persona.hint"),
                     binding: HotkeyBinding.defaultPersona,
                 )
 
@@ -1162,83 +1222,111 @@ struct OnboardingView: View {
     }
 
     private func shortcutCard(
-        eyebrow: String,
         title: String,
-        icon: String,
+        subtitle: String,
         binding: HotkeyBinding,
         expanded: Bool,
     ) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(eyebrow)
-                        .font(.studioBody(9, weight: .semibold))
-                        .tracking(1.4)
-                        .textCase(.uppercase)
-                        .foregroundStyle(Color.white.opacity(0.34))
-
-                    Text(title)
-                        .font(.studioDisplay(16, weight: .bold))
-                        .foregroundStyle(Color.white.opacity(0.93))
-                }
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 16) {
+                Text(title)
+                    .font(.studioDisplay(16, weight: .bold))
+                    .foregroundStyle(Color.white.opacity(0.93))
+                    .lineLimit(1)
 
                 Spacer()
 
-                Image(systemName: icon)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Color(red: 0.75, green: 0.82, blue: 1.0))
+                hotkeySequence(binding)
+                    .fixedSize()
             }
 
-            HStack(spacing: 8) {
-                hotkeySequence(binding)
-            }
+            Text(subtitle)
+                .font(.studioBody(12))
+                .foregroundStyle(Color.white.opacity(0.48))
+                .lineLimit(expanded ? 2 : 3)
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 0)
         }
-        .padding(16)
+        .padding(18)
         .frame(maxWidth: expanded ? .infinity : nil, minHeight: 108, alignment: .topLeading)
         .background(onboardingCardFill)
         .overlay(onboardingCardStroke)
     }
 
     private func shortcutWideCard(
-        eyebrow: String,
         title: String,
-        icon: String,
+        subtitle: String,
         binding: HotkeyBinding,
     ) -> some View {
-        HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
-                    .frame(width: 38, height: 38)
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.77, green: 0.84, blue: 1.0))
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(eyebrow)
-                    .font(.studioBody(9, weight: .semibold))
-                    .tracking(1.4)
-                    .textCase(.uppercase)
-                    .foregroundStyle(Color.white.opacity(0.34))
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 16) {
                 Text(title)
                     .font(.studioDisplay(16, weight: .bold))
                     .foregroundStyle(Color.white.opacity(0.93))
+                    .lineLimit(1)
+
+                Spacer()
+
+                hotkeySequence(binding)
+                    .fixedSize()
             }
 
-            Spacer()
-
-            hotkeySequence(binding)
+            Text(subtitle)
+                .font(.studioBody(12))
+                .foregroundStyle(Color.white.opacity(0.48))
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(16)
+        .padding(18)
         .background(onboardingCardFill)
         .overlay(onboardingCardStroke)
     }
 
     private var keyboardHero: some View {
-        ZStack(alignment: .bottomLeading) {
+        VStack(alignment: .leading, spacing: 0) {
+            ZStack(alignment: .bottom) {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.10, green: 0.10, blue: 0.11),
+                                Color(red: 0.07, green: 0.07, blue: 0.08),
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom,
+                        ),
+                    )
+
+                keyboardPattern
+                    .padding(.horizontal, 18)
+                    .padding(.top, 18)
+                    .padding(.bottom, 18)
+                    .opacity(0.82)
+            }
+            .frame(height: 170)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L("onboarding.shortcuts.hero.title"))
+                    .font(.studioDisplay(18, weight: .bold))
+                    .foregroundStyle(Color.white.opacity(0.92))
+                Text(L("onboarding.shortcuts.hero.subtitle"))
+                    .font(.studioBody(13))
+                    .foregroundStyle(Color.white.opacity(0.52))
+                    .frame(maxWidth: 520, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 22)
+            .padding(.vertical, 18)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color.black.opacity(0.34)),
+            )
+            .padding(.horizontal, 14)
+            .padding(.bottom, 14)
+            .offset(y: -14)
+        }
+        .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(
                     LinearGradient(
@@ -1249,38 +1337,9 @@ struct OnboardingView: View {
                         startPoint: .top,
                         endPoint: .bottom,
                     ),
-                )
-
-            keyboardPattern
-                .padding(.horizontal, 22)
-                .padding(.top, 22)
-                .padding(.bottom, 90)
-                .opacity(0.9)
-
-            LinearGradient(
-                colors: [
-                    Color.clear,
-                    Color.black.opacity(0.92),
-                ],
-                startPoint: .center,
-                endPoint: .bottom,
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Precision Workflow")
-                    .font(.studioDisplay(18, weight: .bold))
-                    .foregroundStyle(Color.white.opacity(0.92))
-                Text("Designed for power users. Typeflux shortcuts integrate seamlessly with your existing operating system habits to keep your hands on the keys and your mind on the task.")
-                    .font(.studioBody(13))
-                    .foregroundStyle(Color.white.opacity(0.52))
-                    .frame(maxWidth: 430, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.horizontal, 22)
-            .padding(.bottom, 22)
-        }
-        .frame(height: 210)
+                ),
+        )
+        .frame(height: 286)
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(Color.white.opacity(0.06), lineWidth: 1),
@@ -1383,10 +1442,10 @@ struct OnboardingView: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Text(title.uppercased())
-                    .font(.studioBody(10, weight: .bold))
-                    .tracking(1.0)
+                    .font(.studioBody(12, weight: .bold))
+                    .tracking(0.8)
                 Image(systemName: viewModel.isLastStep ? "arrow.right" : "arrow.right")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
             }
             .foregroundStyle(Color.black.opacity(0.76))
             .padding(.horizontal, 22)
@@ -1410,9 +1469,9 @@ struct OnboardingView: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                 Text(title)
-                    .font(.studioBody(10, weight: .semibold))
+                    .font(.studioBody(12, weight: .semibold))
             }
             .foregroundStyle(Color.white.opacity(0.44))
             .frame(height: 36)
@@ -1424,8 +1483,8 @@ struct OnboardingView: View {
     private func footerTertiaryButton(title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title.uppercased())
-                .font(.studioBody(9, weight: .bold))
-                .tracking(1.4)
+                .font(.studioBody(11, weight: .bold))
+                .tracking(1.0)
                 .foregroundStyle(Color.white.opacity(0.22))
                 .frame(height: 36)
                 .padding(.horizontal, 10)

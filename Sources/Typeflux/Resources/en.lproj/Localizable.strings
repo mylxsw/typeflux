@@ -613,12 +613,16 @@
 
 "onboarding.permissions.title" = "Grant permissions";
 "onboarding.permissions.subtitle" = "Typeflux needs a few system permissions to capture your voice and insert text into other apps.";
+"onboarding.permissions.privacyCallout.title" = "Privacy First";
+"onboarding.permissions.privacyCallout.subtitle" = "Your audio data is processed locally whenever possible. We never store recordings without your explicit consent.";
 
 "onboarding.shortcuts.title" = "Keyboard shortcuts";
 "onboarding.shortcuts.subtitle" = "These are the default shortcuts. You're all set — no changes required.";
 "onboarding.shortcuts.activation.hint" = "Hold to talk, tap to lock recording";
 "onboarding.shortcuts.ask.hint" = "Ask anything, or rewrite selected text";
 "onboarding.shortcuts.persona.hint" = "Switch or apply a writing persona";
+"onboarding.shortcuts.hero.title" = "Precision Workflow";
+"onboarding.shortcuts.hero.subtitle" = "Designed for keyboard-first users. Typeflux shortcuts fit naturally into your existing habits, so your hands stay on the keys and your focus stays on the task.";
 "onboarding.shortcuts.changeInSettings" = "You can customize shortcuts anytime in Settings → Voice Shortcuts.";
 
 "onboarding.action.back" = "Previous";

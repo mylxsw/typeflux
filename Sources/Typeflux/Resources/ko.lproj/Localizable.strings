@@ -613,12 +613,16 @@
 
 "onboarding.permissions.title" = "권한 부여";
 "onboarding.permissions.subtitle" = "Typeflux에 음성을 캡처하고 다른 앱에 텍스트를 삽입하려면 몇 가지 시스템 권한이 필요합니다.";
+"onboarding.permissions.privacyCallout.title" = "개인정보 보호 우선";
+"onboarding.permissions.privacyCallout.subtitle" = "오디오 데이터는 가능한 한 로컬에서 처리됩니다. 명시적인 동의 없이는 어떤 녹음도 저장하지 않습니다.";
 
 "onboarding.shortcuts.title" = "키보드 단축키";
 "onboarding.shortcuts.subtitle" = "기본 단축키입니다. 모든 설정이 완료되었습니다. 변경할 필요가 없습니다.";
 "onboarding.shortcuts.activation.hint" = "길게 눌러 말하고 녹음을 잠그려면 탭하세요.";
 "onboarding.shortcuts.ask.hint" = "무엇이든 물어보거나 선택한 텍스트를 다시 작성하세요";
 "onboarding.shortcuts.persona.hint" = "쓰기 페르소나 전환 또는 적용";
+"onboarding.shortcuts.hero.title" = "정밀 워크플로";
+"onboarding.shortcuts.hero.subtitle" = "키보드 중심 사용자에게 맞춰 설계되었습니다. Typeflux 단축키는 기존 작업 습관에 자연스럽게 녹아들어 손은 키보드에, 집중은 작업에 머물게 합니다.";
 "onboarding.shortcuts.changeInSettings" = "설정 → 음성 단축키에서 언제든지 단축키를 맞춤 설정할 수 있습니다.";
 
 "onboarding.action.back" = "이전";
