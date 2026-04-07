@@ -140,20 +140,17 @@ private struct StudioTooltipModifier: ViewModifier {
     let text: String
     var yOffset: CGFloat = 10
 
-    @State private var screenFrame: NSRect = .zero
-
     func body(content: Content) -> some View {
         content
-            .background(
-                ScreenFrameAnchor { frame in
-                    screenFrame = frame
-                },
-            )
             .onHover { hovering in
                 if hovering {
+                    let mouse = NSEvent.mouseLocation
+                    // Build a zero-height anchor at the cursor position so the
+                    // tooltip appears yOffset points above the cursor.
+                    let anchor = NSRect(x: mouse.x - 16, y: mouse.y, width: 32, height: 0)
                     TooltipWindowController.shared.show(
                         text: text,
-                        screenFrame: screenFrame,
+                        screenFrame: anchor,
                         yOffset: yOffset,
                     )
                 } else {
