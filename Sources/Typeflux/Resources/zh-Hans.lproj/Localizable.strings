@@ -158,6 +158,8 @@
 "common.clear" = "清空";
 "common.copy" = "复制";
 "common.retry" = "重试";
+"common.expand" = "展开";
+"common.collapse" = "收起";
 "common.reset" = "重置";
 "common.apiKey" = "API Key";
 "common.model" = "模型";

@@ -158,6 +158,8 @@
 "common.clear" = "지우기";
 "common.copy" = "복사";
 "common.retry" = "재시도";
+"common.expand" = "펼치기";
+"common.collapse" = "접기";
 "common.reset" = "재설정";
 "common.apiKey" = "API Key";
 "common.model" = "모델";

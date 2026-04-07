@@ -158,6 +158,8 @@
 "common.clear" = "Clear";
 "common.copy" = "Copy";
 "common.retry" = "Retry";
+"common.expand" = "Expand";
+"common.collapse" = "Collapse";
 "common.reset" = "Reset";
 "common.apiKey" = "API Key";
 "common.model" = "Model";

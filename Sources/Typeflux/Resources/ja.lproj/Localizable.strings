@@ -158,6 +158,8 @@
 "common.clear" = "クリア";
 "common.copy" = "コピー";
 "common.retry" = "再試行";
+"common.expand" = "展開";
+"common.collapse" = "折りたたむ";
 "common.reset" = "リセット";
 "common.apiKey" = "API Key";
 "common.model" = "モデル";

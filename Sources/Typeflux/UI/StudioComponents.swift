@@ -905,6 +905,12 @@ struct StudioHistoryRow: View {
                         historyIconButton(systemImage: "doc.on.doc", helpText: L("history.action.copyTranscript"), action: onCopyResult)
                     }
 
+                    historyIconButton(
+                        systemImage: isExpanded ? "chevron.up" : "chevron.down",
+                        helpText: isExpanded ? L("common.collapse") : L("common.expand"),
+                        action: { withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() } }
+                    )
+
                     Menu {
                         if let onRetry {
                             Button(L("common.retry"), systemImage: "arrow.clockwise", action: onRetry)
@@ -954,10 +960,6 @@ struct StudioHistoryRow: View {
         .padding(.horizontal, StudioTheme.Insets.historyRowHorizontal)
         .padding(.vertical, StudioTheme.Insets.historyRowVertical)
         .background(StudioTheme.surface)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            isExpanded.toggle()
-        }
     }
 
     private func historyIconButton(systemImage: String, helpText: String, action: @escaping () -> Void) -> some View {
