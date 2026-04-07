@@ -270,6 +270,7 @@
 "persona.none.title" = "ペルソナなし";
 "persona.none.subtitle" = "ペルソナのスタイリングなしでディクテーションを行います。";
 
+"history.action.copyResult" = "結果をコピー";
 "history.action.copyTranscript" = "トランスクリプトをコピーする";
 "history.action.downloadAudio" = "音声をダウンロードする";
 "history.action.deleteTranscript" = "トランスクリプトの削除";

@@ -270,6 +270,7 @@
 "persona.none.title" = "페르소나 없음";
 "persona.none.subtitle" = "페르소나 스타일링 없이 지시하세요.";
 
+"history.action.copyResult" = "결과 복사";
 "history.action.copyTranscript" = "성적표 복사";
 "history.action.downloadAudio" = "오디오 다운로드";
 "history.action.deleteTranscript" = "성적표 삭제";

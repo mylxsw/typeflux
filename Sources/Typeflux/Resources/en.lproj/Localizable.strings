@@ -270,6 +270,7 @@
 "persona.none.title" = "No Persona";
 "persona.none.subtitle" = "Dictate without any persona styling.";
 
+"history.action.copyResult" = "Copy result";
 "history.action.copyTranscript" = "Copy transcript";
 "history.action.downloadAudio" = "Download audio";
 "history.action.deleteTranscript" = "Delete transcript";

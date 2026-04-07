@@ -270,6 +270,7 @@
 "persona.none.title" = "無人設";
 "persona.none.subtitle" = "直接聽寫，不套用任何人設風格。";
 
+"history.action.copyResult" = "複製結果";
 "history.action.copyTranscript" = "複製轉寫";
 "history.action.downloadAudio" = "下載音訊";
 "history.action.deleteTranscript" = "刪除轉寫";

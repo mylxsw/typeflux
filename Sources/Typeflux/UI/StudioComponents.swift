@@ -885,7 +885,6 @@ struct StudioHistoryRow: View {
                         Text(record.previewText)
                             .font(.studioBody(StudioTheme.Typography.bodyLarge))
                             .foregroundStyle(record.hasFailure ? StudioTheme.danger : StudioTheme.textPrimary)
-                            .textSelection(.enabled)
                             .fixedSize(horizontal: false, vertical: true)
 
                         if record.hasFailure {
@@ -934,6 +933,15 @@ struct StudioHistoryRow: View {
         .padding(.vertical, StudioTheme.Insets.historyRowVertical)
         .background(StudioTheme.surface)
         .contextMenu {
+            if let onCopyResult, record.hasTranscriptToCopy {
+                Button(L("history.action.copyResult"), systemImage: "doc.on.doc", action: onCopyResult)
+            }
+            if let onCopyTranscript, !(record.transcriptText?.isEmpty ?? true) {
+                Button(L("history.action.copyTranscript"), systemImage: "doc.on.doc", action: onCopyTranscript)
+            }
+            if (onCopyResult != nil && record.hasTranscriptToCopy) || !(record.transcriptText?.isEmpty ?? true) {
+                Divider()
+            }
             if let onRetry {
                 Button(L("common.retry"), systemImage: "arrow.clockwise", action: onRetry)
                     .disabled(!record.canRetry)
