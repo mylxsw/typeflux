@@ -1723,10 +1723,8 @@ struct StudioView: View {
         onReset: @escaping () -> Void,
         onUnset: @escaping () -> Void,
     ) -> some View {
-        HStack(spacing: StudioTheme.Spacing.small) {
-            StudioButton(
-                title: recorder.isRecording
-                    ? L("settings.shortcuts.stopRecording") : L("settings.shortcuts.record"),
+        HStack(spacing: StudioTheme.Spacing.xSmall) {
+            StudioIconButton(
                 systemImage: recorder.isRecording ? "stop.circle.fill" : "keyboard",
                 variant: recorder.isRecording ? .secondary : .primary,
             ) {
@@ -1737,20 +1735,25 @@ struct StudioView: View {
                     onStart()
                 }
             }
+            .help(recorder.isRecording ? L("settings.shortcuts.stopRecording") : L("settings.shortcuts.record"))
 
-            StudioButton(
-                title: L("common.reset"), systemImage: "arrow.counterclockwise",
-                variant: .secondary, isDisabled: isDefault || isUnset,
+            StudioIconButton(
+                systemImage: "arrow.counterclockwise",
+                variant: .secondary,
+                isDisabled: isDefault,
             ) {
                 onReset()
             }
+            .help(L("common.reset"))
 
-            StudioButton(
-                title: L("settings.shortcuts.unset"), systemImage: "xmark.circle",
-                variant: .secondary, isDisabled: isUnset,
+            StudioIconButton(
+                systemImage: "xmark.circle",
+                variant: .secondary,
+                isDisabled: isUnset,
             ) {
                 onUnset()
             }
+            .help(L("settings.shortcuts.unset"))
         }
     }
 
