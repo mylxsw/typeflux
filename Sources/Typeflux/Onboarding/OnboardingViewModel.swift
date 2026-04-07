@@ -13,7 +13,9 @@ final class OnboardingViewModel: ObservableObject {
         case shortcuts = 5
     }
 
-    @Published var currentStep: Step = .welcome
+    static let orderedSteps: [Step] = [.language, .welcome, .stt, .llm, .permissions, .shortcuts]
+
+    @Published var currentStep: Step = .language
     @Published var stepDirection: Int = 1 // 1 = forward, -1 = backward
 
     /// Language
@@ -89,7 +91,7 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     var canGoBack: Bool {
-        currentStep != .welcome
+        currentStep != visibleSteps.first
     }
 
     var isLastStep: Bool {
@@ -98,9 +100,9 @@ final class OnboardingViewModel: ObservableObject {
 
     var visibleSteps: [Step] {
         if sttProvider == .multimodalLLM {
-            return Step.allCases.filter { $0 != .llm }
+            return Self.orderedSteps.filter { $0 != .llm }
         }
-        return Step.allCases
+        return Self.orderedSteps
     }
 
     var isSkippable: Bool {
@@ -121,7 +123,7 @@ final class OnboardingViewModel: ObservableObject {
 
     func goBack() {
         guard canGoBack else { return }
-        let previousStep = adjacentStep(offset: -1) ?? .welcome
+        let previousStep = adjacentStep(offset: -1) ?? (visibleSteps.first ?? .language)
         stepDirection = -1
         withAnimation(.easeInOut(duration: 0.22)) {
             currentStep = previousStep
@@ -133,7 +135,7 @@ final class OnboardingViewModel: ObservableObject {
         if isLastStep {
             complete()
         } else {
-            let nextStep = adjacentStep(offset: 1) ?? .shortcuts
+            let nextStep = adjacentStep(offset: 1) ?? (visibleSteps.last ?? .shortcuts)
             stepDirection = 1
             withAnimation(.easeInOut(duration: 0.22)) {
                 currentStep = nextStep
@@ -145,7 +147,7 @@ final class OnboardingViewModel: ObservableObject {
         if isLastStep {
             complete()
         } else {
-            let nextStep = adjacentStep(offset: 1) ?? .shortcuts
+            let nextStep = adjacentStep(offset: 1) ?? (visibleSteps.last ?? .shortcuts)
             stepDirection = 1
             withAnimation(.easeInOut(duration: 0.22)) {
                 currentStep = nextStep
