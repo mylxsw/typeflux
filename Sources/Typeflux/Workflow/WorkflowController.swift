@@ -15,7 +15,8 @@ final class WorkflowController {
     static let automaticVocabularyBaselineRetryDelay: Duration = .milliseconds(400)
     static let automaticVocabularyBaselineRetryCount = 3
     static let automaticVocabularySettleDelay: TimeInterval = 2.5
-    static let automaticVocabularyMaxAnalysesPerSession = 3
+    // Each voice-input session may trigger at most one LLM evaluation for auto vocabulary.
+    static let automaticVocabularyMaxAnalysesPerSession = 1
     static let localModelPreheatDebounce: Duration = .milliseconds(180)
     static let llmTimeoutAfterTranscriptionSeconds: TimeInterval = 120
 

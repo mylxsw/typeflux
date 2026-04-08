@@ -108,13 +108,13 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
         XCTAssertEqual(state.analysisCount, 1)
     }
 
-    func testPendingAnalysisHonorsMaxAnalysisLimit() {
+    func testPendingAnalysisHonorsSingleAnalysisPerSessionLimit() {
         let start = Date(timeIntervalSince1970: 4000)
         var state = AutomaticVocabularyMonitor.makeObservationState(
             baselineText: "hello world",
             startedAt: start,
         )
-        state.analysisCount = 3
+        state.analysisCount = 1
 
         _ = AutomaticVocabularyMonitor.observe(
             text: "hello Doubao",
@@ -127,9 +127,40 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
                 state: state,
                 now: start.addingTimeInterval(5),
                 settleDelay: 2.5,
-                maxAnalyses: 3,
+                maxAnalyses: 1,
             ),
         )
+    }
+
+    func testPendingAnalysisDoesNotTriggerSecondAnalysisInSameSession() {
+        let start = Date(timeIntervalSince1970: 4500)
+        var state = AutomaticVocabularyMonitor.makeObservationState(
+            baselineText: "hello world",
+            startedAt: start,
+        )
+
+        _ = AutomaticVocabularyMonitor.observe(
+            text: "hello Doubao",
+            at: start.addingTimeInterval(1),
+            state: &state,
+        )
+        AutomaticVocabularyMonitor.markAnalysisCompleted(for: "hello Doubao", state: &state)
+
+        _ = AutomaticVocabularyMonitor.observe(
+            text: "hello Doubao SeedASR",
+            at: start.addingTimeInterval(5),
+            state: &state,
+        )
+
+        XCTAssertNil(
+            AutomaticVocabularyMonitor.pendingAnalysis(
+                state: state,
+                now: start.addingTimeInterval(8),
+                settleDelay: 2.5,
+                maxAnalyses: 1,
+            ),
+        )
+        XCTAssertEqual(state.analysisCount, 1)
     }
 
     func testDetectChangeExtractsNewLatinToken() {
