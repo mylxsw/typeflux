@@ -688,17 +688,6 @@ struct OnboardingView: View {
 
             if sttProviderSupportsTest(viewModel.sttProvider) {
                 HStack(spacing: 12) {
-                    StudioButton(
-                        title: viewModel.sttConnectionTestState == .testing
-                            ? L("settings.models.testingConnection") : L("settings.models.testConnection"),
-                        systemImage: viewModel.sttConnectionTestState == .testing ? nil : "network",
-                        variant: .secondary,
-                        isDisabled: viewModel.sttConnectionTestState == .testing,
-                        isLoading: viewModel.sttConnectionTestState == .testing,
-                    ) {
-                        viewModel.testSTTConnection()
-                    }
-
                     if let url = sttProviderAPIKeyURL(viewModel.sttProvider) {
                         Link(destination: url) {
                             HStack(spacing: 5) {
@@ -711,6 +700,17 @@ struct OnboardingView: View {
                             }
                             .foregroundStyle(StudioTheme.accent)
                         }
+                    }
+
+                    StudioButton(
+                        title: viewModel.sttConnectionTestState == .testing
+                            ? L("settings.models.testingConnection") : L("settings.models.testConnection"),
+                        systemImage: viewModel.sttConnectionTestState == .testing ? nil : "network",
+                        variant: .secondary,
+                        isDisabled: viewModel.sttConnectionTestState == .testing,
+                        isLoading: viewModel.sttConnectionTestState == .testing,
+                    ) {
+                        viewModel.testSTTConnection()
                     }
                 }
 
@@ -749,6 +749,21 @@ struct OnboardingView: View {
 
             if viewModel.llmProvider == .ollama || viewModel.llmRemoteProvider != .freeModel {
                 HStack(spacing: 12) {
+                    if let url = llmProviderAPIKeyURL(viewModel.llmRemoteProvider),
+                       viewModel.llmProvider != .ollama {
+                        Link(destination: url) {
+                            HStack(spacing: 5) {
+                                Image(systemName: "key")
+                                    .font(.system(size: 11, weight: .semibold))
+                                Text(L("onboarding.models.getAPIKey"))
+                                    .font(.studioBody(12, weight: .semibold))
+                                Image(systemName: "arrow.up.right")
+                                    .font(.system(size: 10, weight: .semibold))
+                            }
+                            .foregroundStyle(StudioTheme.accent)
+                        }
+                    }
+
                     StudioButton(
                         title: viewModel.llmConnectionTestState == .testing
                             ? L("settings.models.testingConnection") : L("settings.models.testConnection"),
@@ -758,22 +773,6 @@ struct OnboardingView: View {
                         isLoading: viewModel.llmConnectionTestState == .testing,
                     ) {
                         viewModel.testLLMConnection()
-                    }
-
-                    if let url = llmProviderAPIKeyURL(viewModel.llmRemoteProvider) {
-                        if viewModel.llmProvider != .ollama {
-                            Link(destination: url) {
-                                HStack(spacing: 5) {
-                                    Image(systemName: "key")
-                                        .font(.system(size: 11, weight: .semibold))
-                                    Text(L("onboarding.models.getAPIKey"))
-                                        .font(.studioBody(12, weight: .semibold))
-                                    Image(systemName: "arrow.up.right")
-                                        .font(.system(size: 10, weight: .semibold))
-                                }
-                                .foregroundStyle(StudioTheme.accent)
-                            }
-                        }
                     }
                 }
 
