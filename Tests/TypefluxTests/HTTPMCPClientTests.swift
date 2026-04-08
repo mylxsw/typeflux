@@ -88,6 +88,51 @@ final class HTTPMCPClientTests: XCTestCase {
         XCTAssertEqual(listRequest.value(forHTTPHeaderField: "MCP-Protocol-Version"), "2025-03-26")
     }
 
+    func testConnectDecodesInitializeResponseFromSSEPayload() async throws {
+        MockMCPURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: try XCTUnwrap(request.url),
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: [
+                    "Content-Type": "text/event-stream",
+                    "MCP-Session-Id": "session-sse",
+                ]
+            )!
+            let body = """
+            event: message
+
+            data: {"jsonrpc":"2.0","id":"1","result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{}},"serverInfo":{"name":"Mock SSE MCP","version":"1.0.0"}}}
+
+            """.data(using: .utf8)!
+            return (response, body)
+        }
+
+        let client = HTTPMCPClient(config: MCPHTTPConfig(
+            url: URL(string: "https://example.com/mcp")!,
+            urlSession: makeMockSession(),
+        ))
+
+        try await client.connect()
+
+        let info = await client.serverInfo
+        XCTAssertEqual(info?.name, "Mock SSE MCP")
+        XCTAssertEqual(info?.protocolVersion, "2024-11-05")
+    }
+
+    func testDecodeMessageUsesSSEFramingWhenContentTypeIsEventStream() throws {
+        let payload = """
+        event: message
+        data: {"jsonrpc":"2.0","id":"2","result":{"tools":[]}}
+
+        """.data(using: .utf8)!
+
+        let message = try HTTPMCPClient.decodeMessage(from: payload, contentType: "text/event-stream")
+
+        XCTAssertEqual(message.id, .string("2"))
+        XCTAssertEqual((message.result?["tools"]?.value as? [Any])?.count, 0)
+    }
+
     func testRedactedDebugURLMasksSensitiveQueryItems() {
         let url = URL(string: "https://example.com/mcp?apiKey=secret&token=abc123&query=swift")!
 

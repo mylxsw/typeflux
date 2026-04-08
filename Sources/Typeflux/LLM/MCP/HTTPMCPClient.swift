@@ -140,7 +140,11 @@ actor HTTPMCPClient: MCPClient {
         }
 
         do {
-            return (try JSONDecoder().decode(MCPJsonRPCMessage.self, from: data), httpResponse)
+            let message = try Self.decodeMessage(
+                from: data,
+                contentType: httpResponse.value(forHTTPHeaderField: "Content-Type"),
+            )
+            return (message, httpResponse)
         } catch {
             NetworkDebugLogger.logError(
                 context: """
@@ -200,5 +204,58 @@ actor HTTPMCPClient: MCPClient {
             }
         }
         return redacted
+    }
+
+    static func decodeMessage(from data: Data, contentType: String?) throws -> MCPJsonRPCMessage {
+        if let contentType, contentType.lowercased().contains("text/event-stream") {
+            return try decodeSSEMessage(from: data)
+        }
+
+        return try JSONDecoder().decode(MCPJsonRPCMessage.self, from: data)
+    }
+
+    static func decodeSSEMessage(from data: Data) throws -> MCPJsonRPCMessage {
+        guard let text = String(data: data, encoding: .utf8) else {
+            throw MCPClientError.invalidResponse("SSE payload is not valid UTF-8")
+        }
+
+        var collectedDataLines: [String] = []
+
+        func decodeCollectedLines() throws -> MCPJsonRPCMessage? {
+            guard !collectedDataLines.isEmpty else { return nil }
+            let payload = collectedDataLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+            collectedDataLines.removeAll(keepingCapacity: true)
+
+            guard !payload.isEmpty, payload != "[DONE]" else { return nil }
+            guard let payloadData = payload.data(using: .utf8) else {
+                throw MCPClientError.invalidResponse("SSE data frame is not valid UTF-8")
+            }
+            return try JSONDecoder().decode(MCPJsonRPCMessage.self, from: payloadData)
+        }
+
+        for rawLine in text.components(separatedBy: .newlines) {
+            let line = rawLine.hasSuffix("\r") ? String(rawLine.dropLast()) : rawLine
+            if line.isEmpty {
+                if let message = try decodeCollectedLines() {
+                    return message
+                }
+                continue
+            }
+
+            if line.hasPrefix(":") {
+                continue
+            }
+
+            if line.hasPrefix("data:") {
+                let payload = line.dropFirst("data:".count).trimmingCharacters(in: .whitespaces)
+                collectedDataLines.append(payload)
+            }
+        }
+
+        if let message = try decodeCollectedLines() {
+            return message
+        }
+
+        throw MCPClientError.invalidResponse("SSE response did not contain a JSON-RPC message")
     }
 }
