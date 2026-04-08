@@ -868,6 +868,7 @@ struct StudioHistoryRow: View {
     let onRetry: (() -> Void)?
 
     @State private var isExpanded = false
+    @State private var isHovered = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
@@ -899,6 +900,9 @@ struct StudioHistoryRow: View {
                 HStack(spacing: StudioTheme.Spacing.small) {
                     if let onCopyResult, record.hasTranscriptToCopy {
                         historyIconButton(systemImage: "doc.on.doc", helpText: L("history.action.copyTranscript"), action: onCopyResult)
+                            .opacity(isHovered ? 1 : 0)
+                            .allowsHitTesting(isHovered)
+                            .animation(.easeOut(duration: 0.12), value: isHovered)
                     }
 
                     historyIconButton(
@@ -929,6 +933,8 @@ struct StudioHistoryRow: View {
         .padding(.horizontal, StudioTheme.Insets.historyRowHorizontal)
         .padding(.vertical, StudioTheme.Insets.historyRowVertical)
         .background(StudioTheme.surface)
+        .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
         .contextMenu {
             if let onCopyResult, record.hasTranscriptToCopy {
                 Button(L("history.action.copyResult"), systemImage: "doc.on.doc", action: onCopyResult)

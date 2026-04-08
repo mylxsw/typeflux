@@ -19,6 +19,7 @@ final class WorkflowController {
     static let automaticVocabularyMaxAnalysesPerSession = 1
     static let localModelPreheatDebounce: Duration = .milliseconds(180)
     static let llmTimeoutAfterTranscriptionSeconds: TimeInterval = 120
+    static let recordingStartCueLeadIn: Duration = .milliseconds(60)
 
     struct LLMRequestTimeoutError: LocalizedError {
         var errorDescription: String? {
@@ -66,6 +67,7 @@ final class WorkflowController {
     let overlayController: OverlayController
     let askAnswerWindowController: AskAnswerWindowController
     let soundEffectPlayer: SoundEffectPlayer
+    let sleep: @Sendable (Duration) async -> Void
 
     var currentSelectedText: String?
     var isRecording = false
@@ -122,6 +124,9 @@ final class WorkflowController {
         overlayController: OverlayController,
         askAnswerWindowController: AskAnswerWindowController,
         soundEffectPlayer: SoundEffectPlayer,
+        sleep: @escaping @Sendable (Duration) async -> Void = { duration in
+            try? await Task.sleep(for: duration)
+        },
     ) {
         self.appState = appState
         self.settingsStore = settingsStore
@@ -139,6 +144,7 @@ final class WorkflowController {
         self.overlayController = overlayController
         self.askAnswerWindowController = askAnswerWindowController
         self.soundEffectPlayer = soundEffectPlayer
+        self.sleep = sleep
         self.overlayController.setRecordingActionHandlers(
             onCancel: { [weak self] in
                 guard let self else { return }
@@ -472,9 +478,6 @@ final class WorkflowController {
         recordingIntent = intent
         lastRetryableFailureRecord = nil
         NSLog("[Workflow] Recording started")
-        await MainActor.run {
-            self.soundEffectPlayer.play(.start)
-        }
 
         Task { @MainActor in
             appState.setStatus(.recording)
@@ -488,6 +491,14 @@ final class WorkflowController {
                 overlayController.show()
             }
         }
+
+        await Self.waitForRecordingStartCueIfNeeded(
+            leadIn: Self.recordingStartCueLeadIn,
+            playCue: { @MainActor in
+                self.soundEffectPlayer.play(.start)
+            },
+            sleep: sleep,
+        )
 
         selectionTask = Task { [weak self] in
             guard let self else { return TextSelectionSnapshot() }
@@ -535,6 +546,18 @@ final class WorkflowController {
                 ErrorLogStore.shared.log(msg)
             }
         }
+    }
+
+    static func waitForRecordingStartCueIfNeeded(
+        leadIn: Duration,
+        playCue: @escaping @MainActor () -> Bool,
+        sleep: @escaping @Sendable (Duration) async -> Void,
+    ) async {
+        let didStartCue = await MainActor.run {
+            playCue()
+        }
+        guard didStartCue else { return }
+        await sleep(leadIn)
     }
 
     func handlePressEnded() {

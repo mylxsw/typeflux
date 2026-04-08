@@ -83,7 +83,10 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertTrue(prompts.system.contains("\"<raw_transcript>\" is the source content to rewrite"))
         XCTAssertTrue(prompts.user.contains("<raw_transcript>\nraw text\n</raw_transcript>"))
         XCTAssertTrue(prompts.user.contains("<persona_definition>\nformal and concise\n</persona_definition>"))
-        XCTAssertTrue(prompts.user.contains(PromptCatalog.languageConsistencyRule(for: "source text")))
+        XCTAssertTrue(prompts.user.contains(PromptCatalog.languageConsistencyRule(
+            for: "source text",
+            personaPrompt: "formal and concise"
+        )))
     }
 
     func testRewritePromptsAllowPersonaTranslationInstructionToOverrideSourceLanguage() {
@@ -114,7 +117,10 @@ final class PromptCatalogTests: XCTestCase {
 
         XCTAssertFalse(prompts.system.contains(PromptCatalog.languageConsistencyRule(for: "selected text")))
         XCTAssertTrue(prompts.system.contains("text editing assistant"))
-        XCTAssertTrue(prompts.user.contains(PromptCatalog.languageConsistencyRule(for: "selected text")))
+        XCTAssertTrue(prompts.user.contains(PromptCatalog.languageConsistencyRule(
+            for: "selected text",
+            personaPrompt: "professional but warm"
+        )))
     }
 
     func testSelectionEditingPromptKeepsLanguageAlignedToSelectedText() {
@@ -143,7 +149,10 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertTrue(prompt.contains("You are a multimodal speech transcription and rewrite engine."))
         XCTAssertTrue(prompt.contains("<rules>"))
         XCTAssertTrue(prompt.contains("<language_policy>"))
-        XCTAssertTrue(prompt.contains(PromptCatalog.languageConsistencyRule(for: "spoken content")))
+        XCTAssertTrue(prompt.contains(PromptCatalog.languageConsistencyRule(
+            for: "spoken content",
+            personaPrompt: "Use concise business language."
+        )))
         XCTAssertTrue(prompt.contains("<input_semantics>"))
         XCTAssertTrue(prompt.contains("<task_procedure>"))
         XCTAssertTrue(prompt.contains("<fidelity_requirements>"))

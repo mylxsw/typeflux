@@ -159,6 +159,7 @@
 "common.ok" = "OK";
 "common.cancel" = "Cancel";
 "common.save" = "Save";
+"common.edit" = "Edit";
 "common.test" = "Test";
 "common.delete" = "Delete";
 "common.clear" = "Clear";
@@ -347,7 +348,10 @@
 "vocabulary.action.addWord" = "Add word";
 "vocabulary.sheet.title" = "Add to vocabulary";
 "vocabulary.sheet.subtitle" = "Use one term per entry. This works best for names, brands, product terms, and other frequently dictated jargon.";
+"vocabulary.sheet.editTitle" = "Edit vocabulary term";
+"vocabulary.sheet.editSubtitle" = "Update the term while keeping its source and existing usage history.";
 "vocabulary.sheet.placeholder" = "Add a new word";
+"vocabulary.toast.copied" = "Vocabulary term copied.";
 
 "home.activity.title" = "Overall activity";
 "home.activity.completionRate" = "Completion rate";

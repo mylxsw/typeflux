@@ -153,6 +153,7 @@
 "common.ok" = "OK";
 "common.cancel" = "キャンセル";
 "common.save" = "保存";
+"common.edit" = "編集";
 "common.test" = "テスト";
 "common.delete" = "削除";
 "common.clear" = "クリア";
@@ -341,7 +342,10 @@
 "vocabulary.action.addWord" = "単語を追加";
 "vocabulary.sheet.title" = "語彙に追加";
 "vocabulary.sheet.subtitle" = "エントリごとに 1 つの用語を使用します。これは、名前、ブランド、製品用語、その他の頻繁に使用される専門用語に最適です。";
+"vocabulary.sheet.editTitle" = "語彙項目を編集";
+"vocabulary.sheet.editSubtitle" = "ソースと既存の利用履歴を維持したまま、この用語を更新します。";
 "vocabulary.sheet.placeholder" = "新しい単語を追加する";
+"vocabulary.toast.copied" = "語彙項目をコピーしました。";
 
 "home.activity.title" = "全体的な活動";
 "home.activity.completionRate" = "完了率";

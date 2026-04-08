@@ -58,6 +58,7 @@ struct StudioView: View {
     @State private var recordingTarget: ShortcutRecordingTarget?
     @State private var vocabularyFilter: VocabularyFilter = .all
     @State private var isAddingVocabulary = false
+    @State private var editingVocabularyEntry: VocabularyEntry?
     @State private var newVocabularyTerm = ""
     @State private var personaPendingDeletion: PersonaProfile?
     @State private var localSTTPendingDelete: LocalSTTModel? = nil
@@ -128,7 +129,17 @@ struct StudioView: View {
                     .padding(.bottom, StudioTheme.Insets.toastBottom)
             }
         }
-        .sheet(isPresented: $isAddingVocabulary) {
+        .sheet(
+            isPresented: Binding(
+                get: { isAddingVocabulary || editingVocabularyEntry != nil },
+                set: { isPresented in
+                    guard !isPresented else { return }
+                    isAddingVocabulary = false
+                    editingVocabularyEntry = nil
+                    newVocabularyTerm = ""
+                },
+            ),
+        ) {
             vocabularyAddSheet
         }
         .confirmationDialog(
@@ -228,6 +239,7 @@ struct StudioView: View {
                 StudioButton(
                     title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .primary,
                 ) {
+                    editingVocabularyEntry = nil
                     newVocabularyTerm = ""
                     isAddingVocabulary = true
                 }
@@ -766,6 +778,7 @@ struct StudioView: View {
                             title: L("vocabulary.action.addFirst"), systemImage: "plus",
                             variant: .secondary,
                         ) {
+                            editingVocabularyEntry = nil
                             newVocabularyTerm = ""
                             isAddingVocabulary = true
                         }
@@ -774,6 +787,7 @@ struct StudioView: View {
                 } else {
                     LazyVGrid(
                         columns: [
+                            GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
                             GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
                             GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
                         ],
@@ -1954,56 +1968,31 @@ struct StudioView: View {
     }
 
     private func vocabularyTermCard(_ entry: VocabularyEntry) -> some View {
-        HStack(spacing: StudioTheme.Spacing.small) {
-            Image(systemName: entry.source == .automatic ? "sparkles" : "plus.circle.fill")
-                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                .foregroundStyle(
-                    entry.source == .automatic ? StudioTheme.warning : StudioTheme.accent,
-                )
-
-            Text(entry.term)
-                .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .lineLimit(1)
-
-            Spacer()
-
-            Button {
+        VocabularyTermCard(
+            entry: entry,
+            onCopy: {
+                viewModel.copyVocabularyTerm(entry.term)
+            },
+            onEdit: {
+                editingVocabularyEntry = entry
+                newVocabularyTerm = entry.term
+                isAddingVocabulary = false
+            },
+            onDelete: {
                 viewModel.removeVocabularyEntry(id: entry.id)
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .bold))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .frame(width: 24, height: 24)
-                    .background(
-                        Circle()
-                            .fill(StudioTheme.surfaceMuted.opacity(0.8)),
-                    )
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, StudioTheme.Insets.cardCompact)
-        .padding(.vertical, StudioTheme.Insets.buttonVertical)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                .fill(StudioTheme.surface),
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                .stroke(
-                    StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
-                    lineWidth: StudioTheme.BorderWidth.thin,
-                ),
+            },
         )
     }
 
     private var vocabularyAddSheet: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-            Text(L("vocabulary.sheet.title"))
+        let isEditing = editingVocabularyEntry != nil
+
+        return VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+            Text(L(isEditing ? "vocabulary.sheet.editTitle" : "vocabulary.sheet.title"))
                 .font(.studioDisplay(StudioTheme.Typography.pageTitle, weight: .semibold))
                 .foregroundStyle(StudioTheme.textPrimary)
 
-            Text(L("vocabulary.sheet.subtitle"))
+            Text(L(isEditing ? "vocabulary.sheet.editSubtitle" : "vocabulary.sheet.subtitle"))
                 .font(.studioBody(StudioTheme.Typography.body))
                 .foregroundStyle(StudioTheme.textSecondary)
 
@@ -2032,10 +2021,12 @@ struct StudioView: View {
             HStack {
                 Spacer()
                 StudioButton(title: L("common.cancel"), systemImage: nil, variant: .secondary) {
+                    editingVocabularyEntry = nil
+                    newVocabularyTerm = ""
                     isAddingVocabulary = false
                 }
                 StudioButton(
-                    title: L("vocabulary.action.addWord"),
+                    title: L(isEditing ? "common.save" : "vocabulary.action.addWord"),
                     systemImage: nil,
                     variant: .primary,
                     isDisabled: newVocabularyTerm.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -2052,7 +2043,14 @@ struct StudioView: View {
     private func submitVocabularyTerm() {
         let term = newVocabularyTerm.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !term.isEmpty else { return }
-        viewModel.addVocabularyTerm(term)
+
+        if let editingVocabularyEntry {
+            viewModel.updateVocabularyEntry(id: editingVocabularyEntry.id, term: term)
+        } else {
+            viewModel.addVocabularyTerm(term)
+        }
+
+        editingVocabularyEntry = nil
         newVocabularyTerm = ""
         isAddingVocabulary = false
     }
@@ -4529,6 +4527,65 @@ struct StudioView: View {
         formatter.dateStyle = .medium
         formatter.timeStyle = .medium
         return formatter.string(from: date)
+    }
+}
+
+private struct VocabularyTermCard: View {
+    let entry: VocabularyEntry
+    let onCopy: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: StudioTheme.Spacing.small) {
+            Image(systemName: entry.source == .automatic ? "sparkles" : "plus.circle.fill")
+                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+                .foregroundStyle(entry.source == .automatic ? StudioTheme.warning : StudioTheme.accent)
+
+            Text(entry.term)
+                .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .lineLimit(1)
+
+            Spacer(minLength: StudioTheme.Spacing.small)
+
+            Button(action: onDelete) {
+                Image(systemName: "xmark")
+                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .bold))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .frame(width: 24, height: 24)
+                    .background(
+                        Circle()
+                            .fill(StudioTheme.surfaceMuted.opacity(0.8)),
+                    )
+            }
+            .buttonStyle(.plain)
+            .opacity(isHovered ? 1 : 0)
+            .allowsHitTesting(isHovered)
+            .animation(.easeOut(duration: 0.12), value: isHovered)
+        }
+        .padding(.horizontal, StudioTheme.Insets.cardCompact)
+        .padding(.vertical, StudioTheme.Insets.buttonVertical)
+        .background(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                .fill(StudioTheme.surface),
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                .stroke(
+                    StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
+                    lineWidth: StudioTheme.BorderWidth.thin,
+                ),
+        )
+        .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
+        .onHover { isHovered = $0 }
+        .contextMenu {
+            Button(L("common.copy"), systemImage: "doc.on.doc", action: onCopy)
+            Button(L("common.edit"), systemImage: "pencil", action: onEdit)
+            Button(L("common.delete"), systemImage: "trash", role: .destructive, action: onDelete)
+        }
     }
 }
 

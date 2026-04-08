@@ -9,12 +9,15 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private let audioDeviceManager: AudioDeviceManager
     private let outputMuter: SystemAudioOutputMuting
     private let sleep: @Sendable (Duration) async -> Void
+    private let writeCoordinator = AudioBufferWriteCoordinator()
+    private let stateCondition = NSCondition()
     private var audioFile: AVAudioFile?
     private var startedAt: Date?
     private var levelHandler: ((Float) -> Void)?
     private var audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
     private var muteTask: Task<Void, Never>?
     private var isRecording = false
+    private var activeBufferCallbacks = 0
 
     init(
         settingsStore: SettingsStore,
@@ -36,9 +39,6 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     ) throws {
         stopInternal()
 
-        self.levelHandler = levelHandler
-        self.audioBufferHandler = audioBufferHandler
-
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("typeflux", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
@@ -56,8 +56,13 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             AVLinearPCMIsNonInterleaved: false,
         ]
 
-        audioFile = try AVAudioFile(forWriting: url, settings: outputSettings)
+        let outputFile = try AVAudioFile(forWriting: url, settings: outputSettings)
+        stateCondition.lock()
+        audioFile = outputFile
         startedAt = Date()
+        self.levelHandler = levelHandler
+        self.audioBufferHandler = audioBufferHandler
+        stateCondition.unlock()
 
         inputNode.removeTap(onBus: 0)
         inputNode.installTap(onBus: 0, bufferSize: 2048, format: inputFormat) { [weak self] buffer, _ in
@@ -69,25 +74,43 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         if settingsStore.muteSystemOutputDuringRecording {
             scheduleMutedSessionStart()
         }
+        stateCondition.lock()
         isRecording = true
+        stateCondition.unlock()
     }
 
     func stop() throws -> AudioFile {
-        guard isRecording, let audioFile else {
+        stateCondition.lock()
+        let currentAudioFile = audioFile
+        let currentStartedAt = startedAt
+        let currentlyRecording = isRecording
+        stateCondition.unlock()
+
+        guard currentlyRecording, let currentAudioFile else {
             throw NSError(domain: "AudioRecorder", code: 1)
         }
 
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
 
-        let duration = Date().timeIntervalSince(startedAt ?? Date())
-        let fileURL = audioFile.url
+        stateCondition.lock()
+        while activeBufferCallbacks > 0 {
+            stateCondition.wait()
+        }
+        stateCondition.unlock()
 
+        writeCoordinator.drain()
+
+        let duration = Date().timeIntervalSince(currentStartedAt ?? Date())
+        let fileURL = currentAudioFile.url
+
+        stateCondition.lock()
         self.audioFile = nil
         startedAt = nil
         levelHandler = nil
         audioBufferHandler = nil
         isRecording = false
+        stateCondition.unlock()
         muteTask?.cancel()
         muteTask = nil
         outputMuter.endMutedSession()
@@ -96,15 +119,30 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     }
 
     private func stopInternal() {
-        if isRecording {
+        stateCondition.lock()
+        let currentlyRecording = isRecording
+        stateCondition.unlock()
+
+        if currentlyRecording {
             engine.inputNode.removeTap(onBus: 0)
             engine.stop()
         }
+
+        stateCondition.lock()
+        while activeBufferCallbacks > 0 {
+            stateCondition.wait()
+        }
+        stateCondition.unlock()
+
+        writeCoordinator.drain()
+
+        stateCondition.lock()
         audioFile = nil
         startedAt = nil
         levelHandler = nil
         audioBufferHandler = nil
         isRecording = false
+        stateCondition.unlock()
         muteTask?.cancel()
         muteTask = nil
         outputMuter.endMutedSession()
@@ -115,6 +153,9 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         muteTask = Task { [weak self] in
             guard let self else { return }
             await sleep(Self.outputMuteDelay)
+            stateCondition.lock()
+            let isRecording = self.isRecording
+            stateCondition.unlock()
             guard !Task.isCancelled, isRecording else { return }
             outputMuter.beginMutedSession()
         }
@@ -122,12 +163,16 @@ final class AVFoundationAudioRecorder: AudioRecorder {
 
     #if DEBUG
         func beginMutedSessionAfterDelayForTesting() {
+            stateCondition.lock()
             isRecording = true
+            stateCondition.unlock()
             scheduleMutedSessionStart()
         }
 
         func cancelMutedSessionForTesting() {
+            stateCondition.lock()
             isRecording = false
+            stateCondition.unlock()
             muteTask?.cancel()
             muteTask = nil
             outputMuter.endMutedSession()
@@ -144,12 +189,40 @@ final class AVFoundationAudioRecorder: AudioRecorder {
 
     private func handleInputBuffer(_ buffer: AVAudioPCMBuffer) {
         autoreleasepool {
+            stateCondition.lock()
+            guard let audioFile = self.audioFile else {
+                stateCondition.unlock()
+                return
+            }
+            let levelHandler = self.levelHandler
+            let audioBufferHandler = self.audioBufferHandler
+            activeBufferCallbacks += 1
+            stateCondition.unlock()
+
+            defer {
+                stateCondition.lock()
+                activeBufferCallbacks -= 1
+                if activeBufferCallbacks == 0 {
+                    stateCondition.broadcast()
+                }
+                stateCondition.unlock()
+            }
+
             do {
                 let monoBuffer = try makeMonoPCMBuffer(from: buffer)
-                try audioFile?.write(from: monoBuffer)
-                levelHandler?(normalizePower(rmsPower(for: monoBuffer)))
-                if let previewBuffer = clone(buffer: monoBuffer) {
-                    audioBufferHandler?(previewBuffer)
+                let previewBuffer = clone(buffer: monoBuffer)
+                let normalizedLevel = normalizePower(rmsPower(for: monoBuffer))
+
+                writeCoordinator.enqueue {
+                    do {
+                        try audioFile.write(from: monoBuffer)
+                        levelHandler?(normalizedLevel)
+                        if let previewBuffer {
+                            audioBufferHandler?(previewBuffer)
+                        }
+                    } catch {
+                        NetworkDebugLogger.logError(context: "Audio buffer handling failed", error: error)
+                    }
                 }
             } catch {
                 NetworkDebugLogger.logError(context: "Audio buffer handling failed", error: error)
@@ -274,5 +347,22 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         let minDb: Float = -60
         let clamped = max(minDb, power)
         return (clamped - minDb) / -minDb
+    }
+}
+
+final class AudioBufferWriteCoordinator {
+    private let queue = DispatchQueue(label: "typeflux.audio.buffer-writer")
+    private let group = DispatchGroup()
+
+    func enqueue(_ operation: @escaping @Sendable () -> Void) {
+        group.enter()
+        queue.async {
+            defer { self.group.leave() }
+            operation()
+        }
+    }
+
+    func drain() {
+        group.wait()
     }
 }

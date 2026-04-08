@@ -153,6 +153,7 @@
 "common.ok" = "알았어";
 "common.cancel" = "취소";
 "common.save" = "저장";
+"common.edit" = "편집";
 "common.test" = "테스트";
 "common.delete" = "삭제";
 "common.clear" = "지우기";
@@ -341,7 +342,10 @@
 "vocabulary.action.addWord" = "단어 추가";
 "vocabulary.sheet.title" = "어휘에 추가";
 "vocabulary.sheet.subtitle" = "항목당 하나의 용어를 사용하십시오. 이는 이름, 브랜드, 제품 용어 및 기타 자주 사용되는 전문 용어에 가장 적합합니다.";
+"vocabulary.sheet.editTitle" = "용어 편집";
+"vocabulary.sheet.editSubtitle" = "출처와 기존 사용 기록은 유지한 채 이 용어를 수정합니다.";
 "vocabulary.sheet.placeholder" = "새 단어 추가";
+"vocabulary.toast.copied" = "용어를 복사했습니다.";
 
 "home.activity.title" = "전반적인 활동";
 "home.activity.completionRate" = "진척률";

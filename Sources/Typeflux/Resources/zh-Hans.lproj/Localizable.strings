@@ -159,6 +159,7 @@
 "common.ok" = "确定";
 "common.cancel" = "取消";
 "common.save" = "保存";
+"common.edit" = "编辑";
 "common.test" = "测试";
 "common.delete" = "删除";
 "common.clear" = "清空";
@@ -347,7 +348,10 @@
 "vocabulary.action.addWord" = "添加词条";
 "vocabulary.sheet.title" = "添加到词库";
 "vocabulary.sheet.subtitle" = "每行添加一个词条。该功能特别适合名字、品牌、产品术语和常说的专业词。";
+"vocabulary.sheet.editTitle" = "编辑词条";
+"vocabulary.sheet.editSubtitle" = "更新该词条内容，同时保留它的来源和现有使用记录。";
 "vocabulary.sheet.placeholder" = "添加新词";
+"vocabulary.toast.copied" = "词条已复制。";
 
 "home.activity.title" = "整体活跃度";
 "home.activity.completionRate" = "完成率";
@@ -661,7 +665,7 @@
 "agent.general.stepLogging.title" = "Agent 步骤日志";
 "agent.general.stepLogging.subtitle" = "记录 Agent 的每一步推理和工具调用，便于调试。";
 
-"agent.section.mcpServers" = "MCP 服务器";
+"agent.section.mcpServers" = "MCP";
 "agent.mcp.empty" = "尚未配置 MCP 服务器。添加服务器以通过外部工具扩展 Agent 能力。";
 "agent.mcp.addServer" = "添加 MCP 服务器";
 "agent.mcp.untitled" = "未命名服务器";

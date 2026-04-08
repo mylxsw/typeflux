@@ -84,6 +84,25 @@ enum VocabularyStore {
         return entries
     }
 
+    static func update(id: UUID, term: String) -> [VocabularyEntry] {
+        let normalized = normalize(term)
+        guard !normalized.isEmpty else { return load() }
+
+        var entries = load()
+        guard let index = entries.firstIndex(where: { $0.id == id }) else { return entries }
+        guard !entries.contains(where: { $0.id != id && normalize($0.term) == normalized }) else { return entries }
+
+        let existing = entries[index]
+        entries[index] = VocabularyEntry(
+            id: existing.id,
+            term: normalized,
+            source: existing.source,
+            createdAt: existing.createdAt,
+        )
+        save(entries)
+        return entries
+    }
+
     static func activeTerms() -> [String] {
         load().map(\.term)
     }

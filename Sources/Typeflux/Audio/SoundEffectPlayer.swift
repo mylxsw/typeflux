@@ -1,8 +1,18 @@
 import AVFoundation
 import Foundation
 
+protocol SoundEffectPlayback: AnyObject {
+    var volume: Float { get set }
+    var currentTime: TimeInterval { get set }
+    func prepareToPlay() -> Bool
+    func play() -> Bool
+    func stop()
+}
+
+extension AVAudioPlayer: SoundEffectPlayback {}
+
 final class SoundEffectPlayer {
-    enum Effect: String {
+    enum Effect: String, CaseIterable {
         case start
         case done
         case error
@@ -20,49 +30,75 @@ final class SoundEffectPlayer {
     }
 
     private let settingsStore: SettingsStore
-    private var activePlayers: [UUID: AVAudioPlayer] = [:]
+    private let playerFactory: (URL) throws -> SoundEffectPlayback
+    private var players: [Effect: SoundEffectPlayback] = [:]
 
-    init(settingsStore: SettingsStore) {
+    init(
+        settingsStore: SettingsStore,
+        playerFactory: @escaping (URL) throws -> SoundEffectPlayback = { url in
+            try AVAudioPlayer(contentsOf: url)
+        },
+    ) {
         self.settingsStore = settingsStore
+        self.playerFactory = playerFactory
+
+        preloadPlayers()
     }
 
+    @discardableResult
     @MainActor
-    func play(_ effect: Effect) {
-        guard settingsStore.soundEffectsEnabled else { return }
+    func play(_ effect: Effect) -> Bool {
+        guard settingsStore.soundEffectsEnabled else { return false }
+        guard let player = player(for: effect) else { return false }
+
+        player.stop()
+        player.currentTime = 0
+        player.volume = effect.volume
+        _ = player.prepareToPlay()
+
+        guard player.play() else {
+            ErrorLogStore.shared.log("Failed to play sound effect: \(effect.rawValue)")
+            return false
+        }
+
+        return true
+    }
+
+    private func preloadPlayers() {
+        for effect in Effect.allCases {
+            _ = loadPlayer(for: effect)
+        }
+    }
+
+    private func player(for effect: Effect) -> SoundEffectPlayback? {
+        if let player = players[effect] {
+            return player
+        }
+
+        return loadPlayer(for: effect)
+    }
+
+    @discardableResult
+    private func loadPlayer(for effect: Effect) -> SoundEffectPlayback? {
         guard let url = resourceURL(for: effect) else {
             ErrorLogStore.shared.log("Missing sound effect resource: \(effect.rawValue).mp3")
-            return
+            return nil
         }
 
         do {
-            let player = try AVAudioPlayer(contentsOf: url)
+            let player = try playerFactory(url)
             player.volume = effect.volume
-            player.prepareToPlay()
-
-            guard player.play() else {
-                ErrorLogStore.shared.log("Failed to play sound effect: \(effect.rawValue)")
-                return
-            }
-
-            let id = UUID()
-            activePlayers[id] = player
-            scheduleCleanup(for: id, player: player)
+            _ = player.prepareToPlay()
+            players[effect] = player
+            return player
         } catch {
             ErrorLogStore.shared.log("Failed to initialize sound effect \(effect.rawValue): \(error.localizedDescription)")
+            return nil
         }
     }
 
     private func resourceURL(for effect: Effect) -> URL? {
         Bundle.module.url(forResource: effect.rawValue, withExtension: "mp3", subdirectory: "Resources")
             ?? Bundle.module.url(forResource: effect.rawValue, withExtension: "mp3")
-    }
-
-    @MainActor
-    private func scheduleCleanup(for id: UUID, player: AVAudioPlayer) {
-        let duration = max(player.duration, 0.1)
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000) + 100_000_000)
-            self?.activePlayers.removeValue(forKey: id)
-        }
     }
 }

@@ -157,6 +157,7 @@
 "common.ok" = "確定";
 "common.cancel" = "取消";
 "common.save" = "儲存";
+"common.edit" = "編輯";
 "common.test" = "測試";
 "common.delete" = "刪除";
 "common.clear" = "清空";
@@ -345,7 +346,10 @@
 "vocabulary.action.addWord" = "新增詞條";
 "vocabulary.sheet.title" = "加入詞庫";
 "vocabulary.sheet.subtitle" = "每行新增一個詞條。此功能特別適合名字、品牌、產品術語與常說的專業詞。";
+"vocabulary.sheet.editTitle" = "編輯詞條";
+"vocabulary.sheet.editSubtitle" = "更新此詞條內容，同時保留它的來源與既有使用記錄。";
 "vocabulary.sheet.placeholder" = "新增新詞";
+"vocabulary.toast.copied" = "詞條已複製。";
 
 "home.activity.title" = "整體活躍度";
 "home.activity.completionRate" = "完成率";

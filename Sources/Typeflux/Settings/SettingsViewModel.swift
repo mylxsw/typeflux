@@ -3,6 +3,14 @@ import Foundation
 import SwiftUI
 
 // swiftlint:disable file_length
+private final class HistoryStoreSendableBox: @unchecked Sendable {
+    let base: any HistoryStore
+
+    init(_ base: any HistoryStore) {
+        self.base = base
+    }
+}
+
 enum ConnectionTestState: Equatable {
     case idle
     case testing
@@ -152,11 +160,13 @@ final class StudioViewModel: ObservableObject {
 
     private let settingsStore: SettingsStore
     private let historyStore: HistoryStore
+    private let historyStoreBox: HistoryStoreSendableBox
     let agentJobStore: AgentJobStore
     private let modelManager: OllamaLocalModelManager
     private let localModelManager: LocalModelManager
     private let audioDeviceManager: AudioDeviceManager
     private let onRetryHistory: (HistoryRecord) -> Void
+    private let historyRefreshQueue = DispatchQueue(label: "typeflux.settings.history-refresh", qos: .userInitiated)
     private var historyObserver: NSObjectProtocol?
     private var personaSelectionObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
@@ -165,6 +175,8 @@ final class StudioViewModel: ObservableObject {
     private var llmTestTask: Task<Void, Never>?
     private var sttTestTask: Task<Void, Never>?
     private var mcpTestTask: Task<Void, Never>?
+    private var historyRefreshTask: Task<Void, Never>?
+    private var historyRefreshGeneration = 0
 
     // swiftlint:disable:next function_body_length
     init(
@@ -179,6 +191,7 @@ final class StudioViewModel: ObservableObject {
     ) {
         self.settingsStore = settingsStore
         self.historyStore = historyStore
+        historyStoreBox = HistoryStoreSendableBox(historyStore)
         self.agentJobStore = agentJobStore
         self.modelManager = modelManager
         self.localModelManager = localModelManager
@@ -280,8 +293,8 @@ final class StudioViewModel: ObservableObject {
             object: nil,
             queue: .main,
         ) { [weak self] _ in
-            Task { @MainActor in
-                self?.refreshHistory()
+            Task { @MainActor [weak self] in
+                self?.scheduleHistoryRefresh(reset: false, debounce: .milliseconds(120))
             }
         }
         personaSelectionObserver = NotificationCenter.default.addObserver(
@@ -344,6 +357,7 @@ final class StudioViewModel: ObservableObject {
         if let agentJobObserver {
             NotificationCenter.default.removeObserver(agentJobObserver)
         }
+        historyRefreshTask?.cancel()
     }
 
     var preferredColorScheme: ColorScheme? {
@@ -614,21 +628,45 @@ final class StudioViewModel: ObservableObject {
     }
 
     func refreshHistory(reset: Bool = true) {
+        refreshHistory(reset: reset, completion: nil)
+    }
+
+    private func refreshHistory(
+        reset: Bool,
+        completion: (() -> Void)?,
+    ) {
+        historyRefreshTask?.cancel()
         if reset {
             historyRecords = []
             displayedHistory = []
             canLoadMoreHistory = false
         }
 
-        let records = historyStore.list(
-            limit: Self.historyPageSize,
-            offset: 0,
-            searchQuery: historySearchQuery,
-        )
-        historyRecords = records
-        displayedHistory = records.map(makeHistoryPresentation)
-        canLoadMoreHistory = records.count == Self.historyPageSize
-        isLoadingMoreHistory = false
+        let generation = nextHistoryRefreshGeneration()
+        let searchQuery = historySearchQuery
+        let historyStoreBox = self.historyStoreBox
+        let pageSize = Self.historyPageSize
+
+        historyRefreshQueue.async { [weak self] in
+            let records = historyStoreBox.base.list(
+                limit: pageSize,
+                offset: 0,
+                searchQuery: searchQuery,
+            )
+
+            DispatchQueue.main.async {
+                guard let self else { return }
+                guard self.historyRefreshGeneration == generation else {
+                    completion?()
+                    return
+                }
+                self.historyRecords = records
+                self.displayedHistory = records.map(self.makeHistoryPresentation)
+                self.canLoadMoreHistory = records.count == Self.historyPageSize
+                self.isLoadingMoreHistory = false
+                completion?()
+            }
+        }
     }
 
     func loadMoreHistoryIfNeeded() {
@@ -657,9 +695,14 @@ final class StudioViewModel: ObservableObject {
 
         isRefreshingHistory = true
 
-        Task {
+        Task { [weak self] in
+            guard let self else { return }
             let startedAt = ContinuousClock.now
-            refreshHistory()
+            await withCheckedContinuation { continuation in
+                self.refreshHistory(reset: true, completion: {
+                    continuation.resume()
+                })
+            }
 
             let elapsed = startedAt.duration(to: .now)
             let minimumFeedback = Duration.milliseconds(450)
@@ -670,6 +713,22 @@ final class StudioViewModel: ObservableObject {
             isRefreshingHistory = false
             showToast(L("history.toast.refreshed"))
         }
+    }
+    private func scheduleHistoryRefresh(reset: Bool, debounce: Duration) {
+        historyRefreshTask?.cancel()
+        historyRefreshTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            if debounce > .zero {
+                try? await Task.sleep(for: debounce)
+            }
+            guard !Task.isCancelled else { return }
+            refreshHistory(reset: reset)
+        }
+    }
+
+    private func nextHistoryRefreshGeneration() -> Int {
+        historyRefreshGeneration += 1
+        return historyRefreshGeneration
     }
 
     func setAppearanceMode(_ mode: AppearanceMode) {
@@ -1335,6 +1394,19 @@ final class StudioViewModel: ObservableObject {
 
     func removeVocabularyEntry(id: UUID) {
         vocabularyEntries = VocabularyStore.remove(id: id)
+    }
+
+    func updateVocabularyEntry(id: UUID, term: String) {
+        vocabularyEntries = VocabularyStore.update(id: id, term: term)
+    }
+
+    func copyVocabularyTerm(_ term: String) {
+        let trimmedTerm = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTerm.isEmpty else { return }
+
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(trimmedTerm, forType: .string)
+        showToast(L("vocabulary.toast.copied"))
     }
 
     func beginCreatingPersona() {

@@ -57,6 +57,40 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         XCTAssertEqual(muter.beginCallCount, 0)
         XCTAssertEqual(muter.endCallCount, 1)
     }
+
+    func testAudioBufferWriteCoordinatorDrainWaitsForQueuedWork() async {
+        let coordinator = AudioBufferWriteCoordinator()
+        let started = expectation(description: "Queued work started")
+
+        coordinator.enqueue {
+            started.fulfill()
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+
+        await fulfillment(of: [started], timeout: 1.0)
+
+        let start = Date()
+        coordinator.drain()
+        let elapsed = Date().timeIntervalSince(start)
+
+        XCTAssertGreaterThanOrEqual(elapsed, 0.04)
+    }
+
+    func testAudioBufferWriteCoordinatorDrainIncludesMultipleQueuedOperations() {
+        let coordinator = AudioBufferWriteCoordinator()
+        let recorder = OrderedValueRecorder()
+
+        coordinator.enqueue {
+            recorder.append(1)
+        }
+        coordinator.enqueue {
+            recorder.append(2)
+        }
+
+        coordinator.drain()
+
+        XCTAssertEqual(recorder.values, [1, 2])
+    }
 }
 
 private final class MockSystemAudioOutputMuter: SystemAudioOutputMuting {
@@ -106,5 +140,23 @@ private actor SleepController {
     func resume() {
         continuation?.resume()
         continuation = nil
+    }
+}
+
+private final class OrderedValueRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [Int] = []
+
+    func append(_ value: Int) {
+        lock.lock()
+        storage.append(value)
+        lock.unlock()
+    }
+
+    var values: [Int] {
+        lock.lock()
+        let values = storage
+        lock.unlock()
+        return values
     }
 }

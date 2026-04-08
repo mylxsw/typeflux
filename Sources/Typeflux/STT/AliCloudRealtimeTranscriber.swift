@@ -172,6 +172,7 @@ private actor AliCloudFunASRSession {
     private let model: String
     private let apiKey: String
     private let onUpdate: @Sendable (TranscriptionSnapshot) async -> Void
+    private let snapshotDispatcher: AliCloudSnapshotDispatcher
 
     // Confirmed segments are finalized sentences (sentence_end=true).
     // partialText is the current in-progress sentence being streamed.
@@ -197,6 +198,7 @@ private actor AliCloudFunASRSession {
         self.model = model
         self.apiKey = apiKey
         self.onUpdate = onUpdate
+        snapshotDispatcher = AliCloudSnapshotDispatcher(onUpdate: onUpdate)
     }
 
     private func execute() async throws -> String {
@@ -290,6 +292,7 @@ private actor AliCloudFunASRSession {
         // result just after task-finished. Sleeping here releases the actor so
         // the receive loop can process those buffered messages before we close.
         try? await Task.sleep(for: AliCloudAudioConverter.postTaskFinishedDrainDuration)
+        await snapshotDispatcher.flush()
 
         return composedText()
     }
@@ -309,7 +312,7 @@ private actor AliCloudFunASRSession {
                     phase: "receive",
                     details: String(data: data, encoding: .utf8) ?? "<\(data.count) bytes>",
                 )
-                handleEvent(data: data)
+                await handleEvent(data: data)
             } catch {
                 if !Task.isCancelled {
                     NetworkDebugLogger.logError(context: "AliCloud FunASR receive loop failed", error: error)
@@ -320,7 +323,7 @@ private actor AliCloudFunASRSession {
         }
     }
 
-    private func handleEvent(data: Data) {
+    private func handleEvent(data: Data) async {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let header = json["header"] as? [String: Any],
               let event = header["event"] as? String else { return }
@@ -357,10 +360,7 @@ private actor AliCloudFunASRSession {
             let preview = composedText()
             guard preview != lastEmitted else { return }
             lastEmitted = preview
-            Task { [weak self] in
-                guard let self else { return }
-                await onUpdate(TranscriptionSnapshot(text: preview, isFinal: false))
-            }
+            await snapshotDispatcher.submit(TranscriptionSnapshot(text: preview, isFinal: false))
 
         case "task-finished":
             NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud FunASR", phase: "task-finished")
@@ -491,6 +491,7 @@ private actor AliCloudQwenASRSession {
     private let model: String
     private let apiKey: String
     private let onUpdate: @Sendable (TranscriptionSnapshot) async -> Void
+    private let snapshotDispatcher: AliCloudSnapshotDispatcher
     private var accumulator = OpenAIRealtimeTranscriptAccumulator()
 
     private var sessionReady = false
@@ -509,6 +510,7 @@ private actor AliCloudQwenASRSession {
         self.model = model
         self.apiKey = apiKey
         self.onUpdate = onUpdate
+        snapshotDispatcher = AliCloudSnapshotDispatcher(onUpdate: onUpdate)
     }
 
     private func execute() async throws -> String {
@@ -585,6 +587,7 @@ private actor AliCloudQwenASRSession {
         // Same drain window as AliCloudFunASRSession: let the receive loop process
         // any result events the server emits alongside session.finished.
         try? await Task.sleep(for: AliCloudAudioConverter.postTaskFinishedDrainDuration)
+        await snapshotDispatcher.flush()
 
         return accumulator.finalText()
     }
@@ -604,7 +607,7 @@ private actor AliCloudQwenASRSession {
                     phase: "receive",
                     details: String(data: data, encoding: .utf8) ?? "<\(data.count) bytes>",
                 )
-                handleEvent(data: data)
+                await handleEvent(data: data)
             } catch {
                 if !Task.isCancelled {
                     NetworkDebugLogger.logError(context: "AliCloud Qwen ASR receive loop failed", error: error)
@@ -615,7 +618,7 @@ private actor AliCloudQwenASRSession {
         }
     }
 
-    private func handleEvent(data: Data) {
+    private func handleEvent(data: Data) async {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let type = json["type"] as? String else { return }
 
@@ -647,10 +650,7 @@ private actor AliCloudQwenASRSession {
 
         default:
             if let snapshot = try? accumulator.process(eventData: data) {
-                Task { [weak self] in
-                    guard let self else { return }
-                    await onUpdate(snapshot)
-                }
+                await snapshotDispatcher.submit(snapshot)
             }
         }
     }
@@ -690,6 +690,56 @@ private actor AliCloudQwenASRSession {
         }
         NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud Qwen ASR", phase: "send", details: text)
         try await socketTask.send(.string(text))
+    }
+}
+
+private actor AliCloudSnapshotDispatcher {
+    private let onUpdate: @Sendable (TranscriptionSnapshot) async -> Void
+    private var pendingSnapshot: TranscriptionSnapshot?
+    private var isDispatching = false
+    private var flushContinuations: [CheckedContinuation<Void, Never>] = []
+
+    init(onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void) {
+        self.onUpdate = onUpdate
+    }
+
+    func submit(_ snapshot: TranscriptionSnapshot) {
+        pendingSnapshot = merge(existing: pendingSnapshot, incoming: snapshot)
+        guard !isDispatching else { return }
+        isDispatching = true
+        Task { await drain() }
+    }
+
+    func flush() async {
+        if !isDispatching, pendingSnapshot == nil { return }
+        await withCheckedContinuation { continuation in
+            flushContinuations.append(continuation)
+        }
+    }
+
+    private func drain() async {
+        while true {
+            guard let snapshot = pendingSnapshot else {
+                isDispatching = false
+                let continuations = flushContinuations
+                flushContinuations.removeAll()
+                for continuation in continuations {
+                    continuation.resume()
+                }
+                return
+            }
+
+            pendingSnapshot = nil
+            await onUpdate(snapshot)
+        }
+    }
+
+    private func merge(existing: TranscriptionSnapshot?, incoming: TranscriptionSnapshot) -> TranscriptionSnapshot {
+        guard let existing else { return incoming }
+        if incoming.isFinal || !existing.isFinal {
+            return incoming
+        }
+        return existing
     }
 }
 
