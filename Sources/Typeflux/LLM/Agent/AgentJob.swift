@@ -160,11 +160,10 @@ struct AgentJob: Codable, Identifiable {
     }
 
     func runningElapsedText(relativeTo now: Date = Date()) -> String {
-        let elapsedMs: Int64
-        if status == .running {
-            elapsedMs = max(0, Int64(now.timeIntervalSince(createdAt) * 1000))
+        let elapsedMs: Int64 = if status == .running {
+            max(0, Int64(now.timeIntervalSince(createdAt) * 1000))
         } else {
-            elapsedMs = max(0, totalDurationMs ?? Int64(now.timeIntervalSince(createdAt) * 1000))
+            max(0, totalDurationMs ?? Int64(now.timeIntervalSince(createdAt) * 1000))
         }
 
         let totalSeconds = Int(elapsedMs / 1000)

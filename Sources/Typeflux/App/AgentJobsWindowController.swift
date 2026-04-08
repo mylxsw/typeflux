@@ -91,8 +91,8 @@ final class AgentJobsWindowController: NSObject {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self, let window else { return }
-                self.applyAppearance(to: window)
-                self.reloadRootView()
+                applyAppearance(to: window)
+                reloadRootView()
             }
         }
         storeObserver = NotificationCenter.default.addObserver(
@@ -230,7 +230,7 @@ private struct AgentJobsListPane: View {
                 Spacer()
 
                 if !jobs.isEmpty {
-                    Text(L("menu.agentTasks.runningCount", jobs.filter { $0.status == .running }.count))
+                    Text(L("menu.agentTasks.runningCount", jobs.count(where: { $0.status == .running })))
                         .font(.studioBody(StudioTheme.Typography.bodySmall))
                         .foregroundStyle(StudioTheme.textSecondary)
                 }

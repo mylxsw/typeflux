@@ -4,6 +4,9 @@ run:
 dev:
 	./scripts/run_dev_attached.sh
 
+build:
+	swift build
+
 test:
 	swift test
 
@@ -13,4 +16,4 @@ coverage:
 format:
 	./scripts/format.sh
 
-.PHONY: run dev test coverage format
+.PHONY: run dev build test coverage format

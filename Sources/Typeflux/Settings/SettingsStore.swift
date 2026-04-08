@@ -1,5 +1,6 @@
 import Foundation
 
+// swiftlint:disable type_body_length file_length
 extension Notification.Name {
     static let personaSelectionDidChange = Notification.Name(
         "SettingsStore.personaSelectionDidChange",

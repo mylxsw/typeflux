@@ -4,7 +4,7 @@ import Combine
 @MainActor
 final class StatusBarController: NSObject {
     private enum MenuTag {
-        static let agentTasks = 9_001
+        static let agentTasks = 9001
     }
 
     private enum MenuLayout {

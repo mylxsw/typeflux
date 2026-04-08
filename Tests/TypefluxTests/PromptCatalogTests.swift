@@ -85,7 +85,7 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertTrue(prompts.user.contains("<persona_definition>\nformal and concise\n</persona_definition>"))
         XCTAssertTrue(prompts.user.contains(PromptCatalog.languageConsistencyRule(
             for: "source text",
-            personaPrompt: "formal and concise"
+            personaPrompt: "formal and concise",
         )))
     }
 
@@ -119,7 +119,7 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertTrue(prompts.system.contains("text editing assistant"))
         XCTAssertTrue(prompts.user.contains(PromptCatalog.languageConsistencyRule(
             for: "selected text",
-            personaPrompt: "professional but warm"
+            personaPrompt: "professional but warm",
         )))
     }
 
@@ -151,7 +151,7 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertTrue(prompt.contains("<language_policy>"))
         XCTAssertTrue(prompt.contains(PromptCatalog.languageConsistencyRule(
             for: "spoken content",
-            personaPrompt: "Use concise business language."
+            personaPrompt: "Use concise business language.",
         )))
         XCTAssertTrue(prompt.contains("<input_semantics>"))
         XCTAssertTrue(prompt.contains("<task_procedure>"))

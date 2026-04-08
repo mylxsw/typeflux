@@ -644,7 +644,7 @@ final class StudioViewModel: ObservableObject {
 
         let generation = nextHistoryRefreshGeneration()
         let searchQuery = historySearchQuery
-        let historyStoreBox = self.historyStoreBox
+        let historyStoreBox = historyStoreBox
         let pageSize = Self.historyPageSize
 
         historyRefreshQueue.async { [weak self] in
@@ -714,6 +714,7 @@ final class StudioViewModel: ObservableObject {
             showToast(L("history.toast.refreshed"))
         }
     }
+
     private func scheduleHistoryRefresh(reset: Bool, debounce: Duration) {
         historyRefreshTask?.cancel()
         historyRefreshTask = Task { @MainActor [weak self] in

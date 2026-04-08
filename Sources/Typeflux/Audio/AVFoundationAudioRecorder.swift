@@ -105,7 +105,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         let fileURL = currentAudioFile.url
 
         stateCondition.lock()
-        self.audioFile = nil
+        audioFile = nil
         startedAt = nil
         levelHandler = nil
         audioBufferHandler = nil
@@ -154,7 +154,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             guard let self else { return }
             await sleep(Self.outputMuteDelay)
             stateCondition.lock()
-            let isRecording = self.isRecording
+            let isRecording = isRecording
             stateCondition.unlock()
             guard !Task.isCancelled, isRecording else { return }
             outputMuter.beginMutedSession()

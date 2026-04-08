@@ -1,5 +1,5 @@
-@testable import Typeflux
 import AVFoundation
+@testable import Typeflux
 import XCTest
 
 final class WorkflowControllerAutomaticVocabularyTests: XCTestCase {
@@ -225,7 +225,7 @@ private final class MockWorkflowLLMService: LLMService, @unchecked Sendable {
 }
 
 private final class MockWorkflowLLMAgentService: LLMAgentService {
-    func runTool<T>(request _: LLMAgentRequest, decoding _: T.Type) async throws -> T where T: Decodable, T: Sendable {
+    func runTool<T: Decodable & Sendable>(request _: LLMAgentRequest, decoding _: T.Type) async throws -> T {
         throw NSError(domain: "MockWorkflowLLMAgentService", code: 1)
     }
 }
@@ -263,20 +263,39 @@ private final class MockWorkflowTranscriber: Transcriber {
 
 private final class MockWorkflowHistoryStore: HistoryStore {
     func save(record _: HistoryRecord) {}
-    func list() -> [HistoryRecord] { [] }
-    func list(limit _: Int, offset _: Int, searchQuery _: String?) -> [HistoryRecord] { [] }
-    func record(id _: UUID) -> HistoryRecord? { nil }
+    func list() -> [HistoryRecord] {
+        []
+    }
+
+    func list(limit _: Int, offset _: Int, searchQuery _: String?) -> [HistoryRecord] {
+        []
+    }
+
+    func record(id _: UUID) -> HistoryRecord? {
+        nil
+    }
+
     func delete(id _: UUID) {}
     func purge(olderThanDays _: Int) {}
     func clear() {}
-    func exportMarkdown() throws -> URL { URL(fileURLWithPath: "/tmp/history.md") }
+    func exportMarkdown() throws -> URL {
+        URL(fileURLWithPath: "/tmp/history.md")
+    }
 }
 
 private final class MockWorkflowAgentJobStore: AgentJobStore, @unchecked Sendable {
     func save(_: AgentJob) async throws {}
-    func list(limit _: Int, offset _: Int) async throws -> [AgentJob] { [] }
-    func job(id _: UUID) async throws -> AgentJob? { nil }
+    func list(limit _: Int, offset _: Int) async throws -> [AgentJob] {
+        []
+    }
+
+    func job(id _: UUID) async throws -> AgentJob? {
+        nil
+    }
+
     func delete(id _: UUID) async throws {}
     func clear() async throws {}
-    func count() async throws -> Int { 0 }
+    func count() async throws -> Int {
+        0
+    }
 }

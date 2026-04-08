@@ -908,7 +908,7 @@ struct StudioHistoryRow: View {
                     historyIconButton(
                         systemImage: isExpanded ? "chevron.up" : "chevron.down",
                         helpText: isExpanded ? L("common.collapse") : L("common.expand"),
-                        action: { withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() } }
+                        action: { withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() } },
                     )
                 }
             }

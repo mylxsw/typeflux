@@ -2,6 +2,7 @@ import AppKit
 import Foundation
 import SwiftUI
 
+// swiftlint:disable type_body_length file_length
 @MainActor
 final class OnboardingViewModel: ObservableObject {
     enum Step: Int, CaseIterable {

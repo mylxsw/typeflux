@@ -868,21 +868,21 @@ extension WorkflowController {
             }
 
             do {
-                let execution = try await self.runAskAgent(
+                let execution = try await runAskAgent(
                     selectedText: selectedText,
                     spokenInstruction: transcribedText,
                     personaPrompt: personaPrompt,
                     jobID: jobID,
                     appSystemContext: AppSystemContext(snapshot: selectionSnapshot),
                 )
-                await self.completeDetachedAgentAskTask(
+                await completeDetachedAgentAskTask(
                     execution: execution,
                     recordID: recordID,
                     transcribedText: transcribedText,
                     selectedTextForAnswerPresentation: selectedTextForAnswerPresentation,
                 )
             } catch is CancellationError {
-                await self.failDetachedAgentAskTask(
+                await failDetachedAgentAskTask(
                     recordID: recordID,
                     errorMessage: L("workflow.cancel.userCancelled"),
                     treatAsCancellation: true,
@@ -890,7 +890,7 @@ extension WorkflowController {
             } catch {
                 let message = "Processing failed: \(error.localizedDescription)"
                 ErrorLogStore.shared.log(message)
-                await self.failDetachedAgentAskTask(
+                await failDetachedAgentAskTask(
                     recordID: recordID,
                     errorMessage: message,
                     treatAsCancellation: false,

@@ -179,11 +179,10 @@ actor HTTPMCPClient: MCPClient {
         guard let data, !data.isEmpty else { return "<empty>" }
 
         let prefix = data.prefix(2048)
-        let preview: String
-        if let string = String(data: prefix, encoding: .utf8) {
-            preview = string
+        let preview: String = if let string = String(data: prefix, encoding: .utf8) {
+            string
         } else {
-            preview = "<non-utf8 \(data.count) bytes>"
+            "<non-utf8 \(data.count) bytes>"
         }
 
         if data.count > prefix.count {

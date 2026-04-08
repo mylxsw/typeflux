@@ -3,7 +3,7 @@ import Foundation
 struct TextSelectionSnapshot {
     var processID: pid_t?
     var processName: String?
-    var bundleIdentifier: String? = nil
+    var bundleIdentifier: String?
     var selectedRange: CFRange?
     var selectedText: String?
     var source: String = "none"
@@ -39,7 +39,7 @@ struct TextSelectionSnapshot {
 struct CurrentInputTextSnapshot {
     var processID: pid_t?
     var processName: String?
-    var bundleIdentifier: String? = nil
+    var bundleIdentifier: String?
     var role: String?
     var text: String?
     var isEditable: Bool = false

@@ -47,6 +47,17 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
 
 // swiftlint:disable:next type_body_length
 struct StudioView: View {
+    private struct ShortcutConfiguration {
+        let title: String
+        let subtitle: String
+        let footnote: String
+        let icon: String
+        let badgeSymbol: String
+        let binding: HotkeyBinding?
+        let isDefault: Bool
+        let isThisRecording: Bool
+    }
+
     private enum ShortcutRecordingTarget {
         case activation
         case ask
@@ -868,15 +879,17 @@ struct StudioView: View {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
                     VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
                         shortcutConfigurationRow(
-                            title: L("settings.shortcuts.activation.title"),
-                            subtitle: L("settings.shortcuts.activation.subtitle"),
-                            footnote: L("settings.shortcuts.activation.footnote"),
-                            icon: "command",
-                            badgeSymbol: "mic.fill",
-                            binding: viewModel.activationHotkey,
-                            isDefault: viewModel.activationHotkey?.signature
-                                == HotkeyBinding.defaultActivation.signature,
-                            isThisRecording: recordingTarget == .activation,
+                            configuration: ShortcutConfiguration(
+                                title: L("settings.shortcuts.activation.title"),
+                                subtitle: L("settings.shortcuts.activation.subtitle"),
+                                footnote: L("settings.shortcuts.activation.footnote"),
+                                icon: "command",
+                                badgeSymbol: "mic.fill",
+                                binding: viewModel.activationHotkey,
+                                isDefault: viewModel.activationHotkey?.signature
+                                    == HotkeyBinding.defaultActivation.signature,
+                                isThisRecording: recordingTarget == .activation,
+                            ),
                             onStartRecording: {
                                 recordingTarget = .activation
                                 recorder.start { binding in
@@ -893,15 +906,17 @@ struct StudioView: View {
                         )
 
                         shortcutConfigurationRow(
-                            title: L("settings.shortcuts.ask.title"),
-                            subtitle: L("settings.shortcuts.ask.subtitle"),
-                            footnote: L("settings.shortcuts.ask.footnote"),
-                            icon: "questionmark.bubble.fill",
-                            badgeSymbol: "text.quote",
-                            binding: viewModel.askHotkey,
-                            isDefault: viewModel.askHotkey?.signature
-                                == HotkeyBinding.defaultAsk.signature,
-                            isThisRecording: recordingTarget == .ask,
+                            configuration: ShortcutConfiguration(
+                                title: L("settings.shortcuts.ask.title"),
+                                subtitle: L("settings.shortcuts.ask.subtitle"),
+                                footnote: L("settings.shortcuts.ask.footnote"),
+                                icon: "questionmark.bubble.fill",
+                                badgeSymbol: "text.quote",
+                                binding: viewModel.askHotkey,
+                                isDefault: viewModel.askHotkey?.signature
+                                    == HotkeyBinding.defaultAsk.signature,
+                                isThisRecording: recordingTarget == .ask,
+                            ),
                             onStartRecording: {
                                 recordingTarget = .ask
                                 recorder.start { binding in
@@ -918,15 +933,17 @@ struct StudioView: View {
                         )
 
                         shortcutConfigurationRow(
-                            title: L("settings.shortcuts.persona.title"),
-                            subtitle: L("settings.shortcuts.persona.subtitle"),
-                            footnote: L("settings.shortcuts.persona.footnote"),
-                            icon: "person.crop.rectangle.stack.fill",
-                            badgeSymbol: "person.crop.circle.badge.checkmark",
-                            binding: viewModel.personaHotkey,
-                            isDefault: viewModel.personaHotkey?.signature
-                                == HotkeyBinding.defaultPersona.signature,
-                            isThisRecording: recordingTarget == .persona,
+                            configuration: ShortcutConfiguration(
+                                title: L("settings.shortcuts.persona.title"),
+                                subtitle: L("settings.shortcuts.persona.subtitle"),
+                                footnote: L("settings.shortcuts.persona.footnote"),
+                                icon: "person.crop.rectangle.stack.fill",
+                                badgeSymbol: "person.crop.circle.badge.checkmark",
+                                binding: viewModel.personaHotkey,
+                                isDefault: viewModel.personaHotkey?.signature
+                                    == HotkeyBinding.defaultPersona.signature,
+                                isThisRecording: recordingTarget == .persona,
+                            ),
                             onStartRecording: {
                                 recordingTarget = .persona
                                 recorder.start { binding in
@@ -1597,14 +1614,7 @@ struct StudioView: View {
     }
 
     private func shortcutConfigurationRow(
-        title: String,
-        subtitle: String,
-        footnote: String,
-        icon: String,
-        badgeSymbol: String,
-        binding: HotkeyBinding?,
-        isDefault: Bool,
-        isThisRecording: Bool,
+        configuration: ShortcutConfiguration,
         onStartRecording: @escaping () -> Void,
         onReset: @escaping () -> Void,
         onUnset: @escaping () -> Void,
@@ -1620,20 +1630,20 @@ struct StudioView: View {
                 )
                 .frame(width: 54, height: 54)
                 .overlay(
-                    Image(systemName: icon)
+                    Image(systemName: configuration.icon)
                         .font(.system(size: 21, weight: .semibold))
                         .foregroundStyle(StudioTheme.accent),
                 )
 
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                Text(title)
+                Text(configuration.title)
                     .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text(subtitle)
+                Text(configuration.subtitle)
                     .font(.studioBody(StudioTheme.Typography.bodySmall))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(footnote)
+                Text(configuration.footnote)
                     .font(.studioBody(StudioTheme.Typography.caption))
                     .foregroundStyle(StudioTheme.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1642,13 +1652,13 @@ struct StudioView: View {
 
             Spacer(minLength: StudioTheme.Spacing.large)
 
-            shortcutPill(binding, accentSymbol: badgeSymbol)
+            shortcutPill(configuration.binding, accentSymbol: configuration.badgeSymbol)
                 .frame(minWidth: 170, alignment: .leading)
 
             shortcutActionButtons(
-                isDefault: isDefault,
-                isUnset: binding == nil,
-                isThisRecording: isThisRecording,
+                isDefault: configuration.isDefault,
+                isUnset: configuration.binding == nil,
+                isThisRecording: configuration.isThisRecording,
                 onStart: onStartRecording,
                 onReset: onReset,
                 onUnset: onUnset,

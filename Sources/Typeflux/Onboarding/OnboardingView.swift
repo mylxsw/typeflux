@@ -22,7 +22,7 @@ private struct OnboardingVisualEffectView: NSViewRepresentable {
     }
 }
 
-// swiftlint:disable file_length
+// swiftlint:disable file_length type_body_length
 struct OnboardingView: View {
     @ObservedObject var viewModel: OnboardingViewModel
     let appearanceMode: AppearanceMode
@@ -145,11 +145,11 @@ struct OnboardingView: View {
     private func canvasWidth(for step: OnboardingViewModel.Step) -> CGFloat {
         switch step {
         case .language, .shortcuts:
-            1_030
+            1030
         case .permissions:
             940
         case .stt, .llm:
-            1_040
+            1040
         }
     }
 
@@ -649,7 +649,7 @@ struct OnboardingView: View {
         }
     }
 
-    private func onboardingConfigCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+    private func onboardingConfigCard(@ViewBuilder content: () -> some View) -> some View {
         content()
             .padding(16)
             .background(onboardingCardFill)
@@ -753,7 +753,8 @@ struct OnboardingView: View {
             if viewModel.llmProvider == .ollama || viewModel.llmRemoteProvider != .freeModel {
                 HStack(spacing: 12) {
                     if let url = llmProviderAPIKeyURL(viewModel.llmRemoteProvider),
-                       viewModel.llmProvider != .ollama {
+                       viewModel.llmProvider != .ollama
+                    {
                         Link(destination: url) {
                             HStack(spacing: 5) {
                                 Image(systemName: "key")
@@ -1097,9 +1098,9 @@ struct OnboardingView: View {
     private func providerIconBadgeBorder(for providerID: StudioModelProviderID, isSelected: Bool) -> Color {
         switch OnboardingProviderStyle.iconPlateStyle(for: providerID) {
         case .light:
-            return isDarkMode ? Color.white.opacity(isSelected ? 0.28 : 0.18) : StudioTheme.border.opacity(isSelected ? 0.9 : 0.72)
+            isDarkMode ? Color.white.opacity(isSelected ? 0.28 : 0.18) : StudioTheme.border.opacity(isSelected ? 0.9 : 0.72)
         case .neutral:
-            return isDarkMode ? Color.white.opacity(isSelected ? 0.12 : 0.08) : StudioTheme.border.opacity(isSelected ? 0.85 : 0.72)
+            isDarkMode ? Color.white.opacity(isSelected ? 0.12 : 0.08) : StudioTheme.border.opacity(isSelected ? 0.85 : 0.72)
         }
     }
 
@@ -1386,9 +1387,9 @@ struct OnboardingView: View {
 
     private var keyboardPattern: some View {
         VStack(spacing: 8) {
-            ForEach(0..<4, id: \.self) { row in
+            ForEach(0 ..< 4, id: \.self) { row in
                 HStack(spacing: 8) {
-                    ForEach(0..<(row == 3 ? 12 : 14), id: \.self) { index in
+                    ForEach(0 ..< (row == 3 ? 12 : 14), id: \.self) { index in
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .fill(keyboardPatternKeyFill(index: index))
                             .frame(
@@ -1467,7 +1468,7 @@ struct OnboardingView: View {
         .padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(onboardingFooterSurface)
+                .fill(onboardingFooterSurface),
         )
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -1717,7 +1718,9 @@ struct OnboardingView: View {
         isDarkMode ? Color.white.opacity(0.14) : Color.white.opacity(0.22)
     }
 
-    private var shortcutsSectionSpacing: CGFloat { 14 }
+    private var shortcutsSectionSpacing: CGFloat {
+        14
+    }
 
     private var onboardingSelectionRing: Color {
         isDarkMode ? Color(red: 0.27, green: 0.31, blue: 0.43) : StudioTheme.border
