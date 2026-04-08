@@ -215,6 +215,30 @@ final class AgentJobTests: XCTestCase {
         XCTAssertEqual(job.formattedTotalTokens, "1.1M tokens")
     }
 
+    // MARK: - runningElapsedText
+
+    func testRunningElapsedTextForSeconds() {
+        let createdAt = Date(timeIntervalSince1970: 0)
+        let now = Date(timeIntervalSince1970: 42)
+        let job = AgentJob(createdAt: createdAt, status: .running, userPrompt: "test")
+
+        XCTAssertEqual(job.runningElapsedText(relativeTo: now), "42s")
+    }
+
+    func testRunningElapsedTextForMinutesAndSeconds() {
+        let createdAt = Date(timeIntervalSince1970: 0)
+        let now = Date(timeIntervalSince1970: 125)
+        let job = AgentJob(createdAt: createdAt, status: .running, userPrompt: "test")
+
+        XCTAssertEqual(job.runningElapsedText(relativeTo: now), "2m 5s")
+    }
+
+    func testRunningElapsedTextUsesStoredDurationForCompletedJobs() {
+        let job = AgentJob(status: .completed, userPrompt: "test", totalDurationMs: 3_600_000)
+
+        XCTAssertEqual(job.runningElapsedText(relativeTo: Date(timeIntervalSince1970: 0)), "1h")
+    }
+
     // MARK: - AgentJobStep stepDescription
 
     func testStepDescriptionNoTools() {

@@ -35,6 +35,14 @@ final class SettingsStoreAgentTests: XCTestCase {
         XCTAssertFalse(store.agentFrameworkEnabled)
     }
 
+    func testAgentFrameworkEnabledPostsConfigurationChangeNotification() {
+        let expectation = expectation(forNotification: .agentConfigurationDidChange, object: store)
+
+        store.agentFrameworkEnabled = true
+
+        wait(for: [expectation], timeout: 1.0)
+    }
+
     // MARK: - agentEnabled
 
     func testAgentEnabledDefaultsToTrue() {

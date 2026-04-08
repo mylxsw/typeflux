@@ -17,6 +17,8 @@ final class StatusBarController: NSObject {
     private var cancellables = Set<AnyCancellable>()
     private var languageObserver: NSObjectProtocol?
     private var agentJobObserver: NSObjectProtocol?
+    private var agentSettingsObserver: NSObjectProtocol?
+    private var runningJobDurationTimer: Timer?
     private var runningAgentJobs: [AgentJob] = []
 
     init(
@@ -62,6 +64,16 @@ final class StatusBarController: NSObject {
                 self?.refreshRunningAgentJobs()
             }
         }
+        agentSettingsObserver = NotificationCenter.default.addObserver(
+            forName: .agentConfigurationDidChange,
+            object: settingsStore,
+            queue: .main,
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.refreshRunningAgentJobs()
+                self?.rebuildMenu()
+            }
+        }
         refreshRunningAgentJobs()
 
         appState.$status
@@ -87,6 +99,12 @@ final class StatusBarController: NSObject {
             NotificationCenter.default.removeObserver(agentJobObserver)
         }
         agentJobObserver = nil
+        if let agentSettingsObserver {
+            NotificationCenter.default.removeObserver(agentSettingsObserver)
+        }
+        agentSettingsObserver = nil
+        runningJobDurationTimer?.invalidate()
+        runningJobDurationTimer = nil
         cancellables.removeAll()
     }
 
@@ -163,7 +181,11 @@ final class StatusBarController: NSObject {
             menu.addItem(emptyItem)
         } else {
             for job in runningAgentJobs.prefix(8) {
-                let item = NSMenuItem(title: job.displayTitle, action: #selector(openAgentJob(_:)), keyEquivalent: "")
+                let item = NSMenuItem(
+                    title: "\(job.displayTitle) · \(job.runningElapsedText())",
+                    action: #selector(openAgentJob(_:)),
+                    keyEquivalent: "",
+                )
                 item.target = self
                 item.representedObject = job.id.uuidString
                 menu.addItem(item)
@@ -268,7 +290,23 @@ final class StatusBarController: NSObject {
             let runningJobs = jobs.filter { $0.status == .running }
             await MainActor.run {
                 self.runningAgentJobs = runningJobs
+                self.updateRunningJobDurationTimer()
                 self.rebuildMenu()
+            }
+        }
+    }
+
+    private func updateRunningJobDurationTimer() {
+        guard !runningAgentJobs.isEmpty else {
+            runningJobDurationTimer?.invalidate()
+            runningJobDurationTimer = nil
+            return
+        }
+
+        guard runningJobDurationTimer == nil else { return }
+        runningJobDurationTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.rebuildMenu()
             }
         }
     }

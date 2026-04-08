@@ -5,6 +5,7 @@ extension Notification.Name {
         "SettingsStore.personaSelectionDidChange",
     )
     static let appearanceModeDidChange = Notification.Name("SettingsStore.appearanceModeDidChange")
+    static let agentConfigurationDidChange = Notification.Name("SettingsStore.agentConfigurationDidChange")
 }
 
 enum HistoryRetentionPolicy: String, CaseIterable, Identifiable {

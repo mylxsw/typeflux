@@ -148,4 +148,28 @@ struct AgentJob: Codable, Identifiable {
         }
         return "\(total) tokens"
     }
+
+    func runningElapsedText(relativeTo now: Date = Date()) -> String {
+        let elapsedMs: Int64
+        if status == .running {
+            elapsedMs = max(0, Int64(now.timeIntervalSince(createdAt) * 1000))
+        } else {
+            elapsedMs = max(0, totalDurationMs ?? Int64(now.timeIntervalSince(createdAt) * 1000))
+        }
+
+        let totalSeconds = Int(elapsedMs / 1000)
+        if totalSeconds < 60 {
+            return "\(totalSeconds)s"
+        }
+
+        let totalMinutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        if totalMinutes < 60 {
+            return seconds == 0 ? "\(totalMinutes)m" : "\(totalMinutes)m \(seconds)s"
+        }
+
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        return minutes == 0 ? "\(hours)h" : "\(hours)h \(minutes)m"
+    }
 }
