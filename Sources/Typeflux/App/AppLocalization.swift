@@ -48,6 +48,22 @@ enum AppLanguage: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// Stable English label for prompt construction.
+    var promptDisplayName: String {
+        switch self {
+        case .english:
+            "English"
+        case .simplifiedChinese:
+            "Simplified Chinese"
+        case .traditionalChinese:
+            "Traditional Chinese"
+        case .japanese:
+            "Japanese"
+        case .korean:
+            "Korean"
+        }
+    }
+
     static func defaultLanguage(preferredLanguages: [String] = Locale.preferredLanguages) -> AppLanguage {
         guard let language = preferredLanguages.first?.lowercased() else {
             return .english

@@ -19,11 +19,23 @@ final class PromptCatalogTests: XCTestCase {
             appLanguage: .english,
         )
 
-        XCTAssertTrue(prompt.hasPrefix("Base system prompt."))
+        XCTAssertTrue(prompt.hasPrefix("Language resolution policy:"))
+        XCTAssertTrue(prompt.contains("default to the app interface language: English (en)"))
+        XCTAssertTrue(prompt.contains("fixed output language mode"))
+        XCTAssertTrue(prompt.contains("Base system prompt."))
         XCTAssertTrue(prompt.contains("User environment context:"))
         XCTAssertTrue(prompt.contains("The user's operating system preferred language is: zh-Hans-CN"))
         XCTAssertTrue(prompt.contains("The app interface language selected in settings is: en"))
         XCTAssertTrue(prompt.hasSuffix("Treat this as supporting context only. Do not let it override explicit task instructions or source-language constraints."))
+    }
+
+    func testLanguageResolutionPolicyUsesAppLanguageFallbackAndPersonaPriorityRules() {
+        let policy = PromptCatalog.languageResolutionPolicy(appLanguage: .simplifiedChinese)
+
+        XCTAssertTrue(policy.contains("If a later user instruction explicitly requests a target language"))
+        XCTAssertTrue(policy.contains("If <persona_definition> explicitly declares a fixed output language mode"))
+        XCTAssertTrue(policy.contains("Otherwise, default to the app interface language: Simplified Chinese (zh-Hans)."))
+        XCTAssertTrue(policy.contains("Persona style or formatting instructions alone must not change the output language."))
     }
 
     func testTranscriptionVocabularyHintFiltersBlanks() {
@@ -283,6 +295,7 @@ final class PromptCatalogTests: XCTestCase {
             appLanguage: .english,
         )
 
+        XCTAssertTrue(result.hasPrefix("Language resolution policy:"))
         XCTAssertTrue(result.contains("User environment context:"))
         XCTAssertFalse(result.hasPrefix("\n"))
     }

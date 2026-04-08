@@ -39,6 +39,20 @@ enum PromptCatalog {
         """
     }
 
+    static func languageResolutionPolicy(appLanguage: AppLanguage) -> String {
+        """
+        Language resolution policy:
+        - If a later user instruction explicitly requests a target language, follow that language.
+        - If <persona_definition> explicitly declares a fixed output language mode, follow it unless a later user instruction explicitly requires a different language.
+        - Otherwise, when the task is editing, rewriting, or transcribing existing content and that source content has a clear language, preserve that language.
+        - Otherwise, if <persona_definition> explicitly declares a default language preference, follow it.
+        - Otherwise, default to the app interface language: \(appLanguage.promptDisplayName) (\(appLanguage.rawValue)).
+        - Persona style or formatting instructions alone must not change the output language.
+        - Proper nouns, product names, API names, code identifiers, and established technical terms may remain in their natural form when appropriate, but the surrounding text should still follow the resolved output language.
+        This policy has higher priority than persona style preferences.
+        """
+    }
+
     static func userEnvironmentContext(
         preferredLanguages: [String] = Locale.preferredLanguages,
         appLanguage: AppLanguage,
@@ -60,13 +74,14 @@ enum PromptCatalog {
         appLanguage: AppLanguage,
     ) -> String {
         let trimmedPrompt = systemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        let languagePolicy = languageResolutionPolicy(appLanguage: appLanguage)
         let environmentContext = userEnvironmentContext(
             preferredLanguages: preferredLanguages,
             appLanguage: appLanguage,
         )
 
-        guard !trimmedPrompt.isEmpty else { return environmentContext }
-        return "\(trimmedPrompt)\n\n\(environmentContext)"
+        guard !trimmedPrompt.isEmpty else { return "\(languagePolicy)\n\n\(environmentContext)" }
+        return "\(languagePolicy)\n\n\(trimmedPrompt)\n\n\(environmentContext)"
     }
 
     /// Returns additional system prompt content tailored to the current app context.

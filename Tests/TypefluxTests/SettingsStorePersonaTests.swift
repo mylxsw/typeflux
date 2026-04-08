@@ -2,6 +2,21 @@
 import XCTest
 
 final class SettingsStorePersonaTests: XCTestCase {
+    func testBuiltInPersonasDeclareExpectedLanguageModes() throws {
+        let suiteName = "SettingsStorePersonaTests.languageModes.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        let store = SettingsStore(defaults: defaults)
+
+        let typefluxPersona = try XCTUnwrap(store.personas.first(where: { $0.name == "Typeflux" }))
+        XCTAssertTrue(typefluxPersona.prompt.contains("Persona language mode: inherit."))
+        XCTAssertTrue(typefluxPersona.prompt.contains("Do not decide the output language on your own."))
+
+        let translatorPersona = try XCTUnwrap(store.personas.first(where: { $0.name == "English Translator" }))
+        XCTAssertTrue(translatorPersona.prompt.contains("Persona language mode: fixed English."))
+        XCTAssertTrue(translatorPersona.prompt.contains("always produce the final output in natural English"))
+    }
+
     func testPersonasAlwaysIncludeSystemProfilesAndPersistOnlyCustomProfiles() throws {
         let suiteName = "SettingsStorePersonaTests.persistOnlyCustom.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
