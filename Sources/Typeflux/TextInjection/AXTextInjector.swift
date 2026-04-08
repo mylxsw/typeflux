@@ -316,6 +316,7 @@ final class AXTextInjector: TextInjector {
             return CurrentInputTextSnapshot(
                 processID: frontmostProcessID(),
                 processName: frontmostApplicationName(),
+                bundleIdentifier: frontmostApplicationBundleIdentifier(),
                 role: nil,
                 text: nil,
                 isEditable: false,
@@ -328,6 +329,7 @@ final class AXTextInjector: TextInjector {
             return CurrentInputTextSnapshot(
                 processID: frontmostProcessID(),
                 processName: frontmostApplicationName(),
+                bundleIdentifier: frontmostApplicationBundleIdentifier(),
                 role: nil,
                 text: nil,
                 isEditable: false,
@@ -338,6 +340,7 @@ final class AXTextInjector: TextInjector {
 
         let processID = frontmostProcessID()
         let processName = frontmostApplicationName()
+        let bundleIdentifier = frontmostApplicationBundleIdentifier()
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
         let isEditable = isLikelyEditable(element: element)
         let isFocusedTarget = copyBooleanAttribute(kAXFocusedAttribute as String, from: element) ?? false
@@ -347,6 +350,7 @@ final class AXTextInjector: TextInjector {
             return CurrentInputTextSnapshot(
                 processID: processID,
                 processName: processName,
+                bundleIdentifier: bundleIdentifier,
                 role: role,
                 text: nil,
                 isEditable: false,
@@ -360,6 +364,7 @@ final class AXTextInjector: TextInjector {
                 return CurrentInputTextSnapshot(
                     processID: processID,
                     processName: processName,
+                    bundleIdentifier: bundleIdentifier,
                     role: role,
                     text: nil,
                     isEditable: true,
@@ -371,6 +376,7 @@ final class AXTextInjector: TextInjector {
                 return CurrentInputTextSnapshot(
                     processID: processID,
                     processName: processName,
+                    bundleIdentifier: bundleIdentifier,
                     role: role,
                     text: nil,
                     isEditable: true,
@@ -382,6 +388,7 @@ final class AXTextInjector: TextInjector {
                 return CurrentInputTextSnapshot(
                     processID: processID,
                     processName: processName,
+                    bundleIdentifier: bundleIdentifier,
                     role: role,
                     text: nil,
                     isEditable: true,
@@ -393,6 +400,7 @@ final class AXTextInjector: TextInjector {
             return CurrentInputTextSnapshot(
                 processID: processID,
                 processName: processName,
+                bundleIdentifier: bundleIdentifier,
                 role: role,
                 text: value,
                 isEditable: true,
@@ -404,6 +412,7 @@ final class AXTextInjector: TextInjector {
         return CurrentInputTextSnapshot(
             processID: processID,
             processName: processName,
+            bundleIdentifier: bundleIdentifier,
             role: role,
             text: nil,
             isEditable: true,

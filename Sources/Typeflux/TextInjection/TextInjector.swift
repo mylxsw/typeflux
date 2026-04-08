@@ -39,6 +39,7 @@ struct TextSelectionSnapshot {
 struct CurrentInputTextSnapshot {
     var processID: pid_t?
     var processName: String?
+    var bundleIdentifier: String? = nil
     var role: String?
     var text: String?
     var isEditable: Bool = false

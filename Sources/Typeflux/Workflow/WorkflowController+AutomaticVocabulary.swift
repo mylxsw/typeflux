@@ -1,6 +1,12 @@
 import Foundation
 
 extension WorkflowController {
+    struct AutomaticVocabularyExpectedApp: Equatable {
+        let bundleIdentifier: String?
+        let processID: pid_t?
+        let processName: String?
+    }
+
     // swiftlint:disable:next function_body_length cyclomatic_complexity
     func scheduleAutomaticVocabularyObservation(for insertedText: String) {
         automaticVocabularyObservationTask?.cancel()
@@ -35,6 +41,7 @@ extension WorkflowController {
                 )
                 return
             }
+            let expectedApp = automaticVocabularyExpectedApp(from: initialSnapshot)
 
             do {
                 try await Task.sleep(for: Self.automaticVocabularyStartupDelay)
@@ -48,6 +55,15 @@ extension WorkflowController {
             guard let baselineText = baselineSnapshot.text else {
                 logAutomaticVocabulary(
                     "session aborted: failed to read baseline input text | "
+                        + describeCurrentInputTextSnapshot(baselineSnapshot),
+                )
+                return
+            }
+            guard automaticVocabularyMatchesExpectedApp(baselineSnapshot, expectedApp: expectedApp) else {
+                logAutomaticVocabulary(
+                    "session aborted: focused app changed before baseline was captured | expected="
+                        + describeAutomaticVocabularyExpectedApp(expectedApp)
+                        + " | actual="
                         + describeCurrentInputTextSnapshot(baselineSnapshot),
                 )
                 return
@@ -76,6 +92,15 @@ extension WorkflowController {
                             + describeCurrentInputTextSnapshot(currentSnapshot),
                     )
                     continue
+                }
+                guard automaticVocabularyMatchesExpectedApp(currentSnapshot, expectedApp: expectedApp) else {
+                    logAutomaticVocabulary(
+                        "session aborted: focused app changed before vocabulary analysis | expected="
+                            + describeAutomaticVocabularyExpectedApp(expectedApp)
+                            + " | actual="
+                            + describeCurrentInputTextSnapshot(currentSnapshot),
+                    )
+                    return
                 }
 
                 let now = Date()
@@ -252,13 +277,60 @@ extension WorkflowController {
     }
 
     func describeCurrentInputTextSnapshot(_ snapshot: CurrentInputTextSnapshot) -> String {
+        let bundleIdentifier = snapshot.bundleIdentifier ?? "<unknown>"
         let processName = snapshot.processName ?? "<unknown>"
         let processID = snapshot.processID.map(String.init) ?? "<unknown>"
         let role = snapshot.role ?? "<unknown>"
         let textPreview = snapshot.text.map { automaticVocabularyPreview($0) } ?? "<nil>"
         let failureReason = snapshot.failureReason ?? "<none>"
 
-        return "process=\(processName)(pid: \(processID)) | role=\(role) | "
+        return "bundle=\(bundleIdentifier) | process=\(processName)(pid: \(processID)) | role=\(role) | "
             + "editable=\(snapshot.isEditable) | failureReason=\(failureReason) | text=\(textPreview)"
+    }
+
+    func automaticVocabularyExpectedApp(from snapshot: CurrentInputTextSnapshot) -> AutomaticVocabularyExpectedApp {
+        AutomaticVocabularyExpectedApp(
+            bundleIdentifier: normalizedAutomaticVocabularyAppField(snapshot.bundleIdentifier),
+            processID: snapshot.processID,
+            processName: normalizedAutomaticVocabularyAppField(snapshot.processName),
+        )
+    }
+
+    func automaticVocabularyMatchesExpectedApp(
+        _ snapshot: CurrentInputTextSnapshot,
+        expectedApp: AutomaticVocabularyExpectedApp,
+    ) -> Bool {
+        if let expectedBundleIdentifier = expectedApp.bundleIdentifier,
+           let actualBundleIdentifier = normalizedAutomaticVocabularyAppField(snapshot.bundleIdentifier)
+        {
+            return expectedBundleIdentifier == actualBundleIdentifier
+        }
+
+        if let expectedProcessID = expectedApp.processID,
+           let actualProcessID = snapshot.processID
+        {
+            return expectedProcessID == actualProcessID
+        }
+
+        if let expectedProcessName = expectedApp.processName,
+           let actualProcessName = normalizedAutomaticVocabularyAppField(snapshot.processName)
+        {
+            return expectedProcessName == actualProcessName
+        }
+
+        return true
+    }
+
+    func describeAutomaticVocabularyExpectedApp(_ expectedApp: AutomaticVocabularyExpectedApp) -> String {
+        let bundleIdentifier = expectedApp.bundleIdentifier ?? "<unknown>"
+        let processName = expectedApp.processName ?? "<unknown>"
+        let processID = expectedApp.processID.map(String.init) ?? "<unknown>"
+        return "bundle=\(bundleIdentifier) | process=\(processName)(pid: \(processID))"
+    }
+
+    func normalizedAutomaticVocabularyAppField(_ value: String?) -> String? {
+        let normalized = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let normalized, !normalized.isEmpty else { return nil }
+        return normalized
     }
 }
