@@ -2186,7 +2186,11 @@ struct StudioView: View {
                         placeholder: provider == .gemini ? "AIza..." : "sk-...",
                         text: Binding(get: { viewModel.llmAPIKey }, set: viewModel.setLLMAPIKey),
                         secure: true,
-                    )
+                    ) {
+                        if let url = llmProviderAPIKeyURL(provider) {
+                            apiKeyHelpButton(url: url)
+                        }
+                    }
 
                     StudioSuggestedTextInputCard(
                         label: L("settings.models.apiEndpoint"),
@@ -3279,7 +3283,11 @@ struct StudioView: View {
                         get: { viewModel.whisperAPIKey }, set: viewModel.setWhisperAPIKey,
                     ),
                     secure: true,
-                )
+                ) {
+                    if let url = sttProviderAPIKeyURL(.whisperAPI) {
+                        apiKeyHelpButton(url: url)
+                    }
+                }
 
             case .ollama:
                 StudioSuggestedTextInputCard(
@@ -3334,7 +3342,11 @@ struct StudioView: View {
                             get: { viewModel.multimodalLLMAPIKey },
                             set: viewModel.setMultimodalLLMAPIKey,
                         ), secure: true,
-                    )
+                    ) {
+                        if let url = sttProviderAPIKeyURL(.multimodalLLM) {
+                            apiKeyHelpButton(url: url)
+                        }
+                    }
                     Text(L("settings.models.multimodalLLM.audioHint"))
                         .font(.studioBody(StudioTheme.Typography.caption))
                         .foregroundStyle(StudioTheme.textSecondary)
@@ -3349,18 +3361,9 @@ struct StudioView: View {
                         ),
                         secure: true,
                     ) {
-                        Button {
-                            NSWorkspace.shared.open(
-                                URL(
-                                    string: "https://bailian.console.aliyun.com?tab=model#/api-key",
-                                )!,
-                            )
-                        } label: {
-                            Text(L("settings.models.aliCloud.getAPIKey"))
-                                .font(.studioBody(StudioTheme.Typography.caption))
-                                .foregroundStyle(StudioTheme.accent)
+                        if let url = sttProviderAPIKeyURL(.aliCloud) {
+                            apiKeyHelpButton(url: url)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
 
@@ -3396,7 +3399,11 @@ struct StudioView: View {
                         label: L("common.apiKey"), placeholder: "gsk_...",
                         text: Binding(get: { viewModel.groqSTTAPIKey }, set: viewModel.setGroqSTTAPIKey),
                         secure: true,
-                    )
+                    ) {
+                        if let url = sttProviderAPIKeyURL(.groq) {
+                            apiKeyHelpButton(url: url)
+                        }
+                    }
                     StudioSuggestedTextInputCard(
                         label: L("common.model"),
                         placeholder: OpenAIAudioModelCatalog.groqWhisperModels[0],
@@ -3995,6 +4002,70 @@ struct StudioView: View {
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi,
              .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT:
             StudioTheme.accentSoft
+        }
+    }
+
+    @ViewBuilder
+    private func apiKeyHelpButton(url: URL) -> some View {
+        Button {
+            NSWorkspace.shared.open(url)
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "key")
+                    .font(.system(size: 11, weight: .semibold))
+                Text(L("onboarding.models.getAPIKey"))
+                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .foregroundStyle(StudioTheme.accent)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func sttProviderAPIKeyURL(_ provider: STTProvider) -> URL? {
+        switch provider {
+        case .whisperAPI:
+            URL(string: "https://platform.openai.com/api-keys")
+        case .groq:
+            URL(string: "https://console.groq.com/keys")
+        case .aliCloud:
+            URL(string: "https://bailian.console.aliyun.com?tab=model#/api-key")
+        case .multimodalLLM:
+            URL(string: "https://platform.openai.com/api-keys")
+        case .doubaoRealtime, .freeModel, .localModel, .appleSpeech:
+            nil
+        }
+    }
+
+    private func llmProviderAPIKeyURL(_ provider: LLMRemoteProvider) -> URL? {
+        switch provider {
+        case .openAI:
+            URL(string: "https://platform.openai.com/api-keys")
+        case .anthropic:
+            URL(string: "https://console.anthropic.com/settings/keys")
+        case .gemini:
+            URL(string: "https://aistudio.google.com/apikey")
+        case .deepSeek:
+            URL(string: "https://platform.deepseek.com/api_keys")
+        case .groq:
+            URL(string: "https://console.groq.com/keys")
+        case .openRouter:
+            URL(string: "https://openrouter.ai/settings/keys")
+        case .kimi:
+            URL(string: "https://platform.moonshot.cn/console/api-keys")
+        case .qwen:
+            URL(string: "https://dashscope.console.aliyun.com/apiKey")
+        case .zhipu:
+            URL(string: "https://open.bigmodel.cn/usercenter/proj-mgmt/apikey")
+        case .minimax:
+            URL(string: "https://platform.minimaxi.com/user-center/basic-information/interface-key")
+        case .grok:
+            URL(string: "https://console.x.ai/")
+        case .xiaomi:
+            URL(string: "https://ai.xiaomi.com/")
+        case .freeModel, .custom:
+            nil
         }
     }
 
