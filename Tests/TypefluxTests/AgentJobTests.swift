@@ -91,6 +91,14 @@ final class AgentJobTests: XCTestCase {
         XCTAssertEqual(job.displayTitle, "Search Results")
     }
 
+    func testTruncatedTitleUsesCustomLimitForTitle() {
+        let title = String(repeating: "x", count: 80)
+        let job = AgentJob(title: title, userPrompt: "Search for cats")
+
+        XCTAssertEqual(job.truncatedTitle(limit: 44).count, 45)
+        XCTAssertTrue(job.truncatedTitle(limit: 44).hasSuffix("…"))
+    }
+
     func testDisplayTitleFallsBackToPrompt() {
         let job = AgentJob(userPrompt: "Short prompt")
         XCTAssertEqual(job.displayTitle, "Short prompt")
@@ -101,6 +109,14 @@ final class AgentJobTests: XCTestCase {
         let job = AgentJob(userPrompt: longPrompt)
         XCTAssertEqual(job.displayTitle.count, 61) // 60 + "…"
         XCTAssertTrue(job.displayTitle.hasSuffix("…"))
+    }
+
+    func testTruncatedTitleUsesCustomLimitForPrompt() {
+        let prompt = String(repeating: "p", count: 100)
+        let job = AgentJob(userPrompt: prompt)
+
+        XCTAssertEqual(job.truncatedTitle(limit: 44).count, 45)
+        XCTAssertTrue(job.truncatedTitle(limit: 44).hasSuffix("…"))
     }
 
     func testDisplayTitleIgnoresEmptyTitle() {

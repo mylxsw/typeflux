@@ -7,6 +7,10 @@ final class StatusBarController: NSObject {
         static let agentTasks = 9_001
     }
 
+    private enum MenuLayout {
+        static let runningJobTitleLimit = 44
+    }
+
     private let appState: AppStateStore
     private let settingsStore: SettingsStore
     private let historyStore: HistoryStore
@@ -303,7 +307,7 @@ final class StatusBarController: NSObject {
     }
 
     private func agentTaskMenuTitle(for job: AgentJob, relativeTo now: Date = Date()) -> String {
-        "\(job.displayTitle) · \(job.runningElapsedText(relativeTo: now))"
+        "\(job.truncatedTitle(limit: MenuLayout.runningJobTitleLimit)) · \(job.runningElapsedText(relativeTo: now))"
     }
 
     private func refreshVisibleAgentTaskMenuTitles(relativeTo now: Date = Date()) {

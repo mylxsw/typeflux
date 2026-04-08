@@ -63,6 +63,8 @@ struct AgentJobToolCall: Codable, Identifiable {
 
 /// A complete agent job record.
 struct AgentJob: Codable, Identifiable {
+    static let displayTitleLimit = 60
+
     let id: UUID
     var createdAt: Date
     var completedAt: Date?
@@ -109,10 +111,18 @@ struct AgentJob: Codable, Identifiable {
 
     /// Display title: generated title or truncated user prompt.
     var displayTitle: String {
+        truncatedTitle(limit: Self.displayTitleLimit)
+    }
+
+    func truncatedTitle(limit: Int) -> String {
+        guard limit > 0 else { return "" }
+
         if let title, !title.isEmpty {
-            return title
+            let truncated = title.prefix(limit)
+            return truncated.count < title.count ? "\(truncated)…" : String(truncated)
         }
-        let truncated = userPrompt.prefix(60)
+
+        let truncated = userPrompt.prefix(limit)
         return truncated.count < userPrompt.count ? "\(truncated)…" : String(truncated)
     }
 
