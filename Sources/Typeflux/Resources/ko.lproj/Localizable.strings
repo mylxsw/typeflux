@@ -363,6 +363,7 @@
 "settings.personas.tag.system" = "시스템";
 "settings.personas.deleteDialog.title" = "페르소나를 삭제하시겠습니까?";
 "settings.personas.deleteDialog.message" = "\"%@\"을(를) 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.";
+"settings.providers" = "서비스 제공업체";
 "settings.personas.providers.stt" = "음성 서비스";
 "settings.personas.providers.llm" = "언어 모델 서비스";
 "settings.personaDefault.title" = "기본 페르소나";

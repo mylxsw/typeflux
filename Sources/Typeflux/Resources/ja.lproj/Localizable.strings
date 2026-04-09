@@ -363,6 +363,7 @@
 "settings.personas.tag.system" = "システム";
 "settings.personas.deleteDialog.title" = "ペルソナを削除しますか?";
 "settings.personas.deleteDialog.message" = "「%@」を削除しますか?これを元に戻すことはできません。";
+"settings.providers" = "サービスプロバイダ";
 "settings.personas.providers.stt" = "音声サービス";
 "settings.personas.providers.llm" = "言語モデルサービス";
 "settings.personaDefault.title" = "デフォルトのペルソナ";

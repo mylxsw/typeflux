@@ -369,6 +369,7 @@
 "settings.personas.tag.system" = "System";
 "settings.personas.deleteDialog.title" = "Delete Persona?";
 "settings.personas.deleteDialog.message" = "Delete \"%@\"? This cannot be undone.";
+"settings.providers" = "Service Providers";
 "settings.personas.providers.stt" = "Voice Provider";
 "settings.personas.providers.llm" = "LLM Provider";
 "settings.personaDefault.title" = "Default Persona";

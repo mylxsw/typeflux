@@ -1035,6 +1035,8 @@ struct StudioView: View {
                 }
             }
 
+            StudioSectionTitle(title: L("settings.providers"))
+
             personaProviderSelectionSection
 
             StudioSectionTitle(title: L("settings.identity"))
@@ -1042,74 +1044,24 @@ struct StudioView: View {
             HStack(alignment: .top, spacing: StudioTheme.Spacing.xxLarge) {
                 StudioCard {
                     VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                        HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
-                            RoundedRectangle(
-                                cornerRadius: StudioTheme.CornerRadius.large, style: .continuous,
-                            )
-                            .fill(StudioTheme.accentSoft)
-                            .frame(width: 46, height: 46)
-                            .overlay(
-                                Image(systemName: "person.crop.rectangle.stack.fill")
-                                    .foregroundStyle(StudioTheme.accent),
-                            )
-
-                            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                                Text(L("settings.personaDefault.title"))
-                                    .font(
-                                        .studioDisplay(
-                                            StudioTheme.Typography.cardTitle, weight: .semibold,
-                                        ),
-                                    )
-                                    .foregroundStyle(StudioTheme.textPrimary)
-                                Text(L("settings.personaDefault.subtitle"))
-                                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                                    .foregroundStyle(StudioTheme.textSecondary)
-                            }
-
-                            Spacer()
-
-                            if let selectedID = viewModel.defaultPersonaSelectionID,
-                               let persona = viewModel.personas.first(where: {
-                                   $0.id == selectedID
-                               })
-                            {
-                                StudioPill(title: persona.name)
-                            } else {
-                                StudioPill(
-                                    title: L("persona.none.title"), systemImage: "person.slash",
-                                )
-                            }
-                        }
-
-                        LazyVGrid(
-                            columns: [
-                                GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
-                                GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
-                            ],
-                            alignment: .leading,
-                            spacing: StudioTheme.Spacing.medium,
+                        StudioSettingRow(
+                            title: L("settings.personaDefault.title"),
+                            subtitle: L("settings.personaDefault.subtitle")
                         ) {
-                            personaSelectionCard(
-                                title: L("persona.none.title"),
-                                subtitle: L("persona.none.subtitle"),
-                                initials: "",
-                                systemImage: "person.slash.fill",
-                                isSelected: viewModel.defaultPersonaSelectionID == nil,
-                            ) {
-                                viewModel.setDefaultPersonaSelection(nil)
-                            }
-
-                            ForEach(viewModel.personas) { persona in
-                                personaSelectionCard(
-                                    title: persona.name,
-                                    subtitle: persona.prompt,
-                                    initials: String(persona.name.prefix(2)).uppercased(),
-                                    isSelected: viewModel.defaultPersonaSelectionID == persona.id,
-                                ) {
-                                    viewModel.setDefaultPersonaSelection(persona.id)
-                                }
-                            }
+                            StudioMenuPicker(
+                                options: [(label: L("persona.none.title"), value: nil as UUID?)]
+                                    + viewModel.personas.map { persona in
+                                        (label: persona.name, value: persona.id as UUID?)
+                                    },
+                                selection: Binding(
+                                    get: { viewModel.defaultPersonaSelectionID },
+                                    set: { viewModel.setDefaultPersonaSelection($0) },
+                                ),
+                                width: 200,
+                            )
                         }
+
+                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                         HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
                             Text(

@@ -369,6 +369,7 @@
 "settings.personas.tag.system" = "系统";
 "settings.personas.deleteDialog.title" = "删除人设？";
 "settings.personas.deleteDialog.message" = "删除”%@”？此操作无法撤销。";
+"settings.providers" = "服务商";
 "settings.personas.providers.stt" = "语音服务商";
 "settings.personas.providers.llm" = "大语言模型服务商";
 "settings.personaDefault.title" = "默认人设";
