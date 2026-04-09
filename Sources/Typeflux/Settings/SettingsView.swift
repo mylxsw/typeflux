@@ -77,6 +77,8 @@ struct StudioView: View {
     @State private var llmActivationMissingAPIKeyProviderName: String?
     @State private var isMCPServerDialogPresented = false
     @State private var mcpServerPendingDeletion: MCPServerConfig? = nil
+    @State private var agentJobPendingDeletion: AgentJob?
+    @State private var showingClearAllJobsConfirmation = false
     @State private var agentConfigurationTab: AgentConfigurationTab = .general
     @ObservedObject private var localization = AppLocalization.shared
 
@@ -213,6 +215,39 @@ struct StudioView: View {
         } message: {
             if let server = mcpServerPendingDeletion {
                 Text(L("agent.mcp.deleteDialog.message", server.name.isEmpty ? L("agent.mcp.untitled") : server.name))
+            }
+        }
+        .confirmationDialog(
+            L("agent.jobs.clearAllDialog.title"),
+            isPresented: $showingClearAllJobsConfirmation,
+            titleVisibility: .visible,
+        ) {
+            Button(L("common.delete"), role: .destructive) {
+                viewModel.clearAllAgentJobs()
+            }
+            Button(L("common.cancel"), role: .cancel) {}
+        } message: {
+            Text(L("agent.jobs.clearAllDialog.message"))
+        }
+        .confirmationDialog(
+            L("agent.jobs.deleteDialog.title"),
+            isPresented: Binding(
+                get: { agentJobPendingDeletion != nil },
+                set: { if !$0 { agentJobPendingDeletion = nil } },
+            ),
+            titleVisibility: .visible,
+        ) {
+            Button(L("common.delete"), role: .destructive) {
+                guard let job = agentJobPendingDeletion else { return }
+                viewModel.deleteAgentJob(id: job.id)
+                agentJobPendingDeletion = nil
+            }
+            Button(L("common.cancel"), role: .cancel) {
+                agentJobPendingDeletion = nil
+            }
+        } message: {
+            if let job = agentJobPendingDeletion {
+                Text(L("agent.jobs.deleteDialog.message", job.displayTitle))
             }
         }
         .sheet(isPresented: $viewModel.showingJobsPage) {
@@ -4249,7 +4284,7 @@ struct StudioView: View {
                         systemImage: "trash",
                         variant: .secondary,
                     ) {
-                        viewModel.clearAllAgentJobs()
+                        showingClearAllJobsConfirmation = true
                     }
                 }
 
@@ -4359,7 +4394,7 @@ struct StudioView: View {
         }
         .contextMenu {
             Button(L("common.delete"), role: .destructive) {
-                viewModel.deleteAgentJob(id: job.id)
+                agentJobPendingDeletion = job
             }
         }
     }

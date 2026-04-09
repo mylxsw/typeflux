@@ -726,3 +726,7 @@
 "agent.jobs.status.running" = "Running";
 "agent.jobs.status.completed" = "Completed";
 "agent.jobs.status.failed" = "Failed";
+"agent.jobs.clearAllDialog.title" = "Clear All Jobs";
+"agent.jobs.clearAllDialog.message" = "Clear all job records? This action cannot be undone.";
+"agent.jobs.deleteDialog.title" = "Delete Job";
+"agent.jobs.deleteDialog.message" = "Delete \"%@\"? This action cannot be undone.";

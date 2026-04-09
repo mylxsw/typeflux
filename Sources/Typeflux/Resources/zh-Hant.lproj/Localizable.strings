@@ -724,3 +724,7 @@
 "agent.jobs.status.running" = "執行中";
 "agent.jobs.status.completed" = "已完成";
 "agent.jobs.status.failed" = "失敗";
+"agent.jobs.clearAllDialog.title" = "清除全部任務";
+"agent.jobs.clearAllDialog.message" = "確定清除所有任務記錄嗎？此操作無法復原。";
+"agent.jobs.deleteDialog.title" = "刪除任務";
+"agent.jobs.deleteDialog.message" = "確定刪除「%@」嗎？此操作無法復原。";

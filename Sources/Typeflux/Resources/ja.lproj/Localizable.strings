@@ -716,3 +716,7 @@
 "agent.jobs.detail.stepTokens" = "%d トークン";
 "agent.jobs.detail.context.showMore" = "すべて表示";
 "agent.jobs.detail.context.showLess" = "折りたたむ";
+"agent.jobs.clearAllDialog.title" = "すべてのジョブを削除";
+"agent.jobs.clearAllDialog.message" = "すべてのジョブ記録を削除しますか?この操作は元に戻すことができません。";
+"agent.jobs.deleteDialog.title" = "ジョブの削除";
+"agent.jobs.deleteDialog.message" = "「%@」を削除しますか?この操作は元に戻すことができません。";

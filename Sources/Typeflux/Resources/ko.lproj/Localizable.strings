@@ -716,3 +716,7 @@
 "agent.jobs.detail.stepTokens" = "%d 토큰";
 "agent.jobs.detail.context.showMore" = "더 보기";
 "agent.jobs.detail.context.showLess" = "접기";
+"agent.jobs.clearAllDialog.title" = "모든 작업 삭제";
+"agent.jobs.clearAllDialog.message" = "모든 작업 기록을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.";
+"agent.jobs.deleteDialog.title" = "작업 삭제";
+"agent.jobs.deleteDialog.message" = "\"%@\"을(를) 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.";
