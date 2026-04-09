@@ -438,9 +438,7 @@ struct StudioView: View {
     }
 
     private var personasPage: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.section) {
-            personaProviderSelectionSection
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.section) {
+        HStack(alignment: .top, spacing: StudioTheme.Spacing.section) {
             StudioCard {
                 VStack(spacing: StudioTheme.Spacing.smallMedium) {
                     ForEach(viewModel.filteredPersonas) { persona in
@@ -623,7 +621,6 @@ struct StudioView: View {
                         }
                     }
                 }
-            }
             }
         }
     }
@@ -1037,6 +1034,8 @@ struct StudioView: View {
                     }
                 }
             }
+
+            personaProviderSelectionSection
 
             StudioSectionTitle(title: L("settings.identity"))
 
