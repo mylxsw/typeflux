@@ -6,7 +6,9 @@ APP_DIR="${TYPEFLUX_DEV_APP_DIR:-${TYPEFLUX_DEV_APP_DIR:-$HOME/Applications/Type
 
 swift build --package-path "$ROOT_DIR" -c debug
 
-BIN="$ROOT_DIR/.build/debug/Typeflux"
+BIN_DIR="$(swift build --package-path "$ROOT_DIR" --show-bin-path)"
+BIN="$BIN_DIR/Typeflux"
+RESOURCE_BUNDLE="$BIN_DIR/Typeflux_Typeflux.bundle"
 mkdir -p "$APP_DIR/Contents/MacOS"
 mkdir -p "$APP_DIR/Contents/Resources"
 
@@ -14,6 +16,8 @@ mkdir -p "$APP_DIR/Contents/Resources"
 cp "$ROOT_DIR/app/Info.plist" "$APP_DIR/Contents/Info.plist"
 cp "$BIN" "$APP_DIR/Contents/MacOS/Typeflux"
 cp "$ROOT_DIR/app/Typeflux.icns" "$APP_DIR/Contents/Resources/Typeflux.icns"
+rm -rf "$APP_DIR/Contents/Resources/Typeflux_Typeflux.bundle"
+cp -R "$RESOURCE_BUNDLE" "$APP_DIR/Contents/Resources/Typeflux_Typeflux.bundle"
 
 chmod +x "$APP_DIR/Contents/MacOS/Typeflux"
 

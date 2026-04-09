@@ -47,7 +47,9 @@ final class LocalizationResourceTests: XCTestCase {
 
     private func localizationBundle(for language: AppLanguage) throws -> Bundle {
         let path = try XCTUnwrap(
-            Bundle.module.path(forResource: language.bundleLocalizationName, ofType: "lproj"),
+            language.bundleLocalizationCandidates.compactMap {
+                Bundle.module.path(forResource: $0, ofType: "lproj")
+            }.first,
             "Missing bundle path for \(language.rawValue)",
         )
 

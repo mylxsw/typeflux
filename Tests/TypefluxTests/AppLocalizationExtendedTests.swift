@@ -62,12 +62,18 @@ final class AppLocalizationExtendedTests: XCTestCase {
 
     // MARK: - bundleLocalizationName
 
-    func testBundleLocalizationNameReturnsLowercasedRawValue() {
+    func testBundleLocalizationNameReturnsResourceDirectoryName() {
         XCTAssertEqual(AppLanguage.english.bundleLocalizationName, "en")
-        XCTAssertEqual(AppLanguage.simplifiedChinese.bundleLocalizationName, "zh-hans")
-        XCTAssertEqual(AppLanguage.traditionalChinese.bundleLocalizationName, "zh-hant")
+        XCTAssertEqual(AppLanguage.simplifiedChinese.bundleLocalizationName, "zh-Hans")
+        XCTAssertEqual(AppLanguage.traditionalChinese.bundleLocalizationName, "zh-Hant")
         XCTAssertEqual(AppLanguage.japanese.bundleLocalizationName, "ja")
         XCTAssertEqual(AppLanguage.korean.bundleLocalizationName, "ko")
+    }
+
+    func testBundleLocalizationCandidatesIncludeCaseInsensitiveFallbackForChinese() {
+        XCTAssertEqual(AppLanguage.english.bundleLocalizationCandidates, ["en"])
+        XCTAssertEqual(AppLanguage.simplifiedChinese.bundleLocalizationCandidates, ["zh-Hans", "zh-hans"])
+        XCTAssertEqual(AppLanguage.traditionalChinese.bundleLocalizationCandidates, ["zh-Hant", "zh-hant"])
     }
 
     // MARK: - displayName
@@ -122,6 +128,27 @@ final class AppLocalizationInstanceTests: XCTestCase {
         let localization = AppLocalization.shared
         let result = localization.string("")
         XCTAssertEqual(result, "")
+    }
+
+    func testStringLoadsSimplifiedChineseLocalizationFromBundle() {
+        let localization = AppLocalization.shared
+        let original = localization.language
+        localization.setLanguage(.simplifiedChinese)
+        defer { localization.setLanguage(original) }
+
+        XCTAssertEqual(localization.string("agent.section.general"), "通用")
+        XCTAssertEqual(localization.string("studio.heading.agent"), "Agent 配置")
+        XCTAssertEqual(localization.string("agent.jobs.title"), "任务记录")
+    }
+
+    func testStringLoadsTraditionalChineseLocalizationFromBundle() {
+        let localization = AppLocalization.shared
+        let original = localization.language
+        localization.setLanguage(.traditionalChinese)
+        defer { localization.setLanguage(original) }
+
+        XCTAssertEqual(localization.string("agent.section.general"), "一般")
+        XCTAssertEqual(localization.string("studio.heading.agent"), "Agent 配置")
     }
 
     // MARK: - setLanguage notification

@@ -30,7 +30,16 @@ enum AppLanguage: String, CaseIterable, Codable, Identifiable {
     }
 
     var bundleLocalizationName: String {
-        rawValue.lowercased()
+        rawValue
+    }
+
+    var bundleLocalizationCandidates: [String] {
+        var candidates = [rawValue]
+        let lowercased = rawValue.lowercased()
+        if lowercased != rawValue {
+            candidates.append(lowercased)
+        }
+        return candidates
     }
 
     var displayName: String {
@@ -93,6 +102,7 @@ final class AppLocalization: ObservableObject {
     static let shared = AppLocalization()
 
     @Published private(set) var language: AppLanguage
+    private var stringTableCache: [String: [String: String]] = [:]
 
     private init(settingsStore: SettingsStore = SettingsStore()) {
         language = settingsStore.appLanguage
@@ -109,27 +119,49 @@ final class AppLocalization: ObservableObject {
     }
 
     func string(_ key: String, arguments: [CVarArg] = []) -> String {
-        let localized = NSLocalizedString(
-            key,
-            tableName: nil,
-            bundle: bundle(for: language),
-            value: key,
-            comment: "",
-        )
+        let localized = localizedString(for: key, language: language)
 
         guard !arguments.isEmpty else { return localized }
         return String(format: localized, locale: locale, arguments: arguments)
     }
 
-    private func bundle(for language: AppLanguage) -> Bundle {
-        guard
-            let path = Bundle.module.path(forResource: language.bundleLocalizationName, ofType: "lproj"),
-            let bundle = Bundle(path: path)
-        else {
-            return Bundle.module
+    private func localizedString(for key: String, language: AppLanguage) -> String {
+        for localizationName in language.bundleLocalizationCandidates {
+            if let cached = stringTableCache[localizationName], let localized = cached[key] {
+                return localized
+            }
+
+            guard
+                let tableURL = Bundle.module.url(
+                    forResource: "Localizable",
+                    withExtension: "strings",
+                    subdirectory: nil,
+                    localization: localizationName,
+                ),
+                let dictionary = NSDictionary(contentsOf: tableURL) as? [String: String]
+            else {
+                continue
+            }
+
+            stringTableCache[localizationName] = dictionary
+            if let localized = dictionary[key] {
+                return localized
+            }
         }
 
-        return bundle
+        return bundle(for: language).localizedString(forKey: key, value: key, table: nil)
+    }
+
+    private func bundle(for language: AppLanguage) -> Bundle {
+        for localizationName in language.bundleLocalizationCandidates {
+            if let path = Bundle.module.path(forResource: localizationName, ofType: "lproj"),
+               let bundle = Bundle(path: path)
+            {
+                return bundle
+            }
+        }
+
+        return Bundle.module
     }
 }
 
