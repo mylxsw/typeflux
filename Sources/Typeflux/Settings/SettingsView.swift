@@ -79,6 +79,7 @@ struct StudioView: View {
     @State private var mcpServerPendingDeletion: MCPServerConfig? = nil
     @State private var agentJobPendingDeletion: AgentJob?
     @State private var showingClearAllJobsConfirmation = false
+    @State private var showingClearHistoryConfirmation = false
     @State private var agentConfigurationTab: AgentConfigurationTab = .general
     @ObservedObject private var localization = AppLocalization.shared
 
@@ -230,6 +231,18 @@ struct StudioView: View {
             Text(L("agent.jobs.clearAllDialog.message"))
         }
         .confirmationDialog(
+            L("history.clearDialog.title"),
+            isPresented: $showingClearHistoryConfirmation,
+            titleVisibility: .visible,
+        ) {
+            Button(L("common.clear"), role: .destructive) {
+                viewModel.clearHistory()
+            }
+            Button(L("common.cancel"), role: .cancel) {}
+        } message: {
+            Text(L("history.clearDialog.message"))
+        }
+        .confirmationDialog(
             L("agent.jobs.deleteDialog.title"),
             isPresented: Binding(
                 get: { agentJobPendingDeletion != nil },
@@ -313,7 +326,7 @@ struct StudioView: View {
                         systemImage: "trash",
                         variant: .ghost,
                     ) {
-                        viewModel.clearHistory()
+                        showingClearHistoryConfirmation = true
                     }
                     .studioTooltip(L("common.clear"), yOffset: 34)
                 }

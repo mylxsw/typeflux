@@ -320,6 +320,8 @@
 "history.toast.exported" = "履歴がエクスポートされました。";
 "history.toast.exportFailed" = "履歴のエクスポートに失敗しました。";
 "history.toast.cleared" = "履歴がクリアされました。";
+"history.clearDialog.title" = "履歴をクリア";
+"history.clearDialog.message" = "すべての履歴と関連する音声ファイルが完全に削除されます。この操作は元に戻せません。";
 "history.toast.retryStarted" = "再試行が開始されました。";
 "history.toast.transcriptCopied" = "トランスクリプトをコピーしました。";
 "history.toast.audioUnavailable" = "音声ファイルが利用できません。";

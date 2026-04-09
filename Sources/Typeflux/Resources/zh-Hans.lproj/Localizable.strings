@@ -326,6 +326,8 @@
 "history.toast.exported" = "历史已导出。";
 "history.toast.exportFailed" = "导出历史失败。";
 "history.toast.cleared" = "历史已清空。";
+"history.clearDialog.title" = "清空历史记录";
+"history.clearDialog.message" = "此操作将永久删除所有历史记录及相关音频文件，无法撤销。";
 "history.toast.retryStarted" = "已开始重试。";
 "history.toast.transcriptCopied" = "转写已复制。";
 "history.toast.audioUnavailable" = "音频文件不可用。";

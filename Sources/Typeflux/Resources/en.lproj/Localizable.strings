@@ -326,6 +326,8 @@
 "history.toast.exported" = "History exported.";
 "history.toast.exportFailed" = "Failed to export history.";
 "history.toast.cleared" = "History cleared.";
+"history.clearDialog.title" = "Clear History";
+"history.clearDialog.message" = "This will permanently delete all history records and their associated audio files. This action cannot be undone.";
 "history.toast.retryStarted" = "Retry started.";
 "history.toast.transcriptCopied" = "Transcript copied.";
 "history.toast.audioUnavailable" = "Audio file is unavailable.";

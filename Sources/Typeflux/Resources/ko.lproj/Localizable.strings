@@ -320,6 +320,8 @@
 "history.toast.exported" = "기록을 내보냈습니다.";
 "history.toast.exportFailed" = "기록을 내보내지 못했습니다.";
 "history.toast.cleared" = "기록이 삭제되었습니다.";
+"history.clearDialog.title" = "기록 지우기";
+"history.clearDialog.message" = "모든 기록과 관련 오디오 파일이 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다.";
 "history.toast.retryStarted" = "재시도가 시작되었습니다.";
 "history.toast.transcriptCopied" = "성적 증명서가 복사되었습니다.";
 "history.toast.audioUnavailable" = "오디오 파일을 사용할 수 없습니다.";
