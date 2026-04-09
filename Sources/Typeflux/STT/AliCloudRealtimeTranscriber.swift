@@ -76,11 +76,13 @@ private enum AliCloudAudioConverter {
     /// gives a generous margin for the server to emit sentence_end=true before
     /// finish-task is received: 16000 * 2.0 * 2 bytes = 64000
     static let trailingSilenceBytes: Int = 64000
-    /// After task-finished is received, wait this long before closing the connection
-    /// so the receive loop can drain any result-generated events the server sends
-    /// around the same time as task-finished (the server processes pre-recorded audio
-    /// faster than real-time and may emit the final sentence result just after it).
-    static let postTaskFinishedDrainDuration: Duration = .milliseconds(300)
+    /// Timeout used after task-finished to wait for the last sentence to be finalized
+    /// (sentence_end=true). The server sometimes emits the final result-generated
+    /// slightly after task-finished when pre-recorded audio is processed faster than
+    /// real-time. The event-driven drain wakes up immediately on sentence_end=true,
+    /// so this timeout is only hit in the degenerate case where the server never
+    /// sends it (e.g. very short utterance, VAD didn't fire).
+    static let lastSentenceDrainTimeout: Duration = .seconds(3)
 
     static func convert(url: URL) throws -> Data {
         let sourceFile = try AVAudioFile(forReading: url)
@@ -187,6 +189,7 @@ private actor AliCloudFunASRSession {
     private var taskError: Error?
     private var taskStartedCont: CheckedContinuation<Void, Error>?
     private var taskFinishedCont: CheckedContinuation<Void, Error>?
+    private let drainState = AliCloudFunASRDrainState()
 
     private init(
         pcmData: Data,
@@ -286,12 +289,15 @@ private actor AliCloudFunASRSession {
 
         try await waitForTaskFinished()
 
-        // Drain any result-generated events that the server may send around the
-        // same time as task-finished. Because pre-recorded audio is sent much
-        // faster than real-time, the server sometimes emits the final sentence
-        // result just after task-finished. Sleeping here releases the actor so
-        // the receive loop can process those buffered messages before we close.
-        try? await Task.sleep(for: AliCloudAudioConverter.postTaskFinishedDrainDuration)
+        // Event-driven drain: if the last sentence is still pending (partialText
+        // is not empty), wait for the server to emit sentence_end=true before
+        // returning. The server sometimes sends this result-generated just after
+        // task-finished because it finalizes the task while the ASR model is still
+        // processing the last utterance. A fixed sleep is insufficient; this
+        // approach wakes up immediately when the sentence is confirmed, and only
+        // falls back to the timeout in the degenerate case (e.g. server VAD
+        // never fires, very short or silent recording).
+        await waitForLastSentenceOrTimeout(AliCloudAudioConverter.lastSentenceDrainTimeout)
         await snapshotDispatcher.flush()
 
         return composedText()
@@ -352,6 +358,8 @@ private actor AliCloudFunASRSession {
                 let normalized = AliCloudTextNormalizer.normalize(segment: trimmed, after: confirmedSegments.joined())
                 confirmedSegments.append(normalized)
                 partialText = ""
+                // Wake up any post-task-finished drain that is waiting for this signal.
+                resumeLastSentenceCont()
             } else {
                 // Replace (not append) the partial — only the latest interim result matters.
                 partialText = AliCloudTextNormalizer.normalize(segment: trimmed, after: confirmedSegments.joined())
@@ -369,17 +377,17 @@ private actor AliCloudFunASRSession {
             taskFinishedCont = nil
 
         case "task-failed":
-            let msg = (header["message"] as? String) ?? "ASR task failed"
-            let code = (header["status"] as? Int) ?? -1
+            let msg = (header["error_message"] as? String) ?? "ASR task failed"
+            let errorCode = (header["error_code"] as? String) ?? "UNKNOWN"
             NetworkDebugLogger.logWebSocketEvent(
                 provider: "AliCloud FunASR",
                 phase: "task-failed",
-                details: "code=\(code) message=\(msg)",
+                details: "code=\(errorCode) message=\(msg)",
             )
             signalError(NSError(
                 domain: "AliCloudFunASR",
-                code: code,
-                userInfo: [NSLocalizedDescriptionKey: msg],
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "[\(errorCode)] \(msg)"],
             ))
 
         default:
@@ -401,6 +409,9 @@ private actor AliCloudFunASRSession {
         taskStartedCont = nil
         taskFinishedCont?.resume(throwing: error)
         taskFinishedCont = nil
+        // Also wake up any active last-sentence drain so it exits immediately
+        // rather than waiting for the full timeout after a connection error.
+        resumeLastSentenceCont()
     }
 
     private func waitForTaskStarted() async throws {
@@ -419,6 +430,24 @@ private actor AliCloudFunASRSession {
         }
     }
 
+    /// Signals the drain to exit immediately (idempotent — safe to call multiple times).
+    private func resumeLastSentenceCont() {
+        Task { await drainState.signal() }
+    }
+
+    /// Waits until the last in-progress sentence is finalized (sentence_end=true)
+    /// or the timeout elapses — whichever comes first.
+    ///
+    /// After receiving task-finished the server may still emit result-generated
+    /// with sentence_end=true for the utterance it was processing when finish-task
+    /// arrived. This method parks the actor until that signal arrives, then
+    /// returns immediately. If the server never sends it (e.g. silence-only
+    /// recording, VAD didn't fire) the timeout acts as a safety net and we
+    /// return with whatever partialText we have.
+    private func waitForLastSentenceOrTimeout(_ timeout: Duration) async {
+        await drainState.waitForSentenceEndOrTimeout(hasPartial: !partialText.isEmpty, timeout: timeout)
+    }
+
     private func sendJSON(_ json: [String: Any], to socketTask: URLSessionWebSocketTask) async throws {
         let data = try JSONSerialization.data(withJSONObject: json)
         guard let text = String(data: data, encoding: .utf8) else {
@@ -430,6 +459,44 @@ private actor AliCloudFunASRSession {
         }
         NetworkDebugLogger.logWebSocketEvent(provider: "AliCloud FunASR", phase: "send", details: text)
         try await socketTask.send(.string(text))
+    }
+}
+
+// MARK: - Drain State (testable helper)
+
+/// Encapsulates the "wait for sentence_end=true OR timeout" drain pattern used
+/// by AliCloudFunASRSession after receiving task-finished.
+///
+/// Extracted as a standalone internal actor so the logic can be unit-tested
+/// without a real WebSocket connection.
+actor AliCloudFunASRDrainState {
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    /// Resumes any waiting drain immediately (idempotent — safe to call multiple times).
+    func signal() {
+        continuation?.resume()
+        continuation = nil
+    }
+
+    /// Parks the caller until `signal()` is called or `timeout` elapses.
+    ///
+    /// - Parameter hasPartial: Pass `partialText.isEmpty == false` from the session.
+    ///   When `false` the call returns immediately (fast path).
+    /// - Parameter timeout: Maximum time to wait before returning with whatever
+    ///   partial text is currently available.
+    func waitForSentenceEndOrTimeout(hasPartial: Bool, timeout: Duration) async {
+        guard hasPartial else { return }
+
+        let timeoutTask = Task { [weak self] in
+            try? await Task.sleep(for: timeout)
+            await self?.signal()
+        }
+
+        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+            continuation = cont
+        }
+
+        timeoutTask.cancel()
     }
 }
 
@@ -499,6 +566,7 @@ private actor AliCloudQwenASRSession {
     private var sessionError: Error?
     private var sessionReadyCont: CheckedContinuation<Void, Error>?
     private var sessionFinishedCont: CheckedContinuation<Void, Error>?
+    private let drainState = AliCloudFunASRDrainState()
 
     private init(
         pcmData: Data,
@@ -584,9 +652,16 @@ private actor AliCloudQwenASRSession {
 
         try await waitForSessionFinished()
 
-        // Same drain window as AliCloudFunASRSession: let the receive loop process
-        // any result events the server emits alongside session.finished.
-        try? await Task.sleep(for: AliCloudAudioConverter.postTaskFinishedDrainDuration)
+        // Event-driven drain: wait for all committed audio items to receive
+        // conversation.item.input_audio_transcription.completed. The server can
+        // send session.finished before the final transcription event arrives,
+        // identical to the task-finished / result-generated race in FunASR.
+        let hasPendingItems = !accumulator.orderedItemIDs.isEmpty &&
+            !accumulator.orderedItemIDs.allSatisfy { accumulator.finalTexts[$0] != nil }
+        await drainState.waitForSentenceEndOrTimeout(
+            hasPartial: hasPendingItems,
+            timeout: AliCloudAudioConverter.lastSentenceDrainTimeout,
+        )
         await snapshotDispatcher.flush()
 
         return accumulator.finalText()
@@ -652,6 +727,13 @@ private actor AliCloudQwenASRSession {
             if let snapshot = try? accumulator.process(eventData: data) {
                 await snapshotDispatcher.submit(snapshot)
             }
+            // Signal the drain when every committed item has a finalTexts entry
+            // (i.e. conversation.item.input_audio_transcription.completed received).
+            // signal() is idempotent so calling it on every event is safe.
+            if !accumulator.orderedItemIDs.isEmpty,
+               accumulator.orderedItemIDs.allSatisfy({ accumulator.finalTexts[$0] != nil }) {
+                await drainState.signal()
+            }
         }
     }
 
@@ -661,6 +743,8 @@ private actor AliCloudQwenASRSession {
         sessionReadyCont = nil
         sessionFinishedCont?.resume(throwing: error)
         sessionFinishedCont = nil
+        // Wake up any active drain immediately so it doesn't wait the full timeout.
+        Task { await drainState.signal() }
     }
 
     private func waitForSessionReady() async throws {
