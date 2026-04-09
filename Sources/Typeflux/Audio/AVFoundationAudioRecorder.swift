@@ -39,7 +39,13 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     ) throws {
         stopInternal()
 
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("typeflux", isDirectory: true)
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let now = Date()
+        let calendar = Calendar.current
+        let year = String(format: "%04d", calendar.component(.year, from: now))
+        let month = String(format: "%02d", calendar.component(.month, from: now))
+        let day = String(format: "%02d", calendar.component(.day, from: now))
+        let dir = appSupport.appendingPathComponent("Typeflux/audio/\(year)/\(month)/\(day)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
         let url = dir.appendingPathComponent(UUID().uuidString).appendingPathExtension("wav")
