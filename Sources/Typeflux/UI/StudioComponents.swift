@@ -486,6 +486,7 @@ struct StudioSidebar: View {
             )
         }
         .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
         .accessibilityLabel(L("sidebar.feedbackAccessibility"))
         .studioTooltip(L("sidebar.feedbackAccessibility"), yOffset: 34)
     }
