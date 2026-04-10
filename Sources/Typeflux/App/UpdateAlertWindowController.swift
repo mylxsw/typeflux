@@ -107,28 +107,36 @@ private struct UpdateAlertContentView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 20)
-        .padding(.top, 32)
+        .padding(.top, 18)
         .padding(.bottom, 16)
     }
 
     // MARK: Release Notes
 
     private var releaseNotesSection: some View {
-        let notesWithLink: String
-        if let releaseURL {
-            notesWithLink = releaseNotes + "\n\n[" + L("updater.action.viewDetails") + "](" + releaseURL.absoluteString + ")"
-        } else {
-            notesWithLink = releaseNotes
-        }
+        VStack(alignment: .leading, spacing: 8) {
+            // Use .padding() on the WebView to create inner content spacing
+            // without modifying the shared MarkdownWebView CSS
+            MarkdownWebView(markdown: releaseNotes, appearanceMode: appearanceMode)
+                .padding(12)
+                .frame(maxWidth: .infinity)
+                .frame(height: 210)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.secondary.opacity(0.25), lineWidth: 1)
+                )
 
-        return MarkdownWebView(markdown: notesWithLink, appearanceMode: appearanceMode)
-            .frame(maxWidth: .infinity)
-            .frame(height: 200)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.secondary.opacity(0.25), lineWidth: 1)
-            )
+            if let releaseURL {
+                Button {
+                    NSWorkspace.shared.open(releaseURL)
+                } label: {
+                    Text(L("updater.action.viewDetails"))
+                        .font(.callout)
+                }
+                .buttonStyle(.link)
+            }
+        }
     }
 
     // MARK: Buttons
