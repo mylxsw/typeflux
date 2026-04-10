@@ -597,6 +597,30 @@ struct StudioView: View {
             .frame(width: StudioTheme.Layout.personasListWidth)
 
             StudioCard {
+                if !viewModel.isCreatingPersonaDraft {
+                    HStack {
+                        Spacer()
+                        if viewModel.personaRewriteEnabled
+                            && !viewModel.activePersonaID.isEmpty
+                            && viewModel.selectedPersonaID?.uuidString == viewModel.activePersonaID
+                        {
+                            StudioPill(
+                                title: L("settings.models.active"),
+                                tone: StudioTheme.success,
+                                fill: StudioTheme.success.opacity(0.12),
+                            )
+                        } else {
+                            StudioButton(
+                                title: L("settings.models.useAsDefault"),
+                                systemImage: "checkmark.circle.fill",
+                                variant: .secondary,
+                            ) {
+                                viewModel.activateSelectedPersona()
+                            }
+                        }
+                    }
+                }
+
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
                     StudioTextInputCard(
                         label: L("settings.personas.name"),
