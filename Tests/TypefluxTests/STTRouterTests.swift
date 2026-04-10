@@ -74,6 +74,7 @@ final class STTRouterTests: XCTestCase {
     private var aliCloud: MockTranscriber!
     private var doubaoRealtime: MockTranscriber!
     private var groq: MockTranscriber!
+    private var typefluxOfficial: MockTranscriber!
 
     override func setUp() {
         super.setUp()
@@ -89,6 +90,7 @@ final class STTRouterTests: XCTestCase {
         aliCloud = MockTranscriber()
         doubaoRealtime = MockTranscriber()
         groq = MockTranscriber()
+        typefluxOfficial = MockTranscriber()
     }
 
     override func tearDown() {
@@ -104,6 +106,7 @@ final class STTRouterTests: XCTestCase {
         aliCloud = nil
         doubaoRealtime = nil
         groq = nil
+        typefluxOfficial = nil
         super.tearDown()
     }
 
@@ -121,6 +124,7 @@ final class STTRouterTests: XCTestCase {
             aliCloud: aliCloud,
             doubaoRealtime: doubaoRealtimeOverride ?? doubaoRealtime,
             groq: groq,
+            typefluxOfficial: typefluxOfficial,
         )
     }
 

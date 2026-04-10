@@ -203,6 +203,7 @@
 "provider.stt.aliCloud" = "阿里雲 ASR";
 "provider.stt.doubaoRealtime" = "豆包即時 ASR";
 "provider.stt.groq" = "Groq";
+"provider.stt.typefluxOfficial" = "Typeflux 官方";
 "provider.llm.openAICompatible" = "OpenAI 相容";
 "provider.llm.custom" = "自訂";
 "provider.llm.freeModel" = "免費模型";
@@ -479,8 +480,10 @@
 "settings.models.useAliCloud" = "使用阿里雲";
 "settings.models.useDoubao" = "使用豆包";
 "settings.models.useGroq" = "使用 Groq";
+"settings.models.useTypefluxOfficial" = "使用 Typeflux 官方";
 "settings.models.badge.local" = "本地";
 "settings.models.badge.api" = "API";
+"settings.models.badge.official" = "官方";
 "settings.models.modelNotConfigured" = "模型未配置";
 "settings.models.builtInDefaultModel" = "內建預設模型";
 "settings.models.builtInDefaultProfile" = "內建預設設定";
@@ -491,6 +494,7 @@
 "settings.models.card.aliCloud.summary" = "透過 DashScope 執行即時串流辨識，低延遲 WebSocket 傳輸。";
 "settings.models.card.doubao.summary" = "透過豆包語音辨識 2.0 與位元組原生二進位 WebSocket 協議進行低延遲串流辨識。";
 "settings.models.card.groq.summary" = "透過 Groq 推理介面進行高速 Whisper 轉寫，預設模型為 whisper-large-v3-turbo。";
+"settings.models.card.typefluxOfficial.summary" = "Typeflux 內建語音辨識服務。登入 Typeflux 帳號即可使用，無需額外的 API 金鑰。";
 "settings.models.card.ollama.summary" = "在本地執行改寫與編輯任務，並可選擇自動準備模型。";
 "settings.models.card.openAICompatible.summary" = "接入遠端 chat-completions 提供方，完成人設改寫與編輯流程。";
 "settings.models.card.custom.summary" = "手動設定任意相容端點，自訂 Base URL、模型與 API Key。";
@@ -543,6 +547,7 @@
 "settings.models.overview.aliCloud" = "語音辨識會透過 WebSocket 即時串流到阿里雲 DashScope。";
 "settings.models.overview.doubao" = "語音辨識會透過位元組 WebSocket 即時串流到豆包語音辨識 2.0。";
 "settings.models.overview.groq" = "語音辨識由 Groq 的高速推理介面透過 Whisper 模型處理。";
+"settings.models.overview.typefluxOfficial" = "語音辨識由 Typeflux 內建服務處理。";
 "settings.models.mode.local" = "本地";
 "settings.models.mode.remote" = "遠端";
 "settings.models.fallback.enabled" = "已啟用回退";
@@ -561,6 +566,7 @@
 "settings.models.focused.aliCloud" = "適合希望透過阿里雲 DashScope 獲得低延遲即時串流辨識的情境。";
 "settings.models.focused.doubao" = "適合希望透過豆包語音辨識 2.0 獲得最低延遲雲端聽寫路徑的情境。";
 "settings.models.focused.groq" = "適合希望使用 Groq 加速推理進行快速雲端轉寫的情境。";
+"settings.models.focused.typefluxOfficial" = "使用 Typeflux 內建語音辨識服務，只需登入即可，無需額外設定。";
 "settings.models.routing" = "路由行為";
 "settings.models.routing.primaryRecognizer" = "主辨識器";
 "settings.models.routing.primaryRuntime" = "主執行環境";
@@ -574,6 +580,10 @@
 "settings.models.routing.aliCloud" = "阿里雲 DashScope 會透過 WebSocket 處理即時串流 ASR。";
 "settings.models.routing.doubao" = "豆包語音辨識 2.0 會透過位元組二進位 WebSocket 協議處理即時串流 ASR。";
 "settings.models.routing.groq" = "Groq 會透過 Whisper 相容轉寫介面以加速推理處理聽寫。";
+"settings.models.routing.typefluxOfficial" = "Typeflux 官方透過內建語音辨識服務處理聽寫。";
+"settings.models.typefluxOfficial.description" = "Typeflux 官方是我們內建的語音辨識服務。無需 API 金鑰或端點設定——只需登入您的 Typeflux 帳號即可開始聽寫。";
+"settings.models.typefluxOfficial.loginRequired" = "請登入您的 Typeflux 帳號以使用此服務。";
+"settings.models.typefluxOfficial.signIn" = "登入";
 "settings.models.routing.fallback" = "回退策略";
 "settings.models.routing.localSetup" = "本地準備";
 "settings.models.routing.readiness" = "就緒狀態";

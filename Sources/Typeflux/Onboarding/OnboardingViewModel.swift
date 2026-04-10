@@ -247,7 +247,7 @@ final class OnboardingViewModel: ObservableObject {
                     )
                 case .freeModel:
                     preview = try await FreeSTTTranscriber.testConnection(modelName: freeModel)
-                case .localModel, .appleSpeech:
+                case .localModel, .appleSpeech, .typefluxOfficial:
                     return
                 }
                 guard !Task.isCancelled else { return }
@@ -380,7 +380,7 @@ final class OnboardingViewModel: ObservableObject {
             case .groq:
                 settingsStore.groqSTTAPIKey = groqSTTAPIKey
                 settingsStore.groqSTTModel = groqSTTModel
-            case .appleSpeech:
+            case .appleSpeech, .typefluxOfficial:
                 break
             }
         case .llm:

@@ -74,6 +74,7 @@ final class DIContainer {
                 apiKeyOverride: { [settingsStore] in settingsStore.groqSTTAPIKey },
                 modelOverride: { [settingsStore] in settingsStore.groqSTTModel },
             ),
+            typefluxOfficial: TypefluxOfficialTranscriber(),
         )
     }
 }

@@ -39,6 +39,7 @@ final class STTRouter {
     private let aliCloud: Transcriber
     private let doubaoRealtime: Transcriber
     private let groq: Transcriber
+    private let typefluxOfficial: Transcriber
 
     init(
         settingsStore: SettingsStore,
@@ -50,6 +51,7 @@ final class STTRouter {
         aliCloud: Transcriber,
         doubaoRealtime: Transcriber,
         groq: Transcriber,
+        typefluxOfficial: Transcriber,
     ) {
         self.settingsStore = settingsStore
         self.whisper = whisper
@@ -60,6 +62,7 @@ final class STTRouter {
         self.aliCloud = aliCloud
         self.doubaoRealtime = doubaoRealtime
         self.groq = groq
+        self.typefluxOfficial = typefluxOfficial
     }
 
     func transcribe(audioFile: AudioFile) async throws -> String {
@@ -193,6 +196,20 @@ final class STTRouter {
                 code: 2,
                 userInfo: [NSLocalizedDescriptionKey: "Groq transcription is not configured yet."],
             )
+
+        case .typefluxOfficial:
+            do {
+                return try await RequestRetry.perform(operationName: "Typeflux Official STT request") { [self] in
+                    try await typefluxOfficial.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                }
+            } catch {
+                NetworkDebugLogger.logError(context: "Typeflux Official STT failed", error: error)
+                if settingsStore.useAppleSpeechFallback {
+                    NetworkDebugLogger.logMessage("Falling back to Apple Speech after Typeflux Official STT failure")
+                    return try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                }
+                throw error
+            }
         }
     }
 }

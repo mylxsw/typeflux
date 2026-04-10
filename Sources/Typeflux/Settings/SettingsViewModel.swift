@@ -227,6 +227,8 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .doubaoRealtime
         case .groq:
             focusedModelProvider = .groqSTT
+        case .typefluxOfficial:
+            focusedModelProvider = .typefluxOfficial
         }
         appearanceMode = settingsStore.appearanceMode
         appLanguage = settingsStore.appLanguage
@@ -588,7 +590,8 @@ final class StudioViewModel: ObservableObject {
             switch sttProvider {
             case .appleSpeech, .localModel:
                 "Local Processing"
-            case .freeModel, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .groq:
+            case .freeModel, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .groq,
+                 .typefluxOfficial:
                 "Remote API"
             }
         case .llm:
@@ -616,6 +619,8 @@ final class StudioViewModel: ObservableObject {
                 "Streaming audio to Doubao Speech Recognition 2.0 over WebSocket."
             case .groq:
                 "Streaming audio to Groq for ultra-fast Whisper transcription."
+            case .typefluxOfficial:
+                "Using Typeflux's built-in speech recognition service."
             }
         case .llm:
             llmProvider == .ollama ? "Using local Ollama generation." : "Using remote chat-completion endpoints."
@@ -809,6 +814,8 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .doubaoRealtime
         case .groq:
             focusedModelProvider = .groqSTT
+        case .typefluxOfficial:
+            focusedModelProvider = .typefluxOfficial
         }
     }
 
@@ -1729,7 +1736,7 @@ final class StudioViewModel: ObservableObject {
         case .groqSTT:
             settingsStore.groqSTTAPIKey = groqSTTAPIKey
             settingsStore.groqSTTModel = groqSTTModel
-        case .appleSpeech, .localSTT:
+        case .appleSpeech, .localSTT, .typefluxOfficial:
             break
         }
         if shouldShowToast {
@@ -1837,7 +1844,7 @@ final class StudioViewModel: ObservableObject {
                         if payload.done || collected.count >= 60 { break }
                     }
                 case .appleSpeech, .localSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime,
-                     .groqSTT:
+                     .groqSTT, .typefluxOfficial:
                     return
                 }
 
@@ -1911,6 +1918,8 @@ final class StudioViewModel: ObservableObject {
                             ? OpenAIAudioModelCatalog.groqWhisperModels[0] : capturedGroqSTTModel,
                         apiKey: capturedGroqSTTAPIKey,
                     )
+                case .typefluxOfficial:
+                    preview = try await TypefluxOfficialTranscriber.testConnection()
                 default:
                     return
                 }
@@ -2042,6 +2051,8 @@ final class StudioViewModel: ObservableObject {
                 .doubaoRealtime
             case .groq:
                 .groqSTT
+            case .typefluxOfficial:
+                .typefluxOfficial
             }
         case .llm:
             llmProvider == .ollama ? .ollama : llmRemoteProvider.studioProviderID

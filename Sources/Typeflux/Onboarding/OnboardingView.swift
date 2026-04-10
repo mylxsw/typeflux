@@ -325,7 +325,7 @@ struct OnboardingView: View {
             doubaoConfigFields
         case .groq:
             groqSTTConfigFields
-        case .appleSpeech:
+        case .appleSpeech, .typefluxOfficial:
             EmptyView()
         }
     }
@@ -809,7 +809,7 @@ struct OnboardingView: View {
         switch provider {
         case .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .groq, .freeModel:
             true
-        case .localModel, .appleSpeech:
+        case .localModel, .appleSpeech, .typefluxOfficial:
             false
         }
     }
@@ -826,7 +826,7 @@ struct OnboardingView: View {
             URL(string: "https://console.volcengine.com/speech/service/asr")
         case .multimodalLLM:
             URL(string: "https://platform.openai.com/api-keys")
-        case .freeModel, .localModel, .appleSpeech:
+        case .freeModel, .localModel, .appleSpeech, .typefluxOfficial:
             nil
         }
     }
@@ -918,6 +918,7 @@ struct OnboardingView: View {
         case .doubaoRealtime: .doubaoRealtime
         case .groq: .groqSTT
         case .appleSpeech: .appleSpeech
+        case .typefluxOfficial: .typefluxOfficial
         }
     }
 
@@ -984,6 +985,7 @@ struct OnboardingView: View {
         case .multimodalLLM: "brain.filled.head.profile"
         case .aliCloud: "antenna.radiowaves.left.and.right"
         case .doubaoRealtime: "bolt.horizontal.circle"
+        case .typefluxOfficial: "star.fill"
         }
     }
 
@@ -1005,6 +1007,7 @@ struct OnboardingView: View {
         case .doubaoRealtime: L("settings.models.card.doubao.summary")
         case .groq: L("settings.models.card.groq.summary")
         case .appleSpeech: ""
+        case .typefluxOfficial: L("settings.models.card.typefluxOfficial.summary")
         }
     }
 

@@ -18,8 +18,10 @@ enum STTProvider: String, CaseIterable, Codable {
     case aliCloud
     case doubaoRealtime
     case groq
+    case typefluxOfficial
 
     static let settingsDisplayOrder: [STTProvider] = [
+        .typefluxOfficial,
         .freeModel,
         .localModel,
         .whisperAPI,
@@ -47,6 +49,8 @@ enum STTProvider: String, CaseIterable, Codable {
             L("provider.stt.doubaoRealtime")
         case .groq:
             L("provider.stt.groq")
+        case .typefluxOfficial:
+            L("provider.stt.typefluxOfficial")
         }
     }
 

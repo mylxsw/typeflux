@@ -82,6 +82,7 @@ struct StudioView: View {
     @State private var showingClearHistoryConfirmation = false
     @State private var agentConfigurationTab: AgentConfigurationTab = .general
     @ObservedObject private var localization = AppLocalization.shared
+    @ObservedObject private var authState = AuthState.shared
 
     var body: some View {
         StudioShell(
@@ -94,7 +95,7 @@ struct StudioView: View {
             searchText: $viewModel.searchQuery,
             searchPlaceholder: viewModel.currentSection.searchPlaceholder,
             agentEnabled: viewModel.agentFrameworkEnabled,
-            isLoggedIn: AuthState.shared.isLoggedIn,
+            isLoggedIn: authState.isLoggedIn,
         ) { viewportSize in
             let viewportHeight = viewportContentHeight(from: viewportSize)
 
@@ -292,7 +293,7 @@ struct StudioView: View {
     }
 
     private func handleAccountAction() {
-        if AuthState.shared.isLoggedIn {
+        if authState.isLoggedIn {
             viewModel.navigate(to: .account)
         } else {
             LoginWindowController.shared.show()
@@ -2894,6 +2895,8 @@ struct StudioView: View {
                         forEndpoint: viewModel.whisperBaseURL,
                     ) : viewModel.whisperModel,
             )
+        case StudioModelProviderID.typefluxOfficial.rawValue:
+            viewModel.setSTTProvider(.typefluxOfficial)
         case "ollama-local":
             viewModel.setLLMModelSelection(
                 .ollama,
@@ -2928,6 +2931,8 @@ struct StudioView: View {
                 .doubaoRealtime
             case .groq:
                 .groqSTT
+            case .typefluxOfficial:
+                .typefluxOfficial
             }
         case .llm:
             viewModel.llmProvider == .ollama
@@ -2938,7 +2943,18 @@ struct StudioView: View {
     private var modelProviderCards: [StudioModelCard] {
         switch viewModel.modelDomain {
         case .stt:
-            (FreeSTTModelRegistry.suggestedModelNames.isEmpty ? [] : [
+            [
+                StudioModelCard(
+                    id: StudioModelProviderID.typefluxOfficial.rawValue,
+                    name: STTProvider.typefluxOfficial.displayName,
+                    summary: L("settings.models.card.typefluxOfficial.summary"),
+                    badge: L("settings.models.badge.official"),
+                    metadata: L("settings.models.builtInDefaultModel"),
+                    isSelected: viewModel.sttProvider == .typefluxOfficial,
+                    isMuted: false,
+                    actionTitle: L("settings.models.useTypefluxOfficial"),
+                ),
+            ] + (FreeSTTModelRegistry.suggestedModelNames.isEmpty ? [] : [
                 StudioModelCard(
                     id: StudioModelProviderID.freeSTT.rawValue,
                     name: STTProvider.freeModel.displayName,
@@ -3164,7 +3180,7 @@ struct StudioView: View {
 
                 if [
                     StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .ollama, .aliCloud,
-                    .doubaoRealtime, .groqSTT,
+                    .doubaoRealtime, .groqSTT, .typefluxOfficial,
                 ].contains(viewModel.focusedModelProvider) || focusedLLMRemoteProvider != nil {
                     HStack(spacing: StudioTheme.Spacing.small) {
                         Spacer()
@@ -3185,7 +3201,7 @@ struct StudioView: View {
                             }
                         } else if [
                             StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                            .doubaoRealtime, .groqSTT,
+                            .doubaoRealtime, .groqSTT, .typefluxOfficial,
                         ].contains(viewModel.focusedModelProvider) {
                             StudioButton(
                                 title: viewModel.sttConnectionTestState == .testing
@@ -3211,7 +3227,7 @@ struct StudioView: View {
                         connectionTestResultView(viewModel.llmConnectionTestState)
                     } else if [
                         StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                        .doubaoRealtime, .groqSTT,
+                        .doubaoRealtime, .groqSTT, .typefluxOfficial,
                     ].contains(viewModel.focusedModelProvider) {
                         connectionTestResultView(viewModel.sttConnectionTestState)
                     }
@@ -3346,6 +3362,9 @@ struct StudioView: View {
     private var focusedProviderForm: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
             switch viewModel.focusedModelProvider {
+            case .typefluxOfficial:
+                typefluxOfficialProviderForm
+
             case .appleSpeech:
                 Text(L("settings.models.appleSpeech.quickest"))
                     .font(.studioBody(StudioTheme.Typography.caption))
@@ -3589,6 +3608,31 @@ struct StudioView: View {
                         text: Binding(get: { viewModel.groqSTTModel }, set: viewModel.setGroqSTTModel),
                         suggestions: OpenAIAudioModelCatalog.groqWhisperModels,
                     )
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var typefluxOfficialProviderForm: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            Text(L("settings.models.typefluxOfficial.description"))
+                .font(.studioBody(StudioTheme.Typography.caption))
+                .foregroundStyle(StudioTheme.textSecondary)
+
+            if !authState.isLoggedIn {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    Text(L("settings.models.typefluxOfficial.loginRequired"))
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.warning)
+
+                    StudioButton(
+                        title: L("settings.models.typefluxOfficial.signIn"),
+                        systemImage: "person.circle",
+                        variant: .primary,
+                    ) {
+                        LoginWindowController.shared.show()
+                    }
                 }
             }
         }
@@ -3977,6 +4021,8 @@ struct StudioView: View {
             !viewModel.doubaoAppID.isEmpty && !viewModel.doubaoAccessToken.isEmpty
         case .groqSTT:
             !viewModel.groqSTTAPIKey.isEmpty
+        case .typefluxOfficial:
+            authState.isLoggedIn
         }
     }
 
@@ -4029,6 +4075,8 @@ struct StudioView: View {
             viewModel.setSTTProvider(.doubaoRealtime)
         case .groqSTT:
             viewModel.setSTTProvider(.groq)
+        case .typefluxOfficial:
+            viewModel.setSTTProvider(.typefluxOfficial)
         }
     }
 
@@ -4080,6 +4128,8 @@ struct StudioView: View {
             "antenna.radiowaves.left.and.right"
         case .doubaoRealtime:
             "bolt.horizontal.circle"
+        case .typefluxOfficial:
+            "star.fill"
         }
     }
 
@@ -4122,6 +4172,8 @@ struct StudioView: View {
             L("settings.models.overview.doubao")
         case .groqSTT:
             L("settings.models.overview.groq")
+        case .typefluxOfficial:
+            L("settings.models.overview.typefluxOfficial")
         }
     }
 
@@ -4148,6 +4200,8 @@ struct StudioView: View {
             STTProvider.doubaoRealtime.displayName
         case .groqSTT:
             STTProvider.groq.displayName
+        case .typefluxOfficial:
+            STTProvider.typefluxOfficial.displayName
         }
     }
 
@@ -4157,7 +4211,7 @@ struct StudioView: View {
             L("settings.models.mode.local")
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi,
-             .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT:
+             .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT, .typefluxOfficial:
             L("settings.models.mode.remote")
         }
     }
@@ -4168,7 +4222,7 @@ struct StudioView: View {
             StudioTheme.success
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi,
-             .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT:
+             .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT, .typefluxOfficial:
             StudioTheme.accent
         }
     }
@@ -4179,7 +4233,7 @@ struct StudioView: View {
             StudioTheme.success.opacity(0.12)
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi,
-             .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT:
+             .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT, .typefluxOfficial:
             StudioTheme.accentSoft
         }
     }
@@ -4212,7 +4266,7 @@ struct StudioView: View {
             URL(string: "https://bailian.console.aliyun.com?tab=model#/api-key")
         case .multimodalLLM:
             URL(string: "https://platform.openai.com/api-keys")
-        case .doubaoRealtime, .freeModel, .localModel, .appleSpeech:
+        case .doubaoRealtime, .freeModel, .localModel, .appleSpeech, .typefluxOfficial:
             nil
         }
     }
@@ -4288,6 +4342,8 @@ struct StudioView: View {
         case .groqSTT:
             viewModel.groqSTTModel.isEmpty
                 ? OpenAIAudioModelCatalog.groqWhisperModels[0] : viewModel.groqSTTModel
+        case .typefluxOfficial:
+            STTProvider.typefluxOfficial.displayName
         }
     }
 
@@ -4319,6 +4375,8 @@ struct StudioView: View {
             STTProvider.doubaoRealtime.displayName
         case .groqSTT:
             STTProvider.groq.displayName
+        case .typefluxOfficial:
+            STTProvider.typefluxOfficial.displayName
         }
     }
 
@@ -4348,6 +4406,8 @@ struct StudioView: View {
             L("settings.models.focused.doubao")
         case .groqSTT:
             L("settings.models.focused.groq")
+        case .typefluxOfficial:
+            L("settings.models.focused.typefluxOfficial")
         }
     }
 
@@ -4380,6 +4440,8 @@ struct StudioView: View {
             L("settings.models.routing.doubao")
         case .groqSTT:
             L("settings.models.routing.groq")
+        case .typefluxOfficial:
+            L("settings.models.routing.typefluxOfficial")
         }
     }
 
