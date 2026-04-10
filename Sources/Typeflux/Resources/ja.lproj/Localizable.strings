@@ -174,9 +174,9 @@
 "common.failedPrefix" = "失敗しました:";
 
 "updater.available.title" = "利用可能なアップデート";
-"updater.available.message" = "Typeflux の新しいバージョン (%@) が利用可能です。\n\nリリース ノート:\n%@";
-"updater.action.download" = "ダウンロード";
-"updater.action.later" = "後でリマインドする";
+"updater.available.versionLabel" = "バージョン %@ が利用可能です。";
+"updater.action.update" = "今すぐ更新";
+"updater.action.skip" = "このバージョンをスキップ";
 "updater.latest.title" = "最新の状態";
 "updater.latest.message" = "最新バージョンの Typeflux を実行しています。";
 "updater.checkFailed.title" = "アップデートの確認に失敗";

@@ -180,9 +180,9 @@
 "common.failedPrefix" = "Failed:";
 
 "updater.available.title" = "Update Available";
-"updater.available.message" = "A new version (%@) of Typeflux is available.\n\nRelease Notes:\n%@";
-"updater.action.download" = "Download";
-"updater.action.later" = "Remind Me Later";
+"updater.available.versionLabel" = "Version %@ is now available.";
+"updater.action.update" = "Update Now";
+"updater.action.skip" = "Skip This Version";
 "updater.latest.title" = "Up to Date";
 "updater.latest.message" = "You are running the latest version of Typeflux.";
 "updater.checkFailed.title" = "Update Check Failed";

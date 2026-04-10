@@ -32,6 +32,11 @@ final class AutoUpdater {
     private var autoCheckTimer: Timer?
     private weak var settingsStore: SettingsStore?
 
+    /// Version that the user dismissed via "暂不更新" in the current session.
+    /// Resets on app restart; ignored for manual checks.
+    private var dismissedVersion: String?
+    private var updateAlertWindowController: UpdateAlertWindowController?
+
     private init() {}
 
     // MARK: - Auto-check
@@ -93,7 +98,7 @@ final class AutoUpdater {
                     }
 
                     if info.shouldUpdate {
-                        self.promptUpdate(info: info)
+                        self.promptUpdate(info: info, manual: manual)
                     } else if manual {
                         self.showUpToDateAlert()
                     }
@@ -106,20 +111,35 @@ final class AutoUpdater {
 
     // MARK: - Download & Install
 
-    private func promptUpdate(info: UpdateInfo) {
-        let alert = NSAlert()
-        alert.messageText = L("updater.available.title")
-        alert.informativeText = L("updater.available.message", info.latestVersion, info.releaseNotes)
-        alert.addButton(withTitle: L("updater.action.download"))
-        alert.addButton(withTitle: L("updater.action.later"))
+    private func promptUpdate(info: UpdateInfo, manual: Bool) {
+        // For auto-checks, skip if the user already dismissed this version in the current session
+        if !manual, dismissedVersion == info.latestVersion { return }
 
-        if alert.runModal() == .alertFirstButtonReturn {
-            if let urlString = info.downloadURL, !urlString.isEmpty {
-                Task { await self.downloadAndInstall(info: info, downloadURLString: urlString) }
-            } else {
-                NSWorkspace.shared.open(websiteURL)
+        // Avoid stacking multiple alert windows
+        guard updateAlertWindowController == nil else { return }
+
+        let appearanceMode = settingsStore?.appearanceMode ?? .system
+        let controller = UpdateAlertWindowController(
+            version: info.latestVersion,
+            releaseNotes: info.releaseNotes,
+            appearanceMode: appearanceMode
+        )
+        controller.onAction = { [weak self, weak controller] action in
+            self?.updateAlertWindowController = nil
+            _ = controller  // silence unused-capture warning
+            switch action {
+            case .update:
+                if let urlString = info.downloadURL, !urlString.isEmpty {
+                    Task { await self?.downloadAndInstall(info: info, downloadURLString: urlString) }
+                } else if let self {
+                    NSWorkspace.shared.open(self.websiteURL)
+                }
+            case .skip:
+                self?.dismissedVersion = info.latestVersion
             }
         }
+        updateAlertWindowController = controller
+        controller.show()
     }
 
     private func downloadAndInstall(info: UpdateInfo, downloadURLString: String) async {
