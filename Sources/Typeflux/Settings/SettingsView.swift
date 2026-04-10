@@ -2816,7 +2816,7 @@ struct StudioView: View {
     private var modelProviderCards: [StudioModelCard] {
         switch viewModel.modelDomain {
         case .stt:
-            [
+            (FreeSTTModelRegistry.suggestedModelNames.isEmpty ? [] : [
                 StudioModelCard(
                     id: StudioModelProviderID.freeSTT.rawValue,
                     name: STTProvider.freeModel.displayName,
@@ -2828,6 +2828,7 @@ struct StudioView: View {
                     isMuted: false,
                     actionTitle: L("settings.models.useRemote"),
                 ),
+            ]) + [
                 StudioModelCard(
                     id: StudioModelProviderID.localSTT.rawValue,
                     name: L("settings.models.localModels"),
@@ -2893,7 +2894,7 @@ struct StudioView: View {
                 ),
             ]
         case .llm:
-            [
+            (FreeLLMModelRegistry.suggestedModelNames.isEmpty ? [] : [
                 StudioModelCard(
                     id: LLMRemoteProvider.freeModel.studioProviderID.rawValue,
                     name: LLMRemoteProvider.freeModel.displayName,
@@ -2905,6 +2906,7 @@ struct StudioView: View {
                     isMuted: false,
                     actionTitle: L("settings.models.useRemote"),
                 ),
+            ]) + [
                 StudioModelCard(
                     id: StudioModelProviderID.ollama.rawValue,
                     name: LLMProvider.ollama.displayName,
