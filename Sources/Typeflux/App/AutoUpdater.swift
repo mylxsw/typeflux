@@ -123,7 +123,11 @@ final class AutoUpdater {
             version: info.latestVersion,
             releaseNotes: info.releaseNotes,
             releaseURL: info.releaseURL.flatMap(URL.init),
-            appearanceMode: appearanceMode
+            appearanceMode: appearanceMode,
+            autoUpdateEnabled: settingsStore?.autoUpdateEnabled ?? true,
+            onAutoUpdateChange: { [weak self] newValue in
+                self?.settingsStore?.autoUpdateEnabled = newValue
+            }
         )
         controller.onAction = { [weak self, weak controller] action in
             self?.updateAlertWindowController = nil
@@ -131,7 +135,13 @@ final class AutoUpdater {
             switch action {
             case .update:
                 if let urlString = info.downloadURL, !urlString.isEmpty {
-                    Task { await self?.downloadAndInstall(info: info, downloadURLString: urlString) }
+                    Task { await self?.downloadAndInstall(info: info, downloadURLString: urlString, relaunch: true) }
+                } else if let self {
+                    NSWorkspace.shared.open(self.websiteURL)
+                }
+            case .installOnQuit:
+                if let urlString = info.downloadURL, !urlString.isEmpty {
+                    Task { await self?.downloadAndInstall(info: info, downloadURLString: urlString, relaunch: false) }
                 } else if let self {
                     NSWorkspace.shared.open(self.websiteURL)
                 }
@@ -143,7 +153,7 @@ final class AutoUpdater {
         controller.show()
     }
 
-    private func downloadAndInstall(info: UpdateInfo, downloadURLString: String) async {
+    private func downloadAndInstall(info: UpdateInfo, downloadURLString: String, relaunch: Bool) async {
         guard state == .idle else { return }
         guard let downloadURL = URL(string: downloadURLString) else {
             showCheckFailedAlert(message: L("updater.checkFailed.noData"))
@@ -158,7 +168,7 @@ final class AutoUpdater {
             state = .installing
 
             try await Task.detached(priority: .utility) {
-                try AutoUpdater.performInstall(from: tempFileURL)
+                try AutoUpdater.performInstall(from: tempFileURL, relaunch: relaunch)
             }.value
 
             NSApp.terminate(nil)
@@ -169,7 +179,7 @@ final class AutoUpdater {
     }
 
     // Runs off the main actor — only does file I/O and process launching.
-    nonisolated private static func performInstall(from zipURL: URL) throws {
+    nonisolated private static func performInstall(from zipURL: URL, relaunch: Bool) throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("typeflux-update-\(UUID().uuidString)")
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -195,15 +205,17 @@ final class AutoUpdater {
 
         // Write a short shell script that replaces the app after this process exits
         let scriptURL = fm.temporaryDirectory.appendingPathComponent("typeflux_relaunch_\(UUID().uuidString).sh")
-        let script = """
+        var scriptLines = """
         #!/bin/bash
         sleep 1
         rm -rf '\(currentAppPath)'
         mv '\(newAppPath)' '\(currentAppPath)'
         xattr -dr com.apple.quarantine '\(currentAppPath)' 2>/dev/null
-        open '\(currentAppPath)'
         """
-        try script.write(to: scriptURL, atomically: true, encoding: .utf8)
+        if relaunch {
+            scriptLines += "\nopen '\(currentAppPath)'"
+        }
+        try scriptLines.write(to: scriptURL, atomically: true, encoding: .utf8)
         try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptURL.path)
 
         let launcher = Process()

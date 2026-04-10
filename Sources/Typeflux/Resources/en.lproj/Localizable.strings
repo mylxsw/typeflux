@@ -179,11 +179,15 @@
 "common.failedWithReason" = "Failed: %@";
 "common.failedPrefix" = "Failed:";
 
-"updater.available.title" = "Update Available";
+"updater.available.title" = "A new version of Typeflux is ready to install!";
+"updater.available.subtitle" = "Typeflux %@ is now available. Would you like to install it and relaunch Typeflux now?";
 "updater.available.versionLabel" = "Version %@ is now available.";
 "updater.action.update" = "Update Now";
+"updater.action.installAndRelaunch" = "Install and Relaunch";
+"updater.action.installOnQuit" = "Install on Quit";
 "updater.action.skip" = "Skip This Version";
 "updater.action.viewDetails" = "View Details";
+"updater.autoUpdate.checkbox" = "Automatically download and install updates in the future";
 "updater.latest.title" = "Up to Date";
 "updater.latest.message" = "You are running the latest version of Typeflux.";
 "updater.checkFailed.title" = "Update Check Failed";

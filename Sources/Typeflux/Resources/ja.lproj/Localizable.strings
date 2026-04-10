@@ -173,11 +173,15 @@
 "common.failedWithReason" = "失敗: %@";
 "common.failedPrefix" = "失敗しました:";
 
-"updater.available.title" = "利用可能なアップデート";
+"updater.available.title" = "Typeflux の新しいバージョンをインストールする準備ができました！";
+"updater.available.subtitle" = "Typeflux %@ が利用可能になりました。今すぐインストールして Typeflux を再起動しますか？";
 "updater.available.versionLabel" = "バージョン %@ が利用可能です。";
 "updater.action.update" = "今すぐ更新";
+"updater.action.installAndRelaunch" = "インストールして再起動";
+"updater.action.installOnQuit" = "終了時にインストール";
 "updater.action.skip" = "このバージョンをスキップ";
 "updater.action.viewDetails" = "詳細を見る";
+"updater.autoUpdate.checkbox" = "今後は自動的にアップデートをダウンロードしてインストールする";
 "updater.latest.title" = "最新の状態";
 "updater.latest.message" = "最新バージョンの Typeflux を実行しています。";
 "updater.checkFailed.title" = "アップデートの確認に失敗";
