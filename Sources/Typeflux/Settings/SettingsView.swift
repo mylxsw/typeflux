@@ -487,7 +487,7 @@ struct StudioView: View {
 
     private var personasPage: some View {
         HStack(alignment: .top, spacing: StudioTheme.Spacing.section) {
-            StudioCard {
+            StudioCard(padding: StudioTheme.Insets.cardCompact) {
                 VStack(spacing: StudioTheme.Spacing.xxSmall) {
                     ForEach(viewModel.filteredPersonas) { persona in
                         Button {
@@ -528,6 +528,7 @@ struct StudioView: View {
                                         .lineLimit(StudioTheme.LineLimit.personaPrompt)
                                 }
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(StudioTheme.Insets.personaRow)
                             .padding(.trailing, StudioTheme.ControlSize.personaStatusDot + 4)
                             .background(
