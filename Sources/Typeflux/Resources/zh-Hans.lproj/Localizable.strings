@@ -22,7 +22,9 @@
 "sidebar.platform" = "桌面版";
 "sidebar.about" = "关于";
 "sidebar.aboutAccessibility" = "关于 Typeflux";
-"sidebar.feedbackAccessibility" = "发送邮件反馈";
+"sidebar.feedbackAccessibility" = "问题反馈";
+"sidebar.feedback.emailOption" = "发邮件反馈问题";
+"sidebar.feedback.githubOption" = "GitHub 提 Issue";
 "sidebar.settingsAccessibility" = "打开设置";
 
 "studio.section.home" = "概览";

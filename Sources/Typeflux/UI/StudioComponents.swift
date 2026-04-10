@@ -283,7 +283,8 @@ struct StudioShell<Content: View>: View {
     let currentSection: StudioSection
     let onSelect: (StudioSection) -> Void
     let onOpenAbout: () -> Void
-    let onSendFeedback: () -> Void
+    let onSendFeedbackEmail: () -> Void
+    let onOpenGitHubIssue: () -> Void
     let onAccountAction: () -> Void
     let searchText: Binding<String>
     let searchPlaceholder: String
@@ -295,7 +296,8 @@ struct StudioShell<Content: View>: View {
         currentSection: StudioSection,
         onSelect: @escaping (StudioSection) -> Void,
         onOpenAbout: @escaping () -> Void,
-        onSendFeedback: @escaping () -> Void,
+        onSendFeedbackEmail: @escaping () -> Void,
+        onOpenGitHubIssue: @escaping () -> Void,
         onAccountAction: @escaping () -> Void,
         searchText: Binding<String>,
         searchPlaceholder: String,
@@ -306,7 +308,8 @@ struct StudioShell<Content: View>: View {
         self.currentSection = currentSection
         self.onSelect = onSelect
         self.onOpenAbout = onOpenAbout
-        self.onSendFeedback = onSendFeedback
+        self.onSendFeedbackEmail = onSendFeedbackEmail
+        self.onOpenGitHubIssue = onOpenGitHubIssue
         self.onAccountAction = onAccountAction
         self.searchText = searchText
         self.searchPlaceholder = searchPlaceholder
@@ -324,7 +327,8 @@ struct StudioShell<Content: View>: View {
                 StudioSidebar(
                     currentSection: currentSection,
                     onSelect: onSelect,
-                    onSendFeedback: onSendFeedback,
+                    onSendFeedbackEmail: onSendFeedbackEmail,
+                    onOpenGitHubIssue: onOpenGitHubIssue,
                     onOpenAbout: onOpenAbout,
                     onAccountAction: onAccountAction,
                     agentEnabled: agentEnabled,
@@ -364,7 +368,8 @@ struct StudioShell<Content: View>: View {
 struct StudioSidebar: View {
     let currentSection: StudioSection
     let onSelect: (StudioSection) -> Void
-    let onSendFeedback: () -> Void
+    let onSendFeedbackEmail: () -> Void
+    let onOpenGitHubIssue: () -> Void
     let onOpenAbout: () -> Void
     let onAccountAction: () -> Void
     let agentEnabled: Bool
@@ -431,12 +436,7 @@ struct StudioSidebar: View {
                 Spacer()
 
                 HStack(spacing: StudioTheme.Spacing.smallMedium) {
-                    utilityButton(
-                        systemImage: "envelope",
-                        accessibilityLabel: L("sidebar.feedbackAccessibility"),
-                        isActive: false,
-                        action: onSendFeedback,
-                    )
+                    feedbackMenuButton
 
                     utilityButton(
                         systemImage: "questionmark.circle",
@@ -473,6 +473,22 @@ struct StudioSidebar: View {
             action: action,
         )
     }
+
+    private var feedbackMenuButton: some View {
+        Menu {
+            Button(L("sidebar.feedback.emailOption"), action: onSendFeedbackEmail)
+            Button(L("sidebar.feedback.githubOption"), action: onOpenGitHubIssue)
+        } label: {
+            StudioSidebarIconLabel(
+                systemImage: "envelope",
+                accessibilityLabel: L("sidebar.feedbackAccessibility"),
+                isActive: false,
+            )
+        }
+        .menuStyle(.borderlessButton)
+        .accessibilityLabel(L("sidebar.feedbackAccessibility"))
+        .studioTooltip(L("sidebar.feedbackAccessibility"), yOffset: 34)
+    }
 }
 
 private struct StudioSidebarIconButton: View {
@@ -484,20 +500,37 @@ private struct StudioSidebarIconButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-                .foregroundStyle(isActive ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                .frame(width: StudioTheme.ControlSize.sidebarUtilityButton, height: StudioTheme.ControlSize.sidebarUtilityButton)
-                .background(
-                    Circle()
-                        .fill((isHovered || isActive) ? StudioTheme.sidebarSelection : Color.clear),
-                )
-                .contentShape(Circle())
+            StudioSidebarIconLabel(
+                systemImage: systemImage,
+                accessibilityLabel: accessibilityLabel,
+                isActive: isActive,
+                isHovered: isHovered,
+            )
         }
         .buttonStyle(StudioInteractiveButtonStyle())
         .accessibilityLabel(accessibilityLabel)
         .studioTooltip(accessibilityLabel, yOffset: 34)
         .onHover { isHovered = $0 }
+    }
+}
+
+private struct StudioSidebarIconLabel: View {
+    let systemImage: String
+    let accessibilityLabel: String
+    let isActive: Bool
+    var isHovered: Bool = false
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
+            .foregroundStyle(isActive ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+            .frame(width: StudioTheme.ControlSize.sidebarUtilityButton, height: StudioTheme.ControlSize.sidebarUtilityButton)
+            .background(
+                Circle()
+                    .fill((isHovered || isActive) ? StudioTheme.sidebarSelection : Color.clear),
+            )
+            .contentShape(Circle())
+            .accessibilityLabel(accessibilityLabel)
     }
 }
 

@@ -22,7 +22,9 @@
 "sidebar.platform" = "Desktop";
 "sidebar.about" = "About";
 "sidebar.aboutAccessibility" = "About Typeflux";
-"sidebar.feedbackAccessibility" = "Send feedback email";
+"sidebar.feedbackAccessibility" = "Send feedback";
+"sidebar.feedback.emailOption" = "Send feedback email";
+"sidebar.feedback.githubOption" = "Open GitHub issue";
 "sidebar.settingsAccessibility" = "Open settings";
 
 "studio.section.home" = "Overview";

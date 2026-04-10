@@ -22,7 +22,9 @@
 "sidebar.platform" = "デスクトップ";
 "sidebar.about" = "について";
 "sidebar.aboutAccessibility" = "Typeflux について";
-"sidebar.feedbackAccessibility" = "フィードバックメールを送信する";
+"sidebar.feedbackAccessibility" = "フィードバック";
+"sidebar.feedback.emailOption" = "メールでフィードバックを送る";
+"sidebar.feedback.githubOption" = "GitHub Issue を作成する";
 "sidebar.settingsAccessibility" = "設定を開く";
 
 "studio.section.home" = "概要";

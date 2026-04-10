@@ -22,7 +22,9 @@
 "sidebar.platform" = "桌面版";
 "sidebar.about" = "關於";
 "sidebar.aboutAccessibility" = "關於 Typeflux";
-"sidebar.feedbackAccessibility" = "傳送郵件回饋";
+"sidebar.feedbackAccessibility" = "問題回饋";
+"sidebar.feedback.emailOption" = "透過電子郵件回饋問題";
+"sidebar.feedback.githubOption" = "在 GitHub 提交 Issue";
 "sidebar.settingsAccessibility" = "打開設定";
 
 "studio.section.home" = "總覽";

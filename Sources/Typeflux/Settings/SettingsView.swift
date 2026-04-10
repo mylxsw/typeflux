@@ -88,7 +88,8 @@ struct StudioView: View {
             currentSection: viewModel.currentSection,
             onSelect: viewModel.navigate,
             onOpenAbout: { AboutWindowController.shared.show() },
-            onSendFeedback: sendFeedbackEmail,
+            onSendFeedbackEmail: sendFeedbackEmail,
+            onOpenGitHubIssue: openGitHubIssue,
             onAccountAction: handleAccountAction,
             searchText: $viewModel.searchQuery,
             searchPlaceholder: viewModel.currentSection.searchPlaceholder,
@@ -282,6 +283,11 @@ struct StudioView: View {
         ]
 
         guard let url = components.url else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    private func openGitHubIssue() {
+        guard let url = URL(string: "https://github.com/mylxsw/typeflux/issues/new") else { return }
         NSWorkspace.shared.open(url)
     }
 

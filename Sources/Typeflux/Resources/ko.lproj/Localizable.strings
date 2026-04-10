@@ -22,7 +22,9 @@
 "sidebar.platform" = "데스크탑";
 "sidebar.about" = "소개";
 "sidebar.aboutAccessibility" = "Typeflux 정보";
-"sidebar.feedbackAccessibility" = "피드백 이메일 보내기";
+"sidebar.feedbackAccessibility" = "문제 피드백";
+"sidebar.feedback.emailOption" = "이메일로 문제 보내기";
+"sidebar.feedback.githubOption" = "GitHub 이슈 등록";
 "sidebar.settingsAccessibility" = "설정 열기";
 
 "studio.section.home" = "개요";
