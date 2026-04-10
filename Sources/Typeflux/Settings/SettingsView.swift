@@ -1246,6 +1246,23 @@ struct StudioView: View {
                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                     StudioSettingRow(
+                        title: L("settings.advanced.autoUpdate.title"),
+                        subtitle: L("settings.advanced.autoUpdate.subtitle"),
+                    ) {
+                        Toggle(
+                            "",
+                            isOn: Binding(
+                                get: { viewModel.autoUpdateEnabled },
+                                set: viewModel.setAutoUpdateEnabled,
+                            ),
+                        )
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
+
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                    StudioSettingRow(
                         title: L("settings.models.appleFallback"),
                         subtitle: L("settings.models.appleFallback.detail"),
                     ) {

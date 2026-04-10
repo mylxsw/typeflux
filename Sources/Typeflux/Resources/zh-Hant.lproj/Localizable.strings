@@ -75,6 +75,8 @@
 "settings.advanced" = "進階";
 "settings.advanced.soundEffects.title" = "啟用音效";
 "settings.advanced.soundEffects.subtitle" = "在開始錄音、完成操作與發生錯誤時播放提示音。";
+"settings.advanced.autoUpdate.title" = "自動更新";
+"settings.advanced.autoUpdate.subtitle" = "每 3 小時自動檢查並安裝新版本。";
 "settings.permissionStatus.title" = "權限狀態";
 "settings.permissionStatus.subtitle" = "檢視 Typeflux 依賴的 macOS 權限，並在需要時完成授權。";
 
@@ -90,6 +92,8 @@
 "menu.setupGuide" = "新手引導…";
 "menu.about" = "關於 Typeflux";
 "menu.checkForUpdates" = "檢查更新…";
+"menu.downloadingUpdate" = "正在下載更新…";
+"menu.installingUpdate" = "正在安裝更新…";
 "menu.quit" = "結束";
 "menu.status.ready" = "已就緒";
 "menu.status.recording" = "錄音中…";
@@ -181,6 +185,8 @@
 "updater.latest.message" = "你目前執行的是最新版本的 Typeflux。";
 "updater.checkFailed.title" = "檢查更新失敗";
 "updater.checkFailed.noData" = "無法取得更新資訊。";
+"updater.install.extractionFailed" = "解壓更新包失敗。";
+"updater.install.appNotFound" = "在更新包中找不到應用程式。";
 
 "provider.stt.whisperAPI" = "OpenAI";
 "provider.stt.freeModel" = "免費模型";

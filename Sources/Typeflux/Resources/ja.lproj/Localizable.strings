@@ -75,6 +75,8 @@
 "settings.advanced" = "上級者向け";
 "settings.advanced.soundEffects.title" = "効果音を有効にする";
 "settings.advanced.soundEffects.subtitle" = "ワークフローのフィードバックの記録中に、開始音、完了音、エラー音を再生します。";
+"settings.advanced.autoUpdate.title" = "自動アップデート";
+"settings.advanced.autoUpdate.subtitle" = "3 時間ごとに自動的に新しいバージョンを確認してインストールします。";
 "settings.permissionStatus.title" = "許可ステータス";
 "settings.permissionStatus.subtitle" = "Typeflux が依存する macOS 権限を確認し、必要に応じてアクセスを許可します。";
 
@@ -86,6 +88,8 @@
 "menu.setupGuide" = "セットアップガイド…";
 "menu.about" = "Typeflux について";
 "menu.checkForUpdates" = "アップデートを確認してください…";
+"menu.downloadingUpdate" = "アップデートをダウンロード中…";
+"menu.installingUpdate" = "アップデートをインストール中…";
 "menu.quit" = "やめる";
 "menu.status.ready" = "準備完了";
 "menu.status.recording" = "録音中です…";
@@ -177,6 +181,8 @@
 "updater.latest.message" = "最新バージョンの Typeflux を実行しています。";
 "updater.checkFailed.title" = "アップデートの確認に失敗";
 "updater.checkFailed.noData" = "アップデート情報を取得できませんでした。";
+"updater.install.extractionFailed" = "アップデートアーカイブの展開に失敗しました。";
+"updater.install.appNotFound" = "アップデートアーカイブ内にアプリケーションが見つかりませんでした。";
 
 "provider.stt.whisperAPI" = "OpenAI";
 "provider.stt.freeModel" = "無料モデル";

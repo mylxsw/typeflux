@@ -1,77 +1,198 @@
 import AppKit
 import Foundation
 
-enum AutoUpdater {
+extension Notification.Name {
+    static let autoUpdateStateDidChange = Notification.Name("AutoUpdater.stateDidChange")
+}
+
+@MainActor
+final class AutoUpdater {
+    static let shared = AutoUpdater()
+
+    enum State: Equatable {
+        case idle
+        case downloading
+        case installing
+    }
+
+    private(set) var state: State = .idle {
+        didSet {
+            NotificationCenter.default.post(name: .autoUpdateStateDidChange, object: self)
+        }
+    }
+
     private static let defaultBaseURL = "https://typeflux.gulu.ai"
+    private static let autoCheckInterval: TimeInterval = 3 * 3600
 
-    /// Overridable via the TYPEFLUX_API_URL environment variable (e.g. for local dev).
-    private static var apiBaseURL: String {
-        ProcessInfo.processInfo.environment["TYPEFLUX_API_URL"] ?? defaultBaseURL
+    private var apiBaseURL: String {
+        ProcessInfo.processInfo.environment["TYPEFLUX_API_URL"] ?? Self.defaultBaseURL
     }
 
-    private static var downloadURL: URL {
-        URL(string: apiBaseURL)!
+    private var websiteURL: URL { URL(string: apiBaseURL)! }
+    private var autoCheckTimer: Timer?
+
+    private init() {}
+
+    // MARK: - Auto-check
+
+    func startAutoCheck(settingsStore: SettingsStore) {
+        stopAutoCheck()
+        guard settingsStore.autoUpdateEnabled else { return }
+
+        // Initial check after a short delay on app launch
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+            guard settingsStore.autoUpdateEnabled else { return }
+            self?.checkForUpdates(manual: false)
+        }
+
+        autoCheckTimer = Timer.scheduledTimer(withTimeInterval: Self.autoCheckInterval, repeats: true) { [weak self] _ in
+            guard settingsStore.autoUpdateEnabled else { return }
+            Task { @MainActor [weak self] in
+                self?.checkForUpdates(manual: false)
+            }
+        }
     }
 
-    static func checkForUpdates(manual: Bool = true) {
+    func stopAutoCheck() {
+        autoCheckTimer?.invalidate()
+        autoCheckTimer = nil
+    }
+
+    // MARK: - Check
+
+    func checkForUpdates(manual: Bool = true) {
+        guard state == .idle else { return }
+
         let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
 
         guard var components = URLComponents(string: "\(apiBaseURL)/api/v1/app/update") else { return }
         components.queryItems = [URLQueryItem(name: "version", value: currentVersion)]
         guard let url = components.url else { return }
 
-        URLSession.shared.dataTask(with: url) { data, _, error in
+        URLSession.shared.dataTask(with: url) { [weak self] data, _, error in
             DispatchQueue.main.async {
+                guard let self else { return }
+
                 if let error {
-                    if manual {
-                        showCheckFailedAlert(message: error.localizedDescription)
-                    }
+                    if manual { self.showCheckFailedAlert(message: error.localizedDescription) }
                     return
                 }
 
                 guard let data else {
-                    if manual {
-                        showCheckFailedAlert(message: L("updater.checkFailed.noData"))
-                    }
+                    if manual { self.showCheckFailedAlert(message: L("updater.checkFailed.noData")) }
                     return
                 }
 
                 do {
                     let envelope = try JSONDecoder().decode(UpdateEnvelope.self, from: data)
                     guard let info = envelope.data else {
-                        if manual {
-                            showCheckFailedAlert(message: envelope.message ?? L("updater.checkFailed.noData"))
-                        }
+                        if manual { self.showCheckFailedAlert(message: envelope.message ?? L("updater.checkFailed.noData")) }
                         return
                     }
 
                     if info.shouldUpdate {
-                        showUpdateAvailableAlert(version: info.latestVersion, releaseNotes: info.releaseNotes)
+                        self.promptUpdate(info: info)
                     } else if manual {
-                        showUpToDateAlert()
+                        self.showUpToDateAlert()
                     }
                 } catch {
-                    if manual {
-                        showCheckFailedAlert(message: error.localizedDescription)
-                    }
+                    if manual { self.showCheckFailedAlert(message: error.localizedDescription) }
                 }
             }
         }.resume()
     }
 
-    private static func showUpdateAvailableAlert(version: String, releaseNotes: String) {
+    // MARK: - Download & Install
+
+    private func promptUpdate(info: UpdateInfo) {
         let alert = NSAlert()
         alert.messageText = L("updater.available.title")
-        alert.informativeText = L("updater.available.message", version, releaseNotes)
+        alert.informativeText = L("updater.available.message", info.latestVersion, info.releaseNotes)
         alert.addButton(withTitle: L("updater.action.download"))
         alert.addButton(withTitle: L("updater.action.later"))
 
         if alert.runModal() == .alertFirstButtonReturn {
-            NSWorkspace.shared.open(downloadURL)
+            if let urlString = info.downloadURL, !urlString.isEmpty {
+                Task { await self.downloadAndInstall(info: info, downloadURLString: urlString) }
+            } else {
+                NSWorkspace.shared.open(websiteURL)
+            }
         }
     }
 
-    private static func showUpToDateAlert() {
+    private func downloadAndInstall(info: UpdateInfo, downloadURLString: String) async {
+        guard state == .idle else { return }
+        guard let downloadURL = URL(string: downloadURLString) else {
+            showCheckFailedAlert(message: L("updater.checkFailed.noData"))
+            return
+        }
+
+        state = .downloading
+
+        do {
+            let (tempFileURL, _) = try await URLSession.shared.download(from: downloadURL)
+
+            state = .installing
+
+            try await Task.detached(priority: .utility) {
+                try AutoUpdater.performInstall(from: tempFileURL)
+            }.value
+
+            NSApp.terminate(nil)
+        } catch {
+            state = .idle
+            showCheckFailedAlert(message: error.localizedDescription)
+        }
+    }
+
+    // Runs off the main actor — only does file I/O and process launching.
+    nonisolated private static func performInstall(from zipURL: URL) throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("typeflux-update-\(UUID().uuidString)")
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+        // Extract zip with ditto
+        let ditto = Process()
+        ditto.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+        ditto.arguments = ["-xk", zipURL.path, tempDir.path]
+        try ditto.run()
+        ditto.waitUntilExit()
+        guard ditto.terminationStatus == 0 else {
+            throw UpdateError.extractionFailed
+        }
+
+        // Find the .app bundle in the extracted directory
+        let contents = try fm.contentsOfDirectory(at: tempDir, includingPropertiesForKeys: [.isDirectoryKey])
+        guard let newAppURL = contents.first(where: { $0.pathExtension == "app" }) else {
+            throw UpdateError.appNotFound
+        }
+
+        let currentAppPath = Bundle.main.bundleURL.path
+        let newAppPath = newAppURL.path
+
+        // Write a short shell script that replaces the app after this process exits
+        let scriptURL = fm.temporaryDirectory.appendingPathComponent("typeflux_relaunch_\(UUID().uuidString).sh")
+        let script = """
+        #!/bin/bash
+        sleep 1
+        rm -rf '\(currentAppPath)'
+        mv '\(newAppPath)' '\(currentAppPath)'
+        xattr -dr com.apple.quarantine '\(currentAppPath)' 2>/dev/null
+        open '\(currentAppPath)'
+        """
+        try script.write(to: scriptURL, atomically: true, encoding: .utf8)
+        try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptURL.path)
+
+        let launcher = Process()
+        launcher.executableURL = URL(fileURLWithPath: "/bin/bash")
+        launcher.arguments = [scriptURL.path]
+        try launcher.run()
+        // launcher runs detached; do not wait
+    }
+
+    // MARK: - Alerts
+
+    private func showUpToDateAlert() {
         let alert = NSAlert()
         alert.messageText = L("updater.latest.title")
         alert.informativeText = L("updater.latest.message")
@@ -79,12 +200,26 @@ enum AutoUpdater {
         alert.runModal()
     }
 
-    private static func showCheckFailedAlert(message: String) {
+    private func showCheckFailedAlert(message: String) {
         let alert = NSAlert()
         alert.messageText = L("updater.checkFailed.title")
         alert.informativeText = message
         alert.addButton(withTitle: L("common.ok"))
         alert.runModal()
+    }
+}
+
+// MARK: - Errors
+
+private enum UpdateError: LocalizedError {
+    case extractionFailed
+    case appNotFound
+
+    var errorDescription: String? {
+        switch self {
+        case .extractionFailed: L("updater.install.extractionFailed")
+        case .appNotFound: L("updater.install.appNotFound")
+        }
     }
 }
 
@@ -100,10 +235,12 @@ private struct UpdateInfo: Decodable {
     let latestVersion: String
     let releaseNotes: String
     let shouldUpdate: Bool
+    let downloadURL: String?
 
     enum CodingKeys: String, CodingKey {
         case latestVersion = "latest_version"
         case releaseNotes = "release_notes"
         case shouldUpdate = "should_update"
+        case downloadURL = "download_url"
     }
 }

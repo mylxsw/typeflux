@@ -75,6 +75,8 @@
 "settings.advanced" = "Advanced";
 "settings.advanced.soundEffects.title" = "Enable sound effects";
 "settings.advanced.soundEffects.subtitle" = "Play start, done, and error sounds during recording workflow feedback.";
+"settings.advanced.autoUpdate.title" = "Automatic Updates";
+"settings.advanced.autoUpdate.subtitle" = "Automatically check for and install updates every 3 hours.";
 "settings.permissionStatus.title" = "Permission Status";
 "settings.permissionStatus.subtitle" = "Review the macOS permissions Typeflux depends on, then grant access where needed.";
 
@@ -90,6 +92,8 @@
 "menu.setupGuide" = "Setup Guide…";
 "menu.about" = "About Typeflux";
 "menu.checkForUpdates" = "Check for Updates…";
+"menu.downloadingUpdate" = "Downloading Update…";
+"menu.installingUpdate" = "Installing Update…";
 "menu.quit" = "Quit";
 "menu.status.ready" = "Ready";
 "menu.status.recording" = "Recording in progress…";
@@ -183,6 +187,8 @@
 "updater.latest.message" = "You are running the latest version of Typeflux.";
 "updater.checkFailed.title" = "Update Check Failed";
 "updater.checkFailed.noData" = "Unable to retrieve update information.";
+"updater.install.extractionFailed" = "Failed to extract the update archive.";
+"updater.install.appNotFound" = "Could not find the application bundle in the update archive.";
 
 "provider.stt.whisperAPI" = "OpenAI";
 "provider.stt.freeModel" = "Free Models";

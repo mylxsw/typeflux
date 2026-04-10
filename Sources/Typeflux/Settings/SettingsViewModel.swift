@@ -105,6 +105,7 @@ final class StudioViewModel: ObservableObject {
 
     @Published var appleSpeechFallback: Bool
     @Published var automaticVocabularyCollectionEnabled: Bool
+    @Published var autoUpdateEnabled: Bool
 
     @Published var agentFrameworkEnabled: Bool
     @Published var agentEnabled: Bool
@@ -258,6 +259,7 @@ final class StudioViewModel: ObservableObject {
         localSTTStoragePath = ""
         appleSpeechFallback = settingsStore.useAppleSpeechFallback
         automaticVocabularyCollectionEnabled = settingsStore.automaticVocabularyCollectionEnabled
+        autoUpdateEnabled = settingsStore.autoUpdateEnabled
         agentFrameworkEnabled = settingsStore.agentFrameworkEnabled
         agentEnabled = settingsStore.agentEnabled
         agentStepLoggingEnabled = settingsStore.agentStepLoggingEnabled
@@ -990,6 +992,16 @@ final class StudioViewModel: ObservableObject {
     func setAutomaticVocabularyCollectionEnabled(_ value: Bool) {
         automaticVocabularyCollectionEnabled = value
         settingsStore.automaticVocabularyCollectionEnabled = value
+    }
+
+    func setAutoUpdateEnabled(_ value: Bool) {
+        autoUpdateEnabled = value
+        settingsStore.autoUpdateEnabled = value
+        if value {
+            AutoUpdater.shared.startAutoCheck(settingsStore: settingsStore)
+        } else {
+            AutoUpdater.shared.stopAutoCheck()
+        }
     }
 
     // MARK: - Agent Framework

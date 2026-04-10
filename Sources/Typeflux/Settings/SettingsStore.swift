@@ -151,6 +151,11 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "audio.soundEffects.enabled") }
     }
 
+    var autoUpdateEnabled: Bool {
+        get { defaults.object(forKey: "app.autoUpdate.enabled") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "app.autoUpdate.enabled") }
+    }
+
     var historyRetentionPolicy: HistoryRetentionPolicy {
         get {
             let raw =

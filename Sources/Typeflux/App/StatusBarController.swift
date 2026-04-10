@@ -26,6 +26,7 @@ final class StatusBarController: NSObject {
     private var languageObserver: NSObjectProtocol?
     private var agentJobObserver: NSObjectProtocol?
     private var agentSettingsObserver: NSObjectProtocol?
+    private var autoUpdateStateObserver: NSObjectProtocol?
     private var runningJobDurationTimer: Timer?
     private var runningAgentJobs: [AgentJob] = []
 
@@ -79,6 +80,15 @@ final class StatusBarController: NSObject {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.refreshRunningAgentJobs()
+                self?.rebuildMenu()
+            }
+        }
+        autoUpdateStateObserver = NotificationCenter.default.addObserver(
+            forName: .autoUpdateStateDidChange,
+            object: nil,
+            queue: .main,
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
                 self?.rebuildMenu()
             }
         }
@@ -159,7 +169,7 @@ final class StatusBarController: NSObject {
         let appearanceItem = NSMenuItem(title: L("menu.appearance"), action: nil, keyEquivalent: "")
         appearanceItem.submenu = buildAppearanceMenu()
         menu.addItem(appearanceItem)
-        menu.addItem(makeItem(title: L("menu.checkForUpdates"), action: #selector(checkUpdates)))
+        menu.addItem(makeUpdateMenuItem())
         menu.addItem(NSMenuItem.separator())
         menu.addItem(makeItem(title: L("menu.setupGuide"), action: #selector(openOnboarding)))
         menu.addItem(makeItem(title: L("menu.about"), action: #selector(openAbout)))
@@ -221,6 +231,21 @@ final class StatusBarController: NSObject {
         return item
     }
 
+    private func makeUpdateMenuItem() -> NSMenuItem {
+        switch AutoUpdater.shared.state {
+        case .idle:
+            return makeItem(title: L("menu.checkForUpdates"), action: #selector(checkUpdates))
+        case .downloading:
+            let item = NSMenuItem(title: L("menu.downloadingUpdate"), action: nil, keyEquivalent: "")
+            item.isEnabled = false
+            return item
+        case .installing:
+            let item = NSMenuItem(title: L("menu.installingUpdate"), action: nil, keyEquivalent: "")
+            item.isEnabled = false
+            return item
+        }
+    }
+
     private func openStudio(_ section: StudioSection) {
         switch section {
         case .history:
@@ -265,7 +290,7 @@ final class StatusBarController: NSObject {
     }
 
     @objc private func checkUpdates() {
-        AutoUpdater.checkForUpdates()
+        AutoUpdater.shared.checkForUpdates()
     }
 
     @objc private func openOnboarding() {

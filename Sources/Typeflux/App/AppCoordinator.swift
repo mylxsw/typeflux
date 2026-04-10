@@ -49,6 +49,7 @@ final class AppCoordinator {
         )
         statusBarController?.start()
         self.workflowController?.start()
+        AutoUpdater.shared.startAutoCheck(settingsStore: di.settingsStore)
         UsageStatsStore.shared.backfillIfNeeded(from: di.historyStore)
 
         if !di.settingsStore.isOnboardingCompleted {

@@ -75,6 +75,8 @@
 "settings.advanced" = "고급";
 "settings.advanced.soundEffects.title" = "음향 효과 활성화";
 "settings.advanced.soundEffects.subtitle" = "워크플로 피드백을 기록하는 동안 시작, 완료 및 오류 소리를 재생합니다.";
+"settings.advanced.autoUpdate.title" = "자동 업데이트";
+"settings.advanced.autoUpdate.subtitle" = "3시간마다 자동으로 새 버전을 확인하고 설치합니다.";
 "settings.permissionStatus.title" = "허가현황";
 "settings.permissionStatus.subtitle" = "Typeflux이 의존하는 macOS 권한을 검토한 후 필요한 경우 액세스 권한을 부여하세요.";
 
@@ -86,6 +88,8 @@
 "menu.setupGuide" = "설정 가이드…";
 "menu.about" = "Typeflux 정보";
 "menu.checkForUpdates" = "업데이트 확인…";
+"menu.downloadingUpdate" = "업데이트 다운로드 중…";
+"menu.installingUpdate" = "업데이트 설치 중…";
 "menu.quit" = "종료";
 "menu.status.ready" = "준비";
 "menu.status.recording" = "녹음 진행 중…";
@@ -177,6 +181,8 @@
 "updater.latest.message" = "Typeflux의 최신 버전을 실행 중입니다.";
 "updater.checkFailed.title" = "업데이트 확인 실패";
 "updater.checkFailed.noData" = "업데이트 정보를 가져올 수 없습니다.";
+"updater.install.extractionFailed" = "업데이트 아카이브 압축 해제에 실패했습니다.";
+"updater.install.appNotFound" = "업데이트 아카이브에서 애플리케이션을 찾을 수 없습니다.";
 
 "provider.stt.whisperAPI" = "OpenAI";
 "provider.stt.freeModel" = "무료 모델";
