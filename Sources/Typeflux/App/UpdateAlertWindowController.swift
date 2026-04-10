@@ -19,9 +19,9 @@ final class UpdateAlertWindowController: NSWindowController, NSWindowDelegate {
         panel.titlebarAppearsTransparent = true
         panel.titleVisibility = .hidden
         panel.isMovableByWindowBackground = true
-        // Always float above other windows, even when another app is active
-        panel.level = .floating
-        panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
+        // Always float above all windows in all spaces (menu bar agent app has no main window)
+        panel.level = .popUpMenu
+        panel.collectionBehavior = [.canJoinAllSpaces]
 
         self.init(window: panel)
 
