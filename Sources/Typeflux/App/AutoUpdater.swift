@@ -123,11 +123,7 @@ final class AutoUpdater {
             version: info.latestVersion,
             releaseNotes: info.releaseNotes,
             releaseURL: info.releaseURL.flatMap(URL.init),
-            appearanceMode: appearanceMode,
-            autoUpdateEnabled: settingsStore?.autoUpdateEnabled ?? true,
-            onAutoUpdateChange: { [weak self] newValue in
-                self?.settingsStore?.autoUpdateEnabled = newValue
-            }
+            appearanceMode: appearanceMode
         )
         controller.onAction = { [weak self, weak controller] action in
             self?.updateAlertWindowController = nil
@@ -136,12 +132,6 @@ final class AutoUpdater {
             case .update:
                 if let urlString = info.downloadURL, !urlString.isEmpty {
                     Task { await self?.downloadAndInstall(info: info, downloadURLString: urlString, relaunch: true) }
-                } else if let self {
-                    NSWorkspace.shared.open(self.websiteURL)
-                }
-            case .installOnQuit:
-                if let urlString = info.downloadURL, !urlString.isEmpty {
-                    Task { await self?.downloadAndInstall(info: info, downloadURLString: urlString, relaunch: false) }
                 } else if let self {
                     NSWorkspace.shared.open(self.websiteURL)
                 }
