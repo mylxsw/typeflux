@@ -489,98 +489,31 @@ struct StudioView: View {
         HStack(alignment: .top, spacing: StudioTheme.Spacing.section) {
             StudioCard(padding: StudioTheme.Insets.cardCompact) {
                 VStack(spacing: StudioTheme.Spacing.xxSmall) {
+                    personaRosterRow(
+                        title: L("persona.none.title"),
+                        subtitle: L("persona.none.subtitle"),
+                        initials: "",
+                        systemImage: "slash.circle",
+                        badgeTitle: nil,
+                        isSelected: !viewModel.isCreatingPersonaDraft && viewModel.selectedPersonaID == nil,
+                        isActive: viewModel.activePersonaID.isEmpty,
+                    ) {
+                        viewModel.selectPersona(nil)
+                    }
+
                     ForEach(viewModel.filteredPersonas) { persona in
-                        Button {
+                        personaRosterRow(
+                            title: persona.name,
+                            subtitle: persona.prompt,
+                            initials: String(
+                                persona.name.prefix(StudioTheme.Count.personaInitials),
+                            ).uppercased(),
+                            systemImage: nil,
+                            badgeTitle: persona.isSystem ? L("settings.personas.tag.system") : nil,
+                            isSelected: viewModel.selectedPersonaID == persona.id,
+                            isActive: persona.id.uuidString == viewModel.activePersonaID,
+                        ) {
                             viewModel.selectPersona(persona.id)
-                        } label: {
-                            HStack(spacing: StudioTheme.Spacing.small) {
-                                RoundedRectangle(
-                                    cornerRadius: StudioTheme.CornerRadius.medium,
-                                    style: .continuous,
-                                )
-                                .fill(StudioTheme.accentSoft)
-                                .frame(
-                                    width: StudioTheme.ControlSize.personaAvatar,
-                                    height: StudioTheme.ControlSize.personaAvatar,
-                                )
-                                .overlay(
-                                    Text(
-                                        String(
-                                            persona.name.prefix(StudioTheme.Count.personaInitials),
-                                        ).uppercased(),
-                                    )
-                                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .bold))
-                                    .foregroundStyle(StudioTheme.accent),
-                                )
-                                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
-                                    Text(persona.name)
-                                        .font(
-                                            .studioBody(
-                                                StudioTheme.Typography.body,
-                                                weight: .semibold,
-                                            ),
-                                        )
-                                        .foregroundStyle(StudioTheme.textPrimary)
-                                        .lineLimit(1)
-                                    Text(persona.prompt)
-                                        .font(.studioBody(StudioTheme.Typography.caption))
-                                        .foregroundStyle(StudioTheme.textSecondary)
-                                        .lineLimit(StudioTheme.LineLimit.personaPrompt)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(StudioTheme.Insets.personaRow)
-                            .padding(.trailing, StudioTheme.ControlSize.personaStatusDot + 4)
-                            .background(
-                                RoundedRectangle(
-                                    cornerRadius: StudioTheme.CornerRadius.xxLarge,
-                                    style: .continuous,
-                                )
-                                .fill(
-                                    viewModel.selectedPersonaID == persona.id
-                                        ? StudioTheme.surfaceMuted : Color.clear,
-                                ),
-                            )
-                            .overlay(alignment: .trailing) {
-                                Circle()
-                                    .fill(
-                                        persona.id.uuidString == viewModel.activePersonaID
-                                            ? StudioTheme.accent : Color.clear,
-                                    )
-                                    .frame(
-                                        width: StudioTheme.ControlSize.personaStatusDot,
-                                        height: StudioTheme.ControlSize.personaStatusDot,
-                                    )
-                                    .padding(.trailing, StudioTheme.Insets.personaRow)
-                            }
-                            .overlay(alignment: .topTrailing) {
-                                if persona.isSystem {
-                                    Text(L("settings.personas.tag.system"))
-                                        .font(.studioBody(8, weight: .semibold))
-                                        .foregroundStyle(StudioTheme.textTertiary)
-                                        .padding(.horizontal, 5)
-                                        .padding(.vertical, 2)
-                                        .background(
-                                            Capsule()
-                                                .fill(StudioTheme.surfaceMuted),
-                                        )
-                                        .overlay(
-                                            Capsule()
-                                                .stroke(
-                                                    StudioTheme.border.opacity(0.75),
-                                                    lineWidth: StudioTheme.BorderWidth.thin,
-                                                ),
-                                        )
-                                        .padding(.top, StudioTheme.Insets.personaRow)
-                                        .padding(.trailing, StudioTheme.Insets.personaRow)
-                                }
-                            }
-                            .contentShape(
-                                RoundedRectangle(
-                                    cornerRadius: StudioTheme.CornerRadius.xxLarge,
-                                    style: .continuous,
-                                ),
-                            )
                         }
                         .buttonStyle(StudioInteractiveButtonStyle())
                         .contextMenu {
@@ -599,8 +532,33 @@ struct StudioView: View {
             StudioCard {
                 if !viewModel.isCreatingPersonaDraft {
                     HStack {
+                        Text(L("settings.personas.editTitle"))
+                            .font(
+                                .studioDisplay(
+                                    StudioTheme.Typography.sectionTitle, weight: .semibold,
+                                ),
+                            )
+                            .foregroundStyle(StudioTheme.textPrimary)
+
                         Spacer()
-                        if viewModel.personaRewriteEnabled
+
+                        if viewModel.selectedPersonaID == nil {
+                            if viewModel.activePersonaID.isEmpty {
+                                StudioPill(
+                                    title: L("settings.models.active"),
+                                    tone: StudioTheme.success,
+                                    fill: StudioTheme.success.opacity(0.12),
+                                )
+                            } else {
+                                StudioButton(
+                                    title: L("settings.models.useAsDefault"),
+                                    systemImage: "checkmark.circle.fill",
+                                    variant: .secondary,
+                                ) {
+                                    viewModel.deactivatePersonaRewrite()
+                                }
+                            }
+                        } else if viewModel.personaRewriteEnabled
                             && !viewModel.activePersonaID.isEmpty
                             && viewModel.selectedPersonaID?.uuidString == viewModel.activePersonaID
                         {
@@ -621,75 +579,86 @@ struct StudioView: View {
                     }
                 }
 
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioTextInputCard(
-                        label: L("settings.personas.name"),
-                        placeholder: L("settings.personas.namePlaceholder"),
-                        text: Binding(
-                            get: { viewModel.personaDraftName },
-                            set: { viewModel.personaDraftName = $0 },
-                        ),
-                    )
-                    .disabled(
-                        viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft,
-                    )
-                    .opacity(
-                        viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft
-                            ? 0.6 : 1,
-                    )
-                }
+                if !viewModel.isCreatingPersonaDraft && viewModel.selectedPersonaID == nil {
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                        StudioSectionTitle(title: L("persona.none.title"))
 
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSectionTitle(title: L("settings.personas.prompt"))
-
-                    TextEditor(
-                        text: Binding(
-                            get: { viewModel.personaDraftPrompt },
-                            set: { viewModel.personaDraftPrompt = $0 },
-                        ),
-                    )
-                    .font(.studioMono(StudioTheme.Typography.body))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .scrollContentBackground(.hidden)
-                    .disabled(
-                        viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft,
-                    )
-                    .frame(minHeight: StudioTheme.Layout.textEditorMinHeight)
-                    .padding(StudioTheme.Insets.textEditor)
-                    .background(
-                        RoundedRectangle(
-                            cornerRadius: StudioTheme.CornerRadius.large, style: .continuous,
+                        Text(L("persona.none.subtitle"))
+                            .font(.studioBody(StudioTheme.Typography.body))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: StudioTheme.Layout.textEditorMinHeight, alignment: .topLeading)
+                } else {
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                        StudioTextInputCard(
+                            label: L("settings.personas.name"),
+                            placeholder: L("settings.personas.namePlaceholder"),
+                            text: Binding(
+                                get: { viewModel.personaDraftName },
+                                set: { viewModel.personaDraftName = $0 },
+                            ),
                         )
-                        .fill(StudioTheme.surfaceMuted),
-                    )
-                    .overlay(
-                        RoundedRectangle(
-                            cornerRadius: StudioTheme.CornerRadius.large, style: .continuous,
+                        .disabled(
+                            viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft,
                         )
-                        .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin),
-                    )
-                    .opacity(
-                        viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft
-                            ? 0.6 : 1,
-                    )
-                }
+                        .opacity(
+                            viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft
+                                ? 0.6 : 1,
+                        )
+                    }
 
-                if !(viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft) {
-                    HStack {
-                        Spacer()
-                        StudioButton(
-                            title: L("common.cancel"), systemImage: nil, variant: .secondary,
-                        ) {
-                            viewModel.cancelPersonaEditing()
-                        }
-                        StudioButton(
-                            title: L("common.save"),
-                            systemImage: nil,
-                            variant: .primary,
-                            isDisabled: !viewModel.canSavePersonaDraft
-                                || !viewModel.hasPersonaDraftChanges,
-                        ) {
-                            viewModel.savePersonaDraft()
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                        StudioSectionTitle(title: L("settings.personas.prompt"))
+
+                        TextEditor(
+                            text: Binding(
+                                get: { viewModel.personaDraftPrompt },
+                                set: { viewModel.personaDraftPrompt = $0 },
+                            ),
+                        )
+                        .font(.studioMono(StudioTheme.Typography.body))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .scrollContentBackground(.hidden)
+                        .disabled(
+                            viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft,
+                        )
+                        .frame(minHeight: StudioTheme.Layout.textEditorMinHeight)
+                        .padding(StudioTheme.Insets.textEditor)
+                        .background(
+                            RoundedRectangle(
+                                cornerRadius: StudioTheme.CornerRadius.large, style: .continuous,
+                            )
+                            .fill(StudioTheme.surfaceMuted),
+                        )
+                        .overlay(
+                            RoundedRectangle(
+                                cornerRadius: StudioTheme.CornerRadius.large, style: .continuous,
+                            )
+                            .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin),
+                        )
+                        .opacity(
+                            viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft
+                                ? 0.6 : 1,
+                        )
+                    }
+
+                    if !(viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft) {
+                        HStack {
+                            Spacer()
+                            StudioButton(
+                                title: L("common.cancel"), systemImage: nil, variant: .secondary,
+                            ) {
+                                viewModel.cancelPersonaEditing()
+                            }
+                            StudioButton(
+                                title: L("common.save"),
+                                systemImage: nil,
+                                variant: .primary,
+                                isDisabled: !viewModel.canSavePersonaDraft
+                                    || !viewModel.hasPersonaDraftChanges,
+                            ) {
+                                viewModel.savePersonaDraft()
+                            }
                         }
                     }
                 }
@@ -754,6 +723,113 @@ struct StudioView: View {
                 .map { provider in
                     (label: provider.displayName, value: provider.studioProviderID)
                 }
+    }
+
+    private func personaRosterRow(
+        title: String,
+        subtitle: String,
+        initials: String,
+        systemImage: String?,
+        badgeTitle: String?,
+        isSelected: Bool,
+        isActive: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: StudioTheme.Spacing.small) {
+                RoundedRectangle(
+                    cornerRadius: StudioTheme.CornerRadius.medium,
+                    style: .continuous,
+                )
+                .fill(isSelected ? StudioTheme.accentSoft : StudioTheme.surfaceMuted)
+                .frame(
+                    width: StudioTheme.ControlSize.personaAvatar,
+                    height: StudioTheme.ControlSize.personaAvatar,
+                )
+                .overlay(
+                    Group {
+                        if let systemImage {
+                            Image(systemName: systemImage)
+                                .font(.system(size: StudioTheme.Typography.bodySmall, weight: .bold))
+                                .foregroundStyle(
+                                    isSelected ? StudioTheme.accent : StudioTheme.textSecondary,
+                                )
+                        } else {
+                            Text(initials)
+                                .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .bold))
+                                .foregroundStyle(
+                                    isSelected ? StudioTheme.accent : StudioTheme.textSecondary,
+                                )
+                        }
+                    },
+                )
+
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                    Text(title)
+                        .font(
+                            .studioBody(
+                                StudioTheme.Typography.body,
+                                weight: .semibold,
+                            ),
+                        )
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .lineLimit(1)
+                    Text(subtitle)
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .lineLimit(StudioTheme.LineLimit.personaPrompt)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(StudioTheme.Insets.personaRow)
+            .padding(.trailing, StudioTheme.ControlSize.personaStatusDot + 4)
+            .background(
+                RoundedRectangle(
+                    cornerRadius: StudioTheme.CornerRadius.xxLarge,
+                    style: .continuous,
+                )
+                .fill(isSelected ? StudioTheme.surfaceMuted : Color.clear),
+            )
+            .overlay(alignment: .bottomTrailing) {
+                Circle()
+                    .fill(isActive ? StudioTheme.success : Color.clear)
+                    .frame(
+                        width: StudioTheme.ControlSize.personaStatusDot,
+                        height: StudioTheme.ControlSize.personaStatusDot,
+                    )
+                    .padding(.trailing, StudioTheme.Insets.personaRow)
+                    .padding(.bottom, StudioTheme.Insets.personaRow)
+            }
+            .overlay(alignment: .topTrailing) {
+                if let badgeTitle {
+                    Text(badgeTitle)
+                        .font(.studioBody(8, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(
+                            Capsule()
+                                .fill(StudioTheme.surfaceMuted),
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(
+                                    StudioTheme.border.opacity(0.75),
+                                    lineWidth: StudioTheme.BorderWidth.thin,
+                                ),
+                        )
+                        .padding(.top, StudioTheme.Insets.personaRow)
+                        .padding(.trailing, StudioTheme.Insets.personaRow)
+                }
+            }
+            .contentShape(
+                RoundedRectangle(
+                    cornerRadius: StudioTheme.CornerRadius.xxLarge,
+                    style: .continuous,
+                ),
+            )
+        }
+        .buttonStyle(StudioInteractiveButtonStyle())
     }
 
     private var historyPage: some View {
@@ -3071,11 +3147,8 @@ struct StudioView: View {
                     .doubaoRealtime, .groqSTT,
                 ].contains(viewModel.focusedModelProvider) || focusedLLMRemoteProvider != nil {
                     HStack(spacing: StudioTheme.Spacing.small) {
-                        StudioButton(
-                            title: L("common.save"), systemImage: "checkmark", variant: .primary,
-                        ) {
-                            viewModel.applyModelConfiguration()
-                        }
+                        Spacer()
+
                         if viewModel.focusedModelProvider == .ollama
                             || focusedLLMRemoteProvider != nil
                         {
@@ -3106,7 +3179,12 @@ struct StudioView: View {
                                 viewModel.testSTTConnection()
                             }
                         }
-                        Spacer()
+
+                        StudioButton(
+                            title: L("common.save"), systemImage: "checkmark", variant: .primary,
+                        ) {
+                            viewModel.applyModelConfiguration()
+                        }
                     }
 
                     if viewModel.focusedModelProvider == .ollama || focusedLLMRemoteProvider != nil {

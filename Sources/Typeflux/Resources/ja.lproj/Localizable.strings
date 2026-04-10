@@ -375,6 +375,7 @@
 "home.metric.averagePace" = "平均ペース";
 
 "settings.personas.roster" = "ペルソナ名簿";
+"settings.personas.editTitle" = "ペルソナを編集";
 "settings.personas.name" = "ペルソナ名";
 "settings.personas.namePlaceholder" = "ペルソナ名を入力してください";
 "settings.personas.prompt" = "システムプロンプト";

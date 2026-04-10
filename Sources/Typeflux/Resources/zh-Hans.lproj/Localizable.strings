@@ -377,6 +377,7 @@
 "home.metric.averagePace" = "平均语速";
 
 "settings.personas.roster" = "人设列表";
+"settings.personas.editTitle" = "编辑人设";
 "settings.personas.name" = "人设名称";
 "settings.personas.namePlaceholder" = "输入人设名称";
 "settings.personas.prompt" = "系统提示词";

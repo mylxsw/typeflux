@@ -377,6 +377,7 @@
 "home.metric.averagePace" = "Average pace";
 
 "settings.personas.roster" = "Persona Roster";
+"settings.personas.editTitle" = "Edit Persona";
 "settings.personas.name" = "Persona Name";
 "settings.personas.namePlaceholder" = "Enter persona name";
 "settings.personas.prompt" = "System Prompt";

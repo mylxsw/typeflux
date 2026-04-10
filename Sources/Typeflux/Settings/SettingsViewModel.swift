@@ -267,10 +267,12 @@ final class StudioViewModel: ObservableObject {
         personaRewriteEnabled = settingsStore.personaRewriteEnabled
         personaHotkeyAppliesToSelection = settingsStore.personaHotkeyAppliesToSelection
         personas = currentPersonas
-        let initialSelectedPersonaID = settingsStore.activePersona.map(\.id) ?? currentPersonas.first?.id
+        let initialSelectedPersonaID = settingsStore.personaRewriteEnabled
+            ? settingsStore.activePersona.map(\.id)
+            : nil
         selectedPersonaID = initialSelectedPersonaID
         activePersonaID = settingsStore.activePersonaID
-        let initialPersona = currentPersonas.first(where: { $0.id == initialSelectedPersonaID }) ?? currentPersonas.first
+        let initialPersona = currentPersonas.first(where: { $0.id == initialSelectedPersonaID })
         personaDraftName = initialPersona?.name ?? ""
         personaDraftPrompt = initialPersona?.prompt ?? ""
         isCreatingPersonaDraft = false
@@ -1308,10 +1310,6 @@ final class StudioViewModel: ObservableObject {
 
     func selectPersona(_ id: UUID?) {
         selectedPersonaID = id
-        if settingsStore.activePersonaID.isEmpty, let id {
-            settingsStore.activePersonaID = id.uuidString
-            activePersonaID = id.uuidString
-        }
         loadPersonaDraft()
     }
 
@@ -1488,7 +1486,9 @@ final class StudioViewModel: ObservableObject {
         personaRewriteEnabled = settingsStore.personaRewriteEnabled
         personaHotkeyAppliesToSelection = settingsStore.personaHotkeyAppliesToSelection
         activePersonaID = settingsStore.activePersonaID
-        selectedPersonaID = settingsStore.activePersona.map(\.id) ?? selectedPersonaID
+        selectedPersonaID = settingsStore.personaRewriteEnabled
+            ? settingsStore.activePersona.map(\.id)
+            : nil
         if !isCreatingPersonaDraft {
             loadPersonaDraft()
         }
@@ -1497,7 +1497,9 @@ final class StudioViewModel: ObservableObject {
     func cancelPersonaEditing() {
         if isCreatingPersonaDraft {
             isCreatingPersonaDraft = false
-            selectedPersonaID = personas.first?.id
+            selectedPersonaID = settingsStore.personaRewriteEnabled
+                ? settingsStore.activePersona.map(\.id)
+                : nil
         }
         loadPersonaDraft()
     }
