@@ -267,7 +267,7 @@ enum StudioTheme {
     static let accentSoft = dynamic(light: NSColor(calibratedRed: 0.93, green: 0.96, blue: 1.0, alpha: 1), dark: NSColor(calibratedRed: 0.12, green: 0.16, blue: 0.22, alpha: 1))
     static let windowBackground = dynamic(light: NSColor(calibratedRed: 0.949, green: 0.946, blue: 0.941, alpha: 1), dark: NSColor(calibratedRed: 0.067, green: 0.069, blue: 0.071, alpha: 1))
     static let background = dynamic(light: NSColor(calibratedRed: 0.949, green: 0.946, blue: 0.941, alpha: 1), dark: NSColor(calibratedRed: 0.067, green: 0.069, blue: 0.071, alpha: 1))
-    static let sidebar = dynamic(light: NSColor(calibratedRed: 0.949, green: 0.946, blue: 0.941, alpha: 1), dark: NSColor(calibratedRed: 0.080, green: 0.084, blue: 0.088, alpha: 1))
+    static let sidebar = windowBackground
     static let surface = dynamic(light: NSColor(calibratedRed: 0.994, green: 0.993, blue: 0.989, alpha: 1), dark: NSColor(calibratedRed: 0.096, green: 0.098, blue: 0.100, alpha: 1))
     static let surfaceMuted = dynamic(light: NSColor(calibratedRed: 0.962, green: 0.960, blue: 0.955, alpha: 1), dark: NSColor(calibratedRed: 0.139, green: 0.143, blue: 0.147, alpha: 1))
     static let border = dynamic(light: NSColor(calibratedRed: 0.92, green: 0.915, blue: 0.905, alpha: 1), dark: NSColor(calibratedRed: 0.205, green: 0.213, blue: 0.220, alpha: 1))
