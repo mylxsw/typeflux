@@ -11,19 +11,32 @@ struct StudioInteractiveButtonStyle: ButtonStyle {
 }
 
 struct TypefluxLogoBadge: View {
+    enum BackgroundShape {
+        case roundedSquare
+        case circle
+    }
+
     @Environment(\.colorScheme) private var colorScheme
     let size: CGFloat
     let symbolSize: CGFloat
+    let backgroundShape: BackgroundShape
+    let showsBorder: Bool
 
-    init(size: CGFloat = 52, symbolSize: CGFloat = 26) {
+    init(
+        size: CGFloat = 52,
+        symbolSize: CGFloat = 26,
+        backgroundShape: BackgroundShape = .circle,
+        showsBorder: Bool = false
+    ) {
         self.size = size
         self.symbolSize = symbolSize
+        self.backgroundShape = backgroundShape
+        self.showsBorder = showsBorder
     }
 
     var body: some View {
         ZStack {
-            Circle()
-                .fill(badgeFill)
+            badgeBackground
 
             Image(systemName: "infinity")
                 .font(.system(size: symbolSize, weight: .semibold))
@@ -33,21 +46,72 @@ struct TypefluxLogoBadge: View {
         .accessibilityHidden(true)
     }
 
+    @ViewBuilder
+    private var badgeBackground: some View {
+        switch backgroundShape {
+        case .roundedSquare:
+            RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
+                .fill(badgeFill)
+                .overlay(
+                    RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
+                        .stroke(borderColor, lineWidth: showsBorder ? 1 : 0),
+                )
+        case .circle:
+            Circle()
+                .fill(markFill)
+                .overlay(
+                    Circle()
+                        .stroke(borderColor, lineWidth: showsBorder ? 1 : 0),
+                )
+        }
+    }
+
     private var badgeFill: Color {
         switch colorScheme {
         case .dark:
-            StudioTheme.accent.opacity(0.22)
+            Color.white.opacity(0.10)
         default:
-            StudioTheme.accent.opacity(0.12)
+            Color.black.opacity(0.08)
         }
     }
 
     private var symbolColor: Color {
+        if backgroundShape == .circle {
+            return markSymbolColor
+        }
+
+        return switch colorScheme {
+        case .dark:
+            Color.white
+        default:
+            Color.black
+        }
+    }
+
+    private var markFill: Color {
         switch colorScheme {
         case .dark:
-            Color.white.opacity(0.92)
+            Color.white
         default:
-            StudioTheme.accent
+            Color.black
+        }
+    }
+
+    private var markSymbolColor: Color {
+        switch colorScheme {
+        case .dark:
+            Color.black
+        default:
+            Color.white
+        }
+    }
+
+    private var borderColor: Color {
+        switch colorScheme {
+        case .dark:
+            Color.white.opacity(0.18)
+        default:
+            Color.black.opacity(0.14)
         }
     }
 }
@@ -362,7 +426,7 @@ struct StudioShell<Content: View>: View {
 
     var body: some View {
         ZStack {
-            StudioTheme.windowBackground
+            StudioGlassBackground(tintOpacity: StudioTheme.Opacity.glassBackgroundTint)
                 .ignoresSafeArea()
 
             HStack(spacing: StudioTheme.Spacing.none) {
@@ -377,7 +441,6 @@ struct StudioShell<Content: View>: View {
                     isLoggedIn: isLoggedIn,
                 )
                 .frame(width: StudioTheme.sidebarWidth)
-                .background(StudioTheme.sidebar)
 
                 GeometryReader { proxy in
                     ScrollView {
@@ -405,6 +468,16 @@ struct StudioShell<Content: View>: View {
             }
             .padding(StudioTheme.Layout.shellInset)
         }
+    }
+}
+
+private struct StudioGlassBackground: View {
+    let tintOpacity: Double
+
+    var body: some View {
+        Rectangle()
+            .fill(.ultraThinMaterial)
+            .overlay(StudioTheme.windowBackground.opacity(tintOpacity))
     }
 }
 
@@ -1210,7 +1283,7 @@ struct StudioSegmentedPicker<T: Hashable>: View {
     @Binding var selection: T
 
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: StudioTheme.Spacing.xSmall) {
             ForEach(Array(options.enumerated()), id: \.offset) { _, option in
                 Button {
                     withAnimation(.easeOut(duration: 0.15)) {
@@ -1218,28 +1291,30 @@ struct StudioSegmentedPicker<T: Hashable>: View {
                     }
                 } label: {
                     Text(option.label)
-                        .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
-                        .foregroundStyle(selection == option.value ? .white : StudioTheme.textPrimary)
+                        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                        .foregroundStyle(
+                            selection == option.value ? StudioTheme.textPrimary : StudioTheme.textSecondary,
+                        )
                         .padding(.horizontal, StudioTheme.Insets.segmentedItemHorizontal)
                         .padding(.vertical, StudioTheme.Insets.segmentedItemVertical)
                         .background(
-                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedItem - 2, style: .continuous)
-                                .fill(selection == option.value ? StudioTheme.accent : Color.clear),
+                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedItem, style: .continuous)
+                                .fill(selection == option.value ? StudioTheme.surface : Color.clear),
                         )
-                        .contentShape(Rectangle())
+                        .contentShape(
+                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedItem, style: .continuous),
+                        )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(StudioInteractiveButtonStyle())
             }
         }
-        .padding(StudioTheme.Insets.segmentedControlVertical)
+        .padding(.horizontal, StudioTheme.Insets.segmentedControlHorizontal)
+        .padding(.vertical, StudioTheme.Insets.segmentedControlVertical)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedControl, style: .continuous)
                 .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.segmentedControlFill)),
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedControl, style: .continuous)
-                .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin),
-        )
+        .frame(minHeight: StudioTheme.Layout.modelTabsMinHeight, alignment: .leading)
     }
 }
 

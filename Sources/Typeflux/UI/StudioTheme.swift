@@ -153,6 +153,7 @@ enum StudioTheme {
         static let historyAccentStrong: Double = 0.82
         static let segmentedControlFill: Double = 0.9
         static let pressedFade: Double = 0.86
+        static let glassBackgroundTint: Double = 0.95
     }
 
     enum Durations {

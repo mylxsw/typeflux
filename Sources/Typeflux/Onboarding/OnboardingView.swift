@@ -923,10 +923,6 @@ struct OnboardingView: View {
     }
 
     private func loadProviderLogo(for providerID: StudioModelProviderID) -> NSImage? {
-        if providerID == .typefluxOfficial {
-            return NSApp.applicationIconImage
-        }
-
         guard let name = providerLogoResourceName(for: providerID) else { return nil }
         let url = Bundle.module.url(
             forResource: name,
@@ -1073,7 +1069,14 @@ struct OnboardingView: View {
             )
             .overlay(
                 Group {
-                    if let image = loadProviderLogo(for: providerID) {
+                    if providerID == .typefluxOfficial {
+                        TypefluxLogoBadge(
+                            size: 30,
+                            symbolSize: 15,
+                            backgroundShape: .circle,
+                            showsBorder: true,
+                        )
+                    } else if let image = loadProviderLogo(for: providerID) {
                         Image(nsImage: image)
                             .resizable()
                             .interpolation(.high)

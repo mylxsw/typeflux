@@ -386,48 +386,13 @@ struct StudioView: View {
 
     private func modelsPage(viewportHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
-                ForEach(StudioModelDomain.allCases) { domain in
-                    Button {
-                        viewModel.setModelDomain(domain)
-                    } label: {
-                        Text(modelDomainTabTitle(for: domain))
-                            .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                            .foregroundStyle(
-                                viewModel.modelDomain == domain
-                                    ? StudioTheme.textPrimary : StudioTheme.textSecondary,
-                            )
-                            .padding(.horizontal, StudioTheme.Insets.segmentedItemHorizontal)
-                            .padding(.vertical, StudioTheme.Insets.segmentedItemVertical)
-                            .background(
-                                RoundedRectangle(
-                                    cornerRadius: StudioTheme.CornerRadius.segmentedItem,
-                                    style: .continuous,
-                                )
-                                .fill(
-                                    viewModel.modelDomain == domain
-                                        ? StudioTheme.surface : Color.clear,
-                                ),
-                            )
-                            .contentShape(
-                                RoundedRectangle(
-                                    cornerRadius: StudioTheme.CornerRadius.segmentedItem,
-                                    style: .continuous,
-                                ),
-                            )
-                    }
-                    .buttonStyle(StudioInteractiveButtonStyle())
-                }
-            }
-            .padding(.horizontal, StudioTheme.Insets.segmentedControlHorizontal)
-            .padding(.vertical, StudioTheme.Insets.segmentedControlVertical)
-            .background(
-                RoundedRectangle(
-                    cornerRadius: StudioTheme.CornerRadius.segmentedControl, style: .continuous,
-                )
-                .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.segmentedControlFill)),
+            StudioSegmentedPicker(
+                options: StudioModelDomain.allCases.map { (label: modelDomainTabTitle(for: $0), value: $0) },
+                selection: Binding(
+                    get: { viewModel.modelDomain },
+                    set: viewModel.setModelDomain,
+                ),
             )
-            .frame(minHeight: StudioTheme.Layout.modelTabsMinHeight, alignment: .leading)
 
             GeometryReader { proxy in
                 HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
@@ -475,14 +440,14 @@ struct StudioView: View {
 
     private var personasPage: some View {
         HStack(alignment: .top, spacing: StudioTheme.Spacing.section) {
-            StudioCard(padding: StudioTheme.Insets.cardCompact) {
-                VStack(spacing: StudioTheme.Spacing.xxSmall) {
-                    personaRosterRow(
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
+                    personaRosterCard(
                         title: L("persona.none.title"),
                         subtitle: L("persona.none.subtitle"),
                         initials: "",
                         systemImage: "slash.circle",
-                        badgeTitle: nil,
+                        metadata: L("persona.none.title"),
                         isSelected: !viewModel.isCreatingPersonaDraft && viewModel.selectedPersonaID == nil,
                         isActive: viewModel.activePersonaID.isEmpty,
                     ) {
@@ -490,14 +455,14 @@ struct StudioView: View {
                     }
 
                     ForEach(viewModel.filteredPersonas) { persona in
-                        personaRosterRow(
+                        personaRosterCard(
                             title: persona.name,
                             subtitle: persona.prompt,
                             initials: String(
                                 persona.name.prefix(StudioTheme.Count.personaInitials),
                             ).uppercased(),
                             systemImage: nil,
-                            badgeTitle: persona.isSystem ? L("settings.personas.tag.system") : nil,
+                            metadata: persona.isSystem ? L("settings.personas.tag.system") : nil,
                             isSelected: viewModel.selectedPersonaID == persona.id,
                             isActive: persona.id.uuidString == viewModel.activePersonaID,
                         ) {
@@ -514,8 +479,9 @@ struct StudioView: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(width: StudioTheme.Layout.personasListWidth)
+            .frame(width: StudioTheme.Layout.modelProviderListWidth, alignment: .leading)
 
             StudioCard {
                 if !viewModel.isCreatingPersonaDraft {
@@ -713,106 +679,106 @@ struct StudioView: View {
                 }
     }
 
-    private func personaRosterRow(
+    private func personaRosterCard(
         title: String,
         subtitle: String,
         initials: String,
         systemImage: String?,
-        badgeTitle: String?,
+        metadata: String?,
         isSelected: Bool,
         isActive: Bool,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: StudioTheme.Spacing.small) {
-                RoundedRectangle(
-                    cornerRadius: StudioTheme.CornerRadius.medium,
-                    style: .continuous,
-                )
-                .fill(isSelected ? StudioTheme.accentSoft : StudioTheme.surfaceMuted)
-                .frame(
-                    width: StudioTheme.ControlSize.personaAvatar,
-                    height: StudioTheme.ControlSize.personaAvatar,
-                )
-                .overlay(
-                    Group {
-                        if let systemImage {
-                            Image(systemName: systemImage)
-                                .font(.system(size: StudioTheme.Typography.bodySmall, weight: .bold))
-                                .foregroundStyle(
-                                    isSelected ? StudioTheme.accent : StudioTheme.textSecondary,
-                                )
-                        } else {
-                            Text(initials)
-                                .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .bold))
-                                .foregroundStyle(
-                                    isSelected ? StudioTheme.accent : StudioTheme.textSecondary,
-                                )
-                        }
-                    },
-                )
-
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
-                    Text(title)
-                        .font(
-                            .studioBody(
-                                StudioTheme.Typography.body,
-                                weight: .semibold,
-                            ),
+            StudioCard(padding: StudioTheme.Insets.cardCompact) {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
+                    HStack(alignment: .center, spacing: StudioTheme.Spacing.xSmall) {
+                        RoundedRectangle(
+                            cornerRadius: StudioTheme.CornerRadius.large,
+                            style: .continuous,
                         )
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .lineLimit(1)
+                        .fill(isSelected ? StudioTheme.accentSoft : StudioTheme.surfaceMuted)
+                        .frame(
+                            width: StudioTheme.ControlSize.modelProviderBadge,
+                            height: StudioTheme.ControlSize.modelProviderBadge,
+                        )
+                        .overlay(
+                            Group {
+                                if let systemImage {
+                                    Image(systemName: systemImage)
+                                        .font(.system(
+                                            size: StudioTheme.Typography.bodySmall,
+                                            weight: .bold,
+                                        ))
+                                        .foregroundStyle(
+                                            isSelected ? StudioTheme.accent : StudioTheme.textSecondary,
+                                        )
+                                } else {
+                                    Text(initials)
+                                        .font(.studioBody(
+                                            StudioTheme.Typography.bodySmall,
+                                            weight: .bold,
+                                        ))
+                                        .foregroundStyle(
+                                            isSelected ? StudioTheme.accent : StudioTheme.textSecondary,
+                                        )
+                                }
+                            },
+                        )
+
+                        Text(title)
+                            .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                            .lineLimit(1)
+
+                        Spacer(minLength: 0)
+
+                        Circle()
+                            .fill(isActive ? StudioTheme.success : StudioTheme.border)
+                            .frame(
+                                width: StudioTheme.ControlSize.modelProviderStatusDot,
+                                height: StudioTheme.ControlSize.modelProviderStatusDot,
+                            )
+                    }
+
                     Text(subtitle)
                         .font(.studioBody(StudioTheme.Typography.caption))
                         .foregroundStyle(StudioTheme.textSecondary)
-                        .lineLimit(StudioTheme.LineLimit.personaPrompt)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .lineLimit(2)
+
+                    if metadata != nil || isActive {
+                        HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
+                            if let metadata {
+                                Text(metadata)
+                                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                                    .foregroundStyle(StudioTheme.textSecondary)
+                                    .lineLimit(1)
+                            }
+
+                            Spacer(minLength: 0)
+
+                            if isActive {
+                                StudioPill(
+                                    title: L("settings.models.active"),
+                                    tone: StudioTheme.success,
+                                    fill: StudioTheme.success.opacity(0.12),
+                                )
+                            }
+                        }
+                    }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(StudioTheme.Insets.personaRow)
-            .padding(.trailing, StudioTheme.ControlSize.personaStatusDot + 4)
-            .background(
-                RoundedRectangle(
-                    cornerRadius: StudioTheme.CornerRadius.xxLarge,
-                    style: .continuous,
-                )
-                .fill(isSelected ? StudioTheme.surfaceMuted : Color.clear),
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                    .stroke(
+                        isSelected ? StudioTheme.accent.opacity(0.62) : Color.clear,
+                        lineWidth: StudioTheme.BorderWidth.emphasis,
+                    ),
             )
-            .overlay(alignment: .bottomTrailing) {
-                Circle()
-                    .fill(isActive ? StudioTheme.success : Color.clear)
-                    .frame(
-                        width: StudioTheme.ControlSize.personaStatusDot,
-                        height: StudioTheme.ControlSize.personaStatusDot,
-                    )
-                    .padding(.trailing, StudioTheme.Insets.personaRow)
-                    .padding(.bottom, StudioTheme.Insets.personaRow)
-            }
-            .overlay(alignment: .topTrailing) {
-                if let badgeTitle {
-                    Text(badgeTitle)
-                        .font(.studioBody(8, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 2)
-                        .background(
-                            Capsule()
-                                .fill(StudioTheme.surfaceMuted),
-                        )
-                        .overlay(
-                            Capsule()
-                                .stroke(
-                                    StudioTheme.border.opacity(0.75),
-                                    lineWidth: StudioTheme.BorderWidth.thin,
-                                ),
-                        )
-                        .padding(.top, StudioTheme.Insets.personaRow)
-                        .padding(.trailing, StudioTheme.Insets.personaRow)
-                }
-            }
             .contentShape(
                 RoundedRectangle(
-                    cornerRadius: StudioTheme.CornerRadius.xxLarge,
+                    cornerRadius: StudioTheme.CornerRadius.hero,
                     style: .continuous,
                 ),
             )
@@ -931,80 +897,83 @@ struct StudioView: View {
 
     private var vocabularyPage: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
+            HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
+                HStack(spacing: StudioTheme.Spacing.xSmall) {
+                    ForEach(VocabularyFilter.allCases) { filter in
+                        vocabularyFilterChip(filter)
+                    }
+                }
+
+                Spacer()
+
+                HStack(spacing: StudioTheme.Spacing.small) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(StudioTheme.textTertiary)
+
+                    TextField(L("vocabulary.search.placeholder"), text: $viewModel.searchQuery)
+                        .textFieldStyle(.plain)
+                        .font(.studioBody(StudioTheme.Typography.body))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .frame(width: 220)
+                }
+                .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
+                .padding(.vertical, StudioTheme.Insets.textFieldVertical)
+                .background(
+                    RoundedRectangle(
+                        cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous,
+                    )
+                    .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill)),
+                )
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous,
+                    )
+                    .stroke(
+                        StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
+                        lineWidth: StudioTheme.BorderWidth.thin,
+                    ),
+                )
+            }
+
             StudioCard {
-                HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
-                    HStack(spacing: StudioTheme.Spacing.xSmall) {
-                        ForEach(VocabularyFilter.allCases) { filter in
-                            vocabularyFilterChip(filter)
+                Group {
+                    if filteredVocabularyEntries.isEmpty {
+                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                            Text(L("vocabulary.empty.title"))
+                                .font(
+                                    .studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold),
+                                )
+                                .foregroundStyle(StudioTheme.textPrimary)
+                            Text(L("vocabulary.empty.subtitle"))
+                                .font(.studioBody(StudioTheme.Typography.body))
+                                .foregroundStyle(StudioTheme.textSecondary)
+                            StudioButton(
+                                title: L("vocabulary.action.addFirst"), systemImage: "plus",
+                                variant: .secondary,
+                            ) {
+                                editingVocabularyEntry = nil
+                                newVocabularyTerm = ""
+                                isAddingVocabulary = true
+                            }
                         }
-                    }
-
-                    Spacer()
-
-                    HStack(spacing: StudioTheme.Spacing.small) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundStyle(StudioTheme.textTertiary)
-
-                        TextField(L("vocabulary.search.placeholder"), text: $viewModel.searchQuery)
-                            .textFieldStyle(.plain)
-                            .font(.studioBody(StudioTheme.Typography.body))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                            .frame(width: 220)
-                    }
-                    .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
-                    .padding(.vertical, StudioTheme.Insets.textFieldVertical)
-                    .background(
-                        RoundedRectangle(
-                            cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous,
-                        )
-                        .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill)),
-                    )
-                    .overlay(
-                        RoundedRectangle(
-                            cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous,
-                        )
-                        .stroke(
-                            StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
-                            lineWidth: StudioTheme.BorderWidth.thin,
-                        ),
-                    )
-                }
-
-                if filteredVocabularyEntries.isEmpty {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                        Text(L("vocabulary.empty.title"))
-                            .font(
-                                .studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold),
-                            )
-                            .foregroundStyle(StudioTheme.textPrimary)
-                        Text(L("vocabulary.empty.subtitle"))
-                            .font(.studioBody(StudioTheme.Typography.body))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                        StudioButton(
-                            title: L("vocabulary.action.addFirst"), systemImage: "plus",
-                            variant: .secondary,
+                        .padding(.vertical, StudioTheme.Insets.historyEmptyVertical)
+                    } else {
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
+                                GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
+                                GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
+                            ],
+                            alignment: .leading,
+                            spacing: StudioTheme.Spacing.medium,
                         ) {
-                            editingVocabularyEntry = nil
-                            newVocabularyTerm = ""
-                            isAddingVocabulary = true
-                        }
-                    }
-                    .padding(.vertical, StudioTheme.Insets.historyEmptyVertical)
-                } else {
-                    LazyVGrid(
-                        columns: [
-                            GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
-                            GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
-                            GridItem(.flexible(), spacing: StudioTheme.Spacing.medium),
-                        ],
-                        alignment: .leading,
-                        spacing: StudioTheme.Spacing.medium,
-                    ) {
-                        ForEach(filteredVocabularyEntries) { entry in
-                            vocabularyTermCard(entry)
+                            ForEach(filteredVocabularyEntries) { entry in
+                                vocabularyTermCard(entry)
+                            }
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
@@ -3790,7 +3759,7 @@ struct StudioView: View {
         -> Color
     {
         if provider == .typefluxOfficial {
-            return Color.clear
+            return isFocused ? Color.white.opacity(0.06) : Color.clear
         }
 
         if providerLogoResourceName(for: provider) != nil {
@@ -3804,8 +3773,10 @@ struct StudioView: View {
     private func providerIconView(for provider: StudioModelProviderID, isFocused: Bool) -> some View {
         if provider == .typefluxOfficial {
             TypefluxLogoBadge(
-                size: StudioTheme.ControlSize.modelProviderBadge,
-                symbolSize: 18,
+                size: 28,
+                symbolSize: 14,
+                backgroundShape: .circle,
+                showsBorder: true,
             )
         } else if let image = providerLogoImage(for: provider) {
             Image(nsImage: image)
@@ -3825,10 +3796,6 @@ struct StudioView: View {
     }
 
     private func providerLogoImage(for provider: StudioModelProviderID) -> NSImage? {
-        if provider == .typefluxOfficial {
-            return NSApp.applicationIconImage
-        }
-
         guard let resourceName = providerLogoResourceName(for: provider) else { return nil }
 
         let url =
