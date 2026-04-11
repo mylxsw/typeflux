@@ -51,6 +51,7 @@ final class AppCoordinator {
         self.workflowController?.start()
         AutoUpdater.shared.startAutoCheck(settingsStore: di.settingsStore)
         UsageStatsStore.shared.backfillIfNeeded(from: di.historyStore)
+        Task { await AuthState.shared.refreshTokenIfNeeded() }
 
         if !di.settingsStore.isOnboardingCompleted {
             presentOnboarding()

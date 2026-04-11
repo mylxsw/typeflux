@@ -257,7 +257,7 @@ struct LoginView: View {
                     email: email.trimmingCharacters(in: .whitespacesAndNewlines),
                     password: password,
                 )
-                await authState.handleLoginSuccess(token: response.accessToken, expiresAt: response.expiresAt)
+                await authState.handleLoginSuccess(token: response.accessToken, expiresAt: response.expiresAt, refreshToken: response.refreshToken)
                 isLoading = false
                 onDismiss()
             } catch let error as AuthError {
@@ -332,6 +332,7 @@ struct LoginView: View {
                 await authState.handleLoginSuccess(
                     token: loginResponse.accessToken,
                     expiresAt: loginResponse.expiresAt,
+                    refreshToken: loginResponse.refreshToken
                 )
                 isLoading = false
                 onDismiss()

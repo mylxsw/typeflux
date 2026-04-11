@@ -30,6 +30,14 @@ struct AuthAPIService {
         try await get(path: "/api/v1/me", token: token)
     }
 
+    static func refreshToken(_ refreshToken: String) async throws -> LoginResponse {
+        try await post(path: "/api/v1/auth/refresh", body: RefreshRequest(refreshToken: refreshToken))
+    }
+
+    static func logout(refreshToken: String) async throws {
+        let _: LogoutResponse = try await post(path: "/api/v1/auth/logout", body: LogoutRequest(refreshToken: refreshToken))
+    }
+
     // MARK: - Networking Helpers
 
     private static func post<Body: Encodable, Response: Decodable>(

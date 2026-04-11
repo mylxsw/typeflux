@@ -16,6 +16,9 @@ struct AccountView: View {
                 actionSection
             }
         }
+        .onAppear {
+            Task { await AuthState.shared.refreshTokenIfNeeded() }
+        }
     }
 
     // MARK: - Profile Card

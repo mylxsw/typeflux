@@ -41,6 +41,8 @@ final class SettingsWindowController: NSObject {
     ) {
         self.settingsStore = settingsStore
 
+        Task { await AuthState.shared.refreshTokenIfNeeded() }
+
         if let window {
             viewModel?.navigate(to: initialSection)
             refreshAppearance()

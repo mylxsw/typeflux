@@ -53,10 +53,40 @@ struct LoginRequest: Encodable {
 struct LoginResponse: Decodable {
     let accessToken: String
     let expiresAt: Int
+    let refreshToken: String?
 
     enum CodingKeys: String, CodingKey {
         case accessToken = "access_token"
         case expiresAt = "expires_at"
+        case refreshToken = "refresh_token"
+    }
+}
+
+// MARK: - Refresh Token
+
+struct RefreshRequest: Encodable {
+    let refreshToken: String
+
+    enum CodingKeys: String, CodingKey {
+        case refreshToken = "refresh_token"
+    }
+}
+
+// MARK: - Logout
+
+struct LogoutRequest: Encodable {
+    let refreshToken: String
+
+    enum CodingKeys: String, CodingKey {
+        case refreshToken = "refresh_token"
+    }
+}
+
+struct LogoutResponse: Decodable {
+    let loggedOut: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case loggedOut = "logged_out"
     }
 }
 

@@ -101,6 +101,55 @@ final class AuthModelsTests: XCTestCase {
         let response = try JSONDecoder().decode(LoginResponse.self, from: json.data(using: .utf8)!)
         XCTAssertEqual(response.accessToken, "jwt.token.here")
         XCTAssertEqual(response.expiresAt, 1712867400)
+        XCTAssertNil(response.refreshToken)
+    }
+
+    func testLoginResponseDecodingWithRefreshToken() throws {
+        let json = """
+        {"access_token": "jwt.token.here", "expires_at": 1712867400, "refresh_token": "rt_abc123"}
+        """
+        let response = try JSONDecoder().decode(LoginResponse.self, from: json.data(using: .utf8)!)
+        XCTAssertEqual(response.accessToken, "jwt.token.here")
+        XCTAssertEqual(response.expiresAt, 1712867400)
+        XCTAssertEqual(response.refreshToken, "rt_abc123")
+    }
+
+    // MARK: - RefreshRequest
+
+    func testRefreshRequestEncoding() throws {
+        let request = RefreshRequest(refreshToken: "rt_mytoken123")
+        let data = try JSONEncoder().encode(request)
+        let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        XCTAssertEqual(dict?["refresh_token"] as? String, "rt_mytoken123")
+        XCTAssertNil(dict?["refreshToken"])  // must use snake_case key
+    }
+
+    // MARK: - LogoutRequest
+
+    func testLogoutRequestEncoding() throws {
+        let request = LogoutRequest(refreshToken: "rt_logoutme")
+        let data = try JSONEncoder().encode(request)
+        let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        XCTAssertEqual(dict?["refresh_token"] as? String, "rt_logoutme")
+        XCTAssertNil(dict?["refreshToken"])  // must use snake_case key
+    }
+
+    // MARK: - LogoutResponse
+
+    func testLogoutResponseDecoding() throws {
+        let json = """
+        {"logged_out": true}
+        """
+        let response = try JSONDecoder().decode(LogoutResponse.self, from: json.data(using: .utf8)!)
+        XCTAssertTrue(response.loggedOut)
+    }
+
+    func testLogoutResponseDecodingFalse() throws {
+        let json = """
+        {"logged_out": false}
+        """
+        let response = try JSONDecoder().decode(LogoutResponse.self, from: json.data(using: .utf8)!)
+        XCTAssertFalse(response.loggedOut)
     }
 
     // MARK: - UserProfile
@@ -173,6 +222,17 @@ final class AuthModelsTests: XCTestCase {
         XCTAssertEqual(envelope.data?.accessToken, "tok")
     }
 
+    func testAPIResponseWithDataAndRefreshToken() throws {
+        let json = """
+        {"code": "OK", "data": {"access_token": "tok", "expires_at": 12345, "refresh_token": "rt_xyz"}}
+        """
+        let envelope = try JSONDecoder().decode(
+            APIResponse<LoginResponse>.self,
+            from: json.data(using: .utf8)!,
+        )
+        XCTAssertEqual(envelope.data?.refreshToken, "rt_xyz")
+    }
+
     func testAPIResponseWithError() throws {
         let json = """
         {"code": "AUTH_INVALID_CREDENTIALS", "message": "wrong password"}
@@ -209,5 +269,17 @@ final class AuthModelsTests: XCTestCase {
         let error = AuthError.serverError(code: "INTERNAL", message: nil)
         XCTAssertNotNil(error.errorDescription)
         XCTAssertEqual(error.authErrorCode, "INTERNAL")
+    }
+
+    func testAuthErrorRefreshTokenInvalidCode() {
+        let error = AuthError.serverError(code: "AUTH_REFRESH_TOKEN_INVALID", message: "invalid or expired refresh token")
+        XCTAssertEqual(error.authErrorCode, "AUTH_REFRESH_TOKEN_INVALID")
+        XCTAssertEqual(error.errorDescription, "invalid or expired refresh token")
+    }
+
+    func testAuthErrorRefreshTokenReusedCode() {
+        let error = AuthError.serverError(code: "AUTH_REFRESH_TOKEN_REUSED", message: "refresh token already used")
+        XCTAssertEqual(error.authErrorCode, "AUTH_REFRESH_TOKEN_REUSED")
+        XCTAssertEqual(error.errorDescription, "refresh token already used")
     }
 }

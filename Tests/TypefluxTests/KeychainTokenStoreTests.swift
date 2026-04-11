@@ -57,6 +57,80 @@ final class KeychainTokenStoreTests: XCTestCase {
         XCTAssertEqual(loaded?.expiresAt, 222)
     }
 
+    // MARK: - Refresh Token
+
+    func testSaveTokenWithRefreshToken() {
+        KeychainTokenStore.saveToken("access-tok", expiresAt: 9_999_999_999, refreshToken: "rt_refresh123")
+        let loaded = KeychainTokenStore.loadToken()
+        XCTAssertNotNil(loaded)
+        XCTAssertEqual(loaded?.token, "access-tok")
+        let refresh = KeychainTokenStore.loadRefreshToken()
+        XCTAssertEqual(refresh, "rt_refresh123")
+    }
+
+    func testSaveTokenWithoutRefreshTokenNilByDefault() {
+        KeychainTokenStore.saveToken("access-only", expiresAt: 9_999_999_999)
+        let refresh = KeychainTokenStore.loadRefreshToken()
+        XCTAssertNil(refresh)
+    }
+
+    func testLoadRefreshTokenReturnsNilWhenNoToken() {
+        let refresh = KeychainTokenStore.loadRefreshToken()
+        XCTAssertNil(refresh)
+    }
+
+    func testRefreshTokenClearedWithDeleteToken() {
+        KeychainTokenStore.saveToken("access-tok", expiresAt: 9_999_999_999, refreshToken: "rt_abc")
+        KeychainTokenStore.deleteToken()
+        XCTAssertNil(KeychainTokenStore.loadRefreshToken())
+    }
+
+    func testOverwritePreservesNewRefreshToken() {
+        KeychainTokenStore.saveToken("first", expiresAt: 111, refreshToken: "rt_first")
+        KeychainTokenStore.saveToken("second", expiresAt: 222, refreshToken: "rt_second")
+        XCTAssertEqual(KeychainTokenStore.loadRefreshToken(), "rt_second")
+    }
+
+    func testOverwriteWithNilRefreshTokenClearsIt() {
+        KeychainTokenStore.saveToken("first", expiresAt: 111, refreshToken: "rt_first")
+        KeychainTokenStore.saveToken("second", expiresAt: 222)  // no refreshToken
+        XCTAssertNil(KeychainTokenStore.loadRefreshToken())
+    }
+
+    // MARK: - isTokenExpiringSoon
+
+    func testIsTokenExpiringSoonWithFarFutureExpiry() {
+        // Expires 30 days from now — not expiring soon within 7-day window
+        let farExpiry = Int(Date().timeIntervalSince1970) + 30 * 24 * 3600
+        KeychainTokenStore.saveToken("tok", expiresAt: farExpiry)
+        XCTAssertFalse(KeychainTokenStore.isTokenExpiringSoon())
+    }
+
+    func testIsTokenExpiringSoonWithImminent() {
+        // Expires in 2 days — within default 7-day window
+        let imminentExpiry = Int(Date().timeIntervalSince1970) + 2 * 24 * 3600
+        KeychainTokenStore.saveToken("tok", expiresAt: imminentExpiry)
+        XCTAssertTrue(KeychainTokenStore.isTokenExpiringSoon())
+    }
+
+    func testIsTokenExpiringSoonWithAlreadyExpired() {
+        let pastExpiry = Int(Date().timeIntervalSince1970) - 3600
+        KeychainTokenStore.saveToken("tok", expiresAt: pastExpiry)
+        XCTAssertTrue(KeychainTokenStore.isTokenExpiringSoon())
+    }
+
+    func testIsTokenExpiringSoonWhenNoToken() {
+        // No token → should be treated as expiring (triggers refresh attempt)
+        XCTAssertTrue(KeychainTokenStore.isTokenExpiringSoon())
+    }
+
+    func testIsTokenExpiringSoonCustomInterval() {
+        // Expires in 3 days; custom interval = 1 day → not expiring soon
+        let expiry3d = Int(Date().timeIntervalSince1970) + 3 * 24 * 3600
+        KeychainTokenStore.saveToken("tok", expiresAt: expiry3d)
+        XCTAssertFalse(KeychainTokenStore.isTokenExpiringSoon(within: 24 * 3600))
+    }
+
     // MARK: - User Profile
 
     func testSaveAndLoadUserProfile() {
@@ -96,7 +170,7 @@ final class KeychainTokenStoreTests: XCTestCase {
     // MARK: - Clear All
 
     func testClearAll() {
-        KeychainTokenStore.saveToken("tok", expiresAt: 9_999_999_999)
+        KeychainTokenStore.saveToken("tok", expiresAt: 9_999_999_999, refreshToken: "rt_clear")
         let profile = UserProfile(
             id: "uid-3",
             email: "c@d.com",
@@ -111,6 +185,7 @@ final class KeychainTokenStoreTests: XCTestCase {
         KeychainTokenStore.clearAll()
 
         XCTAssertNil(KeychainTokenStore.loadToken())
+        XCTAssertNil(KeychainTokenStore.loadRefreshToken())
         XCTAssertNil(KeychainTokenStore.loadUserProfile())
     }
 }

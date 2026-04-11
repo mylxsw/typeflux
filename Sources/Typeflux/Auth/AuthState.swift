@@ -12,6 +12,14 @@ final class AuthState: ObservableObject {
     @Published private(set) var userProfile: UserProfile?
     @Published private(set) var isLoading: Bool = false
 
+    /// Refresh the access token when it expires within this window (7 days).
+    private static let refreshEarlyInterval: TimeInterval = 7 * 24 * 3600
+
+    /// Background timer interval: check every hour.
+    private static let timerInterval: TimeInterval = 3600
+
+    private var refreshTimer: Timer?
+
     var accessToken: String? {
         guard let stored = KeychainTokenStore.loadToken(),
               stored.expiresAt > Int(Date().timeIntervalSince1970)
@@ -32,13 +40,15 @@ final class AuthState: ObservableObject {
             userProfile = KeychainTokenStore.loadUserProfile()
             isLoggedIn = true
             Task { await refreshProfile() }
+            Task { await refreshTokenIfNeeded() }
         }
+        startRefreshTimer()
     }
 
     // MARK: - Login
 
-    func handleLoginSuccess(token: String, expiresAt: Int) async {
-        KeychainTokenStore.saveToken(token, expiresAt: expiresAt)
+    func handleLoginSuccess(token: String, expiresAt: Int, refreshToken: String? = nil) async {
+        KeychainTokenStore.saveToken(token, expiresAt: expiresAt, refreshToken: refreshToken)
         isLoggedIn = true
         await refreshProfile()
     }
@@ -46,10 +56,47 @@ final class AuthState: ObservableObject {
     // MARK: - Logout
 
     func logout() {
+        if let refreshToken = KeychainTokenStore.loadRefreshToken() {
+            Task {
+                try? await AuthAPIService.logout(refreshToken: refreshToken)
+            }
+        }
         KeychainTokenStore.clearAll()
         isLoggedIn = false
         userProfile = nil
         logger.info("User logged out")
+    }
+
+    // MARK: - Token Refresh
+
+    /// Refreshes the access token when it will expire within 7 days.
+    /// Safe to call from multiple trigger points; skips silently when not needed.
+    func refreshTokenIfNeeded() async {
+        guard isLoggedIn else { return }
+        guard KeychainTokenStore.isTokenExpiringSoon(within: Self.refreshEarlyInterval) else { return }
+
+        guard let refreshToken = KeychainTokenStore.loadRefreshToken(), !refreshToken.isEmpty else {
+            logger.debug("Token expiring soon but no refresh token stored")
+            return
+        }
+
+        logger.info("Access token expiring soon, refreshing...")
+        do {
+            let response = try await AuthAPIService.refreshToken(refreshToken)
+            KeychainTokenStore.saveToken(
+                response.accessToken,
+                expiresAt: response.expiresAt,
+                refreshToken: response.refreshToken
+            )
+            logger.info("Token refreshed successfully")
+        } catch let error as AuthError {
+            logger.error("Token refresh failed: \(error.localizedDescription)")
+            if shouldInvalidateSession(for: error) {
+                logout()
+            }
+        } catch {
+            logger.error("Token refresh error: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Profile Refresh
@@ -78,12 +125,27 @@ final class AuthState: ObservableObject {
         }
     }
 
+    // MARK: - Background Timer
+
+    private func startRefreshTimer() {
+        refreshTimer?.invalidate()
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: Self.timerInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                await self?.refreshTokenIfNeeded()
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
     private func shouldInvalidateSession(for error: AuthError) -> Bool {
         switch error {
         case .unauthorized:
             true
         case .serverError(let code, _):
             code == "USER_NOT_FOUND"
+                || code == "AUTH_REFRESH_TOKEN_INVALID"
+                || code == "AUTH_REFRESH_TOKEN_REUSED"
         case .networkError, .invalidResponse:
             false
         }
