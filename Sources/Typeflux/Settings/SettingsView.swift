@@ -260,10 +260,18 @@ struct StudioView: View {
     }
 
     private func handleAccountAction() {
-        if authState.isLoggedIn {
-            viewModel.navigate(to: .account)
-        } else {
+        guard authState.isLoggedIn else {
             LoginWindowController.shared.show()
+            return
+        }
+
+        Task { @MainActor in
+            switch await authState.refreshProfile() {
+            case .authenticated, .failed:
+                viewModel.navigate(to: .account)
+            case .unauthenticated:
+                LoginWindowController.shared.show()
+            }
         }
     }
 

@@ -48,6 +48,7 @@ final class SettingsWindowController: NSObject {
             refreshAppearance()
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
+            AuthState.shared.refreshProfileIfNeeded()
             return
         }
 
@@ -92,6 +93,7 @@ final class SettingsWindowController: NSObject {
         self.window = window
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        AuthState.shared.refreshProfileIfNeeded()
     }
 
     private func refreshAppearance() {
