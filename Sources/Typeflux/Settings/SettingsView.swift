@@ -223,18 +223,6 @@ struct StudioView: View {
             }
         }
         .confirmationDialog(
-            L("agent.jobs.clearAllDialog.title"),
-            isPresented: $showingClearAllJobsConfirmation,
-            titleVisibility: .visible,
-        ) {
-            Button(L("common.delete"), role: .destructive) {
-                viewModel.clearAllAgentJobs()
-            }
-            Button(L("common.cancel"), role: .cancel) {}
-        } message: {
-            Text(L("agent.jobs.clearAllDialog.message"))
-        }
-        .confirmationDialog(
             L("history.clearDialog.title"),
             isPresented: $showingClearHistoryConfirmation,
             titleVisibility: .visible,
@@ -245,27 +233,6 @@ struct StudioView: View {
             Button(L("common.cancel"), role: .cancel) {}
         } message: {
             Text(L("history.clearDialog.message"))
-        }
-        .confirmationDialog(
-            L("agent.jobs.deleteDialog.title"),
-            isPresented: Binding(
-                get: { agentJobPendingDeletion != nil },
-                set: { if !$0 { agentJobPendingDeletion = nil } },
-            ),
-            titleVisibility: .visible,
-        ) {
-            Button(L("common.delete"), role: .destructive) {
-                guard let job = agentJobPendingDeletion else { return }
-                viewModel.deleteAgentJob(id: job.id)
-                agentJobPendingDeletion = nil
-            }
-            Button(L("common.cancel"), role: .cancel) {
-                agentJobPendingDeletion = nil
-            }
-        } message: {
-            if let job = agentJobPendingDeletion {
-                Text(L("agent.jobs.deleteDialog.message", job.displayTitle))
-            }
         }
         .sheet(isPresented: $viewModel.showingJobsPage) {
             agentJobsSheet
@@ -4503,6 +4470,39 @@ struct StudioView: View {
         }
         .frame(width: 820, height: 680)
         .background(StudioTheme.background)
+        .confirmationDialog(
+            L("agent.jobs.clearAllDialog.title"),
+            isPresented: $showingClearAllJobsConfirmation,
+            titleVisibility: .visible,
+        ) {
+            Button(L("common.delete"), role: .destructive) {
+                viewModel.clearAllAgentJobs()
+            }
+            Button(L("common.cancel"), role: .cancel) {}
+        } message: {
+            Text(L("agent.jobs.clearAllDialog.message"))
+        }
+        .confirmationDialog(
+            L("agent.jobs.deleteDialog.title"),
+            isPresented: Binding(
+                get: { agentJobPendingDeletion != nil },
+                set: { if !$0 { agentJobPendingDeletion = nil } },
+            ),
+            titleVisibility: .visible,
+        ) {
+            Button(L("common.delete"), role: .destructive) {
+                guard let job = agentJobPendingDeletion else { return }
+                viewModel.deleteAgentJob(id: job.id)
+                agentJobPendingDeletion = nil
+            }
+            Button(L("common.cancel"), role: .cancel) {
+                agentJobPendingDeletion = nil
+            }
+        } message: {
+            if let job = agentJobPendingDeletion {
+                Text(L("agent.jobs.deleteDialog.message", job.displayTitle))
+            }
+        }
     }
 
     private var agentJobsListView: some View {
