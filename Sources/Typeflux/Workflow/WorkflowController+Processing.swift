@@ -751,16 +751,11 @@ extension WorkflowController {
             transcribedText: transcribedText,
             selectedText: askContextText,
             personaPrompt: personaPrompt,
+            sessionID: sessionID,
             selectionSnapshot: selectionSnapshot,
             selectedTextForAnswerPresentation: askContextText,
         )
-        activeProcessingRecordID = nil
-        await MainActor.run {
-            if self.processingSessionID == sessionID {
-                self.appState.setStatus(.idle)
-                self.overlayController.dismissSoon()
-            }
-        }
+        handleDetachedAgentLaunch()
     }
 
     private func processAgentAskFlowWithoutSelection(
@@ -780,16 +775,11 @@ extension WorkflowController {
             transcribedText: transcribedText,
             selectedText: nil,
             personaPrompt: personaPrompt,
+            sessionID: sessionID,
             selectionSnapshot: selectionSnapshot,
             selectedTextForAnswerPresentation: askContextText,
         )
-        activeProcessingRecordID = nil
-        await MainActor.run {
-            if self.processingSessionID == sessionID {
-                self.appState.setStatus(.idle)
-                self.overlayController.dismissSoon()
-            }
-        }
+        handleDetachedAgentLaunch()
     }
 
     private func processAskFlowWithoutSelection(
@@ -856,6 +846,7 @@ extension WorkflowController {
         transcribedText: String,
         selectedText: String?,
         personaPrompt: String?,
+        sessionID: UUID,
         selectionSnapshot: TextSelectionSnapshot,
         selectedTextForAnswerPresentation: String?,
     ) {
@@ -878,12 +869,15 @@ extension WorkflowController {
                 await completeDetachedAgentAskTask(
                     execution: execution,
                     recordID: recordID,
+                    sessionID: sessionID,
                     transcribedText: transcribedText,
+                    selectionSnapshot: selectionSnapshot,
                     selectedTextForAnswerPresentation: selectedTextForAnswerPresentation,
                 )
             } catch is CancellationError {
                 await failDetachedAgentAskTask(
                     recordID: recordID,
+                    sessionID: sessionID,
                     errorMessage: L("workflow.cancel.userCancelled"),
                     treatAsCancellation: true,
                 )
@@ -892,6 +886,7 @@ extension WorkflowController {
                 ErrorLogStore.shared.log(message)
                 await failDetachedAgentAskTask(
                     recordID: recordID,
+                    sessionID: sessionID,
                     errorMessage: message,
                     treatAsCancellation: false,
                 )
@@ -906,14 +901,15 @@ extension WorkflowController {
     private func completeDetachedAgentAskTask(
         execution: AskAgentExecutionResult,
         recordID: UUID,
+        sessionID: UUID,
         transcribedText: String,
+        selectionSnapshot: TextSelectionSnapshot,
         selectedTextForAnswerPresentation: String?,
     ) async {
         guard var record = historyStore.record(id: recordID) else { return }
 
         var pipelineTiming = record.pipelineTiming ?? HistoryPipelineTiming()
         pipelineTiming.llmProcessingCompletedAt = Date()
-        pipelineTiming.applyStartedAt = Date()
         record.pipelineTiming = pipelineTiming
         logPipelineEvent("llm-processing-completed", for: record)
 
@@ -925,7 +921,13 @@ extension WorkflowController {
             record.applyStatus = .running
             saveHistoryRecord(record)
 
+            pipelineTiming.applyStartedAt = Date()
+            record.pipelineTiming = pipelineTiming
             await MainActor.run {
+                if self.processingSessionID == sessionID {
+                    self.lastRetryableFailureRecord = nil
+                    self.appState.setStatus(.idle)
+                }
                 self.presentAskAnswer(
                     question: transcribedText,
                     selectedText: selectedTextForAnswerPresentation,
@@ -944,17 +946,22 @@ extension WorkflowController {
             record.applyStatus = .running
             saveHistoryRecord(record)
 
-            await MainActor.run {
-                self.lastDialogResultText = text
-                self.overlayController.showResultDialog(
-                    title: L("workflow.result.copyTitle"),
-                    message: text,
-                )
-            }
+            pipelineTiming.applyStartedAt = Date()
+            record.pipelineTiming = pipelineTiming
+            let outcome = applyDetachedAgentEditResult(text, selectionSnapshot: selectionSnapshot)
             pipelineTiming.applyCompletedAt = Date()
             record.pipelineTiming = pipelineTiming
             record.applyStatus = .succeeded
-            record.applyMessage = ApplyOutcome.presentedInDialog.message
+            record.applyMessage = outcome.message
+
+            await MainActor.run {
+                guard self.processingSessionID == sessionID else { return }
+                self.lastRetryableFailureRecord = nil
+                self.appState.setStatus(.idle)
+                if outcome == .inserted {
+                    self.overlayController.dismissSoon()
+                }
+            }
         }
 
         saveHistoryRecord(record)
@@ -966,6 +973,7 @@ extension WorkflowController {
 
     private func failDetachedAgentAskTask(
         recordID: UUID,
+        sessionID: UUID,
         errorMessage: String,
         treatAsCancellation: Bool,
     ) async {
@@ -987,6 +995,8 @@ extension WorkflowController {
         enforceHistoryRetentionPolicy()
 
         await MainActor.run {
+            guard self.processingSessionID == sessionID else { return }
+            self.lastRetryableFailureRecord = nil
             self.soundEffectPlayer.play(.error)
             self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
             self.overlayController.showFailure(message: errorMessage)
@@ -1350,6 +1360,39 @@ extension WorkflowController {
     func dismissOverlayForExternalReplacement() {
         overlayController.dismissImmediately()
         usleep(Self.selectionRestoreDelayMicroseconds)
+    }
+
+    func handleDetachedAgentLaunch() {
+        activeProcessingRecordID = nil
+        lastRetryableFailureRecord = nil
+    }
+
+    func shouldShowDialogForDetachedAgentEdit(using snapshot: TextSelectionSnapshot) -> Bool {
+        hasAskSelectionContext(snapshot) && !shouldReplaceActiveSelection(for: snapshot)
+    }
+
+    func applyDetachedAgentEditResult(
+        _ text: String,
+        selectionSnapshot: TextSelectionSnapshot,
+    ) -> ApplyOutcome {
+        let replaceSelection = shouldReplaceActiveSelection(for: selectionSnapshot)
+        let shouldShowResultDialog = shouldShowDialogForDetachedAgentEdit(using: selectionSnapshot)
+        NetworkDebugLogger.logMessage(
+            "[Apply Detached Agent Edit] hasSelection=\(selectionSnapshot.hasSelection) " +
+                "isEditable=\(selectionSnapshot.isEditable) hasRange=\(selectionSnapshot.selectedRange != nil) " +
+                "replaceSelection=\(replaceSelection) showResultDialog=\(shouldShowResultDialog)",
+        )
+
+        if shouldShowResultDialog {
+            presentResultDialog(title: L("workflow.result.copyTitle"), text: text)
+            return .presentedInDialog
+        }
+
+        return applyText(
+            text,
+            replace: replaceSelection,
+            fallbackTitle: L("workflow.result.copyTitle"),
+        )
     }
 
     func copyLastResultFromDialog() {
