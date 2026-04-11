@@ -468,6 +468,7 @@
 "settings.models.selected" = "선택됨";
 "settings.models.testConnection" = "연결 테스트";
 "settings.models.testingConnection" = "연결 테스트 중...";
+"settings.models.connectionTimeout" = "연결 테스트가 %d초 후 시간 초과되었습니다.";
 "settings.models.preparing" = "준비 중...";
 "settings.models.prepareLocalModel" = "로컬 모델 준비";
 "settings.models.prepareOllama" = "Ollama 준비";

@@ -1766,87 +1766,95 @@ final class StudioViewModel: ObservableObject {
 
         llmTestTask = Task {
             let startDate = Date()
-            var firstTokenDate: Date? = nil
-            var collected = ""
 
             do {
-                switch capturedProvider {
-                case .freeSTT:
-                    return
-                case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
-                     .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
-                    let connection = try LLMConnectionResolver.resolve(
-                        provider: capturedRemoteProvider,
-                        baseURL: capturedBaseURL,
-                        model: capturedModel,
-                        apiKey: capturedAPIKey,
-                    )
-                    let preview = try await RemoteLLMClient.previewConnection(
-                        provider: connection.provider,
-                        baseURL: connection.baseURL,
-                        model: connection.model,
-                        apiKey: connection.apiKey,
-                        additionalHeaders: connection.additionalHeaders,
-                    )
-                    if !preview.isEmpty {
-                        firstTokenDate = Date()
-                    }
-                    collected = preview
-                case .ollama:
-                    guard let baseURL = URL(string: capturedOllamaURL) else {
-                        throw NSError(domain: "LLMTest", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama base URL."])
-                    }
-                    let url = baseURL.appendingPathComponent("api/chat")
-                    var urlRequest = URLRequest(url: url)
-                    urlRequest.httpMethod = "POST"
-                    urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                    let body: [String: Any] = [
-                        "model": capturedOllamaModel,
-                        "stream": true,
-                        "messages": [["role": "user", "content": "Hello"]],
-                        "options": ["num_predict": 50],
-                    ]
-                    urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
+                let (firstTokenDate, collected) = try await ConnectionTestSupport.runWithTimeout {
+                    var firstTokenDate: Date? = nil
+                    var collected = ""
 
-                    let (bytes, response) = try await URLSession.shared.bytes(for: urlRequest)
-                    guard let http = response as? HTTPURLResponse else {
-                        throw NSError(domain: "LLMTest", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response."])
-                    }
-                    guard (200 ..< 300).contains(http.statusCode) else {
-                        var errorData = Data()
+                    switch capturedProvider {
+                    case .freeSTT:
+                        return (firstTokenDate, collected)
+                    case .typefluxCloud, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini,
+                         .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
+                        let connection = try await LLMConnectionTestResolver.resolve(
+                            provider: capturedRemoteProvider,
+                            baseURL: capturedBaseURL,
+                            model: capturedModel,
+                            apiKey: capturedAPIKey,
+                        )
+                        let preview = try await RemoteLLMClient.previewConnection(
+                            provider: connection.provider,
+                            baseURL: connection.baseURL,
+                            model: connection.model,
+                            apiKey: connection.apiKey,
+                            additionalHeaders: connection.additionalHeaders,
+                        )
+                        if !preview.isEmpty {
+                            firstTokenDate = Date()
+                        }
+                        collected = preview
+                    case .ollama:
+                        guard let baseURL = URL(string: capturedOllamaURL) else {
+                            throw NSError(domain: "LLMTest", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama base URL."])
+                        }
+                        let url = baseURL.appendingPathComponent("api/chat")
+                        var urlRequest = URLRequest(
+                            url: url,
+                            timeoutInterval: TimeInterval(ConnectionTestSupport.timeoutSeconds)
+                        )
+                        urlRequest.httpMethod = "POST"
+                        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                        let body: [String: Any] = [
+                            "model": capturedOllamaModel,
+                            "stream": true,
+                            "messages": [["role": "user", "content": "Hello"]],
+                            "options": ["num_predict": 50],
+                        ]
+                        urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+                        let (bytes, response) = try await URLSession.shared.bytes(for: urlRequest)
+                        guard let http = response as? HTTPURLResponse else {
+                            throw NSError(domain: "LLMTest", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response."])
+                        }
+                        guard (200 ..< 300).contains(http.statusCode) else {
+                            var errorData = Data()
+                            for try await byte in bytes {
+                                errorData.append(byte)
+                            }
+                            let message = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+                            throw NSError(domain: "LLMTest", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(message)"])
+                        }
+
+                        struct OllamaTestResponse: Decodable {
+                            struct Message: Decodable { let content: String? }
+                            let message: Message?
+                            let done: Bool
+                        }
+
+                        var lineBuffer = Data()
                         for try await byte in bytes {
-                            errorData.append(byte)
+                            if Task.isCancelled { return (firstTokenDate, collected) }
+                            lineBuffer.append(byte)
+                            guard byte == 0x0A else { continue }
+                            let lineStr = String(data: lineBuffer, encoding: .utf8)?.trimmingCharacters(in: .newlines) ?? ""
+                            lineBuffer = Data()
+                            guard !lineStr.isEmpty,
+                                  let lineData = lineStr.data(using: .utf8),
+                                  let payload = try? JSONDecoder().decode(OllamaTestResponse.self, from: lineData)
+                            else { continue }
+                            if let content = payload.message?.content, !content.isEmpty {
+                                if firstTokenDate == nil { firstTokenDate = Date() }
+                                collected += content
+                            }
+                            if payload.done || collected.count >= 60 { break }
                         }
-                        let message = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-                        throw NSError(domain: "LLMTest", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(message)"])
+                    case .appleSpeech, .localSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime,
+                         .groqSTT, .typefluxOfficial:
+                        return (firstTokenDate, collected)
                     }
 
-                    struct OllamaTestResponse: Decodable {
-                        struct Message: Decodable { let content: String? }
-                        let message: Message?
-                        let done: Bool
-                    }
-
-                    var lineBuffer = Data()
-                    for try await byte in bytes {
-                        if Task.isCancelled { return }
-                        lineBuffer.append(byte)
-                        guard byte == 0x0A else { continue }
-                        let lineStr = String(data: lineBuffer, encoding: .utf8)?.trimmingCharacters(in: .newlines) ?? ""
-                        lineBuffer = Data()
-                        guard !lineStr.isEmpty,
-                              let lineData = lineStr.data(using: .utf8),
-                              let payload = try? JSONDecoder().decode(OllamaTestResponse.self, from: lineData)
-                        else { continue }
-                        if let content = payload.message?.content, !content.isEmpty {
-                            if firstTokenDate == nil { firstTokenDate = Date() }
-                            collected += content
-                        }
-                        if payload.done || collected.count >= 60 { break }
-                    }
-                case .appleSpeech, .localSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime,
-                     .groqSTT, .typefluxOfficial, .typefluxCloud:
-                    return
+                    return (firstTokenDate, collected)
                 }
 
                 if Task.isCancelled { return }
@@ -1888,41 +1896,44 @@ final class StudioViewModel: ObservableObject {
             let startDate = Date()
 
             do {
-                let preview: String
-                switch capturedProvider {
-                case .freeSTT:
-                    preview = try await FreeSTTTranscriber.testConnection(modelName: capturedFreeSTTModel)
-                case .whisperAPI:
-                    preview = try await WhisperAPITranscriber.testConnection(
-                        baseURL: capturedWhisperBaseURL,
-                        model: capturedWhisperModel,
-                        apiKey: capturedWhisperAPIKey,
-                    )
-                case .multimodalLLM:
-                    preview = try await MultimodalLLMTranscriber.testConnection(
-                        baseURL: capturedMultimodalBaseURL,
-                        model: capturedMultimodalModel,
-                        apiKey: capturedMultimodalAPIKey,
-                    )
-                case .aliCloud:
-                    preview = try await AliCloudRealtimeTranscriber.testConnection(apiKey: capturedAliCloudAPIKey)
-                case .doubaoRealtime:
-                    preview = try await DoubaoRealtimeTranscriber.testConnection(
-                        appID: capturedDoubaoAppID,
-                        accessToken: capturedDoubaoAccessToken,
-                        resourceID: capturedDoubaoResourceID,
-                    )
-                case .groqSTT:
-                    preview = try await WhisperAPITranscriber.testConnection(
-                        baseURL: "https://api.groq.com/openai/v1",
-                        model: capturedGroqSTTModel.isEmpty
-                            ? OpenAIAudioModelCatalog.groqWhisperModels[0] : capturedGroqSTTModel,
-                        apiKey: capturedGroqSTTAPIKey,
-                    )
-                case .typefluxOfficial:
-                    preview = try await TypefluxOfficialTranscriber.testConnection()
-                default:
-                    return
+                let preview = try await ConnectionTestSupport.runWithTimeout {
+                    let preview: String
+                    switch capturedProvider {
+                    case .freeSTT:
+                        preview = try await FreeSTTTranscriber.testConnection(modelName: capturedFreeSTTModel)
+                    case .whisperAPI:
+                        preview = try await WhisperAPITranscriber.testConnection(
+                            baseURL: capturedWhisperBaseURL,
+                            model: capturedWhisperModel,
+                            apiKey: capturedWhisperAPIKey,
+                        )
+                    case .multimodalLLM:
+                        preview = try await MultimodalLLMTranscriber.testConnection(
+                            baseURL: capturedMultimodalBaseURL,
+                            model: capturedMultimodalModel,
+                            apiKey: capturedMultimodalAPIKey,
+                        )
+                    case .aliCloud:
+                        preview = try await AliCloudRealtimeTranscriber.testConnection(apiKey: capturedAliCloudAPIKey)
+                    case .doubaoRealtime:
+                        preview = try await DoubaoRealtimeTranscriber.testConnection(
+                            appID: capturedDoubaoAppID,
+                            accessToken: capturedDoubaoAccessToken,
+                            resourceID: capturedDoubaoResourceID,
+                        )
+                    case .groqSTT:
+                        preview = try await WhisperAPITranscriber.testConnection(
+                            baseURL: "https://api.groq.com/openai/v1",
+                            model: capturedGroqSTTModel.isEmpty
+                                ? OpenAIAudioModelCatalog.groqWhisperModels[0] : capturedGroqSTTModel,
+                            apiKey: capturedGroqSTTAPIKey,
+                        )
+                    case .typefluxOfficial:
+                        preview = try await TypefluxOfficialTranscriber.testConnection()
+                    default:
+                        preview = ""
+                    }
+                    return preview
                 }
 
                 if Task.isCancelled { return }

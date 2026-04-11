@@ -106,6 +106,17 @@ final class LLMRemoteProviderTests: XCTestCase {
         )
     }
 
+    func testOnboardingDisplayOrderIncludesTypefluxCloudAndExcludesOnlyFreeModel() {
+        XCTAssertEqual(LLMRemoteProvider.onboardingPinnedProvider, .typefluxCloud)
+        XCTAssertFalse(LLMRemoteProvider.onboardingDisplayOrder.contains(.freeModel))
+        XCTAssertFalse(LLMRemoteProvider.onboardingDisplayOrder.contains(.typefluxCloud))
+
+        let expected = LLMRemoteProvider.settingsDisplayOrder.filter {
+            $0 != .freeModel && $0 != LLMRemoteProvider.onboardingPinnedProvider
+        }
+        XCTAssertEqual(LLMRemoteProvider.onboardingDisplayOrder, expected)
+    }
+
     func testGrokAndXiaomiProvidersExposeOpenAICompatibleDefaults() {
         XCTAssertEqual(LLMRemoteProvider.grok.displayName, "xAI")
         XCTAssertEqual(LLMRemoteProvider.grok.apiStyle, .openAICompatible)

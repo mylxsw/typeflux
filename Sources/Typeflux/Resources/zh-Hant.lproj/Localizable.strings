@@ -468,6 +468,7 @@
 "settings.models.selected" = "已選取";
 "settings.models.testConnection" = "測試連線";
 "settings.models.testingConnection" = "正在測試連線...";
+"settings.models.connectionTimeout" = "連線測試逾時（%d 秒）。";
 "settings.models.preparing" = "準備中...";
 "settings.models.prepareLocalModel" = "準備本地模型";
 "settings.models.prepareOllama" = "準備 Ollama";

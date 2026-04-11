@@ -159,6 +159,12 @@ final class StudioModelsTests: XCTestCase {
         XCTAssertFalse(StudioModelProviderID.openAI.usesExpandedLogo)
     }
 
+    func testTypefluxProvidersUseTypefluxBranding() {
+        XCTAssertTrue(StudioModelProviderID.typefluxOfficial.usesTypefluxBranding)
+        XCTAssertTrue(StudioModelProviderID.typefluxCloud.usesTypefluxBranding)
+        XCTAssertFalse(StudioModelProviderID.openAI.usesTypefluxBranding)
+    }
+
     // MARK: - HistoryPipelineStatPresentationItem
 
     func testPipelineStatItem() {

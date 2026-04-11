@@ -470,6 +470,7 @@
 "settings.models.selected" = "Selected";
 "settings.models.testConnection" = "Test Connection";
 "settings.models.testingConnection" = "Testing connection...";
+"settings.models.connectionTimeout" = "Connection timed out after %d seconds.";
 "settings.models.preparing" = "Preparing...";
 "settings.models.prepareLocalModel" = "Prepare Local Model";
 "settings.models.prepareOllama" = "Prepare Ollama";

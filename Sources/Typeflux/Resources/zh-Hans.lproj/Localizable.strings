@@ -470,6 +470,7 @@
 "settings.models.selected" = "已选中";
 "settings.models.testConnection" = "测试连接";
 "settings.models.testingConnection" = "正在测试连接...";
+"settings.models.connectionTimeout" = "连接测试超时（%d 秒）。";
 "settings.models.preparing" = "准备中...";
 "settings.models.prepareLocalModel" = "准备本地模型";
 "settings.models.prepareOllama" = "准备 Ollama";

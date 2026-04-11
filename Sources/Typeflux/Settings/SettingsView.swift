@@ -3574,35 +3574,20 @@ struct StudioView: View {
 
     @ViewBuilder
     private var typefluxOfficialProviderForm: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            if !authState.isLoggedIn {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    Text(L("settings.models.typefluxOfficial.loginRequired"))
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.warning)
-
-                    HStack {
-                        Spacer()
-
-                        StudioButton(
-                            title: L("settings.models.typefluxOfficial.signIn"),
-                            systemImage: "person.circle",
-                            variant: .primary,
-                        ) {
-                            LoginWindowController.shared.show()
-                        }
-                    }
-                }
-            }
-        }
+        typefluxLoginRequiredForm(message: L("settings.models.typefluxOfficial.loginRequired"))
     }
 
     @ViewBuilder
     private var typefluxCloudLLMProviderForm: some View {
+        typefluxLoginRequiredForm(message: L("settings.models.typefluxCloud.loginRequired"))
+    }
+
+    @ViewBuilder
+    private func typefluxLoginRequiredForm(message: String) -> some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
             if !authState.isLoggedIn {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    Text(L("settings.models.typefluxCloud.loginRequired"))
+                    Text(message)
                         .font(.studioBody(StudioTheme.Typography.caption))
                         .foregroundStyle(StudioTheme.warning)
 
@@ -3800,7 +3785,7 @@ struct StudioView: View {
     private func providerBadgeBackground(for provider: StudioModelProviderID, isFocused: Bool)
         -> Color
     {
-        if provider == .typefluxOfficial {
+        if provider.usesTypefluxBranding {
             return isFocused ? Color.white.opacity(0.06) : Color.clear
         }
 
@@ -3813,7 +3798,7 @@ struct StudioView: View {
 
     @ViewBuilder
     private func providerIconView(for provider: StudioModelProviderID, isFocused: Bool) -> some View {
-        if provider == .typefluxOfficial {
+        if provider.usesTypefluxBranding {
             TypefluxLogoBadge(
                 size: 28,
                 symbolSize: 14,
@@ -4128,9 +4113,9 @@ struct StudioView: View {
         case .doubaoRealtime:
             "bolt.horizontal.circle"
         case .typefluxOfficial:
-            "star.fill"
+            "infinity"
         case .typefluxCloud:
-            "star.fill"
+            "infinity"
         }
     }
 

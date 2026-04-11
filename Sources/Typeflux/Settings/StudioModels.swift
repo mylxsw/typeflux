@@ -227,6 +227,15 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
             false
         }
     }
+
+    var usesTypefluxBranding: Bool {
+        switch self {
+        case .typefluxOfficial, .typefluxCloud:
+            true
+        default:
+            false
+        }
+    }
 }
 
 struct StudioModelCard: Identifiable {

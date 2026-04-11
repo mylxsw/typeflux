@@ -341,6 +341,21 @@ struct OnboardingView: View {
 
             HStack(alignment: .top, spacing: 18) {
                 VStack(spacing: 10) {
+                    let pinnedProvider = LLMRemoteProvider.onboardingPinnedProvider
+                    let isPinnedSelected = viewModel.llmProvider == .openAICompatible
+                        && viewModel.llmRemoteProvider == pinnedProvider
+                    modelProviderCard(
+                        providerID: pinnedProvider.studioProviderID,
+                        title: pinnedProvider.displayName,
+                        description: L("settings.models.card.\(pinnedProvider.rawValue).summary"),
+                        badge: L("settings.models.badge.official"),
+                        isSelected: isPinnedSelected,
+                    ) {
+                        withAnimation(.easeOut(duration: 0.18)) {
+                            viewModel.selectLLMRemoteProvider(pinnedProvider)
+                        }
+                    }
+
                     if !FreeLLMModelRegistry.suggestedModelNames.isEmpty {
                         ForEach(
                             LLMRemoteProvider.settingsDisplayOrder
@@ -376,11 +391,7 @@ struct OnboardingView: View {
                         }
                     }
 
-                    ForEach(
-                        LLMRemoteProvider.settingsDisplayOrder
-                            .filter { $0 != .freeModel && $0 != .typefluxCloud },
-                        id: \.self,
-                    ) { provider in
+                    ForEach(LLMRemoteProvider.onboardingDisplayOrder, id: \.self) { provider in
                         let isSelected = viewModel.llmProvider == .openAICompatible
                             && viewModel.llmRemoteProvider == provider
                         modelProviderCard(
@@ -600,45 +611,51 @@ struct OnboardingView: View {
         let modelSuggestions = ([viewModel.llmModel] + provider.suggestedModels)
             .filter { !$0.isEmpty }
 
-        return onboardingConfigCard {
-            VStack(spacing: 12) {
-                if provider == .freeModel {
-                    if FreeLLMModelRegistry.suggestedModelNames.isEmpty {
-                        Text(L("settings.models.freeModel.noSources"))
-                            .font(.studioBody(12))
-                            .foregroundStyle(Color.white.opacity(0.48))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        StudioMenuPicker(
-                            options: FreeLLMModelRegistry.suggestedModelNames.map { ($0, $0) },
-                            selection: $viewModel.llmModel,
-                            width: 320,
-                        )
+        return Group {
+            if provider == .typefluxCloud {
+                EmptyView()
+            } else {
+                onboardingConfigCard {
+                    VStack(spacing: 12) {
+                        if provider == .freeModel {
+                            if FreeLLMModelRegistry.suggestedModelNames.isEmpty {
+                                Text(L("settings.models.freeModel.noSources"))
+                                    .font(.studioBody(12))
+                                    .foregroundStyle(Color.white.opacity(0.48))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            } else {
+                                StudioMenuPicker(
+                                    options: FreeLLMModelRegistry.suggestedModelNames.map { ($0, $0) },
+                                    selection: $viewModel.llmModel,
+                                    width: 320,
+                                )
+                            }
+                            Text(L("settings.models.freeModel.hint"))
+                                .font(.studioBody(12))
+                                .foregroundStyle(Color.white.opacity(0.48))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            StudioTextInputCard(
+                                label: L("common.apiKey"),
+                                placeholder: provider == .gemini ? "AIza..." : "sk-...",
+                                text: $viewModel.llmAPIKey,
+                                secure: true,
+                            )
+                            StudioSuggestedTextInputCard(
+                                label: L("settings.models.remote.baseURL"),
+                                placeholder: provider.defaultBaseURL.isEmpty
+                                    ? "https://api.openai.com/v1" : provider.defaultBaseURL,
+                                text: $viewModel.llmBaseURL,
+                                suggestions: endpointSuggestions,
+                            )
+                            StudioSuggestedTextInputCard(
+                                label: L("common.model"),
+                                placeholder: provider.defaultModel,
+                                text: $viewModel.llmModel,
+                                suggestions: modelSuggestions,
+                            )
+                        }
                     }
-                    Text(L("settings.models.freeModel.hint"))
-                        .font(.studioBody(12))
-                        .foregroundStyle(Color.white.opacity(0.48))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    StudioTextInputCard(
-                        label: L("common.apiKey"),
-                        placeholder: provider == .gemini ? "AIza..." : "sk-...",
-                        text: $viewModel.llmAPIKey,
-                        secure: true,
-                    )
-                    StudioSuggestedTextInputCard(
-                        label: L("settings.models.remote.baseURL"),
-                        placeholder: provider.defaultBaseURL.isEmpty
-                            ? "https://api.openai.com/v1" : provider.defaultBaseURL,
-                        text: $viewModel.llmBaseURL,
-                        suggestions: endpointSuggestions,
-                    )
-                    StudioSuggestedTextInputCard(
-                        label: L("common.model"),
-                        placeholder: provider.defaultModel,
-                        text: $viewModel.llmModel,
-                        suggestions: modelSuggestions,
-                    )
                 }
             }
         }
@@ -766,7 +783,7 @@ struct OnboardingView: View {
                 }
             }
 
-            if viewModel.llmProvider == .ollama || viewModel.llmRemoteProvider != .freeModel {
+            if llmProviderSupportsTest {
                 HStack(spacing: 12) {
                     if let url = llmProviderAPIKeyURL(viewModel.llmRemoteProvider),
                        viewModel.llmProvider != .ollama
@@ -870,6 +887,19 @@ struct OnboardingView: View {
             nil
         case .typefluxCloud:
             nil
+        }
+    }
+
+    private var llmProviderSupportsTest: Bool {
+        if viewModel.llmProvider == .ollama {
+            return true
+        }
+
+        return switch viewModel.llmRemoteProvider {
+        case .freeModel, .typefluxCloud:
+            false
+        default:
+            true
         }
     }
 
@@ -996,8 +1026,8 @@ struct OnboardingView: View {
         case .multimodalLLM: "brain.filled.head.profile"
         case .aliCloud: "antenna.radiowaves.left.and.right"
         case .doubaoRealtime: "bolt.horizontal.circle"
-        case .typefluxOfficial: "star.fill"
-        case .typefluxCloud: "star.fill"
+        case .typefluxOfficial: "infinity"
+        case .typefluxCloud: "infinity"
         }
     }
 
@@ -1081,7 +1111,7 @@ struct OnboardingView: View {
             )
             .overlay(
                 Group {
-                    if providerID == .typefluxOfficial {
+                    if providerID.usesTypefluxBranding {
                         TypefluxLogoBadge(
                             size: 30,
                             symbolSize: 15,

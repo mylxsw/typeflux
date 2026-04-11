@@ -215,40 +215,43 @@ final class OnboardingViewModel: ObservableObject {
         sttTestTask = Task {
             let start = Date()
             do {
-                let preview: String
-                switch provider {
-                case .whisperAPI:
-                    preview = try await WhisperAPITranscriber.testConnection(
-                        baseURL: baseURL,
-                        model: model,
-                        apiKey: apiKey,
-                    )
-                case .multimodalLLM:
-                    preview = try await MultimodalLLMTranscriber.testConnection(
-                        baseURL: multimodalBaseURL,
-                        model: multimodalModel,
-                        apiKey: multimodalAPIKey,
-                    )
-                case .aliCloud:
-                    preview = try await AliCloudRealtimeTranscriber.testConnection(apiKey: aliKey)
-                case .doubaoRealtime:
-                    preview = try await DoubaoRealtimeTranscriber.testConnection(
-                        appID: doubaoID,
-                        accessToken: doubaoToken,
-                        resourceID: doubaoResource,
-                    )
-                case .groq:
-                    let effectiveModel = groqModel.isEmpty
-                        ? OpenAIAudioModelCatalog.groqWhisperModels[0] : groqModel
-                    preview = try await WhisperAPITranscriber.testConnection(
-                        baseURL: "https://api.groq.com/openai/v1",
-                        model: effectiveModel,
-                        apiKey: groqKey,
-                    )
-                case .freeModel:
-                    preview = try await FreeSTTTranscriber.testConnection(modelName: freeModel)
-                case .localModel, .appleSpeech, .typefluxOfficial:
-                    return
+                let preview = try await ConnectionTestSupport.runWithTimeout {
+                    let preview: String
+                    switch provider {
+                    case .whisperAPI:
+                        preview = try await WhisperAPITranscriber.testConnection(
+                            baseURL: baseURL,
+                            model: model,
+                            apiKey: apiKey,
+                        )
+                    case .multimodalLLM:
+                        preview = try await MultimodalLLMTranscriber.testConnection(
+                            baseURL: multimodalBaseURL,
+                            model: multimodalModel,
+                            apiKey: multimodalAPIKey,
+                        )
+                    case .aliCloud:
+                        preview = try await AliCloudRealtimeTranscriber.testConnection(apiKey: aliKey)
+                    case .doubaoRealtime:
+                        preview = try await DoubaoRealtimeTranscriber.testConnection(
+                            appID: doubaoID,
+                            accessToken: doubaoToken,
+                            resourceID: doubaoResource,
+                        )
+                    case .groq:
+                        let effectiveModel = groqModel.isEmpty
+                            ? OpenAIAudioModelCatalog.groqWhisperModels[0] : groqModel
+                        preview = try await WhisperAPITranscriber.testConnection(
+                            baseURL: "https://api.groq.com/openai/v1",
+                            model: effectiveModel,
+                            apiKey: groqKey,
+                        )
+                    case .freeModel:
+                        preview = try await FreeSTTTranscriber.testConnection(modelName: freeModel)
+                    case .localModel, .appleSpeech, .typefluxOfficial:
+                        preview = ""
+                    }
+                    return preview
                 }
                 guard !Task.isCancelled else { return }
                 let ms = Int(Date().timeIntervalSince(start) * 1000)
@@ -275,48 +278,52 @@ final class OnboardingViewModel: ObservableObject {
         llmTestTask = Task {
             let start = Date()
             do {
-                let preview: String
-                if provider == .ollama {
-                    guard let base = URL(string: ollamaURL) else {
-                        throw NSError(
-                            domain: "LLMTest",
-                            code: 1,
-                            userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama URL."],
+                let preview = try await ConnectionTestSupport.runWithTimeout {
+                    if provider == .ollama {
+                        guard let base = URL(string: ollamaURL) else {
+                            throw NSError(
+                                domain: "LLMTest",
+                                code: 1,
+                                userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama URL."],
+                            )
+                        }
+                        let url = base.appendingPathComponent("api/chat")
+                        var req = URLRequest(
+                            url: url,
+                            timeoutInterval: TimeInterval(ConnectionTestSupport.timeoutSeconds)
+                        )
+                        req.httpMethod = "POST"
+                        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                        req.httpBody = try JSONSerialization.data(withJSONObject: [
+                            "model": ollamaModel,
+                            "stream": false,
+                            "messages": [["role": "user", "content": "Reply with exactly: ok"]],
+                            "options": ["num_predict": 10],
+                        ])
+                        let (data, response) = try await URLSession.shared.data(for: req)
+                        guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
+                            let msg = String(data: data, encoding: .utf8) ?? "Unknown error"
+                            throw NSError(domain: "LLMTest", code: -1,
+                                          userInfo: [NSLocalizedDescriptionKey: msg])
+                        }
+                        let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+                        let message = json?["message"] as? [String: Any]
+                        return (message?["content"] as? String) ?? ""
+                    } else {
+                        let connection = try await LLMConnectionTestResolver.resolve(
+                            provider: remoteProvider,
+                            baseURL: baseURL,
+                            model: model,
+                            apiKey: apiKey,
+                        )
+                        return try await RemoteLLMClient.previewConnection(
+                            provider: connection.provider,
+                            baseURL: connection.baseURL,
+                            model: connection.model,
+                            apiKey: connection.apiKey,
+                            additionalHeaders: connection.additionalHeaders,
                         )
                     }
-                    let url = base.appendingPathComponent("api/chat")
-                    var req = URLRequest(url: url, timeoutInterval: 30)
-                    req.httpMethod = "POST"
-                    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                    req.httpBody = try JSONSerialization.data(withJSONObject: [
-                        "model": ollamaModel,
-                        "stream": false,
-                        "messages": [["role": "user", "content": "Reply with exactly: ok"]],
-                        "options": ["num_predict": 10],
-                    ])
-                    let (data, response) = try await URLSession.shared.data(for: req)
-                    guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
-                        let msg = String(data: data, encoding: .utf8) ?? "Unknown error"
-                        throw NSError(domain: "LLMTest", code: -1,
-                                      userInfo: [NSLocalizedDescriptionKey: msg])
-                    }
-                    let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
-                    let message = json?["message"] as? [String: Any]
-                    preview = (message?["content"] as? String) ?? ""
-                } else {
-                    let connection = try LLMConnectionResolver.resolve(
-                        provider: remoteProvider,
-                        baseURL: baseURL,
-                        model: model,
-                        apiKey: apiKey,
-                    )
-                    preview = try await RemoteLLMClient.previewConnection(
-                        provider: connection.provider,
-                        baseURL: connection.baseURL,
-                        model: connection.model,
-                        apiKey: connection.apiKey,
-                        additionalHeaders: connection.additionalHeaders,
-                    )
                 }
                 guard !Task.isCancelled else { return }
                 let ms = Int(Date().timeIntervalSince(start) * 1000)

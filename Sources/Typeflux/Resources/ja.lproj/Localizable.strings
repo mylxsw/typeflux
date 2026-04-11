@@ -468,6 +468,7 @@
 "settings.models.selected" = "選択済み";
 "settings.models.testConnection" = "テスト接続";
 "settings.models.testingConnection" = "接続をテストしています...";
+"settings.models.connectionTimeout" = "接続テストが %d 秒でタイムアウトしました。";
 "settings.models.preparing" = "準備中...";
 "settings.models.prepareLocalModel" = "ローカルモデルの準備";
 "settings.models.prepareOllama" = "Ollama を準備します";
