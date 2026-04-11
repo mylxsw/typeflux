@@ -3822,6 +3822,10 @@ struct StudioView: View {
     private func providerBadgeBackground(for provider: StudioModelProviderID, isFocused: Bool)
         -> Color
     {
+        if provider == .typefluxOfficial {
+            return Color.clear
+        }
+
         if providerLogoResourceName(for: provider) != nil {
             return isFocused ? Color.white.opacity(0.98) : Color.white.opacity(0.92)
         }
@@ -3831,7 +3835,12 @@ struct StudioView: View {
 
     @ViewBuilder
     private func providerIconView(for provider: StudioModelProviderID, isFocused: Bool) -> some View {
-        if let image = providerLogoImage(for: provider) {
+        if provider == .typefluxOfficial {
+            TypefluxLogoBadge(
+                size: StudioTheme.ControlSize.modelProviderBadge,
+                symbolSize: 18,
+            )
+        } else if let image = providerLogoImage(for: provider) {
             Image(nsImage: image)
                 .resizable()
                 .interpolation(.high)

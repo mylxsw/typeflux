@@ -203,7 +203,7 @@
 "provider.stt.aliCloud" = "阿里雲 ASR";
 "provider.stt.doubaoRealtime" = "豆包即時 ASR";
 "provider.stt.groq" = "Groq";
-"provider.stt.typefluxOfficial" = "Typeflux 官方";
+"provider.stt.typefluxOfficial" = "Typeflux Cloud";
 "provider.llm.openAICompatible" = "OpenAI 相容";
 "provider.llm.custom" = "自訂";
 "provider.llm.freeModel" = "免費模型";

@@ -10,6 +10,48 @@ struct StudioInteractiveButtonStyle: ButtonStyle {
     }
 }
 
+struct TypefluxLogoBadge: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let size: CGFloat
+    let symbolSize: CGFloat
+
+    init(size: CGFloat = 52, symbolSize: CGFloat = 26) {
+        self.size = size
+        self.symbolSize = symbolSize
+    }
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(badgeFill)
+
+            Image(systemName: "infinity")
+                .font(.system(size: symbolSize, weight: .semibold))
+                .foregroundStyle(symbolColor)
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
+    }
+
+    private var badgeFill: Color {
+        switch colorScheme {
+        case .dark:
+            StudioTheme.accent.opacity(0.22)
+        default:
+            StudioTheme.accent.opacity(0.12)
+        }
+    }
+
+    private var symbolColor: Color {
+        switch colorScheme {
+        case .dark:
+            Color.white.opacity(0.92)
+        default:
+            StudioTheme.accent
+        }
+    }
+}
+
 // MARK: - Floating Tooltip Panel
 
 private final class TooltipFloatingPanel: NSPanel {
@@ -475,20 +517,13 @@ struct StudioSidebar: View {
     }
 
     private var feedbackMenuButton: some View {
-        Menu {
+        StudioSidebarIconMenuButton(
+            systemImage: "envelope",
+            accessibilityLabel: L("sidebar.feedbackAccessibility"),
+        ) {
             Button(L("sidebar.feedback.emailOption"), action: onSendFeedbackEmail)
             Button(L("sidebar.feedback.githubOption"), action: onOpenGitHubIssue)
-        } label: {
-            StudioSidebarIconLabel(
-                systemImage: "envelope",
-                accessibilityLabel: L("sidebar.feedbackAccessibility"),
-                isActive: false,
-            )
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .accessibilityLabel(L("sidebar.feedbackAccessibility"))
-        .studioTooltip(L("sidebar.feedbackAccessibility"), yOffset: 34)
     }
 }
 
@@ -509,6 +544,33 @@ private struct StudioSidebarIconButton: View {
             )
         }
         .buttonStyle(StudioInteractiveButtonStyle())
+        .accessibilityLabel(accessibilityLabel)
+        .studioTooltip(accessibilityLabel, yOffset: 34)
+        .onHover { isHovered = $0 }
+    }
+}
+
+private struct StudioSidebarIconMenuButton<MenuContent: View>: View {
+    let systemImage: String
+    let accessibilityLabel: String
+    @ViewBuilder let menuContent: () -> MenuContent
+    @State private var isHovered = false
+
+    var body: some View {
+        Menu {
+            menuContent()
+        } label: {
+            StudioSidebarIconLabel(
+                systemImage: systemImage,
+                accessibilityLabel: accessibilityLabel,
+                isActive: false,
+                isHovered: isHovered,
+            )
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .buttonStyle(StudioInteractiveButtonStyle())
+        .tint(StudioTheme.textSecondary)
         .accessibilityLabel(accessibilityLabel)
         .studioTooltip(accessibilityLabel, yOffset: 34)
         .onHover { isHovered = $0 }

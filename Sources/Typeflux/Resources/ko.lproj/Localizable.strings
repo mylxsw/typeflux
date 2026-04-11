@@ -203,7 +203,7 @@
 "provider.stt.aliCloud" = "Alibaba Cloud ASR";
 "provider.stt.doubaoRealtime" = "Doubao Realtime ASR";
 "provider.stt.groq" = "Groq";
-"provider.stt.typefluxOfficial" = "Typeflux 공식";
+"provider.stt.typefluxOfficial" = "Typeflux Cloud";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
 "provider.llm.custom" = "맞춤";
 "provider.llm.freeModel" = "무료 모델";

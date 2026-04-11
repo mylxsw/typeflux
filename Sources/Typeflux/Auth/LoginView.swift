@@ -25,9 +25,7 @@ struct LoginView: View {
         VStack(spacing: StudioTheme.Spacing.none) {
             // Header
             VStack(spacing: StudioTheme.Spacing.xSmall) {
-                Image(systemName: StudioTheme.Symbol.brand)
-                    .font(.system(size: 40, weight: .semibold))
-                    .foregroundStyle(Color.white.opacity(0.96))
+                TypefluxLogoBadge()
 
                 Text(L("auth.login.title"))
                     .font(.studioDisplay(StudioTheme.Typography.pageTitle, weight: .bold))

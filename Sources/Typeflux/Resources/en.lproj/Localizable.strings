@@ -205,7 +205,7 @@
 "provider.stt.aliCloud" = "Alibaba Cloud ASR";
 "provider.stt.doubaoRealtime" = "Doubao Realtime ASR";
 "provider.stt.groq" = "Groq";
-"provider.stt.typefluxOfficial" = "Typeflux Official";
+"provider.stt.typefluxOfficial" = "Typeflux Cloud";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
 "provider.llm.custom" = "Custom";
 "provider.llm.freeModel" = "Free Models";
