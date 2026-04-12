@@ -41,33 +41,62 @@ struct LoginView: View {
     }
 
     var body: some View {
+        Group {
+            switch presentationStyle {
+            case .card:
+                cardBody
+            case .plain:
+                plainBody
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: step)
+    }
+
+    private var cardBody: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            plainHeader
+                .padding(.bottom, 10)
+
+            formContent
+
+            if showsPolicyAgreement {
+                policyAgreementSection
+            }
+
+            if step != .enterEmail {
+                Divider()
+                    .overlay(loginCardDivider)
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        goBack()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: StudioTheme.Typography.caption, weight: .medium))
+                        Text(L("auth.login.back"))
+                            .font(.studioBody(StudioTheme.Typography.body))
+                    }
+                    .foregroundStyle(StudioTheme.textSecondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.top, 40)
+        .padding(.bottom, 28)
+        .frame(maxWidth: 460)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(StudioTheme.windowBackground)
+    }
+
+    private var plainBody: some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 16) {
-                if presentationStyle == .plain {
-                    plainHeader
-                        .padding(.bottom, 10)
-                }
+                plainHeader
+                    .padding(.bottom, 10)
 
-                VStack(spacing: 16) {
-                    switch step {
-                    case .enterEmail:
-                        enterEmailForm
-                    case .login:
-                        loginForm
-                    case .register:
-                        registerForm
-                    case .activate:
-                        activateForm
-                    }
-
-                    if let errorMessage {
-                        Text(errorMessage)
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.danger)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .transition(.opacity)
-                    }
-                }
+                formContent
 
                 if showsPolicyAgreement {
                     policyAgreementSection
@@ -100,7 +129,30 @@ struct LoginView: View {
         }
         .frame(maxWidth: maxWidth)
         .frame(maxWidth: .infinity, alignment: .center)
-        .animation(.easeInOut(duration: 0.2), value: step)
+    }
+
+    private var formContent: some View {
+        VStack(spacing: 16) {
+            switch step {
+            case .enterEmail:
+                enterEmailForm
+            case .login:
+                loginForm
+            case .register:
+                registerForm
+            case .activate:
+                activateForm
+            }
+
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .foregroundStyle(StudioTheme.danger)
+                    .frame(maxWidth: .infinity, alignment: formContentAlignment)
+                    .multilineTextAlignment(presentationStyle == .card ? .center : .leading)
+                    .transition(.opacity)
+            }
+        }
     }
 
     private var plainHeader: some View {
@@ -147,7 +199,7 @@ struct LoginView: View {
                 icon: "envelope",
             )
 
-            if presentationStyle == .plain {
+            if step == .enterEmail {
                 Text(plainEmailHelperText)
                     .font(.studioBody(12))
                     .foregroundStyle(helperTextColor)
@@ -309,6 +361,10 @@ struct LoginView: View {
         }
     }
 
+    private var formContentAlignment: Alignment {
+        presentationStyle == .card ? .center : .leading
+    }
+
     private var containerShadow: Color {
         switch presentationStyle {
         case .card:
@@ -341,7 +397,7 @@ struct LoginView: View {
     }
 
     private var showsPolicyAgreement: Bool {
-        presentationStyle == .plain && step == .enterEmail
+        step == .enterEmail
     }
 
     private var plainEmailHelperText: String {

@@ -5,6 +5,7 @@ import SwiftUI
 final class LoginWindowController: NSObject {
     static let shared = LoginWindowController()
 
+    private let windowSize = NSSize(width: 520, height: 480)
     private var window: NSWindow?
     private var hostingView: NSHostingView<LoginView>?
     private var appearanceObserver: NSObjectProtocol?
@@ -31,28 +32,36 @@ final class LoginWindowController: NSObject {
             return
         }
 
-        let loginView = LoginView { [weak self] in
-            self?.window?.close()
-        }
-        let hosting = NSHostingView(rootView: loginView)
-
+        let contentRect = NSRect(origin: .zero, size: windowSize)
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 520),
-            styleMask: [.titled, .closable, .fullSizeContentView],
+            contentRect: contentRect,
+            styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false,
         )
+        let loginView = LoginView(
+            onDismiss: { [weak self] in
+                self?.window?.close()
+            }
+        )
+        let hosting = NSHostingView(rootView: loginView)
+        // Prevent NSHostingView from driving the window size via intrinsic content size
+        hosting.sizingOptions = []
+        hosting.translatesAutoresizingMaskIntoConstraints = true
+        hosting.autoresizingMask = [.width, .height]
+
         window.title = L("auth.login.windowTitle")
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isMovableByWindowBackground = true
         window.backgroundColor = NSColor(StudioTheme.windowBackground)
         window.contentView = hosting
+        // Lock the window to a fixed size (no resizing)
+        window.minSize = windowSize
+        window.maxSize = windowSize
         window.center()
         window.isReleasedWhenClosed = false
         window.delegate = self
-        window.minSize = NSSize(width: 400, height: 480)
-        window.maxSize = NSSize(width: 500, height: 700)
         window.appearance = AppAppearance.nsAppearance(for: settingsStore.appearanceMode)
 
         hostingView = hosting
