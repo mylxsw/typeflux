@@ -790,6 +790,16 @@
 "auth.login.signIn" = "Sign In";
 "auth.login.createAccount" = "Create Account";
 "auth.login.activate" = "Activate";
+"auth.login.forgotPassword" = "Forgot Password";
+"auth.login.sendResetCode" = "Send Reset Code";
+"auth.login.resetPassword" = "Reset Password";
+"auth.login.alreadyHaveResetCode" = "I already have a reset code";
+"auth.login.resendActivation" = "Didn't receive the code? Resend";
+"auth.login.resendActivationCountdown" = "Resend available in %d seconds";
+"auth.login.forgotPasswordHint" = "We will send a reset code to %@.";
+"auth.login.activationCodeSent" = "Activation code sent. Please check your email.";
+"auth.login.activationCodeResent" = "A new activation code has been sent.";
+"auth.login.resetCodeSent" = "Password reset code sent. Please check your email.";
 "auth.login.back" = "Back";
 "auth.login.activateHint" = "We sent an activation code to %@. Please enter it below.";
 
@@ -798,12 +808,18 @@
 "auth.field.confirmPassword" = "Confirm Password";
 "auth.field.name" = "Name (optional)";
 "auth.field.activationCode" = "Activation Code";
+"auth.field.resetCode" = "Reset Code";
+"auth.field.newPassword" = "New Password";
+"auth.field.confirmNewPassword" = "Confirm New Password";
 
 "auth.error.emailRequired" = "Please enter your email address.";
 "auth.error.passwordRequired" = "Please enter your password.";
+"auth.error.currentPasswordRequired" = "Please enter your current password.";
 "auth.error.passwordMismatch" = "Passwords do not match.";
 "auth.error.passwordTooShort" = "Password must be at least 8 characters.";
+"auth.error.passwordTooWeak" = "Password must include uppercase, lowercase, and a number.";
 "auth.error.codeRequired" = "Please enter the activation code.";
+"auth.error.resetCodeRequired" = "Please enter the reset code.";
 "auth.error.unknown" = "An unknown error occurred.";
 "auth.error.invalidResponse" = "Invalid server response.";
 "auth.error.unauthorized" = "Session expired. Please sign in again.";
@@ -813,5 +829,12 @@
 "auth.account.logout" = "Sign Out";
 "auth.account.providerEmail" = "Email & Password";
 "auth.account.signIn" = "Sign In";
+"auth.account.passwordSection" = "Password";
+"auth.account.currentPassword" = "Current Password";
+"auth.account.newPassword" = "New Password";
+"auth.account.confirmNewPassword" = "Confirm New Password";
+"auth.account.changePassword" = "Change Password";
+"auth.account.passwordHint" = "Changing your password will sign you out on this device.";
+"auth.account.passwordChanged" = "Password updated. Please sign in again.";
 "auth.account.signedOutTitle" = "Not Signed In";
 "auth.account.signedOutSubtitle" = "Sign in to sync your account and manage your session.";

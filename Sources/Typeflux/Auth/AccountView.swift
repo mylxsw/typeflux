@@ -4,6 +4,12 @@ struct AccountView: View {
     @ObservedObject var authState: AuthState
     let onLogout: () -> Void
     @ObservedObject private var localization = AppLocalization.shared
+    @State private var currentPassword = ""
+    @State private var newPassword = ""
+    @State private var confirmNewPassword = ""
+    @State private var isChangingPassword = false
+    @State private var changePasswordMessage: String?
+    @State private var changePasswordError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
@@ -61,6 +67,8 @@ struct AccountView: View {
                 infoRow(label: L("auth.account.provider"), value: providerDisplayName(profile.provider))
                 infoRow(label: L("auth.account.memberSince"), value: formattedDate(profile.createdAt))
             }
+
+            passwordManagementSection(profile: profile)
         }
         .padding(StudioTheme.Spacing.section)
         .background(
@@ -71,6 +79,61 @@ struct AccountView: View {
             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
                 .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin),
         )
+    }
+
+    @ViewBuilder
+    private func passwordManagementSection(profile: UserProfile) -> some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            Divider()
+                .padding(.top, 4)
+
+            Text(L("auth.account.passwordSection"))
+                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
+
+            if profile.provider == "password" {
+                SecureField(L("auth.account.currentPassword"), text: $currentPassword)
+                    .textFieldStyle(.roundedBorder)
+            }
+
+            SecureField(L("auth.account.newPassword"), text: $newPassword)
+                .textFieldStyle(.roundedBorder)
+
+            SecureField(L("auth.account.confirmNewPassword"), text: $confirmNewPassword)
+                .textFieldStyle(.roundedBorder)
+
+            if let changePasswordMessage {
+                Text(changePasswordMessage)
+                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .foregroundStyle(StudioTheme.accent)
+            }
+
+            if let changePasswordError {
+                Text(changePasswordError)
+                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .foregroundStyle(StudioTheme.danger)
+            }
+
+            Button(action: changePassword) {
+                HStack(spacing: StudioTheme.Spacing.small) {
+                    if isChangingPassword {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+
+                    Text(L("auth.account.changePassword"))
+                        .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(isChangingPassword)
+
+            Text(L("auth.account.passwordHint"))
+                .font(.studioBody(StudioTheme.Typography.caption))
+                .foregroundStyle(StudioTheme.textSecondary)
+        }
     }
 
     // MARK: - Loading Card
@@ -186,5 +249,66 @@ struct AccountView: View {
         } else {
             LoginWindowController.shared.show()
         }
+    }
+
+    private func changePassword() {
+        changePasswordMessage = nil
+        changePasswordError = nil
+
+        if authState.userProfile?.provider == "password", currentPassword.isEmpty {
+            changePasswordError = L("auth.error.currentPasswordRequired")
+            return
+        }
+        if newPassword.isEmpty {
+            changePasswordError = L("auth.error.passwordRequired")
+            return
+        }
+        if newPassword != confirmNewPassword {
+            changePasswordError = L("auth.error.passwordMismatch")
+            return
+        }
+        if let passwordError = validatePasswordInput(newPassword) {
+            changePasswordError = passwordError
+            return
+        }
+        guard let token = authState.accessToken else {
+            changePasswordError = L("auth.error.unauthorized")
+            return
+        }
+
+        isChangingPassword = true
+        Task {
+            do {
+                _ = try await AuthAPIService.changePassword(
+                    token: token,
+                    oldPassword: currentPassword,
+                    newPassword: newPassword
+                )
+                await MainActor.run {
+                    isChangingPassword = false
+                    changePasswordMessage = L("auth.account.passwordChanged")
+                    currentPassword = ""
+                    newPassword = ""
+                    confirmNewPassword = ""
+                    authState.logout()
+                    onLogout()
+                }
+            } catch {
+                await MainActor.run {
+                    isChangingPassword = false
+                    changePasswordError = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func validatePasswordInput(_ candidate: String) -> String? {
+        guard candidate.count >= 8 else {
+            return L("auth.error.passwordTooShort")
+        }
+        let hasUppercase = candidate.rangeOfCharacter(from: .uppercaseLetters) != nil
+        let hasLowercase = candidate.rangeOfCharacter(from: .lowercaseLetters) != nil
+        let hasDigit = candidate.rangeOfCharacter(from: .decimalDigits) != nil
+        return hasUppercase && hasLowercase && hasDigit ? nil : L("auth.error.passwordTooWeak")
     }
 }

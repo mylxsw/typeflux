@@ -82,6 +82,22 @@ final class AuthModelsTests: XCTestCase {
         XCTAssertTrue(response.activated)
     }
 
+    func testResendActivationRequestEncoding() throws {
+        let request = ResendActivationRequest(email: "user@test.com", password: "Pass1234")
+        let data = try JSONEncoder().encode(request)
+        let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        XCTAssertEqual(dict?["email"] as? String, "user@test.com")
+        XCTAssertEqual(dict?["password"] as? String, "Pass1234")
+    }
+
+    func testResendActivationResponseDecoding() throws {
+        let json = """
+        {"sent": true}
+        """
+        let response = try JSONDecoder().decode(ResendActivationResponse.self, from: json.data(using: .utf8)!)
+        XCTAssertTrue(response.sent)
+    }
+
     // MARK: - LoginRequest
 
     func testLoginRequestEncoding() throws {
@@ -112,6 +128,23 @@ final class AuthModelsTests: XCTestCase {
         XCTAssertEqual(response.accessToken, "jwt.token.here")
         XCTAssertEqual(response.expiresAt, 1712867400)
         XCTAssertEqual(response.refreshToken, "rt_abc123")
+    }
+
+    func testResetPasswordRequestEncoding() throws {
+        let request = ResetPasswordRequest(email: "user@test.com", code: "RESET123", newPassword: "Pass1234")
+        let data = try JSONEncoder().encode(request)
+        let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        XCTAssertEqual(dict?["email"] as? String, "user@test.com")
+        XCTAssertEqual(dict?["code"] as? String, "RESET123")
+        XCTAssertEqual(dict?["new_password"] as? String, "Pass1234")
+    }
+
+    func testChangePasswordRequestEncoding() throws {
+        let request = ChangePasswordRequest(oldPassword: "OldPass1", newPassword: "NewPass1")
+        let data = try JSONEncoder().encode(request)
+        let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        XCTAssertEqual(dict?["old_password"] as? String, "OldPass1")
+        XCTAssertEqual(dict?["new_password"] as? String, "NewPass1")
     }
 
     // MARK: - RefreshRequest

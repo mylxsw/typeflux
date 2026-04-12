@@ -788,6 +788,16 @@
 "auth.login.signIn" = "登入";
 "auth.login.createAccount" = "建立帳號";
 "auth.login.activate" = "啟用";
+"auth.login.forgotPassword" = "忘記密碼";
+"auth.login.sendResetCode" = "發送重設碼";
+"auth.login.resetPassword" = "重設密碼";
+"auth.login.alreadyHaveResetCode" = "我已經有重設碼了";
+"auth.login.resendActivation" = "沒有收到啟用碼，重新發送";
+"auth.login.resendActivationCountdown" = "%d 秒後可重新發送";
+"auth.login.forgotPasswordHint" = "我們會向 %@ 發送密碼重設碼。";
+"auth.login.activationCodeSent" = "啟用碼已發送，請查收電子郵件。";
+"auth.login.activationCodeResent" = "新的啟用碼已發送，請查收電子郵件。";
+"auth.login.resetCodeSent" = "密碼重設碼已發送，請查收電子郵件。";
 "auth.login.back" = "返回";
 "auth.login.activateHint" = "我們已向 %@ 發送了啟用碼，請在下方輸入。";
 
@@ -796,12 +806,18 @@
 "auth.field.confirmPassword" = "確認密碼";
 "auth.field.name" = "姓名（選填）";
 "auth.field.activationCode" = "啟用碼";
+"auth.field.resetCode" = "重設碼";
+"auth.field.newPassword" = "新密碼";
+"auth.field.confirmNewPassword" = "確認新密碼";
 
 "auth.error.emailRequired" = "請輸入電子郵件地址。";
 "auth.error.passwordRequired" = "請輸入密碼。";
+"auth.error.currentPasswordRequired" = "請輸入目前密碼。";
 "auth.error.passwordMismatch" = "兩次密碼輸入不一致。";
 "auth.error.passwordTooShort" = "密碼至少需要 8 個字元。";
+"auth.error.passwordTooWeak" = "密碼必須包含大寫字母、小寫字母和數字。";
 "auth.error.codeRequired" = "請輸入啟用碼。";
+"auth.error.resetCodeRequired" = "請輸入重設碼。";
 "auth.error.unknown" = "發生了未知錯誤。";
 "auth.error.invalidResponse" = "伺服器回應無效。";
 "auth.error.unauthorized" = "登入已過期，請重新登入。";
@@ -811,5 +827,12 @@
 "auth.account.logout" = "登出";
 "auth.account.providerEmail" = "電子郵件與密碼";
 "auth.account.signIn" = "登入帳號";
+"auth.account.passwordSection" = "密碼管理";
+"auth.account.currentPassword" = "目前密碼";
+"auth.account.newPassword" = "新密碼";
+"auth.account.confirmNewPassword" = "確認新密碼";
+"auth.account.changePassword" = "修改密碼";
+"auth.account.passwordHint" = "修改密碼後，目前裝置需要重新登入。";
+"auth.account.passwordChanged" = "密碼已更新，請重新登入。";
 "auth.account.signedOutTitle" = "尚未登入";
 "auth.account.signedOutSubtitle" = "登入後即可查看帳號資訊並管理目前工作階段。";

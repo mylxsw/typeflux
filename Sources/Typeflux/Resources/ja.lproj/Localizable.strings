@@ -784,6 +784,16 @@
 "auth.login.signIn" = "サインイン";
 "auth.login.createAccount" = "アカウント作成";
 "auth.login.activate" = "アクティベート";
+"auth.login.forgotPassword" = "パスワードをお忘れですか";
+"auth.login.sendResetCode" = "リセットコードを送信";
+"auth.login.resetPassword" = "パスワードをリセット";
+"auth.login.alreadyHaveResetCode" = "すでにリセットコードを持っています";
+"auth.login.resendActivation" = "コードが届きませんか？ 再送する";
+"auth.login.resendActivationCountdown" = "%d 秒後に再送できます";
+"auth.login.forgotPasswordHint" = "%@ にリセットコードを送信します。";
+"auth.login.activationCodeSent" = "アクティベーションコードを送信しました。メールを確認してください。";
+"auth.login.activationCodeResent" = "新しいアクティベーションコードを送信しました。";
+"auth.login.resetCodeSent" = "パスワードリセットコードを送信しました。メールを確認してください。";
 "auth.login.back" = "戻る";
 "auth.login.activateHint" = "%@ にアクティベーションコードを送信しました。下に入力してください。";
 
@@ -792,12 +802,18 @@
 "auth.field.confirmPassword" = "パスワード確認";
 "auth.field.name" = "名前（任意）";
 "auth.field.activationCode" = "アクティベーションコード";
+"auth.field.resetCode" = "リセットコード";
+"auth.field.newPassword" = "新しいパスワード";
+"auth.field.confirmNewPassword" = "新しいパスワードを確認";
 
 "auth.error.emailRequired" = "メールアドレスを入力してください。";
 "auth.error.passwordRequired" = "パスワードを入力してください。";
+"auth.error.currentPasswordRequired" = "現在のパスワードを入力してください。";
 "auth.error.passwordMismatch" = "パスワードが一致しません。";
 "auth.error.passwordTooShort" = "パスワードは8文字以上必要です。";
+"auth.error.passwordTooWeak" = "パスワードには大文字・小文字・数字を含めてください。";
 "auth.error.codeRequired" = "アクティベーションコードを入力してください。";
+"auth.error.resetCodeRequired" = "リセットコードを入力してください。";
 "auth.error.unknown" = "不明なエラーが発生しました。";
 "auth.error.invalidResponse" = "サーバーの応答が無効です。";
 "auth.error.unauthorized" = "セッションが期限切れです。再度サインインしてください。";
@@ -807,5 +823,12 @@
 "auth.account.logout" = "サインアウト";
 "auth.account.providerEmail" = "メールとパスワード";
 "auth.account.signIn" = "サインイン";
+"auth.account.passwordSection" = "パスワード管理";
+"auth.account.currentPassword" = "現在のパスワード";
+"auth.account.newPassword" = "新しいパスワード";
+"auth.account.confirmNewPassword" = "新しいパスワードを確認";
+"auth.account.changePassword" = "パスワードを変更";
+"auth.account.passwordHint" = "パスワードを変更すると、この端末では再ログインが必要になります。";
+"auth.account.passwordChanged" = "パスワードを更新しました。再度サインインしてください。";
 "auth.account.signedOutTitle" = "未サインイン";
 "auth.account.signedOutSubtitle" = "サインインすると、アカウント情報の確認と現在のセッション管理ができます。";

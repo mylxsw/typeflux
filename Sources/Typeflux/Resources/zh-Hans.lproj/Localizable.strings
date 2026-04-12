@@ -790,6 +790,16 @@
 "auth.login.signIn" = "登录";
 "auth.login.createAccount" = "创建账号";
 "auth.login.activate" = "激活";
+"auth.login.forgotPassword" = "忘记密码";
+"auth.login.sendResetCode" = "发送重置码";
+"auth.login.resetPassword" = "重置密码";
+"auth.login.alreadyHaveResetCode" = "我已经有重置码了";
+"auth.login.resendActivation" = "没有收到激活码，重新发送";
+"auth.login.resendActivationCountdown" = "%d 秒后可重新发送";
+"auth.login.forgotPasswordHint" = "我们会向 %@ 发送密码重置码。";
+"auth.login.activationCodeSent" = "激活码已发送，请查收邮箱。";
+"auth.login.activationCodeResent" = "新的激活码已发送，请查收邮箱。";
+"auth.login.resetCodeSent" = "密码重置码已发送，请查收邮箱。";
 "auth.login.back" = "返回";
 "auth.login.activateHint" = "我们已向 %@ 发送了激活码，请在下方输入。";
 
@@ -798,12 +808,18 @@
 "auth.field.confirmPassword" = "确认密码";
 "auth.field.name" = "姓名（可选）";
 "auth.field.activationCode" = "激活码";
+"auth.field.resetCode" = "重置码";
+"auth.field.newPassword" = "新密码";
+"auth.field.confirmNewPassword" = "确认新密码";
 
 "auth.error.emailRequired" = "请输入邮箱地址。";
 "auth.error.passwordRequired" = "请输入密码。";
+"auth.error.currentPasswordRequired" = "请输入当前密码。";
 "auth.error.passwordMismatch" = "两次密码输入不一致。";
 "auth.error.passwordTooShort" = "密码至少需要 8 个字符。";
+"auth.error.passwordTooWeak" = "密码必须包含大写字母、小写字母和数字。";
 "auth.error.codeRequired" = "请输入激活码。";
+"auth.error.resetCodeRequired" = "请输入重置码。";
 "auth.error.unknown" = "发生了未知错误。";
 "auth.error.invalidResponse" = "服务器响应无效。";
 "auth.error.unauthorized" = "登录已过期，请重新登录。";
@@ -813,5 +829,12 @@
 "auth.account.logout" = "退出";
 "auth.account.providerEmail" = "邮箱与密码";
 "auth.account.signIn" = "登录账号";
+"auth.account.passwordSection" = "密码管理";
+"auth.account.currentPassword" = "当前密码";
+"auth.account.newPassword" = "新密码";
+"auth.account.confirmNewPassword" = "确认新密码";
+"auth.account.changePassword" = "修改密码";
+"auth.account.passwordHint" = "修改密码后，当前设备需要重新登录。";
+"auth.account.passwordChanged" = "密码已更新，请重新登录。";
 "auth.account.signedOutTitle" = "尚未登录";
 "auth.account.signedOutSubtitle" = "登录后可查看账号信息并管理当前会话。";

@@ -22,8 +22,34 @@ struct AuthAPIService {
         try await post(path: "/api/v1/auth/activate", body: ActivateRequest(email: email, code: code))
     }
 
+    static func resendActivation(email: String, password: String) async throws -> ResendActivationResponse {
+        try await post(
+            path: "/api/v1/auth/resend-activation",
+            body: ResendActivationRequest(email: email, password: password),
+        )
+    }
+
     static func login(email: String, password: String) async throws -> LoginResponse {
         try await post(path: "/api/v1/auth/login", body: LoginRequest(email: email, password: password))
+    }
+
+    static func forgotPassword(email: String) async throws -> ForgotPasswordResponse {
+        try await post(path: "/api/v1/auth/forgot-password", body: ForgotPasswordRequest(email: email))
+    }
+
+    static func resetPassword(email: String, code: String, newPassword: String) async throws -> ResetPasswordResponse {
+        try await post(
+            path: "/api/v1/auth/reset-password",
+            body: ResetPasswordRequest(email: email, code: code, newPassword: newPassword),
+        )
+    }
+
+    static func changePassword(token: String, oldPassword: String, newPassword: String) async throws -> ChangePasswordResponse {
+        try await post(
+            path: "/api/v1/auth/change-password",
+            body: ChangePasswordRequest(oldPassword: oldPassword, newPassword: newPassword),
+            token: token,
+        )
     }
 
     static func fetchProfile(token: String) async throws -> UserProfile {

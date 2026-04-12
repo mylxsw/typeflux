@@ -11,6 +11,8 @@ struct LoginView: View {
         case login
         case register
         case activate
+        case forgotPassword
+        case resetPassword
     }
 
     @StateObject private var authState = AuthState.shared
@@ -20,14 +22,21 @@ struct LoginView: View {
     @State private var confirmPassword = ""
     @State private var name = ""
     @State private var activationCode = ""
+    @State private var resetCode = ""
+    @State private var resetPassword = ""
+    @State private var resetPasswordConfirmation = ""
     @State private var hasAcceptedPolicies = false
+    @State private var statusMessage: String?
     @State private var errorMessage: String?
     @State private var isLoading = false
+    @State private var previousStepBeforeActivate: Step = .register
+    @State private var resendCooldownRemaining = 0
     @ObservedObject private var localization = AppLocalization.shared
     @Environment(\.colorScheme) private var colorScheme
 
     private let privacyURL = URL(string: "https://typeflux.gulu.ai/privacy")!
     private let termsURL = URL(string: "https://typeflux.gulu.ai/terms")!
+    private let resendTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     let presentationStyle: PresentationStyle
     let onDismiss: () -> Void
@@ -50,6 +59,10 @@ struct LoginView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: step)
+        .onReceive(resendTimer) { _ in
+            guard resendCooldownRemaining > 0 else { return }
+            resendCooldownRemaining -= 1
+        }
     }
 
     private var cardBody: some View {
@@ -142,6 +155,19 @@ struct LoginView: View {
                 registerForm
             case .activate:
                 activateForm
+            case .forgotPassword:
+                forgotPasswordForm
+            case .resetPassword:
+                resetPasswordForm
+            }
+
+            if let statusMessage {
+                Text(statusMessage)
+                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .foregroundStyle(StudioTheme.accent)
+                    .frame(maxWidth: .infinity, alignment: formContentAlignment)
+                    .multilineTextAlignment(presentationStyle == .card ? .center : .leading)
+                    .transition(.opacity)
             }
 
             if let errorMessage {
@@ -189,8 +215,6 @@ struct LoginView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Enter Email Form
-
     private var enterEmailForm: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
             LoginTextField(
@@ -210,8 +234,6 @@ struct LoginView: View {
         }
     }
 
-    // MARK: - Login Form
-
     private var loginForm: some View {
         VStack(spacing: StudioTheme.Spacing.medium) {
             LoginTextField(
@@ -229,10 +251,16 @@ struct LoginView: View {
             )
 
             loginButton(title: L("auth.login.signIn"), action: performLogin)
+
+            Button(action: openForgotPassword) {
+                Text(L("auth.login.forgotPassword"))
+                    .font(.studioBody(StudioTheme.Typography.caption, weight: .medium))
+                    .foregroundStyle(StudioTheme.accent)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .buttonStyle(.plain)
         }
     }
-
-    // MARK: - Register Form
 
     private var registerForm: some View {
         VStack(spacing: StudioTheme.Spacing.medium) {
@@ -267,8 +295,6 @@ struct LoginView: View {
         }
     }
 
-    // MARK: - Activate Form
-
     private var activateForm: some View {
         VStack(spacing: StudioTheme.Spacing.medium) {
             Text(L("auth.login.activateHint", email))
@@ -283,10 +309,81 @@ struct LoginView: View {
             )
 
             loginButton(title: L("auth.login.activate"), action: performActivate)
+
+            Button(action: resendActivationCode) {
+                Text(resendActivationButtonTitle)
+                    .font(.studioBody(StudioTheme.Typography.caption, weight: .medium))
+                    .foregroundStyle(resendCooldownRemaining > 0 ? StudioTheme.textTertiary : StudioTheme.accent)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .buttonStyle(.plain)
+            .disabled(isLoading || resendCooldownRemaining > 0)
         }
     }
 
-    // MARK: - Shared Button
+    private var forgotPasswordForm: some View {
+        VStack(spacing: StudioTheme.Spacing.medium) {
+            Text(L("auth.login.forgotPasswordHint", email))
+                .font(.studioBody(StudioTheme.Typography.caption))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .multilineTextAlignment(.center)
+
+            LoginTextField(
+                placeholder: L("auth.field.email"),
+                text: .constant(email),
+                icon: "envelope",
+                isDisabled: true,
+            )
+
+            loginButton(title: L("auth.login.sendResetCode"), action: performForgotPassword)
+
+            Button {
+                clearMessages()
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    step = .resetPassword
+                }
+            } label: {
+                Text(L("auth.login.alreadyHaveResetCode"))
+                    .font(.studioBody(StudioTheme.Typography.caption, weight: .medium))
+                    .foregroundStyle(StudioTheme.accent)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var resetPasswordForm: some View {
+        VStack(spacing: StudioTheme.Spacing.medium) {
+            LoginTextField(
+                placeholder: L("auth.field.email"),
+                text: .constant(email),
+                icon: "envelope",
+                isDisabled: true,
+            )
+
+            LoginTextField(
+                placeholder: L("auth.field.resetCode"),
+                text: $resetCode,
+                icon: "key",
+            )
+
+            LoginTextField(
+                placeholder: L("auth.field.newPassword"),
+                text: $resetPassword,
+                icon: "lock",
+                isSecure: true,
+            )
+
+            LoginTextField(
+                placeholder: L("auth.field.confirmNewPassword"),
+                text: $resetPasswordConfirmation,
+                icon: "lock.rotation",
+                isSecure: true,
+            )
+
+            loginButton(title: L("auth.login.resetPassword"), action: performResetPassword)
+        }
+    }
 
     private func loginButton(title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -305,11 +402,11 @@ struct LoginView: View {
             .foregroundStyle(buttonTextColor)
             .background(
                 RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                    .fill(buttonFillColor),
+                    .fill(buttonFillColor)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                    .stroke(buttonStrokeColor, lineWidth: buttonStrokeWidth),
+                    .stroke(buttonStrokeColor, lineWidth: buttonStrokeWidth)
             )
         }
         .buttonStyle(.plain)
@@ -354,9 +451,7 @@ struct LoginView: View {
 
     private var maxWidth: CGFloat {
         switch presentationStyle {
-        case .card:
-            460
-        case .plain:
+        case .card, .plain:
             460
         }
     }
@@ -383,9 +478,7 @@ struct LoginView: View {
     }
 
     private var loginCardSurface: Color {
-        colorScheme == .dark
-            ? Color.white.opacity(0.045)
-            : StudioTheme.surface
+        colorScheme == .dark ? Color.white.opacity(0.045) : StudioTheme.surface
     }
 
     private var loginCardStroke: Color {
@@ -506,20 +599,7 @@ struct LoginView: View {
 
     private var plainHeaderTitle: String {
         switch step {
-        case .enterEmail:
-            switch localization.language {
-            case .simplifiedChinese:
-                "欢迎回来"
-            case .traditionalChinese:
-                "歡迎回來"
-            case .japanese:
-                "お帰りなさい"
-            case .korean:
-                "다시 오신 것을 환영합니다"
-            case .english:
-                "Welcome Back"
-            }
-        case .login:
+        case .enterEmail, .login:
             switch localization.language {
             case .simplifiedChinese:
                 "欢迎回来"
@@ -547,12 +627,16 @@ struct LoginView: View {
             }
         case .activate:
             L("auth.login.activate")
+        case .forgotPassword:
+            L("auth.login.forgotPassword")
+        case .resetPassword:
+            L("auth.login.resetPassword")
         }
     }
 
     private var plainHeaderSubtitle: String? {
         switch step {
-        case .enterEmail:
+        case .enterEmail, .login:
             switch localization.language {
             case .simplifiedChinese:
                 "登录后即可使用 Typeflux Cloud 提供的语音识别和模型推理服务"
@@ -565,22 +649,17 @@ struct LoginView: View {
             case .english:
                 "Sign in to use Typeflux Cloud speech recognition and model inference services."
             }
-        case .login:
-            switch localization.language {
-            case .simplifiedChinese:
-                "登录后即可使用 Typeflux Cloud 提供的语音识别和模型推理服务"
-            case .traditionalChinese:
-                "登入後即可使用 Typeflux Cloud 提供的語音辨識和模型推理服務"
-            case .japanese:
-                "サインインすると、Typeflux Cloud の音声認識とモデル推論サービスを利用できます"
-            case .korean:
-                "로그인하면 Typeflux Cloud가 제공하는 음성 인식 및 모델 추론 서비스를 사용할 수 있습니다"
-            case .english:
-                "Sign in to use Typeflux Cloud speech recognition and model inference services."
-            }
-        case .register, .activate:
+        case .register, .activate, .forgotPassword, .resetPassword:
             nil
         }
+    }
+
+    private var resendActivationButtonTitle: String {
+        if resendCooldownRemaining > 0 {
+            return L("auth.login.resendActivationCountdown", resendCooldownRemaining)
+        }
+
+        return L("auth.login.resendActivation")
     }
 
     private var brandEyebrowColor: Color {
@@ -645,14 +724,12 @@ struct LoginView: View {
         }
     }
 
-    // MARK: - Actions
-
     private func checkEmail() {
         guard !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             errorMessage = L("auth.error.emailRequired")
             return
         }
-        errorMessage = nil
+        clearMessages()
         isLoading = true
 
         Task {
@@ -674,21 +751,26 @@ struct LoginView: View {
             errorMessage = L("auth.error.passwordRequired")
             return
         }
-        errorMessage = nil
+        clearMessages()
         isLoading = true
 
         Task {
             do {
                 let response = try await AuthAPIService.login(
                     email: email.trimmingCharacters(in: .whitespacesAndNewlines),
-                    password: password,
+                    password: password
                 )
-                await authState.handleLoginSuccess(token: response.accessToken, expiresAt: response.expiresAt, refreshToken: response.refreshToken)
+                await authState.handleLoginSuccess(
+                    token: response.accessToken,
+                    expiresAt: response.expiresAt,
+                    refreshToken: response.refreshToken
+                )
                 isLoading = false
                 onDismiss()
             } catch let error as AuthError {
                 isLoading = false
                 if error.authErrorCode == "AUTH_USER_NOT_ACTIVE" {
+                    previousStepBeforeActivate = .login
                     withAnimation(.easeInOut(duration: 0.2)) {
                         step = .activate
                     }
@@ -703,19 +785,15 @@ struct LoginView: View {
     }
 
     private func performRegister() {
-        guard !password.isEmpty else {
-            errorMessage = L("auth.error.passwordRequired")
+        if let validationError = validatePasswordInput(password) {
+            errorMessage = validationError
             return
         }
         guard password == confirmPassword else {
             errorMessage = L("auth.error.passwordMismatch")
             return
         }
-        guard password.count >= 8 else {
-            errorMessage = L("auth.error.passwordTooShort")
-            return
-        }
-        errorMessage = nil
+        clearMessages()
         isLoading = true
 
         Task {
@@ -723,9 +801,12 @@ struct LoginView: View {
                 _ = try await AuthAPIService.register(
                     email: email.trimmingCharacters(in: .whitespacesAndNewlines),
                     password: password,
-                    name: name.isEmpty ? nil : name,
+                    name: name.isEmpty ? nil : name
                 )
                 isLoading = false
+                statusMessage = L("auth.login.activationCodeSent")
+                resendCooldownRemaining = 60
+                previousStepBeforeActivate = .register
                 withAnimation(.easeInOut(duration: 0.2)) {
                     step = .activate
                 }
@@ -737,23 +818,22 @@ struct LoginView: View {
     }
 
     private func performActivate() {
-        guard !activationCode.isEmpty else {
+        guard !activationCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             errorMessage = L("auth.error.codeRequired")
             return
         }
-        errorMessage = nil
+        clearMessages()
         isLoading = true
 
         Task {
             do {
                 _ = try await AuthAPIService.activate(
                     email: email.trimmingCharacters(in: .whitespacesAndNewlines),
-                    code: activationCode.trimmingCharacters(in: .whitespacesAndNewlines),
+                    code: activationCode.trimmingCharacters(in: .whitespacesAndNewlines)
                 )
-                // Auto-login after activation
                 let loginResponse = try await AuthAPIService.login(
                     email: email.trimmingCharacters(in: .whitespacesAndNewlines),
-                    password: password,
+                    password: password
                 )
                 await authState.handleLoginSuccess(
                     token: loginResponse.accessToken,
@@ -769,8 +849,118 @@ struct LoginView: View {
         }
     }
 
-    private func goBack() {
+    private func resendActivationCode() {
+        guard resendCooldownRemaining == 0 else { return }
+        clearMessages()
+        isLoading = true
+
+        Task {
+            do {
+                _ = try await AuthAPIService.resendActivation(
+                    email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                    password: password
+                )
+                isLoading = false
+                statusMessage = L("auth.login.activationCodeResent")
+                resendCooldownRemaining = 60
+            } catch {
+                isLoading = false
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func openForgotPassword() {
+        clearMessages()
+        withAnimation(.easeInOut(duration: 0.2)) {
+            step = .forgotPassword
+        }
+    }
+
+    private func performForgotPassword() {
+        clearMessages()
+        isLoading = true
+
+        Task {
+            do {
+                _ = try await AuthAPIService.forgotPassword(email: email.trimmingCharacters(in: .whitespacesAndNewlines))
+                isLoading = false
+                statusMessage = L("auth.login.resetCodeSent")
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    step = .resetPassword
+                }
+            } catch {
+                isLoading = false
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func performResetPassword() {
+        guard !resetCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            errorMessage = L("auth.error.resetCodeRequired")
+            return
+        }
+        if let validationError = validatePasswordInput(resetPassword) {
+            errorMessage = validationError
+            return
+        }
+        guard resetPassword == resetPasswordConfirmation else {
+            errorMessage = L("auth.error.passwordMismatch")
+            return
+        }
+        clearMessages()
+        isLoading = true
+
+        Task {
+            do {
+                _ = try await AuthAPIService.resetPassword(
+                    email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                    code: resetCode.trimmingCharacters(in: .whitespacesAndNewlines),
+                    newPassword: resetPassword
+                )
+                let loginResponse = try await AuthAPIService.login(
+                    email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                    password: resetPassword
+                )
+                await authState.handleLoginSuccess(
+                    token: loginResponse.accessToken,
+                    expiresAt: loginResponse.expiresAt,
+                    refreshToken: loginResponse.refreshToken
+                )
+                isLoading = false
+                onDismiss()
+            } catch {
+                isLoading = false
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func validatePasswordInput(_ candidate: String) -> String? {
+        guard !candidate.isEmpty else {
+            return L("auth.error.passwordRequired")
+        }
+        guard candidate.count >= 8 else {
+            return L("auth.error.passwordTooShort")
+        }
+        let hasUppercase = candidate.rangeOfCharacter(from: .uppercaseLetters) != nil
+        let hasLowercase = candidate.rangeOfCharacter(from: .lowercaseLetters) != nil
+        let hasDigit = candidate.rangeOfCharacter(from: .decimalDigits) != nil
+        guard hasUppercase, hasLowercase, hasDigit else {
+            return L("auth.error.passwordTooWeak")
+        }
+
+        return nil
+    }
+
+    private func clearMessages() {
+        statusMessage = nil
         errorMessage = nil
+    }
+
+    private func goBack() {
+        clearMessages()
         switch step {
         case .enterEmail:
             break
@@ -780,12 +970,18 @@ struct LoginView: View {
             step = .enterEmail
         case .activate:
             activationCode = ""
-            step = .register
+            resendCooldownRemaining = 0
+            step = previousStepBeforeActivate
+        case .forgotPassword:
+            step = .login
+        case .resetPassword:
+            resetCode = ""
+            resetPassword = ""
+            resetPasswordConfirmation = ""
+            step = .forgotPassword
         }
     }
 }
-
-// MARK: - Login Text Field
 
 private struct LoginTextField: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -818,11 +1014,11 @@ private struct LoginTextField: View {
         .frame(height: 46)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                .fill(fieldBackgroundColor),
+                .fill(fieldBackgroundColor)
         )
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                .stroke(fieldBorderColor, lineWidth: StudioTheme.BorderWidth.thin),
+                .stroke(fieldBorderColor, lineWidth: StudioTheme.BorderWidth.thin)
         )
         .shadow(color: fieldShadowColor, radius: fieldShadowRadius, x: 0, y: fieldShadowY)
         .opacity(isDisabled ? 0.6 : 1)

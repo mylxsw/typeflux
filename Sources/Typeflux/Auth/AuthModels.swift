@@ -43,6 +43,15 @@ struct ActivateResponse: Decodable {
     let activated: Bool
 }
 
+struct ResendActivationRequest: Encodable {
+    let email: String
+    let password: String
+}
+
+struct ResendActivationResponse: Decodable {
+    let sent: Bool
+}
+
 // MARK: - Login
 
 struct LoginRequest: Encodable {
@@ -60,6 +69,45 @@ struct LoginResponse: Decodable {
         case expiresAt = "expires_at"
         case refreshToken = "refresh_token"
     }
+}
+
+// MARK: - Password Reset
+
+struct ForgotPasswordRequest: Encodable {
+    let email: String
+}
+
+struct ForgotPasswordResponse: Decodable {
+    let sent: Bool
+}
+
+struct ResetPasswordRequest: Encodable {
+    let email: String
+    let code: String
+    let newPassword: String
+
+    enum CodingKeys: String, CodingKey {
+        case email, code
+        case newPassword = "new_password"
+    }
+}
+
+struct ResetPasswordResponse: Decodable {
+    let reset: Bool
+}
+
+struct ChangePasswordRequest: Encodable {
+    let oldPassword: String
+    let newPassword: String
+
+    enum CodingKeys: String, CodingKey {
+        case oldPassword = "old_password"
+        case newPassword = "new_password"
+    }
+}
+
+struct ChangePasswordResponse: Decodable {
+    let changed: Bool
 }
 
 // MARK: - Refresh Token
