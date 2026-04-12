@@ -644,7 +644,8 @@
 "onboarding.language.title" = "Choose your language";
 "onboarding.language.subtitle" = "Select the display language for the Typeflux interface.";
 "onboarding.account.title" = "Sign in to Typeflux Cloud";
-"onboarding.account.subtitle" = "Sign in once to use your own Typeflux Cloud speech and language models. Or skip for now and configure providers manually.";
+"onboarding.account.subtitle" = "Sign in to use your own Typeflux Cloud speech and language models.";
+"onboarding.account.cloudReady" = "Speech recognition and language model services ready — no extra API keys needed.";
 
 "onboarding.models.title" = "Set up your models";
 "onboarding.models.subtitle" = "Pick a voice recognizer and a language model. You can change these anytime in Settings.";

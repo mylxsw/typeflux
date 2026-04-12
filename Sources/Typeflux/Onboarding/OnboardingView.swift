@@ -274,17 +274,13 @@ struct OnboardingView: View {
                     Spacer()
                 }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(L("settings.models.card.typefluxOfficial.summary"))
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(StudioTheme.accent)
+                    Text(L("onboarding.account.cloudReady"))
                         .font(.studioBody(12))
                         .foregroundStyle(onboardingSecondaryText)
-                    Text(L("settings.models.card.typefluxCloud.summary"))
-                        .font(.studioBody(12))
-                        .foregroundStyle(onboardingSecondaryText)
-                }
-
-                footerPrimaryButton(title: L("onboarding.action.continue")) {
-                    viewModel.useCloudAccountModelsAndContinue()
                 }
             }
         }
@@ -1608,7 +1604,13 @@ struct OnboardingView: View {
                 }
             }
 
-            if viewModel.currentStep != .account {
+            if viewModel.currentStep == .account {
+                if authState.isLoggedIn {
+                    footerPrimaryButton(title: L("onboarding.action.continue")) {
+                        viewModel.useCloudAccountModelsAndContinue()
+                    }
+                }
+            } else {
                 footerPrimaryButton(
                     title: viewModel.isLastStep ? L("onboarding.action.getStarted") : L("onboarding.action.continue"),
                 ) {

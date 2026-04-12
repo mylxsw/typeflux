@@ -642,7 +642,8 @@
 "onboarding.language.title" = "選擇語言";
 "onboarding.language.subtitle" = "選擇 Typeflux 介面的顯示語言。";
 "onboarding.account.title" = "登入 Typeflux Cloud";
-"onboarding.account.subtitle" = "登入後即可使用你自己帳號下的 Typeflux Cloud 語音與語言模型。你也可以先略過，稍後手動設定模型提供者。";
+"onboarding.account.subtitle" = "登入後即可使用你自己帳號下的 Typeflux Cloud 語音與語言模型。";
+"onboarding.account.cloudReady" = "語音辨識與大語言模型服務已就緒，無需額外設定 API 金鑰。";
 
 "onboarding.models.title" = "設定模型";
 "onboarding.models.subtitle" = "選擇語音辨識引擎和語言模型，稍後可在設定中隨時更改。";
