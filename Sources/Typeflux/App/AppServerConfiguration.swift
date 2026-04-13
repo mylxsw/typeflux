@@ -2,7 +2,7 @@ import Foundation
 
 enum AppServerConfiguration {
     private static let defaultBaseURL = "https://typeflux.gulu.ai"
-    private static let defaultGoogleOAuthClientID = "567492048493-35tbcha1ofbuku73jh1r8q9jn0fgl010.apps.googleusercontent.com"
+    private static let defaultGoogleOAuthClientID = "567492048493-bh84p3mfjfjimsfvga7pil3cc373d389.apps.googleusercontent.com"
 
     static var apiBaseURL: String {
         ProcessInfo.processInfo.environment["TYPEFLUX_API_URL"] ?? defaultBaseURL
