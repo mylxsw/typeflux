@@ -2,6 +2,7 @@ import AppKit
 import AuthenticationServices
 import CryptoKit
 import Foundation
+import os
 
 /// Handles the Google OAuth 2.0 + PKCE flow using ASWebAuthenticationSession.
 ///
@@ -19,6 +20,7 @@ import Foundation
 ///   clients automatically allow the reverse-client-ID scheme redirect.
 @MainActor
 struct GoogleOAuthService {
+    private static let logger = Logger(subsystem: "dev.typeflux", category: "GoogleOAuthService")
     /// Initiates the Google sign-in flow and returns a Google ID token on success.
     ///
     /// - Parameters:
@@ -42,7 +44,9 @@ struct GoogleOAuthService {
             URLQueryItem(name: "state", value: state),
         ]
 
+        logger.debug("[Google OAuth] auth URL: \(components.url!.absoluteString, privacy: .public)")
         let code = try await openAuthSession(url: components.url!, scheme: scheme, expectedState: state)
+        logger.debug("[Google OAuth] received code (first 12 chars): \(String(code.prefix(12)), privacy: .public)...")
         return try await exchangeCodeForIDToken(
             code: code,
             codeVerifier: codeVerifier,
@@ -126,12 +130,23 @@ struct GoogleOAuthService {
         if let secret = clientSecret, !secret.isEmpty {
             params["client_secret"] = secret
         }
-        request.httpBody = params
+        let bodyString = params
             .map { "\($0.key)=\(formEncode($0.value))" }
             .joined(separator: "&")
-            .data(using: .utf8)
+        request.httpBody = bodyString.data(using: .utf8)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        // Log the full request body (mask secret if present)
+        let logBody = bodyString.replacingOccurrences(
+            of: #"client_secret=[^&]+"#,
+            with: "client_secret=***",
+            options: .regularExpression
+        )
+        logger.debug("[Google OAuth] token request body: \(logBody, privacy: .public)")
+
+        let (data, urlResponse) = try await URLSession.shared.data(for: request)
+        let statusCode = (urlResponse as? HTTPURLResponse)?.statusCode ?? -1
+        let rawResponse = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+        logger.debug("[Google OAuth] token response [\(statusCode, privacy: .public)]: \(rawResponse, privacy: .public)")
 
         struct TokenResponse: Decodable {
             let idToken: String?
