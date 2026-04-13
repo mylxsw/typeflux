@@ -15,15 +15,14 @@ import Foundation
 /// Configuration:
 /// - Set `GOOGLE_OAUTH_CLIENT_ID` in the environment (or via AppServerConfiguration)
 ///   to a Desktop-type OAuth 2.0 client ID from Google Cloud Console.
-/// - Register the redirect URI `typeflux-auth://oauth-callback/google` in the
-///   Google Cloud Console for that client ID.
+/// - No redirect URI registration is needed in Google Cloud Console — Desktop app
+///   clients automatically allow the reverse-client-ID scheme redirect.
 @MainActor
 struct GoogleOAuthService {
-    private static let callbackScheme = "typeflux-auth"
-    private static let redirectURI = "typeflux-auth://oauth-callback/google"
-
     /// Initiates the Google sign-in flow and returns a Google ID token on success.
     static func signIn(clientID: String) async throws -> String {
+        let scheme = reverseScheme(for: clientID)
+        let redirectURI = "\(scheme):/"
         let (codeVerifier, codeChallenge) = makePKCE()
         let state = UUID().uuidString
 
@@ -38,17 +37,44 @@ struct GoogleOAuthService {
             URLQueryItem(name: "state", value: state),
         ]
 
-        let code = try await openAuthSession(url: components.url!, expectedState: state)
-        return try await exchangeCodeForIDToken(code: code, codeVerifier: codeVerifier, clientID: clientID)
+        let code = try await openAuthSession(url: components.url!, scheme: scheme, expectedState: state)
+        return try await exchangeCodeForIDToken(
+            code: code,
+            codeVerifier: codeVerifier,
+            clientID: clientID,
+            redirectURI: redirectURI
+        )
     }
 
     // MARK: - Private
 
-    private static func openAuthSession(url: URL, expectedState: String) async throws -> String {
+    /// Derives the reverse-DNS URL scheme from a Google client ID.
+    ///
+    /// Google Desktop app clients automatically accept redirects using the scheme
+    /// derived by reversing the client ID domain components. For example:
+    ///   `123456789-abc.apps.googleusercontent.com`
+    ///   → `com.googleusercontent.apps.123456789-abc`
+    ///
+    /// No manual registration in Google Cloud Console is required.
+    private static func reverseScheme(for clientID: String) -> String {
+        let suffix = ".apps.googleusercontent.com"
+        if clientID.hasSuffix(suffix) {
+            let prefix = clientID.dropLast(suffix.count)
+            return "com.googleusercontent.apps.\(prefix)"
+        }
+        // Fallback: reverse the dot-separated components
+        return clientID.split(separator: ".").reversed().joined(separator: ".")
+    }
+
+    private static func openAuthSession(
+        url: URL,
+        scheme: String,
+        expectedState: String
+    ) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             let session = ASWebAuthenticationSession(
                 url: url,
-                callbackURLScheme: callbackScheme
+                callbackURLScheme: scheme
             ) { callbackURL, error in
                 if let error {
                     continuation.resume(throwing: error)
@@ -74,7 +100,8 @@ struct GoogleOAuthService {
     private static func exchangeCodeForIDToken(
         code: String,
         codeVerifier: String,
-        clientID: String
+        clientID: String,
+        redirectURI: String
     ) async throws -> String {
         var request = URLRequest(url: URL(string: "https://oauth2.googleapis.com/token")!)
         request.httpMethod = "POST"
