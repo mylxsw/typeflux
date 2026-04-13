@@ -134,6 +134,8 @@ struct AuthAPIService {
         }
 
         if httpResponse.statusCode == 401 {
+            let raw = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+            logger.error("[\(request.url?.path ?? "?", privacy: .public)] 401 body: \(raw, privacy: .public)")
             throw AuthError.unauthorized
         }
 
@@ -141,6 +143,8 @@ struct AuthAPIService {
               envelope.code == "OK",
               let responseData = envelope.data
         else {
+            let raw = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+            logger.error("[\(request.url?.path ?? "?", privacy: .public)] \(httpResponse.statusCode, privacy: .public) body: \(raw, privacy: .public)")
             throw AuthError.serverError(
                 code: envelope.code,
                 message: envelope.message,
