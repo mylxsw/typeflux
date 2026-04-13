@@ -46,6 +46,7 @@ final class SettingsWindowController: NSObject {
         if let window {
             viewModel?.navigate(to: initialSection)
             refreshAppearance()
+            DockVisibilityController.shared.windowDidShow(window)
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             AuthState.shared.refreshProfileIfNeeded()
@@ -91,6 +92,7 @@ final class SettingsWindowController: NSObject {
 
         self.viewModel = viewModel
         self.window = window
+        DockVisibilityController.shared.windowDidShow(window)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         AuthState.shared.refreshProfileIfNeeded()
@@ -104,6 +106,9 @@ final class SettingsWindowController: NSObject {
 
 extension SettingsWindowController: NSWindowDelegate {
     func windowWillClose(_: Notification) {
+        if let window {
+            DockVisibilityController.shared.windowDidHide(window)
+        }
         window = nil
         viewModel = nil
     }

@@ -137,6 +137,7 @@ final class AgentJobsWindowController: NSObject {
         if !window.isVisible {
             window.center()
         }
+        DockVisibilityController.shared.windowDidShow(window)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -179,11 +180,15 @@ final class AgentJobsWindowController: NSObject {
 
 extension AgentJobsWindowController: NSWindowDelegate {
     func windowWillClose(_: Notification) {
+        if let window {
+            DockVisibilityController.shared.windowDidHide(window)
+        }
         window?.orderOut(nil)
     }
 
-    func windowShouldClose(_: NSWindow) -> Bool {
-        window?.orderOut(nil)
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        DockVisibilityController.shared.windowDidHide(sender)
+        sender.orderOut(nil)
         return false
     }
 }

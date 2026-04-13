@@ -27,6 +27,7 @@ final class LoginWindowController: NSObject {
 
     func show() {
         if let window {
+            DockVisibilityController.shared.windowDidShow(window)
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -66,6 +67,7 @@ final class LoginWindowController: NSObject {
 
         hostingView = hosting
         self.window = window
+        DockVisibilityController.shared.windowDidShow(window)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -73,6 +75,9 @@ final class LoginWindowController: NSObject {
 
 extension LoginWindowController: NSWindowDelegate {
     func windowWillClose(_: Notification) {
+        if let window {
+            DockVisibilityController.shared.windowDidHide(window)
+        }
         window = nil
         hostingView = nil
     }

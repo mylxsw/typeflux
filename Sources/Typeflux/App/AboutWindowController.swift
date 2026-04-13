@@ -44,6 +44,7 @@ final class AboutWindowController: NSObject {
         if let window {
             hostingView?.rootView = rootView
             applyAppearance(to: window)
+            DockVisibilityController.shared.windowDidShow(window)
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -70,6 +71,7 @@ final class AboutWindowController: NSObject {
 
         hostingView = hosting
         self.window = window
+        DockVisibilityController.shared.windowDidShow(window)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -81,6 +83,9 @@ final class AboutWindowController: NSObject {
 
 extension AboutWindowController: NSWindowDelegate {
     func windowWillClose(_: Notification) {
+        if let window {
+            DockVisibilityController.shared.windowDidHide(window)
+        }
         window = nil
         hostingView = nil
     }

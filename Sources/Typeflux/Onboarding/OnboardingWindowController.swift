@@ -11,12 +11,16 @@ final class OnboardingWindowController: NSObject {
     private var onCompleteHandler: (() -> Void)?
 
     func bringToFront() {
-        window?.makeKeyAndOrderFront(nil)
+        if let window {
+            DockVisibilityController.shared.windowDidShow(window)
+            window.makeKeyAndOrderFront(nil)
+        }
         NSApp.activate(ignoringOtherApps: true)
     }
 
     func show(settingsStore: SettingsStore, onComplete: @escaping () -> Void) {
         if let window {
+            DockVisibilityController.shared.windowDidShow(window)
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -53,6 +57,7 @@ final class OnboardingWindowController: NSObject {
 
         self.viewModel = viewModel
         self.window = window
+        DockVisibilityController.shared.windowDidShow(window)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -62,6 +67,9 @@ final class OnboardingWindowController: NSObject {
         onCompleteHandler = nil
 
         // Remove delegate before closing to avoid re-entrant delegate calls
+        if let window {
+            DockVisibilityController.shared.windowDidHide(window)
+        }
         window?.delegate = nil
         window?.close()
         window = nil
@@ -75,6 +83,9 @@ extension OnboardingWindowController: NSWindowDelegate {
     func windowWillClose(_: Notification) {
         // User closed the window manually without completing onboarding
         // Mark it complete so it doesn't show again, then call the handler
+        if let window {
+            DockVisibilityController.shared.windowDidHide(window)
+        }
         if onCompleteHandler != nil {
             viewModel?.skipWithoutAnimation()
             handleComplete()

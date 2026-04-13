@@ -46,6 +46,9 @@ final class UpdateAlertWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func show() {
+        if let window {
+            DockVisibilityController.shared.windowDidShow(window)
+        }
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
     }
@@ -58,6 +61,9 @@ final class UpdateAlertWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
+        if let window {
+            DockVisibilityController.shared.windowDidHide(window)
+        }
         // Treat window close (X button) as skip
         fire(.skip)
     }

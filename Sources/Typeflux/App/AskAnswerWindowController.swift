@@ -106,6 +106,7 @@ final class AskAnswerWindowController: NSObject {
         if !window.isVisible {
             window.center()
         }
+        DockVisibilityController.shared.windowDidShow(window)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         _ = title
@@ -116,7 +117,10 @@ final class AskAnswerWindowController: NSObject {
             DispatchQueue.main.async { [weak self] in self?.dismiss() }
             return
         }
-        window?.orderOut(nil)
+        if let window {
+            DockVisibilityController.shared.windowDidHide(window)
+            window.orderOut(nil)
+        }
     }
 
     private func ensureWindow() {
