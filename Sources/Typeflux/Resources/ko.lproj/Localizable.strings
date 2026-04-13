@@ -795,6 +795,8 @@
 "auth.login.activationCodeResent" = "새 활성화 코드를 다시 보냈습니다.";
 "auth.login.resetCodeSent" = "비밀번호 재설정 코드를 보냈습니다. 이메일을 확인해 주세요.";
 "auth.login.back" = "뒤로";
+"auth.login.continueWithGoogle" = "Google로 로그인";
+"auth.login.orDivider" = "또는";
 "auth.login.activateHint" = "%@(으)로 활성화 코드를 보냈습니다. 아래에 입력해 주세요.";
 
 "auth.field.email" = "이메일";

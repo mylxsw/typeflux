@@ -110,6 +110,16 @@ struct ChangePasswordResponse: Decodable {
     let changed: Bool
 }
 
+// MARK: - OAuth
+
+struct OAuthRequest: Encodable {
+    let idToken: String
+
+    enum CodingKeys: String, CodingKey {
+        case idToken = "id_token"
+    }
+}
+
 // MARK: - Refresh Token
 
 struct RefreshRequest: Encodable {

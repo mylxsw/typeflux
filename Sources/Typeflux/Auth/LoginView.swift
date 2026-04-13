@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 
 struct LoginView: View {
@@ -31,6 +32,8 @@ struct LoginView: View {
     @State private var isLoading = false
     @State private var previousStepBeforeActivate: Step = .register
     @State private var resendCooldownRemaining = 0
+    @State private var isGoogleLoading = false
+    private let googleClientID = AppServerConfiguration.googleOAuthClientID
     @ObservedObject private var localization = AppLocalization.shared
     @Environment(\.colorScheme) private var colorScheme
 
@@ -217,6 +220,11 @@ struct LoginView: View {
 
     private var enterEmailForm: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+            if !googleClientID.isEmpty {
+                googleSignInButton
+                orDivider
+            }
+
             LoginTextField(
                 placeholder: L("auth.field.email"),
                 text: $email,
@@ -232,6 +240,66 @@ struct LoginView: View {
 
             loginButton(title: L("auth.login.continue"), action: checkEmail)
         }
+    }
+
+    private var googleSignInButton: some View {
+        Button(action: performGoogleLogin) {
+            HStack(spacing: 10) {
+                if isGoogleLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    GoogleLogoMark()
+                        .frame(width: 18, height: 18)
+                    Text(L("auth.login.continueWithGoogle"))
+                        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 46)
+            .foregroundStyle(googleButtonTextColor)
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
+                    .fill(googleButtonFillColor)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
+                    .stroke(googleButtonStrokeColor, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isLoading || isGoogleLoading)
+    }
+
+    private var orDivider: some View {
+        HStack(spacing: 12) {
+            Rectangle()
+                .fill(orDividerColor)
+                .frame(height: 1)
+            Text(L("auth.login.orDivider"))
+                .font(.studioBody(12))
+                .foregroundStyle(StudioTheme.textTertiary)
+                .fixedSize()
+            Rectangle()
+                .fill(orDividerColor)
+                .frame(height: 1)
+        }
+    }
+
+    private var orDividerColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.10) : Color.black.opacity(0.10)
+    }
+
+    private var googleButtonFillColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.07) : Color.white
+    }
+
+    private var googleButtonTextColor: Color {
+        colorScheme == .dark ? StudioTheme.textPrimary : Color.black.opacity(0.80)
+    }
+
+    private var googleButtonStrokeColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.12) : Color.black.opacity(0.12)
     }
 
     private var loginForm: some View {
@@ -959,6 +1027,35 @@ struct LoginView: View {
         errorMessage = nil
     }
 
+    private func performGoogleLogin() {
+        guard !googleClientID.isEmpty else { return }
+        clearMessages()
+        isGoogleLoading = true
+
+        Task {
+            do {
+                let idToken = try await GoogleOAuthService.signIn(clientID: googleClientID)
+                let response = try await AuthAPIService.loginWithGoogle(idToken: idToken)
+                await authState.handleLoginSuccess(
+                    token: response.accessToken,
+                    expiresAt: response.expiresAt,
+                    refreshToken: response.refreshToken
+                )
+                isGoogleLoading = false
+                onDismiss()
+            } catch {
+                isGoogleLoading = false
+                // ASWebAuthenticationSession cancellation produces a specific error; suppress it silently.
+                let nsError = error as NSError
+                if nsError.domain == ASWebAuthenticationSessionErrorDomain,
+                   nsError.code == ASWebAuthenticationSessionError.canceledLogin.rawValue {
+                    return
+                }
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     private func goBack() {
         clearMessages()
         switch step {
@@ -1046,5 +1143,19 @@ private struct LoginTextField: View {
 
     private var fieldShadowY: CGFloat {
         colorScheme == .dark ? 0 : 3
+    }
+}
+
+/// A simple Google-branded "G" mark used on the sign-in button.
+private struct GoogleLogoMark: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color.white)
+            Text("G")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(Color(red: 0.26, green: 0.52, blue: 0.96))
+        }
+        .overlay(Circle().stroke(Color.black.opacity(0.08), lineWidth: 0.5))
     }
 }

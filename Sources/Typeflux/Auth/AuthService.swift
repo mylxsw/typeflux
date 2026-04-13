@@ -64,6 +64,10 @@ struct AuthAPIService {
         let _: LogoutResponse = try await post(path: "/api/v1/auth/logout", body: LogoutRequest(refreshToken: refreshToken))
     }
 
+    static func loginWithGoogle(idToken: String) async throws -> LoginResponse {
+        try await post(path: "/api/v1/auth/oauth/google", body: OAuthRequest(idToken: idToken))
+    }
+
     // MARK: - Networking Helpers
 
     private static func post<Body: Encodable, Response: Decodable>(

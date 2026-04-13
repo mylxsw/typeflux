@@ -801,6 +801,8 @@
 "auth.login.activationCodeResent" = "新的激活码已发送，请查收邮箱。";
 "auth.login.resetCodeSent" = "密码重置码已发送，请查收邮箱。";
 "auth.login.back" = "返回";
+"auth.login.continueWithGoogle" = "使用 Google 账号登录";
+"auth.login.orDivider" = "或";
 "auth.login.activateHint" = "我们已向 %@ 发送了激活码，请在下方输入。";
 
 "auth.field.email" = "邮箱";

@@ -795,6 +795,8 @@
 "auth.login.activationCodeResent" = "新しいアクティベーションコードを送信しました。";
 "auth.login.resetCodeSent" = "パスワードリセットコードを送信しました。メールを確認してください。";
 "auth.login.back" = "戻る";
+"auth.login.continueWithGoogle" = "Google でログイン";
+"auth.login.orDivider" = "または";
 "auth.login.activateHint" = "%@ にアクティベーションコードを送信しました。下に入力してください。";
 
 "auth.field.email" = "メールアドレス";

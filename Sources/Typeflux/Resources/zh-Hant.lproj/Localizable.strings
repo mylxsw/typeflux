@@ -799,6 +799,8 @@
 "auth.login.activationCodeResent" = "新的啟用碼已發送，請查收電子郵件。";
 "auth.login.resetCodeSent" = "密碼重設碼已發送，請查收電子郵件。";
 "auth.login.back" = "返回";
+"auth.login.continueWithGoogle" = "使用 Google 帳號登入";
+"auth.login.orDivider" = "或";
 "auth.login.activateHint" = "我們已向 %@ 發送了啟用碼，請在下方輸入。";
 
 "auth.field.email" = "電子郵件";
