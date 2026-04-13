@@ -828,6 +828,8 @@
 "auth.account.newPassword" = "새 비밀번호";
 "auth.account.confirmNewPassword" = "새 비밀번호 확인";
 "auth.account.changePassword" = "비밀번호 변경";
+"auth.account.changePasswordDialogTitle" = "비밀번호 변경";
+"auth.account.changePasswordDialogSubtitle" = "대화상자에서 비밀번호를 변경합니다. 변경 후 이 기기에서 다시 로그인해야 합니다.";
 "auth.account.passwordHint" = "비밀번호를 변경하면 이 기기에서 다시 로그인해야 합니다.";
 "auth.account.passwordChanged" = "비밀번호가 변경되었습니다. 다시 로그인해 주세요.";
 "auth.account.signedOutTitle" = "로그인되지 않음";

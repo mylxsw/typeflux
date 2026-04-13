@@ -3143,9 +3143,7 @@ struct StudioView: View {
                     HStack(spacing: StudioTheme.Spacing.small) {
                         Spacer()
 
-                        if viewModel.focusedModelProvider == .ollama
-                            || focusedLLMRemoteProvider != nil
-                        {
+                        if shouldShowFocusedLLMConnectionTestButton {
                             StudioButton(
                                 title: viewModel.llmConnectionTestState == .testing
                                     ? L("settings.models.testingConnection") : L("common.test"),
@@ -3185,7 +3183,7 @@ struct StudioView: View {
                         }
                     }
 
-                    if viewModel.focusedModelProvider == .ollama || focusedLLMRemoteProvider != nil {
+                    if shouldShowFocusedLLMConnectionTestButton {
                         connectionTestResultView(viewModel.llmConnectionTestState)
                     } else if [
                         StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
@@ -3578,6 +3576,15 @@ struct StudioView: View {
                 }
             }
         }
+    }
+
+    private var shouldShowFocusedLLMConnectionTestButton: Bool {
+        guard viewModel.focusedModelProvider.domain == .llm else { return false }
+        guard viewModel.focusedModelProvider == .ollama || focusedLLMRemoteProvider != nil else {
+            return false
+        }
+
+        return !viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn
     }
 
     @ViewBuilder

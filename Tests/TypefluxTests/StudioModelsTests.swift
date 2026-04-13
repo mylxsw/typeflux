@@ -151,6 +151,7 @@ final class StudioModelsTests: XCTestCase {
 
     func testTypefluxOfficialRequiresLoginForConnectionTest() {
         XCTAssertTrue(StudioModelProviderID.typefluxOfficial.requiresLoginForConnectionTest)
+        XCTAssertTrue(StudioModelProviderID.typefluxCloud.requiresLoginForConnectionTest)
         XCTAssertFalse(StudioModelProviderID.whisperAPI.requiresLoginForConnectionTest)
     }
 

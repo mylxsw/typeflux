@@ -834,6 +834,8 @@
 "auth.account.newPassword" = "New Password";
 "auth.account.confirmNewPassword" = "Confirm New Password";
 "auth.account.changePassword" = "Change Password";
+"auth.account.changePasswordDialogTitle" = "Change Password";
+"auth.account.changePasswordDialogSubtitle" = "Update your password in a dialog. This device will be signed out after the change.";
 "auth.account.passwordHint" = "Changing your password will sign you out on this device.";
 "auth.account.passwordChanged" = "Password updated. Please sign in again.";
 "auth.account.signedOutTitle" = "Not Signed In";

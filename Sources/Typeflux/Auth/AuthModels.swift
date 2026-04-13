@@ -159,6 +159,10 @@ struct UserProfile: Codable, Equatable {
         let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmedName.isEmpty ? email : trimmedName
     }
+
+    var canChangePassword: Bool {
+        provider == "password"
+    }
 }
 
 // MARK: - Auth Errors

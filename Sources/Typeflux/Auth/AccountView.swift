@@ -4,12 +4,7 @@ struct AccountView: View {
     @ObservedObject var authState: AuthState
     let onLogout: () -> Void
     @ObservedObject private var localization = AppLocalization.shared
-    @State private var currentPassword = ""
-    @State private var newPassword = ""
-    @State private var confirmNewPassword = ""
-    @State private var isChangingPassword = false
-    @State private var changePasswordMessage: String?
-    @State private var changePasswordError: String?
+    @State private var isPasswordDialogPresented = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
@@ -19,189 +14,172 @@ struct AccountView: View {
                 loadingCard
             } else {
                 signedOutCard
-                actionSection
             }
         }
         .onAppear {
             Task { await AuthState.shared.refreshTokenIfNeeded() }
+        }
+        .sheet(isPresented: $isPasswordDialogPresented) {
+            ChangePasswordSheet(authState: authState, onPasswordChanged: onLogout)
         }
     }
 
     // MARK: - Profile Card
 
     private func profileCard(profile: UserProfile) -> some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.section) {
-            HStack(spacing: StudioTheme.Spacing.medium) {
-                // Avatar
-                ZStack {
-                    Circle()
-                        .fill(StudioTheme.accentSoft)
-                        .frame(width: 56, height: 56)
-                    Text(avatarInitial(from: profile))
-                        .font(.studioDisplay(StudioTheme.Typography.pageTitle, weight: .bold))
-                        .foregroundStyle(StudioTheme.accent)
+        StudioCard {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
+                HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
+                    ZStack {
+                        Circle()
+                            .fill(StudioTheme.accentSoft)
+                            .frame(width: 60, height: 60)
+                        Text(avatarInitial(from: profile))
+                            .font(.studioDisplay(StudioTheme.Typography.pageTitle, weight: .bold))
+                            .foregroundStyle(StudioTheme.accent)
+                    }
+
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                        Text(profile.resolvedDisplayName)
+                            .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .bold))
+                            .foregroundStyle(StudioTheme.textPrimary)
+
+                        Text(profile.email)
+                            .font(.studioBody(StudioTheme.Typography.body))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                    }
+
+                    Spacer()
+
+                    if authState.isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        StudioButton(
+                            title: L("auth.account.logout"),
+                            systemImage: "rectangle.portrait.and.arrow.forward",
+                            variant: .secondary
+                        ) {
+                            handlePrimaryAction()
+                        }
+                    }
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(profile.resolvedDisplayName)
-                        .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .bold))
+                HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
+                    accountSummaryItem(
+                        label: L("auth.account.provider"),
+                        value: providerDisplayName(profile.provider),
+                        systemImage: "person.crop.circle.badge.checkmark"
+                    )
+
+                    accountSummaryItem(
+                        label: L("auth.account.memberSince"),
+                        value: formattedDate(profile.createdAt),
+                        systemImage: "calendar"
+                    )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if profile.canChangePassword {
+                    passwordManagementSection
+                }
+            }
+        }
+    }
+
+    private var passwordManagementSection: some View {
+        StudioCard(padding: StudioTheme.Spacing.medium) {
+            HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
+                    Text(L("auth.account.passwordSection"))
+                        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
 
-                    Text(profile.email)
-                        .font(.studioBody(StudioTheme.Typography.body))
+                    Text(L("auth.account.passwordHint"))
+                        .font(.studioBody(StudioTheme.Typography.caption))
                         .foregroundStyle(StudioTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer()
 
-                if authState.isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                } else {
-                    actionSection
+                StudioButton(
+                    title: L("auth.account.changePassword"),
+                    systemImage: "key",
+                    variant: .secondary
+                ) {
+                    isPasswordDialogPresented = true
                 }
             }
-
-            // Info rows
-            VStack(spacing: StudioTheme.Spacing.small) {
-                infoRow(label: L("auth.account.provider"), value: providerDisplayName(profile.provider))
-                infoRow(label: L("auth.account.memberSince"), value: formattedDate(profile.createdAt))
-            }
-
-            passwordManagementSection(profile: profile)
-        }
-        .padding(StudioTheme.Spacing.section)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                .fill(StudioTheme.surfaceMuted),
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin),
-        )
-    }
-
-    @ViewBuilder
-    private func passwordManagementSection(profile: UserProfile) -> some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            Divider()
-                .padding(.top, 4)
-
-            Text(L("auth.account.passwordSection"))
-                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-
-            if profile.provider == "password" {
-                SecureField(L("auth.account.currentPassword"), text: $currentPassword)
-                    .textFieldStyle(.roundedBorder)
-            }
-
-            SecureField(L("auth.account.newPassword"), text: $newPassword)
-                .textFieldStyle(.roundedBorder)
-
-            SecureField(L("auth.account.confirmNewPassword"), text: $confirmNewPassword)
-                .textFieldStyle(.roundedBorder)
-
-            if let changePasswordMessage {
-                Text(changePasswordMessage)
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.accent)
-            }
-
-            if let changePasswordError {
-                Text(changePasswordError)
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.danger)
-            }
-
-            Button(action: changePassword) {
-                HStack(spacing: StudioTheme.Spacing.small) {
-                    if isChangingPassword {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
-
-                    Text(L("auth.account.changePassword"))
-                        .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(isChangingPassword)
-
-            Text(L("auth.account.passwordHint"))
-                .font(.studioBody(StudioTheme.Typography.caption))
-                .foregroundStyle(StudioTheme.textSecondary)
         }
     }
 
     // MARK: - Loading Card
 
     private var loadingCard: some View {
-        HStack {
-            Spacer()
-            ProgressView()
-                .controlSize(.regular)
-            Spacer()
+        StudioCard {
+            HStack {
+                Spacer()
+                ProgressView()
+                    .controlSize(.regular)
+                Spacer()
+            }
+            .frame(height: 120)
         }
-        .frame(height: 120)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                .fill(StudioTheme.surfaceMuted),
-        )
     }
 
     private var signedOutCard: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            Text(L("auth.account.signedOutTitle"))
-                .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .bold))
-                .foregroundStyle(StudioTheme.textPrimary)
+        StudioCard {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    Text(L("auth.account.signedOutTitle"))
+                        .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .bold))
+                        .foregroundStyle(StudioTheme.textPrimary)
 
-            Text(L("auth.account.signedOutSubtitle"))
-                .font(.studioBody(StudioTheme.Typography.body))
-                .foregroundStyle(StudioTheme.textSecondary)
-        }
-        .padding(StudioTheme.Spacing.section)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                .fill(StudioTheme.surfaceMuted),
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin),
-        )
-    }
+                    Text(L("auth.account.signedOutSubtitle"))
+                        .font(.studioBody(StudioTheme.Typography.body))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
-    // MARK: - Action Section
-
-    private var actionSection: some View {
-        Button(action: handlePrimaryAction) {
-            HStack(spacing: StudioTheme.Spacing.small) {
-                Image(systemName: authState.isLoggedIn ? "rectangle.portrait.and.arrow.forward" : "person.crop.circle.badge.plus")
-                    .font(.system(size: StudioTheme.Typography.iconSmall, weight: .medium))
-
-                Text(authState.isLoggedIn ? L("auth.account.logout") : L("auth.account.signIn"))
-                    .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
+                StudioButton(
+                    title: L("auth.account.signIn"),
+                    systemImage: "person.crop.circle.badge.plus",
+                    variant: .primary
+                ) {
+                    handlePrimaryAction()
+                }
             }
-            .foregroundStyle(authState.isLoggedIn ? StudioTheme.textSecondary : StudioTheme.accent)
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Helpers
 
-    private func infoRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.studioBody(StudioTheme.Typography.body))
-                .foregroundStyle(StudioTheme.textSecondary)
-            Spacer()
+    private func accountSummaryItem(label: String, value: String, systemImage: String) -> some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            HStack(spacing: StudioTheme.Spacing.xSmall) {
+                Image(systemName: systemImage)
+                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                Text(label)
+                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
+
             Text(value)
-                .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
+                .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
                 .foregroundStyle(StudioTheme.textPrimary)
         }
-        .padding(.vertical, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(StudioTheme.Spacing.medium)
+        .background(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: StudioTheme.BorderWidth.thin)
+        )
     }
 
     private func avatarInitial(from profile: UserProfile) -> String {
@@ -231,7 +209,7 @@ struct AccountView: View {
             display.timeStyle = .none
             return display.string(from: date)
         }
-        // Fallback: try without fractional seconds
+
         formatter.formatOptions = [.withInternetDateTime]
         if let date = formatter.date(from: dateString) {
             let display = DateFormatter()
@@ -250,12 +228,106 @@ struct AccountView: View {
             LoginWindowController.shared.show()
         }
     }
+}
+
+private struct ChangePasswordSheet: View {
+    @ObservedObject var authState: AuthState
+    let onPasswordChanged: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var currentPassword = ""
+    @State private var newPassword = ""
+    @State private var confirmNewPassword = ""
+    @State private var isChangingPassword = false
+    @State private var changePasswordMessage: String?
+    @State private var changePasswordError: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
+                Text(L("auth.account.changePasswordDialogTitle"))
+                    .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .bold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+
+                Text(L("auth.account.changePasswordDialogSubtitle"))
+                    .font(.studioBody(StudioTheme.Typography.body))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+                if authState.userProfile?.canChangePassword == true {
+                    StudioTextInputCard(
+                        label: L("auth.account.currentPassword"),
+                        placeholder: L("auth.account.currentPassword"),
+                        text: $currentPassword,
+                        secure: true
+                    )
+                }
+
+                StudioTextInputCard(
+                    label: L("auth.account.newPassword"),
+                    placeholder: L("auth.account.newPassword"),
+                    text: $newPassword,
+                    secure: true
+                )
+
+                StudioTextInputCard(
+                    label: L("auth.account.confirmNewPassword"),
+                    placeholder: L("auth.account.confirmNewPassword"),
+                    text: $confirmNewPassword,
+                    secure: true
+                )
+            }
+
+            if let changePasswordMessage {
+                Text(changePasswordMessage)
+                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .foregroundStyle(StudioTheme.accent)
+            }
+
+            if let changePasswordError {
+                Text(changePasswordError)
+                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .foregroundStyle(StudioTheme.danger)
+            }
+
+            Text(L("auth.account.passwordHint"))
+                .font(.studioBody(StudioTheme.Typography.caption))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: StudioTheme.Spacing.small) {
+                Spacer()
+
+                StudioButton(
+                    title: L("common.cancel"),
+                    systemImage: nil,
+                    variant: .secondary
+                ) {
+                    dismiss()
+                }
+
+                StudioButton(
+                    title: L("auth.account.changePassword"),
+                    systemImage: isChangingPassword ? nil : "checkmark",
+                    variant: .primary,
+                    isDisabled: isChangingPassword,
+                    isLoading: isChangingPassword
+                ) {
+                    changePassword()
+                }
+            }
+        }
+        .padding(24)
+        .frame(width: 520)
+    }
 
     private func changePassword() {
         changePasswordMessage = nil
         changePasswordError = nil
 
-        if authState.userProfile?.provider == "password", currentPassword.isEmpty {
+        if authState.userProfile?.canChangePassword == true, currentPassword.isEmpty {
             changePasswordError = L("auth.error.currentPasswordRequired")
             return
         }
@@ -291,7 +363,8 @@ struct AccountView: View {
                     newPassword = ""
                     confirmNewPassword = ""
                     authState.logout()
-                    onLogout()
+                    onPasswordChanged()
+                    dismiss()
                 }
             } catch {
                 await MainActor.run {

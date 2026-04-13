@@ -240,6 +240,30 @@ final class AuthModelsTests: XCTestCase {
         XCTAssertEqual(profile, decoded)
     }
 
+    func testUserProfileCanChangePasswordOnlyForPasswordProvider() {
+        let passwordProfile = UserProfile(
+            id: "password-user",
+            email: "password@example.com",
+            name: nil,
+            status: 1,
+            provider: "password",
+            createdAt: "2024-01-01T00:00:00Z",
+            updatedAt: "2024-01-01T00:00:00Z"
+        )
+        let googleProfile = UserProfile(
+            id: "google-user",
+            email: "google@example.com",
+            name: nil,
+            status: 1,
+            provider: "google",
+            createdAt: "2024-01-01T00:00:00Z",
+            updatedAt: "2024-01-01T00:00:00Z"
+        )
+
+        XCTAssertTrue(passwordProfile.canChangePassword)
+        XCTAssertFalse(googleProfile.canChangePassword)
+    }
+
     // MARK: - APIResponse
 
     func testAPIResponseWithData() throws {

@@ -832,6 +832,8 @@
 "auth.account.newPassword" = "新密碼";
 "auth.account.confirmNewPassword" = "確認新密碼";
 "auth.account.changePassword" = "修改密碼";
+"auth.account.changePasswordDialogTitle" = "修改密碼";
+"auth.account.changePasswordDialogSubtitle" = "在彈出對話框中更新密碼，修改後目前裝置將需要重新登入。";
 "auth.account.passwordHint" = "修改密碼後，目前裝置需要重新登入。";
 "auth.account.passwordChanged" = "密碼已更新，請重新登入。";
 "auth.account.signedOutTitle" = "尚未登入";

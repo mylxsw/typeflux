@@ -828,6 +828,8 @@
 "auth.account.newPassword" = "新しいパスワード";
 "auth.account.confirmNewPassword" = "新しいパスワードを確認";
 "auth.account.changePassword" = "パスワードを変更";
+"auth.account.changePasswordDialogTitle" = "パスワードを変更";
+"auth.account.changePasswordDialogSubtitle" = "ダイアログでパスワードを更新します。変更後、この端末では再ログインが必要になります。";
 "auth.account.passwordHint" = "パスワードを変更すると、この端末では再ログインが必要になります。";
 "auth.account.passwordChanged" = "パスワードを更新しました。再度サインインしてください。";
 "auth.account.signedOutTitle" = "未サインイン";

@@ -834,6 +834,8 @@
 "auth.account.newPassword" = "新密码";
 "auth.account.confirmNewPassword" = "确认新密码";
 "auth.account.changePassword" = "修改密码";
+"auth.account.changePasswordDialogTitle" = "修改密码";
+"auth.account.changePasswordDialogSubtitle" = "在弹出的对话框中更新密码，修改后当前设备将重新登录。";
 "auth.account.passwordHint" = "修改密码后，当前设备需要重新登录。";
 "auth.account.passwordChanged" = "密码已更新，请重新登录。";
 "auth.account.signedOutTitle" = "尚未登录";
