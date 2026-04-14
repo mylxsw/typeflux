@@ -803,6 +803,7 @@
 "auth.login.back" = "返回";
 "auth.login.continueWithGoogle" = "使用 Google 账号登录";
 "auth.login.continueWithGitHub" = "使用 GitHub 账号登录";
+"auth.login.continueWithApple" = "使用 Apple 账号登录";
 "auth.login.orDivider" = "或";
 "auth.login.activateHint" = "我们已向 %@ 发送了激活码，请在下方输入。";
 

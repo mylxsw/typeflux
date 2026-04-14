@@ -797,6 +797,7 @@
 "auth.login.back" = "戻る";
 "auth.login.continueWithGoogle" = "Google でログイン";
 "auth.login.continueWithGitHub" = "GitHub でログイン";
+"auth.login.continueWithApple" = "Apple でログイン";
 "auth.login.orDivider" = "または";
 "auth.login.activateHint" = "%@ にアクティベーションコードを送信しました。下に入力してください。";
 

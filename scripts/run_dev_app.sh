@@ -45,19 +45,26 @@ if [[ -z "${DEV_CODESIGN_IDENTITY:-}" ]] && command -v security >/dev/null 2>&1;
   )"
 fi
 
+ENTITLEMENTS="$ROOT_DIR/app/Typeflux.entitlements"
+
+# Ad-hoc signing: entitlements are embedded but Sign In with Apple will not
+# work at runtime — Apple's servers reject tokens from ad-hoc-signed binaries.
+# Use a real Apple Development identity (DEV_CODESIGN_IDENTITY) for full functionality.
 if [[ -z "${DEV_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
-  codesign --force --deep --sign - --identifier "dev.typeflux" "$APP_DIR"
+  codesign --force --deep --sign - --identifier "dev.typeflux" \
+    --entitlements "$ENTITLEMENTS" "$APP_DIR"
 fi
 
 # If you want a fully stable identity across machines and clean TCC behavior,
 # provide an explicit signing identity instead of the fallback dev signature.
-# If you want signing, provide a stable identity explicitly:
+# Sign In with Apple REQUIRES a real Apple Development identity:
 #   DEV_CODESIGN_IDENTITY="Apple Development: Your Name (...)" ./scripts/run_dev_app.sh
 if [[ -n "${DEV_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
-  codesign --force --deep --sign "$DEV_CODESIGN_IDENTITY" "$APP_DIR"
+  codesign --force --deep --sign "$DEV_CODESIGN_IDENTITY" \
+    --entitlements "$ENTITLEMENTS" "$APP_DIR"
   echo "Signed with stable identity: $DEV_CODESIGN_IDENTITY"
 else
-  echo "Warning: using ad-hoc signing. Accessibility permission may need to be re-granted across rebuilds."
+  echo "Warning: using ad-hoc signing. Sign In with Apple requires a real Apple Development identity."
 fi
 
 open "$APP_DIR"

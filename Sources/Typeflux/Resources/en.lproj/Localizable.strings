@@ -803,6 +803,7 @@
 "auth.login.back" = "Back";
 "auth.login.continueWithGoogle" = "Continue with Google";
 "auth.login.continueWithGitHub" = "Continue with GitHub";
+"auth.login.continueWithApple" = "Continue with Apple";
 "auth.login.orDivider" = "or";
 "auth.login.activateHint" = "We sent an activation code to %@. Please enter it below.";
 

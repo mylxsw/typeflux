@@ -801,6 +801,7 @@
 "auth.login.back" = "返回";
 "auth.login.continueWithGoogle" = "使用 Google 帳號登入";
 "auth.login.continueWithGitHub" = "使用 GitHub 帳號登入";
+"auth.login.continueWithApple" = "使用 Apple 帳號登入";
 "auth.login.orDivider" = "或";
 "auth.login.activateHint" = "我們已向 %@ 發送了啟用碼，請在下方輸入。";
 

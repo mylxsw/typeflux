@@ -18,6 +18,7 @@ enum LoginGooglePreflight {
 enum SocialLoginProvider: Hashable {
     case google
     case github
+    case apple
 }
 
 enum SocialLoginLayout {
@@ -27,6 +28,7 @@ enum SocialLoginLayout {
     ) -> [SocialLoginProvider] {
         var providers: [SocialLoginProvider] = []
 
+        providers.append(.apple)
         if !googleClientID.isEmpty {
             providers.append(.google)
         }
@@ -71,6 +73,7 @@ struct LoginView: View {
     @State private var resendCooldownRemaining = 0
     @State private var isGoogleLoading = false
     @State private var isGitHubLoading = false
+    @State private var isAppleLoading = false
     private let googleClientID = AppServerConfiguration.googleOAuthClientID
     private let googleClientSecret = AppServerConfiguration.googleOAuthClientSecret
     private let githubClientID = AppServerConfiguration.githubOAuthClientID
@@ -325,7 +328,7 @@ struct LoginView: View {
             )
         }
         .buttonStyle(.plain)
-        .disabled(isLoading || isGoogleLoading || isGitHubLoading)
+        .disabled(isLoading || isGoogleLoading || isGitHubLoading || isAppleLoading)
         .help(socialLoginAccessibilityLabel(for: provider))
         .accessibilityLabel(socialLoginAccessibilityLabel(for: provider))
     }
@@ -337,6 +340,8 @@ struct LoginView: View {
             GoogleLogoMark()
         case .github:
             GitHubLogoMark()
+        case .apple:
+            AppleLogoMark()
         }
     }
 
@@ -346,6 +351,8 @@ struct LoginView: View {
             performGoogleLogin
         case .github:
             performGitHubLogin
+        case .apple:
+            performAppleLogin
         }
     }
 
@@ -355,6 +362,8 @@ struct LoginView: View {
             isGoogleLoading
         case .github:
             isGitHubLoading
+        case .apple:
+            isAppleLoading
         }
     }
 
@@ -364,6 +373,8 @@ struct LoginView: View {
             L("auth.login.continueWithGoogle")
         case .github:
             L("auth.login.continueWithGitHub")
+        case .apple:
+            L("auth.login.continueWithApple")
         }
     }
 
@@ -398,6 +409,8 @@ struct LoginView: View {
             return colorScheme == .dark
                 ? Color(red: 0.14, green: 0.14, blue: 0.14)
                 : Color(red: 0.13, green: 0.13, blue: 0.13)
+        case .apple:
+            return colorScheme == .dark ? Color.white : Color.black
         }
     }
 
@@ -407,6 +420,8 @@ struct LoginView: View {
             return colorScheme == .dark ? StudioTheme.textPrimary : Color.black.opacity(0.80)
         case .github:
             return Color.white
+        case .apple:
+            return colorScheme == .dark ? Color.black : Color.white
         }
     }
 
@@ -416,6 +431,8 @@ struct LoginView: View {
             return colorScheme == .dark ? Color.white.opacity(0.12) : Color.black.opacity(0.12)
         case .github:
             return colorScheme == .dark ? Color.white.opacity(0.10) : Color.clear
+        case .apple:
+            return Color.clear
         }
     }
 
@@ -1184,6 +1201,38 @@ struct LoginView: View {
         }
     }
 
+    private func performAppleLogin() {
+        if !hasAcceptedPolicies, step == .enterEmail {
+            statusMessage = nil
+            errorMessage = AppLocalization.shared.string("auth.error.policyAgreementRequired")
+            return
+        }
+        clearMessages()
+        isAppleLoading = true
+
+        Task {
+            do {
+                let idToken = try await AppleSignInService.signIn()
+                let response = try await AuthAPIService.loginWithApple(idToken: idToken)
+                await authState.handleLoginSuccess(
+                    token: response.accessToken,
+                    expiresAt: response.expiresAt,
+                    refreshToken: response.refreshToken
+                )
+                isAppleLoading = false
+                onDismiss()
+            } catch {
+                isAppleLoading = false
+                let nsError = error as NSError
+                if nsError.domain == ASAuthorizationError.errorDomain,
+                   nsError.code == ASAuthorizationError.canceled.rawValue {
+                    return
+                }
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     private func performGitHubLogin() {
         guard !githubClientID.isEmpty else { return }
         if !hasAcceptedPolicies, step == .enterEmail {
@@ -1331,5 +1380,13 @@ private struct GitHubLogoMark: View {
         Image(systemName: "cat.fill")
             .font(.system(size: 14, weight: .medium))
             .foregroundStyle(Color.white)
+    }
+}
+
+/// Apple logo mark used on the Sign in with Apple button.
+private struct AppleLogoMark: View {
+    var body: some View {
+        Image(systemName: "apple.logo")
+            .font(.system(size: 15, weight: .medium))
     }
 }
