@@ -53,6 +53,22 @@ enum SocialLoginLayout {
 
         return providers
     }
+
+    static func rows(
+        for providers: [SocialLoginProvider],
+        maxItemsPerRow: Int = 2
+    ) -> [[SocialLoginProvider]] {
+        guard !providers.isEmpty else {
+            return []
+        }
+
+        let itemsPerRow = max(1, maxItemsPerRow)
+
+        return stride(from: 0, to: providers.count, by: itemsPerRow).map { startIndex in
+            let endIndex = min(startIndex + itemsPerRow, providers.count)
+            return Array(providers[startIndex..<endIndex])
+        }
+    }
 }
 
 struct LoginView: View {
@@ -316,7 +332,7 @@ struct LoginView: View {
     }
 
     private var socialLoginButtonsRow: some View {
-        HStack(spacing: StudioTheme.Spacing.medium) {
+        HStack(spacing: 10) {
             ForEach(socialLoginProviders, id: \.self) { provider in
                 socialLoginButton(for: provider)
             }
@@ -327,23 +343,30 @@ struct LoginView: View {
     @ViewBuilder
     private func socialLoginButton(for provider: SocialLoginProvider) -> some View {
         Button(action: action(for: provider)) {
-            ZStack {
+            HStack(spacing: 10) {
                 if isLoadingProvider(provider) {
                     ProgressView()
                         .controlSize(.small)
+                        .tint(socialButtonTextColor(for: provider))
+                        .frame(width: socialButtonIconSize, height: socialButtonIconSize)
                 } else {
                     socialLoginIcon(for: provider)
-                        .frame(width: 22, height: 22)
+                        .frame(width: socialButtonIconSize, height: socialButtonIconSize)
                 }
+
+                Text(socialLoginTitle(for: provider))
+                    .font(.studioBody(13, weight: .semibold))
+                    .lineLimit(1)
             }
-            .frame(width: socialButtonSize, height: socialButtonSize)
             .foregroundStyle(socialButtonTextColor(for: provider))
+            .frame(maxWidth: .infinity, minHeight: socialButtonHeight)
+            .padding(.horizontal, 14)
             .background(
-                Circle()
+                RoundedRectangle(cornerRadius: socialButtonCornerRadius, style: .continuous)
                     .fill(socialButtonFillColor(for: provider))
             )
             .overlay(
-                Circle()
+                RoundedRectangle(cornerRadius: socialButtonCornerRadius, style: .continuous)
                     .stroke(socialButtonStrokeColor(for: provider), lineWidth: 1)
             )
         }
@@ -357,11 +380,11 @@ struct LoginView: View {
     private func socialLoginIcon(for provider: SocialLoginProvider) -> some View {
         switch provider {
         case .google:
-            GoogleLogoMark()
+            SocialProviderLogoMark(resourceName: "google")
         case .github:
-            GitHubLogoMark()
+            SocialProviderLogoMark(resourceName: "github", isTemplate: true)
         case .apple:
-            AppleLogoMark()
+            SocialProviderLogoMark(resourceName: "apple", isTemplate: true)
         }
     }
 
@@ -398,8 +421,27 @@ struct LoginView: View {
         }
     }
 
-    private var socialButtonSize: CGFloat {
-        52
+    private func socialLoginTitle(for provider: SocialLoginProvider) -> String {
+        switch provider {
+        case .google:
+            "Google"
+        case .github:
+            "GitHub"
+        case .apple:
+            "Apple"
+        }
+    }
+
+    private var socialButtonHeight: CGFloat {
+        48
+    }
+
+    private var socialButtonIconSize: CGFloat {
+        18
+    }
+
+    private var socialButtonCornerRadius: CGFloat {
+        12
     }
 
     private var orDivider: some View {
@@ -422,38 +464,19 @@ struct LoginView: View {
     }
 
     private func socialButtonFillColor(for provider: SocialLoginProvider) -> Color {
-        switch provider {
-        case .google:
-            return colorScheme == .dark ? Color.white.opacity(0.07) : Color.white
-        case .github:
-            return colorScheme == .dark
-                ? Color(red: 0.14, green: 0.14, blue: 0.14)
-                : Color(red: 0.13, green: 0.13, blue: 0.13)
-        case .apple:
-            return colorScheme == .dark ? Color.white : Color.black
-        }
+        colorScheme == .dark ? Color.black : Color.white
     }
 
     private func socialButtonTextColor(for provider: SocialLoginProvider) -> Color {
-        switch provider {
-        case .google:
-            return colorScheme == .dark ? StudioTheme.textPrimary : Color.black.opacity(0.80)
-        case .github:
-            return Color.white
-        case .apple:
-            return colorScheme == .dark ? Color.black : Color.white
-        }
+        colorScheme == .dark
+            ? Color.white.opacity(0.96)
+            : Color(red: 0.12, green: 0.14, blue: 0.17)
     }
 
     private func socialButtonStrokeColor(for provider: SocialLoginProvider) -> Color {
-        switch provider {
-        case .google:
-            return colorScheme == .dark ? Color.white.opacity(0.12) : Color.black.opacity(0.12)
-        case .github:
-            return colorScheme == .dark ? Color.white.opacity(0.10) : Color.clear
-        case .apple:
-            return Color.clear
-        }
+        colorScheme == .dark
+            ? Color.white.opacity(0.14)
+            : Color.black.opacity(0.12)
     }
 
     private var loginForm: some View {
@@ -1385,33 +1408,34 @@ private struct LoginTextField: View {
     }
 }
 
-/// A simple Google-branded "G" mark used on the sign-in button.
-private struct GoogleLogoMark: View {
+private struct SocialProviderLogoMark: View {
+    let resourceName: String
+    var isTemplate = false
+
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(Color.white)
-            Text("G")
-                .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(Color(red: 0.26, green: 0.52, blue: 0.96))
+        if let image = logoImage {
+            Image(nsImage: image)
+                .renderingMode(isTemplate ? .template : .original)
+                .resizable()
+                .scaledToFit()
         }
-        .overlay(Circle().stroke(Color.black.opacity(0.08), lineWidth: 0.5))
     }
-}
 
-/// A simple GitHub Octocat-inspired mark used on the sign-in button.
-private struct GitHubLogoMark: View {
-    var body: some View {
-        Image(systemName: "cat.fill")
-            .font(.system(size: 14, weight: .medium))
-            .foregroundStyle(Color.white)
-    }
-}
+    private var logoImage: NSImage? {
+        guard let url = Bundle.module.url(forResource: resourceName, withExtension: "svg", subdirectory: "Resources")
+            ?? Bundle.module.url(forResource: resourceName, withExtension: "svg")
+        else {
+            return nil
+        }
 
-/// Apple logo mark used on the Sign in with Apple button.
-private struct AppleLogoMark: View {
-    var body: some View {
-        Image(systemName: "apple.logo")
-            .font(.system(size: 15, weight: .medium))
+        guard let image = NSImage(contentsOf: url) else {
+            return nil
+        }
+
+        if isTemplate {
+            image.isTemplate = true
+        }
+
+        return image
     }
 }

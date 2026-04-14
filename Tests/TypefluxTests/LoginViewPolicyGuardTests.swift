@@ -105,4 +105,22 @@ final class LoginViewPolicyGuardTests: XCTestCase {
         XCTAssertEqual(githubOnly, [.github])
         XCTAssertTrue(none.isEmpty)
     }
+
+    func testSocialLoginLayoutRowsCanKeepThreeProvidersInOneRow() {
+        let rows = SocialLoginLayout.rows(
+            for: [.apple, .google, .github],
+            maxItemsPerRow: 3
+        )
+
+        XCTAssertEqual(rows, [[.apple, .google, .github]])
+    }
+
+    func testSocialLoginLayoutRowsFallbackToSingleColumnForInvalidItemCount() {
+        let rows = SocialLoginLayout.rows(
+            for: [.google, .github],
+            maxItemsPerRow: 0
+        )
+
+        XCTAssertEqual(rows, [[.google], [.github]])
+    }
 }
