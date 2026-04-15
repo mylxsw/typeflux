@@ -96,6 +96,7 @@ final class STTRouterTests: XCTestCase {
     private var multimodal: MockTranscriber!
     private var aliCloud: MockTranscriber!
     private var doubaoRealtime: MockTranscriber!
+    private var googleCloud: MockTranscriber!
     private var groq: MockTranscriber!
     private var typefluxOfficial: MockTranscriber!
 
@@ -112,6 +113,7 @@ final class STTRouterTests: XCTestCase {
         multimodal = MockTranscriber()
         aliCloud = MockTranscriber()
         doubaoRealtime = MockTranscriber()
+        googleCloud = MockTranscriber()
         groq = MockTranscriber()
         typefluxOfficial = MockTranscriber()
     }
@@ -128,6 +130,7 @@ final class STTRouterTests: XCTestCase {
         multimodal = nil
         aliCloud = nil
         doubaoRealtime = nil
+        googleCloud = nil
         groq = nil
         typefluxOfficial = nil
         super.tearDown()
@@ -146,6 +149,7 @@ final class STTRouterTests: XCTestCase {
             multimodal: multimodal,
             aliCloud: aliCloud,
             doubaoRealtime: doubaoRealtimeOverride ?? doubaoRealtime,
+            googleCloud: googleCloud,
             groq: groq,
             typefluxOfficial: typefluxOfficial,
         )
@@ -226,6 +230,16 @@ final class STTRouterTests: XCTestCase {
         let result = try await router.transcribe(audioFile: dummyAudioFile())
         XCTAssertEqual(result, "doubao result")
         XCTAssertGreaterThan(doubaoRealtime.transcribeCallCount, 0)
+    }
+
+    func testRoutesToGoogleCloud() async throws {
+        settings.sttProvider = .googleCloud
+        googleCloud.resultToReturn = "google result"
+        let router = makeRouter()
+
+        let result = try await router.transcribe(audioFile: dummyAudioFile())
+        XCTAssertEqual(result, "google result")
+        XCTAssertGreaterThan(googleCloud.transcribeCallCount, 0)
     }
 
     func testRoutesToGroqWhenAPIKeyIsConfigured() async throws {
@@ -374,6 +388,7 @@ final class STTRouterTests: XCTestCase {
             multimodal: multimodal,
             aliCloud: aliCloud,
             doubaoRealtime: doubaoRealtime,
+            googleCloud: googleCloud,
             groq: groq,
             typefluxOfficial: scenarioAware,
         )

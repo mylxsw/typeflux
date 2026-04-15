@@ -401,6 +401,10 @@ struct OnboardingView: View {
             aliCloudConfigFields
         case .doubaoRealtime:
             doubaoConfigFields
+        case .googleCloud:
+            Text(L("settings.models.googleCloud.cloudGatewayHint"))
+                .font(.studioBody(StudioTheme.Typography.caption))
+                .foregroundStyle(onboardingSecondaryText)
         case .groq:
             groqSTTConfigFields
         case .appleSpeech, .typefluxOfficial:
@@ -915,7 +919,7 @@ struct OnboardingView: View {
 
     private func sttProviderSupportsTest(_ provider: STTProvider) -> Bool {
         switch provider {
-        case .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .groq, .freeModel:
+        case .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groq, .freeModel:
             true
         case .localModel, .appleSpeech, .typefluxOfficial:
             false
@@ -934,7 +938,7 @@ struct OnboardingView: View {
             URL(string: "https://console.volcengine.com/speech/service/asr")
         case .multimodalLLM:
             URL(string: "https://platform.openai.com/api-keys")
-        case .freeModel, .localModel, .appleSpeech, .typefluxOfficial:
+        case .googleCloud, .freeModel, .localModel, .appleSpeech, .typefluxOfficial:
             nil
         }
     }
@@ -1039,6 +1043,7 @@ struct OnboardingView: View {
         case .multimodalLLM: .multimodalLLM
         case .aliCloud: .aliCloud
         case .doubaoRealtime: .doubaoRealtime
+        case .googleCloud: .googleCloud
         case .groq: .groqSTT
         case .appleSpeech: .appleSpeech
         case .typefluxOfficial: .typefluxOfficial
@@ -1076,6 +1081,7 @@ struct OnboardingView: View {
         case .grok: "xai"
         case .groq: "groq"
         case .groqSTT: "groq"
+        case .googleCloud: nil
         case .xiaomi: "xiaomimimo"
         case .aliCloud: "bailian-color"
         case .doubaoRealtime: "doubao-color"
@@ -1104,6 +1110,7 @@ struct OnboardingView: View {
         case .grok: "x.circle"
         case .groq: "bolt.fill"
         case .groqSTT: "bolt.fill"
+        case .googleCloud: "cloud"
         case .xiaomi: "circle.grid.cross"
         case .multimodalLLM: "brain.filled.head.profile"
         case .aliCloud: "antenna.radiowaves.left.and.right"
@@ -1129,6 +1136,7 @@ struct OnboardingView: View {
         case .multimodalLLM: L("settings.models.card.multimodal.summary")
         case .aliCloud: L("settings.models.card.aliCloud.summary")
         case .doubaoRealtime: L("settings.models.card.doubao.summary")
+        case .googleCloud: L("settings.models.card.googleCloud.summary")
         case .groq: L("settings.models.card.groq.summary")
         case .appleSpeech: ""
         case .typefluxOfficial: L("settings.models.card.typefluxOfficial.summary")

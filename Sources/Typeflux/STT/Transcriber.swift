@@ -68,6 +68,7 @@ final class STTRouter {
     private let multimodal: Transcriber
     private let aliCloud: Transcriber
     private let doubaoRealtime: Transcriber
+    private let googleCloud: Transcriber
     private let groq: Transcriber
     private let typefluxOfficial: Transcriber
     private let autoModelDownloadService: AutoModelDownloadService?
@@ -81,6 +82,7 @@ final class STTRouter {
         multimodal: Transcriber,
         aliCloud: Transcriber,
         doubaoRealtime: Transcriber,
+        googleCloud: Transcriber,
         groq: Transcriber,
         typefluxOfficial: Transcriber,
         autoModelDownloadService: AutoModelDownloadService? = nil,
@@ -93,6 +95,7 @@ final class STTRouter {
         self.multimodal = multimodal
         self.aliCloud = aliCloud
         self.doubaoRealtime = doubaoRealtime
+        self.googleCloud = googleCloud
         self.groq = groq
         self.typefluxOfficial = typefluxOfficial
         self.autoModelDownloadService = autoModelDownloadService
@@ -242,6 +245,24 @@ final class STTRouter {
                 }
                 if settingsStore.useAppleSpeechFallback {
                     NetworkDebugLogger.logMessage("Falling back to Apple Speech after Doubao realtime ASR failure")
+                    return try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                }
+                throw error
+            }
+
+        case .googleCloud:
+            do {
+                return try await RequestRetry.perform(operationName: "Google Cloud STT request") { [self] in
+                    try await googleCloud.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+                }
+            } catch {
+                NetworkDebugLogger.logError(context: "Google Cloud Speech-to-Text failed", error: error)
+                if let localResult = await transcribeWithAutoModelIfReady(audioFile: audioFile, onUpdate: onUpdate) {
+                    NetworkDebugLogger.logMessage("Auto local model succeeded after Google Cloud STT failure")
+                    return localResult
+                }
+                if settingsStore.useAppleSpeechFallback {
+                    NetworkDebugLogger.logMessage("Falling back to Apple Speech after Google Cloud STT failure")
                     return try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
                 }
                 throw error

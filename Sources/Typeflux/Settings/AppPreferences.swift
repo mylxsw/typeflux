@@ -17,6 +17,7 @@ enum STTProvider: String, CaseIterable, Codable {
     case multimodalLLM
     case aliCloud
     case doubaoRealtime
+    case googleCloud
     case groq
     case typefluxOfficial
 
@@ -29,6 +30,7 @@ enum STTProvider: String, CaseIterable, Codable {
         .multimodalLLM,
         .aliCloud,
         .doubaoRealtime,
+        .googleCloud,
     ]
 
     static let onboardingDisplayOrder: [STTProvider] = settingsDisplayOrder.filter {
@@ -51,6 +53,8 @@ enum STTProvider: String, CaseIterable, Codable {
             L("provider.stt.aliCloud")
         case .doubaoRealtime:
             L("provider.stt.doubaoRealtime")
+        case .googleCloud:
+            L("provider.stt.googleCloud")
         case .groq:
             L("provider.stt.groq")
         case .typefluxOfficial:

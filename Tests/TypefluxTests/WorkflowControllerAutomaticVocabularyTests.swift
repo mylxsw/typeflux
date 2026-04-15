@@ -283,6 +283,7 @@ final class WorkflowControllerAutomaticVocabularyTests: XCTestCase {
                 multimodal: MockWorkflowTranscriber(),
                 aliCloud: MockWorkflowTranscriber(),
                 doubaoRealtime: MockWorkflowTranscriber(),
+                googleCloud: MockWorkflowTranscriber(),
                 groq: MockWorkflowTranscriber(),
                 typefluxOfficial: MockWorkflowTranscriber(),
             ),

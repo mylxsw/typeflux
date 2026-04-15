@@ -47,7 +47,7 @@ final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber, 
             throw TypefluxOfficialASRError.notLoggedIn
         }
 
-        let pcmData = try TypefluxOfficialAudioConverter.convert(url: audioFile.fileURL)
+        let pcmData = try CloudASRAudioConverter.convert(url: audioFile.fileURL)
         return try await TypefluxOfficialASRSession.run(
             pcmData: pcmData,
             token: token,
@@ -69,7 +69,7 @@ final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber, 
             throw TypefluxOfficialASRError.notLoggedIn
         }
 
-        let pcmData = try TypefluxOfficialAudioConverter.convert(url: audioFile.fileURL)
+        let pcmData = try CloudASRAudioConverter.convert(url: audioFile.fileURL)
         return try await TypefluxOfficialASRSession.runWithLLM(
             pcmData: pcmData,
             token: token,
@@ -92,6 +92,43 @@ final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber, 
             pcmData: pcmData,
             token: token,
             scenario: .modelSetup,
+        ) { _ in }
+    }
+}
+
+final class GoogleCloudSpeechTranscriber: TypefluxCloudScenarioAwareTranscriber {
+    func transcribeStream(
+        audioFile: AudioFile,
+        scenario: TypefluxCloudScenario,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
+    ) async throws -> String {
+        let token = await MainActor.run { AuthState.shared.accessToken }
+        guard let token, !token.isEmpty else {
+            throw TypefluxOfficialASRError.notLoggedIn
+        }
+
+        let pcmData = try CloudASRAudioConverter.convert(url: audioFile.fileURL)
+        return try await TypefluxOfficialASRSession.run(
+            pcmData: pcmData,
+            token: token,
+            scenario: scenario,
+            provider: "google",
+            onUpdate: onUpdate,
+        )
+    }
+
+    static func testConnection() async throws -> String {
+        let token = await MainActor.run { AuthState.shared.accessToken }
+        guard let token, !token.isEmpty else {
+            throw TypefluxOfficialASRError.notLoggedIn
+        }
+
+        let pcmData = RemoteSTTTestAudio.pcm16MonoSilence()
+        return try await TypefluxOfficialASRSession.run(
+            pcmData: pcmData,
+            token: token,
+            scenario: .modelSetup,
+            provider: "google",
         ) { _ in }
     }
 }
@@ -129,7 +166,7 @@ enum TypefluxOfficialASRClosePolicy {
 
 // MARK: - Audio Converter
 
-private enum TypefluxOfficialAudioConverter {
+enum CloudASRAudioConverter {
     static let targetSampleRate: Double = 16000
     /// 100ms of PCM16 at 16kHz mono = 3200 bytes
     static let chunkSize: Int = 3200
@@ -146,7 +183,7 @@ private enum TypefluxOfficialAudioConverter {
             interleaved: true,
         ) else {
             throw NSError(
-                domain: "TypefluxOfficialAudioConverter",
+                domain: "CloudASRAudioConverter",
                 code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "Failed to create target audio format."],
             )
@@ -154,7 +191,7 @@ private enum TypefluxOfficialAudioConverter {
 
         guard let converter = AVAudioConverter(from: sourceFormat, to: targetFormat) else {
             throw NSError(
-                domain: "TypefluxOfficialAudioConverter",
+                domain: "CloudASRAudioConverter",
                 code: 2,
                 userInfo: [NSLocalizedDescriptionKey: "Failed to create audio converter."],
             )
@@ -162,7 +199,7 @@ private enum TypefluxOfficialAudioConverter {
 
         guard let sourceBuffer = AVAudioPCMBuffer(pcmFormat: sourceFormat, frameCapacity: totalSourceFrames) else {
             throw NSError(
-                domain: "TypefluxOfficialAudioConverter",
+                domain: "CloudASRAudioConverter",
                 code: 3,
                 userInfo: [NSLocalizedDescriptionKey: "Failed to allocate source buffer."],
             )
@@ -173,7 +210,7 @@ private enum TypefluxOfficialAudioConverter {
         let targetCapacity = AVAudioFrameCount(Double(totalSourceFrames) * ratio) + 512
         guard let targetBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: targetCapacity) else {
             throw NSError(
-                domain: "TypefluxOfficialAudioConverter",
+                domain: "CloudASRAudioConverter",
                 code: 4,
                 userInfo: [NSLocalizedDescriptionKey: "Failed to allocate target buffer."],
             )
@@ -194,7 +231,7 @@ private enum TypefluxOfficialAudioConverter {
         if let convertError { throw convertError }
         guard status != .error else {
             throw NSError(
-                domain: "TypefluxOfficialAudioConverter",
+                domain: "CloudASRAudioConverter",
                 code: 5,
                 userInfo: [NSLocalizedDescriptionKey: "Audio conversion failed."],
             )
@@ -212,12 +249,13 @@ enum TypefluxOfficialASRRequestFactory {
         apiBaseURL: String,
         token: String,
         scenario: TypefluxCloudScenario,
+        provider: String = "default",
     ) throws -> URLRequest {
         let wsScheme = apiBaseURL.hasPrefix("https") ? "wss" : "ws"
         let host = apiBaseURL
             .replacingOccurrences(of: "https://", with: "")
             .replacingOccurrences(of: "http://", with: "")
-        let urlString = "\(wsScheme)://\(host)/api/v1/asr/ws/default"
+        let urlString = "\(wsScheme)://\(host)/api/v1/asr/ws/\(provider)"
 
         guard let url = URL(string: urlString) else {
             throw TypefluxOfficialASRError.connectionFailed("Invalid WebSocket URL: \(urlString)")
@@ -237,12 +275,14 @@ private actor TypefluxOfficialASRSession {
         pcmData: Data,
         token: String,
         scenario: TypefluxCloudScenario,
+        provider: String = "default",
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
         let session = TypefluxOfficialASRSession(
             pcmData: pcmData,
             token: token,
             scenario: scenario,
+            provider: provider,
             onASRUpdate: onUpdate,
             llmConfig: nil,
             onLLMStart: nil,
@@ -265,6 +305,7 @@ private actor TypefluxOfficialASRSession {
             pcmData: pcmData,
             token: token,
             scenario: scenario,
+            provider: "default",
             onASRUpdate: onASRUpdate,
             llmConfig: llmConfig,
             onLLMStart: onLLMStart,
@@ -276,6 +317,7 @@ private actor TypefluxOfficialASRSession {
     private let pcmData: Data
     private let token: String
     private let scenario: TypefluxCloudScenario
+    private let provider: String
     private let onASRUpdate: @Sendable (TranscriptionSnapshot) async -> Void
     private let llmConfig: ASRLLMConfig?
     private let onLLMStart: (@Sendable () async -> Void)?
@@ -292,6 +334,7 @@ private actor TypefluxOfficialASRSession {
         pcmData: Data,
         token: String,
         scenario: TypefluxCloudScenario,
+        provider: String,
         onASRUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
         llmConfig: ASRLLMConfig?,
         onLLMStart: (@Sendable () async -> Void)?,
@@ -300,6 +343,7 @@ private actor TypefluxOfficialASRSession {
         self.pcmData = pcmData
         self.token = token
         self.scenario = scenario
+        self.provider = provider
         self.onASRUpdate = onASRUpdate
         self.llmConfig = llmConfig
         self.onLLMStart = onLLMStart
@@ -311,6 +355,7 @@ private actor TypefluxOfficialASRSession {
             apiBaseURL: AppServerConfiguration.apiBaseURL,
             token: token,
             scenario: scenario,
+            provider: provider,
         )
         let session = URLSession(configuration: .default)
         let socketTask = session.webSocketTask(with: request)
@@ -345,7 +390,7 @@ private actor TypefluxOfficialASRSession {
         }
 
         // Stream audio chunks
-        let chunkSize = TypefluxOfficialAudioConverter.chunkSize
+        let chunkSize = CloudASRAudioConverter.chunkSize
         var offset = 0
         while offset < pcmData.count {
             let end = min(offset + chunkSize, pcmData.count)

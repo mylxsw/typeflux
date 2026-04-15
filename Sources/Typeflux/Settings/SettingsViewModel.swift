@@ -229,6 +229,8 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .aliCloud
         case .doubaoRealtime:
             focusedModelProvider = .doubaoRealtime
+        case .googleCloud:
+            focusedModelProvider = .googleCloud
         case .groq:
             focusedModelProvider = .groqSTT
         case .typefluxOfficial:
@@ -595,7 +597,7 @@ final class StudioViewModel: ObservableObject {
             switch sttProvider {
             case .appleSpeech, .localModel:
                 "Local Processing"
-            case .freeModel, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .groq,
+            case .freeModel, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groq,
                  .typefluxOfficial:
                 "Remote API"
             }
@@ -622,6 +624,8 @@ final class StudioViewModel: ObservableObject {
                 "Streaming audio to Alibaba Cloud DashScope for real-time speech recognition."
             case .doubaoRealtime:
                 "Streaming audio to Doubao Speech Recognition 2.0 over WebSocket."
+            case .googleCloud:
+                "Streaming audio to Google Cloud Speech-to-Text through the Typeflux ASR gateway."
             case .groq:
                 "Streaming audio to Groq for ultra-fast Whisper transcription."
             case .typefluxOfficial:
@@ -817,6 +821,8 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .aliCloud
         case .doubaoRealtime:
             focusedModelProvider = .doubaoRealtime
+        case .googleCloud:
+            focusedModelProvider = .googleCloud
         case .groq:
             focusedModelProvider = .groqSTT
         case .typefluxOfficial:
@@ -1748,6 +1754,8 @@ final class StudioViewModel: ObservableObject {
             settingsStore.doubaoAppID = doubaoAppID
             settingsStore.doubaoAccessToken = doubaoAccessToken
             settingsStore.doubaoResourceID = doubaoResourceID
+        case .googleCloud:
+            break
         case .groqSTT:
             settingsStore.groqSTTAPIKey = groqSTTAPIKey
             settingsStore.groqSTTModel = groqSTTModel
@@ -1865,7 +1873,7 @@ final class StudioViewModel: ObservableObject {
                             if payload.done || collected.count >= 60 { break }
                         }
                     case .appleSpeech, .localSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime,
-                         .groqSTT, .typefluxOfficial:
+                         .googleCloud, .groqSTT, .typefluxOfficial:
                         return (firstTokenDate, collected)
                     }
 
@@ -1936,6 +1944,8 @@ final class StudioViewModel: ObservableObject {
                             accessToken: capturedDoubaoAccessToken,
                             resourceID: capturedDoubaoResourceID,
                         )
+                    case .googleCloud:
+                        preview = try await GoogleCloudSpeechTranscriber.testConnection()
                     case .groqSTT:
                         preview = try await WhisperAPITranscriber.testConnection(
                             baseURL: "https://api.groq.com/openai/v1",
@@ -2076,6 +2086,8 @@ final class StudioViewModel: ObservableObject {
                 .aliCloud
             case .doubaoRealtime:
                 .doubaoRealtime
+            case .googleCloud:
+                .googleCloud
             case .groq:
                 .groqSTT
             case .typefluxOfficial:

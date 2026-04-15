@@ -2878,6 +2878,8 @@ struct StudioView: View {
             )
         case StudioModelProviderID.typefluxOfficial.rawValue:
             viewModel.setSTTProvider(.typefluxOfficial)
+        case StudioModelProviderID.googleCloud.rawValue:
+            viewModel.setSTTProvider(.googleCloud)
         case StudioModelProviderID.typefluxCloud.rawValue:
             viewModel.setLLMRemoteProvider(.typefluxCloud)
         case "ollama-local":
@@ -2910,10 +2912,12 @@ struct StudioView: View {
                 .multimodalLLM
             case .aliCloud:
                 .aliCloud
-            case .doubaoRealtime:
-                .doubaoRealtime
-            case .groq:
-                .groqSTT
+        case .doubaoRealtime:
+            .doubaoRealtime
+        case .googleCloud:
+            .googleCloud
+        case .groq:
+            .groqSTT
             case .typefluxOfficial:
                 .typefluxOfficial
             }
@@ -3001,6 +3005,16 @@ struct StudioView: View {
                     isSelected: viewModel.sttProvider == .doubaoRealtime,
                     isMuted: false,
                     actionTitle: L("settings.models.useDoubao"),
+                ),
+                StudioModelCard(
+                    id: StudioModelProviderID.googleCloud.rawValue,
+                    name: STTProvider.googleCloud.displayName,
+                    summary: L("settings.models.card.googleCloud.summary"),
+                    badge: L("settings.models.badge.api"),
+                    metadata: L("settings.models.googleCloud.streaming"),
+                    isSelected: viewModel.sttProvider == .googleCloud,
+                    isMuted: false,
+                    actionTitle: L("settings.models.useGoogleCloud"),
                 ),
                 StudioModelCard(
                     id: StudioModelProviderID.groqSTT.rawValue,
@@ -3175,7 +3189,7 @@ struct StudioView: View {
 
                 if [
                     StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .ollama, .aliCloud,
-                    .doubaoRealtime, .groqSTT, .typefluxOfficial,
+                    .doubaoRealtime, .googleCloud, .groqSTT, .typefluxOfficial,
                 ].contains(viewModel.focusedModelProvider) || focusedLLMRemoteProvider != nil {
                     HStack(spacing: StudioTheme.Spacing.small) {
                         Spacer()
@@ -3194,7 +3208,7 @@ struct StudioView: View {
                             }
                         } else if [
                             StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                            .doubaoRealtime, .groqSTT, .typefluxOfficial,
+                            .doubaoRealtime, .googleCloud, .groqSTT, .typefluxOfficial,
                         ].contains(viewModel.focusedModelProvider),
                             !viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn
                         {
@@ -3224,7 +3238,7 @@ struct StudioView: View {
                         connectionTestResultView(viewModel.llmConnectionTestState)
                     } else if [
                         StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                        .doubaoRealtime, .groqSTT, .typefluxOfficial,
+                        .doubaoRealtime, .googleCloud, .groqSTT, .typefluxOfficial,
                     ].contains(viewModel.focusedModelProvider),
                         !viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn
                     {
@@ -3593,6 +3607,11 @@ struct StudioView: View {
                     }
                 }
 
+            case .googleCloud:
+                Text(L("settings.models.googleCloud.cloudGatewayHint"))
+                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .foregroundStyle(StudioTheme.textSecondary)
+
             case .groqSTT:
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
                     StudioTextInputCard(
@@ -3924,6 +3943,8 @@ struct StudioView: View {
             "groq"
         case .groqSTT:
             "groq"
+        case .googleCloud:
+            nil
         case .xiaomi:
             "xiaomimimo"
         case .aliCloud:
@@ -4069,6 +4090,8 @@ struct StudioView: View {
             !viewModel.aliCloudAPIKey.isEmpty
         case .doubaoRealtime:
             !viewModel.doubaoAppID.isEmpty && !viewModel.doubaoAccessToken.isEmpty
+        case .googleCloud:
+            authState.isLoggedIn
         case .groqSTT:
             !viewModel.groqSTTAPIKey.isEmpty
         case .typefluxOfficial:
@@ -4125,6 +4148,8 @@ struct StudioView: View {
             viewModel.setSTTProvider(.aliCloud)
         case .doubaoRealtime:
             viewModel.setSTTProvider(.doubaoRealtime)
+        case .googleCloud:
+            viewModel.setSTTProvider(.googleCloud)
         case .groqSTT:
             viewModel.setSTTProvider(.groq)
         case .typefluxOfficial:
@@ -4182,6 +4207,8 @@ struct StudioView: View {
             "antenna.radiowaves.left.and.right"
         case .doubaoRealtime:
             "bolt.horizontal.circle"
+        case .googleCloud:
+            "cloud"
         case .typefluxOfficial:
             "infinity"
         case .typefluxCloud:
@@ -4228,6 +4255,8 @@ struct StudioView: View {
             L("settings.models.overview.aliCloud")
         case .doubaoRealtime:
             L("settings.models.overview.doubao")
+        case .googleCloud:
+            L("settings.models.overview.googleCloud")
         case .groqSTT:
             L("settings.models.overview.groq")
         case .typefluxOfficial:
@@ -4258,6 +4287,8 @@ struct StudioView: View {
             STTProvider.aliCloud.displayName
         case .doubaoRealtime:
             STTProvider.doubaoRealtime.displayName
+        case .googleCloud:
+            STTProvider.googleCloud.displayName
         case .groqSTT:
             STTProvider.groq.displayName
         case .typefluxOfficial:
@@ -4271,7 +4302,7 @@ struct StudioView: View {
             L("settings.models.mode.local")
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi,
-             .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT, .typefluxOfficial, .typefluxCloud:
+             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .typefluxOfficial, .typefluxCloud:
             L("settings.models.mode.remote")
         }
     }
@@ -4282,7 +4313,7 @@ struct StudioView: View {
             StudioTheme.success
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi,
-             .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT, .typefluxOfficial, .typefluxCloud:
+             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .typefluxOfficial, .typefluxCloud:
             StudioTheme.accent
         }
     }
@@ -4293,7 +4324,7 @@ struct StudioView: View {
             StudioTheme.success.opacity(0.12)
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi,
-             .multimodalLLM, .aliCloud, .doubaoRealtime, .groqSTT, .typefluxOfficial, .typefluxCloud:
+             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .typefluxOfficial, .typefluxCloud:
             StudioTheme.accentSoft
         }
     }
@@ -4326,7 +4357,7 @@ struct StudioView: View {
             URL(string: "https://bailian.console.aliyun.com?tab=model#/api-key")
         case .multimodalLLM:
             URL(string: "https://platform.openai.com/api-keys")
-        case .doubaoRealtime, .freeModel, .localModel, .appleSpeech, .typefluxOfficial:
+        case .doubaoRealtime, .googleCloud, .freeModel, .localModel, .appleSpeech, .typefluxOfficial:
             nil
         }
     }
@@ -4401,6 +4432,8 @@ struct StudioView: View {
             AliCloudASRDefaults.model
         case .doubaoRealtime:
             L("settings.models.doubao.productName")
+        case .googleCloud:
+            L("settings.models.googleCloud.streaming")
         case .groqSTT:
             viewModel.groqSTTModel.isEmpty
                 ? OpenAIAudioModelCatalog.groqWhisperModels[0] : viewModel.groqSTTModel
@@ -4437,6 +4470,8 @@ struct StudioView: View {
             STTProvider.aliCloud.displayName
         case .doubaoRealtime:
             STTProvider.doubaoRealtime.displayName
+        case .googleCloud:
+            STTProvider.googleCloud.displayName
         case .groqSTT:
             STTProvider.groq.displayName
         case .typefluxOfficial:
@@ -4470,6 +4505,8 @@ struct StudioView: View {
             L("settings.models.focused.aliCloud")
         case .doubaoRealtime:
             L("settings.models.focused.doubao")
+        case .googleCloud:
+            L("settings.models.focused.googleCloud")
         case .groqSTT:
             L("settings.models.focused.groq")
         case .typefluxOfficial:
@@ -4506,6 +4543,8 @@ struct StudioView: View {
             L("settings.models.routing.aliCloud")
         case .doubaoRealtime:
             L("settings.models.routing.doubao")
+        case .googleCloud:
+            L("settings.models.routing.googleCloud")
         case .groqSTT:
             L("settings.models.routing.groq")
         case .typefluxOfficial:

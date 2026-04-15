@@ -205,6 +205,7 @@
 "provider.stt.multimodalLLM" = "Multimodal LLM";
 "provider.stt.aliCloud" = "Alibaba Cloud ASR";
 "provider.stt.doubaoRealtime" = "Doubao Realtime ASR";
+"provider.stt.googleCloud" = "Google Speech-to-Text";
 "provider.stt.groq" = "Groq";
 "provider.stt.typefluxOfficial" = "Typeflux Cloud";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
@@ -500,6 +501,7 @@
 "settings.models.card.multimodal.summary" = "オーディオをマルチモーダル モデルに直接送信します。トランスクリプションとペルソナの書き換えは単一の API 呼び出しで行われ、エンドツーエンドのパスが高速化されます。";
 "settings.models.card.aliCloud.summary" = "低遅延の WebSocket ストリーミングによる DashScope によるリアルタイムのストリーミング認識。";
 "settings.models.card.doubao.summary" = "ByteDance のネイティブ バイナリ WebSocket プロトコルを使用した Doubao Speech Recognition 2.0 による低遅延ストリーミング認識。";
+"settings.models.card.googleCloud.summary" = "Google Cloud Speech-to-Text によるリアルタイムのストリーミング音声認識。";
 "settings.models.card.groq.summary" = "Groq の推論エンドポイントによる高速な Whisper 文字起こし。既定モデルは whisper-large-v3-turbo。";
 "settings.models.card.typefluxOfficial.summary" = "Typeflux 内蔵の音声認識サービスです。Typeflux アカウントでサインインするだけで使用できます。追加の API キーは不要です。";
 "settings.models.card.typefluxCloud.summary" = "Typeflux 内蔵の大規模言語モデルサービスです。Typeflux アカウントでサインインするだけで使用できます。追加の API キーは不要です。";
@@ -554,6 +556,7 @@
 "settings.models.overview.multimodal" = "音声はマルチモーダル モデルに直接送信され、1 回の通話で文字起こしとペルソナの書き換えが行われます。";
 "settings.models.overview.aliCloud" = "音声認識は、WebSocket 経由で Alibaba Cloud DashScope にリアルタイムでストリーミングされます。";
 "settings.models.overview.doubao" = "音声認識は、ByteDance WebSocket 経由で Doubao Speech Recognition 2.0 にリアルタイムでストリーミングされます。";
+"settings.models.overview.googleCloud" = "音声認識は Typeflux Cloud 経由で Google Cloud Speech-to-Text にリアルタイムでストリーミングされます。";
 "settings.models.overview.groq" = "音声認識は、Groq の高速推論エンドポイントが Whisper モデルを使用して処理します。";
 "settings.models.overview.typefluxOfficial" = "音声認識は Typeflux の内蔵サービスで処理されます。";
 "settings.models.overview.typefluxCloud" = "テキストの書き直しと編集は Typeflux の内蔵 LLM サービスで処理されます。";
@@ -574,6 +577,7 @@
 "settings.models.focused.multimodal" = "これは、音声をマルチモーダル モデルに直接送信し、ワンショットで文字起こしと書き換えを行う最速のエンドツーエンド パスが必要な場合に使用します。";
 "settings.models.focused.aliCloud" = "Alibaba Cloud DashScope 経由で低遅延のリアルタイム ストリーミング認識が必要な場合にこれを使用します。";
 "settings.models.focused.doubao" = "Doubao Speech Recognition 2.0 を介した遅延の最も低いクラウド ディクテーション パスが必要な場合は、これを使用します。";
+"settings.models.focused.googleCloud" = "Google Cloud Speech-to-Text のリアルタイム ストリーミング認識が必要な場合にこれを使用します。";
 "settings.models.focused.groq" = "Groq の高速推論を使用した迅速なクラウド文字起こしが必要な場合にこれを使用します。";
 "settings.models.focused.typefluxOfficial" = "Typeflux 内蔵の音声認識サービスを使用します。サインインするだけで、追加の設定は不要です。";
 "settings.models.focused.typefluxCloud" = "Typeflux 内蔵の LLM サービスを使用してテキストの書き直しと編集を行います。サインインするだけで、追加の設定は不要です。";
@@ -589,7 +593,11 @@
 "settings.models.routing.multimodal" = "マルチモーダル LLM は完全な転写パイプラインを処理します。ペルソナがアクティブな場合、書き換えは同じ呼び出しに組み込まれます。";
 "settings.models.routing.aliCloud" = "Alibaba Cloud DashScope は、WebSocket 経由でリアルタイム ストリーミング ASR を処理します。";
 "settings.models.routing.doubao" = "Doubao Speech Recognition 2.0 は、ByteDance のバイナリ WebSocket プロトコルを介してリアルタイム ストリーミング ASR を処理します。";
+"settings.models.routing.googleCloud" = "Google Cloud Speech-to-Text は Typeflux ゲートウェイ経由でリアルタイム ストリーミング ASR を処理します。";
 "settings.models.routing.groq" = "Groq は、Whisper 互換の文字起こしエンドポイントを使用した高速推論でディクテーションを処理します。";
+"settings.models.googleCloud.streaming" = "StreamingRecognize";
+"settings.models.googleCloud.cloudGatewayHint" = "Typeflux Cloud 経由で Google Cloud Speech-to-Text を使用します。Typeflux にサインインすると、このリアルタイムモデルをテストして使用できます。";
+"settings.models.useGoogleCloud" = "Google を使用";
 "settings.models.routing.typefluxOfficial" = "Typeflux 公式は内蔵の音声認識サービスでディクテーションを処理します。";
 "settings.models.routing.typefluxCloud" = "Typeflux Cloud は内蔵の LLM サービスで書き直しと編集のリクエストを処理します。";
 "settings.models.typefluxOfficial.description" = "Typeflux 公式は内蔵の音声認識サービスです。API キーやエンドポイントの設定は不要です。Typeflux アカウントでサインインするだけでディクテーションを始められます。";

@@ -117,6 +117,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
                 multimodal: MockProcessingTranscriber(),
                 aliCloud: MockProcessingTranscriber(),
                 doubaoRealtime: MockProcessingTranscriber(),
+                googleCloud: MockProcessingTranscriber(),
                 groq: MockProcessingTranscriber(),
                 typefluxOfficial: MockProcessingTranscriber(),
             ),

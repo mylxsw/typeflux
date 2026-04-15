@@ -78,6 +78,7 @@ final class DIContainer {
             multimodal: MultimodalLLMTranscriber(settingsStore: settingsStore),
             aliCloud: AliCloudRealtimeTranscriber(settingsStore: settingsStore),
             doubaoRealtime: DoubaoRealtimeTranscriber(settingsStore: settingsStore),
+            googleCloud: GoogleCloudSpeechTranscriber(),
             groq: WhisperAPITranscriber(
                 settingsStore: settingsStore,
                 baseURLOverride: "https://api.groq.com/openai/v1",

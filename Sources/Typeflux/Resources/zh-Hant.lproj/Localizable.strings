@@ -205,6 +205,7 @@
 "provider.stt.multimodalLLM" = "多模態 LLM";
 "provider.stt.aliCloud" = "阿里雲 ASR";
 "provider.stt.doubaoRealtime" = "豆包即時 ASR";
+"provider.stt.googleCloud" = "Google 語音轉文字";
 "provider.stt.groq" = "Groq";
 "provider.stt.typefluxOfficial" = "Typeflux Cloud";
 "provider.llm.openAICompatible" = "OpenAI 相容";
@@ -500,6 +501,7 @@
 "settings.models.card.multimodal.summary" = "音訊直接傳送給多模態模型，在一次 API 呼叫中完成轉寫與人設改寫。";
 "settings.models.card.aliCloud.summary" = "透過 DashScope 執行即時串流辨識，低延遲 WebSocket 傳輸。";
 "settings.models.card.doubao.summary" = "透過豆包語音辨識 2.0 與位元組原生二進位 WebSocket 協議進行低延遲串流辨識。";
+"settings.models.card.googleCloud.summary" = "透過 Google Cloud Speech-to-Text 執行即時串流語音辨識。";
 "settings.models.card.groq.summary" = "透過 Groq 推理介面進行高速 Whisper 轉寫，預設模型為 whisper-large-v3-turbo。";
 "settings.models.card.typefluxOfficial.summary" = "Typeflux 內建語音辨識服務。登入 Typeflux 帳號即可使用，無需額外的 API 金鑰。";
 "settings.models.card.typefluxCloud.summary" = "Typeflux 內建大型語言模型服務。登入 Typeflux 帳號即可使用，無需額外的 API 金鑰。";
@@ -554,6 +556,7 @@
 "settings.models.overview.multimodal" = "音訊會直接傳送到多模態模型，一次呼叫完成轉寫與人設改寫。";
 "settings.models.overview.aliCloud" = "語音辨識會透過 WebSocket 即時串流到阿里雲 DashScope。";
 "settings.models.overview.doubao" = "語音辨識會透過位元組 WebSocket 即時串流到豆包語音辨識 2.0。";
+"settings.models.overview.googleCloud" = "語音辨識會透過 Typeflux Cloud 即時串流到 Google Cloud Speech-to-Text。";
 "settings.models.overview.groq" = "語音辨識由 Groq 的高速推理介面透過 Whisper 模型處理。";
 "settings.models.overview.typefluxOfficial" = "語音辨識由 Typeflux 內建服務處理。";
 "settings.models.overview.typefluxCloud" = "文字改寫和編輯由 Typeflux 內建大型語言模型服務處理。";
@@ -574,6 +577,7 @@
 "settings.models.focused.multimodal" = "適合追求端到端最快路徑的情境，音訊會直接送往多模態模型，一次完成轉寫與改寫。";
 "settings.models.focused.aliCloud" = "適合希望透過阿里雲 DashScope 獲得低延遲即時串流辨識的情境。";
 "settings.models.focused.doubao" = "適合希望透過豆包語音辨識 2.0 獲得最低延遲雲端聽寫路徑的情境。";
+"settings.models.focused.googleCloud" = "適合希望使用 Google Cloud Speech-to-Text 進行即時串流辨識的情境。";
 "settings.models.focused.groq" = "適合希望使用 Groq 加速推理進行快速雲端轉寫的情境。";
 "settings.models.focused.typefluxOfficial" = "使用 Typeflux 內建語音辨識服務，只需登入即可，無需額外設定。";
 "settings.models.focused.typefluxCloud" = "使用 Typeflux 內建大型語言模型服務進行文字改寫和編輯。只需登入即可，無需額外設定。";
@@ -589,7 +593,11 @@
 "settings.models.routing.multimodal" = "多模態 LLM 會處理完整轉寫流程。啟用人設時，改寫也會被折疊到同一次呼叫中。";
 "settings.models.routing.aliCloud" = "阿里雲 DashScope 會透過 WebSocket 處理即時串流 ASR。";
 "settings.models.routing.doubao" = "豆包語音辨識 2.0 會透過位元組二進位 WebSocket 協議處理即時串流 ASR。";
+"settings.models.routing.googleCloud" = "Google Cloud Speech-to-Text 會透過 Typeflux 閘道處理即時串流 ASR。";
 "settings.models.routing.groq" = "Groq 會透過 Whisper 相容轉寫介面以加速推理處理聽寫。";
+"settings.models.googleCloud.streaming" = "StreamingRecognize";
+"settings.models.googleCloud.cloudGatewayHint" = "透過 Typeflux Cloud 使用 Google Cloud Speech-to-Text。登入 Typeflux 後即可測試並使用此即時模型。";
+"settings.models.useGoogleCloud" = "使用 Google";
 "settings.models.routing.typefluxOfficial" = "Typeflux 官方透過內建語音辨識服務處理聽寫。";
 "settings.models.routing.typefluxCloud" = "Typeflux Cloud 透過內建大型語言模型服務處理改寫和編輯請求。";
 "settings.models.typefluxOfficial.description" = "Typeflux 官方是我們內建的語音辨識服務。無需 API 金鑰或端點設定——只需登入您的 Typeflux 帳號即可開始聽寫。";

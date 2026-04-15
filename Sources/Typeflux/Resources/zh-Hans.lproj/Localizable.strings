@@ -207,6 +207,7 @@
 "provider.stt.multimodalLLM" = "多模态 LLM";
 "provider.stt.aliCloud" = "阿里云 ASR";
 "provider.stt.doubaoRealtime" = "豆包实时 ASR";
+"provider.stt.googleCloud" = "Google 语音转文字";
 "provider.stt.groq" = "Groq";
 "provider.stt.typefluxOfficial" = "Typeflux Cloud";
 "provider.llm.openAICompatible" = "OpenAI 兼容";
@@ -502,6 +503,7 @@
 "settings.models.card.multimodal.summary" = "音频直接发送给多模态模型，在一次 API 调用内完成转写和人设改写。";
 "settings.models.card.aliCloud.summary" = "通过 DashScope 执行实时流式识别，低延迟 WebSocket 传输。";
 "settings.models.card.doubao.summary" = "通过豆包语音识别 2.0 和字节原生二进制 WebSocket 协议进行低延迟流式识别。";
+"settings.models.card.googleCloud.summary" = "通过 Google Cloud Speech-to-Text 执行实时流式语音识别。";
 "settings.models.card.groq.summary" = "通过 Groq 推理接口进行高速 Whisper 转写，默认模型为 whisper-large-v3-turbo。";
 "settings.models.card.typefluxOfficial.summary" = "Typeflux 内置语音识别服务。登录 Typeflux 账号即可使用，无需额外的 API 密钥。";
 "settings.models.card.typefluxCloud.summary" = "Typeflux 内置大语言模型服务。登录 Typeflux 账号即可使用，无需额外的 API 密钥。";
@@ -556,6 +558,7 @@
 "settings.models.overview.multimodal" = "音频会直接发送给多模态模型，一次调用完成转写与人设改写。";
 "settings.models.overview.aliCloud" = "语音识别会通过 WebSocket 实时流式发送到阿里云 DashScope。";
 "settings.models.overview.doubao" = "语音识别会通过字节 WebSocket 实时流式发送到豆包语音识别 2.0。";
+"settings.models.overview.googleCloud" = "语音识别会通过 Typeflux Cloud 实时流式发送到 Google Cloud Speech-to-Text。";
 "settings.models.overview.groq" = "语音识别由 Groq 的高速推理接口通过 Whisper 模型处理。";
 "settings.models.overview.typefluxOfficial" = "语音识别由 Typeflux 内置服务处理。";
 "settings.models.overview.typefluxCloud" = "文字改写和编辑由 Typeflux 内置大语言模型服务处理。";
@@ -576,6 +579,7 @@
 "settings.models.focused.multimodal" = "适合追求端到端最快路径的场景，音频会直接发往多模态模型，一次完成转写和改写。";
 "settings.models.focused.aliCloud" = "适合希望通过阿里云 DashScope 获得低延迟实时流式识别的场景。";
 "settings.models.focused.doubao" = "适合希望通过豆包语音识别 2.0 获得最低延迟云端听写路径的场景。";
+"settings.models.focused.googleCloud" = "适合希望使用 Google Cloud Speech-to-Text 进行实时流式识别的场景。";
 "settings.models.focused.groq" = "适合希望使用 Groq 加速推理进行快速云端转写的场景。";
 "settings.models.focused.typefluxOfficial" = "使用 Typeflux 内置语音识别服务，只需登录即可，无需额外配置。";
 "settings.models.focused.typefluxCloud" = "使用 Typeflux 内置大语言模型服务进行文字改写和编辑。只需登录即可，无需额外配置。";
@@ -591,7 +595,11 @@
 "settings.models.routing.multimodal" = "多模态 LLM 会处理完整转写流程。启用人设时，改写也会被折叠进同一次调用。";
 "settings.models.routing.aliCloud" = "阿里云 DashScope 会通过 WebSocket 处理实时流式 ASR。";
 "settings.models.routing.doubao" = "豆包语音识别 2.0 会通过字节二进制 WebSocket 协议处理实时流式 ASR。";
+"settings.models.routing.googleCloud" = "Google Cloud Speech-to-Text 会通过 Typeflux 网关处理实时流式 ASR。";
 "settings.models.routing.groq" = "Groq 会通过 Whisper 兼容转写接口以加速推理处理听写。";
+"settings.models.googleCloud.streaming" = "StreamingRecognize";
+"settings.models.googleCloud.cloudGatewayHint" = "通过 Typeflux Cloud 使用 Google Cloud Speech-to-Text。登录 Typeflux 后即可测试并使用此实时模型。";
+"settings.models.useGoogleCloud" = "使用 Google";
 "settings.models.routing.typefluxOfficial" = "Typeflux 官方通过内置语音识别服务处理听写。";
 "settings.models.routing.typefluxCloud" = "Typeflux Cloud 通过内置大语言模型服务处理改写和编辑请求。";
 "settings.models.typefluxOfficial.description" = "Typeflux 官方是我们内置的语音识别服务。无需 API 密钥或端点配置——只需登录您的 Typeflux 账号即可开始听写。";
