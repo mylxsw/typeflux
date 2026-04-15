@@ -519,18 +519,44 @@ extension WorkflowController {
                 .askAnything
             }
 
-            let transcribedText = try await sttRouter.transcribeStream(
-                audioFile: audioFile,
-                scenario: cloudScenario,
-            ) { [weak self] snapshot in
-                guard let self, !snapshot.text.isEmpty else { return }
-                guard !shouldKeepProcessingCapsule else { return }
-                await MainActor.run {
-                    if self.processingSessionID == sessionID {
-                        self.overlayController.updateStreamingText(snapshot.text)
+            // Use merged ASR+LLM path when both providers are Typeflux Cloud and
+            // a persona rewrite is needed. The server will run the LLM after
+            // transcription and stream results back over the same WebSocket.
+            let canMergeWithLLM = settingsStore.sttProvider == .typefluxOfficial
+                && settingsStore.llmRemoteProvider == .typefluxCloud
+                && recordingIntent == .dictation
+                && !multimodalHandlesPersona
+                && personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+
+            let transcribedText: String
+            var mergedLLMResult: String?
+
+            if canMergeWithLLM, let resolvedPersonaPrompt = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines), !resolvedPersonaPrompt.isEmpty {
+                let mergedResult = try await performMergedCloudTranscription(
+                    audioFile: audioFile,
+                    personaPrompt: resolvedPersonaPrompt,
+                    selectionSnapshot: selectionSnapshot,
+                    cloudScenario: cloudScenario,
+                    shouldKeepProcessingCapsule: shouldKeepProcessingCapsule,
+                    sessionID: sessionID,
+                )
+                transcribedText = mergedResult.transcript
+                mergedLLMResult = mergedResult.rewritten
+            } else {
+                transcribedText = try await sttRouter.transcribeStream(
+                    audioFile: audioFile,
+                    scenario: cloudScenario,
+                ) { [weak self] snapshot in
+                    guard let self, !snapshot.text.isEmpty else { return }
+                    guard !shouldKeepProcessingCapsule else { return }
+                    await MainActor.run {
+                        if self.processingSessionID == sessionID {
+                            self.overlayController.updateStreamingText(snapshot.text)
+                        }
                     }
                 }
             }
+
             try ensureProcessingIsActive(sessionID)
             pipelineTiming.transcriptionCompletedAt = Date()
             record.pipelineTiming = pipelineTiming
@@ -583,6 +609,7 @@ extension WorkflowController {
                     personaPrompt: personaPrompt,
                     selectionSnapshot: selectionSnapshot,
                     multimodalHandlesPersona: multimodalHandlesPersona,
+                    mergedLLMResult: mergedLLMResult,
                     sessionID: sessionID,
                     record: &record,
                     pipelineTiming: &pipelineTiming,
@@ -1014,11 +1041,106 @@ extension WorkflowController {
         }
     }
 
+    // Thread-safe accumulator for LLM streaming chunks captured in @Sendable closures.
+    private final class LLMStreamBuffer: @unchecked Sendable {
+        private var _text = ""
+        private let lock = NSLock()
+
+        func append(_ chunk: String) {
+            lock.lock()
+            _text += chunk
+            lock.unlock()
+        }
+
+        var text: String {
+            lock.lock()
+            defer { lock.unlock() }
+            return _text
+        }
+    }
+
+    /// Builds an `ASRLLMConfig` by constructing the same prompts the LLM service would
+    /// use for a `rewriteTranscript` request, substituting `{{transcript}}` as a
+    /// placeholder for the actual transcript text.
+    private func buildASRLLMConfig(
+        personaPrompt: String,
+        selectionSnapshot: TextSelectionSnapshot,
+    ) -> ASRLLMConfig {
+        let placeholderRequest = LLMRewriteRequest(
+            mode: .rewriteTranscript,
+            sourceText: "{{transcript}}",
+            spokenInstruction: nil,
+            personaPrompt: personaPrompt,
+            appSystemContext: AppSystemContext(snapshot: selectionSnapshot),
+        )
+        let prompts = PromptCatalog.rewritePrompts(for: placeholderRequest)
+        var effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
+            to: prompts.system,
+            appLanguage: settingsStore.appLanguage,
+        )
+        if let appContext = placeholderRequest.appSystemContext {
+            let extra = PromptCatalog.appSpecificSystemContext(appContext)
+            if !extra.isEmpty {
+                effectiveSystemPrompt += "\n\n\(extra)"
+            }
+        }
+        return ASRLLMConfig(
+            systemPrompt: effectiveSystemPrompt,
+            userPromptTemplate: prompts.user,
+        )
+    }
+
+    /// Performs transcription and, when the server supports it, an inline LLM persona
+    /// rewrite over the same WebSocket connection.  Overlay updates are managed here so
+    /// `processPersonaRewriteFlow` can treat the result identically to a normal rewrite.
+    private func performMergedCloudTranscription(
+        audioFile: AudioFile,
+        personaPrompt: String,
+        selectionSnapshot: TextSelectionSnapshot,
+        cloudScenario: TypefluxCloudScenario,
+        shouldKeepProcessingCapsule: Bool,
+        sessionID: UUID,
+    ) async throws -> (transcript: String, rewritten: String?) {
+        let llmConfig = buildASRLLMConfig(personaPrompt: personaPrompt, selectionSnapshot: selectionSnapshot)
+        let llmBuffer = LLMStreamBuffer()
+
+        return try await sttRouter.transcribeStreamWithLLMRewrite(
+            audioFile: audioFile,
+            llmConfig: llmConfig,
+            scenario: cloudScenario,
+            onASRUpdate: { [weak self] snapshot in
+                guard let self, !snapshot.text.isEmpty, !shouldKeepProcessingCapsule else { return }
+                await MainActor.run {
+                    if self.processingSessionID == sessionID {
+                        self.overlayController.updateStreamingText(snapshot.text)
+                    }
+                }
+            },
+            onLLMStart: { [weak self] in
+                await MainActor.run {
+                    if self?.processingSessionID == sessionID {
+                        self?.overlayController.transitionToLLMPhase()
+                    }
+                }
+            },
+            onLLMChunk: { [weak self] chunk in
+                llmBuffer.append(chunk)
+                let current = llmBuffer.text
+                await MainActor.run {
+                    if self?.processingSessionID == sessionID {
+                        self?.overlayController.updateStreamingText(current)
+                    }
+                }
+            },
+        )
+    }
+
     private func processPersonaRewriteFlow(
         transcribedText: String,
         personaPrompt: String,
         selectionSnapshot: TextSelectionSnapshot,
         multimodalHandlesPersona: Bool,
+        mergedLLMResult: String? = nil,
         sessionID: UUID,
         record: inout HistoryRecord,
         pipelineTiming: inout HistoryPipelineTiming,
@@ -1045,51 +1167,63 @@ extension WorkflowController {
         record.processingStatus = .running
         saveHistoryRecord(record)
 
-        await MainActor.run { self.overlayController.transitionToLLMPhase() }
-        pipelineTiming.llmProcessingStartedAt = Date()
-        record.pipelineTiming = pipelineTiming
-        saveHistoryRecord(record)
-        logPipelineEvent("llm-processing-started", for: record)
-
         let rewriteOutput: String
-        do {
-            let rewriteResult = try await generateRewrite(
-                request: LLMRewriteRequest(
-                    mode: .rewriteTranscript,
-                    sourceText: transcribedText,
-                    spokenInstruction: nil,
-                    personaPrompt: personaPrompt,
-                    appSystemContext: AppSystemContext(snapshot: selectionSnapshot),
-                ),
-                sessionID: sessionID,
-                timeout: Self.llmTimeoutAfterTranscriptionSeconds,
-            )
-
-            try ensureProcessingIsActive(sessionID)
-            pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
-            rewriteOutput = rewriteResult.text
-            record.personaResultText = rewriteResult.text
+        if let merged = mergedLLMResult {
+            // Rewrite already completed as part of the merged ASR+LLM WebSocket session.
+            // The overlay was updated with streaming chunks during transcription, so we
+            // only need to record the timing and move on.
+            pipelineTiming.llmProcessingStartedAt = pipelineTiming.transcriptionCompletedAt ?? Date()
+            pipelineTiming.llmProcessingCompletedAt = Date()
+            record.pipelineTiming = pipelineTiming
+            record.personaResultText = merged
+            rewriteOutput = merged
             logPipelineEvent("llm-processing-completed", for: record)
-        } catch is LLMRequestTimeoutError {
-            // Timeout: insert transcript as fallback so the user isn't left empty-handed
-            // after waiting the full timeout period. Log for diagnostics.
-            ErrorLogStore.shared.log(
-                "Persona rewrite timed out after \(Int(Self.llmTimeoutAfterTranscriptionSeconds))s, using transcript as fallback",
-            )
-            pipelineTiming.llmProcessingCompletedAt = Date()
-            rewriteOutput = transcribedText
-            record.personaResultText = transcribedText
-        } catch let error where Self.isServiceOverloadedError(error) {
-            // Service overloaded (HTTP 529): all retries exhausted; insert transcript as
-            // fallback so the user isn't left with an error dialog.
-            ErrorLogStore.shared.log("LLM service overloaded after retries, using transcript as fallback")
-            pipelineTiming.llmProcessingCompletedAt = Date()
-            rewriteOutput = transcribedText
-            record.personaResultText = transcribedText
-        } catch {
-            // All other failures (network error, API error, etc.) are surfaced to the
-            // user as a retryable failure so they are never silently swallowed.
-            throw error
+        } else {
+            await MainActor.run { self.overlayController.transitionToLLMPhase() }
+            pipelineTiming.llmProcessingStartedAt = Date()
+            record.pipelineTiming = pipelineTiming
+            saveHistoryRecord(record)
+            logPipelineEvent("llm-processing-started", for: record)
+
+            do {
+                let rewriteResult = try await generateRewrite(
+                    request: LLMRewriteRequest(
+                        mode: .rewriteTranscript,
+                        sourceText: transcribedText,
+                        spokenInstruction: nil,
+                        personaPrompt: personaPrompt,
+                        appSystemContext: AppSystemContext(snapshot: selectionSnapshot),
+                    ),
+                    sessionID: sessionID,
+                    timeout: Self.llmTimeoutAfterTranscriptionSeconds,
+                )
+
+                try ensureProcessingIsActive(sessionID)
+                pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
+                rewriteOutput = rewriteResult.text
+                record.personaResultText = rewriteResult.text
+                logPipelineEvent("llm-processing-completed", for: record)
+            } catch is LLMRequestTimeoutError {
+                // Timeout: insert transcript as fallback so the user isn't left empty-handed
+                // after waiting the full timeout period. Log for diagnostics.
+                ErrorLogStore.shared.log(
+                    "Persona rewrite timed out after \(Int(Self.llmTimeoutAfterTranscriptionSeconds))s, using transcript as fallback",
+                )
+                pipelineTiming.llmProcessingCompletedAt = Date()
+                rewriteOutput = transcribedText
+                record.personaResultText = transcribedText
+            } catch let error where Self.isServiceOverloadedError(error) {
+                // Service overloaded (HTTP 529): all retries exhausted; insert transcript as
+                // fallback so the user isn't left with an error dialog.
+                ErrorLogStore.shared.log("LLM service overloaded after retries, using transcript as fallback")
+                pipelineTiming.llmProcessingCompletedAt = Date()
+                rewriteOutput = transcribedText
+                record.personaResultText = transcribedText
+            } catch {
+                // All other failures (network error, API error, etc.) are surfaced to the
+                // user as a retryable failure so they are never silently swallowed.
+                throw error
+            }
         }
 
         record.pipelineTiming = pipelineTiming

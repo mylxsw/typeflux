@@ -253,4 +253,30 @@ final class STTRouter {
             }
         }
     }
+
+    /// Runs transcription and, if the provider supports it, an LLM persona rewrite in
+    /// the same WebSocket session. Only `typefluxOfficial` implements this optimisation;
+    /// for all other providers the method falls back to a plain `transcribeStream` call
+    /// and returns `rewritten: nil` so the caller can run a separate LLM request.
+    func transcribeStreamWithLLMRewrite(
+        audioFile: AudioFile,
+        llmConfig: ASRLLMConfig,
+        scenario: TypefluxCloudScenario,
+        onASRUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
+        onLLMStart: @escaping @Sendable () async -> Void,
+        onLLMChunk: @escaping @Sendable (String) async -> Void,
+    ) async throws -> (transcript: String, rewritten: String?) {
+        guard let integrated = typefluxOfficial as? TypefluxCloudLLMIntegratedTranscriber else {
+            let transcript = try await transcribeStream(audioFile: audioFile, scenario: scenario, onUpdate: onASRUpdate)
+            return (transcript: transcript, rewritten: nil)
+        }
+        return try await integrated.transcribeStreamWithLLMRewrite(
+            audioFile: audioFile,
+            llmConfig: llmConfig,
+            scenario: scenario,
+            onASRUpdate: onASRUpdate,
+            onLLMStart: onLLMStart,
+            onLLMChunk: onLLMChunk,
+        )
+    }
 }

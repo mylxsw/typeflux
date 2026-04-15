@@ -2,9 +2,39 @@ import AVFoundation
 import Foundation
 import os
 
+// MARK: - LLM Integration Types
+
+/// Configuration for server-side LLM rewrite, sent as part of the ASR start message.
+/// When included, the server runs an LLM pass after transcription and streams the
+/// result back over the same WebSocket connection.
+struct ASRLLMConfig: Encodable {
+    /// Fully-assembled system prompt (language policy + persona + environment context).
+    let systemPrompt: String
+    /// User prompt template containing "{{transcript}}" as a placeholder for the
+    /// final transcription text. The server substitutes it before calling the LLM.
+    let userPromptTemplate: String
+
+    enum CodingKeys: String, CodingKey {
+        case systemPrompt = "system_prompt"
+        case userPromptTemplate = "user_prompt_template"
+    }
+}
+
+/// Transcribers that support a merged ASR + LLM rewrite in a single WebSocket session.
+protocol TypefluxCloudLLMIntegratedTranscriber: TypefluxCloudScenarioAwareTranscriber {
+    func transcribeStreamWithLLMRewrite(
+        audioFile: AudioFile,
+        llmConfig: ASRLLMConfig,
+        scenario: TypefluxCloudScenario,
+        onASRUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
+        onLLMStart: @escaping @Sendable () async -> Void,
+        onLLMChunk: @escaping @Sendable (String) async -> Void,
+    ) async throws -> (transcript: String, rewritten: String?)
+}
+
 // MARK: - Main Transcriber
 
-final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber {
+final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber, TypefluxCloudLLMIntegratedTranscriber {
     private let logger = Logger(subsystem: "dev.typeflux", category: "TypefluxOfficialTranscriber")
 
     func transcribeStream(
@@ -23,6 +53,31 @@ final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber {
             token: token,
             scenario: scenario,
             onUpdate: onUpdate,
+        )
+    }
+
+    func transcribeStreamWithLLMRewrite(
+        audioFile: AudioFile,
+        llmConfig: ASRLLMConfig,
+        scenario: TypefluxCloudScenario,
+        onASRUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
+        onLLMStart: @escaping @Sendable () async -> Void,
+        onLLMChunk: @escaping @Sendable (String) async -> Void,
+    ) async throws -> (transcript: String, rewritten: String?) {
+        let token = await MainActor.run { AuthState.shared.accessToken }
+        guard let token, !token.isEmpty else {
+            throw TypefluxOfficialASRError.notLoggedIn
+        }
+
+        let pcmData = try TypefluxOfficialAudioConverter.convert(url: audioFile.fileURL)
+        return try await TypefluxOfficialASRSession.runWithLLM(
+            pcmData: pcmData,
+            token: token,
+            scenario: scenario,
+            llmConfig: llmConfig,
+            onASRUpdate: onASRUpdate,
+            onLLMStart: onLLMStart,
+            onLLMChunk: onLLMChunk,
         )
     }
 
@@ -188,7 +243,32 @@ private actor TypefluxOfficialASRSession {
             pcmData: pcmData,
             token: token,
             scenario: scenario,
-            onUpdate: onUpdate,
+            onASRUpdate: onUpdate,
+            llmConfig: nil,
+            onLLMStart: nil,
+            onLLMChunk: nil,
+        )
+        let (transcript, _) = try await session.execute()
+        return transcript
+    }
+
+    static func runWithLLM(
+        pcmData: Data,
+        token: String,
+        scenario: TypefluxCloudScenario,
+        llmConfig: ASRLLMConfig,
+        onASRUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
+        onLLMStart: @escaping @Sendable () async -> Void,
+        onLLMChunk: @escaping @Sendable (String) async -> Void,
+    ) async throws -> (transcript: String, rewritten: String?) {
+        let session = TypefluxOfficialASRSession(
+            pcmData: pcmData,
+            token: token,
+            scenario: scenario,
+            onASRUpdate: onASRUpdate,
+            llmConfig: llmConfig,
+            onLLMStart: onLLMStart,
+            onLLMChunk: onLLMChunk,
         )
         return try await session.execute()
     }
@@ -196,27 +276,37 @@ private actor TypefluxOfficialASRSession {
     private let pcmData: Data
     private let token: String
     private let scenario: TypefluxCloudScenario
-    private let onUpdate: @Sendable (TranscriptionSnapshot) async -> Void
+    private let onASRUpdate: @Sendable (TranscriptionSnapshot) async -> Void
+    private let llmConfig: ASRLLMConfig?
+    private let onLLMStart: (@Sendable () async -> Void)?
+    private let onLLMChunk: (@Sendable (String) async -> Void)?
     private let logger = Logger(subsystem: "dev.typeflux", category: "TypefluxOfficialASRSession")
 
     private var finalSegments: [String] = []
     private var currentPartialText: String = ""
     private var completed = false
     private var sessionError: Error?
+    private var rewrittenText: String?
 
     private init(
         pcmData: Data,
         token: String,
         scenario: TypefluxCloudScenario,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
+        onASRUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
+        llmConfig: ASRLLMConfig?,
+        onLLMStart: (@Sendable () async -> Void)?,
+        onLLMChunk: (@Sendable (String) async -> Void)?,
     ) {
         self.pcmData = pcmData
         self.token = token
         self.scenario = scenario
-        self.onUpdate = onUpdate
+        self.onASRUpdate = onASRUpdate
+        self.llmConfig = llmConfig
+        self.onLLMStart = onLLMStart
+        self.onLLMChunk = onLLMChunk
     }
 
-    private func execute() async throws -> String {
+    private func execute() async throws -> (transcript: String, rewritten: String?) {
         let request = try TypefluxOfficialASRRequestFactory.makeWebSocketRequest(
             apiBaseURL: AppServerConfiguration.apiBaseURL,
             token: token,
@@ -231,18 +321,21 @@ private actor TypefluxOfficialASRSession {
             session.finishTasksAndInvalidate()
         }
 
-        // Send start message
-        let startMessage: [String: Any] = [
-            "type": "start",
-            "config": [
-                "audio": [
-                    "format": "pcm",
-                    "sample_rate": 16000,
-                    "channel": 1,
-                    "lang": "auto",
-                ],
-            ],
+        // Build start message; include LLM config when present.
+        let audioConfig: [String: Any] = [
+            "format": "pcm",
+            "sample_rate": 16000,
+            "channel": 1,
+            "lang": "auto",
         ]
+        var config: [String: Any] = ["audio": audioConfig]
+        if let llmConfig {
+            config["llm"] = [
+                "system_prompt": llmConfig.systemPrompt,
+                "user_prompt_template": llmConfig.userPromptTemplate,
+            ]
+        }
+        let startMessage: [String: Any] = ["type": "start", "config": config]
         let startData = try JSONSerialization.data(withJSONObject: startMessage)
         try await socketTask.send(.string(String(data: startData, encoding: .utf8)!))
 
@@ -274,9 +367,9 @@ private actor TypefluxOfficialASRSession {
 
         let transcript = assembleTranscript()
         if !transcript.isEmpty {
-            await onUpdate(TranscriptionSnapshot(text: transcript, isFinal: true))
+            await onASRUpdate(TranscriptionSnapshot(text: transcript, isFinal: true))
         }
-        return transcript
+        return (transcript: transcript, rewritten: rewrittenText)
     }
 
     private func receiveLoop(socketTask: URLSessionWebSocketTask) async {
@@ -317,7 +410,7 @@ private actor TypefluxOfficialASRSession {
             let partialText = json["text"] as? String ?? ""
             currentPartialText = partialText
             let display = assembleTranscript()
-            await onUpdate(TranscriptionSnapshot(text: display, isFinal: false))
+            await onASRUpdate(TranscriptionSnapshot(text: display, isFinal: false))
 
         case "final":
             let finalText = json["text"] as? String ?? ""
@@ -326,13 +419,30 @@ private actor TypefluxOfficialASRSession {
             }
             currentPartialText = ""
             let display = assembleTranscript()
-            await onUpdate(TranscriptionSnapshot(text: display, isFinal: false))
+            await onASRUpdate(TranscriptionSnapshot(text: display, isFinal: false))
 
         case "event":
             let eventText = json["text"] as? String ?? ""
             if eventText == "completed" {
-                completed = true
+                // If LLM is pending, keep the receive loop alive to handle llm_* messages.
+                if llmConfig == nil {
+                    completed = true
+                }
             }
+
+        case "llm_start":
+            await onLLMStart?()
+
+        case "llm_chunk":
+            let chunkText = json["text"] as? String ?? ""
+            if !chunkText.isEmpty {
+                await onLLMChunk?(chunkText)
+            }
+
+        case "llm_final":
+            let finalRewrite = json["text"] as? String ?? ""
+            rewrittenText = finalRewrite.isEmpty ? nil : finalRewrite
+            completed = true
 
         case "error":
             let errorText = json["error"] as? String ?? "Unknown error"
