@@ -599,6 +599,7 @@
 "settings.models.googleCloud.projectID" = "Project ID";
 "settings.models.googleCloud.directHint" = "直接使用 Google Cloud Speech-to-Text v2 StreamingRecognize。請在 Google Cloud 中啟用 Speech-to-Text API，並為此專案建立 API Key。";
 "settings.models.googleCloud.cloudGatewayHint" = "使用 Project ID 和 API Key 直接呼叫 Google Cloud Speech-to-Text v2 StreamingRecognize。";
+"settings.models.googleCloud.docs" = "查看 API 文件";
 "settings.models.useGoogleCloud" = "使用 Google";
 "settings.models.routing.typefluxOfficial" = "Typeflux 官方透過內建語音辨識服務處理聽寫。";
 "settings.models.routing.typefluxCloud" = "Typeflux Cloud 透過內建大型語言模型服務處理改寫和編輯請求。";

@@ -599,6 +599,7 @@
 "settings.models.googleCloud.projectID" = "Project ID";
 "settings.models.googleCloud.directHint" = "Google Cloud Speech-to-Text v2 StreamingRecognize を直接使用します。Google Cloud で Speech-to-Text API を有効にし、このプロジェクト用の API Key を作成してください。";
 "settings.models.googleCloud.cloudGatewayHint" = "Project ID と API Key を使って Google Cloud Speech-to-Text v2 StreamingRecognize を直接呼び出します。";
+"settings.models.googleCloud.docs" = "API ドキュメントを表示";
 "settings.models.useGoogleCloud" = "Google を使用";
 "settings.models.routing.typefluxOfficial" = "Typeflux 公式は内蔵の音声認識サービスでディクテーションを処理します。";
 "settings.models.routing.typefluxCloud" = "Typeflux Cloud は内蔵の LLM サービスで書き直しと編集のリクエストを処理します。";

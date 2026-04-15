@@ -601,6 +601,7 @@
 "settings.models.googleCloud.projectID" = "Project ID";
 "settings.models.googleCloud.directHint" = "Uses Google Cloud Speech-to-Text v2 StreamingRecognize directly. Enable the Speech-to-Text API in Google Cloud and create an API key for this project.";
 "settings.models.googleCloud.cloudGatewayHint" = "Uses Google Cloud Speech-to-Text v2 StreamingRecognize directly with your Project ID and API key.";
+"settings.models.googleCloud.docs" = "View API Docs";
 "settings.models.useGoogleCloud" = "Use Google";
 "settings.models.routing.typefluxOfficial" = "Typeflux Official handles dictation through our built-in speech recognition service.";
 "settings.models.routing.typefluxCloud" = "Typeflux Cloud handles rewrite and edit requests through our built-in LLM service.";

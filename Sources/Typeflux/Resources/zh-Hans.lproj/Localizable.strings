@@ -601,6 +601,7 @@
 "settings.models.googleCloud.projectID" = "Project ID";
 "settings.models.googleCloud.directHint" = "直接使用 Google Cloud Speech-to-Text v2 StreamingRecognize。请在 Google Cloud 中启用 Speech-to-Text API，并为此项目创建 API Key。";
 "settings.models.googleCloud.cloudGatewayHint" = "使用 Project ID 和 API Key 直接调用 Google Cloud Speech-to-Text v2 StreamingRecognize。";
+"settings.models.googleCloud.docs" = "查看 API 文档";
 "settings.models.useGoogleCloud" = "使用 Google";
 "settings.models.routing.typefluxOfficial" = "Typeflux 官方通过内置语音识别服务处理听写。";
 "settings.models.routing.typefluxCloud" = "Typeflux Cloud 通过内置大语言模型服务处理改写和编辑请求。";

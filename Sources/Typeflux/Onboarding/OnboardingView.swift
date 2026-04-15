@@ -692,6 +692,17 @@ struct OnboardingView: View {
                     .font(.studioBody(12))
                     .foregroundStyle(onboardingSecondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                Link(destination: GoogleCloudSpeechDefaults.apiDocumentationURL) {
+                    HStack(spacing: 5) {
+                        Text(L("settings.models.googleCloud.docs"))
+                            .font(.studioBody(12, weight: .semibold))
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundStyle(StudioTheme.accent)
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
@@ -1087,6 +1098,8 @@ struct OnboardingView: View {
         )
             ?? Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Providers")
             ?? Bundle.module.url(forResource: name, withExtension: "png")
+            ?? Bundle.module.url(forResource: name, withExtension: "svg", subdirectory: "Resources")
+            ?? Bundle.module.url(forResource: name, withExtension: "svg")
         guard let url else { return nil }
         return NSImage(contentsOf: url)
     }
@@ -1109,7 +1122,7 @@ struct OnboardingView: View {
         case .grok: "xai"
         case .groq: "groq"
         case .groqSTT: "groq"
-        case .googleCloud: nil
+        case .googleCloud: "google"
         case .xiaomi: "xiaomimimo"
         case .aliCloud: "bailian-color"
         case .doubaoRealtime: "doubao-color"

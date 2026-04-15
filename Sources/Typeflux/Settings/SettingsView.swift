@@ -3640,6 +3640,12 @@ struct StudioView: View {
                     Text(L("settings.models.googleCloud.directHint"))
                         .font(.studioBody(StudioTheme.Typography.caption))
                         .foregroundStyle(StudioTheme.textSecondary)
+                    Link(destination: GoogleCloudSpeechDefaults.apiDocumentationURL) {
+                        Text(L("settings.models.googleCloud.docs"))
+                            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                            .foregroundStyle(StudioTheme.accent)
+                    }
+                    .buttonStyle(.plain)
                 }
 
             case .groqSTT:
@@ -3934,6 +3940,8 @@ struct StudioView: View {
                 forResource: resourceName, withExtension: "png", subdirectory: "Providers",
             )
             ?? Bundle.module.url(forResource: resourceName, withExtension: "png")
+            ?? Bundle.module.url(forResource: resourceName, withExtension: "svg", subdirectory: "Resources")
+            ?? Bundle.module.url(forResource: resourceName, withExtension: "svg")
 
         guard let url else { return nil }
         return NSImage(contentsOf: url)
@@ -3974,7 +3982,7 @@ struct StudioView: View {
         case .groqSTT:
             "groq"
         case .googleCloud:
-            nil
+            "google"
         case .xiaomi:
             "xiaomimimo"
         case .aliCloud:
