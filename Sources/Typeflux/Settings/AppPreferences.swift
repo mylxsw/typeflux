@@ -5,8 +5,8 @@ enum AliCloudASRDefaults {
 }
 
 enum GoogleCloudSpeechDefaults {
-    static let model = "long"
-    static let suggestedModels = ["long", "short", "latest_long", "latest_short", "chirp", "chirp_2", "chirp_3"]
+    static let model = "chirp_3"
+    static let suggestedModels = ["chirp_3", "chirp_2", "chirp", "long", "short", "latest_long", "latest_short"]
     static let apiDocumentationURL = URL(
         string: "https://docs.cloud.google.com/speech-to-text/docs",
     )!

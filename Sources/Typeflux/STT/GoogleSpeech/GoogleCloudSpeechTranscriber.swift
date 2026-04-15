@@ -50,10 +50,12 @@ struct GoogleCloudSpeechConfiguration: Equatable {
     let projectID: String
     let apiKey: String
     let model: String
+    let location: String
+    let endpointHost: String
     let languageCode: String
 
     var recognizer: String {
-        "projects/\(projectID)/locations/global/recognizers/_"
+        "projects/\(projectID)/locations/\(location)/recognizers/_"
     }
 
     var routingMetadataValue: String {
@@ -78,7 +80,18 @@ struct GoogleCloudSpeechConfiguration: Equatable {
         self.projectID = trimmedProjectID
         self.apiKey = trimmedAPIKey
         self.model = trimmedModel.isEmpty ? GoogleCloudSpeechDefaults.model : trimmedModel
+        location = Self.googleLocation(for: self.model)
+        endpointHost = location == "global" ? "speech.googleapis.com" : "\(location)-speech.googleapis.com"
         languageCode = Self.googleLanguageCode(for: appLanguage)
+    }
+
+    static func googleLocation(for model: String) -> String {
+        switch model.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "chirp_3":
+            "us"
+        default:
+            "global"
+        }
     }
 
     static func googleLanguageCode(for appLanguage: AppLanguage) -> String {
@@ -122,7 +135,7 @@ private enum GoogleCloudSpeechStreamingSession {
     ) async throws -> String {
         let group = PlatformSupport.makeEventLoopGroup(loopCount: 1)
         let channel = ClientConnection.usingTLSBackedByNIOSSL(on: group)
-            .connect(host: "speech.googleapis.com", port: 443)
+            .connect(host: configuration.endpointHost, port: 443)
 
         let client = Google_Cloud_Speech_V2_SpeechAsyncClient(channel: channel)
         var callOptions = CallOptions(timeLimit: .timeout(.seconds(30)))
@@ -153,7 +166,7 @@ private enum GoogleCloudSpeechStreamingSession {
             }
         } catch {
             await shutdown(channel: channel, group: group)
-            throw GoogleCloudSpeechError.rpcFailed(error.localizedDescription)
+            throw GoogleCloudSpeechError.rpcFailed(rpcErrorMessage(error))
         }
 
         let transcript = assembleTranscript(finalSegments: finalSegments, currentPartial: currentPartial)
@@ -162,6 +175,16 @@ private enum GoogleCloudSpeechStreamingSession {
         }
         await shutdown(channel: channel, group: group)
         return transcript
+    }
+
+    private static func rpcErrorMessage(_ error: Error) -> String {
+        if let status = error as? GRPCStatus {
+            if let message = status.message, !message.isEmpty {
+                return "\(status.code): \(message)"
+            }
+            return String(describing: status.code)
+        }
+        return error.localizedDescription
     }
 
     private static func shutdown(channel: ClientConnection, group: EventLoopGroup) async {
