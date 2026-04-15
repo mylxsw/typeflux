@@ -9,7 +9,7 @@ final class WorkflowController {
     static let tapToLockThreshold: TimeInterval = 0.22
     static let minimumRecordingDuration: TimeInterval = 0.35
     static let selectionRestoreDelayMicroseconds: useconds_t = 120_000
-    static let automaticVocabularyObservationWindow: TimeInterval = 60
+    static let automaticVocabularyObservationWindow: TimeInterval = 30
     static let automaticVocabularyPollInterval: Duration = .seconds(1)
     static let automaticVocabularyStartupDelay: Duration = .milliseconds(600)
     static let automaticVocabularyBaselineRetryDelay: Duration = .milliseconds(400)
