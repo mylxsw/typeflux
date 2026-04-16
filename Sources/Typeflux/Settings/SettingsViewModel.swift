@@ -89,6 +89,9 @@ final class StudioViewModel: ObservableObject {
     @Published var googleCloudProjectID: String
     @Published var googleCloudAPIKey: String
     @Published var googleCloudModel: String
+    @Published private(set) var googleCloudOAuthAuthorized: Bool
+    @Published private(set) var googleCloudOAuthStatusText: String
+    @Published private(set) var isAuthorizingGoogleCloudOAuth = false
     @Published var groqSTTAPIKey: String
     @Published var groqSTTModel: String
 
@@ -265,6 +268,11 @@ final class StudioViewModel: ObservableObject {
         googleCloudProjectID = settingsStore.googleCloudProjectID
         googleCloudAPIKey = settingsStore.googleCloudAPIKey
         googleCloudModel = settingsStore.googleCloudModel
+        let hasGoogleCloudOAuthAuthorization = GoogleCloudSpeechCredentialResolver.isStoredAuthorizationAvailable()
+        googleCloudOAuthAuthorized = hasGoogleCloudOAuthAuthorization
+        googleCloudOAuthStatusText = hasGoogleCloudOAuthAuthorization
+            ? L("settings.models.googleCloud.oauth.connected")
+            : L("settings.models.googleCloud.oauth.notConnected")
         groqSTTAPIKey = settingsStore.groqSTTAPIKey
         groqSTTModel = settingsStore.groqSTTModel
         localSTTModel = settingsStore.localSTTModel
@@ -997,6 +1005,44 @@ final class StudioViewModel: ObservableObject {
 
     func setGoogleCloudModel(_ value: String) {
         googleCloudModel = value; sttConnectionTestState = .idle
+    }
+
+    func authorizeGoogleCloudOAuth() {
+        guard !isAuthorizingGoogleCloudOAuth else { return }
+
+        isAuthorizingGoogleCloudOAuth = true
+        sttConnectionTestState = .idle
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer {
+                isAuthorizingGoogleCloudOAuth = false
+            }
+
+            do {
+                let token = try await GoogleOAuthService.authorizeGoogleCloud(
+                    clientID: AppServerConfiguration.googleOAuthClientID,
+                    clientSecret: AppServerConfiguration.googleOAuthClientSecret.isEmpty
+                        ? nil : AppServerConfiguration.googleOAuthClientSecret,
+                )
+                GoogleCloudSpeechOAuthTokenStore.save(token)
+                googleCloudAPIKey = ""
+                refreshGoogleCloudOAuthState()
+                applyModelConfiguration(shouldShowToast: false)
+                showToast(L("settings.models.googleCloud.oauth.connected"))
+            } catch {
+                refreshGoogleCloudOAuthState()
+                sttConnectionTestState = .failure(message: error.localizedDescription)
+                showToast(L("common.failedWithReason", error.localizedDescription))
+            }
+        }
+    }
+
+    func disconnectGoogleCloudOAuth() {
+        GoogleCloudSpeechOAuthTokenStore.clear()
+        refreshGoogleCloudOAuthState()
+        sttConnectionTestState = .idle
+        showToast(L("settings.models.googleCloud.oauth.disconnected"))
     }
 
     func setGroqSTTAPIKey(_ value: String) {
@@ -2136,6 +2182,13 @@ final class StudioViewModel: ObservableObject {
 
     private static func visibleSTTProvider(from provider: STTProvider) -> STTProvider {
         provider == .appleSpeech ? .whisperAPI : provider
+    }
+
+    private func refreshGoogleCloudOAuthState() {
+        googleCloudOAuthAuthorized = GoogleCloudSpeechCredentialResolver.isStoredAuthorizationAvailable()
+        googleCloudOAuthStatusText = googleCloudOAuthAuthorized
+            ? L("settings.models.googleCloud.oauth.connected")
+            : L("settings.models.googleCloud.oauth.notConnected")
     }
 
     private func showToast(_ text: String) {

@@ -601,7 +601,14 @@
 "settings.models.routing.groq" = "Groq는 Whisper 호환 전사 엔드포인트를 통한 고속 추론으로 받아쓰기를 처리합니다.";
 "settings.models.googleCloud.streaming" = "StreamingRecognize";
 "settings.models.googleCloud.projectID" = "Project ID";
-"settings.models.googleCloud.directHint" = "Google Cloud Speech-to-Text v2 StreamingRecognize를 직접 사용합니다. Google Cloud에서 Speech-to-Text API를 사용 설정하고 이 프로젝트용 API Key를 만드세요.";
+"settings.models.googleCloud.credential" = "Access Token / API Key";
+"settings.models.googleCloud.oauth.authorize" = "Google 인증";
+"settings.models.googleCloud.oauth.reauthorize" = "다시 인증";
+"settings.models.googleCloud.oauth.disconnect" = "연결 해제";
+"settings.models.googleCloud.oauth.connected" = "Google 인증이 연결되었습니다. Typeflux가 Speech-to-Text 액세스 토큰을 자동으로 갱신합니다.";
+"settings.models.googleCloud.oauth.notConnected" = "저장된 Google 인증이 없습니다. 액세스 토큰이나 API Key를 직접 붙여넣을 수도 있습니다.";
+"settings.models.googleCloud.oauth.disconnected" = "Google 인증 연결을 해제했습니다.";
+"settings.models.googleCloud.directHint" = "Google Cloud Speech-to-Text v2 StreamingRecognize를 직접 사용합니다. 가장 쉬운 설정은 Project ID를 입력하고 'Google 인증'을 누른 뒤 바로 연결 테스트를 하는 것입니다. OAuth 액세스 토큰 사용을 권장하며 API Key만으로는 거부될 수 있습니다. 호출 주체에는 recognizer 리소스에 대한 speech.recognizers.recognize 권한도 필요합니다.";
 "settings.models.googleCloud.cloudGatewayHint" = "Project ID와 API Key로 Google Cloud Speech-to-Text v2 StreamingRecognize를 직접 호출합니다.";
 "settings.models.googleCloud.docs" = "API 문서 보기";
 "settings.models.useGoogleCloud" = "Google 사용";

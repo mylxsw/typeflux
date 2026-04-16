@@ -21,6 +21,31 @@ import os
 @MainActor
 struct GoogleOAuthService {
     private static let logger = Logger(subsystem: "dev.typeflux", category: "GoogleOAuthService")
+    private struct AuthorizationRequest {
+        let url: URL
+        let callbackScheme: String
+        let state: String
+        let codeVerifier: String
+    }
+
+    private struct TokenExchangeResponse: Decodable {
+        let accessToken: String?
+        let expiresIn: Int?
+        let idToken: String?
+        let refreshToken: String?
+        let error: String?
+        let errorDescription: String?
+
+        enum CodingKeys: String, CodingKey {
+            case accessToken = "access_token"
+            case expiresIn = "expires_in"
+            case idToken = "id_token"
+            case refreshToken = "refresh_token"
+            case error
+            case errorDescription = "error_description"
+        }
+    }
+
     /// Initiates the Google sign-in flow and returns a Google ID token on success.
     ///
     /// - Parameters:
@@ -28,35 +53,135 @@ struct GoogleOAuthService {
     ///     (no secret required). Desktop-type clients require `clientSecret`.
     ///   - clientSecret: Required only for Desktop-type OAuth clients. Leave nil for iOS-type clients.
     static func signIn(clientID: String, clientSecret: String? = nil) async throws -> String {
+        let authorization = makeAuthorizationRequest(
+            clientID: clientID,
+            scopes: ["openid", "email", "profile"],
+        )
+
+        logger.debug("[Google OAuth] auth URL: \(authorization.url.absoluteString, privacy: .public)")
+        let code = try await openAuthSession(
+            url: authorization.url,
+            scheme: authorization.callbackScheme,
+            expectedState: authorization.state,
+        )
+        logger.debug("[Google OAuth] received code (first 12 chars): \(String(code.prefix(12)), privacy: .public)...")
+        let response = try await exchangeAuthorizationCode(
+            code: code,
+            codeVerifier: authorization.codeVerifier,
+            clientID: clientID,
+            clientSecret: clientSecret,
+            redirectURI: "\(authorization.callbackScheme):/"
+        )
+        guard let idToken = response.idToken else {
+            throw GoogleAuthError.missingIDToken
+        }
+        return idToken
+    }
+
+    static func authorizeGoogleCloud(
+        clientID: String,
+        clientSecret: String? = nil
+    ) async throws -> GoogleCloudSpeechOAuthToken {
+        let authorization = makeAuthorizationRequest(
+            clientID: clientID,
+            scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+            accessType: "offline",
+            prompt: "consent",
+        )
+
+        logger.debug("[Google OAuth] cloud-platform auth URL: \(authorization.url.absoluteString, privacy: .public)")
+        let code = try await openAuthSession(
+            url: authorization.url,
+            scheme: authorization.callbackScheme,
+            expectedState: authorization.state,
+        )
+        let response = try await exchangeAuthorizationCode(
+            code: code,
+            codeVerifier: authorization.codeVerifier,
+            clientID: clientID,
+            clientSecret: clientSecret,
+            redirectURI: "\(authorization.callbackScheme):/",
+        )
+        guard let accessToken = response.accessToken,
+              let expiresIn = response.expiresIn
+        else {
+            throw GoogleAuthError.missingAccessToken
+        }
+
+        return GoogleCloudSpeechOAuthToken(
+            accessToken: accessToken,
+            refreshToken: response.refreshToken,
+            expiresAt: Int(Date().timeIntervalSince1970) + expiresIn,
+        )
+    }
+
+    static func refreshAccessToken(
+        refreshToken: String,
+        clientID: String,
+        clientSecret: String? = nil
+    ) async throws -> GoogleCloudSpeechOAuthToken {
+        var params: [String: String] = [
+            "client_id": clientID,
+            "grant_type": "refresh_token",
+            "refresh_token": refreshToken,
+        ]
+        if let clientSecret, !clientSecret.isEmpty {
+            params["client_secret"] = clientSecret
+        }
+
+        let response = try await tokenRequest(params: params)
+        guard let accessToken = response.accessToken,
+              let expiresIn = response.expiresIn
+        else {
+            throw GoogleAuthError.missingAccessToken
+        }
+
+        return GoogleCloudSpeechOAuthToken(
+            accessToken: accessToken,
+            refreshToken: response.refreshToken ?? refreshToken,
+            expiresAt: Int(Date().timeIntervalSince1970) + expiresIn,
+        )
+    }
+
+    // MARK: - Private
+
+    private static func makeAuthorizationRequest(
+        clientID: String,
+        scopes: [String],
+        accessType: String? = nil,
+        prompt: String? = nil
+    ) -> AuthorizationRequest {
         let scheme = reverseScheme(for: clientID)
         let redirectURI = "\(scheme):/"
         let (codeVerifier, codeChallenge) = makePKCE()
         let state = UUID().uuidString
 
-        var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
-        components.queryItems = [
+        var queryItems = [
             URLQueryItem(name: "client_id", value: clientID),
             URLQueryItem(name: "redirect_uri", value: redirectURI),
             URLQueryItem(name: "response_type", value: "code"),
-            URLQueryItem(name: "scope", value: "openid email profile"),
+            URLQueryItem(name: "scope", value: scopes.joined(separator: " ")),
             URLQueryItem(name: "code_challenge", value: codeChallenge),
             URLQueryItem(name: "code_challenge_method", value: "S256"),
             URLQueryItem(name: "state", value: state),
         ]
+        if let accessType {
+            queryItems.append(URLQueryItem(name: "access_type", value: accessType))
+        }
+        if let prompt {
+            queryItems.append(URLQueryItem(name: "prompt", value: prompt))
+        }
 
-        logger.debug("[Google OAuth] auth URL: \(components.url!.absoluteString, privacy: .public)")
-        let code = try await openAuthSession(url: components.url!, scheme: scheme, expectedState: state)
-        logger.debug("[Google OAuth] received code (first 12 chars): \(String(code.prefix(12)), privacy: .public)...")
-        return try await exchangeCodeForIDToken(
-            code: code,
+        var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
+        components.queryItems = queryItems
+
+        return AuthorizationRequest(
+            url: components.url!,
+            callbackScheme: scheme,
+            state: state,
             codeVerifier: codeVerifier,
-            clientID: clientID,
-            clientSecret: clientSecret,
-            redirectURI: redirectURI
         )
     }
-
-    // MARK: - Private
 
     /// Derives the reverse-DNS URL scheme from a Google client ID.
     ///
@@ -107,18 +232,13 @@ struct GoogleOAuthService {
         }
     }
 
-    private static func exchangeCodeForIDToken(
+    private static func exchangeAuthorizationCode(
         code: String,
         codeVerifier: String,
         clientID: String,
         clientSecret: String?,
         redirectURI: String
-    ) async throws -> String {
-        var request = URLRequest(url: URL(string: "https://oauth2.googleapis.com/token")!)
-        request.httpMethod = "POST"
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 30
-
+    ) async throws -> TokenExchangeResponse {
         var params: [String: String] = [
             "code": code,
             "client_id": clientID,
@@ -126,45 +246,45 @@ struct GoogleOAuthService {
             "grant_type": "authorization_code",
             "code_verifier": codeVerifier,
         ]
-        // Desktop-type OAuth clients require client_secret; iOS-type clients do not.
         if let secret = clientSecret, !secret.isEmpty {
             params["client_secret"] = secret
         }
+
+        return try await tokenRequest(params: params)
+    }
+
+    private static func tokenRequest(params: [String: String]) async throws -> TokenExchangeResponse {
+        var request = URLRequest(url: URL(string: "https://oauth2.googleapis.com/token")!)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30
+
         let bodyString = params
             .map { "\($0.key)=\(formEncode($0.value))" }
             .joined(separator: "&")
         request.httpBody = bodyString.data(using: .utf8)
 
-        // Log the full request body (mask secret if present)
-        let logBody = bodyString.replacingOccurrences(
-            of: #"client_secret=[^&]+"#,
-            with: "client_secret=***",
-            options: .regularExpression
-        )
-        logger.debug("[Google OAuth] token request body: \(logBody, privacy: .public)")
+        let redactedLogBody = bodyString
+            .replacingOccurrences(of: #"client_secret=[^&]+"#, with: "client_secret=***", options: .regularExpression)
+            .replacingOccurrences(of: #"refresh_token=[^&]+"#, with: "refresh_token=***", options: .regularExpression)
+            .replacingOccurrences(of: #"code=[^&]+"#, with: "code=***", options: .regularExpression)
+            .replacingOccurrences(of: #"access_token=[^&]+"#, with: "access_token=***", options: .regularExpression)
+        logger.debug("[Google OAuth] token request body: \(redactedLogBody, privacy: .public)")
 
         let (data, urlResponse) = try await URLSession.shared.data(for: request)
         let statusCode = (urlResponse as? HTTPURLResponse)?.statusCode ?? -1
         let rawResponse = String(data: data, encoding: .utf8) ?? "<non-utf8>"
-        logger.debug("[Google OAuth] token response [\(statusCode, privacy: .public)]: \(rawResponse, privacy: .public)")
+        let redactedResponse = rawResponse
+            .replacingOccurrences(of: #""access_token"\s*:\s*"[^"]+""#, with: "\"access_token\":\"***\"", options: .regularExpression)
+            .replacingOccurrences(of: #""refresh_token"\s*:\s*"[^"]+""#, with: "\"refresh_token\":\"***\"", options: .regularExpression)
+            .replacingOccurrences(of: #""id_token"\s*:\s*"[^"]+""#, with: "\"id_token\":\"***\"", options: .regularExpression)
+        logger.debug("[Google OAuth] token response [\(statusCode, privacy: .public)]: \(redactedResponse, privacy: .public)")
 
-        struct TokenResponse: Decodable {
-            let idToken: String?
-            let error: String?
-            enum CodingKeys: String, CodingKey {
-                case idToken = "id_token"
-                case error
-            }
+        let response = try JSONDecoder().decode(TokenExchangeResponse.self, from: data)
+        if let error = response.error {
+            throw GoogleAuthError.tokenExchangeFailed(response.errorDescription ?? error)
         }
-
-        let response = try JSONDecoder().decode(TokenResponse.self, from: data)
-        if let errorDescription = response.error {
-            throw GoogleAuthError.tokenExchangeFailed(errorDescription)
-        }
-        guard let idToken = response.idToken else {
-            throw GoogleAuthError.missingIDToken
-        }
-        return idToken
+        return response
     }
 
     /// Percent-encodes a value for use in an application/x-www-form-urlencoded body.
@@ -200,6 +320,7 @@ struct GoogleOAuthService {
 enum GoogleAuthError: LocalizedError {
     case invalidCallback
     case missingIDToken
+    case missingAccessToken
     case tokenExchangeFailed(String)
 
     var errorDescription: String? {
@@ -208,6 +329,8 @@ enum GoogleAuthError: LocalizedError {
             "Google sign-in was cancelled or returned an invalid response."
         case .missingIDToken:
             "Failed to retrieve Google ID token."
+        case .missingAccessToken:
+            "Failed to retrieve Google access token."
         case .tokenExchangeFailed(let reason):
             "Google token exchange failed: \(reason)"
         }

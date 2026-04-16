@@ -28,6 +28,8 @@ struct OnboardingView: View {
     let appearanceMode: AppearanceMode
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject private var authState = AuthState.shared
+    @State private var googleCloudOAuthAuthorized = GoogleCloudSpeechCredentialResolver.isStoredAuthorizationAvailable()
+    @State private var isAuthorizingGoogleCloudOAuth = false
     @Environment(\.colorScheme) private var colorScheme
 
     private let languageColumns = [
@@ -677,11 +679,44 @@ struct OnboardingView: View {
                     text: $viewModel.googleCloudProjectID,
                 )
                 StudioTextInputCard(
-                    label: L("common.apiKey"),
-                    placeholder: "AIza...",
+                    label: L("settings.models.googleCloud.credential"),
+                    placeholder: "AIza... / ya29...",
                     text: $viewModel.googleCloudAPIKey,
                     secure: true,
                 )
+                HStack(spacing: 12) {
+                    StudioButton(
+                        title: googleCloudOAuthAuthorized
+                            ? L("settings.models.googleCloud.oauth.reauthorize")
+                            : L("settings.models.googleCloud.oauth.authorize"),
+                        systemImage: "person.crop.circle.badge.checkmark",
+                        variant: .secondary,
+                        isDisabled: AppServerConfiguration.googleOAuthClientID.isEmpty || isAuthorizingGoogleCloudOAuth,
+                        isLoading: isAuthorizingGoogleCloudOAuth,
+                    ) {
+                        authorizeGoogleCloudFromOnboarding()
+                    }
+
+                    if googleCloudOAuthAuthorized {
+                        StudioButton(
+                            title: L("settings.models.googleCloud.oauth.disconnect"),
+                            systemImage: "xmark.circle",
+                            variant: .ghost,
+                        ) {
+                            GoogleCloudSpeechOAuthTokenStore.clear()
+                            googleCloudOAuthAuthorized = false
+                            viewModel.googleCloudAPIKey = ""
+                        }
+                    }
+
+                    Spacer()
+                }
+                Text(googleCloudOAuthAuthorized
+                    ? L("settings.models.googleCloud.oauth.connected")
+                    : L("settings.models.googleCloud.oauth.notConnected"))
+                    .font(.studioBody(12))
+                    .foregroundStyle(onboardingSecondaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 StudioSuggestedTextInputCard(
                     label: L("common.model"),
                     placeholder: GoogleCloudSpeechDefaults.model,
@@ -703,6 +738,32 @@ struct OnboardingView: View {
                 }
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private func authorizeGoogleCloudFromOnboarding() {
+        guard !isAuthorizingGoogleCloudOAuth else { return }
+
+        isAuthorizingGoogleCloudOAuth = true
+        viewModel.sttConnectionTestState = .idle
+
+        Task { @MainActor in
+            defer {
+                isAuthorizingGoogleCloudOAuth = false
+            }
+
+            do {
+                let token = try await GoogleOAuthService.authorizeGoogleCloud(
+                    clientID: AppServerConfiguration.googleOAuthClientID,
+                    clientSecret: AppServerConfiguration.googleOAuthClientSecret.isEmpty
+                        ? nil : AppServerConfiguration.googleOAuthClientSecret,
+                )
+                GoogleCloudSpeechOAuthTokenStore.save(token)
+                viewModel.googleCloudAPIKey = ""
+                googleCloudOAuthAuthorized = true
+            } catch {
+                viewModel.sttConnectionTestState = .failure(message: error.localizedDescription)
             }
         }
     }

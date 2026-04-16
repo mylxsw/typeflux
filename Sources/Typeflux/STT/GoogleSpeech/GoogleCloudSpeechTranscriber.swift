@@ -16,10 +16,13 @@ final class GoogleCloudSpeechTranscriber: TypefluxCloudScenarioAwareTranscriber 
         scenario _: TypefluxCloudScenario,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> String {
+        let effectiveCredential = try await GoogleCloudSpeechCredentialResolver.resolveCredential(
+            manualCredential: await MainActor.run { settingsStore.googleCloudAPIKey }
+        )
         let configuration = try await MainActor.run {
             try GoogleCloudSpeechConfiguration(
                 projectID: settingsStore.googleCloudProjectID,
-                apiKey: settingsStore.googleCloudAPIKey,
+                apiKey: effectiveCredential,
                 model: settingsStore.googleCloudModel,
                 appLanguage: settingsStore.appLanguage,
             )
@@ -33,9 +36,10 @@ final class GoogleCloudSpeechTranscriber: TypefluxCloudScenarioAwareTranscriber 
     }
 
     static func testConnection(projectID: String, apiKey: String, model: String, appLanguage: AppLanguage) async throws -> String {
+        let effectiveCredential = try await GoogleCloudSpeechCredentialResolver.resolveCredential(manualCredential: apiKey)
         let configuration = try GoogleCloudSpeechConfiguration(
             projectID: projectID,
-            apiKey: apiKey,
+            apiKey: effectiveCredential,
             model: model,
             appLanguage: appLanguage,
         )
@@ -47,12 +51,18 @@ final class GoogleCloudSpeechTranscriber: TypefluxCloudScenarioAwareTranscriber 
 }
 
 struct GoogleCloudSpeechConfiguration: Equatable {
+    enum Credential: Equatable {
+        case apiKey(String)
+        case bearerToken(String)
+    }
+
     let projectID: String
-    let apiKey: String
+    let credentialValue: String
     let model: String
     let location: String
     let endpointHost: String
     let languageCode: String
+    let credential: Credential
 
     var recognizer: String {
         "projects/\(projectID)/locations/\(location)/recognizers/_"
@@ -67,22 +77,37 @@ struct GoogleCloudSpeechConfiguration: Equatable {
 
     init(projectID: String, apiKey: String, model: String, appLanguage: AppLanguage) throws {
         let trimmedProjectID = projectID.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedAPIKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedCredential = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedModel = model.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmedProjectID.isEmpty else {
             throw GoogleCloudSpeechError.missingProjectID
         }
-        guard !trimmedAPIKey.isEmpty else {
+        guard !trimmedCredential.isEmpty else {
             throw GoogleCloudSpeechError.missingAPIKey
         }
 
         self.projectID = trimmedProjectID
-        self.apiKey = trimmedAPIKey
+        credentialValue = trimmedCredential
+        credential = Self.googleCredential(for: trimmedCredential)
         self.model = trimmedModel.isEmpty ? GoogleCloudSpeechDefaults.model : trimmedModel
         location = Self.googleLocation(for: self.model)
         endpointHost = location == "global" ? "speech.googleapis.com" : "\(location)-speech.googleapis.com"
-        languageCode = Self.googleLanguageCode(for: appLanguage)
+        languageCode = Self.googleLanguageCode(for: appLanguage, model: self.model)
+    }
+
+    static func googleCredential(for rawValue: String) -> Credential {
+        let trimmedValue = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedValue.lowercased().hasPrefix("bearer ") {
+            let token = String(trimmedValue.dropFirst("bearer ".count)).trimmingCharacters(in: .whitespacesAndNewlines)
+            return .bearerToken(token)
+        }
+
+        if trimmedValue.hasPrefix("AIza") {
+            return .apiKey(trimmedValue)
+        }
+
+        return .bearerToken(trimmedValue)
     }
 
     static func googleLocation(for model: String) -> String {
@@ -94,14 +119,15 @@ struct GoogleCloudSpeechConfiguration: Equatable {
         }
     }
 
-    static func googleLanguageCode(for appLanguage: AppLanguage) -> String {
-        switch appLanguage {
+    static func googleLanguageCode(for appLanguage: AppLanguage, model: String = "") -> String {
+        _ = model
+        return switch appLanguage {
         case .english:
             "en-US"
         case .simplifiedChinese:
-            "zh-CN"
+            "cmn-Hans-CN"
         case .traditionalChinese:
-            "zh-TW"
+            "cmn-Hant-TW"
         case .japanese:
             "ja-JP"
         case .korean:
@@ -120,14 +146,14 @@ enum GoogleCloudSpeechError: LocalizedError {
         case .missingProjectID:
             "Google Cloud Project ID is required."
         case .missingAPIKey:
-            "Google Cloud API key is required."
+            "Google Cloud access token or API key is required."
         case .rpcFailed(let message):
             "Google Cloud Speech-to-Text error: \(message)"
         }
     }
 }
 
-private enum GoogleCloudSpeechStreamingSession {
+enum GoogleCloudSpeechStreamingSession {
     static func run(
         pcmData: Data,
         configuration: GoogleCloudSpeechConfiguration,
@@ -139,7 +165,7 @@ private enum GoogleCloudSpeechStreamingSession {
 
         let client = Google_Cloud_Speech_V2_SpeechAsyncClient(channel: channel)
         var callOptions = CallOptions(timeLimit: .timeout(.seconds(30)))
-        callOptions.customMetadata.add(name: "x-goog-api-key", value: configuration.apiKey)
+        applyAuthorizationMetadata(to: &callOptions, configuration: configuration)
         callOptions.customMetadata.add(
             name: "x-goog-request-params",
             value: configuration.routingMetadataValue,
@@ -166,7 +192,7 @@ private enum GoogleCloudSpeechStreamingSession {
             }
         } catch {
             await shutdown(channel: channel, group: group)
-            throw GoogleCloudSpeechError.rpcFailed(rpcErrorMessage(error))
+            throw GoogleCloudSpeechError.rpcFailed(rpcErrorMessage(error, configuration: configuration))
         }
 
         let transcript = assembleTranscript(finalSegments: finalSegments, currentPartial: currentPartial)
@@ -177,14 +203,55 @@ private enum GoogleCloudSpeechStreamingSession {
         return transcript
     }
 
-    private static func rpcErrorMessage(_ error: Error) -> String {
+    private static func applyAuthorizationMetadata(
+        to callOptions: inout CallOptions,
+        configuration: GoogleCloudSpeechConfiguration,
+    ) {
+        switch configuration.credential {
+        case .apiKey(let apiKey):
+            callOptions.customMetadata.add(name: "x-goog-api-key", value: apiKey)
+        case .bearerToken(let accessToken):
+            callOptions.customMetadata.add(name: "authorization", value: "Bearer \(accessToken)")
+        }
+    }
+
+    static func rpcErrorMessage(_ error: Error, configuration: GoogleCloudSpeechConfiguration) -> String {
         if let status = error as? GRPCStatus {
+            if status.code == .permissionDenied {
+                return permissionDeniedMessage(status: status, configuration: configuration)
+            }
             if let message = status.message, !message.isEmpty {
                 return "\(status.code): \(message)"
             }
             return String(describing: status.code)
         }
         return error.localizedDescription
+    }
+
+    private static func permissionDeniedMessage(
+        status: GRPCStatus,
+        configuration: GoogleCloudSpeechConfiguration,
+    ) -> String {
+        let backendMessage = status.message?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let resourceHint = "recognizer \(configuration.recognizer)"
+
+        switch configuration.credential {
+        case .apiKey:
+            let guidance =
+                "permission denied. Google Cloud Speech-to-Text v2 StreamingRecognize usually requires an OAuth access token or Application Default Credentials instead of an API key. Make sure the authenticated principal has speech.recognizers.recognize on \(resourceHint)."
+            if backendMessage.isEmpty {
+                return guidance
+            }
+            return "\(guidance) Backend message: \(backendMessage)"
+
+        case .bearerToken:
+            let guidance =
+                "permission denied. Make sure the authenticated Google principal has speech.recognizers.recognize on \(resourceHint)."
+            if backendMessage.isEmpty {
+                return guidance
+            }
+            return "\(guidance) Backend message: \(backendMessage)"
+        }
     }
 
     private static func shutdown(channel: ClientConnection, group: EventLoopGroup) async {

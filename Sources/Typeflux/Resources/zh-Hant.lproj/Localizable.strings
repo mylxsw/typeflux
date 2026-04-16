@@ -601,7 +601,14 @@
 "settings.models.routing.groq" = "Groq 會透過 Whisper 相容轉寫介面以加速推理處理聽寫。";
 "settings.models.googleCloud.streaming" = "StreamingRecognize";
 "settings.models.googleCloud.projectID" = "Project ID";
-"settings.models.googleCloud.directHint" = "直接使用 Google Cloud Speech-to-Text v2 StreamingRecognize。請在 Google Cloud 中啟用 Speech-to-Text API，並為此專案建立 API Key。";
+"settings.models.googleCloud.credential" = "存取權杖 / API Key";
+"settings.models.googleCloud.oauth.authorize" = "授權 Google";
+"settings.models.googleCloud.oauth.reauthorize" = "重新授權";
+"settings.models.googleCloud.oauth.disconnect" = "中斷授權";
+"settings.models.googleCloud.oauth.connected" = "Google 授權已連線，Typeflux 會自動刷新 Speech-to-Text 存取權杖。";
+"settings.models.googleCloud.oauth.notConnected" = "尚未儲存 Google 授權。你也可以手動貼上存取權杖或 API Key。";
+"settings.models.googleCloud.oauth.disconnected" = "Google 授權已中斷。";
+"settings.models.googleCloud.directHint" = "直接使用 Google Cloud Speech-to-Text v2 StreamingRecognize。最省事的方式是：填寫 Project ID，點擊「授權 Google」，然後測試連線。建議優先使用 OAuth 存取權杖；單獨使用 API Key 可能會被拒絕。呼叫方也需要在 recognizer 資源上擁有 speech.recognizers.recognize 權限。";
 "settings.models.googleCloud.cloudGatewayHint" = "使用 Project ID 和 API Key 直接呼叫 Google Cloud Speech-to-Text v2 StreamingRecognize。";
 "settings.models.googleCloud.docs" = "查看 API 文件";
 "settings.models.useGoogleCloud" = "使用 Google";

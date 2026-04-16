@@ -3634,7 +3634,8 @@ struct StudioView: View {
                         ),
                     )
                     StudioTextInputCard(
-                        label: L("common.apiKey"), placeholder: "AIza...",
+                        label: L("settings.models.googleCloud.credential"),
+                        placeholder: "AIza... / ya29...",
                         text: Binding(
                             get: { viewModel.googleCloudAPIKey },
                             set: viewModel.setGoogleCloudAPIKey,
@@ -3645,6 +3646,35 @@ struct StudioView: View {
                             apiKeyHelpButton(url: url)
                         }
                     }
+                    HStack(spacing: StudioTheme.Spacing.small) {
+                        StudioButton(
+                            title: viewModel.googleCloudOAuthAuthorized
+                                ? L("settings.models.googleCloud.oauth.reauthorize")
+                                : L("settings.models.googleCloud.oauth.authorize"),
+                            systemImage: "person.crop.circle.badge.checkmark",
+                            variant: .secondary,
+                            isDisabled: AppServerConfiguration.googleOAuthClientID.isEmpty
+                                || viewModel.isAuthorizingGoogleCloudOAuth,
+                            isLoading: viewModel.isAuthorizingGoogleCloudOAuth,
+                        ) {
+                            viewModel.authorizeGoogleCloudOAuth()
+                        }
+
+                        if viewModel.googleCloudOAuthAuthorized {
+                            StudioButton(
+                                title: L("settings.models.googleCloud.oauth.disconnect"),
+                                systemImage: "xmark.circle",
+                                variant: .ghost,
+                            ) {
+                                viewModel.disconnectGoogleCloudOAuth()
+                            }
+                        }
+
+                        Spacer()
+                    }
+                    Text(viewModel.googleCloudOAuthStatusText)
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textSecondary)
                     StudioSuggestedTextInputCard(
                         label: L("common.model"),
                         placeholder: GoogleCloudSpeechDefaults.model,
@@ -4147,7 +4177,10 @@ struct StudioView: View {
             !viewModel.doubaoAppID.isEmpty && !viewModel.doubaoAccessToken.isEmpty
         case .googleCloud:
             !viewModel.googleCloudProjectID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                && !viewModel.googleCloudAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && (
+                    !viewModel.googleCloudAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        || viewModel.googleCloudOAuthAuthorized
+                )
         case .groqSTT:
             !viewModel.groqSTTAPIKey.isEmpty
         case .typefluxOfficial:

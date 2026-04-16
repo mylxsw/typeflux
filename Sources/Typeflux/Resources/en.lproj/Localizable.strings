@@ -603,7 +603,14 @@
 "settings.models.routing.groq" = "Groq handles dictation through the Whisper-compatible transcription endpoint with accelerated inference.";
 "settings.models.googleCloud.streaming" = "StreamingRecognize";
 "settings.models.googleCloud.projectID" = "Project ID";
-"settings.models.googleCloud.directHint" = "Uses Google Cloud Speech-to-Text v2 StreamingRecognize directly. Enable the Speech-to-Text API in Google Cloud and create an API key for this project.";
+"settings.models.googleCloud.credential" = "Access Token / API Key";
+"settings.models.googleCloud.oauth.authorize" = "Authorize Google";
+"settings.models.googleCloud.oauth.reauthorize" = "Reauthorize";
+"settings.models.googleCloud.oauth.disconnect" = "Disconnect";
+"settings.models.googleCloud.oauth.connected" = "Google authorization is connected. Typeflux will refresh the Speech-to-Text access token automatically.";
+"settings.models.googleCloud.oauth.notConnected" = "No Google authorization stored. You can still paste an access token or API key manually.";
+"settings.models.googleCloud.oauth.disconnected" = "Google authorization disconnected.";
+"settings.models.googleCloud.directHint" = "Uses Google Cloud Speech-to-Text v2 StreamingRecognize directly. The easiest setup is: enter your Project ID, click Authorize Google, then test the connection. OAuth access tokens are preferred; API keys may be rejected. The caller also needs speech.recognizers.recognize permission on the recognizer resource.";
 "settings.models.googleCloud.cloudGatewayHint" = "Uses Google Cloud Speech-to-Text v2 StreamingRecognize directly with your Project ID and API key.";
 "settings.models.googleCloud.docs" = "View API Docs";
 "settings.models.useGoogleCloud" = "Use Google";

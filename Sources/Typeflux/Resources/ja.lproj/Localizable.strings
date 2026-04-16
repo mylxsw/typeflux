@@ -601,7 +601,14 @@
 "settings.models.routing.groq" = "Groq は、Whisper 互換の文字起こしエンドポイントを使用した高速推論でディクテーションを処理します。";
 "settings.models.googleCloud.streaming" = "StreamingRecognize";
 "settings.models.googleCloud.projectID" = "Project ID";
-"settings.models.googleCloud.directHint" = "Google Cloud Speech-to-Text v2 StreamingRecognize を直接使用します。Google Cloud で Speech-to-Text API を有効にし、このプロジェクト用の API Key を作成してください。";
+"settings.models.googleCloud.credential" = "Access Token / API Key";
+"settings.models.googleCloud.oauth.authorize" = "Google を認可";
+"settings.models.googleCloud.oauth.reauthorize" = "再認可";
+"settings.models.googleCloud.oauth.disconnect" = "切断";
+"settings.models.googleCloud.oauth.connected" = "Google 認可は接続済みです。Typeflux が Speech-to-Text のアクセストークンを自動更新します。";
+"settings.models.googleCloud.oauth.notConnected" = "保存された Google 認可はありません。アクセストークンまたは API Key を手動で貼り付けることもできます。";
+"settings.models.googleCloud.oauth.disconnected" = "Google 認可を切断しました。";
+"settings.models.googleCloud.directHint" = "Google Cloud Speech-to-Text v2 StreamingRecognize を直接使用します。もっとも簡単な設定は、Project ID を入力して「Google を認可」を押し、そのまま接続テストする方法です。OAuth アクセストークンを優先してください。API Key のみでは拒否される場合があります。呼び出し元には recognizer リソースへの speech.recognizers.recognize 権限も必要です。";
 "settings.models.googleCloud.cloudGatewayHint" = "Project ID と API Key を使って Google Cloud Speech-to-Text v2 StreamingRecognize を直接呼び出します。";
 "settings.models.googleCloud.docs" = "API ドキュメントを表示";
 "settings.models.useGoogleCloud" = "Google を使用";
