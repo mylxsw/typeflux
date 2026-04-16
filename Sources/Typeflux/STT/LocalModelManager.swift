@@ -123,7 +123,7 @@ final class LocalModelManager: LocalSTTModelManaging {
         try fileManager.createDirectory(at: resourceURL, withIntermediateDirectories: true)
 
         switch configuration.model {
-        case .whisperLocal:
+        case .whisperLocal, .whisperLocalLarge:
             resultPath = try await prepareWhisperKit(
                 configuration: configuration,
                 downloadBasePath: downloadBasePath,
@@ -297,7 +297,7 @@ final class LocalModelManager: LocalSTTModelManaging {
         }
 
         switch model {
-        case .whisperLocal:
+        case .whisperLocal, .whisperLocalLarge:
             return isUsableWhisperKitModelFolder(storagePath)
         case .senseVoiceSmall, .qwen3ASR:
             guard let layout = SherpaOnnxModelLayout.layout(for: model) else {

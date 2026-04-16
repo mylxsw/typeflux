@@ -128,7 +128,7 @@ final class AutoModelDownloadService {
         guard let config, let path else { return nil }
 
         switch config.model {
-        case .whisperLocal:
+        case .whisperLocal, .whisperLocalLarge:
             let modelName = config.modelIdentifier.hasPrefix("whisperkit-")
                 ? String(config.modelIdentifier.dropFirst("whisperkit-".count))
                 : config.modelIdentifier

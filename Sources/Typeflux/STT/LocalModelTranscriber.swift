@@ -39,7 +39,7 @@ final class LocalModelTranscriber: Transcriber {
         )
 
         switch settingsStore.localSTTModel {
-        case .whisperLocal:
+        case .whisperLocal, .whisperLocalLarge:
             let modelInfo = try await preparedModelInfo()
             let transcriber = whisperKitTranscriber(for: model, modelFolder: modelInfo.storagePath)
             return try await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
@@ -138,7 +138,7 @@ extension LocalModelTranscriber: RecordingPrewarmingTranscriber {
     /// Eagerly initialises the WhisperKit CoreML pipeline so the first
     /// real transcription call doesn't pay the cold-start penalty.
     func prepareForRecording() async {
-        guard settingsStore.localSTTModel == .whisperLocal else {
+        guard settingsStore.localSTTModel == .whisperLocal || settingsStore.localSTTModel == .whisperLocalLarge else {
             removeWhisperKitCache(keepingCapacity: false)
             return
         }

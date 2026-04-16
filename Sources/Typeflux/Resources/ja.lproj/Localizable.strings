@@ -218,10 +218,14 @@
 "downloadSource.modelScope" = "ModelScope";
 "downloadSource.huggingFace" = "Hugging Face";
 
-"localSTT.whisperLocal.name" = "Whisper Local";
+"localSTT.whisperLocal.name" = "WhisperKit Medium";
 "localSTT.whisperLocal.summary" = "安定した英語と多言語のディクテーションを備えたバランスの取れたローカル ASR で、ほとんどのオフライン文字起こしのニーズに適しています。";
-"localSTT.whisperLocal.parameterValue" = "244M";
-"localSTT.whisperLocal.sizeValue" = "486 MB";
+"localSTT.whisperLocal.parameterValue" = "769M";
+"localSTT.whisperLocal.sizeValue" = "~1.5 GB";
+"localSTT.whisperLocalLarge.name" = "WhisperKit Large";
+"localSTT.whisperLocalLarge.summary" = "最高の多言語文字起こし品質を持つ高精度ローカル ASR で、要求の厳しいオフライン文字起こしタスクに最適です。";
+"localSTT.whisperLocalLarge.parameterValue" = "1.55B";
+"localSTT.whisperLocalLarge.sizeValue" = "~3 GB";
 "localSTT.senseVoiceSmall.name" = "SenseVoice Small";
 "localSTT.senseVoiceSmall.summary" = "中国語、広東語、英語、日本語、韓国語を強力にサポートする高速多言語音声認識。";
 "localSTT.senseVoiceSmall.parameterValue" = "234M";

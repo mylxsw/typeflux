@@ -324,7 +324,7 @@ final class LocalModelTranscriberTests: XCTestCase {
         let modelDirectory = root.appendingPathComponent(layout.modelRootDirectory, isDirectory: true)
         try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
         switch model {
-        case .whisperLocal:
+        case .whisperLocal, .whisperLocalLarge:
             break
         case .senseVoiceSmall:
             try Data("fixture".utf8).write(to: modelDirectory.appendingPathComponent("model.int8.onnx"))

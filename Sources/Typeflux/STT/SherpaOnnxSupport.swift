@@ -12,7 +12,7 @@ struct SherpaOnnxModelLayout {
         downloadSource: ModelDownloadSource = .huggingFace,
     ) -> SherpaOnnxModelLayout? {
         switch model {
-        case .whisperLocal:
+        case .whisperLocal, .whisperLocalLarge:
             return nil
         case .senseVoiceSmall:
             guard let modelRootDirectory = LocalModelDownloadCatalog.sherpaOnnxModelDirectoryName(for: model),
@@ -367,7 +367,7 @@ final class SherpaOnnxCommandLineDecoder {
     ) throws -> [String] {
         let modelDirectory = layout.modelDirectoryURL(storageURL: storageURL)
         switch model {
-        case .whisperLocal:
+        case .whisperLocal, .whisperLocalLarge:
             throw NSError(
                 domain: "SherpaOnnxCommandLineDecoder",
                 code: 4,

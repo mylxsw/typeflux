@@ -3,7 +3,7 @@ import Foundation
 enum LocalModelDownloadCatalog {
     private static let huggingFaceEndpoint = "https://huggingface.co"
     private static let whisperKitRepositoryID = "argmaxinc/whisperkit-coreml"
-    private static let whisperKitDefaultModelName = "whisperkit-small"
+    private static let whisperKitDefaultModelName = "whisperkit-medium"
     private static let sherpaOnnxRuntimeRootDirectory = "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts"
     private static let senseVoiceRootDirectory = "sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17"
     private static let qwen3ASRRootDirectory = "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25"
@@ -34,7 +34,7 @@ enum LocalModelDownloadCatalog {
 
     static func sherpaOnnxModelArchiveURL(for model: LocalSTTModel, source _: ModelDownloadSource) -> URL? {
         switch model {
-        case .whisperLocal:
+        case .whisperLocal, .whisperLocalLarge:
             nil
         case .senseVoiceSmall:
             URL(string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/\(senseVoiceRootDirectory).tar.bz2")!
@@ -45,7 +45,7 @@ enum LocalModelDownloadCatalog {
 
     static func sherpaOnnxModelDirectoryName(for model: LocalSTTModel) -> String? {
         switch model {
-        case .whisperLocal:
+        case .whisperLocal, .whisperLocalLarge:
             nil
         case .senseVoiceSmall:
             senseVoiceRootDirectory
