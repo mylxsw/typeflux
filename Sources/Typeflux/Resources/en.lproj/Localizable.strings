@@ -220,10 +220,14 @@
 "downloadSource.modelScope" = "ModelScope";
 "downloadSource.huggingFace" = "Hugging Face";
 
-"localSTT.whisperLocal.name" = "WhisperKit";
+"localSTT.whisperLocal.name" = "WhisperKit Medium";
 "localSTT.whisperLocal.summary" = "Balanced local ASR with stable English and multilingual dictation, suitable for most offline transcription needs.";
-"localSTT.whisperLocal.parameterValue" = "244M";
-"localSTT.whisperLocal.sizeValue" = "486 MB";
+"localSTT.whisperLocal.parameterValue" = "769M";
+"localSTT.whisperLocal.sizeValue" = "~1.5 GB";
+"localSTT.whisperLocalLarge.name" = "WhisperKit Large";
+"localSTT.whisperLocalLarge.summary" = "High-accuracy local ASR with the best multilingual transcription quality, ideal for demanding offline transcription tasks.";
+"localSTT.whisperLocalLarge.parameterValue" = "1.55B";
+"localSTT.whisperLocalLarge.sizeValue" = "~3 GB";
 "localSTT.senseVoiceSmall.name" = "SenseVoice";
 "localSTT.senseVoiceSmall.summary" = "Fast multilingual speech recognition with strong Mandarin, Cantonese, English, Japanese, and Korean support.";
 "localSTT.senseVoiceSmall.parameterValue" = "234M";

@@ -218,10 +218,14 @@
 "downloadSource.modelScope" = "ModelScope";
 "downloadSource.huggingFace" = "Hugging Face";
 
-"localSTT.whisperLocal.name" = "WhisperKit";
+"localSTT.whisperLocal.name" = "WhisperKit Medium";
 "localSTT.whisperLocal.summary" = "均衡的本地 ASR，英文與多語言聽寫表現穩定，適合多數離線轉寫情境。";
-"localSTT.whisperLocal.parameterValue" = "244M";
-"localSTT.whisperLocal.sizeValue" = "486 MB";
+"localSTT.whisperLocal.parameterValue" = "769M";
+"localSTT.whisperLocal.sizeValue" = "~1.5 GB";
+"localSTT.whisperLocalLarge.name" = "WhisperKit Large";
+"localSTT.whisperLocalLarge.summary" = "高精度本地 ASR，多語言轉寫品質最佳，適合對辨識準確度要求較高的離線情境。";
+"localSTT.whisperLocalLarge.parameterValue" = "1.55B";
+"localSTT.whisperLocalLarge.sizeValue" = "~3 GB";
 "localSTT.senseVoiceSmall.name" = "SenseVoice";
 "localSTT.senseVoiceSmall.summary" = "快速的多語言語音辨識，對普通話、粵語、英語、日語與韓語支援較強。";
 "localSTT.senseVoiceSmall.parameterValue" = "234M";

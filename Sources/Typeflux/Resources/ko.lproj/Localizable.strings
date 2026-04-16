@@ -218,10 +218,14 @@
 "downloadSource.modelScope" = "ModelScope";
 "downloadSource.huggingFace" = "Hugging Face";
 
-"localSTT.whisperLocal.name" = "Whisper Local";
+"localSTT.whisperLocal.name" = "WhisperKit Medium";
 "localSTT.whisperLocal.summary" = "대부분의 오프라인 전사 요구에 적합한 안정적인 영어 및 다국어 받아쓰기를 갖춘 균형 잡힌 로컬 ASR입니다.";
-"localSTT.whisperLocal.parameterValue" = "244M";
-"localSTT.whisperLocal.sizeValue" = "486 MB";
+"localSTT.whisperLocal.parameterValue" = "769M";
+"localSTT.whisperLocal.sizeValue" = "~1.5 GB";
+"localSTT.whisperLocalLarge.name" = "WhisperKit Large";
+"localSTT.whisperLocalLarge.summary" = "최고의 다국어 전사 품질을 갖춘 고정밀 로컬 ASR로, 까다로운 오프라인 전사 작업에 이상적입니다.";
+"localSTT.whisperLocalLarge.parameterValue" = "1.55B";
+"localSTT.whisperLocalLarge.sizeValue" = "~3 GB";
 "localSTT.senseVoiceSmall.name" = "SenseVoice Small";
 "localSTT.senseVoiceSmall.summary" = "중국어, 광둥어, 영어, 일본어, 한국어를 강력하게 지원하는 빠른 다국어 음성 인식.";
 "localSTT.senseVoiceSmall.parameterValue" = "234M";

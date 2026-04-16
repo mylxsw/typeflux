@@ -78,11 +78,12 @@ enum STTProvider: String, CaseIterable, Codable {
 
 enum LocalSTTModel: String, CaseIterable, Codable {
     case whisperLocal
+    case whisperLocalLarge
     case senseVoiceSmall
     case qwen3ASR
 
     static var displayOrder: [LocalSTTModel] {
-        [.senseVoiceSmall, .whisperLocal, .qwen3ASR]
+        [.senseVoiceSmall, .whisperLocal, .whisperLocalLarge, .qwen3ASR]
     }
 
     struct Specs {
@@ -95,6 +96,8 @@ enum LocalSTTModel: String, CaseIterable, Codable {
         switch self {
         case .whisperLocal:
             L("localSTT.whisperLocal.name")
+        case .whisperLocalLarge:
+            L("localSTT.whisperLocalLarge.name")
         case .senseVoiceSmall:
             L("localSTT.senseVoiceSmall.name")
         case .qwen3ASR:
@@ -106,6 +109,8 @@ enum LocalSTTModel: String, CaseIterable, Codable {
         switch self {
         case .whisperLocal:
             LocalModelDownloadCatalog.whisperKitDefaultModelIdentifier
+        case .whisperLocalLarge:
+            "whisperkit-large-v3"
         case .senseVoiceSmall:
             "sensevoice-small-coreml"
         case .qwen3ASR:
@@ -115,7 +120,7 @@ enum LocalSTTModel: String, CaseIterable, Codable {
 
     var recommendedDownloadSource: ModelDownloadSource {
         switch self {
-        case .whisperLocal:
+        case .whisperLocal, .whisperLocalLarge:
             .huggingFace
         case .senseVoiceSmall:
             .huggingFace
@@ -128,7 +133,7 @@ enum LocalSTTModel: String, CaseIterable, Codable {
         switch self {
         case .senseVoiceSmall:
             L("settings.models.recommended")
-        case .whisperLocal, .qwen3ASR:
+        case .whisperLocal, .whisperLocalLarge, .qwen3ASR:
             nil
         }
     }
@@ -140,6 +145,12 @@ enum LocalSTTModel: String, CaseIterable, Codable {
                 summary: L("localSTT.whisperLocal.summary"),
                 parameterValue: L("localSTT.whisperLocal.parameterValue"),
                 sizeValue: L("localSTT.whisperLocal.sizeValue"),
+            )
+        case .whisperLocalLarge:
+            Specs(
+                summary: L("localSTT.whisperLocalLarge.summary"),
+                parameterValue: L("localSTT.whisperLocalLarge.parameterValue"),
+                sizeValue: L("localSTT.whisperLocalLarge.sizeValue"),
             )
         case .senseVoiceSmall:
             Specs(

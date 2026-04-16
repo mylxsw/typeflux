@@ -47,7 +47,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
     }
 
     func testDownloadCatalogProvidesLocalModelDownloadLocations() throws {
-        XCTAssertEqual(LocalModelDownloadCatalog.whisperKitDefaultModelIdentifier, "whisperkit-small")
+        XCTAssertEqual(LocalModelDownloadCatalog.whisperKitDefaultModelIdentifier, "whisperkit-medium")
         XCTAssertEqual(
             LocalModelDownloadCatalog.whisperKitModelRepository(source: .huggingFace),
             "argmaxinc/whisperkit-coreml",
