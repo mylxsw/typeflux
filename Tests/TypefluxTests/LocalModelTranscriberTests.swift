@@ -169,6 +169,42 @@ final class LocalModelTranscriberTests: XCTestCase {
         XCTAssertNotNil(manager.preparedModelInfo(settingsStore: settingsStore))
     }
 
+    func testWhisperKitTranscriberCacheExpiresAfterIdleKeepAliveWindow() async throws {
+        let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.sttProvider = .localModel
+        settingsStore.localSTTModel = .whisperLocal
+        settingsStore.localSTTModelIdentifier = "whisperkit-base"
+        settingsStore.localSTTDownloadSource = .huggingFace
+        settingsStore.localSTTAutoSetup = false
+
+        let manager = FakeLocalSTTModelManager(preparedInfo: LocalSTTPreparedModelInfo(
+            storagePath: "/tmp/typeflux-whisperkit-test",
+            sourceDisplayName: ModelDownloadSource.huggingFace.displayName,
+        ))
+        let factory = FakeWhisperKitTranscriberFactory()
+        let transcriber = LocalModelTranscriber(
+            settingsStore: settingsStore,
+            modelManager: manager,
+            whisperKitKeepAliveDuration: 0.05,
+            whisperKitTranscriberFactory: factory.makeTranscriber(modelName:modelFolder:),
+        )
+        let audioFile = try makeTestWAVFile()
+
+        _ = try await transcriber.transcribe(audioFile: audioFile)
+        _ = try await transcriber.transcribe(audioFile: audioFile)
+        XCTAssertEqual(factory.createdTranscribers.count, 1)
+
+        try await Task.sleep(nanoseconds: 120_000_000)
+        _ = try await transcriber.transcribe(audioFile: audioFile)
+
+        XCTAssertEqual(factory.createdTranscribers.count, 2)
+        XCTAssertEqual(factory.createdTranscribers.map(\.modelName), ["base", "base"])
+    }
+
     func testSherpaLayoutRejectsASCIIExecutableFixture() throws {
         let modelFolder = try makeSherpaModelFolder(for: .qwen3ASR, useMachORuntime: false)
         let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .qwen3ASR))
@@ -480,6 +516,63 @@ private final class FakeSherpaOnnxInstaller: SherpaOnnxModelInstalling {
 
         return storageURL.path
     }
+}
+
+private final class FakeLocalSTTModelManager: LocalSTTModelManaging {
+    private let preparedInfo: LocalSTTPreparedModelInfo?
+
+    init(preparedInfo: LocalSTTPreparedModelInfo?) {
+        self.preparedInfo = preparedInfo
+    }
+
+    func prepareModel(
+        settingsStore _: SettingsStore,
+        onUpdate _: (@Sendable (LocalSTTPreparationUpdate) -> Void)?,
+    ) async throws {}
+
+    func preparedModelInfo(settingsStore _: SettingsStore) -> LocalSTTPreparedModelInfo? {
+        preparedInfo
+    }
+
+    func isModelDownloaded(_: LocalSTTModel) -> Bool {
+        preparedInfo != nil
+    }
+
+    func deleteModelFiles(_: LocalSTTModel) throws {}
+
+    func storagePath(for configuration: LocalSTTConfiguration) -> String {
+        "/tmp/\(configuration.modelIdentifier)"
+    }
+}
+
+private final class FakeWhisperKitTranscriberFactory {
+    private(set) var createdTranscribers: [FakeWhisperKitTranscriber] = []
+
+    func makeTranscriber(modelName: String, modelFolder: String) -> LocalWhisperKitTranscribing {
+        let transcriber = FakeWhisperKitTranscriber(modelName: modelName, modelFolder: modelFolder)
+        createdTranscribers.append(transcriber)
+        return transcriber
+    }
+}
+
+private final class FakeWhisperKitTranscriber: LocalWhisperKitTranscribing {
+    let modelName: String
+    let modelFolder: String
+
+    init(modelName: String, modelFolder: String) {
+        self.modelName = modelName
+        self.modelFolder = modelFolder
+    }
+
+    func transcribeStream(
+        audioFile _: AudioFile,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
+    ) async throws -> String {
+        await onUpdate(TranscriptionSnapshot(text: "cached transcript", isFinal: true))
+        return "cached transcript"
+    }
+
+    func prepare(onProgress _: ((Double, String) -> Void)?) async throws {}
 }
 
 private final class StaticArchiveDownloader: SherpaOnnxArchiveDownloading {

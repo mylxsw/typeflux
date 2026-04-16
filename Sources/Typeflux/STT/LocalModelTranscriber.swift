@@ -1,17 +1,40 @@
 import Foundation
 
+protocol LocalWhisperKitTranscribing: AnyObject {
+    func transcribeStream(
+        audioFile: AudioFile,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
+    ) async throws -> String
+
+    func prepare(onProgress: ((Double, String) -> Void)?) async throws
+}
+
 final class LocalModelTranscriber: Transcriber {
+    static let defaultWhisperKitKeepAliveDuration: TimeInterval = 15 * 60
+
     private let settingsStore: SettingsStore
-    private let modelManager: LocalModelManager
+    private let modelManager: LocalSTTModelManaging
+    private let whisperKitTranscriberFactory: (String, String) -> LocalWhisperKitTranscribing
+    private let whisperKitKeepAliveDuration: TimeInterval
     private let whisperKitCacheLock = NSLock()
     /// Single active WhisperKit pipeline cache keyed by model name + resolved model folder.
     /// WhisperKit keeps CoreML graphs resident after the first load, so we drop stale
     /// entries on model switch to release memory from the previously selected model.
-    private var whisperKitCache: [String: WhisperKitTranscriber] = [:]
+    private var whisperKitCache: [String: LocalWhisperKitTranscribing] = [:]
+    private var whisperKitCacheExpirationTask: Task<Void, Never>?
 
-    init(settingsStore: SettingsStore, modelManager: LocalModelManager) {
+    init(
+        settingsStore: SettingsStore,
+        modelManager: LocalSTTModelManaging,
+        whisperKitKeepAliveDuration: TimeInterval = defaultWhisperKitKeepAliveDuration,
+        whisperKitTranscriberFactory: @escaping (String, String) -> LocalWhisperKitTranscribing = { modelName, modelFolder in
+            WhisperKitTranscriber(modelName: modelName, modelFolder: modelFolder)
+        },
+    ) {
         self.settingsStore = settingsStore
         self.modelManager = modelManager
+        self.whisperKitKeepAliveDuration = whisperKitKeepAliveDuration
+        self.whisperKitTranscriberFactory = whisperKitTranscriberFactory
     }
 
     func transcribe(audioFile: AudioFile) async throws -> String {
@@ -75,34 +98,60 @@ final class LocalModelTranscriber: Transcriber {
             throw notPreparedError()
         }
 
-        try await modelManager.prepareModel(settingsStore: settingsStore)
+        try await modelManager.prepareModel(settingsStore: settingsStore, onUpdate: nil)
         guard let prepared = modelManager.preparedModelInfo(settingsStore: settingsStore) else {
             throw preparedPathUnavailableError()
         }
         return prepared
     }
 
-    private func whisperKitTranscriber(for identifier: String, modelFolder: String) -> WhisperKitTranscriber {
+    private func whisperKitTranscriber(for identifier: String, modelFolder: String) -> LocalWhisperKitTranscribing {
         let modelName = identifier.hasPrefix("whisperkit-")
             ? String(identifier.dropFirst("whisperkit-".count))
             : identifier
         let cacheKey = "\(modelName)|\(modelFolder)"
         whisperKitCacheLock.lock()
         if let cached = whisperKitCache[cacheKey] {
+            scheduleWhisperKitCacheExpiration(for: cacheKey)
             whisperKitCacheLock.unlock()
             return cached
         }
 
         whisperKitCache.removeAll(keepingCapacity: true)
-        let transcriber = WhisperKitTranscriber(modelName: modelName, modelFolder: modelFolder)
+        let transcriber = whisperKitTranscriberFactory(modelName, modelFolder)
         whisperKitCache[cacheKey] = transcriber
+        scheduleWhisperKitCacheExpiration(for: cacheKey)
         whisperKitCacheLock.unlock()
         return transcriber
     }
 
     private func removeWhisperKitCache(keepingCapacity: Bool) {
         whisperKitCacheLock.lock()
+        whisperKitCacheExpirationTask?.cancel()
+        whisperKitCacheExpirationTask = nil
         whisperKitCache.removeAll(keepingCapacity: keepingCapacity)
+        whisperKitCacheLock.unlock()
+    }
+
+    private func scheduleWhisperKitCacheExpiration(for cacheKey: String) {
+        whisperKitCacheExpirationTask?.cancel()
+        let keepAliveDuration = whisperKitKeepAliveDuration
+        whisperKitCacheExpirationTask = Task { [weak self] in
+            let nanoseconds = UInt64(max(keepAliveDuration, 0) * 1_000_000_000)
+            if nanoseconds > 0 {
+                try? await Task.sleep(nanoseconds: nanoseconds)
+            }
+            guard !Task.isCancelled else { return }
+            self?.expireWhisperKitCache(cacheKey: cacheKey)
+        }
+    }
+
+    private func expireWhisperKitCache(cacheKey: String) {
+        whisperKitCacheLock.lock()
+        whisperKitCache.removeValue(forKey: cacheKey)
+        if whisperKitCache.isEmpty {
+            whisperKitCacheExpirationTask = nil
+        }
         whisperKitCacheLock.unlock()
     }
 
@@ -145,7 +194,7 @@ extension LocalModelTranscriber: RecordingPrewarmingTranscriber {
         guard let modelInfo = modelManager.preparedModelInfo(settingsStore: settingsStore) else { return }
         let model = selectedModelIdentifier()
         let transcriber = whisperKitTranscriber(for: model, modelFolder: modelInfo.storagePath)
-        try? await transcriber.prepare()
+        try? await transcriber.prepare(onProgress: nil)
     }
 
     func cancelPreparedRecording() async {

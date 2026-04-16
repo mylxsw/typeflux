@@ -115,4 +115,20 @@ final class LLMServiceTests: XCTestCase {
         let schema = LLMJSONSchema(name: "test", schema: [:], strict: false)
         XCTAssertFalse(schema.strict)
     }
+
+    func testOllamaChatRequestKeepsLocalModelWarmForFifteenMinutes() throws {
+        let body = OllamaLLMService.makeChatRequestBody(
+            model: "llama3",
+            systemPrompt: "system",
+            userPrompt: "user",
+            stream: true,
+            temperature: 0.4,
+        )
+
+        XCTAssertEqual(body["keep_alive"] as? String, "15m")
+        XCTAssertEqual(body["model"] as? String, "llama3")
+        XCTAssertEqual(body["stream"] as? Bool, true)
+        let options = try XCTUnwrap(body["options"] as? [String: Any])
+        XCTAssertEqual(options["temperature"] as? Double, 0.4)
+    }
 }

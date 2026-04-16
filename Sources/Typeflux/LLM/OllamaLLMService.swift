@@ -1,6 +1,8 @@
 import Foundation
 
 final class OllamaLLMService: LLMService {
+    static let localModelKeepAlive = "15m"
+
     private let settingsStore: SettingsStore
     private let modelManager: OllamaLocalModelManager
 
@@ -64,17 +66,13 @@ final class OllamaLLMService: LLMService {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        var body: [String: Any] = [
-            "model": settingsStore.ollamaModel,
-            "stream": false,
-            "messages": [
-                ["role": "system", "content": systemPrompt],
-                ["role": "user", "content": userPrompt],
-            ],
-            "options": [
-                "temperature": 0.1,
-            ],
-        ]
+        var body = Self.makeChatRequestBody(
+            model: settingsStore.ollamaModel,
+            systemPrompt: systemPrompt,
+            userPrompt: userPrompt,
+            stream: false,
+            temperature: 0.1,
+        )
         if let schema {
             body["format"] = schema.jsonObject
         }
@@ -134,17 +132,13 @@ final class OllamaLLMService: LLMService {
                 effectiveSystemPrompt += "\n\n\(extra)"
             }
         }
-        let body: [String: Any] = [
-            "model": settingsStore.ollamaModel,
-            "stream": true,
-            "messages": [
-                ["role": "system", "content": effectiveSystemPrompt],
-                ["role": "user", "content": prompts.user],
-            ],
-            "options": [
-                "temperature": 0.4,
-            ],
-        ]
+        let body = Self.makeChatRequestBody(
+            model: settingsStore.ollamaModel,
+            systemPrompt: effectiveSystemPrompt,
+            userPrompt: prompts.user,
+            stream: true,
+            temperature: 0.4,
+        )
 
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
         NetworkDebugLogger.logRequest(urlRequest)
@@ -198,6 +192,27 @@ final class OllamaLLMService: LLMService {
         }
 
         return finalText
+    }
+
+    static func makeChatRequestBody(
+        model: String,
+        systemPrompt: String,
+        userPrompt: String,
+        stream: Bool,
+        temperature: Double,
+    ) -> [String: Any] {
+        [
+            "model": model,
+            "stream": stream,
+            "keep_alive": localModelKeepAlive,
+            "messages": [
+                ["role": "system", "content": systemPrompt],
+                ["role": "user", "content": userPrompt],
+            ],
+            "options": [
+                "temperature": temperature,
+            ],
+        ]
     }
 }
 

@@ -152,3 +152,5 @@ final class WhisperKitTranscriber: Transcriber {
         pipelineLock.unlock()
     }
 }
+
+extension WhisperKitTranscriber: LocalWhisperKitTranscribing {}
