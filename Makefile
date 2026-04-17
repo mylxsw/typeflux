@@ -19,7 +19,10 @@ release:
 dmg:
 	./scripts/build_dmg.sh
 
+release-notarize:
+	./scripts/release_notarize.sh
+
 format:
 	./scripts/format.sh
 
-.PHONY: run dev build test coverage release dmg format
+.PHONY: run dev build test coverage release dmg release-notarize format

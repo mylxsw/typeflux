@@ -148,6 +148,12 @@ make dev
 
 This is the most convenient mode when developing the workflow, permissions flow, overlay behavior, or provider integrations.
 
+## Documentation
+
+- [Usage Guide](./docs/USAGE.md)
+- [Make Commands](./docs/MAKE_COMMANDS.md)
+- [Release Guide](./docs/RELEASE.md)
+
 ## Development Notes
 
 ### Why the project runs as an `.app`

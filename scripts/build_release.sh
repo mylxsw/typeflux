@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="${ROOT_DIR}/.build/release"
 APP_NAME="Typeflux"
 APP_BUNDLE="${BUILD_DIR}/${APP_NAME}.app"
+APP_EXECUTABLE="${APP_BUNDLE}/Contents/MacOS/${APP_NAME}"
 
 echo "Building Typeflux release bundle..."
 
@@ -25,12 +26,28 @@ cp -R "$RESOURCE_BUNDLE" "$APP_BUNDLE/Contents/Resources/Typeflux_Typeflux.bundl
 
 chmod +x "$APP_BUNDLE/Contents/MacOS/Typeflux"
 
-# Sign the bundle if an identity is available
+# Sign the bundle if an identity is available.
+# Hardened runtime is required for notarization with a Developer ID signature.
 if [[ -n "${CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
-  codesign --force --deep --sign "$CODESIGN_IDENTITY" --identifier "dev.typeflux" "$APP_BUNDLE"
+  codesign \
+    --force \
+    --sign "$CODESIGN_IDENTITY" \
+    --timestamp \
+    --options runtime \
+    --identifier "dev.typeflux" \
+    "$APP_EXECUTABLE"
+  codesign \
+    --force \
+    --sign "$CODESIGN_IDENTITY" \
+    --timestamp \
+    --options runtime \
+    --identifier "dev.typeflux" \
+    "$APP_BUNDLE"
+  codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
   echo "Signed with identity: $CODESIGN_IDENTITY"
 elif command -v codesign >/dev/null 2>&1; then
-  codesign --force --deep --sign - --identifier "dev.typeflux" "$APP_BUNDLE"
+  codesign --force --sign - --identifier "dev.typeflux" "$APP_EXECUTABLE"
+  codesign --force --sign - --identifier "dev.typeflux" "$APP_BUNDLE"
   echo "Signed with ad-hoc identity"
 fi
 

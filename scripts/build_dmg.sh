@@ -25,7 +25,6 @@ rm -rf "$STAGING_DIR"
 mkdir -p "$STAGING_DIR"
 
 cp -R "$APP_BUNDLE" "$STAGING_DIR/"
-ln -s /Applications "$STAGING_DIR/Applications"
 
 rm -f "$DMG_PATH"
 
@@ -42,7 +41,7 @@ rm -rf "$STAGING_DIR"
 
 # Sign the DMG if a signing identity is available
 if [[ -n "${CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
-  codesign --sign "$CODESIGN_IDENTITY" "$DMG_PATH"
+  codesign --force --sign "$CODESIGN_IDENTITY" --timestamp "$DMG_PATH"
   echo "Signed DMG with identity: $CODESIGN_IDENTITY"
 fi
 
