@@ -277,7 +277,7 @@ final class LocalModelTranscriberTests: XCTestCase {
         let downloader = FlakyArchiveDownloader(
             archiveMap: [
                 layout.runtimeArchiveURL: runtimeArchiveURL,
-                layout.modelArchiveURL: modelArchiveURL,
+                try XCTUnwrap(layout.modelArchiveURL): modelArchiveURL,
             ],
             failuresBeforeSuccess: 2,
         )
@@ -342,7 +342,7 @@ final class LocalModelTranscriberTests: XCTestCase {
             processRunner: ProcessCommandRunner(),
             archiveDownloader: StaticArchiveDownloader(archiveMap: [
                 layout.runtimeArchiveURL: runtimeArchiveURL,
-                layout.modelArchiveURL: modelArchiveURL,
+                try XCTUnwrap(layout.modelArchiveURL): modelArchiveURL,
             ]),
         )
 
