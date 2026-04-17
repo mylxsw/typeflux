@@ -13,7 +13,13 @@ test:
 coverage:
 	./scripts/coverage.sh
 
+release:
+	./scripts/build_release.sh
+
+dmg:
+	./scripts/build_dmg.sh
+
 format:
 	./scripts/format.sh
 
-.PHONY: run dev build test coverage format
+.PHONY: run dev build test coverage release dmg format
