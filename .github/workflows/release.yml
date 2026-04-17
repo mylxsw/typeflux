@@ -19,11 +19,56 @@ jobs:
       - name: Install create-dmg
         run: brew install create-dmg
 
-      - name: Build release bundle
-        run: ./scripts/build_release.sh
+      - name: Import Developer ID certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 16)"
 
-      - name: Build DMG installer
-        run: ./scripts/build_dmg.sh
+          # Decode certificate
+          echo "$CERTIFICATE_BASE64" | base64 --decode -o "$RUNNER_TEMP/certificate.p12"
+
+          # Create a temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Import certificate into the keychain
+          security import "$RUNNER_TEMP/certificate.p12" \
+            -P "$CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+
+          # Allow codesign to access the keychain without prompting
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Make it the default and add to search list
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Store notarytool credentials
+        env:
+          NOTARYTOOL_APPLE_ID: ${{ secrets.NOTARYTOOL_APPLE_ID }}
+          NOTARYTOOL_PASSWORD: ${{ secrets.NOTARYTOOL_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          xcrun notarytool store-credentials "typeflux-notary" \
+            --apple-id "$NOTARYTOOL_APPLE_ID" \
+            --password "$NOTARYTOOL_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --keychain "$KEYCHAIN_PATH"
+
+      - name: Build, sign, notarize, and staple
+        env:
+          CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
+          NOTARY_PROFILE: typeflux-notary
+        run: ./scripts/release_notarize.sh
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -34,3 +79,8 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Clean up keychain
+        if: always()
+        run: |
+          security delete-keychain "$KEYCHAIN_PATH" || true
