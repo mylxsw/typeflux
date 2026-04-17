@@ -102,6 +102,22 @@ For some providers, you may also need:
 - local model files for local speech or local LLM workflows
 - a valid code signing identity if you want a stable local development app identity across rebuilds
 
+## Installation
+
+### Download the latest release
+
+The easiest way to install Typeflux is to download the pre-built `.app` bundle from the [Releases](https://github.com/mylxsw/typeflux/releases) page:
+
+1. Download `Typeflux.zip` from the latest release.
+2. Unzip the archive.
+3. Drag `Typeflux.app` to your **Applications** folder.
+4. Launch Typeflux from Applications.
+5. Grant the requested permissions (Microphone, Accessibility, and Speech Recognition) when prompted.
+
+### Build from source
+
+If you prefer to build from source, follow the steps below.
+
 ## Getting Started
 
 ### Build
