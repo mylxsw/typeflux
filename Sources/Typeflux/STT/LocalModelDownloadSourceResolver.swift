@@ -1,9 +1,28 @@
 import Foundation
 
+struct LocalModelDownloadURLProbeResult: Equatable {
+    let url: URL
+    let latency: TimeInterval?
+    let isReachable: Bool
+}
+
 struct LocalModelDownloadSourceCandidate: Equatable {
     let source: ModelDownloadSource
     let latency: TimeInterval?
     let isReachable: Bool
+    let probeResults: [LocalModelDownloadURLProbeResult]
+
+    init(
+        source: ModelDownloadSource,
+        latency: TimeInterval?,
+        isReachable: Bool,
+        probeResults: [LocalModelDownloadURLProbeResult] = [],
+    ) {
+        self.source = source
+        self.latency = latency
+        self.isReachable = isReachable
+        self.probeResults = probeResults
+    }
 }
 
 protocol LocalModelDownloadSourceResolving {
@@ -78,23 +97,87 @@ final class NetworkLocalModelDownloadSourceResolver: LocalModelDownloadSourceRes
             .map(\.source)
 
         let preferred = reachableSources + sources + fallbackSources
-        return preferred.removingDuplicatesPreservingOrder()
+        let rankedSources = preferred.removingDuplicatesPreservingOrder()
+        logResolution(
+            configuration: configuration,
+            sources: sources,
+            candidates: candidates,
+            probeURLsBySource: probeURLsBySource,
+            rankedSources: rankedSources,
+        )
+        return rankedSources
     }
 
     private func probeSource(source: ModelDownloadSource, urls: [URL]) async -> LocalModelDownloadSourceCandidate {
         var latencies: [TimeInterval] = []
+        var probeResults: [LocalModelDownloadURLProbeResult] = []
         for url in urls {
             guard let result = await probe(url), result.isReachable, let latency = result.latency else {
-                return LocalModelDownloadSourceCandidate(source: source, latency: nil, isReachable: false)
+                probeResults.append(LocalModelDownloadURLProbeResult(
+                    url: url,
+                    latency: nil,
+                    isReachable: false,
+                ))
+                return LocalModelDownloadSourceCandidate(
+                    source: source,
+                    latency: nil,
+                    isReachable: false,
+                    probeResults: probeResults,
+                )
             }
             latencies.append(latency)
+            probeResults.append(LocalModelDownloadURLProbeResult(
+                url: url,
+                latency: latency,
+                isReachable: true,
+            ))
         }
 
         return LocalModelDownloadSourceCandidate(
             source: source,
             latency: latencies.reduce(0, +),
             isReachable: true,
+            probeResults: probeResults,
         )
+    }
+
+    private func logResolution(
+        configuration: LocalSTTConfiguration,
+        sources: [ModelDownloadSource],
+        candidates: [LocalModelDownloadSourceCandidate],
+        probeURLsBySource: [ModelDownloadSource: [URL]],
+        rankedSources: [ModelDownloadSource],
+    ) {
+        let candidateBySource = Dictionary(uniqueKeysWithValues: candidates.map { ($0.source, $0) })
+        let selectedSource = rankedSources.first?.displayName ?? "<none>"
+        let ranking = rankedSources.map(\.displayName).joined(separator: " > ")
+        let details = sources.map { source in
+            let candidate = candidateBySource[source]
+            let reachable = candidate?.isReachable == true ? "reachable" : "unreachable"
+            let latency = Self.formatLatency(candidate?.latency)
+            let probeDetails = (candidate?.probeResults ?? makeMissingProbeResults(for: probeURLsBySource[source] ?? []))
+                .map { result in
+                    "\(result.url.absoluteString) status=\(result.isReachable ? "reachable" : "unreachable") latency=\(Self.formatLatency(result.latency))"
+                }
+                .joined(separator: ", ")
+            return "source=\(source.displayName) status=\(reachable) latency=\(latency) urls=[\(probeDetails)]"
+        }
+        .joined(separator: " | ")
+
+        NetworkDebugLogger.logMessage(
+            "[Local Model Download] source-resolution model=\(configuration.model.displayName) selected=\(selectedSource) ranking=\(ranking) probes=\(details)"
+        )
+    }
+
+    private func makeMissingProbeResults(for urls: [URL]) -> [LocalModelDownloadURLProbeResult] {
+        urls.map { LocalModelDownloadURLProbeResult(url: $0, latency: nil, isReachable: false) }
+    }
+
+    private static func formatLatency(_ latency: TimeInterval?) -> String {
+        guard let latency else {
+            return "n/a"
+        }
+        return "\(Int((latency * 1_000).rounded()))ms"
     }
 
     private static func probe(url: URL, urlSession: URLSession) async -> LocalModelDownloadSourceCandidate? {
