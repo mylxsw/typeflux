@@ -226,7 +226,7 @@ struct GoogleOAuthService {
                 }
                 continuation.resume(returning: code)
             }
-            session.prefersEphemeralWebBrowserSession = true
+            session.prefersEphemeralWebBrowserSession = false
             session.presentationContextProvider = AuthSessionContextProvider.shared
             session.start()
         }

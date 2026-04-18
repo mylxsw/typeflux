@@ -89,7 +89,7 @@ struct GitHubOAuthService {
                 }
                 continuation.resume(returning: code)
             }
-            session.prefersEphemeralWebBrowserSession = true
+            session.prefersEphemeralWebBrowserSession = false
             session.presentationContextProvider = GitHubAuthSessionContextProvider.shared
             session.start()
         }
