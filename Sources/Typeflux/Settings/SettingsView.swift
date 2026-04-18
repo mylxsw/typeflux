@@ -3459,6 +3459,25 @@ struct StudioView: View {
 
             case .localSTT:
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
+                        Text(L("settings.models.downloadSource"))
+                            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textSecondary)
+
+                        StudioMenuPicker(
+                            options: ModelDownloadSource.allCases.map { ($0.displayName, $0) },
+                            selection: Binding(
+                                get: { viewModel.localSTTDownloadSource },
+                                set: viewModel.setLocalSTTDownloadSource,
+                            ),
+                            width: 240,
+                        )
+
+                        Text(L("settings.models.downloadSourceHint"))
+                            .font(.studioBody(StudioTheme.Typography.caption))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                    }
+
                     Text(L("settings.models.localModel"))
                         .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
                         .foregroundStyle(StudioTheme.textSecondary)

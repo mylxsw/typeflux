@@ -461,6 +461,8 @@
 "settings.models.localModel" = "本地模型";
 "settings.models.localModels" = "本地模型";
 "settings.models.localSpeechModels" = "本地語音模型";
+"settings.models.downloadSource" = "下載源";
+"settings.models.downloadSourceHint" = "在準備或重新下載本地語音模型前選擇下載來源。";
 "settings.models.appleSpeech.quickest" = "Apple Speech 是最快的本地選項，無需額外準備或下載。";
 "settings.models.multimodalLLM.audioHint" = "音訊會以 base64 編碼，透過 input_audio 傳送到配置的 chat/completions 介面。啟用人設時，轉寫與改寫會在一次呼叫中完成。";
 "settings.models.aliCloud.getAPIKey" = "取得 API Key";

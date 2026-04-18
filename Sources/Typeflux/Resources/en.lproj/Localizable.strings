@@ -463,6 +463,8 @@
 "settings.models.localModel" = "Local Model";
 "settings.models.localModels" = "Local Models";
 "settings.models.localSpeechModels" = "Local Speech Models";
+"settings.models.downloadSource" = "Download Source";
+"settings.models.downloadSourceHint" = "Choose the source before preparing or redownloading local speech models.";
 "settings.models.appleSpeech.quickest" = "Apple Speech is the quickest local option and requires no additional setup or downloads.";
 "settings.models.multimodalLLM.audioHint" = "Audio is base64-encoded and sent as input_audio to the configured chat/completions endpoint. When a persona is active, transcription and rewriting happen in a single call.";
 "settings.models.aliCloud.getAPIKey" = "Get API Key";

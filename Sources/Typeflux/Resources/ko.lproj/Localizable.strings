@@ -461,6 +461,8 @@
 "settings.models.localModel" = "로컬 모델";
 "settings.models.localModels" = "지역 모델";
 "settings.models.localSpeechModels" = "지역 음성 모델";
+"settings.models.downloadSource" = "다운로드 소스";
+"settings.models.downloadSourceHint" = "로컬 음성 모델을 준비하거나 다시 다운로드하기 전에 다운로드 소스를 선택합니다.";
 "settings.models.appleSpeech.quickest" = "Apple Speech은 가장 빠른 로컬 옵션이며 추가 설정이나 다운로드가 필요하지 않습니다.";
 "settings.models.multimodalLLM.audioHint" = "오디오는 base64로 인코딩되어 구성된 채팅/완료 엔드포인트에 input_audio로 전송됩니다. 페르소나가 활성화되면 단일 호출로 전사 및 재작성이 발생합니다.";
 "settings.models.aliCloud.getAPIKey" = "API Key 받기";

@@ -461,6 +461,8 @@
 "settings.models.localModel" = "ローカルモデル";
 "settings.models.localModels" = "ローカルモデル";
 "settings.models.localSpeechModels" = "ローカル音声モデル";
+"settings.models.downloadSource" = "ダウンロード元";
+"settings.models.downloadSourceHint" = "ローカル音声モデルを準備または再ダウンロードする前に、ダウンロード元を選択します。";
 "settings.models.appleSpeech.quickest" = "Apple Speech は最も速いローカル オプションであり、追加のセットアップやダウンロードは必要ありません。";
 "settings.models.multimodalLLM.audioHint" = "音声はbase64でエンコードされ、input_audioとして構成されたチャット/補完エンドポイントに送信されます。ペルソナがアクティブな場合、転写と書き換えは 1 回の呼び出しで行われます。";
 "settings.models.aliCloud.getAPIKey" = "API Key を取得";

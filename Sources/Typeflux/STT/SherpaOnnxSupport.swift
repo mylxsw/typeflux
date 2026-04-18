@@ -1,11 +1,34 @@
 import Foundation
 
+struct SherpaOnnxModelFile: Equatable {
+    let url: URL
+    let relativePath: String
+}
+
+enum SherpaOnnxModelArtifact: Equatable {
+    case archive(url: URL, fileName: String)
+    case files([SherpaOnnxModelFile])
+
+    var archiveURL: URL? {
+        switch self {
+        case let .archive(url, _):
+            url
+        case .files:
+            nil
+        }
+    }
+}
+
 struct SherpaOnnxModelLayout {
     let runtimeArchiveURL: URL
     let runtimeRootDirectory: String
-    let modelArchiveURL: URL
+    let modelArtifact: SherpaOnnxModelArtifact
     let modelRootDirectory: String
     let requiredRelativePaths: [String]
+
+    var modelArchiveURL: URL? {
+        modelArtifact.archiveURL
+    }
 
     static func layout(
         for model: LocalSTTModel,
@@ -16,7 +39,7 @@ struct SherpaOnnxModelLayout {
             return nil
         case .senseVoiceSmall:
             guard let modelRootDirectory = LocalModelDownloadCatalog.sherpaOnnxModelDirectoryName(for: model),
-                  let modelArchiveURL = LocalModelDownloadCatalog.sherpaOnnxModelArchiveURL(
+                  let modelArtifact = LocalModelDownloadCatalog.sherpaOnnxModelArtifact(
                     for: model,
                     source: downloadSource,
                   )
@@ -26,7 +49,7 @@ struct SherpaOnnxModelLayout {
             return SherpaOnnxModelLayout(
                 runtimeArchiveURL: LocalModelDownloadCatalog.sherpaOnnxRuntimeArchiveURL(source: downloadSource),
                 runtimeRootDirectory: LocalModelDownloadCatalog.sherpaOnnxRuntimeDirectoryName,
-                modelArchiveURL: modelArchiveURL,
+                modelArtifact: modelArtifact,
                 modelRootDirectory: modelRootDirectory,
                 requiredRelativePaths: [
                     "\(LocalModelDownloadCatalog.sherpaOnnxRuntimeDirectoryName)/bin/sherpa-onnx-offline",
@@ -38,7 +61,7 @@ struct SherpaOnnxModelLayout {
             )
         case .qwen3ASR:
             guard let modelRootDirectory = LocalModelDownloadCatalog.sherpaOnnxModelDirectoryName(for: model),
-                  let modelArchiveURL = LocalModelDownloadCatalog.sherpaOnnxModelArchiveURL(
+                  let modelArtifact = LocalModelDownloadCatalog.sherpaOnnxModelArtifact(
                     for: model,
                     source: downloadSource,
                   )
@@ -48,7 +71,7 @@ struct SherpaOnnxModelLayout {
             return SherpaOnnxModelLayout(
                 runtimeArchiveURL: LocalModelDownloadCatalog.sherpaOnnxRuntimeArchiveURL(source: downloadSource),
                 runtimeRootDirectory: LocalModelDownloadCatalog.sherpaOnnxRuntimeDirectoryName,
-                modelArchiveURL: modelArchiveURL,
+                modelArtifact: modelArtifact,
                 modelRootDirectory: modelRootDirectory,
                 requiredRelativePaths: [
                     "\(LocalModelDownloadCatalog.sherpaOnnxRuntimeDirectoryName)/bin/sherpa-onnx-offline",
@@ -222,11 +245,10 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
             storagePath: storageURL.path,
             source: nil,
         ))
-        try await downloadAndExtract(
-            archiveURL: layout.modelArchiveURL,
+        try await prepareModelArtifact(
+            layout.modelArtifact,
             destinationURL: storageURL,
             extractedRootDirectoryName: layout.modelRootDirectory,
-            archiveFileName: "\(layout.modelRootDirectory).tar.bz2",
         )
 
         guard layout.isInstalled(storageURL: storageURL, fileManager: fileManager) else {
@@ -289,6 +311,55 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
 
             try? fileManager.removeItem(at: localArchiveURL)
             try? fileManager.removeItem(at: temporaryDirectory)
+        }
+    }
+
+    private func prepareModelArtifact(
+        _ artifact: SherpaOnnxModelArtifact,
+        destinationURL: URL,
+        extractedRootDirectoryName: String,
+    ) async throws {
+        switch artifact {
+        case let .archive(url, fileName):
+            try await downloadAndExtract(
+                archiveURL: url,
+                destinationURL: destinationURL,
+                extractedRootDirectoryName: extractedRootDirectoryName,
+                archiveFileName: fileName,
+            )
+        case let .files(files):
+            try await downloadExtractedFiles(
+                files,
+                destinationURL: destinationURL,
+                extractedRootDirectoryName: extractedRootDirectoryName,
+            )
+        }
+    }
+
+    private func downloadExtractedFiles(
+        _ files: [SherpaOnnxModelFile],
+        destinationURL: URL,
+        extractedRootDirectoryName: String,
+    ) async throws {
+        try await RequestRetry.perform(operationName: "Sherpa-ONNX model file download") { [self] in
+            let extractedRootURL = destinationURL.appendingPathComponent(
+                extractedRootDirectoryName,
+                isDirectory: true,
+            )
+            if fileManager.fileExists(atPath: extractedRootURL.path) {
+                try fileManager.removeItem(at: extractedRootURL)
+            }
+
+            try fileManager.createDirectory(at: extractedRootURL, withIntermediateDirectories: true)
+
+            for file in files {
+                let destinationFileURL = destinationURL.appendingPathComponent(file.relativePath, isDirectory: false)
+                try fileManager.createDirectory(
+                    at: destinationFileURL.deletingLastPathComponent(),
+                    withIntermediateDirectories: true,
+                )
+                try await downloadArchive(from: file.url, to: destinationFileURL)
+            }
         }
     }
 

@@ -41,7 +41,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
     func testSenseVoiceSmallModelArchiveURL() throws {
         let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
         XCTAssertEqual(
-            layout.modelArchiveURL.absoluteString,
+            try XCTUnwrap(layout.modelArchiveURL).absoluteString,
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2",
         )
     }
@@ -72,6 +72,61 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2",
         )
         XCTAssertNil(LocalModelDownloadCatalog.sherpaOnnxModelArchiveURL(for: .whisperLocal, source: .huggingFace))
+    }
+
+    func testDownloadCatalogProvidesChinaMirrorLocations() throws {
+        XCTAssertEqual(
+            LocalModelDownloadCatalog.whisperKitModelRepository(source: .modelScope),
+            "argmaxinc/whisperkit-coreml",
+        )
+        XCTAssertEqual(
+            LocalModelDownloadCatalog.whisperKitModelRepositoryURL(source: .modelScope).absoluteString,
+            "https://hf-mirror.com/argmaxinc/whisperkit-coreml",
+        )
+        XCTAssertEqual(
+            LocalModelDownloadCatalog.whisperKitModelEndpoint(source: .modelScope),
+            "https://hf-mirror.com",
+        )
+        XCTAssertEqual(
+            LocalModelDownloadCatalog.sherpaOnnxRuntimeArchiveURL(source: .modelScope).absoluteString,
+            "https://sourceforge.net/projects/sherpa-onnx.mirror/files/v1.12.35/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts.tar.bz2/download",
+        )
+        XCTAssertNil(LocalModelDownloadCatalog.sherpaOnnxModelArchiveURL(for: .senseVoiceSmall, source: .modelScope))
+        XCTAssertNil(LocalModelDownloadCatalog.sherpaOnnxModelArchiveURL(for: .qwen3ASR, source: .modelScope))
+    }
+
+    func testModelScopeSenseVoiceUsesExtractedFilesFromChinaMirror() throws {
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall, downloadSource: .modelScope))
+
+        guard case let .files(files) = layout.modelArtifact else {
+            return XCTFail("Expected ModelScope SenseVoice layout to use extracted files")
+        }
+
+        XCTAssertEqual(files.map(\.relativePath), [
+            "sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/model.int8.onnx",
+            "sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/tokens.txt",
+        ])
+        XCTAssertTrue(files.allSatisfy { $0.url.host != "github.com" })
+        XCTAssertTrue(files.allSatisfy { $0.url.absoluteString.hasPrefix("https://hf-mirror.com/") })
+    }
+
+    func testModelScopeQwen3ASRUsesExtractedFilesFromDomesticSources() throws {
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .qwen3ASR, downloadSource: .modelScope))
+
+        guard case let .files(files) = layout.modelArtifact else {
+            return XCTFail("Expected ModelScope Qwen3-ASR layout to use extracted files")
+        }
+
+        XCTAssertEqual(files.map(\.relativePath), [
+            "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/conv_frontend.onnx",
+            "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/encoder.int8.onnx",
+            "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/decoder.int8.onnx",
+            "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/tokenizer/merges.txt",
+            "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/tokenizer/tokenizer_config.json",
+            "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/tokenizer/vocab.json",
+        ])
+        XCTAssertTrue(files.allSatisfy { $0.url.host != "github.com" })
+        XCTAssertTrue(files.allSatisfy { $0.url.absoluteString.hasPrefix("https://modelscope.cn/") })
     }
 
     func testSenseVoiceSmallRequiredPaths() throws {

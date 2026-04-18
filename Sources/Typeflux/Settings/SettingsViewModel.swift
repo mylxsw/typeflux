@@ -1059,7 +1059,10 @@ final class StudioViewModel: ObservableObject {
     }
 
     func setLocalSTTDownloadSource(_ value: ModelDownloadSource) {
-        localSTTDownloadSource = value; settingsStore.localSTTDownloadSource = value
+        localSTTDownloadSource = value
+        settingsStore.localSTTDownloadSource = value
+        refreshLocalSTTStoragePath()
+        refreshLocalSTTPreparedState()
     }
 
     func setLocalSTTAutoSetup(_ value: Bool) {
