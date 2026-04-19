@@ -3111,7 +3111,7 @@ struct StudioView: View {
         let primaryRemoteProviders = LLMRemoteProvider.settingsDisplayOrder.filter {
             $0 != .freeModel && $0 != .typefluxCloud && $0 != .custom
         }
-        cards.append(contentsOf: primaryRemoteProviders.map(makeLLMRemoteProviderCard))
+        cards.append(contentsOf: primaryRemoteProviders.map { makeLLMRemoteProviderCard($0) })
 
         cards.append(
             StudioModelCard(
@@ -3128,7 +3128,7 @@ struct StudioView: View {
         )
 
         let customRemoteProviders = LLMRemoteProvider.settingsDisplayOrder.filter { $0 == .custom }
-        cards.append(contentsOf: customRemoteProviders.map(makeLLMRemoteProviderCard))
+        cards.append(contentsOf: customRemoteProviders.map { makeLLMRemoteProviderCard($0) })
 
         return cards
     }
