@@ -22,8 +22,8 @@ final class SettingsStoreFeatureFlagTests: XCTestCase {
         super.tearDown()
     }
 
-    func testStrictEditApplyFallbackEnabledDefaultsToTrue() {
-        XCTAssertTrue(store.strictEditApplyFallbackEnabled)
+    func testStrictEditApplyFallbackEnabledDefaultsToFalse() {
+        XCTAssertFalse(store.strictEditApplyFallbackEnabled)
     }
 
     func testStrictEditApplyFallbackEnabledCanBeEnabledAndDisabled() {
