@@ -1,7 +1,7 @@
 import Foundation
 
 enum AppServerConfiguration {
-    private static let defaultBaseURLs = ["https://typeflux.gulu.ai"]
+    private static let defaultBaseURLs = ["https://typeflux-api.gulu.ai"]
     private static let defaultGoogleOAuthClientID = "567492048493-bh84p3mfjfjimsfvga7pil3cc373d389.apps.googleusercontent.com"
     private static let defaultGoogleCloudOAuthClientID = "86325451552-drgdrf01ffjo0on25a1psmg4mpvlo8gi.apps.googleusercontent.com"
     private static let defaultGithubOAuthClientID = "Ov23lidqnPDEOAvE8RvH"
