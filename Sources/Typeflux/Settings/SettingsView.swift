@@ -3137,13 +3137,10 @@ struct StudioView: View {
         _ provider: LLMRemoteProvider,
         badge: String? = nil,
     ) -> StudioModelCard {
-        let resolvedBadge: String
-        if let badge {
-            resolvedBadge = badge
-        } else {
-            resolvedBadge = provider.apiStyle == .openAICompatible
+        let resolvedBadge = badge ?? (
+            provider.apiStyle == .openAICompatible
                 ? L("settings.models.badge.api") : L("settings.models.badge.native")
-        }
+        )
 
         return StudioModelCard(
             id: provider.studioProviderID.rawValue,
