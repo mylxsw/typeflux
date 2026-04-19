@@ -2972,18 +2972,28 @@ struct StudioView: View {
     private var modelProviderCards: [StudioModelCard] {
         switch viewModel.modelDomain {
         case .stt:
-            [
-                StudioModelCard(
-                    id: StudioModelProviderID.typefluxOfficial.rawValue,
-                    name: STTProvider.typefluxOfficial.displayName,
-                    summary: L("settings.models.card.typefluxOfficial.summary"),
-                    badge: L("settings.models.badge.official"),
-                    metadata: L("settings.models.builtInDefaultModel"),
-                    isSelected: viewModel.sttProvider == .typefluxOfficial,
-                    isMuted: false,
-                    actionTitle: L("settings.models.useTypefluxOfficial"),
-                ),
-            ] + (FreeSTTModelRegistry.suggestedModelNames.isEmpty ? [] : [
+            sttModelProviderCards
+        case .llm:
+            llmModelProviderCards
+        }
+    }
+
+    private var sttModelProviderCards: [StudioModelCard] {
+        var cards = [
+            StudioModelCard(
+                id: StudioModelProviderID.typefluxOfficial.rawValue,
+                name: STTProvider.typefluxOfficial.displayName,
+                summary: L("settings.models.card.typefluxOfficial.summary"),
+                badge: L("settings.models.badge.official"),
+                metadata: L("settings.models.builtInDefaultModel"),
+                isSelected: viewModel.sttProvider == .typefluxOfficial,
+                isMuted: false,
+                actionTitle: L("settings.models.useTypefluxOfficial"),
+            ),
+        ]
+
+        if !FreeSTTModelRegistry.suggestedModelNames.isEmpty {
+            cards.append(
                 StudioModelCard(
                     id: StudioModelProviderID.freeSTT.rawValue,
                     name: STTProvider.freeModel.displayName,
@@ -2995,7 +3005,11 @@ struct StudioView: View {
                     isMuted: false,
                     actionTitle: L("settings.models.useRemote"),
                 ),
-            ]) + [
+            )
+        }
+
+        cards.append(
+            contentsOf: [
                 StudioModelCard(
                     id: StudioModelProviderID.localSTT.rawValue,
                     name: L("settings.models.localModels"),
@@ -3069,76 +3083,76 @@ struct StudioView: View {
                     isMuted: false,
                     actionTitle: L("settings.models.useGroq"),
                 ),
-            ]
-        case .llm:
-            [
-                StudioModelCard(
-                    id: LLMRemoteProvider.typefluxCloud.studioProviderID.rawValue,
-                    name: LLMRemoteProvider.typefluxCloud.displayName,
-                    summary: L("settings.models.card.typefluxCloud.summary"),
-                    badge: L("settings.models.badge.official"),
-                    metadata: L("settings.models.builtInDefaultModel"),
-                    isSelected: viewModel.llmProvider == .openAICompatible
-                        && viewModel.llmRemoteProvider == .typefluxCloud,
-                    isMuted: false,
-                    actionTitle: L("settings.models.useTypefluxCloud"),
-                ),
-            ] + (FreeLLMModelRegistry.suggestedModelNames.isEmpty ? [] : [
-                StudioModelCard(
-                    id: LLMRemoteProvider.freeModel.studioProviderID.rawValue,
-                    name: LLMRemoteProvider.freeModel.displayName,
-                    summary: L("settings.models.card.\(LLMRemoteProvider.freeModel.rawValue).summary"),
-                    badge: L("settings.models.badge.free"),
-                    metadata: metadata(for: .freeModel),
-                    isSelected: viewModel.llmProvider == .openAICompatible
-                        && viewModel.llmRemoteProvider == .freeModel,
-                    isMuted: false,
-                    actionTitle: L("settings.models.useRemote"),
-                ),
-            ]) + LLMRemoteProvider.settingsDisplayOrder
-                .filter { $0 != .freeModel && $0 != .typefluxCloud && $0 != .custom }
-                .map { provider in
-                    StudioModelCard(
-                        id: provider.studioProviderID.rawValue,
-                        name: provider.displayName,
-                        summary: L("settings.models.card.\(provider.rawValue).summary"),
-                        badge: provider.apiStyle == .openAICompatible
-                            ? L("settings.models.badge.api") : L("settings.models.badge.native"),
-                        metadata: metadata(for: provider),
-                        isSelected: viewModel.llmProvider == .openAICompatible
-                            && viewModel.llmRemoteProvider == provider,
-                        isMuted: false,
-                        actionTitle: L("settings.models.useRemote"),
-                    )
-                } + [
-                StudioModelCard(
-                    id: StudioModelProviderID.ollama.rawValue,
-                    name: LLMProvider.ollama.displayName,
-                    summary: L("settings.models.card.ollama.summary"),
-                    badge: L("settings.models.badge.local"),
-                    metadata: viewModel.ollamaModel.isEmpty
-                        ? L("settings.models.modelNotConfigured") : viewModel.ollamaModel,
-                    isSelected: viewModel.llmProvider == .ollama,
-                    isMuted: false,
-                    actionTitle: L("settings.models.useLocal"),
-                ),
-            ] + LLMRemoteProvider.settingsDisplayOrder
-                .filter { $0 == .custom }
-                .map { provider in
-                    StudioModelCard(
-                        id: provider.studioProviderID.rawValue,
-                        name: provider.displayName,
-                        summary: L("settings.models.card.\(provider.rawValue).summary"),
-                        badge: provider.apiStyle == .openAICompatible
-                            ? L("settings.models.badge.api") : L("settings.models.badge.native"),
-                        metadata: metadata(for: provider),
-                        isSelected: viewModel.llmProvider == .openAICompatible
-                            && viewModel.llmRemoteProvider == provider,
-                        isMuted: false,
-                        actionTitle: L("settings.models.useRemote"),
-                    )
-                }
+            ],
+        )
+
+        return cards
+    }
+
+    private var llmModelProviderCards: [StudioModelCard] {
+        var cards = [
+            StudioModelCard(
+                id: LLMRemoteProvider.typefluxCloud.studioProviderID.rawValue,
+                name: LLMRemoteProvider.typefluxCloud.displayName,
+                summary: L("settings.models.card.typefluxCloud.summary"),
+                badge: L("settings.models.badge.official"),
+                metadata: L("settings.models.builtInDefaultModel"),
+                isSelected: viewModel.llmProvider == .openAICompatible
+                    && viewModel.llmRemoteProvider == .typefluxCloud,
+                isMuted: false,
+                actionTitle: L("settings.models.useTypefluxCloud"),
+            ),
+        ]
+
+        if !FreeLLMModelRegistry.suggestedModelNames.isEmpty {
+            cards.append(makeLLMRemoteProviderCard(.freeModel, badge: L("settings.models.badge.free")))
         }
+
+        let primaryRemoteProviders = LLMRemoteProvider.settingsDisplayOrder.filter {
+            $0 != .freeModel && $0 != .typefluxCloud && $0 != .custom
+        }
+        cards.append(contentsOf: primaryRemoteProviders.map(makeLLMRemoteProviderCard))
+
+        cards.append(
+            StudioModelCard(
+                id: StudioModelProviderID.ollama.rawValue,
+                name: LLMProvider.ollama.displayName,
+                summary: L("settings.models.card.ollama.summary"),
+                badge: L("settings.models.badge.local"),
+                metadata: viewModel.ollamaModel.isEmpty
+                    ? L("settings.models.modelNotConfigured") : viewModel.ollamaModel,
+                isSelected: viewModel.llmProvider == .ollama,
+                isMuted: false,
+                actionTitle: L("settings.models.useLocal"),
+            ),
+        )
+
+        let customRemoteProviders = LLMRemoteProvider.settingsDisplayOrder.filter { $0 == .custom }
+        cards.append(contentsOf: customRemoteProviders.map(makeLLMRemoteProviderCard))
+
+        return cards
+    }
+
+    private func makeLLMRemoteProviderCard(
+        _ provider: LLMRemoteProvider,
+        badge: String? = nil,
+    ) -> StudioModelCard {
+        let resolvedBadge = badge ?? (
+            provider.apiStyle == .openAICompatible
+                ? L("settings.models.badge.api") : L("settings.models.badge.native")
+        )
+
+        return StudioModelCard(
+            id: provider.studioProviderID.rawValue,
+            name: provider.displayName,
+            summary: L("settings.models.card.\(provider.rawValue).summary"),
+            badge: resolvedBadge,
+            metadata: metadata(for: provider),
+            isSelected: viewModel.llmProvider == .openAICompatible
+                && viewModel.llmRemoteProvider == provider,
+            isMuted: false,
+            actionTitle: L("settings.models.useRemote"),
+        )
     }
 
     private var modelOverviewPanel: some View {
