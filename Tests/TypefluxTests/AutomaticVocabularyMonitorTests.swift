@@ -380,8 +380,9 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
         let terms = AutomaticVocabularyMonitor.parseAcceptedTerms(
             from: #"{"terms":["A","AI","UI","GPT","GPT4"]}"#,
         )
-        // A (1), AI (2), UI (2), GPT (3) all rejected; only GPT4 (4) passes.
-        XCTAssertEqual(terms, ["GPT4"])
+        // A (1), AI (2), UI (2) rejected; GPT (3) and GPT4 (4) both pass under the
+        // relaxed 3-char minimum for English/Latin acronyms.
+        XCTAssertEqual(terms, ["GPT", "GPT4"])
     }
 
     func testParseAcceptedTermsRejectsPureDigits() {

@@ -11,11 +11,21 @@ final class WorkflowController {
     static let selectionRestoreDelayMicroseconds: useconds_t = 120_000
     static let automaticVocabularyObservationWindow: TimeInterval = 30
     static let automaticVocabularyPollInterval: Duration = .seconds(1)
-    static let automaticVocabularyStartupDelay: Duration = .milliseconds(600)
+    // Bumped from 600ms to 900ms so the paste fallback path has time for focus and
+    // pasteboard restoration before we start reading the AX baseline.
+    static let automaticVocabularyStartupDelay: Duration = .milliseconds(900)
     static let automaticVocabularyBaselineRetryDelay: Duration = .milliseconds(400)
     static let automaticVocabularyBaselineRetryCount = 6
-    static let automaticVocabularyIdleSettleDelay: TimeInterval = 8
-    static let automaticVocabularyEditRatioLimit: Double = 0.6
+    // Retry the initial editable-focus snapshot a few times — Electron/web targets
+    // frequently report non-editable roles on the first AX query after insertion.
+    static let automaticVocabularyInitialSnapshotRetryCount = 3
+    static let automaticVocabularyInitialSnapshotRetryDelay: Duration = .milliseconds(400)
+    // Dropped from 8s to 4s so real editing sessions have a realistic chance to
+    // complete before the next dictation arrives.
+    static let automaticVocabularyIdleSettleDelay: TimeInterval = 4
+    // Raised from 0.6 to 0.8 so short dictations with a delete+retype edit are
+    // still considered for analysis.
+    static let automaticVocabularyEditRatioLimit: Double = 0.8
     static let localModelPreheatDebounce: Duration = .milliseconds(180)
     static let llmTimeoutAfterTranscriptionSeconds: TimeInterval = 120
     static let recordingStartCueLeadIn: Duration = .milliseconds(60)
@@ -79,6 +89,10 @@ final class WorkflowController {
     var selectionTask: Task<TextSelectionSnapshot, Never>?
     var processingTask: Task<Void, Never>?
     var automaticVocabularyObservationTask: Task<Void, Never>?
+    /// Latest snapshot of the currently running automatic-vocabulary observation.
+    /// Kept in sync by the observation task so that an incoming `scheduleAutomatic…`
+    /// call can finalize-then-cancel instead of dropping partially-observed work.
+    var automaticVocabularyActiveSession: AutomaticVocabularyActiveSession?
     var processingSessionID = UUID()
     var activeProcessingRecordID: UUID?
     var lastRetryableFailureRecord: HistoryRecord?

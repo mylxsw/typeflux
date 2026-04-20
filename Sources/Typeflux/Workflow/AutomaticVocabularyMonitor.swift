@@ -233,7 +233,9 @@ enum AutomaticVocabularyMonitor {
 
     private static func isValidLatinOrNumberToken(_ token: String) -> Bool {
         let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 4, trimmed.count <= 32 else { return false }
+        // Dropped from 4 to 3: common tech acronyms (GPT, API, LLM, ASR, gRPC) get
+        // manually corrected all the time. LLM-side validation keeps the noise out.
+        guard trimmed.count >= 3, trimmed.count <= 32 else { return false }
         return trimmed.rangeOfCharacter(from: .letters) != nil
     }
 
@@ -297,7 +299,9 @@ enum AutomaticVocabularyMonitor {
         }
 
         guard trimmed.rangeOfCharacter(from: .letters) != nil else { return false }
-        return trimmed.count >= 4
+        // Aligns with the candidate tokenizer: allow 3-char acronyms like "API",
+        // "GPT" that users frequently correct by hand.
+        return trimmed.count >= 3
     }
 
     private static func extractJSONObjectOrArray(from response: String) -> String? {

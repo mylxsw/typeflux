@@ -314,21 +314,18 @@ enum PromptCatalog {
         return (
             system: """
             You decide whether user-corrected terms should be added to a speech transcription vocabulary.
-            Your goal is to keep only stable vocabulary entries that are likely to improve future speech recognition accuracy.
-            You may keep a candidate only if it clearly belongs to one of these two categories:
-            1. A word or short phrase that speech recognition is likely to mishear or misspell.
+            Your goal is to keep entries that are likely to improve future speech recognition accuracy.
+            Prefer keeping any correction that looks like one of these:
+            1. A word or short phrase that speech recognition is likely to mishear or misspell (capitalization fixes, spacing fixes, homophones, brand spellings all qualify).
             2. A professional term, product name, model name, framework name, API name, protocol name, command, code identifier, or other domain-specific term.
-            Reject anything that does not clearly match the two categories above.
-            Always reject:
-            - common everyday words
-            - generic rewrites or paraphrases
+            When the correction spans two or more tokens (e.g. "Open AI" → "OpenAI", "read me" → "readme"), keep the corrected form — those are exactly the mistakes an ASR vocabulary fixes.
+            Reject only clear non-terms:
+            - common everyday words with no correction value
             - filler words or conversational fragments
             - punctuation-only changes
-            - grammar fixes
-            - complete clauses or sentence fragments
-            - long phrases or copied chunks of text
+            - pure grammar fixes with no new terminology
+            - complete clauses or sentence fragments copied from the transcript
             - content added only to clarify meaning, tone, or context
-            - anything uncertain or ambiguous
             A valid vocabulary entry must be short and term-like:
             - usually 1 term or a very short phrase
             - not a full sentence
@@ -336,7 +333,7 @@ enum PromptCatalog {
             - not more than 3 English words
             - not more than 8 Chinese characters unless it is clearly a fixed technical term
             Minimum length requirements (reject anything shorter):
-            - English / Latin / alphanumeric terms must be at least 4 characters and contain letters (e.g. "GPT4", "LLM4", "Rust" OK; "AI", "UI", "Go", "123", "X" rejected).
+            - English / Latin / alphanumeric terms must be at least 3 characters and contain letters (e.g. "GPT", "API", "LLM", "iOS", "Rust" OK; "AI", "UI", "Go", "123", "X" rejected).
             - Chinese terms must contain at least 2 Han characters (e.g. "向量", "推理" OK; single-character terms rejected).
             - Mixed terms containing any Han character must still be at least 2 characters total.
             Good examples:
@@ -353,7 +350,7 @@ enum PromptCatalog {
             - today afternoon meeting
             - let me explain this
             - a whole sentence copied from the transcript
-            If a candidate is not clearly suitable, reject it.
+            When in doubt about a candidate that looks like a real term/name/acronym, keep it — duplicates and noise are inexpensive to prune later; missing a real domain term hurts recognition quality.
             Return strict JSON only in the form {"terms":["term1","term2"]}.
             Return at most 3 terms.
             If nothing qualifies, return {"terms":[]}.
@@ -371,9 +368,8 @@ enum PromptCatalog {
 
             \(xmlSection(tag: "existing_vocabulary", content: existingSummary))
 
-            Keep only the candidates that are strong long-term vocabulary entries for speech recognition.
-            Prefer precision over recall.
-            If uncertain, return an empty list.
+            Keep the candidates that look like real domain terms, product/model/framework/API names, code identifiers, or spacing/capitalization corrections that speech recognition is likely to mishear.
+            Lean toward keeping genuine term-like corrections; reject only obvious non-terms per the system guidance.
             Return strict JSON only.
             """,
         )

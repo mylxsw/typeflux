@@ -202,4 +202,137 @@ final class VocabularyStoreExtendedTests: XCTestCase {
         XCTAssertEqual(VocabularySource.manual.rawValue, "manual")
         XCTAssertEqual(VocabularySource.automatic.rawValue, "automatic")
     }
+
+    // MARK: - occurrenceCount + ranking
+
+    func testAddInitialTermHasOccurrenceCountOne() {
+        let entries = VocabularyStore.add(term: "SeedASR", source: .manual)
+        XCTAssertEqual(entries.first?.occurrenceCount, 1)
+    }
+
+    func testAddDuplicateBumpsOccurrenceCountInsteadOfInsertingNewEntry() {
+        _ = VocabularyStore.add(term: "SeedASR", source: .manual)
+        _ = VocabularyStore.add(term: "SeedASR", source: .automatic)
+        let entries = VocabularyStore.add(term: "seedasr", source: .automatic) // case-insensitive
+        XCTAssertEqual(entries.filter { $0.term.lowercased() == "seedasr" }.count, 1)
+        XCTAssertEqual(entries.first(where: { $0.term.lowercased() == "seedasr" })?.occurrenceCount, 3)
+    }
+
+    func testAddPreservesOriginalCreatedAtAndTermWhenBumping() {
+        let initial = VocabularyStore.add(term: "Typeflux", source: .manual)
+        let originalID = initial.first?.id
+        let originalCreatedAt = initial.first?.createdAt
+
+        // Sleep a moment so createdAt would differ if the record were replaced.
+        Thread.sleep(forTimeInterval: 0.01)
+        let after = VocabularyStore.add(term: "Typeflux", source: .automatic)
+        XCTAssertEqual(after.first?.id, originalID)
+        XCTAssertEqual(after.first?.createdAt, originalCreatedAt)
+        XCTAssertEqual(after.first?.term, "Typeflux")
+    }
+
+    func testIncrementOccurrencesBumpsMatchingTerms() {
+        _ = VocabularyStore.add(term: "SeedASR", source: .manual)
+        _ = VocabularyStore.add(term: "向量", source: .manual)
+        _ = VocabularyStore.add(term: "GPT", source: .manual)
+
+        let bumped = VocabularyStore.incrementOccurrences(
+            in: "测试 SeedASR 与 向量 数据库",
+        )
+        XCTAssertEqual(Set(bumped), Set(["SeedASR", "向量"]))
+
+        let entries = VocabularyStore.load()
+        let bySeed = entries.first(where: { $0.term == "SeedASR" })
+        let byVector = entries.first(where: { $0.term == "向量" })
+        let byGPT = entries.first(where: { $0.term == "GPT" })
+        XCTAssertEqual(bySeed?.occurrenceCount, 2)
+        XCTAssertEqual(byVector?.occurrenceCount, 2)
+        XCTAssertEqual(byGPT?.occurrenceCount, 1)
+    }
+
+    func testIncrementOccurrencesEmptyTextIsNoOp() {
+        _ = VocabularyStore.add(term: "SeedASR", source: .manual)
+        let bumped = VocabularyStore.incrementOccurrences(in: "   ")
+        XCTAssertTrue(bumped.isEmpty)
+        XCTAssertEqual(VocabularyStore.load().first?.occurrenceCount, 1)
+    }
+
+    func testIncrementOccurrencesIsCaseInsensitive() {
+        _ = VocabularyStore.add(term: "Typeflux", source: .manual)
+        let bumped = VocabularyStore.incrementOccurrences(in: "I love typeflux!")
+        XCTAssertEqual(bumped, ["Typeflux"])
+        XCTAssertEqual(VocabularyStore.load().first?.occurrenceCount, 2)
+    }
+
+    func testActiveTermsSortedByCountThenCreatedAt() {
+        _ = VocabularyStore.add(term: "Oldest", source: .manual)
+        Thread.sleep(forTimeInterval: 0.01)
+        _ = VocabularyStore.add(term: "Middle", source: .manual)
+        Thread.sleep(forTimeInterval: 0.01)
+        _ = VocabularyStore.add(term: "Newest", source: .manual)
+
+        // Middle appears twice → highest count → first in ranking.
+        _ = VocabularyStore.add(term: "Middle", source: .manual)
+
+        let active = VocabularyStore.activeTerms()
+        XCTAssertEqual(active.prefix(3).map { $0 }, ["Middle", "Newest", "Oldest"])
+    }
+
+    func testActiveTermsCapsAt100Entries() {
+        var seeded: [VocabularyEntry] = []
+        let baseDate = Date(timeIntervalSince1970: 100_000)
+        for i in 0 ..< 150 {
+            seeded.append(
+                VocabularyEntry(
+                    term: "Term\(String(format: "%03d", i))",
+                    source: .manual,
+                    createdAt: baseDate.addingTimeInterval(TimeInterval(i)),
+                    occurrenceCount: 1,
+                ),
+            )
+        }
+        VocabularyStore.save(seeded)
+
+        let active = VocabularyStore.activeTerms()
+        XCTAssertEqual(active.count, 100)
+        // Latest createdAt wins the tiebreak → Term149 is first.
+        XCTAssertEqual(active.first, "Term149")
+        // Term049 is the 100th most-recent; Term048 should have been dropped.
+        XCTAssertTrue(active.contains("Term050"))
+        XCTAssertFalse(active.contains("Term049"))
+    }
+
+    func testAllTermsReturnsEverythingUnlimited() {
+        var seeded: [VocabularyEntry] = []
+        for i in 0 ..< 120 {
+            seeded.append(
+                VocabularyEntry(
+                    term: "Term\(i)",
+                    source: .manual,
+                    createdAt: Date(timeIntervalSince1970: TimeInterval(1_000 + i)),
+                    occurrenceCount: 1,
+                ),
+            )
+        }
+        VocabularyStore.save(seeded)
+        XCTAssertEqual(VocabularyStore.allTerms().count, 120)
+    }
+
+    func testVocabularyEntryDecodesWithoutOccurrenceCountFieldAsOne() throws {
+        // Legacy on-disk payload — simulates entries saved by pre-ranking builds.
+        let legacyJSON = """
+        [
+          {
+            "id": "\(UUID().uuidString)",
+            "term": "Legacy",
+            "source": "manual",
+            "createdAt": 1000
+          }
+        ]
+        """
+        let data = try XCTUnwrap(legacyJSON.data(using: .utf8))
+        let decoder = JSONDecoder()
+        let entries = try decoder.decode([VocabularyEntry].self, from: data)
+        XCTAssertEqual(entries.first?.occurrenceCount, 1)
+    }
 }
