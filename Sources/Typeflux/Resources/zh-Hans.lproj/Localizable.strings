@@ -670,7 +670,7 @@
 "onboarding.language.title" = "选择语言";
 "onboarding.language.subtitle" = "选择 Typeflux 界面的显示语言。";
 "onboarding.account.title" = "登录 Typeflux Cloud";
-"onboarding.account.subtitle" = "登录后即可使用你自己账号下的 Typeflux Cloud 语音和语言模型。";
+"onboarding.account.subtitle" = "解锁云端语音识别与 AI 推理能力";
 "onboarding.account.cloudReady" = "语音识别与大语言模型服务已就绪，无需额外配置 API 密钥。";
 
 "onboarding.models.title" = "配置模型";
