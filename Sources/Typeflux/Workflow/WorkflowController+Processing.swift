@@ -270,6 +270,12 @@ extension WorkflowController {
             } else {
                 try textInjector.insert(text: text)
             }
+            let bumpedTerms = VocabularyStore.incrementOccurrences(in: text)
+            if !bumpedTerms.isEmpty {
+                NetworkDebugLogger.logMessage(
+                    "[Apply Text] vocabulary occurrences bumped: \(bumpedTerms.joined(separator: ", "))",
+                )
+            }
             scheduleAutomaticVocabularyObservation(for: text)
             NetworkDebugLogger.logMessage(
                 """

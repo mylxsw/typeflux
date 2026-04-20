@@ -111,6 +111,52 @@ final class WorkflowControllerAutomaticVocabularyTests: XCTestCase {
         XCTAssertEqual(llmService.completeJSONCallCount, 0)
     }
 
+    func testScheduleNewObservationFinalizesPreviousSessionWhenEditsWereObserved() async {
+        let llmService = MockWorkflowLLMService(stubbedJSON: #"{"terms":["SeedASR"]}"#)
+        let controller = makeWorkflowController(llmService: llmService)
+
+        // Simulate a previous session that observed a real user edit but never
+        // reached the end of its observation window.
+        controller.automaticVocabularyActiveSession = AutomaticVocabularyActiveSession(
+            sessionID: UUID(),
+            insertedText: "please check the seedsr config",
+            baselineText: "please check the seedsr config",
+            latestObservedText: "please check the SeedASR config",
+            hasObservedChange: true,
+        )
+
+        controller.finalizePreviousAutomaticVocabularySessionIfNeeded()
+
+        // The analysis runs on a detached Task — wait a bit for completion.
+        for _ in 0 ..< 40 {
+            if llmService.completeJSONCallCount > 0 { break }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+
+        XCTAssertEqual(llmService.completeJSONCallCount, 1)
+        if let entry = VocabularyStore.load().first(where: { $0.term == "SeedASR" }) {
+            _ = VocabularyStore.remove(id: entry.id)
+        }
+    }
+
+    func testScheduleNewObservationSkipsFinalizationWhenNoChangeWasObserved() {
+        let llmService = MockWorkflowLLMService()
+        let controller = makeWorkflowController(llmService: llmService)
+
+        // Baseline captured but no user edit ever happened — nothing to analyze.
+        controller.automaticVocabularyActiveSession = AutomaticVocabularyActiveSession(
+            sessionID: UUID(),
+            insertedText: "hello",
+            baselineText: "hello",
+            latestObservedText: "hello",
+            hasObservedChange: false,
+        )
+
+        controller.finalizePreviousAutomaticVocabularySessionIfNeeded()
+
+        XCTAssertEqual(llmService.completeJSONCallCount, 0)
+    }
+
     // MARK: - runAutomaticVocabularyAnalysis orchestration paths
 
     func testRunAnalysisSmallRewriteReachesLLM() async {
