@@ -669,7 +669,7 @@
 
 "onboarding.language.title" = "Choose your language";
 "onboarding.language.subtitle" = "Select the display language for the Typeflux interface.";
-"onboarding.account.title" = "Sign in to Typeflux Cloud";
+"onboarding.account.title" = "Welcome Back";
 "onboarding.account.subtitle" = "Unlock cloud speech recognition and AI inference";
 "onboarding.account.cloudReady" = "Speech recognition and language model services ready — no extra API keys needed.";
 

@@ -667,7 +667,7 @@
 
 "onboarding.language.title" = "選擇語言";
 "onboarding.language.subtitle" = "選擇 Typeflux 介面的顯示語言。";
-"onboarding.account.title" = "登入 Typeflux Cloud";
+"onboarding.account.title" = "歡迎回來";
 "onboarding.account.subtitle" = "解鎖雲端語音辨識與 AI 推理能力";
 "onboarding.account.cloudReady" = "語音辨識與大語言模型服務已就緒，無需額外設定 API 金鑰。";
 

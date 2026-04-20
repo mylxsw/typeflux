@@ -667,7 +667,7 @@
 
 "onboarding.language.title" = "言語を選択してください";
 "onboarding.language.subtitle" = "Typeflux インターフェイスの表示言語を選択します。";
-"onboarding.account.title" = "Typeflux Cloud にサインイン";
+"onboarding.account.title" = "お帰りなさい";
 "onboarding.account.subtitle" = "クラウド音声認識と AI 推論機能を解放する";
 "onboarding.account.cloudReady" = "音声認識と大規模言語モデルサービスが利用可能です。追加の API キーは不要です。";
 
