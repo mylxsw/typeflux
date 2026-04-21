@@ -1,207 +1,128 @@
 # Typeflux
 
+**Voice input for any macOS app — hold to talk, release to insert.**
+
 [![Tests](https://github.com/mylxsw/typeflux/actions/workflows/test.yml/badge.svg)](https://github.com/mylxsw/typeflux/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/mylxsw/typeflux/graph/badge.svg)](https://codecov.io/gh/mylxsw/typeflux)
+[![Release](https://img.shields.io/github/v/release/mylxsw/typeflux)](https://github.com/mylxsw/typeflux/releases/latest)
+[![Stars](https://img.shields.io/github/stars/mylxsw/typeflux?style=social)](https://github.com/mylxsw/typeflux/stargazers)
 
-Typeflux is a macOS menu bar voice input tool built with Swift. It is designed for a fast "hold to talk, release to insert" workflow: press a hotkey, speak naturally, let the app transcribe your speech, and send the resulting text back into the currently focused app.
+Typeflux is a macOS menu bar app that lets you speak into any text field — email, code editor, terminal, browser — without switching apps or changing your workflow. Press a hotkey, talk, release, and your words appear at the cursor.
 
-The project is aimed at people who want voice input to feel like a native part of desktop typing instead of a separate recording workflow. In addition to plain dictation, Typeflux also supports voice-driven text rewriting, streaming transcription previews, clipboard synchronization, and local or remote speech/LLM backends.
+![Typeflux demo](./assets/preview-1.png)
 
-![preview](./assets/preview-1.png)
+## Download
 
-## What Typeflux Does
+**[⬇ Download latest release (.app)](https://github.com/mylxsw/typeflux/releases/latest)**
 
-Typeflux lives in the macOS menu bar and listens for a configurable hotkey. Once activated, it records audio, shows a floating status overlay, transcribes the recording, and then tries to inject the final text into the active application. It also copies the result to the system clipboard as a fallback and keeps a history of recent sessions.
+1. Download `Typeflux.zip` from the latest release
+2. Unzip and drag `Typeflux.app` to **Applications**
+3. Launch and grant Microphone + Accessibility permissions
 
-The product supports two major interaction patterns:
+> macOS 13+. No subscription. Fully local inference supported (no API keys required).
 
-1. Dictation mode: speak and insert the recognized text at the current cursor position.
-2. Editing mode: select existing text first, then speak an instruction to rewrite or transform that selected content.
+---
 
-This makes the app useful both for raw text entry and for higher-level editing workflows such as polishing, shortening, translating, or rephrasing selected text with voice commands.
+## Why Typeflux
 
-## Highlights
+Most voice input tools are separate apps. You dictate, copy the result, and paste it elsewhere. That context switch breaks flow.
 
-- Native macOS menu bar app built in Swift with Swift Package Manager.
-- Hold-to-talk interaction with a lightweight floating overlay.
-- Automatic text insertion into the focused app, with clipboard fallback.
-- Streaming transcription support for responsive feedback.
-- Multiple speech-to-text backends, including local and remote providers.
-- Voice-driven text rewriting powered by configurable LLM services.
-- History storage with retry support and audio/text session review.
-- Built-in settings UI for hotkeys, providers, personas, model options, and preferences.
-- Privacy-conscious architecture that supports fully local transcription setups.
+Typeflux injects text directly into whichever app you're already using — at the cursor position — the moment you release the hotkey. It feels like typing, just faster.
 
-## Key Features
+It also handles the editing case: **select existing text, speak an instruction** ("make this shorter", "translate to English"), and the selection is rewritten in place using an LLM.
 
-### 1. Fast voice input workflow
+---
 
-Typeflux is optimized around a low-friction desktop loop:
+## How It Works
 
-1. Press and hold a hotkey.
-2. Speak.
-3. Release to finish recording.
-4. Receive live or near-live transcription.
-5. Insert the result into the active app and copy it to the clipboard.
+```
+Hold hotkey → Speak → Release → Text appears in focused app
+```
 
-The app also includes a locked recording mode for longer sessions.
+1. Press and hold your configured hotkey (default: `Option + Space`)
+2. Speak naturally
+3. Release — Typeflux transcribes and injects the text at your cursor
+4. The result is also copied to clipboard as a fallback
 
-### 2. Dictation and voice editing
+---
 
-Typeflux is not limited to plain transcription. When text is already selected, the workflow can treat the selection as input context and apply a voice instruction to rewrite it. This makes the project useful as both a speech input utility and a voice-operated editing assistant.
+## Features
 
-### 3. Flexible speech backends
+### Voice Dictation
+Insert transcribed speech into any macOS app via the Accessibility API. Works in browsers, code editors, terminals, Electron apps, and native apps — anywhere a text cursor exists.
 
-The codebase already includes support for several speech-to-text providers:
+### Voice Editing
+Select text first, then speak an instruction. Typeflux sends the selection + your instruction to an LLM and replaces it with the rewritten result. No copy-paste needed.
 
-- Apple Speech
-- Whisper API / OpenAI-compatible remote speech APIs
-- Local model transcription
-- Multimodal LLM transcription
-- Alibaba Cloud realtime ASR
-- Doubao realtime ASR
+### Local-First, Privacy-Friendly
+Run entirely on your Mac with **WhisperKit** (on-device Whisper inference) and **Ollama** (local LLM). No API keys, no data leaving your machine.
 
-The routing layer can fall back to Apple Speech when configured to do so.
+### Multiple Speech Backends
+| Backend | Type | Best for |
+|---------|------|----------|
+| Apple Speech | Built-in | Quick setup, fast |
+| Whisper API / OpenAI-compatible | Cloud | High accuracy |
+| WhisperKit | Local | Privacy, M-series Macs |
+| Alibaba Cloud Realtime ASR | Cloud streaming | Low latency |
+| Doubao Realtime ASR | Cloud streaming | Chinese optimization |
+| Multimodal LLM | Cloud | Specialized use cases |
 
-### 4. Flexible LLM backends
+### Streaming Preview
+See partial transcription results while still speaking, so you get immediate feedback before you release.
 
-For rewrite or post-processing workflows, Typeflux supports:
+### Persona System
+Create named instruction sets (personas) for different workflows — formal writing, code comments, quick notes, specific languages — and switch between them from the menu bar.
 
-- OpenAI-compatible LLM services
-- Ollama for local model serving
+### History & Replay
+Every session is saved locally. Review past sessions, replay audio, retry transcription with different settings, or export records to Markdown.
 
-This makes it possible to run the app against hosted APIs, self-hosted endpoints, or local desktop model stacks depending on your privacy, latency, and cost requirements.
-
-### 5. History and observability
-
-Typeflux stores session history, supports retrying previous records, and includes supporting pieces such as usage statistics and network debug logging. This is helpful for both product iteration and day-to-day debugging during development.
-
-## Why This Project Is Interesting
-
-Typeflux sits at the intersection of desktop UX, speech recognition, accessibility APIs, and LLM-assisted text workflows. The project is intentionally modular: hotkeys, audio capture, transcription, overlay UI, clipboard handling, text injection, settings, history, and model routing are separated into focused components.
-
-That modularity makes the repository a good base for:
-
-- experimenting with new speech providers,
-- adding custom rewrite prompts or personas,
-- testing local-first voice pipelines,
-- building alternative desktop input experiences,
-- or shipping a polished internal productivity tool for macOS users.
+---
 
 ## Requirements
 
 - macOS 13 or later
-- Xcode with Swift 5.9+ tooling, or an equivalent Swift toolchain
 - Microphone permission
-- Accessibility permission for text injection
-- Speech Recognition permission when using Apple Speech or Apple fallback
+- Accessibility permission (for text injection)
+- Speech Recognition permission (when using Apple Speech)
 
-For some providers, you may also need:
+For cloud providers: API keys and endpoint URLs. For local inference: model files downloaded on first use.
 
-- API keys and endpoint URLs for remote STT or LLM services
-- local model files for local speech or local LLM workflows
-- a valid code signing identity if you want a stable local development app identity across rebuilds
+---
 
-## Installation
-
-### Download the latest release
-
-The easiest way to install Typeflux is to download the pre-built `.app` bundle from the [Releases](https://github.com/mylxsw/typeflux/releases) page:
-
-1. Download `Typeflux.zip` from the latest release.
-2. Unzip the archive.
-3. Drag `Typeflux.app` to your **Applications** folder.
-4. Launch Typeflux from Applications.
-5. Grant the requested permissions (Microphone, Accessibility, and Speech Recognition) when prompted.
-
-### Build from source
-
-If you prefer to build from source, follow the steps below.
-
-## Getting Started
-
-### Build
+## Build from Source
 
 ```bash
-swift build
+git clone https://github.com/mylxsw/typeflux
+cd typeflux
+make run          # build + launch as .app bundle
+make dev          # launch with terminal logs attached
+swift test        # run tests
 ```
 
-### Run tests
+See [CLAUDE.md](./CLAUDE.md) for the full development guide.
 
-```bash
-swift test
-```
-
-### Launch the app in development mode
-
-```bash
-make run
-```
-
-This builds the Swift package, assembles a stable `.app` bundle in `~/Applications/Typeflux Dev.app`, and launches it.
-
-### Launch with logs attached to the terminal
-
-```bash
-make dev
-```
-
-This is the most convenient mode when developing the workflow, permissions flow, overlay behavior, or provider integrations.
+---
 
 ## Documentation
 
 - [Usage Guide](./docs/USAGE.md)
 - [Make Commands](./docs/MAKE_COMMANDS.md)
 - [Release Guide](./docs/RELEASE.md)
+- [Changelog](./CHANGELOG.md)
 
-## Development Notes
+---
 
-### Why the project runs as an `.app`
+## Contributing
 
-Typeflux relies on macOS capabilities such as menu bar behavior, privacy permissions, and accessibility APIs. The repository includes helper scripts that package the debug binary into an app bundle before launch so that the app has a stable identity and macOS does not repeatedly invalidate permissions during normal development.
+Contributions welcome. Good starting points: STT provider integrations, overlay UX, settings views, text injection edge cases, or history/export features.
 
-### Privacy and permissions
+1. Read the module layout in [CLAUDE.md](./CLAUDE.md)
+2. Run the app locally with `make dev`
+3. Add or update tests for any logic changes
+4. Open a PR with a description of user-visible impact
 
-If required permissions are missing, the app surfaces guidance and opens the relevant macOS settings panes. During development, expect to grant at least:
-
-- Microphone
-- Accessibility
-- Speech Recognition, when applicable
-
-### Local development workflow
-
-The most common inner loop is:
-
-1. Edit code.
-2. Run `swift test` for logic changes.
-3. Run `make dev` to launch the app with logs attached.
-4. Validate hotkeys, recording, transcription, overlay updates, and text injection in real desktop apps.
-
-## How to Contribute
-
-We welcome contributions from people interested in desktop productivity, voice UX, speech recognition, local AI, and macOS systems work.
-
-A good way to get started:
-
-1. Read the module layout above and run the app locally.
-2. Start with one bounded area such as STT providers, overlay behavior, settings UX, text injection, or history.
-3. Add or update tests in `Tests/TypefluxTests` when your change affects business logic, parsing, routing, or prompt behavior.
-4. Keep modules focused and prefer extending existing abstractions instead of adding one-off code paths.
-
-## Design Principles
-
-The codebase is moving toward a few clear principles:
-
-- Keep the interaction loop extremely fast.
-- Prefer modular provider abstractions over hard-coded vendor logic.
-- Preserve a usable fallback path when direct text injection fails.
-- Support both cloud-powered and local-first workflows.
-- Make the menu bar app understandable and hackable for contributors.
+---
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0 (GPL-3.0). In practical terms, that means people are allowed to use, modify, and redistribute the code, but if they distribute a modified version or a derivative work, they must also provide the source code under the same GPL-compatible terms.
-
-If you want a stronger network-service copyleft requirement for hosted SaaS deployments, you may want to consider AGPL in the future. For now, this repository uses GPL v3 as requested.
-
-See the [LICENSE](./LICENSE) file for the full text.
+GPL-3.0. See [LICENSE](./LICENSE).
