@@ -4009,15 +4009,15 @@ struct StudioView: View {
         guard let resourceName = providerLogoResourceName(for: provider) else { return nil }
 
         let url =
-            Bundle.module.url(
+            Bundle.appResources.url(
                 forResource: resourceName, withExtension: "png", subdirectory: "Resources/Providers",
             )
-            ?? Bundle.module.url(
+            ?? Bundle.appResources.url(
                 forResource: resourceName, withExtension: "png", subdirectory: "Providers",
             )
-            ?? Bundle.module.url(forResource: resourceName, withExtension: "png")
-            ?? Bundle.module.url(forResource: resourceName, withExtension: "svg", subdirectory: "Resources")
-            ?? Bundle.module.url(forResource: resourceName, withExtension: "svg")
+            ?? Bundle.appResources.url(forResource: resourceName, withExtension: "png")
+            ?? Bundle.appResources.url(forResource: resourceName, withExtension: "svg", subdirectory: "Resources")
+            ?? Bundle.appResources.url(forResource: resourceName, withExtension: "svg")
 
         guard let url else { return nil }
         return NSImage(contentsOf: url)

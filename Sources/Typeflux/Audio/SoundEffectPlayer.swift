@@ -98,7 +98,7 @@ final class SoundEffectPlayer {
     }
 
     private func resourceURL(for effect: Effect) -> URL? {
-        Bundle.module.url(forResource: effect.rawValue, withExtension: "mp3", subdirectory: "Resources")
-            ?? Bundle.module.url(forResource: effect.rawValue, withExtension: "mp3")
+        Bundle.appResources.url(forResource: effect.rawValue, withExtension: "mp3", subdirectory: "Resources")
+            ?? Bundle.appResources.url(forResource: effect.rawValue, withExtension: "mp3")
     }
 }

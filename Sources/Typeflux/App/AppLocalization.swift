@@ -132,7 +132,7 @@ final class AppLocalization: ObservableObject {
             }
 
             guard
-                let tableURL = Bundle.module.url(
+                let tableURL = Bundle.appResources.url(
                     forResource: "Localizable",
                     withExtension: "strings",
                     subdirectory: nil,
@@ -154,14 +154,14 @@ final class AppLocalization: ObservableObject {
 
     private func bundle(for language: AppLanguage) -> Bundle {
         for localizationName in language.bundleLocalizationCandidates {
-            if let path = Bundle.module.path(forResource: localizationName, ofType: "lproj"),
+            if let path = Bundle.appResources.path(forResource: localizationName, ofType: "lproj"),
                let bundle = Bundle(path: path)
             {
                 return bundle
             }
         }
 
-        return Bundle.module
+        return Bundle.appResources
     }
 }
 

@@ -1145,15 +1145,15 @@ struct OnboardingView: View {
 
     private func loadProviderLogo(for providerID: StudioModelProviderID) -> NSImage? {
         guard let name = providerLogoResourceName(for: providerID) else { return nil }
-        let url = Bundle.module.url(
+        let url = Bundle.appResources.url(
             forResource: name,
             withExtension: "png",
             subdirectory: "Resources/Providers",
         )
-            ?? Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Providers")
-            ?? Bundle.module.url(forResource: name, withExtension: "png")
-            ?? Bundle.module.url(forResource: name, withExtension: "svg", subdirectory: "Resources")
-            ?? Bundle.module.url(forResource: name, withExtension: "svg")
+            ?? Bundle.appResources.url(forResource: name, withExtension: "png", subdirectory: "Providers")
+            ?? Bundle.appResources.url(forResource: name, withExtension: "png")
+            ?? Bundle.appResources.url(forResource: name, withExtension: "svg", subdirectory: "Resources")
+            ?? Bundle.appResources.url(forResource: name, withExtension: "svg")
         guard let url else { return nil }
         return NSImage(contentsOf: url)
     }

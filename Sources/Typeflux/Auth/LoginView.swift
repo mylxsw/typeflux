@@ -1448,8 +1448,8 @@ private struct SocialProviderLogoMark: View {
     }
 
     private var logoImage: NSImage? {
-        guard let url = Bundle.module.url(forResource: resourceName, withExtension: "svg", subdirectory: "Resources")
-            ?? Bundle.module.url(forResource: resourceName, withExtension: "svg")
+        guard let url = Bundle.appResources.url(forResource: resourceName, withExtension: "svg", subdirectory: "Resources")
+            ?? Bundle.appResources.url(forResource: resourceName, withExtension: "svg")
         else {
             return nil
         }
