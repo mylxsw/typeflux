@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -14,11 +14,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0EF1DD4DF7DB34487F73A003 /* Typeflux.icns */ = {isa = PBXFileReference; includeInIndex = 1; name = Typeflux.icns; path = app/Typeflux.icns; sourceTree = "<group>"; };
+		0EF1DD4DF7DB34487F73A003 /* Typeflux.icns */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.icns; name = Typeflux.icns; path = app/Typeflux.icns; sourceTree = "<group>"; };
 		2DDB70C53E2097A89CFACB4F /* Typeflux.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Typeflux.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		38F3926F848D24C49AE499C2 /* Typeflux.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; name = Typeflux.entitlements; path = app/Typeflux.entitlements; sourceTree = "<group>"; };
 		4A81678B00497A889F3C9A71 /* TypefluxXcodeMain.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TypefluxXcodeMain.swift; path = app/TypefluxXcodeMain.swift; sourceTree = "<group>"; };
 		933D640EAC9946F3AF4B13C0 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = app/Info.plist; sourceTree = "<group>"; };
+		A54B93972F97B94400E3730D /* TypefluxAppRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TypefluxAppRelease.entitlements; sourceTree = "<group>"; };
 		D7DCD59424C3B5F1B988E350 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
@@ -46,6 +47,7 @@
 		7471CC8E535D3AF17AFB03B7 = {
 			isa = PBXGroup;
 			children = (
+				A54B93972F97B94400E3730D /* TypefluxAppRelease.entitlements */,
 				7B0A6CC89F60A35356EAE68E /* Products */,
 				CE9748FBCDCFB24152FC3E4C /* Frameworks */,
 				E9845375B60BD7C71C9D4098 /* app */,
@@ -120,11 +122,9 @@
 				Base,
 			);
 			mainGroup = 7471CC8E535D3AF17AFB03B7;
-			minimizedProjectReferenceProxies = 0;
 			packageReferences = (
 				75920B75E2F12E793BD5A629 /* XCLocalSwiftPackageReference "." */,
 			);
-			preferredProjectObjectVersion = 77;
 			productRefGroup = 7B0A6CC89F60A35356EAE68E /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -162,7 +162,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = app/Typeflux.entitlements;
+				CODE_SIGN_ENTITLEMENTS = TypefluxAppRelease.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = N95437SZ2A;
@@ -170,7 +170,10 @@
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = app/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ai.gulu.app.typeflux;
 				PRODUCT_MODULE_NAME = TypefluxAppRunner;
@@ -248,7 +251,10 @@
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = app/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ai.gulu.app.typeflux;
 				PRODUCT_MODULE_NAME = TypefluxAppRunner;
