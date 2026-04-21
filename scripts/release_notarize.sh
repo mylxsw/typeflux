@@ -11,7 +11,7 @@ TYPEFLUX_NOTARY_POLL_INTERVAL_SECONDS="${TYPEFLUX_NOTARY_POLL_INTERVAL_SECONDS:-
 TYPEFLUX_NOTARY_SUBMIT_RETRIES="${TYPEFLUX_NOTARY_SUBMIT_RETRIES:-3}"
 TYPEFLUX_NOTARY_KEYCHAIN="${TYPEFLUX_NOTARY_KEYCHAIN:-}"
 
-TYPEFLUX_CODESIGN_IDENTITY="${TYPEFLUX_CODESIGN_IDENTITY:-${TYPEFLUX_APPLE_DISTRIBUTION:-}}"
+TYPEFLUX_CODESIGN_IDENTITY="${TYPEFLUX_CODESIGN_IDENTITY:-${TYPEFLUX_DEVELOPER_ID_APPLICATION:-${TYPEFLUX_APPLE_DISTRIBUTION:-}}}"
 export TYPEFLUX_CODESIGN_IDENTITY
 
 log() {
@@ -42,6 +42,46 @@ parse_notary_field() {
   awk -F': ' -v key="$field_name" '$1 ~ key"$" {print $2; exit}' <<<"$raw_output"
 }
 
+find_valid_codesign_identity() {
+  local requested_identity="$1"
+
+  security find-identity -v -p codesigning 2>/dev/null \
+    | sed -n 's/^[[:space:]]*[0-9][0-9]*) [0-9A-F]\{40\} "\(.*\)"$/\1/p' \
+    | while IFS= read -r identity; do
+      [[ -n "$identity" ]] || continue
+
+      if [[ -n "$requested_identity" ]]; then
+        [[ "$identity" == "$requested_identity" ]] && printf '%s\n' "$identity"
+      elif [[ "$identity" == Developer\ ID\ Application:* ]]; then
+        printf '%s\n' "$identity"
+        break
+      fi
+    done
+}
+
+codesign_identity_exists_as_certificate() {
+  local identity_name="$1"
+  security find-certificate -a -c "$identity_name" >/dev/null 2>&1
+}
+
+resolve_codesign_identity() {
+  local requested_identity="${TYPEFLUX_CODESIGN_IDENTITY:-}"
+  local resolved_identity
+
+  resolved_identity="$(find_valid_codesign_identity "$requested_identity" | head -n 1)"
+  if [[ -n "$resolved_identity" ]]; then
+    TYPEFLUX_CODESIGN_IDENTITY="$resolved_identity"
+    export TYPEFLUX_CODESIGN_IDENTITY
+    return 0
+  fi
+
+  if [[ -n "$requested_identity" ]] && codesign_identity_exists_as_certificate "$requested_identity"; then
+    fail "Signing certificate '${requested_identity}' exists in Keychain, but no valid signing identity was found. The private key is likely missing from this Mac."
+  fi
+
+  fail "No valid Developer ID Application signing identity found. Import or create a Developer ID Application certificate with its private key, or set TYPEFLUX_CODESIGN_IDENTITY to a valid identity from 'security find-identity -v -p codesigning'."
+}
+
 run_notarytool() {
   local subcommand="$1"
   shift
@@ -62,7 +102,7 @@ submit_for_notarization() {
     log "Submitting ${DMG_PATH} for notarization (attempt ${attempt}/${TYPEFLUX_NOTARY_SUBMIT_RETRIES})..."
     submit_log="$(mktemp)"
 
-    if run_notarytool submit "$DMG_PATH" 2>&1 | tee "$submit_log" >&2; then
+    if run_notarytool submit "$DMG_PATH" --no-wait 2>&1 | tee "$submit_log" >&2; then
       submit_output="$(<"$submit_log")"
       submission_id="$(parse_notary_field "id" "$submit_output")"
       rm -f "$submit_log"
@@ -146,8 +186,8 @@ main() {
   require_command codesign
   require_command xcrun
   require_command create-dmg
-  require_env TYPEFLUX_CODESIGN_IDENTITY
   require_env TYPEFLUX_NOTARY_PROFILE
+  resolve_codesign_identity
 
   log "Using signing identity: ${TYPEFLUX_CODESIGN_IDENTITY}"
   log "Using notary profile: ${TYPEFLUX_NOTARY_PROFILE}"
