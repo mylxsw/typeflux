@@ -9,7 +9,7 @@ struct KeychainTokenStore {
         let refreshToken: String?
     }
 
-    private static let service = "\(Bundle.main.bundleIdentifier ?? "dev.typeflux").auth"
+    private static let service = "\(Bundle.main.bundleIdentifier ?? "ai.gulu.app.typeflux").auth"
     private static let tokenAccount = "session"
     private static let userProfileAccount = "userProfile"
 

@@ -39,7 +39,7 @@ ENTITLEMENTS="$ROOT_DIR/app/Typeflux.entitlements"
 TYPEFLUX_PROVISIONING_PROFILE="${TYPEFLUX_PROVISIONING_PROFILE:-}"
 
 # Sign In with Apple requires both the entitlement and an embedded macOS
-# provisioning profile whose App ID matches dev.typeflux. Without the profile,
+# provisioning profile whose App ID matches ai.gulu.app.typeflux. Without the profile,
 # AMFI rejects the app at launch when restricted entitlements are present, so
 # we fall back to signing without entitlements and warn the operator.
 use_apple_sign_in_entitlements=false
@@ -63,7 +63,7 @@ if [[ -n "${TYPEFLUX_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 
     --sign "$TYPEFLUX_CODESIGN_IDENTITY"
     --timestamp
     --options runtime
-    --identifier "dev.typeflux"
+    --identifier "ai.gulu.app.typeflux"
   )
   if [[ "$use_apple_sign_in_entitlements" == true ]]; then
     codesign_args+=(--entitlements "$ENTITLEMENTS")
@@ -73,8 +73,8 @@ if [[ -n "${TYPEFLUX_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 
   codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
   echo "Signed with identity: $TYPEFLUX_CODESIGN_IDENTITY"
 elif command -v codesign >/dev/null 2>&1; then
-  codesign --force --sign - --identifier "dev.typeflux" "$APP_EXECUTABLE"
-  codesign --force --sign - --identifier "dev.typeflux" "$APP_BUNDLE"
+  codesign --force --sign - --identifier "ai.gulu.app.typeflux" "$APP_EXECUTABLE"
+  codesign --force --sign - --identifier "ai.gulu.app.typeflux" "$APP_BUNDLE"
   echo "Signed with ad-hoc identity"
 fi
 
@@ -82,7 +82,7 @@ if [[ "$use_apple_sign_in_entitlements" == true ]]; then
   echo "Embedded provisioning profile: $TYPEFLUX_PROVISIONING_PROFILE"
 else
   echo "Warning: Sign In with Apple is disabled for this release build."
-  echo "Warning: To enable it, set TYPEFLUX_PROVISIONING_PROFILE to a macOS provisioning profile whose App ID matches dev.typeflux and includes the Sign In with Apple capability."
+  echo "Warning: To enable it, set TYPEFLUX_PROVISIONING_PROFILE to a macOS provisioning profile whose App ID matches ai.gulu.app.typeflux and includes the Sign In with Apple capability."
 fi
 
 create_zip_archive

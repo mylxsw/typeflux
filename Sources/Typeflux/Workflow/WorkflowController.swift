@@ -3,7 +3,7 @@ import Foundation
 import os
 
 final class WorkflowController {
-    let logger = Logger(subsystem: "dev.typeflux", category: "WorkflowController")
+    let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "WorkflowController")
     static let recordingTimeoutNanoseconds: UInt64 = 600_000_000_000 // 10 minutes
     static let processingTimeoutNanoseconds: UInt64 = 120_000_000_000 // 2 minutes
     static let tapToLockThreshold: TimeInterval = 0.22

@@ -7,7 +7,7 @@
     <key>CFBundleExecutable</key>
     <string>Typeflux</string>
     <key>CFBundleIdentifier</key>
-    <string>dev.typeflux</string>
+    <string>ai.gulu.app.typeflux</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
@@ -35,10 +35,10 @@
     <array>
         <dict>
             <key>CFBundleURLName</key>
-            <string>dev.typeflux</string>
+            <string>ai.gulu.app.typeflux</string>
             <key>CFBundleURLSchemes</key>
             <array>
-                <string>dev.typeflux</string>
+                <string>ai.gulu.app.typeflux</string>
             </array>
         </dict>
     </array>

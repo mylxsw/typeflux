@@ -21,7 +21,7 @@ final class LocalNotificationTriggerTests: XCTestCase {
         let notification = try XCTUnwrap(firstNotification)
         XCTAssertEqual(notification.title, L("notification.localModelReady.title"))
         XCTAssertEqual(notification.body, L("notification.localModelReady.body"))
-        XCTAssertEqual(notification.identifier, "dev.typeflux.local-model-ready")
+        XCTAssertEqual(notification.identifier, "ai.gulu.app.typeflux.local-model-ready")
     }
 
     func testPrepareLocalSTTModelSendsReadyNotificationOnSuccess() async throws {

@@ -18,7 +18,7 @@ import os
 /// - The backend APPLE_OIDC_CLIENT_ID must match the bundle ID (or configured Services ID).
 @MainActor
 final class AppleSignInService: NSObject {
-    nonisolated private static let logger = Logger(subsystem: "dev.typeflux", category: "AppleSignInService")
+    nonisolated private static let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "AppleSignInService")
     private static let shared = AppleSignInService()
 
     private var continuation: CheckedContinuation<String, Error>?

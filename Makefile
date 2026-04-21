@@ -21,7 +21,7 @@ dmg:
 	./scripts/build_dmg.sh
 
 release-notarize:
-	TYPEFLUX_CODESIGN_IDENTITY="Developer ID Application: YIYAO  GUAN (N95437SZ2A)" TYPEFLUX_PROVISIONING_PROFILE="/Users/mylxsw/ResilioSync/ResilioSync/AI/Typeflux/typefluxprofile.provisionprofile" TYPEFLUX_NOTARY_PROFILE="typeflux-profile" ./scripts/release_notarize.sh
+	./scripts/release_notarize.sh
 
 format:
 	./scripts/format.sh

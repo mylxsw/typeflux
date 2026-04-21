@@ -120,7 +120,7 @@
     }
   },
   {
-    "text": "        Logger(subsystem: \"dev.typeflux\", category: \"DIContainer\").debug(\"DIContainer initialized — Logger test message\")",
+    "text": "        Logger(subsystem: \"ai.gulu.app.typeflux\", category: \"DIContainer\").debug(\"DIContainer initialized — Logger test message\")",
     "violation": {
       "severity": "warning",
       "ruleIdentifier": "line_length",

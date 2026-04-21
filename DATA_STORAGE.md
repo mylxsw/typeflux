@@ -636,7 +636,7 @@ private func migrateLegacyJSONIfNeeded() throws {
 `NetworkDebugLogger` 使用 `os.Logger` 记录网络请求：
 
 ```swift
-static let logger = Logger(subsystem: "dev.typeflux", category: "Network")
+static let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "Network")
 ```
 
 日志包含：

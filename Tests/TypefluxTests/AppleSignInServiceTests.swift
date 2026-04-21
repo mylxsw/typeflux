@@ -7,7 +7,7 @@ final class AppleSignInServiceTests: XCTestCase {
     func testConfigurationIssueDescriptionWhenEntitlementMissing() {
         let description = AppleSignInService.configurationIssueDescription(
             for: .init(
-                bundleIdentifier: "dev.typeflux",
+                bundleIdentifier: "ai.gulu.app.typeflux",
                 teamIdentifier: "N95437SZ2A",
                 hasAppleSignInEntitlement: false
             )
@@ -21,7 +21,7 @@ final class AppleSignInServiceTests: XCTestCase {
     func testConfigurationIssueDescriptionWhenBuildIsAdHocSigned() {
         let description = AppleSignInService.configurationIssueDescription(
             for: .init(
-                bundleIdentifier: "dev.typeflux",
+                bundleIdentifier: "ai.gulu.app.typeflux",
                 teamIdentifier: nil,
                 hasAppleSignInEntitlement: true
             )
@@ -41,7 +41,7 @@ final class AppleSignInServiceTests: XCTestCase {
         let mappedError = AppleSignInService.mapSystemError(
             originalError,
             runtimeConfiguration: .init(
-                bundleIdentifier: "dev.typeflux",
+                bundleIdentifier: "ai.gulu.app.typeflux",
                 teamIdentifier: "N95437SZ2A",
                 hasAppleSignInEntitlement: false
             )
@@ -62,7 +62,7 @@ final class AppleSignInServiceTests: XCTestCase {
         let mappedError = AppleSignInService.mapSystemError(
             originalError,
             runtimeConfiguration: .init(
-                bundleIdentifier: "dev.typeflux",
+                bundleIdentifier: "ai.gulu.app.typeflux",
                 teamIdentifier: "N95437SZ2A",
                 hasAppleSignInEntitlement: true
             )

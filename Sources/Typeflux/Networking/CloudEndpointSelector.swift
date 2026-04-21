@@ -61,7 +61,7 @@ actor CloudEndpointSelector {
     private let config: CloudEndpointSelectorConfig
     private let prober: CloudEndpointProbing
     private let now: @Sendable () -> Date
-    private let logger = Logger(subsystem: "dev.typeflux", category: "CloudEndpointSelector")
+    private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "CloudEndpointSelector")
 
     private let orderedURLs: [URL]
     private var states: [URL: EndpointState]

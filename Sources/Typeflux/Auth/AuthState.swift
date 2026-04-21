@@ -12,7 +12,7 @@ final class AuthState: ObservableObject {
 
     static let shared = AuthState()
 
-    private let logger = Logger(subsystem: "dev.typeflux", category: "AuthState")
+    private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "AuthState")
     private let loadStoredToken: () -> (token: String, expiresAt: Int)?
     private let loadStoredUserProfile: () -> UserProfile?
     private let saveStoredToken: (String, Int) -> Void

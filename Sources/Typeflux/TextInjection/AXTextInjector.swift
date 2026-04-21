@@ -72,7 +72,7 @@ final class AXTextInjector: TextInjector {
         }
     }
 
-    let logger = Logger(subsystem: "dev.typeflux", category: "AXTextInjector")
+    let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "AXTextInjector")
     let settingsStore: SettingsStore?
     struct PasteboardItemSnapshot {
         let representations: [(type: NSPasteboard.PasteboardType, data: Data)]

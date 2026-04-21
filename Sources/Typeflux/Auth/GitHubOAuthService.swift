@@ -16,13 +16,13 @@ import os
 /// Configuration:
 /// - Set `GITHUB_OAUTH_CLIENT_ID` in the environment (or via AppServerConfiguration)
 ///   to a GitHub OAuth App client ID from https://github.com/settings/developers.
-/// - Register `dev.typeflux://oauth/github` as an authorized callback URL in your GitHub OAuth App.
+/// - Register `ai.gulu.app.typeflux://oauth/github` as an authorized callback URL in your GitHub OAuth App.
 @MainActor
 struct GitHubOAuthService {
-    private static let logger = Logger(subsystem: "dev.typeflux", category: "GitHubOAuthService")
+    private static let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "GitHubOAuthService")
 
-    private static let redirectURI = "dev.typeflux://oauth/github"
-    private static let callbackScheme = "dev.typeflux"
+    private static let redirectURI = "ai.gulu.app.typeflux://oauth/github"
+    private static let callbackScheme = "ai.gulu.app.typeflux"
 
     struct AuthorizationCode {
         let code: String

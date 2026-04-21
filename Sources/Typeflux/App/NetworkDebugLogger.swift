@@ -2,7 +2,7 @@ import Foundation
 import os
 
 enum NetworkDebugLogger {
-    static let logger = Logger(subsystem: "dev.typeflux", category: "Network")
+    static let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "Network")
 
     static func logRequest(_ request: URLRequest, bodyDescription: String? = nil) {
         let method = request.httpMethod ?? "GET"

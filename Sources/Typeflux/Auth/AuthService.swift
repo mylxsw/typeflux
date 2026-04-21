@@ -3,7 +3,7 @@ import os
 
 /// HTTP client for the Typeflux authentication API.
 struct AuthAPIService {
-    private static let logger = Logger(subsystem: "dev.typeflux", category: "AuthAPIService")
+    private static let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "AuthAPIService")
 
     // MARK: - Public API
 

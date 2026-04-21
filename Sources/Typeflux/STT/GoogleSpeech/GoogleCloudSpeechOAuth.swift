@@ -16,7 +16,7 @@ struct GoogleCloudSpeechOAuthToken: Codable, Equatable {
 }
 
 struct GoogleCloudSpeechOAuthTokenStore {
-    private static let service = "\(Bundle.main.bundleIdentifier ?? "dev.typeflux").google-cloud-speech"
+    private static let service = "\(Bundle.main.bundleIdentifier ?? "ai.gulu.app.typeflux").google-cloud-speech"
     private static let account = "oauth-token"
 
     static func save(_ token: GoogleCloudSpeechOAuthToken) {

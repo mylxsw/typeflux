@@ -45,7 +45,7 @@ final class CloudEndpointProbeScheduler {
     private let interval: TimeInterval
     private let initialDelay: TimeInterval
     private var task: Task<Void, Never>?
-    private let logger = Logger(subsystem: "dev.typeflux", category: "CloudEndpointProbeScheduler")
+    private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "CloudEndpointProbeScheduler")
 
     init(
         selector: CloudEndpointSelector = CloudEndpointRegistry.shared,

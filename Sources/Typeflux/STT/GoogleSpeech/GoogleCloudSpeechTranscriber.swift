@@ -5,7 +5,7 @@ import os
 
 final class GoogleCloudSpeechTranscriber: TypefluxCloudScenarioAwareTranscriber {
     private let settingsStore: SettingsStore
-    private let logger = Logger(subsystem: "dev.typeflux", category: "GoogleCloudSpeechTranscriber")
+    private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "GoogleCloudSpeechTranscriber")
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore

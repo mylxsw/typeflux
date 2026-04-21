@@ -10,7 +10,7 @@ TARGET_NAME = 'TypefluxApp'
 PRODUCT_NAME = 'Typeflux'
 MODULE_NAME = 'TypefluxAppRunner'
 TEAM_ID = ENV.fetch('TYPEFLUX_DEVELOPMENT_TEAM', 'N95437SZ2A')
-BUNDLE_ID = ENV.fetch('TYPEFLUX_BUNDLE_ID', 'dev.typeflux')
+BUNDLE_ID = ENV.fetch('TYPEFLUX_BUNDLE_ID', 'ai.gulu.app.typeflux')
 
 FileUtils.rm_rf(PROJECT_PATH)
 

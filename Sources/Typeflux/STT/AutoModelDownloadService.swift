@@ -216,7 +216,7 @@ final class AutoModelDownloadService {
         await notificationService.sendLocalNotification(
             title: L("notification.localModelReady.title"),
             body: L("notification.localModelReady.body"),
-            identifier: "dev.typeflux.local-model-ready",
+            identifier: "ai.gulu.app.typeflux.local-model-ready",
         )
     }
 

@@ -140,7 +140,7 @@ A macOS provisioning profile is **required** when the app uses restricted entitl
 
 1. Sign in to https://developer.apple.com/account/resources/identifiers.
 2. Click **+ Add**, choose **App IDs → App**.
-3. **Bundle ID:** `dev.typeflux` (this matches `app/Info.plist`).
+3. **Bundle ID:** `ai.gulu.app.typeflux` (this matches `app/Info.plist`).
 4. **Capabilities:** enable **Sign In with Apple**.
 5. Save.
 
@@ -149,7 +149,7 @@ A macOS provisioning profile is **required** when the app uses restricted entitl
 1. Go to https://developer.apple.com/account/resources/profiles.
 2. Click **+ Add**.
 3. **Distribution → Developer ID** for release builds, or **Development → macOS App Development** for the dev build. (You may want one of each.)
-4. Pick the `dev.typeflux` App ID.
+4. Pick the `ai.gulu.app.typeflux` App ID.
 5. For the development profile, pick the certificates and devices it should embed (you only need your Mac).
 6. Name it descriptively, e.g. `Typeflux Dev` or `Typeflux Distribution`.
 7. Download the resulting `.provisionprofile` file and store it somewhere stable on disk.

@@ -41,7 +41,7 @@ final class DIContainer {
         agentClarificationWindowController = AgentClarificationWindowController(settingsStore: settingsStore)
         soundEffectPlayer = SoundEffectPlayer(settingsStore: settingsStore)
         textInjector = AXTextInjector(settingsStore: settingsStore)
-        Logger(subsystem: "dev.typeflux", category: "DIContainer").debug("DIContainer initialized — Logger test message")
+        Logger(subsystem: "ai.gulu.app.typeflux", category: "DIContainer").debug("DIContainer initialized — Logger test message")
         historyStore = SQLiteHistoryStore()
         agentJobStore = SQLiteAgentJobStore()
         agentExecutionRegistry = AgentExecutionRegistry()

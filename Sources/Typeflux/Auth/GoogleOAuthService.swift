@@ -20,7 +20,7 @@ import os
 ///   the reverse-client-ID scheme redirect used here.
 @MainActor
 struct GoogleOAuthService {
-    private static let logger = Logger(subsystem: "dev.typeflux", category: "GoogleOAuthService")
+    private static let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "GoogleOAuthService")
     private struct AuthorizationRequest {
         let url: URL
         let callbackScheme: String

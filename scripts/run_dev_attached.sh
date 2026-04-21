@@ -85,10 +85,10 @@ fi
 # Sign In with Apple for the dev build.
 if [[ -z "${TYPEFLUX_DEV_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
   if [[ "$use_apple_sign_in_entitlements" == true ]]; then
-    codesign --force --deep --sign - --identifier "dev.typeflux" \
+    codesign --force --deep --sign - --identifier "ai.gulu.app.typeflux" \
       --entitlements "$ENTITLEMENTS" "$APP_DIR"
   else
-    codesign --force --deep --sign - --identifier "dev.typeflux" "$APP_DIR"
+    codesign --force --deep --sign - --identifier "ai.gulu.app.typeflux" "$APP_DIR"
   fi
 fi
 

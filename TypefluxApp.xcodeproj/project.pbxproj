@@ -172,7 +172,7 @@
 				INFOPLIST_FILE = app/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				PRODUCT_BUNDLE_IDENTIFIER = dev.typeflux;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.gulu.app.typeflux;
 				PRODUCT_MODULE_NAME = TypefluxAppRunner;
 				PRODUCT_NAME = Typeflux;
 				SDKROOT = macosx;
@@ -250,7 +250,7 @@
 				INFOPLIST_FILE = app/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				PRODUCT_BUNDLE_IDENTIFIER = dev.typeflux;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.gulu.app.typeflux;
 				PRODUCT_MODULE_NAME = TypefluxAppRunner;
 				PRODUCT_NAME = Typeflux;
 				SDKROOT = macosx;

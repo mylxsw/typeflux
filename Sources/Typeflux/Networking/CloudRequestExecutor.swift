@@ -35,7 +35,7 @@ struct CloudRequestExecutor: Sendable {
     let selector: CloudEndpointSelector
     let session: CloudHTTPSession
 
-    private let logger = Logger(subsystem: "dev.typeflux", category: "CloudRequestExecutor")
+    private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "CloudRequestExecutor")
 
     init(
         selector: CloudEndpointSelector = CloudEndpointRegistry.shared,

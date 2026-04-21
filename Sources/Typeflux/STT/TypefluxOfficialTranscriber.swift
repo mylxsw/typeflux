@@ -35,7 +35,7 @@ protocol TypefluxCloudLLMIntegratedTranscriber: TypefluxCloudScenarioAwareTransc
 // MARK: - Main Transcriber
 
 final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber, TypefluxCloudLLMIntegratedTranscriber {
-    private let logger = Logger(subsystem: "dev.typeflux", category: "TypefluxOfficialTranscriber")
+    private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "TypefluxOfficialTranscriber")
 
     func transcribeStream(
         audioFile: AudioFile,
@@ -335,7 +335,7 @@ private actor TypefluxOfficialASRSession {
     private let llmConfig: ASRLLMConfig?
     private let onLLMStart: (@Sendable () async -> Void)?
     private let onLLMChunk: (@Sendable (String) async -> Void)?
-    private let logger = Logger(subsystem: "dev.typeflux", category: "TypefluxOfficialASRSession")
+    private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "TypefluxOfficialASRSession")
 
     private var finalSegments: [String] = []
     private var currentPartialText: String = ""
