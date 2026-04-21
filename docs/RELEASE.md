@@ -29,7 +29,7 @@ published. It requires the repository secrets below.
 | `APPLE_CERTIFICATE_BASE64` | Base64-encoded `.p12` export of the Developer ID Application certificate and private key used for macOS distribution signing. | Single-line base64 text |
 | `APPLE_CERTIFICATE_PASSWORD` | Password used when exporting the `.p12` certificate from Keychain Access. | Plain secret value |
 | `APPLE_TEAM_ID` | Apple Developer Team ID for the account that owns the certificate and notarization credentials. | 10-character team ID |
-| `CODESIGN_IDENTITY` | Exact signing identity name used by `codesign`. | `Developer ID Application: Name (TEAMID)` |
+| `CODESIGN_IDENTITY` | Exact signing identity name used by `codesign` (mapped into the workflow as `TYPEFLUX_CODESIGN_IDENTITY`). | `Developer ID Application: Name (TEAMID)` |
 | `NOTARYTOOL_APPLE_ID` | Apple ID email address used for notarization. | Apple ID email |
 | `NOTARYTOOL_PASSWORD` | App-specific password for the Apple ID used by `notarytool`. | App-specific password |
 
@@ -65,7 +65,7 @@ Copy the exact Developer ID Application identity, for example:
 Developer ID Application: Example Company, Inc. (ABCDE12345)
 ```
 
-Save that value as `CODESIGN_IDENTITY`.
+Save that value as the `CODESIGN_IDENTITY` repository secret. The workflow exposes it to the build scripts as `TYPEFLUX_CODESIGN_IDENTITY`.
 
 ### Creating Notarization Credentials
 
@@ -120,26 +120,27 @@ brew install create-dmg
 Before running the one-step release command, export:
 
 ```bash
-export APPLE_DISTRIBUTION="Developer ID Application: Your Name (TEAMID)"
-export NOTARY_PROFILE="your-notarytool-profile"
+export TYPEFLUX_APPLE_DISTRIBUTION="Developer ID Application: Your Name (TEAMID)"
+export TYPEFLUX_NOTARY_PROFILE="your-notarytool-profile"
 ```
 
 Optional overrides:
 
 ```bash
-export CODESIGN_IDENTITY="$APPLE_DISTRIBUTION"
-export NOTARY_SUBMIT_RETRIES=3
-export NOTARY_POLL_INTERVAL_SECONDS=15
-export NOTARY_KEYCHAIN="/path/to/custom.keychain-db"
+export TYPEFLUX_CODESIGN_IDENTITY="$TYPEFLUX_APPLE_DISTRIBUTION"
+export TYPEFLUX_NOTARY_SUBMIT_RETRIES=3
+export TYPEFLUX_NOTARY_POLL_INTERVAL_SECONDS=15
+export TYPEFLUX_NOTARY_KEYCHAIN="/path/to/custom.keychain-db"
 ```
 
 Notes:
 
-- `CODESIGN_IDENTITY` takes priority over `APPLE_DISTRIBUTION`
-- `NOTARY_KEYCHAIN` is optional and only needed when the notary profile lives in
+- `TYPEFLUX_CODESIGN_IDENTITY` takes priority over `TYPEFLUX_APPLE_DISTRIBUTION`
+- `TYPEFLUX_NOTARY_KEYCHAIN` is optional and only needed when the notary profile lives in
   a non-default keychain
 - the release script retries transient notarization submission failures
 - if Apple returns a submission ID and the local client times out afterward, the script continues tracking that submission instead of restarting blindly
+- see [BUILD_CONFIGURATION.md](./BUILD_CONFIGURATION.md) for the full step-by-step setup of certificates, Developer IDs, provisioning profiles, and notarization credentials
 
 ## One-Step Notarized Release
 
@@ -184,7 +185,7 @@ Output:
 
 ```bash
 xcrun notarytool submit .build/release/Typeflux.dmg \
-  --keychain-profile "$NOTARY_PROFILE" \
+  --keychain-profile "$TYPEFLUX_NOTARY_PROFILE" \
   --wait
 ```
 
@@ -225,7 +226,7 @@ If you publish a release manually, prefer attaching both:
 First fetch the Apple log:
 
 ```bash
-xcrun notarytool log <submission-id> --keychain-profile "$NOTARY_PROFILE"
+xcrun notarytool log <submission-id> --keychain-profile "$TYPEFLUX_NOTARY_PROFILE"
 ```
 
 Common causes:
@@ -241,6 +242,6 @@ The one-step release script already retries submission failures and keeps tracki
 If you need to inspect the queue manually:
 
 ```bash
-xcrun notarytool history --keychain-profile "$NOTARY_PROFILE"
-xcrun notarytool info <submission-id> --keychain-profile "$NOTARY_PROFILE"
+xcrun notarytool history --keychain-profile "$TYPEFLUX_NOTARY_PROFILE"
+xcrun notarytool info <submission-id> --keychain-profile "$TYPEFLUX_NOTARY_PROFILE"
 ```

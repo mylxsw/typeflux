@@ -132,11 +132,11 @@ Artifacts:
 
 Environment:
 
-- optional: `CODESIGN_IDENTITY`
+- optional: `TYPEFLUX_CODESIGN_IDENTITY`
 
 Behavior:
 
-- if `CODESIGN_IDENTITY` is set, it signs with that identity
+- if `TYPEFLUX_CODESIGN_IDENTITY` is set, it signs with that identity
 - otherwise it falls back to ad-hoc signing
 
 ### `make dmg`
@@ -163,7 +163,7 @@ Requirements:
 
 Environment:
 
-- optional: `CODESIGN_IDENTITY`
+- optional: `TYPEFLUX_CODESIGN_IDENTITY`
 
 ### `make release-notarize`
 
@@ -192,23 +192,24 @@ Artifacts:
 Required environment:
 
 ```bash
-export APPLE_DISTRIBUTION="Developer ID Application: Your Name (TEAMID)"
-export NOTARY_PROFILE="your-notarytool-profile"
+export TYPEFLUX_APPLE_DISTRIBUTION="Developer ID Application: Your Name (TEAMID)"
+export TYPEFLUX_NOTARY_PROFILE="your-notarytool-profile"
 ```
 
 Optional environment:
 
 ```bash
-export CODESIGN_IDENTITY="$APPLE_DISTRIBUTION"
-export NOTARY_SUBMIT_RETRIES=3
-export NOTARY_POLL_INTERVAL_SECONDS=15
+export TYPEFLUX_CODESIGN_IDENTITY="$TYPEFLUX_APPLE_DISTRIBUTION"
+export TYPEFLUX_NOTARY_SUBMIT_RETRIES=3
+export TYPEFLUX_NOTARY_POLL_INTERVAL_SECONDS=15
 ```
 
 Notes:
 
-- `CODESIGN_IDENTITY` takes priority over `APPLE_DISTRIBUTION`
+- `TYPEFLUX_CODESIGN_IDENTITY` takes priority over `TYPEFLUX_APPLE_DISTRIBUTION`
 - the script automatically retries submission failures
 - if Apple returns a submission ID and the client times out afterward, the script continues polling that submission instead of blindly starting over
+- for full setup of certificates, Developer IDs, and notarization credentials, see [BUILD_CONFIGURATION.md](./BUILD_CONFIGURATION.md)
 
 ### `make format`
 
@@ -246,8 +247,8 @@ make dmg
 ### One-step notarized release
 
 ```bash
-export APPLE_DISTRIBUTION="Developer ID Application: Your Name (TEAMID)"
-export NOTARY_PROFILE="your-notarytool-profile"
+export TYPEFLUX_APPLE_DISTRIBUTION="Developer ID Application: Your Name (TEAMID)"
+export TYPEFLUX_NOTARY_PROFILE="your-notarytool-profile"
 make release-notarize
 ```
 

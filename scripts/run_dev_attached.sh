@@ -53,8 +53,8 @@ chmod +x "$APP_EXEC"
 # SwiftPM debug builds may carry a transient ad-hoc signature with a generated
 # identifier. Re-sign the assembled app bundle with a stable identifier so the
 # dev app is launchable and privacy services see a consistent app identity.
-if [[ -z "${DEV_CODESIGN_IDENTITY:-}" ]] && command -v security >/dev/null 2>&1; then
-  DEV_CODESIGN_IDENTITY="$(
+if [[ -z "${TYPEFLUX_DEV_CODESIGN_IDENTITY:-}" ]] && command -v security >/dev/null 2>&1; then
+  TYPEFLUX_DEV_CODESIGN_IDENTITY="$(
     security find-identity -v -p codesigning 2>/dev/null \
       | sed -n 's/.*"Apple Development: \(.*\)"/Apple Development: \1/p' \
       | head -n 1
@@ -62,15 +62,15 @@ if [[ -z "${DEV_CODESIGN_IDENTITY:-}" ]] && command -v security >/dev/null 2>&1;
 fi
 
 ENTITLEMENTS="$ROOT_DIR/app/Typeflux.entitlements"
-PROVISIONING_PROFILE="${DEV_PROVISIONING_PROFILE:-}"
+TYPEFLUX_DEV_PROVISIONING_PROFILE="${TYPEFLUX_DEV_PROVISIONING_PROFILE:-}"
 
 use_apple_sign_in_entitlements=false
-if [[ -n "$PROVISIONING_PROFILE" ]]; then
-  if [[ -f "$PROVISIONING_PROFILE" ]]; then
-    cp "$PROVISIONING_PROFILE" "$APP_DIR/Contents/embedded.provisionprofile"
+if [[ -n "$TYPEFLUX_DEV_PROVISIONING_PROFILE" ]]; then
+  if [[ -f "$TYPEFLUX_DEV_PROVISIONING_PROFILE" ]]; then
+    cp "$TYPEFLUX_DEV_PROVISIONING_PROFILE" "$APP_DIR/Contents/embedded.provisionprofile"
     use_apple_sign_in_entitlements=true
   else
-    echo "Warning: DEV_PROVISIONING_PROFILE does not exist: $PROVISIONING_PROFILE"
+    echo "Warning: TYPEFLUX_DEV_PROVISIONING_PROFILE does not exist: $TYPEFLUX_DEV_PROVISIONING_PROFILE"
     rm -f "$APP_DIR/Contents/embedded.provisionprofile"
   fi
 else
@@ -83,7 +83,7 @@ fi
 # Without the provisioning profile, AMFI rejects the app at launch if restricted
 # entitlements are present. In that case we keep the app launchable and disable
 # Sign In with Apple for the dev build.
-if [[ -z "${DEV_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
+if [[ -z "${TYPEFLUX_DEV_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
   if [[ "$use_apple_sign_in_entitlements" == true ]]; then
     codesign --force --deep --sign - --identifier "dev.typeflux" \
       --entitlements "$ENTITLEMENTS" "$APP_DIR"
@@ -96,26 +96,26 @@ fi
 # provide an explicit signing identity instead of the fallback dev signature.
 # Sign In with Apple REQUIRES both a real Apple Development identity and a
 # matching macOS provisioning profile:
-#   DEV_PROVISIONING_PROFILE="/path/to/profile.provisionprofile" \
-#   DEV_CODESIGN_IDENTITY="Apple Development: Your Name (...)" ./scripts/run_dev_attached.sh
-if [[ -n "${DEV_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
+#   TYPEFLUX_DEV_PROVISIONING_PROFILE="/path/to/profile.provisionprofile" \
+#   TYPEFLUX_DEV_CODESIGN_IDENTITY="Apple Development: Your Name (...)" ./scripts/run_dev_attached.sh
+if [[ -n "${TYPEFLUX_DEV_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
   if [[ "$use_apple_sign_in_entitlements" == true ]]; then
-    codesign --force --deep --sign "$DEV_CODESIGN_IDENTITY" \
+    codesign --force --deep --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" \
       --entitlements "$ENTITLEMENTS" "$APP_DIR"
   else
-    codesign --force --deep --sign "$DEV_CODESIGN_IDENTITY" "$APP_DIR"
+    codesign --force --deep --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" "$APP_DIR"
   fi
-  echo "Signed with stable identity: $DEV_CODESIGN_IDENTITY"
+  echo "Signed with stable identity: $TYPEFLUX_DEV_CODESIGN_IDENTITY"
 else
   echo "Warning: using ad-hoc signing. Accessibility permission may need to be re-granted across rebuilds."
   echo "Warning: Sign In with Apple requires a real Apple Development identity and matching provisioning profile."
 fi
 
 if [[ "$use_apple_sign_in_entitlements" == true ]]; then
-  echo "Embedded provisioning profile: $PROVISIONING_PROFILE"
+  echo "Embedded provisioning profile: $TYPEFLUX_DEV_PROVISIONING_PROFILE"
 else
   echo "Warning: Sign In with Apple is disabled for this dev build."
-  echo "Warning: To enable it, provide DEV_PROVISIONING_PROFILE with a matching macOS provisioning profile."
+  echo "Warning: To enable it, provide TYPEFLUX_DEV_PROVISIONING_PROFILE with a matching macOS provisioning profile."
 fi
 
 if pgrep -f "$APP_EXEC" >/dev/null 2>&1; then

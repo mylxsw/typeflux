@@ -7,12 +7,12 @@ APP_NAME="Typeflux"
 APP_BUNDLE="${BUILD_DIR}/${APP_NAME}.app"
 DMG_PATH="${BUILD_DIR}/${APP_NAME}.dmg"
 ZIP_PATH="${BUILD_DIR}/${APP_NAME}.zip"
-NOTARY_POLL_INTERVAL_SECONDS="${NOTARY_POLL_INTERVAL_SECONDS:-15}"
-NOTARY_SUBMIT_RETRIES="${NOTARY_SUBMIT_RETRIES:-3}"
-NOTARY_KEYCHAIN="${NOTARY_KEYCHAIN:-}"
+TYPEFLUX_NOTARY_POLL_INTERVAL_SECONDS="${TYPEFLUX_NOTARY_POLL_INTERVAL_SECONDS:-15}"
+TYPEFLUX_NOTARY_SUBMIT_RETRIES="${TYPEFLUX_NOTARY_SUBMIT_RETRIES:-3}"
+TYPEFLUX_NOTARY_KEYCHAIN="${TYPEFLUX_NOTARY_KEYCHAIN:-}"
 
-CODESIGN_IDENTITY="${CODESIGN_IDENTITY:-${APPLE_DISTRIBUTION:-}}"
-export CODESIGN_IDENTITY
+TYPEFLUX_CODESIGN_IDENTITY="${TYPEFLUX_CODESIGN_IDENTITY:-${TYPEFLUX_APPLE_DISTRIBUTION:-}}"
+export TYPEFLUX_CODESIGN_IDENTITY
 
 log() {
   echo "[$(date '+%H:%M:%S')] $*" >&2
@@ -46,10 +46,10 @@ run_notarytool() {
   local subcommand="$1"
   shift
 
-  local args=("$subcommand" "$@" --keychain-profile "$NOTARY_PROFILE")
+  local args=("$subcommand" "$@" --keychain-profile "$TYPEFLUX_NOTARY_PROFILE")
 
-  if [[ -n "$NOTARY_KEYCHAIN" ]]; then
-    args+=(--keychain "$NOTARY_KEYCHAIN")
+  if [[ -n "$TYPEFLUX_NOTARY_KEYCHAIN" ]]; then
+    args+=(--keychain "$TYPEFLUX_NOTARY_KEYCHAIN")
   fi
 
   xcrun notarytool "${args[@]}"
@@ -58,8 +58,8 @@ run_notarytool() {
 submit_for_notarization() {
   local attempt submit_log submit_output submission_id
 
-  for attempt in $(seq 1 "$NOTARY_SUBMIT_RETRIES"); do
-    log "Submitting ${DMG_PATH} for notarization (attempt ${attempt}/${NOTARY_SUBMIT_RETRIES})..."
+  for attempt in $(seq 1 "$TYPEFLUX_NOTARY_SUBMIT_RETRIES"); do
+    log "Submitting ${DMG_PATH} for notarization (attempt ${attempt}/${TYPEFLUX_NOTARY_SUBMIT_RETRIES})..."
     submit_log="$(mktemp)"
 
     if run_notarytool submit "$DMG_PATH" 2>&1 | tee "$submit_log" >&2; then
@@ -80,13 +80,13 @@ submit_for_notarization() {
       return 0
     fi
 
-    if [[ "$attempt" -lt "$NOTARY_SUBMIT_RETRIES" ]]; then
+    if [[ "$attempt" -lt "$TYPEFLUX_NOTARY_SUBMIT_RETRIES" ]]; then
       log "Submission failed, retrying in 10 seconds..."
       sleep 10
       continue
     fi
 
-    fail "Notarization submission failed after ${NOTARY_SUBMIT_RETRIES} attempts."
+    fail "Notarization submission failed after ${TYPEFLUX_NOTARY_SUBMIT_RETRIES} attempts."
   done
 }
 
@@ -108,7 +108,7 @@ wait_for_notarization() {
         return 0
         ;;
       "In Progress")
-        sleep "$NOTARY_POLL_INTERVAL_SECONDS"
+        sleep "$TYPEFLUX_NOTARY_POLL_INTERVAL_SECONDS"
         ;;
       *)
         echo "$info_output" >&2
@@ -146,11 +146,11 @@ main() {
   require_command codesign
   require_command xcrun
   require_command create-dmg
-  require_env CODESIGN_IDENTITY
-  require_env NOTARY_PROFILE
+  require_env TYPEFLUX_CODESIGN_IDENTITY
+  require_env TYPEFLUX_NOTARY_PROFILE
 
-  log "Using signing identity: ${CODESIGN_IDENTITY}"
-  log "Using notary profile: ${NOTARY_PROFILE}"
+  log "Using signing identity: ${TYPEFLUX_CODESIGN_IDENTITY}"
+  log "Using notary profile: ${TYPEFLUX_NOTARY_PROFILE}"
 
   log "Building signed release app..."
   "${ROOT_DIR}/scripts/build_release.sh"

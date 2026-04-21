@@ -213,7 +213,7 @@ extension AppleSignInService {
             Sign In with Apple is not enabled in this dev build. For manually \
             assembled macOS app bundles, Apple Sign In needs both the bundled \
             entitlement and a matching embedded macOS provisioning profile. \
-            Rebuild with `DEV_PROVISIONING_PROFILE=/path/to/profile.provisionprofile`.
+            Rebuild with `TYPEFLUX_DEV_PROVISIONING_PROFILE=/path/to/profile.provisionprofile`.
             """
         }
 

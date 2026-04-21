@@ -15,7 +15,7 @@ final class AppleSignInServiceTests: XCTestCase {
 
         XCTAssertNotNil(description)
         XCTAssertTrue(description?.contains("not enabled in this dev build") == true)
-        XCTAssertTrue(description?.contains("DEV_PROVISIONING_PROFILE") == true)
+        XCTAssertTrue(description?.contains("TYPEFLUX_DEV_PROVISIONING_PROFILE") == true)
     }
 
     func testConfigurationIssueDescriptionWhenBuildIsAdHocSigned() {
@@ -50,7 +50,7 @@ final class AppleSignInServiceTests: XCTestCase {
         guard case .configurationIssue(let description) = mappedError as? AppleSignInError else {
             return XCTFail("Expected a configuration issue error.")
         }
-        XCTAssertTrue(description.contains("DEV_PROVISIONING_PROFILE"))
+        XCTAssertTrue(description.contains("TYPEFLUX_DEV_PROVISIONING_PROFILE"))
     }
 
     func testMapSystemErrorLeavesNonConfigurationFailuresUntouched() {

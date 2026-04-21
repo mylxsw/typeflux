@@ -30,4 +30,4 @@ Recent history favors short, imperative commit subjects such as `Fix compiler wa
 
 ## Security & Configuration Tips
 
-Do not commit API keys, local model paths, or personal macOS signing identities. For local app stability, use the existing launch scripts and set `DEV_CODESIGN_IDENTITY` only in your shell environment when needed.
+Do not commit API keys, local model paths, or personal macOS signing identities. For local app stability, use the existing launch scripts and set `TYPEFLUX_DEV_CODESIGN_IDENTITY` only in your shell environment when needed.

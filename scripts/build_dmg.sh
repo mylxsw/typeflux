@@ -40,9 +40,9 @@ create-dmg \
 rm -rf "$STAGING_DIR"
 
 # Sign the DMG if a signing identity is available
-if [[ -n "${CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
-  codesign --force --sign "$CODESIGN_IDENTITY" --timestamp "$DMG_PATH"
-  echo "Signed DMG with identity: $CODESIGN_IDENTITY"
+if [[ -n "${TYPEFLUX_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
+  codesign --force --sign "$TYPEFLUX_CODESIGN_IDENTITY" --timestamp "$DMG_PATH"
+  echo "Signed DMG with identity: $TYPEFLUX_CODESIGN_IDENTITY"
 fi
 
 echo "DMG created: $DMG_PATH"

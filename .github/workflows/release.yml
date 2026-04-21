@@ -20,14 +20,14 @@ jobs:
       APP_NAME: Typeflux
       APPLE_CERTIFICATE_PATH: ${{ runner.temp }}/developer-id-application.p12
       BUILD_DIR: .build/release
-      CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
+      TYPEFLUX_CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
       KEYCHAIN_PATH: ${{ runner.temp }}/typeflux-release.keychain-db
-      NOTARY_KEYCHAIN: ${{ runner.temp }}/typeflux-release.keychain-db
-      NOTARY_PROFILE: typeflux-release
+      TYPEFLUX_NOTARY_KEYCHAIN: ${{ runner.temp }}/typeflux-release.keychain-db
+      TYPEFLUX_NOTARY_PROFILE: typeflux-release
       NOTARYTOOL_APPLE_ID: ${{ secrets.NOTARYTOOL_APPLE_ID }}
       NOTARYTOOL_PASSWORD: ${{ secrets.NOTARYTOOL_PASSWORD }}
-      NOTARY_SUBMIT_RETRIES: 3
-      NOTARY_POLL_INTERVAL_SECONDS: 15
+      TYPEFLUX_NOTARY_SUBMIT_RETRIES: 3
+      TYPEFLUX_NOTARY_POLL_INTERVAL_SECONDS: 15
 
     steps:
       - name: Checkout
@@ -70,7 +70,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          xcrun notarytool store-credentials "$NOTARY_PROFILE" \
+          xcrun notarytool store-credentials "$TYPEFLUX_NOTARY_PROFILE" \
             --apple-id "$NOTARYTOOL_APPLE_ID" \
             --team-id "$APPLE_TEAM_ID" \
             --password "$NOTARYTOOL_PASSWORD" \

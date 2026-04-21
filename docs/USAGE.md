@@ -170,8 +170,8 @@ make release-notarize
 Before running it, export the required environment variables:
 
 ```bash
-export APPLE_DISTRIBUTION="Developer ID Application: Your Name (TEAMID)"
-export NOTARY_PROFILE="your-notarytool-profile"
+export TYPEFLUX_APPLE_DISTRIBUTION="Developer ID Application: Your Name (TEAMID)"
+export TYPEFLUX_NOTARY_PROFILE="your-notarytool-profile"
 make release-notarize
 ```
 
