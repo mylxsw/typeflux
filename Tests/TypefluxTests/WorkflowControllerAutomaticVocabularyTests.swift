@@ -176,6 +176,26 @@ final class WorkflowControllerAutomaticVocabularyTests: XCTestCase {
         }
     }
 
+    func testRunAnalysisCaseOnlyAcronymCorrectionReachesLLM() async {
+        let llmService = MockWorkflowLLMService(stubbedJSON: #"{"terms":["GPT","API"]}"#)
+        let controller = makeWorkflowController(llmService: llmService)
+
+        await controller.runAutomaticVocabularyAnalysis(
+            insertedText: "please check the gpt api response",
+            baselineText: "please check the gpt api response",
+            finalText: "please check the GPT API response",
+        )
+
+        XCTAssertEqual(llmService.completeJSONCallCount, 1)
+        XCTAssertTrue(VocabularyStore.activeTerms().contains("GPT"))
+        XCTAssertTrue(VocabularyStore.activeTerms().contains("API"))
+        for term in ["GPT", "API"] {
+            if let entry = VocabularyStore.load().first(where: { $0.term == term }) {
+                _ = VocabularyStore.remove(id: entry.id)
+            }
+        }
+    }
+
     func testRunAnalysisLargeRewriteIsAbandoned() async {
         let llmService = MockWorkflowLLMService()
         let controller = makeWorkflowController(llmService: llmService)

@@ -173,6 +173,17 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
         XCTAssertEqual(change?.candidateTerms, ["OpenAI"])
     }
 
+    func testDetectChangeExtractsCaseOnlyAcronymCorrection() {
+        let change = AutomaticVocabularyMonitor.detectChange(
+            from: "Please check the gpt api response",
+            to: "Please check the GPT API response",
+        )
+
+        XCTAssertEqual(change?.oldFragment, "gpt api")
+        XCTAssertEqual(change?.newFragment, "GPT API")
+        XCTAssertEqual(change?.candidateTerms, ["GPT", "API"])
+    }
+
     // MARK: - changeIsJustInitialInsertion
 
     func testChangeIsJustInitialInsertionDetectsExactMatch() {
@@ -232,6 +243,20 @@ final class AutomaticVocabularyMonitorTests: XCTestCase {
             AutomaticVocabularyMonitor.changeIsJustInitialInsertion(
                 change: change,
                 insertedText: "please check SeedASR and Doubao",
+            ),
+        )
+    }
+
+    func testChangeIsJustInitialInsertionFalseForCaseCorrection() {
+        let change = AutomaticVocabularyChange(
+            oldFragment: "gpt api",
+            newFragment: "GPT API",
+            candidateTerms: ["GPT", "API"],
+        )
+        XCTAssertFalse(
+            AutomaticVocabularyMonitor.changeIsJustInitialInsertion(
+                change: change,
+                insertedText: "please check the gpt api response",
             ),
         )
     }

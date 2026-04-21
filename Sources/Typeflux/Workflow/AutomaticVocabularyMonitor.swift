@@ -77,9 +77,15 @@ enum AutomaticVocabularyMonitor {
 
         guard !newFragment.isEmpty else { return nil }
 
-        let previousTerms = Set(tokenize(oldFragment).map(normalize))
+        let previousTermSurfacesByNormalized = Dictionary(
+            grouping: tokenize(oldFragment),
+            by: normalize,
+        ).mapValues { Set($0) }
         let candidateTerms = tokenize(newFragment)
-            .filter { !previousTerms.contains(normalize($0)) }
+            .filter { term in
+                let previousSurfaces = previousTermSurfacesByNormalized[normalize(term)] ?? []
+                return !previousSurfaces.contains(term)
+            }
             .uniquedPreservingOrder(by: normalize)
             .prefix(8)
 
@@ -209,9 +215,9 @@ enum AutomaticVocabularyMonitor {
         guard !normalizedInserted.isEmpty else { return false }
         let normalizedNew = normalize(change.newFragment)
         if normalizedNew == normalizedInserted { return true }
-        let insertedTokens = Set(tokenize(insertedText).map(normalize))
+        let insertedTokens = Set(tokenize(insertedText))
         guard !insertedTokens.isEmpty else { return false }
-        return change.candidateTerms.allSatisfy { insertedTokens.contains(normalize($0)) }
+        return change.candidateTerms.allSatisfy { insertedTokens.contains($0) }
     }
 
     private static func tokenize(_ text: String) -> [String] {
