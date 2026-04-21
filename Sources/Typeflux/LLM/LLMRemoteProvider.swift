@@ -28,6 +28,8 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
     case xiaomi
     case custom
 
+    static let defaultProvider: LLMRemoteProvider = .openAI
+
     static let settingsDisplayOrder: [LLMRemoteProvider] = [
         .typefluxCloud,
         .freeModel,

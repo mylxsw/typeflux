@@ -94,7 +94,7 @@ final class OnboardingViewModel: ObservableObject {
             // Never show providers that are hidden from onboarding model selection.
             return switch p {
             case .appleSpeech, .typefluxOfficial:
-                .whisperAPI
+                STTProvider.defaultProvider
             default:
                 p
             }

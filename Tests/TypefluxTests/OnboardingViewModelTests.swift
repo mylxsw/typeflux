@@ -84,7 +84,7 @@ final class OnboardingViewModelTests: XCTestCase {
 
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
 
-        XCTAssertEqual(viewModel.sttProvider, .whisperAPI)
+        XCTAssertEqual(viewModel.sttProvider, .localModel)
     }
 
     @MainActor
@@ -96,6 +96,16 @@ final class OnboardingViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.llmProvider, .openAICompatible)
         XCTAssertEqual(viewModel.llmRemoteProvider, .custom)
+    }
+
+    @MainActor
+    func testNewUserDefaultsToSenseVoiceAndOpenAI() {
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+
+        XCTAssertEqual(viewModel.sttProvider, .localModel)
+        XCTAssertEqual(viewModel.localSTTModel, .senseVoiceSmall)
+        XCTAssertEqual(viewModel.llmProvider, .openAICompatible)
+        XCTAssertEqual(viewModel.llmRemoteProvider, .openAI)
     }
 
     @MainActor

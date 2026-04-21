@@ -25,7 +25,7 @@ final class SettingsStoreTests: XCTestCase {
     // MARK: - STT Provider
 
     func testDefaultSTTProvider() {
-        XCTAssertEqual(store.sttProvider, .whisperAPI)
+        XCTAssertEqual(store.sttProvider, .localModel)
     }
 
     func testSetAndGetSTTProvider() {
@@ -35,7 +35,7 @@ final class SettingsStoreTests: XCTestCase {
 
     func testInvalidSTTProviderFallsBackToDefault() {
         defaults.set("nonexistent", forKey: "stt.provider")
-        XCTAssertEqual(store.sttProvider, .whisperAPI)
+        XCTAssertEqual(store.sttProvider, .localModel)
     }
 
     // MARK: - LLM Provider
@@ -146,11 +146,16 @@ final class SettingsStoreTests: XCTestCase {
     // MARK: - LLM Remote Provider
 
     func testDefaultLLMRemoteProvider() {
-        XCTAssertEqual(store.llmRemoteProvider, .custom)
+        XCTAssertEqual(store.llmRemoteProvider, .openAI)
     }
 
     func testSetAndGetLLMRemoteProvider() {
         store.llmRemoteProvider = .openAI
+        XCTAssertEqual(store.llmRemoteProvider, .openAI)
+    }
+
+    func testInvalidLLMRemoteProviderFallsBackToDefault() {
+        defaults.set("nonexistent", forKey: "llm.remote.provider")
         XCTAssertEqual(store.llmRemoteProvider, .openAI)
     }
 
@@ -272,7 +277,7 @@ final class SettingsStoreTests: XCTestCase {
     // MARK: - Local STT Model
 
     func testDefaultLocalSTTModel() {
-        XCTAssertEqual(store.localSTTModel, .whisperLocal)
+        XCTAssertEqual(store.localSTTModel, .senseVoiceSmall)
     }
 
     func testSetAndGetLocalSTTModel() {
@@ -559,8 +564,8 @@ final class SettingsStoreTests: XCTestCase {
 extension SettingsStoreTests {
     // MARK: - sttProvider
 
-    func testSTTProviderDefaultsToWhisperAPI() {
-        XCTAssertEqual(store.sttProvider, .whisperAPI)
+    func testSTTProviderDefaultsToLocalModel() {
+        XCTAssertEqual(store.sttProvider, .localModel)
     }
 
     func testSTTProviderCanBeChangedToAppleSpeech() {

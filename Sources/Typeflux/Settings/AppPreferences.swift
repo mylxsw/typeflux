@@ -26,6 +26,8 @@ enum STTProvider: String, CaseIterable, Codable {
     case groq
     case typefluxOfficial
 
+    static let defaultProvider: STTProvider = .localModel
+
     static let settingsDisplayOrder: [STTProvider] = [
         .typefluxOfficial,
         .freeModel,
@@ -78,6 +80,8 @@ enum LocalSTTModel: String, CaseIterable, Codable {
     case whisperLocalLarge
     case senseVoiceSmall
     case qwen3ASR
+
+    static let defaultModel: LocalSTTModel = .senseVoiceSmall
 
     static var displayOrder: [LocalSTTModel] {
         [.senseVoiceSmall, .whisperLocal, .whisperLocalLarge, .qwen3ASR]

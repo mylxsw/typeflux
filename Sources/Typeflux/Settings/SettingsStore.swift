@@ -97,8 +97,8 @@ final class SettingsStore {
 
     var sttProvider: STTProvider {
         get {
-            let raw = defaults.string(forKey: "stt.provider") ?? STTProvider.whisperAPI.rawValue
-            return STTProvider(rawValue: raw) ?? .whisperAPI
+            let raw = defaults.string(forKey: "stt.provider") ?? STTProvider.defaultProvider.rawValue
+            return STTProvider(rawValue: raw) ?? STTProvider.defaultProvider
         }
         set { defaults.set(newValue.rawValue, forKey: "stt.provider") }
     }
@@ -115,8 +115,8 @@ final class SettingsStore {
     var llmRemoteProvider: LLMRemoteProvider {
         get {
             let raw =
-                defaults.string(forKey: "llm.remote.provider") ?? LLMRemoteProvider.custom.rawValue
-            return LLMRemoteProvider(rawValue: raw) ?? .custom
+                defaults.string(forKey: "llm.remote.provider") ?? LLMRemoteProvider.defaultProvider.rawValue
+            return LLMRemoteProvider(rawValue: raw) ?? LLMRemoteProvider.defaultProvider
         }
         set { defaults.set(newValue.rawValue, forKey: "llm.remote.provider") }
     }
@@ -220,8 +220,8 @@ final class SettingsStore {
     var localSTTModel: LocalSTTModel {
         get {
             let raw =
-                defaults.string(forKey: "stt.local.model") ?? LocalSTTModel.whisperLocal.rawValue
-            return LocalSTTModel(rawValue: raw) ?? .whisperLocal
+                defaults.string(forKey: "stt.local.model") ?? LocalSTTModel.defaultModel.rawValue
+            return LocalSTTModel(rawValue: raw) ?? LocalSTTModel.defaultModel
         }
         set { defaults.set(newValue.rawValue, forKey: "stt.local.model") }
     }
