@@ -21,7 +21,7 @@ dmg:
 	./scripts/build_dmg.sh
 
 release-notarize:
-	./scripts/release_notarize.sh
+	NOTARY_PROFILE="typeflux-profile" ./scripts/release_notarize.sh
 
 format:
 	./scripts/format.sh
