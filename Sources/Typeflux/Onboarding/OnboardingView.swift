@@ -1367,8 +1367,6 @@ struct OnboardingView: View {
                     alignCenter: false,
                 )
 
-                permissionInstruction
-
                 VStack(spacing: 10) {
                     ForEach(PrivacyGuard.PermissionID.allCases) { permissionID in
                         if let snapshot = viewModel.permissions.first(where: { $0.id == permissionID }) {
@@ -1377,7 +1375,7 @@ struct OnboardingView: View {
                     }
                 }
 
-                privacyCallout
+                permissionInstruction
                     .padding(.top, 8)
             }
             .frame(maxWidth: 980, alignment: .leading)
@@ -1464,6 +1462,7 @@ struct OnboardingView: View {
             }
         }
         .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(onboardingMutedSurface),
@@ -1471,39 +1470,6 @@ struct OnboardingView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(onboardingSubtleBorder, lineWidth: 1),
-        )
-    }
-
-    private var privacyCallout: some View {
-        HStack(alignment: .top, spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(privacyCalloutIconBackground)
-                    .frame(width: 34, height: 34)
-
-                Image(systemName: "shield.lefthalf.filled")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(privacyCalloutIconForeground)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(L("onboarding.permissions.privacyCallout.title"))
-                    .font(.studioBody(13, weight: .semibold))
-                    .foregroundStyle(onboardingPrimaryText)
-                Text(L("onboarding.permissions.privacyCallout.subtitle"))
-                    .font(.studioBody(12))
-                    .foregroundStyle(onboardingSecondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(18)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(privacyCalloutBackground),
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(privacyCalloutBorder, lineWidth: 1),
         )
     }
 
@@ -2028,30 +1994,6 @@ struct OnboardingView: View {
 
     private var onboardingSelectedBadgeFill: Color {
         isDarkMode ? Color.white.opacity(0.08) : StudioTheme.accentSoft
-    }
-
-    private var privacyCalloutBackground: Color {
-        isDarkMode
-            ? Color(red: 0.08, green: 0.14, blue: 0.13).opacity(0.94)
-            : Color(red: 0.93, green: 0.97, blue: 0.95)
-    }
-
-    private var privacyCalloutBorder: Color {
-        isDarkMode
-            ? Color(red: 0.30, green: 0.58, blue: 0.49).opacity(0.32)
-            : Color(red: 0.76, green: 0.87, blue: 0.81)
-    }
-
-    private var privacyCalloutIconBackground: Color {
-        isDarkMode
-            ? Color(red: 0.11, green: 0.23, blue: 0.20).opacity(0.9)
-            : Color(red: 0.85, green: 0.95, blue: 0.89)
-    }
-
-    private var privacyCalloutIconForeground: Color {
-        isDarkMode
-            ? Color(red: 0.56, green: 0.93, blue: 0.79)
-            : Color(red: 0.12, green: 0.62, blue: 0.42)
     }
 
     private var keyboardHeroBackground: LinearGradient {
