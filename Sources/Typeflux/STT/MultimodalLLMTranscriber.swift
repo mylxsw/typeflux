@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 /// Transcribes audio by sending it directly to an OpenAI-compatible multimodal LLM.
@@ -10,9 +11,25 @@ final class MultimodalLLMTranscriber: Transcriber {
     static let audioProcessingInstructionText = "This input_audio item contains the user's spoken audio. Please process it according to the system prompt and return only the requested final text."
 
     private let settingsStore: SettingsStore
+    private let frontmostBundleIdentifierProvider: @Sendable () -> String?
 
-    init(settingsStore: SettingsStore) {
+    init(
+        settingsStore: SettingsStore,
+        frontmostBundleIdentifierProvider: @escaping @Sendable () -> String? = MultimodalLLMTranscriber.defaultFrontmostBundleIdentifierProvider,
+    ) {
         self.settingsStore = settingsStore
+        self.frontmostBundleIdentifierProvider = frontmostBundleIdentifierProvider
+    }
+
+    /// Default lookup for the focused app's bundle identifier. Excludes Typeflux
+    /// itself so a stray main-thread dispatch ordering never reports the overlay
+    /// as the frontmost app.
+    static let defaultFrontmostBundleIdentifierProvider: @Sendable () -> String? = {
+        let candidate = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        guard let candidate, candidate != Bundle.main.bundleIdentifier else {
+            return nil
+        }
+        return candidate
     }
 
     static func testConnection(baseURL: String, model: String, apiKey: String) async throws -> String {
@@ -82,9 +99,11 @@ final class MultimodalLLMTranscriber: Transcriber {
         // Build system prompt: persona + vocabulary in one shot
         let personaPrompt = settingsStore.activePersona?.prompt
         let vocabularyTerms = VocabularyStore.activeTerms()
+        let frontmostBundleIdentifier = frontmostBundleIdentifierProvider()
         let systemPrompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
             personaPrompt: personaPrompt,
             vocabularyTerms: vocabularyTerms,
+            bundleIdentifier: frontmostBundleIdentifier,
         )
         let effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
             to: systemPrompt,
@@ -105,6 +124,7 @@ final class MultimodalLLMTranscriber: Transcriber {
             audioSizeBytes=\(audioData.count)
             hasPersona=\(personaPrompt != nil)
             vocabularyTerms=\(vocabularyTerms.count)
+            frontmostBundleIdentifier=\(frontmostBundleIdentifier ?? "<nil>")
             """,
         )
 

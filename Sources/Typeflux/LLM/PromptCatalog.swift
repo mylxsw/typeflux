@@ -93,8 +93,8 @@ enum PromptCatalog {
 
     /// Returns additional system prompt content tailored to the current app context.
     /// Called during system prompt assembly so that app-specific optimizations can be
-    /// injected at the end of the system prompt. Returns an empty string until
-    /// business logic is implemented.
+    /// injected at the end of the system prompt. Currently injects a coding-context
+    /// hint when the focused app is a code editor, IDE, or terminal emulator.
     /// - Parameter context: Environment info captured at the time of the LLM request.
     static func appSpecificSystemContext(_ context: AppSystemContext) -> String {
         NetworkDebugLogger.logMessage(
@@ -109,13 +109,41 @@ enum PromptCatalog {
             selectedText(\(context.selectedText?.count ?? 0)): \(context.selectedText.map { String($0.prefix(80)) } ?? "<nil>")
             """,
         )
+
+        if CodingAppDetector.isCodingApp(bundleIdentifier: context.bundleIdentifier) {
+            return codingContextHint()
+        }
         return ""
+    }
+
+    /// Hint block inserted when the user is dictating into a code editor, IDE, or
+    /// terminal. Biases the model toward technical interpretations of ambiguous
+    /// audio (programming terms, API names, literal identifiers, untranslated
+    /// acronyms). Shared by multimodal transcription and LLM rewrite paths.
+    static func codingContextHint() -> String {
+        xmlSection(
+            tag: "coding_context",
+            content: """
+            The user is dictating into a code editor, IDE, or terminal. When the audio is ambiguous, prefer a technical interpretation over an everyday-language guess:
+            - Treat ambiguous words as programming terms, API names, library names, framework names, language keywords, or shell commands.
+            - Preserve code identifiers verbatim in ASCII with their original casing, dots, underscores, brackets, and parentheses (e.g. "NSURLSession", "pgxpool", "bcrypt.CompareHashAndPassword", "snake_case", "CamelCase").
+            - Keep English technical terms, function names, and library names in English even when the surrounding speech is in another language such as Chinese.
+            - Do not expand acronyms such as "API", "JWT", "SDK", "ASR", "LLM", "OIDC" into their long form unless the speaker explicitly said the long form.
+            - When the utterance sounds like a shell command, preserve flags, paths, and option syntax literally (e.g. "git commit -m", "./scripts/run.sh", "npm install --save-dev").
+            """,
+        )
     }
 
     /// Builds the system prompt for a multimodal LLM transcription call.
     /// When a persona is provided, the model transcribes AND rewrites in one shot.
     /// Otherwise, it acts as a high-quality transcription engine with vocabulary hints.
-    static func multimodalTranscriptionSystemPrompt(personaPrompt: String?, vocabularyTerms: [String]) -> String {
+    /// When `bundleIdentifier` points at a code editor, IDE, or terminal, an additional
+    /// coding-context hint is appended to bias the model toward technical interpretations.
+    static func multimodalTranscriptionSystemPrompt(
+        personaPrompt: String?,
+        vocabularyTerms: [String],
+        bundleIdentifier: String? = nil,
+    ) -> String {
         let persona = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let hasPersona = !persona.isEmpty
         let roleDefinition = hasPersona
@@ -188,6 +216,10 @@ enum PromptCatalog {
 
         if let hint = transcriptionVocabularyHint(terms: vocabularyTerms) {
             parts.append(hint)
+        }
+
+        if CodingAppDetector.isCodingApp(bundleIdentifier: bundleIdentifier) {
+            parts.append(codingContextHint())
         }
 
         return parts.joined(separator: "\n\n")

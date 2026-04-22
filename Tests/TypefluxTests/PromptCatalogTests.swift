@@ -599,4 +599,112 @@ extension PromptCatalogTests {
         let prompt = AgentPromptCatalog.routerUserPrompt(selectedText: "   ", instruction: "Test")
         XCTAssertFalse(prompt.contains("<selected_text>"))
     }
+
+    // MARK: - codingContextHint
+
+    func testCodingContextHintWrapsInCodingContextTag() {
+        let hint = PromptCatalog.codingContextHint()
+
+        XCTAssertTrue(hint.hasPrefix("<coding_context>"))
+        XCTAssertTrue(hint.hasSuffix("</coding_context>"))
+        XCTAssertTrue(hint.contains("code editor, IDE, or terminal"))
+        XCTAssertTrue(hint.contains("Preserve code identifiers verbatim"))
+        XCTAssertTrue(hint.contains("snake_case"))
+        XCTAssertTrue(hint.contains("CamelCase"))
+        XCTAssertTrue(hint.contains("Do not expand acronyms"))
+        XCTAssertTrue(hint.contains("shell command"))
+    }
+
+    // MARK: - appSpecificSystemContext
+
+    func testAppSpecificSystemContextInjectsCodingHintForCodingApps() {
+        let context = AppSystemContext(snapshot: makeSnapshot(bundleIdentifier: "com.apple.dt.Xcode"))
+
+        let result = PromptCatalog.appSpecificSystemContext(context)
+
+        XCTAssertEqual(result, PromptCatalog.codingContextHint())
+    }
+
+    func testAppSpecificSystemContextInjectsCodingHintForJetBrainsApp() {
+        let context = AppSystemContext(snapshot: makeSnapshot(bundleIdentifier: "com.jetbrains.goland"))
+
+        let result = PromptCatalog.appSpecificSystemContext(context)
+
+        XCTAssertTrue(result.contains("<coding_context>"))
+    }
+
+    func testAppSpecificSystemContextReturnsEmptyForNonCodingApp() {
+        let context = AppSystemContext(snapshot: makeSnapshot(bundleIdentifier: "com.apple.Safari"))
+
+        let result = PromptCatalog.appSpecificSystemContext(context)
+
+        XCTAssertEqual(result, "")
+    }
+
+    func testAppSpecificSystemContextReturnsEmptyWhenBundleIdentifierMissing() {
+        let context = AppSystemContext(snapshot: makeSnapshot(bundleIdentifier: nil))
+
+        let result = PromptCatalog.appSpecificSystemContext(context)
+
+        XCTAssertEqual(result, "")
+    }
+
+    // MARK: - multimodalTranscriptionSystemPrompt (coding-context awareness)
+
+    func testMultimodalTranscriptionSystemPromptAppendsCodingContextForCodingApps() {
+        let prompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
+            personaPrompt: nil,
+            vocabularyTerms: [],
+            bundleIdentifier: "com.microsoft.VSCode",
+        )
+
+        XCTAssertTrue(prompt.contains("<coding_context>"))
+        XCTAssertTrue(prompt.contains("Preserve code identifiers verbatim"))
+    }
+
+    func testMultimodalTranscriptionSystemPromptOmitsCodingContextForNonCodingApps() {
+        let prompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
+            personaPrompt: nil,
+            vocabularyTerms: [],
+            bundleIdentifier: "com.apple.Safari",
+        )
+
+        XCTAssertFalse(prompt.contains("<coding_context>"))
+    }
+
+    func testMultimodalTranscriptionSystemPromptOmitsCodingContextWhenBundleIdentifierMissing() {
+        let prompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
+            personaPrompt: nil,
+            vocabularyTerms: [],
+        )
+
+        XCTAssertFalse(prompt.contains("<coding_context>"))
+    }
+
+    func testMultimodalTranscriptionSystemPromptAppendsCodingContextAfterVocabularyHint() {
+        let prompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
+            personaPrompt: nil,
+            vocabularyTerms: ["pgxpool"],
+            bundleIdentifier: "com.apple.dt.Xcode",
+        )
+
+        guard let vocabularyRange = prompt.range(of: "<vocabulary_hints>"),
+              let codingRange = prompt.range(of: "<coding_context>")
+        else {
+            XCTFail("Both hint blocks should be present")
+            return
+        }
+
+        XCTAssertTrue(vocabularyRange.lowerBound < codingRange.lowerBound)
+    }
+
+    // MARK: - Helpers
+
+    private func makeSnapshot(bundleIdentifier: String?) -> TextSelectionSnapshot {
+        var snapshot = TextSelectionSnapshot()
+        snapshot.bundleIdentifier = bundleIdentifier
+        snapshot.processName = "TestApp"
+        snapshot.isFocusedTarget = true
+        return snapshot
+    }
 }
