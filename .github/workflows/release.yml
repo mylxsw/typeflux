@@ -4,6 +4,9 @@ on:
   release:
     types:
       - published
+  push:
+    branches:
+      - pre-release
 
 concurrency:
   group: release-${{ github.event.release.tag_name || github.ref }}
@@ -18,6 +21,7 @@ jobs:
     timeout-minutes: 60
     env:
       APP_NAME: Typeflux
+      TYPEFLUX_PACKAGE_NAME: ${{ github.event_name == 'push' && github.ref_name == 'pre-release' && 'Typeflux-pre-release' || 'Typeflux' }}
       APPLE_CERTIFICATE_PATH: ${{ runner.temp }}/developer-id-application.p12
       BUILD_DIR: .build/release
       TYPEFLUX_CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
@@ -83,19 +87,31 @@ jobs:
         run: |
           set -euo pipefail
 
-          test -f "$BUILD_DIR/$APP_NAME.dmg"
-          test -f "$BUILD_DIR/$APP_NAME.zip"
+          test -f "$BUILD_DIR/$TYPEFLUX_PACKAGE_NAME.dmg"
+          test -f "$BUILD_DIR/$TYPEFLUX_PACKAGE_NAME.zip"
           codesign --verify --deep --strict --verbose=2 "$BUILD_DIR/$APP_NAME.app"
           spctl --assess --type execute --verbose=4 "$BUILD_DIR/$APP_NAME.app"
-          xcrun stapler validate "$BUILD_DIR/$APP_NAME.dmg"
+          xcrun stapler validate "$BUILD_DIR/$TYPEFLUX_PACKAGE_NAME.dmg"
+
+      - name: Upload pre-release build artifacts
+        if: github.event_name == 'push' && github.ref_name == 'pre-release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TYPEFLUX_PACKAGE_NAME }}-${{ github.sha }}
+          path: |
+            .build/release/${{ env.TYPEFLUX_PACKAGE_NAME }}.zip
+            .build/release/${{ env.TYPEFLUX_PACKAGE_NAME }}.dmg
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload release assets
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name }}
           files: |
-            .build/release/Typeflux.zip
-            .build/release/Typeflux.dmg
+            .build/release/${{ env.TYPEFLUX_PACKAGE_NAME }}.zip
+            .build/release/${{ env.TYPEFLUX_PACKAGE_NAME }}.dmg
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

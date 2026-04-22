@@ -4,8 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="${ROOT_DIR}/.build/release"
 APP_NAME="Typeflux"
+PACKAGE_NAME="${TYPEFLUX_PACKAGE_NAME:-$APP_NAME}"
 APP_BUNDLE="${BUILD_DIR}/${APP_NAME}.app"
-DMG_NAME="${APP_NAME}.dmg"
+DMG_NAME="${PACKAGE_NAME}.dmg"
 DMG_PATH="${BUILD_DIR}/${DMG_NAME}"
 STAGING_DIR="${BUILD_DIR}/dmg-staging"
 
@@ -19,7 +20,7 @@ if [[ ! -d "$APP_BUNDLE" ]]; then
   exit 1
 fi
 
-echo "Creating DMG for $APP_NAME..."
+echo "Creating DMG package for $PACKAGE_NAME..."
 
 rm -rf "$STAGING_DIR"
 mkdir -p "$STAGING_DIR"
@@ -29,7 +30,7 @@ cp -R "$APP_BUNDLE" "$STAGING_DIR/"
 rm -f "$DMG_PATH"
 
 create-dmg \
-  --volname "$APP_NAME" \
+  --volname "$PACKAGE_NAME" \
   --window-size 800 400 \
   --icon-size 100 \
   --app-drop-link 600 185 \

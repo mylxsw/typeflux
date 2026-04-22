@@ -4,9 +4,10 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="${ROOT_DIR}/.build/release"
 APP_NAME="Typeflux"
+PACKAGE_NAME="${TYPEFLUX_PACKAGE_NAME:-$APP_NAME}"
 APP_BUNDLE="${BUILD_DIR}/${APP_NAME}.app"
 APP_EXECUTABLE="${APP_BUNDLE}/Contents/MacOS/${APP_NAME}"
-ZIP_PATH="${BUILD_DIR}/${APP_NAME}.zip"
+ZIP_PATH="${BUILD_DIR}/${PACKAGE_NAME}.zip"
 
 profile_supports_apple_sign_in() {
   local profile_path="$1"
@@ -32,7 +33,7 @@ create_zip_archive() {
   rm -f "$ZIP_PATH"
   (
     cd "$BUILD_DIR"
-    ditto -c -k --sequesterRsrc --keepParent "$APP_NAME.app" "$APP_NAME.zip"
+    ditto -c -k --sequesterRsrc --keepParent "$APP_NAME.app" "$PACKAGE_NAME.zip"
   )
 }
 

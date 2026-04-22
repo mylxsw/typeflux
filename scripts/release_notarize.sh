@@ -4,9 +4,10 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="${ROOT_DIR}/.build/release"
 APP_NAME="Typeflux"
+PACKAGE_NAME="${TYPEFLUX_PACKAGE_NAME:-$APP_NAME}"
 APP_BUNDLE="${BUILD_DIR}/${APP_NAME}.app"
-DMG_PATH="${BUILD_DIR}/${APP_NAME}.dmg"
-ZIP_PATH="${BUILD_DIR}/${APP_NAME}.zip"
+DMG_PATH="${BUILD_DIR}/${PACKAGE_NAME}.dmg"
+ZIP_PATH="${BUILD_DIR}/${PACKAGE_NAME}.zip"
 TYPEFLUX_NOTARY_POLL_INTERVAL_SECONDS="${TYPEFLUX_NOTARY_POLL_INTERVAL_SECONDS:-15}"
 TYPEFLUX_NOTARY_SUBMIT_RETRIES="${TYPEFLUX_NOTARY_SUBMIT_RETRIES:-3}"
 TYPEFLUX_NOTARY_KEYCHAIN="${TYPEFLUX_NOTARY_KEYCHAIN:-}"
@@ -175,7 +176,7 @@ refresh_zip_archive() {
   rm -f "$ZIP_PATH"
   (
     cd "$BUILD_DIR"
-    ditto -c -k --sequesterRsrc --keepParent "$APP_NAME.app" "$APP_NAME.zip"
+    ditto -c -k --sequesterRsrc --keepParent "$APP_NAME.app" "$PACKAGE_NAME.zip"
   )
 }
 
@@ -191,6 +192,7 @@ main() {
 
   log "Using signing identity: ${TYPEFLUX_CODESIGN_IDENTITY}"
   log "Using notary profile: ${TYPEFLUX_NOTARY_PROFILE}"
+  log "Using package name: ${PACKAGE_NAME}"
 
   log "Building signed release app..."
   "${ROOT_DIR}/scripts/build_release.sh"
