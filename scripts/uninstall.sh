@@ -8,9 +8,6 @@
 #   scripts/uninstall.sh --yes        # non-interactive, delete everything
 #   scripts/uninstall.sh --dry-run    # only print what would be removed
 #   scripts/uninstall.sh --keep-build # keep project .build / coverage / DerivedData
-#   scripts/uninstall.sh --reset-accessibility-history
-#                                   # also reset Accessibility for all apps to
-#                                   # clear stale path-based Typeflux entries
 #
 # Safe to run multiple times; missing targets are skipped.
 
@@ -25,16 +22,14 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ASSUME_YES=false
 DRY_RUN=false
 KEEP_BUILD=false
-RESET_ACCESSIBILITY_HISTORY=false
 
 for arg in "$@"; do
   case "$arg" in
     -y|--yes) ASSUME_YES=true ;;
     -n|--dry-run) DRY_RUN=true ;;
     --keep-build) KEEP_BUILD=true ;;
-    --reset-accessibility-history) RESET_ACCESSIBILITY_HISTORY=true ;;
     -h|--help)
-      sed -n '2,15p' "${BASH_SOURCE[0]}"
+      sed -n '2,12p' "${BASH_SOURCE[0]}"
       exit 0
       ;;
     *)
@@ -73,6 +68,20 @@ run_cmd() {
   else
     log "$*"
     "$@" >/dev/null 2>&1 || true
+  fi
+}
+
+reset_tcc_service_for_bundle() {
+  local service="$1"
+
+  if $DRY_RUN; then
+    log "would run: tccutil reset $service $BUNDLE_ID"
+    return 0
+  fi
+
+  log "tccutil reset $service $BUNDLE_ID"
+  if ! tccutil reset "$service" "$BUNDLE_ID" >/dev/null 2>&1; then
+    log "skipped: unable to reset $service for $BUNDLE_ID"
   fi
 }
 
@@ -126,21 +135,11 @@ echo "Typeflux uninstaller"
 echo "  bundle id:  $BUNDLE_ID"
 echo "  project:    $ROOT_DIR"
 $DRY_RUN && echo "  mode:       DRY RUN (no changes will be made)"
-if $RESET_ACCESSIBILITY_HISTORY; then
-  echo "  TCC reset:   global Accessibility history will be cleared"
-fi
 
 if ! $ASSUME_YES && ! $DRY_RUN; then
   if ! confirm "This will delete app data, preferences, caches, keychain items, and privacy grants. Continue?"; then
     echo "Aborted."
     exit 1
-  fi
-
-  if $RESET_ACCESSIBILITY_HISTORY; then
-    if ! confirm "Reset Accessibility permission for ALL apps to clear stale Typeflux entries?"; then
-      echo "Aborted."
-      exit 1
-    fi
   fi
 fi
 
@@ -152,6 +151,16 @@ if pgrep -x Typeflux >/dev/null 2>&1; then
 else
   log "no running process"
 fi
+
+section "Resetting privacy (TCC) grants"
+# Reset only bundle-scoped services here.
+# Do not run a global Accessibility reset from this script: on some systems that
+# can clear Accessibility grants for every app, which is too destructive for an
+# uninstaller. Run these resets before unregistering/removing the app bundle so
+# tccutil can still resolve the bundle identifier.
+for svc in Microphone SpeechRecognition ListenEvent PostEvent AppleEvents; do
+  reset_tcc_service_for_bundle "$svc"
+done
 
 section "Unregistering application bundles from LaunchServices"
 for app_path in "${APP_PATHS[@]}"; do
@@ -193,19 +202,6 @@ else
   done
 fi
 
-section "Resetting privacy (TCC) grants"
-# These remove entries from Settings > Privacy & Security for this bundle id.
-for svc in Accessibility Microphone SpeechRecognition ListenEvent PostEvent AppleEvents All; do
-  run_cmd tccutil reset "$svc" "$BUNDLE_ID"
-done
-
-if $RESET_ACCESSIBILITY_HISTORY; then
-  section "Resetting global Accessibility history"
-  # Some historical Accessibility rows are tracked by path instead of bundle id.
-  # A service-wide reset is the only reliable CLI cleanup for those stale entries.
-  run_cmd tccutil reset Accessibility
-fi
-
 if ! $KEEP_BUILD; then
   section "Removing project build artifacts"
   remove_path "$ROOT_DIR/.build"
@@ -232,10 +228,5 @@ if $DRY_RUN; then
   echo "Dry run complete. Re-run without --dry-run to actually remove the items above."
 else
   echo "Typeflux has been removed. You may need to sign out of Accessibility in System Settings"
-  if $RESET_ACCESSIBILITY_HISTORY; then
-    echo "Accessibility permissions were reset system-wide to clear stale Typeflux history."
-  else
-    echo "If a stale Accessibility row remains, re-run with --reset-accessibility-history"
-    echo "or remove the row manually in System Settings."
-  fi
+  echo "If a stale Accessibility row remains, remove it manually in System Settings."
 fi
