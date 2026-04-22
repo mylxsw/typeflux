@@ -133,6 +133,20 @@ final class AXTextInjector: TextInjector {
         return target != frontmostProcessID
     }
 
+    /// Chromium-based apps (Arc, Chrome, Edge, Electron) reset their keyboard
+    /// focus to the window's default control (the URL bar) when they receive
+    /// an `activate` call while already frontmost. Skipping the redundant
+    /// activation keeps the original editable focus intact so the subsequent
+    /// AX write / paste lands in the correct field. Apps that are *not*
+    /// frontmost still need activation so their window accepts our keystrokes.
+    static func shouldReactivateProcessForSelectionRestore(
+        targetProcessID: pid_t?,
+        frontmostProcessID: pid_t?,
+    ) -> Bool {
+        guard let target = targetProcessID else { return false }
+        return target != frontmostProcessID
+    }
+
     /// When the stubborn-paste flag is on, route Cmd+V through the HID tap so the
     /// event behaves like a real physical keystroke and survives non-standard
     /// event pipelines (Electron, NSPanel hotkey windows, etc.). Otherwise keep

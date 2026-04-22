@@ -403,6 +403,44 @@ final class AXTextInjectorTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
+    func testShouldReactivateProcessForSelectionRestoreSkipsWhenAlreadyFrontmost() {
+        // Chromium-based apps reset focus to the URL bar when activated while
+        // already frontmost; the caller must not issue a redundant activate().
+        let result = AXTextInjector.shouldReactivateProcessForSelectionRestore(
+            targetProcessID: 42,
+            frontmostProcessID: 42,
+        )
+
+        XCTAssertFalse(result)
+    }
+
+    func testShouldReactivateProcessForSelectionRestoreActivatesWhenTargetDiffers() {
+        let result = AXTextInjector.shouldReactivateProcessForSelectionRestore(
+            targetProcessID: 42,
+            frontmostProcessID: 99,
+        )
+
+        XCTAssertTrue(result)
+    }
+
+    func testShouldReactivateProcessForSelectionRestoreActivatesWhenFrontmostUnknown() {
+        let result = AXTextInjector.shouldReactivateProcessForSelectionRestore(
+            targetProcessID: 42,
+            frontmostProcessID: nil,
+        )
+
+        XCTAssertTrue(result)
+    }
+
+    func testShouldReactivateProcessForSelectionRestoreSkipsWhenTargetUnknown() {
+        let result = AXTextInjector.shouldReactivateProcessForSelectionRestore(
+            targetProcessID: nil,
+            frontmostProcessID: 42,
+        )
+
+        XCTAssertFalse(result)
+    }
+
     func testPasteEventDispatchMethodUsesHIDTapWhenFlagEnabled() {
         let result = AXTextInjector.pasteEventDispatchMethod(
             flagEnabled: true,

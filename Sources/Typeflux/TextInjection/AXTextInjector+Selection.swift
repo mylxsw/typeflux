@@ -379,7 +379,13 @@ extension AXTextInjector {
     }
 
     func restoreSelectionContext(_ context: SelectionContext) {
-        if let processID = context.processID,
+        let needsReactivation = Self.shouldReactivateProcessForSelectionRestore(
+            targetProcessID: context.processID,
+            frontmostProcessID: frontmostProcessID(),
+        )
+
+        if needsReactivation,
+           let processID = context.processID,
            let app = NSRunningApplication(processIdentifier: processID)
         {
             app.activate(options: [.activateIgnoringOtherApps])
