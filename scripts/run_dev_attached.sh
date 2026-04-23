@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_DIR="${TYPEFLUX_DEV_APP_DIR:-${TYPEFLUX_DEV_APP_DIR:-$HOME/Applications/Typeflux Dev.app}}"
 APP_EXEC="$APP_DIR/Contents/MacOS/Typeflux"
 LOG_PID=""
+DEV_VARIANT="${TYPEFLUX_DEV_VARIANT:-minimal}"
 
 profile_supports_apple_sign_in() {
   local profile_path="$1"
@@ -24,6 +25,30 @@ profile_supports_apple_sign_in() {
   rm -f "$decoded_profile"
 
   [[ "$entitlement_output" == *"Default"* ]]
+}
+
+install_bundled_models() {
+  local bundled_models_dir="$APP_DIR/Contents/Resources/BundledModels"
+  rm -rf "$bundled_models_dir"
+
+  case "$DEV_VARIANT" in
+    minimal)
+      ;;
+    full)
+      local target_model_folder="$bundled_models_dir/senseVoiceSmall/sensevoice-small"
+      "${ROOT_DIR}/scripts/install_bundled_sensevoice.sh" "$target_model_folder"
+
+      local expected_model_file="$target_model_folder/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/model.int8.onnx"
+      if [[ ! -f "$expected_model_file" ]]; then
+        echo "Error: bundled SenseVoice model missing at $expected_model_file" >&2
+        exit 1
+      fi
+      ;;
+    *)
+      echo "Error: unsupported TYPEFLUX_DEV_VARIANT: ${DEV_VARIANT}" >&2
+      exit 1
+      ;;
+  esac
 }
 
 cleanup() {
@@ -54,6 +79,7 @@ cp "$BIN" "$APP_DIR/Contents/MacOS/Typeflux"
 cp "$ROOT_DIR/app/Typeflux.icns" "$APP_DIR/Contents/Resources/Typeflux.icns"
 rm -rf "$APP_DIR/Contents/Resources/Typeflux_Typeflux.bundle"
 cp -R "$RESOURCE_BUNDLE" "$APP_DIR/Contents/Resources/Typeflux_Typeflux.bundle"
+install_bundled_models
 
 set_plist_value() {
   local key="$1"
@@ -154,6 +180,7 @@ if pgrep -f "$APP_EXEC" >/dev/null 2>&1; then
 fi
 
 echo "App launched in attached dev mode: $APP_DIR"
+echo "Dev variant: $DEV_VARIANT"
 echo "Logs stay attached to this terminal. Press Ctrl+C to stop the app."
 
 if command -v log >/dev/null 2>&1; then

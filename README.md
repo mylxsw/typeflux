@@ -96,6 +96,7 @@ git clone https://github.com/mylxsw/typeflux
 cd typeflux
 make run          # build + launch as .app bundle
 make dev          # launch with terminal logs attached
+make full-dev     # launch dev app with bundled SenseVoice resources
 swift test        # run tests
 ```
 

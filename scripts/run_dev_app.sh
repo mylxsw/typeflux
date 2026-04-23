@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_DIR="${TYPEFLUX_DEV_APP_DIR:-${TYPEFLUX_DEV_APP_DIR:-$HOME/Applications/Typeflux Dev.app}}"
+DEV_VARIANT="${TYPEFLUX_DEV_VARIANT:-minimal}"
 
 profile_supports_apple_sign_in() {
   local profile_path="$1"
@@ -24,6 +25,30 @@ profile_supports_apple_sign_in() {
   [[ "$entitlement_output" == *"Default"* ]]
 }
 
+install_bundled_models() {
+  local bundled_models_dir="$APP_DIR/Contents/Resources/BundledModels"
+  rm -rf "$bundled_models_dir"
+
+  case "$DEV_VARIANT" in
+    minimal)
+      ;;
+    full)
+      local target_model_folder="$bundled_models_dir/senseVoiceSmall/sensevoice-small"
+      "${ROOT_DIR}/scripts/install_bundled_sensevoice.sh" "$target_model_folder"
+
+      local expected_model_file="$target_model_folder/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/model.int8.onnx"
+      if [[ ! -f "$expected_model_file" ]]; then
+        echo "Error: bundled SenseVoice model missing at $expected_model_file" >&2
+        exit 1
+      fi
+      ;;
+    *)
+      echo "Error: unsupported TYPEFLUX_DEV_VARIANT: ${DEV_VARIANT}" >&2
+      exit 1
+      ;;
+  esac
+}
+
 swift build --package-path "$ROOT_DIR" -c debug
 
 BIN_DIR="$(swift build --package-path "$ROOT_DIR" --show-bin-path)"
@@ -38,6 +63,7 @@ cp "$BIN" "$APP_DIR/Contents/MacOS/Typeflux"
 cp "$ROOT_DIR/app/Typeflux.icns" "$APP_DIR/Contents/Resources/Typeflux.icns"
 rm -rf "$APP_DIR/Contents/Resources/Typeflux_Typeflux.bundle"
 cp -R "$RESOURCE_BUNDLE" "$APP_DIR/Contents/Resources/Typeflux_Typeflux.bundle"
+install_bundled_models
 
 set_plist_value() {
   local key="$1"
@@ -133,3 +159,4 @@ fi
 open "$APP_DIR"
 
 echo "App launched: $APP_DIR"
+echo "Dev variant: $DEV_VARIANT"

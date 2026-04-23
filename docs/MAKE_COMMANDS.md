@@ -8,6 +8,7 @@ This document explains the purpose of each `make` command in the repository, whe
 | --- | --- | --- |
 | `make run` | Build and launch the packaged development app | Normal local app testing |
 | `make dev` | Build and launch the packaged development app with terminal logs | Debugging runtime behavior |
+| `make full-dev` | Launch the dev app with SenseVoice bundled into the app | Test the full packaged local-model flow |
 | `make build` | Compile the Swift package | Fast compile check |
 | `make test` | Run the unit test suite | Logic and regression validation |
 | `make coverage` | Generate code coverage output | Larger refactors or quality checks |
@@ -58,6 +59,32 @@ What it does:
 Use it when:
 
 - you are debugging hotkeys, audio capture, provider calls, overlay behavior, or text insertion
+
+### `make full-dev`
+
+Command:
+
+```bash
+make full-dev
+```
+
+What it does:
+
+- launches the development app with terminal logs attached
+- sets `TYPEFLUX_API_URL=http://127.0.0.1:8080` before launch
+- bundles SenseVoice into `~/Applications/Typeflux Dev.app` using the same app-internal layout as the `full` release variant
+- downloads missing SenseVoice runtime/model files into the local cache on first use
+
+Use it when:
+
+- you want to test the real bundled-model behavior locally before building a release artifact
+- you need the dev app to run the same bundled SenseVoice path as the `full` installer
+
+Notes:
+
+- `make dev` and `make full-dev` reuse the same `~/Applications/Typeflux Dev.app` path
+- switching from `make full-dev` back to `make dev` removes the bundled model payload from the dev app
+- this command validates the full local app behavior, not notarization, DMG packaging, or final release signing
 
 ### `make build`
 
@@ -235,6 +262,7 @@ Use it when:
 make build
 make test
 make dev
+make full-dev
 ```
 
 ### Prepare a release app and DMG manually
