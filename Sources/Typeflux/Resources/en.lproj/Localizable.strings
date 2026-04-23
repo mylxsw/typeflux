@@ -719,14 +719,12 @@
 
 "onboarding.shortcuts.title" = "Keyboard shortcuts";
 "onboarding.shortcuts.subtitle" = "These are the default shortcuts. You're all set — no changes required.";
-"onboarding.shortcuts.globeKeyNotice.title" = "Set the Globe (🌐) key to do nothing";
-"onboarding.shortcuts.globeKeyNotice.message" = "Typeflux uses the 🌐 (Globe/Fn) key as a hold-to-talk trigger. In macOS Keyboard settings, change \"Press 🌐 key to\" to \"Do Nothing\" — otherwise macOS will intercept the key and the shortcut won't work.";
+"onboarding.shortcuts.globeKeyNotice.title" = "Free up the Globe (🌐) key";
+"onboarding.shortcuts.globeKeyNotice.message" = "macOS reserves the 🌐 key to open Emoji & Symbols by default, which blocks Typeflux from using it. Open Keyboard settings and change \"Press 🌐 key to\" to \"Do Nothing\" — that's all it takes.";
 "onboarding.shortcuts.globeKeyNotice.button" = "Open Keyboard Settings";
 "onboarding.shortcuts.activation.hint" = "Hold to talk, tap to lock recording";
 "onboarding.shortcuts.ask.hint" = "Ask anything, or rewrite selected text";
 "onboarding.shortcuts.persona.hint" = "Switch or apply a writing persona";
-"onboarding.shortcuts.hero.title" = "Precision Workflow";
-"onboarding.shortcuts.hero.subtitle" = "Designed for keyboard-first users. Typeflux shortcuts fit naturally into your existing habits, so your hands stay on the keys and your focus stays on the task.";
 "onboarding.shortcuts.changeInSettings" = "You can customize shortcuts anytime in Settings → Voice Shortcuts.";
 
 "onboarding.action.back" = "Previous";

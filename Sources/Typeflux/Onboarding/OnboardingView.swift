@@ -1513,9 +1513,6 @@ struct OnboardingView: View {
                     subtitle: L("onboarding.shortcuts.persona.hint"),
                     binding: HotkeyBinding.defaultPersona,
                 )
-
-                keyboardHero
-                    .padding(.top, 4)
             }
         }
         .frame(maxWidth: 920, alignment: .leading)
@@ -1583,27 +1580,31 @@ struct OnboardingView: View {
     }
 
     private var globeKeyNotice: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(StudioTheme.warning)
-                .frame(width: 34, height: 34)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(StudioTheme.warning.opacity(isDarkMode ? 0.18 : 0.12)),
-                )
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .center, spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(StudioTheme.warning.opacity(isDarkMode ? 0.22 : 0.14))
+                    Image(systemName: "globe")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(StudioTheme.warning)
+                }
+                .frame(width: 44, height: 44)
 
-            VStack(alignment: .leading, spacing: 5) {
                 Text(L("onboarding.shortcuts.globeKeyNotice.title"))
-                    .font(.studioBody(13, weight: .semibold))
+                    .font(.studioDisplay(16, weight: .bold))
                     .foregroundStyle(onboardingPrimaryText)
-                Text(L("onboarding.shortcuts.globeKeyNotice.message"))
-                    .font(.studioBody(12))
-                    .foregroundStyle(onboardingSecondaryText)
                     .fixedSize(horizontal: false, vertical: true)
+
+                Spacer(minLength: 0)
             }
 
-            Spacer(minLength: 12)
+            Text(L("onboarding.shortcuts.globeKeyNotice.message"))
+                .font(.studioBody(13))
+                .foregroundStyle(onboardingSecondaryText)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             StudioButton(
                 title: L("onboarding.shortcuts.globeKeyNotice.button"),
@@ -1613,80 +1614,16 @@ struct OnboardingView: View {
                 viewModel.openKeyboardSystemSettings()
             }
         }
-        .padding(14)
+        .padding(22)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(StudioTheme.warning.opacity(isDarkMode ? 0.10 : 0.06)),
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(StudioTheme.warning.opacity(isDarkMode ? 0.36 : 0.22), lineWidth: 1),
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(StudioTheme.warning.opacity(isDarkMode ? 0.32 : 0.20), lineWidth: 1),
         )
-    }
-
-    private var keyboardHero: some View {
-        ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(keyboardHeroBackground)
-
-            ZStack(alignment: .bottom) {
-                keyboardPattern
-                    .padding(.horizontal, 18)
-                    .padding(.top, 18)
-                    .padding(.bottom, 70)
-                    .opacity(0.82)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text(L("onboarding.shortcuts.hero.title"))
-                    .font(.studioDisplay(18, weight: .bold))
-                    .foregroundStyle(onboardingPrimaryText)
-                Text(L("onboarding.shortcuts.hero.subtitle"))
-                    .font(.studioBody(13))
-                    .foregroundStyle(onboardingSecondaryText)
-                    .frame(maxWidth: 520, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.horizontal, 22)
-            .padding(.vertical, 18)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(keyboardHeroCaptionBackground),
-            )
-            .padding(.leading, 14)
-            .padding(.trailing, 14)
-            .padding(.bottom, 14)
-        }
-        .frame(height: 236)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(keyboardHeroBorder, lineWidth: 1),
-        )
-    }
-
-    private var keyboardPattern: some View {
-        VStack(spacing: 8) {
-            ForEach(0 ..< 4, id: \.self) { row in
-                HStack(spacing: 8) {
-                    ForEach(0 ..< (row == 3 ? 12 : 14), id: \.self) { index in
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(keyboardPatternKeyFill(index: index))
-                            .frame(
-                                width: row == 1 && index == 9 ? 70 : 42,
-                                height: 32,
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .stroke(keyboardPatternKeyBorder, lineWidth: 1),
-                            )
-                    }
-                }
-            }
-        }
-        .blur(radius: 0.2)
     }
 
     @ViewBuilder
@@ -2041,41 +1978,4 @@ struct OnboardingView: View {
         isDarkMode ? Color.white.opacity(0.08) : StudioTheme.accentSoft
     }
 
-    private var keyboardHeroBackground: LinearGradient {
-        LinearGradient(
-            colors: isDarkMode
-                ? [
-                    Color(red: 0.10, green: 0.10, blue: 0.11),
-                    Color(red: 0.06, green: 0.06, blue: 0.07),
-                ]
-                : [
-                    Color(red: 0.92, green: 0.94, blue: 0.97),
-                    Color(red: 0.84, green: 0.87, blue: 0.92),
-                ],
-            startPoint: .top,
-            endPoint: .bottom,
-        )
-    }
-
-    private var keyboardHeroCaptionBackground: Color {
-        isDarkMode
-            ? Color.black.opacity(0.34)
-            : Color.white.opacity(0.72)
-    }
-
-    private var keyboardHeroBorder: Color {
-        isDarkMode ? Color.white.opacity(0.06) : StudioTheme.border
-    }
-
-    private func keyboardPatternKeyFill(index: Int) -> Color {
-        if isDarkMode {
-            return Color.white.opacity(index.isMultiple(of: 5) ? 0.10 : 0.07)
-        }
-
-        return Color.black.opacity(index.isMultiple(of: 5) ? 0.10 : 0.07)
-    }
-
-    private var keyboardPatternKeyBorder: Color {
-        isDarkMode ? Color.white.opacity(0.03) : Color.black.opacity(0.04)
-    }
 }
