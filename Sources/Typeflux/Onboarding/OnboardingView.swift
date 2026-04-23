@@ -1489,6 +1489,8 @@ struct OnboardingView: View {
                 alignCenter: false,
             )
 
+            globeKeyNotice
+
             VStack(spacing: shortcutsSectionSpacing) {
                 HStack(alignment: .top, spacing: shortcutsSectionSpacing) {
                     shortcutCard(
@@ -1578,6 +1580,49 @@ struct OnboardingView: View {
         .padding(18)
         .background(onboardingCardFill)
         .overlay(onboardingCardStroke)
+    }
+
+    private var globeKeyNotice: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(StudioTheme.warning)
+                .frame(width: 34, height: 34)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(StudioTheme.warning.opacity(isDarkMode ? 0.18 : 0.12)),
+                )
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(L("onboarding.shortcuts.globeKeyNotice.title"))
+                    .font(.studioBody(13, weight: .semibold))
+                    .foregroundStyle(onboardingPrimaryText)
+                Text(L("onboarding.shortcuts.globeKeyNotice.message"))
+                    .font(.studioBody(12))
+                    .foregroundStyle(onboardingSecondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 12)
+
+            StudioButton(
+                title: L("onboarding.shortcuts.globeKeyNotice.button"),
+                systemImage: "arrow.up.forward.app",
+                variant: .secondary,
+            ) {
+                viewModel.openKeyboardSystemSettings()
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(StudioTheme.warning.opacity(isDarkMode ? 0.10 : 0.06)),
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(StudioTheme.warning.opacity(isDarkMode ? 0.36 : 0.22), lineWidth: 1),
+        )
     }
 
     private var keyboardHero: some View {

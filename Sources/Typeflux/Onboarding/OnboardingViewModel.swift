@@ -411,6 +411,14 @@ final class OnboardingViewModel: ObservableObject {
         permissions = PrivacyGuard.snapshots()
     }
 
+    static let keyboardSystemSettingsURL = URL(
+        string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension",
+    )!
+
+    func openKeyboardSystemSettings() {
+        NSWorkspace.shared.open(Self.keyboardSystemSettingsURL)
+    }
+
     func requestPermission(_ id: PrivacyGuard.PermissionID) {
         guard !requestingPermissions.contains(id) else { return }
         requestingPermissions.insert(id)

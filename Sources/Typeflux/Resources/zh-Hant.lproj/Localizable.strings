@@ -708,6 +708,9 @@
 
 "onboarding.shortcuts.title" = "鍵盤快捷鍵";
 "onboarding.shortcuts.subtitle" = "以下是預設快捷鍵設定，無需修改即可使用。";
+"onboarding.shortcuts.globeKeyNotice.title" = "請將「按下 🌐 鍵時」設為「不執行任何操作」";
+"onboarding.shortcuts.globeKeyNotice.message" = "Typeflux 使用 🌐（地球/Fn）鍵作為按住說話的觸發鍵。請在系統「鍵盤」設定中，將「按下 🌐 鍵時」修改為「不執行任何操作」，否則該按鍵會被 macOS 攔截，快捷鍵將無法生效。";
+"onboarding.shortcuts.globeKeyNotice.button" = "開啟鍵盤設定";
 "onboarding.shortcuts.activation.hint" = "按住錄音，輕點鎖定錄製";
 "onboarding.shortcuts.ask.hint" = "隨時提問，可選取文字改寫";
 "onboarding.shortcuts.persona.hint" = "切換或套用寫作人設";

@@ -710,6 +710,9 @@
 
 "onboarding.shortcuts.title" = "Keyboard shortcuts";
 "onboarding.shortcuts.subtitle" = "These are the default shortcuts. You're all set — no changes required.";
+"onboarding.shortcuts.globeKeyNotice.title" = "Set the Globe (🌐) key to do nothing";
+"onboarding.shortcuts.globeKeyNotice.message" = "Typeflux uses the 🌐 (Globe/Fn) key as a hold-to-talk trigger. In macOS Keyboard settings, change \"Press 🌐 key to\" to \"Do Nothing\" — otherwise macOS will intercept the key and the shortcut won't work.";
+"onboarding.shortcuts.globeKeyNotice.button" = "Open Keyboard Settings";
 "onboarding.shortcuts.activation.hint" = "Hold to talk, tap to lock recording";
 "onboarding.shortcuts.ask.hint" = "Ask anything, or rewrite selected text";
 "onboarding.shortcuts.persona.hint" = "Switch or apply a writing persona";

@@ -708,6 +708,9 @@
 
 "onboarding.shortcuts.title" = "키보드 단축키";
 "onboarding.shortcuts.subtitle" = "기본 단축키입니다. 모든 설정이 완료되었습니다. 변경할 필요가 없습니다.";
+"onboarding.shortcuts.globeKeyNotice.title" = "🌐 키 동작을 「아무 작업도 하지 않음」으로 설정하세요";
+"onboarding.shortcuts.globeKeyNotice.message" = "Typeflux 는 🌐(지구본/Fn) 키를 길게 눌러 말하기 트리거로 사용합니다. 시스템 「키보드」 설정에서 「🌐 키를 눌렀을 때」를 「아무 작업도 하지 않음」으로 변경하세요. 그렇지 않으면 macOS 가 키를 가로채 단축키가 작동하지 않습니다.";
+"onboarding.shortcuts.globeKeyNotice.button" = "키보드 설정 열기";
 "onboarding.shortcuts.activation.hint" = "길게 눌러 말하고 녹음을 잠그려면 탭하세요.";
 "onboarding.shortcuts.ask.hint" = "무엇이든 물어보거나 선택한 텍스트를 다시 작성하세요";
 "onboarding.shortcuts.persona.hint" = "쓰기 페르소나 전환 또는 적용";

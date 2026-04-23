@@ -710,6 +710,9 @@
 
 "onboarding.shortcuts.title" = "键盘快捷键";
 "onboarding.shortcuts.subtitle" = "以下是默认快捷键设置，无需修改即可使用。";
+"onboarding.shortcuts.globeKeyNotice.title" = "请将「按下 🌐 键时」设为「不执行任何操作」";
+"onboarding.shortcuts.globeKeyNotice.message" = "Typeflux 使用 🌐（地球/Fn）键作为按住说话的触发键。请在系统「键盘」设置中，将「按下 🌐 键时」修改为「不执行任何操作」，否则该按键会被 macOS 拦截，快捷键将无法生效。";
+"onboarding.shortcuts.globeKeyNotice.button" = "打开键盘设置";
 "onboarding.shortcuts.activation.hint" = "按住录音，轻点锁定录制";
 "onboarding.shortcuts.ask.hint" = "随时提问，可选中文字改写";
 "onboarding.shortcuts.persona.hint" = "切换或应用写作人设";

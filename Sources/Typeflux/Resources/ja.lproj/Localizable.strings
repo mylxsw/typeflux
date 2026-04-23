@@ -708,6 +708,9 @@
 
 "onboarding.shortcuts.title" = "キーボードショートカット";
 "onboarding.shortcuts.subtitle" = "これらはデフォルトのショートカットです。これで準備は完了です。変更は必要ありません。";
+"onboarding.shortcuts.globeKeyNotice.title" = "🌐 キーを押したときの動作を「何もしない」に設定してください";
+"onboarding.shortcuts.globeKeyNotice.message" = "Typeflux は 🌐（地球儀／Fn）キーを押し続けて話すトリガーとして使用します。システムの「キーボード」設定で「🌐 キーを押したとき」を「何もしない」に変更してください。そうしないと macOS がキーを横取りし、ショートカットが機能しません。";
+"onboarding.shortcuts.globeKeyNotice.button" = "キーボード設定を開く";
 "onboarding.shortcuts.activation.hint" = "押し続けて話す、タップして録音をロックする";
 "onboarding.shortcuts.ask.hint" = "何か質問するか、選択したテキストを書き換えます";
 "onboarding.shortcuts.persona.hint" = "書き込みペルソナを切り替えるか適用する";

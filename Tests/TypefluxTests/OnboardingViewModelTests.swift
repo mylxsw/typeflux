@@ -285,4 +285,14 @@ final class OnboardingViewModelTests: XCTestCase {
         )
         return authState
     }
+
+    @MainActor
+    func testKeyboardSystemSettingsURLPointsToKeyboardPane() {
+        let url = OnboardingViewModel.keyboardSystemSettingsURL
+        XCTAssertEqual(url.scheme, "x-apple.systempreferences")
+        XCTAssertTrue(
+            url.absoluteString.contains("Keyboard"),
+            "URL should target the Keyboard settings pane, got: \(url.absoluteString)",
+        )
+    }
 }
