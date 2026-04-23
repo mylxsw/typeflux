@@ -722,6 +722,8 @@
 "onboarding.shortcuts.globeKeyNotice.title" = "Free up the Globe (🌐) key";
 "onboarding.shortcuts.globeKeyNotice.message" = "macOS reserves the 🌐 key to open Emoji & Symbols by default, which blocks Typeflux from using it. Open Keyboard settings and change \"Press 🌐 key to\" to \"Do Nothing\" — that's all it takes.";
 "onboarding.shortcuts.globeKeyNotice.button" = "Open Keyboard Settings";
+"onboarding.shortcuts.globeKeyNotice.ready.title" = "🌐 key is ready";
+"onboarding.shortcuts.globeKeyNotice.ready.message" = "Your keyboard setting looks good — Typeflux can use the 🌐 key as a hotkey. If the hotkey still doesn't respond, try signing out and back in, or restart your Mac.";
 "onboarding.shortcuts.activation.hint" = "Hold to talk, tap to lock recording";
 "onboarding.shortcuts.ask.hint" = "Ask anything, or rewrite selected text";
 "onboarding.shortcuts.persona.hint" = "Switch or apply a writing persona";

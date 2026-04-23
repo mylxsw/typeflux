@@ -722,6 +722,8 @@
 "onboarding.shortcuts.globeKeyNotice.title" = "请先释放 🌐（地球）键";
 "onboarding.shortcuts.globeKeyNotice.message" = "macOS 默认会用 🌐 键打开「表情与符号」，这会阻止 Typeflux 使用它。请打开键盘设置，将「按下 🌐 键时」改为「不执行任何操作」即可。";
 "onboarding.shortcuts.globeKeyNotice.button" = "打开键盘设置";
+"onboarding.shortcuts.globeKeyNotice.ready.title" = "🌐 键已就绪";
+"onboarding.shortcuts.globeKeyNotice.ready.message" = "键盘设置已经到位，Typeflux 可以使用 🌐 键作为快捷键了。若按键仍无响应，请尝试注销后重新登录，或重启 Mac。";
 "onboarding.shortcuts.activation.hint" = "按住录音，轻点锁定录制";
 "onboarding.shortcuts.ask.hint" = "随时提问，可选中文字改写";
 "onboarding.shortcuts.persona.hint" = "切换或应用写作人设";

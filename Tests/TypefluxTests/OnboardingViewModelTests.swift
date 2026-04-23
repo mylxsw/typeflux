@@ -295,4 +295,55 @@ final class OnboardingViewModelTests: XCTestCase {
             "URL should target the Keyboard settings pane, got: \(url.absoluteString)",
         )
     }
+
+    @MainActor
+    func testIsGlobeKeyReadyReflectsInitialReaderState() {
+        let readyReader = StubGlobeKeyPreferenceReader(usage: .doNothing)
+        let notReadyReader = StubGlobeKeyPreferenceReader(usage: .showEmojiAndSymbols)
+
+        let readyVM = OnboardingViewModel(
+            settingsStore: store,
+            globeKeyReader: readyReader,
+            onComplete: {},
+        )
+        let notReadyVM = OnboardingViewModel(
+            settingsStore: store,
+            globeKeyReader: notReadyReader,
+            onComplete: {},
+        )
+
+        XCTAssertTrue(readyVM.isGlobeKeyReady)
+        XCTAssertFalse(notReadyVM.isGlobeKeyReady)
+    }
+
+    @MainActor
+    func testRefreshGlobeKeyStatePicksUpChanges() {
+        let reader = StubGlobeKeyPreferenceReader(usage: .changeInputSource)
+        let viewModel = OnboardingViewModel(
+            settingsStore: store,
+            globeKeyReader: reader,
+            onComplete: {},
+        )
+        XCTAssertFalse(viewModel.isGlobeKeyReady)
+
+        reader.usage = .doNothing
+        viewModel.refreshGlobeKeyState()
+        XCTAssertTrue(viewModel.isGlobeKeyReady)
+
+        reader.usage = .startDictation
+        viewModel.refreshGlobeKeyState()
+        XCTAssertFalse(viewModel.isGlobeKeyReady)
+    }
+}
+
+private final class StubGlobeKeyPreferenceReader: GlobeKeyPreferenceReading {
+    var usage: GlobeKeyUsage
+
+    init(usage: GlobeKeyUsage) {
+        self.usage = usage
+    }
+
+    func currentUsage() -> GlobeKeyUsage {
+        usage
+    }
 }

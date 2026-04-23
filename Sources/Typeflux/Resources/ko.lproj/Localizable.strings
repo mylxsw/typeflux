@@ -720,6 +720,8 @@
 "onboarding.shortcuts.globeKeyNotice.title" = "🌐(지구본) 키를 먼저 비워 주세요";
 "onboarding.shortcuts.globeKeyNotice.message" = "macOS 는 기본적으로 🌐 키에 「이모티콘과 기호」를 배정하므로 Typeflux 가 이 키를 사용할 수 없습니다. 키보드 설정을 열어 「🌐 키를 눌렀을 때」를 「아무 작업도 하지 않음」으로 바꾸기만 하면 됩니다.";
 "onboarding.shortcuts.globeKeyNotice.button" = "키보드 설정 열기";
+"onboarding.shortcuts.globeKeyNotice.ready.title" = "🌐 키가 준비되었습니다";
+"onboarding.shortcuts.globeKeyNotice.ready.message" = "키보드 설정이 완료되어 Typeflux 가 🌐 키를 단축키로 사용할 수 있습니다. 그래도 반응이 없다면 한 번 로그아웃 후 다시 로그인하거나, Mac 을 재시작해 주세요.";
 "onboarding.shortcuts.activation.hint" = "길게 눌러 말하고 녹음을 잠그려면 탭하세요.";
 "onboarding.shortcuts.ask.hint" = "무엇이든 물어보거나 선택한 텍스트를 다시 작성하세요";
 "onboarding.shortcuts.persona.hint" = "쓰기 페르소나 전환 또는 적용";

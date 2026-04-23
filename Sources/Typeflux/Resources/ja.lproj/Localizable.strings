@@ -720,6 +720,8 @@
 "onboarding.shortcuts.globeKeyNotice.title" = "🌐（地球儀）キーを解放してください";
 "onboarding.shortcuts.globeKeyNotice.message" = "macOS はデフォルトで 🌐 キーに「絵文字と記号」を割り当てており、Typeflux がこのキーを利用できません。キーボード設定を開き、「🌐 キーを押したとき」を「何もしない」に変更するだけで OK です。";
 "onboarding.shortcuts.globeKeyNotice.button" = "キーボード設定を開く";
+"onboarding.shortcuts.globeKeyNotice.ready.title" = "🌐 キーの準備ができました";
+"onboarding.shortcuts.globeKeyNotice.ready.message" = "キーボード設定は整っており、Typeflux が 🌐 キーをホットキーとして使用できます。それでも反応しない場合は、一度サインアウトして再ログインするか、Mac を再起動してみてください。";
 "onboarding.shortcuts.activation.hint" = "押し続けて話す、タップして録音をロックする";
 "onboarding.shortcuts.ask.hint" = "何か質問するか、選択したテキストを書き換えます";
 "onboarding.shortcuts.persona.hint" = "書き込みペルソナを切り替えるか適用する";

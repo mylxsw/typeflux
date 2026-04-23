@@ -70,18 +70,24 @@ final class OnboardingViewModel: ObservableObject {
     @Published var requestingPermissions: Set<PrivacyGuard.PermissionID> = []
     @Published var showIncompletePermissionsAlert = false
 
+    // Globe key (🌐) macOS keyboard setting
+    @Published var isGlobeKeyReady: Bool = true
+
     private let settingsStore: SettingsStore
     private let authState: AuthState
+    private let globeKeyReader: GlobeKeyPreferenceReading
     let onComplete: () -> Void
 
     init(
         settingsStore: SettingsStore,
         authState: AuthState? = nil,
+        globeKeyReader: GlobeKeyPreferenceReading = SystemGlobeKeyPreferenceReader(),
         onComplete: @escaping () -> Void
     ) {
         self.settingsStore = settingsStore
         let resolvedAuthState = authState ?? .shared
         self.authState = resolvedAuthState
+        self.globeKeyReader = globeKeyReader
         self.onComplete = onComplete
         let initialUseCloudAccountModels = resolvedAuthState.isLoggedIn
             && settingsStore.sttProvider == .typefluxOfficial
@@ -133,6 +139,7 @@ final class OnboardingViewModel: ObservableObject {
         ollamaModel = settingsStore.ollamaModel
 
         permissions = PrivacyGuard.snapshots()
+        isGlobeKeyReady = globeKeyReader.isReadyForHotkey
     }
 
     var canGoBack: Bool {
@@ -409,6 +416,10 @@ final class OnboardingViewModel: ObservableObject {
 
     func refreshPermissions() {
         permissions = PrivacyGuard.snapshots()
+    }
+
+    func refreshGlobeKeyState() {
+        isGlobeKeyReady = globeKeyReader.isReadyForHotkey
     }
 
     static let keyboardSystemSettingsURL = URL(

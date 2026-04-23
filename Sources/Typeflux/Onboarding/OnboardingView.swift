@@ -62,6 +62,9 @@ struct OnboardingView: View {
             if viewModel.currentStep == .permissions {
                 viewModel.refreshPermissions()
             }
+            if viewModel.currentStep == .shortcuts {
+                viewModel.refreshGlobeKeyState()
+            }
         }
     }
 
@@ -1580,36 +1583,48 @@ struct OnboardingView: View {
     }
 
     private var globeKeyNotice: some View {
-        HStack(alignment: .center, spacing: 14) {
+        let isReady = viewModel.isGlobeKeyReady
+        let accent: Color = isReady ? StudioTheme.success : StudioTheme.warning
+        let iconName = isReady ? "checkmark.seal.fill" : "globe"
+        let titleKey = isReady
+            ? "onboarding.shortcuts.globeKeyNotice.ready.title"
+            : "onboarding.shortcuts.globeKeyNotice.title"
+        let messageKey = isReady
+            ? "onboarding.shortcuts.globeKeyNotice.ready.message"
+            : "onboarding.shortcuts.globeKeyNotice.message"
+
+        return HStack(alignment: .center, spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(StudioTheme.warning.opacity(isDarkMode ? 0.22 : 0.14))
-                Image(systemName: "globe")
+                    .fill(accent.opacity(isDarkMode ? 0.22 : 0.14))
+                Image(systemName: iconName)
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(StudioTheme.warning)
+                    .foregroundStyle(accent)
             }
             .frame(width: 44, height: 44)
 
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .center, spacing: 14) {
-                    Text(L("onboarding.shortcuts.globeKeyNotice.title"))
+                    Text(L(titleKey))
                         .font(.studioDisplay(16, weight: .bold))
                         .foregroundStyle(onboardingPrimaryText)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Spacer(minLength: 12)
 
-                    StudioButton(
-                        title: L("onboarding.shortcuts.globeKeyNotice.button"),
-                        systemImage: "arrow.up.forward.app",
-                        variant: .secondary,
-                    ) {
-                        viewModel.openKeyboardSystemSettings()
+                    if !isReady {
+                        StudioButton(
+                            title: L("onboarding.shortcuts.globeKeyNotice.button"),
+                            systemImage: "arrow.up.forward.app",
+                            variant: .secondary,
+                        ) {
+                            viewModel.openKeyboardSystemSettings()
+                        }
+                        .fixedSize()
                     }
-                    .fixedSize()
                 }
 
-                Text(L("onboarding.shortcuts.globeKeyNotice.message"))
+                Text(L(messageKey))
                     .font(.studioBody(13))
                     .foregroundStyle(onboardingSecondaryText)
                     .lineSpacing(3)
@@ -1621,12 +1636,13 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(StudioTheme.warning.opacity(isDarkMode ? 0.10 : 0.06)),
+                .fill(accent.opacity(isDarkMode ? 0.10 : 0.06)),
         )
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(StudioTheme.warning.opacity(isDarkMode ? 0.32 : 0.20), lineWidth: 1),
+                .stroke(accent.opacity(isDarkMode ? 0.32 : 0.20), lineWidth: 1),
         )
+        .animation(.easeInOut(duration: 0.25), value: isReady)
     }
 
     @ViewBuilder
