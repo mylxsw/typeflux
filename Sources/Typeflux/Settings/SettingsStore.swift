@@ -75,6 +75,10 @@ final class SettingsStore {
         let apiKey: String
     }
 
+    /// Identifier of the built-in "Typeflux" persona. Used as the smart default
+    /// persona for new users whose LLM is already configured.
+    static let defaultPersonaID = UUID(uuidString: "2A7A4A74-A8AC-4F3C-9FB1-5A433EDFA001")!
+
     let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -338,6 +342,15 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "persona.activeID") }
     }
 
+    /// Tracks whether the user has explicitly chosen a persona state (including
+    /// explicitly choosing "none"). Used to distinguish a first-run user who has
+    /// never touched the persona setting from a user who deliberately turned it off.
+    /// Only the first group is eligible for the Typeflux smart default.
+    var personaSelectionIsExplicit: Bool {
+        get { defaults.object(forKey: "persona.selectionIsExplicit") as? Bool ?? false }
+        set { defaults.set(newValue, forKey: "persona.selectionIsExplicit") }
+    }
+
     var personasJSON: String {
         get { defaults.string(forKey: "persona.items") ?? "" }
         set { defaults.set(newValue, forKey: "persona.items") }
@@ -371,8 +384,22 @@ final class SettingsStore {
             activePersonaID = ""
             personaRewriteEnabled = false
         }
+        personaSelectionIsExplicit = true
 
         NotificationCenter.default.post(name: .personaSelectionDidChange, object: self)
+    }
+
+    /// If the LLM is currently configured and the user has not yet explicitly
+    /// chosen a persona state, select the built-in Typeflux persona so users
+    /// benefit from rewriting as soon as they have an LLM to talk to. Never
+    /// overrides an explicit choice — including an explicit "none".
+    /// Returns true if the default was applied.
+    @discardableResult
+    func applyDefaultPersonaIfLLMConfigured() -> Bool {
+        guard !personaSelectionIsExplicit else { return false }
+        guard isLLMConfigured else { return false }
+        applyPersonaSelection(SettingsStore.defaultPersonaID)
+        return true
     }
 
     func llmBaseURL(for provider: LLMRemoteProvider) -> String {
@@ -435,6 +462,35 @@ final class SettingsStore {
         defaults.set(value, forKey: llmRemoteKey(provider, suffix: "apiKey"))
         if provider == llmRemoteProvider {
             defaults.set(value, forKey: "llm.apiKey")
+        }
+    }
+
+    /// Whether the current LLM selection has everything it needs to dispatch a request.
+    /// Used to drive first-run smart defaults such as auto-selecting the built-in persona.
+    /// `typefluxCloud` is treated as configured whenever selected (auth is carried by JWT,
+    /// not by base URL / API key here); transient auth failures surface at request time.
+    var isLLMConfigured: Bool {
+        switch llmProvider {
+        case .ollama:
+            let baseURL = ollamaBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+            let model = ollamaModel.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !baseURL.isEmpty && !model.isEmpty
+        case .openAICompatible:
+            switch llmRemoteProvider {
+            case .typefluxCloud:
+                return true
+            case .freeModel:
+                return !llmModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            case .custom:
+                let baseURL = llmBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+                let model = llmModel.trimmingCharacters(in: .whitespacesAndNewlines)
+                return !baseURL.isEmpty && !model.isEmpty
+            default:
+                let baseURL = llmBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+                let model = llmModel.trimmingCharacters(in: .whitespacesAndNewlines)
+                let apiKey = llmAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+                return !baseURL.isEmpty && !model.isEmpty && !apiKey.isEmpty
+            }
         }
     }
 

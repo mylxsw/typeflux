@@ -164,6 +164,102 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.llmRemoteProvider, .openAI)
     }
 
+    // MARK: - Default persona selection on completion
+
+    @MainActor
+    func testCompletingOnboardingWithCloudLoginSelectsTypefluxPersona() {
+        let authState = makeLoggedInAuthState()
+        let viewModel = OnboardingViewModel(settingsStore: store, authState: authState, onComplete: {})
+
+        viewModel.currentStep = .account
+        viewModel.useCloudAccountModelsAndContinue()
+        completeOnboarding(viewModel)
+
+        XCTAssertTrue(store.personaRewriteEnabled)
+        XCTAssertEqual(store.activePersonaID, SettingsStore.defaultPersonaID.uuidString)
+        XCTAssertEqual(store.activePersona?.name, "Typeflux")
+    }
+
+    @MainActor
+    func testCompletingOnboardingWithCustomLLMSelectsTypefluxPersona() {
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+
+        viewModel.currentStep = .llm
+        viewModel.llmProvider = .openAICompatible
+        viewModel.llmRemoteProvider = .custom
+        viewModel.llmBaseURL = "https://example.com/v1"
+        viewModel.llmModel = "my-model"
+        completeOnboarding(viewModel)
+
+        XCTAssertTrue(store.personaRewriteEnabled)
+        XCTAssertEqual(store.activePersonaID, SettingsStore.defaultPersonaID.uuidString)
+    }
+
+    @MainActor
+    func testCompletingOnboardingWithoutLLMLeavesPersonaDisabled() {
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+
+        // Go through all steps without configuring LLM (default openAI, no API key).
+        completeOnboarding(viewModel)
+
+        XCTAssertFalse(store.personaRewriteEnabled)
+        XCTAssertEqual(store.activePersonaID, "")
+        XCTAssertNil(store.activePersona)
+    }
+
+    @MainActor
+    func testCompletingOnboardingDoesNotOverwriteExplicitPersonaChoice() {
+        // User pre-selected the "English Translator" persona before completing onboarding.
+        let translatorID = UUID(uuidString: "2A7A4A74-A8AC-4F3C-9FB1-5A433EDFA002")!
+        store.applyPersonaSelection(translatorID)
+
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+        viewModel.currentStep = .llm
+        viewModel.llmProvider = .openAICompatible
+        viewModel.llmRemoteProvider = .custom
+        viewModel.llmBaseURL = "https://example.com/v1"
+        viewModel.llmModel = "my-model"
+        completeOnboarding(viewModel)
+
+        XCTAssertEqual(store.activePersonaID, translatorID.uuidString)
+    }
+
+    @MainActor
+    func testSkipWithoutAnimationAppliesDefaultPersonaWhenLLMConfigured() {
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+
+        // Simulate a pre-configured LLM before the user closes the onboarding window.
+        store.llmProvider = .openAICompatible
+        store.llmRemoteProvider = .custom
+        store.setLLMBaseURL("https://example.com/v1", for: .custom)
+        store.setLLMModel("my-model", for: .custom)
+
+        viewModel.skipWithoutAnimation()
+
+        XCTAssertTrue(store.isOnboardingCompleted)
+        XCTAssertTrue(store.personaRewriteEnabled)
+        XCTAssertEqual(store.activePersonaID, SettingsStore.defaultPersonaID.uuidString)
+    }
+
+    @MainActor
+    private func completeOnboarding(_ viewModel: OnboardingViewModel) {
+        // Advance until onboarding marks itself complete. `advance()` no-ops past the last step,
+        // so bound the loop to avoid infinite iteration if `isOnboardingCompleted` is never set.
+        var guardCounter = 0
+        while !store.isOnboardingCompleted, guardCounter < 20 {
+            // The permissions step blocks advance() unless required permissions are granted.
+            // Stub them as granted so the loop can progress.
+            if viewModel.currentStep == .permissions {
+                viewModel.permissions = PrivacyGuard.requiredPermissionIDs(settingsStore: store).map { id in
+                    PrivacyGuard.PermissionSnapshot(id: id, state: .granted, detail: "Granted in test")
+                }
+            }
+            viewModel.advance()
+            guardCounter += 1
+        }
+        XCTAssertTrue(store.isOnboardingCompleted, "Onboarding failed to complete within bounded iterations")
+    }
+
     @MainActor
     private func makeLoggedInAuthState() -> AuthState {
         let storedToken = (

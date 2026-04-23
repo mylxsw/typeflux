@@ -847,6 +847,7 @@ final class StudioViewModel: ObservableObject {
         llmProvider = provider
         settingsStore.llmProvider = provider
         focusedModelProvider = provider == .ollama ? .ollama : llmRemoteProvider.studioProviderID
+        settingsStore.applyDefaultPersonaIfLLMConfigured()
     }
 
     func setLLMRemoteProvider(_ provider: LLMRemoteProvider) {
@@ -856,6 +857,7 @@ final class StudioViewModel: ObservableObject {
         settingsStore.llmProvider = .openAICompatible
         loadLLMConfiguration(for: provider)
         focusedModelProvider = provider.studioProviderID
+        settingsStore.applyDefaultPersonaIfLLMConfigured()
     }
 
     func setSTTModelSelection(_ provider: STTProvider, suggestedModel: String) {
@@ -899,6 +901,7 @@ final class StudioViewModel: ObservableObject {
             llmModel = suggestedModel
             settingsStore.setLLMModel(suggestedModel, for: llmRemoteProvider)
         }
+        settingsStore.applyDefaultPersonaIfLLMConfigured()
     }
 
     func loadLLMConfiguration(for provider: LLMRemoteProvider) {
@@ -1843,6 +1846,7 @@ final class StudioViewModel: ObservableObject {
         case .appleSpeech, .localSTT, .typefluxOfficial, .typefluxCloud:
             break
         }
+        settingsStore.applyDefaultPersonaIfLLMConfigured()
         if shouldShowToast {
             showToast(L("settings.models.configurationSaved"))
         }

@@ -211,6 +211,7 @@ final class OnboardingViewModel: ObservableObject {
     /// Marks onboarding as complete without triggering the completion callback.
     /// Used when the window is closed externally (e.g., user clicks the close button).
     func skipWithoutAnimation() {
+        settingsStore.applyDefaultPersonaIfLLMConfigured()
         settingsStore.isOnboardingCompleted = true
     }
 
@@ -490,6 +491,7 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     private func complete() {
+        settingsStore.applyDefaultPersonaIfLLMConfigured()
         settingsStore.isOnboardingCompleted = true
         onComplete()
     }

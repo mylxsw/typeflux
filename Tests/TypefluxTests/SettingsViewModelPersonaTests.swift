@@ -74,6 +74,68 @@ final class SettingsViewModelPersonaTests: XCTestCase {
         XCTAssertEqual(viewModel.activePersonaID, "")
         XCTAssertFalse(viewModel.personaRewriteEnabled)
     }
+
+    // MARK: - Auto persona default when LLM becomes configured via Settings
+
+    func testSwitchingToTypefluxCloudAutoSelectsTypefluxPersona() {
+        let suiteName = "SettingsViewModelPersonaTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let settingsStore = SettingsStore(defaults: defaults)
+        let historyStore = InMemoryHistoryStore()
+        let viewModel = StudioViewModel(
+            settingsStore: settingsStore,
+            historyStore: historyStore,
+            initialSection: .home,
+        )
+
+        XCTAssertFalse(settingsStore.personaRewriteEnabled)
+
+        viewModel.setLLMRemoteProvider(LLMRemoteProvider.typefluxCloud)
+
+        XCTAssertTrue(settingsStore.personaRewriteEnabled)
+        XCTAssertEqual(settingsStore.activePersonaID, SettingsStore.defaultPersonaID.uuidString)
+    }
+
+    func testApplyingOpenAIAPIKeyAutoSelectsTypefluxPersona() {
+        let suiteName = "SettingsViewModelPersonaTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let settingsStore = SettingsStore(defaults: defaults)
+        let historyStore = InMemoryHistoryStore()
+        let viewModel = StudioViewModel(
+            settingsStore: settingsStore,
+            historyStore: historyStore,
+            initialSection: .home,
+        )
+
+        viewModel.setLLMRemoteProvider(LLMRemoteProvider.openAI)
+        XCTAssertFalse(settingsStore.personaRewriteEnabled, "OpenAI without key should not trigger default")
+
+        viewModel.setLLMAPIKey("sk-test")
+        viewModel.applyModelConfiguration(shouldShowToast: false)
+
+        XCTAssertTrue(settingsStore.personaRewriteEnabled)
+        XCTAssertEqual(settingsStore.activePersonaID, SettingsStore.defaultPersonaID.uuidString)
+    }
+
+    func testExplicitlyDisabledPersonaStaysOffWhenLLMIsConfigured() {
+        let suiteName = "SettingsViewModelPersonaTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let settingsStore = SettingsStore(defaults: defaults)
+        let historyStore = InMemoryHistoryStore()
+        let viewModel = StudioViewModel(
+            settingsStore: settingsStore,
+            historyStore: historyStore,
+            initialSection: .home,
+        )
+
+        // User explicitly turns persona off before configuring LLM.
+        settingsStore.applyPersonaSelection(nil)
+
+        viewModel.setLLMRemoteProvider(LLMRemoteProvider.typefluxCloud)
+
+        XCTAssertFalse(settingsStore.personaRewriteEnabled, "Explicit opt-out must be respected")
+        XCTAssertEqual(settingsStore.activePersonaID, "")
+    }
 }
 
 private final class InMemoryHistoryStore: HistoryStore {
