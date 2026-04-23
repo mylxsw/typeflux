@@ -306,6 +306,11 @@
 "workflow.ask.selectionRequired" = "「何でも質問」では、最初にテキストを選択する必要があります。";
 "workflow.retry.audioMissing" = "再試行に失敗しました: 音声ファイルがありません。";
 "workflow.retry.audioGone" = "再試行に失敗しました: 音声ファイルはもう存在しません。";
+"workflow.llmNotConfigured.missingAPIKey" = "LLM API キーが設定されていません。設定画面で設定するか、Typeflux Cloud をご利用ください。";
+"workflow.llmNotConfigured.cloudNotLoggedIn" = "Typeflux Cloud にサインインして、クラウド言語モデルをご利用ください。";
+"workflow.llmNotConfigured.incomplete" = "LLM の設定が不完全です。設定を確認してください。";
+"workflow.llmNotConfigured.action.settings" = "設定を開く";
+"workflow.llmNotConfigured.action.loginCloud" = "クラウドにログイン";
 
 "persona.none.title" = "ペルソナなし";
 "persona.none.subtitle" = "ペルソナのスタイリングなしでディクテーションを行います。";

@@ -711,6 +711,52 @@ final class WorkflowController {
         agentClarificationWindowController.dismiss()
         continuation.resume(throwing: CancellationError())
     }
+
+    // MARK: - LLM Configuration Validation
+
+    func validateLLMConfiguration() async -> LLMConfigurationStatus {
+        let isLoggedIn = await MainActor.run { AuthState.shared.isLoggedIn }
+        let validator = LLMConfigurationValidator(
+            settingsStore: settingsStore,
+            isLoggedIn: isLoggedIn,
+        )
+        return validator.validate()
+    }
+
+    func presentLLMNotConfigured(_ status: LLMConfigurationStatus) async {
+        guard case .notConfigured(let reason) = status else { return }
+        await MainActor.run {
+            self.soundEffectPlayer.play(.error)
+            self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
+
+            let actions: [OverlayFailureAction] = [
+                OverlayFailureAction(
+                    title: L("workflow.llmNotConfigured.action.settings"),
+                    isRetry: false,
+                    handler: { [weak self] in
+                        guard let self else { return }
+                        SettingsWindowController.shared.show(
+                            settingsStore: self.settingsStore,
+                            historyStore: self.historyStore,
+                            initialSection: .models,
+                        )
+                    },
+                ),
+                OverlayFailureAction(
+                    title: L("workflow.llmNotConfigured.action.loginCloud"),
+                    isRetry: false,
+                    handler: {
+                        LoginWindowController.shared.show()
+                    },
+                ),
+            ]
+
+            self.overlayController.showFailureWithActions(
+                message: reason.localizedMessage,
+                actions: actions,
+            )
+        }
+    }
 }
 
 // swiftlint:enable file_length function_body_length line_length type_body_length

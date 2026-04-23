@@ -331,6 +331,8 @@ final class WorkflowControllerAutomaticVocabularyTests: XCTestCase {
         defaults.removePersistentDomain(forName: suiteName)
         let settingsStore = SettingsStore(defaults: defaults)
         settingsStore.automaticVocabularyCollectionEnabled = true
+        settingsStore.llmRemoteProvider = .freeModel
+        settingsStore.llmModel = "test-model"
 
         let appState = AppStateStore()
         let overlayController = OverlayController(appState: appState)

@@ -92,6 +92,46 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         }
     }
 
+    func testGenerateRewriteThrowsConfigurationErrorWhenLLMIsNotConfigured() async {
+        let controller = makeWorkflowController()
+
+        await XCTAssertThrowsErrorAsync(
+            try await controller.generateRewrite(
+                request: LLMRewriteRequest(
+                    mode: .rewriteTranscript,
+                    sourceText: "hello",
+                    spokenInstruction: nil,
+                    personaPrompt: "Rewrite this",
+                ),
+                sessionID: UUID(),
+            )
+        ) { error in
+            XCTAssertEqual(
+                error as? LLMConfigurationError,
+                .notConfigured(reason: .missingAPIKey),
+            )
+        }
+    }
+
+    func testDecideAskSelectionThrowsConfigurationErrorWhenLLMIsNotConfigured() async {
+        let controller = makeWorkflowController()
+
+        await XCTAssertThrowsErrorAsync(
+            try await controller.decideAskSelection(
+                selectedText: "draft",
+                spokenInstruction: "improve this",
+                personaPrompt: nil,
+                editableTarget: true,
+                sessionID: UUID(),
+            )
+        ) { error in
+            XCTAssertEqual(
+                error as? LLMConfigurationError,
+                .notConfigured(reason: .missingAPIKey),
+            )
+        }
+    }
+
     private func makeWorkflowController(
         textInjector: TextInjector = MockProcessingTextInjector(),
         llmService: LLMService = MockProcessingLLMService(),
@@ -139,6 +179,20 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             ),
             soundEffectPlayer: SoundEffectPlayer(settingsStore: settingsStore),
         )
+    }
+}
+
+private func XCTAssertThrowsErrorAsync<T>(
+    _ expression: @autoclosure () async throws -> T,
+    _ errorHandler: (Error) -> Void,
+    file: StaticString = #filePath,
+    line: UInt = #line,
+) async {
+    do {
+        _ = try await expression()
+        XCTFail("Expected error to be thrown", file: file, line: line)
+    } catch {
+        errorHandler(error)
     }
 }
 

@@ -24,6 +24,15 @@ extension WorkflowController {
         showsStreamingPreview: Bool = true,
         timeout: TimeInterval? = nil,
     ) async throws -> RewriteGenerationResult {
+        let configStatus = await validateLLMConfiguration()
+        guard case .ready = configStatus else {
+            await presentLLMNotConfigured(configStatus)
+            if case .notConfigured(let reason) = configStatus {
+                throw LLMConfigurationError.notConfigured(reason: reason)
+            }
+            throw CancellationError()
+        }
+
         func performRewrite() async throws -> RewriteGenerationResult {
             try await RequestRetry.perform(
                 operationName: "LLM rewrite stream",
@@ -88,6 +97,15 @@ extension WorkflowController {
         appSystemContext: AppSystemContext? = nil,
         sessionID: UUID,
     ) async throws -> AskSelectionDecisionResult {
+        let configStatus = await validateLLMConfiguration()
+        guard case .ready = configStatus else {
+            await presentLLMNotConfigured(configStatus)
+            if case .notConfigured(let reason) = configStatus {
+                throw LLMConfigurationError.notConfigured(reason: reason)
+            }
+            throw CancellationError()
+        }
+
         NetworkDebugLogger.logMessage(
             """
             [Ask Decision] request
@@ -668,6 +686,14 @@ extension WorkflowController {
                     }
                 }
             }
+        } catch let error as LLMConfigurationError {
+            let message = error.localizedDescription
+            ErrorLogStore.shared.log("Processing failed: \(message)")
+            markFailure(&record, message: message)
+            saveHistoryRecord(record)
+            logPipelineEvent("pipeline-failed", for: record)
+            UsageStatsStore.shared.recordSession(record: record)
+            enforceHistoryRetentionPolicy()
         } catch is CancellationError {
             markCancelled(&record)
             saveHistoryRecord(record)
@@ -917,6 +943,15 @@ extension WorkflowController {
                     selectionSnapshot: selectionSnapshot,
                     selectedTextForAnswerPresentation: selectedTextForAnswerPresentation,
                 )
+            } catch let error as LLMConfigurationError {
+                guard var record = historyStore.record(id: recordID) else { return }
+                let message = error.localizedDescription
+                ErrorLogStore.shared.log("Processing failed: \(message)")
+                markFailure(&record, message: message)
+                saveHistoryRecord(record)
+                logPipelineEvent("pipeline-failed", for: record)
+                UsageStatsStore.shared.recordSession(record: record)
+                enforceHistoryRetentionPolicy()
             } catch is CancellationError {
                 await failDetachedAgentAskTask(
                     recordID: recordID,

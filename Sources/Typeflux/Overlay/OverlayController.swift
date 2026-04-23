@@ -26,6 +26,12 @@ private func overlayEventTapCallback(
     return controller.handleEventTapEvent(type: type, event: event)
 }
 
+struct OverlayFailureAction {
+    let title: String
+    let isRetry: Bool
+    let handler: () -> Void
+}
+
 final class OverlayController {
     private static let autoDismissDelay: TimeInterval = 6.0
 
@@ -78,7 +84,7 @@ final class OverlayController {
     }
 
     func setFailureRetryHandler(onRetry: (() -> Void)?) {
-        model.onFailureRetryRequested = onRetry
+        model.onFailureRetryHandler = onRetry
     }
 
     func show(hintText: String? = nil) {
@@ -216,7 +222,7 @@ final class OverlayController {
         model.presentation = .failure
         model.statusText = L("overlay.failure.title")
         model.detailText = message
-        model.failureRetryable = false
+        model.failureActions = []
         refreshWindow()
     }
 
@@ -230,7 +236,13 @@ final class OverlayController {
         model.presentation = .failure
         model.statusText = L("overlay.failure.title")
         model.detailText = message
-        model.failureRetryable = true
+        model.failureActions = [
+            OverlayFailureAction(
+                title: L("common.retry"),
+                isRetry: true,
+                handler: { [weak self] in self?.model.onFailureRetryHandler?() },
+            ),
+        ]
         refreshWindow()
     }
 
@@ -244,7 +256,27 @@ final class OverlayController {
         model.presentation = .failure
         model.statusText = L("overlay.timeout.title")
         model.detailText = L("overlay.timeout.message")
-        model.failureRetryable = true
+        model.failureActions = [
+            OverlayFailureAction(
+                title: L("common.retry"),
+                isRetry: true,
+                handler: { [weak self] in self?.model.onFailureRetryHandler?() },
+            ),
+        ]
+        refreshWindow()
+    }
+
+    func showFailureWithActions(message: String, actions: [OverlayFailureAction]) {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.showFailureWithActions(message: message, actions: actions) }
+            return
+        }
+        dismissWorkItem?.cancel()
+        ensureWindow()
+        model.presentation = .failure
+        model.statusText = L("overlay.failure.title")
+        model.detailText = message
+        model.failureActions = actions
         refreshWindow()
     }
 
@@ -502,7 +534,8 @@ final class OverlayController {
                 interactive: true,
             )
         case .failure:
-            let failureHeight: CGFloat = model.failureRetryable ? 248 : 216
+            let actionCount = model.failureActions.count
+            let failureHeight: CGFloat = actionCount == 0 ? 216 : 216 + CGFloat(actionCount) * 40
             return OverlayMetrics(
                 size: NSSize(width: 352, height: failureHeight), anchor: .bottom, offset: 80,
                 interactive: true,
@@ -680,6 +713,10 @@ final class OverlayController {
                 model.requestDismiss()
                 return true
             }
+            if keyCode == 36 || keyCode == 76, !model.failureActions.isEmpty {
+                model.requestFailureAction(at: 0)
+                return true
+            }
             return false
         case .personaPicker:
             switch keyCode {
@@ -753,7 +790,7 @@ final class OverlayViewModel: ObservableObject {
     @Published var personaItems: [OverlayController.PersonaPickerItem] = []
     @Published var personaSelectedIndex: Int = 0
     @Published var personaViewportHeight: CGFloat = 240
-    @Published var failureRetryable: Bool = false
+    @Published var failureActions: [OverlayFailureAction] = []
     var onDismissRequested: (() -> Void)?
     var onCancelRequested: (() -> Void)?
     var onConfirmRequested: (() -> Void)?
@@ -763,7 +800,17 @@ final class OverlayViewModel: ObservableObject {
     var onPersonaConfirmRequested: (() -> Void)?
     var onPersonaCancelRequested: (() -> Void)?
     var onResultCopyRequested: (() -> Void)?
-    var onFailureRetryRequested: (() -> Void)?
+    var onFailureRetryHandler: (() -> Void)?
+
+    func requestFailureAction(at index: Int) {
+        guard failureActions.indices.contains(index) else { return }
+        failureActions[index].handler()
+    }
+
+    func requestFailureRetry() {
+        guard let retryIndex = failureActions.firstIndex(where: { $0.isRetry }) else { return }
+        failureActions[retryIndex].handler()
+    }
 
     func requestDismiss() {
         onDismissRequested?()
@@ -799,10 +846,6 @@ final class OverlayViewModel: ObservableObject {
 
     func requestResultCopy() {
         onResultCopyRequested?()
-    }
-
-    func requestFailureRetry() {
-        onFailureRetryRequested?()
     }
 }
 
@@ -1030,11 +1073,11 @@ private struct OverlayView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
                 }
-                .frame(maxHeight: model.failureRetryable ? 124 : 92)
+                .frame(maxHeight: model.failureActions.isEmpty ? 92 : 124)
 
-                if model.failureRetryable {
-                    Button(action: model.requestFailureRetry) {
-                        Text(L("common.retry"))
+                ForEach(Array(model.failureActions.enumerated()), id: \.offset) { index, action in
+                    Button(action: { model.requestFailureAction(at: index) }) {
+                        Text(action.title)
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(Color.white)
                             .frame(maxWidth: .infinity)

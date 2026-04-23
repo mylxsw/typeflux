@@ -79,7 +79,7 @@ final class OllamaLLMService: LLMService {
 
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
         NetworkDebugLogger.logRequest(urlRequest)
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        let (data, response) = try await LLMHTTPSession.shared.data(for: urlRequest)
         NetworkDebugLogger.logResponse(response, data: data)
 
         guard let http = response as? HTTPURLResponse else {
@@ -143,7 +143,7 @@ final class OllamaLLMService: LLMService {
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
         NetworkDebugLogger.logRequest(urlRequest)
 
-        let (bytes, response) = try await URLSession.shared.bytes(for: urlRequest)
+        let (bytes, response) = try await LLMHTTPSession.shared.bytes(for: urlRequest)
         guard let http = response as? HTTPURLResponse else {
             throw NSError(
                 domain: "OllamaLLMService",

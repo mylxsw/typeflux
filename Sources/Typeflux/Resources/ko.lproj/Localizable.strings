@@ -306,6 +306,11 @@
 "workflow.ask.selectionRequired" = "무엇이든 물어보세요. 먼저 선택한 텍스트가 필요합니다.";
 "workflow.retry.audioMissing" = "재시도 실패: 오디오 파일이 없습니다.";
 "workflow.retry.audioGone" = "재시도 실패: 오디오 파일이 더 이상 존재하지 않습니다.";
+"workflow.llmNotConfigured.missingAPIKey" = "LLM API 키가 구성되지 않았습니다. 설정에서 구성하거나 Typeflux Cloud를 사용하세요.";
+"workflow.llmNotConfigured.cloudNotLoggedIn" = "클우드 언어 모델을 사용하려면 Typeflux Cloud에 로그인하세요.";
+"workflow.llmNotConfigured.incomplete" = "LLM 구성이 불완전합니다. 설정을 확인하세요.";
+"workflow.llmNotConfigured.action.settings" = "설정 열기";
+"workflow.llmNotConfigured.action.loginCloud" = "클우드 로그인";
 
 "persona.none.title" = "페르소나 없음";
 "persona.none.subtitle" = "페르소나 스타일링 없이 지시하세요.";

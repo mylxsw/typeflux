@@ -241,6 +241,14 @@ extension WorkflowController {
                 + "| candidates=\(candidateSummary)",
         )
 
+        let configStatus = await validateLLMConfiguration()
+        guard case .ready = configStatus else {
+            logAutomaticVocabulary(
+                "analysis skipped: llm not configured | session=\(shortSessionID(sessionID))",
+            )
+            return
+        }
+
         do {
             let acceptedTerms = try await evaluateAutomaticVocabularyCandidates(
                 transcript: insertedText,

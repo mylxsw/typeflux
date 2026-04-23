@@ -43,6 +43,15 @@ extension WorkflowController {
         jobID: UUID = UUID(),
         appSystemContext: AppSystemContext? = nil,
     ) async throws -> AskAgentExecutionResult {
+        let configStatus = await validateLLMConfiguration()
+        guard case .ready = configStatus else {
+            await presentLLMNotConfigured(configStatus)
+            if case .notConfigured(let reason) = configStatus {
+                throw LLMConfigurationError.notConfigured(reason: reason)
+            }
+            throw CancellationError()
+        }
+
         let llmService = OpenAICompatibleAgentService(settingsStore: settingsStore)
 
         // Create the job recorder upfront so every invocation—regardless of routing

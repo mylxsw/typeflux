@@ -732,7 +732,7 @@ enum RemoteLLMClient {
 
     static func performJSONRequest(_ request: URLRequest) async throws -> Data {
         NetworkDebugLogger.logRequest(request)
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await LLMHTTPSession.shared.data(for: request)
         NetworkDebugLogger.logResponse(response, data: data)
         guard let http = response as? HTTPURLResponse else {
             throw NSError(domain: "LLM", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid response."])
@@ -747,7 +747,7 @@ enum RemoteLLMClient {
 
 enum SSEClient {
     static func lines(for request: URLRequest) async throws -> AsyncThrowingStream<String, Error> {
-        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+        let (bytes, response) = try await LLMHTTPSession.shared.bytes(for: request)
         guard let http = response as? HTTPURLResponse else {
             NetworkDebugLogger.logResponse(response, bodyDescription: "<invalid non-http response>")
             throw NSError(domain: "SSE", code: 1)

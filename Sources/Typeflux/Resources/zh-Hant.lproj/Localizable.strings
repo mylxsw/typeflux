@@ -306,6 +306,11 @@
 "workflow.ask.selectionRequired" = "「隨便問」需要先選取文字。";
 "workflow.retry.audioMissing" = "重試失敗：缺少音訊檔。";
 "workflow.retry.audioGone" = "重試失敗：音訊檔已不存在。";
+"workflow.llmNotConfigured.missingAPIKey" = "尚未設定大語言模型的 API Key。請前往設定頁面設定，或使用 Typeflux Cloud。";
+"workflow.llmNotConfigured.cloudNotLoggedIn" = "請先登入 Typeflux Cloud，以使用雲端大語言模型。";
+"workflow.llmNotConfigured.incomplete" = "大語言模型設定不完整，請檢查設定。";
+"workflow.llmNotConfigured.action.settings" = "開啟設定";
+"workflow.llmNotConfigured.action.loginCloud" = "登入雲端";
 
 "persona.none.title" = "無人設";
 "persona.none.subtitle" = "直接聽寫，不套用任何人設風格。";
