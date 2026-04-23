@@ -1580,41 +1580,42 @@ struct OnboardingView: View {
     }
 
     private var globeKeyNotice: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(StudioTheme.warning.opacity(isDarkMode ? 0.22 : 0.14))
-                    Image(systemName: "globe")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(StudioTheme.warning)
-                }
-                .frame(width: 44, height: 44)
-
-                Text(L("onboarding.shortcuts.globeKeyNotice.title"))
-                    .font(.studioDisplay(16, weight: .bold))
-                    .foregroundStyle(onboardingPrimaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Spacer(minLength: 12)
-
-                StudioButton(
-                    title: L("onboarding.shortcuts.globeKeyNotice.button"),
-                    systemImage: "arrow.up.forward.app",
-                    variant: .secondary,
-                ) {
-                    viewModel.openKeyboardSystemSettings()
-                }
-                .fixedSize()
+        HStack(alignment: .center, spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(StudioTheme.warning.opacity(isDarkMode ? 0.22 : 0.14))
+                Image(systemName: "globe")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(StudioTheme.warning)
             }
+            .frame(width: 44, height: 44)
 
-            Text(L("onboarding.shortcuts.globeKeyNotice.message"))
-                .font(.studioBody(13))
-                .foregroundStyle(onboardingSecondaryText)
-                .lineSpacing(3)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 58)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .center, spacing: 14) {
+                    Text(L("onboarding.shortcuts.globeKeyNotice.title"))
+                        .font(.studioDisplay(16, weight: .bold))
+                        .foregroundStyle(onboardingPrimaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Spacer(minLength: 12)
+
+                    StudioButton(
+                        title: L("onboarding.shortcuts.globeKeyNotice.button"),
+                        systemImage: "arrow.up.forward.app",
+                        variant: .secondary,
+                    ) {
+                        viewModel.openKeyboardSystemSettings()
+                    }
+                    .fixedSize()
+                }
+
+                Text(L("onboarding.shortcuts.globeKeyNotice.message"))
+                    .font(.studioBody(13))
+                    .foregroundStyle(onboardingSecondaryText)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
         .padding(22)
         .frame(maxWidth: .infinity, alignment: .leading)
