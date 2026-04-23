@@ -9,6 +9,10 @@ final class StatusBarController: NSObject {
         static let personas = 9003
     }
 
+    private enum MenuValue {
+        static let noPersona = "__no_persona__"
+    }
+
     private enum MenuLayout {
         static let runningJobTitleLimit = 44
         static let recentHistoryLimit = 10
@@ -301,26 +305,26 @@ final class StatusBarController: NSObject {
         let personas = settingsStore.personas
         let activePersonaID = settingsStore.personaRewriteEnabled ? settingsStore.activePersonaID : ""
 
-        if personas.isEmpty {
-            let emptyItem = NSMenuItem(
-                title: L("menu.personas.empty"),
-                action: nil,
+        let noPersonaItem = NSMenuItem(
+            title: L("persona.none.title"),
+            action: #selector(selectPersonaFromMenu(_:)),
+            keyEquivalent: "",
+        )
+        noPersonaItem.target = self
+        noPersonaItem.representedObject = MenuValue.noPersona
+        noPersonaItem.state = activePersonaID.isEmpty ? .on : .off
+        menu.addItem(noPersonaItem)
+
+        for persona in personas {
+            let item = NSMenuItem(
+                title: persona.name,
+                action: #selector(selectPersonaFromMenu(_:)),
                 keyEquivalent: "",
             )
-            emptyItem.isEnabled = false
-            menu.addItem(emptyItem)
-        } else {
-            for persona in personas {
-                let item = NSMenuItem(
-                    title: persona.name,
-                    action: #selector(selectPersonaFromMenu(_:)),
-                    keyEquivalent: "",
-                )
-                item.target = self
-                item.representedObject = persona.id.uuidString
-                item.state = persona.id.uuidString == activePersonaID ? .on : .off
-                menu.addItem(item)
-            }
+            item.target = self
+            item.representedObject = persona.id.uuidString
+            item.state = persona.id.uuidString == activePersonaID ? .on : .off
+            menu.addItem(item)
         }
 
         menu.addItem(NSMenuItem.separator())
@@ -482,12 +486,18 @@ final class StatusBarController: NSObject {
 
     @objc private func selectPersonaFromMenu(_ sender: NSMenuItem) {
         guard
-            let rawValue = sender.representedObject as? String,
-            let personaID = UUID(uuidString: rawValue)
+            let rawValue = sender.representedObject as? String
         else {
             return
         }
 
+        if rawValue == MenuValue.noPersona {
+            settingsStore.applyPersonaSelection(nil)
+            rebuildMenu()
+            return
+        }
+
+        guard let personaID = UUID(uuidString: rawValue) else { return }
         settingsStore.applyPersonaSelection(personaID)
         rebuildMenu()
     }
