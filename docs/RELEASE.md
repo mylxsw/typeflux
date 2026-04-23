@@ -25,6 +25,12 @@ For local release validation, use the one-step notarized release command:
 make release-notarize
 ```
 
+For a local full-model production installer, use:
+
+```bash
+make full-release
+```
+
 ## GitHub Actions Release Workflow
 
 The workflow in `.github/workflows/release.yml` runs when a GitHub Release is
@@ -98,6 +104,13 @@ The preferred release flow is the one-step notarized release command:
 make release-notarize
 ```
 
+To build the bundled SenseVoice variant locally without exporting the release
+variant by hand, run:
+
+```bash
+make full-release
+```
+
 This command automatically:
 
 1. builds the release app bundle
@@ -159,6 +172,12 @@ Run:
 make release-notarize
 ```
 
+For the bundled-model installer:
+
+```bash
+make full-release
+```
+
 Successful output artifacts:
 
 - `.build/release/Typeflux.app`
@@ -180,6 +199,17 @@ Outputs:
 - `.build/release/Typeflux.app`
 - `.build/release/Typeflux.zip` for `TYPEFLUX_RELEASE_VARIANT=minimal`
 - `.build/release/Typeflux-full.zip` for `TYPEFLUX_RELEASE_VARIANT=full`
+
+For the full production installer shortcut:
+
+```bash
+make full-release
+```
+
+Outputs copied to `~/Downloads/`:
+
+- `Typeflux-full.zip`
+- `Typeflux-full.dmg`
 
 ### Build the DMG
 

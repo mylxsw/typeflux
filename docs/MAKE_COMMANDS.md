@@ -13,6 +13,7 @@ This document explains the purpose of each `make` command in the repository, whe
 | `make test` | Run the unit test suite | Logic and regression validation |
 | `make coverage` | Generate code coverage output | Larger refactors or quality checks |
 | `make release` | Build the signed release app bundle and zip archive | Prepare `.app` and `.zip` artifacts |
+| `make full-release` | Build the full notarized release with bundled SenseVoice | Prepare full `.zip` and `.dmg` installers |
 | `make dmg` | Build the signed DMG from the release app bundle | Prepare `.dmg` artifact |
 | `make release-notarize` | Run the full release pipeline including notarization and stapling | One-step external distribution build |
 | `make format` | Format the codebase | Cleanup before commit or review |
@@ -147,24 +148,50 @@ make release
 
 What it does:
 
-- builds the release binary
-- assembles `.build/release/Typeflux.app`
-- signs the app bundle
-- generates `.build/release/Typeflux.zip`
+- runs the default one-step notarized release flow for the `minimal` variant
+- moves the finished installers into `~/Downloads/`
 
 Artifacts:
 
-- `.build/release/Typeflux.app`
-- `.build/release/Typeflux.zip`
+- `~/Downloads/Typeflux.zip`
+- `~/Downloads/Typeflux.dmg`
 
 Environment:
 
-- optional: `TYPEFLUX_CODESIGN_IDENTITY`
+- same notarization and signing environment required by `make release-notarize`
 
 Behavior:
 
-- if `TYPEFLUX_CODESIGN_IDENTITY` is set, it signs with that identity
-- otherwise it falls back to ad-hoc signing
+- defaults to `TYPEFLUX_RELEASE_VARIANT=minimal`
+- if you override `TYPEFLUX_RELEASE_VARIANT=full`, it now moves `Typeflux-full.zip` and `Typeflux-full.dmg` correctly
+
+### `make full-release`
+
+Command:
+
+```bash
+make full-release
+```
+
+What it does:
+
+- runs the same notarized production release flow as `make release`
+- forces `TYPEFLUX_RELEASE_VARIANT=full`
+- moves `Typeflux-full.zip` and `Typeflux-full.dmg` into `~/Downloads/`
+
+Artifacts:
+
+- `~/Downloads/Typeflux-full.zip`
+- `~/Downloads/Typeflux-full.dmg`
+
+Use it when:
+
+- you want a production-ready installer that already contains the bundled SenseVoice model
+- you want the local full installer without manually exporting `TYPEFLUX_RELEASE_VARIANT=full`
+
+Requirements:
+
+- the same Developer ID, notarization profile, and `create-dmg` setup required by `make release`
 
 ### `make dmg`
 
@@ -278,6 +305,7 @@ make dmg
 export TYPEFLUX_APPLE_DISTRIBUTION="Developer ID Application: Your Name (TEAMID)"
 export TYPEFLUX_NOTARY_PROFILE="your-notarytool-profile"
 make release-notarize
+make full-release
 ```
 
 ## Related Documentation

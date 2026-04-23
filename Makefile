@@ -1,9 +1,15 @@
+RELEASE_VARIANT := $(if $(TYPEFLUX_RELEASE_VARIANT),$(TYPEFLUX_RELEASE_VARIANT),minimal)
+PACKAGE_NAME = Typeflux$(if $(filter full,$(RELEASE_VARIANT)),-full,)
+
 run:
 	./scripts/run_dev_app.sh
 
 release: release-notarize
-	mv .build/release/Typeflux.dmg ~/Downloads/
-	mv .build/release/Typeflux.zip ~/Downloads/
+	mv .build/release/$(PACKAGE_NAME).dmg ~/Downloads/
+	mv .build/release/$(PACKAGE_NAME).zip ~/Downloads/
+
+full-release:
+	TYPEFLUX_RELEASE_VARIANT=full $(MAKE) release
 
 dev:
 	TYPEFLUX_API_URL=http://127.0.0.1:8080 ./scripts/run_dev_attached.sh
@@ -29,4 +35,4 @@ release-notarize:
 format:
 	./scripts/format.sh
 
-.PHONY: run dev full-dev build test coverage release dmg release-notarize format
+.PHONY: run release full-release dev full-dev build test coverage dmg release-notarize format
