@@ -102,6 +102,40 @@ else
   rm -f "$APP_BUNDLE/Contents/embedded.provisionprofile"
 fi
 
+# Notarization requires every Mach-O inside the bundle to carry a Developer ID
+# signature, a secure timestamp, and the hardened runtime. The `full` variant
+# bundles third-party sherpa-onnx binaries under Contents/Resources that ship
+# unsigned from upstream, so we must sign them individually before the outer
+# bundle is sealed. `codesign --deep` is deprecated for this and does not cover
+# arbitrary Mach-O files under Contents/Resources.
+sign_nested_binaries() {
+  local identity="$1"
+  local adhoc="$2"
+  local search_root="$APP_BUNDLE/Contents/Resources/BundledModels"
+
+  [[ -d "$search_root" ]] || return 0
+
+  local -a nested_args
+  if [[ "$adhoc" == true ]]; then
+    nested_args=(--force --sign - --identifier "ai.gulu.app.typeflux")
+  else
+    nested_args=(
+      --force
+      --sign "$identity"
+      --timestamp
+      --options runtime
+    )
+  fi
+
+  while IFS= read -r -d '' candidate; do
+    [[ -L "$candidate" ]] && continue
+    if file "$candidate" 2>/dev/null | grep -qE 'Mach-O|dynamically linked shared library'; then
+      echo "Signing nested binary: ${candidate#$APP_BUNDLE/}"
+      codesign "${nested_args[@]}" "$candidate"
+    fi
+  done < <(find "$search_root" -type f \( -perm -u+x -o -name '*.dylib' -o -name '*.so' \) -print0)
+}
+
 # Sign the bundle if an identity is available.
 # Hardened runtime is required for notarization with a Developer ID signature.
 if [[ -n "${TYPEFLUX_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
@@ -115,11 +149,13 @@ if [[ -n "${TYPEFLUX_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 
   if [[ "$use_apple_sign_in_entitlements" == true ]]; then
     codesign_args+=(--entitlements "$ENTITLEMENTS")
   fi
+  sign_nested_binaries "$TYPEFLUX_CODESIGN_IDENTITY" false
   codesign "${codesign_args[@]}" "$APP_EXECUTABLE"
   codesign "${codesign_args[@]}" "$APP_BUNDLE"
   codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
   echo "Signed with identity: $TYPEFLUX_CODESIGN_IDENTITY"
 elif command -v codesign >/dev/null 2>&1; then
+  sign_nested_binaries "" true
   codesign --force --sign - --identifier "ai.gulu.app.typeflux" "$APP_EXECUTABLE"
   codesign --force --sign - --identifier "ai.gulu.app.typeflux" "$APP_BUNDLE"
   echo "Signed with ad-hoc identity"
