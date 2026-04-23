@@ -513,6 +513,42 @@ final class AXTextInjectorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testShouldRestoreCapturedPasteboardReturnsTrueWhenChangeCountMatches() {
+        let result = AXTextInjector.shouldRestoreCapturedPasteboard(
+            capturedChangeCount: 42,
+            currentChangeCount: 42,
+        )
+
+        XCTAssertTrue(result)
+    }
+
+    func testShouldRestoreCapturedPasteboardReturnsFalseWhenChangeCountAdvanced() {
+        // Another writer (user copy, clipboard manager, etc.) updated the
+        // pasteboard after our transcription write. Restoring would clobber
+        // their fresh content, so we must skip.
+        let result = AXTextInjector.shouldRestoreCapturedPasteboard(
+            capturedChangeCount: 42,
+            currentChangeCount: 43,
+        )
+
+        XCTAssertFalse(result)
+    }
+
+    func testUnverifiedPasteRestoreDelayIsLongerThanVerifiedDelay() {
+        // Slow clipboard consumers (iTerm2, Terminal, Warp) may not read the
+        // pasteboard until well after Cmd+V is dispatched. When we cannot
+        // verify the paste landed, the restore delay must be long enough to
+        // avoid racing the consumer's read.
+        XCTAssertGreaterThan(
+            AXTextInjector.unverifiedPasteRestoreDelayNanoseconds,
+            AXTextInjector.verifiedPasteRestoreDelayNanoseconds,
+        )
+        XCTAssertGreaterThan(
+            AXTextInjector.unverifiedPasteRestoreDelayNanoseconds,
+            AXTextInjector.legacyPasteRestoreDelayNanoseconds,
+        )
+    }
+
     func testEvaluatePasteVerificationIsIndeterminateWhenReadableTextIsUnchangedOnHeuristicTarget() {
         let before = CurrentInputTextSnapshot(
             processID: 42,

@@ -97,6 +97,13 @@ final class AXTextInjector: TextInjector {
     static var didRequestAccessibility = false
     static let legacyPasteRestoreDelayNanoseconds: UInt64 = 150_000_000
     static let verifiedPasteRestoreDelayNanoseconds: UInt64 = 150_000_000
+    /// Slow clipboard consumers (iTerm2 / Terminal.app / Warp bracketed paste,
+    /// "warn before pasting" dialogs, paste-slowly modes) may not read the
+    /// pasteboard until well after Cmd+V is dispatched. When we have no way to
+    /// verify the paste landed (plain insert into non-AX-readable targets),
+    /// keep our transcription on the pasteboard long enough that the consumer
+    /// reads it before we restore the user's previous clipboard content.
+    static let unverifiedPasteRestoreDelayNanoseconds: UInt64 = 1_500_000_000
     static let pasteVerificationPollIntervalMicroseconds: useconds_t = 120_000
     static let pasteVerificationAttempts = 4
     static let axWriteVerificationPollIntervalMicroseconds: useconds_t = 120_000
@@ -183,6 +190,18 @@ final class AXTextInjector: TextInjector {
     ) -> Bool {
         guard replaceSelection, !baselineAvailable else { return false }
         return selectionSource == "clipboard-copy" && focusMatched
+    }
+
+    /// Only restore the user's previous pasteboard if no other writer has
+    /// touched `NSPasteboard.general` since we wrote the transcription. If the
+    /// change count has advanced, either the user copied something new or a
+    /// clipboard manager updated the contents — in both cases overwriting with
+    /// our stale snapshot would destroy their data.
+    static func shouldRestoreCapturedPasteboard(
+        capturedChangeCount: Int,
+        currentChangeCount: Int,
+    ) -> Bool {
+        capturedChangeCount == currentChangeCount
     }
 
     static func shouldPreferEditableDescendant(

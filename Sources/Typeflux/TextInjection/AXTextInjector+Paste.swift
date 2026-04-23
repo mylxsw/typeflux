@@ -275,7 +275,7 @@ extension AXTextInjector {
             )
             restorePasteboardAfterPaste(
                 previousSnapshot,
-                delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds,
+                delayNanoseconds: Self.unverifiedPasteRestoreDelayNanoseconds,
             )
             return
         }
@@ -289,7 +289,7 @@ extension AXTextInjector {
             )
             restorePasteboardAfterPaste(
                 previousSnapshot,
-                delayNanoseconds: Self.legacyPasteRestoreDelayNanoseconds,
+                delayNanoseconds: Self.unverifiedPasteRestoreDelayNanoseconds,
             )
             return
         }
@@ -349,7 +349,7 @@ extension AXTextInjector {
 
         restorePasteboardAfterPaste(
             previousSnapshot,
-            delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds,
+            delayNanoseconds: Self.unverifiedPasteRestoreDelayNanoseconds,
         )
 
         if let lastFailureReason {
@@ -523,10 +523,21 @@ extension AXTextInjector {
         _ previousSnapshot: PasteboardSnapshot,
         delayNanoseconds: UInt64,
     ) {
+        let capturedChangeCount = NSPasteboard.general.changeCount
         Task.detached {
             try? await Task.sleep(nanoseconds: delayNanoseconds)
             await MainActor.run {
                 let pasteboard = NSPasteboard.general
+                let currentChangeCount = pasteboard.changeCount
+                guard Self.shouldRestoreCapturedPasteboard(
+                    capturedChangeCount: capturedChangeCount,
+                    currentChangeCount: currentChangeCount,
+                ) else {
+                    NetworkDebugLogger.logMessage(
+                        "[Text Injection] pasteboard restore skipped; changeCount moved \(capturedChangeCount) → \(currentChangeCount)",
+                    )
+                    return
+                }
                 self.restorePasteboard(previousSnapshot, to: pasteboard)
             }
         }
