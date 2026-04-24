@@ -257,13 +257,13 @@ final class OverlayController {
         model.presentation = .failure
         model.statusText = L("overlay.failure.title")
         model.detailText = message
-        model.failureActions = [
+        model.failureActions = wrapFailureActions([
             OverlayFailureAction(
                 title: L("common.retry"),
                 isRetry: true,
                 handler: { [weak self] in self?.model.onFailureRetryHandler?() },
             ),
-        ]
+        ])
         refreshWindow()
     }
 
@@ -277,13 +277,13 @@ final class OverlayController {
         model.presentation = .failure
         model.statusText = L("overlay.timeout.title")
         model.detailText = L("overlay.timeout.message")
-        model.failureActions = [
+        model.failureActions = wrapFailureActions([
             OverlayFailureAction(
                 title: L("common.retry"),
                 isRetry: true,
                 handler: { [weak self] in self?.model.onFailureRetryHandler?() },
             ),
-        ]
+        ])
         refreshWindow()
     }
 
@@ -297,8 +297,30 @@ final class OverlayController {
         model.presentation = .failure
         model.statusText = L("overlay.failure.title")
         model.detailText = message
-        model.failureActions = actions
+        model.failureActions = wrapFailureActions(actions)
         refreshWindow()
+    }
+
+    static func wrapFailureActions(
+        _ actions: [OverlayFailureAction],
+        beforeAction: @escaping () -> Void,
+    ) -> [OverlayFailureAction] {
+        actions.map { action in
+            OverlayFailureAction(
+                title: action.title,
+                isRetry: action.isRetry,
+                handler: {
+                    beforeAction()
+                    action.handler()
+                },
+            )
+        }
+    }
+
+    private func wrapFailureActions(_ actions: [OverlayFailureAction]) -> [OverlayFailureAction] {
+        Self.wrapFailureActions(actions) { [weak self] in
+            self?.dismissImmediately()
+        }
     }
 
     func updateLevel(_ level: Float) {
