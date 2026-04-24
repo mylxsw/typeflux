@@ -312,7 +312,10 @@
 "workflow.llmNotConfigured.cloudNotLoggedIn" = "Please sign in to Typeflux Cloud to use the cloud language model.";
 "workflow.llmNotConfigured.incomplete" = "LLM configuration is incomplete. Please check your settings.";
 "workflow.llmNotConfigured.action.settings" = "Open Settings";
-"workflow.llmNotConfigured.action.loginCloud" = "Login to Cloud";
+"workflow.llmNotConfigured.action.loginCloud" = "Login to Typeflux Cloud";
+"workflow.llmNotConfigured.action.configureCustomModel" = "Configure Custom Model";
+"workflow.llmNotConfigured.notice.localFallback" = "Typeflux Cloud is not signed in. Typeflux used local speech recognition to keep this input flowing. Sign in to enable cloud rewriting.";
+"workflow.llmNotConfigured.askSkipped" = "Typeflux Cloud is not signed in. The voice transcript was saved, but cloud Q&A could not run.";
 
 "persona.none.title" = "No Persona";
 "persona.none.subtitle" = "Dictate without any persona styling.";

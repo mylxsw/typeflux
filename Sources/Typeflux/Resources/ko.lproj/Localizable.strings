@@ -310,7 +310,10 @@
 "workflow.llmNotConfigured.cloudNotLoggedIn" = "클우드 언어 모델을 사용하려면 Typeflux Cloud에 로그인하세요.";
 "workflow.llmNotConfigured.incomplete" = "LLM 구성이 불완전합니다. 설정을 확인하세요.";
 "workflow.llmNotConfigured.action.settings" = "설정 열기";
-"workflow.llmNotConfigured.action.loginCloud" = "클우드 로그인";
+"workflow.llmNotConfigured.action.loginCloud" = "Typeflux Cloud 로그인";
+"workflow.llmNotConfigured.action.configureCustomModel" = "사용자 지정 모델 구성";
+"workflow.llmNotConfigured.notice.localFallback" = "Typeflux Cloud에 로그인되어 있지 않습니다. 이번 입력이 끊기지 않도록 로컬 음성 인식을 사용했습니다. 로그인하면 클라우드 다시 쓰기를 사용할 수 있습니다.";
+"workflow.llmNotConfigured.askSkipped" = "Typeflux Cloud에 로그인되어 있지 않습니다. 음성 전사는 저장했지만 클라우드 Q&A는 실행할 수 없습니다.";
 
 "persona.none.title" = "페르소나 없음";
 "persona.none.subtitle" = "페르소나 스타일링 없이 지시하세요.";

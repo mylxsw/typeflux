@@ -72,11 +72,24 @@ set_plist_value() {
   /usr/libexec/PlistBuddy -c "Add :$key string $value" "$APP_DIR/Contents/Info.plist"
 }
 
-for key in TYPEFLUX_API_URL GOOGLE_OAUTH_CLIENT_ID GOOGLE_OAUTH_CLIENT_SECRET GITHUB_OAUTH_CLIENT_ID; do
+add_dev_http_transport_exception_if_needed() {
+  local configured_urls="${TYPEFLUX_API_URLS:-${TYPEFLUX_API_URL:-}}"
+  if [[ "$configured_urls" != *"http://"* ]]; then
+    return
+  fi
+
+  /usr/libexec/PlistBuddy -c "Delete :NSAppTransportSecurity" "$APP_DIR/Contents/Info.plist" >/dev/null 2>&1 || true
+  /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" "$APP_DIR/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" "$APP_DIR/Contents/Info.plist"
+  echo "Warning: enabled App Transport Security HTTP exception for this dev app."
+}
+
+for key in TYPEFLUX_API_URL TYPEFLUX_API_URLS GOOGLE_OAUTH_CLIENT_ID GOOGLE_OAUTH_CLIENT_SECRET GITHUB_OAUTH_CLIENT_ID; do
   if [[ -n "${!key:-}" ]]; then
     set_plist_value "$key" "${!key}"
   fi
 done
+add_dev_http_transport_exception_if_needed
 
 chmod +x "$APP_DIR/Contents/MacOS/Typeflux"
 

@@ -97,6 +97,7 @@ final class WorkflowController {
     var activeProcessingRecordID: UUID?
     var lastRetryableFailureRecord: HistoryRecord?
     var lastDialogResultText: String?
+    var shouldPreserveLLMConfigurationNotice = false
     var localModelPreheatTask: Task<Void, Never>?
     var lastLocalModelPreheatConfiguration: LocalSTTConfiguration?
     var localModelPreheatObserver: NSObjectProtocol?
@@ -725,14 +726,32 @@ final class WorkflowController {
 
     func presentLLMNotConfigured(_ status: LLMConfigurationStatus) async {
         guard case .notConfigured(let reason) = status else { return }
+        let presentation = LLMConfigurationReminderPolicy(settingsStore: settingsStore)
+            .presentation(for: status)
         await MainActor.run {
+            self.shouldPreserveLLMConfigurationNotice = true
+
+            guard presentation == .actionDialog else {
+                self.appState.setStatus(.idle)
+                self.overlayController.showNotice(message: L("workflow.llmNotConfigured.notice.localFallback"))
+                return
+            }
+
             self.soundEffectPlayer.play(.error)
-            self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
 
             let actions: [OverlayFailureAction] = [
                 OverlayFailureAction(
-                    title: L("workflow.llmNotConfigured.action.settings"),
+                    title: L("workflow.llmNotConfigured.action.loginCloud"),
                     isRetry: false,
+                    handler: {
+                        LoginWindowController.shared.show()
+                    },
+                ),
+                OverlayFailureAction(
+                    title: L("workflow.llmNotConfigured.action.configureCustomModel"),
+                    isRetry: false,
+                    style: .secondary,
+                    trailingSystemImage: "gearshape",
                     handler: { [weak self] in
                         guard let self else { return }
                         SettingsWindowController.shared.show(
@@ -740,13 +759,6 @@ final class WorkflowController {
                             historyStore: self.historyStore,
                             initialSection: .models,
                         )
-                    },
-                ),
-                OverlayFailureAction(
-                    title: L("workflow.llmNotConfigured.action.loginCloud"),
-                    isRetry: false,
-                    handler: {
-                        LoginWindowController.shared.show()
                     },
                 ),
             ]

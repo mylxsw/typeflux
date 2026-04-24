@@ -523,6 +523,22 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "stt.localOptimization.enabled") }
     }
 
+    var lastTypefluxCloudLoginReminderAt: Date? {
+        get {
+            guard defaults.object(forKey: "typefluxCloud.loginReminder.lastShownAt") != nil else {
+                return nil
+            }
+            return Date(timeIntervalSince1970: defaults.double(forKey: "typefluxCloud.loginReminder.lastShownAt"))
+        }
+        set {
+            if let newValue {
+                defaults.set(newValue.timeIntervalSince1970, forKey: "typefluxCloud.loginReminder.lastShownAt")
+            } else {
+                defaults.removeObject(forKey: "typefluxCloud.loginReminder.lastShownAt")
+            }
+        }
+    }
+
     var localSTTMemoryOptimizationEnabled: Bool {
         get { defaults.object(forKey: "stt.local.memoryOptimization.enabled") as? Bool ?? false }
         set { defaults.set(newValue, forKey: "stt.local.memoryOptimization.enabled") }

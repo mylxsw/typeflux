@@ -310,7 +310,10 @@
 "workflow.llmNotConfigured.cloudNotLoggedIn" = "Typeflux Cloud にサインインして、クラウド言語モデルをご利用ください。";
 "workflow.llmNotConfigured.incomplete" = "LLM の設定が不完全です。設定を確認してください。";
 "workflow.llmNotConfigured.action.settings" = "設定を開く";
-"workflow.llmNotConfigured.action.loginCloud" = "クラウドにログイン";
+"workflow.llmNotConfigured.action.loginCloud" = "Typeflux Cloud にログイン";
+"workflow.llmNotConfigured.action.configureCustomModel" = "カスタムモデルを設定";
+"workflow.llmNotConfigured.notice.localFallback" = "Typeflux Cloud にログインしていません。今回の入力を止めないよう、ローカル音声認識を使用しました。ログインするとクラウド書き換えを利用できます。";
+"workflow.llmNotConfigured.askSkipped" = "Typeflux Cloud にログインしていません。音声の文字起こしは保存しましたが、クラウド Q&A は実行できませんでした。";
 
 "persona.none.title" = "ペルソナなし";
 "persona.none.subtitle" = "ペルソナのスタイリングなしでディクテーションを行います。";

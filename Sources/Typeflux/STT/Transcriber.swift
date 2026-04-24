@@ -321,6 +321,10 @@ final class STTRouter {
                 }
             } catch {
                 NetworkDebugLogger.logError(context: "Typeflux Official STT failed", error: error)
+                if let localResult = await transcribeWithAutoModelIfReady(audioFile: audioFile, onUpdate: onUpdate) {
+                    NetworkDebugLogger.logMessage("Auto local model succeeded after Typeflux Official STT failure")
+                    return localResult
+                }
                 if settingsStore.useAppleSpeechFallback {
                     NetworkDebugLogger.logMessage("Falling back to Apple Speech after Typeflux Official STT failure")
                     return try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
@@ -355,13 +359,27 @@ final class STTRouter {
             let transcript = try await transcribeStream(audioFile: audioFile, scenario: scenario, onUpdate: onASRUpdate)
             return (transcript: transcript, rewritten: nil)
         }
-        return try await integrated.transcribeStreamWithLLMRewrite(
-            audioFile: audioFile,
-            llmConfig: llmConfig,
-            scenario: scenario,
-            onASRUpdate: onASRUpdate,
-            onLLMStart: onLLMStart,
-            onLLMChunk: onLLMChunk,
-        )
+        do {
+            return try await integrated.transcribeStreamWithLLMRewrite(
+                audioFile: audioFile,
+                llmConfig: llmConfig,
+                scenario: scenario,
+                onASRUpdate: onASRUpdate,
+                onLLMStart: onLLMStart,
+                onLLMChunk: onLLMChunk,
+            )
+        } catch {
+            NetworkDebugLogger.logError(context: "Typeflux Official integrated STT+LLM failed", error: error)
+            if let localResult = await transcribeWithAutoModelIfReady(audioFile: audioFile, onUpdate: onASRUpdate) {
+                NetworkDebugLogger.logMessage("Auto local model succeeded after integrated Typeflux Official failure")
+                return (transcript: localResult, rewritten: nil)
+            }
+            if settingsStore.useAppleSpeechFallback {
+                NetworkDebugLogger.logMessage("Falling back to Apple Speech after integrated Typeflux Official failure")
+                let transcript = try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onASRUpdate)
+                return (transcript: transcript, rewritten: nil)
+            }
+            throw error
+        }
     }
 }

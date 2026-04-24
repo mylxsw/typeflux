@@ -27,9 +27,30 @@ private func overlayEventTapCallback(
 }
 
 struct OverlayFailureAction {
+    enum Style {
+        case primary
+        case secondary
+    }
+
     let title: String
     let isRetry: Bool
+    let style: Style
+    let trailingSystemImage: String?
     let handler: () -> Void
+
+    init(
+        title: String,
+        isRetry: Bool,
+        style: Style = .primary,
+        trailingSystemImage: String? = nil,
+        handler: @escaping () -> Void,
+    ) {
+        self.title = title
+        self.isRetry = isRetry
+        self.style = style
+        self.trailingSystemImage = trailingSystemImage
+        self.handler = handler
+    }
 }
 
 final class OverlayController {
@@ -1077,20 +1098,40 @@ private struct OverlayView: View {
 
                 ForEach(Array(model.failureActions.enumerated()), id: \.offset) { index, action in
                     Button(action: { model.requestFailureAction(at: index) }) {
-                        Text(action.title)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Color.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 7)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8).fill(
-                                    Color(red: 1.0, green: 0.42, blue: 0.08).opacity(0.55),
-                                ),
-                            )
+                        HStack(spacing: 6) {
+                            Text(action.title)
+                                .font(.system(size: 13, weight: .semibold))
+
+                            if let trailingSystemImage = action.trailingSystemImage {
+                                Image(systemName: trailingSystemImage)
+                                    .font(.system(size: 11, weight: .semibold))
+                            }
+                        }
+                        .foregroundStyle(action.style == .primary ? Color.white : Color.white.opacity(0.68))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, action.style == .primary ? 7 : 5)
+                        .background(failureActionBackground(for: action.style))
                     }
                     .buttonStyle(.plain)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func failureActionBackground(for style: OverlayFailureAction.Style) -> some View {
+        switch style {
+        case .primary:
+            RoundedRectangle(cornerRadius: 8).fill(
+                Color(red: 1.0, green: 0.42, blue: 0.08).opacity(0.55),
+            )
+        case .secondary:
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.white.opacity(0.045))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.white.opacity(0.07), lineWidth: 0.8),
+                )
         }
     }
 

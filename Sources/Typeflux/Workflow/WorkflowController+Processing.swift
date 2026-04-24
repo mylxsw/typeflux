@@ -682,7 +682,11 @@ extension WorkflowController {
                             )
                         }
                     } else {
-                        self.overlayController.dismissSoon()
+                        if self.shouldPreserveLLMConfigurationNotice {
+                            self.shouldPreserveLLMConfigurationNotice = false
+                        } else {
+                            self.overlayController.dismissSoon()
+                        }
                     }
                 }
             }
@@ -783,14 +787,24 @@ extension WorkflowController {
             return true
         }
 
-        let askDecisionResult = try await decideAskSelection(
-            selectedText: askContextText,
-            spokenInstruction: transcribedText,
-            personaPrompt: personaPrompt,
-            editableTarget: askEditableTargetContext(for: selectionSnapshot),
-            appSystemContext: AppSystemContext(snapshot: selectionSnapshot),
-            sessionID: sessionID,
-        )
+        let askDecisionResult: AskSelectionDecisionResult
+        do {
+            askDecisionResult = try await decideAskSelection(
+                selectedText: askContextText,
+                spokenInstruction: transcribedText,
+                personaPrompt: personaPrompt,
+                editableTarget: askEditableTargetContext(for: selectionSnapshot),
+                appSystemContext: AppSystemContext(snapshot: selectionSnapshot),
+                sessionID: sessionID,
+            )
+        } catch let error as LLMConfigurationError {
+            completeAskFlowAfterLLMConfigurationFallback(
+                error: error,
+                record: &record,
+                pipelineTiming: &pipelineTiming,
+            )
+            return false
+        }
         try await applyLegacyAskDecision(
             askDecisionResult,
             question: transcribedText,
@@ -889,14 +903,24 @@ extension WorkflowController {
             return true
         }
 
-        let askDecisionResult = try await decideAskSelection(
-            selectedText: askContextText,
-            spokenInstruction: transcribedText,
-            personaPrompt: personaPrompt,
-            editableTarget: askEditableTargetContext(for: selectionSnapshot),
-            appSystemContext: AppSystemContext(snapshot: selectionSnapshot),
-            sessionID: sessionID,
-        )
+        let askDecisionResult: AskSelectionDecisionResult
+        do {
+            askDecisionResult = try await decideAskSelection(
+                selectedText: askContextText,
+                spokenInstruction: transcribedText,
+                personaPrompt: personaPrompt,
+                editableTarget: askEditableTargetContext(for: selectionSnapshot),
+                appSystemContext: AppSystemContext(snapshot: selectionSnapshot),
+                sessionID: sessionID,
+            )
+        } catch let error as LLMConfigurationError {
+            completeAskFlowAfterLLMConfigurationFallback(
+                error: error,
+                record: &record,
+                pipelineTiming: &pipelineTiming,
+            )
+            return false
+        }
         try await applyLegacyAskDecision(
             askDecisionResult,
             question: transcribedText,
@@ -907,6 +931,21 @@ extension WorkflowController {
             sessionID: sessionID,
         )
         return false
+    }
+
+    private func completeAskFlowAfterLLMConfigurationFallback(
+        error: LLMConfigurationError,
+        record: inout HistoryRecord,
+        pipelineTiming: inout HistoryPipelineTiming,
+    ) {
+        ErrorLogStore.shared.log(
+            "Ask flow skipped because LLM configuration is unavailable: \(error.localizedDescription)",
+        )
+        pipelineTiming.llmProcessingCompletedAt = Date()
+        record.pipelineTiming = pipelineTiming
+        record.processingStatus = .skipped
+        record.applyStatus = .skipped
+        record.applyMessage = L("workflow.llmNotConfigured.askSkipped")
     }
 
     private func launchDetachedAgentAskTask(
@@ -945,13 +984,21 @@ extension WorkflowController {
                 )
             } catch let error as LLMConfigurationError {
                 guard var record = historyStore.record(id: recordID) else { return }
-                let message = error.localizedDescription
-                ErrorLogStore.shared.log("Processing failed: \(message)")
-                markFailure(&record, message: message)
+                var pipelineTiming = record.pipelineTiming ?? HistoryPipelineTiming()
+                completeAskFlowAfterLLMConfigurationFallback(
+                    error: error,
+                    record: &record,
+                    pipelineTiming: &pipelineTiming,
+                )
                 saveHistoryRecord(record)
-                logPipelineEvent("pipeline-failed", for: record)
+                logPipelineEvent("pipeline-completed", for: record)
                 UsageStatsStore.shared.recordSession(record: record)
                 enforceHistoryRetentionPolicy()
+                await MainActor.run {
+                    guard self.processingSessionID == sessionID else { return }
+                    self.lastRetryableFailureRecord = nil
+                    self.appState.setStatus(.idle)
+                }
             } catch is CancellationError {
                 await failDetachedAgentAskTask(
                     recordID: recordID,
@@ -1259,6 +1306,13 @@ extension WorkflowController {
                 // Service overloaded (HTTP 529): all retries exhausted; insert transcript as
                 // fallback so the user isn't left with an error dialog.
                 ErrorLogStore.shared.log("LLM service overloaded after retries, using transcript as fallback")
+                pipelineTiming.llmProcessingCompletedAt = Date()
+                rewriteOutput = transcribedText
+                record.personaResultText = transcribedText
+            } catch let error as LLMConfigurationError {
+                ErrorLogStore.shared.log(
+                    "LLM configuration unavailable (\(error.localizedDescription)), using transcript as fallback",
+                )
                 pipelineTiming.llmProcessingCompletedAt = Date()
                 rewriteOutput = transcribedText
                 record.personaResultText = transcribedText
