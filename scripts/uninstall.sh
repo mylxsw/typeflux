@@ -209,10 +209,6 @@ if ! $KEEP_BUILD; then
   remove_path "$ROOT_DIR/coverage-report"
   remove_path "$ROOT_DIR/coverage.lcov"
   remove_path "$ROOT_DIR/Typeflux.xcodeproj"
-  # Release packaging output (ignored if absent)
-  while IFS= read -r -d '' f; do
-    remove_path "$f"
-  done < <(find "$ROOT_DIR" -maxdepth 2 \( -name 'Typeflux*.zip' -o -name 'Typeflux*.dmg' \) -print0 2>/dev/null)
   # Xcode DerivedData for this project (best-effort, name is hashed so prefix-match).
   if [[ -d "$HOME/Library/Developer/Xcode/DerivedData" ]]; then
     while IFS= read -r -d '' f; do
