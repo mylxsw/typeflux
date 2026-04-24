@@ -34,9 +34,14 @@ final class GlobeKeyPreferenceTests: XCTestCase {
         XCTAssertEqual(SystemGlobeKeyPreferenceReader.preferenceDomain, "com.apple.HIToolbox")
         XCTAssertEqual(SystemGlobeKeyPreferenceReader.preferenceKey, "AppleFnUsageType")
     }
+
+    func testMissingUsageIsNotReady() {
+        let reader = FixedGlobeKeyReader(usage: nil)
+        XCTAssertFalse(reader.isReadyForHotkey)
+    }
 }
 
 private struct FixedGlobeKeyReader: GlobeKeyPreferenceReading {
-    let usage: GlobeKeyUsage
-    func currentUsage() -> GlobeKeyUsage { usage }
+    let usage: GlobeKeyUsage?
+    func currentUsage() -> GlobeKeyUsage? { usage }
 }

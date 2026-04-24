@@ -13,7 +13,7 @@ enum GlobeKeyUsage: Int {
 /// Reads the current macOS setting for the Globe key behavior. Injectable so
 /// tests can simulate each state without touching real preferences.
 protocol GlobeKeyPreferenceReading {
-    func currentUsage() -> GlobeKeyUsage
+    func currentUsage() -> GlobeKeyUsage?
 }
 
 extension GlobeKeyPreferenceReading {
@@ -23,18 +23,23 @@ extension GlobeKeyPreferenceReading {
     }
 }
 
-/// Production reader that queries `com.apple.HIToolbox` via `CFPreferencesCopyAppValue`.
-/// A missing value is treated as `.doNothing` — that's the factory default on
-/// macOS 13+ and the key is only written when the user picks a non-default option.
+/// Production reader that queries `com.apple.HIToolbox` via `CFPreferencesCopyValue`.
+/// Only an explicit `.doNothing` value is treated as ready. Missing or unknown
+/// values are reported as `nil` so onboarding does not show a false positive.
 struct SystemGlobeKeyPreferenceReader: GlobeKeyPreferenceReading {
     static let preferenceDomain = "com.apple.HIToolbox"
     static let preferenceKey = "AppleFnUsageType"
 
-    func currentUsage() -> GlobeKeyUsage {
-        let raw = CFPreferencesCopyAppValue(
+    func currentUsage() -> GlobeKeyUsage? {
+        let raw = CFPreferencesCopyValue(
             Self.preferenceKey as CFString,
             Self.preferenceDomain as CFString,
-        ) as? Int
-        return GlobeKeyUsage(rawValue: raw ?? GlobeKeyUsage.doNothing.rawValue) ?? .doNothing
+            kCFPreferencesCurrentUser,
+            kCFPreferencesAnyHost,
+        )
+        if let number = raw as? NSNumber {
+            return GlobeKeyUsage(rawValue: number.intValue)
+        }
+        return nil
     }
 }

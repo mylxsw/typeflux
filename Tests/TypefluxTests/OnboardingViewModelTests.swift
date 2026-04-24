@@ -334,16 +334,28 @@ final class OnboardingViewModelTests: XCTestCase {
         viewModel.refreshGlobeKeyState()
         XCTAssertFalse(viewModel.isGlobeKeyReady)
     }
+
+    @MainActor
+    func testUnknownGlobeKeyStateIsNotReady() {
+        let reader = StubGlobeKeyPreferenceReader(usage: nil)
+        let viewModel = OnboardingViewModel(
+            settingsStore: store,
+            globeKeyReader: reader,
+            onComplete: {},
+        )
+
+        XCTAssertFalse(viewModel.isGlobeKeyReady)
+    }
 }
 
 private final class StubGlobeKeyPreferenceReader: GlobeKeyPreferenceReading {
-    var usage: GlobeKeyUsage
+    var usage: GlobeKeyUsage?
 
-    init(usage: GlobeKeyUsage) {
+    init(usage: GlobeKeyUsage?) {
         self.usage = usage
     }
 
-    func currentUsage() -> GlobeKeyUsage {
+    func currentUsage() -> GlobeKeyUsage? {
         usage
     }
 }
