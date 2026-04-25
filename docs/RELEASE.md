@@ -254,7 +254,7 @@ If you publish a release manually, prefer attaching both:
 
 ## Release Checklist
 
-- [ ] Version updated in `app/Info.plist`
+- [ ] Version updated with `./scripts/set_version.sh <version>`
 - [ ] `CHANGELOG.md` updated
 - [ ] `swift test` passes
 - [ ] `make release-notarize` completes successfully
