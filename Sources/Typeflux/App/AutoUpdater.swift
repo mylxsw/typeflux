@@ -150,7 +150,7 @@ final class AutoUpdater {
         state = .downloading
 
         do {
-            let (tempFileURL, _) = try await URLSession.shared.download(from: downloadURL)
+            let tempFileURL = try await Self.downloadUpdate(from: downloadURL)
 
             state = .installing
 
@@ -163,6 +163,32 @@ final class AutoUpdater {
             state = .idle
             showCheckFailedAlert(message: error.localizedDescription)
         }
+    }
+
+    private static func downloadUpdate(from downloadURL: URL) async throws -> URL {
+        do {
+            return try await downloadFile(from: downloadURL)
+        } catch {
+            guard let proxyURL = GitHubProxyDownloadURL.proxyURL(for: downloadURL) else {
+                throw error
+            }
+
+            NetworkDebugLogger.logError(
+                context: "Auto update download failed; retrying through GitHub proxy",
+                error: error,
+            )
+            return try await downloadFile(from: proxyURL)
+        }
+    }
+
+    private static func downloadFile(from url: URL) async throws -> URL {
+        let (tempFileURL, response) = try await URLSession.shared.download(from: url)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<300).contains(httpResponse.statusCode)
+        else {
+            throw UpdateError.downloadFailed
+        }
+        return tempFileURL
     }
 
     // Runs off the main actor — only does file I/O and process launching.
@@ -236,12 +262,23 @@ final class AutoUpdater {
 private enum UpdateError: LocalizedError {
     case extractionFailed
     case appNotFound
+    case downloadFailed
 
     var errorDescription: String? {
         switch self {
         case .extractionFailed: L("updater.install.extractionFailed")
         case .appNotFound: L("updater.install.appNotFound")
+        case .downloadFailed: L("updater.download.failed")
         }
+    }
+}
+
+enum GitHubProxyDownloadURL {
+    static let proxyBaseURL = URL(string: "https://gh-proxy.com")!
+
+    static func proxyURL(for url: URL) -> URL? {
+        guard url.host?.lowercased() == "github.com" else { return nil }
+        return URL(string: "\(proxyBaseURL.absoluteString)/\(url.absoluteString)")
     }
 }
 

@@ -205,6 +205,7 @@
 "updater.latest.message" = "最新バージョンの Typeflux を実行しています。";
 "updater.checkFailed.title" = "アップデートの確認に失敗";
 "updater.checkFailed.noData" = "アップデート情報を取得できませんでした。";
+"updater.download.failed" = "アップデートのダウンロードに失敗しました。";
 "updater.install.extractionFailed" = "アップデートアーカイブの展開に失敗しました。";
 "updater.install.appNotFound" = "アップデートアーカイブ内にアプリケーションが見つかりませんでした。";
 

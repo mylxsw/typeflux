@@ -207,6 +207,7 @@
 "updater.latest.message" = "你当前运行的是最新版本的 Typeflux。";
 "updater.checkFailed.title" = "检查更新失败";
 "updater.checkFailed.noData" = "无法获取更新信息。";
+"updater.download.failed" = "下载更新失败。";
 "updater.install.extractionFailed" = "解压更新包失败。";
 "updater.install.appNotFound" = "在更新包中找不到应用程序。";
 

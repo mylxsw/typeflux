@@ -207,6 +207,7 @@
 "updater.latest.message" = "You are running the latest version of Typeflux.";
 "updater.checkFailed.title" = "Update Check Failed";
 "updater.checkFailed.noData" = "Unable to retrieve update information.";
+"updater.download.failed" = "Failed to download the update.";
 "updater.install.extractionFailed" = "Failed to extract the update archive.";
 "updater.install.appNotFound" = "Could not find the application bundle in the update archive.";
 
