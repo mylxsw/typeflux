@@ -10,6 +10,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private let outputMuter: SystemAudioOutputMuting
     private let sleep: @Sendable (Duration) async -> Void
     private let writeCoordinator = AudioBufferWriteCoordinator()
+    private let lifecycleLock = NSLock()
     private let stateCondition = NSCondition()
     private var audioFile: AVAudioFile?
     private var startedAt: Date?
@@ -17,6 +18,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private var audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
     private var muteTask: Task<Void, Never>?
     private var isRecording = false
+    private var isTapInstalled = false
     private var activeBufferCallbacks = 0
 
     init(
@@ -37,6 +39,9 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         levelHandler: @escaping (Float) -> Void,
         audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?,
     ) throws {
+        lifecycleLock.lock()
+        defer { lifecycleLock.unlock() }
+
         stopInternal()
 
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -74,18 +79,28 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         inputNode.installTap(onBus: 0, bufferSize: 2048, format: inputFormat) { [weak self] buffer, _ in
             self?.handleInputBuffer(buffer)
         }
+        isTapInstalled = true
 
-        engine.prepare()
-        try engine.start()
-        if settingsStore.muteSystemOutputDuringRecording {
-            scheduleMutedSessionStart()
+        do {
+            engine.prepare()
+            try engine.start()
+        } catch {
+            stopInternal()
+            throw error
         }
+
         stateCondition.lock()
         isRecording = true
         stateCondition.unlock()
+        if settingsStore.muteSystemOutputDuringRecording {
+            scheduleMutedSessionStart()
+        }
     }
 
     func stop() throws -> AudioFile {
+        lifecycleLock.lock()
+        defer { lifecycleLock.unlock() }
+
         stateCondition.lock()
         let currentAudioFile = audioFile
         let currentStartedAt = startedAt
@@ -96,7 +111,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             throw NSError(domain: "AudioRecorder", code: 1)
         }
 
-        engine.inputNode.removeTap(onBus: 0)
+        removeInputTapIfInstalled()
         engine.stop()
 
         stateCondition.lock()
@@ -126,11 +141,11 @@ final class AVFoundationAudioRecorder: AudioRecorder {
 
     private func stopInternal() {
         stateCondition.lock()
-        let currentlyRecording = isRecording
+        let shouldStopEngine = isRecording || isTapInstalled
         stateCondition.unlock()
 
-        if currentlyRecording {
-            engine.inputNode.removeTap(onBus: 0)
+        if shouldStopEngine {
+            removeInputTapIfInstalled()
             engine.stop()
         }
 
@@ -152,6 +167,12 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         muteTask?.cancel()
         muteTask = nil
         outputMuter.endMutedSession()
+    }
+
+    private func removeInputTapIfInstalled() {
+        guard isTapInstalled else { return }
+        engine.inputNode.removeTap(onBus: 0)
+        isTapInstalled = false
     }
 
     private func scheduleMutedSessionStart() {
