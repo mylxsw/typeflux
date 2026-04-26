@@ -133,6 +133,17 @@ See [CLAUDE.md](./CLAUDE.md) for the full development guide.
 
 ---
 
+## Community
+
+Join the community to share feedback, ask questions, and follow development updates:
+
+- [Join Discord](https://discord.com/invite/Vr5389YrN)
+- WeChat group:
+
+  <img src="./assets/wechat-group-20260426.jpg" alt="Typeflux WeChat group QR code" width="260">
+
+---
+
 ## Contributing
 
 Typeflux is a completely open-source project. We believe great tools should belong to everyone.
