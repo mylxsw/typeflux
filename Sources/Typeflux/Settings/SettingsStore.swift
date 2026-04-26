@@ -549,6 +549,11 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "vocabulary.automaticCollection.enabled") }
     }
 
+    var inputContextOptimizationEnabled: Bool {
+        get { defaults.object(forKey: "inputContext.optimization.enabled") as? Bool ?? false }
+        set { defaults.set(newValue, forKey: "inputContext.optimization.enabled") }
+    }
+
     var activationHotkeyJSON: String {
         get { defaults.string(forKey: "hotkey.activation.json") ?? "" }
         set { defaults.set(newValue, forKey: "hotkey.activation.json") }

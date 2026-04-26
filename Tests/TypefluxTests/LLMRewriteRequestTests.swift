@@ -35,4 +35,31 @@ final class LLMRewriteRequestTests: XCTestCase {
         XCTAssertNil(request.spokenInstruction)
         XCTAssertNil(request.personaPrompt)
     }
+
+    func testRewritePromptIncludesInputContextWhenProvided() {
+        let inputContext = InputContextSnapshot(
+            appName: "Notes",
+            bundleIdentifier: "com.apple.Notes",
+            role: "AXTextArea",
+            isEditable: true,
+            isFocusedTarget: true,
+            prefix: "Project Apollo will ship",
+            suffix: "after QA signs off",
+            selectedText: nil,
+        )
+        let request = LLMRewriteRequest(
+            mode: .rewriteTranscript,
+            sourceText: "next Friday",
+            spokenInstruction: nil,
+            personaPrompt: nil,
+            inputContext: inputContext,
+        )
+
+        let prompts = PromptCatalog.rewritePrompts(for: request)
+
+        XCTAssertTrue(prompts.system.contains("<input_context>"))
+        XCTAssertTrue(prompts.user.contains("<input_context>"))
+        XCTAssertTrue(prompts.user.contains("Project Apollo will ship"))
+        XCTAssertTrue(prompts.user.contains("after QA signs off"))
+    }
 }

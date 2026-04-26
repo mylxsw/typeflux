@@ -760,6 +760,9 @@
 "settings.advanced.localSTTMemoryOptimization.title" = "内存优化";
 "settings.advanced.localSTTMemoryOptimization.subtitle" = "启用后，长时间未使用的本地语音模型会自动从内存中卸载，以减少资源占用。再次使用时会重新加载，首次响应可能会增加 3 到 5 秒。";
 
+"settings.advanced.inputContextOptimization.title" = "使用输入框上下文";
+"settings.advanced.inputContextOptimization.subtitle" = "临时读取光标附近的一小段文字，帮助优化连续输入、专有名词和模糊词。不会保存到历史记录。";
+
 "settings.advanced.agentFramework.title" = "启用 Agent 框架";
 "settings.advanced.agentFramework.subtitle" = "为「随便问」功能启用多轮 Agent 循环，支持工具调用和 MCP 服务器集成。";
 

@@ -87,6 +87,7 @@ final class WorkflowController {
     var recordingTimeoutTask: Task<Void, Never>?
     var processingTimeoutTask: Task<Void, Never>?
     var selectionTask: Task<TextSelectionSnapshot, Never>?
+    var inputContextTask: Task<InputContextSnapshot?, Never>?
     var processingTask: Task<Void, Never>?
     var automaticVocabularyObservationTask: Task<Void, Never>?
     /// Latest snapshot of the currently running automatic-vocabulary observation.
@@ -344,6 +345,8 @@ final class WorkflowController {
         }
         selectionTask?.cancel()
         selectionTask = nil
+        inputContextTask?.cancel()
+        inputContextTask = nil
         Task { @MainActor in
             appState.setStatus(.idle)
             overlayController.dismiss(after: 0.3)
@@ -537,6 +540,20 @@ final class WorkflowController {
         selectionTask = Task { [weak self] in
             guard let self else { return TextSelectionSnapshot() }
             return await textInjector.getSelectionSnapshot()
+        }
+        if settingsStore.inputContextOptimizationEnabled {
+            let selectionTask = selectionTask
+            inputContextTask = Task { [weak self] in
+                guard let self else { return nil }
+                let inputSnapshot = await textInjector.currentInputTextSnapshot()
+                let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
+                return InputContextSnapshot.make(
+                    inputSnapshot: inputSnapshot,
+                    selectionSnapshot: selectionSnapshot,
+                )
+            }
+        } else {
+            inputContextTask = nil
         }
 
         do {

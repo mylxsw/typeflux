@@ -760,6 +760,9 @@
 "settings.advanced.localSTTMemoryOptimization.title" = "Memory Optimization";
 "settings.advanced.localSTTMemoryOptimization.subtitle" = "Unload inactive local speech models from memory to reduce resource usage. The next request may take 3 to 5 seconds while the model reloads.";
 
+"settings.advanced.inputContextOptimization.title" = "Use input context";
+"settings.advanced.inputContextOptimization.subtitle" = "Temporarily read a short snippet around the cursor to improve dictation continuity, proper nouns, and ambiguous words. The snippet is not saved to history.";
+
 "settings.advanced.agentFramework.title" = "Enable Agent framework";
 "settings.advanced.agentFramework.subtitle" = "Use the multi-turn Agent loop for Ask Anything. Supports tool calling and MCP server integration.";
 

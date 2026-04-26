@@ -758,6 +758,9 @@
 "settings.advanced.localSTTMemoryOptimization.title" = "記憶體優化";
 "settings.advanced.localSTTMemoryOptimization.subtitle" = "啟用後，長時間未使用的本地語音模型會自動從記憶體中卸載，以降低資源占用。再次使用時會重新載入，首次回應可能會增加 3 到 5 秒。";
 
+"settings.advanced.inputContextOptimization.title" = "使用輸入框上下文";
+"settings.advanced.inputContextOptimization.subtitle" = "暫時讀取游標附近的一小段文字，協助優化連續輸入、專有名詞與模糊詞。不會儲存到歷史記錄。";
+
 "settings.advanced.agentFramework.title" = "啟用 Agent 框架";
 "settings.advanced.agentFramework.subtitle" = "為「隨便問」功能啟用多輪 Agent 迴圈，支援工具呼叫和 MCP 伺服器整合。";
 

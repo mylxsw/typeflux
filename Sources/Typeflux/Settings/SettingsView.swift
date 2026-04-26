@@ -1389,6 +1389,24 @@ struct StudioView: View {
                         Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                         StudioSettingRow(
+                            title: L("settings.advanced.inputContextOptimization.title"),
+                            subtitle: L("settings.advanced.inputContextOptimization.subtitle"),
+                            badge: "Beta",
+                        ) {
+                            Toggle(
+                                "",
+                                isOn: Binding(
+                                    get: { viewModel.inputContextOptimizationEnabled },
+                                    set: viewModel.setInputContextOptimizationEnabled,
+                                ),
+                            )
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                        }
+
+                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                        StudioSettingRow(
                             title: L("settings.advanced.agentFramework.title"),
                             subtitle: L("settings.advanced.agentFramework.subtitle"),
                             badge: "Beta",

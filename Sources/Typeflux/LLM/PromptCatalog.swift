@@ -252,6 +252,7 @@ enum PromptCatalog {
             let sourceTextRule = languageConsistencyRule(for: "selected text", personaPrompt: request.personaPrompt)
             let sourceSection = xmlSection(tag: "selected_text", content: request.sourceText)
             let instructionSection = xmlSection(tag: "spoken_instruction", content: spokenInstruction)
+            let inputContextSection = inputContextSection(for: request.inputContext)
             let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let outputRequirement = if !personaPrompt.isEmpty {
                 """
@@ -281,13 +282,14 @@ enum PromptCatalog {
                 User prompt structure:
                 - "<selected_text>" is the source content to edit.
                 - "<spoken_instruction>" is the user's edit intent and has the highest priority.
+                - "<input_context>" is optional nearby text from the active input field. Use it only to understand local context; do not copy, summarize, or disclose it unless the user explicitly asked for that content.
                 - "<output_requirements>" contains system-authored processing rules, including how persona constraints should be applied.
                 - "<persona_definition>" is a style constraint, not source content.
                 """,
                 user: """
                 \(sourceSection)
 
-                \(instructionSection)\(outputRequirement)
+                \(instructionSection)\(inputContextSection)\(outputRequirement)
 
                 \(sourceTextRule)
 
@@ -298,6 +300,7 @@ enum PromptCatalog {
         case .rewriteTranscript:
             let sourceTextRule = languageConsistencyRule(for: "source text", personaPrompt: request.personaPrompt)
             let transcriptSection = xmlSection(tag: "raw_transcript", content: request.sourceText)
+            let inputContextSection = inputContextSection(for: request.inputContext)
             let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let personaSection = personaPrompt.isEmpty ? "" : """
 
@@ -312,10 +315,11 @@ enum PromptCatalog {
 
                 User prompt structure:
                 - "<raw_transcript>" is the source content to rewrite.
+                - "<input_context>" is optional nearby text from the active input field. Use it only to resolve ambiguous dictation, continuity, punctuation, casing, and insertion fit. Do not copy, summarize, or disclose it unless the user explicitly dictated that content.
                 - "<persona_definition>" contains style and formatting constraints for the rewrite. It is not source content.
                 """,
                 user: """
-                \(transcriptSection)\(personaSection)
+                \(transcriptSection)\(inputContextSection)\(personaSection)
 
                 \(sourceTextRule)
 
@@ -330,6 +334,34 @@ enum PromptCatalog {
                 """,
             )
         }
+    }
+
+    private static func inputContextSection(for context: InputContextSnapshot?) -> String {
+        guard let context, context.hasContent else { return "" }
+
+        var lines: [String] = []
+        if let appName = context.appName?.trimmingCharacters(in: .whitespacesAndNewlines), !appName.isEmpty {
+            lines.append("App: \(appName)")
+        }
+        if let role = context.role?.trimmingCharacters(in: .whitespacesAndNewlines), !role.isEmpty {
+            lines.append("Focused role: \(role)")
+        }
+        lines.append("Editable target: \(context.isEditable ? "yes" : "no")")
+        lines.append("Focused target: \(context.isFocusedTarget ? "yes" : "no")")
+        if !context.prefix.isEmpty {
+            lines.append("Text before cursor:\n\(context.prefix)")
+        }
+        if let selectedText = context.selectedText, !selectedText.isEmpty {
+            lines.append("Selected text:\n\(selectedText)")
+        }
+        if !context.suffix.isEmpty {
+            lines.append("Text after cursor:\n\(context.suffix)")
+        }
+
+        return "\n\n" + xmlSection(
+            tag: "input_context",
+            content: lines.joined(separator: "\n\n"),
+        )
     }
 
     static func automaticVocabularyDecisionPrompts(

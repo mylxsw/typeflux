@@ -758,6 +758,9 @@
 "settings.advanced.localSTTMemoryOptimization.title" = "메모리 최적화";
 "settings.advanced.localSTTMemoryOptimization.subtitle" = "활성화하면 한동안 사용하지 않은 로컬 음성 모델을 메모리에서 자동으로 내려 자원 사용량을 줄입니다. 다시 사용할 때는 모델을 다시 불러오므로 첫 응답이 3~5초 정도 늦어질 수 있습니다.";
 
+"settings.advanced.inputContextOptimization.title" = "입력 컨텍스트 사용";
+"settings.advanced.inputContextOptimization.subtitle" = "커서 주변의 짧은 텍스트를 일시적으로 읽어 연속 입력, 고유명사, 모호한 단어를 더 잘 처리합니다. 기록에는 저장되지 않습니다.";
+
 "settings.advanced.agentFramework.title" = "에이전트 프레임워크 활성화";
 "settings.advanced.agentFramework.subtitle" = "무엇이든 물어보세요에 다중 턴 에이전트 루프를 사용하세요. 도구 호출 및 MCP 서버 통합을 지원합니다.";
 

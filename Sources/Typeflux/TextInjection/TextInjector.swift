@@ -42,6 +42,7 @@ struct CurrentInputTextSnapshot {
     var bundleIdentifier: String?
     var role: String?
     var text: String?
+    var selectedRange: CFRange?
     var isEditable: Bool = false
     var isFocusedTarget: Bool = false
     var failureReason: String?
