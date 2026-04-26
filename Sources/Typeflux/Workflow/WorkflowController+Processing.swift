@@ -326,6 +326,8 @@ extension WorkflowController {
             self.recordingIntent = .dictation
             let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
             selectionTask = nil
+            let inputContext = await inputContextTask?.value
+            inputContextTask = nil
 
             let audioAnalysis = try AudioContentAnalyzer.analyze(fileURL: audioFile.fileURL)
             let validatedAudioFile = AudioFile(
@@ -410,6 +412,7 @@ extension WorkflowController {
                     selectionSnapshot: selectionSnapshot,
                     selectedText: selectedText,
                     askContextText: askContextText,
+                    inputContext: inputContext,
                     personaPrompt: personaPrompt,
                     recordingIntent: recordingIntent,
                     sessionID: sessionID,
@@ -497,6 +500,7 @@ extension WorkflowController {
             ),
             selectedText: selectedText,
             askContextText: selectedText,
+            inputContext: nil,
             personaPrompt: personaPrompt,
             recordingIntent: mutableRecord.mode == .editSelection || mutableRecord.mode == .askAnswer
                 ? .askSelection
@@ -513,6 +517,7 @@ extension WorkflowController {
         selectionSnapshot: TextSelectionSnapshot,
         selectedText: String?,
         askContextText: String?,
+        inputContext: InputContextSnapshot?,
         personaPrompt: String?,
         recordingIntent: RecordingIntent,
         sessionID: UUID,
@@ -550,6 +555,7 @@ extension WorkflowController {
                 && settingsStore.llmRemoteProvider == .typefluxCloud
                 && recordingIntent == .dictation
                 && !multimodalHandlesPersona
+                && inputContext == nil
                 && personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
 
             let transcribedText: String
@@ -632,6 +638,7 @@ extension WorkflowController {
                     transcribedText: transcribedText,
                     personaPrompt: personaPrompt,
                     selectionSnapshot: selectionSnapshot,
+                    inputContext: inputContext,
                     multimodalHandlesPersona: multimodalHandlesPersona,
                     mergedLLMResult: mergedLLMResult,
                     sessionID: sessionID,
@@ -1229,6 +1236,7 @@ extension WorkflowController {
         transcribedText: String,
         personaPrompt: String,
         selectionSnapshot: TextSelectionSnapshot,
+        inputContext: InputContextSnapshot?,
         multimodalHandlesPersona: Bool,
         mergedLLMResult: String? = nil,
         sessionID: UUID,
@@ -1283,6 +1291,7 @@ extension WorkflowController {
                         spokenInstruction: nil,
                         personaPrompt: personaPrompt,
                         appSystemContext: AppSystemContext(snapshot: selectionSnapshot),
+                        inputContext: inputContext,
                     ),
                     sessionID: sessionID,
                     timeout: Self.llmTimeoutAfterTranscriptionSeconds,

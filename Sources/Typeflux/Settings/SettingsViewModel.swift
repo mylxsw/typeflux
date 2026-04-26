@@ -112,6 +112,7 @@ final class StudioViewModel: ObservableObject {
     @Published var localOptimizationEnabled: Bool
     @Published var appleSpeechFallback: Bool
     @Published var automaticVocabularyCollectionEnabled: Bool
+    @Published var inputContextOptimizationEnabled: Bool
     @Published var autoUpdateEnabled: Bool
 
     @Published var stubbornPasteFallbackEnabled: Bool
@@ -280,6 +281,7 @@ final class StudioViewModel: ObservableObject {
         localOptimizationEnabled = settingsStore.localOptimizationEnabled
         appleSpeechFallback = settingsStore.useAppleSpeechFallback
         automaticVocabularyCollectionEnabled = settingsStore.automaticVocabularyCollectionEnabled
+        inputContextOptimizationEnabled = settingsStore.inputContextOptimizationEnabled
         autoUpdateEnabled = settingsStore.autoUpdateEnabled
         stubbornPasteFallbackEnabled = settingsStore.stubbornPasteFallbackEnabled
         agentFrameworkEnabled = settingsStore.agentFrameworkEnabled
@@ -1094,6 +1096,11 @@ final class StudioViewModel: ObservableObject {
     func setAutomaticVocabularyCollectionEnabled(_ value: Bool) {
         automaticVocabularyCollectionEnabled = value
         settingsStore.automaticVocabularyCollectionEnabled = value
+    }
+
+    func setInputContextOptimizationEnabled(_ value: Bool) {
+        inputContextOptimizationEnabled = value
+        settingsStore.inputContextOptimizationEnabled = value
     }
 
     func setAutoUpdateEnabled(_ value: Bool) {
