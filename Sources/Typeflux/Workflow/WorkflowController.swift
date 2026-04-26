@@ -547,10 +547,16 @@ final class WorkflowController {
                 guard let self else { return nil }
                 let inputSnapshot = await textInjector.currentInputTextSnapshot()
                 let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
-                return InputContextSnapshot.make(
+                let context = InputContextSnapshot.make(
                     inputSnapshot: inputSnapshot,
                     selectionSnapshot: selectionSnapshot,
                 )
+                InputContextSnapshot.logCapture(
+                    inputSnapshot: inputSnapshot,
+                    selectionSnapshot: selectionSnapshot,
+                    context: context,
+                )
+                return context
             }
         } else {
             inputContextTask = nil

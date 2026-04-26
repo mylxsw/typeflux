@@ -25,7 +25,7 @@ struct InputContextSnapshot: Equatable {
         suffixLimit: Int = defaultSuffixLimit,
         selectionLimit: Int = defaultSelectionLimit,
     ) -> InputContextSnapshot? {
-        guard inputSnapshot.isEditable, inputSnapshot.isFocusedTarget else { return nil }
+        guard inputSnapshot.isEditable else { return nil }
         guard let text = inputSnapshot.text, !text.isEmpty else { return nil }
         guard
             let selectedRange = inputSnapshot.selectedRange,
@@ -47,12 +47,63 @@ struct InputContextSnapshot: Equatable {
             bundleIdentifier: inputSnapshot.bundleIdentifier ?? selectionSnapshot.bundleIdentifier,
             role: inputSnapshot.role ?? selectionSnapshot.role,
             isEditable: inputSnapshot.isEditable,
-            isFocusedTarget: inputSnapshot.isFocusedTarget,
+            isFocusedTarget: inputSnapshot.isFocusedTarget || selectionSnapshot.isFocusedTarget,
             prefix: prefix,
             suffix: suffix,
             selectedText: selected,
         )
         return snapshot.hasContent ? snapshot : nil
+    }
+
+    static func logCapture(
+        inputSnapshot: CurrentInputTextSnapshot,
+        selectionSnapshot: TextSelectionSnapshot,
+        context: InputContextSnapshot?,
+    ) {
+        let selectedRangeDescription = inputSnapshot.selectedRange.map {
+            "location=\($0.location), length=\($0.length)"
+        } ?? "<nil>"
+        let status = context == nil ? "skipped" : "captured"
+        let skipReason = context == nil
+            ? inputContextSkipReason(inputSnapshot: inputSnapshot)
+            : "<none>"
+
+        NetworkDebugLogger.logMessage(
+            """
+            [InputContext]
+            status: \(status)
+            skipReason: \(skipReason)
+            inputFailureReason: \(inputSnapshot.failureReason ?? "<nil>")
+            appName: \(inputSnapshot.processName ?? selectionSnapshot.processName ?? "<nil>")
+            bundleIdentifier: \(inputSnapshot.bundleIdentifier ?? selectionSnapshot.bundleIdentifier ?? "<nil>")
+            role: \(inputSnapshot.role ?? selectionSnapshot.role ?? "<nil>")
+            inputIsEditable: \(inputSnapshot.isEditable)
+            inputIsFocusedTarget: \(inputSnapshot.isFocusedTarget)
+            selectionIsFocusedTarget: \(selectionSnapshot.isFocusedTarget)
+            selectedRange: \(selectedRangeDescription)
+            inputTextLength: \(inputSnapshot.text?.count ?? 0)
+            selectedTextLength: \(context?.selectedText?.count ?? 0)
+            prefix(\(context?.prefix.count ?? 0)):
+            \(context?.prefix ?? "")
+            selectedText(\(context?.selectedText?.count ?? 0)):
+            \(context?.selectedText ?? "")
+            suffix(\(context?.suffix.count ?? 0)):
+            \(context?.suffix ?? "")
+            """,
+        )
+    }
+
+    private static func inputContextSkipReason(inputSnapshot: CurrentInputTextSnapshot) -> String {
+        if !inputSnapshot.isEditable {
+            return inputSnapshot.failureReason ?? "focused-element-not-editable"
+        }
+        guard let text = inputSnapshot.text, !text.isEmpty else {
+            return inputSnapshot.failureReason ?? "missing-input-text"
+        }
+        guard inputSnapshot.selectedRange != nil else {
+            return "missing-selected-range"
+        }
+        return "invalid-selected-range-or-empty-context"
     }
 
     private static func stringRange(from cfRange: CFRange, in text: String) -> Range<String.Index>? {

@@ -2,7 +2,19 @@
 import XCTest
 
 final class InputContextSnapshotTests: XCTestCase {
-    func testMakeReturnsNilWhenFeatureCannotReadFocusedEditableText() {
+    func testMakeReturnsNilWhenInputIsNotEditable() {
+        let snapshot = CurrentInputTextSnapshot(
+            processName: "Notes",
+            text: "Hello world",
+            selectedRange: CFRange(location: 5, length: 0),
+            isEditable: false,
+            isFocusedTarget: false,
+        )
+
+        XCTAssertNil(InputContextSnapshot.make(inputSnapshot: snapshot, selectionSnapshot: TextSelectionSnapshot()))
+    }
+
+    func testMakeAllowsFocusedElementWhenFocusedAttributeIsFalse() {
         let snapshot = CurrentInputTextSnapshot(
             processName: "Notes",
             text: "Hello world",
@@ -11,7 +23,14 @@ final class InputContextSnapshotTests: XCTestCase {
             isFocusedTarget: false,
         )
 
-        XCTAssertNil(InputContextSnapshot.make(inputSnapshot: snapshot, selectionSnapshot: TextSelectionSnapshot()))
+        let context = InputContextSnapshot.make(
+            inputSnapshot: snapshot,
+            selectionSnapshot: TextSelectionSnapshot(),
+        )
+
+        XCTAssertEqual(context?.prefix, "Hello")
+        XCTAssertEqual(context?.suffix, " world")
+        XCTAssertFalse(context?.isFocusedTarget ?? true)
     }
 
     func testMakeSplitsTextAroundCursorAndAppliesLimits() {
