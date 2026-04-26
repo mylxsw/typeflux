@@ -33,6 +33,41 @@ final class InputContextSnapshotTests: XCTestCase {
         XCTAssertFalse(context?.isFocusedTarget ?? true)
     }
 
+    func testMakeFallsBackToSelectionWhenFocusedElementIsNotEditable() {
+        let input = CurrentInputTextSnapshot(
+            processName: "Zed",
+            bundleIdentifier: "dev.zed.Zed",
+            role: "AXWindow",
+            text: nil,
+            selectedRange: nil,
+            isEditable: false,
+            isFocusedTarget: true,
+            failureReason: "focused-element-not-editable",
+        )
+
+        var selection = TextSelectionSnapshot()
+        selection.processName = "Zed"
+        selection.bundleIdentifier = "dev.zed.Zed"
+        selection.selectedText = "Selected markdown paragraph"
+        selection.source = "clipboard-copy"
+        selection.isFocusedTarget = true
+
+        let context = InputContextSnapshot.make(
+            inputSnapshot: input,
+            selectionSnapshot: selection,
+            selectionLimit: 8,
+        )
+
+        XCTAssertEqual(context?.appName, "Zed")
+        XCTAssertEqual(context?.bundleIdentifier, "dev.zed.Zed")
+        XCTAssertEqual(context?.role, "AXWindow")
+        XCTAssertFalse(context?.isEditable ?? true)
+        XCTAssertTrue(context?.isFocusedTarget ?? false)
+        XCTAssertEqual(context?.prefix, "")
+        XCTAssertEqual(context?.selectedText, "Selected")
+        XCTAssertEqual(context?.suffix, "")
+    }
+
     func testMakeSplitsTextAroundCursorAndAppliesLimits() {
         let input = CurrentInputTextSnapshot(
             processName: "Notes",

@@ -25,13 +25,29 @@ struct InputContextSnapshot: Equatable {
         suffixLimit: Int = defaultSuffixLimit,
         selectionLimit: Int = defaultSelectionLimit,
     ) -> InputContextSnapshot? {
-        guard inputSnapshot.isEditable else { return nil }
-        guard let text = inputSnapshot.text, !text.isEmpty else { return nil }
+        guard inputSnapshot.isEditable else {
+            return selectionOnlyContext(
+                inputSnapshot: inputSnapshot,
+                selectionSnapshot: selectionSnapshot,
+                selectionLimit: selectionLimit,
+            )
+        }
+        guard let text = inputSnapshot.text, !text.isEmpty else {
+            return selectionOnlyContext(
+                inputSnapshot: inputSnapshot,
+                selectionSnapshot: selectionSnapshot,
+                selectionLimit: selectionLimit,
+            )
+        }
         guard
             let selectedRange = inputSnapshot.selectedRange,
             let range = stringRange(from: selectedRange, in: text)
         else {
-            return nil
+            return selectionOnlyContext(
+                inputSnapshot: inputSnapshot,
+                selectionSnapshot: selectionSnapshot,
+                selectionLimit: selectionLimit,
+            )
         }
 
         let selected = normalizedSelectedText(
@@ -63,9 +79,12 @@ struct InputContextSnapshot: Equatable {
         let selectedRangeDescription = inputSnapshot.selectedRange.map {
             "location=\($0.location), length=\($0.length)"
         } ?? "<nil>"
+        let selectionRangeDescription = selectionSnapshot.selectedRange.map {
+            "location=\($0.location), length=\($0.length)"
+        } ?? "<nil>"
         let status = context == nil ? "skipped" : "captured"
         let skipReason = context == nil
-            ? inputContextSkipReason(inputSnapshot: inputSnapshot)
+            ? inputContextSkipReason(inputSnapshot: inputSnapshot, selectionSnapshot: selectionSnapshot)
             : "<none>"
 
         NetworkDebugLogger.logMessage(
@@ -79,8 +98,11 @@ struct InputContextSnapshot: Equatable {
             role: \(inputSnapshot.role ?? selectionSnapshot.role ?? "<nil>")
             inputIsEditable: \(inputSnapshot.isEditable)
             inputIsFocusedTarget: \(inputSnapshot.isFocusedTarget)
+            selectionSource: \(selectionSnapshot.source)
+            selectionIsEditable: \(selectionSnapshot.isEditable)
             selectionIsFocusedTarget: \(selectionSnapshot.isFocusedTarget)
             selectedRange: \(selectedRangeDescription)
+            selectionSelectedRange: \(selectionRangeDescription)
             inputTextLength: \(inputSnapshot.text?.count ?? 0)
             selectedTextLength: \(context?.selectedText?.count ?? 0)
             prefix(\(context?.prefix.count ?? 0)):
@@ -93,7 +115,38 @@ struct InputContextSnapshot: Equatable {
         )
     }
 
-    private static func inputContextSkipReason(inputSnapshot: CurrentInputTextSnapshot) -> String {
+    private static func selectionOnlyContext(
+        inputSnapshot: CurrentInputTextSnapshot,
+        selectionSnapshot: TextSelectionSnapshot,
+        selectionLimit: Int,
+    ) -> InputContextSnapshot? {
+        guard let selected = normalizedSelectedText(
+            selectionSnapshot.selectedText,
+            fallback: "",
+            limit: selectionLimit,
+        ) else {
+            return nil
+        }
+
+        return InputContextSnapshot(
+            appName: inputSnapshot.processName ?? selectionSnapshot.processName,
+            bundleIdentifier: inputSnapshot.bundleIdentifier ?? selectionSnapshot.bundleIdentifier,
+            role: selectionSnapshot.role ?? inputSnapshot.role,
+            isEditable: inputSnapshot.isEditable || selectionSnapshot.isEditable,
+            isFocusedTarget: inputSnapshot.isFocusedTarget || selectionSnapshot.isFocusedTarget,
+            prefix: "",
+            suffix: "",
+            selectedText: selected,
+        )
+    }
+
+    private static func inputContextSkipReason(
+        inputSnapshot: CurrentInputTextSnapshot,
+        selectionSnapshot: TextSelectionSnapshot,
+    ) -> String {
+        guard selectionSnapshot.hasSelection else {
+            return inputSnapshot.failureReason ?? "missing-input-and-selection-context"
+        }
         if !inputSnapshot.isEditable {
             return inputSnapshot.failureReason ?? "focused-element-not-editable"
         }
