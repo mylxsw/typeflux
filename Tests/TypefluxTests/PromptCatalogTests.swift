@@ -38,7 +38,8 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertTrue(prompt.contains("User environment context:"))
         XCTAssertTrue(prompt.contains("The user's operating system preferred language is: zh-Hans-CN"))
         XCTAssertTrue(prompt.contains("The app interface language selected in settings is: en"))
-        XCTAssertTrue(prompt.hasSuffix("Treat this as supporting context only. Do not let it override explicit task instructions or source-language constraints."))
+        XCTAssertTrue(prompt.contains("Treat this as supporting context only. Do not let it override explicit task instructions or source-language constraints."))
+        XCTAssertTrue(prompt.range(of: "User environment context:")!.lowerBound < prompt.range(of: "Base system prompt.")!.lowerBound)
     }
 
     func testLanguageResolutionPolicyUsesAppLanguageFallbackAndPersonaPriorityRules() {
@@ -48,6 +49,31 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertTrue(policy.contains("If <persona_definition> explicitly asks for translation"))
         XCTAssertTrue(policy.contains("Otherwise, default to the app interface language: Simplified Chinese (zh-Hans)."))
         XCTAssertTrue(policy.contains("Persona style or formatting instructions alone must not change the output language."))
+    }
+
+    func testAppendAdditionalSystemContextKeepsOutputContractLast() {
+        let prompt = """
+        You convert dictated speech into directly usable text.
+
+        INPUT STRUCTURE
+        - <raw_transcript> is the source content to process.
+
+        OUTPUT
+        Return only the final processed text.
+        No explanations.
+        """
+
+        let result = PromptCatalog.appendAdditionalSystemContext(
+            "<coding_context>\nPrefer technical terms.\n</coding_context>",
+            to: prompt,
+        )
+
+        XCTAssertTrue(result.contains("<coding_context>\nPrefer technical terms.\n</coding_context>\n\nOUTPUT"))
+        XCTAssertTrue(result.hasSuffix("""
+        OUTPUT
+        Return only the final processed text.
+        No explanations.
+        """))
     }
 
     func testTranscriptionVocabularyHintFiltersBlanks() {
@@ -178,12 +204,14 @@ final class PromptCatalogTests: XCTestCase {
             user: prompts.user,
         )
 
-        XCTAssertTrue(debugPrompt.hasPrefix("[Rewrite Prompt]\nSystem:\nLanguage resolution policy:"))
+        XCTAssertTrue(debugPrompt.hasPrefix("[Rewrite Prompt]\nSystem:\nYou convert dictated speech into directly usable text."))
         XCTAssertTrue(debugPrompt.contains("You convert dictated speech into directly usable text."))
         XCTAssertTrue(debugPrompt.contains("PRIMARY OBJECTIVE\nPreserve the user's intended meaning while applying the user's persona instructions."))
         XCTAssertTrue(debugPrompt.contains("INSTRUCTION PRIORITY\n1. Follow explicit user instructions in the current request."))
         XCTAssertTrue(debugPrompt.contains("PERSONA HANDLING\npersona_definition is an active instruction, not source content."))
-        XCTAssertTrue(debugPrompt.contains("LANGUAGE\n- If the current user request explicitly specifies a target language, use that language."))
+        XCTAssertTrue(debugPrompt.contains("LANGUAGE\nLanguage resolution policy:"))
+        XCTAssertTrue(debugPrompt.contains("User environment context:"))
+        XCTAssertFalse(debugPrompt.contains("LANGUAGE\n- If the current user request explicitly specifies a target language, use that language."))
         XCTAssertTrue(debugPrompt.contains("SHORT UTTERANCE RULE\nIf the transcript is short and already complete, keep it close to the original"))
         XCTAssertTrue(debugPrompt.contains("INPUT CONTEXT\ninput_context may contain nearby user text from the active field."))
         XCTAssertTrue(debugPrompt.contains("OUTPUT\nReturn only the final processed text."))

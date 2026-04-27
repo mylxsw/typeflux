@@ -86,9 +86,52 @@ enum PromptCatalog {
             preferredLanguages: preferredLanguages,
             appLanguage: appLanguage,
         )
+        let languageContext = "\(languagePolicy)\n\n\(environmentContext)"
 
-        guard !trimmedPrompt.isEmpty else { return "\(languagePolicy)\n\n\(environmentContext)" }
-        return "\(languagePolicy)\n\n\(trimmedPrompt)\n\n\(environmentContext)"
+        guard !trimmedPrompt.isEmpty else { return languageContext }
+
+        if let rewrittenPrompt = replacingDictationLanguageSection(
+            in: trimmedPrompt,
+            with: languageContext,
+        ) {
+            return rewrittenPrompt
+        }
+
+        return "\(languageContext)\n\n\(trimmedPrompt)"
+    }
+
+    static func appendAdditionalSystemContext(_ extraContext: String, to systemPrompt: String) -> String {
+        let trimmedExtra = extraContext.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedExtra.isEmpty else { return systemPrompt }
+
+        let outputMarker = "\n\nOUTPUT\n"
+        if let outputRange = systemPrompt.range(of: outputMarker, options: .backwards) {
+            return "\(systemPrompt[..<outputRange.lowerBound])\n\n\(trimmedExtra)\(systemPrompt[outputRange.lowerBound...])"
+        }
+
+        let trimmedPrompt = systemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPrompt.isEmpty else { return trimmedExtra }
+        return "\(trimmedPrompt)\n\n\(trimmedExtra)"
+    }
+
+    private static func replacingDictationLanguageSection(
+        in prompt: String,
+        with languageContext: String,
+    ) -> String? {
+        let legacyLanguageSection = """
+        LANGUAGE
+        - If the current user request explicitly specifies a target language, use that language.
+        - Otherwise, if persona_definition explicitly specifies a target output language or translation task, use that language.
+        - Otherwise, preserve the source language.
+        - Do not change language based only on vague style preferences, product names, or environment settings.
+        """
+
+        guard prompt.contains(legacyLanguageSection) else { return nil }
+
+        return prompt.replacingOccurrences(
+            of: legacyLanguageSection,
+            with: "LANGUAGE\n\(languageContext)",
+        )
     }
 
     /// Returns additional system prompt content tailored to the current app context.

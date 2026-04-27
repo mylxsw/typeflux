@@ -1183,7 +1183,10 @@ extension WorkflowController {
         if let appContext = placeholderRequest.appSystemContext {
             let extra = PromptCatalog.appSpecificSystemContext(appContext)
             if !extra.isEmpty {
-                effectiveSystemPrompt += "\n\n\(extra)"
+                effectiveSystemPrompt = PromptCatalog.appendAdditionalSystemContext(
+                    extra,
+                    to: effectiveSystemPrompt,
+                )
             }
         }
         return ASRLLMConfig(

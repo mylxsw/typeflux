@@ -272,7 +272,10 @@ final class OpenAICompatibleLLMService: LLMService {
         if let appContext = rewriteRequest.appSystemContext {
             let extra = PromptCatalog.appSpecificSystemContext(appContext)
             if !extra.isEmpty {
-                effectiveSystemPrompt += "\n\n\(extra)"
+                effectiveSystemPrompt = PromptCatalog.appendAdditionalSystemContext(
+                    extra,
+                    to: effectiveSystemPrompt,
+                )
             }
         }
         NetworkDebugLogger.logMessage(

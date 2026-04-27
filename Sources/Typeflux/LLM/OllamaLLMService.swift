@@ -129,7 +129,10 @@ final class OllamaLLMService: LLMService {
         if let appContext = request.appSystemContext {
             let extra = PromptCatalog.appSpecificSystemContext(appContext)
             if !extra.isEmpty {
-                effectiveSystemPrompt += "\n\n\(extra)"
+                effectiveSystemPrompt = PromptCatalog.appendAdditionalSystemContext(
+                    extra,
+                    to: effectiveSystemPrompt,
+                )
             }
         }
         NetworkDebugLogger.logMessage(

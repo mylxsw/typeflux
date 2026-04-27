@@ -265,7 +265,10 @@ extension WorkflowController {
         if let appContext = appSystemContext {
             let extra = PromptCatalog.appSpecificSystemContext(appContext)
             if !extra.isEmpty {
-                systemPrompt += "\n\n\(extra)"
+                systemPrompt = PromptCatalog.appendAdditionalSystemContext(
+                    extra,
+                    to: systemPrompt,
+                )
             }
         }
         let userPrompt = AgentPromptCatalog.agentUserPrompt(
