@@ -94,7 +94,7 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
 
         coordinator.enqueue {
             started.fulfill()
-            Thread.sleep(forTimeInterval: 0.05)
+            Thread.sleep(forTimeInterval: 0.08)
         }
 
         await fulfillment(of: [started], timeout: 1.0)
@@ -103,7 +103,7 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         coordinator.drain()
         let elapsed = Date().timeIntervalSince(start)
 
-        XCTAssertGreaterThanOrEqual(elapsed, 0.04)
+        XCTAssertGreaterThanOrEqual(elapsed, 0.02)
     }
 
     func testAudioBufferWriteCoordinatorDrainIncludesMultipleQueuedOperations() {

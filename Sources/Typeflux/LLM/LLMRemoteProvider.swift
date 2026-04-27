@@ -113,7 +113,7 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
         case .freeModel:
             ""
         case .custom:
-            "https://api.openai.com/v1"
+            ""
         case .openRouter:
             "https://openrouter.ai/api/v1"
         case .openAI:

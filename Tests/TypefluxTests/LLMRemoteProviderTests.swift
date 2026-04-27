@@ -122,6 +122,8 @@ final class LLMRemoteProviderTests: XCTestCase {
             [
                 .typefluxCloud,
                 .freeModel,
+                .openCodeZen,
+                .openCodeGo,
                 .openRouter,
                 .openAI,
                 .anthropic,
@@ -304,7 +306,7 @@ extension LLMRemoteProviderTests {
     }
 
     func testCustomProviderHasEmptyDefaultBaseURL() {
-        XCTAssertEqual(LLMRemoteProvider.custom.defaultBaseURL, "https://api.openai.com/v1")
+        XCTAssertEqual(LLMRemoteProvider.custom.defaultBaseURL, "")
     }
 
     func testCustomProviderHasEmptyDefaultModel() {
