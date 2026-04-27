@@ -11,6 +11,7 @@ Use the package manifest in `Package.swift` as the source of truth.
 - `swift build`: compile the app target.
 - `swift test` or `make test`: run the full test suite.
 - `swift test --filter TypefluxTests.LLMRouterTests`: run one test class.
+- `scripts/setup_dev_cert.sh` **(run once)**: create a local self-signed code-signing identity ("Typeflux Dev") in a dedicated passwordless keychain. Required for stable macOS privacy permission grants (microphone, accessibility) across rebuilds.
 - `make run`: build, bundle, and launch `~/Applications/Typeflux Dev.app`.
 - `make dev`: launch the dev app with terminal logs attached.
 - `make coverage`: run coverage and write HTML output to `coverage-report/`.
@@ -31,3 +32,15 @@ Recent history favors short, imperative commit subjects such as `Fix compiler wa
 ## Security & Configuration Tips
 
 Do not commit API keys, local model paths, or personal macOS signing identities. For local app stability, use the existing launch scripts and set `TYPEFLUX_DEV_CODESIGN_IDENTITY` only in your shell environment when needed.
+
+### macOS Code Signing for Dev Builds
+
+A stable code-signing identity prevents macOS from re-prompting for microphone/accessibility permissions on every rebuild. The recommended setup:
+
+1. Run `scripts/setup_dev_cert.sh` once after cloning. It creates a self-signed "Typeflux Dev" cert in `~/Library/Keychains/typeflux-dev.keychain-db` (passwordless, project-local). No admin privileges are required.
+2. `make run` auto-detects the "Typeflux Dev" identity and signs the dev app bundle.
+3. Without the identity, the script falls back to ad-hoc signing — permissions will reset each time the binary's hash changes (i.e., every rebuild).
+
+Overrides are available via environment variables:
+- `TYPEFLUX_DEV_CODESIGN_IDENTITY` — force a specific signing identity (e.g., "Apple Development: user@example.com (...)")
+- `TYPEFLUX_DEV_PROVISIONING_PROFILE` — path to a macOS provisioning profile for Sign In with Apple support

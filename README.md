@@ -126,12 +126,19 @@ For local inference: model files are downloaded automatically on first use.
 ```bash
 git clone https://github.com/mylxsw/typeflux
 cd typeflux
+
+# One-time setup: create a local code-signing identity so macOS
+# permissions (microphone, accessibility) persist across rebuilds.
+scripts/setup_dev_cert.sh
+
 make run          # build + launch as .app bundle
 make dev          # launch with terminal logs attached
 make full-dev     # launch dev app with bundled SenseVoice resources
 make full-release # build the full notarized production installer locally
 swift test        # run tests
 ```
+
+> ⚠️ If you skip `setup_dev_cert.sh`, `make run` still works but macOS will re-prompt for permissions on each build (ad-hoc signing).
 
 See [CLAUDE.md](./CLAUDE.md) for the full development guide.
 
