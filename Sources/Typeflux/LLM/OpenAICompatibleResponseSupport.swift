@@ -142,9 +142,39 @@ enum OpenAICompatibleResponseSupport {
     static func shouldDisableThinking(baseURL: URL, model: String) -> Bool {
         let host = baseURL.host?.lowercased() ?? ""
         let normalizedModel = model.lowercased()
-        return host.contains("volces.com")
-            || host.contains("bytedance.net")
-            || normalizedModel.contains("doubao")
+        let disabledHosts = [
+            "volces.com",
+            "bytedance.net",
+            "deepseek.com",
+            "dashscope.aliyuncs.com",
+            "x.ai",
+            "bigmodel.cn",
+            "z.ai",
+            "openrouter.ai",
+            "opencode.ai",
+            "moonshot.cn",
+            "minimax.io",
+            "minimaxi.com",
+            "groq.com",
+            "xiaomimimo.com",
+            "modelscope.cn",
+            "siliconflow.cn",
+            "together.xyz",
+            "fireworks.ai",
+        ]
+        let disabledModelKeywords = [
+            "doubao",
+            "deepseek",
+            "qwen",
+            "grok",
+            "glm",
+            "qwq",
+            "kimi",
+            "minimax",
+            "mimo",
+        ]
+        return disabledHosts.contains(where: { host.contains($0) })
+            || disabledModelKeywords.contains(where: { normalizedModel.contains($0) })
     }
 
     private static func extractText(from value: Any?) -> String? {

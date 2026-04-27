@@ -3613,7 +3613,7 @@ struct StudioView: View {
                 .toggleStyle(.switch)
 
             case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
-                 .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
+                 .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
                 llmRemoteProviderForm
 
             case .typefluxCloud:
@@ -4079,6 +4079,8 @@ struct StudioView: View {
             "google"
         case .xiaomi:
             "xiaomimimo"
+        case .openCodeZen, .openCodeGo:
+            "opencode"
         case .aliCloud:
             "bailian-color"
         case .doubaoRealtime:
@@ -4213,7 +4215,7 @@ struct StudioView: View {
             !viewModel.llmModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && FreeLLMModelRegistry.resolve(modelName: viewModel.llmModel) != nil
         case .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu,
-             .minimax, .grok, .groq, .xiaomi:
+             .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             !viewModel.llmAPIKey.isEmpty && !viewModel.llmBaseURL.isEmpty
                 && !viewModel.llmModel.isEmpty
         case .multimodalLLM:
@@ -4263,7 +4265,7 @@ struct StudioView: View {
             )
             viewModel.prepareOllamaModel()
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
+             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             if let provider = focusedLLMRemoteProvider {
                 viewModel.applyModelConfiguration(shouldShowToast: false)
                 viewModel.setLLMRemoteProvider(provider)
@@ -4334,6 +4336,10 @@ struct StudioView: View {
             "bolt.fill"
         case .xiaomi:
             "circle.grid.cross"
+        case .openCodeZen:
+            "sparkle.magnifyingglass"
+        case .openCodeGo:
+            "hare"
         case .multimodalLLM:
             "brain.filled.head.profile"
         case .aliCloud:
@@ -4378,7 +4384,7 @@ struct StudioView: View {
         case .ollama:
             L("settings.models.overview.ollama")
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
+             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             L("settings.models.overview.remoteProvider", activeLLMRemoteProvider.displayName)
         case .typefluxCloud:
             L("settings.models.overview.typefluxCloud")
@@ -4410,7 +4416,7 @@ struct StudioView: View {
         case .ollama:
             LLMProvider.ollama.displayName
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
+             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             activeLLMRemoteProvider.displayName
         case .typefluxCloud:
             LLMRemoteProvider.typefluxCloud.displayName
@@ -4434,7 +4440,7 @@ struct StudioView: View {
         case .appleSpeech, .localSTT, .ollama:
             L("settings.models.mode.local")
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
-             .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi,
+             .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
              .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .typefluxOfficial, .typefluxCloud:
             L("settings.models.mode.remote")
         }
@@ -4445,7 +4451,7 @@ struct StudioView: View {
         case .appleSpeech, .localSTT, .ollama:
             StudioTheme.success
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
-             .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi,
+             .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
              .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .typefluxOfficial, .typefluxCloud:
             StudioTheme.accent
         }
@@ -4456,7 +4462,7 @@ struct StudioView: View {
         case .appleSpeech, .localSTT, .ollama:
             StudioTheme.success.opacity(0.12)
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
-             .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi,
+             .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
              .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .typefluxOfficial, .typefluxCloud:
             StudioTheme.accentSoft
         }
@@ -4521,6 +4527,10 @@ struct StudioView: View {
             URL(string: "https://console.x.ai/")
         case .xiaomi:
             URL(string: "https://ai.xiaomi.com/")
+        case .openCodeZen:
+            URL(string: "https://opencode.ai/auth")
+        case .openCodeGo:
+            URL(string: "https://opencode.ai/auth")
         case .freeModel, .custom:
             nil
         case .typefluxCloud:
@@ -4555,7 +4565,7 @@ struct StudioView: View {
         case .ollama:
             viewModel.ollamaModel.isEmpty ? "qwen2.5:7b" : viewModel.ollamaModel
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
+             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             viewModel.llmModel.isEmpty
                 ? activeLLMRemoteProvider.defaultModel : viewModel.llmModel
         case .multimodalLLM:
@@ -4595,7 +4605,7 @@ struct StudioView: View {
         case .ollama:
             LLMProvider.ollama.displayName
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
+             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             focusedLLMRemoteProvider?.displayName ?? LLMProvider.openAICompatible.displayName
         case .multimodalLLM:
             STTProvider.multimodalLLM.displayName
@@ -4627,7 +4637,7 @@ struct StudioView: View {
         case .ollama:
             L("settings.models.focused.ollama")
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
+             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             L(
                 "settings.models.focused.remoteProvider",
                 focusedLLMRemoteProvider?.displayName ?? LLMProvider.openAICompatible.displayName,
@@ -4668,7 +4678,7 @@ struct StudioView: View {
         case .ollama:
             L("settings.models.routing.ollama")
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi:
+             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             L("settings.models.routing.remoteProvider", activeLLMRemoteProvider.displayName)
         case .multimodalLLM:
             L("settings.models.routing.multimodal")

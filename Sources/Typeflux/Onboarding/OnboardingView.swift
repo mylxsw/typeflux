@@ -1073,6 +1073,10 @@ struct OnboardingView: View {
             URL(string: "https://console.x.ai/")
         case .xiaomi:
             URL(string: "https://ai.xiaomi.com/")
+        case .openCodeZen:
+            URL(string: "https://opencode.ai/auth")
+        case .openCodeGo:
+            URL(string: "https://opencode.ai/auth")
         case .freeModel, .custom:
             nil
         case .typefluxCloud:
@@ -1189,6 +1193,7 @@ struct OnboardingView: View {
         case .groqSTT: "groq"
         case .googleCloud: "google"
         case .xiaomi: "xiaomimimo"
+        case .openCodeZen, .openCodeGo: "opencode"
         case .aliCloud: "bailian-color"
         case .doubaoRealtime: "doubao-color"
         default: nil
@@ -1218,6 +1223,8 @@ struct OnboardingView: View {
         case .groqSTT: "bolt.fill"
         case .googleCloud: "cloud"
         case .xiaomi: "circle.grid.cross"
+        case .openCodeZen: "sparkle.magnifyingglass"
+        case .openCodeGo: "hare"
         case .multimodalLLM: "brain.filled.head.profile"
         case .aliCloud: "antenna.radiowaves.left.and.right"
         case .doubaoRealtime: "bolt.horizontal.circle"

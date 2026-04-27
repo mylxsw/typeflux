@@ -547,6 +547,8 @@
 "settings.models.card.minimax.summary" = "通过 MiniMax 的 OpenAI 兼容端点使用其模型，并提供国际版与中国版 URL 选择。";
 "settings.models.card.grok.summary" = "通过 xAI 的 OpenAI 兼容端点使用 Grok 模型。";
 "settings.models.card.xiaomi.summary" = "通过小米 MiMo 的 OpenAI 兼容端点使用 mimo-v2 系列模型。";
+"settings.models.card.openCodeZen.summary" = "精选优质模型，专为编程优化——通过 OpenCode Zen 网关使用 GPT、Claude、Gemini、Qwen、GLM 等模型。";
+"settings.models.card.openCodeGo.summary" = "低成本开源编程模型——DeepSeek、Qwen、GLM、Kimi、MiniMax 等。首月 $5，之后 $10/月。";
 "settings.models.badge.free" = "免费";
 "settings.models.freeSTT.hint" = "免费语音模型由代码配置管理，用户只能从已配置的模型列表中选择。";
 "settings.models.freeSTT.noSources" = "当前还没有配置任何免费语音模型源。请在 Sources/Typeflux/STT/FreeModels 下添加实现。";

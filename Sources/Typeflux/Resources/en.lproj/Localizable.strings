@@ -547,6 +547,8 @@
 "settings.models.card.minimax.summary" = "MiniMax models through its OpenAI-compatible endpoint, with separate international and China API URLs.";
 "settings.models.card.grok.summary" = "Grok models through xAI's OpenAI-compatible endpoint.";
 "settings.models.card.xiaomi.summary" = "Xiaomi MiMo mimo-v2 models through Xiaomi's OpenAI-compatible endpoint.";
+"settings.models.card.openCodeZen.summary" = "Curated premium models optimized for coding — GPT, Claude, Gemini, Qwen, GLM & more via the OpenCode Zen gateway.";
+"settings.models.card.openCodeGo.summary" = "Low-cost open-source coding models — DeepSeek, Qwen, GLM, Kimi, MiniMax & more. First month $5, then $10/mo.";
 "settings.models.badge.free" = "Free";
 "settings.models.freeSTT.hint" = "Free speech models are managed in code. Users can only pick from the configured model list.";
 "settings.models.freeSTT.noSources" = "No free speech model source is configured yet. Add an implementation under Sources/Typeflux/STT/FreeModels.";

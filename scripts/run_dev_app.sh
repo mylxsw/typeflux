@@ -97,11 +97,23 @@ chmod +x "$APP_DIR/Contents/MacOS/Typeflux"
 # identifier. Re-sign the assembled app bundle with a stable identifier so the
 # dev app is launchable and privacy services see a consistent app identity.
 if [[ -z "${TYPEFLUX_DEV_CODESIGN_IDENTITY:-}" ]] && command -v security >/dev/null 2>&1; then
+  # Prefer Apple Development identities, then any other non-system identity.
+  # A stable identity (self-signed or Apple) ensures macOS privacy permissions
+  # (microphone, accessibility, etc.) persist across rebuilds.
+  # Run 'scripts/setup_dev_cert.sh' once to create a reusable self-signed cert.
   TYPEFLUX_DEV_CODESIGN_IDENTITY="$(
     security find-identity -v -p codesigning 2>/dev/null \
       | sed -n 's/.*"Apple Development: \(.*\)"/Apple Development: \1/p' \
       | head -n 1
   )"
+  if [[ -z "${TYPEFLUX_DEV_CODESIGN_IDENTITY:-}" ]]; then
+    TYPEFLUX_DEV_CODESIGN_IDENTITY="$(
+      security find-identity -v -p codesigning 2>/dev/null \
+        | grep '"' \
+        | sed 's/.*"\(.*\)"/\1/' \
+        | head -n 1
+    )"
+  fi
 fi
 
 RUNTIME_ENTITLEMENTS="$ROOT_DIR/app/TypefluxRuntime.entitlements"

@@ -186,6 +186,8 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
     case grok
     case xiaomi
     case groq
+    case openCodeZen
+    case openCodeGo
 
     var id: String {
         rawValue
@@ -197,7 +199,7 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
              .googleCloud, .groqSTT, .typefluxOfficial:
             .stt
         case .typefluxCloud, .ollama, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
-             .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi, .groq:
+             .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi, .groq, .openCodeZen, .openCodeGo:
             .llm
         }
     }
@@ -223,6 +225,8 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
     var usesExpandedLogo: Bool {
         switch self {
         case .typefluxOfficial, .typefluxCloud:
+            true
+        case .openCodeZen, .openCodeGo:
             true
         default:
             false
