@@ -16,11 +16,13 @@ final class LLMRewriteRequestTests: XCTestCase {
             sourceText: "source",
             spokenInstruction: "make it better",
             personaPrompt: "formal tone",
+            vocabularyTerms: ["Typeflux"],
         )
 
         XCTAssertEqual(request.sourceText, "source")
         XCTAssertEqual(request.spokenInstruction, "make it better")
         XCTAssertEqual(request.personaPrompt, "formal tone")
+        XCTAssertEqual(request.vocabularyTerms, ["Typeflux"])
     }
 
     func testCanCreateRequestWithNilOptionals() {
@@ -34,6 +36,7 @@ final class LLMRewriteRequestTests: XCTestCase {
         XCTAssertEqual(request.sourceText, "raw text")
         XCTAssertNil(request.spokenInstruction)
         XCTAssertNil(request.personaPrompt)
+        XCTAssertTrue(request.vocabularyTerms.isEmpty)
     }
 
     func testRewritePromptIncludesInputContextWhenProvided() {

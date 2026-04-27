@@ -78,15 +78,16 @@ final class PromptCatalogTests: XCTestCase {
 
         let prompts = PromptCatalog.rewritePrompts(for: request)
 
-        XCTAssertTrue(prompts.system.contains("polished final copy"))
+        XCTAssertTrue(prompts.system.contains("You convert dictated speech into directly usable text."))
+        XCTAssertTrue(prompts.system.contains("PRIMARY OBJECTIVE"))
+        XCTAssertTrue(prompts.system.contains("INSTRUCTION PRIORITY"))
+        XCTAssertTrue(prompts.system.contains("PERSONA HANDLING"))
+        XCTAssertTrue(prompts.system.contains("persona_definition is an active instruction, not source content."))
+        XCTAssertTrue(prompts.system.contains("- <raw_transcript> is the source content to process. It may contain speech-recognition errors."))
         XCTAssertFalse(prompts.system.contains(PromptCatalog.languageConsistencyRule(for: "source text")))
-        XCTAssertTrue(prompts.system.contains("\"<raw_transcript>\" is the source content to rewrite"))
         XCTAssertTrue(prompts.user.contains("<raw_transcript>\nraw text\n</raw_transcript>"))
         XCTAssertTrue(prompts.user.contains("<persona_definition>\nformal and concise\n</persona_definition>"))
-        XCTAssertTrue(prompts.user.contains(PromptCatalog.languageConsistencyRule(
-            for: "source text",
-            personaPrompt: "formal and concise",
-        )))
+        XCTAssertTrue(prompts.user.contains("Process <raw_transcript> according to the system prompt."))
     }
 
     func testRewritePromptsAllowPersonaTranslationInstructionToOverrideSourceLanguage() {
@@ -101,8 +102,101 @@ final class PromptCatalogTests: XCTestCase {
 
         let prompts = PromptCatalog.rewritePrompts(for: request)
 
-        XCTAssertTrue(prompts.user.contains("explicitly asks for translation"))
-        XCTAssertTrue(prompts.user.contains("treat that as a real language instruction"))
+        XCTAssertTrue(prompts.system.contains("If persona_definition explicitly requests translation or specifies a target output language, follow it."))
+        XCTAssertTrue(prompts.system.contains("- Otherwise, if persona_definition explicitly specifies a target output language or translation task, use that language."))
+        XCTAssertTrue(prompts.user.contains("<persona_definition>\n将内容翻译为地地道道的中文。\n</persona_definition>"))
+    }
+
+    func testRewriteTranscriptPromptIncludesVocabularyHintsWhenProvided() {
+        let request = LLMRewriteRequest(
+            mode: .rewriteTranscript,
+            sourceText: "请把这个 seed asr 的配置打开",
+            spokenInstruction: nil,
+            personaPrompt: nil,
+            vocabularyTerms: ["SeedASR", "Typeflux"],
+        )
+
+        let prompts = PromptCatalog.rewritePrompts(for: request)
+
+        XCTAssertTrue(prompts.system.contains("<vocabulary_hints> is an optional user vocabulary list"))
+        XCTAssertTrue(prompts.system.contains("Use it only to correct likely speech-recognition errors or ambiguities"))
+        XCTAssertTrue(prompts.user.contains("<vocabulary_hints>"))
+        XCTAssertTrue(prompts.user.contains("These are user vocabulary terms that speech recognition often mishears"))
+        XCTAssertTrue(prompts.user.contains("<terms>\nSeedASR, Typeflux\n</terms>"))
+    }
+
+    func testRewriteTranscriptPromptOmitsVocabularyHintsWhenEmpty() {
+        let request = LLMRewriteRequest(
+            mode: .rewriteTranscript,
+            sourceText: "hello world",
+            spokenInstruction: nil,
+            personaPrompt: nil,
+            vocabularyTerms: [],
+        )
+
+        let prompts = PromptCatalog.rewritePrompts(for: request)
+
+        XCTAssertFalse(prompts.user.contains("<vocabulary_hints>"))
+    }
+
+    func testRewritePromptDebugDescriptionShowsFinalAssembledPrompt() {
+        let inputContext = InputContextSnapshot(
+            appName: "Notes",
+            bundleIdentifier: "com.apple.Notes",
+            role: "AXTextArea",
+            isEditable: true,
+            isFocusedTarget: true,
+            prefix: "这个新版本整体体验我试了下，",
+            suffix: "你可以也体验一下。",
+            selectedText: nil,
+        )
+        let request = LLMRewriteRequest(
+            mode: .rewriteTranscript,
+            sourceText: "效果很不错吧。",
+            spokenInstruction: nil,
+            personaPrompt: """
+            任务：将用户的中文口述内容翻译并整理成自然的英文表达。
+
+            要求：
+            - 输出英文
+            - 保持原意
+            - 表达自然、简洁
+            - 不要添加用户没有表达的新信息
+            """,
+            inputContext: inputContext,
+            vocabularyTerms: ["Typeflux", "SeedASR"],
+        )
+
+        let prompts = PromptCatalog.rewritePrompts(for: request)
+        let finalSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
+            to: prompts.system,
+            preferredLanguages: ["zh-Hans-CN"],
+            appLanguage: .english,
+        )
+        let debugPrompt = PromptCatalog.rewritePromptDebugDescription(
+            system: finalSystemPrompt,
+            user: prompts.user,
+        )
+
+        XCTAssertTrue(debugPrompt.hasPrefix("[Rewrite Prompt]\nSystem:\nLanguage resolution policy:"))
+        XCTAssertTrue(debugPrompt.contains("You convert dictated speech into directly usable text."))
+        XCTAssertTrue(debugPrompt.contains("PRIMARY OBJECTIVE\nPreserve the user's intended meaning while applying the user's persona instructions."))
+        XCTAssertTrue(debugPrompt.contains("INSTRUCTION PRIORITY\n1. Follow explicit user instructions in the current request."))
+        XCTAssertTrue(debugPrompt.contains("PERSONA HANDLING\npersona_definition is an active instruction, not source content."))
+        XCTAssertTrue(debugPrompt.contains("LANGUAGE\n- If the current user request explicitly specifies a target language, use that language."))
+        XCTAssertTrue(debugPrompt.contains("SHORT UTTERANCE RULE\nIf the transcript is short and already complete, keep it close to the original"))
+        XCTAssertTrue(debugPrompt.contains("INPUT CONTEXT\ninput_context may contain nearby user text from the active field."))
+        XCTAssertTrue(debugPrompt.contains("OUTPUT\nReturn only the final processed text."))
+        XCTAssertTrue(debugPrompt.contains("User:\n<raw_transcript>\n效果很不错吧。\n</raw_transcript>"))
+        XCTAssertTrue(debugPrompt.contains("<input_context>"))
+        XCTAssertTrue(debugPrompt.contains("<text_before_cursor><![CDATA[\n这个新版本整体体验我试了下，\n]]></text_before_cursor>"))
+        XCTAssertTrue(debugPrompt.contains("<cursor />"))
+        XCTAssertTrue(debugPrompt.contains("<text_after_cursor><![CDATA[\n你可以也体验一下。\n]]></text_after_cursor>"))
+        XCTAssertTrue(debugPrompt.contains("<vocabulary_hints>"))
+        XCTAssertTrue(debugPrompt.contains("<terms>\nTypeflux, SeedASR\n</terms>"))
+        XCTAssertTrue(debugPrompt.contains("<persona_definition>\n任务：将用户的中文口述内容翻译并整理成自然的英文表达。"))
+        XCTAssertTrue(debugPrompt.contains("- 输出英文"))
+        XCTAssertTrue(debugPrompt.contains("Process <raw_transcript> according to the system prompt."))
     }
 
     func testRewritePromptsIncludeLanguageConsistencyForSelectionEditing() {
@@ -140,30 +234,24 @@ final class PromptCatalogTests: XCTestCase {
         XCTAssertTrue(prompts.user.contains("<persona_definition>\nRespond like a concise assistant.\n</persona_definition>"))
     }
 
-    func testMultimodalTranscriptionPromptIncludesLanguageConsistencyRule() {
+    func testMultimodalTranscriptionPromptIncludesDictationRewriteFramework() {
         let prompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
             personaPrompt: "Use concise business language.",
             vocabularyTerms: ["Typeflux"],
         )
 
-        XCTAssertTrue(prompt.contains("You are a multimodal speech transcription and rewrite engine."))
-        XCTAssertTrue(prompt.contains("<rules>"))
-        XCTAssertTrue(prompt.contains("<language_policy>"))
-        XCTAssertTrue(prompt.contains(PromptCatalog.languageConsistencyRule(
-            for: "spoken content",
-            personaPrompt: "Use concise business language.",
-        )))
-        XCTAssertTrue(prompt.contains("<input_semantics>"))
-        XCTAssertTrue(prompt.contains("<task_procedure>"))
-        XCTAssertTrue(prompt.contains("<fidelity_requirements>"))
-        XCTAssertTrue(prompt.contains("<output_contract>"))
+        XCTAssertTrue(prompt.contains("You convert dictated speech into directly usable text."))
+        XCTAssertTrue(prompt.contains("PRIMARY OBJECTIVE"))
+        XCTAssertTrue(prompt.contains("LANGUAGE"))
+        XCTAssertTrue(prompt.contains("- If the current user request explicitly specifies a target language, use that language."))
+        XCTAssertTrue(prompt.contains("SHORT UTTERANCE RULE"))
+        XCTAssertTrue(prompt.contains("If the transcript is short and already complete, keep it close to the original"))
+        XCTAssertTrue(prompt.contains("- The audio payload is the user's dictated speech and the only source content."))
+        XCTAssertTrue(prompt.contains("- First infer the faithful raw transcript from the audio, then process that transcript according to this prompt."))
         XCTAssertTrue(prompt.contains("<persona_definition>\nUse concise business language.\n</persona_definition>"))
         XCTAssertTrue(prompt.contains("<vocabulary_hints>"))
         XCTAssertTrue(prompt.contains("<terms>\nTypeflux\n</terms>"))
         XCTAssertTrue(prompt.contains("Do not output the intermediate transcript."))
-        XCTAssertTrue(prompt.contains("Preserve all critical information from the speech"))
-        XCTAssertTrue(prompt.contains("For very short or fragmentary utterances"))
-        XCTAssertTrue(prompt.contains("When persona style conflicts with completeness or fidelity"))
     }
 
     func testAskSelectionDecisionPromptDefaultsAmbiguousRequestsToAnswer() {
@@ -362,11 +450,11 @@ final class PromptCatalogTests: XCTestCase {
 
         let prompts = PromptCatalog.rewritePrompts(for: request)
 
-        XCTAssertTrue(prompts.system.contains("preserve the user's full intent and every critical detail"))
-        XCTAssertTrue(prompts.system.contains("unless they would cause information loss or change the user's meaning"))
-        XCTAssertTrue(prompts.user.contains("For very short transcripts, be especially careful not to over-compress."))
-        XCTAssertTrue(prompts.user.contains("Keep the original speech act intact."))
-        XCTAssertTrue(prompts.user.contains("do not introduce new facts or remove meaningful details"))
+        XCTAssertTrue(prompts.system.contains("Preserve the source meaning, critical details, and speech act."))
+        XCTAssertTrue(prompts.system.contains("Do not add facts, invent details, summarize away meaning, or strengthen tone beyond the user's intent."))
+        XCTAssertTrue(prompts.system.contains("Questions remain questions unless persona_definition explicitly transforms the content into another format."))
+        XCTAssertTrue(prompts.system.contains("Requests remain requests unless persona_definition explicitly transforms the content into another format."))
+        XCTAssertTrue(prompts.system.contains("If the transcript is short and already complete, keep it close to the original unless persona_definition requires translation, reformatting, or a specific style transformation."))
     }
 
     // MARK: - transcriptionVocabularyHint with empty terms

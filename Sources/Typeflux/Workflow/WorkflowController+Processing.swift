@@ -1173,6 +1173,7 @@ extension WorkflowController {
             spokenInstruction: nil,
             personaPrompt: personaPrompt,
             appSystemContext: AppSystemContext(snapshot: selectionSnapshot),
+            vocabularyTerms: VocabularyStore.activeTerms(),
         )
         let prompts = PromptCatalog.rewritePrompts(for: placeholderRequest)
         var effectiveSystemPrompt = PromptCatalog.appendUserEnvironmentContext(
@@ -1298,6 +1299,7 @@ extension WorkflowController {
                         personaPrompt: personaPrompt,
                         appSystemContext: AppSystemContext(snapshot: selectionSnapshot),
                         inputContext: inputContext,
+                        vocabularyTerms: VocabularyStore.activeTerms(),
                     ),
                     sessionID: sessionID,
                     timeout: Self.llmTimeoutAfterTranscriptionSeconds,

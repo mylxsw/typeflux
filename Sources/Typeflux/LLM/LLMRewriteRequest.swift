@@ -35,6 +35,7 @@ struct LLMRewriteRequest {
     let personaPrompt: String?
     let appSystemContext: AppSystemContext?
     let inputContext: InputContextSnapshot?
+    let vocabularyTerms: [String]
 
     init(
         mode: Mode,
@@ -43,6 +44,7 @@ struct LLMRewriteRequest {
         personaPrompt: String?,
         appSystemContext: AppSystemContext? = nil,
         inputContext: InputContextSnapshot? = nil,
+        vocabularyTerms: [String] = [],
     ) {
         self.mode = mode
         self.sourceText = sourceText
@@ -50,5 +52,6 @@ struct LLMRewriteRequest {
         self.personaPrompt = personaPrompt
         self.appSystemContext = appSystemContext
         self.inputContext = inputContext
+        self.vocabularyTerms = vocabularyTerms
     }
 }
