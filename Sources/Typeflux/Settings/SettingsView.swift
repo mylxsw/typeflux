@@ -466,7 +466,7 @@ struct StudioView: View {
                     ForEach(viewModel.filteredPersonas) { persona in
                         personaRosterCard(
                             title: persona.name,
-                            subtitle: persona.prompt,
+                            subtitle: viewModel.personaDisplayPrompt(for: persona),
                             initials: String(
                                 persona.name.prefix(StudioTheme.Count.personaInitials),
                             ).uppercased(),

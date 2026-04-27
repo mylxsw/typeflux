@@ -298,7 +298,7 @@ final class StudioViewModel: ObservableObject {
         activePersonaID = settingsStore.activePersonaID
         let initialPersona = currentPersonas.first(where: { $0.id == initialSelectedPersonaID })
         personaDraftName = initialPersona?.name ?? ""
-        personaDraftPrompt = initialPersona?.prompt ?? ""
+        personaDraftPrompt = initialPersona.map { settingsStore.resolvedPersonaPrompt(for: $0) } ?? ""
         isCreatingPersonaDraft = false
         vocabularyEntries = VocabularyStore.load()
         launchAtLogin = LaunchAtLoginManager.isEnabled
@@ -478,8 +478,12 @@ final class StudioViewModel: ObservableObject {
         guard !searchQuery.isEmpty else { return personas }
         return personas.filter {
             $0.name.localizedCaseInsensitiveContains(searchQuery) ||
-                $0.prompt.localizedCaseInsensitiveContains(searchQuery)
+                personaDisplayPrompt(for: $0).localizedCaseInsensitiveContains(searchQuery)
         }
+    }
+
+    func personaDisplayPrompt(for persona: PersonaProfile) -> String {
+        settingsStore.resolvedPersonaPrompt(for: persona)
     }
 
     var filteredVocabularyEntries: [VocabularyEntry] {
@@ -774,6 +778,9 @@ final class StudioViewModel: ObservableObject {
         appLanguage = language
         settingsStore.appLanguage = language
         AppLocalization.shared.setLanguage(language)
+        if selectedPersonaIsSystem {
+            loadPersonaDraft()
+        }
         refreshPermissionRows()
     }
 
@@ -2162,7 +2169,7 @@ final class StudioViewModel: ObservableObject {
     private func loadPersonaDraft() {
         if let selectedPersona {
             personaDraftName = selectedPersona.name
-            personaDraftPrompt = selectedPersona.prompt
+            personaDraftPrompt = settingsStore.resolvedPersonaPrompt(for: selectedPersona)
         } else {
             personaDraftName = ""
             personaDraftPrompt = ""

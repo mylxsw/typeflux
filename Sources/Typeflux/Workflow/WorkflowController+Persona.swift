@@ -32,7 +32,11 @@ extension WorkflowController {
         }
         items.append(
             contentsOf: settingsStore.personas.map {
-                PersonaPickerEntry(id: $0.id, title: $0.name, subtitle: $0.prompt)
+                PersonaPickerEntry(
+                    id: $0.id,
+                    title: $0.name,
+                    subtitle: settingsStore.resolvedPersonaPrompt(for: $0),
+                )
             },
         )
         return items
