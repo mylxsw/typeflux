@@ -2,7 +2,7 @@
 import XCTest
 
 final class LocalModelTranscriberTests: XCTestCase {
-    func testSenseVoiceTranscriberUsesChineseLanguageHintAndParsesTranscript() async throws {
+    func testSenseVoiceTranscriberUsesAutomaticLanguageDetectionAndParsesTranscript() async throws {
         let originalLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(originalLanguage) }
@@ -21,14 +21,14 @@ final class LocalModelTranscriberTests: XCTestCase {
         XCTAssertEqual(text, "你好 Typeflux")
         XCTAssertEqual(runner.lastExecutablePath, modelFolder.appendingPathComponent("sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/bin/sherpa-onnx-offline").path)
         XCTAssertEqual(runner.lastEnvironment?["DYLD_LIBRARY_PATH"], modelFolder.appendingPathComponent("sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib").path)
-        XCTAssertTrue(runner.lastArguments.contains("--sense-voice-language=zh"))
+        XCTAssertTrue(runner.lastArguments.contains("--sense-voice-language=auto"))
         XCTAssertTrue(runner.lastArguments.contains("--sense-voice-use-itn=true"))
         XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--sense-voice-model=") }))
         XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--tokens=") }))
         XCTAssertEqual(runner.lastArguments.last, audioFile.fileURL.path)
     }
 
-    func testSenseVoiceTranscriberUsesEnglishLanguageHint() async throws {
+    func testSenseVoiceTranscriberUsesAutomaticLanguageDetectionForEnglishUI() async throws {
         let originalLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(originalLanguage) }
@@ -43,7 +43,7 @@ final class LocalModelTranscriberTests: XCTestCase {
 
         _ = try await transcriber.transcribe(audioFile: makeTestWAVFile())
 
-        XCTAssertTrue(runner.lastArguments.contains("--sense-voice-language=en"))
+        XCTAssertTrue(runner.lastArguments.contains("--sense-voice-language=auto"))
     }
 
     func testQwen3ASRTranscriberUsesQwen3ModelArguments() async throws {

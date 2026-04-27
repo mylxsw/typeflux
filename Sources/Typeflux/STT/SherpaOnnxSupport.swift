@@ -624,7 +624,7 @@ final class SherpaOnnxCommandLineDecoder {
                 "--print-args=false",
                 "--tokens=\(modelDirectory.appendingPathComponent("tokens.txt").path)",
                 "--sense-voice-model=\(modelDirectory.appendingPathComponent("model.int8.onnx").path)",
-                "--sense-voice-language=\(AppLocalization.shared.language.whisperKitLanguageCode)",
+                "--sense-voice-language=auto",
                 "--sense-voice-use-itn=true",
                 "--provider=cpu",
                 audioURL.path,
