@@ -18,7 +18,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private let makeAudioEngine: () -> AVAudioEngine
     private var engine: AVAudioEngine
     private let settingsStore: SettingsStore
-    private let audioDeviceManager: AudioDeviceManager
+    private let audioDeviceManager: AudioDeviceManaging
     private let outputMuter: SystemAudioOutputMuting
     private let sleep: @Sendable (Duration) async -> Void
     private let writeCoordinator = AudioBufferWriteCoordinator()
@@ -35,7 +35,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
 
     init(
         settingsStore: SettingsStore,
-        audioDeviceManager: AudioDeviceManager = AudioDeviceManager(),
+        audioDeviceManager: AudioDeviceManaging = AudioDeviceManager(),
         outputMuter: SystemAudioOutputMuting = SystemAudioOutputMuter(),
         makeAudioEngine: @escaping () -> AVAudioEngine = { AVAudioEngine() },
         sleep: @escaping @Sendable (Duration) async -> Void = { duration in
@@ -241,20 +241,32 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             muteTask = nil
             outputMuter.endMutedSession()
         }
+
+        func resolvedInputDeviceIDForTesting() -> AudioDeviceID? {
+            resolveInputDeviceID()
+        }
     #endif
 
-    private func configureInputDeviceIfNeeded(for inputNode: AVAudioInputNode) throws {
+    private func resolveInputDeviceID() -> AudioDeviceID? {
         let preferredID = settingsStore.preferredMicrophoneID
-        guard !preferredID.isEmpty else { return }
-        guard let deviceID = audioDeviceManager.resolveInputDeviceID(for: preferredID) else { return }
+        if !preferredID.isEmpty {
+            if let deviceID = audioDeviceManager.resolveInputDeviceID(for: preferredID) {
+                return deviceID
+            }
 
-        inputNode.auAudioUnit.setValue(Int(deviceID), forKey: "deviceID")
+            resetUnavailablePreferredMicrophone(preferredID: preferredID)
+        }
+
+        return audioDeviceManager.defaultInputDeviceID()
     }
 
     private func configureInputDeviceAndResolveFormat(for inputNode: AVAudioInputNode) throws -> AVAudioFormat {
         let preferredID = settingsStore.preferredMicrophoneID
-        if !preferredID.isEmpty {
-            try configureInputDeviceIfNeeded(for: inputNode)
+        if let deviceID = resolveInputDeviceID() {
+            inputNode.auAudioUnit.setValue(Int(deviceID), forKey: "deviceID")
+        }
+
+        if !preferredID.isEmpty, settingsStore.preferredMicrophoneID == preferredID {
             let preferredFormat = inputNode.inputFormat(forBus: 0)
             if Self.isUsableInputFormat(preferredFormat) {
                 return preferredFormat
@@ -268,12 +280,25 @@ final class AVFoundationAudioRecorder: AudioRecorder {
                 channelCount: \(preferredFormat.channelCount)
                 """,
             )
-            inputNode.auAudioUnit.setValue(0, forKey: "deviceID")
+            resetUnavailablePreferredMicrophone(preferredID: preferredID)
+            if let defaultDeviceID = audioDeviceManager.defaultInputDeviceID() {
+                inputNode.auAudioUnit.setValue(Int(defaultDeviceID), forKey: "deviceID")
+            }
         }
 
         let automaticFormat = inputNode.inputFormat(forBus: 0)
         try Self.validateInputFormat(automaticFormat)
         return automaticFormat
+    }
+
+    private func resetUnavailablePreferredMicrophone(preferredID: String) {
+        NetworkDebugLogger.logMessage(
+            """
+            [Audio Recorder] Preferred microphone is unavailable; falling back to automatic selection.
+            preferredMicrophoneID: \(preferredID)
+            """,
+        )
+        settingsStore.preferredMicrophoneID = AudioDeviceManager.automaticDeviceID
     }
 
     private func currentRecordingState() -> Bool {

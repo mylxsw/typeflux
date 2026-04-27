@@ -6,7 +6,13 @@ struct AudioInputDevice: Identifiable, Equatable {
     let name: String
 }
 
-final class AudioDeviceManager {
+protocol AudioDeviceManaging {
+    func availableInputDevices() -> [AudioInputDevice]
+    func resolveInputDeviceID(for uniqueID: String) -> AudioDeviceID?
+    func defaultInputDeviceID() -> AudioDeviceID?
+}
+
+final class AudioDeviceManager: AudioDeviceManaging {
     static let automaticDeviceID = ""
 
     func availableInputDevices() -> [AudioInputDevice] {
@@ -39,6 +45,31 @@ final class AudioDeviceManager {
         }
 
         return nil
+    }
+
+    func defaultInputDeviceID() -> AudioDeviceID? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultInputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain,
+        )
+        var deviceID = AudioDeviceID(kAudioObjectUnknown)
+        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        let status = withUnsafeMutablePointer(to: &deviceID) { pointer in
+            AudioObjectGetPropertyData(
+                AudioObjectID(kAudioObjectSystemObject),
+                &address,
+                0,
+                nil,
+                &size,
+                pointer,
+            )
+        }
+        guard status == noErr, deviceID != kAudioObjectUnknown, deviceSupportsInput(deviceID) else {
+            return nil
+        }
+
+        return deviceID
     }
 
     private func allAudioDeviceIDs() -> [AudioDeviceID] {
