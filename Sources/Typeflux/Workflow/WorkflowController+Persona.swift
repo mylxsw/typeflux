@@ -96,7 +96,7 @@ extension WorkflowController {
 
     // swiftlint:disable:next function_body_length
     func applyPersonaToSelection(_ context: PersonaSelectionContext, persona: PersonaProfile) {
-        let personaPrompt = persona.prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        let personaPrompt = settingsStore.resolvedPersonaPrompt(for: persona).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !personaPrompt.isEmpty else { return }
 
         cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.newRecording"))
