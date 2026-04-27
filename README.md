@@ -138,6 +138,7 @@ See [CLAUDE.md](./CLAUDE.md) for the full development guide.
 Join the community to share feedback, ask questions, and follow development updates:
 
 - [Join Discord](https://discord.com/invite/Vr5389YrN)
+- [X](https://x.com/mylxsw)
 - WeChat group:
 
   <img src="./assets/wechat-group-20260426.jpg" alt="Typeflux WeChat group QR code" width="260">
