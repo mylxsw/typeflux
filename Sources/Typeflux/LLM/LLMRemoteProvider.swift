@@ -32,27 +32,20 @@ enum LLMRemoteProvider: String, CaseIterable, Codable {
 
     static let defaultProvider: LLMRemoteProvider = .openAI
 
-    static let settingsDisplayOrder: [LLMRemoteProvider] = [
-        .typefluxCloud,
-        .freeModel,
-        .openCodeZen,
-        .openCodeGo,
-        .openRouter,
-        .openAI,
-        .anthropic,
-        .gemini,
-        .grok,
-        .deepSeek,
-        .kimi,
-        .qwen,
-        .zhipu,
-        .minimax,
-        .xiaomi,
-        .custom,
-    ]
+    static var settingsDisplayOrder: [LLMRemoteProvider] {
+        let standardProviders = allCases
+            .filter { $0 != .typefluxCloud && $0 != .custom }
+            .sorted { lhs, rhs in
+                lhs.displayName.localizedCaseInsensitiveCompare(rhs.displayName) == .orderedAscending
+            }
 
-    static let onboardingDisplayOrder: [LLMRemoteProvider] = settingsDisplayOrder.filter {
-        $0 != .freeModel && $0 != .typefluxCloud
+        return [.typefluxCloud] + standardProviders + [.custom]
+    }
+
+    static var onboardingDisplayOrder: [LLMRemoteProvider] {
+        settingsDisplayOrder.filter {
+            $0 != .freeModel && $0 != .typefluxCloud
+        }
     }
 
     var displayName: String {

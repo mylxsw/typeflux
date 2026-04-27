@@ -121,22 +121,38 @@ final class LLMRemoteProviderTests: XCTestCase {
             LLMRemoteProvider.settingsDisplayOrder,
             [
                 .typefluxCloud,
-                .freeModel,
-                .openCodeZen,
-                .openCodeGo,
-                .openRouter,
-                .openAI,
                 .anthropic,
-                .gemini,
-                .grok,
                 .deepSeek,
+                .freeModel,
+                .gemini,
+                .groq,
                 .kimi,
-                .qwen,
-                .zhipu,
                 .minimax,
+                .openAI,
+                .openCodeGo,
+                .openCodeZen,
+                .openRouter,
+                .qwen,
+                .grok,
                 .xiaomi,
+                .zhipu,
                 .custom,
             ],
+        )
+    }
+
+    func testSettingsDisplayOrderPinsCloudAndCustomAroundAlphabetizedProviders() {
+        let order = LLMRemoteProvider.settingsDisplayOrder
+
+        XCTAssertEqual(order.first, .typefluxCloud)
+        XCTAssertEqual(order.last, .custom)
+
+        let standardProviders = Array(order.dropFirst().dropLast())
+        XCTAssertEqual(
+            standardProviders.map(\.displayName),
+            standardProviders.map(\.displayName).sorted {
+                $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+            },
         )
     }
 

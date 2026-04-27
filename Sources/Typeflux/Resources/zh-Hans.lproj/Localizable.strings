@@ -225,7 +225,7 @@
 "provider.llm.custom" = "自定义";
 "provider.llm.freeModel" = "免费模型";
 "provider.llm.openRouter" = "OpenRouter";
-"provider.llm.ollama" = "本地 Ollama";
+"provider.llm.ollama" = "Ollama 本地";
 "provider.llm.typefluxCloud" = "Typeflux Cloud";
 
 "downloadSource.modelScope" = "ModelScope";
@@ -708,7 +708,7 @@
 "onboarding.models.stt.local.hint" = "所选模型将在首次使用时自动下载。";
 "onboarding.models.llm.openai.title" = "OpenAI 兼容接口";
 "onboarding.models.llm.openai.description" = "任意远程聊天 API — OpenAI、Claude、DeepSeek…";
-"onboarding.models.llm.ollama.title" = "本地 Ollama";
+"onboarding.models.llm.ollama.title" = "Ollama 本地";
 "onboarding.models.llm.ollama.description" = "完全在你的 Mac 上本地运行，保护隐私";
 "onboarding.models.badge.noSetup" = "免配置";
 "onboarding.models.badge.apiKey" = "需要密钥";

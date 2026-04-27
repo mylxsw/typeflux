@@ -434,59 +434,60 @@ struct OnboardingView: View {
 
             HStack(alignment: .top, spacing: 18) {
                 VStack(spacing: 10) {
-                    if !FreeLLMModelRegistry.suggestedModelNames.isEmpty {
-                        ForEach(
-                            LLMRemoteProvider.settingsDisplayOrder
-                                .filter { $0 == .freeModel }
-                                .prefix(1),
-                            id: \.self,
-                        ) { provider in
+                    let standardOptions = (
+                        LLMRemoteProvider.settingsDisplayOrder
+                            .filter { $0 != .typefluxCloud && $0 != .custom }
+                            .filter { $0 != .freeModel || !FreeLLMModelRegistry.suggestedModelNames.isEmpty }
+                            .map { provider in
+                                (
+                                    title: provider.displayName,
+                                    providerID: provider.studioProviderID,
+                                    remoteProvider: Optional(provider),
+                                )
+                            } + [
+                                (
+                                    title: LLMProvider.ollama.displayName,
+                                    providerID: StudioModelProviderID.ollama,
+                                    remoteProvider: nil,
+                                ),
+                            ]
+                    ).sorted { lhs, rhs in
+                        lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+                    }
+
+                    ForEach(standardOptions, id: \.providerID) { option in
+                        if let provider = option.remoteProvider {
                             let isSelected = viewModel.llmProvider == .openAICompatible
                                 && viewModel.llmRemoteProvider == provider
                             modelProviderCard(
                                 providerID: provider.studioProviderID,
                                 title: provider.displayName,
                                 description: L("settings.models.card.\(provider.rawValue).summary"),
-                                badge: L("settings.models.badge.free"),
+                                badge: provider == .freeModel
+                                    ? L("settings.models.badge.free")
+                                    : (
+                                        provider.apiStyle == .openAICompatible
+                                            ? L("settings.models.badge.api")
+                                            : L("settings.models.badge.native")
+                                    ),
                                 isSelected: isSelected,
                             ) {
                                 withAnimation(.easeOut(duration: 0.18)) {
                                     viewModel.selectLLMRemoteProvider(provider)
                                 }
                             }
-                        }
-                    }
-
-                    ForEach(
-                        LLMRemoteProvider.onboardingDisplayOrder.filter { $0 != .custom },
-                        id: \.self
-                    ) { provider in
-                        let isSelected = viewModel.llmProvider == .openAICompatible
-                            && viewModel.llmRemoteProvider == provider
-                        modelProviderCard(
-                            providerID: provider.studioProviderID,
-                            title: provider.displayName,
-                            description: L("settings.models.card.\(provider.rawValue).summary"),
-                            badge: provider.apiStyle == .openAICompatible
-                                ? L("settings.models.badge.api")
-                                : L("settings.models.badge.native"),
-                            isSelected: isSelected,
-                        ) {
-                            withAnimation(.easeOut(duration: 0.18)) {
-                                viewModel.selectLLMRemoteProvider(provider)
+                        } else {
+                            modelProviderCard(
+                                providerID: .ollama,
+                                title: L("provider.llm.ollama"),
+                                description: L("settings.models.card.ollama.summary"),
+                                badge: L("settings.models.badge.local"),
+                                isSelected: viewModel.llmProvider == .ollama,
+                            ) {
+                                withAnimation(.easeOut(duration: 0.18)) {
+                                    viewModel.selectOllama()
+                                }
                             }
-                        }
-                    }
-
-                    modelProviderCard(
-                        providerID: .ollama,
-                        title: L("provider.llm.ollama"),
-                        description: L("settings.models.card.ollama.summary"),
-                        badge: L("settings.models.badge.local"),
-                        isSelected: viewModel.llmProvider == .ollama,
-                    ) {
-                        withAnimation(.easeOut(duration: 0.18)) {
-                            viewModel.selectOllama()
                         }
                     }
 

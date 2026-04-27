@@ -29,6 +29,15 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testChineseOllamaProviderNameUsesRequestedWordOrder() throws {
+        for language in [AppLanguage.simplifiedChinese, .traditionalChinese] {
+            let bundle = try localizationBundle(for: language)
+            let localized = bundle.localizedString(forKey: "provider.llm.ollama", value: nil, table: nil)
+
+            XCTAssertEqual(localized, "Ollama 本地")
+        }
+    }
+
     func testOverlayProcessingPhaseKeysExistForAllSupportedLanguages() throws {
         let keys = [
             "overlay.processing.transcribing",

@@ -680,9 +680,10 @@ struct StudioView: View {
     }
 
     private var personaLLMProviderOptions: [(label: String, value: StudioModelProviderID)] {
-        let remoteOptions = LLMRemoteProvider.settingsDisplayOrder
+        var remoteOptions = LLMRemoteProvider.settingsDisplayOrder
             .filter { $0 != .freeModel || !FreeLLMModelRegistry.suggestedModelNames.isEmpty }
             .filter { $0 != .custom }
+            .filter { $0 != .typefluxCloud }
             .map { provider in
                 (label: provider.displayName, value: provider.studioProviderID)
             }
@@ -692,7 +693,12 @@ struct StudioView: View {
                 (label: provider.displayName, value: provider.studioProviderID)
             }
 
-        return remoteOptions + [(label: LLMProvider.ollama.displayName, value: .ollama)] + customOptions
+        remoteOptions.append((label: LLMProvider.ollama.displayName, value: .ollama))
+        remoteOptions.sort { lhs, rhs in
+            lhs.label.localizedCaseInsensitiveCompare(rhs.label) == .orderedAscending
+        }
+
+        return [(label: LLMRemoteProvider.typefluxCloud.displayName, value: .typefluxCloud)] + remoteOptions + customOptions
     }
 
     private func personaRosterCard(
@@ -3122,17 +3128,22 @@ struct StudioView: View {
             ),
         ]
 
-        if !FreeLLMModelRegistry.suggestedModelNames.isEmpty {
-            cards.append(makeLLMRemoteProviderCard(.freeModel, badge: L("settings.models.badge.free")))
-        }
+        var standardCards = LLMRemoteProvider.settingsDisplayOrder
+            .filter { $0 != .typefluxCloud && $0 != .custom }
+            .filter { $0 != .freeModel || !FreeLLMModelRegistry.suggestedModelNames.isEmpty }
+            .map { provider in
+                (
+                    name: provider.displayName,
+                    card: makeLLMRemoteProviderCard(
+                        provider,
+                        badge: provider == .freeModel ? L("settings.models.badge.free") : nil,
+                    ),
+                )
+            }
 
-        let primaryRemoteProviders = LLMRemoteProvider.settingsDisplayOrder.filter {
-            $0 != .freeModel && $0 != .typefluxCloud && $0 != .custom
-        }
-        cards.append(contentsOf: primaryRemoteProviders.map { makeLLMRemoteProviderCard($0) })
-
-        cards.append(
-            StudioModelCard(
+        standardCards.append((
+            name: LLMProvider.ollama.displayName,
+            card: StudioModelCard(
                 id: StudioModelProviderID.ollama.rawValue,
                 name: LLMProvider.ollama.displayName,
                 summary: L("settings.models.card.ollama.summary"),
@@ -3142,8 +3153,12 @@ struct StudioView: View {
                 isSelected: viewModel.llmProvider == .ollama,
                 isMuted: false,
                 actionTitle: L("settings.models.useLocal"),
-            ),
-        )
+            )
+        ))
+        standardCards.sort { lhs, rhs in
+            lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+        }
+        cards.append(contentsOf: standardCards.map(\.card))
 
         let customRemoteProviders = LLMRemoteProvider.settingsDisplayOrder.filter { $0 == .custom }
         cards.append(contentsOf: customRemoteProviders.map { makeLLMRemoteProviderCard($0) })
