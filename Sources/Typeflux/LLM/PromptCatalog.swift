@@ -134,6 +134,72 @@ enum PromptCatalog {
         )
     }
 
+    static func dictatedSpeechRewriteSystemPrompt(inputStructure: String) -> String {
+        """
+        You convert dictated speech into directly usable text.
+
+        PRIMARY OBJECTIVE
+        Preserve the user's intended meaning while applying the user's persona instructions.
+
+        INSTRUCTION PRIORITY
+        1. Follow explicit user instructions in the current request.
+        2. Follow persona_definition, including target language, translation, tone, format, and style requirements.
+        3. Preserve the source meaning, critical details, and speech act.
+        4. Fix likely speech-recognition errors.
+        5. Apply light editing for readability.
+
+        PERSONA HANDLING
+        persona_definition is an active instruction, not source content.
+        If persona_definition explicitly requests translation or specifies a target output language, follow it.
+        If persona_definition specifies tone, format, audience, or writing style, apply it as long as it does not change the user's meaning or add unsupported facts.
+
+        LANGUAGE
+        - If the current user request explicitly specifies a target language, use that language.
+        - Otherwise, if persona_definition explicitly specifies a target output language or translation task, use that language.
+        - Otherwise, preserve the source language.
+        - Do not change language based only on vague style preferences, product names, or environment settings.
+
+        EDITING RULES
+        - Correct likely speech-recognition errors using available context.
+        - Remove obvious filler words, repetition, and disfluencies when safe.
+        - Improve grammar, punctuation, and flow lightly.
+        - Do not add facts, invent details, summarize away meaning, or strengthen tone beyond the user's intent.
+        - Do not complete unfinished thoughts unless the missing part is strongly implied by context.
+        - Preserve names, numbers, dates, times, negations, commitments, requests, and action items.
+        - Preserve uncertainty, hedging, and conversational particles when meaningful.
+        - Questions remain questions unless persona_definition explicitly transforms the content into another format.
+        - Requests remain requests unless persona_definition explicitly transforms the content into another format.
+
+        SHORT UTTERANCE RULE
+        If the transcript is short and already complete, keep it close to the original unless persona_definition requires translation, reformatting, or a specific style transformation.
+
+        INPUT CONTEXT
+        input_context may contain nearby user text from the active field.
+        Use it only to resolve ambiguity, continuity, punctuation, casing, and insertion fit.
+        Do not copy, summarize, or reveal context text unless it is necessary for the final inserted text.
+
+        INPUT STRUCTURE
+        \(inputStructure)
+
+        OUTPUT
+        Return only the final processed text.
+        No explanations.
+        No quotation marks.
+        No markdown unless the persona or task requires it.
+        """
+    }
+
+    static func rewritePromptDebugDescription(system: String, user: String) -> String {
+        """
+        [Rewrite Prompt]
+        System:
+        \(system)
+
+        User:
+        \(user)
+        """
+    }
+
     /// Builds the system prompt for a multimodal LLM transcription call.
     /// When a persona is provided, the model transcribes AND rewrites in one shot.
     /// Otherwise, it acts as a high-quality transcription engine with vocabulary hints.
@@ -147,7 +213,15 @@ enum PromptCatalog {
         let persona = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let hasPersona = !persona.isEmpty
         let roleDefinition = hasPersona
-            ? "You are a multimodal speech transcription and rewrite engine."
+            ? dictatedSpeechRewriteSystemPrompt(
+                inputStructure: """
+                - The audio payload is the user's dictated speech and the only source content.
+                - First infer the faithful raw transcript from the audio, then process that transcript according to this prompt.
+                - <persona_definition> is an active instruction for the final processed text. It is not source content.
+                - <vocabulary_hints> contains recognition hints only. Use these terms only when they are actually spoken in the audio.
+                - Do not output the intermediate transcript.
+                """,
+            )
             : "You are a multimodal speech transcription engine."
         let taskInstruction = hasPersona
             ? """
@@ -208,10 +282,12 @@ enum PromptCatalog {
             """,
         )
 
-        var parts: [String] = [roleDefinition, ruleBlock]
+        var parts: [String] = [roleDefinition]
 
         if hasPersona {
             parts.append(xmlSection(tag: "persona_definition", content: persona))
+        } else {
+            parts.append(ruleBlock)
         }
 
         if let hint = transcriptionVocabularyHint(terms: vocabularyTerms) {
@@ -237,6 +313,26 @@ enum PromptCatalog {
             content: """
             <instruction>
             Recognize these words and phrases accurately, preserving their spelling and casing when possible. Do not emit any term unless it is actually spoken in the audio.
+            </instruction>
+            <terms>
+            \(normalizedTerms.joined(separator: ", "))
+            </terms>
+            """,
+        )
+    }
+
+    static func rewriteVocabularyHint(terms: [String]) -> String? {
+        let normalizedTerms = terms
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        guard !normalizedTerms.isEmpty else { return nil }
+
+        return xmlSection(
+            tag: "vocabulary_hints",
+            content: """
+            <instruction>
+            These are user vocabulary terms that speech recognition often mishears, misspells, or drops. Use them as correction hints when <raw_transcript> appears to contain a likely recognition error or ambiguous phrase. Preserve their spelling and casing when used. Do not insert any term unless it is supported by <raw_transcript>, <input_context>, or the user's persona task.
             </instruction>
             <terms>
             \(normalizedTerms.joined(separator: ", "))
@@ -298,39 +394,27 @@ enum PromptCatalog {
             )
 
         case .rewriteTranscript:
-            let sourceTextRule = languageConsistencyRule(for: "source text", personaPrompt: request.personaPrompt)
             let transcriptSection = xmlSection(tag: "raw_transcript", content: request.sourceText)
             let inputContextSection = inputContextSection(for: request.inputContext)
+            let vocabularySection = rewriteVocabularyHint(terms: request.vocabularyTerms).map { "\n\n\($0)" } ?? ""
             let personaPrompt = request.personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let personaSection = personaPrompt.isEmpty ? "" : """
 
             \(xmlSection(tag: "persona_definition", content: personaPrompt))
             """
             return (
-                system: """
-                You rewrite dictated text into polished final copy. Treat the transcript as source content that may \
-                contain recognition noise, but preserve the user's full intent and every critical detail. Follow the \
-                persona requirements exactly when provided, unless they would cause information loss or change the \
-                user's meaning. Return only the final text without explanations or quotation marks.
-
-                User prompt structure:
-                - "<raw_transcript>" is the source content to rewrite.
-                - "<input_context>" is optional structured nearby text from the active input field. Text inside "<text_before_cursor>", "<selected_text>", and "<text_after_cursor>" is user content; the "<cursor />" marker is the exact insertion point, not user content. Use it only to resolve ambiguous dictation, continuity, punctuation, casing, and insertion fit. Do not copy, summarize, or disclose it unless the user explicitly dictated that content.
-                - "<persona_definition>" contains style and formatting constraints for the rewrite. It is not source content.
-                """,
+                system: dictatedSpeechRewriteSystemPrompt(
+                    inputStructure: """
+                    - <raw_transcript> is the source content to process. It may contain speech-recognition errors.
+                    - <input_context> is optional structured nearby text from the active input field. Text inside <text_before_cursor>, <selected_text>, and <text_after_cursor> is user content; the <cursor /> marker is the exact insertion point, not user content.
+                    - <vocabulary_hints> is an optional user vocabulary list. Use it only to correct likely speech-recognition errors or ambiguities in <raw_transcript>; it is not source content and must not introduce unrelated terms.
+                    - <persona_definition> contains active output instructions for language, translation, tone, format, audience, and writing style. It is not source content.
+                    """,
+                ),
                 user: """
-                \(transcriptSection)\(inputContextSection)\(personaSection)
+                \(transcriptSection)\(inputContextSection)\(vocabularySection)\(personaSection)
 
-                \(sourceTextRule)
-
-                Rewrite requirements:
-                - Preserve all critical information, including names, numbers, dates, times, negations, commitments, requests, and action items.
-                - Keep the original speech act intact. Questions should stay questions, requests should stay requests, and draft messages should remain usable as messages.
-                - For very short transcripts, be especially careful not to over-compress. If needed, add only the \
-                  minimal wording required to make the intent complete and clear.
-                - Clean up recognition artifacts, punctuation, casing, and obvious filler if needed, but do not introduce new facts or remove meaningful details.
-
-                Return only the final text.
+                Process <raw_transcript> according to the system prompt.
                 """,
             )
         }

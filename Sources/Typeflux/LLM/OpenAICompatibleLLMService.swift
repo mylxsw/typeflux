@@ -275,6 +275,12 @@ final class OpenAICompatibleLLMService: LLMService {
                 effectiveSystemPrompt += "\n\n\(extra)"
             }
         }
+        NetworkDebugLogger.logMessage(
+            PromptCatalog.rewritePromptDebugDescription(
+                system: effectiveSystemPrompt,
+                user: prompts.user,
+            ),
+        )
 
         let final = try await runWithFailureReporting(cloudBaseURL: call.cloudBaseURL) {
             try await RemoteLLMClient.streamRewrite(

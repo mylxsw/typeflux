@@ -132,6 +132,12 @@ final class OllamaLLMService: LLMService {
                 effectiveSystemPrompt += "\n\n\(extra)"
             }
         }
+        NetworkDebugLogger.logMessage(
+            PromptCatalog.rewritePromptDebugDescription(
+                system: effectiveSystemPrompt,
+                user: prompts.user,
+            ),
+        )
         let body = Self.makeChatRequestBody(
             model: settingsStore.ollamaModel,
             systemPrompt: effectiveSystemPrompt,
