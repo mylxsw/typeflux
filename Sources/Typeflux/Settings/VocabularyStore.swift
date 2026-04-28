@@ -59,6 +59,23 @@ struct VocabularyEntry: Codable, Identifiable, Equatable {
     }
 }
 
+struct VocabularyBatchImportResult {
+    let entries: [VocabularyEntry]
+    let addedCount: Int
+    let updatedCount: Int
+}
+
+enum VocabularyImportError: LocalizedError {
+    case unsupportedFormat
+
+    var errorDescription: String? {
+        switch self {
+        case .unsupportedFormat:
+            return "Unsupported vocabulary file format."
+        }
+    }
+}
+
 enum VocabularyStore {
     private static let key = "vocabulary.entries"
     /// Maximum number of terms returned to speech recognition as hints. Beyond this
@@ -94,6 +111,32 @@ enum VocabularyStore {
         } catch {
             ErrorLogStore.shared.log("Vocabulary save failed: \(error.localizedDescription)")
         }
+    }
+
+    static func exportData() throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return try encoder.encode(rankedEntries())
+    }
+
+    @discardableResult
+    static func importEntries(
+        from data: Data,
+        defaultSource: VocabularySource = .manual,
+    ) throws -> VocabularyBatchImportResult {
+        let importedEntries = try decodeImportedEntries(from: data, defaultSource: defaultSource)
+        return merge(importedEntries)
+    }
+
+    @discardableResult
+    static func importTerms(
+        _ terms: [String],
+        source: VocabularySource = .manual,
+    ) -> VocabularyBatchImportResult {
+        let importedEntries = terms.map {
+            VocabularyEntry(term: $0, source: source)
+        }
+        return merge(importedEntries)
     }
 
     /// Add a new term, or bump the occurrence count if the normalized term already exists.
@@ -231,7 +274,116 @@ enum VocabularyStore {
             }
     }
 
+    private static func merge(_ importedEntries: [VocabularyEntry]) -> VocabularyBatchImportResult {
+        var entries = load()
+        var addedCount = 0
+        var updatedCount = 0
+
+        for importedEntry in importedEntries {
+            let normalizedTerm = normalize(importedEntry.term)
+            guard !normalizedTerm.isEmpty else { continue }
+            if let index = entries.firstIndex(where: {
+                normalize($0.term).caseInsensitiveCompare(normalizedTerm) == .orderedSame
+            }) {
+                let existing = entries[index]
+                let mergedEntry = VocabularyEntry(
+                    id: existing.id,
+                    term: preferredSurface(existing: existing.term, imported: normalizedTerm),
+                    source: mergedSource(existing: existing.source, imported: importedEntry.source),
+                    createdAt: min(existing.createdAt, importedEntry.createdAt),
+                    occurrenceCount: max(existing.occurrenceCount, max(1, importedEntry.occurrenceCount)),
+                )
+                if mergedEntry != existing {
+                    entries[index] = mergedEntry
+                    updatedCount += 1
+                }
+            } else {
+                entries.insert(
+                    VocabularyEntry(
+                        term: normalizedTerm,
+                        source: importedEntry.source,
+                        createdAt: importedEntry.createdAt,
+                        occurrenceCount: max(1, importedEntry.occurrenceCount),
+                    ),
+                    at: 0,
+                )
+                addedCount += 1
+            }
+        }
+
+        save(entries)
+        return VocabularyBatchImportResult(
+            entries: load(),
+            addedCount: addedCount,
+            updatedCount: updatedCount,
+        )
+    }
+
+    private static func decodeImportedEntries(
+        from data: Data,
+        defaultSource: VocabularySource,
+    ) throws -> [VocabularyEntry] {
+        let decoder = JSONDecoder()
+        if let entries = try? decoder.decode([VocabularyEntry].self, from: data) {
+            return entries
+        }
+
+        if let terms = try? decoder.decode([String].self, from: data) {
+            return terms.map { VocabularyEntry(term: $0, source: defaultSource) }
+        }
+
+        if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let terms = object["terms"] as? [String]
+        {
+            return terms.map { VocabularyEntry(term: $0, source: defaultSource) }
+        }
+
+        guard let text = String(data: data, encoding: .utf8) else {
+            throw VocabularyImportError.unsupportedFormat
+        }
+
+        let separators = CharacterSet(charactersIn: ",;\n\r")
+        let terms = text
+            .components(separatedBy: separators)
+            .map { VocabularyEntry(term: $0, source: defaultSource) }
+            .filter { !normalize($0.term).isEmpty }
+
+        guard !terms.isEmpty else {
+            throw VocabularyImportError.unsupportedFormat
+        }
+
+        return terms
+    }
+
+    private static func mergedSource(
+        existing: VocabularySource,
+        imported: VocabularySource,
+    ) -> VocabularySource {
+        if existing == .manual || imported == .manual {
+            return .manual
+        }
+        return .automatic
+    }
+
+    private static func preferredSurface(existing: String, imported: String) -> String {
+        let existingHasDecoratedCharacters = existing.hasDecoratedVocabularyCharacters
+        let importedHasDecoratedCharacters = imported.hasDecoratedVocabularyCharacters
+        if importedHasDecoratedCharacters && !existingHasDecoratedCharacters {
+            return imported
+        }
+        if imported.count > existing.count, importedHasDecoratedCharacters == existingHasDecoratedCharacters {
+            return imported
+        }
+        return existing
+    }
+
     private static func normalize(_ term: String) -> String {
         term.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+private extension String {
+    var hasDecoratedVocabularyCharacters: Bool {
+        contains(where: { $0.isUppercase || "._+-/".contains($0) })
     }
 }

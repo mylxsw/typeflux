@@ -390,12 +390,22 @@
 "vocabulary.action.newWord" = "新增詞條";
 "vocabulary.action.addFirst" = "新增第一個詞條";
 "vocabulary.action.addWord" = "新增詞條";
+"vocabulary.action.import" = "匯入";
+"vocabulary.action.export" = "匯出";
+"vocabulary.action.sync" = "同步專案詞彙";
 "vocabulary.sheet.title" = "加入詞庫";
 "vocabulary.sheet.subtitle" = "每行新增一個詞條。此功能特別適合名字、品牌、產品術語與常說的專業詞。";
 "vocabulary.sheet.editTitle" = "編輯詞條";
 "vocabulary.sheet.editSubtitle" = "更新此詞條內容，同時保留它的來源與既有使用記錄。";
 "vocabulary.sheet.placeholder" = "新增新詞";
+"vocabulary.sync.scanning" = "正在掃描 ~/.codex 與 ~/.claude ...";
 "vocabulary.toast.copied" = "詞條已複製。";
+"vocabulary.toast.imported" = "已匯入 %d 個詞條。";
+"vocabulary.toast.importNoChanges" = "匯入後詞庫沒有變化。";
+"vocabulary.toast.exported" = "詞庫已匯出。";
+"vocabulary.toast.synced" = "已同步 %d 個專案詞彙到詞庫。";
+"vocabulary.toast.syncNoSources" = "找不到 ~/.codex 或 ~/.claude 目錄。";
+"vocabulary.toast.syncNoTerms" = "沒有找到可同步的專案詞彙。";
 
 "home.activity.title" = "整體活躍度";
 "home.activity.completionRate" = "完成率";

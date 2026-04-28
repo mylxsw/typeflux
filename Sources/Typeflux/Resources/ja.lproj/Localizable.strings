@@ -390,12 +390,22 @@
 "vocabulary.action.newWord" = "新しい言葉";
 "vocabulary.action.addFirst" = "最初の単語を追加";
 "vocabulary.action.addWord" = "単語を追加";
+"vocabulary.action.import" = "インポート";
+"vocabulary.action.export" = "エクスポート";
+"vocabulary.action.sync" = "プロジェクト用語を同期";
 "vocabulary.sheet.title" = "語彙に追加";
 "vocabulary.sheet.subtitle" = "エントリごとに 1 つの用語を使用します。これは、名前、ブランド、製品用語、その他の頻繁に使用される専門用語に最適です。";
 "vocabulary.sheet.editTitle" = "語彙項目を編集";
 "vocabulary.sheet.editSubtitle" = "ソースと既存の利用履歴を維持したまま、この用語を更新します。";
 "vocabulary.sheet.placeholder" = "新しい単語を追加する";
+"vocabulary.sync.scanning" = "~/.codex と ~/.claude をスキャンしています...";
 "vocabulary.toast.copied" = "語彙項目をコピーしました。";
+"vocabulary.toast.imported" = "%d 件の語彙用語をインポートしました。";
+"vocabulary.toast.importNoChanges" = "インポートしても語彙は変更されませんでした。";
+"vocabulary.toast.exported" = "語彙をエクスポートしました。";
+"vocabulary.toast.synced" = "%d 件のプロジェクト用語を語彙に同期しました。";
+"vocabulary.toast.syncNoSources" = "~/.codex または ~/.claude ディレクトリが見つかりません。";
+"vocabulary.toast.syncNoTerms" = "同期するプロジェクト用語が見つかりませんでした。";
 
 "home.activity.title" = "全体的な活動";
 "home.activity.completionRate" = "完了率";

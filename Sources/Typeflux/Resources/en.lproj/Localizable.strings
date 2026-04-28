@@ -392,12 +392,22 @@
 "vocabulary.action.newWord" = "New word";
 "vocabulary.action.addFirst" = "Add your first word";
 "vocabulary.action.addWord" = "Add word";
+"vocabulary.action.import" = "Import";
+"vocabulary.action.export" = "Export";
+"vocabulary.action.sync" = "Sync project terms";
 "vocabulary.sheet.title" = "Add to vocabulary";
 "vocabulary.sheet.subtitle" = "Use one term per entry. This works best for names, brands, product terms, and other frequently dictated jargon.";
 "vocabulary.sheet.editTitle" = "Edit vocabulary term";
 "vocabulary.sheet.editSubtitle" = "Update the term while keeping its source and existing usage history.";
 "vocabulary.sheet.placeholder" = "Add a new word";
+"vocabulary.sync.scanning" = "Scanning ~/.codex and ~/.claude...";
 "vocabulary.toast.copied" = "Vocabulary term copied.";
+"vocabulary.toast.imported" = "Imported %d vocabulary terms.";
+"vocabulary.toast.importNoChanges" = "No vocabulary changes were imported.";
+"vocabulary.toast.exported" = "Vocabulary exported.";
+"vocabulary.toast.synced" = "Synced %d project terms into vocabulary.";
+"vocabulary.toast.syncNoSources" = "No ~/.codex or ~/.claude directories were found.";
+"vocabulary.toast.syncNoTerms" = "No project terms were discovered to sync.";
 
 "home.activity.title" = "Overall activity";
 "home.activity.completionRate" = "Completion rate";

@@ -288,12 +288,39 @@ struct StudioView: View {
             if viewModel.currentSection == .vocabulary {
                 Spacer()
 
-                StudioButton(
-                    title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .primary,
-                ) {
-                    editingVocabularyEntry = nil
-                    newVocabularyTerm = ""
-                    isAddingVocabulary = true
+                HStack(spacing: StudioTheme.Spacing.small) {
+                    StudioIconButton(
+                        systemImage: "arrow.down.doc",
+                        variant: .ghost,
+                    ) {
+                        viewModel.importVocabulary()
+                    }
+                    .studioTooltip(L("vocabulary.action.import"), yOffset: 34)
+
+                    StudioIconButton(
+                        systemImage: "arrow.up.doc",
+                        variant: .ghost,
+                    ) {
+                        viewModel.exportVocabulary()
+                    }
+                    .studioTooltip(L("vocabulary.action.export"), yOffset: 34)
+
+                    StudioIconButton(
+                        systemImage: "arrow.triangle.2.circlepath",
+                        variant: .ghost,
+                    ) {
+                        viewModel.syncProjectVocabulary()
+                    }
+                    .disabled(viewModel.isSynchronizingVocabulary)
+                    .studioTooltip(L("vocabulary.action.sync"), yOffset: 34)
+
+                    StudioButton(
+                        title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .primary,
+                    ) {
+                        editingVocabularyEntry = nil
+                        newVocabularyTerm = ""
+                        isAddingVocabulary = true
+                    }
                 }
             } else if viewModel.currentSection == .agent {
                 Spacer()
@@ -955,6 +982,16 @@ struct StudioView: View {
                         lineWidth: StudioTheme.BorderWidth.thin,
                     ),
                 )
+            }
+
+            if viewModel.isSynchronizingVocabulary {
+                HStack(spacing: StudioTheme.Spacing.small) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(L("vocabulary.sync.scanning"))
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
             }
 
             StudioCard {

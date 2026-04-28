@@ -392,12 +392,22 @@
 "vocabulary.action.newWord" = "新建词条";
 "vocabulary.action.addFirst" = "添加第一个词条";
 "vocabulary.action.addWord" = "添加词条";
+"vocabulary.action.import" = "导入";
+"vocabulary.action.export" = "导出";
+"vocabulary.action.sync" = "同步项目词汇";
 "vocabulary.sheet.title" = "添加到词库";
 "vocabulary.sheet.subtitle" = "每行添加一个词条。该功能特别适合名字、品牌、产品术语和常说的专业词。";
 "vocabulary.sheet.editTitle" = "编辑词条";
 "vocabulary.sheet.editSubtitle" = "更新该词条内容，同时保留它的来源和现有使用记录。";
 "vocabulary.sheet.placeholder" = "添加新词";
+"vocabulary.sync.scanning" = "正在扫描 ~/.codex 和 ~/.claude ...";
 "vocabulary.toast.copied" = "词条已复制。";
+"vocabulary.toast.imported" = "已导入 %d 个词条。";
+"vocabulary.toast.importNoChanges" = "导入后词库没有变化。";
+"vocabulary.toast.exported" = "词库已导出。";
+"vocabulary.toast.synced" = "已同步 %d 个项目词汇到词库。";
+"vocabulary.toast.syncNoSources" = "未找到 ~/.codex 或 ~/.claude 目录。";
+"vocabulary.toast.syncNoTerms" = "没有发现可同步的项目词汇。";
 
 "home.activity.title" = "整体活跃度";
 "home.activity.completionRate" = "完成率";

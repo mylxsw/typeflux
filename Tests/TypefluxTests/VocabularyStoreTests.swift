@@ -111,6 +111,67 @@ final class VocabularyStoreExtendedTests: XCTestCase {
         XCTAssertTrue(terms.contains("XCTest"))
     }
 
+    func testExportDataRoundTripsEntries() throws {
+        let entries = [
+            VocabularyEntry(term: "TypefluxCloud", source: .manual, occurrenceCount: 3),
+            VocabularyEntry(term: "Qwen3-ASR", source: .automatic, occurrenceCount: 2),
+        ]
+        VocabularyStore.save(entries)
+
+        let data = try VocabularyStore.exportData()
+        let decoded = try JSONDecoder().decode([VocabularyEntry].self, from: data)
+
+        XCTAssertEqual(decoded.count, 2)
+        XCTAssertTrue(decoded.contains(where: { $0.term == "TypefluxCloud" && $0.occurrenceCount == 3 }))
+        XCTAssertTrue(decoded.contains(where: { $0.term == "Qwen3-ASR" && $0.occurrenceCount == 2 }))
+    }
+
+    func testImportEntriesSupportsPlainTextLists() throws {
+        let data = """
+        Typeflux
+        Qwen3-ASR
+        Typeflux
+        """
+        .data(using: .utf8)!
+
+        let result = try VocabularyStore.importEntries(from: data)
+
+        XCTAssertEqual(result.addedCount, 2)
+        XCTAssertEqual(result.updatedCount, 0)
+        XCTAssertEqual(Set(result.entries.map(\.term)), Set(["Typeflux", "Qwen3-ASR"]))
+    }
+
+    func testImportEntriesSupportsExportedJSONAndPreservesMetadata() throws {
+        let payload = [
+            VocabularyEntry(term: "WhisperKit", source: .automatic, occurrenceCount: 4),
+            VocabularyEntry(term: "TypefluxCloud", source: .manual, occurrenceCount: 2),
+        ]
+        let data = try JSONEncoder().encode(payload)
+
+        let result = try VocabularyStore.importEntries(from: data)
+
+        XCTAssertEqual(result.addedCount, 2)
+        XCTAssertEqual(result.entries.first(where: { $0.term == "WhisperKit" })?.occurrenceCount, 4)
+        XCTAssertEqual(result.entries.first(where: { $0.term == "TypefluxCloud" })?.source, .manual)
+    }
+
+    func testImportEntriesUpgradesExistingAutomaticTermToManualWithoutInflatingCount() throws {
+        VocabularyStore.save([
+            VocabularyEntry(term: "TypefluxCloud", source: .automatic, occurrenceCount: 2),
+        ])
+
+        let data = """
+        ["TypefluxCloud"]
+        """
+        .data(using: .utf8)!
+        let result = try VocabularyStore.importEntries(from: data, defaultSource: .manual)
+
+        XCTAssertEqual(result.addedCount, 0)
+        XCTAssertEqual(result.updatedCount, 1)
+        XCTAssertEqual(result.entries.first?.source, .manual)
+        XCTAssertEqual(result.entries.first?.occurrenceCount, 2)
+    }
+
     func testSaveDeduplicate() {
         let entries = [
             VocabularyEntry(term: "duplicate", source: .manual),
