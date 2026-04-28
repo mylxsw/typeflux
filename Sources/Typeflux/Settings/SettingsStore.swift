@@ -464,9 +464,10 @@ final class SettingsStore {
     }
 
     private func personaAppBinding(appName: String?, bundleIdentifier: String?) -> PersonaAppBinding? {
-        // Prefer bundle identifiers because they are stable across localizations and
-        // window titles. Fall back to app names only when no bundle identifier match
-        // is available so manual name-based bindings still work.
+        // Prefer bindings that match the focused app's bundle identifier because
+        // bundle IDs are stable across localizations and window titles. Only if no
+        // binding matches that bundle ID do we try the app name, so manual
+        // name-based bindings still work as a fallback.
         personaAppBindings.first { $0.matches(bundleIdentifier: bundleIdentifier, appName: nil) }
             ?? personaAppBindings.first { $0.matches(bundleIdentifier: nil, appName: appName) }
     }

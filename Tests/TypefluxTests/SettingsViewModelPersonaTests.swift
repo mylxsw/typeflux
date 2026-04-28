@@ -161,7 +161,10 @@ final class SettingsViewModelPersonaTests: XCTestCase {
         let settingsStore = SettingsStore(defaults: defaults)
         let customPersona = PersonaProfile(name: "Chat Reply", prompt: "Be casual.")
         settingsStore.personas = settingsStore.personas + [customPersona]
-        settingsStore.savePersonaAppBinding(appIdentifier: "Slack", personaID: customPersona.id)
+        settingsStore.savePersonaAppBinding(
+            appIdentifier: "com.tinyspeck.slackmacgap",
+            personaID: customPersona.id,
+        )
         let historyStore = InMemoryHistoryStore()
         let viewModel = StudioViewModel(
             settingsStore: settingsStore,
