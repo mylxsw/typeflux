@@ -158,8 +158,8 @@ enum ProjectVocabularyScanner {
     /// we keep the most descriptive project-facing label.
     private static func preferredSurface(existing: String?, candidate: String) -> String {
         guard let existing else { return candidate }
-        let existingDecorated = existing.hasProjectVocabularyDecoration
-        let candidateDecorated = candidate.hasProjectVocabularyDecoration
+        let existingDecorated = existing.hasVocabularyDecoration
+        let candidateDecorated = candidate.hasVocabularyDecoration
         if candidateDecorated && !existingDecorated {
             return candidate
         }
@@ -233,14 +233,14 @@ enum ProjectVocabularyScanner {
                 return fallback
             }
             fatalError(
-                "Unable to initialize the vocabulary scanner, and the application must terminate immediately. Please restart the app or contact support.",
+                "ProjectVocabularyScanner could not initialize its fallback regex. This indicates a fundamental Foundation regex failure and the process must terminate.",
             )
         }
     }
 }
 
 private extension String {
-    var hasProjectVocabularyDecoration: Bool {
+    var hasVocabularyDecoration: Bool {
         contains(where: { $0.isUppercase || vocabularyDecoratedCharacters.contains($0) })
     }
 }

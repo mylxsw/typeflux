@@ -160,6 +160,7 @@ final class VocabularyStoreExtendedTests: XCTestCase {
             VocabularyEntry(term: "TypefluxCloud", source: .automatic, occurrenceCount: 2),
         ])
 
+        // Exercises the `[String]` JSON-array decode path used for simple bulk imports.
         let data = """
         ["TypefluxCloud"]
         """

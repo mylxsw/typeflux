@@ -373,8 +373,8 @@ enum VocabularyStore {
     /// terms (uppercase, separators, or punctuation commonly used in product and
     /// model names) are preferred over plain lowercase imports.
     private static func preferredSurface(existing: String, imported: String) -> String {
-        let existingHasDecoratedCharacters = existing.hasDecoratedVocabularyCharacters
-        let importedHasDecoratedCharacters = imported.hasDecoratedVocabularyCharacters
+        let existingHasDecoratedCharacters = existing.hasVocabularyDecoration
+        let importedHasDecoratedCharacters = imported.hasVocabularyDecoration
         if importedHasDecoratedCharacters && !existingHasDecoratedCharacters {
             return imported
         }
@@ -391,7 +391,7 @@ enum VocabularyStore {
 }
 
 private extension String {
-    var hasDecoratedVocabularyCharacters: Bool {
+    var hasVocabularyDecoration: Bool {
         contains(where: { $0.isUppercase || vocabularyDecoratedCharacters.contains($0) })
     }
 }
