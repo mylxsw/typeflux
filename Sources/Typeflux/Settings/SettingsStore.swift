@@ -459,7 +459,7 @@ final class SettingsStore {
     }
 
     func removePersonaAppBinding(id: UUID) {
-        personaAppBindings.removeAll { $0.id == id }
+        personaAppBindings = personaAppBindings.filter { $0.id != id }
     }
 
     private func personaAppBinding(appName: String?, bundleIdentifier: String?) -> PersonaAppBinding? {

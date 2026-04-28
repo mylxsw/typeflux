@@ -1593,6 +1593,9 @@ final class StudioViewModel: ObservableObject {
         persistPersonas()
         settingsStore.personaAppBindings = settingsStore.personaAppBindings.filter { $0.personaID != id }
         personaAppBindings = settingsStore.personaAppBindings
+        if personaAppBindingDraftPersonaID == id {
+            personaAppBindingDraftPersonaID = personas.first?.id
+        }
         if settingsStore.activePersonaID == id.uuidString {
             settingsStore.activePersonaID = personas.first?.id.uuidString ?? ""
             activePersonaID = settingsStore.activePersonaID
