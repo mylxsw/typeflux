@@ -679,6 +679,105 @@ struct StudioView: View {
         }
     }
 
+    private var personaAppBindingSection: some View {
+        StudioCard {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                Text(L("settings.personaAppBindings.title"))
+                    .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+
+                Text(L("settings.personaAppBindings.subtitle"))
+                    .font(.studioBody(StudioTheme.Typography.body))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if viewModel.personaAppBindings.isEmpty {
+                    Text(L("settings.personaAppBindings.empty"))
+                        .font(.studioBody(StudioTheme.Typography.bodySmall))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                } else {
+                    VStack(spacing: StudioTheme.Spacing.none) {
+                        ForEach(viewModel.personaAppBindings) { binding in
+                            HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
+                                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                                    Text(binding.appIdentifier)
+                                        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                                        .foregroundStyle(StudioTheme.textPrimary)
+                                    Text(viewModel.personaName(for: binding))
+                                        .font(.studioBody(StudioTheme.Typography.caption))
+                                        .foregroundStyle(StudioTheme.textSecondary)
+                                }
+
+                                Spacer()
+
+                                StudioPill(title: viewModel.personaName(for: binding))
+
+                                Button(L("common.delete"), role: .destructive) {
+                                    viewModel.removePersonaAppBinding(id: binding.id)
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                            .padding(.vertical, StudioTheme.Spacing.small)
+
+                            if binding.id != viewModel.personaAppBindings.last?.id {
+                                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                            }
+                        }
+                    }
+                }
+
+                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                StudioTextInputCard(
+                    label: L("settings.personaAppBindings.appIdentifier"),
+                    placeholder: L("settings.personaAppBindings.appIdentifierPlaceholder"),
+                    text: Binding(
+                        get: { viewModel.personaAppBindingDraftIdentifier },
+                        set: { viewModel.personaAppBindingDraftIdentifier = $0 },
+                    ),
+                ) {
+                    StudioButton(
+                        title: L("settings.personaAppBindings.useCurrentApp"),
+                        systemImage: "app.badge",
+                        variant: .secondary,
+                    ) {
+                        viewModel.useFrontmostAppForPersonaBindingDraft()
+                    }
+                }
+
+                HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                        Text(L("settings.personaAppBindings.persona"))
+                            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textSecondary)
+
+                        StudioMenuPicker(
+                            options: viewModel.personas.map { persona in
+                                (label: persona.name, value: persona.id as UUID?)
+                            },
+                            selection: Binding(
+                                get: { viewModel.personaAppBindingDraftPersonaID },
+                                set: { viewModel.personaAppBindingDraftPersonaID = $0 },
+                            ),
+                            width: 220,
+                        )
+                    }
+
+                    Spacer()
+
+                    StudioButton(
+                        title: L("settings.personaAppBindings.add"),
+                        systemImage: "plus",
+                        variant: .primary,
+                        isDisabled: !viewModel.canSavePersonaAppBinding,
+                    ) {
+                        viewModel.savePersonaAppBinding()
+                    }
+                }
+            }
+        }
+    }
+
     private var personaLLMProviderOptions: [(label: String, value: StudioModelProviderID)] {
         var remoteOptions = LLMRemoteProvider.settingsDisplayOrder
             .filter { $0 != .freeModel || !FreeLLMModelRegistry.suggestedModelNames.isEmpty }
@@ -1179,6 +1278,10 @@ struct StudioView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
+
+            StudioSectionTitle(title: L("settings.personaAppBindings.section"))
+
+            personaAppBindingSection
 
             StudioSectionTitle(title: L("settings.audio"))
 

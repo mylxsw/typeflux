@@ -426,6 +426,16 @@
 "settings.personaDefault.enabled" = "New dictation sessions will be rewritten with the selected persona.";
 "settings.personaDefault.disabled" = "Persona is currently off, so dictation will stay in its plain form.";
 "settings.personaDefault.openPersonas" = "Open Personas";
+"settings.personaAppBindings.section" = "App-specific Personas";
+"settings.personaAppBindings.title" = "Automatic persona switching";
+"settings.personaAppBindings.subtitle" = "Match the focused app and automatically override the default persona. Bundle identifiers are the most reliable, but app names also work.";
+"settings.personaAppBindings.empty" = "No app-specific personas yet.";
+"settings.personaAppBindings.appIdentifier" = "App identifier";
+"settings.personaAppBindings.appIdentifierPlaceholder" = "com.tinyspeck.slackmacgap or Slack";
+"settings.personaAppBindings.useCurrentApp" = "Use Current App";
+"settings.personaAppBindings.persona" = "Persona";
+"settings.personaAppBindings.add" = "Add Binding";
+"settings.personaAppBindings.saved" = "%@ will now switch automatically for the matched app.";
 
 "settings.shortcuts.activation.title" = "Voice Input";
 "settings.shortcuts.activation.subtitle" = "Use one shortcut to start voice input. Hold to talk, or tap quickly to lock the recording session. If text is selected, the transcript replaces that selection directly.";

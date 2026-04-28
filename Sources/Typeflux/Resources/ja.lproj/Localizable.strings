@@ -424,6 +424,16 @@
 "settings.personaDefault.enabled" = "新しいディクテーション セッションは、選択したペルソナで書き換えられます。";
 "settings.personaDefault.disabled" = "ペルソナは現在オフになっているため、ディクテーションはそのままの形式のままになります。";
 "settings.personaDefault.openPersonas" = "オープンペルソナ";
+"settings.personaAppBindings.section" = "アプリ別ペルソナ";
+"settings.personaAppBindings.title" = "自動ペルソナ切り替え";
+"settings.personaAppBindings.subtitle" = "フォーカス中の入力欄が属するアプリに合わせて、デフォルトのペルソナを自動で上書きします。Bundle Identifier の指定が最も確実ですが、アプリ名でも一致できます。";
+"settings.personaAppBindings.empty" = "アプリ別ペルソナはまだありません。";
+"settings.personaAppBindings.appIdentifier" = "アプリ識別子";
+"settings.personaAppBindings.appIdentifierPlaceholder" = "例: com.tinyspeck.slackmacgap または Slack";
+"settings.personaAppBindings.useCurrentApp" = "現在のアプリを使用";
+"settings.personaAppBindings.persona" = "ペルソナ";
+"settings.personaAppBindings.add" = "バインドを追加";
+"settings.personaAppBindings.saved" = "一致したアプリでは %@ に自動で切り替わります。";
 
 "settings.shortcuts.activation.title" = "音声入力";
 "settings.shortcuts.activation.subtitle" = "1 つのショートカットを使用して音声入力を開始します。押し続けて話すか、すばやくタップして録音セッションをロックします。テキストが選択されている場合、トランスクリプトはその選択を直接置き換えます。";

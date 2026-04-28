@@ -367,7 +367,7 @@ extension WorkflowController {
             currentSelectedText = selectedText
             let personaPrompt = recordingIntent == .askSelection
                 ? nil
-                : settingsStore.activePersonaPrompt
+                : activePersonaPrompt(selectionSnapshot: selectionSnapshot, inputContext: inputContext)
 
             NetworkDebugLogger.logMessage(selectionSnapshotLog(selectionSnapshot))
             if WorkflowOverlayPresentationPolicy.shouldShowProcessingAfterRecording() {
@@ -1542,6 +1542,16 @@ extension WorkflowController {
         case .dictation, .editSelection, .personaRewrite, .askAnswer:
             record.personaPrompt ?? settingsStore.activePersonaPrompt
         }
+    }
+
+    func activePersonaPrompt(
+        selectionSnapshot: TextSelectionSnapshot,
+        inputContext: InputContextSnapshot?,
+    ) -> String? {
+        settingsStore.effectivePersonaPrompt(
+            appName: inputContext?.appName ?? selectionSnapshot.processName,
+            bundleIdentifier: inputContext?.bundleIdentifier ?? selectionSnapshot.bundleIdentifier,
+        )
     }
 
     func selectionSnapshotLog(_ snapshot: TextSelectionSnapshot) -> String {
