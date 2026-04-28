@@ -434,6 +434,7 @@
 "settings.personaAppBindings.persona" = "페르소나";
 "settings.personaAppBindings.add" = "바인딩 추가";
 "settings.personaAppBindings.saved" = "일치하는 앱에서는 이제 %@ 로 자동 전환됩니다.";
+"settings.personaAppBindings.savedGeneric" = "앱별 페르소나 바인딩을 저장했습니다.";
 "settings.personaAppBindings.missingPersona" = "페르소나를 찾을 수 없음";
 
 "settings.shortcuts.activation.title" = "음성 입력";

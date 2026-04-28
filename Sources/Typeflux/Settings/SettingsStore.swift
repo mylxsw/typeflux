@@ -364,8 +364,12 @@ final class SettingsStore {
             return (try? JSONDecoder().decode([PersonaAppBinding].self, from: data)) ?? []
         }
         set {
-            let data = (try? JSONEncoder().encode(newValue)) ?? Data("[]".utf8)
-            defaults.set(data, forKey: "persona.appBindings")
+            do {
+                let data = try JSONEncoder().encode(newValue)
+                defaults.set(data, forKey: "persona.appBindings")
+            } catch {
+                ErrorLogStore.shared.log("Failed to encode persona app bindings: \(error.localizedDescription)")
+            }
         }
     }
 
@@ -448,6 +452,8 @@ final class SettingsStore {
             bindings[index].appIdentifier = trimmedIdentifier
             bindings[index].personaID = personaID
         } else {
+            // Prepend new bindings so the most recently created rule wins if users
+            // intentionally create overlapping manual identifiers.
             bindings.insert(
                 PersonaAppBinding(
                     appIdentifier: trimmedIdentifier,

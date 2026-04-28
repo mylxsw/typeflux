@@ -434,6 +434,7 @@
 "settings.personaAppBindings.persona" = "人設";
 "settings.personaAppBindings.add" = "新增綁定";
 "settings.personaAppBindings.saved" = "符合的應用現在會自動切換到 %@。";
+"settings.personaAppBindings.savedGeneric" = "已儲存應用專屬人設綁定。";
 "settings.personaAppBindings.missingPersona" = "人設已不存在";
 
 "settings.shortcuts.activation.title" = "語音輸入";

@@ -434,6 +434,7 @@
 "settings.personaAppBindings.persona" = "ペルソナ";
 "settings.personaAppBindings.add" = "バインドを追加";
 "settings.personaAppBindings.saved" = "一致したアプリでは %@ に自動で切り替わります。";
+"settings.personaAppBindings.savedGeneric" = "アプリ別ペルソナのバインドを保存しました。";
 "settings.personaAppBindings.missingPersona" = "ペルソナが見つかりません";
 
 "settings.shortcuts.activation.title" = "音声入力";

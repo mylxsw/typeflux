@@ -1540,6 +1540,8 @@ final class StudioViewModel: ObservableObject {
         personaAppBindingDraftIdentifier = ""
         if let persona = personas.first(where: { $0.id == personaID }) {
             showToast(L("settings.personaAppBindings.saved", persona.name))
+        } else {
+            showToast(L("settings.personaAppBindings.savedGeneric"))
         }
     }
 

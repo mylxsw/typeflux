@@ -436,6 +436,7 @@
 "settings.personaAppBindings.persona" = "Persona";
 "settings.personaAppBindings.add" = "Add Binding";
 "settings.personaAppBindings.saved" = "%@ will now switch automatically for the matched app.";
+"settings.personaAppBindings.savedGeneric" = "The app-specific persona binding has been saved.";
 "settings.personaAppBindings.missingPersona" = "Missing Persona";
 
 "settings.shortcuts.activation.title" = "Voice Input";
