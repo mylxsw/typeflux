@@ -15,6 +15,16 @@ DMG_NAME="${PACKAGE_NAME}.dmg"
 DMG_PATH="${BUILD_DIR}/${DMG_NAME}"
 STAGING_DIR="${BUILD_DIR}/dmg-staging"
 
+verify_bundle_signature() {
+  local bundle_path="$1"
+
+  command -v codesign >/dev/null 2>&1 || return 0
+
+  if codesign -dv "$bundle_path" >/dev/null 2>&1; then
+    codesign --verify --deep --strict --verbose=2 "$bundle_path"
+  fi
+}
+
 if ! command -v create-dmg >/dev/null 2>&1; then
   echo "Error: create-dmg is not installed. Install it with: brew install create-dmg"
   exit 1
@@ -30,7 +40,10 @@ echo "Creating DMG package for $PACKAGE_NAME..."
 rm -rf "$STAGING_DIR"
 mkdir -p "$STAGING_DIR"
 
-cp -R "$APP_BUNDLE" "$STAGING_DIR/"
+# Preserve bundle metadata/signature while staging the app for DMG creation.
+verify_bundle_signature "$APP_BUNDLE"
+ditto "$APP_BUNDLE" "$STAGING_DIR/${APP_NAME}.app"
+verify_bundle_signature "$STAGING_DIR/${APP_NAME}.app"
 
 rm -f "$DMG_PATH"
 
