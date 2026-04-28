@@ -26,12 +26,7 @@ enum VocabularySource: String, Codable, CaseIterable {
     }
 
     var isExternalAppSource: Bool {
-        switch self {
-        case .claude, .codex:
-            true
-        case .manual, .automatic:
-            false
-        }
+        self == .claude || self == .codex
     }
 }
 
@@ -415,6 +410,10 @@ enum VocabularyStore {
         return deduplicated
     }
 
+    /// Merge source precedence keeps the highest-signal provenance available:
+    /// manual > existing external app > imported external app > automatic.
+    /// This lets local/user-curated terms stay strongest while keeping third-party
+    /// imports stable across repeated Claude/Codex syncs.
     private static func mergedSource(
         existing: VocabularySource,
         imported: VocabularySource,

@@ -2277,14 +2277,19 @@ final class StudioViewModel: ObservableObject {
         googleCloudOAuthAuthorized = GoogleCloudSpeechCredentialResolver.isStoredAuthorizationAvailable()
     }
 
-    private func showImportConfirmationAlert(for fileName: String, itemCount: Int) -> Bool {
+    static func makeVocabularyImportConfirmationAlert(fileName: String, itemCount: Int) -> NSAlert {
         let alert = NSAlert()
         alert.messageText = L("vocabulary.importDialog.title")
         alert.informativeText = L("vocabulary.importDialog.message", itemCount, fileName)
         alert.alertStyle = .informational
         alert.addButton(withTitle: L("vocabulary.importDialog.confirm"))
         alert.addButton(withTitle: L("common.cancel"))
-        return alert.runModal() == .alertFirstButtonReturn
+        return alert
+    }
+
+    private func showImportConfirmationAlert(for fileName: String, itemCount: Int) -> Bool {
+        Self.makeVocabularyImportConfirmationAlert(fileName: fileName, itemCount: itemCount)
+            .runModal() == .alertFirstButtonReturn
     }
 
     private func importVocabularyFromExternalApp(source: VocabularySource, directoryName: String) {

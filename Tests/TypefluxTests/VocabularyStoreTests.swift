@@ -1,3 +1,4 @@
+import AppKit
 @testable import Typeflux
 import XCTest
 
@@ -41,6 +42,24 @@ final class VocabularyStoreTests: XCTestCase {
 
         XCTAssertEqual(viewModel.vocabularyEntries.map(\.term), ["Qwen3-ASR"])
         XCTAssertEqual(viewModel.vocabularyEntries.first?.source, .automatic)
+    }
+
+    @MainActor
+    func testVocabularyImportConfirmationAlertUsesExpectedLocalizedContent() {
+        let alert = StudioViewModel.makeVocabularyImportConfirmationAlert(
+            fileName: "typeflux-vocabulary.json",
+            itemCount: 18,
+        )
+
+        XCTAssertEqual(alert.messageText, L("vocabulary.importDialog.title"))
+        XCTAssertEqual(
+            alert.informativeText,
+            L("vocabulary.importDialog.message", 18, "typeflux-vocabulary.json"),
+        )
+        XCTAssertEqual(alert.buttons.map(\.title), [
+            L("vocabulary.importDialog.confirm"),
+            L("common.cancel"),
+        ])
     }
 }
 

@@ -28,6 +28,7 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
     func matches(_ source: VocabularySource) -> Bool {
         switch self {
         case .all:
+            // The "All" filter intentionally includes every vocabulary source.
             true
         case .automatic:
             source == .automatic
@@ -75,10 +76,11 @@ private func vocabularySourceLogoImage(for source: VocabularySource) -> NSImage?
 }
 
 private func vocabularySourceLogoURL(for resourceName: String) -> URL? {
+    let imageExtension = "png"
     let candidatePaths: [(String?, String)] = [
-        ("Resources/Providers", "png"),
-        ("Providers", "png"),
-        (nil, "png"),
+        ("Resources/Providers", imageExtension),
+        ("Providers", imageExtension),
+        (nil, imageExtension),
     ]
 
     for (subdirectory, pathExtension) in candidatePaths {
