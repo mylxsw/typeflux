@@ -66,7 +66,9 @@ private func vocabularySourceLogoResourceName(for source: VocabularySource) -> S
 private func vocabularySourceLogoImage(for source: VocabularySource) -> NSImage? {
     guard let resourceName = vocabularySourceLogoResourceName(for: source) else { return nil }
     guard let url = vocabularySourceLogoURL(for: resourceName) else {
-        ErrorLogStore.shared.log("Missing vocabulary source logo resource: \(resourceName)")
+        ErrorLogStore.shared.log(
+            "Missing vocabulary source logo resource for \(source.rawValue): \(resourceName)",
+        )
         return nil
     }
     return NSImage(contentsOf: url)

@@ -1545,8 +1545,8 @@ final class StudioViewModel: ObservableObject {
             }
 
             guard showImportConfirmationAlert(
+                for: sourceURL.lastPathComponent,
                 itemCount: previewItems.count,
-                fileName: sourceURL.lastPathComponent,
             ) else { return }
 
             let result = try VocabularyStore.importItems(previewItems)
@@ -2277,7 +2277,7 @@ final class StudioViewModel: ObservableObject {
         googleCloudOAuthAuthorized = GoogleCloudSpeechCredentialResolver.isStoredAuthorizationAvailable()
     }
 
-    private func showImportConfirmationAlert(itemCount: Int, fileName: String) -> Bool {
+    private func showImportConfirmationAlert(for fileName: String, itemCount: Int) -> Bool {
         let alert = NSAlert()
         alert.messageText = L("vocabulary.importDialog.title")
         alert.informativeText = L("vocabulary.importDialog.message", itemCount, fileName)

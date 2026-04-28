@@ -425,6 +425,9 @@ enum VocabularyStore {
         if existing == imported {
             return existing
         }
+        // When two different external-app sources collide on the same term, keep the
+        // existing persisted source so repeated imports remain stable instead of
+        // flipping between Claude and Codex based on import order alone.
         if existing.isExternalAppSource {
             return existing
         }
