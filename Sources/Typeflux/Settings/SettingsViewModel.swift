@@ -1544,18 +1544,10 @@ final class StudioViewModel: ObservableObject {
                 return
             }
 
-            let alert = NSAlert()
-            alert.messageText = L("vocabulary.importDialog.title")
-            alert.informativeText = L(
-                "vocabulary.importDialog.message",
-                previewItems.count,
-                sourceURL.lastPathComponent,
-            )
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: L("vocabulary.importDialog.confirm"))
-            alert.addButton(withTitle: L("common.cancel"))
-
-            guard alert.runModal() == .alertFirstButtonReturn else { return }
+            guard showImportConfirmationAlert(
+                itemCount: previewItems.count,
+                fileName: sourceURL.lastPathComponent,
+            ) else { return }
 
             let result = try VocabularyStore.importItems(previewItems)
             vocabularyEntries = result.entries
@@ -2283,6 +2275,16 @@ final class StudioViewModel: ObservableObject {
 
     private func refreshGoogleCloudOAuthState() {
         googleCloudOAuthAuthorized = GoogleCloudSpeechCredentialResolver.isStoredAuthorizationAvailable()
+    }
+
+    private func showImportConfirmationAlert(itemCount: Int, fileName: String) -> Bool {
+        let alert = NSAlert()
+        alert.messageText = L("vocabulary.importDialog.title")
+        alert.informativeText = L("vocabulary.importDialog.message", itemCount, fileName)
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: L("vocabulary.importDialog.confirm"))
+        alert.addButton(withTitle: L("common.cancel"))
+        return alert.runModal() == .alertFirstButtonReturn
     }
 
     private func importVocabularyFromExternalApp(source: VocabularySource, directoryName: String) {

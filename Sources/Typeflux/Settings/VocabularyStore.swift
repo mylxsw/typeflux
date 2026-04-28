@@ -148,7 +148,8 @@ enum VocabularyStore {
         from data: Data,
         defaultSource: VocabularySource = .manual,
     ) throws -> VocabularyBatchImportResult {
-        try importItems(previewImportItems(from: data, defaultSource: defaultSource))
+        let items = try previewImportItems(from: data, defaultSource: defaultSource)
+        return try importItems(items)
     }
 
     static func previewImportItems(
@@ -352,7 +353,7 @@ enum VocabularyStore {
         )
     }
 
-    private static func decodeImportedEntries(
+    private static func decodeImportedItems(
         from data: Data,
         defaultSource: VocabularySource,
     ) throws -> [VocabularyTransferItem] {

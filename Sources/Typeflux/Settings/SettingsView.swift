@@ -65,18 +65,31 @@ private func vocabularySourceLogoResourceName(for source: VocabularySource) -> S
 
 private func vocabularySourceLogoImage(for source: VocabularySource) -> NSImage? {
     guard let resourceName = vocabularySourceLogoResourceName(for: source) else { return nil }
-
-    let url =
-        Bundle.appResources.url(
-            forResource: resourceName, withExtension: "png", subdirectory: "Resources/Providers",
-        )
-        ?? Bundle.appResources.url(
-            forResource: resourceName, withExtension: "png", subdirectory: "Providers",
-        )
-        ?? Bundle.appResources.url(forResource: resourceName, withExtension: "png")
-
-    guard let url else { return nil }
+    guard let url = vocabularySourceLogoURL(for: resourceName) else {
+        ErrorLogStore.shared.log("Missing vocabulary source logo resource: \(resourceName)")
+        return nil
+    }
     return NSImage(contentsOf: url)
+}
+
+private func vocabularySourceLogoURL(for resourceName: String) -> URL? {
+    let candidatePaths: [(String?, String)] = [
+        ("Resources/Providers", "png"),
+        ("Providers", "png"),
+        (nil, "png"),
+    ]
+
+    for (subdirectory, pathExtension) in candidatePaths {
+        if let url = Bundle.appResources.url(
+            forResource: resourceName,
+            withExtension: pathExtension,
+            subdirectory: subdirectory,
+        ) {
+            return url
+        }
+    }
+
+    return nil
 }
 
 // swiftlint:disable:next type_body_length
