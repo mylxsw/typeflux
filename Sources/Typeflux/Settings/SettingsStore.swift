@@ -356,6 +356,19 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "persona.items") }
     }
 
+    var personaAppBindings: [PersonaAppBinding] {
+        get {
+            guard let data = defaults.data(forKey: "persona.appBindings") else {
+                return []
+            }
+            return (try? JSONDecoder().decode([PersonaAppBinding].self, from: data)) ?? []
+        }
+        set {
+            let data = (try? JSONEncoder().encode(newValue)) ?? Data("[]".utf8)
+            defaults.set(data, forKey: "persona.appBindings")
+        }
+    }
+
     var personas: [PersonaProfile] {
         get {
             guard let data = personasJSON.data(using: .utf8), !personasJSON.isEmpty else {
@@ -379,6 +392,23 @@ final class SettingsStore {
     var activePersonaPrompt: String? {
         guard let activePersona else { return nil }
         return resolvedPersonaPrompt(for: activePersona)
+    }
+
+    func effectivePersona(appName: String?, bundleIdentifier: String?) -> PersonaProfile? {
+        if let binding = personaAppBinding(appName: appName, bundleIdentifier: bundleIdentifier),
+           let boundPersona = personas.first(where: { $0.id == binding.personaID })
+        {
+            return boundPersona
+        }
+
+        return activePersona
+    }
+
+    func effectivePersonaPrompt(appName: String?, bundleIdentifier: String?) -> String? {
+        guard let persona = effectivePersona(appName: appName, bundleIdentifier: bundleIdentifier) else {
+            return nil
+        }
+        return resolvedPersonaPrompt(for: persona)
     }
 
     func resolvedPersonaPrompt(for persona: PersonaProfile) -> String {
@@ -406,6 +436,50 @@ final class SettingsStore {
         personaSelectionIsExplicit = true
 
         NotificationCenter.default.post(name: .personaSelectionDidChange, object: self)
+    }
+
+    func savePersonaAppBinding(appIdentifier: String, personaID: UUID) {
+        let normalizedIdentifier = PersonaAppBinding.normalize(appIdentifier)
+        guard !normalizedIdentifier.isEmpty else { return }
+
+        var bindings = personaAppBindings
+        if let index = bindings.firstIndex(where: { $0.normalizedAppIdentifier == normalizedIdentifier }) {
+            bindings[index].appIdentifier = appIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
+            bindings[index].personaID = personaID
+        } else {
+            bindings.insert(
+                PersonaAppBinding(
+                    appIdentifier: appIdentifier.trimmingCharacters(in: .whitespacesAndNewlines),
+                    personaID: personaID,
+                ),
+                at: 0,
+            )
+        }
+        personaAppBindings = bindings
+    }
+
+    func removePersonaAppBinding(id: UUID) {
+        personaAppBindings = personaAppBindings.filter { $0.id != id }
+    }
+
+    private func personaAppBinding(appName: String?, bundleIdentifier: String?) -> PersonaAppBinding? {
+        let bindings = personaAppBindings
+
+        if let bundleIdentifier {
+            let normalizedBundleIdentifier = PersonaAppBinding.normalize(bundleIdentifier)
+            if let match = bindings.first(where: { $0.normalizedAppIdentifier == normalizedBundleIdentifier }) {
+                return match
+            }
+        }
+
+        if let appName {
+            let normalizedAppName = PersonaAppBinding.normalize(appName)
+            if let match = bindings.first(where: { $0.normalizedAppIdentifier == normalizedAppName }) {
+                return match
+            }
+        }
+
+        return nil
     }
 
     /// If the LLM is currently configured and the user has not yet explicitly

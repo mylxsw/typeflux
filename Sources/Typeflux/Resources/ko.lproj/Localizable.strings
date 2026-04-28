@@ -424,6 +424,16 @@
 "settings.personaDefault.enabled" = "새로운 받아쓰기 세션은 선택한 페르소나로 다시 작성됩니다.";
 "settings.personaDefault.disabled" = "페르소나는 현재 꺼져 있으므로 받아쓰기는 일반 형식으로 유지됩니다.";
 "settings.personaDefault.openPersonas" = "오픈 페르소나";
+"settings.personaAppBindings.section" = "앱별 페르소나";
+"settings.personaAppBindings.title" = "자동 페르소나 전환";
+"settings.personaAppBindings.subtitle" = "현재 포커스된 입력창의 앱에 따라 기본 페르소나를 자동으로 덮어씁니다. Bundle Identifier가 가장 정확하지만 앱 이름도 사용할 수 있습니다.";
+"settings.personaAppBindings.empty" = "앱별 페르소나가 아직 없습니다.";
+"settings.personaAppBindings.appIdentifier" = "앱 식별자";
+"settings.personaAppBindings.appIdentifierPlaceholder" = "예: com.tinyspeck.slackmacgap 또는 Slack";
+"settings.personaAppBindings.useCurrentApp" = "현재 앱 사용";
+"settings.personaAppBindings.persona" = "페르소나";
+"settings.personaAppBindings.add" = "바인딩 추가";
+"settings.personaAppBindings.saved" = "일치하는 앱에서는 이제 %@ 로 자동 전환됩니다.";
 
 "settings.shortcuts.activation.title" = "음성 입력";
 "settings.shortcuts.activation.subtitle" = "하나의 단축키를 사용하여 음성 입력을 시작하세요. 길게 눌러 말하거나 빠르게 탭하여 녹음 세션을 잠급니다. 텍스트를 선택하면 스크립트가 해당 선택 항목을 직접 대체합니다.";

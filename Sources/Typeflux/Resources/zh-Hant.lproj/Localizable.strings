@@ -424,6 +424,16 @@
 "settings.personaDefault.enabled" = "新的聽寫會話會使用所選人設進行改寫。";
 "settings.personaDefault.disabled" = "目前未啟用人設，聽寫內容會保持原始形式。";
 "settings.personaDefault.openPersonas" = "打開人設";
+"settings.personaAppBindings.section" = "應用專屬人設";
+"settings.personaAppBindings.title" = "自動切換人設";
+"settings.personaAppBindings.subtitle" = "根據目前聚焦輸入框所在的應用自動覆蓋預設人設。建議優先填寫 Bundle Identifier，也支援直接填寫應用名稱。";
+"settings.personaAppBindings.empty" = "尚未設定應用專屬人設。";
+"settings.personaAppBindings.appIdentifier" = "應用識別";
+"settings.personaAppBindings.appIdentifierPlaceholder" = "例如 com.tinyspeck.slackmacgap 或 Slack";
+"settings.personaAppBindings.useCurrentApp" = "使用目前應用";
+"settings.personaAppBindings.persona" = "人設";
+"settings.personaAppBindings.add" = "新增綁定";
+"settings.personaAppBindings.saved" = "符合的應用現在會自動切換到 %@。";
 
 "settings.shortcuts.activation.title" = "語音輸入";
 "settings.shortcuts.activation.subtitle" = "使用一組快捷鍵開始語音輸入。可按住說話，也可快速輕觸後鎖定錄音。若目前已有選取內容，識別結果會直接覆蓋該選取範圍。";

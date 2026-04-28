@@ -426,6 +426,16 @@
 "settings.personaDefault.enabled" = "新的听写会话会使用所选人设进行改写。";
 "settings.personaDefault.disabled" = "当前未启用人设，听写内容将保持原始形式。";
 "settings.personaDefault.openPersonas" = "打开人设";
+"settings.personaAppBindings.section" = "应用专属人设";
+"settings.personaAppBindings.title" = "自动切换人设";
+"settings.personaAppBindings.subtitle" = "根据当前聚焦输入框所在的应用自动覆盖默认人设。优先推荐填写 Bundle Identifier，也支持直接填写应用名称。";
+"settings.personaAppBindings.empty" = "还没有配置应用专属人设。";
+"settings.personaAppBindings.appIdentifier" = "应用标识";
+"settings.personaAppBindings.appIdentifierPlaceholder" = "例如 com.tinyspeck.slackmacgap 或 Slack";
+"settings.personaAppBindings.useCurrentApp" = "使用当前应用";
+"settings.personaAppBindings.persona" = "人设";
+"settings.personaAppBindings.add" = "添加绑定";
+"settings.personaAppBindings.saved" = "已为匹配应用自动切换到 %@。";
 
 "settings.shortcuts.activation.title" = "语音输入";
 "settings.shortcuts.activation.subtitle" = "使用一个快捷键开始语音输入。可按住说话，也可快速轻触后锁定录音。若当前已有选区，识别结果会直接覆盖该选区。";

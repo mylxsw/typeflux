@@ -97,9 +97,12 @@ final class MultimodalLLMTranscriber: Transcriber {
         let model = settingsStore.multimodalLLMModel.isEmpty ? OpenAIAudioModelCatalog.multimodalModels[0] : settingsStore.multimodalLLMModel
 
         // Build system prompt: persona + vocabulary in one shot
-        let personaPrompt = settingsStore.activePersonaPrompt
         let vocabularyTerms = VocabularyStore.activeTerms()
         let frontmostBundleIdentifier = frontmostBundleIdentifierProvider()
+        let personaPrompt = settingsStore.effectivePersonaPrompt(
+            appName: nil,
+            bundleIdentifier: frontmostBundleIdentifier,
+        )
         let systemPrompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
             personaPrompt: personaPrompt,
             vocabularyTerms: vocabularyTerms,

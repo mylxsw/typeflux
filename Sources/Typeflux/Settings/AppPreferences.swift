@@ -262,3 +262,40 @@ struct PersonaProfile: Codable, Identifiable, Equatable {
         try container.encode(kind, forKey: .kind)
     }
 }
+
+struct PersonaAppBinding: Codable, Identifiable, Equatable {
+    let id: UUID
+    var appIdentifier: String
+    var personaID: UUID
+
+    init(id: UUID = UUID(), appIdentifier: String, personaID: UUID) {
+        self.id = id
+        self.appIdentifier = appIdentifier
+        self.personaID = personaID
+    }
+
+    var normalizedAppIdentifier: String {
+        Self.normalize(appIdentifier)
+    }
+
+    func matches(bundleIdentifier: String?, appName: String?) -> Bool {
+        let target = normalizedAppIdentifier
+        guard !target.isEmpty else { return false }
+
+        if Self.normalize(bundleIdentifier) == target {
+            return true
+        }
+
+        if Self.normalize(appName) == target {
+            return true
+        }
+
+        return false
+    }
+
+    static func normalize(_ value: String?) -> String {
+        value?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased() ?? ""
+    }
+}

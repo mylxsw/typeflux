@@ -117,6 +117,36 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertFalse(WorkflowController.shouldRewriteTranscript(personaPrompt: nil, inputContext: nil))
     }
 
+    func testActivePersonaPromptUsesFocusedAppBinding() {
+        let customPersona = PersonaProfile(name: "Chat Reply", prompt: "Keep it warm and casual.")
+        let controller = makeWorkflowController { settingsStore in
+            settingsStore.personas = settingsStore.personas + [customPersona]
+            settingsStore.savePersonaAppBinding(
+                appIdentifier: "com.tinyspeck.slackmacgap",
+                personaID: customPersona.id,
+            )
+        }
+        let selectionSnapshot = TextSelectionSnapshot(
+            processID: 1,
+            processName: "Slack",
+            bundleIdentifier: "com.tinyspeck.slackmacgap",
+            selectedRange: nil,
+            selectedText: nil,
+            source: "accessibility",
+            isEditable: true,
+            role: "AXTextArea",
+            windowTitle: "DM",
+            isFocusedTarget: true,
+        )
+
+        let personaPrompt = controller.activePersonaPrompt(
+            selectionSnapshot: selectionSnapshot,
+            inputContext: nil,
+        )
+
+        XCTAssertEqual(personaPrompt, customPersona.prompt)
+    }
+
     func testGenerateRewriteThrowsConfigurationErrorWhenLLMIsNotConfigured() async {
         let controller = makeWorkflowController()
 
@@ -160,11 +190,13 @@ final class WorkflowControllerProcessingTests: XCTestCase {
     private func makeWorkflowController(
         textInjector: TextInjector = MockProcessingTextInjector(),
         llmService: LLMService = MockProcessingLLMService(),
+        configureSettings: ((SettingsStore) -> Void)? = nil,
     ) -> WorkflowController {
         let suiteName = "WorkflowControllerProcessingTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         let settingsStore = SettingsStore(defaults: defaults)
+        configureSettings?(settingsStore)
         let appState = AppStateStore()
         let overlayController = OverlayController(appState: appState)
 
