@@ -150,6 +150,10 @@ enum ProjectVocabularyScanner {
         }
     }
 
+    /// Prefer display surfaces that preserve the richest project spelling: terms
+    /// with uppercase/separator decoration beat plain lowercase forms, and when
+    /// both candidates have the same decoration status the longer surface wins so
+    /// we keep the most descriptive project-facing label.
     private static func preferredSurface(existing: String?, candidate: String) -> String {
         guard let existing else { return candidate }
         let existingDecorated = existing.hasProjectVocabularyDecoration
@@ -220,7 +224,7 @@ enum ProjectVocabularyScanner {
                 return fallback
             }
             fatalError(
-                "Failed to initialize ProjectVocabularyScanner fallback regex. This indicates a fundamental Foundation regex failure, so vocabulary sync cannot continue safely.",
+                "Unable to initialize the vocabulary scanner. Please restart the application or contact support.",
             )
         }
     }

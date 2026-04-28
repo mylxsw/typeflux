@@ -367,6 +367,9 @@ enum VocabularyStore {
         return .automatic
     }
 
+    /// Preserve the user-visible spelling that carries more intent: decorated
+    /// terms (uppercase, separators, or punctuation commonly used in product and
+    /// model names) are preferred over plain lowercase imports.
     private static func preferredSurface(existing: String, imported: String) -> String {
         let existingHasDecoratedCharacters = existing.hasDecoratedVocabularyCharacters
         let importedHasDecoratedCharacters = imported.hasDecoratedVocabularyCharacters
