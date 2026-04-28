@@ -18,7 +18,10 @@ STAGING_DIR="${BUILD_DIR}/dmg-staging"
 verify_bundle_signature() {
   local bundle_path="$1"
 
-  command -v codesign >/dev/null 2>&1 || return 0
+  if ! command -v codesign >/dev/null 2>&1; then
+    echo "Warning: codesign not available; skipping signature verification for $bundle_path" >&2
+    return 0
+  fi
 
   if codesign -dv "$bundle_path" >/dev/null 2>&1; then
     codesign --verify --deep --strict --verbose=2 "$bundle_path"
