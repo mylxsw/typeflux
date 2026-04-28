@@ -178,6 +178,45 @@ final class SettingsViewModelPersonaTests: XCTestCase {
         XCTAssertTrue(viewModel.personaAppBindings.isEmpty)
     }
 
+    func testSetPersonaAppBindingsEnabledUpdatesStore() {
+        let suiteName = "SettingsViewModelPersonaTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let settingsStore = SettingsStore(defaults: defaults)
+        let historyStore = InMemoryHistoryStore()
+        let viewModel = StudioViewModel(
+            settingsStore: settingsStore,
+            historyStore: historyStore,
+            initialSection: .personas,
+        )
+
+        viewModel.setPersonaAppBindingsEnabled(false)
+
+        XCTAssertFalse(settingsStore.personaAppBindingsEnabled)
+        XCTAssertFalse(viewModel.personaAppBindingsEnabled)
+    }
+
+    func testUpdatePersonaAppBindingPersonaUpdatesStore() throws {
+        let suiteName = "SettingsViewModelPersonaTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let settingsStore = SettingsStore(defaults: defaults)
+        let historyStore = InMemoryHistoryStore()
+        let originalPersona = PersonaProfile(name: "Casual", prompt: "Casual")
+        let updatedPersona = PersonaProfile(name: "Formal", prompt: "Formal")
+        settingsStore.personas = settingsStore.personas + [originalPersona, updatedPersona]
+        settingsStore.savePersonaAppBinding(appIdentifier: "Slack", personaID: originalPersona.id)
+        let bindingID = try XCTUnwrap(settingsStore.personaAppBindings.first?.id)
+        let viewModel = StudioViewModel(
+            settingsStore: settingsStore,
+            historyStore: historyStore,
+            initialSection: .personas,
+        )
+
+        viewModel.updatePersonaAppBindingPersona(id: bindingID, personaID: updatedPersona.id)
+
+        XCTAssertEqual(settingsStore.personaAppBindings.first?.personaID, updatedPersona.id)
+        XCTAssertEqual(viewModel.personaAppBindings.first?.personaID, updatedPersona.id)
+    }
+
     // MARK: - Auto persona default when LLM becomes configured via Settings
 
     func testSwitchingToTypefluxCloudAutoSelectsTypefluxPersona() {

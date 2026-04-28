@@ -481,6 +481,22 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(effectivePersona?.id, defaultPersona.id)
     }
 
+    func testEffectivePersonaIgnoresAppBindingsWhenFeatureIsPaused() throws {
+        let defaultPersona = try XCTUnwrap(store.personas.first)
+        let appSpecificPersona = PersonaProfile(name: "Chat Reply", prompt: "Keep it casual.")
+        store.personas = store.personas + [appSpecificPersona]
+        store.applyPersonaSelection(defaultPersona.id)
+        store.savePersonaAppBinding(appIdentifier: "com.tinyspeck.slackmacgap", personaID: appSpecificPersona.id)
+        store.personaAppBindingsEnabled = false
+
+        let effectivePersona = store.effectivePersona(
+            appName: "Slack",
+            bundleIdentifier: "com.tinyspeck.slackmacgap",
+        )
+
+        XCTAssertEqual(effectivePersona?.id, defaultPersona.id)
+    }
+
     func testSavePersonaAppBindingReplacesExistingIdentifierCaseInsensitively() {
         let firstPersona = store.personas[0]
         let secondPersona = store.personas[1]
@@ -499,6 +515,18 @@ final class SettingsStoreTests: XCTestCase {
         store.savePersonaAppBinding(appIdentifier: "  Slack  ", personaID: persona.id)
 
         XCTAssertEqual(store.personaAppBindings.first?.appIdentifier, "Slack")
+    }
+
+    func testUpdatePersonaAppBindingPersonaUpdatesExistingBinding() {
+        let firstPersona = store.personas[0]
+        let secondPersona = store.personas[1]
+        store.savePersonaAppBinding(appIdentifier: "Slack", personaID: firstPersona.id)
+        let bindingID = store.personaAppBindings[0].id
+
+        store.updatePersonaAppBindingPersona(id: bindingID, personaID: secondPersona.id)
+
+        XCTAssertEqual(store.personaAppBindings.first?.id, bindingID)
+        XCTAssertEqual(store.personaAppBindings.first?.personaID, secondPersona.id)
     }
 
     // MARK: - applyPersonaSelection

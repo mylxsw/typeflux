@@ -373,6 +373,11 @@ final class SettingsStore {
         }
     }
 
+    var personaAppBindingsEnabled: Bool {
+        get { defaults.object(forKey: "persona.appBindingsEnabled") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "persona.appBindingsEnabled") }
+    }
+
     var personas: [PersonaProfile] {
         get {
             guard let data = personasJSON.data(using: .utf8), !personasJSON.isEmpty else {
@@ -399,7 +404,8 @@ final class SettingsStore {
     }
 
     func effectivePersona(appName: String?, bundleIdentifier: String?) -> PersonaProfile? {
-        if let binding = personaAppBinding(appName: appName, bundleIdentifier: bundleIdentifier),
+        if personaAppBindingsEnabled,
+           let binding = personaAppBinding(appName: appName, bundleIdentifier: bundleIdentifier),
            let boundPersona = personas.first(where: { $0.id == binding.personaID })
         {
             return boundPersona
@@ -467,6 +473,11 @@ final class SettingsStore {
 
     func removePersonaAppBinding(id: UUID) {
         personaAppBindings = personaAppBindings.filter { $0.id != id }
+    }
+
+    func updatePersonaAppBindingPersona(id: UUID, personaID: UUID) {
+        guard let binding = personaAppBindings.first(where: { $0.id == id }) else { return }
+        savePersonaAppBinding(appIdentifier: binding.appIdentifier, personaID: personaID)
     }
 
     private func personaAppBinding(appName: String?, bundleIdentifier: String?) -> PersonaAppBinding? {

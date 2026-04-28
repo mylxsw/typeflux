@@ -145,6 +145,7 @@ final class StudioViewModel: ObservableObject {
     @Published var personaHotkeyAppliesToSelection: Bool
     @Published var personas: [PersonaProfile]
     @Published var personaAppBindings: [PersonaAppBinding]
+    @Published var personaAppBindingsEnabled: Bool
     @Published var selectedPersonaID: UUID?
     @Published private(set) var activePersonaID: String
     @Published var personaDraftName: String
@@ -295,6 +296,7 @@ final class StudioViewModel: ObservableObject {
         personaHotkeyAppliesToSelection = settingsStore.personaHotkeyAppliesToSelection
         personas = currentPersonas
         personaAppBindings = settingsStore.personaAppBindings
+        personaAppBindingsEnabled = settingsStore.personaAppBindingsEnabled
         let initialSelectedPersonaID = settingsStore.personaRewriteEnabled
             ? settingsStore.activePersona.map(\.id)
             : nil
@@ -1545,16 +1547,19 @@ final class StudioViewModel: ObservableObject {
         }
     }
 
-    func removePersonaAppBinding(id: UUID) {
-        settingsStore.removePersonaAppBinding(id: id)
+    func setPersonaAppBindingsEnabled(_ value: Bool) {
+        personaAppBindingsEnabled = value
+        settingsStore.personaAppBindingsEnabled = value
+    }
+
+    func updatePersonaAppBindingPersona(id: UUID, personaID: UUID) {
+        settingsStore.updatePersonaAppBindingPersona(id: id, personaID: personaID)
         personaAppBindings = settingsStore.personaAppBindings
     }
 
-    func useFrontmostAppForPersonaBindingDraft() {
-        let frontmostApp = NSWorkspace.shared.frontmostApplication
-        let identifier = frontmostApp?.bundleIdentifier ?? frontmostApp?.localizedName ?? ""
-        guard !identifier.isEmpty else { return }
-        personaAppBindingDraftIdentifier = identifier
+    func removePersonaAppBinding(id: UUID) {
+        settingsStore.removePersonaAppBinding(id: id)
+        personaAppBindings = settingsStore.personaAppBindings
     }
 
     func personaName(for binding: PersonaAppBinding) -> String {
@@ -1655,6 +1660,7 @@ final class StudioViewModel: ObservableObject {
         personaHotkeyAppliesToSelection = settingsStore.personaHotkeyAppliesToSelection
         activePersonaID = settingsStore.activePersonaID
         personaAppBindings = settingsStore.personaAppBindings
+        personaAppBindingsEnabled = settingsStore.personaAppBindingsEnabled
         selectedPersonaID = settingsStore.personaRewriteEnabled
             ? settingsStore.activePersona.map(\.id)
             : nil
