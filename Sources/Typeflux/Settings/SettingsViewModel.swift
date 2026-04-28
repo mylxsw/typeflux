@@ -41,10 +41,6 @@ enum MCPConnectionTestState: Equatable {
 // swiftlint:disable:next type_body_length
 final class StudioViewModel: ObservableObject {
     private static let historyPageSize = 100
-    /// Prevents repeated navigation into the vocabulary page from re-scanning the
-    /// filesystem too aggressively; project-context files change infrequently, so
-    /// a 5-minute / 300-second cooldown keeps sync responsive without thrashing.
-    private static let vocabularyContextSyncCooldown: TimeInterval = 300
 
     @Published var currentSection: StudioSection
     @Published var searchQuery = "" {
@@ -194,7 +190,6 @@ final class StudioViewModel: ObservableObject {
     private var mcpTestTask: Task<Void, Never>?
     private var historyRefreshTask: Task<Void, Never>?
     private var historyRefreshGeneration = 0
-    private var lastVocabularyContextSyncAt: Date?
 
     // swiftlint:disable:next function_body_length
     init(
@@ -375,9 +370,6 @@ final class StudioViewModel: ObservableObject {
             }
         }
 
-        if initialSection == .vocabulary {
-            syncProjectVocabularyIfNeeded(force: false)
-        }
     }
 
     deinit {
@@ -672,8 +664,6 @@ final class StudioViewModel: ObservableObject {
         if section == .home || section == .history {
             applyHistoryRetentionPolicy()
             refreshHistory(reset: true)
-        } else if section == .vocabulary {
-            syncProjectVocabularyIfNeeded(force: false)
         }
     }
 
@@ -1548,7 +1538,26 @@ final class StudioViewModel: ObservableObject {
 
         do {
             let data = try Data(contentsOf: sourceURL)
-            let result = try VocabularyStore.importEntries(from: data)
+            let previewItems = try VocabularyStore.previewImportItems(from: data)
+            guard !previewItems.isEmpty else {
+                showToast(L("vocabulary.toast.importNoChanges"))
+                return
+            }
+
+            let alert = NSAlert()
+            alert.messageText = L("vocabulary.importDialog.title")
+            alert.informativeText = L(
+                "vocabulary.importDialog.message",
+                previewItems.count,
+                sourceURL.lastPathComponent,
+            )
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: L("vocabulary.importDialog.confirm"))
+            alert.addButton(withTitle: L("common.cancel"))
+
+            guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+            let result = try VocabularyStore.importItems(previewItems)
             vocabularyEntries = result.entries
             let changedCount = result.addedCount + result.updatedCount
             if changedCount > 0 {
@@ -1578,8 +1587,12 @@ final class StudioViewModel: ObservableObject {
         }
     }
 
-    func syncProjectVocabulary() {
-        syncProjectVocabularyIfNeeded(force: true)
+    func importClaudeVocabulary() {
+        importVocabularyFromExternalApp(source: .claude, directoryName: ".claude")
+    }
+
+    func importCodexVocabulary() {
+        importVocabularyFromExternalApp(source: .codex, directoryName: ".codex")
     }
 
     func removeVocabularyEntry(id: UUID) {
@@ -2272,46 +2285,34 @@ final class StudioViewModel: ObservableObject {
         googleCloudOAuthAuthorized = GoogleCloudSpeechCredentialResolver.isStoredAuthorizationAvailable()
     }
 
-    private func syncProjectVocabularyIfNeeded(force: Bool) {
-        if !force,
-           let lastVocabularyContextSyncAt,
-           Date().timeIntervalSince(lastVocabularyContextSyncAt) < Self.vocabularyContextSyncCooldown
-        {
-            return
-        }
-
+    private func importVocabularyFromExternalApp(source: VocabularySource, directoryName: String) {
         guard !isSynchronizingVocabulary else { return }
         isSynchronizingVocabulary = true
 
         Task { [weak self] in
             guard let self else { return }
             let discovery = await Task.detached(priority: .utility) {
-                ProjectVocabularyScanner.scanDefaultContextDirectories()
+                let directory = FileManager.default.homeDirectoryForCurrentUser
+                    .appendingPathComponent(directoryName, isDirectory: true)
+                return ProjectVocabularyScanner.scanContextDirectories([directory])
             }.value
 
             await MainActor.run {
-                self.lastVocabularyContextSyncAt = Date()
                 self.isSynchronizingVocabulary = false
 
                 guard !discovery.roots.isEmpty else {
-                    if force {
-                        self.showToast(L("vocabulary.toast.syncNoSources"))
-                    }
+                    self.showToast(L("vocabulary.toast.externalNoSource", source.displayName))
                     return
                 }
 
-                let result = VocabularyStore.importTerms(discovery.terms, source: .automatic)
+                let result = VocabularyStore.importTerms(discovery.terms, source: source)
                 self.vocabularyEntries = result.entries
                 let changedCount = result.addedCount + result.updatedCount
 
-                if force {
-                    if changedCount > 0 {
-                        self.showToast(L("vocabulary.toast.synced", changedCount))
-                    } else {
-                        self.showToast(L("vocabulary.toast.syncNoTerms"))
-                    }
-                } else if changedCount > 0 {
-                    self.showToast(L("vocabulary.toast.synced", changedCount))
+                if changedCount > 0 {
+                    self.showToast(L("vocabulary.toast.externalImported", changedCount, source.displayName))
+                } else {
+                    self.showToast(L("vocabulary.toast.externalNoTerms", source.displayName))
                 }
             }
         }

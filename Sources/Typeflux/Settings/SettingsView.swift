@@ -6,6 +6,7 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
     case all
     case automatic
     case manual
+    case otherApps
 
     var id: String {
         rawValue
@@ -19,17 +20,21 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
             L("vocabulary.filter.automatic")
         case .manual:
             L("vocabulary.filter.manual")
+        case .otherApps:
+            L("vocabulary.filter.otherApps")
         }
     }
 
-    var source: VocabularySource? {
+    func matches(_ source: VocabularySource) -> Bool {
         switch self {
         case .all:
-            nil
+            true
         case .automatic:
-            .automatic
+            source == .automatic
         case .manual:
-            .manual
+            source == .manual
+        case .otherApps:
+            source.isExternalAppSource
         }
     }
 
@@ -41,8 +46,37 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
             "sparkles"
         case .manual:
             "hand.draw"
+        case .otherApps:
+            "square.stack.3d.up"
         }
     }
+}
+
+private func vocabularySourceLogoResourceName(for source: VocabularySource) -> String? {
+    switch source {
+    case .claude:
+        "claude-color"
+    case .codex:
+        "openai"
+    case .manual, .automatic:
+        nil
+    }
+}
+
+private func vocabularySourceLogoImage(for source: VocabularySource) -> NSImage? {
+    guard let resourceName = vocabularySourceLogoResourceName(for: source) else { return nil }
+
+    let url =
+        Bundle.appResources.url(
+            forResource: resourceName, withExtension: "png", subdirectory: "Resources/Providers",
+        )
+        ?? Bundle.appResources.url(
+            forResource: resourceName, withExtension: "png", subdirectory: "Providers",
+        )
+        ?? Bundle.appResources.url(forResource: resourceName, withExtension: "png")
+
+    guard let url else { return nil }
+    return NSImage(contentsOf: url)
 }
 
 // swiftlint:disable:next type_body_length
@@ -289,31 +323,6 @@ struct StudioView: View {
                 Spacer()
 
                 HStack(spacing: StudioTheme.Spacing.small) {
-                    StudioIconButton(
-                        systemImage: "arrow.down.doc",
-                        variant: .ghost,
-                    ) {
-                        viewModel.importVocabulary()
-                    }
-                    .studioTooltip(L("vocabulary.action.import"), yOffset: 34)
-
-                    StudioIconButton(
-                        systemImage: "arrow.up.doc",
-                        variant: .ghost,
-                    ) {
-                        viewModel.exportVocabulary()
-                    }
-                    .studioTooltip(L("vocabulary.action.export"), yOffset: 34)
-
-                    StudioIconButton(
-                        systemImage: "arrow.triangle.2.circlepath",
-                        variant: .ghost,
-                    ) {
-                        viewModel.syncProjectVocabulary()
-                    }
-                    .disabled(viewModel.isSynchronizingVocabulary)
-                    .studioTooltip(L("vocabulary.action.sync"), yOffset: 34)
-
                     StudioButton(
                         title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .primary,
                     ) {
@@ -321,6 +330,32 @@ struct StudioView: View {
                         newVocabularyTerm = ""
                         isAddingVocabulary = true
                     }
+
+                    Menu {
+                        Button(action: viewModel.importVocabulary) {
+                            Label(L("vocabulary.action.importFile"), systemImage: "arrow.down.doc")
+                        }
+                        Button(action: viewModel.exportVocabulary) {
+                            Label(L("vocabulary.action.export"), systemImage: "arrow.up.doc")
+                        }
+                        Divider()
+                        Button(action: viewModel.importClaudeVocabulary) {
+                            vocabularyMenuItemLabel(
+                                title: L("vocabulary.action.importClaude"),
+                                source: .claude,
+                            )
+                        }
+                        Button(action: viewModel.importCodexVocabulary) {
+                            vocabularyMenuItemLabel(
+                                title: L("vocabulary.action.importCodex"),
+                                source: .codex,
+                            )
+                        }
+                    } label: {
+                        vocabularyMoreMenuLabel
+                    }
+                    .menuStyle(.borderlessButton)
+                    .disabled(viewModel.isSynchronizingVocabulary)
                 }
             } else if viewModel.currentSection == .agent {
                 Spacer()
@@ -982,16 +1017,6 @@ struct StudioView: View {
                         lineWidth: StudioTheme.BorderWidth.thin,
                     ),
                 )
-            }
-
-            if viewModel.isSynchronizingVocabulary {
-                HStack(spacing: StudioTheme.Spacing.small) {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text(L("vocabulary.sync.scanning"))
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
             }
 
             StudioCard {
@@ -2193,9 +2218,7 @@ struct StudioView: View {
     }
 
     private var filteredVocabularyEntries: [VocabularyEntry] {
-        let entries = viewModel.filteredVocabularyEntries
-        guard let source = vocabularyFilter.source else { return entries }
-        return entries.filter { $0.source == source }
+        viewModel.filteredVocabularyEntries.filter { vocabularyFilter.matches($0.source) }
     }
 
     private func vocabularyFilterChip(_ filter: VocabularyFilter) -> some View {
@@ -2326,8 +2349,47 @@ struct StudioView: View {
     }
 
     private func vocabularyCount(for filter: VocabularyFilter) -> Int {
-        guard let source = filter.source else { return viewModel.vocabularyEntries.count }
-        return viewModel.vocabularyEntries.count(where: { $0.source == source })
+        viewModel.vocabularyEntries.count(where: { filter.matches($0.source) })
+    }
+
+    private var vocabularyMoreMenuLabel: some View {
+        HStack(spacing: StudioTheme.Spacing.xSmall) {
+            Text(L("vocabulary.action.more"))
+                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+            Image(systemName: "chevron.down")
+                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+        }
+        .foregroundStyle(StudioTheme.textSecondary)
+        .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
+        .padding(.vertical, StudioTheme.Insets.buttonVertical)
+        .background(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                .fill(StudioTheme.surfaceMuted.opacity(0.92)),
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                .stroke(
+                    StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
+                    lineWidth: StudioTheme.BorderWidth.thin,
+                ),
+        )
+    }
+
+    private func vocabularyMenuItemLabel(title: String, source: VocabularySource) -> some View {
+        HStack(spacing: StudioTheme.Spacing.small) {
+            if let image = vocabularySourceLogoImage(for: source) {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: 14, height: 14)
+            } else {
+                Image(systemName: "square.stack.3d.up")
+                    .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
+            }
+
+            Text(title)
+        }
     }
 
     private func uniqueSuggestions(_ values: [String]) -> [String] {
@@ -5199,9 +5261,7 @@ private struct VocabularyTermCard: View {
 
     var body: some View {
         HStack(spacing: StudioTheme.Spacing.small) {
-            Image(systemName: entry.source == .automatic ? "sparkles" : "plus.circle.fill")
-                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                .foregroundStyle(entry.source == .automatic ? StudioTheme.warning : StudioTheme.accent)
+            vocabularySourceBadge
 
             Text(entry.term)
                 .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
@@ -5244,6 +5304,21 @@ private struct VocabularyTermCard: View {
             Button(L("common.copy"), systemImage: "doc.on.doc", action: onCopy)
             Button(L("common.edit"), systemImage: "pencil", action: onEdit)
             Button(L("common.delete"), systemImage: "trash", role: .destructive, action: onDelete)
+        }
+    }
+
+    @ViewBuilder
+    private var vocabularySourceBadge: some View {
+        if let image = vocabularySourceLogoImage(for: entry.source) {
+            Image(nsImage: image)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(width: 16, height: 16)
+        } else {
+            Image(systemName: entry.source == .automatic ? "sparkles" : "plus.circle.fill")
+                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+                .foregroundStyle(entry.source == .automatic ? StudioTheme.warning : StudioTheme.accent)
         }
     }
 }

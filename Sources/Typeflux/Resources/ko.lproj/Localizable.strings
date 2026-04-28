@@ -379,9 +379,12 @@
 
 "vocabulary.source.manual" = "수동으로 추가됨";
 "vocabulary.source.automatic" = "자동 추가됨";
+"vocabulary.source.claude" = "Claude";
+"vocabulary.source.codex" = "Codex";
 "vocabulary.filter.all" = "모두";
 "vocabulary.filter.automatic" = "자동 추가됨";
 "vocabulary.filter.manual" = "수동으로 추가됨";
+"vocabulary.filter.otherApps" = "기타 앱";
 "vocabulary.intro.title" = "Typeflux이 이름, 제품, 도메인 용어를 더욱 안정적으로 포착할 수 있도록 도와주세요.";
 "vocabulary.intro.subtitle" = "수동 항목은 Whisper 호환 전사 백엔드에 인식 힌트로 전송됩니다.";
 "vocabulary.search.placeholder" = "단어 검색...";
@@ -390,8 +393,12 @@
 "vocabulary.action.newWord" = "새로운 단어";
 "vocabulary.action.addFirst" = "첫 번째 단어를 추가하세요.";
 "vocabulary.action.addWord" = "단어 추가";
+"vocabulary.action.more" = "더보기";
+"vocabulary.action.importFile" = "파일 가져오기";
 "vocabulary.action.import" = "가져오기";
 "vocabulary.action.export" = "내보내기";
+"vocabulary.action.importClaude" = "Claude 어휘 가져오기";
+"vocabulary.action.importCodex" = "Codex 어휘 가져오기";
 "vocabulary.action.sync" = "프로젝트 용어 동기화";
 "vocabulary.sheet.title" = "어휘에 추가";
 "vocabulary.sheet.subtitle" = "항목당 하나의 용어를 사용하십시오. 이는 이름, 브랜드, 제품 용어 및 기타 자주 사용되는 전문 용어에 가장 적합합니다.";
@@ -399,10 +406,16 @@
 "vocabulary.sheet.editSubtitle" = "출처와 기존 사용 기록은 유지한 채 이 용어를 수정합니다.";
 "vocabulary.sheet.placeholder" = "새 단어 추가";
 "vocabulary.sync.scanning" = "~/.codex 및 ~/.claude를 스캔하는 중...";
+"vocabulary.importDialog.title" = "어휘 가져오기";
+"vocabulary.importDialog.message" = "%2$@에서 %1$d개의 어휘를 가져오시겠습니까?";
+"vocabulary.importDialog.confirm" = "가져오기";
 "vocabulary.toast.copied" = "용어를 복사했습니다.";
 "vocabulary.toast.imported" = "%d개의 용어를 가져왔습니다.";
 "vocabulary.toast.importNoChanges" = "가져온 뒤 어휘 변경 사항이 없습니다.";
 "vocabulary.toast.exported" = "어휘를 내보냈습니다.";
+"vocabulary.toast.externalImported" = "%2$@에서 %1$d개의 용어를 가져왔습니다.";
+"vocabulary.toast.externalNoSource" = "%1$@ 어휘 디렉터리를 찾을 수 없습니다.";
+"vocabulary.toast.externalNoTerms" = "%1$@에서 가져올 용어를 찾지 못했습니다.";
 "vocabulary.toast.synced" = "%d개의 프로젝트 용어를 어휘에 동기화했습니다.";
 "vocabulary.toast.syncNoSources" = "~/.codex 또는 ~/.claude 디렉터리를 찾을 수 없습니다.";
 "vocabulary.toast.syncNoTerms" = "동기화할 프로젝트 용어를 찾지 못했습니다.";

@@ -381,9 +381,12 @@
 
 "vocabulary.source.manual" = "手动添加";
 "vocabulary.source.automatic" = "自动添加";
+"vocabulary.source.claude" = "Claude";
+"vocabulary.source.codex" = "Codex";
 "vocabulary.filter.all" = "全部";
 "vocabulary.filter.automatic" = "自动添加";
 "vocabulary.filter.manual" = "手动添加";
+"vocabulary.filter.otherApps" = "其它应用";
 "vocabulary.intro.title" = "帮助 Typeflux 更稳定地识别人名、产品名和领域词汇。";
 "vocabulary.intro.subtitle" = "手动添加的词条会作为识别提示发送给兼容 Whisper 的转写后端。";
 "vocabulary.search.placeholder" = "搜索词库...";
@@ -392,8 +395,12 @@
 "vocabulary.action.newWord" = "新建词条";
 "vocabulary.action.addFirst" = "添加第一个词条";
 "vocabulary.action.addWord" = "添加词条";
+"vocabulary.action.more" = "更多";
+"vocabulary.action.importFile" = "导入文件";
 "vocabulary.action.import" = "导入";
 "vocabulary.action.export" = "导出";
+"vocabulary.action.importClaude" = "导入 Claude 词库";
+"vocabulary.action.importCodex" = "导入 Codex 词库";
 "vocabulary.action.sync" = "同步项目词汇";
 "vocabulary.sheet.title" = "添加到词库";
 "vocabulary.sheet.subtitle" = "每行添加一个词条。该功能特别适合名字、品牌、产品术语和常说的专业词。";
@@ -401,10 +408,16 @@
 "vocabulary.sheet.editSubtitle" = "更新该词条内容，同时保留它的来源和现有使用记录。";
 "vocabulary.sheet.placeholder" = "添加新词";
 "vocabulary.sync.scanning" = "正在扫描 ~/.codex 和 ~/.claude ...";
+"vocabulary.importDialog.title" = "导入词库";
+"vocabulary.importDialog.message" = "即将从 %2$@ 导入 %1$d 条词汇，是否继续？";
+"vocabulary.importDialog.confirm" = "确认导入";
 "vocabulary.toast.copied" = "词条已复制。";
 "vocabulary.toast.imported" = "已导入 %d 个词条。";
 "vocabulary.toast.importNoChanges" = "导入后词库没有变化。";
 "vocabulary.toast.exported" = "词库已导出。";
+"vocabulary.toast.externalImported" = "已从 %2$@ 导入 %1$d 个词汇。";
+"vocabulary.toast.externalNoSource" = "未找到 %1$@ 词库目录。";
+"vocabulary.toast.externalNoTerms" = "未从 %1$@ 导入任何词汇。";
 "vocabulary.toast.synced" = "已同步 %d 个项目词汇到词库。";
 "vocabulary.toast.syncNoSources" = "未找到 ~/.codex 或 ~/.claude 目录。";
 "vocabulary.toast.syncNoTerms" = "没有发现可同步的项目词汇。";

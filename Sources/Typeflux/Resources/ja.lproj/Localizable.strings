@@ -379,9 +379,12 @@
 
 "vocabulary.source.manual" = "手動で追加";
 "vocabulary.source.automatic" = "自動追加";
+"vocabulary.source.claude" = "Claude";
+"vocabulary.source.codex" = "Codex";
 "vocabulary.filter.all" = "すべて";
 "vocabulary.filter.automatic" = "自動追加";
 "vocabulary.filter.manual" = "手動で追加";
+"vocabulary.filter.otherApps" = "他のアプリ";
 "vocabulary.intro.title" = "Typeflux が名前、製品、ドメイン用語をより確実にキャッチできるように支援します。";
 "vocabulary.intro.subtitle" = "手動入力は、認識ヒントとして Whisper 互換の文字起こしバックエンドに送信されます。";
 "vocabulary.search.placeholder" = "語彙を検索...";
@@ -390,8 +393,12 @@
 "vocabulary.action.newWord" = "新しい言葉";
 "vocabulary.action.addFirst" = "最初の単語を追加";
 "vocabulary.action.addWord" = "単語を追加";
+"vocabulary.action.more" = "その他";
+"vocabulary.action.importFile" = "ファイルをインポート";
 "vocabulary.action.import" = "インポート";
 "vocabulary.action.export" = "エクスポート";
+"vocabulary.action.importClaude" = "Claude の語彙をインポート";
+"vocabulary.action.importCodex" = "Codex の語彙をインポート";
 "vocabulary.action.sync" = "プロジェクト用語を同期";
 "vocabulary.sheet.title" = "語彙に追加";
 "vocabulary.sheet.subtitle" = "エントリごとに 1 つの用語を使用します。これは、名前、ブランド、製品用語、その他の頻繁に使用される専門用語に最適です。";
@@ -399,10 +406,16 @@
 "vocabulary.sheet.editSubtitle" = "ソースと既存の利用履歴を維持したまま、この用語を更新します。";
 "vocabulary.sheet.placeholder" = "新しい単語を追加する";
 "vocabulary.sync.scanning" = "~/.codex と ~/.claude をスキャンしています...";
+"vocabulary.importDialog.title" = "語彙をインポート";
+"vocabulary.importDialog.message" = "%2$@ から %1$d 件の語彙をインポートしますか？";
+"vocabulary.importDialog.confirm" = "インポート";
 "vocabulary.toast.copied" = "語彙項目をコピーしました。";
 "vocabulary.toast.imported" = "%d 件の語彙用語をインポートしました。";
 "vocabulary.toast.importNoChanges" = "インポートしても語彙は変更されませんでした。";
 "vocabulary.toast.exported" = "語彙をエクスポートしました。";
+"vocabulary.toast.externalImported" = "%2$@ から %1$d 件の用語をインポートしました。";
+"vocabulary.toast.externalNoSource" = "%1$@ の語彙ディレクトリが見つかりません。";
+"vocabulary.toast.externalNoTerms" = "%1$@ からインポートできる用語が見つかりませんでした。";
 "vocabulary.toast.synced" = "%d 件のプロジェクト用語を語彙に同期しました。";
 "vocabulary.toast.syncNoSources" = "~/.codex または ~/.claude ディレクトリが見つかりません。";
 "vocabulary.toast.syncNoTerms" = "同期するプロジェクト用語が見つかりませんでした。";

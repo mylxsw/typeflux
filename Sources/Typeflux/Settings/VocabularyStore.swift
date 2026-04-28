@@ -9,6 +9,8 @@ extension Notification.Name {
 enum VocabularySource: String, Codable, CaseIterable {
     case manual
     case automatic
+    case claude
+    case codex
 
     var displayName: String {
         switch self {
@@ -16,6 +18,19 @@ enum VocabularySource: String, Codable, CaseIterable {
             L("vocabulary.source.manual")
         case .automatic:
             L("vocabulary.source.automatic")
+        case .claude:
+            L("vocabulary.source.claude")
+        case .codex:
+            L("vocabulary.source.codex")
+        }
+    }
+
+    var isExternalAppSource: Bool {
+        switch self {
+        case .claude, .codex:
+            true
+        case .manual, .automatic:
+            false
         }
     }
 }
@@ -65,6 +80,11 @@ struct VocabularyBatchImportResult {
     let entries: [VocabularyEntry]
     let addedCount: Int
     let updatedCount: Int
+}
+
+struct VocabularyTransferItem: Codable, Equatable {
+    let term: String
+    let source: VocabularySource
 }
 
 enum VocabularyImportError: LocalizedError, Equatable {
@@ -118,7 +138,9 @@ enum VocabularyStore {
     static func exportData() throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        return try encoder.encode(rankedEntries())
+        return try encoder.encode(
+            rankedEntries().map { VocabularyTransferItem(term: $0.term, source: $0.source) },
+        )
     }
 
     @discardableResult
@@ -126,8 +148,19 @@ enum VocabularyStore {
         from data: Data,
         defaultSource: VocabularySource = .manual,
     ) throws -> VocabularyBatchImportResult {
-        let importedEntries = try decodeImportedEntries(from: data, defaultSource: defaultSource)
-        return merge(importedEntries)
+        try importItems(previewImportItems(from: data, defaultSource: defaultSource))
+    }
+
+    static func previewImportItems(
+        from data: Data,
+        defaultSource: VocabularySource = .manual,
+    ) throws -> [VocabularyTransferItem] {
+        deduplicatedImportItems(try decodeImportedItems(from: data, defaultSource: defaultSource))
+    }
+
+    @discardableResult
+    static func importItems(_ items: [VocabularyTransferItem]) throws -> VocabularyBatchImportResult {
+        merge(deduplicatedImportItems(items))
     }
 
     @discardableResult
@@ -135,10 +168,10 @@ enum VocabularyStore {
         _ terms: [String],
         source: VocabularySource = .manual,
     ) -> VocabularyBatchImportResult {
-        let importedEntries = terms.map {
-            VocabularyEntry(term: $0, source: source)
+        let importedItems = terms.map {
+            VocabularyTransferItem(term: $0, source: source)
         }
-        return merge(importedEntries)
+        return merge(deduplicatedImportItems(importedItems))
     }
 
     /// Add a new term, or bump the occurrence count if the normalized term already exists.
@@ -276,13 +309,13 @@ enum VocabularyStore {
             }
     }
 
-    private static func merge(_ importedEntries: [VocabularyEntry]) -> VocabularyBatchImportResult {
+    private static func merge(_ importedItems: [VocabularyTransferItem]) -> VocabularyBatchImportResult {
         var entries = load()
         var addedCount = 0
         var updatedCount = 0
 
-        for importedEntry in importedEntries {
-            let normalizedTerm = normalize(importedEntry.term)
+        for importedItem in importedItems {
+            let normalizedTerm = normalize(importedItem.term)
             guard !normalizedTerm.isEmpty else { continue }
             if let index = entries.firstIndex(where: {
                 normalize($0.term).caseInsensitiveCompare(normalizedTerm) == .orderedSame
@@ -291,11 +324,9 @@ enum VocabularyStore {
                 let mergedEntry = VocabularyEntry(
                     id: existing.id,
                     term: preferredSurface(existing: existing.term, imported: normalizedTerm),
-                    source: mergedSource(existing: existing.source, imported: importedEntry.source),
-                    createdAt: min(existing.createdAt, importedEntry.createdAt),
-                    occurrenceCount: ensureMinimumCount(
-                        max(existing.occurrenceCount, importedEntry.occurrenceCount),
-                    ),
+                    source: mergedSource(existing: existing.source, imported: importedItem.source),
+                    createdAt: existing.createdAt,
+                    occurrenceCount: ensureMinimumCount(existing.occurrenceCount),
                 )
                 if mergedEntry != existing {
                     entries[index] = mergedEntry
@@ -305,9 +336,7 @@ enum VocabularyStore {
                 entries.insert(
                     VocabularyEntry(
                         term: normalizedTerm,
-                        source: importedEntry.source,
-                        createdAt: importedEntry.createdAt,
-                        occurrenceCount: ensureMinimumCount(importedEntry.occurrenceCount),
+                        source: importedItem.source,
                     ),
                     at: 0,
                 )
@@ -326,20 +355,20 @@ enum VocabularyStore {
     private static func decodeImportedEntries(
         from data: Data,
         defaultSource: VocabularySource,
-    ) throws -> [VocabularyEntry] {
+    ) throws -> [VocabularyTransferItem] {
         let decoder = JSONDecoder()
-        if let entries = try? decoder.decode([VocabularyEntry].self, from: data) {
+        if let entries = try? decoder.decode([VocabularyTransferItem].self, from: data) {
             return entries
         }
 
         if let terms = try? decoder.decode([String].self, from: data) {
-            return terms.map { VocabularyEntry(term: $0, source: defaultSource) }
+            return terms.map { VocabularyTransferItem(term: $0, source: defaultSource) }
         }
 
         if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let terms = object["terms"] as? [String]
         {
-            return terms.map { VocabularyEntry(term: $0, source: defaultSource) }
+            return terms.map { VocabularyTransferItem(term: $0, source: defaultSource) }
         }
 
         guard let text = String(data: data, encoding: .utf8) else {
@@ -349,7 +378,7 @@ enum VocabularyStore {
         let separators = CharacterSet(charactersIn: ",;\n\r")
         let terms = text
             .components(separatedBy: separators)
-            .map { VocabularyEntry(term: $0, source: defaultSource) }
+            .map { VocabularyTransferItem(term: $0, source: defaultSource) }
             .filter { !normalize($0.term).isEmpty }
 
         guard !terms.isEmpty else {
@@ -359,6 +388,32 @@ enum VocabularyStore {
         return terms
     }
 
+    private static func deduplicatedImportItems(_ items: [VocabularyTransferItem]) -> [VocabularyTransferItem] {
+        var deduplicated: [VocabularyTransferItem] = []
+        var indexByNormalizedTerm: [String: Int] = [:]
+
+        for item in items {
+            let normalizedTerm = normalize(item.term)
+            guard !normalizedTerm.isEmpty else { continue }
+            let key = normalizedTerm.lowercased()
+
+            if let index = indexByNormalizedTerm[key] {
+                let existing = deduplicated[index]
+                deduplicated[index] = VocabularyTransferItem(
+                    term: preferredSurface(existing: existing.term, imported: normalizedTerm),
+                    source: mergedSource(existing: existing.source, imported: item.source),
+                )
+            } else {
+                deduplicated.append(
+                    VocabularyTransferItem(term: normalizedTerm, source: item.source),
+                )
+                indexByNormalizedTerm[key] = deduplicated.endIndex - 1
+            }
+        }
+
+        return deduplicated
+    }
+
     private static func mergedSource(
         existing: VocabularySource,
         imported: VocabularySource,
@@ -366,7 +421,19 @@ enum VocabularyStore {
         if existing == .manual || imported == .manual {
             return .manual
         }
-        return .automatic
+        if existing == imported {
+            return existing
+        }
+        if existing.isExternalAppSource {
+            return existing
+        }
+        if imported.isExternalAppSource {
+            return imported
+        }
+        if existing == .automatic || imported == .automatic {
+            return .automatic
+        }
+        return existing
     }
 
     /// Preserve the user-visible spelling that carries more intent: decorated

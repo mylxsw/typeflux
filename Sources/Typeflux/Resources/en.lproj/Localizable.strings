@@ -381,9 +381,12 @@
 
 "vocabulary.source.manual" = "Manually added";
 "vocabulary.source.automatic" = "Auto-added";
+"vocabulary.source.claude" = "Claude";
+"vocabulary.source.codex" = "Codex";
 "vocabulary.filter.all" = "All";
 "vocabulary.filter.automatic" = "Auto-added";
 "vocabulary.filter.manual" = "Manually added";
+"vocabulary.filter.otherApps" = "Other Apps";
 "vocabulary.intro.title" = "Help Typeflux catch names, products, and domain terms more reliably.";
 "vocabulary.intro.subtitle" = "Manual entries are sent as recognition hints to Whisper-compatible transcription backends.";
 "vocabulary.search.placeholder" = "Search vocabulary...";
@@ -392,8 +395,12 @@
 "vocabulary.action.newWord" = "New word";
 "vocabulary.action.addFirst" = "Add your first word";
 "vocabulary.action.addWord" = "Add word";
+"vocabulary.action.more" = "More";
+"vocabulary.action.importFile" = "Import file";
 "vocabulary.action.import" = "Import";
 "vocabulary.action.export" = "Export";
+"vocabulary.action.importClaude" = "Import Claude vocabulary";
+"vocabulary.action.importCodex" = "Import Codex vocabulary";
 "vocabulary.action.sync" = "Sync project terms";
 "vocabulary.sheet.title" = "Add to vocabulary";
 "vocabulary.sheet.subtitle" = "Use one term per entry. This works best for names, brands, product terms, and other frequently dictated jargon.";
@@ -401,10 +408,16 @@
 "vocabulary.sheet.editSubtitle" = "Update the term while keeping its source and existing usage history.";
 "vocabulary.sheet.placeholder" = "Add a new word";
 "vocabulary.sync.scanning" = "Scanning ~/.codex and ~/.claude...";
+"vocabulary.importDialog.title" = "Import vocabulary";
+"vocabulary.importDialog.message" = "Import %1$d vocabulary entries from %2$@?";
+"vocabulary.importDialog.confirm" = "Import";
 "vocabulary.toast.copied" = "Vocabulary term copied.";
 "vocabulary.toast.imported" = "Imported %d vocabulary terms.";
 "vocabulary.toast.importNoChanges" = "No vocabulary changes were imported.";
 "vocabulary.toast.exported" = "Vocabulary exported.";
+"vocabulary.toast.externalImported" = "Imported %1$d terms from %2$@.";
+"vocabulary.toast.externalNoSource" = "No %1$@ vocabulary directory was found.";
+"vocabulary.toast.externalNoTerms" = "No terms were imported from %1$@.";
 "vocabulary.toast.synced" = "Synced %d project terms into vocabulary.";
 "vocabulary.toast.syncNoSources" = "No ~/.codex or ~/.claude directories were found.";
 "vocabulary.toast.syncNoTerms" = "No project terms were discovered to sync.";

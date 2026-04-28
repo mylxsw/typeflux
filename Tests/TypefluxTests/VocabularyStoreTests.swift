@@ -114,16 +114,17 @@ final class VocabularyStoreExtendedTests: XCTestCase {
     func testExportDataRoundTripsEntries() throws {
         let entries = [
             VocabularyEntry(term: "TypefluxCloud", source: .manual, occurrenceCount: 3),
-            VocabularyEntry(term: "Qwen3-ASR", source: .automatic, occurrenceCount: 2),
+            VocabularyEntry(term: "Qwen3-ASR", source: .claude, occurrenceCount: 2),
         ]
         VocabularyStore.save(entries)
 
         let data = try VocabularyStore.exportData()
-        let decoded = try JSONDecoder().decode([VocabularyEntry].self, from: data)
+        let decoded = try JSONSerialization.jsonObject(with: data) as? [[String: String]]
 
-        XCTAssertEqual(decoded.count, 2)
-        XCTAssertTrue(decoded.contains(where: { $0.term == "TypefluxCloud" && $0.occurrenceCount == 3 }))
-        XCTAssertTrue(decoded.contains(where: { $0.term == "Qwen3-ASR" && $0.occurrenceCount == 2 }))
+        XCTAssertEqual(decoded?.count, 2)
+        XCTAssertEqual(Set(decoded?.first?.keys ?? []), Set(["term", "source"]))
+        XCTAssertTrue(decoded?.contains(where: { $0["term"] == "TypefluxCloud" && $0["source"] == "manual" }) == true)
+        XCTAssertTrue(decoded?.contains(where: { $0["term"] == "Qwen3-ASR" && $0["source"] == "claude" }) == true)
     }
 
     func testImportEntriesSupportsPlainTextLists() throws {
@@ -141,17 +142,19 @@ final class VocabularyStoreExtendedTests: XCTestCase {
         XCTAssertEqual(Set(result.entries.map(\.term)), Set(["Typeflux", "Qwen3-ASR"]))
     }
 
-    func testImportEntriesSupportsExportedJSONAndPreservesMetadata() throws {
-        let payload = [
-            VocabularyEntry(term: "WhisperKit", source: .automatic, occurrenceCount: 4),
-            VocabularyEntry(term: "TypefluxCloud", source: .manual, occurrenceCount: 2),
+    func testImportEntriesSupportsSourceAndTermJSONPayload() throws {
+        let data = """
+        [
+          { "term": "WhisperKit", "source": "codex", "createdAt": 0, "occurrenceCount": 9 },
+          { "term": "TypefluxCloud", "source": "manual", "id": "ignored" }
         ]
-        let data = try JSONEncoder().encode(payload)
+        """.data(using: .utf8)!
 
         let result = try VocabularyStore.importEntries(from: data)
 
         XCTAssertEqual(result.addedCount, 2)
-        XCTAssertEqual(result.entries.first(where: { $0.term == "WhisperKit" })?.occurrenceCount, 4)
+        XCTAssertEqual(result.entries.first(where: { $0.term == "WhisperKit" })?.occurrenceCount, 1)
+        XCTAssertEqual(result.entries.first(where: { $0.term == "WhisperKit" })?.source, .codex)
         XCTAssertEqual(result.entries.first(where: { $0.term == "TypefluxCloud" })?.source, .manual)
     }
 
@@ -171,6 +174,22 @@ final class VocabularyStoreExtendedTests: XCTestCase {
         XCTAssertEqual(result.updatedCount, 1)
         XCTAssertEqual(result.entries.first?.source, .manual)
         XCTAssertEqual(result.entries.first?.occurrenceCount, 2)
+    }
+
+    func testPreviewImportItemsDeduplicatesTermsCaseInsensitively() throws {
+        let data = """
+        [
+          { "term": "TypefluxCloud", "source": "manual" },
+          { "term": "typefluxcloud", "source": "codex" },
+          { "term": "Qwen3-ASR", "source": "claude" }
+        ]
+        """.data(using: .utf8)!
+
+        let items = try VocabularyStore.previewImportItems(from: data)
+
+        XCTAssertEqual(items.count, 2)
+        XCTAssertEqual(items.first(where: { $0.term == "TypefluxCloud" })?.source, .manual)
+        XCTAssertEqual(items.first(where: { $0.term == "Qwen3-ASR" })?.source, .claude)
     }
 
     func testImportEntriesThrowsUnsupportedFormatForMalformedBinaryPayload() {
@@ -271,6 +290,8 @@ final class VocabularyStoreExtendedTests: XCTestCase {
     func testVocabularySourceRawValues() {
         XCTAssertEqual(VocabularySource.manual.rawValue, "manual")
         XCTAssertEqual(VocabularySource.automatic.rawValue, "automatic")
+        XCTAssertEqual(VocabularySource.claude.rawValue, "claude")
+        XCTAssertEqual(VocabularySource.codex.rawValue, "codex")
     }
 
     // MARK: - occurrenceCount + ranking
