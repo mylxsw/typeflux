@@ -485,12 +485,20 @@ final class SettingsStoreTests: XCTestCase {
         let firstPersona = store.personas[0]
         let secondPersona = store.personas[1]
 
-        store.savePersonaAppBinding(appIdentifier: " Slack ", personaID: firstPersona.id)
+        store.savePersonaAppBinding(appIdentifier: "Slack", personaID: firstPersona.id)
         store.savePersonaAppBinding(appIdentifier: "slack", personaID: secondPersona.id)
 
         XCTAssertEqual(store.personaAppBindings.count, 1)
         XCTAssertEqual(store.personaAppBindings.first?.personaID, secondPersona.id)
         XCTAssertEqual(store.personaAppBindings.first?.appIdentifier, "slack")
+    }
+
+    func testSavePersonaAppBindingTrimsWhitespace() {
+        let persona = store.personas[0]
+
+        store.savePersonaAppBinding(appIdentifier: "  Slack  ", personaID: persona.id)
+
+        XCTAssertEqual(store.personaAppBindings.first?.appIdentifier, "Slack")
     }
 
     // MARK: - applyPersonaSelection
