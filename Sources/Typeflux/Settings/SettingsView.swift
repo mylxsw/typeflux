@@ -109,6 +109,7 @@ struct StudioView: View {
     @State private var personaAppPickerSearchQuery = ""
     @State private var personaAppCandidates: [PersonaAppCandidate] = []
     @State private var isLoadingPersonaAppCandidates = false
+    @State private var personaAppCandidateLoadToken = UUID()
     @State private var localSTTPendingDelete: LocalSTTModel? = nil
     @State private var localSTTPendingRedownload: LocalSTTModel? = nil
     @State private var llmActivationMissingAPIKeyProviderName: String?
@@ -1186,22 +1187,39 @@ struct StudioView: View {
 
     @MainActor
     private func loadPersonaAppCandidates(for scope: PersonaAppPickerScope) {
+        let loadToken = UUID()
+        personaAppCandidateLoadToken = loadToken
         isLoadingPersonaAppCandidates = true
-        personaAppCandidates = Self.discoverPersonaAppCandidates(scope: scope)
-        isLoadingPersonaAppCandidates = false
+
+        Task {
+            let candidates = await Self.discoverPersonaAppCandidates(scope: scope)
+            await MainActor.run {
+                guard personaAppCandidateLoadToken == loadToken else { return }
+                personaAppCandidates = candidates
+                isLoadingPersonaAppCandidates = false
+            }
+        }
     }
 
-    @MainActor
-    private static func discoverPersonaAppCandidates(scope: PersonaAppPickerScope) -> [PersonaAppCandidate] {
+    private static func discoverPersonaAppCandidates(scope: PersonaAppPickerScope) async -> [PersonaAppCandidate] {
         switch scope {
         case .running:
-            runningPersonaAppCandidates()
+            await MainActor.run {
+                runningPersonaAppCandidates()
+            }
         case .all:
-            mergePersonaAppCandidates(
-                installedPersonaAppCandidates(),
-                runningPersonaAppCandidates(),
-            )
+            async let installed = loadInstalledPersonaAppCandidates()
+            let running = await MainActor.run {
+                runningPersonaAppCandidates()
+            }
+            return mergePersonaAppCandidates(await installed, running)
         }
+    }
+
+    private static func loadInstalledPersonaAppCandidates() async -> [PersonaAppCandidate] {
+        await Task.detached(priority: .userInitiated) {
+            Self.installedPersonaAppCandidates()
+        }.value
     }
 
     private func personaAppBindingsCardHeader(
@@ -1251,7 +1269,6 @@ struct StudioView: View {
         }
     }
 
-    @MainActor
     private static func installedPersonaAppCandidates() -> [PersonaAppCandidate] {
         let fileManager = FileManager.default
         let searchRoots = Array(
