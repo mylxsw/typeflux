@@ -11,13 +11,11 @@ enum ProjectVocabularyScanner {
     private static let maxReturnedTerms = 64
     private static let minimumScore = 2
     private static let separatorCharacters = CharacterSet(charactersIn: "._+-/")
-    private static let pathTokenRegex = try! NSRegularExpression(
-        pattern: #"\b[\p{L}\p{N}][\p{L}\p{N}._+\-/]{2,39}\b"#,
+    private static let pathTokenRegex = makeRegex(#"\b[\p{L}\p{N}][\p{L}\p{N}._+\-/]{2,39}\b"#)
+    private static let richTextTokenRegex = makeRegex(
+        #"\b(?:[A-Z]{2,}[A-Za-z0-9._+\-/]*|[A-Za-z0-9]+(?:[._+\-/][A-Za-z0-9]+)+|[A-Z][A-Za-z0-9]+(?:[A-Z][A-Za-z0-9]+)+|[A-Za-z]*\d+[A-Za-z0-9._+\-/]*)\b"#,
     )
-    private static let richTextTokenRegex = try! NSRegularExpression(
-        pattern: #"\b(?:[A-Z]{2,}[A-Za-z0-9._+\-/]*|[A-Za-z0-9]+(?:[._+\-/][A-Za-z0-9]+)+|[A-Z][A-Za-z0-9]+(?:[A-Z][A-Za-z0-9]+)+|[A-Za-z]*\d+[A-Za-z0-9._+\-/]*)\b"#,
-    )
-    private static let hanTokenRegex = try! NSRegularExpression(pattern: #"\p{Han}{2,12}"#)
+    private static let hanTokenRegex = makeRegex(#"\p{Han}{2,12}"#)
     private static let stopwords: Set<String> = [
         "assistant", "cache", "claude", "codex", "config", "configuration",
         "conversation", "data", "directory", "document", "docs", "file", "files",
@@ -203,6 +201,20 @@ enum ProjectVocabularyScanner {
 
     private static func isHanScalar(_ scalar: UnicodeScalar) -> Bool {
         (0x4E00 ... 0x9FFF).contains(scalar.value)
+    }
+
+    private static func makeRegex(_ pattern: String) -> NSRegularExpression {
+        do {
+            return try NSRegularExpression(pattern: pattern)
+        } catch {
+            ErrorLogStore.shared.log(
+                "Project vocabulary regex initialization failed for pattern \(pattern): \(error.localizedDescription)",
+            )
+            if let fallback = try? NSRegularExpression(pattern: "$^") {
+                return fallback
+            }
+            fatalError("Failed to initialize fallback regex")
+        }
     }
 }
 

@@ -291,7 +291,9 @@ enum VocabularyStore {
                     term: preferredSurface(existing: existing.term, imported: normalizedTerm),
                     source: mergedSource(existing: existing.source, imported: importedEntry.source),
                     createdAt: min(existing.createdAt, importedEntry.createdAt),
-                    occurrenceCount: max(existing.occurrenceCount, max(1, importedEntry.occurrenceCount)),
+                    occurrenceCount: ensureMinimumCount(
+                        max(existing.occurrenceCount, importedEntry.occurrenceCount),
+                    ),
                 )
                 if mergedEntry != existing {
                     entries[index] = mergedEntry
@@ -303,7 +305,7 @@ enum VocabularyStore {
                         term: normalizedTerm,
                         source: importedEntry.source,
                         createdAt: importedEntry.createdAt,
-                        occurrenceCount: max(1, importedEntry.occurrenceCount),
+                        occurrenceCount: ensureMinimumCount(importedEntry.occurrenceCount),
                     ),
                     at: 0,
                 )
@@ -379,6 +381,10 @@ enum VocabularyStore {
 
     private static func normalize(_ term: String) -> String {
         term.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func ensureMinimumCount(_ count: Int) -> Int {
+        max(1, count)
     }
 }
 
