@@ -411,7 +411,8 @@ enum VocabularyStore {
     }
 
     /// Merge source precedence keeps the highest-signal provenance available:
-    /// manual > existing external app > imported external app > automatic.
+    /// manual > same source > existing external app > imported external app >
+    /// automatic/other existing source.
     /// This lets local/user-curated terms stay strongest while keeping third-party
     /// imports stable across repeated Claude/Codex syncs.
     private static func mergedSource(

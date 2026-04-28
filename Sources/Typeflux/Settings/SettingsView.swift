@@ -53,7 +53,7 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
     }
 }
 
-private func vocabularySourceLogoResourceName(for source: VocabularySource) -> String? {
+private func logoResourceName(for source: VocabularySource) -> String? {
     switch source {
     case .claude:
         "claude-color"
@@ -65,7 +65,7 @@ private func vocabularySourceLogoResourceName(for source: VocabularySource) -> S
 }
 
 private func vocabularySourceLogoImage(for source: VocabularySource) -> NSImage? {
-    guard let resourceName = vocabularySourceLogoResourceName(for: source) else { return nil }
+    guard let resourceName = logoResourceName(for: source) else { return nil }
     guard let url = vocabularySourceLogoURL(for: resourceName) else {
         ErrorLogStore.shared.log(
             "Missing vocabulary source logo resource for \(source.rawValue): \(resourceName)",
