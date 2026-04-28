@@ -217,6 +217,26 @@ final class SettingsViewModelPersonaTests: XCTestCase {
         XCTAssertEqual(viewModel.personaAppBindings.first?.personaID, updatedPersona.id)
     }
 
+    func testSetPersonaAppBindingEnabledUpdatesStore() throws {
+        let suiteName = "SettingsViewModelPersonaTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let settingsStore = SettingsStore(defaults: defaults)
+        let historyStore = InMemoryHistoryStore()
+        let persona = try XCTUnwrap(settingsStore.personas.first)
+        settingsStore.savePersonaAppBinding(appIdentifier: "Slack", personaID: persona.id)
+        let bindingID = try XCTUnwrap(settingsStore.personaAppBindings.first?.id)
+        let viewModel = StudioViewModel(
+            settingsStore: settingsStore,
+            historyStore: historyStore,
+            initialSection: .personas,
+        )
+
+        viewModel.setPersonaAppBindingEnabled(id: bindingID, isEnabled: false)
+
+        XCTAssertFalse(settingsStore.personaAppBindings.first?.isEnabled ?? true)
+        XCTAssertFalse(viewModel.personaAppBindings.first?.isEnabled ?? true)
+    }
+
     // MARK: - Auto persona default when LLM becomes configured via Settings
 
     func testSwitchingToTypefluxCloudAutoSelectsTypefluxPersona() {

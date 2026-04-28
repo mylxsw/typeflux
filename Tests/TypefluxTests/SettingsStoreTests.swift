@@ -517,6 +517,23 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(store.personaAppBindings.first?.appIdentifier, "Slack")
     }
 
+    func testEffectivePersonaIgnoresPausedAppBinding() throws {
+        let defaultPersona = try XCTUnwrap(store.personas.first)
+        let appSpecificPersona = PersonaProfile(name: "Chat Reply", prompt: "Keep it casual.")
+        store.personas = store.personas + [appSpecificPersona]
+        store.applyPersonaSelection(defaultPersona.id)
+        store.savePersonaAppBinding(appIdentifier: "Slack", personaID: appSpecificPersona.id)
+        let bindingID = try XCTUnwrap(store.personaAppBindings.first?.id)
+        store.setPersonaAppBindingEnabled(id: bindingID, isEnabled: false)
+
+        let effectivePersona = store.effectivePersona(
+            appName: "Slack",
+            bundleIdentifier: nil,
+        )
+
+        XCTAssertEqual(effectivePersona?.id, defaultPersona.id)
+    }
+
     func testUpdatePersonaAppBindingPersonaUpdatesExistingBinding() {
         let firstPersona = store.personas[0]
         let secondPersona = store.personas[1]
@@ -527,6 +544,29 @@ final class SettingsStoreTests: XCTestCase {
 
         XCTAssertEqual(store.personaAppBindings.first?.id, bindingID)
         XCTAssertEqual(store.personaAppBindings.first?.personaID, secondPersona.id)
+    }
+
+    func testUpdatePersonaAppBindingPersonaPreservesPausedState() {
+        let firstPersona = store.personas[0]
+        let secondPersona = store.personas[1]
+        store.savePersonaAppBinding(appIdentifier: "Slack", personaID: firstPersona.id)
+        let bindingID = store.personaAppBindings[0].id
+        store.setPersonaAppBindingEnabled(id: bindingID, isEnabled: false)
+
+        store.updatePersonaAppBindingPersona(id: bindingID, personaID: secondPersona.id)
+
+        XCTAssertEqual(store.personaAppBindings.first?.personaID, secondPersona.id)
+        XCTAssertFalse(store.personaAppBindings.first?.isEnabled ?? true)
+    }
+
+    func testSetPersonaAppBindingEnabledUpdatesExistingBinding() {
+        let persona = store.personas[0]
+        store.savePersonaAppBinding(appIdentifier: "Slack", personaID: persona.id)
+        let bindingID = store.personaAppBindings[0].id
+
+        store.setPersonaAppBindingEnabled(id: bindingID, isEnabled: false)
+
+        XCTAssertFalse(store.personaAppBindings[0].isEnabled)
     }
 
     // MARK: - applyPersonaSelection

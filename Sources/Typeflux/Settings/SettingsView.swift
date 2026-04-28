@@ -109,7 +109,6 @@ struct StudioView: View {
     @State private var personaAppPickerSearchQuery = ""
     @State private var personaAppCandidates: [PersonaAppCandidate] = []
     @State private var isLoadingPersonaAppCandidates = false
-    @State private var personaAppCandidateLoadToken = UUID()
     @State private var localSTTPendingDelete: LocalSTTModel? = nil
     @State private var localSTTPendingRedownload: LocalSTTModel? = nil
     @State private var llmActivationMissingAPIKeyProviderName: String?
@@ -368,25 +367,21 @@ struct StudioView: View {
                 Spacer()
 
                 HStack(spacing: StudioTheme.Spacing.medium) {
-                    StudioIconButton(
+                    StudioButton(
+                        title: L("settings.personaAppBindings.openButton"),
                         systemImage: "app.badge",
-                        variant: .ghost,
+                        variant: .secondary,
                     ) {
                         isPersonaAppBindingsSheetPresented = true
                     }
-                    .studioTooltip(L("settings.personaAppBindings.open"), yOffset: 34)
 
-                    Button(action: viewModel.beginCreatingPersona) {
-                        Image(systemName: "plus")
-                            .foregroundStyle(.white)
-                            .frame(
-                                width: StudioTheme.ControlSize.personaAddButton,
-                                height: StudioTheme.ControlSize.personaAddButton,
-                            )
-                            .background(Circle().fill(StudioTheme.accent))
-                            .contentShape(Circle())
+                    StudioButton(
+                        title: L("settings.personas.newButton"),
+                        systemImage: "plus",
+                        variant: .secondary,
+                    ) {
+                        viewModel.beginCreatingPersona()
                     }
-                    .buttonStyle(StudioInteractiveButtonStyle())
                 }
             }
         }
@@ -775,9 +770,10 @@ struct StudioView: View {
 
                     StudioCard {
                         VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                            Text(L("settings.personaAppBindings.addTitle"))
-                                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                                .foregroundStyle(StudioTheme.textPrimary)
+                            personaAppBindingsCardHeader(
+                                title: L("settings.personaAppBindings.addTitle"),
+                                subtitle: L("settings.personaAppBindings.addSubtitle"),
+                            )
 
                             VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
                                 Text(L("settings.personaAppBindings.appIdentifier"))
@@ -815,7 +811,8 @@ struct StudioView: View {
                                         ),
                                     )
 
-                                    StudioIconButton(
+                                    StudioButton(
+                                        title: L("settings.personaAppBindings.searchApp"),
                                         systemImage: "magnifyingglass",
                                         variant: .secondary,
                                     ) {
@@ -824,7 +821,6 @@ struct StudioView: View {
                                         isPersonaAppPickerPresented = true
                                         loadPersonaAppCandidates(for: .running)
                                     }
-                                    .studioTooltip(L("settings.personaAppBindings.searchApp"), yOffset: 34)
                                 }
                             }
 
@@ -869,7 +865,15 @@ struct StudioView: View {
                         }
                     } else {
                         StudioCard(padding: StudioTheme.Insets.none) {
-                            VStack(spacing: 0) {
+                            VStack(alignment: .leading, spacing: 0) {
+                                personaAppBindingsCardHeader(
+                                    title: L("settings.personaAppBindings.listTitle"),
+                                    subtitle: L("settings.personaAppBindings.listSubtitle"),
+                                    padding: StudioTheme.Insets.cardDefault,
+                                )
+
+                                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
                                 ForEach(viewModel.personaAppBindings) { binding in
                                     personaAppBindingRow(binding)
 
@@ -912,67 +916,91 @@ struct StudioView: View {
         }
     }
 
+    @MainActor
     private func personaAppBindingRow(_ binding: PersonaAppBinding) -> some View {
         let metadata = personaAppMetadata(for: binding.appIdentifier)
         let hasMatchingPersona = viewModel.personas.contains(where: { $0.id == binding.personaID })
 
-        return HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
-            Group {
-                if let image = metadata.icon {
-                    Image(nsImage: image)
-                        .resizable()
-                        .interpolation(.high)
-                } else {
-                    Image(systemName: "app")
-                        .resizable()
-                        .scaledToFit()
-                        .padding(6)
+        return HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
+            HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
+                Group {
+                    if let image = metadata.icon {
+                        Image(nsImage: image)
+                            .resizable()
+                            .interpolation(.high)
+                    } else {
+                        Image(systemName: "app")
+                            .resizable()
+                            .scaledToFit()
+                            .padding(6)
+                            .foregroundStyle(StudioTheme.textSecondary)
+                    }
+                }
+                .frame(width: 36, height: 36)
+                .background(
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
+                        .fill(StudioTheme.surfaceMuted),
+                )
+
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                    HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
+                        Text(metadata.displayName)
+                            .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textPrimary)
+
+                        if !binding.isEnabled {
+                            StudioPill(title: L("settings.personaAppBindings.binding.paused"))
+                        }
+                    }
+
+                    Text(binding.appIdentifier)
+                        .font(.studioBody(StudioTheme.Typography.caption))
                         .foregroundStyle(StudioTheme.textSecondary)
+                        .textSelection(.enabled)
                 }
             }
-            .frame(width: 36, height: 36)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                    .fill(StudioTheme.surfaceMuted),
-            )
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                Text(metadata.displayName)
-                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Text(binding.appIdentifier)
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .textSelection(.enabled)
+            VStack(alignment: .trailing, spacing: StudioTheme.Spacing.small) {
+                StudioMenuPicker(
+                    options: [(label: L("settings.personaAppBindings.selectPersona"), value: nil as UUID?)]
+                        + viewModel.personas.map { persona in
+                            (label: persona.name, value: Optional(persona.id))
+                        },
+                    selection: Binding(
+                        get: { hasMatchingPersona ? Optional(binding.personaID) : nil },
+                        set: { newPersonaID in
+                            guard let newPersonaID else { return }
+                            viewModel.updatePersonaAppBindingPersona(id: binding.id, personaID: newPersonaID)
+                        },
+                    ),
+                    width: 220,
+                )
+
+                HStack(spacing: StudioTheme.Spacing.small) {
+                    StudioButton(
+                        title: binding.isEnabled
+                            ? L("settings.personaAppBindings.binding.pause")
+                            : L("settings.personaAppBindings.binding.enable"),
+                        systemImage: binding.isEnabled ? "pause.fill" : "play.fill",
+                        variant: .secondary,
+                    ) {
+                        viewModel.setPersonaAppBindingEnabled(id: binding.id, isEnabled: !binding.isEnabled)
+                    }
+
+                    StudioIconButton(
+                        systemImage: "trash",
+                        variant: .ghost,
+                    ) {
+                        personaAppBindingPendingDeletion = binding
+                    }
+                    .studioTooltip(L("common.delete"), yOffset: 34)
+                }
             }
-
-            Spacer()
-
-            StudioMenuPicker(
-                options: [(label: L("settings.personaAppBindings.selectPersona"), value: nil as UUID?)]
-                    + viewModel.personas.map { persona in
-                        (label: persona.name, value: Optional(persona.id))
-                    },
-                selection: Binding(
-                    get: { hasMatchingPersona ? Optional(binding.personaID) : nil },
-                    set: { newPersonaID in
-                        guard let newPersonaID else { return }
-                        viewModel.updatePersonaAppBindingPersona(id: binding.id, personaID: newPersonaID)
-                    },
-                ),
-                width: 220,
-            )
-
-            StudioIconButton(
-                systemImage: "trash",
-                variant: .ghost,
-            ) {
-                personaAppBindingPendingDeletion = binding
-            }
-            .studioTooltip(L("common.delete"), yOffset: 34)
         }
         .padding(.horizontal, StudioTheme.Spacing.large)
         .padding(.vertical, StudioTheme.Spacing.medium)
+        .opacity(binding.isEnabled ? 1 : 0.72)
     }
 
     private var personaAppPickerSheet: some View {
@@ -1077,6 +1105,7 @@ struct StudioView: View {
         }
     }
 
+    @MainActor
     private func personaAppCandidateRow(_ candidate: PersonaAppCandidate) -> some View {
         HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
             Group {
@@ -1126,6 +1155,7 @@ struct StudioView: View {
         }
     }
 
+    @MainActor
     private func personaAppMetadata(for identifier: String) -> (displayName: String, icon: NSImage?) {
         if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier) {
             return (Self.appDisplayName(for: url) ?? identifier, NSWorkspace.shared.icon(forFile: url.path))
@@ -1139,6 +1169,7 @@ struct StudioView: View {
         return (identifier, nil)
     }
 
+    @MainActor
     private func personaAppIcon(for candidate: PersonaAppCandidate) -> NSImage? {
         if let appURL = candidate.appURL {
             return NSWorkspace.shared.icon(forFile: appURL.path)
@@ -1153,33 +1184,45 @@ struct StudioView: View {
         return nil
     }
 
+    @MainActor
     private func loadPersonaAppCandidates(for scope: PersonaAppPickerScope) {
-        let loadToken = UUID()
-        personaAppCandidateLoadToken = loadToken
         isLoadingPersonaAppCandidates = true
+        personaAppCandidates = Self.discoverPersonaAppCandidates(scope: scope)
+        isLoadingPersonaAppCandidates = false
+    }
 
-        Task { @MainActor in
-            let candidates = await Self.discoverPersonaAppCandidates(scope: scope)
-            guard personaAppCandidateLoadToken == loadToken else { return }
-            personaAppCandidates = candidates
-            isLoadingPersonaAppCandidates = false
+    @MainActor
+    private static func discoverPersonaAppCandidates(scope: PersonaAppPickerScope) -> [PersonaAppCandidate] {
+        switch scope {
+        case .running:
+            runningPersonaAppCandidates()
+        case .all:
+            mergePersonaAppCandidates(
+                installedPersonaAppCandidates(),
+                runningPersonaAppCandidates(),
+            )
         }
     }
 
-    private static func discoverPersonaAppCandidates(scope: PersonaAppPickerScope) async -> [PersonaAppCandidate] {
-        await Task.detached(priority: .userInitiated) {
-            switch scope {
-            case .running:
-                runningPersonaAppCandidates()
-            case .all:
-                mergePersonaAppCandidates(
-                    installedPersonaAppCandidates(),
-                    runningPersonaAppCandidates(),
-                )
-            }
-        }.value
+    private func personaAppBindingsCardHeader(
+        title: String,
+        subtitle: String,
+        padding: CGFloat = 0,
+    ) -> some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+            Text(title)
+                .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
+
+            Text(subtitle)
+                .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(padding)
     }
 
+    @MainActor
     private static func runningPersonaAppCandidates() -> [PersonaAppCandidate] {
         var seen = Set<String>()
 
@@ -1208,6 +1251,7 @@ struct StudioView: View {
         }
     }
 
+    @MainActor
     private static func installedPersonaAppCandidates() -> [PersonaAppCandidate] {
         let fileManager = FileManager.default
         let searchRoots = Array(

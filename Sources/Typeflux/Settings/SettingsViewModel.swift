@@ -1557,6 +1557,11 @@ final class StudioViewModel: ObservableObject {
         personaAppBindings = settingsStore.personaAppBindings
     }
 
+    func setPersonaAppBindingEnabled(id: UUID, isEnabled: Bool) {
+        settingsStore.setPersonaAppBindingEnabled(id: id, isEnabled: isEnabled)
+        personaAppBindings = settingsStore.personaAppBindings
+    }
+
     func removePersonaAppBinding(id: UUID) {
         settingsStore.removePersonaAppBinding(id: id)
         personaAppBindings = settingsStore.personaAppBindings

@@ -476,8 +476,11 @@ final class SettingsStore {
     }
 
     func updatePersonaAppBindingPersona(id: UUID, personaID: UUID) {
-        guard let binding = personaAppBindings.first(where: { $0.id == id }) else { return }
-        savePersonaAppBinding(appIdentifier: binding.appIdentifier, personaID: personaID)
+        updatePersonaAppBinding(id: id) { $0.personaID = personaID }
+    }
+
+    func setPersonaAppBindingEnabled(id: UUID, isEnabled: Bool) {
+        updatePersonaAppBinding(id: id) { $0.isEnabled = isEnabled }
     }
 
     private func personaAppBinding(appName: String?, bundleIdentifier: String?) -> PersonaAppBinding? {
@@ -485,8 +488,15 @@ final class SettingsStore {
         // bundle IDs are stable across localizations. Only if no binding matches
         // that bundle ID do we try the app name, so manual name-based bindings
         // still work as a fallback.
-        personaAppBindings.first { $0.matches(bundleIdentifier: bundleIdentifier, appName: nil) }
-            ?? personaAppBindings.first { $0.matches(bundleIdentifier: nil, appName: appName) }
+        personaAppBindings.first { $0.isEnabled && $0.matches(bundleIdentifier: bundleIdentifier, appName: nil) }
+            ?? personaAppBindings.first { $0.isEnabled && $0.matches(bundleIdentifier: nil, appName: appName) }
+    }
+
+    private func updatePersonaAppBinding(id: UUID, transform: (inout PersonaAppBinding) -> Void) {
+        var bindings = personaAppBindings
+        guard let index = bindings.firstIndex(where: { $0.id == id }) else { return }
+        transform(&bindings[index])
+        personaAppBindings = bindings
     }
 
     /// If the LLM is currently configured and the user has not yet explicitly
