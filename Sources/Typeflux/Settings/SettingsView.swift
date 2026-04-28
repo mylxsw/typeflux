@@ -751,7 +751,7 @@ struct StudioView: View {
 
                         StudioMenuPicker(
                             options: viewModel.personas.map { persona in
-                                (label: persona.name, value: persona.id as UUID?)
+                                (label: persona.name, value: Optional(persona.id))
                             },
                             selection: Binding(
                                 get: { viewModel.personaAppBindingDraftPersonaID },
