@@ -6,7 +6,13 @@ struct ProjectVocabularyDiscovery: Equatable {
 }
 
 enum ProjectVocabularyScanner {
+    /// Caps per-file reads at 32 KB so a single prompt/log dump cannot dominate
+    /// sync time or memory while still leaving enough content to capture repeated
+    /// project terms near the top of configuration and context files.
     private static let contentCharacterLimit = 32_768
+    /// Limits recursive scanning to a few hundred files per sync. `.codex` and
+    /// `.claude` trees can accumulate large histories; this keeps sync responsive
+    /// while still covering the most relevant project/context artifacts.
     private static let maxScannedFiles = 240
     private static let maxReturnedTerms = 64
     private static let minimumScore = 2
@@ -213,7 +219,9 @@ enum ProjectVocabularyScanner {
             if let fallback = try? NSRegularExpression(pattern: "$^") {
                 return fallback
             }
-            fatalError("Failed to initialize fallback regex")
+            fatalError(
+                "Failed to initialize ProjectVocabularyScanner fallback regex. This indicates a fundamental Foundation regex failure, so vocabulary sync cannot continue safely.",
+            )
         }
     }
 }

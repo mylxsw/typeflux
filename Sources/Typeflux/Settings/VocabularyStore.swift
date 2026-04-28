@@ -65,7 +65,7 @@ struct VocabularyBatchImportResult {
     let updatedCount: Int
 }
 
-enum VocabularyImportError: LocalizedError {
+enum VocabularyImportError: LocalizedError, Equatable {
     case unsupportedFormat
 
     var errorDescription: String? {
@@ -371,9 +371,6 @@ enum VocabularyStore {
         let existingHasDecoratedCharacters = existing.hasDecoratedVocabularyCharacters
         let importedHasDecoratedCharacters = imported.hasDecoratedVocabularyCharacters
         if importedHasDecoratedCharacters && !existingHasDecoratedCharacters {
-            return imported
-        }
-        if imported.count > existing.count, importedHasDecoratedCharacters == existingHasDecoratedCharacters {
             return imported
         }
         return existing

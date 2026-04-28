@@ -172,6 +172,14 @@ final class VocabularyStoreExtendedTests: XCTestCase {
         XCTAssertEqual(result.entries.first?.occurrenceCount, 2)
     }
 
+    func testImportEntriesThrowsUnsupportedFormatForMalformedBinaryPayload() {
+        let malformed = Data([0xFF, 0xD8, 0x00, 0x80])
+
+        XCTAssertThrowsError(try VocabularyStore.importEntries(from: malformed)) { error in
+            XCTAssertEqual(error as? VocabularyImportError, .unsupportedFormat)
+        }
+    }
+
     func testSaveDeduplicate() {
         let entries = [
             VocabularyEntry(term: "duplicate", source: .manual),

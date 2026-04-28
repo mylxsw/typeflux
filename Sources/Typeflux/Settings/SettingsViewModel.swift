@@ -41,6 +41,8 @@ enum MCPConnectionTestState: Equatable {
 // swiftlint:disable:next type_body_length
 final class StudioViewModel: ObservableObject {
     private static let historyPageSize = 100
+    /// Prevents repeated navigation into the vocabulary page from re-scanning the
+    /// filesystem too aggressively; project-context files change infrequently.
     private static let vocabularyContextSyncCooldown: TimeInterval = 300
 
     @Published var currentSection: StudioSection
