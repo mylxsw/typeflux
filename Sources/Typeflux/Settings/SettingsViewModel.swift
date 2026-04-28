@@ -42,7 +42,8 @@ enum MCPConnectionTestState: Equatable {
 final class StudioViewModel: ObservableObject {
     private static let historyPageSize = 100
     /// Prevents repeated navigation into the vocabulary page from re-scanning the
-    /// filesystem too aggressively; project-context files change infrequently.
+    /// filesystem too aggressively; project-context files change infrequently, so
+    /// a 5-minute / 300-second cooldown keeps sync responsive without thrashing.
     private static let vocabularyContextSyncCooldown: TimeInterval = 300
 
     @Published var currentSection: StudioSection

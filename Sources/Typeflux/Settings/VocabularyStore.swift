@@ -1,5 +1,7 @@
 import Foundation
 
+let vocabularyDecoratedCharacters = "._+-/"
+
 extension Notification.Name {
     static let vocabularyStoreDidChange = Notification.Name("VocabularyStore.didChange")
 }
@@ -390,6 +392,6 @@ enum VocabularyStore {
 
 private extension String {
     var hasDecoratedVocabularyCharacters: Bool {
-        contains(where: { $0.isUppercase || "._+-/".contains($0) })
+        contains(where: { $0.isUppercase || vocabularyDecoratedCharacters.contains($0) })
     }
 }

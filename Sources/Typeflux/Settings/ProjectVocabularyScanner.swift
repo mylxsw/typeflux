@@ -16,12 +16,14 @@ enum ProjectVocabularyScanner {
     private static let maxScannedFiles = 240
     private static let maxReturnedTerms = 64
     private static let minimumScore = 2
-    private static let separatorCharacters = CharacterSet(charactersIn: "._+-/")
+    private static let separatorCharacters = CharacterSet(charactersIn: vocabularyDecoratedCharacters)
     private static let pathTokenRegex = makeRegex(#"\b[\p{L}\p{N}][\p{L}\p{N}._+\-/]{2,39}\b"#)
     private static let richTextTokenRegex = makeRegex(
         #"\b(?:[A-Z]{2,}[A-Za-z0-9._+\-/]*|[A-Za-z0-9]+(?:[._+\-/][A-Za-z0-9]+)+|[A-Z][A-Za-z0-9]+(?:[A-Z][A-Za-z0-9]+)+|[A-Za-z]*\d+[A-Za-z0-9._+\-/]*)\b"#,
     )
     private static let hanTokenRegex = makeRegex(#"\p{Han}{2,12}"#)
+    /// Generic assistant/configuration words that appear frequently in `.codex`
+    /// and `.claude` trees but are too broad to be useful as project vocabulary.
     private static let stopwords: Set<String> = [
         "assistant", "cache", "claude", "codex", "config", "configuration",
         "conversation", "data", "directory", "document", "docs", "file", "files",
@@ -206,7 +208,14 @@ enum ProjectVocabularyScanner {
     }
 
     private static func looksBinary(_ data: Data) -> Bool {
-        data.contains(0)
+        let sample = data.prefix(512)
+        guard !sample.isEmpty else { return false }
+        let nullCount = sample.reduce(into: 0) { count, byte in
+            if byte == 0 {
+                count += 1
+            }
+        }
+        return nullCount * 20 > sample.count
     }
 
     private static func isHanScalar(_ scalar: UnicodeScalar) -> Bool {
@@ -224,7 +233,7 @@ enum ProjectVocabularyScanner {
                 return fallback
             }
             fatalError(
-                "Unable to initialize the vocabulary scanner. Please restart the application or contact support.",
+                "Unable to initialize the vocabulary scanner, and the application must terminate immediately. Please restart the app or contact support.",
             )
         }
     }
@@ -232,6 +241,6 @@ enum ProjectVocabularyScanner {
 
 private extension String {
     var hasProjectVocabularyDecoration: Bool {
-        contains(where: { $0.isUppercase || "._+-/".contains($0) })
+        contains(where: { $0.isUppercase || vocabularyDecoratedCharacters.contains($0) })
     }
 }
