@@ -439,17 +439,18 @@ final class SettingsStore {
     }
 
     func savePersonaAppBinding(appIdentifier: String, personaID: UUID) {
-        let normalizedIdentifier = PersonaAppBinding.normalize(appIdentifier)
+        let trimmedIdentifier = appIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedIdentifier = PersonaAppBinding.normalize(trimmedIdentifier)
         guard !normalizedIdentifier.isEmpty else { return }
 
         var bindings = personaAppBindings
         if let index = bindings.firstIndex(where: { $0.normalizedAppIdentifier == normalizedIdentifier }) {
-            bindings[index].appIdentifier = appIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
+            bindings[index].appIdentifier = trimmedIdentifier
             bindings[index].personaID = personaID
         } else {
             bindings.insert(
                 PersonaAppBinding(
-                    appIdentifier: appIdentifier.trimmingCharacters(in: .whitespacesAndNewlines),
+                    appIdentifier: trimmedIdentifier,
                     personaID: personaID,
                 ),
                 at: 0,
@@ -463,23 +464,8 @@ final class SettingsStore {
     }
 
     private func personaAppBinding(appName: String?, bundleIdentifier: String?) -> PersonaAppBinding? {
-        let bindings = personaAppBindings
-
-        if let bundleIdentifier {
-            let normalizedBundleIdentifier = PersonaAppBinding.normalize(bundleIdentifier)
-            if let match = bindings.first(where: { $0.normalizedAppIdentifier == normalizedBundleIdentifier }) {
-                return match
-            }
-        }
-
-        if let appName {
-            let normalizedAppName = PersonaAppBinding.normalize(appName)
-            if let match = bindings.first(where: { $0.normalizedAppIdentifier == normalizedAppName }) {
-                return match
-            }
-        }
-
-        return nil
+        personaAppBindings.first { $0.matches(bundleIdentifier: bundleIdentifier, appName: nil) }
+            ?? personaAppBindings.first { $0.matches(bundleIdentifier: nil, appName: appName) }
     }
 
     /// If the LLM is currently configured and the user has not yet explicitly
