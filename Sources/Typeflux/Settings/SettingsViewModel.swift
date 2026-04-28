@@ -1556,7 +1556,8 @@ final class StudioViewModel: ObservableObject {
     }
 
     func personaName(for binding: PersonaAppBinding) -> String {
-        personas.first(where: { $0.id == binding.personaID })?.name ?? binding.appIdentifier
+        personas.first(where: { $0.id == binding.personaID })?.name
+            ?? L("settings.personaAppBindings.missingPersona")
     }
 
     func addVocabularyTerm(_ term: String, source: VocabularySource = .manual) {

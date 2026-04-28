@@ -710,8 +710,6 @@ struct StudioView: View {
 
                                 Spacer()
 
-                                StudioPill(title: viewModel.personaName(for: binding))
-
                                 Button(L("common.delete"), role: .destructive) {
                                     viewModel.removePersonaAppBinding(id: binding.id)
                                 }

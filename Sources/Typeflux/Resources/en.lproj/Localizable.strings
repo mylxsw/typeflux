@@ -436,6 +436,7 @@
 "settings.personaAppBindings.persona" = "Persona";
 "settings.personaAppBindings.add" = "Add Binding";
 "settings.personaAppBindings.saved" = "%@ will now switch automatically for the matched app.";
+"settings.personaAppBindings.missingPersona" = "Missing Persona";
 
 "settings.shortcuts.activation.title" = "Voice Input";
 "settings.shortcuts.activation.subtitle" = "Use one shortcut to start voice input. Hold to talk, or tap quickly to lock the recording session. If text is selected, the transcript replaces that selection directly.";

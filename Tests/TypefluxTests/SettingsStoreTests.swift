@@ -469,13 +469,15 @@ final class SettingsStoreTests: XCTestCase {
     func testEffectivePersonaFallsBackToDefaultPersonaWhenNoAppBindingMatches() throws {
         let defaultPersona = try XCTUnwrap(store.personas.first)
         store.applyPersonaSelection(defaultPersona.id)
-        store.savePersonaAppBinding(appIdentifier: "com.tinyspeck.slackmacgap", personaID: UUID())
+        let missingPersonaID = UUID()
+        store.savePersonaAppBinding(appIdentifier: "com.tinyspeck.slackmacgap", personaID: missingPersonaID)
 
         let effectivePersona = store.effectivePersona(
             appName: "Notes",
             bundleIdentifier: "com.apple.Notes",
         )
 
+        XCTAssertEqual(store.personaAppBindings.first?.personaID, missingPersonaID)
         XCTAssertEqual(effectivePersona?.id, defaultPersona.id)
     }
 

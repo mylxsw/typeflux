@@ -434,6 +434,7 @@
 "settings.personaAppBindings.persona" = "人設";
 "settings.personaAppBindings.add" = "新增綁定";
 "settings.personaAppBindings.saved" = "符合的應用現在會自動切換到 %@。";
+"settings.personaAppBindings.missingPersona" = "人設已不存在";
 
 "settings.shortcuts.activation.title" = "語音輸入";
 "settings.shortcuts.activation.subtitle" = "使用一組快捷鍵開始語音輸入。可按住說話，也可快速輕觸後鎖定錄音。若目前已有選取內容，識別結果會直接覆蓋該選取範圍。";

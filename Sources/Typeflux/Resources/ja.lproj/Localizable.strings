@@ -434,6 +434,7 @@
 "settings.personaAppBindings.persona" = "ペルソナ";
 "settings.personaAppBindings.add" = "バインドを追加";
 "settings.personaAppBindings.saved" = "一致したアプリでは %@ に自動で切り替わります。";
+"settings.personaAppBindings.missingPersona" = "ペルソナが見つかりません";
 
 "settings.shortcuts.activation.title" = "音声入力";
 "settings.shortcuts.activation.subtitle" = "1 つのショートカットを使用して音声入力を開始します。押し続けて話すか、すばやくタップして録音セッションをロックします。テキストが選択されている場合、トランスクリプトはその選択を直接置き換えます。";
