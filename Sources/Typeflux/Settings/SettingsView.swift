@@ -1169,7 +1169,7 @@ struct StudioView: View {
         let trimmedIdentifier = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
         let cacheKey = trimmedIdentifier.lowercased()
 
-        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier) {
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: trimmedIdentifier) {
             return (
                 displayName: Self.appDisplayName(for: url) ?? trimmedIdentifier,
                 icon: NSWorkspace.shared.icon(forFile: url.path)
