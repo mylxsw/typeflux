@@ -49,7 +49,35 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
 private final class PersonaAppMetadataStore {
     static let shared = PersonaAppMetadataStore()
 
-    var entries: [String: (displayName: String, icon: NSImage?)] = [:]
+    private var entries: [String: (displayName: String, icon: NSImage?)] = [:]
+
+    func metadata(for key: String) -> (displayName: String, icon: NSImage?)? {
+        entries[key]
+    }
+
+    func store(_ metadata: (displayName: String, icon: NSImage?), for key: String) {
+        entries[key] = metadata
+    }
+}
+
+private final class InstalledPersonaAppCandidatesStore: @unchecked Sendable {
+    static let shared = InstalledPersonaAppCandidatesStore()
+
+    private let lock = NSLock()
+    private var cachedCandidates: [PersonaAppCandidate]?
+
+    func candidates(loader: () -> [PersonaAppCandidate]) -> [PersonaAppCandidate] {
+        lock.lock()
+        defer { lock.unlock() }
+
+        if let cachedCandidates {
+            return cachedCandidates
+        }
+
+        let loadedCandidates = loader()
+        cachedCandidates = loadedCandidates
+        return loadedCandidates
+    }
 }
 
 // swiftlint:disable:next type_body_length
@@ -1170,7 +1198,7 @@ struct StudioView: View {
         let cacheKey = trimmedIdentifier.lowercased()
         let metadataStore = PersonaAppMetadataStore.shared
 
-        if let cachedMetadata = metadataStore.entries[cacheKey] {
+        if let cachedMetadata = metadataStore.metadata(for: cacheKey) {
             return cachedMetadata
         }
 
@@ -1179,7 +1207,7 @@ struct StudioView: View {
                 displayName: Self.appDisplayName(for: url) ?? trimmedIdentifier,
                 icon: NSWorkspace.shared.icon(forFile: url.path)
             )
-            metadataStore.entries[cacheKey] = metadata
+            metadataStore.store(metadata, for: cacheKey)
             return metadata
         }
 
@@ -1193,7 +1221,7 @@ struct StudioView: View {
                 displayName: Self.appDisplayName(for: url) ?? trimmedIdentifier,
                 icon: NSWorkspace.shared.icon(forFile: url.path)
             )
-            metadataStore.entries[cacheKey] = metadata
+            metadataStore.store(metadata, for: cacheKey)
             return metadata
         }
 
@@ -1207,12 +1235,12 @@ struct StudioView: View {
                 displayName: Self.appDisplayName(for: url) ?? trimmedIdentifier,
                 icon: NSWorkspace.shared.icon(forFile: url.path)
             )
-            metadataStore.entries[cacheKey] = metadata
+            metadataStore.store(metadata, for: cacheKey)
             return metadata
         }
 
         let fallbackMetadata = (displayName: trimmedIdentifier, icon: nil)
-        metadataStore.entries[cacheKey] = fallbackMetadata
+        metadataStore.store(fallbackMetadata, for: cacheKey)
         return fallbackMetadata
     }
 
@@ -1269,7 +1297,9 @@ struct StudioView: View {
     }
 
     private nonisolated static func cachedInstalledPersonaAppCandidates() -> [PersonaAppCandidate] {
-        installedPersonaAppCandidatesCache
+        InstalledPersonaAppCandidatesStore.shared.candidates {
+            installedPersonaAppCandidates()
+        }
     }
 
     private func personaAppBindingsCardHeader(
@@ -1408,8 +1438,6 @@ struct StudioView: View {
 
         return url.deletingPathExtension().lastPathComponent
     }
-
-    private nonisolated static let installedPersonaAppCandidatesCache = installedPersonaAppCandidates()
 
     private var personaLLMProviderOptions: [(label: String, value: StudioModelProviderID)] {
         var remoteOptions = LLMRemoteProvider.settingsDisplayOrder
