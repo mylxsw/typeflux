@@ -58,25 +58,9 @@ private final class PersonaAppMetadataStore {
     func store(_ metadata: (displayName: String, icon: NSImage?), for key: String) {
         entries[key] = metadata
     }
-}
 
-private final class InstalledPersonaAppCandidatesStore: @unchecked Sendable {
-    static let shared = InstalledPersonaAppCandidatesStore()
-
-    private let lock = NSLock()
-    private var cachedCandidates: [PersonaAppCandidate]?
-
-    func candidates(loader: () -> [PersonaAppCandidate]) -> [PersonaAppCandidate] {
-        lock.lock()
-        defer { lock.unlock() }
-
-        if let cachedCandidates {
-            return cachedCandidates
-        }
-
-        let loadedCandidates = loader()
-        cachedCandidates = loadedCandidates
-        return loadedCandidates
+    func clear() {
+        entries.removeAll()
     }
 }
 
@@ -143,7 +127,9 @@ struct StudioView: View {
     @State private var personaAppPickerScope: PersonaAppPickerScope = .running
     @State private var personaAppPickerSearchQuery = ""
     @State private var personaAppCandidates: [PersonaAppCandidate] = []
+    @State private var personaAppInstalledCandidates: [PersonaAppCandidate] = []
     @State private var isLoadingPersonaAppCandidates = false
+    @State private var hasLoadedPersonaAppInstalledCandidates = false
     @State private var personaAppCandidateLoadToken = UUID()
     @State private var localSTTPendingDelete: LocalSTTModel? = nil
 
@@ -927,6 +913,9 @@ struct StudioView: View {
         }
         .frame(width: 820, height: 680)
         .background(StudioTheme.background)
+        .task {
+            await preloadPersonaAppInstalledCandidatesIfNeeded()
+        }
         .sheet(isPresented: $isPersonaAppPickerPresented) {
             personaAppPickerSheet
         }
@@ -1225,7 +1214,7 @@ struct StudioView: View {
             return metadata
         }
 
-        if let url = Self.cachedInstalledPersonaAppCandidates().first(where: { candidate in
+        if let url = personaAppInstalledCandidates.first(where: { candidate in
             candidate.displayName.localizedCaseInsensitiveCompare(trimmedIdentifier) == .orderedSame
                 || candidate.appURL?.deletingPathExtension().lastPathComponent
                     .localizedCaseInsensitiveCompare(trimmedIdentifier) == .orderedSame
@@ -1237,6 +1226,10 @@ struct StudioView: View {
             )
             metadataStore.store(metadata, for: cacheKey)
             return metadata
+        }
+
+        guard hasLoadedPersonaAppInstalledCandidates else {
+            return (trimmedIdentifier, nil)
         }
 
         let fallbackMetadata = (displayName: trimmedIdentifier, icon: nil)
@@ -1275,6 +1268,16 @@ struct StudioView: View {
         }
     }
 
+    @MainActor
+    private func preloadPersonaAppInstalledCandidatesIfNeeded() async {
+        guard !hasLoadedPersonaAppInstalledCandidates else { return }
+
+        let candidates = await Self.loadInstalledPersonaAppCandidates()
+        personaAppInstalledCandidates = candidates
+        hasLoadedPersonaAppInstalledCandidates = true
+        PersonaAppMetadataStore.shared.clear()
+    }
+
     private static func discoverPersonaAppCandidates(scope: PersonaAppPickerScope) async -> [PersonaAppCandidate] {
         switch scope {
         case .running:
@@ -1292,14 +1295,8 @@ struct StudioView: View {
 
     private nonisolated static func loadInstalledPersonaAppCandidates() async -> [PersonaAppCandidate] {
         await Task.detached(priority: .userInitiated) {
-            Self.cachedInstalledPersonaAppCandidates()
+            Self.installedPersonaAppCandidates()
         }.value
-    }
-
-    private nonisolated static func cachedInstalledPersonaAppCandidates() -> [PersonaAppCandidate] {
-        InstalledPersonaAppCandidatesStore.shared.candidates {
-            installedPersonaAppCandidates()
-        }
     }
 
     private func personaAppBindingsCardHeader(
