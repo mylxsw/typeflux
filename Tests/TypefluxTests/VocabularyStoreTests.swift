@@ -208,7 +208,7 @@ final class VocabularyStoreExtendedTests: XCTestCase {
         XCTAssertEqual(result.entries.first?.occurrenceCount, 2)
     }
 
-    func testImportEntriesUpdatesExternalSourceToLatestImportedApp() throws {
+    func testImportEntriesUpdatesExternalSourceToLatestImport() throws {
         VocabularyStore.save([
             VocabularyEntry(term: "WhisperKit", source: .claude, occurrenceCount: 2),
         ])
