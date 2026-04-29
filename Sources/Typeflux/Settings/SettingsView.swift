@@ -45,25 +45,6 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
     }
 }
 
-@MainActor
-private final class PersonaAppMetadataStore {
-    static let shared = PersonaAppMetadataStore()
-
-    private var entries: [String: (displayName: String, icon: NSImage?)] = [:]
-
-    func metadata(for key: String) -> (displayName: String, icon: NSImage?)? {
-        entries[key]
-    }
-
-    func store(_ metadata: (displayName: String, icon: NSImage?), for key: String) {
-        entries[key] = metadata
-    }
-
-    func clear() {
-        entries.removeAll()
-    }
-}
-
 // swiftlint:disable:next type_body_length
 struct StudioView: View {
     private struct ShortcutConfiguration {
@@ -127,7 +108,8 @@ struct StudioView: View {
     @State private var personaAppPickerScope: PersonaAppPickerScope = .running
     @State private var personaAppPickerSearchQuery = ""
     @State private var personaAppCandidates: [PersonaAppCandidate] = []
-    @State private var personaAppInstalledCandidates: [PersonaAppCandidate] = []
+    @State private var personaAppRunningLookup: [String: URL] = [:]
+    @State private var personaAppInstalledLookup: [String: URL] = [:]
     @State private var isLoadingPersonaAppCandidates = false
     @State private var hasLoadedPersonaAppInstalledCandidates = false
     @State private var personaAppCandidateLoadToken = UUID()
@@ -914,6 +896,7 @@ struct StudioView: View {
         .frame(width: 820, height: 680)
         .background(StudioTheme.background)
         .task {
+            refreshPersonaAppRunningLookup()
             await preloadPersonaAppInstalledCandidatesIfNeeded()
         }
         .sheet(isPresented: $isPersonaAppPickerPresented) {
@@ -1185,56 +1168,29 @@ struct StudioView: View {
     private func personaAppMetadata(for identifier: String) -> (displayName: String, icon: NSImage?) {
         let trimmedIdentifier = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
         let cacheKey = trimmedIdentifier.lowercased()
-        let metadataStore = PersonaAppMetadataStore.shared
-
-        if let cachedMetadata = metadataStore.metadata(for: cacheKey) {
-            return cachedMetadata
-        }
 
         if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier) {
-            let metadata = (
+            return (
                 displayName: Self.appDisplayName(for: url) ?? trimmedIdentifier,
                 icon: NSWorkspace.shared.icon(forFile: url.path)
             )
-            metadataStore.store(metadata, for: cacheKey)
-            return metadata
         }
 
-        if let application = NSWorkspace.shared.runningApplications.first(where: {
-            $0.localizedName?.trimmingCharacters(in: .whitespacesAndNewlines)
-                .localizedCaseInsensitiveCompare(trimmedIdentifier) == .orderedSame
-        }),
-           let url = application.bundleURL
-        {
-            let metadata = (
+        if let url = personaAppRunningLookup[cacheKey] {
+            return (
                 displayName: Self.appDisplayName(for: url) ?? trimmedIdentifier,
                 icon: NSWorkspace.shared.icon(forFile: url.path)
             )
-            metadataStore.store(metadata, for: cacheKey)
-            return metadata
         }
 
-        if let url = personaAppInstalledCandidates.first(where: { candidate in
-            candidate.displayName.localizedCaseInsensitiveCompare(trimmedIdentifier) == .orderedSame
-                || candidate.appURL?.deletingPathExtension().lastPathComponent
-                    .localizedCaseInsensitiveCompare(trimmedIdentifier) == .orderedSame
-        })?.appURL
-        {
-            let metadata = (
+        if let url = personaAppInstalledLookup[cacheKey] {
+            return (
                 displayName: Self.appDisplayName(for: url) ?? trimmedIdentifier,
                 icon: NSWorkspace.shared.icon(forFile: url.path)
             )
-            metadataStore.store(metadata, for: cacheKey)
-            return metadata
         }
 
-        guard hasLoadedPersonaAppInstalledCandidates else {
-            return (trimmedIdentifier, nil)
-        }
-
-        let fallbackMetadata = (displayName: trimmedIdentifier, icon: nil)
-        metadataStore.store(fallbackMetadata, for: cacheKey)
-        return fallbackMetadata
+        return (trimmedIdentifier, nil)
     }
 
     @MainActor
@@ -1273,9 +1229,38 @@ struct StudioView: View {
         guard !hasLoadedPersonaAppInstalledCandidates else { return }
 
         let candidates = await Self.loadInstalledPersonaAppCandidates()
-        personaAppInstalledCandidates = candidates
+        var installedLookup: [String: URL] = [:]
+        for candidate in candidates {
+            guard let url = candidate.appURL else { continue }
+            installedLookup[candidate.displayName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()] = url
+            installedLookup[url.deletingPathExtension().lastPathComponent.lowercased()] = url
+        }
+
+        personaAppInstalledLookup = installedLookup
         hasLoadedPersonaAppInstalledCandidates = true
-        PersonaAppMetadataStore.shared.clear()
+    }
+
+    @MainActor
+    private func refreshPersonaAppRunningLookup() {
+        var runningLookup: [String: URL] = [:]
+
+        for application in NSWorkspace.shared.runningApplications {
+            guard let url = application.bundleURL else { continue }
+
+            if let localizedName = application.localizedName?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !localizedName.isEmpty
+            {
+                runningLookup[localizedName.lowercased()] = url
+            }
+
+            if let bundleIdentifier = application.bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !bundleIdentifier.isEmpty
+            {
+                runningLookup[bundleIdentifier.lowercased()] = url
+            }
+        }
+
+        personaAppRunningLookup = runningLookup
     }
 
     private static func discoverPersonaAppCandidates(scope: PersonaAppPickerScope) async -> [PersonaAppCandidate] {
