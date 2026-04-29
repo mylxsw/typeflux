@@ -1545,7 +1545,7 @@ final class StudioViewModel: ObservableObject {
             }
 
             guard showImportConfirmationAlert(
-                for: sourceURL.lastPathComponent,
+                subject: sourceURL.lastPathComponent,
                 itemCount: previewItems.count,
             ) else { return }
 
@@ -2277,18 +2277,18 @@ final class StudioViewModel: ObservableObject {
         googleCloudOAuthAuthorized = GoogleCloudSpeechCredentialResolver.isStoredAuthorizationAvailable()
     }
 
-    static func makeVocabularyImportConfirmationAlert(fileName: String, itemCount: Int) -> NSAlert {
+    static func makeVocabularyImportConfirmationAlert(subject: String, itemCount: Int) -> NSAlert {
         let alert = NSAlert()
         alert.messageText = L("vocabulary.importDialog.title")
-        alert.informativeText = L("vocabulary.importDialog.message", itemCount, fileName)
+        alert.informativeText = L("vocabulary.importDialog.message", itemCount, subject)
         alert.alertStyle = .informational
         alert.addButton(withTitle: L("vocabulary.importDialog.confirm"))
         alert.addButton(withTitle: L("common.cancel"))
         return alert
     }
 
-    private func showImportConfirmationAlert(for fileName: String, itemCount: Int) -> Bool {
-        Self.makeVocabularyImportConfirmationAlert(fileName: fileName, itemCount: itemCount)
+    private func showImportConfirmationAlert(subject: String, itemCount: Int) -> Bool {
+        Self.makeVocabularyImportConfirmationAlert(subject: subject, itemCount: itemCount)
             .runModal() == .alertFirstButtonReturn
     }
 
@@ -2311,6 +2311,16 @@ final class StudioViewModel: ObservableObject {
                     self.showToast(L("vocabulary.toast.externalNoSource", source.displayName))
                     return
                 }
+
+                guard !discovery.terms.isEmpty else {
+                    self.showToast(L("vocabulary.toast.externalNoTerms", source.displayName))
+                    return
+                }
+
+                guard self.showImportConfirmationAlert(
+                    subject: source.displayName,
+                    itemCount: discovery.terms.count,
+                ) else { return }
 
                 let result = VocabularyStore.importTerms(discovery.terms, source: source)
                 self.vocabularyEntries = result.entries

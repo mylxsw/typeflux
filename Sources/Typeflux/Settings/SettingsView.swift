@@ -75,6 +75,21 @@ private func vocabularySourceLogoImage(for source: VocabularySource) -> NSImage?
     return NSImage(contentsOf: url)
 }
 
+private func vocabularySourceMenuIconImage(for source: VocabularySource) -> NSImage? {
+    guard let image = vocabularySourceLogoImage(for: source) else { return nil }
+    let iconSize = NSSize(width: 16, height: 16)
+    let resized = NSImage(size: iconSize)
+    resized.lockFocus()
+    image.draw(
+        in: NSRect(origin: .zero, size: iconSize),
+        from: NSRect(origin: .zero, size: image.size),
+        operation: .sourceOver,
+        fraction: 1,
+    )
+    resized.unlockFocus()
+    return resized
+}
+
 private func vocabularySourceLogoURL(for resourceName: String) -> URL? {
     let imageExtension = "png"
     let candidatePaths: [(String?, String)] = [
@@ -2370,41 +2385,40 @@ struct StudioView: View {
     }
 
     private var vocabularyMoreMenuLabel: some View {
-        HStack(spacing: StudioTheme.Spacing.xSmall) {
-            Text(L("vocabulary.action.more"))
-                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-            Image(systemName: "chevron.down")
-                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-        }
-        .foregroundStyle(StudioTheme.textSecondary)
-        .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
-        .padding(.vertical, StudioTheme.Insets.buttonVertical)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                .fill(StudioTheme.surfaceMuted.opacity(0.92)),
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                .stroke(
-                    StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
-                    lineWidth: StudioTheme.BorderWidth.thin,
-                ),
-        )
+        Text(L("vocabulary.action.more"))
+            .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+            .foregroundStyle(StudioTheme.textSecondary)
+            .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
+            .padding(.vertical, StudioTheme.Insets.buttonVertical)
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                    .fill(StudioTheme.surfaceMuted.opacity(0.92)),
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                    .stroke(
+                        StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
+                        lineWidth: StudioTheme.BorderWidth.thin,
+                    ),
+            )
     }
 
-    private func vocabularyMenuItemLabel(title: String, source: VocabularySource) -> some View {
-        HStack(spacing: StudioTheme.Spacing.small) {
-            if let image = vocabularySourceLogoImage(for: source) {
+    private func vocabularyMenuItemIcon(for source: VocabularySource) -> some View {
+        Group {
+            if let image = vocabularySourceMenuIconImage(for: source) {
                 Image(nsImage: image)
-                    .resizable()
                     .interpolation(.high)
-                    .scaledToFit()
-                    .frame(width: 14, height: 14)
             } else {
                 Image(systemName: "square.stack.3d.up")
                     .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
             }
+        }
+        .frame(width: 16, height: 16)
+    }
 
+    private func vocabularyMenuItemLabel(title: String, source: VocabularySource) -> some View {
+        HStack(spacing: StudioTheme.Spacing.small) {
+            vocabularyMenuItemIcon(for: source)
             Text(title)
         }
     }

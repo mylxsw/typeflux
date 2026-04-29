@@ -394,9 +394,9 @@
 "vocabulary.action.addFirst" = "첫 번째 단어를 추가하세요.";
 "vocabulary.action.addWord" = "단어 추가";
 "vocabulary.action.more" = "더보기";
-"vocabulary.action.importFile" = "파일 가져오기";
+"vocabulary.action.importFile" = "어휘 가져오기";
 "vocabulary.action.import" = "가져오기";
-"vocabulary.action.export" = "내보내기";
+"vocabulary.action.export" = "어휘 내보내기";
 "vocabulary.action.importClaude" = "Claude 어휘 가져오기";
 "vocabulary.action.importCodex" = "Codex 어휘 가져오기";
 "vocabulary.action.sync" = "프로젝트 용어 동기화";

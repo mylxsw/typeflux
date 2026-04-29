@@ -396,9 +396,9 @@
 "vocabulary.action.addFirst" = "添加第一个词条";
 "vocabulary.action.addWord" = "添加词条";
 "vocabulary.action.more" = "更多";
-"vocabulary.action.importFile" = "导入文件";
+"vocabulary.action.importFile" = "导入词库";
 "vocabulary.action.import" = "导入";
-"vocabulary.action.export" = "导出";
+"vocabulary.action.export" = "导出词库";
 "vocabulary.action.importClaude" = "导入 Claude 词库";
 "vocabulary.action.importCodex" = "导入 Codex 词库";
 "vocabulary.action.sync" = "同步项目词汇";

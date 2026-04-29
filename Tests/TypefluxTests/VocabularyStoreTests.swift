@@ -47,7 +47,7 @@ final class VocabularyStoreTests: XCTestCase {
     @MainActor
     func testVocabularyImportConfirmationAlertUsesExpectedLocalizedContent() {
         let alert = StudioViewModel.makeVocabularyImportConfirmationAlert(
-            fileName: "typeflux-vocabulary.json",
+            subject: "typeflux-vocabulary.json",
             itemCount: 18,
         )
 
@@ -60,6 +60,19 @@ final class VocabularyStoreTests: XCTestCase {
             L("vocabulary.importDialog.confirm"),
             L("common.cancel"),
         ])
+    }
+
+    @MainActor
+    func testVocabularyImportConfirmationAlertSupportsExternalSourceNames() {
+        let alert = StudioViewModel.makeVocabularyImportConfirmationAlert(
+            subject: VocabularySource.claude.displayName,
+            itemCount: 12,
+        )
+
+        XCTAssertEqual(
+            alert.informativeText,
+            L("vocabulary.importDialog.message", 12, VocabularySource.claude.displayName),
+        )
     }
 }
 

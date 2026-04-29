@@ -394,9 +394,9 @@
 "vocabulary.action.addFirst" = "最初の単語を追加";
 "vocabulary.action.addWord" = "単語を追加";
 "vocabulary.action.more" = "その他";
-"vocabulary.action.importFile" = "ファイルをインポート";
+"vocabulary.action.importFile" = "語彙をインポート";
 "vocabulary.action.import" = "インポート";
-"vocabulary.action.export" = "エクスポート";
+"vocabulary.action.export" = "語彙をエクスポート";
 "vocabulary.action.importClaude" = "Claude の語彙をインポート";
 "vocabulary.action.importCodex" = "Codex の語彙をインポート";
 "vocabulary.action.sync" = "プロジェクト用語を同期";

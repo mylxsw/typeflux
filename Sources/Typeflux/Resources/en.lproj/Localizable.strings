@@ -396,9 +396,9 @@
 "vocabulary.action.addFirst" = "Add your first word";
 "vocabulary.action.addWord" = "Add word";
 "vocabulary.action.more" = "More";
-"vocabulary.action.importFile" = "Import file";
+"vocabulary.action.importFile" = "Import vocabulary";
 "vocabulary.action.import" = "Import";
-"vocabulary.action.export" = "Export";
+"vocabulary.action.export" = "Export vocabulary";
 "vocabulary.action.importClaude" = "Import Claude vocabulary";
 "vocabulary.action.importCodex" = "Import Codex vocabulary";
 "vocabulary.action.sync" = "Sync project terms";
