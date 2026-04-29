@@ -254,7 +254,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
                 return deviceID
             }
 
-            resetUnavailablePreferredMicrophone(preferredID: preferredID)
+            logUnavailablePreferredMicrophone(preferredID: preferredID)
         }
 
         return audioDeviceManager.defaultInputDeviceID()
@@ -280,7 +280,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
                 channelCount: \(preferredFormat.channelCount)
                 """,
             )
-            resetUnavailablePreferredMicrophone(preferredID: preferredID)
+            logUnavailablePreferredMicrophone(preferredID: preferredID)
             if let defaultDeviceID = audioDeviceManager.defaultInputDeviceID() {
                 inputNode.auAudioUnit.setValue(Int(defaultDeviceID), forKey: "deviceID")
             }
@@ -291,14 +291,13 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         return automaticFormat
     }
 
-    private func resetUnavailablePreferredMicrophone(preferredID: String) {
+    private func logUnavailablePreferredMicrophone(preferredID: String) {
         NetworkDebugLogger.logMessage(
             """
             [Audio Recorder] Preferred microphone is unavailable; falling back to automatic selection.
             preferredMicrophoneID: \(preferredID)
             """,
         )
-        settingsStore.preferredMicrophoneID = AudioDeviceManager.automaticDeviceID
     }
 
     private func currentRecordingState() -> Bool {
