@@ -45,6 +45,13 @@ private enum VocabularyFilter: String, CaseIterable, Identifiable {
     }
 }
 
+@MainActor
+private final class PersonaAppMetadataStore {
+    static let shared = PersonaAppMetadataStore()
+
+    var entries: [String: (displayName: String, icon: NSImage?)] = [:]
+}
+
 // swiftlint:disable:next type_body_length
 struct StudioView: View {
     private struct ShortcutConfiguration {
@@ -112,8 +119,6 @@ struct StudioView: View {
     @State private var personaAppCandidateLoadToken = UUID()
     @State private var localSTTPendingDelete: LocalSTTModel? = nil
 
-    @MainActor
-    private static var personaAppMetadataCache: [String: (displayName: String, icon: NSImage?)] = [:]
     @State private var localSTTPendingRedownload: LocalSTTModel? = nil
     @State private var llmActivationMissingAPIKeyProviderName: String?
     @State private var isMCPServerDialogPresented = false
@@ -1163,8 +1168,9 @@ struct StudioView: View {
     private func personaAppMetadata(for identifier: String) -> (displayName: String, icon: NSImage?) {
         let trimmedIdentifier = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
         let cacheKey = trimmedIdentifier.lowercased()
+        let metadataStore = PersonaAppMetadataStore.shared
 
-        if let cachedMetadata = Self.personaAppMetadataCache[cacheKey] {
+        if let cachedMetadata = metadataStore.entries[cacheKey] {
             return cachedMetadata
         }
 
@@ -1173,7 +1179,7 @@ struct StudioView: View {
                 displayName: Self.appDisplayName(for: url) ?? trimmedIdentifier,
                 icon: NSWorkspace.shared.icon(forFile: url.path)
             )
-            Self.personaAppMetadataCache[cacheKey] = metadata
+            metadataStore.entries[cacheKey] = metadata
             return metadata
         }
 
@@ -1187,11 +1193,11 @@ struct StudioView: View {
                 displayName: Self.appDisplayName(for: url) ?? trimmedIdentifier,
                 icon: NSWorkspace.shared.icon(forFile: url.path)
             )
-            Self.personaAppMetadataCache[cacheKey] = metadata
+            metadataStore.entries[cacheKey] = metadata
             return metadata
         }
 
-        if let url = Self.installedPersonaAppCandidates().first(where: { candidate in
+        if let url = Self.cachedInstalledPersonaAppCandidates().first(where: { candidate in
             candidate.displayName.localizedCaseInsensitiveCompare(trimmedIdentifier) == .orderedSame
                 || candidate.appURL?.deletingPathExtension().lastPathComponent
                     .localizedCaseInsensitiveCompare(trimmedIdentifier) == .orderedSame
@@ -1201,12 +1207,12 @@ struct StudioView: View {
                 displayName: Self.appDisplayName(for: url) ?? trimmedIdentifier,
                 icon: NSWorkspace.shared.icon(forFile: url.path)
             )
-            Self.personaAppMetadataCache[cacheKey] = metadata
+            metadataStore.entries[cacheKey] = metadata
             return metadata
         }
 
-        let fallbackMetadata = (displayName: trimmedIdentifier, icon: nil as NSImage?)
-        Self.personaAppMetadataCache[cacheKey] = fallbackMetadata
+        let fallbackMetadata = (displayName: trimmedIdentifier, icon: nil)
+        metadataStore.entries[cacheKey] = fallbackMetadata
         return fallbackMetadata
     }
 
@@ -1258,8 +1264,12 @@ struct StudioView: View {
 
     private nonisolated static func loadInstalledPersonaAppCandidates() async -> [PersonaAppCandidate] {
         await Task.detached(priority: .userInitiated) {
-            Self.installedPersonaAppCandidates()
+            Self.cachedInstalledPersonaAppCandidates()
         }.value
+    }
+
+    private nonisolated static func cachedInstalledPersonaAppCandidates() -> [PersonaAppCandidate] {
+        installedPersonaAppCandidatesCache
     }
 
     private func personaAppBindingsCardHeader(
@@ -1398,6 +1408,8 @@ struct StudioView: View {
 
         return url.deletingPathExtension().lastPathComponent
     }
+
+    private nonisolated static let installedPersonaAppCandidatesCache = installedPersonaAppCandidates()
 
     private var personaLLMProviderOptions: [(label: String, value: StudioModelProviderID)] {
         var remoteOptions = LLMRemoteProvider.settingsDisplayOrder
