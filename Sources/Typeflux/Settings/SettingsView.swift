@@ -111,6 +111,9 @@ struct StudioView: View {
     @State private var isLoadingPersonaAppCandidates = false
     @State private var personaAppCandidateLoadToken = UUID()
     @State private var localSTTPendingDelete: LocalSTTModel? = nil
+
+    @MainActor
+    private static var personaAppMetadataCache: [String: (displayName: String, icon: NSImage?)] = [:]
     @State private var localSTTPendingRedownload: LocalSTTModel? = nil
     @State private var llmActivationMissingAPIKeyProviderName: String?
     @State private var isMCPServerDialogPresented = false
@@ -1158,29 +1161,53 @@ struct StudioView: View {
 
     @MainActor
     private func personaAppMetadata(for identifier: String) -> (displayName: String, icon: NSImage?) {
+        let trimmedIdentifier = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cacheKey = trimmedIdentifier.lowercased()
+
+        if let cachedMetadata = Self.personaAppMetadataCache[cacheKey] {
+            return cachedMetadata
+        }
+
         if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier) {
-            return (Self.appDisplayName(for: url) ?? identifier, NSWorkspace.shared.icon(forFile: url.path))
+            let metadata = (
+                displayName: Self.appDisplayName(for: url) ?? trimmedIdentifier,
+                icon: NSWorkspace.shared.icon(forFile: url.path)
+            )
+            Self.personaAppMetadataCache[cacheKey] = metadata
+            return metadata
         }
 
         if let application = NSWorkspace.shared.runningApplications.first(where: {
             $0.localizedName?.trimmingCharacters(in: .whitespacesAndNewlines)
-                .localizedCaseInsensitiveCompare(identifier) == .orderedSame
+                .localizedCaseInsensitiveCompare(trimmedIdentifier) == .orderedSame
         }),
            let url = application.bundleURL
         {
-            return (Self.appDisplayName(for: url) ?? identifier, NSWorkspace.shared.icon(forFile: url.path))
+            let metadata = (
+                displayName: Self.appDisplayName(for: url) ?? trimmedIdentifier,
+                icon: NSWorkspace.shared.icon(forFile: url.path)
+            )
+            Self.personaAppMetadataCache[cacheKey] = metadata
+            return metadata
         }
 
         if let url = Self.installedPersonaAppCandidates().first(where: { candidate in
-            candidate.displayName.localizedCaseInsensitiveCompare(identifier) == .orderedSame
+            candidate.displayName.localizedCaseInsensitiveCompare(trimmedIdentifier) == .orderedSame
                 || candidate.appURL?.deletingPathExtension().lastPathComponent
-                    .localizedCaseInsensitiveCompare(identifier) == .orderedSame
+                    .localizedCaseInsensitiveCompare(trimmedIdentifier) == .orderedSame
         })?.appURL
         {
-            return (Self.appDisplayName(for: url) ?? identifier, NSWorkspace.shared.icon(forFile: url.path))
+            let metadata = (
+                displayName: Self.appDisplayName(for: url) ?? trimmedIdentifier,
+                icon: NSWorkspace.shared.icon(forFile: url.path)
+            )
+            Self.personaAppMetadataCache[cacheKey] = metadata
+            return metadata
         }
 
-        return (identifier, nil)
+        let fallbackMetadata = (displayName: trimmedIdentifier, icon: nil as NSImage?)
+        Self.personaAppMetadataCache[cacheKey] = fallbackMetadata
+        return fallbackMetadata
     }
 
     @MainActor
