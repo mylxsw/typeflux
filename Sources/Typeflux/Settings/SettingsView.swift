@@ -1162,9 +1162,13 @@ struct StudioView: View {
             return (Self.appDisplayName(for: url) ?? identifier, NSWorkspace.shared.icon(forFile: url.path))
         }
 
-        if let path = NSWorkspace.shared.fullPath(forApplication: identifier) {
-            let url = URL(fileURLWithPath: path)
-            return (Self.appDisplayName(for: url) ?? identifier, NSWorkspace.shared.icon(forFile: path))
+        if let application = NSWorkspace.shared.runningApplications.first(where: {
+            $0.localizedName?.trimmingCharacters(in: .whitespacesAndNewlines)
+                .localizedCaseInsensitiveCompare(identifier) == .orderedSame
+        }),
+           let url = application.bundleURL
+        {
+            return (Self.appDisplayName(for: url) ?? identifier, NSWorkspace.shared.icon(forFile: url.path))
         }
 
         return (identifier, nil)
@@ -1204,7 +1208,7 @@ struct StudioView: View {
     private static func discoverPersonaAppCandidates(scope: PersonaAppPickerScope) async -> [PersonaAppCandidate] {
         switch scope {
         case .running:
-            await MainActor.run {
+            return await MainActor.run {
                 runningPersonaAppCandidates()
             }
         case .all:
@@ -1216,7 +1220,7 @@ struct StudioView: View {
         }
     }
 
-    private static func loadInstalledPersonaAppCandidates() async -> [PersonaAppCandidate] {
+    private nonisolated static func loadInstalledPersonaAppCandidates() async -> [PersonaAppCandidate] {
         await Task.detached(priority: .userInitiated) {
             Self.installedPersonaAppCandidates()
         }.value
@@ -1269,7 +1273,7 @@ struct StudioView: View {
         }
     }
 
-    private static func installedPersonaAppCandidates() -> [PersonaAppCandidate] {
+    private nonisolated static func installedPersonaAppCandidates() -> [PersonaAppCandidate] {
         let fileManager = FileManager.default
         let searchRoots = Array(
             Set(
@@ -1322,7 +1326,7 @@ struct StudioView: View {
         }
     }
 
-    private static func mergePersonaAppCandidates(
+    private nonisolated static func mergePersonaAppCandidates(
         _ first: [PersonaAppCandidate],
         _ second: [PersonaAppCandidate],
     ) -> [PersonaAppCandidate] {
@@ -1339,7 +1343,7 @@ struct StudioView: View {
         }
     }
 
-    private static func appDisplayName(for url: URL?) -> String? {
+    private nonisolated static func appDisplayName(for url: URL?) -> String? {
         guard let url else { return nil }
 
         if let bundle = Bundle(url: url) {
