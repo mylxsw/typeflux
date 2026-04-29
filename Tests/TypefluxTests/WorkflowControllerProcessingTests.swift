@@ -274,12 +274,38 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         }
     }
 
-    func testBeginRecordingStartsAudioBeforeCueLeadIn() async {
+    func testBeginRecordingPlaysStartCueBeforeStartingAudio() async {
         let eventRecorder = ThreadSafeEventRecorder()
         let audioRecorder = MockProcessingAudioRecorder {
             eventRecorder.append("audio-start")
         }
         let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            soundEffectPlayer: makeRecordingSoundEffectPlayer(eventRecorder: eventRecorder),
+            sleep: { duration in
+                eventRecorder.append("cue-sleep")
+                eventRecorder.append(duration: duration)
+            },
+        )
+
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+
+        XCTAssertEqual(
+            eventRecorder.snapshot(),
+            ["cue-play", "cue-sleep", "audio-start"],
+        )
+        XCTAssertEqual(eventRecorder.durationSnapshot(), [.milliseconds(1_225)])
+    }
+
+    func testBeginRecordingDoesNotWaitForSelectionCaptureBeforeCueOrAudioStart() async throws {
+        let eventRecorder = ThreadSafeEventRecorder()
+        let audioStarted = expectation(description: "audio recorder started")
+        let audioRecorder = MockProcessingAudioRecorder {
+            eventRecorder.append("audio-start")
+            audioStarted.fulfill()
+        }
+        let controller = makeWorkflowController(
+            textInjector: SlowSelectionTextInjector(eventRecorder: eventRecorder),
             audioRecorder: audioRecorder,
             soundEffectPlayer: makeRecordingSoundEffectPlayer(eventRecorder: eventRecorder),
             sleep: { _ in
@@ -288,11 +314,15 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         )
 
         await controller.beginRecording(intent: .dictation, startLocked: false)
+        await fulfillment(of: [audioStarted], timeout: 0.5)
+        controller.cancelRecording()
 
-        XCTAssertEqual(
-            eventRecorder.snapshot(),
-            ["audio-start", "cue-play", "cue-sleep"],
-        )
+        let events = eventRecorder.snapshot()
+        let cuePlayIndex = try XCTUnwrap(events.firstIndex(of: "cue-play"))
+        let cueSleepIndex = try XCTUnwrap(events.firstIndex(of: "cue-sleep"))
+        let audioStartIndex = try XCTUnwrap(events.firstIndex(of: "audio-start"))
+        XCTAssertLessThan(cuePlayIndex, cueSleepIndex)
+        XCTAssertLessThan(cueSleepIndex, audioStartIndex)
     }
 
     private func makeWorkflowController(
@@ -401,6 +431,34 @@ private final class MockProcessingTextInjector: TextInjector {
     }
 }
 
+private final class SlowSelectionTextInjector: TextInjector {
+    private let eventRecorder: ThreadSafeEventRecorder
+
+    init(eventRecorder: ThreadSafeEventRecorder) {
+        self.eventRecorder = eventRecorder
+    }
+
+    func getSelectionSnapshot() async -> TextSelectionSnapshot {
+        eventRecorder.append("selection-start")
+        try? await Task.sleep(for: .seconds(30))
+        return TextSelectionSnapshot()
+    }
+
+    func currentInputTextSnapshot() async -> CurrentInputTextSnapshot {
+        eventRecorder.append("input-context-start")
+        try? await Task.sleep(for: .seconds(30))
+        return CurrentInputTextSnapshot()
+    }
+
+    func currentInputText() async -> String? {
+        nil
+    }
+
+    func insert(text _: String) throws {}
+
+    func replaceSelection(text _: String) throws {}
+}
+
 private final class MockProcessingLLMService: LLMService {
     func streamRewrite(request _: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
@@ -478,6 +536,7 @@ private final class MockSoundEffectPlayback: SoundEffectPlayback {
 private final class ThreadSafeEventRecorder: @unchecked Sendable {
     private let lock = NSLock()
     private var events: [String] = []
+    private var durations: [Duration] = []
 
     func append(_ event: String) {
         lock.lock()
@@ -485,10 +544,22 @@ private final class ThreadSafeEventRecorder: @unchecked Sendable {
         lock.unlock()
     }
 
+    func append(duration: Duration) {
+        lock.lock()
+        durations.append(duration)
+        lock.unlock()
+    }
+
     func snapshot() -> [String] {
         lock.lock()
         defer { lock.unlock() }
         return events
+    }
+
+    func durationSnapshot() -> [Duration] {
+        lock.lock()
+        defer { lock.unlock() }
+        return durations
     }
 }
 
