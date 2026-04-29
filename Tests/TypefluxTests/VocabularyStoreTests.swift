@@ -208,6 +208,19 @@ final class VocabularyStoreExtendedTests: XCTestCase {
         XCTAssertEqual(result.entries.first?.occurrenceCount, 2)
     }
 
+    func testImportEntriesUpdatesExternalSourceToLatestImportedApp() throws {
+        VocabularyStore.save([
+            VocabularyEntry(term: "WhisperKit", source: .claude, occurrenceCount: 2),
+        ])
+
+        let result = VocabularyStore.importTerms(["WhisperKit"], source: .codex)
+
+        XCTAssertEqual(result.addedCount, 0)
+        XCTAssertEqual(result.updatedCount, 1)
+        XCTAssertEqual(result.entries.first?.source, .codex)
+        XCTAssertEqual(result.entries.first?.occurrenceCount, 2)
+    }
+
     func testPreviewImportItemsDeduplicatesTermsCaseInsensitively() throws {
         let data = """
         [

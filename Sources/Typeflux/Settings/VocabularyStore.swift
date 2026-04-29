@@ -411,10 +411,10 @@ enum VocabularyStore {
     }
 
     /// Merge source precedence keeps the highest-signal provenance available:
-    /// manual > same source > existing external app > imported external app >
+    /// manual > same source > latest imported external app > existing external app >
     /// automatic/other existing source.
-    /// This lets local/user-curated terms stay strongest while keeping third-party
-    /// imports stable across repeated Claude/Codex syncs.
+    /// This lets local/user-curated terms stay strongest while ensuring an explicit
+    /// Claude/Codex import updates the displayed provenance for shared terms.
     private static func mergedSource(
         existing: VocabularySource,
         imported: VocabularySource,
@@ -425,14 +425,11 @@ enum VocabularyStore {
         if existing == imported {
             return existing
         }
-        // When two different external-app sources collide on the same term, keep the
-        // existing persisted source so repeated imports remain stable instead of
-        // flipping between Claude and Codex based on import order alone.
-        if existing.isExternalAppSource {
-            return existing
-        }
         if imported.isExternalAppSource {
             return imported
+        }
+        if existing.isExternalAppSource {
+            return existing
         }
         if existing == .automatic || imported == .automatic {
             return .automatic
