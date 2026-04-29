@@ -78,16 +78,15 @@ private func vocabularySourceLogoImage(for source: VocabularySource) -> NSImage?
 private func vocabularySourceMenuIconImage(for source: VocabularySource) -> NSImage? {
     guard let image = vocabularySourceLogoImage(for: source) else { return nil }
     let iconSize = NSSize(width: 16, height: 16)
-    let resized = NSImage(size: iconSize)
-    resized.lockFocus()
-    image.draw(
-        in: NSRect(origin: .zero, size: iconSize),
-        from: NSRect(origin: .zero, size: image.size),
-        operation: .sourceOver,
-        fraction: 1,
-    )
-    resized.unlockFocus()
-    return resized
+    return NSImage(size: iconSize, flipped: false) { destinationRect in
+        image.draw(
+            in: destinationRect,
+            from: NSRect(origin: .zero, size: image.size),
+            operation: .sourceOver,
+            fraction: 1,
+        )
+        return true
+    }
 }
 
 private func vocabularySourceLogoURL(for resourceName: String) -> URL? {
