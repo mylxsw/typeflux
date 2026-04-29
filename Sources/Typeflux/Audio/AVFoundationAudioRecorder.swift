@@ -58,7 +58,6 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         defer { lifecycleLock.unlock() }
 
         stopInternal()
-        rebuildAudioEngine()
 
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let now = Date()

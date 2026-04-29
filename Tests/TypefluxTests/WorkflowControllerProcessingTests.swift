@@ -119,13 +119,13 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
     func testActivePersonaPromptUsesFocusedAppBinding() {
         let customPersona = PersonaProfile(name: "Chat Reply", prompt: "Keep it warm and casual.")
-        let controller = makeWorkflowController { settingsStore in
+        let controller = makeWorkflowController(configureSettings: { settingsStore in
             settingsStore.personas = settingsStore.personas + [customPersona]
             settingsStore.savePersonaAppBinding(
                 appIdentifier: "com.tinyspeck.slackmacgap",
                 personaID: customPersona.id,
             )
-        }
+        })
         let selectionSnapshot = TextSelectionSnapshot(
             processID: 1,
             processName: "Slack",
@@ -148,14 +148,14 @@ final class WorkflowControllerProcessingTests: XCTestCase {
     }
 
     func testActivePersonaPromptUsesNoPersonaAppBindingOverDefaultPersona() {
-        let controller = makeWorkflowController { settingsStore in
+        let controller = makeWorkflowController(configureSettings: { settingsStore in
             let defaultPersona = settingsStore.personas[0]
             settingsStore.applyPersonaSelection(defaultPersona.id)
             settingsStore.savePersonaAppBinding(
                 appIdentifier: "com.apple.Notes",
                 personaID: nil,
             )
-        }
+        })
         let selectionSnapshot = TextSelectionSnapshot(
             processID: 1,
             processName: "Notes",
@@ -209,7 +209,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
     func testApplicationPersonaSelectionUpdatesAppBindingWithoutChangingGlobalPersona() throws {
         let targetPersona = PersonaProfile(name: "Release Notes", prompt: "Make it crisp.")
-        let controller = makeWorkflowController { settingsStore in
+        let controller = makeWorkflowController(configureSettings: { settingsStore in
             let globalPersona = settingsStore.personas[0]
             let appPersona = settingsStore.personas[1]
             settingsStore.personas = settingsStore.personas + [targetPersona]
@@ -218,7 +218,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
                 appIdentifier: "com.apple.Notes",
                 personaID: appPersona.id,
             )
-        }
+        })
         let binding = try XCTUnwrap(controller.settingsStore.personaAppBindings.first)
         controller.personaPickerMode = .switchApplication(binding)
         controller.personaPickerItems = controller.personaPickerEntries(includeNoneOption: true)
@@ -274,9 +274,33 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         }
     }
 
+    func testBeginRecordingStartsAudioBeforeCueLeadIn() async {
+        let eventRecorder = ThreadSafeEventRecorder()
+        let audioRecorder = MockProcessingAudioRecorder {
+            eventRecorder.append("audio-start")
+        }
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            soundEffectPlayer: makeRecordingSoundEffectPlayer(eventRecorder: eventRecorder),
+            sleep: { _ in
+                eventRecorder.append("cue-sleep")
+            },
+        )
+
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+
+        XCTAssertEqual(
+            eventRecorder.snapshot(),
+            ["audio-start", "cue-play", "cue-sleep"],
+        )
+    }
+
     private func makeWorkflowController(
         textInjector: TextInjector = MockProcessingTextInjector(),
+        audioRecorder: AudioRecorder = MockProcessingAudioRecorder(),
         llmService: LLMService = MockProcessingLLMService(),
+        soundEffectPlayer: SoundEffectPlayer? = nil,
+        sleep: @escaping @Sendable (Duration) async -> Void = { _ in },
         configureSettings: ((SettingsStore) -> Void)? = nil,
     ) -> WorkflowController {
         let suiteName = "WorkflowControllerProcessingTests.\(UUID().uuidString)"
@@ -291,7 +315,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             appState: appState,
             settingsStore: settingsStore,
             hotkeyService: MockProcessingHotkeyService(),
-            audioRecorder: MockProcessingAudioRecorder(),
+            audioRecorder: audioRecorder,
             sttRouter: STTRouter(
                 settingsStore: settingsStore,
                 whisper: MockProcessingTranscriber(),
@@ -321,8 +345,20 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             agentClarificationWindowController: AgentClarificationWindowController(
                 settingsStore: settingsStore,
             ),
-            soundEffectPlayer: SoundEffectPlayer(settingsStore: settingsStore),
+            soundEffectPlayer: soundEffectPlayer ?? SoundEffectPlayer(settingsStore: settingsStore),
+            sleep: sleep,
         )
+    }
+
+    private func makeRecordingSoundEffectPlayer(eventRecorder: ThreadSafeEventRecorder) -> SoundEffectPlayer {
+        let suiteName = "WorkflowControllerProcessingSoundTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.soundEffectsEnabled = true
+        return SoundEffectPlayer(settingsStore: settingsStore) { _ in
+            MockSoundEffectPlayback(eventRecorder: eventRecorder)
+        }
     }
 }
 
@@ -401,13 +437,58 @@ private final class MockProcessingHotkeyService: HotkeyService {
 }
 
 private final class MockProcessingAudioRecorder: AudioRecorder {
+    private let onStart: () -> Void
+
+    init(onStart: @escaping () -> Void = {}) {
+        self.onStart = onStart
+    }
+
     func start(
         levelHandler _: @escaping (Float) -> Void,
         audioBufferHandler _: ((AVAudioPCMBuffer) -> Void)?,
-    ) throws {}
+    ) throws {
+        onStart()
+    }
 
     func stop() throws -> AudioFile {
         AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1)
+    }
+}
+
+private final class MockSoundEffectPlayback: SoundEffectPlayback {
+    var volume: Float = 0
+    var currentTime: TimeInterval = 0
+
+    private let eventRecorder: ThreadSafeEventRecorder
+
+    init(eventRecorder: ThreadSafeEventRecorder) {
+        self.eventRecorder = eventRecorder
+    }
+
+    func prepareToPlay() -> Bool { true }
+
+    func play() -> Bool {
+        eventRecorder.append("cue-play")
+        return true
+    }
+
+    func stop() {}
+}
+
+private final class ThreadSafeEventRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var events: [String] = []
+
+    func append(_ event: String) {
+        lock.lock()
+        events.append(event)
+        lock.unlock()
+    }
+
+    func snapshot() -> [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return events
     }
 }
 

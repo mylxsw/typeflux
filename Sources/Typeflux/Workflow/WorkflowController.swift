@@ -575,52 +575,6 @@ final class WorkflowController {
         lastRetryableFailureRecord = nil
         NSLog("[Workflow] Recording started")
 
-        Task { @MainActor in
-            appState.setStatus(.recording)
-            if startLocked {
-                if intent == .askSelection {
-                    overlayController.showLockedRecording(hintText: L("overlay.ask.guidance"))
-                } else {
-                    overlayController.showLockedRecording()
-                }
-            } else {
-                overlayController.show()
-            }
-        }
-
-        await Self.waitForRecordingStartCueIfNeeded(
-            leadIn: Self.recordingStartCueLeadIn,
-            playCue: { @MainActor in
-                self.soundEffectPlayer.play(.start)
-            },
-            sleep: sleep,
-        )
-
-        selectionTask = Task { [weak self] in
-            guard let self else { return TextSelectionSnapshot() }
-            return await textInjector.getSelectionSnapshot()
-        }
-        if settingsStore.inputContextOptimizationEnabled {
-            let selectionTask = selectionTask
-            inputContextTask = Task { [weak self] in
-                guard let self else { return nil }
-                let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
-                let inputSnapshot = await textInjector.currentInputTextSnapshot()
-                let context = InputContextSnapshot.make(
-                    inputSnapshot: inputSnapshot,
-                    selectionSnapshot: selectionSnapshot,
-                )
-                InputContextSnapshot.logCapture(
-                    inputSnapshot: inputSnapshot,
-                    selectionSnapshot: selectionSnapshot,
-                    context: context,
-                )
-                return context
-            }
-        } else {
-            inputContextTask = nil
-        }
-
         do {
             try audioRecorder.start(
                 levelHandler: { [weak self] level in
@@ -631,6 +585,52 @@ final class WorkflowController {
 
             Task { [weak self] in
                 await self?.sttRouter.prepareForRecording()
+            }
+
+            Task { @MainActor in
+                appState.setStatus(.recording)
+                if startLocked {
+                    if intent == .askSelection {
+                        overlayController.showLockedRecording(hintText: L("overlay.ask.guidance"))
+                    } else {
+                        overlayController.showLockedRecording()
+                    }
+                } else {
+                    overlayController.show()
+                }
+            }
+
+            await Self.waitForRecordingStartCueIfNeeded(
+                leadIn: Self.recordingStartCueLeadIn,
+                playCue: { @MainActor in
+                    self.soundEffectPlayer.play(.start)
+                },
+                sleep: sleep,
+            )
+
+            selectionTask = Task { [weak self] in
+                guard let self else { return TextSelectionSnapshot() }
+                return await textInjector.getSelectionSnapshot()
+            }
+            if settingsStore.inputContextOptimizationEnabled {
+                let selectionTask = selectionTask
+                inputContextTask = Task { [weak self] in
+                    guard let self else { return nil }
+                    let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
+                    let inputSnapshot = await textInjector.currentInputTextSnapshot()
+                    let context = InputContextSnapshot.make(
+                        inputSnapshot: inputSnapshot,
+                        selectionSnapshot: selectionSnapshot,
+                    )
+                    InputContextSnapshot.logCapture(
+                        inputSnapshot: inputSnapshot,
+                        selectionSnapshot: selectionSnapshot,
+                        context: context,
+                    )
+                    return context
+                }
+            } else {
+                inputContextTask = nil
             }
 
             // Set a timeout to auto-stop recording after 10 minutes
