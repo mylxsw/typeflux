@@ -1171,6 +1171,15 @@ struct StudioView: View {
             return (Self.appDisplayName(for: url) ?? identifier, NSWorkspace.shared.icon(forFile: url.path))
         }
 
+        if let url = Self.installedPersonaAppCandidates().first(where: { candidate in
+            candidate.displayName.localizedCaseInsensitiveCompare(identifier) == .orderedSame
+                || candidate.appURL?.deletingPathExtension().lastPathComponent
+                    .localizedCaseInsensitiveCompare(identifier) == .orderedSame
+        })?.appURL
+        {
+            return (Self.appDisplayName(for: url) ?? identifier, NSWorkspace.shared.icon(forFile: url.path))
+        }
+
         return (identifier, nil)
     }
 
