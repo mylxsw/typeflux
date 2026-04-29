@@ -51,7 +51,7 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         XCTAssertEqual(settingsStore.preferredMicrophoneID, "external-mic")
     }
 
-    func testResolvedInputDeviceFallsBackToDefaultWhenPreferredMicrophoneIsUnavailable() throws {
+    func testResolvedInputDeviceFallsBackToDefaultWithoutClearingUnavailablePreferredMicrophone() throws {
         let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -64,7 +64,23 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         )
 
         XCTAssertEqual(recorder.resolvedInputDeviceIDForTesting(), 7)
-        XCTAssertEqual(settingsStore.preferredMicrophoneID, AudioDeviceManager.automaticDeviceID)
+        XCTAssertEqual(settingsStore.preferredMicrophoneID, "disconnected-mic")
+    }
+
+    func testResolvedInputDevicePreservesPreferredMicrophoneWhenNoFallbackIsAvailable() throws {
+        let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.preferredMicrophoneID = "temporarily-disconnected-mic"
+        let recorder = AVFoundationAudioRecorder(
+            settingsStore: settingsStore,
+            audioDeviceManager: MockAudioDeviceManager(),
+        )
+
+        XCTAssertNil(recorder.resolvedInputDeviceIDForTesting())
+        XCTAssertEqual(settingsStore.preferredMicrophoneID, "temporarily-disconnected-mic")
     }
 
     func testResolvedInputDeviceUsesDefaultMicrophoneInAutomaticMode() throws {
@@ -170,6 +186,22 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         coordinator.drain()
 
         XCTAssertEqual(recorder.values, [1, 2])
+    }
+
+    func testAudioBufferWriteCoordinatorDrainTimeoutReturnsFalseWhenWorkIsStillRunning() async {
+        let coordinator = AudioBufferWriteCoordinator()
+        let started = expectation(description: "Queued work started")
+
+        coordinator.enqueue {
+            started.fulfill()
+            Thread.sleep(forTimeInterval: 0.08)
+        }
+
+        await fulfillment(of: [started], timeout: 1.0)
+
+        XCTAssertFalse(coordinator.drain(timeout: 0.001))
+
+        coordinator.drain()
     }
 }
 

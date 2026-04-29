@@ -58,6 +58,28 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertNil(controller.activeProcessingRecordID)
     }
 
+    func testStoppingRecordingBlocksNewRecordingUntilStopCompletes() async {
+        let audioRecorder = BlockingStopAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: audioRecorder)
+        controller.isRecording = true
+        controller.recordingMode = .locked
+
+        controller.finishRecordingFromCurrentMode()
+        await audioRecorder.waitUntilStopStarted()
+
+        XCTAssertTrue(controller.isStoppingRecording)
+
+        await controller.beginRecording(intent: .dictation, startLocked: true)
+
+        XCTAssertEqual(audioRecorder.startCallCount, 0)
+
+        audioRecorder.finishStop()
+        await waitUntil {
+            !controller.isStoppingRecording
+        }
+        XCTAssertFalse(controller.isStoppingRecording)
+    }
+
     func testAskWithoutSelectionAgentDispositionMapsAnswerToAnswer() {
         let result = WorkflowController.askWithoutSelectionAgentDisposition(
             for: .answer("Here is the answer"),
@@ -276,6 +298,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
     private func makeWorkflowController(
         textInjector: TextInjector = MockProcessingTextInjector(),
+        audioRecorder: AudioRecorder = MockProcessingAudioRecorder(),
         llmService: LLMService = MockProcessingLLMService(),
         configureSettings: ((SettingsStore) -> Void)? = nil,
     ) -> WorkflowController {
@@ -291,7 +314,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             appState: appState,
             settingsStore: settingsStore,
             hotkeyService: MockProcessingHotkeyService(),
-            audioRecorder: MockProcessingAudioRecorder(),
+            audioRecorder: audioRecorder,
             sttRouter: STTRouter(
                 settingsStore: settingsStore,
                 whisper: MockProcessingTranscriber(),
@@ -323,6 +346,16 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             ),
             soundEffectPlayer: SoundEffectPlayer(settingsStore: settingsStore),
         )
+    }
+}
+
+private func waitUntil(
+    timeout: TimeInterval = 1.0,
+    condition: @escaping () -> Bool,
+) async {
+    let deadline = Date().addingTimeInterval(timeout)
+    while !condition(), Date() < deadline {
+        try? await Task.sleep(for: .milliseconds(10))
     }
 }
 
@@ -408,6 +441,48 @@ private final class MockProcessingAudioRecorder: AudioRecorder {
 
     func stop() throws -> AudioFile {
         AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1)
+    }
+}
+
+private final class BlockingStopAudioRecorder: AudioRecorder, @unchecked Sendable {
+    private let lock = NSLock()
+    private let stopStarted = DispatchSemaphore(value: 0)
+    private let stopRelease = DispatchSemaphore(value: 0)
+    private var starts = 0
+
+    var startCallCount: Int {
+        lock.lock()
+        let count = starts
+        lock.unlock()
+        return count
+    }
+
+    func start(
+        levelHandler _: @escaping (Float) -> Void,
+        audioBufferHandler _: ((AVAudioPCMBuffer) -> Void)?,
+    ) throws {
+        lock.lock()
+        starts += 1
+        lock.unlock()
+    }
+
+    func stop() throws -> AudioFile {
+        stopStarted.signal()
+        _ = stopRelease.wait(timeout: .now() + 2)
+        return AudioFile(fileURL: URL(fileURLWithPath: "/tmp/missing.wav"), duration: 1)
+    }
+
+    func waitUntilStopStarted() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global().async {
+                self.stopStarted.wait()
+                continuation.resume()
+            }
+        }
+    }
+
+    func finishStop() {
+        stopRelease.signal()
     }
 }
 

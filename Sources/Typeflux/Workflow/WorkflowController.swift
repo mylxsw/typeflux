@@ -82,6 +82,7 @@ final class WorkflowController {
 
     var currentSelectedText: String?
     var isRecording = false
+    var isStoppingRecording = false
     var recordingMode: RecordingMode = .holdToTalk
     var recordingIntent: RecordingIntent = .dictation
     var hotkeyPressedAt: Date?
@@ -417,6 +418,13 @@ final class WorkflowController {
             return
         }
 
+        guard !isStoppingRecording else {
+            Task { @MainActor in
+                self.overlayController.showProcessing()
+            }
+            return
+        }
+
         hotkeyPressedAt = startLocked ? nil : Date()
 
         if isRecording {
@@ -569,6 +577,8 @@ final class WorkflowController {
     }
 
     func beginRecording(intent: RecordingIntent, startLocked: Bool) async {
+        guard !isStoppingRecording else { return }
+
         isRecording = true
         recordingMode = startLocked ? .locked : .holdToTalk
         recordingIntent = intent
@@ -719,12 +729,18 @@ final class WorkflowController {
         guard isRecording else { return }
 
         isRecording = false
+        isStoppingRecording = true
         recordingMode = .holdToTalk
         hotkeyPressedAt = nil
         recordingTimeoutTask?.cancel()
         recordingTimeoutTask = nil
         NSLog("[Workflow] Recording stopped")
         let recordingStoppedAt = Date()
+
+        Task { @MainActor in
+            self.appState.setStatus(.processing)
+            self.overlayController.showProcessing()
+        }
 
         Task { [weak self] in
             guard let self else { return }

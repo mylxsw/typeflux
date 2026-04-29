@@ -321,6 +321,7 @@ extension WorkflowController {
     func finishRecordingAndProcess(recordingStoppedAt: Date) async {
         do {
             let audioFile = try audioRecorder.stop()
+            isStoppingRecording = false
             let audioFileReadyAt = Date()
             let recordingIntent = recordingIntent
             self.recordingIntent = .dictation
@@ -426,6 +427,7 @@ extension WorkflowController {
                 }
             }
         } catch {
+            isStoppingRecording = false
             let msg = "Processing failed: \(error.localizedDescription)"
             ErrorLogStore.shared.log(msg)
 
