@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "description": "Sample mixed Chinese/English benchmark manifest for local ASR models. Replace audioFile paths with matching local WAV recordings before running the harness.",
+  "protectedTerms": [
+    "Typeflux",
+    "OpenAI",
+    "WhisperKit",
+    "SenseVoice",
+    "SwiftUI",
+    "API",
+    "SDK",
+    "LLM",
+    "ASR",
+    "JWT",
+    "URL",
+    "URLSession",
+    "UserDefaults"
+  ],
+  "samples": [
+    {
+      "id": "product_names_zh_en_001",
+      "audioFile": "audio/product_names_zh_en_001.wav",
+      "reference": "今天我在 Typeflux 里测试 OpenAI, WhisperKit, SenseVoice 和 SwiftUI 的混合输入。",
+      "expectedTerms": ["Typeflux", "OpenAI", "WhisperKit", "SenseVoice", "SwiftUI"]
+    },
+    {
+      "id": "acronyms_zh_en_001",
+      "audioFile": "audio/acronyms_zh_en_001.wav",
+      "reference": "这个 API 会返回 SDK, LLM, ASR, JWT 和 URL 相关的配置。",
+      "expectedTerms": ["API", "SDK", "LLM", "ASR", "JWT", "URL"]
+    },
+    {
+      "id": "code_terms_zh_en_001",
+      "audioFile": "audio/code_terms_zh_en_001.wav",
+      "reference": "请检查 async await, UserDefaults, URLSession, git commit 和 npm install 的识别结果。",
+      "expectedTerms": ["async await", "UserDefaults", "URLSession", "git commit", "npm install"]
+    },
+    {
+      "id": "ordinary_mixed_zh_en_001",
+      "audioFile": "audio/ordinary_mixed_zh_en_001.wav",
+      "reference": "我明天要把这个 feature branch 合并，然后更新 release notes。",
+      "expectedTerms": ["feature branch", "release notes"]
+    }
+  ]
+}
