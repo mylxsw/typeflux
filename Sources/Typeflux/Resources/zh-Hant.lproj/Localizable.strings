@@ -245,6 +245,10 @@
 "localSTT.qwen3ASR.summary" = "更大的多語言 ASR 模型，語境理解更強，長語音辨識品質更好。";
 "localSTT.qwen3ASR.parameterValue" = "0.6B";
 "localSTT.qwen3ASR.sizeValue" = "1.3 GB";
+"localSTT.funASR.name" = "FunASR（Paraformer）";
+"localSTT.funASR.summary" = "阿里巴巴達摩院開發的 Paraformer 架構中文 ASR 模型，速度快，準確率高。";
+"localSTT.funASR.parameterValue" = "220M";
+"localSTT.funASR.sizeValue" = "~180 MB";
 "localSTT.prepare.runtimePreparing" = "正在準備原生本地語音執行環境...";
 "localSTT.prepare.cleaningLegacyRuntime" = "正在清理舊版 Python 執行環境...";
 "localSTT.prepare.runtimeDownloading" = "正在下載 Sherpa-ONNX 原生執行環境...";
@@ -585,7 +589,7 @@
 "settings.models.builtInDefaultProfile" = "內建預設設定";
 "settings.models.card.whisper.summary" = "使用 OpenAI 官方語音轉寫服務，並內建預設模型。";
 "settings.models.card.freeSTT.summary" = "從程式碼中設定好的免費語音轉寫模型中選擇，使用者不需要手動填寫端點或金鑰。";
-"settings.models.card.localSTT.summary" = "透過原生 Swift 執行環境在本地執行 WhisperKit、SenseVoice 或 Qwen3-ASR。";
+"settings.models.card.localSTT.summary" = "透過原生 Swift 執行環境在本地執行 WhisperKit、SenseVoice、FunASR 或 Qwen3-ASR。";
 "settings.models.card.multimodal.summary" = "音訊直接傳送給多模態模型，在一次 API 呼叫中完成轉寫與人設改寫。";
 "settings.models.card.aliCloud.summary" = "透過 DashScope 執行即時串流辨識，低延遲 WebSocket 傳輸。";
 "settings.models.card.doubao.summary" = "透過豆包語音辨識 2.0 與位元組原生二進位 WebSocket 協議進行低延遲串流辨識。";

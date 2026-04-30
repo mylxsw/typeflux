@@ -83,6 +83,28 @@ struct SherpaOnnxModelLayout {
                     "\(modelRootDirectory)/tokenizer",
                 ],
             )
+        case .funASR:
+            guard let modelRootDirectory = LocalModelDownloadCatalog.sherpaOnnxModelDirectoryName(for: model),
+                  let modelArtifact = LocalModelDownloadCatalog.sherpaOnnxModelArtifact(
+                    for: model,
+                    source: downloadSource,
+                  )
+            else {
+                return nil
+            }
+            return SherpaOnnxModelLayout(
+                runtimeArchiveURL: LocalModelDownloadCatalog.sherpaOnnxRuntimeArchiveURL(source: downloadSource),
+                runtimeRootDirectory: LocalModelDownloadCatalog.sherpaOnnxRuntimeDirectoryName,
+                modelArtifact: modelArtifact,
+                modelRootDirectory: modelRootDirectory,
+                requiredRelativePaths: [
+                    "\(LocalModelDownloadCatalog.sherpaOnnxRuntimeDirectoryName)/bin/sherpa-onnx-offline",
+                    "\(LocalModelDownloadCatalog.sherpaOnnxRuntimeDirectoryName)/lib/libsherpa-onnx-c-api.dylib",
+                    "\(LocalModelDownloadCatalog.sherpaOnnxRuntimeDirectoryName)/lib/libonnxruntime.dylib",
+                    "\(modelRootDirectory)/model.int8.onnx",
+                    "\(modelRootDirectory)/tokens.txt",
+                ],
+            )
         }
     }
 
@@ -640,6 +662,14 @@ final class SherpaOnnxCommandLineDecoder {
                 "--qwen3-asr-max-total-len=1500",
                 "--qwen3-asr-max-new-tokens=512",
                 "--qwen3-asr-temperature=0",
+                "--provider=cpu",
+                audioURL.path,
+            ]
+        case .funASR:
+            return [
+                "--print-args=false",
+                "--tokens=\(modelDirectory.appendingPathComponent("tokens.txt").path)",
+                "--paraformer=\(modelDirectory.appendingPathComponent("model.int8.onnx").path)",
                 "--provider=cpu",
                 audioURL.path,
             ]

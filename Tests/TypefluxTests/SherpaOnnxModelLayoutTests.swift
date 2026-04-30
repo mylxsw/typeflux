@@ -18,6 +18,11 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         XCTAssertNotNil(layout)
     }
 
+    func testFunASRReturnsLayout() {
+        let layout = SherpaOnnxModelLayout.layout(for: .funASR)
+        XCTAssertNotNil(layout)
+    }
+
     // MARK: - SenseVoice layout properties
 
     func testSenseVoiceSmallRuntimeDirectory() throws {
@@ -180,6 +185,57 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         XCTAssertTrue(layout.requiredRelativePaths.contains("sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/encoder.int8.onnx"))
         XCTAssertTrue(layout.requiredRelativePaths.contains("sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/decoder.int8.onnx"))
         XCTAssertTrue(layout.requiredRelativePaths.contains("sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/tokenizer"))
+    }
+
+    // MARK: - FunASR layout properties
+
+    func testFunASRRuntimeDirectory() throws {
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .funASR))
+        XCTAssertEqual(layout.runtimeRootDirectory, "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts")
+    }
+
+    func testFunASRModelDirectory() throws {
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .funASR))
+        XCTAssertEqual(layout.modelRootDirectory, "sherpa-onnx-paraformer-zh-small-2024-03-09")
+    }
+
+    func testFunASRRequiredPaths() throws {
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .funASR))
+        XCTAssertEqual(layout.requiredRelativePaths.count, 5)
+        XCTAssertTrue(layout.requiredRelativePaths.contains("sherpa-onnx-paraformer-zh-small-2024-03-09/model.int8.onnx"))
+        XCTAssertTrue(layout.requiredRelativePaths.contains("sherpa-onnx-paraformer-zh-small-2024-03-09/tokens.txt"))
+    }
+
+    func testFunASRUsesDirectFilesForHuggingFace() throws {
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .funASR))
+
+        guard case let .files(files) = layout.modelArtifact else {
+            return XCTFail("Expected Hugging Face FunASR layout to use extracted files")
+        }
+
+        XCTAssertNil(layout.modelArchiveURL)
+        XCTAssertEqual(files.map(\.relativePath), [
+            "sherpa-onnx-paraformer-zh-small-2024-03-09/model.int8.onnx",
+            "sherpa-onnx-paraformer-zh-small-2024-03-09/tokens.txt",
+        ])
+        XCTAssertTrue(files.allSatisfy { $0.url.absoluteString.hasPrefix("https://huggingface.co/") })
+        XCTAssertTrue(files.allSatisfy { $0.url.absoluteString.contains("/resolve/main/") })
+    }
+
+    func testModelScopeFunASRUsesExtractedFilesFromChinaMirror() throws {
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .funASR, downloadSource: .modelScope))
+
+        guard case let .files(files) = layout.modelArtifact else {
+            return XCTFail("Expected ModelScope FunASR layout to use extracted files")
+        }
+
+        XCTAssertEqual(files.map(\.relativePath), [
+            "sherpa-onnx-paraformer-zh-small-2024-03-09/model.int8.onnx",
+            "sherpa-onnx-paraformer-zh-small-2024-03-09/tokens.txt",
+        ])
+        XCTAssertTrue(files.allSatisfy { $0.url.host != "github.com" })
+        XCTAssertTrue(files.allSatisfy { $0.url.absoluteString.hasPrefix("https://hf-mirror.com/") })
+        XCTAssertTrue(files.allSatisfy { $0.url.absoluteString.contains("/resolve/main/") })
     }
 
     // MARK: - URL computation

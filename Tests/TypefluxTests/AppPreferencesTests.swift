@@ -70,6 +70,7 @@ final class AppPreferencesTests: XCTestCase {
         XCTAssertEqual(LocalSTTModel.whisperLocalLarge.defaultModelIdentifier, "whisperkit-large-v3")
         XCTAssertEqual(LocalSTTModel.senseVoiceSmall.defaultModelIdentifier, "sensevoice-small")
         XCTAssertTrue(LocalSTTModel.qwen3ASR.defaultModelIdentifier.contains("Qwen3-ASR"))
+        XCTAssertEqual(LocalSTTModel.funASR.defaultModelIdentifier, "paraformer-zh-small")
     }
 
     func testLocalSTTModelDisplayOrderStartsWithSenseVoice() {
@@ -82,6 +83,7 @@ final class AppPreferencesTests: XCTestCase {
         XCTAssertNil(LocalSTTModel.whisperLocal.recommendationBadgeTitle)
         XCTAssertNil(LocalSTTModel.whisperLocalLarge.recommendationBadgeTitle)
         XCTAssertNil(LocalSTTModel.qwen3ASR.recommendationBadgeTitle)
+        XCTAssertNil(LocalSTTModel.funASR.recommendationBadgeTitle)
     }
 
     func testLocalSTTModelSpecsAreNonEmpty() {

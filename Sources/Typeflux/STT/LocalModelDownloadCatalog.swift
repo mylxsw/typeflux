@@ -116,7 +116,7 @@ enum LocalModelDownloadCatalog {
 
     static func downloadSources(for model: LocalSTTModel) -> [ModelDownloadSource] {
         switch model {
-        case .whisperLocal, .whisperLocalLarge, .senseVoiceSmall, .qwen3ASR:
+        case .whisperLocal, .whisperLocalLarge, .senseVoiceSmall, .qwen3ASR, .funASR:
             [.huggingFace, .modelScope]
         }
     }
@@ -139,6 +139,13 @@ enum LocalModelDownloadCatalog {
             case .modelScope:
                 [LocalModelDownloadURLCatalog.url(for: .qwen3ASRModelScopeEncoder)]
             }
+        case .funASR:
+            [
+                sherpaOnnxRuntimeArchiveURL(source: source),
+                LocalModelDownloadURLCatalog.url(for: source == .huggingFace
+                    ? .funASRHuggingFaceModel
+                    : .funASRChinaMirrorModel),
+            ]
         }
     }
 
@@ -200,6 +207,8 @@ enum LocalModelDownloadCatalog {
             return senseVoiceDescriptor
         case .qwen3ASR:
             return qwen3ASRDescriptor
+        case .funASR:
+            return funASRDescriptor
         }
     }
 
@@ -260,6 +269,32 @@ enum LocalModelDownloadCatalog {
                 SherpaOnnxFileDescriptor(
                     urlKey: .qwen3ASRModelScopeTokenizerVocab,
                     destinationPath: "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/tokenizer/vocab.json",
+                ),
+            ]),
+        ],
+    )
+
+    private static let funASRDescriptor = SherpaOnnxModelDescriptor(
+        rootDirectory: "sherpa-onnx-paraformer-zh-small-2024-03-09",
+        deliveryBySource: [
+            .huggingFace: .files([
+                SherpaOnnxFileDescriptor(
+                    urlKey: .funASRHuggingFaceModel,
+                    destinationPath: "sherpa-onnx-paraformer-zh-small-2024-03-09/model.int8.onnx",
+                ),
+                SherpaOnnxFileDescriptor(
+                    urlKey: .funASRHuggingFaceTokens,
+                    destinationPath: "sherpa-onnx-paraformer-zh-small-2024-03-09/tokens.txt",
+                ),
+            ]),
+            .modelScope: .files([
+                SherpaOnnxFileDescriptor(
+                    urlKey: .funASRChinaMirrorModel,
+                    destinationPath: "sherpa-onnx-paraformer-zh-small-2024-03-09/model.int8.onnx",
+                ),
+                SherpaOnnxFileDescriptor(
+                    urlKey: .funASRChinaMirrorTokens,
+                    destinationPath: "sherpa-onnx-paraformer-zh-small-2024-03-09/tokens.txt",
                 ),
             ]),
         ],

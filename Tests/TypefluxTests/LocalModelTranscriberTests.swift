@@ -91,6 +91,26 @@ final class LocalModelTranscriberTests: XCTestCase {
         XCTAssertEqual(runner.lastArguments.last, audioFile.fileURL.path)
     }
 
+    func testFunASRTranscriberUsesParaformerModelArguments() async throws {
+        let modelFolder = try makeSherpaModelFolder(for: .funASR)
+        let runner = CapturingProcessRunner(stdout: "ignored log\n你好 Typeflux\n")
+        let transcriber = FunASRTranscriber(
+            modelIdentifier: LocalSTTModel.funASR.defaultModelIdentifier,
+            modelFolder: modelFolder.path,
+            processRunner: runner,
+        )
+        let audioFile = try makeTestWAVFile()
+
+        let text = try await transcriber.transcribe(audioFile: audioFile)
+
+        XCTAssertEqual(text, "你好 Typeflux")
+        XCTAssertEqual(runner.lastExecutablePath, modelFolder.appendingPathComponent("sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/bin/sherpa-onnx-offline").path)
+        XCTAssertEqual(runner.lastEnvironment?["DYLD_LIBRARY_PATH"], modelFolder.appendingPathComponent("sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib").path)
+        XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--paraformer=") }))
+        XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--tokens=") }))
+        XCTAssertEqual(runner.lastArguments.last, audioFile.fileURL.path)
+    }
+
     func testLocalModelManagerPersistsSenseVoicePreparedModelInfo() async throws {
         let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -983,6 +1003,9 @@ final class LocalModelTranscriberTests: XCTestCase {
                 at: modelDirectory.appendingPathComponent("tokenizer", isDirectory: true),
                 withIntermediateDirectories: true,
             )
+        case .funASR:
+            try senseVoiceModelFixtureData().write(to: modelDirectory.appendingPathComponent("model.int8.onnx"))
+            try senseVoiceTokensFixtureData().write(to: modelDirectory.appendingPathComponent("tokens.txt"))
         }
 
         return root

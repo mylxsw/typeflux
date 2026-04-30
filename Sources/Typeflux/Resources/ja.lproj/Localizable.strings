@@ -245,6 +245,10 @@
 "localSTT.qwen3ASR.summary" = "より強力なコンテキスト理解とより優れた長文認識品質を備えた、より大規模な多言語 ASR モデル。";
 "localSTT.qwen3ASR.parameterValue" = "0.6B";
 "localSTT.qwen3ASR.sizeValue" = "1.3 GB";
+"localSTT.funASR.name" = "FunASR（Paraformer）";
+"localSTT.funASR.summary" = "Alibaba DAMO Academyが開発したParaformerアーキテクチャの中国語特化ASRモデル。高速かつ高精度。";
+"localSTT.funASR.parameterValue" = "220M";
+"localSTT.funASR.sizeValue" = "~180 MB";
 "localSTT.prepare.runtimePreparing" = "ネイティブローカル音声ランタイムを準備しています...";
 "localSTT.prepare.cleaningLegacyRuntime" = "旧 Python ランタイムをクリーンアップしています...";
 "localSTT.prepare.runtimeDownloading" = "Sherpa-ONNX ネイティブランタイムをダウンロードしています...";
@@ -585,7 +589,7 @@
 "settings.models.builtInDefaultProfile" = "組み込みのデフォルトプロファイル";
 "settings.models.card.whisper.summary" = "OpenAI の公式音声文字起こしサービス。既定モデルを内蔵。";
 "settings.models.card.freeSTT.summary" = "コードで構成された自由な音声テキスト変換モデルから選択します。エンドポイントまたは API キーは手動で入力されません。";
-"settings.models.card.localSTT.summary" = "Whisper、SenseVoice Small、または Qwen3-ASR を、組み込みサービス ランタイムを通じてローカルで実行します。";
+"settings.models.card.localSTT.summary" = "Whisper、SenseVoice Small、FunASR、または Qwen3-ASR を、組み込みサービス ランタイムを通じてローカルで実行します。";
 "settings.models.card.multimodal.summary" = "オーディオをマルチモーダル モデルに直接送信します。トランスクリプションとペルソナの書き換えは単一の API 呼び出しで行われ、エンドツーエンドのパスが高速化されます。";
 "settings.models.card.aliCloud.summary" = "低遅延の WebSocket ストリーミングによる DashScope によるリアルタイムのストリーミング認識。";
 "settings.models.card.doubao.summary" = "ByteDance のネイティブ バイナリ WebSocket プロトコルを使用した Doubao Speech Recognition 2.0 による低遅延ストリーミング認識。";

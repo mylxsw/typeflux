@@ -85,6 +85,15 @@ final class LocalModelTranscriber: Transcriber {
                 modelFolder: modelInfo.storagePath,
             )
             return try await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+
+        case .funASR:
+            removeWhisperKitCache(keepingCapacity: false)
+            let modelInfo = try await preparedModelInfo()
+            let transcriber = FunASRTranscriber(
+                modelIdentifier: model,
+                modelFolder: modelInfo.storagePath,
+            )
+            return try await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
         }
     }
 

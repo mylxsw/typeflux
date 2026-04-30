@@ -19,6 +19,10 @@ enum LocalModelDownloadURLCatalog {
         case qwen3ASRModelScopeTokenizerMerges
         case qwen3ASRModelScopeTokenizerConfig
         case qwen3ASRModelScopeTokenizerVocab
+        case funASRHuggingFaceModel
+        case funASRHuggingFaceTokens
+        case funASRChinaMirrorModel
+        case funASRChinaMirrorTokens
     }
 
     /// Single lookup entry point for download addresses.
@@ -108,6 +112,25 @@ enum LocalModelDownloadURLCatalog {
         // Tokenizer vocabulary mapping token ids to the text units used by Qwen3-ASR.
         .qwen3ASRModelScopeTokenizerVocab: URL(
             string: "https://modelscope.cn/models/Qwen/Qwen3-ASR-0.6B/resolve/master/vocab.json"
+        )!,
+
+        // MARK: - FunASR (Paraformer ZH Small)
+
+        // Quantized Paraformer ZH Small ONNX weights hosted on Hugging Face.
+        .funASRHuggingFaceModel: URL(
+            string: "https://huggingface.co/csukuangfj/sherpa-onnx-paraformer-zh-small-2024-03-09/resolve/main/model.int8.onnx"
+        )!,
+        // Token vocabulary file required to decode Paraformer model outputs into text.
+        .funASRHuggingFaceTokens: URL(
+            string: "https://huggingface.co/csukuangfj/sherpa-onnx-paraformer-zh-small-2024-03-09/resolve/main/tokens.txt"
+        )!,
+        // Quantized Paraformer ZH Small ONNX weights from the China mirror.
+        .funASRChinaMirrorModel: URL(
+            string: "https://hf-mirror.com/csukuangfj/sherpa-onnx-paraformer-zh-small-2024-03-09/resolve/main/model.int8.onnx"
+        )!,
+        // Token vocabulary file from the China mirror.
+        .funASRChinaMirrorTokens: URL(
+            string: "https://hf-mirror.com/csukuangfj/sherpa-onnx-paraformer-zh-small-2024-03-09/resolve/main/tokens.txt"
         )!,
     ]
 }
