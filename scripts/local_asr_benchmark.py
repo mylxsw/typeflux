@@ -197,7 +197,28 @@ def make_input_directory(samples: list[Sample], target: Path) -> dict[str, Sampl
     return mapping
 
 
-def run_typeflux_batch(model: str, input_dir: Path, output_csv: Path, package_path: Path, typeflux_bin: str | None) -> tuple[int, str]:
+@dataclass(frozen=True)
+class SenseVoiceOptions:
+    language: str = "auto"
+    use_itn: bool = True
+    normalize_16k_mono: bool = False
+
+    def as_report_dict(self) -> dict[str, Any]:
+        return {
+            "language": self.language,
+            "useITN": self.use_itn,
+            "normalize16kMono": self.normalize_16k_mono,
+        }
+
+
+def run_typeflux_batch(
+    model: str,
+    input_dir: Path,
+    output_csv: Path,
+    package_path: Path,
+    typeflux_bin: str | None,
+    sense_voice_options: SenseVoiceOptions,
+) -> tuple[int, str]:
     if typeflux_bin:
         command = [typeflux_bin, "batch-wav"]
     else:
@@ -214,6 +235,12 @@ def run_typeflux_batch(model: str, input_dir: Path, output_csv: Path, package_pa
         model,
         "--no-persona",
     ]
+    if model == "senseVoiceSmall":
+        command += ["--sense-voice-language", sense_voice_options.language]
+        if not sense_voice_options.use_itn:
+            command.append("--sense-voice-no-itn")
+        if sense_voice_options.normalize_16k_mono:
+            command.append("--sense-voice-normalize-16k-mono")
 
     suite = f"ai.gulu.app.typeflux.local-asr-benchmark.{os.getpid()}.{model}"
     env = os.environ.copy()
@@ -280,6 +307,7 @@ def benchmark_model(
     package_path: Path,
     typeflux_bin: str | None,
     models_root: Path,
+    sense_voice_options: SenseVoiceOptions,
 ) -> dict[str, Any]:
     identifier, storage_path, missing_assets = model_storage_info(model, models_root)
     base = {
@@ -289,6 +317,8 @@ def benchmark_model(
         "storagePath": str(storage_path) if storage_path else None,
         "footprintBytes": directory_size_bytes(storage_path),
     }
+    if model == "senseVoiceSmall":
+        base["senseVoiceOptions"] = sense_voice_options.as_report_dict()
     if missing_assets:
         return {
             **base,
@@ -310,7 +340,14 @@ def benchmark_model(
     input_mapping = make_input_directory(samples, input_dir)
 
     started = time.monotonic()
-    exit_code, command_output = run_typeflux_batch(model, input_dir, output_csv, package_path, typeflux_bin)
+    exit_code, command_output = run_typeflux_batch(
+        model,
+        input_dir,
+        output_csv,
+        package_path,
+        typeflux_bin,
+        sense_voice_options,
+    )
     elapsed_ms = int((time.monotonic() - started) * 1000)
     rows = read_batch_csv(output_csv)
 
@@ -438,6 +475,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--package-path", type=Path, default=REPO_ROOT)
     parser.add_argument("--typeflux-bin", default=None, help="Optional prebuilt Typeflux executable path.")
     parser.add_argument("--models", nargs="+", default=["senseVoiceSmall", "qwen3ASR", "whisperLocal"])
+    parser.add_argument("--sense-voice-language", choices=["auto", "zh", "en"], default="auto")
+    parser.add_argument("--sense-voice-no-itn", action="store_true")
+    parser.add_argument("--sense-voice-normalize-16k-mono", action="store_true")
     parser.add_argument("--keep-work", action="store_true")
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args()
@@ -454,11 +494,24 @@ def main() -> int:
 
     samples = load_manifest(args.manifest, args.audio_root)
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    sense_voice_options = SenseVoiceOptions(
+        language=args.sense_voice_language,
+        use_itn=not args.sense_voice_no_itn,
+        normalize_16k_mono=args.sense_voice_normalize_16k_mono,
+    )
 
     work_parent = Path(tempfile.mkdtemp(prefix="typeflux-local-asr-benchmark-"))
     try:
         models = [
-            benchmark_model(model, samples, work_parent, args.package_path, args.typeflux_bin, args.models_root)
+            benchmark_model(
+                model,
+                samples,
+                work_parent,
+                args.package_path,
+                args.typeflux_bin,
+                args.models_root,
+                sense_voice_options,
+            )
             for model in args.models
         ]
         report = {

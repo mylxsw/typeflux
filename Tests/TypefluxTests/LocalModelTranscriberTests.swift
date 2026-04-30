@@ -1,4 +1,5 @@
 @testable import Typeflux
+import AVFoundation
 import WhisperKit
 import XCTest
 
@@ -59,6 +60,54 @@ final class LocalModelTranscriberTests: XCTestCase {
         _ = try await transcriber.transcribe(audioFile: makeTestWAVFile())
 
         XCTAssertTrue(runner.lastArguments.contains("--sense-voice-language=auto"))
+    }
+
+    func testSenseVoiceTranscriberUsesExplicitLanguageAndITNConfiguration() async throws {
+        let modelFolder = try makeSherpaModelFolder(for: .senseVoiceSmall)
+        let runner = CapturingProcessRunner(stdout: "<|en|><|NEUTRAL|><|Speech|><|woitn|> hello Typeflux \n")
+        let transcriber = SenseVoiceTranscriber(
+            modelIdentifier: LocalSTTModel.senseVoiceSmall.defaultModelIdentifier,
+            modelFolder: modelFolder.path,
+            decodingConfiguration: SenseVoiceDecodingConfiguration(
+                language: .en,
+                useITN: false,
+                audioNormalization: .preserveInput,
+            ),
+            processRunner: runner,
+        )
+
+        let text = try await transcriber.transcribe(audioFile: makeTestWAVFile())
+
+        XCTAssertEqual(text, "hello Typeflux")
+        XCTAssertTrue(runner.lastArguments.contains("--sense-voice-language=en"))
+        XCTAssertTrue(runner.lastArguments.contains("--sense-voice-use-itn=false"))
+    }
+
+    func testSenseVoiceTranscriberNormalizesInputTo16kMonoWhenConfigured() async throws {
+        let modelFolder = try makeSherpaModelFolder(for: .senseVoiceSmall)
+        let runner = CapturingProcessRunner(stdout: "normalized\n")
+        let transcriber = SenseVoiceTranscriber(
+            modelIdentifier: LocalSTTModel.senseVoiceSmall.defaultModelIdentifier,
+            modelFolder: modelFolder.path,
+            decodingConfiguration: SenseVoiceDecodingConfiguration(
+                language: .zh,
+                useITN: true,
+                audioNormalization: .mono16k,
+            ),
+            processRunner: runner,
+        )
+        let audioFile = try makeValidTestWAVFile(sampleRate: 44_100)
+
+        _ = try await transcriber.transcribe(audioFile: audioFile)
+
+        let normalizedURL = URL(fileURLWithPath: try XCTUnwrap(runner.lastArguments.last))
+        XCTAssertNotEqual(normalizedURL.path, audioFile.fileURL.path)
+        XCTAssertEqual(normalizedURL.pathExtension.lowercased(), "wav")
+        let normalizedFile = try AVAudioFile(forReading: normalizedURL)
+        XCTAssertEqual(normalizedFile.processingFormat.sampleRate, 16_000, accuracy: 0.1)
+        XCTAssertEqual(normalizedFile.processingFormat.channelCount, 1)
+        XCTAssertTrue(runner.lastArguments.contains("--sense-voice-language=zh"))
+        XCTAssertTrue(runner.lastArguments.contains("--sense-voice-use-itn=true"))
     }
 
     func testQwen3ASRTranscriberUsesQwen3ModelArguments() async throws {
@@ -1017,6 +1066,14 @@ final class LocalModelTranscriberTests: XCTestCase {
             .appendingPathExtension("wav")
         try Data().write(to: fileURL)
         return AudioFile(fileURL: fileURL, duration: 1)
+    }
+
+    private func makeValidTestWAVFile(sampleRate: Int) throws -> AudioFile {
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-tests-\(UUID().uuidString)", isDirectory: false)
+            .appendingPathExtension("wav")
+        try RemoteSTTTestAudio.wavSilence(sampleRate: sampleRate, durationMs: 100).write(to: fileURL)
+        return AudioFile(fileURL: fileURL, duration: 0.1)
     }
 
     private func makeDownloadedFileFixtures(

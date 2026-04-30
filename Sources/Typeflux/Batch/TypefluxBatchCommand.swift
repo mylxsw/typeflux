@@ -36,6 +36,7 @@ private struct BatchConfiguration {
     let retryFailed: Bool
     let sttProviderOverride: STTProvider?
     let localSTTModelOverride: LocalSTTModel?
+    let senseVoiceDecodingConfiguration: SenseVoiceDecodingConfiguration
     let personaSelector: PersonaSelector?
     let noPersona: Bool
 
@@ -75,6 +76,21 @@ private struct BatchConfiguration {
         } else {
             localSTTModelOverride = nil
         }
+
+        var senseVoiceConfig = SenseVoiceDecodingConfiguration.default
+        if let raw = parser.consumeValue("--sense-voice-language") {
+            guard let language = SenseVoiceDecodingConfiguration.Language(rawValue: raw) else {
+                throw BatchCommandError(message: "Unsupported --sense-voice-language value: \(raw)")
+            }
+            senseVoiceConfig.language = language
+        }
+        if parser.consumeFlag("--sense-voice-no-itn") {
+            senseVoiceConfig.useITN = false
+        }
+        if parser.consumeFlag("--sense-voice-normalize-16k-mono") {
+            senseVoiceConfig.audioNormalization = .mono16k
+        }
+        senseVoiceDecodingConfiguration = senseVoiceConfig
 
         let personaID = parser.consumeValue("--persona-id")
         let personaName = parser.consumeValue("--persona-name")
@@ -164,6 +180,9 @@ private struct BatchConfiguration {
       --state <path>                   Override the default state path. Defaults to <output>.state.json.
       --stt-provider <provider>        Optional STT provider override. See table below.
       --local-stt-model <model>        Optional local STT model override. See table below.
+      --sense-voice-language <value>   SenseVoice language override for local experiments: auto, zh, en.
+      --sense-voice-no-itn             Disable SenseVoice inverse text normalization for local experiments.
+      --sense-voice-normalize-16k-mono Convert SenseVoice input to 16 kHz mono WAV before decoding.
       --persona-id <uuid>              Optional saved persona selector by ID.
       --persona-name <name>            Optional saved persona selector by name.
       --persona-prompt-file <path>     Optional prompt file selector instead of a saved persona.
@@ -382,7 +401,11 @@ private final class WAVPersonaBenchmark {
             whisper: WhisperAPITranscriber(settingsStore: settingsStore),
             freeSTT: FreeSTTTranscriber(settingsStore: settingsStore),
             appleSpeech: AppleSpeechTranscriber(),
-            localModel: LocalModelTranscriber(settingsStore: settingsStore, modelManager: localModelManager),
+            localModel: LocalModelTranscriber(
+                settingsStore: settingsStore,
+                modelManager: localModelManager,
+                senseVoiceDecodingConfiguration: config.senseVoiceDecodingConfiguration,
+            ),
             multimodal: MultimodalLLMTranscriber(settingsStore: settingsStore),
             aliCloud: AliCloudRealtimeTranscriber(settingsStore: settingsStore),
             doubaoRealtime: DoubaoRealtimeTranscriber(settingsStore: settingsStore),

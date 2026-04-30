@@ -15,6 +15,7 @@ final class LocalModelTranscriber: Transcriber {
 
     private let settingsStore: SettingsStore
     private let modelManager: LocalSTTModelManaging
+    private let senseVoiceDecodingConfiguration: SenseVoiceDecodingConfiguration
     private let whisperKitTranscriberFactory: (String, String) -> LocalWhisperKitTranscribing
     private let whisperKitKeepAliveDurationWhenMemoryOptimized: TimeInterval
     private let whisperKitCacheLock = NSLock()
@@ -27,6 +28,7 @@ final class LocalModelTranscriber: Transcriber {
     init(
         settingsStore: SettingsStore,
         modelManager: LocalSTTModelManaging,
+        senseVoiceDecodingConfiguration: SenseVoiceDecodingConfiguration = .default,
         whisperKitKeepAliveDuration: TimeInterval = defaultWhisperKitKeepAliveDuration,
         whisperKitTranscriberFactory: @escaping (String, String) -> LocalWhisperKitTranscribing = { modelName, modelFolder in
             WhisperKitTranscriber(modelName: modelName, modelFolder: modelFolder)
@@ -34,6 +36,7 @@ final class LocalModelTranscriber: Transcriber {
     ) {
         self.settingsStore = settingsStore
         self.modelManager = modelManager
+        self.senseVoiceDecodingConfiguration = senseVoiceDecodingConfiguration
         whisperKitKeepAliveDurationWhenMemoryOptimized = whisperKitKeepAliveDuration
         self.whisperKitTranscriberFactory = whisperKitTranscriberFactory
     }
@@ -74,6 +77,7 @@ final class LocalModelTranscriber: Transcriber {
             let transcriber = SenseVoiceTranscriber(
                 modelIdentifier: model,
                 modelFolder: modelInfo.storagePath,
+                decodingConfiguration: senseVoiceDecodingConfiguration,
             )
             return try await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
 

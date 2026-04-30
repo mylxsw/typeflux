@@ -573,17 +573,20 @@ final class SherpaOnnxCommandLineDecoder {
     private let model: LocalSTTModel
     private let modelIdentifier: String
     private let modelFolder: String
+    private let senseVoiceDecodingConfiguration: SenseVoiceDecodingConfiguration
     private let processRunner: ProcessCommandRunning
 
     init(
         model: LocalSTTModel,
         modelIdentifier: String,
         modelFolder: String,
+        senseVoiceDecodingConfiguration: SenseVoiceDecodingConfiguration = .default,
         processRunner: ProcessCommandRunning = ProcessCommandRunner(),
     ) {
         self.model = model
         self.modelIdentifier = modelIdentifier
         self.modelFolder = modelFolder
+        self.senseVoiceDecodingConfiguration = senseVoiceDecodingConfiguration
         self.processRunner = processRunner
     }
 
@@ -614,7 +617,7 @@ final class SherpaOnnxCommandLineDecoder {
             )
         }
 
-        let wavURL = try AudioFileTranscoder.wavFileURL(for: audioFile)
+        let wavURL = try wavFileURL(for: audioFile)
         let arguments = try commandLineArguments(layout: layout, storageURL: storageURL, audioURL: wavURL)
         let result = try await processRunner.run(
             executablePath: executableURL.path,
@@ -626,6 +629,20 @@ final class SherpaOnnxCommandLineDecoder {
         )
 
         return try parseTranscript(stdout: result.stdout)
+    }
+
+    private func wavFileURL(for audioFile: AudioFile) throws -> URL {
+        guard model == .senseVoiceSmall,
+              senseVoiceDecodingConfiguration.audioNormalization == .mono16k
+        else {
+            return try AudioFileTranscoder.wavFileURL(for: audioFile)
+        }
+
+        return try AudioFileTranscoder.wavFileURL(
+            for: audioFile,
+            outputFormat: .mono16k,
+            forceTranscode: true,
+        )
     }
 
     func commandLineArguments(
@@ -646,8 +663,8 @@ final class SherpaOnnxCommandLineDecoder {
                 "--print-args=false",
                 "--tokens=\(modelDirectory.appendingPathComponent("tokens.txt").path)",
                 "--sense-voice-model=\(modelDirectory.appendingPathComponent("model.int8.onnx").path)",
-                "--sense-voice-language=auto",
-                "--sense-voice-use-itn=true",
+                "--sense-voice-language=\(senseVoiceDecodingConfiguration.language.rawValue)",
+                "--sense-voice-use-itn=\(senseVoiceDecodingConfiguration.useITN ? "true" : "false")",
                 "--provider=cpu",
                 audioURL.path,
             ]
@@ -691,10 +708,10 @@ final class SherpaOnnxCommandLineDecoder {
         }
 
         if let jsonTranscript = parseJSONTranscript(stdoutLine: transcript) {
-            return jsonTranscript
+            return cleanedTranscript(jsonTranscript)
         }
 
-        return transcript
+        return cleanedTranscript(transcript)
     }
 
     func parseJSONTranscript(stdoutLine: String) -> String? {
@@ -707,5 +724,17 @@ final class SherpaOnnxCommandLineDecoder {
         }
 
         return text
+    }
+
+    private func cleanedTranscript(_ transcript: String) -> String {
+        transcript
+            .replacingOccurrences(
+                of: #"<\|[^|]+?\|>"#,
+                with: "",
+                options: .regularExpression,
+            )
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
     }
 }
