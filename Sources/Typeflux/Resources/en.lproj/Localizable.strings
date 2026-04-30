@@ -500,9 +500,9 @@
 "settings.advanced.personaHotkeyApply.subtitle" = "When enabled, the persona shortcut checks for selected text first and uses the picker to rewrite that selection instead of only switching the default persona.";
 "settings.shortcuts.recording" = "Recording a new shortcut";
 "settings.shortcuts.recordingActivation" = "Press the new voice input key or key combination now.";
-"settings.shortcuts.recordingAsk" = "Press the new Ask Anything combination now. Include at least one modifier key.";
-"settings.shortcuts.recordingPersona" = "Press the shortcut that should open the persona picker. Include at least one modifier key.";
-"settings.shortcuts.recordingGeneric" = "Press the full key combination you want to use. Include at least one modifier key.";
+"settings.shortcuts.recordingAsk" = "Press the new Ask Anything key or key combination now.";
+"settings.shortcuts.recordingPersona" = "Press the shortcut that should open the persona picker.";
+"settings.shortcuts.recordingGeneric" = "Press the key or key combination you want to use.";
 "settings.shortcuts.record" = "Record";
 "settings.shortcuts.stopRecording" = "Stop Recording";
 "settings.shortcuts.activationConflict" = "Voice input shortcut cannot match the Ask Anything or persona shortcut.";

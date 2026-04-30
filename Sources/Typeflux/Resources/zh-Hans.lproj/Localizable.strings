@@ -500,9 +500,9 @@
 "settings.advanced.personaHotkeyApply.subtitle" = "开启后，人设快捷键会先检查是否有选中文本；如果有，就用所选人设直接改写该文本，而不只是切换默认人设。";
 "settings.shortcuts.recording" = "正在录制新的快捷键";
 "settings.shortcuts.recordingActivation" = "现在按下新的语音输入按键或组合键。";
-"settings.shortcuts.recordingAsk" = "现在按下新的“随便问”组合键，至少包含一个修饰键。";
-"settings.shortcuts.recordingPersona" = "现在按下用于打开人设选择器的快捷键，至少包含一个修饰键。";
-"settings.shortcuts.recordingGeneric" = "按下你想使用的完整组合键，至少包含一个修饰键。";
+"settings.shortcuts.recordingAsk" = "现在按下新的“随便问”按键或组合键。";
+"settings.shortcuts.recordingPersona" = "现在按下用于打开人设选择器的快捷键。";
+"settings.shortcuts.recordingGeneric" = "按下你想使用的按键或组合键。";
 "settings.shortcuts.record" = "录制";
 "settings.shortcuts.stopRecording" = "停止录制";
 "settings.shortcuts.activationConflict" = "语音输入快捷键不能与“随便问”或人设快捷键相同。";

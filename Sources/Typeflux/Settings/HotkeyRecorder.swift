@@ -16,21 +16,14 @@ final class HotkeyRecorder: ObservableObject {
             let keyCode = Int(event.keyCode)
             let flags = event.modifierFlags.intersection([.command, .option, .control, .shift, .function])
 
-            let binding = HotkeyBinding(keyCode: keyCode, modifierFlags: UInt(flags.rawValue))
-
-            if event.type == .flagsChanged {
-                guard binding.isRightCommandTrigger || binding.isFunctionTrigger else { return event }
-                onRecorded(binding)
-                stop()
-                return nil
+            guard let binding = Self.recordedBinding(
+                eventType: event.type,
+                keyCode: keyCode,
+                modifierFlags: UInt(flags.rawValue),
+                isRepeat: event.isARepeat,
+            ) else {
+                return event.type == .keyDown && event.isARepeat ? nil : event
             }
-
-            // Ignore repeats
-            if event.isARepeat { return nil }
-
-            // Require at least one modifier to reduce collisions.
-            if flags.isEmpty { return nil }
-
             onRecorded(binding)
             stop()
             return nil
@@ -43,5 +36,21 @@ final class HotkeyRecorder: ObservableObject {
         }
         monitor = nil
         isRecording = false
+    }
+
+    static func recordedBinding(
+        eventType: NSEvent.EventType,
+        keyCode: Int,
+        modifierFlags: UInt,
+        isRepeat: Bool,
+    ) -> HotkeyBinding? {
+        let binding = HotkeyBinding(keyCode: keyCode, modifierFlags: modifierFlags)
+
+        if eventType == .flagsChanged {
+            return binding.isModifierOnlyTrigger ? binding : nil
+        }
+
+        guard eventType == .keyDown, !isRepeat, modifierFlags != 0 else { return nil }
+        return binding
     }
 }

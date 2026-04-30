@@ -5,8 +5,19 @@ final class HotkeyFormatTests: XCTestCase {
     // MARK: - Special triggers
 
     func testDisplayRightCommandTrigger() {
-        let binding = HotkeyBinding(keyCode: 54, modifierFlags: 1_048_576)
+        let binding = HotkeyBinding(
+            keyCode: HotkeyBinding.rightCommandKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue),
+        )
         XCTAssertEqual(HotkeyFormat.display(binding), "Right Command")
+    }
+
+    func testDisplayRightOptionTrigger() {
+        let binding = HotkeyBinding(
+            keyCode: HotkeyBinding.rightOptionKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
+        )
+        XCTAssertEqual(HotkeyFormat.display(binding), "Right Option")
     }
 
     func testDisplayFnTrigger() {

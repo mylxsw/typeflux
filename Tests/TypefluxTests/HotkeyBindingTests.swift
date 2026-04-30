@@ -29,13 +29,37 @@ final class HotkeyBindingTests: XCTestCase {
     // MARK: - isRightCommandTrigger
 
     func testIsRightCommandTrigger() {
-        let binding = HotkeyBinding(keyCode: 54, modifierFlags: 1_048_576)
+        let binding = HotkeyBinding(
+            keyCode: HotkeyBinding.rightCommandKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue),
+        )
         XCTAssertTrue(binding.isRightCommandTrigger)
     }
 
     func testIsNotRightCommandTriggerWrongKeyCode() {
-        let binding = HotkeyBinding(keyCode: 55, modifierFlags: 1_048_576)
+        let binding = HotkeyBinding(
+            keyCode: HotkeyBinding.rightCommandKeyCode + 1,
+            modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue),
+        )
         XCTAssertFalse(binding.isRightCommandTrigger)
+    }
+
+    // MARK: - isRightOptionTrigger
+
+    func testIsRightOptionTrigger() {
+        let binding = HotkeyBinding(
+            keyCode: HotkeyBinding.rightOptionKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
+        )
+        XCTAssertTrue(binding.isRightOptionTrigger)
+    }
+
+    func testIsNotRightOptionTriggerWrongKeyCode() {
+        let binding = HotkeyBinding(
+            keyCode: HotkeyBinding.rightOptionKeyCode + 1,
+            modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
+        )
+        XCTAssertFalse(binding.isRightOptionTrigger)
     }
 
     // MARK: - isFunctionTrigger
@@ -57,7 +81,18 @@ final class HotkeyBindingTests: XCTestCase {
     }
 
     func testModifierOnlyForRightCommand() {
-        let binding = HotkeyBinding(keyCode: 54, modifierFlags: 1_048_576)
+        let binding = HotkeyBinding(
+            keyCode: HotkeyBinding.rightCommandKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue),
+        )
+        XCTAssertTrue(binding.isModifierOnlyTrigger)
+    }
+
+    func testModifierOnlyForRightOption() {
+        let binding = HotkeyBinding(
+            keyCode: HotkeyBinding.rightOptionKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
+        )
         XCTAssertTrue(binding.isModifierOnlyTrigger)
     }
 

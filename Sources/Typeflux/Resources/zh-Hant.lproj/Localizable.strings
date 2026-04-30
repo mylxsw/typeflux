@@ -498,9 +498,9 @@
 "settings.advanced.personaHotkeyApply.subtitle" = "開啟後，人設快捷鍵會先檢查是否有選取文字；如果有，就用所選人設直接改寫該文字，而不只是切換預設人設。";
 "settings.shortcuts.recording" = "正在錄製新的快捷鍵";
 "settings.shortcuts.recordingActivation" = "現在按下新的語音輸入按鍵或組合鍵。";
-"settings.shortcuts.recordingAsk" = "現在按下新的「隨便問」組合鍵，至少包含一個修飾鍵。";
-"settings.shortcuts.recordingPersona" = "現在按下用於打開人設選擇器的快捷鍵，至少包含一個修飾鍵。";
-"settings.shortcuts.recordingGeneric" = "按下你想使用的完整組合鍵，至少包含一個修飾鍵。";
+"settings.shortcuts.recordingAsk" = "現在按下新的「隨便問」按鍵或組合鍵。";
+"settings.shortcuts.recordingPersona" = "現在按下用於打開人設選擇器的快捷鍵。";
+"settings.shortcuts.recordingGeneric" = "按下你想使用的按鍵或組合鍵。";
 "settings.shortcuts.record" = "錄製";
 "settings.shortcuts.stopRecording" = "停止錄製";
 "settings.shortcuts.activationConflict" = "語音輸入快捷鍵不能與「隨便問」或人設快捷鍵相同。";

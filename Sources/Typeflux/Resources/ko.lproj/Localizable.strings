@@ -498,9 +498,9 @@
 "settings.advanced.personaHotkeyApply.subtitle" = "활성화되면 페르소나 단축키는 선택한 텍스트를 먼저 확인하고 기본 페르소나만 전환하는 대신 선택기를 사용하여 해당 선택 항목을 다시 작성합니다.";
 "settings.shortcuts.recording" = "새 바로가기 녹음";
 "settings.shortcuts.recordingActivation" = "지금 새로운 음성 입력 키나 키 조합을 누르세요.";
-"settings.shortcuts.recordingAsk" = "지금 새로운 무엇이든 물어보세요 조합을 누르세요. 최소한 하나의 수정자 키를 포함하세요.";
-"settings.shortcuts.recordingPersona" = "페르소나 선택기를 여는 바로가기를 누릅니다. 최소한 하나의 수정자 키를 포함하세요.";
-"settings.shortcuts.recordingGeneric" = "사용하려는 전체 키 조합을 누르세요. 최소한 하나의 수정자 키를 포함하세요.";
+"settings.shortcuts.recordingAsk" = "지금 새로운 무엇이든 물어보세요 키나 키 조합을 누르세요.";
+"settings.shortcuts.recordingPersona" = "페르소나 선택기를 여는 바로가기를 누르세요.";
+"settings.shortcuts.recordingGeneric" = "사용하려는 키나 키 조합을 누르세요.";
 "settings.shortcuts.record" = "기록";
 "settings.shortcuts.stopRecording" = "녹음 중지";
 "settings.shortcuts.activationConflict" = "음성 입력 바로가기는 무엇이든 물어보세요 또는 페르소나 바로가기와 일치할 수 없습니다.";

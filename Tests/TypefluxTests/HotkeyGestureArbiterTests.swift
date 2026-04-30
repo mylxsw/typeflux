@@ -188,6 +188,34 @@ final class HotkeyGestureArbiterTests: XCTestCase {
 
         XCTAssertEqual(events, [.activationTapped])
     }
+
+    func testRightOptionModifierOnlyActivationBeginsAndEnds() {
+        var arbiter = HotkeyGestureArbiter()
+        let rightOptionActivation = HotkeyBinding(
+            keyCode: HotkeyBinding.rightOptionKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
+        )
+
+        let beginEvents = arbiter.handleFlagsChanged(
+            keyCode: HotkeyBinding.rightOptionKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
+            activationHotkey: rightOptionActivation,
+            askHotkey: nil,
+        )
+
+        XCTAssertEqual(beginEvents, [.begin(.activation)])
+        XCTAssertEqual(arbiter.phase, .active(.activation))
+
+        let endEvents = arbiter.handleFlagsChanged(
+            keyCode: HotkeyBinding.rightOptionKeyCode,
+            modifierFlags: 0,
+            activationHotkey: rightOptionActivation,
+            askHotkey: nil,
+        )
+
+        XCTAssertEqual(endEvents, [.end(.activation)])
+        XCTAssertEqual(arbiter.phase, .idle)
+    }
 }
 
 // MARK: - Extended HotkeyGestureArbiter tests

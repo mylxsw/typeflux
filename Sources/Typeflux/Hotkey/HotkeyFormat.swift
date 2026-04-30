@@ -10,6 +10,9 @@ enum HotkeyFormat {
         if binding.isRightCommandTrigger {
             return ["Right Command"]
         }
+        if binding.isRightOptionTrigger {
+            return ["Right Option"]
+        }
         if binding.isFunctionTrigger {
             return ["Fn"]
         }

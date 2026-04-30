@@ -498,9 +498,9 @@
 "settings.advanced.personaHotkeyApply.subtitle" = "有効にすると、ペルソナ ショートカットは最初に選択されたテキストを確認し、デフォルトのペルソナを切り替えるだけでなく、ピッカーを使用してその選択を書き換えます。";
 "settings.shortcuts.recording" = "新しいショートカットを記録する";
 "settings.shortcuts.recordingActivation" = "新しい音声入力キーまたはキーの組み合わせを今すぐ押してください。";
-"settings.shortcuts.recordingAsk" = "新しい「何でも質問」の組み合わせを今すぐ押してください。少なくとも 1 つの修飾キーを含めます。";
-"settings.shortcuts.recordingPersona" = "ペルソナピッカーを開くショートカットを押します。少なくとも 1 つの修飾キーを含めます。";
-"settings.shortcuts.recordingGeneric" = "使用するキーの組み合わせをすべて押します。少なくとも 1 つの修飾キーを含めます。";
+"settings.shortcuts.recordingAsk" = "新しい「何でも質問」のキーまたはキーの組み合わせを今すぐ押してください。";
+"settings.shortcuts.recordingPersona" = "ペルソナピッカーを開くショートカットを押してください。";
+"settings.shortcuts.recordingGeneric" = "使用するキーまたはキーの組み合わせを押してください。";
 "settings.shortcuts.record" = "記録";
 "settings.shortcuts.stopRecording" = "録音を停止する";
 "settings.shortcuts.activationConflict" = "音声入力ショートカットは、「何でも質問」またはペルソナのショートカットと一致することはできません。";
