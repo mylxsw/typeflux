@@ -142,6 +142,8 @@ final class AutoModelDownloadService {
             return SenseVoiceTranscriber(modelIdentifier: config.modelIdentifier, modelFolder: path)
         case .qwen3ASR:
             return Qwen3ASRTranscriber(modelIdentifier: config.modelIdentifier, modelFolder: path)
+        case .funASR:
+            return FunASRTranscriber(modelIdentifier: config.modelIdentifier, modelFolder: path)
         }
     }
 

@@ -275,7 +275,7 @@ final class LocalModelManager: LocalSTTModelManaging {
                 downloadBasePath: downloadBasePath,
                 onUpdate: onUpdate,
             )
-        case .senseVoiceSmall, .qwen3ASR:
+        case .senseVoiceSmall, .qwen3ASR, .funASR:
             resultPath = try await sherpaOnnxInstaller.prepareModel(
                 configuration.model,
                 at: URL(fileURLWithPath: downloadBasePath, isDirectory: true),
@@ -752,7 +752,7 @@ final class LocalModelManager: LocalSTTModelManaging {
         switch model {
         case .whisperLocal, .whisperLocalLarge:
             return isUsableWhisperKitModelFolder(storagePath)
-        case .senseVoiceSmall, .qwen3ASR:
+        case .senseVoiceSmall, .qwen3ASR, .funASR:
             guard let layout = SherpaOnnxModelLayout.layout(for: model) else {
                 return false
             }
