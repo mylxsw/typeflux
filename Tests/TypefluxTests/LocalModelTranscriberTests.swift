@@ -1,7 +1,22 @@
 @testable import Typeflux
+import WhisperKit
 import XCTest
 
 final class LocalModelTranscriberTests: XCTestCase {
+    func testWhisperKitTranscriberUsesAutomaticLanguageDetection() {
+        let originalLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.english)
+        defer { AppLocalization.shared.setLanguage(originalLanguage) }
+
+        let options = WhisperKitTranscriber.decodingOptions()
+
+        XCTAssertEqual(options.task, .transcribe)
+        XCTAssertNil(options.language)
+        XCTAssertTrue(options.detectLanguage)
+        XCTAssertTrue(options.usePrefillPrompt)
+        XCTAssertTrue(options.withoutTimestamps)
+    }
+
     func testSenseVoiceTranscriberUsesAutomaticLanguageDetectionAndParsesTranscript() async throws {
         let originalLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)

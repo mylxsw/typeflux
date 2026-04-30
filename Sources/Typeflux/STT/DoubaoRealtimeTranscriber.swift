@@ -418,6 +418,7 @@ private actor DoubaoRealtimeSession {
     private var lastSnapshot = TranscriptionSnapshot(text: "", isFinal: false)
     private var activeConnection: DoubaoPreparedConnection?
     private var receiveTask: Task<Void, Never>?
+    private var didSendAudioEnd = false
 
     private init(
         pcmData: Data,
@@ -485,6 +486,7 @@ private actor DoubaoRealtimeSession {
             .data(DoubaoProtocol.encodeAudioPacket(audioData: Data(), isLast: true)),
             description: "audio_end",
         )
+        didSendAudioEnd = true
 
         try await waitForCompletion()
 
@@ -550,7 +552,9 @@ private actor DoubaoRealtimeSession {
                 try await socketTask.send(message)
                 return
             } catch {
-                guard isRetriableSocketConnectionError(error), attempt < retryDelays.count - 1 else {
+                guard DoubaoRealtimeCompletionPolicy.isSocketNotConnected(error),
+                      attempt < retryDelays.count - 1
+                else {
                     throw error
                 }
 
@@ -576,6 +580,18 @@ private actor DoubaoRealtimeSession {
             } catch {
                 if Task.isCancelled { break }
                 if didFinish {
+                    break
+                }
+                if DoubaoRealtimeCompletionPolicy.shouldTreatReceiveErrorAsCompletedAfterAudioEnd(
+                    error,
+                    didSendAudioEnd: didSendAudioEnd,
+                ) {
+                    NetworkDebugLogger.logWebSocketEvent(
+                        provider: "Doubao Realtime ASR",
+                        phase: "closed_after_audio_end",
+                        details: "text_length=\(lastSnapshot.text.count)",
+                    )
+                    finish()
                     break
                 }
                 NetworkDebugLogger.logError(context: "Doubao realtime receive loop failed", error: error)
@@ -673,7 +689,14 @@ private actor DoubaoRealtimeSession {
         return "type=\(header.messageType) flags=\(header.flags) bytes=\(data.count)"
     }
 
-    private func isRetriableSocketConnectionError(_ error: Error) -> Bool {
+}
+
+enum DoubaoRealtimeCompletionPolicy {
+    static func shouldTreatReceiveErrorAsCompletedAfterAudioEnd(_ error: Error, didSendAudioEnd: Bool) -> Bool {
+        didSendAudioEnd && isSocketNotConnected(error)
+    }
+
+    static func isSocketNotConnected(_ error: Error) -> Bool {
         let nsError = error as NSError
         if nsError.domain == NSPOSIXErrorDomain && nsError.code == Int(ENOTCONN) {
             return true

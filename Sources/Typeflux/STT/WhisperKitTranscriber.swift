@@ -54,13 +54,7 @@ final class WhisperKitTranscriber: Transcriber {
     ) async throws -> String {
         let pipe = try await ensurePipeline()
 
-        let language = AppLocalization.shared.language.whisperKitLanguageCode
-        let options = DecodingOptions(
-            verbose: false,
-            task: .transcribe,
-            language: language,
-            withoutTimestamps: true,
-        )
+        let options = Self.decodingOptions()
 
         let results: [TranscriptionResult] = try await pipe.transcribe(
             audioPath: audioFile.fileURL.path,
@@ -77,6 +71,17 @@ final class WhisperKitTranscriber: Transcriber {
         let text = (results.first?.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         await onUpdate(TranscriptionSnapshot(text: text, isFinal: true))
         return text
+    }
+
+    static func decodingOptions() -> DecodingOptions {
+        DecodingOptions(
+            verbose: false,
+            task: .transcribe,
+            language: nil,
+            usePrefillPrompt: true,
+            detectLanguage: true,
+            withoutTimestamps: true,
+        )
     }
 
     // MARK: - Preparation

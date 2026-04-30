@@ -1,4 +1,5 @@
 @testable import Typeflux
+import Darwin
 import XCTest
 
 final class DoubaoRealtimeProtocolTests: XCTestCase {
@@ -42,6 +43,42 @@ final class DoubaoRealtimeProtocolTests: XCTestCase {
         XCTAssertEqual(response.snapshot.text, "你好世界")
         XCTAssertTrue(response.snapshot.isFinal)
         XCTAssertEqual(response.utterances.count, 2)
+    }
+
+    func testCompletionPolicyTreatsSocketCloseAfterAudioEndAsCompleted() {
+        let error = NSError(
+            domain: NSPOSIXErrorDomain,
+            code: Int(ENOTCONN),
+            userInfo: [NSLocalizedDescriptionKey: "Socket is not connected"],
+        )
+
+        XCTAssertTrue(
+            DoubaoRealtimeCompletionPolicy.shouldTreatReceiveErrorAsCompletedAfterAudioEnd(
+                error,
+                didSendAudioEnd: true,
+            ),
+        )
+        XCTAssertFalse(
+            DoubaoRealtimeCompletionPolicy.shouldTreatReceiveErrorAsCompletedAfterAudioEnd(
+                error,
+                didSendAudioEnd: false,
+            ),
+        )
+    }
+
+    func testCompletionPolicyDoesNotCompleteForUnrelatedErrors() {
+        let error = NSError(
+            domain: NSURLErrorDomain,
+            code: NSURLErrorTimedOut,
+            userInfo: [NSLocalizedDescriptionKey: "The request timed out."],
+        )
+
+        XCTAssertFalse(
+            DoubaoRealtimeCompletionPolicy.shouldTreatReceiveErrorAsCompletedAfterAudioEnd(
+                error,
+                didSendAudioEnd: true,
+            ),
+        )
     }
 }
 

@@ -116,21 +116,71 @@ private struct BatchConfiguration {
         URL(fileURLWithPath: outputURL.path + ".state.json")
     }
 
-    fileprivate static let helpText = """
+    private static var sttProviderTable: String {
+        let rows = STTProvider.allCases.map { provider in
+            [provider.rawValue, provider.displayName]
+        }
+        return markdownTable(headers: ["Value", "Display name"], rows: rows)
+    }
+
+    private static var localSTTModelTable: String {
+        let rows = LocalSTTModel.allCases.map { model in
+            [model.rawValue, model.displayName, model.defaultModelIdentifier]
+        }
+        return markdownTable(headers: ["Value", "Display name", "Default model identifier"], rows: rows)
+    }
+
+    private static var personaTable: String {
+        let settingsStore = SettingsStore()
+        let rows = settingsStore.personas.map { persona in
+            [persona.name, persona.id.uuidString, persona.kind.rawValue]
+        }
+        return markdownTable(headers: ["Name (--persona-name)", "ID (--persona-id)", "Kind"], rows: rows)
+    }
+
+    private static func markdownTable(headers: [String], rows: [[String]]) -> String {
+        let header = "| " + headers.map(escapeMarkdownTableCell).joined(separator: " | ") + " |"
+        let divider = "| " + headers.map { _ in "---" }.joined(separator: " | ") + " |"
+        let body = rows.map { row in
+            "| " + row.map(escapeMarkdownTableCell).joined(separator: " | ") + " |"
+        }
+        return ([header, divider] + body).joined(separator: "\n")
+    }
+
+    private static func escapeMarkdownTableCell(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "|", with: "\\|")
+    }
+
+    fileprivate static var helpText: String {
+        """
     Usage:
-      Typeflux batch-wav --input <wav-directory> --output <report.csv> [options]
+      Typeflux batch-wav --input <wav-directory> --output <report.csv> [--stt-provider <provider>] [--local-stt-model <model>] [--persona-id <uuid>|--persona-name <name>|--persona-prompt-file <path>] [options]
 
     Options:
       --resume                         Continue from the default or explicit state file.
       --retry-failed                   Retry rows previously marked failed.
       --state <path>                   Override the default state path. Defaults to <output>.state.json.
-      --stt-provider <rawValue>        Override the app STT provider for this run.
-      --local-stt-model <rawValue>     Override the local STT model for this run.
-      --persona-id <uuid>              Use a specific saved persona.
-      --persona-name <name>            Use a specific saved persona by name.
-      --persona-prompt-file <path>     Use a prompt file instead of a saved persona.
+      --stt-provider <provider>        Optional STT provider override. See table below.
+      --local-stt-model <model>        Optional local STT model override. See table below.
+      --persona-id <uuid>              Optional saved persona selector by ID.
+      --persona-name <name>            Optional saved persona selector by name.
+      --persona-prompt-file <path>     Optional prompt file selector instead of a saved persona.
       --no-persona                     Only transcribe; write the transcript as the final result.
+
+    Parameter Tables:
+
+    STT providers (--stt-provider):
+    \(sttProviderTable)
+
+    Local STT models (--local-stt-model):
+    \(localSTTModelTable)
+
+    Personas (--persona-name / --persona-id):
+    \(personaTable)
     """
+    }
 }
 
 private enum PersonaSelector {
