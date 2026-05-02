@@ -132,6 +132,8 @@ final class HotkeyFormatTests: XCTestCase {
             (122, "F1"), (120, "F2"), (99, "F3"), (118, "F4"),
             (96, "F5"), (97, "F6"), (98, "F7"), (100, "F8"),
             (101, "F9"), (109, "F10"), (103, "F11"), (111, "F12"),
+            (105, "F13"), (107, "F14"), (113, "F15"), (106, "F16"),
+            (64, "F17"), (79, "F18"), (80, "F19"), (90, "F20"),
         ]
         for (code, name) in expected {
             let binding = HotkeyBinding(keyCode: code, modifierFlags: 0)
@@ -140,10 +142,40 @@ final class HotkeyFormatTests: XCTestCase {
         }
     }
 
-    func testUnmappedKeyCodeFallback() {
+    func testKeypadKeys() {
+        let expected: [(Int, String)] = [
+            (65, "Keypad ."), (67, "Keypad *"), (69, "Keypad +"),
+            (75, "Keypad /"), (76, "Keypad Enter"), (78, "Keypad -"),
+            (81, "Keypad ="), (82, "Keypad 0"), (83, "Keypad 1"),
+            (84, "Keypad 2"), (85, "Keypad 3"), (86, "Keypad 4"),
+            (87, "Keypad 5"), (88, "Keypad 6"), (89, "Keypad 7"),
+            (91, "Keypad 8"), (92, "Keypad 9"),
+        ]
+        for (code, name) in expected {
+            let binding = HotkeyBinding(keyCode: code, modifierFlags: 0)
+            let parts = HotkeyFormat.components(binding)
+            XCTAssertEqual(parts.last, name, "keyCode \(code) should map to \(name)")
+        }
+    }
+
+    func testNavigationAndSystemKeys() {
+        let expected: [(Int, String)] = [
+            (71, "Clear"), (72, "Volume Up"), (73, "Volume Down"),
+            (74, "Mute"), (114, "Help"), (115, "Home"),
+            (116, "Page Up"), (117, "Forward Delete"), (119, "End"),
+            (121, "Page Down"),
+        ]
+        for (code, name) in expected {
+            let binding = HotkeyBinding(keyCode: code, modifierFlags: 0)
+            let parts = HotkeyFormat.components(binding)
+            XCTAssertEqual(parts.last, name, "keyCode \(code) should map to \(name)")
+        }
+    }
+
+    func testUnmappedKeyCodeFallbackIsUserFacing() {
         let binding = HotkeyBinding(keyCode: 200, modifierFlags: 0)
         let parts = HotkeyFormat.components(binding)
-        XCTAssertEqual(parts.last, "Key200")
+        XCTAssertEqual(parts.last, "Unknown Key")
     }
 
     func testPunctuationKeys() {

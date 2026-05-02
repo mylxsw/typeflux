@@ -26,11 +26,11 @@ enum HotkeyFormat {
             flags.contains(.command) ? "⌘" : nil,
         ].compactMap(\.self)
 
-        parts.append(keyCodeToName(binding.keyCode))
+        parts.append(keyCodeDisplayName(binding.keyCode))
         return parts
     }
 
-    private static func keyCodeToName(_ keyCode: Int) -> String {
+    private static func keyCodeDisplayName(_ keyCode: Int) -> String {
         switch keyCode {
         case 0: "A"
         case 1: "S"
@@ -84,6 +84,31 @@ enum HotkeyFormat {
         case 50: "`"
         case 51: "Delete"
         case 53: "Escape"
+        case 64: "F17"
+        case 65: "Keypad ."
+        case 67: "Keypad *"
+        case 69: "Keypad +"
+        case 71: "Clear"
+        case 72: "Volume Up"
+        case 73: "Volume Down"
+        case 74: "Mute"
+        case 75: "Keypad /"
+        case 76: "Keypad Enter"
+        case 78: "Keypad -"
+        case 79: "F18"
+        case 80: "F19"
+        case 81: "Keypad ="
+        case 82: "Keypad 0"
+        case 83: "Keypad 1"
+        case 84: "Keypad 2"
+        case 85: "Keypad 3"
+        case 86: "Keypad 4"
+        case 87: "Keypad 5"
+        case 88: "Keypad 6"
+        case 89: "Keypad 7"
+        case 90: "F20"
+        case 91: "Keypad 8"
+        case 92: "Keypad 9"
         case 96: "F5"
         case 97: "F6"
         case 98: "F7"
@@ -91,16 +116,26 @@ enum HotkeyFormat {
         case 100: "F8"
         case 101: "F9"
         case 103: "F11"
+        case 105: "F13"
+        case 106: "F16"
+        case 107: "F14"
         case 109: "F10"
         case 111: "F12"
+        case 113: "F15"
+        case 114: "Help"
+        case 115: "Home"
+        case 116: "Page Up"
+        case 117: "Forward Delete"
         case 118: "F4"
+        case 119: "End"
         case 120: "F2"
+        case 121: "Page Down"
         case 122: "F1"
         case 123: "←"
         case 124: "→"
         case 125: "↓"
         case 126: "↑"
-        default: "Key\(keyCode)"
+        default: "Unknown Key"
         }
     }
 }
