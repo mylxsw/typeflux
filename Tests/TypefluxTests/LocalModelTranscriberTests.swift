@@ -34,8 +34,8 @@ final class LocalModelTranscriberTests: XCTestCase {
         let text = try await transcriber.transcribe(audioFile: audioFile)
 
         XCTAssertEqual(text, "你好 Typeflux")
-        XCTAssertEqual(runner.lastExecutablePath, modelFolder.appendingPathComponent("sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts/bin/sherpa-onnx-offline").path)
-        XCTAssertEqual(runner.lastEnvironment?["DYLD_LIBRARY_PATH"], modelFolder.appendingPathComponent("sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts/lib").path)
+        XCTAssertEqual(runner.lastExecutablePath, modelFolder.appendingPathComponent("sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/bin/sherpa-onnx-offline").path)
+        XCTAssertEqual(runner.lastEnvironment?["DYLD_LIBRARY_PATH"], modelFolder.appendingPathComponent("sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib").path)
         XCTAssertTrue(runner.lastArguments.contains("--sense-voice-language=auto"))
         XCTAssertTrue(runner.lastArguments.contains("--sense-voice-use-itn=true"))
         XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--sense-voice-model=") }))
@@ -104,8 +104,8 @@ final class LocalModelTranscriberTests: XCTestCase {
         let text = try await transcriber.transcribe(audioFile: audioFile)
 
         XCTAssertEqual(text, "你好 Typeflux")
-        XCTAssertEqual(runner.lastExecutablePath, modelFolder.appendingPathComponent("sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts/bin/sherpa-onnx-offline").path)
-        XCTAssertEqual(runner.lastEnvironment?["DYLD_LIBRARY_PATH"], modelFolder.appendingPathComponent("sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts/lib").path)
+        XCTAssertEqual(runner.lastExecutablePath, modelFolder.appendingPathComponent("sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/bin/sherpa-onnx-offline").path)
+        XCTAssertEqual(runner.lastEnvironment?["DYLD_LIBRARY_PATH"], modelFolder.appendingPathComponent("sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib").path)
         XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--paraformer=") }))
         XCTAssertTrue(runner.lastArguments.contains(where: { $0.hasPrefix("--tokens=") }))
         XCTAssertEqual(runner.lastArguments.last, audioFile.fileURL.path)

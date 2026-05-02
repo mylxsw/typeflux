@@ -7,10 +7,10 @@ if [[ $# -ne 1 ]]; then
 fi
 
 TARGET_RUNTIME_FOLDER="$1"
-RUNTIME_VERSION="v1.13.0"
+RUNTIME_VERSION="v1.12.35"
 RUNTIME_ROOT="sherpa-onnx-${RUNTIME_VERSION}-osx-universal2-shared-no-tts"
 RUNTIME_ARCHIVE_URL="https://github.com/k2-fsa/sherpa-onnx/releases/download/${RUNTIME_VERSION}/sherpa-onnx-${RUNTIME_VERSION}-osx-universal2-shared-no-tts.tar.bz2"
-VERSIONED_LIB="libonnxruntime.1.24.4.dylib"
+VERSIONED_LIB="libonnxruntime.1.23.2.dylib"
 
 MAX_RETRIES=3
 RETRY_DELAY_SECONDS=5

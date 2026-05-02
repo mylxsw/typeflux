@@ -30,7 +30,7 @@ profile_supports_apple_sign_in() {
 install_bundled_models() {
   local bundled_models_dir="$APP_DIR/Contents/Resources/BundledModels"
   local bundled_runtimes_dir="$APP_DIR/Contents/Resources/LocalRuntimes"
-  local sherpa_runtime_root="$bundled_runtimes_dir/sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts"
+  local sherpa_runtime_root="$bundled_runtimes_dir/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts"
   rm -rf "$bundled_models_dir"
   rm -rf "$bundled_runtimes_dir"
 

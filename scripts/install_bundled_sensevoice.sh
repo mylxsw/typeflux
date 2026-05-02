@@ -8,7 +8,7 @@ fi
 
 TARGET_MODEL_FOLDER="$1"
 RUNTIME_ROOT_FOLDER="${2:-}"
-RUNTIME_ROOT_NAME="sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts"
+RUNTIME_ROOT_NAME="sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts"
 MODEL_ROOT="sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17"
 MODEL_URL="https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/main/model.int8.onnx"
 TOKENS_URL="https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/main/tokens.txt"

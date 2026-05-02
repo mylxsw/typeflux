@@ -71,7 +71,7 @@ cp -R "$RESOURCE_BUNDLE" "$APP_BUNDLE/Contents/Resources/Typeflux_Typeflux.bundl
 
 rm -rf "$APP_BUNDLE/Contents/Resources/BundledModels"
 rm -rf "$APP_BUNDLE/Contents/Resources/LocalRuntimes"
-SHERPA_RUNTIME_ROOT="$APP_BUNDLE/Contents/Resources/LocalRuntimes/sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts"
+SHERPA_RUNTIME_ROOT="$APP_BUNDLE/Contents/Resources/LocalRuntimes/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts"
 "${ROOT_DIR}/scripts/install_bundled_sherpa_runtime.sh" "$SHERPA_RUNTIME_ROOT"
 
 if [[ "$RELEASE_VARIANT" == "full" ]]; then
@@ -186,6 +186,8 @@ else
   echo "Warning: Sign In with Apple is disabled for this release build."
   echo "Warning: To enable it, set TYPEFLUX_PROVISIONING_PROFILE to a macOS provisioning profile whose App ID matches ai.gulu.app.typeflux and includes the Sign In with Apple capability."
 fi
+
+"${ROOT_DIR}/scripts/audit_macho_minos.sh" "$APP_BUNDLE" "${TYPEFLUX_MAX_MACHO_MINOS:-13.4}"
 
 create_zip_archive
 

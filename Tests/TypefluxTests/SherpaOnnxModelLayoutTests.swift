@@ -27,7 +27,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
 
     func testSenseVoiceSmallRuntimeDirectory() throws {
         let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
-        XCTAssertEqual(layout.runtimeRootDirectory, "sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts")
+        XCTAssertEqual(layout.runtimeRootDirectory, "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts")
     }
 
     func testSenseVoiceSmallModelDirectory() throws {
@@ -39,7 +39,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
         XCTAssertEqual(
             layout.runtimeArchiveURL.absoluteString,
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.0/sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts.tar.bz2",
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.35/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts.tar.bz2",
         )
     }
 
@@ -75,7 +75,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         )
         XCTAssertEqual(
             LocalModelDownloadCatalog.sherpaOnnxRuntimeArchiveURL(source: .huggingFace).absoluteString,
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.0/sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts.tar.bz2",
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.35/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts.tar.bz2",
         )
         XCTAssertNil(LocalModelDownloadCatalog.sherpaOnnxModelArchiveURL(for: .senseVoiceSmall, source: .huggingFace))
         XCTAssertNil(LocalModelDownloadCatalog.sherpaOnnxModelArchiveURL(for: .whisperLocal, source: .huggingFace))
@@ -114,7 +114,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         )
         XCTAssertEqual(
             LocalModelDownloadCatalog.sherpaOnnxRuntimeArchiveURL(source: .modelScope).absoluteString,
-            "https://sourceforge.net/projects/sherpa-onnx.mirror/files/v1.13.0/sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts.tar.bz2/download",
+            "https://sourceforge.net/projects/sherpa-onnx.mirror/files/v1.12.35/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts.tar.bz2/download",
         )
         XCTAssertNil(LocalModelDownloadCatalog.sherpaOnnxModelArchiveURL(for: .senseVoiceSmall, source: .modelScope))
         XCTAssertNil(LocalModelDownloadCatalog.sherpaOnnxModelArchiveURL(for: .qwen3ASR, source: .modelScope))
@@ -182,7 +182,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
         XCTAssertEqual(layout.requiredRelativePaths.count, 6)
         XCTAssertTrue(layout.requiredRelativePaths.contains(
-            "sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts/lib/\(LocalModelDownloadCatalog.sherpaOnnxRuntimeVersionedLibraryName)"
+            "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib/\(LocalModelDownloadCatalog.sherpaOnnxRuntimeVersionedLibraryName)"
         ))
         XCTAssertTrue(layout.requiredRelativePaths.contains("sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/model.int8.onnx"))
         XCTAssertTrue(layout.requiredRelativePaths.contains("sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/tokens.txt"))
@@ -192,7 +192,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
 
     func testQwen3ASRRuntimeDirectory() throws {
         let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .qwen3ASR))
-        XCTAssertEqual(layout.runtimeRootDirectory, "sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts")
+        XCTAssertEqual(layout.runtimeRootDirectory, "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts")
     }
 
     func testQwen3ASRModelDirectory() throws {
@@ -203,7 +203,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
     func testQwen3ASRRequiredPaths() throws {
         let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .qwen3ASR))
         XCTAssertTrue(layout.requiredRelativePaths.contains(
-            "sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts/lib/\(LocalModelDownloadCatalog.sherpaOnnxRuntimeVersionedLibraryName)"
+            "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib/\(LocalModelDownloadCatalog.sherpaOnnxRuntimeVersionedLibraryName)"
         ))
         XCTAssertTrue(layout.requiredRelativePaths.contains("sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/conv_frontend.onnx"))
         XCTAssertTrue(layout.requiredRelativePaths.contains("sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/encoder.int8.onnx"))
@@ -215,7 +215,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
 
     func testFunASRRuntimeDirectory() throws {
         let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .funASR))
-        XCTAssertEqual(layout.runtimeRootDirectory, "sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts")
+        XCTAssertEqual(layout.runtimeRootDirectory, "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts")
     }
 
     func testFunASRModelDirectory() throws {
@@ -227,7 +227,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .funASR))
         XCTAssertEqual(layout.requiredRelativePaths.count, 6)
         XCTAssertTrue(layout.requiredRelativePaths.contains(
-            "sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts/lib/\(LocalModelDownloadCatalog.sherpaOnnxRuntimeVersionedLibraryName)"
+            "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib/\(LocalModelDownloadCatalog.sherpaOnnxRuntimeVersionedLibraryName)"
         ))
         XCTAssertTrue(layout.requiredRelativePaths.contains("sherpa-onnx-paraformer-zh-small-2024-03-09/model.int8.onnx"))
         XCTAssertTrue(layout.requiredRelativePaths.contains("sherpa-onnx-paraformer-zh-small-2024-03-09/tokens.txt"))
@@ -273,7 +273,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let executableURL = layout.runtimeExecutableURL(storageURL: storage)
         XCTAssertEqual(
             executableURL.path,
-            "/models/sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts/bin/sherpa-onnx-offline",
+            "/models/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/bin/sherpa-onnx-offline",
         )
     }
 
@@ -283,7 +283,7 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         let libURL = layout.runtimeLibraryURL(storageURL: storage)
         XCTAssertEqual(
             libURL.path,
-            "/models/sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts/lib",
+            "/models/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib",
         )
     }
 
@@ -341,6 +341,62 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
             layout.missingOrUnusableRelativePaths(storageURL: tmpURL),
             ["\(layout.runtimeRootDirectory)/lib/\(LocalModelDownloadCatalog.sherpaOnnxRuntimeVersionedLibraryName)"],
         )
+    }
+
+    func testIsInstalledRejectsRuntimeDylibRequiringNewerMacOS() throws {
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
+        let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tmpURL) }
+
+        for relativePath in layout.requiredRelativePaths {
+            let fullURL = tmpURL.appendingPathComponent(relativePath, isDirectory: false)
+            try FileManager.default.createDirectory(
+                at: fullURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true,
+            )
+
+            switch fullURL.lastPathComponent {
+            case "sherpa-onnx-offline":
+                try machOFixtureData().write(to: fullURL)
+                try FileManager.default.setAttributes(
+                    [.posixPermissions: NSNumber(value: Int16(0o755))],
+                    ofItemAtPath: fullURL.path,
+                )
+            case let name where name == LocalModelDownloadCatalog.sherpaOnnxRuntimeVersionedLibraryName:
+                try machOFixtureData(
+                    minimumOSVersion: OperatingSystemVersion(
+                        majorVersion: 15,
+                        minorVersion: 5,
+                        patchVersion: 0,
+                    )
+                ).write(to: fullURL)
+            case let name where name.hasSuffix(".dylib"):
+                try machOFixtureData().write(to: fullURL)
+            case "tokens.txt":
+                try Data("<unk> 0\n<s> 1\n</s> 2\n".utf8).write(to: fullURL)
+            default:
+                try Data(repeating: 0x5A, count: 1_048_576).write(to: fullURL)
+            }
+        }
+
+        let macOS154 = OperatingSystemVersion(majorVersion: 15, minorVersion: 4, patchVersion: 0)
+        let macOS155 = OperatingSystemVersion(majorVersion: 15, minorVersion: 5, patchVersion: 0)
+
+        XCTAssertFalse(layout.isInstalled(
+            storageURL: tmpURL,
+            runtimeCompatibilitySystemVersion: macOS154,
+        ))
+        XCTAssertEqual(
+            layout.missingOrUnusableRelativePaths(
+                storageURL: tmpURL,
+                runtimeCompatibilitySystemVersion: macOS154,
+            ),
+            ["\(layout.runtimeRootDirectory)/lib/\(LocalModelDownloadCatalog.sherpaOnnxRuntimeVersionedLibraryName)"],
+        )
+        XCTAssertTrue(layout.isInstalled(
+            storageURL: tmpURL,
+            runtimeCompatibilitySystemVersion: macOS155,
+        ))
     }
 
     func testIsInstalledReturnsTrueWhenDirectoriesExist() throws {
@@ -493,7 +549,37 @@ final class SherpaOnnxModelLayoutTests: XCTestCase {
         XCTAssertNil(decoder.parseJSONTranscript(stdoutLine: "{invalid json"))
     }
 
-    private func machOFixtureData() -> Data {
-        Data([0xCF, 0xFA, 0xED, 0xFE, 0x46, 0x49, 0x58, 0x54, 0x55, 0x52, 0x45])
+    private func machOFixtureData(minimumOSVersion: OperatingSystemVersion? = nil) -> Data {
+        guard let minimumOSVersion else {
+            return Data([0xCF, 0xFA, 0xED, 0xFE, 0x46, 0x49, 0x58, 0x54, 0x55, 0x52, 0x45])
+        }
+
+        var data = Data()
+        appendLittleEndianUInt32(0xFEED_FACF, to: &data)
+        appendLittleEndianUInt32(0x0100_0007, to: &data)
+        appendLittleEndianUInt32(3, to: &data)
+        appendLittleEndianUInt32(6, to: &data)
+        appendLittleEndianUInt32(1, to: &data)
+        appendLittleEndianUInt32(24, to: &data)
+        appendLittleEndianUInt32(0, to: &data)
+        appendLittleEndianUInt32(0, to: &data)
+
+        let encodedVersion = UInt32(minimumOSVersion.majorVersion << 16)
+            | UInt32(minimumOSVersion.minorVersion << 8)
+            | UInt32(minimumOSVersion.patchVersion)
+        appendLittleEndianUInt32(0x32, to: &data)
+        appendLittleEndianUInt32(24, to: &data)
+        appendLittleEndianUInt32(1, to: &data)
+        appendLittleEndianUInt32(encodedVersion, to: &data)
+        appendLittleEndianUInt32(encodedVersion, to: &data)
+        appendLittleEndianUInt32(0, to: &data)
+        return data
+    }
+
+    private func appendLittleEndianUInt32(_ value: UInt32, to data: inout Data) {
+        data.append(UInt8(value & 0xFF))
+        data.append(UInt8((value >> 8) & 0xFF))
+        data.append(UInt8((value >> 16) & 0xFF))
+        data.append(UInt8((value >> 24) & 0xFF))
     }
 }

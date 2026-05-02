@@ -49,8 +49,8 @@ enum LocalModelDownloadCatalog {
     }
 
     private enum SherpaOnnxRuntimeCatalog {
-        static let rootDirectory = "sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts"
-        static let onnxRuntimeVersionedLibraryName = "libonnxruntime.1.24.4.dylib"
+        static let rootDirectory = "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts"
+        static let onnxRuntimeVersionedLibraryName = "libonnxruntime.1.23.2.dylib"
         static let archiveURLKeys: [ModelDownloadSource: LocalModelDownloadURLCatalog.Key] = [
             .huggingFace: .sherpaOnnxRuntimeHuggingFaceArchive,
             .modelScope: .sherpaOnnxRuntimeChinaMirrorArchive,

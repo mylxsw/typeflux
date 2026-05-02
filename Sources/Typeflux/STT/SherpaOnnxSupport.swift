@@ -146,12 +146,28 @@ struct SherpaOnnxModelLayout {
         storageURL.appendingPathComponent(modelRootDirectory, isDirectory: true)
     }
 
-    func isInstalled(storageURL: URL, fileManager: FileManager = .default) -> Bool {
-        missingOrUnusableRelativePaths(storageURL: storageURL, fileManager: fileManager).isEmpty
+    func isInstalled(
+        storageURL: URL,
+        fileManager: FileManager = .default,
+        runtimeCompatibilitySystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
+    ) -> Bool {
+        missingOrUnusableRelativePaths(
+            storageURL: storageURL,
+            fileManager: fileManager,
+            runtimeCompatibilitySystemVersion: runtimeCompatibilitySystemVersion,
+        ).isEmpty
     }
 
-    func isRuntimeInstalled(storageURL: URL, fileManager: FileManager = .default) -> Bool {
-        missingOrUnusableRuntimeRelativePaths(storageURL: storageURL, fileManager: fileManager).isEmpty
+    func isRuntimeInstalled(
+        storageURL: URL,
+        fileManager: FileManager = .default,
+        runtimeCompatibilitySystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
+    ) -> Bool {
+        missingOrUnusableRuntimeRelativePaths(
+            storageURL: storageURL,
+            fileManager: fileManager,
+            runtimeCompatibilitySystemVersion: runtimeCompatibilitySystemVersion,
+        ).isEmpty
     }
 
     func isModelInstalled(storageURL: URL, fileManager: FileManager = .default) -> Bool {
@@ -161,12 +177,14 @@ struct SherpaOnnxModelLayout {
     func missingOrUnusableRelativePaths(
         storageURL: URL,
         fileManager: FileManager = .default,
+        runtimeCompatibilitySystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
     ) -> [String] {
         requiredRelativePaths.filter { relativePath in
             !hasUsableItem(
                 at: storageURL.appendingPathComponent(relativePath, isDirectory: false),
                 relativePath: relativePath,
                 fileManager: fileManager,
+                runtimeCompatibilitySystemVersion: runtimeCompatibilitySystemVersion,
             )
         }
     }
@@ -174,12 +192,14 @@ struct SherpaOnnxModelLayout {
     func missingOrUnusableRuntimeRelativePaths(
         storageURL: URL,
         fileManager: FileManager = .default,
+        runtimeCompatibilitySystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
     ) -> [String] {
         Self.runtimeRequiredRelativePaths.filter { relativePath in
             !hasUsableItem(
                 at: storageURL.appendingPathComponent(relativePath, isDirectory: false),
                 relativePath: relativePath,
                 fileManager: fileManager,
+                runtimeCompatibilitySystemVersion: runtimeCompatibilitySystemVersion,
             )
         }
     }
@@ -201,10 +221,20 @@ struct SherpaOnnxModelLayout {
         let executableURL = runtimeExecutableURL(storageURL: storageURL)
         let relativePath = "\(runtimeRootDirectory)/bin/sherpa-onnx-offline"
         return fileManager.isExecutableFile(atPath: executableURL.path)
-            && hasUsableItem(at: executableURL, relativePath: relativePath, fileManager: fileManager)
+            && hasUsableItem(
+                at: executableURL,
+                relativePath: relativePath,
+                fileManager: fileManager,
+                runtimeCompatibilitySystemVersion: ProcessInfo.processInfo.operatingSystemVersion,
+            )
     }
 
-    private func hasUsableItem(at url: URL, relativePath: String, fileManager: FileManager) -> Bool {
+    private func hasUsableItem(
+        at url: URL,
+        relativePath: String,
+        fileManager: FileManager,
+        runtimeCompatibilitySystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
+    ) -> Bool {
         var isDirectory: ObjCBool = false
         guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
             return false
@@ -224,6 +254,10 @@ struct SherpaOnnxModelLayout {
         }
 
         return hasExecutableFileFormat(at: url)
+            && SherpaOnnxRuntimeCompatibility.isCompatible(
+                at: url,
+                with: runtimeCompatibilitySystemVersion,
+            )
     }
 
     private func hasValidModelAsset(at url: URL, relativePath: String, fileManager: FileManager) -> Bool {
@@ -309,6 +343,223 @@ struct SherpaOnnxModelLayout {
             [0xCF, 0xFA, 0xED, 0xFE],
         ]
         return machOMagics.contains(Array(bytes.prefix(4)))
+    }
+}
+
+private enum SherpaOnnxRuntimeCompatibility {
+    static func isCompatible(at url: URL, with systemVersion: OperatingSystemVersion) -> Bool {
+        guard let minimumVersion = MachOMinimumOSVersionReader.minimumOperatingSystemVersion(at: url) else {
+            return true
+        }
+
+        return !isVersion(minimumVersion, greaterThan: systemVersion)
+    }
+
+    private static func isVersion(
+        _ lhs: OperatingSystemVersion,
+        greaterThan rhs: OperatingSystemVersion,
+    ) -> Bool {
+        if lhs.majorVersion != rhs.majorVersion {
+            return lhs.majorVersion > rhs.majorVersion
+        }
+        if lhs.minorVersion != rhs.minorVersion {
+            return lhs.minorVersion > rhs.minorVersion
+        }
+        return lhs.patchVersion > rhs.patchVersion
+    }
+}
+
+private enum MachOByteOrder {
+    case littleEndian
+    case bigEndian
+}
+
+private enum MachOMinimumOSVersionReader {
+    static func minimumOperatingSystemVersion(at url: URL) -> OperatingSystemVersion? {
+        guard let data = try? Data(contentsOf: url) else {
+            return nil
+        }
+
+        return minimumOperatingSystemVersion(in: data)
+    }
+
+    private static func minimumOperatingSystemVersion(in data: Data) -> OperatingSystemVersion? {
+        guard data.count >= 4 else {
+            return nil
+        }
+
+        if let fatVersion = parseFatHeader(in: data) {
+            return fatVersion
+        }
+
+        return parseThinHeader(in: data, at: 0)
+    }
+
+    private static func parseFatHeader(in data: Data) -> OperatingSystemVersion? {
+        guard let magic = data.uint32(at: 0, byteOrder: .bigEndian),
+              magic == 0xCAFE_BABE || magic == 0xCAFE_BABF,
+              let sliceCount = data.uint32(at: 4, byteOrder: .bigEndian),
+              sliceCount > 0,
+              sliceCount <= 32
+        else {
+            return nil
+        }
+
+        let isFat64 = magic == 0xCAFE_BABF
+        let entrySize = isFat64 ? 32 : 20
+        var versions: [OperatingSystemVersion] = []
+
+        for index in 0..<Int(sliceCount) {
+            let entryOffset = 8 + index * entrySize
+            let sliceOffset: UInt64?
+            if isFat64 {
+                sliceOffset = data.uint64(at: entryOffset + 8, byteOrder: .bigEndian)
+            } else {
+                sliceOffset = data.uint32(at: entryOffset + 8, byteOrder: .bigEndian).map(UInt64.init)
+            }
+
+            guard let sliceOffset,
+                  sliceOffset <= UInt64(Int.max),
+                  let version = parseThinHeader(in: data, at: Int(sliceOffset))
+            else {
+                continue
+            }
+            versions.append(version)
+        }
+
+        return versions.max(by: isVersion(_:lessThan:))
+    }
+
+    private static func parseThinHeader(in data: Data, at offset: Int) -> OperatingSystemVersion? {
+        guard offset >= 0,
+              offset + 4 <= data.count
+        else {
+            return nil
+        }
+
+        let magicBytes = Array(data[offset..<(offset + 4)])
+        let header: (byteOrder: MachOByteOrder, is64Bit: Bool)?
+        switch magicBytes {
+        case [0xCF, 0xFA, 0xED, 0xFE]:
+            header = (.littleEndian, true)
+        case [0xCE, 0xFA, 0xED, 0xFE]:
+            header = (.littleEndian, false)
+        case [0xFE, 0xED, 0xFA, 0xCF]:
+            header = (.bigEndian, true)
+        case [0xFE, 0xED, 0xFA, 0xCE]:
+            header = (.bigEndian, false)
+        default:
+            return nil
+        }
+
+        guard let header,
+              let commandCount = data.uint32(at: offset + 16, byteOrder: header.byteOrder),
+              commandCount <= 512
+        else {
+            return nil
+        }
+
+        var commandOffset = offset + (header.is64Bit ? 32 : 28)
+        var versions: [OperatingSystemVersion] = []
+
+        for _ in 0..<Int(commandCount) {
+            guard commandOffset + 8 <= data.count,
+                  let command = data.uint32(at: commandOffset, byteOrder: header.byteOrder),
+                  let commandSize = data.uint32(at: commandOffset + 4, byteOrder: header.byteOrder),
+                  commandSize >= 8,
+                  commandOffset + Int(commandSize) <= data.count
+            else {
+                return nil
+            }
+
+            switch command {
+            case 0x32:
+                if let encodedVersion = data.uint32(at: commandOffset + 12, byteOrder: header.byteOrder) {
+                    versions.append(decodeMachOVersion(encodedVersion))
+                }
+            case 0x24:
+                if let encodedVersion = data.uint32(at: commandOffset + 8, byteOrder: header.byteOrder) {
+                    versions.append(decodeMachOVersion(encodedVersion))
+                }
+            default:
+                break
+            }
+
+            commandOffset += Int(commandSize)
+        }
+
+        return versions.max(by: isVersion(_:lessThan:))
+    }
+
+    private static func decodeMachOVersion(_ rawVersion: UInt32) -> OperatingSystemVersion {
+        OperatingSystemVersion(
+            majorVersion: Int((rawVersion >> 16) & 0xFFFF),
+            minorVersion: Int((rawVersion >> 8) & 0xFF),
+            patchVersion: Int(rawVersion & 0xFF),
+        )
+    }
+
+    private static func isVersion(
+        _ lhs: OperatingSystemVersion,
+        lessThan rhs: OperatingSystemVersion,
+    ) -> Bool {
+        if lhs.majorVersion != rhs.majorVersion {
+            return lhs.majorVersion < rhs.majorVersion
+        }
+        if lhs.minorVersion != rhs.minorVersion {
+            return lhs.minorVersion < rhs.minorVersion
+        }
+        return lhs.patchVersion < rhs.patchVersion
+    }
+}
+
+private extension Data {
+    func uint32(at offset: Int, byteOrder: MachOByteOrder) -> UInt32? {
+        guard offset >= 0, offset + 4 <= count else {
+            return nil
+        }
+
+        let bytes = Array(self[offset..<(offset + 4)])
+        switch byteOrder {
+        case .littleEndian:
+            return UInt32(bytes[0])
+                | UInt32(bytes[1]) << 8
+                | UInt32(bytes[2]) << 16
+                | UInt32(bytes[3]) << 24
+        case .bigEndian:
+            return UInt32(bytes[0]) << 24
+                | UInt32(bytes[1]) << 16
+                | UInt32(bytes[2]) << 8
+                | UInt32(bytes[3])
+        }
+    }
+
+    func uint64(at offset: Int, byteOrder: MachOByteOrder) -> UInt64? {
+        guard offset >= 0, offset + 8 <= count else {
+            return nil
+        }
+
+        let bytes = Array(self[offset..<(offset + 8)])
+        switch byteOrder {
+        case .littleEndian:
+            return UInt64(bytes[0])
+                | UInt64(bytes[1]) << 8
+                | UInt64(bytes[2]) << 16
+                | UInt64(bytes[3]) << 24
+                | UInt64(bytes[4]) << 32
+                | UInt64(bytes[5]) << 40
+                | UInt64(bytes[6]) << 48
+                | UInt64(bytes[7]) << 56
+        case .bigEndian:
+            return UInt64(bytes[0]) << 56
+                | UInt64(bytes[1]) << 48
+                | UInt64(bytes[2]) << 40
+                | UInt64(bytes[3]) << 32
+                | UInt64(bytes[4]) << 24
+                | UInt64(bytes[5]) << 16
+                | UInt64(bytes[6]) << 8
+                | UInt64(bytes[7])
+        }
     }
 }
 

@@ -57,11 +57,11 @@ enum LocalModelDownloadURLCatalog {
 
         // Full runtime archive from the official release, containing the offline binary and shared libraries.
         .sherpaOnnxRuntimeHuggingFaceArchive: URL(
-            string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.0/sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts.tar.bz2"
+            string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.35/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts.tar.bz2"
         )!,
         // Domestic mirror of the same Sherpa ONNX runtime archive used for local ASR execution.
         .sherpaOnnxRuntimeChinaMirrorArchive: URL(
-            string: "https://sourceforge.net/projects/sherpa-onnx.mirror/files/v1.13.0/sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts.tar.bz2/download"
+            string: "https://sourceforge.net/projects/sherpa-onnx.mirror/files/v1.12.35/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts.tar.bz2/download"
         )!,
 
         // MARK: - SenseVoice Small
