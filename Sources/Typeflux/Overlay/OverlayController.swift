@@ -2170,18 +2170,15 @@ private struct LevelWaveform: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 2.2) {
-            ForEach(0 ..< 9, id: \.self) { index in
+            ForEach(0 ..< OverlayWaveformMetrics.barCount, id: \.self) { index in
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
                     .fill(activeColor)
-                    .frame(width: 2.3, height: barHeight(for: index))
+                    .frame(
+                        width: 2.3,
+                        height: OverlayWaveformMetrics.barHeight(for: index, level: level),
+                    )
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-    }
-
-    private func barHeight(for index: Int) -> CGFloat {
-        let normalizedLevel = CGFloat(max(0.08, min(1.0, level)))
-        let profile: [CGFloat] = [0.34, 0.52, 0.72, 0.9, 1.0, 0.86, 0.7, 0.5, 0.32]
-        return 4.5 + (10.8 * normalizedLevel * profile[index])
     }
 }
