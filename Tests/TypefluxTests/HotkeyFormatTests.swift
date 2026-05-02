@@ -9,7 +9,7 @@ final class HotkeyFormatTests: XCTestCase {
             keyCode: HotkeyBinding.rightCommandKeyCode,
             modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue),
         )
-        XCTAssertEqual(HotkeyFormat.display(binding), "Right Command")
+        XCTAssertEqual(HotkeyFormat.display(binding), "⌘")
     }
 
     func testDisplayRightOptionTrigger() {
@@ -17,7 +17,7 @@ final class HotkeyFormatTests: XCTestCase {
             keyCode: HotkeyBinding.rightOptionKeyCode,
             modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
         )
-        XCTAssertEqual(HotkeyFormat.display(binding), "Right Option")
+        XCTAssertEqual(HotkeyFormat.display(binding), "⌥")
     }
 
     func testDisplayFnTrigger() {
@@ -106,8 +106,8 @@ final class HotkeyFormatTests: XCTestCase {
 
     func testSpecialKeys() {
         let expected: [(Int, String)] = [
-            (36, "Return"), (48, "Tab"), (49, "Space"),
-            (51, "Delete"), (53, "Escape"), (50, "`"),
+            (36, "↩"), (48, "⇥"), (49, "Space"),
+            (51, "⌫"), (53, "Esc"), (50, "`"),
         ]
         for (code, name) in expected {
             let binding = HotkeyBinding(keyCode: code, modifierFlags: 0)
@@ -144,12 +144,11 @@ final class HotkeyFormatTests: XCTestCase {
 
     func testKeypadKeys() {
         let expected: [(Int, String)] = [
-            (65, "Keypad ."), (67, "Keypad *"), (69, "Keypad +"),
-            (75, "Keypad /"), (76, "Keypad Enter"), (78, "Keypad -"),
-            (81, "Keypad ="), (82, "Keypad 0"), (83, "Keypad 1"),
-            (84, "Keypad 2"), (85, "Keypad 3"), (86, "Keypad 4"),
-            (87, "Keypad 5"), (88, "Keypad 6"), (89, "Keypad 7"),
-            (91, "Keypad 8"), (92, "Keypad 9"),
+            (65, "."), (67, "*"), (69, "+"), (75, "/"),
+            (76, "Enter"), (78, "-"), (81, "="), (82, "0"),
+            (83, "1"), (84, "2"), (85, "3"), (86, "4"),
+            (87, "5"), (88, "6"), (89, "7"), (91, "8"),
+            (92, "9"),
         ]
         for (code, name) in expected {
             let binding = HotkeyBinding(keyCode: code, modifierFlags: 0)
@@ -160,10 +159,10 @@ final class HotkeyFormatTests: XCTestCase {
 
     func testNavigationAndSystemKeys() {
         let expected: [(Int, String)] = [
-            (71, "Clear"), (72, "Volume Up"), (73, "Volume Down"),
+            (71, "Clear"), (72, "Vol+"), (73, "Vol-"),
             (74, "Mute"), (114, "Help"), (115, "Home"),
-            (116, "Page Up"), (117, "Forward Delete"), (119, "End"),
-            (121, "Page Down"),
+            (116, "PgUp"), (117, "⌦"), (119, "End"),
+            (121, "PgDn"),
         ]
         for (code, name) in expected {
             let binding = HotkeyBinding(keyCode: code, modifierFlags: 0)
@@ -172,10 +171,10 @@ final class HotkeyFormatTests: XCTestCase {
         }
     }
 
-    func testUnmappedKeyCodeFallbackIsUserFacing() {
+    func testUnmappedKeyCodeFallbackShowsKeyCode() {
         let binding = HotkeyBinding(keyCode: 200, modifierFlags: 0)
         let parts = HotkeyFormat.components(binding)
-        XCTAssertEqual(parts.last, "Unknown Key")
+        XCTAssertEqual(parts.last, "Key200")
     }
 
     func testPunctuationKeys() {
