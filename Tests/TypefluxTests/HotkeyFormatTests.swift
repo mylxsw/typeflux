@@ -9,7 +9,7 @@ final class HotkeyFormatTests: XCTestCase {
             keyCode: HotkeyBinding.rightCommandKeyCode,
             modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue),
         )
-        XCTAssertEqual(HotkeyFormat.display(binding), "⌘")
+        XCTAssertEqual(HotkeyFormat.display(binding), "⌘(R)")
     }
 
     func testDisplayRightOptionTrigger() {
@@ -17,7 +17,7 @@ final class HotkeyFormatTests: XCTestCase {
             keyCode: HotkeyBinding.rightOptionKeyCode,
             modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
         )
-        XCTAssertEqual(HotkeyFormat.display(binding), "⌥")
+        XCTAssertEqual(HotkeyFormat.display(binding), "⌥(R)")
     }
 
     func testDisplayFnTrigger() {

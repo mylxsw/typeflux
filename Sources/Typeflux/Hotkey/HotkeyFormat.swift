@@ -8,10 +8,10 @@ enum HotkeyFormat {
 
     static func components(_ binding: HotkeyBinding) -> [String] {
         if binding.isRightCommandTrigger {
-            return ["⌘"]
+            return ["⌘(R)"]
         }
         if binding.isRightOptionTrigger {
-            return ["⌥"]
+            return ["⌥(R)"]
         }
         if binding.isFunctionTrigger {
             return ["Fn"]
