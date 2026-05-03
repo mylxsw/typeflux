@@ -101,7 +101,7 @@
 "menu.agentTasks.viewAll" = "View All Tasks";
 "menu.agentTasks.runningCount" = "%d running";
 "menu.appearance" = "Appearance";
-"menu.settings" = "Settings";
+"menu.settings" = "Typeflux Settings";
 "menu.setupGuide" = "Setup Guide";
 "menu.about" = "About Typeflux";
 "menu.checkForUpdates" = "Check for Updates";

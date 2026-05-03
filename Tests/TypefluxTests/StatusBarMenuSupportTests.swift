@@ -19,7 +19,11 @@ final class StatusBarMenuSupportTests: XCTestCase {
         defer { controller.stop() }
 
         let titles = controller.menu?.items.map(\.title) ?? []
+        let settingsItem = try XCTUnwrap(controller.menu?.items.first { $0.title == L("menu.settings") })
 
+        XCTAssertEqual(controller.menu?.showsStateColumn, false)
+        XCTAssertNotEqual(settingsItem.title, "Settings")
+        XCTAssertFalse(NSStringFromSelector(try XCTUnwrap(settingsItem.action)).localizedCaseInsensitiveContains("settings"))
         XCTAssertLessThan(
             try XCTUnwrap(titles.firstIndex(of: L("menu.appearance"))),
             try XCTUnwrap(titles.firstIndex(of: L("menu.settings"))),

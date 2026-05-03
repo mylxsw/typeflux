@@ -101,7 +101,7 @@
 "menu.agentTasks.viewAll" = "查看所有任务";
 "menu.agentTasks.runningCount" = "%d 个运行中";
 "menu.appearance" = "外观";
-"menu.settings" = "设置";
+"menu.settings" = "系统设置";
 "menu.setupGuide" = "新手引导";
 "menu.about" = "关于 Typeflux";
 "menu.checkForUpdates" = "检查更新";
