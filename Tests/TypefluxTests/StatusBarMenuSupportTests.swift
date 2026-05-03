@@ -3,7 +3,11 @@ import XCTest
 
 final class StatusBarMenuSupportTests: XCTestCase {
     @MainActor
-    func testStatusBarMenuIncludesSettingsItemNearAppearanceControls() {
+    func testStatusBarMenuIncludesSettingsItemNearAppearanceControls() throws {
+        if ProcessInfo.processInfo.environment["CI"] == "true" {
+            throw XCTSkip("Status bar menu test requires a GUI WindowServer session.")
+        }
+
         let controller = StatusBarController(
             appState: AppStateStore(),
             settingsStore: SettingsStore(defaults: UserDefaults(suiteName: "StatusBarMenuSupportTests.\(UUID().uuidString)")!),
