@@ -15,6 +15,53 @@ protocol PCM16RealtimeTranscriptionSession: AnyObject {
     func cancel() async
 }
 
+actor DeferredPCM16RealtimeTranscriptionSession: PCM16RealtimeTranscriptionSession {
+    private let makeUpstream: @Sendable () async throws -> any PCM16RealtimeTranscriptionSession
+    private var startingUpstream: (any PCM16RealtimeTranscriptionSession)?
+    private var upstream: (any PCM16RealtimeTranscriptionSession)?
+    private var isCancelled = false
+
+    init(makeUpstream: @escaping @Sendable () async throws -> any PCM16RealtimeTranscriptionSession) {
+        self.makeUpstream = makeUpstream
+    }
+
+    func start() async throws {
+        guard upstream == nil else { return }
+        guard !isCancelled else { throw CancellationError() }
+        let resolved = try await makeUpstream()
+        guard !isCancelled else {
+            await resolved.cancel()
+            throw CancellationError()
+        }
+        startingUpstream = resolved
+        defer { startingUpstream = nil }
+        try await resolved.start()
+        guard !isCancelled else {
+            await resolved.cancel()
+            throw CancellationError()
+        }
+        upstream = resolved
+    }
+
+    func appendPCM16(_ data: Data) async throws {
+        guard let upstream else { throw CancellationError() }
+        try await upstream.appendPCM16(data)
+    }
+
+    func finish() async throws -> String {
+        guard let upstream else { throw CancellationError() }
+        return try await upstream.finish()
+    }
+
+    func cancel() async {
+        isCancelled = true
+        await startingUpstream?.cancel()
+        startingUpstream = nil
+        await upstream?.cancel()
+        upstream = nil
+    }
+}
+
 final class RealtimeAudioBufferPump {
     private let continuation: AsyncStream<AVAudioPCMBuffer>.Continuation
     private let task: Task<Void, Never>

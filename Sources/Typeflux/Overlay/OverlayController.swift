@@ -80,6 +80,7 @@ private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
 
     var body: some View {
         Group {
+            #if compiler(>=6.2)
             if #available(macOS 26.0, *) {
                 ZStack {
                     shape
@@ -96,18 +97,11 @@ private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
                         .allowsHitTesting(false)
                 }
             } else {
-                ZStack {
-                    RoundedVisualEffectBlur(
-                        material: .popover,
-                        blendingMode: .behindWindow,
-                        cornerRadius: cornerRadius,
-                    )
-                    .allowsHitTesting(false)
-
-                    shape
-                        .fill(Color.black.opacity(tintOpacity))
-                }
+                fallbackBackground
             }
+            #else
+            fallbackBackground
+            #endif
         }
         .overlay(
             shape
@@ -141,6 +135,20 @@ private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
                 )
                 .blendMode(.screen),
         )
+    }
+
+    private var fallbackBackground: some View {
+        ZStack {
+            RoundedVisualEffectBlur(
+                material: .popover,
+                blendingMode: .behindWindow,
+                cornerRadius: cornerRadius,
+            )
+            .allowsHitTesting(false)
+
+            shape
+                .fill(Color.black.opacity(tintOpacity))
+        }
     }
 }
 
