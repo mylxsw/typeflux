@@ -216,22 +216,23 @@ An analogy: CoreML is like `.mov` (optimized for the Apple ecosystem), while ONN
 
 ## 7. Runtime Binaries: Sherpa-ONNX's "Engine Package"
 
-Since Sherpa-ONNX runs out-of-process, it requires a set of executable files to function. The runtime package used by Typeflux is `sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts`, which contains:
+Since Sherpa-ONNX runs out-of-process, it requires a set of executable files to function. The runtime package used by Typeflux is `sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts`, which contains:
 
 ```
-sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts/
+sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/
 ├── bin/
 │   └── sherpa-onnx-offline      ← Main program (accepts audio, outputs text)
 └── lib/
     ├── libsherpa-onnx-c-api.dylib      ← Sherpa-ONNX core library
     ├── libonnxruntime.dylib             ← ONNX Runtime inference engine
-    └── libonnxruntime.1.24.4.dylib      ← ONNX Runtime versioned library
+    └── libonnxruntime.1.23.2.dylib      ← ONNX Runtime versioned library
 ```
 
 - `sherpa-onnx-offline` is the command-line tool that actually performs inference.
 - The dynamic libraries (`.dylib`) provide the low-level computation support needed for inference.
 - `osx-universal2` means it supports both Intel and Apple Silicon Macs.
 - `no-tts` means text-to-speech functionality is not included (Typeflux only needs speech-to-text).
+- Release packaging audits these Mach-O binaries so their declared macOS `minos` does not silently exceed the supported runtime floor.
 
 These files can be **downloaded from the internet** or **bundled inside the .app package** (see Section 9).
 
@@ -245,7 +246,7 @@ All local model-related files are stored under `~/Library/Application Support/Ty
 ~/Library/Application Support/Typeflux/LocalModels/
 ├── senseVoiceSmall/
 │   └── sensevoice-small/
-│       ├── sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts/   ← Runtime
+│       ├── sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/  ← Runtime
 │       │   ├── bin/sherpa-onnx-offline
 │       │   └── lib/*.dylib
 │       ├── sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/  ← Model
@@ -255,7 +256,7 @@ All local model-related files are stored under `~/Library/Application Support/Ty
 │
 ├── qwen3ASR/
 │   └── <identifier>/
-│       ├── sherpa-onnx-v1.13.0-.../                             ← Runtime (may be shared)
+│       ├── sherpa-onnx-v1.12.35-.../                            ← Runtime (may be shared)
 │       ├── sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/          ← Model
 │       └── prepared.json
 │
@@ -302,9 +303,9 @@ Typeflux.app/Contents/Resources/
 │   └── senseVoiceSmall/
 │       └── sensevoice-small/
 │           ├── sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/  ← Bundled model
-│           └── sherpa-onnx-v1.13.0-.../ → Symlink to LocalRuntimes
+│           └── sherpa-onnx-v1.12.35-.../ → Symlink to LocalRuntimes
 └── LocalRuntimes/
-    └── sherpa-onnx-v1.13.0-osx-universal2-shared-no-tts/            ← Bundled runtime
+    └── sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/           ← Bundled runtime
         ├── bin/sherpa-onnx-offline
         └── lib/*.dylib
 ```
