@@ -366,6 +366,9 @@
 "history.privacy.subtitle" = "語音聽寫歷史只保存在這台 Mac 上。自動清理會移除過期本地記錄和關聯音訊檔。";
 "history.export.title" = "匯出封存";
 "history.export.subtitle" = "將歷史匯出為 Markdown，或清空目前時間線。";
+"history.export.chooseDirectory" = "選擇匯出資料夾";
+"history.export.chooseDirectoryMessage" = "Typeflux 會將 Markdown 歷史封存儲存到這個資料夾。";
+"history.export.chooseDirectoryPrompt" = "匯出";
 "history.empty" = "還沒有歷史記錄。";
 "history.loadingMore" = "正在載入更多歷史...";
 "history.section.today" = "今天";

@@ -368,6 +368,9 @@
 "history.privacy.subtitle" = "Voice dictation history is only stored on this Mac. Auto-cleanup removes expired local entries and linked audio files.";
 "history.export.title" = "Export archive";
 "history.export.subtitle" = "Download your history as markdown or clear the current timeline.";
+"history.export.chooseDirectory" = "Choose Export Folder";
+"history.export.chooseDirectoryMessage" = "Typeflux will save the Markdown history archive in this folder.";
+"history.export.chooseDirectoryPrompt" = "Export";
 "history.empty" = "No history entries yet.";
 "history.loadingMore" = "Loading more history...";
 "history.section.today" = "Today";

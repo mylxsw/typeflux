@@ -1931,13 +1931,34 @@ final class StudioViewModel: ObservableObject {
     }
 
     func exportHistory() {
+        guard let destinationDirectoryURL = chooseHistoryExportDirectory() else { return }
+
         do {
-            let url = try historyStore.exportMarkdown()
+            let exportedURL = try historyStore.exportMarkdown()
+            let url = try HistoryExportDestination.moveExport(
+                at: exportedURL,
+                to: destinationDirectoryURL,
+            )
             NSWorkspace.shared.activateFileViewerSelecting([url])
             showToast(L("history.toast.exported"))
         } catch {
             showToast(L("history.toast.exportFailed"))
         }
+    }
+
+    private func chooseHistoryExportDirectory() -> URL? {
+        let panel = NSOpenPanel()
+        panel.title = L("history.export.chooseDirectory")
+        panel.message = L("history.export.chooseDirectoryMessage")
+        panel.prompt = L("history.export.chooseDirectoryPrompt")
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+        panel.directoryURL = HistoryExportDestination.downloadsDirectory()
+
+        guard panel.runModal() == .OK else { return nil }
+        return panel.url
     }
 
     func clearHistory() {
