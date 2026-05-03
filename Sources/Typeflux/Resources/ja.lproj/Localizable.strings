@@ -101,7 +101,7 @@
 "menu.agentTasks.viewAll" = "すべてのタスクを表示";
 "menu.agentTasks.runningCount" = "%d個実行中";
 "menu.appearance" = "外観";
-"menu.settings" = "設定";
+"menu.settings" = "Typeflux 設定";
 "menu.setupGuide" = "セットアップガイド";
 "menu.about" = "Typeflux について";
 "menu.checkForUpdates" = "アップデートを確認";

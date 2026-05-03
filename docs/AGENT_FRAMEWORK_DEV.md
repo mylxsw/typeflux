@@ -1,131 +1,131 @@
-# Agent 框架重构开发文档
+# Agent Framework Refactoring Development Document
 
-## 目标
+## Goal
 
-将「随便问」功能从当前固定的两步流程（意图判断 → 执行）重构为一个功能完整的 Agent 框架，支持：
-- **循环执行**：Agent 可多轮推理，限制最大执行步数（默认 10）
-- **工具调用**：内置工具（终止工具、中间工具）+ 外部 MCP 工具
-- **MCP 支持**：Model Context Protocol，支持 Stdio（本地进程）和 HTTP/SSE（远程服务器）两种传输方式
-- **中间状态可见性**：保留工具调用步骤记录，供后续 UI 展示
+Refactor the "Ask Anything" feature from the current fixed two-step flow (intent classification → execution) into a fully functional Agent framework with support for:
+- **Iterative execution**: The agent can perform multi-step reasoning, limited to a maximum number of steps (default: 10)
+- **Tool calling**: Built-in tools (termination tools, intermediate tools) + external MCP tools
+- **MCP support**: Model Context Protocol, with Stdio (local process) and HTTP/SSE (remote server) transport modes
+- **Intermediate state visibility**: Step-level tool call records are preserved for subsequent UI display
 
 ---
 
-## 一、架构概览
+## 1. Architecture Overview
 
-### 1.1 现有架构 vs 目标架构
+### 1.1 Current Architecture vs Target Architecture
 
-**现有（两步流程）**：
+**Current (two-step flow)**:
 ```
-用户输入 → STT → [LLM Call 1: 强制 answer_or_edit_selection 工具] → [LLM Call 2: answer 或 rewrite]
+User input → STT → [LLM Call 1: forced answer_or_edit_selection tool] → [LLM Call 2: answer or rewrite]
 ```
 
-**目标（Agent 循环）**：
+**Target (Agent loop)**:
 ```
-用户输入 → STT → AgentLoop {
+User input → STT → AgentLoop {
     for step in 0..<maxSteps:
-        LLM 推理 → 选择工具 → 执行工具 → 结果反馈给 LLM
-    终止条件: 调用终止工具 / 纯文本回复 / 达到最大步数
+        LLM reasoning → select tool → execute tool → feed result back to LLM
+    Termination conditions: call termination tool / plain text response / max steps reached
 }
 ```
 
-### 1.2 目录结构
+### 1.2 Directory Structure
 
 ```
 Sources/Typeflux/
 ├── LLM/
 │   ├── Agent/
-│   │   ├── AgentMessage.swift          # 多轮对话消息结构
-│   │   ├── AgentTool.swift              # 工具协议 + 注册表
-│   │   ├── AgentConfig.swift            # 配置（最大步数等）
-│   │   ├── AgentResult.swift            # 执行结果
-│   │   ├── AgentLoop.swift              # 核心执行引擎
-│   │   ├── AgentToolRegistry.swift      # 工具注册表 actor
-│   │   ├── AgentToolCallMonitor.swift   # 步骤监控（保留中间状态）
-│   │   └── BuiltinAgentTools.swift      # 内置工具实现
+│   │   ├── AgentMessage.swift          # Multi-turn conversation message structure
+│   │   ├── AgentTool.swift             # Tool protocol + registry
+│   │   ├── AgentConfig.swift           # Configuration (max steps, etc.)
+│   │   ├── AgentResult.swift           # Execution result
+│   │   ├── AgentLoop.swift             # Core execution engine
+│   │   ├── AgentToolRegistry.swift     # Tool registry actor
+│   │   ├── AgentToolCallMonitor.swift  # Step monitoring (preserves intermediate state)
+│   │   └── BuiltinAgentTools.swift     # Built-in tool implementations
 │   ├── MCP/
-│   │   ├── MCPClient.swift              # MCP 客户端协议
-│   │   ├── MCPMessage.swift             # MCP JSON-RPC 消息结构
-│   │   ├── StdioMCPClient.swift         # Stdio 传输实现
-│   │   ├── HTTPMCPClient.swift          # HTTP/SSE 传输实现
-│   │   ├── MCPRegistry.swift            # MCP 服务器管理
-│   │   └── MCPToolAdapter.swift         # MCP → AgentTool 适配器
-│   ├── LLMMultiTurnService.swift        # 多轮 LLM 协议
-│   ├── OpenAICompatibleAgentService+MultiTurn.swift  # 多轮扩展
-│   └── AgentPromptCatalog.swift         # Agent 专用提示词
+│   │   ├── MCPClient.swift             # MCP client protocol
+│   │   ├── MCPMessage.swift            # MCP JSON-RPC message structure
+│   │   ├── StdioMCPClient.swift        # Stdio transport implementation
+│   │   ├── HTTPMCPClient.swift         # HTTP/SSE transport implementation
+│   │   ├── MCPRegistry.swift           # MCP server management
+│   │   └── MCPToolAdapter.swift        # MCP → AgentTool adapter
+│   ├── LLMMultiTurnService.swift       # Multi-turn LLM protocol
+│   ├── OpenAICompatibleAgentService+MultiTurn.swift  # Multi-turn extension
+│   └── AgentPromptCatalog.swift        # Agent-specific prompts
 ├── Settings/
-│   └── MCPSettings.swift                # MCP 配置存储
+│   └── MCPSettings.swift               # MCP configuration storage
 └── Workflow/
-    └── WorkflowController+Agent.swift   # Agent 集成（扩展而非修改）
+    └── WorkflowController+Agent.swift   # Agent integration (extension, not modification)
 ```
 
 ---
 
-## 二、核心数据结构
+## 2. Core Data Structures
 
-### 2.1 AgentMessage — 多轮对话消息
+### 2.1 AgentMessage — Multi-turn Conversation Messages
 
-**文件**: `LLM/Agent/AgentMessage.swift`
+**File**: `LLM/Agent/AgentMessage.swift`
 
 ```swift
-/// 消息角色
+/// Message role
 enum AgentMessageRole: String, Codable, Sendable {
     case system
     case user
     case assistant
-    case tool  // 工具返回结果
+    case tool  // Tool return result
 }
 
-/// 单个工具调用
+/// A single tool call
 struct AgentToolCall: Equatable, Codable, Sendable {
-    let id: String          // 唯一 ID，用于关联调用和结果
+    let id: String          // Unique ID used to correlate calls with results
     let name: String
     let argumentsJSON: String
 }
 
-/// 工具执行结果
+/// Tool execution result
 struct AgentToolResult: Equatable, Codable, Sendable {
     let toolCallId: String
-    let content: String     // 工具返回的内容（文本或 JSON 字符串）
+    let content: String     // Content returned by the tool (text or JSON string)
     let isError: Bool
 }
 
-/// 助手消息（文本 + 工具调用）
+/// Assistant message (text + tool calls)
 struct AgentAssistantMessage: Equatable, Codable, Sendable {
     let text: String?
     let toolCalls: [AgentToolCall]
 }
 
-/// 单条消息联合类型
+/// Union type for a single message
 enum AgentMessage: Equatable, Sendable {
     case system(String)
     case user(String)
     case assistant(AgentAssistantMessage)
     case toolResult(AgentToolResult)
 
-    /// 序列化为 provider 特定的字典格式
+    /// Serialize to provider-specific dictionary format
     func toProviderFormat(role: AgentMessageRole, apiStyle: LLMRemoteAPIStyle) -> [String: Any]
 }
 ```
 
-### 2.2 AgentTool — 工具协议
+### 2.2 AgentTool — Tool Protocol
 
-**文件**: `LLM/Agent/AgentTool.swift`
+**File**: `LLM/Agent/AgentTool.swift`
 
 ```swift
-/// Agent 工具协议
+/// Agent tool protocol
 protocol AgentTool: Sendable {
-    /// 工具定义（名称、描述、输入 Schema）
+    /// Tool definition (name, description, input schema)
     var definition: LLMAgentTool { get }
-    /// 执行工具
-    /// - Parameter arguments: JSON 字符串参数
-    /// - Returns: 执行结果（文本或 JSON 字符串）
+    /// Execute the tool
+    /// - Parameter arguments: JSON string of arguments
+    /// - Returns: Execution result (text or JSON string)
     func execute(arguments: String) async throws -> String
 }
 
-/// 终止工具标记协议
+/// Termination tool marker protocol
 protocol TerminationTool: AgentTool {}
 
-/// 内置工具标识
+/// Built-in tool identifiers
 enum BuiltinAgentToolName: String, CaseIterable {
     case answerText = "answer_text"
     case editText = "edit_text"
@@ -133,9 +133,9 @@ enum BuiltinAgentToolName: String, CaseIterable {
 }
 ```
 
-### 2.3 AgentToolRegistry — 工具注册表
+### 2.3 AgentToolRegistry — Tool Registry
 
-**文件**: `LLM/Agent/AgentToolRegistry.swift`
+**File**: `LLM/Agent/AgentToolRegistry.swift`
 
 ```swift
 actor AgentToolRegistry {
@@ -146,33 +146,33 @@ actor AgentToolRegistry {
     func registerAll(_ tools: [any AgentTool])
     func unregister(name: String)
 
-    /// 执行工具
+    /// Execute a tool
     func execute(name: String, arguments: String, toolCallId: String) async throws -> AgentToolResult
 
-    /// 获取所有工具定义（用于 LLM 调用）
+    /// Get all tool definitions (used for LLM calls)
     var definitions: [LLMAgentTool] { get }
 
-    /// 检查是否为终止工具
+    /// Check if a tool is a termination tool
     func isTerminationTool(name: String) -> Bool
 
-    /// 检查工具是否存在
+    /// Check if a tool exists
     func hasTool(name: String) -> Bool
 }
 ```
 
-### 2.4 AgentConfig — 配置
+### 2.4 AgentConfig — Configuration
 
-**文件**: `LLM/Agent/AgentConfig.swift`
+**File**: `LLM/Agent/AgentConfig.swift`
 
 ```swift
 struct AgentConfig: Sendable {
-    /// 最大执行步数（默认 10）
+    /// Maximum number of execution steps (default 10)
     let maxSteps: Int
-    /// 是否允许 LLM 并行调用多个工具（默认 false）
+    /// Whether to allow the LLM to call multiple tools in parallel (default false)
     let allowParallelToolCalls: Bool
-    /// 温度参数
+    /// Temperature parameter
     let temperature: Double?
-    /// 是否启用流式输出回调
+    /// Whether to enable streaming output callbacks
     let enableStreaming: Bool
 
     static let `default` = AgentConfig(
@@ -184,12 +184,12 @@ struct AgentConfig: Sendable {
 }
 ```
 
-### 2.5 AgentStep — 执行步骤（中间状态）
+### 2.5 AgentStep — Execution Step (Intermediate State)
 
-**文件**: `LLM/Agent/AgentToolCallMonitor.swift`
+**File**: `LLM/Agent/AgentToolCallMonitor.swift`
 
 ```swift
-/// 单个执行步骤的记录
+/// Record of a single execution step
 struct AgentStep: Sendable {
     let stepIndex: Int
     let assistantMessage: AgentAssistantMessage
@@ -197,15 +197,15 @@ struct AgentStep: Sendable {
     let durationMs: Int64
 }
 
-/// 步骤监控器协议
+/// Step monitor protocol
 protocol AgentStepMonitor: AnyObject, Sendable {
-    /// 每一步执行完成后调用
+    /// Called after each step completes
     func agentDidCompleteStep(_ step: AgentStep) async
-    /// Agent 完成后调用
+    /// Called when the agent finishes
     func agentDidFinish(outcome: AgentOutcome) async
 }
 
-/// 用于 UI 展示的实时状态
+/// Real-time state for UI display
 struct AgentRealtimeState: Sendable {
     let currentStep: Int
     let lastToolCall: AgentToolCall?
@@ -214,22 +214,22 @@ struct AgentRealtimeState: Sendable {
 }
 ```
 
-### 2.6 AgentResult — 执行结果
+### 2.6 AgentResult — Execution Result
 
-**文件**: `LLM/Agent/AgentResult.swift`
+**File**: `LLM/Agent/AgentResult.swift`
 
 ```swift
-/// Agent 执行结果
+/// Agent execution result
 struct AgentResult: Sendable {
-    /// 终止原因
+    /// Termination reason
     enum Outcome: Sendable {
-        /// 模型直接返回文本（无工具调用）
+        /// The model returned plain text directly (no tool calls)
         case text(String)
-        /// 调用了终止工具
+        /// A termination tool was called
         case terminationTool(name: String, argumentsJSON: String)
-        /// 达到最大步数
+        /// Maximum steps reached
         case maxStepsReached
-        /// 执行出错
+        /// Execution error
         case error(Error)
     }
 
@@ -237,7 +237,7 @@ struct AgentResult: Sendable {
     let steps: [AgentStep]
     let totalDurationMs: Int64
 
-    /// 提取最终答案文本（用于 answer_text 工具）
+    /// Extract the final answer text (for the answer_text tool)
     var answerText: String? {
         if case .text(let text) = outcome { return text }
         if case .terminationTool("answer_text", let args) = outcome {
@@ -246,7 +246,7 @@ struct AgentResult: Sendable {
         return nil
     }
 
-    /// 提取要替换的文本（用于 edit_text 工具）
+    /// Extract the replacement text (for the edit_text tool)
     var editedText: String? {
         if case .terminationTool("edit_text", let args) = outcome {
             return extractReplacement(from: args)
@@ -258,33 +258,33 @@ struct AgentResult: Sendable {
 
 ---
 
-## 三、LLM 多轮服务协议
+## 3. Multi-turn LLM Service Protocol
 
 ### 3.1 LLMMultiTurnService
 
-**文件**: `LLM/LLMMultiTurnService.swift`
+**File**: `LLM/LLMMultiTurnService.swift`
 
-现有 `LLMAgentService.runTool()` 只支持单轮 + 强制工具调用。新增多轮支持：
+The existing `LLMAgentService.runTool()` only supports single-turn calls with forced tool invocation. This adds multi-turn support:
 
 ```swift
-/// 单轮 LLM 输出
+/// Single-turn LLM output
 enum AgentTurn: Sendable {
-    /// 纯文本回复
+    /// Plain text response
     case text(String)
-    /// 工具调用
+    /// Tool calls
     case toolCalls([AgentToolCall])
-    /// 文本 + 工具调用
+    /// Text + tool calls
     case textWithToolCalls(text: String, toolCalls: [AgentToolCall])
 }
 
-/// 多轮 LLM 服务协议
+/// Multi-turn LLM service protocol
 protocol LLMMultiTurnService: Sendable {
-    /// 执行多轮对话
+    /// Execute a multi-turn conversation
     /// - Parameters:
-    ///   - messages: 消息历史（包含 system、user、assistant、toolResult）
-    ///   - tools: 可用工具定义列表
-    ///   - config: 调用配置
-    /// - Returns: LLM 本轮输出
+    ///   - messages: Message history (including system, user, assistant, toolResult)
+    ///   - tools: List of available tool definitions
+    ///   - config: Call configuration
+    /// - Returns: LLM output for the current turn
     func complete(
         messages: [AgentMessage],
         tools: [LLMAgentTool],
@@ -292,26 +292,26 @@ protocol LLMMultiTurnService: Sendable {
     ) async throws -> AgentTurn
 }
 
-/// 调用配置
+/// Call configuration
 struct LLMCallConfig: Sendable {
-    /// 强制使用某个工具（nil 表示模型自由选择）
+    /// Force a specific tool to be used (nil means the model chooses freely)
     let forcedToolName: String?
-    /// 允许并行工具调用
+    /// Allow parallel tool calls
     let parallelToolCalls: Bool
-    /// 温度参数
+    /// Temperature parameter
     let temperature: Double?
 }
 ```
 
-### 3.2 Provider 特定的消息序列化
+### 3.2 Provider-specific Message Serialization
 
-**文件**: `LLM/Agent/AgentMessage+ProviderFormat.swift`
+**File**: `LLM/Agent/AgentMessage+ProviderFormat.swift`
 
-每种 API 格式（OpenAI/Anthropic/Gemini）消息格式不同，需要分别序列化：
+Each API format (OpenAI/Anthropic/Gemini) has a different message structure and requires separate serialization:
 
 ```swift
 extension AgentMessage {
-    /// 转换为 OpenAI 兼容格式的消息
+    /// Convert to OpenAI-compatible message format
     static func toOpenAIMessages(_ messages: [AgentMessage]) -> [[String: Any]] {
         // system → {"role": "system", "content": "..."}
         // user → {"role": "user", "content": "..."}
@@ -320,15 +320,15 @@ extension AgentMessage {
         // tool_result → {"role": "tool", "tool_call_id": "...", "content": "..."}
     }
 
-    /// 转换为 Anthropic 格式的消息
+    /// Convert to Anthropic message format
     static func toAnthropicMessages(_ messages: [AgentMessage]) -> [[String: Any]] {
-        // system 合并到 system 字段
+        // system merged into the system field
         // user → {"role": "user", "content": [{"type": "text", "text": "..."}]}
         // assistant (tool) → {"role": "assistant", "content": [{"type": "tool_use", ...}]}
         // tool_result → {"role": "user", "content": [{"type": "tool_result", ...}]}
     }
 
-    /// 转换为 Gemini 格式的内容
+    /// Convert to Gemini content format
     static func toGeminiContents(_ messages: [AgentMessage]) -> [[String: Any]] {
         // user → {"role": "user", "parts": [{"text": "..."}]}
         // model → {"role": "model", "parts": [{"text": "..."}]}
@@ -339,11 +339,11 @@ extension AgentMessage {
 
 ---
 
-## 四、核心引擎：AgentLoop
+## 4. Core Engine: AgentLoop
 
-### 4.1 AgentLoop actor
+### 4.1 AgentLoop Actor
 
-**文件**: `LLM/Agent/AgentLoop.swift`
+**File**: `LLM/Agent/AgentLoop.swift`
 
 ```swift
 actor AgentLoop {
@@ -362,14 +362,14 @@ actor AgentLoop {
         self.config = config
     }
 
-    /// 设置步骤监控器
+    /// Set the step monitor
     func setStepMonitor(_ monitor: (any AgentStepMonitor)?)
 
-    /// 运行 Agent
+    /// Run the agent
     /// - Parameters:
-    ///   - messages: 初始消息（通常为 system + user）
-    ///   - streamHandler: 流式文本输出回调（可选）
-    /// - Returns: Agent 执行结果
+    ///   - messages: Initial messages (typically system + user)
+    ///   - streamHandler: Streaming text output callback (optional)
+    /// - Returns: Agent execution result
     func run(
         messages: [AgentMessage],
         streamHandler: ((String) -> Void)? = nil
@@ -377,7 +377,7 @@ actor AgentLoop {
 }
 ```
 
-### 4.2 执行流程详解
+### 4.2 Execution Flow Detail
 
 ```
 run(messages:):
@@ -392,7 +392,7 @@ run(messages:):
       messages: accumulatedMessages,
       tools: toolRegistry.definitions,
       config: LLMCallConfig(
-        forcedToolName: nil,           // 自由选择
+        forcedToolName: nil,           // Free choice
         parallelToolCalls: config.allowParallelToolCalls,
         temperature: config.temperature
       )
@@ -400,7 +400,7 @@ run(messages:):
 
     switch turn:
       case .text(let text):
-        // 纯文本回复 → 终止
+        // Plain text response → terminate
         if !text.isEmpty:
           accumulatedText += text
           streamHandler?(text)
@@ -413,7 +413,7 @@ run(messages:):
         toolResults = []
         for toolCall in toolCalls:
           if toolRegistry.isTerminationTool(toolCall.name):
-            // 终止工具 → 直接返回
+            // Termination tool → return immediately
             return AgentResult(
               outcome: .terminationTool(name: toolCall.name, argumentsJSON: toolCall.argumentsJSON),
               steps: steps + [step(assistantMsg, toolResults)]
@@ -428,15 +428,15 @@ run(messages:):
       case .textWithToolCalls(let text, let toolCalls):
         accumulatedText += text
         streamHandler?(text)
-        // 同样处理 toolCalls...
+        // Process toolCalls in the same way...
 ```
 
-### 4.3 并行工具执行
+### 4.3 Parallel Tool Execution
 
-当 `config.allowParallelToolCalls = true` 且模型返回多个工具调用时：
+When `config.allowParallelToolCalls = true` and the model returns multiple tool calls:
 
 ```swift
-// 并行执行所有工具
+// Execute all tools in parallel
 let toolResults = await withTaskGroup(of: AgentToolResult.self) { group in
     for toolCall in toolCalls {
         group.addTask {
@@ -457,20 +457,20 @@ let toolResults = await withTaskGroup(of: AgentToolResult.self) { group in
 
 ---
 
-## 五、内置工具实现
+## 5. Built-in Tool Implementations
 
-### 5.1 终止工具
+### 5.1 Termination Tools
 
 #### AnswerTextTool
 
-**文件**: `LLM/Agent/BuiltinAgentTools.swift`
+**File**: `LLM/Agent/BuiltinAgentTools.swift`
 
 ```swift
-/// 向用户展示答案的终止工具
+/// Termination tool that presents an answer to the user
 struct AnswerTextTool: AgentTool, TerminationTool {
     let definition = LLMAgentTool(
         name: "answer_text",
-        description: "当用户想要获取关于选中文本的问题答案时使用。在弹窗中向用户展示最终答案。",
+        description: "Use when the user wants to get an answer about selected text. Presents the final answer to the user in a popup window.",
         inputSchema: LLMJSONSchema(
             name: "answer_text",
             schema: [
@@ -479,7 +479,7 @@ struct AnswerTextTool: AgentTool, TerminationTool {
                 "properties": .object([
                     "answer": .object([
                         "type": .string("string"),
-                        "description": .string("要向用户展示的最终答案")
+                        "description": .string("The final answer to present to the user")
                     ]),
                     "format": .object([
                         "type": .string("string"),
@@ -491,10 +491,10 @@ struct AnswerTextTool: AgentTool, TerminationTool {
     )
 
     func execute(arguments: String) async throws -> String {
-        // 验证参数有效性
+        // Validate argument validity
         struct Args: Codable { let answer: String; let format: String? }
         let args = try JSONDecoder().decode(Args.self, from: arguments.data(using: .utf8)!)
-        return arguments  // 直接返回原 JSON，AgentResult 会解析
+        return arguments  // Return the original JSON directly; AgentResult will parse it
     }
 }
 ```
@@ -502,11 +502,11 @@ struct AnswerTextTool: AgentTool, TerminationTool {
 #### EditTextTool
 
 ```swift
-/// 替换选中文本的终止工具
+/// Termination tool that replaces the selected text
 struct EditTextTool: AgentTool, TerminationTool {
     let definition = LLMAgentTool(
         name: "edit_text",
-        description: "当用户想要重写、翻译、改写或以其他方式修改选中文本时使用。用新文本替换用户之前选中的文本。",
+        description: "Use when the user wants to rewrite, translate, paraphrase, or otherwise modify the selected text. Replaces the user's previously selected text with new content.",
         inputSchema: LLMJSONSchema(
             name: "edit_text",
             schema: [
@@ -515,7 +515,7 @@ struct EditTextTool: AgentTool, TerminationTool {
                 "properties": .object([
                     "replacement": .object([
                         "type": .string("string"),
-                        "description": .string("用于替换选中文本的新内容")
+                        "description": .string("The new content to replace the selected text with")
                     ])
                 ])
             ]
@@ -528,16 +528,16 @@ struct EditTextTool: AgentTool, TerminationTool {
 }
 ```
 
-### 5.2 中间工具
+### 5.2 Intermediate Tools
 
 #### GetClipboardTool
 
 ```swift
-/// 读取剪贴板内容
+/// Reads the contents of the clipboard
 struct GetClipboardTool: AgentTool {
     let definition = LLMAgentTool(
         name: "get_clipboard",
-        description: "读取当前系统剪贴板的内容。当用户提到「剪贴板里的内容」或需要引用之前复制的内容时使用。",
+        description: "Reads the current system clipboard contents. Use when the user mentions 'the content in the clipboard' or needs to reference previously copied content.",
         inputSchema: LLMJSONSchema(
             name: "get_clipboard",
             schema: [
@@ -552,9 +552,9 @@ struct GetClipboardTool: AgentTool {
 
     func execute(arguments: String) async throws -> String {
         guard let content = clipboardService.getString() else {
-            return #"{"error": "剪贴板为空或无文本内容"}"#
+            return #"{"error": "Clipboard is empty or contains no text content"}"#
         }
-        // 返回 JSON 格式
+        // Return in JSON format
         let escaped = content
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
@@ -568,22 +568,22 @@ struct GetClipboardTool: AgentTool {
 
 ---
 
-## 六、MCP 支持
+## 6. MCP Support
 
-### 6.1 MCP 协议概述
+### 6.1 MCP Protocol Overview
 
-MCP（Model Context Protocol）是一个标准协议，用于 LLM 与外部工具服务通信。协议基于 JSON-RPC 2.0。
+MCP (Model Context Protocol) is a standard protocol for communication between LLMs and external tool services. The protocol is based on JSON-RPC 2.0.
 
-**传输方式**：
-- **Stdio**：通过标准输入/输出与本地进程通信（适合本地运行的工具服务器）
-- **HTTP/SSE**：通过 HTTP POST + SSE 接收响应（适合远程工具服务器）
+**Transport modes**:
+- **Stdio**: Communicates with a local process via standard input/output (suitable for locally running tool servers)
+- **HTTP/SSE**: Sends requests via HTTP POST and receives responses via SSE (suitable for remote tool servers)
 
-### 6.2 MCP 消息结构
+### 6.2 MCP Message Structure
 
-**文件**: `LLM/MCP/MCPMessage.swift`
+**File**: `LLM/MCP/MCPMessage.swift`
 
 ```swift
-/// MCP JSON-RPC 消息
+/// MCP JSON-RPC message
 struct MCPJsonRPCMessage: Codable, Sendable {
     let jsonrpc: String  // "2.0"
     let id: MCPMessageId?
@@ -610,37 +610,37 @@ enum MCPResult: Codable, Sendable {
     case toolsCall(MCPToolsCallResult)
 }
 
-/// 初始化参数
+/// Initialization parameters
 struct MCPInitializeParams: Codable, Sendable {
     let protocolVersion: String
     let capabilities: MCPServerCapabilities
     let clientInfo: MCPClientInfo
 }
 
-/// 服务器能力
+/// Server capabilities
 struct MCPServerCapabilities: Codable, Sendable {
     let tools: MCPToolsCapability?
 }
 
-/// 工具能力
+/// Tools capability
 struct MCPToolsCapability: Codable, Sendable {
     let listChanged: Bool?
 }
 
-/// 工具定义
+/// Tool definition
 struct MCPToolDefinition: Codable, Sendable {
     let name: String
     let description: String?
     let inputSchema: MCPObjectSchema
 }
 
-/// 工具调用参数
+/// Tool call parameters
 struct MCPToolsCallParams: Codable, Sendable {
     let name: String
     let arguments: [String: AnyCodable]?
 }
 
-/// 工具调用结果
+/// Tool call result
 struct MCPToolsCallResult: Codable, Sendable {
     let content: [MCPContentBlock]
     let isError: Bool?
@@ -652,33 +652,33 @@ struct MCPContentBlock: Codable, Sendable {
 }
 ```
 
-### 6.3 MCPClient 协议
+### 6.3 MCPClient Protocol
 
-**文件**: `LLM/MCP/MCPClient.swift`
+**File**: `LLM/MCP/MCPClient.swift`
 
 ```swift
-/// MCP 客户端协议
+/// MCP client protocol
 protocol MCPClient: Actor {
     var serverInfo: MCPConnectionInfo { get }
     var isConnected: Bool { get }
 
-    /// 连接到 MCP 服务器
+    /// Connect to an MCP server
     func connect() async throws
 
-    /// 断开连接
+    /// Disconnect
     func disconnect() async
 
-    /// 获取可用工具列表
+    /// Get the list of available tools
     func listTools() async throws -> [MCPToolDefinition]
 
-    /// 调用工具
+    /// Call a tool
     func callTool(name: String, arguments: [String: Any]) async throws -> MCPToolsCallResult
 
-    /// 测试连接
+    /// Test the connection
     func ping() async throws
 }
 
-/// 连接信息
+/// Connection information
 struct MCPConnectionInfo: Sendable {
     let name: String
     let protocolVersion: String
@@ -686,11 +686,11 @@ struct MCPConnectionInfo: Sendable {
 }
 ```
 
-### 6.4 Stdio MCP 客户端
+### 6.4 Stdio MCP Client
 
-**文件**: `LLM/MCP/StdioMCPClient.swift`
+**File**: `LLM/MCP/StdioMCPClient.swift`
 
-通过进程的标准输入/输出通信：
+Communicates with a process via its standard input/output:
 
 ```swift
 actor StdioMCPClient: MCPClient {
@@ -707,7 +707,7 @@ actor StdioMCPClient: MCPClient {
     }
 
     func connect() async throws {
-        // 1. 启动进程
+        // 1. Start the process
         process = Process()
         process?.executableURL = URL(fileURLWithPath: config.command)
         process?.arguments = config.args
@@ -715,17 +715,17 @@ actor StdioMCPClient: MCPClient {
             process?.environment = config.env
         }
 
-        // 2. 设置管道
+        // 2. Set up pipes
         inputPipe = Pipe()
         outputPipe = Pipe()
         process?.standardInput = inputPipe
         process?.standardOutput = outputPipe
 
-        // 3. 启动读取循环
+        // 3. Start the read loop
         try process?.run()
         startReadingLoop()
 
-        // 4. 发送初始化
+        // 4. Send initialization
         let initResult = try await sendRequest(method: "initialize", params: .initialize(.init(
             protocolVersion: "2024-11-05",
             capabilities: .init(tools: .init(listChanged: nil)),
@@ -737,7 +737,7 @@ actor StdioMCPClient: MCPClient {
         }
         connectionInfo = info
 
-        // 5. 发送 initialized 通知
+        // 5. Send the initialized notification
         try await sendNotification(method: "notifications/initialized", params: nil)
     }
 
@@ -802,11 +802,11 @@ struct MCPStdioConfig: Sendable {
 }
 ```
 
-### 6.5 HTTP/SSE MCP 客户端
+### 6.5 HTTP/SSE MCP Client
 
-**文件**: `LLM/MCP/HTTPMCPClient.swift`
+**File**: `LLM/MCP/HTTPMCPClient.swift`
 
-通过 HTTP POST 发送请求，SSE 接收响应：
+Sends requests via HTTP POST and receives responses via SSE:
 
 ```swift
 actor HTTPMCPClient: MCPClient {
@@ -820,7 +820,7 @@ actor HTTPMCPClient: MCPClient {
 
     func connect() async throws {
         session = URLSession(configuration: .default)
-        // 发送初始化请求
+        // Send the initialization request
         let initResult = try await post(method: "initialize", params: .initialize(.init(
             protocolVersion: "2024-11-05",
             capabilities: .init(tools: .init(listChanged: nil)),
@@ -874,14 +874,14 @@ struct MCPHTTPConfig: Sendable {
 }
 ```
 
-### 6.6 MCP → AgentTool 适配器
+### 6.6 MCP → AgentTool Adapter
 
-**文件**: `LLM/MCP/MCPToolAdapter.swift`
+**File**: `LLM/MCP/MCPToolAdapter.swift`
 
-将 MCP 工具包装为 `AgentTool`：
+Wraps an MCP tool as an `AgentTool`:
 
 ```swift
-/// MCP 工具到 AgentTool 的适配器
+/// Adapter from MCP tool to AgentTool
 struct MCPToolAdapter: AgentTool {
     let client: any MCPClient
     let toolDef: MCPToolDefinition
@@ -913,15 +913,15 @@ struct MCPToolAdapter: AgentTool {
     }
 
     private func convertSchema(_ mcpSchema: MCPObjectSchema) -> LLMJSONSchema {
-        // 将 MCP JSON Schema 格式转换为 LLMJSONSchema
+        // Convert MCP JSON Schema format to LLMJSONSchema
         ...
     }
 }
 ```
 
-### 6.7 MCPRegistry — MCP 服务器管理
+### 6.7 MCPRegistry — MCP Server Management
 
-**文件**: `LLM/MCP/MCPRegistry.swift`
+**File**: `LLM/MCP/MCPRegistry.swift`
 
 ```swift
 actor MCPRegistry {
@@ -929,7 +929,7 @@ actor MCPRegistry {
     private var serverConfigs: [UUID: MCPServerConfig] = [:]
     private var cachedTools: [String: (any AgentTool, UUID)] = [:]  // toolName → (adapter, serverId)
 
-    /// 注册 MCP 服务器
+    /// Register an MCP server
     func addServer(_ config: MCPServerConfig) async throws {
         let client: any MCPClient
         switch config.transport {
@@ -943,11 +943,11 @@ actor MCPRegistry {
         servers[config.id] = client
         serverConfigs[config.id] = config
 
-        // 刷新工具缓存
+        // Refresh the tool cache
         try await refreshTools(for: config.id)
     }
 
-    /// 移除 MCP 服务器
+    /// Remove an MCP server
     func removeServer(id: UUID) async {
         await servers[id]?.disconnect()
         servers.removeValue(forKey: id)
@@ -955,13 +955,13 @@ actor MCPRegistry {
         cachedTools = cachedTools.filter { $0.value.1 != id }
     }
 
-    /// 获取所有 MCP 工具
+    /// Get all MCP tools
     func allMCPtools() async -> [any AgentTool] {
         await refreshCachedToolsIfNeeded()
         return cachedTools.map { $0.value.0 }
     }
 
-    /// 查找工具所属服务器
+    /// Look up which server owns a given tool
     func serverId(forToolName name: String) -> UUID? {
         cachedTools[name]?.1
     }
@@ -978,14 +978,14 @@ actor MCPRegistry {
 
 ---
 
-## 七、MCP 配置存储
+## 7. MCP Configuration Storage
 
-### 7.1 配置模型
+### 7.1 Configuration Model
 
-**文件**: `Settings/MCPSettings.swift`
+**File**: `Settings/MCPSettings.swift`
 
 ```swift
-/// MCP 服务器配置
+/// MCP server configuration
 struct MCPServerConfig: Codable, Identifiable, Sendable {
     let id: UUID
     var name: String
@@ -994,7 +994,7 @@ struct MCPServerConfig: Codable, Identifiable, Sendable {
     var autoConnect: Bool
 }
 
-/// 传输配置
+/// Transport configuration
 enum MCPTransportConfig: Codable, Sendable {
     case stdio(MCPStdioTransportConfig)
     case http(MCPHTTPTransportConfig)
@@ -1011,7 +1011,7 @@ struct MCPHTTPTransportConfig: Codable, Sendable {
     var apiKey: String?
 }
 
-/// MCP 设置存储
+/// MCP settings store
 final class MCPSettingsStore {
     private let defaults: UserDefaults
     private let serversKey = "mcp.servers"
@@ -1053,42 +1053,42 @@ final class MCPSettingsStore {
 
 ---
 
-## 八、WorkflowController 集成
+## 8. WorkflowController Integration
 
-### 8.1 扩展而非修改
+### 8.1 Extension, Not Modification
 
-现有 `WorkflowController` 保持不变，新增扩展文件：
+The existing `WorkflowController` remains unchanged. A new extension file is added:
 
-**文件**: `Workflow/WorkflowController+Agent.swift`
+**File**: `Workflow/WorkflowController+Agent.swift`
 
 ```swift
 extension WorkflowController {
-    /// 使用新 Agent 框架处理「随便问」
+    /// Handle "Ask Anything" using the new Agent framework
     func runAskAgent(
         selectedText: String?,
         spokenInstruction: String,
         personaPrompt: String?,
         sessionID: UUID
     ) async throws -> AskAgentResult {
-        // 1. 构建工具注册表
+        // 1. Build the tool registry
         let registry = await buildAgentToolRegistry(
             selectedText: selectedText,
             clipboard: clipboard
         )
 
-        // 2. 创建 AgentLoop
+        // 2. Create the AgentLoop
         let agentLoop = AgentLoop(
             llmService: multiTurnLLMService,
             toolRegistry: registry,
             config: .default
         )
 
-        // 3. 设置步骤监控（可选，用于后续 UI 展示）
+        // 3. Set up step monitoring (optional, for subsequent UI display)
         if settingsStore.agentStepLoggingEnabled {
             agentLoop.setStepMonitor(AgentStepLogger())
         }
 
-        // 4. 构建初始消息
+        // 4. Build initial messages
         let systemPrompt = PromptCatalog.askAgentSystemPrompt(personaPrompt: personaPrompt)
         let userPrompt = PromptCatalog.askAgentUserPrompt(
             selectedText: selectedText,
@@ -1099,10 +1099,10 @@ extension WorkflowController {
             .user(userPrompt)
         ]
 
-        // 5. 运行 Agent
+        // 5. Run the agent
         let result = try await agentLoop.run(messages: messages)
 
-        // 6. 处理结果
+        // 6. Process the result
         switch result.outcome {
         case .text(let text):
             return .answer(text)
@@ -1127,14 +1127,14 @@ extension WorkflowController {
     ) -> AgentToolRegistry {
         let registry = AgentToolRegistry()
 
-        // 注册内置终止工具
+        // Register built-in termination tools
         registry.register(AnswerTextTool())
         registry.register(EditTextTool())
 
-        // 注册中间工具
+        // Register intermediate tools
         registry.register(GetClipboardTool(clipboardService: clipboard))
 
-        // 注册 MCP 工具（如果已配置）
+        // Register MCP tools (if configured)
         Task {
             let mcpTools = await mcpRegistry.allMCPtools()
             for tool in mcpTools {
@@ -1146,20 +1146,20 @@ extension WorkflowController {
     }
 }
 
-/// Agent 执行结果
+/// Agent execution result
 enum AskAgentResult: Sendable {
-    case answer(String)   // 展示答案
-    case edit(String)     // 替换文本
+    case answer(String)   // Display an answer
+    case edit(String)     // Replace text
 }
 ```
 
-### 8.2 Prompt 模板
+### 8.2 Prompt Templates
 
-**文件**: `LLM/Agent/AgentPromptCatalog.swift`
+**File**: `LLM/Agent/AgentPromptCatalog.swift`
 
 ```swift
 enum AgentPromptCatalog {
-    /// Agent 系统提示词
+    /// Agent system prompt
     static func askAgentSystemPrompt(personaPrompt: String?) -> String {
         var parts: [String] = [
             """
@@ -1192,7 +1192,7 @@ enum AgentPromptCatalog {
         return parts.joined(separator: "\n\n")
     }
 
-    /// Agent 用户提示词
+    /// Agent user prompt
     static func askAgentUserPrompt(selectedText: String?, instruction: String) -> String {
         var parts: [String] = []
 
@@ -1209,11 +1209,11 @@ enum AgentPromptCatalog {
 
 ---
 
-## 九、OpenAICompatibleAgentService 多轮扩展
+## 9. OpenAICompatibleAgentService Multi-turn Extension
 
-### 9.1 MultiTurn 扩展
+### 9.1 MultiTurn Extension
 
-**文件**: `LLM/Agent/LLMMultiTurnService+OpenAI.swift`
+**File**: `LLM/Agent/LLMMultiTurnService+OpenAI.swift`
 
 ```swift
 extension OpenAICompatibleAgentService: LLMMultiTurnService {
@@ -1361,11 +1361,11 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
 
 ---
 
-## 十、错误处理
+## 10. Error Handling
 
-### 10.1 新增错误类型
+### 10.1 New Error Types
 
-**文件**: `LLM/Agent/AgentError.swift`
+**File**: `LLM/Agent/AgentError.swift`
 
 ```swift
 enum AgentError: LocalizedError, Equatable, Sendable {
@@ -1400,27 +1400,27 @@ enum AgentError: LocalizedError, Equatable, Sendable {
 
 ---
 
-## 十一、单元测试
+## 11. Unit Tests
 
-### 11.1 测试文件列表
+### 11.1 Test File List
 
-每个新组件需要对应的测试文件：
+Each new component requires a corresponding test file:
 
-| 测试文件 | 覆盖内容 |
-|---------|---------|
-| `AgentMessageTests.swift` | 消息序列化、反序列化、provider 格式转换 |
-| `AgentToolRegistryTests.swift` | 工具注册、查找、执行、终止工具判断 |
-| `AgentLoopTests.swift` | 循环执行、终止条件、最大步数限制 |
-| `AgentConfigTests.swift` | 配置默认值、参数验证 |
-| `BuiltinAgentToolsTests.swift` | AnswerTextTool、EditTextTool、GetClipboardTool |
-| `MCPMessageTests.swift` | JSON-RPC 消息序列化/反序列化 |
-| `StdioMCPClientTests.swift` | Stdio 客户端连接、工具调用（mock 进程） |
-| `HTTPMCPClientTests.swift` | HTTP 客户端请求/响应 |
-| `MCPToolAdapterTests.swift` | MCP → AgentTool 适配 |
-| `LLMMultiTurnServiceTests.swift` | 多轮消息转换、provider 格式生成 |
-| `AgentStepMonitorTests.swift` | 步骤监控回调、状态累积 |
+| Test File | Coverage |
+|-----------|----------|
+| `AgentMessageTests.swift` | Message serialization, deserialization, provider format conversion |
+| `AgentToolRegistryTests.swift` | Tool registration, lookup, execution, termination tool detection |
+| `AgentLoopTests.swift` | Loop execution, termination conditions, max step limit |
+| `AgentConfigTests.swift` | Default configuration values, parameter validation |
+| `BuiltinAgentToolsTests.swift` | AnswerTextTool, EditTextTool, GetClipboardTool |
+| `MCPMessageTests.swift` | JSON-RPC message serialization/deserialization |
+| `StdioMCPClientTests.swift` | Stdio client connection, tool calling (mock process) |
+| `HTTPMCPClientTests.swift` | HTTP client request/response |
+| `MCPToolAdapterTests.swift` | MCP → AgentTool adaptation |
+| `LLMMultiTurnServiceTests.swift` | Multi-turn message conversion, provider format generation |
+| `AgentStepMonitorTests.swift` | Step monitor callbacks, state accumulation |
 
-### 11.2 测试示例
+### 11.2 Test Examples
 
 #### AgentToolRegistryTests
 
@@ -1466,7 +1466,7 @@ func testAgentTerminatesOnAnswerTextTool() async throws {
 
 func testAgentMaxStepsLimit() async throws {
     let mockLLM = MockLLMMultiTurnService()
-    // 返回工具调用但不返回终止工具
+    // Return tool calls but never return a termination tool
     mockLLM.turns = Array(repeating: .toolCalls([AgentToolCall(id: "1", name: "get_clipboard", argumentsJSON: "{}")]), count: 15)
 
     let registry = AgentToolRegistry()
@@ -1511,15 +1511,15 @@ func testJsonRPCMessageInitialization() throws {
 
 ---
 
-## 十二、依赖注入集成
+## 12. Dependency Injection Integration
 
-### 12.1 DIContainer 扩展
+### 12.1 DIContainer Extension
 
-**文件**: `App/DIContainer+Agent.swift`
+**File**: `App/DIContainer+Agent.swift`
 
 ```swift
 extension DIContainer {
-    /// 多轮 LLM 服务（用于 Agent）
+    /// Multi-turn LLM service (used by the Agent)
     var llmMultiTurnService: LLMMultiTurnService {
         LLMMultiTurnRouter(
             settingsStore: settingsStore,
@@ -1527,13 +1527,13 @@ extension DIContainer {
         )
     }
 
-    /// MCP 注册表
+    /// MCP registry
     var mcpRegistry: MCPRegistry {
         MCPRegistry(settingsStore: MCPSettingsStore())
     }
 }
 
-/// 多轮 LLM 路由
+/// Multi-turn LLM router
 final class LLMMultiTurnRouter: LLMMultiTurnService {
     private let settingsStore: SettingsStore
     private let openAICompatible: LLMMultiTurnService
@@ -1548,7 +1548,7 @@ final class LLMMultiTurnRouter: LLMMultiTurnService {
         case .openAICompatible:
             return try await openAICompatible.complete(messages: messages, tools: tools, config: config)
         case .ollama:
-            // Ollama 暂不支持多轮工具调用
+            // Ollama does not yet support multi-turn tool calls
             throw AgentError.llmConnectionFailed(reason: "Ollama does not support multi-turn tool calls")
         }
     }
@@ -1557,67 +1557,67 @@ final class LLMMultiTurnRouter: LLMMultiTurnService {
 
 ---
 
-## 十三、实施顺序
+## 13. Implementation Order
 
-### Phase 1: 核心数据结构（预计 2-3 天）
+### Phase 1: Core Data Structures (estimated 2–3 days)
 
-1. `AgentMessage.swift` — 消息结构
-2. `AgentTool.swift` + `AgentToolRegistry.swift` — 工具协议和注册表
-3. `AgentConfig.swift` — 配置
-4. `AgentResult.swift` — 结果类型
-5. `AgentToolCallMonitor.swift` — 步骤监控
+1. `AgentMessage.swift` — Message structure
+2. `AgentTool.swift` + `AgentToolRegistry.swift` — Tool protocol and registry
+3. `AgentConfig.swift` — Configuration
+4. `AgentResult.swift` — Result type
+5. `AgentToolCallMonitor.swift` — Step monitoring
 
-### Phase 2: 内置工具（预计 1 天）
+### Phase 2: Built-in Tools (estimated 1 day)
 
-6. `BuiltinAgentTools.swift` — AnswerTextTool、EditTextTool、GetClipboardTool
-7. 单元测试
+6. `BuiltinAgentTools.swift` — AnswerTextTool, EditTextTool, GetClipboardTool
+7. Unit tests
 
-### Phase 3: LLM 多轮服务（预计 2-3 天）
+### Phase 3: Multi-turn LLM Service (estimated 2–3 days)
 
-8. `LLMMultiTurnService.swift` — 协议定义
-9. `OpenAICompatibleAgentService+MultiTurn.swift` — OpenAI 兼容实现
-10. `AgentPromptCatalog.swift` — 提示词
-11. 单元测试
+8. `LLMMultiTurnService.swift` — Protocol definition
+9. `OpenAICompatibleAgentService+MultiTurn.swift` — OpenAI-compatible implementation
+10. `AgentPromptCatalog.swift` — Prompts
+11. Unit tests
 
-### Phase 4: 核心引擎（预计 2 天）
+### Phase 4: Core Engine (estimated 2 days)
 
-12. `AgentLoop.swift` — 执行引擎
-13. `AgentError.swift` — 错误类型
-14. 单元测试
+12. `AgentLoop.swift` — Execution engine
+13. `AgentError.swift` — Error types
+14. Unit tests
 
-### Phase 5: MCP 支持（预计 3-4 天）
+### Phase 5: MCP Support (estimated 3–4 days)
 
-15. `MCPMessage.swift` — 消息结构
-16. `MCPClient.swift` — 客户端协议
-17. `StdioMCPClient.swift` — Stdio 实现
-18. `HTTPMCPClient.swift` — HTTP 实现
-19. `MCPToolAdapter.swift` — 适配器
-20. `MCPRegistry.swift` — 服务器管理
-21. `MCPSettings.swift` — 配置存储
-22. 单元测试
+15. `MCPMessage.swift` — Message structure
+16. `MCPClient.swift` — Client protocol
+17. `StdioMCPClient.swift` — Stdio implementation
+18. `HTTPMCPClient.swift` — HTTP implementation
+19. `MCPToolAdapter.swift` — Adapter
+20. `MCPRegistry.swift` — Server management
+21. `MCPSettings.swift` — Configuration storage
+22. Unit tests
 
-### Phase 6: Workflow 集成（预计 1-2 天）
+### Phase 6: Workflow Integration (estimated 1–2 days)
 
-23. `WorkflowController+Agent.swift` — 集成
-24. `DIContainer+Agent.swift` — 依赖注入
-25. 集成测试
+23. `WorkflowController+Agent.swift` — Integration
+24. `DIContainer+Agent.swift` — Dependency injection
+25. Integration tests
 
-### Phase 7: 最终测试与修复（预计 2 天）
+### Phase 7: Final Testing and Bug Fixes (estimated 2 days)
 
-26. 端到端测试
-27. Bug 修复
-28. 文档完善
+26. End-to-end tests
+27. Bug fixes
+28. Documentation updates
 
 ---
 
-## 十四、向后兼容性
+## 14. Backward Compatibility
 
-- 现有 `LLMAgentService.runTool()` 保持不变，现有功能（词汇监控等）继续工作
-- 现有 `decideAskSelection` 双步流程作为 fallback
-- 新 Agent 框架通过 feature flag 控制，默认关闭
+- The existing `LLMAgentService.runTool()` remains unchanged; existing features (vocabulary monitoring, etc.) continue to work
+- The existing `decideAskSelection` two-step flow is kept as a fallback
+- The new Agent framework is controlled by a feature flag, disabled by default
 
 ```swift
-// SettingsStore 扩展
+// SettingsStore extension
 var agentFrameworkEnabled: Bool {
     get { defaults.object(forKey: "agent.framework.enabled") as? Bool ?? false }
     set { defaults.set(newValue, forKey: "agent.framework.enabled") }
@@ -1626,31 +1626,31 @@ var agentFrameworkEnabled: Bool {
 
 ---
 
-## 十五、关键设计决策
+## 15. Key Design Decisions
 
-| 决策点 | 选择 | 理由 |
-|--------|------|------|
-| 并发模型 | Swift `actor` | AgentLoop、ToolRegistry、MCPClient 都是 actor，保证线程安全 |
-| 工具执行 | 顺序执行（默认） | 并行执行增加复杂度，默认关闭 |
-| MCP 消息格式 | 完整 JSON-RPC 2.0 | 兼容标准 MCP 实现 |
-| 工具参数 | JSON 字符串 | 统一格式，便于跨 provider |
-| 流式输出 | 回调机制 | 不改变现有接口，UI 可选择性使用 |
-| 向后兼容 | Feature flag | 现有功能不受影响 |
-
----
-
-## 十六、已知限制
-
-1. **Ollama 暂不支持多轮工具调用**：Ollama 不支持 tool_choice 强制指定，Phase 3 会添加有限支持
-2. **并行工具调用暂不支持**：首批实现为顺序执行
-3. **流式文本输出**：首批实现不包含，保留回调接口
-4. **MCP 工具缓存**：工具列表在连接时获取一次，不自动刷新（可通过手动重连刷新）
+| Decision Point | Choice | Rationale |
+|----------------|--------|-----------|
+| Concurrency model | Swift `actor` | AgentLoop, ToolRegistry, and MCPClient are all actors, ensuring thread safety |
+| Tool execution | Sequential (default) | Parallel execution adds complexity; disabled by default |
+| MCP message format | Full JSON-RPC 2.0 | Compatible with standard MCP implementations |
+| Tool arguments | JSON string | Unified format, easy to use across providers |
+| Streaming output | Callback mechanism | Does not change existing interfaces; UI can use it optionally |
+| Backward compatibility | Feature flag | Existing functionality remains unaffected |
 
 ---
 
-## 十七、文档更新
+## 16. Known Limitations
 
-实现完成后，需更新以下文档：
-- `ARCHITECTURE.md` — 新增 Agent 框架章节
-- `CLAUDE.md` — 新增 Agent 相关提示
-- README 相关章节（如果涉及用户-facing 功能变更）
+1. **Ollama does not yet support multi-turn tool calls**: Ollama does not support `tool_choice` forced selection; Phase 3 will add limited support
+2. **Parallel tool calls not yet supported**: The initial implementation uses sequential execution only
+3. **Streaming text output**: Not included in the initial implementation; the callback interface is preserved for future use
+4. **MCP tool caching**: The tool list is fetched once at connection time and is not automatically refreshed (can be refreshed by manually reconnecting)
+
+---
+
+## 17. Documentation Updates
+
+After implementation is complete, the following documents need to be updated:
+- `ARCHITECTURE.md` — Add a new Agent framework section
+- `CLAUDE.md` — Add Agent-related guidance
+- README sections (if user-facing functionality changes)

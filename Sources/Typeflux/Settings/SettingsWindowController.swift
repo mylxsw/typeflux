@@ -1,6 +1,12 @@
 import AppKit
 import SwiftUI
 
+private final class TransparentSettingsHostingView<Content: View>: NSHostingView<Content> {
+    override var isOpaque: Bool {
+        false
+    }
+}
+
 @MainActor
 final class SettingsWindowController: NSObject {
     static let shared = SettingsWindowController()
@@ -63,7 +69,7 @@ final class SettingsWindowController: NSObject {
         )
         AppLocalization.shared.setLanguage(viewModel.appLanguage)
         let view = StudioView(viewModel: viewModel)
-        let hosting = NSHostingView(rootView: view)
+        let hosting = TransparentSettingsHostingView(rootView: view)
 
         let window = NSWindow(
             contentRect: NSRect(
@@ -79,10 +85,12 @@ final class SettingsWindowController: NSObject {
         window.title = L("window.voiceStudio")
         window.center()
         window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
         window.isOpaque = false
         window.backgroundColor = .clear
+        window.hasShadow = true
         window.contentView = hosting
         window.isReleasedWhenClosed = false
         window.delegate = self

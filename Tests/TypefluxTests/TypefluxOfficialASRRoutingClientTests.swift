@@ -1,3 +1,4 @@
+import AVFoundation
 @testable import Typeflux
 import XCTest
 
@@ -150,6 +151,60 @@ final class TypefluxOfficialTranscriberRoutingTests: XCTestCase {
         XCTAssertNil(report)
     }
 
+    func testRealtimeSessionCreationDoesNotWaitForRouteFetch() async throws {
+        let routing = DelayedTypefluxRoutingClient()
+        let stream = RecordingPCM16RealtimeTranscriptionSession(finalText: "realtime")
+        let transport = MockTypefluxTransport()
+        transport.directPCMStreamFactory = { stream }
+        let transcriber = TypefluxOfficialTranscriber(
+            routingClient: routing,
+            transport: transport,
+            accessTokenProvider: { "cloud-token" }
+        )
+
+        let session = try await transcriber.makeRealtimeTranscriptionSession(
+            scenario: .voiceInput,
+            onUpdate: { _ in }
+        )
+
+        await session.start()
+        await routing.waitUntilFetchStarted()
+        let startCountBeforeRoute = await stream.startCallCount()
+        XCTAssertEqual(startCountBeforeRoute, 0)
+
+        let buffer = try makeFloatBuffer(frameCount: 1_600)
+        await session.append(buffer)
+        await routing.release(route: .aliyun(
+            token: "st-temp",
+            expiresAt: nil,
+            usageReportID: "report-1"
+        ))
+
+        let transcript = try await session.finish()
+
+        let startCountAfterFinish = await stream.startCallCount()
+        let sentByteCount = await stream.sentByteCount()
+        XCTAssertEqual(transcript, "realtime")
+        XCTAssertEqual(startCountAfterFinish, 1)
+        XCTAssertEqual(sentByteCount, CloudASRAudioConverter.chunkSize)
+    }
+
+    private func makeFloatBuffer(frameCount: AVAudioFrameCount) throws -> AVAudioPCMBuffer {
+        let format = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: CloudASRAudioConverter.targetSampleRate,
+            channels: 1,
+            interleaved: false,
+        )!
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)!
+        buffer.frameLength = frameCount
+        let channel = buffer.floatChannelData![0]
+        for index in 0 ..< Int(frameCount) {
+            channel[index] = sinf(Float(index) / 20.0) * 0.2
+        }
+        return buffer
+    }
+
     private func makeSilentAudioFile(duration: TimeInterval) throws -> AudioFile {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("typeflux-routing-\(UUID().uuidString).wav")
@@ -265,6 +320,44 @@ private actor MockTypefluxRoutingClient: TypefluxOfficialASRRoutingClient {
     }
 }
 
+private actor DelayedTypefluxRoutingClient: TypefluxOfficialASRRoutingClient {
+    private var fetchStartedContinuation: CheckedContinuation<Void, Never>?
+    private var routeContinuation: CheckedContinuation<TypefluxOfficialASRRouteDecision, Never>?
+    private var didStartFetch = false
+
+    func fetchRoute(
+        accessToken _: String,
+        scenario _: TypefluxCloudScenario
+    ) async throws -> TypefluxOfficialASRRouteDecision {
+        didStartFetch = true
+        fetchStartedContinuation?.resume()
+        fetchStartedContinuation = nil
+        return await withCheckedContinuation { continuation in
+            routeContinuation = continuation
+        }
+    }
+
+    func reportAliyunUsage(
+        accessToken _: String,
+        usageReportID _: String,
+        audioDurationMs _: Int64,
+        outputChars _: Int,
+        scenario _: TypefluxCloudScenario
+    ) async throws {}
+
+    func waitUntilFetchStarted() async {
+        if didStartFetch { return }
+        await withCheckedContinuation { continuation in
+            fetchStartedContinuation = continuation
+        }
+    }
+
+    func release(route: TypefluxOfficialASRRouteDecision) {
+        routeContinuation?.resume(returning: route)
+        routeContinuation = nil
+    }
+}
+
 private final class MockTypefluxTransport: TypefluxOfficialASRTransport, @unchecked Sendable {
     var directTranscript = "direct"
     var webSocketTranscript = "websocket"
@@ -273,6 +366,9 @@ private final class MockTypefluxTransport: TypefluxOfficialASRTransport, @unchec
     var webSocketCallCount = 0
     var webSocketLLMCallCount = 0
     var lastDirectAliyunToken: String?
+    var directPCMStreamFactory: @Sendable () -> any PCM16RealtimeTranscriptionSession = {
+        MockPCM16RealtimeTranscriptionSession()
+    }
 
     func transcribeViaWebSocket(
         pcmData _: Data,
@@ -310,10 +406,11 @@ private final class MockTypefluxTransport: TypefluxOfficialASRTransport, @unchec
     }
 
     func makeDirectAliyunPCMStream(
-        token _: String,
+        token: String,
         onUpdate _: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) -> any PCM16RealtimeTranscriptionSession {
-        MockPCM16RealtimeTranscriptionSession()
+        lastDirectAliyunToken = token
+        return directPCMStreamFactory()
     }
 }
 
@@ -322,4 +419,36 @@ private actor MockPCM16RealtimeTranscriptionSession: PCM16RealtimeTranscriptionS
     func appendPCM16(_: Data) async throws {}
     func finish() async throws -> String { "realtime" }
     func cancel() async {}
+}
+
+private actor RecordingPCM16RealtimeTranscriptionSession: PCM16RealtimeTranscriptionSession {
+    private let finalText: String
+    private var starts = 0
+    private var chunks: [Data] = []
+
+    init(finalText: String) {
+        self.finalText = finalText
+    }
+
+    func start() async throws {
+        starts += 1
+    }
+
+    func appendPCM16(_ data: Data) async throws {
+        chunks.append(data)
+    }
+
+    func finish() async throws -> String {
+        finalText
+    }
+
+    func cancel() async {}
+
+    func startCallCount() -> Int {
+        starts
+    }
+
+    func sentByteCount() -> Int {
+        chunks.reduce(0) { $0 + $1.count }
+    }
 }

@@ -271,6 +271,93 @@ final class HotkeyGestureArbiterTests: XCTestCase {
         XCTAssertEqual(endEvents, [.end(.activation)])
         XCTAssertEqual(arbiter.phase, .idle)
     }
+
+    func testRightCommandModifierOnlyAskBeginsAndEnds() {
+        var arbiter = HotkeyGestureArbiter()
+        let rightCommandAsk = HotkeyBinding(
+            keyCode: HotkeyBinding.rightCommandKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue),
+        )
+
+        let beginEvents = arbiter.handleFlagsChanged(
+            keyCode: HotkeyBinding.rightCommandKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue),
+            activationHotkey: activation,
+            askHotkey: rightCommandAsk,
+            personaHotkey: persona,
+        )
+
+        XCTAssertEqual(beginEvents, [.begin(.ask)])
+        XCTAssertEqual(arbiter.phase, .active(.ask))
+
+        let endEvents = arbiter.handleFlagsChanged(
+            keyCode: HotkeyBinding.rightCommandKeyCode,
+            modifierFlags: 0,
+            activationHotkey: activation,
+            askHotkey: rightCommandAsk,
+            personaHotkey: persona,
+        )
+
+        XCTAssertEqual(endEvents, [.end(.ask)])
+        XCTAssertEqual(arbiter.phase, .idle)
+    }
+
+    func testRightOptionModifierOnlyPersonaRequestsPicker() {
+        var arbiter = HotkeyGestureArbiter()
+        let rightOptionPersona = HotkeyBinding(
+            keyCode: HotkeyBinding.rightOptionKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
+        )
+
+        let events = arbiter.handleFlagsChanged(
+            keyCode: HotkeyBinding.rightOptionKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
+            activationHotkey: activation,
+            askHotkey: ask,
+            personaHotkey: rightOptionPersona,
+        )
+
+        XCTAssertEqual(events, [.personaRequested])
+        XCTAssertEqual(arbiter.phase, .idle)
+    }
+
+    func testShouldConsumeModifierFlagsChangedForAskModifierOnlyTrigger() {
+        let arbiter = HotkeyGestureArbiter()
+        let rightCommandAsk = HotkeyBinding(
+            keyCode: HotkeyBinding.rightCommandKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue),
+        )
+
+        let shouldConsume = arbiter.shouldConsume(
+            eventType: .flagsChanged,
+            keyCode: HotkeyBinding.rightCommandKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue),
+            activationHotkey: activation,
+            askHotkey: rightCommandAsk,
+            personaHotkey: persona,
+        )
+
+        XCTAssertTrue(shouldConsume)
+    }
+
+    func testShouldConsumeModifierFlagsChangedForPersonaModifierOnlyTrigger() {
+        let arbiter = HotkeyGestureArbiter()
+        let rightOptionPersona = HotkeyBinding(
+            keyCode: HotkeyBinding.rightOptionKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
+        )
+
+        let shouldConsume = arbiter.shouldConsume(
+            eventType: .flagsChanged,
+            keyCode: HotkeyBinding.rightOptionKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
+            activationHotkey: activation,
+            askHotkey: ask,
+            personaHotkey: rightOptionPersona,
+        )
+
+        XCTAssertTrue(shouldConsume)
+    }
 }
 
 // MARK: - Extended HotkeyGestureArbiter tests

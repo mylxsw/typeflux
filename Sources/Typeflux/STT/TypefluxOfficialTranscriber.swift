@@ -173,35 +173,36 @@ final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber, 
         scenario: TypefluxCloudScenario,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
     ) async throws -> any RealtimeTranscriptionSession {
-        let token = await accessTokenProvider()
-        guard let token, !token.isEmpty else {
-            throw TypefluxOfficialASRError.notLoggedIn
-        }
-
-        let route = try await routingClient.fetchRoute(accessToken: token, scenario: scenario)
-        if case .aliyun(let aliyunToken, _, let usageReportID) = route {
-            let upstream = TypefluxOfficialAliyunUsageReportingPCMStream(
-                upstream: transport.makeDirectAliyunPCMStream(token: aliyunToken, onUpdate: onUpdate),
-                accessToken: token,
-                usageReportID: usageReportID,
-                scenario: scenario,
-                routingClient: routingClient,
-            )
-            return BufferedRealtimeTranscriptionSession(upstream: upstream)
-        }
-
-        let baseURLs = await Self.realtimeCandidateBaseURLs()
-        guard let baseURL = baseURLs.first else {
-            throw TypefluxOfficialASRError.connectionFailed("No Typeflux Cloud endpoint configured.")
-        }
-
         return BufferedRealtimeTranscriptionSession(
-            upstream: TypefluxOfficialRealtimePCMStream(
-                apiBaseURL: baseURL.absoluteString,
-                token: token,
-                scenario: scenario,
-                onUpdate: onUpdate,
-            ),
+            upstream: DeferredPCM16RealtimeTranscriptionSession { [accessTokenProvider, routingClient, transport] in
+                let token = await accessTokenProvider()
+                guard let token, !token.isEmpty else {
+                    throw TypefluxOfficialASRError.notLoggedIn
+                }
+
+                let route = try await routingClient.fetchRoute(accessToken: token, scenario: scenario)
+                if case .aliyun(let aliyunToken, _, let usageReportID) = route {
+                    return TypefluxOfficialAliyunUsageReportingPCMStream(
+                        upstream: transport.makeDirectAliyunPCMStream(token: aliyunToken, onUpdate: onUpdate),
+                        accessToken: token,
+                        usageReportID: usageReportID,
+                        scenario: scenario,
+                        routingClient: routingClient,
+                    )
+                }
+
+                let baseURLs = await Self.realtimeCandidateBaseURLs()
+                guard let baseURL = baseURLs.first else {
+                    throw TypefluxOfficialASRError.connectionFailed("No Typeflux Cloud endpoint configured.")
+                }
+
+                return TypefluxOfficialRealtimePCMStream(
+                    apiBaseURL: baseURL.absoluteString,
+                    token: token,
+                    scenario: scenario,
+                    onUpdate: onUpdate,
+                )
+            },
         )
     }
 

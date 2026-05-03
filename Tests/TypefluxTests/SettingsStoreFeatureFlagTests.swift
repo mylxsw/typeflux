@@ -53,8 +53,8 @@ final class SettingsStoreFeatureFlagTests: XCTestCase {
         XCTAssertFalse(reloaded.stubbornPasteFallbackEnabled)
     }
 
-    func testInputContextOptimizationEnabledDefaultsToFalse() {
-        XCTAssertFalse(store.inputContextOptimizationEnabled)
+    func testInputContextOptimizationEnabledDefaultsToTrue() {
+        XCTAssertTrue(store.inputContextOptimizationEnabled)
     }
 
     func testInputContextOptimizationEnabledCanBeEnabledAndDisabled() {
@@ -63,5 +63,12 @@ final class SettingsStoreFeatureFlagTests: XCTestCase {
 
         store.inputContextOptimizationEnabled = false
         XCTAssertFalse(store.inputContextOptimizationEnabled)
+    }
+
+    func testInputContextOptimizationEnabledPersistsExplicitFalse() {
+        store.inputContextOptimizationEnabled = false
+
+        let reloaded = SettingsStore(defaults: defaults)
+        XCTAssertFalse(reloaded.inputContextOptimizationEnabled)
     }
 }

@@ -327,7 +327,7 @@ struct OnboardingView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color(red: 0.66, green: 0.78, blue: 1.0), StudioTheme.accent],
+                            colors: [StudioTheme.accent.opacity(0.72), StudioTheme.accent],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing,
                         ),
@@ -1341,10 +1341,10 @@ struct OnboardingView: View {
         switch OnboardingProviderStyle.iconPlateStyle(for: providerID) {
         case .light:
             let top = isSelected
-                ? Color(red: 0.96, green: 0.98, blue: 1.0).opacity(0.96)
+                ? StudioTheme.accent.opacity(0.18)
                 : Color.white.opacity(0.92)
             let bottom = isSelected
-                ? Color(red: 0.82, green: 0.89, blue: 1.0).opacity(0.88)
+                ? StudioTheme.accent.opacity(0.34)
                 : Color(red: 0.84, green: 0.87, blue: 0.93).opacity(0.84)
             return LinearGradient(colors: [top, bottom], startPoint: .topLeading, endPoint: .bottomTrailing)
         case .neutral:

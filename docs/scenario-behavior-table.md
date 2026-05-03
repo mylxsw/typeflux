@@ -1,115 +1,115 @@
-# Typeflux 场景-行为对照表
+# Typeflux Scenario-Behavior Reference Table
 
-本文档描述了 Typeflux 应用在各种场景下的触发条件和对应的系统行为。
+This document describes the trigger conditions and corresponding system behaviors for the Typeflux application across various scenarios.
 
-## 热键操作场景
+## Hotkey Operation Scenarios
 
-| 场景 | 行为 |
-|------|------|
-| 按住说话模式 | 用户按住激活热键（默认 FN）→ 开始录音，显示悬浮录音胶囊，播放开始音效 |
-| 点击锁定模式 | 用户快速点击热键（<220ms）→ 进入锁定录音模式，悬浮窗显示确认/取消按钮 |
-| 热键释放（短按） | 释放热键且按住时间 <220ms → 切换到锁定录音模式 |
-| 热键释放（长按结束） | 释放热键且按住时间 ≥220ms → 停止录音，开始后续处理 |
-| Ask 热键触发 | 按下 Ask 热键（⌘⇧空格）→ 开始锁定录音，用于对选中文本提问 |
-| 角色选择热键触发 | 按下角色热键（⌘⇧P）→ 显示角色选择器悬浮窗 |
+| Scenario | Behavior |
+|----------|----------|
+| Hold-to-talk mode | User holds the activation hotkey (default FN) → recording starts, floating recording capsule appears, start sound effect plays |
+| Tap-to-lock mode | User quickly taps the hotkey (<220ms) → enters locked recording mode, overlay shows confirm/cancel buttons |
+| Hotkey release (short press) | Hotkey released with hold duration <220ms → switches to locked recording mode |
+| Hotkey release (long press ends) | Hotkey released with hold duration ≥220ms → recording stops, post-processing begins |
+| Ask hotkey triggered | Ask hotkey pressed (⌘⇧Space) → starts locked recording for querying selected text |
+| Persona selection hotkey triggered | Persona hotkey pressed (⌘⇧P) → displays the persona selector overlay |
 
-## 角色选择器场景
+## Persona Selector Scenarios
 
-| 场景 | 行为 |
-|------|------|
-| 切换默认角色 | 在没有选中文本时打开角色选择器 → 可切换全局默认角色 |
-| 应用角色到选区 | 在有选中文本时打开角色选择器 → 直接将角色应用到选中文本 |
-| 角色选择确认 | 在角色选择器中按回车或点击 → 应用选中的角色 |
-| 角色选择取消 | 按 Esc 或点击外部 → 关闭角色选择器，不应用更改 |
+| Scenario | Behavior |
+|----------|----------|
+| Switch default persona | Open persona selector with no text selected → allows switching the global default persona |
+| Apply persona to selection | Open persona selector with text selected → applies persona directly to the selected text |
+| Persona selection confirmed | Press Enter or click in the persona selector → applies the selected persona |
+| Persona selection cancelled | Press Esc or click outside → closes the persona selector without applying changes |
 
-## 录音控制场景
+## Recording Control Scenarios
 
-| 场景 | 行为 |
-|------|------|
-| 录音超时（10分钟） | 录音达到10分钟限制 → 自动停止录音并处理 |
-| 录音时间过短 | 录音时长 <0.35秒 → 取消处理，显示提示"录音时间过短" |
-| 录音无声音信号 | 音频分析未发现可听信号 → 取消处理，显示提示"未检测到语音" |
-| 音频启动失败 | 录音设备初始化失败 → 记录错误，播放错误音效，显示失败提示 |
-| 用户取消录音 | 按 Esc 或点击取消按钮 → 停止录音，清理状态，关闭悬浮窗 |
-| 确认锁定录音 | 锁定模式下点击确认或按热键 → 停止录音并处理 |
+| Scenario | Behavior |
+|----------|----------|
+| Recording timeout (10 min) | Recording reaches the 10-minute limit → automatically stops and processes the audio |
+| Recording too short | Recording duration <0.35 seconds → processing cancelled, displays "Recording too short" prompt |
+| No voice signal detected | Audio analysis finds no audible signal → processing cancelled, displays "No speech detected" prompt |
+| Audio device initialization failed | Recording device failed to initialize → logs error, plays error sound effect, shows failure prompt |
+| User cancels recording | Press Esc or click the cancel button → stops recording, clears state, closes the overlay |
+| Confirm locked recording | Click confirm or press hotkey in locked mode → stops recording and begins processing |
 
-## 语音处理场景
+## Voice Processing Scenarios
 
-| 场景 | 行为 |
-|------|------|
-| 语音识别 | 调用 STT Router 转录音频 → 显示处理中状态，支持实时预览 |
-| 语音识别结果为空 | 转录文本为空 → 跳过后续处理，显示提示 |
-| Persona 改写模式 | 启用了角色且转录成功 → 调用 LLM 按角色提示词改写文本 |
-| 选区编辑模式 | 有选中文本时录音 → LLM 根据指令编辑选中文本 |
-| Ask 回答模式 | 使用 Ask 热键且有选中文本 → 进入 Agent 流程，决定是回答还是编辑 |
-| Agent 回答结果 | Agent 决定回答问题 → 打开 AskAnswer 窗口显示回答内容 |
-| Agent 编辑结果 | Agent 决定编辑文本 → 将编辑后的文本写入原位置 |
-| 多模态模型直接处理 | 使用多模态 STT 且无需改写 → 跳过 LLM 改写，直接应用转录结果 |
-| 处理超时（2分钟） | 处理超过2分钟 → 取消处理，显示超时失败提示，支持重试 |
-| 用户取消处理 | 处理中按 Esc → 取消当前处理任务，记录失败状态 |
-| 重试历史记录 | 在历史记录中点击重试 → 重新处理该条记录的音频 |
+| Scenario | Behavior |
+|----------|----------|
+| Speech recognition | STT Router transcribes the audio → displays processing status, supports real-time preview |
+| Empty transcription result | Transcribed text is empty → skips subsequent processing, displays a prompt |
+| Persona rewrite mode | Persona enabled and transcription succeeded → calls LLM to rewrite text using the persona prompt |
+| Selection edit mode | Text is selected when recording → LLM edits the selected text based on the instruction |
+| Ask answer mode | Ask hotkey used with text selected → enters Agent workflow, decides whether to answer or edit |
+| Agent answer result | Agent decides to answer the question → opens AskAnswer window to display the response |
+| Agent edit result | Agent decides to edit text → writes the edited text back to the original location |
+| Multimodal model direct processing | Multimodal STT used and no rewrite needed → skips LLM rewriting, applies transcription result directly |
+| Processing timeout (2 min) | Processing exceeds 2 minutes → cancels processing, displays timeout failure prompt with retry option |
+| User cancels processing | Press Esc during processing → cancels the current processing task, records failure status |
+| Retry from history | Click retry in history record → reprocesses the audio for that record |
 
-## 文本注入场景
+## Text Injection Scenarios
 
-| 场景 | 行为 |
-|------|------|
-| 替换选区 | 目标可编辑且有选中文本 → 使用 AX API 或 Cmd+V 替换选中文本 |
-| 插入文本 | 目标可编辑但无选中文本 → 在光标位置插入文本 |
-| 文本注入失败回退 | AX API 和粘贴都失败 → 显示结果对话框，包含复制按钮 |
-| 权限检查失败 | 无辅助功能权限时尝试注入文本 → 打开系统设置权限页面 |
-| 粘贴板恢复 | 使用粘贴方式注入文本后 → 延迟恢复原始粘贴板内容 |
+| Scenario | Behavior |
+|----------|----------|
+| Replace selection | Target is editable with text selected → uses AX API or Cmd+V to replace the selected text |
+| Insert text | Target is editable with no text selected → inserts text at the cursor position |
+| Text injection failure fallback | Both AX API and paste fail → displays result dialog with a copy button |
+| Permission check failed | Attempting text injection without Accessibility permissions → opens the System Settings permissions page |
+| Clipboard restoration | After injecting text via paste → delays restoring the original clipboard contents |
 
-## 悬浮窗 UI 场景
+## Overlay UI Scenarios
 
-| 场景 | 行为 |
-|------|------|
-| 录音胶囊 | 录音中 → 显示音量波形动画 |
-| 录音预览 | 实时转录可用时 → 在胶囊下方显示转录文本预览 |
-| 处理中 | 转录或 LLM 处理中 → 显示进度动画和状态文本 |
-| 失败提示 | 处理出错 → 显示错误信息，支持重试按钮（如可重试） |
-| 结果对话框 | 无法直接注入文本时 → 显示结果和复制按钮 |
-| 角色选择器 | 显示角色列表 → 支持上下键选择、回车确认、Esc 取消 |
+| Scenario | Behavior |
+|----------|----------|
+| Recording capsule | While recording → displays volume waveform animation |
+| Recording preview | When real-time transcription is available → shows transcribed text preview below the capsule |
+| Processing state | During transcription or LLM processing → displays progress animation and status text |
+| Failure prompt | On processing error → displays error message with optional retry button (if retryable) |
+| Result dialog | When text cannot be injected directly → displays result with a copy button |
+| Persona selector | Displays persona list → supports ↑/↓ arrow key navigation, Enter to confirm, Esc to cancel |
 
-## 系统功能场景
+## System Feature Scenarios
 
-| 场景 | 行为 |
-|------|------|
-| 自动词库收集 | 文本注入成功后 → 监控输入框变化，检测用户修正，自动学习词汇 |
-| 菜单栏状态更新 | 状态变化时 → 更新菜单栏图标和菜单内容 |
-| 设置窗口操作 | 点击菜单项 → 打开设置窗口到对应页面（首页/历史/角色） |
-| 首次启动引导 | onboarding 未完成 → 打开权限引导窗口 |
-| 本地模型预热 | 使用本地 STT 时 → 在后台预加载模型以减少延迟 |
-| MCP 工具调用 | Agent 模式启用 MCP → 调用外部 MCP 服务器工具 |
-| 技能系统调用 | Agent 识别到技能匹配 → 加载对应技能提示词和工具 |
+| Scenario | Behavior |
+|----------|----------|
+| Automatic vocabulary collection | After successful text injection → monitors input field changes, detects user corrections, and automatically learns vocabulary |
+| Menu bar status update | On state change → updates menu bar icon and menu content |
+| Settings window operations | Click a menu item → opens settings window to the corresponding page (Home/History/Persona) |
+| First-launch onboarding | Onboarding not completed → opens the permissions guidance window |
+| Local model warm-up | When using local STT → preloads the model in the background to reduce latency |
+| MCP tool invocation | Agent mode with MCP enabled → calls external MCP server tools |
+| Skill system invocation | Agent detects a skill match → loads the corresponding skill prompt and tools |
 
-## 快捷键参考
+## Hotkey Reference
 
-| 快捷键 | 功能 |
-|--------|------|
-| `FN` (默认) | 按住说话 / 点击锁定 |
-| `⌘⇧空格` | Ask 模式（对选中文本提问） |
-| `⌘⇧P` | 打开角色选择器 |
-| `Esc` | 取消录音/处理/关闭悬浮窗 |
-| `↑/↓` | 在角色选择器中上下移动 |
-| `Enter` | 确认角色选择或锁定录音 |
+| Hotkey | Function |
+|--------|----------|
+| `FN` (default) | Hold to talk / Tap to lock |
+| `⌘⇧Space` | Ask mode (query selected text) |
+| `⌘⇧P` | Open persona selector |
+| `Esc` | Cancel recording / processing / close overlay |
+| `↑/↓` | Navigate up/down in persona selector |
+| `Enter` | Confirm persona selection or lock recording |
 
-## 核心工作流
+## Core Workflow
 
 ```
-热键触发 → 开始录音 → 音频分析 → 语音识别 → [可选]LLM处理 → 文本注入 → 完成
-                ↓              ↓              ↓              ↓
-           悬浮窗显示    检查音频质量    流式预览      失败时回退到
-           实时预览      过短/无声音     实时转录      结果对话框
+Hotkey trigger → Start recording → Audio analysis → Speech recognition → [Optional] LLM processing → Text injection → Done
+                    ↓                  ↓                ↓                      ↓
+               Overlay display    Check audio       Streaming preview    Fallback to result
+               real-time preview  too short/silent   real-time transcript  dialog on failure
 ```
 
-## 状态流转
+## State Transitions
 
-| 当前状态 | 可能的下一个状态 | 触发条件 |
-|---------|----------------|---------|
-| 空闲 | 录音中 | 按下热键 |
-| 录音中 | 处理中 | 释放热键（结束录音） |
-| 录音中 | 空闲 | 按 Esc 取消 |
-| 处理中 | 空闲 | 处理完成并成功注入 |
-| 处理中 | 结果对话框 | 无法直接注入文本 |
-| 处理中 | 失败提示 | 处理出错 |
-| 处理中 | 空闲 | 按 Esc 取消/超时 |
+| Current State | Possible Next State | Trigger |
+|---------------|-------------------|---------|
+| Idle | Recording | Hotkey pressed |
+| Recording | Processing | Hotkey released (recording ends) |
+| Recording | Idle | Esc pressed (cancel) |
+| Processing | Idle | Processing completed and text injected successfully |
+| Processing | Result dialog | Text cannot be injected directly |
+| Processing | Failure prompt | Processing error occurred |
+| Processing | Idle | Esc pressed (cancel) / Timeout |

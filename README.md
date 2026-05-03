@@ -1,8 +1,6 @@
 <div align="center">
 
-# Typeflux
-
-**Talk. We'll Type.**
+# Typeflux - Talk. We'll Type.
 
 Press `Fn` and speak naturally. Typeflux delivers lightning-fast, accurate voice-to-text directly into any macOS application. Free, open-source, and supports local models — your voice never has to leave your Mac.
 

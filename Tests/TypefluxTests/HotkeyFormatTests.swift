@@ -9,7 +9,7 @@ final class HotkeyFormatTests: XCTestCase {
             keyCode: HotkeyBinding.rightCommandKeyCode,
             modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue),
         )
-        XCTAssertEqual(HotkeyFormat.display(binding), "Right Command")
+        XCTAssertEqual(HotkeyFormat.display(binding), "⌘(R)")
     }
 
     func testDisplayRightOptionTrigger() {
@@ -17,7 +17,7 @@ final class HotkeyFormatTests: XCTestCase {
             keyCode: HotkeyBinding.rightOptionKeyCode,
             modifierFlags: UInt(NSEvent.ModifierFlags.option.rawValue),
         )
-        XCTAssertEqual(HotkeyFormat.display(binding), "Right Option")
+        XCTAssertEqual(HotkeyFormat.display(binding), "⌥(R)")
     }
 
     func testDisplayFnTrigger() {
@@ -106,8 +106,8 @@ final class HotkeyFormatTests: XCTestCase {
 
     func testSpecialKeys() {
         let expected: [(Int, String)] = [
-            (36, "Return"), (48, "Tab"), (49, "Space"),
-            (51, "Delete"), (53, "Escape"), (50, "`"),
+            (36, "↩"), (48, "⇥"), (49, "Space"),
+            (51, "⌫"), (53, "Esc"), (50, "`"),
         ]
         for (code, name) in expected {
             let binding = HotkeyBinding(keyCode: code, modifierFlags: 0)
@@ -132,6 +132,8 @@ final class HotkeyFormatTests: XCTestCase {
             (122, "F1"), (120, "F2"), (99, "F3"), (118, "F4"),
             (96, "F5"), (97, "F6"), (98, "F7"), (100, "F8"),
             (101, "F9"), (109, "F10"), (103, "F11"), (111, "F12"),
+            (105, "F13"), (107, "F14"), (113, "F15"), (106, "F16"),
+            (64, "F17"), (79, "F18"), (80, "F19"), (90, "F20"),
         ]
         for (code, name) in expected {
             let binding = HotkeyBinding(keyCode: code, modifierFlags: 0)
@@ -140,7 +142,36 @@ final class HotkeyFormatTests: XCTestCase {
         }
     }
 
-    func testUnmappedKeyCodeFallback() {
+    func testKeypadKeys() {
+        let expected: [(Int, String)] = [
+            (65, "."), (67, "*"), (69, "+"), (75, "/"),
+            (76, "Enter"), (78, "-"), (81, "="), (82, "0"),
+            (83, "1"), (84, "2"), (85, "3"), (86, "4"),
+            (87, "5"), (88, "6"), (89, "7"), (91, "8"),
+            (92, "9"),
+        ]
+        for (code, name) in expected {
+            let binding = HotkeyBinding(keyCode: code, modifierFlags: 0)
+            let parts = HotkeyFormat.components(binding)
+            XCTAssertEqual(parts.last, name, "keyCode \(code) should map to \(name)")
+        }
+    }
+
+    func testNavigationAndSystemKeys() {
+        let expected: [(Int, String)] = [
+            (71, "Clear"), (72, "Vol+"), (73, "Vol-"),
+            (74, "Mute"), (114, "Help"), (115, "Home"),
+            (116, "PgUp"), (117, "⌦"), (119, "End"),
+            (121, "PgDn"),
+        ]
+        for (code, name) in expected {
+            let binding = HotkeyBinding(keyCode: code, modifierFlags: 0)
+            let parts = HotkeyFormat.components(binding)
+            XCTAssertEqual(parts.last, name, "keyCode \(code) should map to \(name)")
+        }
+    }
+
+    func testUnmappedKeyCodeFallbackShowsKeyCode() {
         let binding = HotkeyBinding(keyCode: 200, modifierFlags: 0)
         let parts = HotkeyFormat.components(binding)
         XCTAssertEqual(parts.last, "Key200")

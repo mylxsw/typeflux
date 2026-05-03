@@ -65,6 +65,37 @@ final class RealtimeTranscriptionSessionTests: XCTestCase {
         }
     }
 
+    func testDeferredPCM16SessionResolvesUpstreamOnStart() async throws {
+        let upstream = DelayedStartPCMStream(finalText: "deferred")
+        let factory = DelayedPCMStreamFactory(upstream: upstream)
+        let session = DeferredPCM16RealtimeTranscriptionSession {
+            await factory.makeUpstream()
+        }
+
+        let startTask = Task {
+            try await session.start()
+        }
+        await factory.waitUntilRequested()
+        let requestCountBeforeRelease = await factory.requestCount()
+        let startCountBeforeRelease = await upstream.startCallCount()
+        XCTAssertEqual(requestCountBeforeRelease, 1)
+        XCTAssertEqual(startCountBeforeRelease, 0)
+
+        await factory.release()
+        await upstream.waitUntilStartCalled()
+        await upstream.releaseStart()
+        try await startTask.value
+
+        try await session.appendPCM16(Data([1, 2, 3]))
+        let finalText = try await session.finish()
+
+        let startCountAfterFinish = await upstream.startCallCount()
+        let sentByteCount = await upstream.sentByteCount()
+        XCTAssertEqual(finalText, "deferred")
+        XCTAssertEqual(startCountAfterFinish, 1)
+        XCTAssertEqual(sentByteCount, 3)
+    }
+
     private func makeFloatBuffer(frameCount: AVAudioFrameCount) throws -> AVAudioPCMBuffer {
         let format = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
@@ -85,13 +116,18 @@ final class RealtimeTranscriptionSessionTests: XCTestCase {
 private actor DelayedStartPCMStream: PCM16RealtimeTranscriptionSession {
     private let finalText: String
     private var startContinuation: CheckedContinuation<Void, Never>?
+    private var startRequestedContinuation: CheckedContinuation<Void, Never>?
     private var chunks: [Data] = []
+    private var starts = 0
 
     init(finalText: String) {
         self.finalText = finalText
     }
 
     func start() async throws {
+        starts += 1
+        startRequestedContinuation?.resume()
+        startRequestedContinuation = nil
         await withCheckedContinuation { continuation in
             startContinuation = continuation
         }
@@ -122,6 +158,17 @@ private actor DelayedStartPCMStream: PCM16RealtimeTranscriptionSession {
     func sentByteCount() -> Int {
         chunks.reduce(0) { $0 + $1.count }
     }
+
+    func startCallCount() -> Int {
+        starts
+    }
+
+    func waitUntilStartCalled() async {
+        if starts > 0 { return }
+        await withCheckedContinuation { continuation in
+            startRequestedContinuation = continuation
+        }
+    }
 }
 
 private actor FailingStartPCMStream: PCM16RealtimeTranscriptionSession {
@@ -136,4 +183,41 @@ private actor FailingStartPCMStream: PCM16RealtimeTranscriptionSession {
     }
 
     func cancel() async {}
+}
+
+private actor DelayedPCMStreamFactory {
+    private let upstream: any PCM16RealtimeTranscriptionSession
+    private var requestContinuation: CheckedContinuation<Void, Never>?
+    private var releaseContinuation: CheckedContinuation<Void, Never>?
+    private var requests = 0
+
+    init(upstream: any PCM16RealtimeTranscriptionSession) {
+        self.upstream = upstream
+    }
+
+    func makeUpstream() async -> any PCM16RealtimeTranscriptionSession {
+        requests += 1
+        requestContinuation?.resume()
+        requestContinuation = nil
+        await withCheckedContinuation { continuation in
+            releaseContinuation = continuation
+        }
+        return upstream
+    }
+
+    func waitUntilRequested() async {
+        if requests > 0 { return }
+        await withCheckedContinuation { continuation in
+            requestContinuation = continuation
+        }
+    }
+
+    func release() {
+        releaseContinuation?.resume()
+        releaseContinuation = nil
+    }
+
+    func requestCount() -> Int {
+        requests
+    }
 }

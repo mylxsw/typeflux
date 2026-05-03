@@ -21,7 +21,20 @@ enum AudioFileTranscoder {
             try FileManager.default.removeItem(at: outputURL)
         }
 
-        let inputFile = try AVAudioFile(forReading: audioFile.fileURL)
+        do {
+            try convertWithAVFoundation(inputURL: audioFile.fileURL, outputURL: outputURL)
+        } catch {
+            if FileManager.default.fileExists(atPath: outputURL.path) {
+                try? FileManager.default.removeItem(at: outputURL)
+            }
+            try convertWithAFConvert(inputURL: audioFile.fileURL, outputURL: outputURL, originalError: error)
+        }
+
+        return outputURL
+    }
+
+    private static func convertWithAVFoundation(inputURL: URL, outputURL: URL) throws {
+        let inputFile = try AVAudioFile(forReading: inputURL)
         let format = AVAudioFormat(
             commonFormat: .pcmFormatInt16,
             sampleRate: inputFile.processingFormat.sampleRate,
@@ -112,7 +125,37 @@ enum AudioFileTranscoder {
                 try outputFile.write(from: outputBuffer)
             }
         }
+    }
 
-        return outputURL
+    private static func convertWithAFConvert(inputURL: URL, outputURL: URL, originalError: Error) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/afconvert")
+        process.arguments = [
+            "-f",
+            "WAVE",
+            "-d",
+            "LEI16",
+            inputURL.path,
+            outputURL.path,
+        ]
+
+        let errorPipe = Pipe()
+        process.standardError = errorPipe
+        try process.run()
+        process.waitUntilExit()
+
+        guard process.terminationStatus == 0 else {
+            let stderr = String(data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            throw NSError(
+                domain: "AudioFileTranscoder",
+                code: 6,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "Unable to transcode audio file to WAV.",
+                    NSLocalizedFailureReasonErrorKey: stderr.isEmpty ? "afconvert exited with status \(process.terminationStatus)." : stderr,
+                    NSUnderlyingErrorKey: originalError,
+                ],
+            )
+        }
     }
 }

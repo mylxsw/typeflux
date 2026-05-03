@@ -5,14 +5,18 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private static let outputMuteDelayWithStartCue: Duration = .milliseconds(1_225)
     private static let outputMuteDelayWithoutStartCue: Duration = .milliseconds(180)
     private static let silentInputRecoveryDelay: Duration = .milliseconds(1_000)
+    private static let audioStartupTimeout: DispatchTimeInterval = .seconds(5)
 
     enum RecorderError: LocalizedError, Equatable {
         case inputDeviceUnavailable
+        case inputStartupTimedOut
 
         var errorDescription: String? {
             switch self {
             case .inputDeviceUnavailable:
                 return "No usable microphone input format is available."
+            case .inputStartupTimedOut:
+                return "Microphone input did not become ready in time."
             }
         }
     }
@@ -34,6 +38,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private var silentInputRecoveryTask: Task<Void, Never>?
     private var isRecording = false
     private var isTapInstalled = false
+    private var activeRecordingID: UUID?
     private var activeBufferCallbacks = 0
     private var inputBufferCallbackCount = 0
 
@@ -58,68 +63,50 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         levelHandler: @escaping (Float) -> Void,
         audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?,
     ) throws {
+        let startupAttempt = RecordingStartupAttempt()
+        let startupResult = RecordingStartupResultBox()
+        let startupSemaphore = DispatchSemaphore(value: 0)
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else {
+                startupResult.store(.failure(RecorderError.inputDeviceUnavailable))
+                startupSemaphore.signal()
+                return
+            }
+            do {
+                let preparedSession = try self.prepareRecordingSession(
+                    id: startupAttempt.id,
+                    startupAttempt: startupAttempt,
+                )
+                startupResult.store(.success(preparedSession))
+            } catch {
+                startupResult.store(.failure(error))
+            }
+            startupSemaphore.signal()
+        }
+
+        guard startupSemaphore.wait(timeout: .now() + Self.audioStartupTimeout) == .success else {
+            startupAttempt.cancel()
+            NetworkDebugLogger.logMessage(
+                "[Audio Recorder] Microphone input startup timed out; abandoning stale AVAudioEngine startup.",
+            )
+            throw RecorderError.inputStartupTimedOut
+        }
+
+        let preparedSession = try startupResult.value().get()
+
         lifecycleLock.lock()
         defer { lifecycleLock.unlock() }
 
         stopInternal()
-        prepareEngineForRecordingSession()
 
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let now = Date()
-        let calendar = Calendar.current
-        let year = String(format: "%04d", calendar.component(.year, from: now))
-        let month = String(format: "%02d", calendar.component(.month, from: now))
-        let day = String(format: "%02d", calendar.component(.day, from: now))
-        let dir = appSupport.appendingPathComponent("Typeflux/audio/\(year)/\(month)/\(day)", isDirectory: true)
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-
-        let url = dir.appendingPathComponent(UUID().uuidString).appendingPathExtension("wav")
-        var inputNode = engine.inputNode
-        let inputFormat: AVAudioFormat
-        do {
-            inputFormat = try configureInputDeviceAndResolveFormat(for: inputNode)
-        } catch RecorderError.inputDeviceUnavailable {
-            NetworkDebugLogger.logMessage(
-                "[Audio Recorder] Rebuilding audio engine after microphone input format became unavailable.",
-            )
-            rebuildAudioEngine()
-            inputNode = engine.inputNode
-            inputFormat = try configureInputDeviceAndResolveFormat(for: inputNode)
-        }
-        let outputSettings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: inputFormat.sampleRate,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 16,
-            AVLinearPCMIsBigEndianKey: false,
-            AVLinearPCMIsFloatKey: false,
-            AVLinearPCMIsNonInterleaved: false,
-        ]
-
-        let outputFile = try AVAudioFile(forWriting: url, settings: outputSettings)
+        engine = preparedSession.engine
+        isTapInstalled = true
         stateCondition.lock()
-        audioFile = outputFile
-        startedAt = Date()
+        audioFile = preparedSession.audioFile
+        startedAt = preparedSession.startedAt
         self.levelHandler = levelHandler
         self.audioBufferHandler = audioBufferHandler
-        stateCondition.unlock()
-
-        inputNode.removeTap(onBus: 0)
-        inputNode.installTap(onBus: 0, bufferSize: 2048, format: inputFormat) { [weak self] buffer, _ in
-            self?.handleInputBuffer(buffer)
-        }
-        isTapInstalled = true
-
-        do {
-            engine.prepare()
-            try engine.start()
-            RecordingStartupLatencyTrace.shared.mark("audio.engine_start_return")
-        } catch {
-            stopInternal()
-            throw error
-        }
-
-        stateCondition.lock()
+        activeRecordingID = preparedSession.id
         isRecording = true
         let callbackCountAtStart = inputBufferCallbackCount
         stateCondition.unlock()
@@ -163,6 +150,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         levelHandler = nil
         audioBufferHandler = nil
         isRecording = false
+        activeRecordingID = nil
         stateCondition.unlock()
         muteTask?.cancel()
         muteTask = nil
@@ -198,6 +186,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         levelHandler = nil
         audioBufferHandler = nil
         isRecording = false
+        activeRecordingID = nil
         stateCondition.unlock()
         muteTask?.cancel()
         muteTask = nil
@@ -218,6 +207,85 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         // default device while an existing AVAudioEngine input node remains silent.
         // Rebuilding here forces AVFoundation to bind to the current HAL device.
         rebuildAudioEngine()
+    }
+
+    private func prepareRecordingSession(
+        id: UUID,
+        startupAttempt: RecordingStartupAttempt,
+    ) throws -> PreparedRecordingSession {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let now = Date()
+        let calendar = Calendar.current
+        let year = String(format: "%04d", calendar.component(.year, from: now))
+        let month = String(format: "%02d", calendar.component(.month, from: now))
+        let day = String(format: "%02d", calendar.component(.day, from: now))
+        let dir = appSupport.appendingPathComponent("Typeflux/audio/\(year)/\(month)/\(day)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+        let url = dir.appendingPathComponent(UUID().uuidString).appendingPathExtension("wav")
+        var sessionEngine = makeAudioEngine()
+        let inputNodeAndFormat: (AVAudioInputNode, AVAudioFormat)
+        do {
+            inputNodeAndFormat = try prepareInputNodeAndFormat(for: sessionEngine)
+        } catch RecorderError.inputDeviceUnavailable {
+            NetworkDebugLogger.logMessage(
+                "[Audio Recorder] Rebuilding audio engine after microphone input format became unavailable.",
+            )
+            sessionEngine.stop()
+            sessionEngine.reset()
+            sessionEngine = makeAudioEngine()
+            inputNodeAndFormat = try prepareInputNodeAndFormat(for: sessionEngine)
+        }
+
+        let inputNode = inputNodeAndFormat.0
+        let inputFormat = inputNodeAndFormat.1
+        let outputSettings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: inputFormat.sampleRate,
+            AVNumberOfChannelsKey: 1,
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsFloatKey: false,
+            AVLinearPCMIsNonInterleaved: false,
+        ]
+
+        let outputFile = try AVAudioFile(forWriting: url, settings: outputSettings)
+        inputNode.removeTap(onBus: 0)
+        inputNode.installTap(onBus: 0, bufferSize: 2048, format: inputFormat) { [weak self, startupAttempt] buffer, _ in
+            guard !startupAttempt.isCancelled else { return }
+            self?.handleInputBuffer(buffer, recordingID: id)
+        }
+
+        do {
+            sessionEngine.prepare()
+            try sessionEngine.start()
+            RecordingStartupLatencyTrace.shared.mark("audio.engine_start_return")
+        } catch {
+            inputNode.removeTap(onBus: 0)
+            sessionEngine.stop()
+            sessionEngine.reset()
+            throw error
+        }
+
+        guard !startupAttempt.isCancelled else {
+            inputNode.removeTap(onBus: 0)
+            sessionEngine.stop()
+            sessionEngine.reset()
+            throw RecorderError.inputStartupTimedOut
+        }
+
+        return PreparedRecordingSession(
+            id: id,
+            engine: sessionEngine,
+            audioFile: outputFile,
+            startedAt: Date(),
+        )
+    }
+
+    private func prepareInputNodeAndFormat(for engine: AVAudioEngine) throws -> (AVAudioInputNode, AVAudioFormat) {
+        let inputNode = engine.inputNode
+        let inputFormat = try configureInputDeviceAndResolveFormat(for: inputNode)
+        return (inputNode, inputFormat)
     }
 
     private func removeInputTapIfInstalled() {
@@ -270,8 +338,9 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             let inputNode = engine.inputNode
             let inputFormat = try configureInputDeviceAndResolveFormat(for: inputNode)
             inputNode.removeTap(onBus: 0)
+            let recordingID = currentRecordingID()
             inputNode.installTap(onBus: 0, bufferSize: 2048, format: inputFormat) { [weak self] buffer, _ in
-                self?.handleInputBuffer(buffer)
+                self?.handleInputBuffer(buffer, recordingID: recordingID)
             }
             isTapInstalled = true
             engine.prepare()
@@ -387,6 +456,13 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         return isRecording
     }
 
+    private func currentRecordingID() -> UUID? {
+        stateCondition.lock()
+        let activeRecordingID = activeRecordingID
+        stateCondition.unlock()
+        return activeRecordingID
+    }
+
     static func validateInputFormat(_ format: AVAudioFormat) throws {
         try validateInputFormat(channelCount: format.channelCount, sampleRate: format.sampleRate)
     }
@@ -405,10 +481,10 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         channelCount > 0 && sampleRate > 0
     }
 
-    private func handleInputBuffer(_ buffer: AVAudioPCMBuffer) {
+    private func handleInputBuffer(_ buffer: AVAudioPCMBuffer, recordingID: UUID?) {
         autoreleasepool {
             stateCondition.lock()
-            guard let audioFile = self.audioFile else {
+            guard let recordingID, activeRecordingID == recordingID, let audioFile = self.audioFile else {
                 stateCondition.unlock()
                 return
             }
@@ -568,6 +644,48 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         let minDb: Float = -60
         let clamped = max(minDb, power)
         return (clamped - minDb) / -minDb
+    }
+}
+
+private struct PreparedRecordingSession {
+    let id: UUID
+    let engine: AVAudioEngine
+    let audioFile: AVAudioFile
+    let startedAt: Date
+}
+
+private final class RecordingStartupAttempt {
+    let id = UUID()
+    private let lock = NSLock()
+    private var cancelled = false
+
+    var isCancelled: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return cancelled
+    }
+
+    func cancel() {
+        lock.lock()
+        cancelled = true
+        lock.unlock()
+    }
+}
+
+private final class RecordingStartupResultBox {
+    private let lock = NSLock()
+    private var result: Result<PreparedRecordingSession, Error>?
+
+    func store(_ result: Result<PreparedRecordingSession, Error>) {
+        lock.lock()
+        self.result = result
+        lock.unlock()
+    }
+
+    func value() -> Result<PreparedRecordingSession, Error> {
+        lock.lock()
+        defer { lock.unlock() }
+        return result ?? .failure(AVFoundationAudioRecorder.RecorderError.inputStartupTimedOut)
     }
 }
 

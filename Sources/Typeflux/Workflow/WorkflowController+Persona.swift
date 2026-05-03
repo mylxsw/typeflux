@@ -78,7 +78,7 @@ extension WorkflowController {
         let selected = personaPickerItems[personaPickerSelectedIndex]
         let mode = personaPickerMode
         soundEffectPlayer.playAsync(.tip)
-        dismissPersonaPicker(closeOverlay: false)
+        dismissPersonaPicker(immediate: true)
 
         switch mode {
         case .switchDefault:
@@ -117,13 +117,17 @@ extension WorkflowController {
         confirmPersonaSelection()
     }
 
-    func dismissPersonaPicker(closeOverlay: Bool = true) {
+    func dismissPersonaPicker(closeOverlay: Bool = true, immediate: Bool = false) {
         guard isPersonaPickerPresented else { return }
         isPersonaPickerPresented = false
         personaPickerItems = []
         personaPickerSelectedIndex = 0
         personaPickerMode = .switchDefault
         guard closeOverlay else { return }
+        if immediate {
+            overlayController.dismissImmediately()
+            return
+        }
         Task { @MainActor in
             self.overlayController.dismiss(after: 0.05)
         }

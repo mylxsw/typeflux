@@ -30,7 +30,7 @@ final class StatusBarController: NSObject {
     private let onOpenAgentJob: (UUID) -> Void
 
     private var statusItem: NSStatusItem?
-    private var menu: NSMenu?
+    private(set) var menu: NSMenu?
     private var cancellables = Set<AnyCancellable>()
     private var languageObserver: NSObjectProtocol?
     private var agentJobObserver: NSObjectProtocol?
@@ -208,6 +208,7 @@ final class StatusBarController: NSObject {
     private func rebuildMenu() {
         let menu = NSMenu()
         menu.autoenablesItems = false
+        menu.showsStateColumn = false
         menu.delegate = self
 
         menu.addItem(makeItem(title: L("menu.openVoiceStudio"), action: #selector(openHome)))
@@ -231,6 +232,7 @@ final class StatusBarController: NSObject {
         let appearanceItem = NSMenuItem(title: L("menu.appearance"), action: nil, keyEquivalent: "")
         appearanceItem.submenu = buildAppearanceMenu()
         menu.addItem(appearanceItem)
+        menu.addItem(makeSettingsItem())
         menu.addItem(makeUpdateMenuItem())
         if let downloadItem = makeAutoModelDownloadMenuItem() {
             menu.addItem(downloadItem)
@@ -387,6 +389,10 @@ final class StatusBarController: NSObject {
         return item
     }
 
+    private func makeSettingsItem() -> NSMenuItem {
+        makeItem(title: L("menu.settings"), action: #selector(showConfiguration))
+    }
+
     private func makeUpdateMenuItem() -> NSMenuItem {
         switch AutoUpdater.shared.state {
         case .idle:
@@ -419,6 +425,10 @@ final class StatusBarController: NSObject {
 
     @objc private func openHome() {
         openStudio(.home)
+    }
+
+    @objc private func showConfiguration() {
+        openStudio(.settings)
     }
 
     @objc private func openPersonas() {

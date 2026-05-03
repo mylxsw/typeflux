@@ -8,10 +8,10 @@ enum HotkeyFormat {
 
     static func components(_ binding: HotkeyBinding) -> [String] {
         if binding.isRightCommandTrigger {
-            return ["Right Command"]
+            return ["⌘(R)"]
         }
         if binding.isRightOptionTrigger {
-            return ["Right Option"]
+            return ["⌥(R)"]
         }
         if binding.isFunctionTrigger {
             return ["Fn"]
@@ -26,11 +26,11 @@ enum HotkeyFormat {
             flags.contains(.command) ? "⌘" : nil,
         ].compactMap(\.self)
 
-        parts.append(keyCodeToName(binding.keyCode))
+        parts.append(keyCodeDisplayName(binding.keyCode))
         return parts
     }
 
-    private static func keyCodeToName(_ keyCode: Int) -> String {
+    private static func keyCodeDisplayName(_ keyCode: Int) -> String {
         switch keyCode {
         case 0: "A"
         case 1: "S"
@@ -67,7 +67,7 @@ enum HotkeyFormat {
         case 33: "["
         case 34: "I"
         case 35: "P"
-        case 36: "Return"
+        case 36: "↩"
         case 37: "L"
         case 38: "J"
         case 39: "'"
@@ -79,11 +79,36 @@ enum HotkeyFormat {
         case 45: "N"
         case 46: "M"
         case 47: "."
-        case 48: "Tab"
+        case 48: "⇥"
         case 49: "Space"
         case 50: "`"
-        case 51: "Delete"
-        case 53: "Escape"
+        case 51: "⌫"
+        case 53: "Esc"
+        case 64: "F17"
+        case 65: "."
+        case 67: "*"
+        case 69: "+"
+        case 71: "Clear"
+        case 72: "Vol+"
+        case 73: "Vol-"
+        case 74: "Mute"
+        case 75: "/"
+        case 76: "Enter"
+        case 78: "-"
+        case 79: "F18"
+        case 80: "F19"
+        case 81: "="
+        case 82: "0"
+        case 83: "1"
+        case 84: "2"
+        case 85: "3"
+        case 86: "4"
+        case 87: "5"
+        case 88: "6"
+        case 89: "7"
+        case 90: "F20"
+        case 91: "8"
+        case 92: "9"
         case 96: "F5"
         case 97: "F6"
         case 98: "F7"
@@ -91,10 +116,20 @@ enum HotkeyFormat {
         case 100: "F8"
         case 101: "F9"
         case 103: "F11"
+        case 105: "F13"
+        case 106: "F16"
+        case 107: "F14"
         case 109: "F10"
         case 111: "F12"
+        case 113: "F15"
+        case 114: "Help"
+        case 115: "Home"
+        case 116: "PgUp"
+        case 117: "⌦"
         case 118: "F4"
+        case 119: "End"
         case 120: "F2"
+        case 121: "PgDn"
         case 122: "F1"
         case 123: "←"
         case 124: "→"

@@ -154,6 +154,7 @@ private struct UpdateAlertContentView: View {
             Spacer()
             Button(L("updater.action.installAndRelaunch"), action: onUpdate)
                 .buttonStyle(.borderedProminent)
+                .tint(StudioTheme.accent)
                 .keyboardShortcut(.defaultAction)
         }
         .padding(16)

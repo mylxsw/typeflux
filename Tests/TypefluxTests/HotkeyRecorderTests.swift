@@ -63,6 +63,52 @@ final class HotkeyRecorderTests: XCTestCase {
         XCTAssertEqual(binding?.modifierFlags, UInt(NSEvent.ModifierFlags.option.rawValue))
     }
 
+    func testRecordsRightCommandModifierOnlyTriggerFromFlagsChanged() {
+        let binding = HotkeyRecorder.recordedBinding(
+            eventType: .flagsChanged,
+            keyCode: HotkeyBinding.rightCommandKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue),
+            isRepeat: false,
+        )
+
+        XCTAssertEqual(binding?.keyCode, HotkeyBinding.rightCommandKeyCode)
+        XCTAssertEqual(binding?.modifierFlags, UInt(NSEvent.ModifierFlags.command.rawValue))
+    }
+
+    func testRecordsRightCommandModifierOnlyTriggerWithAdditionalFlagsNoise() {
+        let flags = UInt(
+            NSEvent.ModifierFlags.command.rawValue
+                | NSEvent.ModifierFlags.shift.rawValue,
+        )
+
+        let binding = HotkeyRecorder.recordedBinding(
+            eventType: .flagsChanged,
+            keyCode: HotkeyBinding.rightCommandKeyCode,
+            modifierFlags: flags,
+            isRepeat: false,
+        )
+
+        XCTAssertEqual(binding?.keyCode, HotkeyBinding.rightCommandKeyCode)
+        XCTAssertEqual(binding?.modifierFlags, UInt(NSEvent.ModifierFlags.command.rawValue))
+    }
+
+    func testRecordsRightOptionModifierOnlyTriggerWithAdditionalFlagsNoise() {
+        let flags = UInt(
+            NSEvent.ModifierFlags.option.rawValue
+                | NSEvent.ModifierFlags.control.rawValue,
+        )
+
+        let binding = HotkeyRecorder.recordedBinding(
+            eventType: .flagsChanged,
+            keyCode: HotkeyBinding.rightOptionKeyCode,
+            modifierFlags: flags,
+            isRepeat: false,
+        )
+
+        XCTAssertEqual(binding?.keyCode, HotkeyBinding.rightOptionKeyCode)
+        XCTAssertEqual(binding?.modifierFlags, UInt(NSEvent.ModifierFlags.option.rawValue))
+    }
+
     func testIgnoresUnsupportedModifierOnlyTriggerFromFlagsChanged() {
         let binding = HotkeyRecorder.recordedBinding(
             eventType: .flagsChanged,

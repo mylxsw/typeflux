@@ -51,28 +51,93 @@ private struct RoundedVisualEffectBlur: NSViewRepresentable {
     }
 }
 
-private struct FrostedShapeBackground<S: InsettableShape>: View {
+private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
     let shape: S
     let cornerRadius: CGFloat?
     let tintOpacity: Double
+    let scrimOpacity: Double
     let strokeOpacity: Double
     let lineWidth: CGFloat
+    let interactive: Bool
 
     init(
         shape: S,
         cornerRadius: CGFloat? = nil,
-        tintOpacity: Double = 0.30,
+        tintOpacity: Double = 0.08,
+        scrimOpacity: Double = 0.18,
         strokeOpacity: Double = 0.16,
         lineWidth: CGFloat = 0.9,
+        interactive: Bool = false,
     ) {
         self.shape = shape
         self.cornerRadius = cornerRadius
         self.tintOpacity = tintOpacity
+        self.scrimOpacity = scrimOpacity
         self.strokeOpacity = strokeOpacity
         self.lineWidth = lineWidth
+        self.interactive = interactive
     }
 
     var body: some View {
+        Group {
+            #if compiler(>=6.2)
+            if #available(macOS 26.0, *) {
+                ZStack {
+                    shape
+                        .fill(Color.clear)
+                        .glassEffect(
+                            Glass.clear
+                                .interactive(interactive)
+                                .tint(Color.white.opacity(tintOpacity)),
+                            in: shape,
+                        )
+
+                    shape
+                        .fill(Color.black.opacity(scrimOpacity))
+                        .allowsHitTesting(false)
+                }
+            } else {
+                fallbackBackground
+            }
+            #else
+            fallbackBackground
+            #endif
+        }
+        .overlay(
+            shape
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(strokeOpacity + 0.08),
+                            Color.white.opacity(strokeOpacity * 0.35),
+                            Color.white.opacity(strokeOpacity),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing,
+                    ),
+                    lineWidth: lineWidth,
+                ),
+        )
+        .overlay(
+            shape
+                .inset(by: lineWidth + 0.6)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.20),
+                            Color.clear,
+                            Color.white.opacity(0.07),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom,
+                    ),
+                    lineWidth: 0.6,
+                )
+                .blendMode(.screen),
+        )
+    }
+
+    private var fallbackBackground: some View {
         ZStack {
             RoundedVisualEffectBlur(
                 material: .popover,
@@ -84,10 +149,6 @@ private struct FrostedShapeBackground<S: InsettableShape>: View {
             shape
                 .fill(Color.black.opacity(tintOpacity))
         }
-        .overlay(
-            shape
-                .strokeBorder(Color.white.opacity(strokeOpacity), lineWidth: lineWidth),
-        )
     }
 }
 
@@ -1272,10 +1333,10 @@ private struct OverlayView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
             .background(
-                FrostedShapeBackground(
+                LiquidGlassShapeBackground(
                     shape: Capsule(style: .continuous),
                     cornerRadius: nil,
-                    tintOpacity: 0.08,
+                    tintOpacity: 0.05,
                     strokeOpacity: 0.14,
                     lineWidth: 0.8,
                 ),
@@ -1320,7 +1381,7 @@ private struct OverlayView: View {
             HStack(spacing: 10) {
                 Image(systemName: "info.circle")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.43, green: 0.56, blue: 1.0))
+                    .foregroundStyle(StudioTheme.accent)
 
                 Text("“\(model.detailText)”")
                     .font(.system(size: 12.5, weight: .medium))
@@ -1395,7 +1456,7 @@ private struct OverlayView: View {
             VStack(alignment: .leading, spacing: 8) {
                 cardHeader(
                     icon: "info.circle",
-                    accent: Color(red: 0.43, green: 0.56, blue: 1.0),
+                    accent: StudioTheme.accent,
                     title: model.statusText,
                     dismissible: true,
                     titleSize: 13.5,
@@ -1420,12 +1481,14 @@ private struct OverlayView: View {
                             .font(.system(size: 19, weight: .semibold))
                             .foregroundStyle(Color.white.opacity(0.98))
                             .lineLimit(1)
+                            .shadow(color: Color.black.opacity(0.36), radius: 3, x: 0, y: 1)
 
                         Text(model.detailText)
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(Color.white.opacity(0.62))
+                            .foregroundStyle(Color.white.opacity(0.72))
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
+                            .shadow(color: Color.black.opacity(0.32), radius: 2, x: 0, y: 1)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -1434,16 +1497,17 @@ private struct OverlayView: View {
                 Button(action: model.requestPersonaCancel) {
                     Image(systemName: "xmark")
                         .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Color.white.opacity(0.52))
+                        .foregroundStyle(Color.white.opacity(0.72))
                         .frame(width: 26, height: 26)
                         .background(
                             Circle()
-                                .fill(Color.white.opacity(0.06)),
+                                .fill(Color.black.opacity(0.18)),
                         )
                         .overlay(
                             Circle()
-                                .stroke(Color.white.opacity(0.06), lineWidth: 0.8),
+                                .stroke(Color.white.opacity(0.20), lineWidth: 0.8),
                         )
+                        .shadow(color: Color.black.opacity(0.18), radius: 5, x: 0, y: 2)
                 }
                 .buttonStyle(.plain)
             }
@@ -1475,31 +1539,36 @@ private struct OverlayView: View {
         .padding(.top, 18)
         .padding(.bottom, 16)
         .frame(width: 458, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color.black.opacity(0.52))
-                .background(
-                    .regularMaterial,
-                    in: RoundedRectangle(cornerRadius: 24, style: .continuous),
+        .background(personaPickerGlassBackground)
+        .shadow(color: Color.black.opacity(0.30), radius: 24, x: 0, y: 16)
+    }
+
+    private var personaPickerGlassBackground: some View {
+        let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+
+        return LiquidGlassShapeBackground(
+            shape: shape,
+            cornerRadius: 24,
+            tintOpacity: 0.08,
+            scrimOpacity: 0.28,
+            strokeOpacity: 0.18,
+            lineWidth: 1.0,
+            interactive: true,
+        )
+        .overlay(
+            shape
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.08),
+                            Color.clear,
+                            Color.black.opacity(0.10),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing,
+                    ),
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.16),
-                                    Color.white.opacity(0.05),
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom,
-                            ),
-                            lineWidth: 0.9,
-                        ),
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(Color.black.opacity(0.35), lineWidth: 0.6),
-                ),
+                .allowsHitTesting(false),
         )
     }
 
@@ -1509,10 +1578,11 @@ private struct OverlayView: View {
         case .none:
             EmptyView()
         case .global:
-            Image(systemName: "globe")
-                .font(.system(size: 30, weight: .semibold))
-                .foregroundStyle(Color.white.opacity(0.92))
-                .frame(width: 42, height: 42)
+                Image(systemName: "globe")
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(0.92))
+                    .frame(width: 42, height: 42)
+                    .shadow(color: Color.black.opacity(0.35), radius: 4, x: 0, y: 2)
         case let .application(icon):
             if let icon {
                 Image(nsImage: icon)
@@ -1524,6 +1594,7 @@ private struct OverlayView: View {
                     .font(.system(size: 30, weight: .semibold))
                     .foregroundStyle(Color.white.opacity(0.92))
                     .frame(width: 42, height: 42)
+                    .shadow(color: Color.black.opacity(0.35), radius: 4, x: 0, y: 2)
             }
         }
     }
@@ -1533,7 +1604,7 @@ private struct OverlayView: View {
             VStack(alignment: .leading, spacing: 10) {
                 cardHeader(
                     icon: "info.circle",
-                    accent: Color(red: 0.43, green: 0.56, blue: 1.0),
+                    accent: StudioTheme.accent,
                     title: model.statusText,
                     dismissible: true,
                     titleSize: 13.5,
@@ -1584,24 +1655,30 @@ private struct OverlayView: View {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(
                     isSelected
-                        ? Color.accentColor.opacity(0.26)
-                        : Color.white.opacity(0.045),
+                        ? StudioTheme.accent.opacity(0.34)
+                        : Color.black.opacity(0.16),
                 )
                 .frame(width: 40, height: 40)
                 .overlay(
                     Text(String(item.title.prefix(2)).uppercased())
                         .font(.system(size: 11.5, weight: .bold))
-                        .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.7)),
+                        .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.78)),
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .stroke(Color.white.opacity(isSelected ? 0.20 : 0.10), lineWidth: 0.8),
                 )
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.title)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.white.opacity(isSelected ? 0.98 : 0.94))
+                    .shadow(color: Color.black.opacity(0.34), radius: 2, x: 0, y: 1)
                 Text(item.subtitle)
                     .font(.system(size: 11.5, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(isSelected ? 0.7 : 0.5))
+                    .foregroundStyle(Color.white.opacity(isSelected ? 0.76 : 0.58))
                     .lineLimit(2)
+                    .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
             }
 
             Spacer(minLength: 0)
@@ -1609,7 +1686,7 @@ private struct OverlayView: View {
             if isSelected {
                 ZStack {
                     Circle()
-                        .fill(Color.accentColor)
+                        .fill(StudioTheme.accent.opacity(0.95))
                     Image(systemName: "checkmark")
                         .font(.system(size: 9.5, weight: .bold))
                         .foregroundStyle(Color.white)
@@ -1623,14 +1700,14 @@ private struct OverlayView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(
                     isSelected
-                        ? Color.accentColor.opacity(0.11)
-                        : Color.white.opacity(0.02),
+                        ? StudioTheme.accent.opacity(0.18)
+                        : Color.black.opacity(0.10),
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .stroke(
                             isSelected
-                                ? Color.accentColor.opacity(0.92) : Color.white.opacity(0.045),
+                                ? StudioTheme.accent.opacity(0.95) : Color.white.opacity(0.08),
                             lineWidth: isSelected ? 1.15 : 0.8,
                         ),
                 )
@@ -1716,12 +1793,13 @@ private struct LockedRecordingCapsule: View {
         .padding(.horizontal, 7)
         .padding(.vertical, 5.5)
         .background(
-            FrostedShapeBackground(
+            LiquidGlassShapeBackground(
                 shape: Capsule(style: .continuous),
                 cornerRadius: nil,
-                tintOpacity: 0.10,
+                tintOpacity: 0.05,
                 strokeOpacity: 0.16,
                 lineWidth: 1.0,
+                interactive: true,
             ),
         )
         .shadow(color: Color.black.opacity(0.24), radius: 16, x: 0, y: 12)
@@ -1738,8 +1816,13 @@ private struct LockedRecordingCapsule: View {
                 .frame(width: 24, height: 24)
                 .background(
                     Circle()
-                        .fill(inverted ? Color.white.opacity(0.98) : Color.white.opacity(0.22)),
+                        .fill(inverted ? Color.white.opacity(0.92) : Color.black.opacity(0.20)),
                 )
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(inverted ? 0.46 : 0.22), lineWidth: 0.8),
+                )
+                .shadow(color: Color.black.opacity(0.20), radius: 5, x: 0, y: 2)
         }
         .buttonStyle(.plain)
     }
@@ -1775,12 +1858,13 @@ private struct MorphingRecordingCapsule: View {
         }
         .frame(width: width, height: height, alignment: .bottom)
         .background(
-            FrostedShapeBackground(
+            LiquidGlassShapeBackground(
                 shape: shape,
                 cornerRadius: expanded ? 22 : nil,
-                tintOpacity: 0.10,
+                tintOpacity: expanded ? 0.06 : 0.045,
                 strokeOpacity: 0.15,
                 lineWidth: 0.9,
+                interactive: showControls,
             ),
         )
         .shadow(color: Color.black.opacity(0.24), radius: 18, x: 0, y: 12)
@@ -1815,8 +1899,13 @@ private struct MorphingRecordingCapsule: View {
                 .frame(width: 24, height: 24)
                 .background(
                     Circle()
-                        .fill(inverted ? Color.white.opacity(0.98) : Color.white.opacity(0.22)),
+                        .fill(inverted ? Color.white.opacity(0.92) : Color.black.opacity(0.20)),
                 )
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(inverted ? 0.46 : 0.22), lineWidth: 0.8),
+                )
+                .shadow(color: Color.black.opacity(0.20), radius: 5, x: 0, y: 2)
         }
         .buttonStyle(.plain)
     }
@@ -1832,7 +1921,8 @@ private struct LiveTranscriptPreviewText: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(text)
                         .font(.system(size: 12.5, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(0.86))
+                        .foregroundStyle(Color.white.opacity(0.96))
+                        .shadow(color: Color.black.opacity(0.55), radius: 3, x: 0, y: 1)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
 
@@ -1875,10 +1965,10 @@ private struct ThinkingProgressCapsule: View {
         let capsuleShape = Capsule(style: .continuous)
 
         ZStack {
-            FrostedShapeBackground(
+            LiquidGlassShapeBackground(
                 shape: capsuleShape,
                 cornerRadius: nil,
-                tintOpacity: 0.10,
+                tintOpacity: 0.05,
                 strokeOpacity: 0.16,
                 lineWidth: 1.0,
             )
@@ -1960,10 +2050,10 @@ private struct ProcessingTranscriptCapsule: View {
         }
         .frame(width: 360, height: 127, alignment: .bottom)
         .background(
-            FrostedShapeBackground(
+            LiquidGlassShapeBackground(
                 shape: shape,
                 cornerRadius: 22,
-                tintOpacity: 0.10,
+                tintOpacity: 0.06,
                 strokeOpacity: 0.15,
                 lineWidth: 0.9,
             ),
@@ -2016,7 +2106,7 @@ private struct ProcessingTranscriptCapsule: View {
         .clipShape(capsuleShape)
         .overlay(
             capsuleShape
-                .stroke(Color.white.opacity(0.13), lineWidth: 0.8),
+                .stroke(Color.white.opacity(0.18), lineWidth: 0.8),
         )
     }
 
@@ -2043,10 +2133,10 @@ private struct OverlayCapsule<Content: View>: View {
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, 10.5)
             .background(
-                FrostedShapeBackground(
+                LiquidGlassShapeBackground(
                     shape: Capsule(),
                     cornerRadius: nil,
-                    tintOpacity: 0.10,
+                    tintOpacity: 0.05,
                     strokeOpacity: 0.16,
                     lineWidth: 1.0,
                 ),
@@ -2170,18 +2260,16 @@ private struct LevelWaveform: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 2.2) {
-            ForEach(0 ..< 9, id: \.self) { index in
+            ForEach(0 ..< OverlayWaveformMetrics.barCount, id: \.self) { index in
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
                     .fill(activeColor)
-                    .frame(width: 2.3, height: barHeight(for: index))
+                    .frame(
+                        width: 2.3,
+                        height: OverlayWaveformMetrics.barHeight(for: index, level: level),
+                    )
+                    .shadow(color: Color.black.opacity(0.34), radius: 1.6, x: 0, y: 0.6)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-    }
-
-    private func barHeight(for index: Int) -> CGFloat {
-        let normalizedLevel = CGFloat(max(0.08, min(1.0, level)))
-        let profile: [CGFloat] = [0.34, 0.52, 0.72, 0.9, 1.0, 0.86, 0.7, 0.5, 0.32]
-        return 4.5 + (10.8 * normalizedLevel * profile[index])
     }
 }

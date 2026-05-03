@@ -37,8 +37,25 @@ struct HotkeyGestureArbiter {
     ) -> Bool {
         switch eventType {
         case .flagsChanged:
-            guard let activationHotkey else { return false }
-            return activationHotkey.isModifierOnlyTrigger && keyCode == activationHotkey.keyCode
+            if let activationHotkey,
+               activationHotkey.isModifierOnlyTrigger,
+               keyCode == activationHotkey.keyCode
+            {
+                return true
+            }
+            if let askHotkey,
+               askHotkey.isModifierOnlyTrigger,
+               keyCode == askHotkey.keyCode
+            {
+                return true
+            }
+            if let personaHotkey,
+               personaHotkey.isModifierOnlyTrigger,
+               keyCode == personaHotkey.keyCode
+            {
+                return true
+            }
+            return false
         case .keyDown:
             if let askHotkey, askHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags) {
                 return true
@@ -143,13 +160,11 @@ struct HotkeyGestureArbiter {
         askHotkey: HotkeyBinding?,
         personaHotkey: HotkeyBinding? = nil,
     ) -> [HotkeyGestureEvent] {
-        guard let activationHotkey else { return [] }
-        guard activationHotkey.isModifierOnlyTrigger else { return [] }
-
-        let isActivationModifierEvent = keyCode == activationHotkey.keyCode
-        let activationModifierDown = isActivationModifierEvent && modifierFlags == activationHotkey.modifierFlags
-
-        if activationModifierDown, phase == .idle {
+        if let activationHotkey,
+           activationHotkey.isModifierOnlyTrigger,
+           activationHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags),
+           phase == .idle
+        {
             if shouldDeferModifierActivation(
                 activationHotkey: activationHotkey,
                 askHotkey: askHotkey,
@@ -162,6 +177,44 @@ struct HotkeyGestureArbiter {
             phase = .active(.activation)
             return [.begin(.activation)]
         }
+
+        if let askHotkey,
+           askHotkey.isModifierOnlyTrigger,
+           askHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags)
+        {
+            guard phase == .idle || phase == .pendingModifierActivation else { return [] }
+            let shouldCancelPendingActivation = phase == .pendingModifierActivation
+            phase = .active(.ask)
+            return shouldCancelPendingActivation
+                ? [.cancel(.activation), .begin(.ask)]
+                : [.begin(.ask)]
+        }
+
+        if let personaHotkey,
+           personaHotkey.isModifierOnlyTrigger,
+           personaHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags)
+        {
+            guard phase == .idle || phase == .pendingModifierActivation else { return [] }
+            let shouldCancelPendingActivation = phase == .pendingModifierActivation
+            phase = .idle
+            return shouldCancelPendingActivation
+                ? [.cancel(.activation), .personaRequested]
+                : [.personaRequested]
+        }
+
+        if case .active(.ask) = phase,
+           let askHotkey,
+           askHotkey.isModifierOnlyTrigger,
+           keyCode == askHotkey.keyCode,
+           modifierFlags != askHotkey.modifierFlags
+        {
+            phase = .idle
+            return [.end(.ask)]
+        }
+
+        guard let activationHotkey, activationHotkey.isModifierOnlyTrigger else { return [] }
+        let isActivationModifierEvent = keyCode == activationHotkey.keyCode
+        let activationModifierDown = isActivationModifierEvent && modifierFlags == activationHotkey.modifierFlags
 
         guard isActivationModifierEvent, !activationModifierDown else { return [] }
 

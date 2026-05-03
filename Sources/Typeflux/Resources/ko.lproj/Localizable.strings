@@ -101,7 +101,7 @@
 "menu.agentTasks.viewAll" = "모든 작업 보기";
 "menu.agentTasks.runningCount" = "%d개 실행 중";
 "menu.appearance" = "외관";
-"menu.settings" = "설정";
+"menu.settings" = "Typeflux 설정";
 "menu.setupGuide" = "설정 가이드";
 "menu.about" = "Typeflux 정보";
 "menu.checkForUpdates" = "업데이트 확인";

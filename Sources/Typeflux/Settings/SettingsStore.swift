@@ -678,7 +678,7 @@ final class SettingsStore {
     }
 
     var inputContextOptimizationEnabled: Bool {
-        get { defaults.object(forKey: "inputContext.optimization.enabled") as? Bool ?? false }
+        get { defaults.object(forKey: "inputContext.optimization.enabled") as? Bool ?? true }
         set { defaults.set(newValue, forKey: "inputContext.optimization.enabled") }
     }
 

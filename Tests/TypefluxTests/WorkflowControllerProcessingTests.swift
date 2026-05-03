@@ -398,6 +398,26 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertFalse(eventRecorder.snapshot().contains("cue-play"))
     }
 
+    func testBeginRecordingResetsStateWhenAudioStartFails() async {
+        let audioRecorder = ThrowingStartAudioRecorder(error: AVFoundationAudioRecorder.RecorderError.inputStartupTimedOut)
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sleep: { _ in },
+        )
+
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+        await waitForMainActorWork()
+
+        XCTAssertFalse(controller.isRecording)
+        XCTAssertFalse(controller.isAudioRecorderStarted)
+        XCTAssertFalse(controller.isAudioRecorderStarting)
+        XCTAssertFalse(controller.shouldFinishRecordingAfterAudioStart)
+        XCTAssertNil(controller.pendingRecordingStartID)
+        XCTAssertEqual(controller.recordingMode, .holdToTalk)
+        XCTAssertEqual(audioRecorder.startCallCount, 1)
+        XCTAssertEqual(audioRecorder.stopCallCount, 0)
+    }
+
     func testReleasingAfterImmediateAudioStartStopsRecorder() async {
         let eventRecorder = ThreadSafeEventRecorder()
         let audioRecorder = MockProcessingAudioRecorder {
@@ -830,6 +850,46 @@ private final class BlockingStartAudioRecorder: AudioRecorder, @unchecked Sendab
         shouldReleaseStart = true
         lock.broadcast()
         lock.unlock()
+    }
+}
+
+private final class ThrowingStartAudioRecorder: AudioRecorder {
+    private let error: Error
+    private let lock = NSLock()
+    private var starts = 0
+    private var stops = 0
+
+    init(error: Error) {
+        self.error = error
+    }
+
+    var startCallCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return starts
+    }
+
+    var stopCallCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return stops
+    }
+
+    func start(
+        levelHandler _: @escaping (Float) -> Void,
+        audioBufferHandler _: ((AVAudioPCMBuffer) -> Void)?,
+    ) throws {
+        lock.lock()
+        starts += 1
+        lock.unlock()
+        throw error
+    }
+
+    func stop() throws -> AudioFile {
+        lock.lock()
+        stops += 1
+        lock.unlock()
+        return AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1)
     }
 }
 
