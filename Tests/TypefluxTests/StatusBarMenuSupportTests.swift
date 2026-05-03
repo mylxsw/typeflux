@@ -2,6 +2,30 @@
 import XCTest
 
 final class StatusBarMenuSupportTests: XCTestCase {
+    @MainActor
+    func testStatusBarMenuIncludesSettingsItemNearAppearanceControls() {
+        let controller = StatusBarController(
+            appState: AppStateStore(),
+            settingsStore: SettingsStore(defaults: UserDefaults(suiteName: "StatusBarMenuSupportTests.\(UUID().uuidString)")!),
+            historyStore: EmptyHistoryStore(),
+            agentJobStore: EmptyAgentJobStore(),
+        )
+
+        controller.start()
+        defer { controller.stop() }
+
+        let titles = controller.menu?.items.map(\.title) ?? []
+
+        XCTAssertLessThan(
+            try XCTUnwrap(titles.firstIndex(of: L("menu.appearance"))),
+            try XCTUnwrap(titles.firstIndex(of: L("menu.settings"))),
+        )
+        XCTAssertLessThan(
+            try XCTUnwrap(titles.firstIndex(of: L("menu.settings"))),
+            try XCTUnwrap(titles.firstIndex(of: L("menu.checkForUpdates"))),
+        )
+    }
+
     func testRecentTranscriptionRecordsFiltersEmptyFinalTextAndLimitsResults() {
         let base = Date(timeIntervalSince1970: 1_000)
         let records = [
@@ -29,4 +53,24 @@ final class StatusBarMenuSupportTests: XCTestCase {
         XCTAssertTrue(title.hasSuffix("..."))
         XCTAssertTrue(title.contains("first line second line"))
     }
+}
+
+private final class EmptyHistoryStore: HistoryStore {
+    func save(record _: HistoryRecord) {}
+    func list() -> [HistoryRecord] { [] }
+    func list(limit _: Int, offset _: Int, searchQuery _: String?) -> [HistoryRecord] { [] }
+    func record(id _: UUID) -> HistoryRecord? { nil }
+    func delete(id _: UUID) {}
+    func purge(olderThanDays _: Int) {}
+    func clear() {}
+    func exportMarkdown() throws -> URL { URL(fileURLWithPath: NSTemporaryDirectory()) }
+}
+
+private struct EmptyAgentJobStore: AgentJobStore {
+    func save(_: AgentJob) async throws {}
+    func list(limit _: Int, offset _: Int) async throws -> [AgentJob] { [] }
+    func job(id _: UUID) async throws -> AgentJob? { nil }
+    func delete(id _: UUID) async throws {}
+    func clear() async throws {}
+    func count() async throws -> Int { 0 }
 }

@@ -30,7 +30,7 @@ final class StatusBarController: NSObject {
     private let onOpenAgentJob: (UUID) -> Void
 
     private var statusItem: NSStatusItem?
-    private var menu: NSMenu?
+    private(set) var menu: NSMenu?
     private var cancellables = Set<AnyCancellable>()
     private var languageObserver: NSObjectProtocol?
     private var agentJobObserver: NSObjectProtocol?
@@ -231,6 +231,7 @@ final class StatusBarController: NSObject {
         let appearanceItem = NSMenuItem(title: L("menu.appearance"), action: nil, keyEquivalent: "")
         appearanceItem.submenu = buildAppearanceMenu()
         menu.addItem(appearanceItem)
+        menu.addItem(makeItem(title: L("menu.settings"), action: #selector(openSettings)))
         menu.addItem(makeUpdateMenuItem())
         if let downloadItem = makeAutoModelDownloadMenuItem() {
             menu.addItem(downloadItem)
@@ -419,6 +420,10 @@ final class StatusBarController: NSObject {
 
     @objc private func openHome() {
         openStudio(.home)
+    }
+
+    @objc private func openSettings() {
+        openStudio(.settings)
     }
 
     @objc private func openPersonas() {
