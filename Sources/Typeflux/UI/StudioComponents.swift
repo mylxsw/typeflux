@@ -338,6 +338,7 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
 
     var body: some View {
         Group {
+            #if compiler(>=6.2)
             if #available(macOS 26.0, *) {
                 ZStack {
                     shape
@@ -354,20 +355,11 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
                         .allowsHitTesting(false)
                 }
             } else {
-                ZStack {
-                    StudioVisualEffectBlur(
-                        material: material,
-                        blendingMode: .withinWindow,
-                        cornerRadius: cornerRadius,
-                    )
-                    .allowsHitTesting(false)
-
-                    shape
-                        .fill(StudioTheme.glassScrim.opacity(scrimOpacity))
-                    shape
-                        .fill(StudioTheme.glassTint.opacity(tintOpacity))
-                }
+                fallbackBackground
             }
+            #else
+            fallbackBackground
+            #endif
         }
         .clipShape(shape)
         .overlay(
@@ -402,6 +394,22 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
                 )
                 .blendMode(.screen),
         )
+    }
+
+    private var fallbackBackground: some View {
+        ZStack {
+            StudioVisualEffectBlur(
+                material: material,
+                blendingMode: .withinWindow,
+                cornerRadius: cornerRadius,
+            )
+            .allowsHitTesting(false)
+
+            shape
+                .fill(StudioTheme.glassScrim.opacity(scrimOpacity))
+            shape
+                .fill(StudioTheme.glassTint.opacity(tintOpacity))
+        }
     }
 }
 
