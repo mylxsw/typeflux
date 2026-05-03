@@ -2,6 +2,20 @@
 import XCTest
 
 final class OverlayControllerTests: XCTestCase {
+    func testLiveTranscriptPreviewLayoutCapsVisibleTextToThreeLines() {
+        XCTAssertEqual(LiveTranscriptPreviewLayout.maxVisibleLineCount, 3)
+        XCTAssertEqual(
+            LiveTranscriptPreviewLayout.textViewportHeight,
+            LiveTranscriptPreviewLayout.lineHeight * 3,
+            accuracy: 0.001,
+        )
+    }
+
+    func testExpandedRecordingPreviewLayoutIsSmallerThanPreviousFiveLineDesign() {
+        XCTAssertLessThan(LiveTranscriptPreviewLayout.expandedCapsuleHeight, 127)
+        XCTAssertLessThan(LiveTranscriptPreviewLayout.expandedOverlayHeight, 218)
+    }
+
     func testWrapFailureActionsRunsDismissBeforeOriginalHandler() {
         var events: [String] = []
         let wrapped = OverlayController.wrapFailureActions(
