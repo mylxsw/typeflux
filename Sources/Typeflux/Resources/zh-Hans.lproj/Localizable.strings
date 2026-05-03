@@ -210,6 +210,7 @@
 "updater.download.failed" = "下载更新失败。";
 "updater.install.extractionFailed" = "解压更新包失败。";
 "updater.install.appNotFound" = "在更新包中找不到应用程序。";
+"updater.install.signatureVerificationFailed" = "无法验证更新包签名。";
 
 "provider.stt.whisperAPI" = "OpenAI";
 "provider.stt.freeModel" = "免费模型";

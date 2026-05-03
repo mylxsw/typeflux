@@ -208,6 +208,7 @@
 "updater.download.failed" = "アップデートのダウンロードに失敗しました。";
 "updater.install.extractionFailed" = "アップデートアーカイブの展開に失敗しました。";
 "updater.install.appNotFound" = "アップデートアーカイブ内にアプリケーションが見つかりませんでした。";
+"updater.install.signatureVerificationFailed" = "アップデートを検証できませんでした。";
 
 "provider.stt.whisperAPI" = "OpenAI";
 "provider.stt.freeModel" = "無料モデル";

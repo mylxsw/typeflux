@@ -36,7 +36,7 @@ final class LoginWindowController: NSObject {
         let contentRect = NSRect(origin: .zero, size: Self.defaultWindowSize)
         let window = NSWindow(
             contentRect: contentRect,
-            styleMask: [.titled, .closable],
+            styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false,
         )
@@ -54,8 +54,10 @@ final class LoginWindowController: NSObject {
         window.title = L("auth.login.windowTitle")
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
         window.isMovableByWindowBackground = true
-        window.backgroundColor = NSColor(StudioTheme.windowBackground)
+        window.isOpaque = false
+        window.backgroundColor = .clear
         window.contentView = hosting
         // Lock the window to a fixed size (no resizing)
         window.minSize = Self.defaultWindowSize

@@ -172,6 +172,10 @@ final class StatusBarController: NSObject {
             NotificationCenter.default.removeObserver(personaSelectionObserver)
         }
         personaSelectionObserver = nil
+        if let autoUpdateStateObserver {
+            NotificationCenter.default.removeObserver(autoUpdateStateObserver)
+        }
+        autoUpdateStateObserver = nil
         if let autoModelDownloadObserver {
             NotificationCenter.default.removeObserver(autoModelDownloadObserver)
         }

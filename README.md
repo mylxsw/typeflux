@@ -133,6 +133,7 @@ make run          # build + launch as .app bundle
 make dev          # launch with terminal logs attached
 make full-dev     # launch dev app with bundled SenseVoice resources
 make full-release # build the full notarized production installer locally
+make release-continue # resume an interrupted local release
 swift test        # run tests
 ```
 

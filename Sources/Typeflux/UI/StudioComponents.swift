@@ -641,7 +641,7 @@ struct StudioShell<Content: View>: View {
     }
 }
 
-private struct StudioGlassBackground: View {
+struct StudioGlassBackground: View {
     let tintOpacity: Double
 
     var body: some View {

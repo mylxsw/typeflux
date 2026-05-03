@@ -180,7 +180,7 @@ struct LoginView: View {
             .frame(maxWidth: .infinity, alignment: .top)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(StudioTheme.windowBackground)
+        .background(loginWindowBackground)
     }
 
     private var plainBody: some View {
@@ -732,6 +732,11 @@ struct LoginView: View {
 
     private var loginCardShadow: Color {
         colorScheme == .dark ? Color.black.opacity(0.28) : Color.black.opacity(0.08)
+    }
+
+    private var loginWindowBackground: some View {
+        StudioGlassBackground(tintOpacity: StudioTheme.Opacity.glassBackgroundTint)
+            .ignoresSafeArea()
     }
 
     private var showsPolicyAgreement: Bool {

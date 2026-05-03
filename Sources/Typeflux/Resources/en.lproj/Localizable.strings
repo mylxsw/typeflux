@@ -210,6 +210,7 @@
 "updater.download.failed" = "Failed to download the update.";
 "updater.install.extractionFailed" = "Failed to extract the update archive.";
 "updater.install.appNotFound" = "Could not find the application bundle in the update archive.";
+"updater.install.signatureVerificationFailed" = "The update could not be verified.";
 
 "provider.stt.whisperAPI" = "OpenAI";
 "provider.stt.freeModel" = "Free Models";

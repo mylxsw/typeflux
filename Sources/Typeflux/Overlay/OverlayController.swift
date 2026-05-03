@@ -2,6 +2,14 @@ import AppKit
 import QuartzCore
 import SwiftUI
 
+enum LiveTranscriptPreviewLayout {
+    static let maxVisibleLineCount = 3
+    static let lineHeight: CGFloat = 16
+    static let textViewportHeight = lineHeight * CGFloat(maxVisibleLineCount)
+    static let expandedCapsuleHeight: CGFloat = 103
+    static let expandedOverlayHeight: CGFloat = 194
+}
+
 private final class TransparentHostingView<Content: View>: NSHostingView<Content> {
     override var isOpaque: Bool {
         false
@@ -847,7 +855,7 @@ final class OverlayController {
             return OverlayMetrics(
                 size: recordingOverlaySize(
                     baseWidth: isExpanded ? 428 : 146,
-                    baseHeight: isExpanded ? 218 : 112,
+                    baseHeight: isExpanded ? LiveTranscriptPreviewLayout.expandedOverlayHeight : 112,
                 ), anchor: .bottom, offset: 16,
                 interactive: false,
             )
@@ -860,7 +868,7 @@ final class OverlayController {
             return OverlayMetrics(
                 size: recordingOverlaySize(
                     baseWidth: isExpanded ? 428 : 196,
-                    baseHeight: isExpanded ? 218 : 120,
+                    baseHeight: isExpanded ? LiveTranscriptPreviewLayout.expandedOverlayHeight : 120,
                 ), anchor: .bottom, offset: 16,
                 interactive: true,
             )
@@ -1839,7 +1847,7 @@ private struct MorphingRecordingCapsule: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: expanded ? 22 : 999, style: .continuous)
         let width: CGFloat = expanded ? 360 : (showControls ? 114 : 78)
-        let height: CGFloat = expanded ? 127 : 35
+        let height: CGFloat = expanded ? LiveTranscriptPreviewLayout.expandedCapsuleHeight : 35
 
         ZStack(alignment: .bottom) {
             if expanded {
@@ -1931,7 +1939,7 @@ private struct LiveTranscriptPreviewText: View {
                         .id(bottomID)
                 }
             }
-            .frame(height: 72)
+            .frame(height: LiveTranscriptPreviewLayout.textViewportHeight)
             .onAppear {
                 scrollToLatest(using: proxy, animated: false)
             }
