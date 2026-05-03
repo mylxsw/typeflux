@@ -34,6 +34,7 @@ private struct LocalModelPreparedRecord: Codable {
     let model: String
     let modelIdentifier: String
     let storagePath: String
+    let runtimePath: String?
     let source: String
     let preparedAt: Date
 }
@@ -74,9 +75,8 @@ protocol LocalSTTModelManaging {
 }
 
 final class LocalModelManager: LocalSTTModelManaging {
-    /// Raw value stored in `prepared.json` when the active model is backed by the bundled copy
-    /// shipped inside the .app bundle (the on-disk path under Application Support is a symlink
-    /// into Contents/Resources/BundledModels).
+    /// Raw value stored in `prepared.json` when the active model was installed from the
+    /// bundled copy shipped inside the .app bundle.
     static let bundledPreparedSource = "bundled"
 
     typealias WhisperKitPreparerFactory = @Sendable (String, URL, String, String) -> any WhisperKitPreparing
@@ -97,6 +97,7 @@ final class LocalModelManager: LocalSTTModelManaging {
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
     private let _modelsRootURL: URL
+    private let _runtimesRootURL: URL
     private let _legacyRuntimeURL: URL
 
     init(
@@ -131,9 +132,6 @@ final class LocalModelManager: LocalSTTModelManaging {
         bundledModelsRootURL: URL? = nil,
     ) {
         self.fileManager = fileManager
-        self.sherpaOnnxInstaller = sherpaOnnxInstaller ?? SherpaOnnxModelInstaller(
-            fileManager: fileManager,
-        )
         self.whisperKitPreparerFactory = whisperKitPreparerFactory
         self.localWhisperKitPreparerFactory = localWhisperKitPreparerFactory
         self.remoteFileLoader = remoteFileLoader
@@ -146,7 +144,12 @@ final class LocalModelManager: LocalSTTModelManaging {
             ?? fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support", isDirectory: true)
         _modelsRootURL = base.appendingPathComponent("Typeflux/LocalModels", isDirectory: true)
+        _runtimesRootURL = base.appendingPathComponent("Typeflux/LocalRuntimes", isDirectory: true)
         _legacyRuntimeURL = base.appendingPathComponent("Typeflux/STT/Runtime", isDirectory: true)
+        self.sherpaOnnxInstaller = sherpaOnnxInstaller ?? SherpaOnnxModelInstaller(
+            fileManager: fileManager,
+            sharedRuntimeStorageURL: _runtimesRootURL,
+        )
     }
 
     var modelsRootPath: String {
@@ -160,14 +163,15 @@ final class LocalModelManager: LocalSTTModelManaging {
         let configuration = LocalSTTConfiguration(settingsStore: settingsStore)
 
         if let bundled = bundledModelInfo(for: configuration) {
-            let linkedPath = try linkBundledModelIntoAppSupport(
+            let installedPath = try installBundledModelIntoAppSupport(
                 configuration: configuration,
                 bundledPath: bundled.storagePath,
             )
             let record = LocalModelPreparedRecord(
                 model: configuration.model.rawValue,
                 modelIdentifier: configuration.modelIdentifier,
-                storagePath: linkedPath,
+                storagePath: installedPath,
+                runtimePath: runtimePath(for: configuration.model),
                 source: Self.bundledPreparedSource,
                 preparedAt: Date(),
             )
@@ -175,7 +179,7 @@ final class LocalModelManager: LocalSTTModelManaging {
             onUpdate?(LocalSTTPreparationUpdate(
                 message: L("localSTT.prepare.runtimeReady", configuration.model.displayName),
                 progress: 1,
-                storagePath: linkedPath,
+                storagePath: installedPath,
                 source: L("common.bundled"),
             ))
             return
@@ -186,6 +190,7 @@ final class LocalModelManager: LocalSTTModelManaging {
             model: configuration.model.rawValue,
             modelIdentifier: configuration.modelIdentifier,
             storagePath: result.storagePath,
+            runtimePath: runtimePath(for: configuration.model),
             source: result.source.rawValue,
             preparedAt: Date(),
         )
@@ -312,7 +317,7 @@ final class LocalModelManager: LocalSTTModelManaging {
     }
 
     /// Ensures the bundled SenseVoice copy shipped inside the .app bundle (if present)
-    /// is linked into Application Support and recorded in prepared.json.
+    /// is copied into Application Support and recorded in prepared.json.
     ///
     /// This is intended to be called once at app start for the full installer variant
     /// so that the first hotkey press doesn't have to wait for a lazy prepare on the
@@ -322,7 +327,7 @@ final class LocalModelManager: LocalSTTModelManaging {
     /// so it works correctly even before onboarding runs and is not affected by any
     /// model the user may have manually picked afterwards.
     ///
-    /// - Returns: `true` if a bundled model was found (and is now linked/recorded),
+    /// - Returns: `true` if a bundled model was found (and is now copied/recorded),
     ///            `false` if no bundled model ships with this build.
     @discardableResult
     func ensureBundledSenseVoiceLinked() throws -> Bool {
@@ -337,21 +342,15 @@ final class LocalModelManager: LocalSTTModelManaging {
             return false
         }
 
-        if let existing = loadPreparedRecord(for: configuration.model),
-           existing.modelIdentifier == configuration.modelIdentifier,
-           existing.source == Self.bundledPreparedSource,
-           isPreparedStoragePathValid(existing.storagePath, for: configuration.model) {
-            return true
-        }
-
-        let linkedPath = try linkBundledModelIntoAppSupport(
+        let installedPath = try installBundledModelIntoAppSupport(
             configuration: configuration,
             bundledPath: bundled.storagePath,
         )
         let record = LocalModelPreparedRecord(
             model: configuration.model.rawValue,
             modelIdentifier: configuration.modelIdentifier,
-            storagePath: linkedPath,
+            storagePath: installedPath,
+            runtimePath: runtimePath(for: configuration.model),
             source: Self.bundledPreparedSource,
             preparedAt: Date(),
         )
@@ -478,10 +477,6 @@ final class LocalModelManager: LocalSTTModelManaging {
     }
 
     func preparedModelInfo(for configuration: LocalSTTConfiguration) -> LocalSTTPreparedModelInfo? {
-        if let bundled = bundledModelInfo(for: configuration) {
-            return bundled
-        }
-
         guard
             let record = loadPreparedRecord(for: configuration.model),
             record.modelIdentifier == configuration.modelIdentifier,
@@ -519,6 +514,10 @@ final class LocalModelManager: LocalSTTModelManaging {
 
     private var modelsRootURL: URL {
         _modelsRootURL
+    }
+
+    private var runtimesRootURL: URL {
+        _runtimesRootURL
     }
 
     private var legacyRuntimeURL: URL {
@@ -566,49 +565,149 @@ final class LocalModelManager: LocalSTTModelManaging {
         return nil
     }
 
-    /// Links the bundled model directory into the per-user Application Support tree so that it
-    /// mirrors the layout produced by a real download. This lets downstream code treat bundled and
-    /// downloaded models uniformly (single lookup path, single prepared.json record).
-    ///
-    /// Idempotent: if a symlink pointing at the same bundle destination already exists, the
-    /// existing link is reused. Any unrelated file/directory at the target path is replaced.
-    private func linkBundledModelIntoAppSupport(
+    private func runtimePath(for model: LocalSTTModel) -> String? {
+        guard let layout = SherpaOnnxModelLayout.layout(for: model) else {
+            return nil
+        }
+        return runtimesRootURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true).path
+    }
+
+    /// Copies bundled Sherpa model assets into the per-user Application Support tree and
+    /// links the shared runtime from `LocalRuntimes/` into the model folder. The app bundle
+    /// is replaced during auto-update, so durable state must not point back into the bundle.
+    private func installBundledModelIntoAppSupport(
         configuration: LocalSTTConfiguration,
         bundledPath: String,
     ) throws -> String {
-        let targetURL = URL(fileURLWithPath: storagePath(for: configuration), isDirectory: true)
-        let bundledURL = URL(fileURLWithPath: bundledPath, isDirectory: true)
-
-        // Defense in depth: every removeItem/createSymbolicLink below must land strictly
-        // inside modelsRootURL. storagePath() derives from modelsRootURL + sanitized
-        // identifier today, but this guard makes the invariant explicit so future changes
-        // to identifier handling cannot silently let us touch arbitrary filesystem paths.
-        let rootPath = modelsRootURL.standardizedFileURL.path
-        let resolvedTargetPath = targetURL.standardizedFileURL.path
-        guard resolvedTargetPath.hasPrefix(rootPath + "/") else {
+        guard let layout = SherpaOnnxModelLayout.layout(for: configuration.model) else {
             throw NSError(
                 domain: "LocalModelManager",
-                code: 9,
-                userInfo: [NSLocalizedDescriptionKey: "Resolved bundled model target path escapes models root: \(resolvedTargetPath)"],
+                code: 10,
+                userInfo: [NSLocalizedDescriptionKey: "Bundled local model copy is only supported for Sherpa-ONNX models."],
             )
         }
 
-        try fileManager.createDirectory(
-            at: targetURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true,
-        )
+        let targetURL = URL(fileURLWithPath: storagePath(for: configuration), isDirectory: true)
+        let bundledURL = URL(fileURLWithPath: bundledPath, isDirectory: true)
 
-        if let existingDestination = try? fileManager.destinationOfSymbolicLink(atPath: targetURL.path) {
-            if existingDestination == bundledURL.path {
-                return targetURL.path
-            }
-            try fileManager.removeItem(at: targetURL)
-        } else if fileManager.fileExists(atPath: targetURL.path) {
+        // Defense in depth: every removeItem/copy below must land strictly
+        // inside modelsRootURL. storagePath() derives from modelsRootURL + sanitized
+        // identifier today, but this guard makes the invariant explicit so future changes
+        // to identifier handling cannot silently let us touch arbitrary filesystem paths.
+        try ensurePath(targetURL, isInside: modelsRootURL)
+
+        let runtimeRootURL = try installBundledRuntimeIntoAppSupport(layout: layout, bundledStorageURL: bundledURL)
+        if bundledModelMatchesInstalledCopy(layout: layout, bundledStorageURL: bundledURL, targetURL: targetURL, runtimeRootURL: runtimeRootURL) {
+            return targetURL.path
+        }
+
+        if fileManager.fileExists(atPath: targetURL.path) || (try? fileManager.destinationOfSymbolicLink(atPath: targetURL.path)) != nil {
             try fileManager.removeItem(at: targetURL)
         }
 
-        try fileManager.createSymbolicLink(at: targetURL, withDestinationURL: bundledURL)
+        let bundledModelRootURL = bundledURL.appendingPathComponent(layout.modelRootDirectory, isDirectory: true)
+        let targetModelRootURL = targetURL.appendingPathComponent(layout.modelRootDirectory, isDirectory: true)
+        try fileManager.createDirectory(at: targetURL, withIntermediateDirectories: true)
+        try fileManager.copyItem(at: bundledModelRootURL, to: targetModelRootURL)
+        try linkRuntime(layout: layout, modelStorageURL: targetURL, runtimeRootURL: runtimeRootURL)
+
+        guard layout.isInstalled(storageURL: targetURL, fileManager: fileManager) else {
+            throw NSError(
+                domain: "LocalModelManager",
+                code: 11,
+                userInfo: [NSLocalizedDescriptionKey: "Bundled local model copy failed validation at \(targetURL.path)"],
+            )
+        }
         return targetURL.path
+    }
+
+    private func installBundledRuntimeIntoAppSupport(
+        layout: SherpaOnnxModelLayout,
+        bundledStorageURL: URL,
+    ) throws -> URL {
+        let bundledRuntimeURL = try resolvedURLFollowingSymlink(
+            bundledStorageURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        )
+        let targetRuntimeURL = runtimesRootURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        try ensurePath(targetRuntimeURL, isInside: runtimesRootURL)
+
+        if layout.isRuntimeInstalled(storageURL: runtimesRootURL, fileManager: fileManager),
+           directoryContentsMatch(sourceURL: bundledRuntimeURL, targetURL: targetRuntimeURL)
+        {
+            return targetRuntimeURL
+        }
+
+        if fileManager.fileExists(atPath: targetRuntimeURL.path) || (try? fileManager.destinationOfSymbolicLink(atPath: targetRuntimeURL.path)) != nil {
+            try fileManager.removeItem(at: targetRuntimeURL)
+        }
+        try fileManager.createDirectory(at: targetRuntimeURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try fileManager.copyItem(at: bundledRuntimeURL, to: targetRuntimeURL)
+        return targetRuntimeURL
+    }
+
+    private func bundledModelMatchesInstalledCopy(
+        layout: SherpaOnnxModelLayout,
+        bundledStorageURL: URL,
+        targetURL: URL,
+        runtimeRootURL: URL,
+    ) -> Bool {
+        let bundledModelRootURL = bundledStorageURL.appendingPathComponent(layout.modelRootDirectory, isDirectory: true)
+        let targetModelRootURL = targetURL.appendingPathComponent(layout.modelRootDirectory, isDirectory: true)
+        guard directoryContentsMatch(sourceURL: bundledModelRootURL, targetURL: targetModelRootURL),
+              layout.isInstalled(storageURL: targetURL, fileManager: fileManager)
+        else {
+            return false
+        }
+        return (try? fileManager.destinationOfSymbolicLink(
+            atPath: targetURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true).path
+        )) == runtimeRootURL.path
+    }
+
+    private func linkRuntime(
+        layout: SherpaOnnxModelLayout,
+        modelStorageURL: URL,
+        runtimeRootURL: URL,
+    ) throws {
+        let linkURL = modelStorageURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        if let existingDestination = try? fileManager.destinationOfSymbolicLink(atPath: linkURL.path) {
+            if existingDestination == runtimeRootURL.path {
+                return
+            }
+            try fileManager.removeItem(at: linkURL)
+        } else if fileManager.fileExists(atPath: linkURL.path) {
+            try fileManager.removeItem(at: linkURL)
+        }
+        try fileManager.createSymbolicLink(at: linkURL, withDestinationURL: runtimeRootURL)
+    }
+
+    private func resolvedURLFollowingSymlink(_ url: URL) throws -> URL {
+        guard let destination = try? fileManager.destinationOfSymbolicLink(atPath: url.path) else {
+            return url
+        }
+        if destination.hasPrefix("/") {
+            return URL(fileURLWithPath: destination, isDirectory: true)
+        }
+        return url.deletingLastPathComponent().appendingPathComponent(destination, isDirectory: true)
+    }
+
+    private func ensurePath(_ url: URL, isInside rootURL: URL) throws {
+        let rootPath = rootURL.standardizedFileURL.path
+        let path = url.standardizedFileURL.path
+        guard path.hasPrefix(rootPath + "/") else {
+            throw NSError(
+                domain: "LocalModelManager",
+                code: 9,
+                userInfo: [NSLocalizedDescriptionKey: "Resolved local model asset path escapes storage root: \(path)"],
+            )
+        }
+    }
+
+    private func directoryContentsMatch(sourceURL: URL, targetURL: URL) -> Bool {
+        DirectoryContentMatcher.contentsMatch(
+            sourceURL: sourceURL,
+            targetURL: targetURL,
+            fileManager: fileManager,
+        )
     }
 
     private func preparedSourceDisplayName(

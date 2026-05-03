@@ -10,7 +10,7 @@ extension LocalModelManager: BundledSenseVoiceLinking {}
 /// Runs once at app start to activate the bundled SenseVoice copy that ships with
 /// the full installer variant.
 ///
-/// Without this, the symlink into Application Support and the `prepared.json`
+/// Without this, the Application Support copy and the `prepared.json`
 /// record are only written lazily on the first transcription call. That lazy
 /// path is fragile: `AutoModelDownloadService.triggerIfNeeded()` reads
 /// `preparedModelInfo` on startup to expose the local-first fallback route
@@ -33,10 +33,10 @@ final class BundledModelAutoSetup {
             let hadBundle = try linker.ensureBundledSenseVoiceLinked()
             NSLog("[BundledModelAutoSetup] isFullInstall=\(hadBundle)")
             if hadBundle {
-                NSLog("[BundledModelAutoSetup] bundled SenseVoice linked and recorded")
+                NSLog("[BundledModelAutoSetup] bundled SenseVoice copied and recorded")
             }
         } catch {
-            NSLog("[BundledModelAutoSetup] failed to link bundled SenseVoice: \(error.localizedDescription)")
+            NSLog("[BundledModelAutoSetup] failed to copy bundled SenseVoice: \(error.localizedDescription)")
         }
     }
 }

@@ -656,17 +656,20 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
     private let processRunner: ProcessCommandRunning
     private let archiveDownloader: SherpaOnnxArchiveDownloading
     private let runtimeLocator: SherpaOnnxRuntimeLocating
+    private let sharedRuntimeStorageURL: URL?
 
     init(
         fileManager: FileManager = .default,
         processRunner: ProcessCommandRunning = ProcessCommandRunner(),
         archiveDownloader: SherpaOnnxArchiveDownloading = URLSessionSherpaOnnxArchiveDownloader(),
         runtimeLocator: SherpaOnnxRuntimeLocating = BundledSherpaOnnxRuntimeLocator(),
+        sharedRuntimeStorageURL: URL? = nil,
     ) {
         self.fileManager = fileManager
         self.processRunner = processRunner
         self.archiveDownloader = archiveDownloader
         self.runtimeLocator = runtimeLocator
+        self.sharedRuntimeStorageURL = sharedRuntimeStorageURL
     }
 
     func prepareModel(
@@ -683,16 +686,22 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
             )
         }
 
+        let runtimeStorageURL = sharedRuntimeStorageURL ?? storageURL
         try fileManager.createDirectory(at: storageURL, withIntermediateDirectories: true)
-        try installBundledRuntimeIfAvailable(layout: layout, storageURL: storageURL)
-        if !layout.isRuntimeInstalled(storageURL: storageURL, fileManager: fileManager) {
-            try? pruneRuntimePayload(in: storageURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true))
+        try fileManager.createDirectory(at: runtimeStorageURL, withIntermediateDirectories: true)
+        try installBundledRuntimeIfAvailable(layout: layout, runtimeStorageURL: runtimeStorageURL)
+        try installLegacyRuntimeIfAvailable(layout: layout, modelStorageURL: storageURL, runtimeStorageURL: runtimeStorageURL)
+        if !layout.isRuntimeInstalled(storageURL: runtimeStorageURL, fileManager: fileManager) {
+            try? pruneRuntimePayload(in: runtimeStorageURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true))
         }
-        if layout.isInstalled(storageURL: storageURL, fileManager: fileManager) {
+        if layout.isModelInstalled(storageURL: storageURL, fileManager: fileManager),
+           layout.isRuntimeInstalled(storageURL: runtimeStorageURL, fileManager: fileManager)
+        {
+            try linkSharedRuntimeIfNeeded(layout: layout, modelStorageURL: storageURL, runtimeStorageURL: runtimeStorageURL)
             return storageURL.path
         }
 
-        if !layout.isRuntimeInstalled(storageURL: storageURL, fileManager: fileManager) {
+        if !layout.isRuntimeInstalled(storageURL: runtimeStorageURL, fileManager: fileManager) {
             onUpdate?(LocalSTTPreparationUpdate(
                 message: L("localSTT.prepare.runtimeDownloading"),
                 progress: 0.15,
@@ -704,12 +713,14 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
             )
             try await downloadAndExtract(
                 archiveURL: layout.runtimeArchiveURL,
-                destinationURL: storageURL,
+                destinationURL: runtimeStorageURL,
                 extractedRootDirectoryName: layout.runtimeRootDirectory,
                 archiveFileName: "\(layout.runtimeRootDirectory).tar.bz2",
             )
-            try pruneRuntimePayload(in: storageURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true))
+            try pruneRuntimePayload(in: runtimeStorageURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true))
         }
+
+        try linkSharedRuntimeIfNeeded(layout: layout, modelStorageURL: storageURL, runtimeStorageURL: runtimeStorageURL)
 
         if !layout.isModelInstalled(storageURL: storageURL, fileManager: fileManager) {
             onUpdate?(LocalSTTPreparationUpdate(
@@ -754,25 +765,96 @@ final class SherpaOnnxModelInstaller: SherpaOnnxModelInstalling {
         return storageURL.path
     }
 
-    private func installBundledRuntimeIfAvailable(layout: SherpaOnnxModelLayout, storageURL: URL) throws {
+    private func installBundledRuntimeIfAvailable(layout: SherpaOnnxModelLayout, runtimeStorageURL: URL) throws {
         guard let runtimeRootURL = runtimeLocator.runtimeRootURL(for: layout, fileManager: fileManager) else {
             return
         }
 
-        let targetURL = storageURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
-        if let existingDestination = try? fileManager.destinationOfSymbolicLink(atPath: targetURL.path) {
-            if existingDestination == runtimeRootURL.path {
-                return
-            }
-            try fileManager.removeItem(at: targetURL)
-        } else if fileManager.fileExists(atPath: targetURL.path) {
+        let targetURL = runtimeStorageURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        if layout.isRuntimeInstalled(storageURL: runtimeStorageURL, fileManager: fileManager),
+           directoryContentsMatch(sourceURL: runtimeRootURL, targetURL: targetURL)
+        {
+            return
+        }
+
+        if fileManager.fileExists(atPath: targetURL.path) || (try? fileManager.destinationOfSymbolicLink(atPath: targetURL.path)) != nil {
             try fileManager.removeItem(at: targetURL)
         }
 
         try fileManager.createDirectory(at: targetURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try fileManager.createSymbolicLink(at: targetURL, withDestinationURL: runtimeRootURL)
+        try fileManager.copyItem(at: runtimeRootURL, to: targetURL)
         NetworkDebugLogger.logMessage(
-            "[Local Model Download] kind=sherpa-runtime source=bundled path=\(runtimeRootURL.path)"
+            "[Local Model Download] kind=sherpa-runtime source=bundled sourcePath=\(runtimeRootURL.path) storagePath=\(targetURL.path)"
+        )
+    }
+
+    private func installLegacyRuntimeIfAvailable(
+        layout: SherpaOnnxModelLayout,
+        modelStorageURL: URL,
+        runtimeStorageURL: URL,
+    ) throws {
+        guard runtimeStorageURL.standardizedFileURL.path != modelStorageURL.standardizedFileURL.path,
+              !layout.isRuntimeInstalled(storageURL: runtimeStorageURL, fileManager: fileManager),
+              layout.isRuntimeInstalled(storageURL: modelStorageURL, fileManager: fileManager)
+        else {
+            return
+        }
+
+        let legacyRuntimeURL = try resolvedURLFollowingSymlink(
+            modelStorageURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        )
+        let targetRuntimeURL = runtimeStorageURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        if fileManager.fileExists(atPath: targetRuntimeURL.path) || (try? fileManager.destinationOfSymbolicLink(atPath: targetRuntimeURL.path)) != nil {
+            try fileManager.removeItem(at: targetRuntimeURL)
+        }
+        try fileManager.createDirectory(at: targetRuntimeURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try fileManager.copyItem(at: legacyRuntimeURL, to: targetRuntimeURL)
+        NetworkDebugLogger.logMessage(
+            "[Local Model Download] kind=sherpa-runtime source=legacy modelPath=\(legacyRuntimeURL.path) storagePath=\(targetRuntimeURL.path)"
+        )
+    }
+
+    private func linkSharedRuntimeIfNeeded(
+        layout: SherpaOnnxModelLayout,
+        modelStorageURL: URL,
+        runtimeStorageURL: URL,
+    ) throws {
+        guard runtimeStorageURL.standardizedFileURL.path != modelStorageURL.standardizedFileURL.path else {
+            return
+        }
+        guard layout.isRuntimeInstalled(storageURL: runtimeStorageURL, fileManager: fileManager) else {
+            return
+        }
+
+        let runtimeRootURL = runtimeStorageURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        let linkURL = modelStorageURL.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        if let existingDestination = try? fileManager.destinationOfSymbolicLink(atPath: linkURL.path) {
+            if existingDestination == runtimeRootURL.path {
+                return
+            }
+            try fileManager.removeItem(at: linkURL)
+        } else if fileManager.fileExists(atPath: linkURL.path) {
+            try fileManager.removeItem(at: linkURL)
+        }
+        try fileManager.createDirectory(at: linkURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try fileManager.createSymbolicLink(at: linkURL, withDestinationURL: runtimeRootURL)
+    }
+
+    private func resolvedURLFollowingSymlink(_ url: URL) throws -> URL {
+        guard let destination = try? fileManager.destinationOfSymbolicLink(atPath: url.path) else {
+            return url
+        }
+        if destination.hasPrefix("/") {
+            return URL(fileURLWithPath: destination, isDirectory: true)
+        }
+        return url.deletingLastPathComponent().appendingPathComponent(destination, isDirectory: true)
+    }
+
+    private func directoryContentsMatch(sourceURL: URL, targetURL: URL) -> Bool {
+        DirectoryContentMatcher.contentsMatch(
+            sourceURL: sourceURL,
+            targetURL: targetURL,
+            fileManager: fileManager,
         )
     }
 

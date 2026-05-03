@@ -149,7 +149,7 @@ final class LocalModelTranscriberTests: XCTestCase {
         XCTAssertTrue(updates.values().contains(where: { $0.message == "fake sherpa ready" }))
     }
 
-    func testLocalModelManagerPrefersBundledSenseVoicePreparedModelInfo() async throws {
+    func testPreparedModelInfoDoesNotInstallBundledSenseVoice() async throws {
         let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -161,14 +161,6 @@ final class LocalModelTranscriberTests: XCTestCase {
         settingsStore.localSTTAutoSetup = true
 
         let appSupportURL = makeTemporaryApplicationSupportURL()
-        let firstManager = LocalModelManager(
-            fileManager: .default,
-            sherpaOnnxInstaller: FakeSherpaOnnxInstaller(),
-            applicationSupportURL: appSupportURL,
-            downloadSourceResolver: FixedLocalModelDownloadSourceResolver(sources: [.huggingFace]),
-        )
-        try await firstManager.prepareModel(settingsStore: settingsStore)
-
         let bundledModelsRootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("typeflux-bundled-models-\(UUID().uuidString)", isDirectory: true)
         let bundledStorageURL = bundledModelsRootURL
@@ -188,14 +180,15 @@ final class LocalModelTranscriberTests: XCTestCase {
             bundledModelsRootURL: bundledModelsRootURL,
         )
 
-        let prepared = try XCTUnwrap(manager.preparedModelInfo(settingsStore: settingsStore))
+        let prepared = manager.preparedModelInfo(settingsStore: settingsStore)
+        let expectedPath = manager.storagePath(for: LocalSTTConfiguration(settingsStore: settingsStore))
 
-        XCTAssertEqual(prepared.storagePath, bundledStorageURL.path)
-        XCTAssertEqual(prepared.sourceDisplayName, L("common.bundled"))
-        XCTAssertFalse(prepared.storagePath.hasPrefix(appSupportURL.path))
+        XCTAssertNil(prepared)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: expectedPath))
+        XCTAssertTrue(expectedPath.hasPrefix(appSupportURL.path))
     }
 
-    func testPrepareModelSymlinksBundledSenseVoiceAndSkipsDownload() async throws {
+    func testPrepareModelCopiesBundledSenseVoiceAndSkipsDownload() async throws {
         let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -206,7 +199,7 @@ final class LocalModelTranscriberTests: XCTestCase {
         settingsStore.localSTTDownloadSource = .huggingFace
         settingsStore.localSTTAutoSetup = true
 
-        let (manager, bundledStorageURL, fakeInstaller, appSupportURL) = try makeBundledSenseVoiceManager()
+        let (manager, _, fakeInstaller, appSupportURL) = try makeBundledSenseVoiceManager()
 
         let updates = PreparationUpdateRecorder()
         try await manager.prepareModel(settingsStore: settingsStore) { update in
@@ -217,12 +210,11 @@ final class LocalModelTranscriberTests: XCTestCase {
         let expectedTargetPath = manager.storagePath(for: configuration)
         XCTAssertTrue(expectedTargetPath.hasPrefix(appSupportURL.path))
 
-        let destination = try FileManager.default.destinationOfSymbolicLink(atPath: expectedTargetPath)
-        XCTAssertEqual(destination, bundledStorageURL.path)
+        XCTAssertNil(try? FileManager.default.destinationOfSymbolicLink(atPath: expectedTargetPath))
         XCTAssertEqual(fakeInstaller.preparedSources, [])
 
         let prepared = try XCTUnwrap(manager.preparedModelInfo(settingsStore: settingsStore))
-        XCTAssertEqual(prepared.storagePath, bundledStorageURL.path)
+        XCTAssertEqual(prepared.storagePath, expectedTargetPath)
         XCTAssertEqual(prepared.sourceDisplayName, L("common.bundled"))
 
         XCTAssertTrue(updates.values().contains(where: { $0.progress == 1 && $0.source == L("common.bundled") }))
@@ -239,18 +231,18 @@ final class LocalModelTranscriberTests: XCTestCase {
         settingsStore.localSTTDownloadSource = .huggingFace
         settingsStore.localSTTAutoSetup = true
 
-        let (manager, bundledStorageURL, fakeInstaller, _) = try makeBundledSenseVoiceManager()
+        let (manager, _, fakeInstaller, _) = try makeBundledSenseVoiceManager()
 
         try await manager.prepareModel(settingsStore: settingsStore)
         try await manager.prepareModel(settingsStore: settingsStore)
 
         let targetPath = manager.storagePath(for: LocalSTTConfiguration(settingsStore: settingsStore))
-        let destination = try FileManager.default.destinationOfSymbolicLink(atPath: targetPath)
-        XCTAssertEqual(destination, bundledStorageURL.path)
+        XCTAssertNil(try? FileManager.default.destinationOfSymbolicLink(atPath: targetPath))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: targetPath))
         XCTAssertEqual(fakeInstaller.preparedSources, [])
     }
 
-    func testPrepareModelReplacesExistingDirectoryWithBundledSymlink() async throws {
+    func testPrepareModelReplacesExistingDirectoryWithBundledCopy() async throws {
         let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -261,7 +253,7 @@ final class LocalModelTranscriberTests: XCTestCase {
         settingsStore.localSTTDownloadSource = .huggingFace
         settingsStore.localSTTAutoSetup = true
 
-        let (manager, bundledStorageURL, fakeInstaller, _) = try makeBundledSenseVoiceManager()
+        let (manager, _, fakeInstaller, _) = try makeBundledSenseVoiceManager()
         let configuration = LocalSTTConfiguration(settingsStore: settingsStore)
         let targetPath = manager.storagePath(for: configuration)
 
@@ -276,8 +268,12 @@ final class LocalModelTranscriberTests: XCTestCase {
 
         try await manager.prepareModel(settingsStore: settingsStore)
 
-        let destination = try FileManager.default.destinationOfSymbolicLink(atPath: targetPath)
-        XCTAssertEqual(destination, bundledStorageURL.path)
+        XCTAssertNil(try? FileManager.default.destinationOfSymbolicLink(atPath: targetPath))
+        XCTAssertFalse(FileManager.default.fileExists(
+            atPath: URL(fileURLWithPath: targetPath, isDirectory: true)
+                .appendingPathComponent("stale.txt")
+                .path,
+        ))
         XCTAssertEqual(fakeInstaller.preparedSources, [])
     }
 
@@ -350,6 +346,7 @@ final class LocalModelTranscriberTests: XCTestCase {
             settingsStore: settingsStore,
         )
 
+        try manager.ensureBundledSenseVoiceLinked()
         service.triggerIfNeeded()
 
         XCTAssertTrue(service.isModelReady)
@@ -947,7 +944,7 @@ final class LocalModelTranscriberTests: XCTestCase {
         )
     }
 
-    func testSherpaInstallerLinksBundledRuntimeAndDownloadsOnlyModelAssets() async throws {
+    func testSherpaInstallerCopiesBundledRuntimeAndDownloadsOnlyModelAssets() async throws {
         let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .funASR))
         let bundledRuntimeStorage = try makeSherpaModelFolder(for: .senseVoiceSmall)
         let bundledRuntimeRoot = bundledRuntimeStorage.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
@@ -981,10 +978,104 @@ final class LocalModelTranscriberTests: XCTestCase {
         let preparedPath = try await installer.prepareModel(.funASR, at: installRoot, downloadSource: .huggingFace)
 
         XCTAssertEqual(preparedPath, installRoot.path)
-        let linkedRuntimeRoot = installRoot.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        let copiedRuntimeRoot = installRoot.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        XCTAssertNil(try? FileManager.default.destinationOfSymbolicLink(atPath: copiedRuntimeRoot.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: copiedRuntimeRoot.appendingPathComponent("bin/sherpa-onnx-offline").path))
+        XCTAssertTrue(layout.isInstalled(storageURL: installRoot, fileManager: .default))
+    }
+
+    func testSherpaInstallerStoresRuntimeInSharedStorageAndLinksModelFolder() async throws {
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
+        let fixturesRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-sherpa-fixtures-\(UUID().uuidString)", isDirectory: true)
+        let installRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-sherpa-install-\(UUID().uuidString)", isDirectory: true)
+        let sharedRuntimeRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-shared-runtimes-\(UUID().uuidString)", isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: fixturesRoot)
+            try? FileManager.default.removeItem(at: installRoot)
+            try? FileManager.default.removeItem(at: sharedRuntimeRoot)
+        }
+        try FileManager.default.createDirectory(at: fixturesRoot, withIntermediateDirectories: true)
+
+        let runtimeArchiveURL = try await makeArchiveFixture(
+            rootDirectoryName: layout.runtimeRootDirectory,
+            requiredRelativePaths: [
+                "bin/sherpa-onnx-offline",
+                "lib/libsherpa-onnx-c-api.dylib",
+                "lib/libonnxruntime.dylib",
+            ],
+            outputDirectory: fixturesRoot,
+        )
+        guard case let .files(files) = try XCTUnwrap(LocalModelDownloadCatalog.sherpaOnnxModelArtifact(
+            for: .senseVoiceSmall,
+            source: .huggingFace,
+        )) else {
+            return XCTFail("Expected file-based SenseVoice artifact for Hugging Face")
+        }
+
+        var archiveMap: [URL: URL] = [
+            layout.runtimeArchiveURL: runtimeArchiveURL,
+        ]
+        archiveMap.merge(
+            try makeDownloadedFileFixtures(for: files, outputDirectory: fixturesRoot),
+            uniquingKeysWith: { _, new in new },
+        )
+        let installer = SherpaOnnxModelInstaller(
+            fileManager: .default,
+            processRunner: ProcessCommandRunner(),
+            archiveDownloader: StaticArchiveDownloader(archiveMap: archiveMap),
+            sharedRuntimeStorageURL: sharedRuntimeRoot,
+        )
+
+        let preparedPath = try await installer.prepareModel(.senseVoiceSmall, at: installRoot, downloadSource: .huggingFace)
+
+        XCTAssertEqual(preparedPath, installRoot.path)
+        let persistedRuntimeRoot = sharedRuntimeRoot.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: persistedRuntimeRoot.appendingPathComponent("bin/sherpa-onnx-offline").path))
         XCTAssertEqual(
-            try FileManager.default.destinationOfSymbolicLink(atPath: linkedRuntimeRoot.path),
-            bundledRuntimeRoot.path,
+            try FileManager.default.destinationOfSymbolicLink(
+                atPath: installRoot.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true).path,
+            ),
+            persistedRuntimeRoot.path,
+        )
+        XCTAssertTrue(layout.isInstalled(storageURL: installRoot, fileManager: .default))
+    }
+
+    func testSherpaInstallerMigratesLegacyBundledRuntimeSymlinkToSharedStorage() async throws {
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
+        let installRoot = try makeSherpaModelFolder(for: .senseVoiceSmall)
+        let bundledRuntimeStorage = try makeSherpaModelFolder(for: .senseVoiceSmall)
+        let bundledRuntimeRoot = bundledRuntimeStorage.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        let sharedRuntimeRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-shared-runtimes-\(UUID().uuidString)", isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: installRoot)
+            try? FileManager.default.removeItem(at: bundledRuntimeStorage)
+            try? FileManager.default.removeItem(at: sharedRuntimeRoot)
+        }
+
+        let legacyRuntimeLink = installRoot.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        try FileManager.default.removeItem(at: legacyRuntimeLink)
+        try FileManager.default.createSymbolicLink(at: legacyRuntimeLink, withDestinationURL: bundledRuntimeRoot)
+        XCTAssertTrue(layout.isRuntimeInstalled(storageURL: installRoot, fileManager: .default))
+
+        let installer = SherpaOnnxModelInstaller(
+            fileManager: .default,
+            processRunner: ProcessCommandRunner(),
+            archiveDownloader: StaticArchiveDownloader(archiveMap: [:]),
+            sharedRuntimeStorageURL: sharedRuntimeRoot,
+        )
+
+        _ = try await installer.prepareModel(.senseVoiceSmall, at: installRoot, downloadSource: .huggingFace)
+
+        let persistedRuntimeRoot = sharedRuntimeRoot.appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: persistedRuntimeRoot.appendingPathComponent("bin/sherpa-onnx-offline").path))
+        XCTAssertNil(try? FileManager.default.destinationOfSymbolicLink(atPath: persistedRuntimeRoot.path))
+        XCTAssertEqual(
+            try FileManager.default.destinationOfSymbolicLink(atPath: legacyRuntimeLink.path),
+            persistedRuntimeRoot.path,
         )
         XCTAssertTrue(layout.isInstalled(storageURL: installRoot, fileManager: .default))
     }
@@ -994,7 +1085,7 @@ final class LocalModelTranscriberTests: XCTestCase {
     }
 
     /// Constructs a LocalModelManager whose BundledModels root contains a complete SenseVoice
-    /// payload so that `prepareModel` takes the bundled (symlink) path.
+    /// payload so that `prepareModel` takes the bundled copy path.
     private func makeBundledSenseVoiceManager() throws -> (
         manager: LocalModelManager,
         bundledStorageURL: URL,

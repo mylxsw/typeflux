@@ -104,16 +104,18 @@ jobs:
             --password "$NOTARYTOOL_PASSWORD" \
             --keychain "$KEYCHAIN_PATH"
 
-      - name: Build, sign, notarize, staple, and package minimal + full installers
+      - name: Build, sign, notarize, staple, and package installers
         run: |
           set -euo pipefail
 
           if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF_NAME}" == "pre-release" ]]; then
             MINIMAL_PACKAGE_NAME="Typeflux-pre-release-minimal"
             FULL_PACKAGE_NAME="Typeflux-pre-release-full"
+            APP_ONLY_PACKAGE_NAME="Typeflux-pre-release-app-only"
           else
             MINIMAL_PACKAGE_NAME="Typeflux-minimal"
             FULL_PACKAGE_NAME="Typeflux-full"
+            APP_ONLY_PACKAGE_NAME="Typeflux-app-only"
           fi
 
           TYPEFLUX_RELEASE_VARIANT=minimal \
@@ -124,6 +126,10 @@ jobs:
           TYPEFLUX_PACKAGE_NAME="$FULL_PACKAGE_NAME" \
           ./scripts/release_notarize.sh
 
+          TYPEFLUX_RELEASE_VARIANT=app-only \
+          TYPEFLUX_PACKAGE_NAME="$APP_ONLY_PACKAGE_NAME" \
+          ./scripts/release_notarize.sh
+
       - name: Verify release artifacts
         run: |
           set -euo pipefail
@@ -132,14 +138,18 @@ jobs:
           test -f "$BUILD_DIR/Typeflux-minimal.zip" || test -f "$BUILD_DIR/Typeflux-pre-release-minimal.zip"
           test -f "$BUILD_DIR/Typeflux-full.dmg" || test -f "$BUILD_DIR/Typeflux-pre-release-full.dmg"
           test -f "$BUILD_DIR/Typeflux-full.zip" || test -f "$BUILD_DIR/Typeflux-pre-release-full.zip"
+          test -f "$BUILD_DIR/Typeflux-app-only.dmg" || test -f "$BUILD_DIR/Typeflux-pre-release-app-only.dmg"
+          test -f "$BUILD_DIR/Typeflux-app-only.zip" || test -f "$BUILD_DIR/Typeflux-pre-release-app-only.zip"
           codesign --verify --deep --strict --verbose=2 "$BUILD_DIR/$APP_NAME.app"
           spctl --assess --type execute --verbose=4 "$BUILD_DIR/$APP_NAME.app"
           if [[ -f "$BUILD_DIR/Typeflux-full.dmg" ]]; then
             xcrun stapler validate "$BUILD_DIR/Typeflux-full.dmg"
             xcrun stapler validate "$BUILD_DIR/Typeflux-minimal.dmg"
+            xcrun stapler validate "$BUILD_DIR/Typeflux-app-only.dmg"
           else
             xcrun stapler validate "$BUILD_DIR/Typeflux-pre-release-full.dmg"
             xcrun stapler validate "$BUILD_DIR/Typeflux-pre-release-minimal.dmg"
+            xcrun stapler validate "$BUILD_DIR/Typeflux-pre-release-app-only.dmg"
           fi
 
       - name: Upload pre-release build artifacts
@@ -152,6 +162,8 @@ jobs:
             .build/release/Typeflux-pre-release-minimal.dmg
             .build/release/Typeflux-pre-release-full.zip
             .build/release/Typeflux-pre-release-full.dmg
+            .build/release/Typeflux-pre-release-app-only.zip
+            .build/release/Typeflux-pre-release-app-only.dmg
           if-no-files-found: error
           retention-days: 14
 
@@ -184,6 +196,8 @@ jobs:
             .build/release/Typeflux-pre-release-minimal.dmg
             .build/release/Typeflux-pre-release-full.zip
             .build/release/Typeflux-pre-release-full.dmg
+            .build/release/Typeflux-pre-release-app-only.zip
+            .build/release/Typeflux-pre-release-app-only.dmg
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -198,6 +212,8 @@ jobs:
             .build/release/Typeflux-minimal.dmg
             .build/release/Typeflux-full.zip
             .build/release/Typeflux-full.dmg
+            .build/release/Typeflux-app-only.zip
+            .build/release/Typeflux-app-only.dmg
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

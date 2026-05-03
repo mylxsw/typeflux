@@ -49,8 +49,8 @@ final class BundledModelAutoSetupTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testEnsureBundledSenseVoiceLinked_withValidBundle_createsSymlinkAndRecord() throws {
-        let (manager, bundledStorageURL, appSupportURL) = try makeBundledSenseVoiceEnvironment()
+    func testEnsureBundledSenseVoiceLinked_withValidBundle_copiesModelAndRecord() throws {
+        let (manager, _, appSupportURL) = try makeBundledSenseVoiceEnvironment()
 
         let result = try manager.ensureBundledSenseVoiceLinked()
 
@@ -65,8 +65,26 @@ final class BundledModelAutoSetupTests: XCTestCase {
         let targetPath = manager.storagePath(for: configuration)
         XCTAssertTrue(targetPath.hasPrefix(appSupportURL.path))
 
-        let destination = try FileManager.default.destinationOfSymbolicLink(atPath: targetPath)
-        XCTAssertEqual(destination, bundledStorageURL.path)
+        XCTAssertNil(try? FileManager.default.destinationOfSymbolicLink(atPath: targetPath))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: targetPath))
+
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
+        XCTAssertTrue(FileManager.default.fileExists(
+            atPath: URL(fileURLWithPath: targetPath, isDirectory: true)
+                .appendingPathComponent(layout.modelRootDirectory, isDirectory: true)
+                .appendingPathComponent("model.int8.onnx")
+                .path,
+        ))
+        let runtimeLinkPath = URL(fileURLWithPath: targetPath, isDirectory: true)
+            .appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+            .path
+        XCTAssertEqual(
+            try FileManager.default.destinationOfSymbolicLink(atPath: runtimeLinkPath),
+            appSupportURL
+                .appendingPathComponent("Typeflux/LocalRuntimes", isDirectory: true)
+                .appendingPathComponent(layout.runtimeRootDirectory, isDirectory: true)
+                .path,
+        )
 
         let recordURL = URL(fileURLWithPath: targetPath, isDirectory: true)
             .deletingLastPathComponent()
@@ -80,7 +98,7 @@ final class BundledModelAutoSetupTests: XCTestCase {
     }
 
     func testEnsureBundledSenseVoiceLinked_isIdempotent() throws {
-        let (manager, bundledStorageURL, _) = try makeBundledSenseVoiceEnvironment()
+        let (manager, _, _) = try makeBundledSenseVoiceEnvironment()
 
         let first = try manager.ensureBundledSenseVoiceLinked()
         let second = try manager.ensureBundledSenseVoiceLinked()
@@ -95,8 +113,54 @@ final class BundledModelAutoSetupTests: XCTestCase {
             autoSetup: true,
         )
         let targetPath = manager.storagePath(for: configuration)
-        let destination = try FileManager.default.destinationOfSymbolicLink(atPath: targetPath)
-        XCTAssertEqual(destination, bundledStorageURL.path)
+        XCTAssertNil(try? FileManager.default.destinationOfSymbolicLink(atPath: targetPath))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: targetPath))
+    }
+
+    func testEnsureBundledSenseVoiceLinked_replacesSameSizeChangedBundledFiles() throws {
+        let (manager, bundledStorageURL, _) = try makeBundledSenseVoiceEnvironment()
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
+        let bundledTokensURL = bundledStorageURL
+            .appendingPathComponent(layout.modelRootDirectory, isDirectory: true)
+            .appendingPathComponent("tokens.txt", isDirectory: false)
+
+        try manager.ensureBundledSenseVoiceLinked()
+        let sourceData = try Data(contentsOf: bundledTokensURL)
+        let changedText = String(decoding: sourceData, as: UTF8.self)
+            .replacingOccurrences(of: "the 3", with: "tha 3")
+        let changedData = Data(changedText.utf8)
+        XCTAssertEqual(changedData.count, sourceData.count)
+        try changedData.write(to: bundledTokensURL)
+
+        try manager.ensureBundledSenseVoiceLinked()
+
+        let configuration = LocalSTTConfiguration(
+            model: .senseVoiceSmall,
+            modelIdentifier: LocalSTTModel.senseVoiceSmall.defaultModelIdentifier,
+            downloadSource: .huggingFace,
+            autoSetup: true,
+        )
+        let installedTokensURL = URL(fileURLWithPath: manager.storagePath(for: configuration), isDirectory: true)
+            .appendingPathComponent(layout.modelRootDirectory, isDirectory: true)
+            .appendingPathComponent("tokens.txt", isDirectory: false)
+        XCTAssertEqual(try Data(contentsOf: installedTokensURL), changedData)
+    }
+
+    func testDirectoryContentMatcherDetectsSameSizeChangedFiles() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-content-match-\(UUID().uuidString)", isDirectory: true)
+        let sourceURL = root.appendingPathComponent("source", isDirectory: true)
+        let targetURL = root.appendingPathComponent("target", isDirectory: true)
+        try FileManager.default.createDirectory(at: sourceURL, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: targetURL, withIntermediateDirectories: true)
+        try Data("abc".utf8).write(to: sourceURL.appendingPathComponent("tokens.txt"))
+        try Data("xyz".utf8).write(to: targetURL.appendingPathComponent("tokens.txt"))
+
+        XCTAssertFalse(DirectoryContentMatcher.contentsMatch(
+            sourceURL: sourceURL,
+            targetURL: targetURL,
+            fileManager: .default,
+        ))
     }
 
     // MARK: - Fixtures

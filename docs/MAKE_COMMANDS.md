@@ -163,7 +163,8 @@ Environment:
 Behavior:
 
 - defaults to `TYPEFLUX_RELEASE_VARIANT=minimal`
-- if you override `TYPEFLUX_RELEASE_VARIANT=full`, it now moves `Typeflux-full.zip` and `Typeflux-full.dmg` correctly
+- if you override `TYPEFLUX_RELEASE_VARIANT=full`, it moves `Typeflux-full.zip` and `Typeflux-full.dmg` correctly
+- if you override `TYPEFLUX_RELEASE_VARIANT=app-only`, it moves `Typeflux-app-only.zip` and `Typeflux-app-only.dmg` correctly
 
 ### `make full-release`
 
@@ -192,6 +193,24 @@ Use it when:
 Requirements:
 
 - the same Developer ID, notarization profile, and `create-dmg` setup required by `make release`
+
+### `make app-only-release`
+
+Command:
+
+```bash
+make app-only-release
+```
+
+What it does:
+
+- runs the same notarized production release flow as `make release`
+- forces `TYPEFLUX_RELEASE_VARIANT=app-only`
+- moves `Typeflux-app-only.zip` and `Typeflux-app-only.dmg` into `~/Downloads/`
+
+Use it when:
+
+- you need an in-app auto-update payload that does not rebundle local runtime or model assets
 
 ### `make dmg`
 

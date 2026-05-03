@@ -34,12 +34,14 @@ install_bundled_models() {
   rm -rf "$bundled_models_dir"
   rm -rf "$bundled_runtimes_dir"
 
-  "${ROOT_DIR}/scripts/install_bundled_sherpa_runtime.sh" "$sherpa_runtime_root"
-
   case "$DEV_VARIANT" in
+    app-only)
+      ;;
     minimal)
+      "${ROOT_DIR}/scripts/install_bundled_sherpa_runtime.sh" "$sherpa_runtime_root"
       ;;
     full)
+      "${ROOT_DIR}/scripts/install_bundled_sherpa_runtime.sh" "$sherpa_runtime_root"
       local target_model_folder="$bundled_models_dir/senseVoiceSmall/sensevoice-small"
       "${ROOT_DIR}/scripts/install_bundled_sensevoice.sh" "$target_model_folder" "$sherpa_runtime_root"
 

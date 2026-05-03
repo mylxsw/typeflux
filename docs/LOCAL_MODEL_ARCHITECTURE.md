@@ -240,34 +240,39 @@ These files can be **downloaded from the internet** or **bundled inside the .app
 
 ## 8. File Storage Layout
 
-All local model-related files are stored under `~/Library/Application Support/Typeflux/LocalModels/`:
+Local model-related files are stored under `~/Library/Application Support/Typeflux/`.
+Sherpa-ONNX runtime binaries are stored once under `LocalRuntimes/` and reused
+by every Sherpa-backed model. Model weights stay under `LocalModels/`:
 
 ```
-~/Library/Application Support/Typeflux/LocalModels/
-├── senseVoiceSmall/
-│   └── sensevoice-small/
-│       ├── sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/  ← Runtime
-│       │   ├── bin/sherpa-onnx-offline
-│       │   └── lib/*.dylib
-│       ├── sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/  ← Model
-│       │   ├── model.int8.onnx
-│       │   └── tokens.txt
-│       └── prepared.json                                         ← Ready marker
-│
-├── qwen3ASR/
-│   └── <identifier>/
-│       ├── sherpa-onnx-v1.12.35-.../                            ← Runtime (may be shared)
-│       ├── sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/          ← Model
-│       └── prepared.json
-│
-├── whisperLocal/
-│   └── <identifier>/
-│       ├── MelSpectrogram.mlmodelc/
-│       ├── AudioEncoder.mlmodelc/
-│       ├── TextDecoder.mlmodelc/
-│       └── prepared.json
-│
-└── ... (other models follow the same pattern)
+~/Library/Application Support/Typeflux/
+├── LocalRuntimes/
+│   └── sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/
+│       ├── bin/sherpa-onnx-offline
+│       └── lib/*.dylib
+└── LocalModels/
+    ├── senseVoiceSmall/
+    │   ├── prepared.json
+    │   └── sensevoice-small/
+    │       ├── sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/  ← Symlink to LocalRuntimes
+    │       └── sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/  ← Model
+    │           ├── model.int8.onnx
+    │           └── tokens.txt
+    │
+    ├── qwen3ASR/
+    │   └── <identifier>/
+    │       ├── sherpa-onnx-v1.12.35-.../                            ← Symlink to LocalRuntimes
+    │       ├── sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/          ← Model
+    │       └── prepared.json
+    │
+    ├── whisperLocal/
+    │   └── <identifier>/
+    │       ├── MelSpectrogram.mlmodelc/
+    │       ├── AudioEncoder.mlmodelc/
+    │       ├── TextDecoder.mlmodelc/
+    │       └── prepared.json
+    │
+    └── ... (other models follow the same pattern)
 ```
 
 Each model directory contains a `prepared.json` file that records the model's metadata:
@@ -292,8 +297,9 @@ The app can be built in two variants:
 
 | Variant | What Is Bundled | First-Use Experience | App Size |
 |---------|-----------------|---------------------|----------|
-| **Minimal** | Only Sherpa-ONNX runtime binaries | Model files must be downloaded on first use (about 47 MB) | Smaller |
-| **Full** | Runtime + SenseVoice model files included | Works out of the box, no download needed | Larger |
+| **Minimal** | Only Sherpa-ONNX runtime binaries | Runtime is copied locally; model files must be downloaded on first use (about 47 MB) | Smaller |
+| **Full** | Runtime + SenseVoice model files included | Runtime and model are copied locally; works out of the box | Larger |
+| **App-only** | No local runtime/model assets | Existing local assets are reused; missing assets are downloaded | Smallest, for auto-updates |
 
 Bundled files are placed inside the `.app` package:
 
@@ -310,7 +316,12 @@ Typeflux.app/Contents/Resources/
         └── lib/*.dylib
 ```
 
-At app launch, `BundledLocalModelLocator` searches three candidate paths for bundled models. Once found, `LocalModelManager` creates a **symbolic link (symlink)** that points the bundled model into the `LocalModels/` directory. This way, all downstream code uses the same path regardless of whether the model was bundled or downloaded.
+At app launch, `BundledLocalModelLocator` searches three candidate paths for
+bundled models. Once found, `LocalModelManager` copies the bundled model into
+`LocalModels/`, copies the bundled runtime into `LocalRuntimes/`, and links the
+model folder back to that shared runtime. This matters for auto-update: the
+`.app` bundle can be replaced by a smaller package later, while the durable
+runtime/model copy remains available in Application Support.
 
 ---
 
@@ -468,7 +479,7 @@ This means: **even if you are on an airplane with no network, Typeflux can still
 
 5. **Lazy + Eager loading strategy**: WhisperKit begins warming up while the user is still speaking (eager), while Sherpa models require no warm-up since they run out-of-process. This strikes a balance between resource consumption and response speed.
 
-6. **Bundled + on-demand download**: The Full variant works out of the box; the Minimal variant downloads automatically on first use. Symlinks unify the paths so that downstream code does not need to distinguish between bundled and downloaded models.
+6. **Bundled + on-demand download**: The Full variant works out of the box; the Minimal variant downloads automatically on first use. Bundled assets are copied into durable Application Support storage, and model folders link to the shared runtime so downstream code can keep using one model-root path.
 
 ---
 

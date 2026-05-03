@@ -8,6 +8,8 @@ RELEASE_VARIANT="${TYPEFLUX_RELEASE_VARIANT:-minimal}"
 DEFAULT_PACKAGE_NAME="$APP_NAME"
 if [[ "$RELEASE_VARIANT" == "full" ]]; then
   DEFAULT_PACKAGE_NAME="${APP_NAME}-full"
+elif [[ "$RELEASE_VARIANT" == "app-only" ]]; then
+  DEFAULT_PACKAGE_NAME="${APP_NAME}-app-only"
 fi
 PACKAGE_NAME="${TYPEFLUX_PACKAGE_NAME:-$DEFAULT_PACKAGE_NAME}"
 APP_BUNDLE="${BUILD_DIR}/${APP_NAME}.app"
@@ -46,7 +48,7 @@ echo "Building Typeflux release bundle..."
 echo "Release variant: ${RELEASE_VARIANT}"
 
 case "$RELEASE_VARIANT" in
-  minimal|full)
+  minimal|full|app-only)
     ;;
   *)
     echo "Error: unsupported TYPEFLUX_RELEASE_VARIANT: ${RELEASE_VARIANT}" >&2
@@ -72,7 +74,9 @@ cp -R "$RESOURCE_BUNDLE" "$APP_BUNDLE/Contents/Resources/Typeflux_Typeflux.bundl
 rm -rf "$APP_BUNDLE/Contents/Resources/BundledModels"
 rm -rf "$APP_BUNDLE/Contents/Resources/LocalRuntimes"
 SHERPA_RUNTIME_ROOT="$APP_BUNDLE/Contents/Resources/LocalRuntimes/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts"
-"${ROOT_DIR}/scripts/install_bundled_sherpa_runtime.sh" "$SHERPA_RUNTIME_ROOT"
+if [[ "$RELEASE_VARIANT" != "app-only" ]]; then
+  "${ROOT_DIR}/scripts/install_bundled_sherpa_runtime.sh" "$SHERPA_RUNTIME_ROOT"
+fi
 
 if [[ "$RELEASE_VARIANT" == "full" ]]; then
   # Directory name must match LocalSTTModel.senseVoiceSmall.defaultModelIdentifier
