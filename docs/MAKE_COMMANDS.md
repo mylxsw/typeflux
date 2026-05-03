@@ -189,6 +189,38 @@ Use it when:
 - you want a production-ready installer that already contains the bundled SenseVoice model
 - you want the local full installer without manually exporting `TYPEFLUX_RELEASE_VARIANT=full`
 
+### `make release-continue`
+
+Command:
+
+```bash
+make release-continue
+```
+
+What it does:
+
+- resumes the last interrupted local release using `.build/release/.release-workflow.env`
+- skips completed stages such as app build, DMG build, notarization submission, stapling, or archive export
+- continues waiting on the saved Apple notarization submission ID when the previous run reached Apple before timing out or being stopped
+- moves completed installers into `~/Downloads/`
+
+Use it when:
+
+- `make release` failed or was stopped after making progress
+- Apple notarization took long enough that the local release process timed out
+
+For the full bundled-model variant, run:
+
+```bash
+make full-release-continue
+```
+
+To resume the same workflow without moving artifacts to `~/Downloads`, run:
+
+```bash
+make release-notarize-continue
+```
+
 Requirements:
 
 - the same Developer ID, notarization profile, and `create-dmg` setup required by `make release`

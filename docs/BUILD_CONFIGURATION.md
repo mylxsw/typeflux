@@ -227,6 +227,8 @@ The release script passes `--keychain` automatically when this variable is set.
 | `TYPEFLUX_NOTARY_SUBMIT_RETRIES` | Optional | Integer; default `3` | `scripts/release_notarize.sh` (retries on transient submission failure) |
 | `TYPEFLUX_NOTARY_POLL_INTERVAL_SECONDS` | Optional | Integer; default `15` | `scripts/release_notarize.sh` (sleep between status polls) |
 | `TYPEFLUX_RELEASE_VARIANT` | Optional | `minimal` (default) or `full` | `scripts/build_release.sh` (controls whether SenseVoice is embedded into the app bundle) |
+| `TYPEFLUX_RELEASE_STATE_PATH` | Optional | Path to the resumable release state file; default `.build/release/.release-workflow.env` | `scripts/release_notarize.sh` |
+| `TYPEFLUX_RELEASE_DESTINATION` | Optional | Directory for `make release` / `make release-continue` exports; default `~/Downloads` | `scripts/release_notarize.sh` |
 
 > Variables that are **not** prefixed are intentionally Apple-defined or third-party names: `NOTARYTOOL_APPLE_ID`, `NOTARYTOOL_PASSWORD`, `APPLE_TEAM_ID`, `APPLE_CERTIFICATE_BASE64`, `APPLE_CERTIFICATE_PASSWORD` exist only inside the GitHub Actions workflow.
 

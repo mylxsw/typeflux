@@ -25,6 +25,12 @@ For local release validation, use the one-step notarized release command:
 make release-notarize
 ```
 
+If local release validation fails after making progress, resume it with:
+
+```bash
+make release-notarize-continue
+```
+
 For a local full-model production installer, use:
 
 ```bash
@@ -122,6 +128,13 @@ This command automatically:
 7. staples the notarization ticket to both the app and the DMG
 8. validates the stapled artifacts
 
+The release script writes resumable state to
+`.build/release/.release-workflow.env` after each completed stage. A fresh
+`make release` or `make release-notarize` starts over and replaces that state.
+`make release-continue` and `make release-notarize-continue` use the saved
+stage and notarization submission ID to resume the previous release, including
+continuing the Apple notarization wait after a timeout or manual stop.
+
 ## Prerequisites
 
 - macOS 13 or later
@@ -162,6 +175,7 @@ Notes:
   a non-default keychain
 - the release script retries transient notarization submission failures
 - if Apple returns a submission ID and the local client times out afterward, the script continues tracking that submission instead of restarting blindly
+- after an interrupted local release, use `make release-continue` or `make release-notarize-continue` to resume from the saved state instead of rebuilding from the beginning
 - see [BUILD_CONFIGURATION.md](./BUILD_CONFIGURATION.md) for the full step-by-step setup of certificates, Developer IDs, provisioning profiles, and notarization credentials
 
 ## One-Step Notarized Release
@@ -176,6 +190,24 @@ For the bundled-model installer:
 
 ```bash
 make full-release
+```
+
+Resume an interrupted default release validation:
+
+```bash
+make release-notarize-continue
+```
+
+Resume an interrupted default release that exports artifacts to `~/Downloads`:
+
+```bash
+make release-continue
+```
+
+Resume an interrupted full release:
+
+```bash
+make full-release-continue
 ```
 
 Successful output artifacts:
