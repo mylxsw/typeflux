@@ -23,9 +23,22 @@
 "sidebar.about" = "About";
 "sidebar.aboutAccessibility" = "About Typeflux";
 "sidebar.feedbackAccessibility" = "Send feedback";
+"sidebar.feedback.directOption" = "Direct feedback";
 "sidebar.feedback.emailOption" = "Send feedback email";
 "sidebar.feedback.githubOption" = "Open GitHub issue";
 "sidebar.settingsAccessibility" = "Open settings";
+
+"feedback.direct.title" = "Send feedback";
+"feedback.direct.subtitle" = "Describe the problem or suggestion. Typeflux will send it to the service and create an issue for follow-up.";
+"feedback.direct.contentLabel" = "Feedback";
+"feedback.direct.contentPlaceholder" = "What happened? Include the expected behavior, actual behavior, and any useful context.";
+"feedback.direct.contactLabel" = "Contact (optional)";
+"feedback.direct.contactPlaceholder" = "Email or other contact";
+"feedback.direct.submit" = "Submit";
+"feedback.toast.submitted" = "Feedback submitted. Thank you.";
+"feedback.error.emptyContent" = "Please enter feedback content.";
+"feedback.error.server" = "Failed to submit feedback.";
+"feedback.error.invalidResponse" = "Received an invalid feedback response.";
 
 "studio.section.home" = "Overview";
 "studio.section.models" = "Models";

@@ -197,6 +197,11 @@ struct StudioView: View {
     @State private var agentJobPendingDeletion: AgentJob?
     @State private var showingClearAllJobsConfirmation = false
     @State private var showingClearHistoryConfirmation = false
+    @State private var isDirectFeedbackPresented = false
+    @State private var feedbackContent = ""
+    @State private var feedbackContact = ""
+    @State private var isSubmittingFeedback = false
+    @State private var feedbackSubmissionError: String?
     @State private var agentConfigurationTab: AgentConfigurationTab = .general
     @State private var isAdvancedSettingsExpanded = false
     @ObservedObject private var localization = AppLocalization.shared
@@ -207,6 +212,7 @@ struct StudioView: View {
             currentSection: viewModel.currentSection,
             onSelect: viewModel.navigate,
             onOpenAbout: { AboutWindowController.shared.show() },
+            onSendDirectFeedback: openDirectFeedback,
             onSendFeedbackEmail: sendFeedbackEmail,
             onOpenGitHubIssue: openGitHubIssue,
             onAccountAction: handleAccountAction,
@@ -363,6 +369,30 @@ struct StudioView: View {
         .sheet(isPresented: $viewModel.showingJobsPage) {
             agentJobsSheet
         }
+        .sheet(isPresented: $isDirectFeedbackPresented) {
+            directFeedbackSheet
+        }
+    }
+
+    private var directFeedbackSheet: some View {
+        DirectFeedbackSheet(
+            content: $feedbackContent,
+            contact: $feedbackContact,
+            isSubmitting: isSubmittingFeedback,
+            errorMessage: feedbackSubmissionError,
+            onCancel: {
+                isDirectFeedbackPresented = false
+            },
+            onSubmit: submitDirectFeedback
+        )
+    }
+
+    private func openDirectFeedback() {
+        feedbackContent = ""
+        feedbackContact = authState.userProfile?.email ?? ""
+        feedbackSubmissionError = nil
+        isSubmittingFeedback = false
+        isDirectFeedbackPresented = true
     }
 
     private func sendFeedbackEmail() {
@@ -383,6 +413,28 @@ struct StudioView: View {
     private func openGitHubIssue() {
         guard let url = URL(string: "https://github.com/mylxsw/typeflux/issues/new") else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    private func submitDirectFeedback() {
+        let content = feedbackContent
+        let contact = feedbackContact
+        let token = authState.accessToken
+        isSubmittingFeedback = true
+        feedbackSubmissionError = nil
+
+        Task { @MainActor in
+            do {
+                _ = try await FeedbackAPIService.submit(content: content, contact: contact, token: token)
+                isSubmittingFeedback = false
+                isDirectFeedbackPresented = false
+                feedbackContent = ""
+                feedbackContact = ""
+                viewModel.showToast(L("feedback.toast.submitted"))
+            } catch {
+                isSubmittingFeedback = false
+                feedbackSubmissionError = error.localizedDescription
+            }
+        }
     }
 
     private func handleAccountAction() {

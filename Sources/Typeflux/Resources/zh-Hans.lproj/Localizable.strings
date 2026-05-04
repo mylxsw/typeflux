@@ -23,9 +23,22 @@
 "sidebar.about" = "关于";
 "sidebar.aboutAccessibility" = "关于 Typeflux";
 "sidebar.feedbackAccessibility" = "问题反馈";
+"sidebar.feedback.directOption" = "直接反馈";
 "sidebar.feedback.emailOption" = "发邮件反馈问题";
 "sidebar.feedback.githubOption" = "GitHub 提 Issue";
 "sidebar.settingsAccessibility" = "打开设置";
+
+"feedback.direct.title" = "问题反馈";
+"feedback.direct.subtitle" = "描述你遇到的问题或建议。Typeflux 会提交到服务端并创建 Issue 便于跟进。";
+"feedback.direct.contentLabel" = "反馈内容";
+"feedback.direct.contentPlaceholder" = "发生了什么？请包含预期行为、实际行为和有用的上下文。";
+"feedback.direct.contactLabel" = "联系方式（可选）";
+"feedback.direct.contactPlaceholder" = "邮箱或其他联系方式";
+"feedback.direct.submit" = "提交";
+"feedback.toast.submitted" = "反馈已提交，谢谢。";
+"feedback.error.emptyContent" = "请输入反馈内容。";
+"feedback.error.server" = "提交反馈失败。";
+"feedback.error.invalidResponse" = "收到的反馈响应无效。";
 
 "studio.section.home" = "概览";
 "studio.section.models" = "模型";

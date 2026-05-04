@@ -2526,7 +2526,7 @@ final class StudioViewModel: ObservableObject {
         }
     }
 
-    private func showToast(_ text: String) {
+    func showToast(_ text: String) {
         toastMessage = text
         Task {
             try? await Task.sleep(nanoseconds: 2_200_000_000)

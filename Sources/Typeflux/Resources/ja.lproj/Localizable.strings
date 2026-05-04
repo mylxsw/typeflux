@@ -23,9 +23,22 @@
 "sidebar.about" = "について";
 "sidebar.aboutAccessibility" = "Typeflux について";
 "sidebar.feedbackAccessibility" = "フィードバック";
+"sidebar.feedback.directOption" = "直接フィードバック";
 "sidebar.feedback.emailOption" = "メールでフィードバックを送る";
 "sidebar.feedback.githubOption" = "GitHub Issue を作成する";
 "sidebar.settingsAccessibility" = "設定を開く";
+
+"feedback.direct.title" = "フィードバック";
+"feedback.direct.subtitle" = "問題や提案を入力してください。Typeflux がサーバーへ送信し、フォローアップ用の Issue を作成します。";
+"feedback.direct.contentLabel" = "フィードバック内容";
+"feedback.direct.contentPlaceholder" = "何が起きましたか？期待した動作、実際の動作、役立つ背景情報を入力してください。";
+"feedback.direct.contactLabel" = "連絡先（任意）";
+"feedback.direct.contactPlaceholder" = "メールアドレスまたは連絡先";
+"feedback.direct.submit" = "送信";
+"feedback.toast.submitted" = "フィードバックを送信しました。ありがとうございます。";
+"feedback.error.emptyContent" = "フィードバック内容を入力してください。";
+"feedback.error.server" = "フィードバックの送信に失敗しました。";
+"feedback.error.invalidResponse" = "フィードバックの応答が無効です。";
 
 "studio.section.home" = "概要";
 "studio.section.models" = "モデル";

@@ -552,6 +552,7 @@ struct StudioShell<Content: View>: View {
     let currentSection: StudioSection
     let onSelect: (StudioSection) -> Void
     let onOpenAbout: () -> Void
+    let onSendDirectFeedback: () -> Void
     let onSendFeedbackEmail: () -> Void
     let onOpenGitHubIssue: () -> Void
     let onAccountAction: () -> Void
@@ -565,6 +566,7 @@ struct StudioShell<Content: View>: View {
         currentSection: StudioSection,
         onSelect: @escaping (StudioSection) -> Void,
         onOpenAbout: @escaping () -> Void,
+        onSendDirectFeedback: @escaping () -> Void,
         onSendFeedbackEmail: @escaping () -> Void,
         onOpenGitHubIssue: @escaping () -> Void,
         onAccountAction: @escaping () -> Void,
@@ -577,6 +579,7 @@ struct StudioShell<Content: View>: View {
         self.currentSection = currentSection
         self.onSelect = onSelect
         self.onOpenAbout = onOpenAbout
+        self.onSendDirectFeedback = onSendDirectFeedback
         self.onSendFeedbackEmail = onSendFeedbackEmail
         self.onOpenGitHubIssue = onOpenGitHubIssue
         self.onAccountAction = onAccountAction
@@ -596,6 +599,7 @@ struct StudioShell<Content: View>: View {
                 StudioSidebar(
                     currentSection: currentSection,
                     onSelect: onSelect,
+                    onSendDirectFeedback: onSendDirectFeedback,
                     onSendFeedbackEmail: onSendFeedbackEmail,
                     onOpenGitHubIssue: onOpenGitHubIssue,
                     onOpenAbout: onOpenAbout,
@@ -689,6 +693,7 @@ struct StudioGlassBackground: View {
 struct StudioSidebar: View {
     let currentSection: StudioSection
     let onSelect: (StudioSection) -> Void
+    let onSendDirectFeedback: () -> Void
     let onSendFeedbackEmail: () -> Void
     let onOpenGitHubIssue: () -> Void
     let onOpenAbout: () -> Void
@@ -809,6 +814,7 @@ struct StudioSidebar: View {
             systemImage: "envelope.stack",
             accessibilityLabel: L("sidebar.feedbackAccessibility"),
         ) {
+            Button(L("sidebar.feedback.directOption"), action: onSendDirectFeedback)
             Button(L("sidebar.feedback.emailOption"), action: onSendFeedbackEmail)
             Button(L("sidebar.feedback.githubOption"), action: onOpenGitHubIssue)
         }

@@ -23,9 +23,22 @@
 "sidebar.about" = "소개";
 "sidebar.aboutAccessibility" = "Typeflux 정보";
 "sidebar.feedbackAccessibility" = "문제 피드백";
+"sidebar.feedback.directOption" = "직접 피드백";
 "sidebar.feedback.emailOption" = "이메일로 문제 보내기";
 "sidebar.feedback.githubOption" = "GitHub 이슈 등록";
 "sidebar.settingsAccessibility" = "설정 열기";
+
+"feedback.direct.title" = "문제 피드백";
+"feedback.direct.subtitle" = "문제나 제안을 입력하세요. Typeflux가 서버로 전송하고 후속 조치를 위한 Issue를 생성합니다.";
+"feedback.direct.contentLabel" = "피드백 내용";
+"feedback.direct.contentPlaceholder" = "무슨 일이 있었나요? 기대한 동작, 실제 동작, 도움이 되는 맥락을 입력하세요.";
+"feedback.direct.contactLabel" = "연락처(선택 사항)";
+"feedback.direct.contactPlaceholder" = "이메일 또는 기타 연락처";
+"feedback.direct.submit" = "제출";
+"feedback.toast.submitted" = "피드백이 제출되었습니다. 감사합니다.";
+"feedback.error.emptyContent" = "피드백 내용을 입력하세요.";
+"feedback.error.server" = "피드백 제출에 실패했습니다.";
+"feedback.error.invalidResponse" = "피드백 응답이 올바르지 않습니다.";
 
 "studio.section.home" = "개요";
 "studio.section.models" = "모델";

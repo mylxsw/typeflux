@@ -23,9 +23,22 @@
 "sidebar.about" = "關於";
 "sidebar.aboutAccessibility" = "關於 Typeflux";
 "sidebar.feedbackAccessibility" = "問題回饋";
+"sidebar.feedback.directOption" = "直接回饋";
 "sidebar.feedback.emailOption" = "透過電子郵件回饋問題";
 "sidebar.feedback.githubOption" = "在 GitHub 提交 Issue";
 "sidebar.settingsAccessibility" = "打開設定";
+
+"feedback.direct.title" = "問題回饋";
+"feedback.direct.subtitle" = "描述你遇到的問題或建議。Typeflux 會提交到服務端並建立 Issue 方便後續追蹤。";
+"feedback.direct.contentLabel" = "回饋內容";
+"feedback.direct.contentPlaceholder" = "發生了什麼？請包含預期行為、實際行為和有用的上下文。";
+"feedback.direct.contactLabel" = "聯絡方式（選填）";
+"feedback.direct.contactPlaceholder" = "電子郵件或其他聯絡方式";
+"feedback.direct.submit" = "提交";
+"feedback.toast.submitted" = "回饋已提交，謝謝。";
+"feedback.error.emptyContent" = "請輸入回饋內容。";
+"feedback.error.server" = "提交回饋失敗。";
+"feedback.error.invalidResponse" = "收到的回饋回應無效。";
 
 "studio.section.home" = "總覽";
 "studio.section.models" = "模型";
