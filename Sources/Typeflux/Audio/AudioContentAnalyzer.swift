@@ -15,11 +15,11 @@ struct AudioContentAnalysis: Sendable {
     var containsAudibleSignal: Bool {
         guard duration > 0 else { return false }
 
-        if rmsPowerDB >= -42 {
+        if rmsPowerDB >= -48 {
             return true
         }
 
-        return peakPowerDB >= -35
+        return peakPowerDB >= -42
             && audibleDuration >= Self.minimumAudibleDuration
             && audibleFrameRatio >= Self.minimumAudibleFrameRatio
     }

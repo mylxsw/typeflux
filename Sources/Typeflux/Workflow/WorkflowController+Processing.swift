@@ -426,6 +426,16 @@ extension WorkflowController {
             }
 
             if !audioAnalysis.containsAudibleSignal, recordingPreviewText.isEmpty {
+                NetworkDebugLogger.logMessage(
+                    """
+                    [Audio Analysis] no audible signal detected; skipping transcription
+                    duration: \(String(format: "%.3f", audioAnalysis.duration))
+                    rmsPowerDB: \(audioAnalysis.rmsPowerDB)
+                    peakPowerDB: \(audioAnalysis.peakPowerDB)
+                    audibleDuration: \(String(format: "%.3f", audioAnalysis.audibleDuration))
+                    audibleFrameRatio: \(audioAnalysis.audibleFrameRatio)
+                    """
+                )
                 try? FileManager.default.removeItem(at: validatedAudioFile.fileURL)
                 realtimeAudioBufferPump?.cancel()
                 await realtimeTranscriptionSession?.cancel()
