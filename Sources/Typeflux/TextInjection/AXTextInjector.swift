@@ -546,10 +546,7 @@ final class AXTextInjector: TextInjector {
         // 'c' keystroke, leaking a stray character into the input.
         let skipClipboardCopy: Bool = {
             guard let element = focusedElement() else { return false }
-            if let range = copySelectedTextRange(from: element), range.length == 0 {
-                return true
-            }
-            return false
+            return copySelectedTextRange(from: element).map { $0.length == 0 } ?? false
         }()
 
         if skipClipboardCopy {
