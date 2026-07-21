@@ -680,6 +680,19 @@ extension WorkflowController {
                 personaPrompt: personaPrompt,
                 inputContext: inputContext
             )
+            let expectedASROptimize = !shouldRewriteTranscript
+            let usableRealtimeTranscriptionSession = realtimeTranscriptionSession
+            if let actualASROptimize = (realtimeTranscriptionSession as?
+                any RealtimeASROptimizeProviding)?.asrOptimize {
+                let action = actualASROptimize == expectedASROptimize
+                    ? "reuse_realtime"
+                    : "reuse_realtime_mismatch"
+                NetworkDebugLogger.logMessage(
+                    "[ASR Timing][client] phase=optimize_decision action=\(action) " +
+                        "requested_optimize=\(actualASROptimize) expected_optimize=\(expectedASROptimize) " +
+                        "rewrite_required=\(shouldRewriteTranscript) replay_audio=false"
+                )
+            }
             pipelineTiming.transcriptionStartedAt = Date()
             record.pipelineTiming = pipelineTiming
             saveHistoryRecord(record)
@@ -711,7 +724,7 @@ extension WorkflowController {
 
             let transcriptionStartedAt = Date()
             NetworkDebugLogger.logMessage("[Ask Timing] transcription entered intent=\(recordingIntent.traceName)")
-            if let realtimeTranscriptionSession {
+            if let realtimeTranscriptionSession = usableRealtimeTranscriptionSession {
                 do {
                     rawTranscribedText = try await realtimeTranscriptionSession.finish()
                 } catch {
@@ -729,7 +742,8 @@ extension WorkflowController {
                         )
                         rawTranscribedText = try await sttRouter.transcribeStream(
                             audioFile: audioFile,
-                            scenario: cloudScenario
+                            scenario: cloudScenario,
+                            optimize: !shouldRewriteTranscript
                         ) { _ in }
                     }
                 }
@@ -753,7 +767,8 @@ extension WorkflowController {
                 do {
                     rawTranscribedText = try await sttRouter.transcribeStream(
                         audioFile: audioFile,
-                        scenario: cloudScenario
+                        scenario: cloudScenario,
+                        optimize: !shouldRewriteTranscript
                     ) { _ in }
                 } catch {
                     guard Self.shouldUseRecordingPreviewOnTranscriptionFailure(error),
@@ -768,7 +783,7 @@ extension WorkflowController {
                     rawTranscribedText = ""
                 }
             }
-            if let diagnosticsProvider = realtimeTranscriptionSession as?
+            if let diagnosticsProvider = usableRealtimeTranscriptionSession as?
                 any RealtimeDiagnosticsProviding {
                 let diagnostics = await diagnosticsProvider.diagnosticsSnapshot()
                 pipelineTiming.merge(diagnostics)

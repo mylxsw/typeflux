@@ -2,11 +2,35 @@
 import XCTest
 
 final class TypefluxOfficialTranscriberTests: XCTestCase {
+    func testStartMessageDisablesOptimizeWhenLLMRewriteIsIncluded() throws {
+        let message = TypefluxOfficialASRStartMessageFactory.make(
+            optimize: false,
+            llmConfig: ASRLLMConfig(
+                systemPrompt: "Rewrite with persona",
+                userPromptTemplate: "{{transcript}}"
+            )
+        )
+        let config = try XCTUnwrap(message["config"] as? [String: Any])
+
+        XCTAssertEqual(config["optimize"] as? Bool, false)
+        XCTAssertNotNil(config["llm"])
+    }
+
+    func testStartMessageEnablesOptimizeWithoutLLMRewrite() throws {
+        let message = TypefluxOfficialASRStartMessageFactory.make(optimize: true)
+        let config = try XCTUnwrap(message["config"] as? [String: Any])
+
+        XCTAssertEqual(config["optimize"] as? Bool, true)
+        XCTAssertNil(config["llm"])
+    }
+
     func testWebSocketRequestIncludesScenarioHeader() throws {
+        let traceID = "client-trace-123"
         let request = try TypefluxOfficialASRRequestFactory.makeWebSocketRequest(
             apiBaseURL: "https://cloud.typeflux.dev",
             token: "token-123",
-            scenario: .voiceInput
+            scenario: .voiceInput,
+            traceID: traceID
         )
 
         XCTAssertEqual(request.url?.absoluteString, "wss://cloud.typeflux.dev/api/v1/asr/ws/default")
@@ -17,6 +41,10 @@ final class TypefluxOfficialTranscriberTests: XCTestCase {
         )
         XCTAssertNotNil(request.value(forHTTPHeaderField: "User-Agent"))
         XCTAssertNotNil(request.value(forHTTPHeaderField: TypefluxCloudRequestHeaders.clientIDField))
+        XCTAssertEqual(
+            request.value(forHTTPHeaderField: TypefluxOfficialASRRequestFactory.traceIDHeader),
+            traceID
+        )
     }
 
     func testWebSocketRequestConvertsHTTPPrefixToWS() throws {

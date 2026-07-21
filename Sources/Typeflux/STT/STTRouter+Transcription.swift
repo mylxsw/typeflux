@@ -12,6 +12,7 @@ extension STTRouter {
     func transcribeStream(
         audioFile: AudioFile,
         scenario: TypefluxCloudScenario = .voiceInput,
+        optimize: Bool = true,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         switch settingsStore.sttProvider {
@@ -24,7 +25,12 @@ extension STTRouter {
         case .appleSpeech:
             try await appleSpeech.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
         case .localModel:
-            try await transcribeWithLocalModel(audioFile: audioFile, scenario: scenario, onUpdate: onUpdate)
+            try await transcribeWithLocalModel(
+                audioFile: audioFile,
+                scenario: scenario,
+                optimize: optimize,
+                onUpdate: onUpdate
+            )
         case .multimodalLLM:
             try await RequestRetry.perform(operationName: "Multimodal STT request") { [self] in
                 try await multimodal.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
@@ -35,6 +41,7 @@ extension STTRouter {
             try await transcribeWithTypefluxOfficialProvider(
                 audioFile: audioFile,
                 scenario: scenario,
+                optimize: optimize,
                 onUpdate: onUpdate
             )
         }
@@ -101,6 +108,7 @@ extension STTRouter {
     private func transcribeWithLocalModel(
         audioFile: AudioFile,
         scenario: TypefluxCloudScenario,
+        optimize: Bool,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         do {
@@ -110,6 +118,7 @@ extension STTRouter {
                 error,
                 audioFile: audioFile,
                 scenario: scenario,
+                optimize: optimize,
                 onUpdate: onUpdate
             )
         }

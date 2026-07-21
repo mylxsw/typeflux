@@ -5,6 +5,7 @@ extension STTRouter {
         _ error: Error,
         audioFile: AudioFile,
         scenario: TypefluxCloudScenario,
+        optimize: Bool,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         NetworkDebugLogger.logError(context: "Local STT failed", error: error)
@@ -16,6 +17,7 @@ extension STTRouter {
             return try await transcribeWithCloudFallbackForUnavailableLocalModel(
                 audioFile: audioFile,
                 scenario: scenario,
+                optimize: optimize,
                 onUpdate: onUpdate
             )
         }
@@ -32,12 +34,14 @@ extension STTRouter {
     func transcribeWithTypefluxOfficialProvider(
         audioFile: AudioFile,
         scenario: TypefluxCloudScenario,
+        optimize: Bool = true,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         do {
             return try await transcribeWithTypefluxOfficial(
                 audioFile: audioFile,
                 scenario: scenario,
+                optimize: optimize,
                 onUpdate: onUpdate
             )
         } catch {
@@ -115,6 +119,7 @@ extension STTRouter {
     private func transcribeWithCloudFallbackForUnavailableLocalModel(
         audioFile: AudioFile,
         scenario: TypefluxCloudScenario,
+        optimize: Bool,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         do {
@@ -122,6 +127,7 @@ extension STTRouter {
             return try await transcribeWithTypefluxOfficial(
                 audioFile: audioFile,
                 scenario: scenario,
+                optimize: optimize,
                 onUpdate: onUpdate
             )
         } catch {
@@ -256,9 +262,18 @@ extension STTRouter {
     private func transcribeWithTypefluxOfficial(
         audioFile: AudioFile,
         scenario: TypefluxCloudScenario,
+        optimize: Bool = true,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         try await RequestRetry.perform(operationName: "Typeflux Official STT request") { [self] in
+            if let optimizeAware = typefluxOfficial as? ASROptimizeAwareTranscriber {
+                return try await optimizeAware.transcribeStream(
+                    audioFile: audioFile,
+                    scenario: scenario,
+                    optimize: optimize,
+                    onUpdate: onUpdate
+                )
+            }
             if let scenarioAware = typefluxOfficial as? TypefluxCloudScenarioAwareTranscriber {
                 return try await scenarioAware.transcribeStream(
                     audioFile: audioFile,

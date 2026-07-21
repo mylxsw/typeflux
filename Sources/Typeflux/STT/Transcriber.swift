@@ -25,11 +25,30 @@ protocol RealtimeTranscriptionSessionFactory: Transcriber {
     ) async throws -> any RealtimeTranscriptionSession
 }
 
+/// Realtime factories that can choose between lower ASR latency and the
+/// provider's higher-quality recognition pass for each request.
+protocol OptimizeAwareRealtimeSessionFactory: RealtimeTranscriptionSessionFactory {
+    func makeRealtimeTranscriptionSession(
+        scenario: TypefluxCloudScenario,
+        optimize: Bool,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> any RealtimeTranscriptionSession
+}
+
 protocol TypefluxCloudScenarioAwareTranscriber: Transcriber {
     func transcribe(audioFile: AudioFile, scenario: TypefluxCloudScenario) async throws -> String
     func transcribeStream(
         audioFile: AudioFile,
         scenario: TypefluxCloudScenario,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> String
+}
+
+protocol ASROptimizeAwareTranscriber: TypefluxCloudScenarioAwareTranscriber {
+    func transcribeStream(
+        audioFile: AudioFile,
+        scenario: TypefluxCloudScenario,
+        optimize: Bool,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String
 }

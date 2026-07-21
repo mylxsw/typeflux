@@ -8,6 +8,12 @@ protocol RealtimeTranscriptionSession: AnyObject {
     func cancel() async
 }
 
+/// Exposes the optimize value actually used to create a realtime ASR session.
+/// A nil value means the provider does not support this request option.
+protocol RealtimeASROptimizeProviding: AnyObject {
+    var asrOptimize: Bool? { get }
+}
+
 protocol PCM16RealtimeTranscriptionSession: AnyObject {
     func start() async throws
     func appendPCM16(_ data: Data) async throws

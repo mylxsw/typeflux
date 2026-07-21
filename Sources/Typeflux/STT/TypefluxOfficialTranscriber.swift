@@ -42,15 +42,18 @@ protocol TypefluxCloudLLMIntegratedTranscriber: TypefluxCloudScenarioAwareTransc
 }
 
 protocol TypefluxOfficialASRTransport: Sendable {
+    // swiftlint:disable:next function_parameter_count
     func transcribeViaWebSocket(
         pcmData: Data,
         apiBaseURL: String,
         token: String,
         provider: String,
         scenario: TypefluxCloudScenario,
+        optimize: Bool,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String
 
+    // swiftlint:disable:next function_parameter_count
     func transcribeViaWebSocketWithLLM(
         pcmData: Data,
         apiBaseURL: String,
@@ -66,8 +69,8 @@ protocol TypefluxOfficialASRTransport: Sendable {
 
 // MARK: - Main Transcriber
 
-final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber, TypefluxCloudLLMIntegratedTranscriber,
-    RealtimeTranscriptionSessionFactory {
+final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCloudLLMIntegratedTranscriber,
+    OptimizeAwareRealtimeSessionFactory {
     private let routingClient: any TypefluxOfficialASRRoutingClient
     private let transport: any TypefluxOfficialASRTransport
     private let serverRegistry: any TypefluxASRServerProviding
@@ -90,6 +93,20 @@ final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber, 
     func transcribeStream(
         audioFile: AudioFile,
         scenario: TypefluxCloudScenario,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> String {
+        try await transcribeStream(
+            audioFile: audioFile,
+            scenario: scenario,
+            optimize: true,
+            onUpdate: onUpdate
+        )
+    }
+
+    func transcribeStream(
+        audioFile: AudioFile,
+        scenario: TypefluxCloudScenario,
+        optimize: Bool,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         let token = await accessTokenProvider()
@@ -119,6 +136,7 @@ final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber, 
                 token: asrToken,
                 provider: asrProvider,
                 scenario: scenario,
+                optimize: optimize,
                 onUpdate: onUpdate
             )
         }
@@ -171,6 +189,18 @@ final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber, 
         scenario: TypefluxCloudScenario,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> any RealtimeTranscriptionSession {
+        try await makeRealtimeTranscriptionSession(
+            scenario: scenario,
+            optimize: true,
+            onUpdate: onUpdate
+        )
+    }
+
+    func makeRealtimeTranscriptionSession(
+        scenario: TypefluxCloudScenario,
+        optimize: Bool,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> any RealtimeTranscriptionSession {
         BufferedRealtimeTranscriptionSession(
             upstream: DeferredPCM16RealtimeTranscriptionSession {
                 [accessTokenProvider, routingClient, serverRegistry] in
@@ -200,6 +230,7 @@ final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber, 
                     token: asrToken,
                     provider: asrProvider,
                     scenario: scenario,
+                    optimize: optimize,
                     onUpdate: onUpdate
                 )
             }
@@ -275,12 +306,14 @@ final class TypefluxOfficialTranscriber: TypefluxCloudScenarioAwareTranscriber, 
 }
 
 struct DefaultTypefluxOfficialASRTransport: TypefluxOfficialASRTransport {
+    // swiftlint:disable:next function_parameter_count
     func transcribeViaWebSocket(
         pcmData: Data,
         apiBaseURL: String,
         token: String,
         provider: String,
         scenario: TypefluxCloudScenario,
+        optimize: Bool,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         try await TypefluxOfficialASRSession.run(
@@ -289,10 +322,12 @@ struct DefaultTypefluxOfficialASRTransport: TypefluxOfficialASRTransport {
             token: token,
             scenario: scenario,
             provider: provider,
+            optimize: optimize,
             onUpdate: onUpdate
         )
     }
 
+    // swiftlint:disable:next function_parameter_count
     func transcribeViaWebSocketWithLLM(
         pcmData: Data,
         apiBaseURL: String,
@@ -437,12 +472,15 @@ enum CloudASRAudioConverter {
 }
 
 enum TypefluxOfficialASRRequestFactory {
+    static let traceIDHeader = "X-Typeflux-ASR-Trace-ID"
+
     static func makeWebSocketRequest(
         apiBaseURL: String,
         token: String,
         scenario: TypefluxCloudScenario,
         provider: String = "default",
-        personaID: UUID? = nil
+        personaID: UUID? = nil,
+        traceID: String? = nil
     ) throws -> URLRequest {
         guard var components = URLComponents(string: apiBaseURL),
               let scheme = components.scheme?.lowercased(),
@@ -462,6 +500,9 @@ enum TypefluxOfficialASRRequestFactory {
 
         var request = URLRequest(url: url)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let traceID, !traceID.isEmpty {
+            request.setValue(traceID, forHTTPHeaderField: traceIDHeader)
+        }
         TypefluxCloudRequestHeaders.applyCloudHeaders(scenario: scenario, to: &request)
         TypefluxCloudRequestHeaders.applyPersonaID(personaID, to: &request)
         return request
@@ -510,6 +551,96 @@ enum TypefluxOfficialASRTokenScope {
 
 // MARK: - WebSocket ASR Session
 
+enum TypefluxOfficialASRStartMessageFactory {
+    static func make(optimize: Bool, llmConfig: ASRLLMConfig? = nil) -> [String: Any] {
+        let audioConfig: [String: Any] = [
+            "format": "pcm",
+            "sample_rate": 16000,
+            "channel": 1,
+            "lang": "auto"
+        ]
+        var config: [String: Any] = [
+            "audio": audioConfig,
+            "optimize": optimize
+        ]
+        if let llmConfig {
+            config["llm"] = [
+                "system_prompt": llmConfig.systemPrompt,
+                "user_prompt_template": llmConfig.userPromptTemplate
+            ]
+        }
+        return ["type": "start", "config": config]
+    }
+}
+
+private struct TypefluxASRTiming {
+    let traceID = UUID().uuidString.lowercased()
+    let mode: String
+    let optimize: Bool
+    let startedAt = Date()
+    var connectionReadyAt: Date?
+    var firstAudioAt: Date?
+    var firstResultAt: Date?
+    var finalResultAt: Date?
+    var stopStartedAt: Date?
+    var serverCompletedAt: Date?
+    var audioBytes = 0
+    var summaryLogged = false
+
+    mutating func markConnectionReady() {
+        connectionReadyAt = connectionReadyAt ?? Date()
+    }
+
+    mutating func addAudioBytes(_ count: Int) -> Bool {
+        audioBytes += count
+        guard count > 0, firstAudioAt == nil else { return false }
+        firstAudioAt = Date()
+        return true
+    }
+
+    mutating func markResult(isFinal: Bool) -> Bool {
+        let isFirst = firstResultAt == nil
+        firstResultAt = firstResultAt ?? Date()
+        if isFinal {
+            finalResultAt = finalResultAt ?? Date()
+        }
+        return isFirst
+    }
+
+    mutating func markStopStarted() {
+        stopStartedAt = stopStartedAt ?? Date()
+    }
+
+    mutating func markServerCompleted() {
+        serverCompletedAt = serverCompletedAt ?? Date()
+    }
+
+    func summary(status: String, outputChars: Int, endedAt: Date = Date()) -> String {
+        [
+            "[ASR Timing][client]",
+            "trace_id=\(traceID)",
+            "phase=summary",
+            "mode=\(mode)",
+            "status=\(status)",
+            "optimize=\(optimize)",
+            "connect_ms=\(Self.milliseconds(from: startedAt, to: connectionReadyAt))",
+            "first_audio_ms=\(Self.milliseconds(from: startedAt, to: firstAudioAt))",
+            "audio_to_first_result_ms=\(Self.milliseconds(from: firstAudioAt, to: firstResultAt))",
+            "stop_to_final_ms=\(Self.milliseconds(from: stopStartedAt, to: finalResultAt))",
+            "stop_to_server_completed_ms=\(Self.milliseconds(from: stopStartedAt, to: serverCompletedAt))",
+            "stop_to_request_completed_ms=\(Self.milliseconds(from: stopStartedAt, to: endedAt))",
+            "total_ms=\(Self.milliseconds(from: startedAt, to: endedAt))",
+            "audio_bytes=\(audioBytes)",
+            "output_chars=\(outputChars)"
+        ].joined(separator: " ")
+    }
+
+    static func milliseconds(from start: Date?, to end: Date?) -> Int {
+        guard let start, let end, end >= start else { return -1 }
+        return Int(end.timeIntervalSince(start) * 1000)
+    }
+}
+
 private actor TypefluxOfficialASRSession {
     static func run(
         pcmData: Data,
@@ -517,6 +648,7 @@ private actor TypefluxOfficialASRSession {
         token: String,
         scenario: TypefluxCloudScenario,
         provider: String = "default",
+        optimize: Bool = true,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         let session = TypefluxOfficialASRSession(
@@ -526,6 +658,7 @@ private actor TypefluxOfficialASRSession {
             scenario: scenario,
             provider: provider,
             personaID: nil,
+            optimize: optimize,
             onASRUpdate: onUpdate,
             llmConfig: nil,
             onLLMStart: nil,
@@ -553,6 +686,7 @@ private actor TypefluxOfficialASRSession {
             scenario: scenario,
             provider: provider,
             personaID: llmConfig.personaID,
+            optimize: false,
             onASRUpdate: onASRUpdate,
             llmConfig: llmConfig,
             onLLMStart: onLLMStart,
@@ -567,11 +701,13 @@ private actor TypefluxOfficialASRSession {
     private let scenario: TypefluxCloudScenario
     private let provider: String
     private let personaID: UUID?
+    private let optimize: Bool
     private let onASRUpdate: @Sendable (TranscriptionSnapshot) async -> Void
     private let llmConfig: ASRLLMConfig?
     private let onLLMStart: (@Sendable () async -> Void)?
     private let onLLMChunk: (@Sendable (String) async -> Void)?
     private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "TypefluxOfficialASRSession")
+    private var timing: TypefluxASRTiming
 
     private var finalSegments: [String] = []
     private var currentPartialText: String = ""
@@ -586,6 +722,7 @@ private actor TypefluxOfficialASRSession {
         scenario: TypefluxCloudScenario,
         provider: String,
         personaID: UUID?,
+        optimize: Bool,
         onASRUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
         llmConfig: ASRLLMConfig?,
         onLLMStart: (@Sendable () async -> Void)?,
@@ -597,19 +734,30 @@ private actor TypefluxOfficialASRSession {
         self.scenario = scenario
         self.provider = provider
         self.personaID = personaID
+        self.optimize = optimize
         self.onASRUpdate = onASRUpdate
         self.llmConfig = llmConfig
         self.onLLMStart = onLLMStart
         self.onLLMChunk = onLLMChunk
+        timing = TypefluxASRTiming(mode: llmConfig == nil ? "batch" : "batch_llm", optimize: optimize)
     }
 
     private func execute() async throws -> (transcript: String, rewritten: String?) {
+        defer {
+            logTimingSummary(status: "interrupted", outputChars: assembleTranscript().count)
+        }
+        NetworkDebugLogger.logMessage(
+            "[ASR Timing][client] trace_id=\(timing.traceID) phase=request_start " +
+                "mode=\(timing.mode) provider=\(provider) optimize=\(optimize) " +
+                "audio_bytes=\(pcmData.count) endpoint=\(apiBaseURL)"
+        )
         let request = try TypefluxOfficialASRRequestFactory.makeWebSocketRequest(
             apiBaseURL: apiBaseURL,
             token: token,
             scenario: scenario,
             provider: provider,
-            personaID: personaID
+            personaID: personaID,
+            traceID: timing.traceID
         )
         let session = URLSession(configuration: .default)
         let socketTask = session.webSocketTask(with: request)
@@ -620,23 +768,18 @@ private actor TypefluxOfficialASRSession {
             session.finishTasksAndInvalidate()
         }
 
-        // Build start message; include LLM config when present.
-        let audioConfig: [String: Any] = [
-            "format": "pcm",
-            "sample_rate": 16000,
-            "channel": 1,
-            "lang": "auto"
-        ]
-        var config: [String: Any] = ["audio": audioConfig]
-        if let llmConfig {
-            config["llm"] = [
-                "system_prompt": llmConfig.systemPrompt,
-                "user_prompt_template": llmConfig.userPromptTemplate
-            ]
-        }
-        let startMessage: [String: Any] = ["type": "start", "config": config]
+        let startMessage = TypefluxOfficialASRStartMessageFactory.make(
+            optimize: optimize,
+            llmConfig: llmConfig
+        )
         let startData = try JSONSerialization.data(withJSONObject: startMessage)
         try await socketTask.send(.string(String(data: startData, encoding: .utf8)!))
+        timing.markConnectionReady()
+        NetworkDebugLogger.logMessage(
+            "[ASR Timing][client] trace_id=\(timing.traceID) phase=start_sent " +
+                "mode=\(timing.mode) optimize=\(optimize) " +
+                "connect_ms=\(TypefluxASRTiming.milliseconds(from: timing.startedAt, to: timing.connectionReadyAt))"
+        )
 
         // Start receive loop in a separate task
         let receiveTask = Task { [self] in
@@ -648,19 +791,33 @@ private actor TypefluxOfficialASRSession {
         var offset = pcmData.startIndex
         while offset < pcmData.endIndex {
             let end = pcmData.index(offset, offsetBy: chunkSize, limitedBy: pcmData.endIndex) ?? pcmData.endIndex
-            try await socketTask.send(.data(Data(pcmData[offset ..< end])))
+            let chunk = Data(pcmData[offset ..< end])
+            if timing.addAudioBytes(chunk.count) {
+                NetworkDebugLogger.logMessage(
+                    "[ASR Timing][client] trace_id=\(timing.traceID) phase=first_audio " +
+                        "mode=\(timing.mode) optimize=\(optimize) " +
+                        "since_start_ms=\(TypefluxASRTiming.milliseconds(from: timing.startedAt, to: timing.firstAudioAt))"
+                )
+            }
+            try await socketTask.send(.data(chunk))
             offset = end
         }
 
         // Send stop message
+        timing.markStopStarted()
         let stopMessage = try JSONSerialization.data(withJSONObject: ["type": "stop"])
         try await socketTask.send(.string(String(data: stopMessage, encoding: .utf8)!))
+        NetworkDebugLogger.logMessage(
+            "[ASR Timing][client] trace_id=\(timing.traceID) phase=stop_sent " +
+                "mode=\(timing.mode) optimize=\(optimize) audio_bytes=\(timing.audioBytes)"
+        )
 
         // Wait for receive loop to complete
         await receiveTask.value
 
         if let error = sessionError {
             let transcript = assembleTranscript()
+            logTimingSummary(status: "error", outputChars: transcript.count)
             if llmConfig != nil,
                !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                TypefluxCloudBillingError.fromError(error) != nil {
@@ -676,6 +833,7 @@ private actor TypefluxOfficialASRSession {
         if !transcript.isEmpty {
             await onASRUpdate(TranscriptionSnapshot(text: transcript, isFinal: true))
         }
+        logTimingSummary(status: "completed", outputChars: transcript.count)
         return (transcript: transcript, rewritten: rewrittenText)
     }
 
@@ -719,6 +877,7 @@ private actor TypefluxOfficialASRSession {
             let partialText = json["text"] as? String ?? ""
             currentPartialText = partialText
             let display = assembleTranscript()
+            logFirstResultIfNeeded(isFinal: false, text: display)
             await onASRUpdate(TranscriptionSnapshot(text: display, isFinal: false))
 
         case "final":
@@ -728,11 +887,13 @@ private actor TypefluxOfficialASRSession {
             }
             currentPartialText = ""
             let display = assembleTranscript()
+            logFirstResultIfNeeded(isFinal: true, text: display)
             await onASRUpdate(TranscriptionSnapshot(text: display, isFinal: true))
 
         case "event":
             let eventText = json["text"] as? String ?? ""
             if eventText == "completed" {
+                timing.markServerCompleted()
                 // If LLM is pending, keep the receive loop alive to handle llm_* messages.
                 if llmConfig == nil {
                     completed = true
@@ -769,6 +930,27 @@ private actor TypefluxOfficialASRSession {
         }
     }
 
+    private func logFirstResultIfNeeded(isFinal: Bool, text: String) {
+        guard !text.isEmpty else { return }
+        let isFirst = timing.markResult(isFinal: isFinal)
+        guard isFirst || isFinal else { return }
+        NetworkDebugLogger.logMessage(
+            "[ASR Timing][client] trace_id=\(timing.traceID) " +
+                "phase=\(isFinal ? "final_result" : "first_result") mode=\(timing.mode) " +
+                "optimize=\(optimize) audio_to_result_ms=" +
+                "\(TypefluxASRTiming.milliseconds(from: timing.firstAudioAt, to: isFinal ? timing.finalResultAt : timing.firstResultAt)) " +
+                "stop_to_result_ms=" +
+                "\(TypefluxASRTiming.milliseconds(from: timing.stopStartedAt, to: isFinal ? timing.finalResultAt : timing.firstResultAt)) " +
+                "chars=\(text.count)"
+        )
+    }
+
+    private func logTimingSummary(status: String, outputChars: Int) {
+        guard !timing.summaryLogged else { return }
+        timing.summaryLogged = true
+        NetworkDebugLogger.logMessage(timing.summary(status: status, outputChars: outputChars))
+    }
+
     private func assembleTranscript() -> String {
         var parts = finalSegments
         if !currentPartialText.isEmpty {
@@ -783,8 +965,10 @@ private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSessi
     private let token: String
     private let provider: String
     private let scenario: TypefluxCloudScenario
+    private let optimize: Bool
     private let onUpdate: @Sendable (TranscriptionSnapshot) async -> Void
     private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "TypefluxOfficialRealtimePCMStream")
+    private var timing: TypefluxASRTiming
 
     private var urlSession: URLSession?
     private var socketTask: URLSessionWebSocketTask?
@@ -799,21 +983,29 @@ private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSessi
         token: String,
         provider: String = "default",
         scenario: TypefluxCloudScenario,
+        optimize: Bool = true,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) {
         self.apiBaseURL = apiBaseURL
         self.token = token
         self.provider = provider
         self.scenario = scenario
+        self.optimize = optimize
         self.onUpdate = onUpdate
+        timing = TypefluxASRTiming(mode: "realtime", optimize: optimize)
     }
 
     func start() async throws {
+        NetworkDebugLogger.logMessage(
+            "[ASR Timing][client] trace_id=\(timing.traceID) phase=request_start " +
+                "mode=realtime provider=\(provider) optimize=\(optimize) endpoint=\(apiBaseURL)"
+        )
         let request = try TypefluxOfficialASRRequestFactory.makeWebSocketRequest(
             apiBaseURL: apiBaseURL,
             token: token,
             scenario: scenario,
-            provider: provider
+            provider: provider,
+            traceID: timing.traceID
         )
         let session = URLSession(configuration: .default)
         let socketTask = session.webSocketTask(with: request)
@@ -821,14 +1013,14 @@ private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSessi
         self.socketTask = socketTask
         socketTask.resume()
 
-        let audioConfig: [String: Any] = [
-            "format": "pcm",
-            "sample_rate": 16000,
-            "channel": 1,
-            "lang": "auto"
-        ]
-        let startMessage: [String: Any] = ["type": "start", "config": ["audio": audioConfig]]
+        let startMessage = TypefluxOfficialASRStartMessageFactory.make(optimize: optimize)
         try await sendJSON(startMessage)
+        timing.markConnectionReady()
+        NetworkDebugLogger.logMessage(
+            "[ASR Timing][client] trace_id=\(timing.traceID) phase=start_sent " +
+                "mode=realtime optimize=\(optimize) " +
+                "connect_ms=\(TypefluxASRTiming.milliseconds(from: timing.startedAt, to: timing.connectionReadyAt))"
+        )
 
         receiveTask = Task { [weak self] in
             await self?.receiveLoop()
@@ -840,26 +1032,42 @@ private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSessi
         guard let socketTask else {
             throw TypefluxOfficialASRError.connectionFailed("Realtime WebSocket is not connected.")
         }
+        if timing.addAudioBytes(data.count) {
+            NetworkDebugLogger.logMessage(
+                "[ASR Timing][client] trace_id=\(timing.traceID) phase=first_audio " +
+                    "mode=realtime optimize=\(optimize) " +
+                    "since_start_ms=\(TypefluxASRTiming.milliseconds(from: timing.startedAt, to: timing.firstAudioAt))"
+            )
+        }
         try await socketTask.send(.data(Data(data)))
     }
 
     func finish() async throws -> String {
+        timing.markStopStarted()
         try await sendJSON(["type": "stop"])
+        NetworkDebugLogger.logMessage(
+            "[ASR Timing][client] trace_id=\(timing.traceID) phase=stop_sent " +
+                "mode=realtime optimize=\(optimize) audio_bytes=\(timing.audioBytes)"
+        )
         await receiveTask?.value
 
         if let sessionError {
+            logTimingSummary(status: "error", outputChars: assembleTranscript().count)
             throw sessionError
         }
 
         let transcript = assembleTranscript()
         if !transcript.isEmpty {
+            logFirstResultIfNeeded(isFinal: true, text: transcript)
             await onUpdate(TranscriptionSnapshot(text: transcript, isFinal: true))
         }
+        logTimingSummary(status: "completed", outputChars: transcript.count)
         await close()
         return transcript
     }
 
     func cancel() async {
+        logTimingSummary(status: "cancelled", outputChars: assembleTranscript().count)
         await close()
     }
 
@@ -913,16 +1121,21 @@ private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSessi
         switch type {
         case "partial":
             currentPartialText = json["text"] as? String ?? ""
-            await onUpdate(TranscriptionSnapshot(text: assembleTranscript(), isFinal: false))
+            let display = assembleTranscript()
+            logFirstResultIfNeeded(isFinal: false, text: display)
+            await onUpdate(TranscriptionSnapshot(text: display, isFinal: false))
         case "final":
             let finalText = json["text"] as? String ?? ""
             if !finalText.isEmpty {
                 finalSegments.append(finalText)
             }
             currentPartialText = ""
-            await onUpdate(TranscriptionSnapshot(text: assembleTranscript(), isFinal: true))
+            let display = assembleTranscript()
+            logFirstResultIfNeeded(isFinal: true, text: display)
+            await onUpdate(TranscriptionSnapshot(text: display, isFinal: true))
         case "event":
             if (json["text"] as? String) == "completed" {
+                timing.markServerCompleted()
                 completed = true
             }
         case "error":
@@ -938,6 +1151,27 @@ private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSessi
         default:
             break
         }
+    }
+
+    private func logFirstResultIfNeeded(isFinal: Bool, text: String) {
+        guard !text.isEmpty else { return }
+        let isFirst = timing.markResult(isFinal: isFinal)
+        guard isFirst || isFinal else { return }
+        NetworkDebugLogger.logMessage(
+            "[ASR Timing][client] trace_id=\(timing.traceID) " +
+                "phase=\(isFinal ? "final_result" : "first_result") mode=realtime " +
+                "optimize=\(optimize) audio_to_result_ms=" +
+                "\(TypefluxASRTiming.milliseconds(from: timing.firstAudioAt, to: isFinal ? timing.finalResultAt : timing.firstResultAt)) " +
+                "stop_to_result_ms=" +
+                "\(TypefluxASRTiming.milliseconds(from: timing.stopStartedAt, to: isFinal ? timing.finalResultAt : timing.firstResultAt)) " +
+                "chars=\(text.count)"
+        )
+    }
+
+    private func logTimingSummary(status: String, outputChars: Int) {
+        guard !timing.summaryLogged else { return }
+        timing.summaryLogged = true
+        NetworkDebugLogger.logMessage(timing.summary(status: status, outputChars: outputChars))
     }
 
     private func sendJSON(_ json: [String: Any]) async throws {

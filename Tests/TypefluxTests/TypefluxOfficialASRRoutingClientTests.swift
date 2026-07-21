@@ -120,6 +120,35 @@ final class TypefluxASRPublicConfigClientTests: XCTestCase {
 }
 
 final class TypefluxOfficialTranscriberRoutingTests: XCTestCase {
+    func testPlainWebSocketRouteForwardsOptimizeDecision() async throws {
+        let asrServer = try XCTUnwrap(URL(string: "https://asr-1.example.com"))
+        let routing = try MockTypefluxRoutingClient(route: .webSocket(
+            token: makeUnsignedJWT(payload: ["asr_provider": "doubao"]),
+            tokenType: "Bearer",
+            expiresAt: nil,
+            expiresInSeconds: 300,
+            serverBaseURLs: [asrServer]
+        ))
+        let transport = MockTypefluxTransport()
+        let transcriber = TypefluxOfficialTranscriber(
+            routingClient: routing,
+            transport: transport,
+            serverRegistry: MockASRServerRegistry(),
+            accessTokenProvider: { "cloud-token" }
+        )
+        let audioFile = try makeSilentAudioFile(duration: 0.1)
+
+        _ = try await transcriber.transcribeStream(
+            audioFile: audioFile,
+            scenario: .voiceInput,
+            optimize: false,
+            onUpdate: { _ in }
+        )
+
+        XCTAssertEqual(transport.webSocketCallCount, 1)
+        XCTAssertEqual(transport.lastWebSocketOptimize, false)
+    }
+
     func testWebSocketRouteUsesTemporaryTokenAndReturnedASRServer() async throws {
         let asrServer = try XCTUnwrap(URL(string: "https://asr-1.example.com"))
         let routing = try MockTypefluxRoutingClient(route: .webSocket(
@@ -304,22 +333,27 @@ private final class MockTypefluxTransport: TypefluxOfficialASRTransport, @unchec
     var lastWebSocketBaseURL: String?
     var lastWebSocketToken: String?
     var lastWebSocketProvider: String?
+    var lastWebSocketOptimize: Bool?
 
+    // swiftlint:disable:next function_parameter_count
     func transcribeViaWebSocket(
         pcmData _: Data,
         apiBaseURL: String,
         token: String,
         provider: String,
         scenario _: TypefluxCloudScenario,
+        optimize: Bool,
         onUpdate _: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         webSocketCallCount += 1
         lastWebSocketBaseURL = apiBaseURL
         lastWebSocketToken = token
         lastWebSocketProvider = provider
+        lastWebSocketOptimize = optimize
         return webSocketTranscript
     }
 
+    // swiftlint:disable:next function_parameter_count
     func transcribeViaWebSocketWithLLM(
         pcmData _: Data,
         apiBaseURL: String,

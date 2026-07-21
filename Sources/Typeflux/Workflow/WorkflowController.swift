@@ -929,6 +929,27 @@ final class WorkflowController {
         )
     }
 
+    func shouldOptimizeTypefluxASR(
+        intent: RecordingIntent,
+        recordingMode: RecordingMode,
+        appName: String?,
+        bundleIdentifier: String?
+    ) -> Bool {
+        guard intent == .dictation else { return true }
+        if shouldUseQuickInput(recordingMode: recordingMode, recordingIntent: intent) {
+            return true
+        }
+        guard let persona = settingsStore.effectivePersona(
+            appName: appName,
+            bundleIdentifier: bundleIdentifier
+        ) else {
+            return true
+        }
+        return settingsStore.resolvedPersonaPrompt(for: persona)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .isEmpty
+    }
+
     func currentRecordingHintPresentation() -> RecordingHintPresentation {
         let frontmostApplicationContext = Self.frontmostApplicationContext()
         return recordingHintPresentation(
@@ -957,7 +978,19 @@ final class WorkflowController {
         recordingIntent = effectiveIntent
         lastRetryableFailureRecord = nil
         latestRecordingPreviewText = ""
-        let recordingHint = currentRecordingHintPresentation()
+        let frontmostApplicationContext = Self.frontmostApplicationContext()
+        let recordingHint = recordingHintPresentation(
+            intent: effectiveIntent,
+            recordingMode: recordingMode,
+            appName: frontmostApplicationContext.appName,
+            bundleIdentifier: frontmostApplicationContext.bundleIdentifier
+        )
+        let optimizeASR = shouldOptimizeTypefluxASR(
+            intent: effectiveIntent,
+            recordingMode: recordingMode,
+            appName: frontmostApplicationContext.appName,
+            bundleIdentifier: frontmostApplicationContext.bundleIdentifier
+        )
         NSLog("[Workflow] Recording started")
 
         Task { @MainActor in
@@ -991,6 +1024,7 @@ final class WorkflowController {
             let realtimeSession: (any RealtimeTranscriptionSession)? = if canUseRealtimeTranscription {
                 await sttRouter.makeRealtimeTranscriptionSession(
                     scenario: .voiceInput,
+                    optimize: optimizeASR,
                     onUpdate: { [weak self] snapshot in
                         let trimmed = snapshot.text.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !trimmed.isEmpty else { return }
