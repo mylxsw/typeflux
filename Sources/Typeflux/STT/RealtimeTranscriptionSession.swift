@@ -91,7 +91,7 @@ final class RealtimeAudioBufferPump {
     }
 }
 
-actor BufferedRealtimeTranscriptionSession: RealtimeTranscriptionSession {
+actor BufferedRealtimeTranscriptionSession: RealtimeTranscriptionSession, RealtimeTranscriptionConnectionAwaiting {
     private enum State {
         case idle
         case starting
@@ -119,6 +119,10 @@ actor BufferedRealtimeTranscriptionSession: RealtimeTranscriptionSession {
             try await upstream.start()
         }
         Task { await completeStart() }
+    }
+
+    func waitUntilConnectionReady() async throws {
+        try await startTask?.value
     }
 
     func append(_ buffer: AVAudioPCMBuffer) async {

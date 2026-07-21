@@ -105,7 +105,7 @@ actor TypefluxASRServerRegistry: TypefluxASRServerProviding {
 
     init(
         publicConfigClient: TypefluxASRPublicConfigClient = TypefluxASRPublicConfigHTTPClient(),
-        prober: CloudEndpointProbing = HTTPCloudEndpointProber(),
+        prober: CloudEndpointProbing = HTTPHealthEndpointProber(),
         config: CloudEndpointSelectorConfig = .default,
         userDefaults: UserDefaults = .standard,
         cacheKey: String = "TypefluxASRRealtimeServers"
@@ -126,6 +126,7 @@ actor TypefluxASRServerRegistry: TypefluxASRServerProviding {
             await replaceServersAndProbe(config.realtimeServers, forceProbe: true)
         } catch {
             logger.error("Failed to refresh Typeflux ASR public config: \(error.localizedDescription)")
+            await probeAllAvailable()
         }
     }
 
@@ -147,6 +148,21 @@ actor TypefluxASRServerRegistry: TypefluxASRServerProviding {
         await selector.reportFailure(url, error: error)
     }
 
+    func snapshot() async -> [CloudEndpointStatus] {
+        if selector == nil, !cachedServers.isEmpty {
+            selector = makeSelector(for: cachedServers)
+        }
+        guard let selector else { return [] }
+        return await selector.snapshot()
+    }
+
+    func probeAllAvailable() async {
+        if selector == nil, !cachedServers.isEmpty {
+            selector = makeSelector(for: cachedServers)
+        }
+        await selector?.probeAll()
+    }
+
     private func replaceServersAndProbe(_ servers: [URL], forceProbe: Bool) async {
         let normalized = TypefluxASRServerURLNormalizer.normalizedURLs(from: servers.map(\.absoluteString))
         guard !normalized.isEmpty else { return }
@@ -162,7 +178,12 @@ actor TypefluxASRServerRegistry: TypefluxASRServerProviding {
     }
 
     private func makeSelector(for servers: [URL]) -> CloudEndpointSelector {
-        CloudEndpointSelector(baseURLs: servers, prober: prober, config: config)
+        CloudEndpointSelector(
+            baseURLs: servers,
+            prober: prober,
+            config: config,
+            preferredEndpoint: { CloudServerPreferences.shared.preferredASRURL }
+        )
     }
 }
 

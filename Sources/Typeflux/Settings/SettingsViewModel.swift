@@ -106,6 +106,12 @@ final class StudioViewModel: ObservableObject {
     @Published var preferredMicrophoneID: String
     @Published var muteSystemOutputDuringRecording: Bool
     @Published var soundEffectsEnabled: Bool
+    @Published var preferredAPIServer = CloudServerPreferences.automaticValue
+    @Published var preferredASRServer = CloudServerPreferences.automaticValue
+    @Published private(set) var apiServerStatuses: [CloudEndpointStatus] = []
+    @Published private(set) var asrServerStatuses: [CloudEndpointStatus] = []
+    @Published private(set) var isTestingCloudServers = false
+    @Published private(set) var cloudServerTestSummary: String?
 
     @Published var llmBaseURL: String
     @Published var llmModel: String
@@ -254,6 +260,7 @@ final class StudioViewModel: ObservableObject {
     private var mcpTestTask: Task<Void, Never>?
     private var historyRefreshTask: Task<Void, Never>?
     private var localSTTPreparationTask: Task<Void, Never>?
+    private var cloudServerTestTask: Task<Void, Never>?
     private var localSTTPreparationID: UUID?
     private var historyRefreshGeneration = 0
     private let audioPreviewPlayer: HistoryAudioPreviewPlaying
@@ -323,6 +330,8 @@ final class StudioViewModel: ObservableObject {
         preferredMicrophoneID = settingsStore.preferredMicrophoneID
         muteSystemOutputDuringRecording = settingsStore.muteSystemOutputDuringRecording
         soundEffectsEnabled = settingsStore.soundEffectsEnabled
+        preferredAPIServer = CloudServerPreferences.shared.preferredAPIServer
+        preferredASRServer = CloudServerPreferences.shared.preferredASRServer
         llmBaseURL = settingsStore.llmBaseURL(for: initialLLMRemoteProvider)
         llmModel = settingsStore.llmModel(for: initialLLMRemoteProvider)
         llmAPIKey = settingsStore.llmAPIKey(for: initialLLMRemoteProvider)
@@ -481,6 +490,7 @@ final class StudioViewModel: ObservableObject {
             }
         }
         syncLocalModelDownloadProgress()
+        refreshCloudServerStatuses()
         audioPreviewPlayer.onPlaybackFinished = { [weak self] in
             Task { @MainActor [weak self] in
                 self?.playingAudioRecordID = nil
@@ -514,6 +524,7 @@ final class StudioViewModel: ObservableObject {
             NotificationCenter.default.removeObserver(localModelDownloadProgressObserver)
         }
         historyRefreshTask?.cancel()
+        cloudServerTestTask?.cancel()
         audioPreviewPlayer.stop()
     }
 
@@ -834,6 +845,89 @@ final class StudioViewModel: ObservableObject {
             applyHistoryRetentionPolicy()
             refreshHistory(reset: true)
         }
+    }
+
+    var availableAPIServers: [String] {
+        let configured = AppServerConfiguration.apiBaseURLs.compactMap { URL(string: $0)?.absoluteString }
+        return uniqueServerURLs(configured + apiServerStatuses.map(\.baseURL.absoluteString))
+    }
+
+    var availableASRServers: [String] {
+        uniqueServerURLs(asrServerStatuses.map(\.baseURL.absoluteString))
+    }
+
+    func setPreferredAPIServer(_ value: String) {
+        preferredAPIServer = value
+        CloudServerPreferences.shared.preferredAPIServer = value
+    }
+
+    func setPreferredASRServer(_ value: String) {
+        preferredASRServer = value
+        CloudServerPreferences.shared.preferredASRServer = value
+    }
+
+    func refreshCloudServerStatuses() {
+        cloudServerTestTask?.cancel()
+        cloudServerTestTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            apiServerStatuses = await CloudEndpointRegistry.shared.snapshot()
+            asrServerStatuses = await TypefluxASRServerRegistry.shared.snapshot()
+            ensureAvailableServerSelections()
+        }
+    }
+
+    func testCloudServerLatency() {
+        guard !isTestingCloudServers else { return }
+        isTestingCloudServers = true
+        cloudServerTestSummary = nil
+        cloudServerTestTask?.cancel()
+        cloudServerTestTask = Task { @MainActor [weak self] in
+            async let apiProbe: Void = CloudEndpointRegistry.shared.probeAll()
+            async let asrProbe: Void = Self.probeASRServers()
+            _ = await (apiProbe, asrProbe)
+
+            guard let self, !Task.isCancelled else { return }
+            apiServerStatuses = await CloudEndpointRegistry.shared.snapshot()
+            asrServerStatuses = await TypefluxASRServerRegistry.shared.snapshot()
+            ensureAvailableServerSelections()
+            let apiAvailable = availableServerCount(in: apiServerStatuses)
+            let asrAvailable = availableServerCount(in: asrServerStatuses)
+            cloudServerTestSummary = L(
+                "settings.servers.speedTest.summary",
+                apiAvailable,
+                apiServerStatuses.count,
+                asrAvailable,
+                asrServerStatuses.count
+            )
+            isTestingCloudServers = false
+            if let cloudServerTestSummary {
+                showToast(cloudServerTestSummary)
+            }
+        }
+    }
+
+    private static func probeASRServers() async {
+        await TypefluxASRServerRegistry.shared.refreshPublicConfig()
+    }
+
+    private func availableServerCount(in statuses: [CloudEndpointStatus]) -> Int {
+        statuses.count { $0.lastProbeAt != nil && $0.lastError == nil && $0.latencyMs != nil }
+    }
+
+    private func ensureAvailableServerSelections() {
+        if !preferredAPIServer.isEmpty, !availableAPIServers.contains(preferredAPIServer) {
+            setPreferredAPIServer(CloudServerPreferences.automaticValue)
+        }
+        if !preferredASRServer.isEmpty,
+           !availableASRServers.isEmpty,
+           !availableASRServers.contains(preferredASRServer) {
+            setPreferredASRServer(CloudServerPreferences.automaticValue)
+        }
+    }
+
+    private func uniqueServerURLs(_ values: [String]) -> [String] {
+        var seen = Set<String>()
+        return values.filter { seen.insert($0).inserted }
     }
 
     func refreshHistory(reset: Bool = true) {
@@ -2950,8 +3044,7 @@ final class StudioViewModel: ObservableObject {
             postProcessedText: record.postProcessedText,
             selectionOriginalText: record.selectionOriginalText,
             selectionEditedText: record.selectionEditedText,
-            pipelineStatItems: historyPipelineStatItems(record.pipelineStats ?? record.pipelineTiming?
-                .generatedStats()),
+            pipelineTimeline: historyPipelineTimeline(record.pipelineStats ?? record.pipelineTiming?.generatedStats()),
             errorMessage: record.errorMessage,
             applyMessage: record.applyMessage,
             hasTranscriptToCopy: !(record.finalText?.isEmpty ?? true),
@@ -2963,26 +3056,126 @@ final class StudioViewModel: ObservableObject {
         )
     }
 
-    private func historyPipelineStatItems(_ stats: HistoryPipelineStats?) -> [HistoryPipelineStatPresentationItem] {
-        guard let stats, stats.hasData else { return [] }
+    private func historyPipelineTimeline(
+        _ stats: HistoryPipelineStats?
+    ) -> HistoryPipelineTimelinePresentation? {
+        guard let stats, stats.hasData else { return nil }
 
-        let durationRows: [(String, Int?)] = [
-            (L("history.stats.transcriptionDuration"), stats.transcriptionDurationMilliseconds),
-            (L("history.stats.llmDuration"), stats.llmDurationMilliseconds),
-            (L("history.stats.endToEnd"), stats.endToEndMilliseconds)
+        let origin = stats.recordingStoppedAt ?? [
+            stats.audioFileReadyAt,
+            stats.transcriptionStartedAt,
+            stats.realtimeFinishStartedAt,
+            stats.llmProcessingStartedAt,
+            stats.applyStartedAt
+        ].compactMap(\.self).min()
+        let end = [
+            stats.audioFileReadyAt,
+            stats.realtimeFinishCompletedAt,
+            stats.transcriptionCompletedAt,
+            stats.llmProcessingCompletedAt,
+            stats.applyCompletedAt
+        ].compactMap(\.self).max()
+        let span = origin.flatMap { start in end.map { max(0.001, $0.timeIntervalSince(start)) } }
+
+        struct LaneSource {
+            let id: String
+            let title: String
+            let start: Date?
+            let end: Date?
+            let tone: HistoryPipelineTimelineTone
+        }
+
+        let sources = [
+            LaneSource(
+                id: "audio",
+                title: L("history.timeline.audio"),
+                start: stats.recordingStoppedAt,
+                end: stats.audioFileReadyAt,
+                tone: .audio
+            ),
+            LaneSource(
+                id: "realtime",
+                title: L("history.timeline.realtime"),
+                start: stats.realtimeFinishStartedAt,
+                end: stats.realtimeFinishCompletedAt,
+                tone: .realtime
+            ),
+            LaneSource(
+                id: "transcription",
+                title: L("history.timeline.transcription"),
+                start: stats.transcriptionStartedAt,
+                end: stats.transcriptionCompletedAt,
+                tone: .transcription
+            ),
+            LaneSource(
+                id: "llm",
+                title: L("history.timeline.llm"),
+                start: stats.llmProcessingStartedAt,
+                end: stats.llmProcessingCompletedAt,
+                tone: .llm
+            ),
+            LaneSource(
+                id: "apply",
+                title: L("history.timeline.apply"),
+                start: stats.applyStartedAt,
+                end: stats.applyCompletedAt,
+                tone: .apply
+            )
         ]
 
-        return durationRows.enumerated().compactMap { item -> HistoryPipelineStatPresentationItem? in
-            let index = item.offset
-            let row = item.element
-            guard let value = row.1 else { return nil }
-            return HistoryPipelineStatPresentationItem(
-                id: "duration-\(index)",
-                title: row.0,
-                value: historyDurationText(milliseconds: value),
-                style: .duration
+        let laneDurations = sources.compactMap { source -> (String, Int)? in
+            guard let start = source.start, let end = source.end else { return nil }
+            return (source.id, max(0, Int((end.timeIntervalSince(start) * 1000).rounded())))
+        }
+        let slowestID = laneDurations.max(by: { $0.1 < $1.1 })?.0
+        let lanes = sources.compactMap { source -> HistoryPipelineTimelinePresentation.Lane? in
+            guard let origin, let span, let start = source.start, let end = source.end else { return nil }
+            let clippedStart = max(start, origin)
+            let clippedEnd = max(clippedStart, end)
+            let duration = max(0, Int((end.timeIntervalSince(start) * 1000).rounded()))
+            return HistoryPipelineTimelinePresentation.Lane(
+                id: source.id,
+                title: source.title,
+                durationText: historyDurationText(milliseconds: duration),
+                offsetFraction: min(1, max(0, clippedStart.timeIntervalSince(origin) / span)),
+                widthFraction: min(1, max(0, clippedEnd.timeIntervalSince(clippedStart) / span)),
+                tone: source.tone,
+                isSlowest: source.id == slowestID
             )
         }
+
+        let keyMetricSources: [(String, String, Int?)] = [
+            ("connection", L("history.stats.realtimeConnection"), stats.realtimeConnectionDurationMilliseconds),
+            (
+                "first-result",
+                L("history.stats.realtimeFirstAudioToFirstResult"),
+                stats.realtimeAudioToFirstResultMilliseconds
+            ),
+            ("final-result", L("history.stats.realtimeStopToFinalResult"), stats.realtimeStopToFinalResultMilliseconds),
+            ("llm-first-output", L("history.stats.llmTimeToFirstOutput"), stats.llmTimeToFirstOutputMilliseconds)
+        ]
+        let keyMetrics = keyMetricSources.compactMap { id, title, value in
+            value.map {
+                HistoryPipelineStatPresentationItem(
+                    id: id,
+                    title: title,
+                    value: historyDurationText(milliseconds: $0),
+                    style: .duration
+                )
+            }
+        }
+        let slowestStageText = lanes.first(where: \.isSlowest).map {
+            "\($0.title) · \($0.durationText)"
+        }
+        let totalDurationText = stats.endToEndMilliseconds.map(historyDurationText(milliseconds:))
+
+        guard !lanes.isEmpty || !keyMetrics.isEmpty || totalDurationText != nil else { return nil }
+        return HistoryPipelineTimelinePresentation(
+            totalDurationText: totalDurationText,
+            slowestStageText: slowestStageText,
+            lanes: lanes,
+            keyMetrics: keyMetrics
+        )
     }
 
     private func historyDurationText(milliseconds: Int) -> String {

@@ -3,6 +3,41 @@ import XCTest
 
 @MainActor
 final class SettingsViewModelHistoryAudioTests: XCTestCase {
+    func testHistoryPipelineTimelinePreservesStageOffsetsAndHighlightsSlowestLane() {
+        let base = Date(timeIntervalSince1970: 1000)
+        let recordID = UUID()
+        let record = HistoryRecord(
+            id: recordID,
+            date: base,
+            audioFilePath: "/tmp/timeline.wav",
+            transcriptText: "hello",
+            pipelineTiming: HistoryPipelineTiming(
+                recordingStoppedAt: base,
+                audioFileReadyAt: base.addingTimeInterval(0.1),
+                transcriptionStartedAt: base.addingTimeInterval(0.1),
+                transcriptionCompletedAt: base.addingTimeInterval(0.8),
+                llmProcessingStartedAt: base.addingTimeInterval(0.8),
+                llmProcessingCompletedAt: base.addingTimeInterval(2.8),
+                applyStartedAt: base.addingTimeInterval(2.8),
+                applyCompletedAt: base.addingTimeInterval(3.0)
+            )
+        )
+        let viewModel = makeViewModel(
+            records: [record],
+            audioPreviewPlayer: FakeHistoryAudioPreviewPlayer(playResult: true)
+        )
+        waitForHistoryRecord(recordID, in: viewModel)
+
+        let timeline = viewModel.displayedHistory.first?.pipelineTimeline
+        let llmLane = timeline?.lanes.first { $0.id == "llm" }
+
+        XCTAssertEqual(timeline?.lanes.count, 4)
+        XCTAssertEqual(llmLane?.offsetFraction ?? -1, 0.8 / 3.0, accuracy: 0.001)
+        XCTAssertEqual(llmLane?.widthFraction ?? -1, 2.0 / 3.0, accuracy: 0.001)
+        XCTAssertEqual(llmLane?.isSlowest, true)
+        XCTAssertNotNil(timeline?.totalDurationText)
+    }
+
     func testPlayAudioStartsPreviewForExistingHistoryFile() throws {
         let audioURL = try makeTemporaryAudioPlaceholder()
         let recordID = UUID()

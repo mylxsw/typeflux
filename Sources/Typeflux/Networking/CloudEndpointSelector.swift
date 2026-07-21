@@ -61,6 +61,7 @@ actor CloudEndpointSelector {
     private let config: CloudEndpointSelectorConfig
     private let prober: CloudEndpointProbing
     private let now: @Sendable () -> Date
+    private let preferredEndpoint: @Sendable () -> URL?
     private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "CloudEndpointSelector")
 
     private let orderedURLs: [URL]
@@ -70,7 +71,8 @@ actor CloudEndpointSelector {
         baseURLs: [URL],
         prober: CloudEndpointProbing,
         config: CloudEndpointSelectorConfig = .default,
-        now: @escaping @Sendable () -> Date = { Date() }
+        now: @escaping @Sendable () -> Date = { Date() },
+        preferredEndpoint: @escaping @Sendable () -> URL? = { nil }
     ) {
         precondition(!baseURLs.isEmpty, "CloudEndpointSelector requires at least one base URL")
         // Preserve the configured order while removing duplicates.
@@ -83,6 +85,7 @@ actor CloudEndpointSelector {
         self.config = config
         self.prober = prober
         self.now = now
+        self.preferredEndpoint = preferredEndpoint
         states = Dictionary(uniqueKeysWithValues: unique.map { ($0, EndpointState()) })
     }
 
@@ -119,7 +122,7 @@ actor CloudEndpointSelector {
             )
         }
 
-        return ranked.sorted { lhs, rhs in
+        let latencyOrdered = ranked.sorted { lhs, rhs in
             // Healthy first.
             if lhs.inCooldown != rhs.inCooldown {
                 return !lhs.inCooldown
@@ -143,6 +146,8 @@ actor CloudEndpointSelector {
                 return lhs.insertionIndex < rhs.insertionIndex
             }
         }.map(\.url)
+
+        return applyingPreferredEndpoint(to: latencyOrdered, snapshot: snapshot)
     }
 
     /// Returns endpoints in configured primary-first order. The first
@@ -169,7 +174,7 @@ actor CloudEndpointSelector {
             )
         }
 
-        return ranked.sorted { lhs, rhs in
+        let primaryOrdered = ranked.sorted { lhs, rhs in
             if lhs.inCooldown != rhs.inCooldown {
                 return !lhs.inCooldown
             }
@@ -180,6 +185,8 @@ actor CloudEndpointSelector {
             }
             return lhs.insertionIndex < rhs.insertionIndex
         }.map(\.url)
+
+        return applyingPreferredEndpoint(to: primaryOrdered, snapshot: snapshot)
     }
 
     /// Returns the highest-priority endpoint. Always non-nil because the
@@ -291,5 +298,19 @@ actor CloudEndpointSelector {
     private func blendLatency(previous: Double?, sample: Double) -> Double {
         guard let previous else { return sample }
         return config.ewmaAlpha * sample + (1.0 - config.ewmaAlpha) * previous
+    }
+
+    private func applyingPreferredEndpoint(to endpoints: [URL], snapshot: Date) -> [URL] {
+        guard let preferred = preferredEndpoint(),
+              let preferredIndex = endpoints.firstIndex(of: preferred),
+              (states[preferred]?.cooldownUntil ?? .distantPast) <= snapshot
+        else {
+            return endpoints
+        }
+
+        var result = endpoints
+        result.remove(at: preferredIndex)
+        result.insert(preferred, at: 0)
+        return result
     }
 }

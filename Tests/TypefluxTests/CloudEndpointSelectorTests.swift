@@ -39,6 +39,42 @@ final class CloudEndpointSelectorTests: XCTestCase {
         XCTAssertEqual(ordered, [urlB, urlC, urlA])
     }
 
+    func testPreferredEndpointTakesPriorityOverFasterEndpoint() async {
+        let preferred = urlC
+        let selector = CloudEndpointSelector(
+            baseURLs: [urlA, urlB, urlC],
+            prober: StubProber(),
+            preferredEndpoint: { preferred }
+        )
+        await selector.reportSuccess(urlA, latencyMs: 40)
+        await selector.reportSuccess(urlB, latencyMs: 80)
+        await selector.reportSuccess(urlC, latencyMs: 200)
+
+        let ordered = await selector.orderedEndpoints()
+
+        XCTAssertEqual(ordered, [urlC, urlA, urlB])
+    }
+
+    func testPreferredEndpointFallsBackWhileInCooldown() async {
+        let preferred = urlC
+        var config = CloudEndpointSelectorConfig.default
+        config.failureThreshold = 1
+        config.baseCooldown = 60
+        let selector = CloudEndpointSelector(
+            baseURLs: [urlA, urlB, urlC],
+            prober: StubProber(),
+            config: config,
+            preferredEndpoint: { preferred }
+        )
+        await selector.reportSuccess(urlA, latencyMs: 40)
+        await selector.reportSuccess(urlB, latencyMs: 80)
+        await selector.reportFailure(urlC, error: SampleError.boom)
+
+        let ordered = await selector.orderedEndpoints()
+
+        XCTAssertEqual(ordered, [urlA, urlB, urlC])
+    }
+
     func testOrderedEndpointsPlacesUnknownLatencyAfterKnown() async {
         let selector = CloudEndpointSelector(
             baseURLs: [urlA, urlB, urlC],
@@ -80,6 +116,19 @@ final class CloudEndpointSelectorTests: XCTestCase {
 
         let ordered = await selector.primaryFirstEndpoints()
         XCTAssertEqual(ordered, [urlA, urlB, urlC])
+    }
+
+    func testPrimaryFirstEndpointsHonorsPreferredEndpoint() async {
+        let preferred = urlC
+        let selector = CloudEndpointSelector(
+            baseURLs: [urlA, urlB, urlC],
+            prober: StubProber(),
+            preferredEndpoint: { preferred }
+        )
+
+        let ordered = await selector.primaryFirstEndpoints()
+
+        XCTAssertEqual(ordered, [urlC, urlA, urlB])
     }
 
     func testPrimaryFirstEndpointsMovesCooldownPrimaryBehindHealthyBackups() async {

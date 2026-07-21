@@ -14,12 +14,21 @@ extension WorkflowController {
 
     struct RewriteGenerationResult {
         let text: String
+        let firstOutputAt: Date?
         let completedAt: Date
     }
 
     struct AskSelectionDecisionResult {
         let decision: AskSelectionDecision
         let completedAt: Date
+    }
+
+    struct MergedCloudTranscriptionResult {
+        let transcript: String
+        let rewritten: String?
+        let llmStartedAt: Date?
+        let llmFirstOutputAt: Date?
+        let llmCompletedAt: Date?
     }
 
     var shouldSuppressPostRecordingStreamingPreviewForCurrentSTTProvider: Bool {
@@ -60,11 +69,15 @@ extension WorkflowController {
                 }
             ) { [self] in
                 var buffer = ""
+                var firstOutputAt: Date?
                 var lastChunkAt = Date()
 
                 let stream = llmService.streamRewrite(request: request)
                 for try await chunk in stream {
                     try ensureProcessingIsActive(sessionID)
+                    if firstOutputAt == nil, !chunk.isEmpty {
+                        firstOutputAt = Date()
+                    }
                     buffer += chunk
                     let now = Date()
                     if now.timeIntervalSince(lastChunkAt) > 0.15 {
@@ -82,6 +95,7 @@ extension WorkflowController {
 
                 return RewriteGenerationResult(
                     text: buffer.trimmingCharacters(in: .whitespacesAndNewlines),
+                    firstOutputAt: firstOutputAt,
                     completedAt: Date()
                 )
             }
@@ -690,6 +704,9 @@ extension WorkflowController {
 
             let rawTranscribedText: String
             var mergedLLMResult: String?
+            var mergedLLMStartedAt: Date?
+            var mergedLLMFirstOutputAt: Date?
+            var mergedLLMCompletedAt: Date?
             let fallbackPreviewText = recordingPreviewText.trimmingCharacters(in: .whitespacesAndNewlines)
 
             let transcriptionStartedAt = Date()
@@ -729,6 +746,9 @@ extension WorkflowController {
                 )
                 rawTranscribedText = mergedResult.transcript
                 mergedLLMResult = mergedResult.rewritten
+                mergedLLMStartedAt = mergedResult.llmStartedAt
+                mergedLLMFirstOutputAt = mergedResult.llmFirstOutputAt
+                mergedLLMCompletedAt = mergedResult.llmCompletedAt
             } else {
                 do {
                     rawTranscribedText = try await sttRouter.transcribeStream(
@@ -747,6 +767,14 @@ extension WorkflowController {
                     )
                     rawTranscribedText = ""
                 }
+            }
+            if let diagnosticsProvider = realtimeTranscriptionSession as?
+                any RealtimeDiagnosticsProviding {
+                let diagnostics = await diagnosticsProvider.diagnosticsSnapshot()
+                pipelineTiming.merge(diagnostics)
+                record.pipelineTiming = pipelineTiming
+                saveHistoryRecord(record)
+                logPipelineEvent("realtime-session-finished", for: record)
             }
             NetworkDebugLogger.logMessage(
                 "[Ask Timing] transcription completed in \(Self.formatDurationSince(transcriptionStartedAt))"
@@ -771,7 +799,10 @@ extension WorkflowController {
                     """
                 )
             }
-            pipelineTiming.transcriptionCompletedAt = Date()
+            pipelineTiming.transcriptionCompletedAt = mergedLLMStartedAt ?? Date()
+            pipelineTiming.llmProcessingStartedAt = mergedLLMStartedAt
+            pipelineTiming.llmFirstOutputAt = mergedLLMFirstOutputAt
+            pipelineTiming.llmProcessingCompletedAt = mergedLLMCompletedAt
             record.pipelineTiming = pipelineTiming
             record.transcriptText = transcribedText
             record.transcriptionStatus = .succeeded
@@ -1474,11 +1505,22 @@ extension WorkflowController {
     /// Thread-safe accumulator for LLM streaming chunks captured in @Sendable closures.
     private final class LLMStreamBuffer: @unchecked Sendable {
         private var _text = ""
+        private var _startedAt: Date?
+        private var _firstOutputAt: Date?
         private let lock = NSLock()
 
         func append(_ chunk: String) {
             lock.lock()
+            if _firstOutputAt == nil, !chunk.isEmpty {
+                _firstOutputAt = Date()
+            }
             _text += chunk
+            lock.unlock()
+        }
+
+        func markStarted() {
+            lock.lock()
+            _startedAt = _startedAt ?? Date()
             lock.unlock()
         }
 
@@ -1486,6 +1528,12 @@ extension WorkflowController {
             lock.lock()
             defer { lock.unlock() }
             return _text
+        }
+
+        var timing: (startedAt: Date?, firstOutputAt: Date?) {
+            lock.lock()
+            defer { lock.unlock() }
+            return (_startedAt, _firstOutputAt)
         }
     }
 
@@ -1540,7 +1588,7 @@ extension WorkflowController {
         selectionSnapshot: TextSelectionSnapshot,
         cloudScenario: TypefluxCloudScenario,
         sessionID: UUID
-    ) async throws -> (transcript: String, rewritten: String?) {
+    ) async throws -> MergedCloudTranscriptionResult {
         let llmConfig = buildASRLLMConfig(
             personaPrompt: personaPrompt,
             personaID: personaID,
@@ -1549,13 +1597,14 @@ extension WorkflowController {
         let llmBuffer = LLMStreamBuffer()
         let suppressStreamingPreview = shouldSuppressPostRecordingStreamingPreviewForCurrentSTTProvider
 
-        return try await sttRouter.transcribeStreamWithLLMRewrite(
+        let result = try await sttRouter.transcribeStreamWithLLMRewrite(
             audioFile: audioFile,
             llmConfig: llmConfig,
             scenario: cloudScenario,
             onASRUpdate: { _ in },
             onLLMStart: { [weak self] in
                 guard let self else { return }
+                llmBuffer.markStarted()
                 await MainActor.run {
                     if self.processingSessionID == sessionID {
                         self.overlayController.transitionToLLMPhase()
@@ -1573,6 +1622,14 @@ extension WorkflowController {
                     }
                 }
             }
+        )
+        let timing = llmBuffer.timing
+        return MergedCloudTranscriptionResult(
+            transcript: result.transcript,
+            rewritten: result.rewritten,
+            llmStartedAt: timing.startedAt,
+            llmFirstOutputAt: timing.firstOutputAt,
+            llmCompletedAt: result.rewritten == nil ? nil : Date()
         )
     }
 
@@ -1622,8 +1679,10 @@ extension WorkflowController {
             // Rewrite already completed as part of the merged ASR+LLM WebSocket session.
             // The overlay was updated with streaming chunks during transcription, so we
             // only need to record the timing and move on.
-            pipelineTiming.llmProcessingStartedAt = pipelineTiming.transcriptionCompletedAt ?? Date()
-            pipelineTiming.llmProcessingCompletedAt = Date()
+            pipelineTiming.llmProcessingStartedAt = pipelineTiming.llmProcessingStartedAt
+                ?? pipelineTiming.transcriptionCompletedAt
+                ?? Date()
+            pipelineTiming.llmProcessingCompletedAt = pipelineTiming.llmProcessingCompletedAt ?? Date()
             record.pipelineTiming = pipelineTiming
             rewriteOutput = merged
             logPipelineEvent("llm-processing-completed", for: record)
@@ -1653,6 +1712,7 @@ extension WorkflowController {
                 )
 
                 try ensureProcessingIsActive(sessionID)
+                pipelineTiming.llmFirstOutputAt = rewriteResult.firstOutputAt
                 pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
                 if rewriteResult.text.isEmpty {
                     ErrorLogStore.shared.log("Persona rewrite returned an empty response, using transcript as fallback")
@@ -2137,10 +2197,37 @@ extension WorkflowController {
             ("stt_ms", timing.millisecondsBetween(timing.transcriptionStartedAt, timing.transcriptionCompletedAt)),
             ("stop_to_stt_ms", timing.millisecondsBetween(timing.recordingStoppedAt, timing.transcriptionCompletedAt)),
             (
+                "realtime_connect_ms",
+                timing.millisecondsBetween(timing.realtimeSessionStartedAt, timing.realtimeConnectionReadyAt)
+            ),
+            (
+                "realtime_audio_to_first_result_ms",
+                timing.millisecondsBetween(
+                    timing.realtimeFirstAudioSubmittedAt,
+                    timing.realtimeFirstResultReceivedAt
+                )
+            ),
+            (
+                "realtime_ready_to_audio_ms",
+                timing.millisecondsBetween(
+                    timing.realtimeConnectionReadyAt,
+                    timing.realtimeFirstAudioSubmittedAt
+                )
+            ),
+            (
+                "realtime_stop_to_final_ms",
+                timing.millisecondsBetween(timing.realtimeFinishStartedAt, timing.realtimeFinalResultReceivedAt)
+            ),
+            (
+                "realtime_finish_ms",
+                timing.millisecondsBetween(timing.realtimeFinishStartedAt, timing.realtimeFinishCompletedAt)
+            ),
+            (
                 "transcript_to_llm_ms",
                 timing.millisecondsBetween(timing.transcriptionCompletedAt, timing.llmProcessingStartedAt)
             ),
             ("llm_ms", timing.millisecondsBetween(timing.llmProcessingStartedAt, timing.llmProcessingCompletedAt)),
+            ("llm_ttft_ms", timing.millisecondsBetween(timing.llmProcessingStartedAt, timing.llmFirstOutputAt)),
             ("apply_ms", timing.millisecondsBetween(timing.applyStartedAt, timing.applyCompletedAt)),
             (
                 "end_to_end_ms",

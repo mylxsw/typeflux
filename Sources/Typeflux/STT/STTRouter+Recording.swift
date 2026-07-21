@@ -76,10 +76,15 @@ extension STTRouter {
             return nil
         }
         do {
-            return try await factory.makeRealtimeTranscriptionSession(
+            let diagnostics = RealtimeTranscriptionDiagnostics()
+            let session = try await factory.makeRealtimeTranscriptionSession(
                 scenario: scenario,
-                onUpdate: onUpdate
+                onUpdate: { snapshot in
+                    diagnostics.markResult(isFinal: snapshot.isFinal)
+                    await onUpdate(snapshot)
+                }
             )
+            return ObservedRealtimeTranscriptionSession(upstream: session, diagnostics: diagnostics)
         } catch {
             NetworkDebugLogger.logError(context: failureContext, error: error)
             return nil

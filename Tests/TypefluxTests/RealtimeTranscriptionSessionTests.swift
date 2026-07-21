@@ -3,6 +3,18 @@ import AVFoundation
 import XCTest
 
 final class RealtimeTranscriptionSessionTests: XCTestCase {
+    func testDiagnosticsRecordsInboundResultMilestonesOnlyOnce() {
+        let diagnostics = RealtimeTranscriptionDiagnostics()
+
+        diagnostics.markResult(isFinal: false)
+        let firstResult = diagnostics.currentSnapshot().firstResultReceivedAt
+        diagnostics.markResult(isFinal: true)
+        let snapshot = diagnostics.currentSnapshot()
+
+        XCTAssertEqual(snapshot.firstResultReceivedAt, firstResult)
+        XCTAssertNotNil(snapshot.finalResultReceivedAt)
+    }
+
     func testPCM16FrameChunkerKeepsRemainderUntilFlush() {
         var chunker = PCM16FrameChunker(chunkSize: 4)
 

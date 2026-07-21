@@ -267,6 +267,31 @@ struct HistoryPipelineStatPresentationItem: Identifiable {
     let style: ValueStyle
 }
 
+enum HistoryPipelineTimelineTone {
+    case audio
+    case realtime
+    case transcription
+    case llm
+    case apply
+}
+
+struct HistoryPipelineTimelinePresentation {
+    struct Lane: Identifiable {
+        let id: String
+        let title: String
+        let durationText: String
+        let offsetFraction: Double
+        let widthFraction: Double
+        let tone: HistoryPipelineTimelineTone
+        let isSlowest: Bool
+    }
+
+    let totalDurationText: String?
+    let slowestStageText: String?
+    let lanes: [Lane]
+    let keyMetrics: [HistoryPipelineStatPresentationItem]
+}
+
 struct HistoryPresentationRecord: Identifiable {
     let id: UUID
     let date: Date
@@ -282,7 +307,7 @@ struct HistoryPresentationRecord: Identifiable {
     let postProcessedText: String?
     let selectionOriginalText: String?
     let selectionEditedText: String?
-    let pipelineStatItems: [HistoryPipelineStatPresentationItem]
+    let pipelineTimeline: HistoryPipelineTimelinePresentation?
     let errorMessage: String?
     let applyMessage: String?
     let hasTranscriptToCopy: Bool

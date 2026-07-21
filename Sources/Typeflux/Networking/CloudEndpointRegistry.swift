@@ -22,7 +22,8 @@ enum CloudEndpointRegistry {
         let resolved = urls.isEmpty ? [URL(string: "https://typeflux.app")!] : urls
         let selector = CloudEndpointSelector(
             baseURLs: resolved,
-            prober: HTTPCloudEndpointProber()
+            prober: HTTPCloudEndpointProber(),
+            preferredEndpoint: { CloudServerPreferences.shared.preferredAPIURL }
         )
         cached = selector
         return selector
