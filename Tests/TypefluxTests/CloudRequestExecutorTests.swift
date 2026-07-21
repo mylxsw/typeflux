@@ -24,6 +24,25 @@ final class CloudRequestExecutorTests: XCTestCase {
         XCTAssertEqual(calls, [urlA])
     }
 
+    func testExecuteDoesNotMixBusinessRequestDurationIntoProbeLatency() async throws {
+        let session = StubSession()
+        await session.setHandler { request in
+            (Data("ok".utf8), Self.httpResponse(url: request.url!, status: 200))
+        }
+        let selector = CloudEndpointSelector(baseURLs: [urlA], prober: NoOpProber())
+        await selector.reportSuccess(urlA, latencyMs: 123)
+        let executor = CloudRequestExecutor(selector: selector, session: session)
+
+        _ = try await executor.execute { base in
+            URLRequest(url: base.appendingPathComponent("api/v1/me"))
+        }
+
+        let status = await selector.snapshot()
+        XCTAssertEqual(status[0].latencyMs, 123)
+        XCTAssertEqual(status[0].consecutiveFailures, 0)
+        XCTAssertNil(status[0].lastError)
+    }
+
     func testExecuteAddsCloudClientHeaders() async throws {
         let session = StubSession()
         await session.setHandler { request in

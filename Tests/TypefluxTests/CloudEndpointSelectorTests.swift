@@ -298,6 +298,18 @@ final class CloudEndpointSelectorTests: XCTestCase {
         XCTAssertNotNil(snapshot[1].lastError)
     }
 
+    func testProbeAllUsesMedianLatencyToIgnoreTransientSpike() async {
+        let prober = SequencedProber(latencies: [100, 900, 120])
+        let selector = CloudEndpointSelector(baseURLs: [urlA], prober: prober)
+
+        await selector.probeAll()
+
+        let snapshot = await selector.snapshot()
+        XCTAssertEqual(snapshot[0].latencyMs, 120)
+        let callCount = await prober.callCount
+        XCTAssertEqual(callCount, 3)
+    }
+
     // MARK: - primaryEndpoint fallback
 
     func testPrimaryEndpointFallsBackToFirstConfiguredWhenAllInCooldown() async {
@@ -343,6 +355,26 @@ private actor StubProber: CloudEndpointProbing {
         case .none:
             throw CloudEndpointProbeError.timedOut
         }
+    }
+}
+
+private actor SequencedProber: CloudEndpointProbing {
+    private var latencies: [Double]
+    private(set) var callCount = 0
+
+    init(latencies: [Double]) {
+        self.latencies = latencies
+    }
+
+    func probe(baseURL _: URL, nonce _: String, timeout _: TimeInterval) async throws -> CloudEndpointProbeResult {
+        let index = min(callCount, latencies.count - 1)
+        callCount += 1
+        return CloudEndpointProbeResult(
+            latencyMs: latencies[index],
+            serverID: nil,
+            serverVersion: nil,
+            nonceMatches: true
+        )
     }
 }
 
