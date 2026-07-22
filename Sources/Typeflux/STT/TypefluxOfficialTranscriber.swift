@@ -552,7 +552,11 @@ enum TypefluxOfficialASRTokenScope {
 // MARK: - WebSocket ASR Session
 
 enum TypefluxOfficialASRStartMessageFactory {
-    static func make(optimize: Bool, llmConfig: ASRLLMConfig? = nil) -> [String: Any] {
+    static func make(
+        optimize: Bool,
+        llmConfig: ASRLLMConfig? = nil,
+        inputMode: String = "realtime"
+    ) -> [String: Any] {
         let audioConfig: [String: Any] = [
             "format": "pcm",
             "sample_rate": 16000,
@@ -561,7 +565,8 @@ enum TypefluxOfficialASRStartMessageFactory {
         ]
         var config: [String: Any] = [
             "audio": audioConfig,
-            "optimize": optimize
+            "optimize": optimize,
+            "input_mode": inputMode
         ]
         if let llmConfig {
             config["llm"] = [
@@ -770,7 +775,8 @@ private actor TypefluxOfficialASRSession {
 
         let startMessage = TypefluxOfficialASRStartMessageFactory.make(
             optimize: optimize,
-            llmConfig: llmConfig
+            llmConfig: llmConfig,
+            inputMode: "batch"
         )
         let startData = try JSONSerialization.data(withJSONObject: startMessage)
         try await socketTask.send(.string(String(data: startData, encoding: .utf8)!))

@@ -13,6 +13,7 @@ final class TypefluxOfficialTranscriberTests: XCTestCase {
         let config = try XCTUnwrap(message["config"] as? [String: Any])
 
         XCTAssertEqual(config["optimize"] as? Bool, false)
+        XCTAssertEqual(config["input_mode"] as? String, "realtime")
         XCTAssertNotNil(config["llm"])
     }
 
@@ -21,7 +22,18 @@ final class TypefluxOfficialTranscriberTests: XCTestCase {
         let config = try XCTUnwrap(message["config"] as? [String: Any])
 
         XCTAssertEqual(config["optimize"] as? Bool, true)
+        XCTAssertEqual(config["input_mode"] as? String, "realtime")
         XCTAssertNil(config["llm"])
+    }
+
+    func testStartMessageSupportsBatchInputMode() throws {
+        let message = TypefluxOfficialASRStartMessageFactory.make(
+            optimize: false,
+            inputMode: "batch"
+        )
+        let config = try XCTUnwrap(message["config"] as? [String: Any])
+
+        XCTAssertEqual(config["input_mode"] as? String, "batch")
     }
 
     func testWebSocketRequestIncludesScenarioHeader() throws {
