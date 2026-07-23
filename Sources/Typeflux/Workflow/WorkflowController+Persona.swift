@@ -216,6 +216,13 @@ extension WorkflowController {
                 )
                 try ensureProcessingIsActive(sessionID)
 
+                var pipelineTiming = record.pipelineTiming ?? HistoryPipelineTiming()
+                pipelineTiming.llmProcessingStartedAt = pipelineTiming.llmProcessingStartedAt ?? record.date
+                pipelineTiming.llmFirstOutputAt = rewriteResult.firstOutputAt
+                pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
+                pipelineTiming.llmRequestAttempts = rewriteResult.requestAttempts
+                record.pipelineTiming = pipelineTiming
+
                 let processedText = await outputPostProcessor.process(rewriteResult.text)
                 let outcome: ApplyOutcome
                 if shouldShowResultDialog {

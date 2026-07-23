@@ -201,15 +201,20 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
         optimize: Bool,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> any RealtimeTranscriptionSession {
-        BufferedRealtimeTranscriptionSession(
+        let transportDiagnostics = NetworkTransportDiagnosticsRecorder(endpoint: nil)
+        return BufferedRealtimeTranscriptionSession(
             upstream: DeferredPCM16RealtimeTranscriptionSession {
-                [accessTokenProvider, routingClient, serverRegistry] in
+                [accessTokenProvider, routingClient, serverRegistry, transportDiagnostics] in
+                transportDiagnostics.markCredentialLookupStarted()
                 let token = await accessTokenProvider()
+                transportDiagnostics.markCredentialLookupCompleted()
                 guard let token, !token.isEmpty else {
                     throw TypefluxOfficialASRError.notLoggedIn
                 }
 
+                transportDiagnostics.markRouteLookupStarted()
                 let route = try await routingClient.fetchRoute(accessToken: token, scenario: scenario)
+                transportDiagnostics.markRouteLookupCompleted()
                 let asrToken: String
                 let asrProvider: String
                 let serverBaseURLs: [URL]
@@ -220,7 +225,9 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
                     serverBaseURLs = servers
                 }
 
+                transportDiagnostics.markServerSelectionStarted()
                 let baseURLs = await serverRegistry.orderedServers(preferred: serverBaseURLs)
+                transportDiagnostics.markServerSelectionCompleted()
                 guard let baseURL = baseURLs.first else {
                     throw TypefluxOfficialASRError.connectionFailed("No Typeflux Cloud endpoint configured.")
                 }
@@ -231,7 +238,8 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
                     provider: asrProvider,
                     scenario: scenario,
                     optimize: optimize,
-                    onUpdate: onUpdate
+                    onUpdate: onUpdate,
+                    transportDiagnostics: transportDiagnostics
                 )
             }
         )
@@ -966,7 +974,8 @@ private actor TypefluxOfficialASRSession {
     }
 }
 
-private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSession {
+private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSession,
+    RealtimeTransportDiagnosticsProviding {
     private let apiBaseURL: String
     private let token: String
     private let provider: String
@@ -983,6 +992,7 @@ private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSessi
     private var currentPartialText = ""
     private var completed = false
     private var sessionError: Error?
+    private var transportDiagnostics: NetworkTransportDiagnosticsRecorder?
 
     init(
         apiBaseURL: String,
@@ -990,7 +1000,8 @@ private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSessi
         provider: String = "default",
         scenario: TypefluxCloudScenario,
         optimize: Bool = true,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
+        transportDiagnostics: NetworkTransportDiagnosticsRecorder? = nil
     ) {
         self.apiBaseURL = apiBaseURL
         self.token = token
@@ -998,6 +1009,7 @@ private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSessi
         self.scenario = scenario
         self.optimize = optimize
         self.onUpdate = onUpdate
+        self.transportDiagnostics = transportDiagnostics
         timing = TypefluxASRTiming(mode: "realtime", optimize: optimize)
     }
 
@@ -1013,14 +1025,23 @@ private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSessi
             provider: provider,
             traceID: timing.traceID
         )
-        let session = URLSession(configuration: .default)
+        let transportDiagnostics = transportDiagnostics ?? NetworkTransportDiagnosticsRecorder(endpoint: request.url)
+        transportDiagnostics.updateEndpoint(request.url)
+        let session = URLSession(
+            configuration: .default,
+            delegate: transportDiagnostics,
+            delegateQueue: nil
+        )
+        self.transportDiagnostics = transportDiagnostics
         let socketTask = session.webSocketTask(with: request)
         urlSession = session
         self.socketTask = socketTask
+        transportDiagnostics.markWebSocketTaskResumed()
         socketTask.resume()
 
         let startMessage = TypefluxOfficialASRStartMessageFactory.make(optimize: optimize)
         try await sendJSON(startMessage)
+        transportDiagnostics.markStartMessageSent()
         timing.markConnectionReady()
         NetworkDebugLogger.logMessage(
             "[ASR Timing][client] trace_id=\(timing.traceID) phase=start_sent " +
@@ -1077,6 +1098,10 @@ private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSessi
         await close()
     }
 
+    func transportDiagnosticsSnapshot() async -> NetworkTransportDiagnosticsSnapshot? {
+        await transportDiagnostics?.settledSnapshot()
+    }
+
     private func close() async {
         completed = true
         receiveTask?.cancel()
@@ -1119,10 +1144,15 @@ private actor TypefluxOfficialRealtimePCMStream: PCM16RealtimeTranscriptionSessi
     }
 
     private func handleTextMessage(_ text: String) async {
+        let parsingStartedAt = Date()
         guard let data = text.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let type = json["type"] as? String
-        else { return }
+        else {
+            transportDiagnostics?.recordMessageParsing(duration: Date().timeIntervalSince(parsingStartedAt))
+            return
+        }
+        transportDiagnostics?.recordMessageParsing(duration: Date().timeIntervalSince(parsingStartedAt))
 
         switch type {
         case "partial":

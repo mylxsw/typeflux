@@ -659,6 +659,49 @@ final class SQLiteHistoryStore: HistoryStore {
             }
         }
 
+        if let transport = stats.realtimeTransport {
+            lines.append("- Realtime ASR endpoint: \(transport.endpoint ?? "<unknown>")")
+            if let value = transport.networkProtocolName { lines.append("  - Protocol: \(value)") }
+            if let value = transport.reusedConnection { lines.append("  - Reused connection: \(value)") }
+            let transportDurations: [(String, Int?)] = [
+                ("DNS lookup", transport.dnsLookupMilliseconds),
+                ("TCP connection", transport.tcpConnectionMilliseconds),
+                ("TLS handshake", transport.tlsHandshakeMilliseconds),
+                ("WebSocket upgrade response wait", transport.requestToUpgradeResponseMilliseconds),
+                ("ASR JSON parsing", transport.messageParsingMilliseconds)
+            ]
+            for (label, value) in transportDurations {
+                if let value { lines.append("  - \(label): \(value) ms") }
+            }
+            lines.append("  - Parsed ASR messages: \(transport.parsedMessageCount)")
+        }
+
+        for (index, attempt) in (stats.llmRequestAttempts ?? []).enumerated() {
+            lines.append("- LLM request #\(index + 1): \(attempt.endpoint)")
+            lines.append("  - Provider/model: \(attempt.provider) / \(attempt.model)")
+            if let value = attempt.statusCode { lines.append("  - HTTP status: \(value)") }
+            if let value = attempt.networkProtocolName { lines.append("  - Protocol: \(value)") }
+            if let value = attempt.reusedConnection { lines.append("  - Reused connection: \(value)") }
+            let requestDurations: [(String, Int?)] = [
+                ("Total request", attempt.totalRequestMilliseconds),
+                ("DNS lookup", attempt.dnsLookupMilliseconds),
+                ("TCP connection", attempt.tcpConnectionMilliseconds),
+                ("TLS handshake", attempt.tlsHandshakeMilliseconds),
+                ("Request upload", attempt.requestUploadMilliseconds),
+                ("Server wait", attempt.serverWaitMilliseconds),
+                ("Response download", attempt.responseDownloadMilliseconds),
+                ("First SSE event delay", attempt.firstSSEEventDelayMilliseconds),
+                ("First parsed output delay", attempt.firstParsedOutputDelayMilliseconds),
+                ("SSE parsing", attempt.sseParsingMilliseconds),
+                ("JSON parsing", attempt.jsonParsingMilliseconds),
+                ("Unaccounted client time", attempt.unaccountedClientMilliseconds)
+            ]
+            for (label, value) in requestDurations {
+                if let value { lines.append("  - \(label): \(value) ms") }
+            }
+            lines.append("  - SSE events / JSON payloads: \(attempt.sseEventCount) / \(attempt.jsonParseCount)")
+        }
+
         return lines.joined(separator: "\n")
     }
 

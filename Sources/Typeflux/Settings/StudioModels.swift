@@ -267,6 +267,13 @@ struct HistoryPipelineStatPresentationItem: Identifiable {
     let style: ValueStyle
 }
 
+struct HistoryPipelineRequestPresentationItem: Identifiable {
+    let id: String
+    let title: String
+    let endpoint: String
+    let badges: [String]
+}
+
 enum HistoryPipelineTimelineTone {
     case audio
     case realtime
@@ -279,17 +286,21 @@ struct HistoryPipelineTimelinePresentation {
     struct Lane: Identifiable {
         let id: String
         let title: String
+        let durationMilliseconds: Int
         let durationText: String
         let offsetFraction: Double
         let widthFraction: Double
         let tone: HistoryPipelineTimelineTone
+        let isDetail: Bool
         let isSlowest: Bool
     }
 
     let totalDurationText: String?
+    let timelineSpanDurationText: String?
     let slowestStageText: String?
     let lanes: [Lane]
     let keyMetrics: [HistoryPipelineStatPresentationItem]
+    let requestDetails: [HistoryPipelineRequestPresentationItem]
 }
 
 struct HistoryPresentationRecord: Identifiable {

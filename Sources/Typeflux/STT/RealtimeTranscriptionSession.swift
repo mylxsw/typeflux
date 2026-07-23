@@ -21,7 +21,8 @@ protocol PCM16RealtimeTranscriptionSession: AnyObject {
     func cancel() async
 }
 
-actor DeferredPCM16RealtimeTranscriptionSession: PCM16RealtimeTranscriptionSession {
+actor DeferredPCM16RealtimeTranscriptionSession: PCM16RealtimeTranscriptionSession,
+    RealtimeTransportDiagnosticsProviding {
     private let makeUpstream: @Sendable () async throws -> any PCM16RealtimeTranscriptionSession
     private var startingUpstream: (any PCM16RealtimeTranscriptionSession)?
     private var upstream: (any PCM16RealtimeTranscriptionSession)?
@@ -66,6 +67,12 @@ actor DeferredPCM16RealtimeTranscriptionSession: PCM16RealtimeTranscriptionSessi
         await upstream?.cancel()
         upstream = nil
     }
+
+    func transportDiagnosticsSnapshot() async -> NetworkTransportDiagnosticsSnapshot? {
+        let resolved = upstream ?? startingUpstream
+        guard let provider = resolved as? any RealtimeTransportDiagnosticsProviding else { return nil }
+        return await provider.transportDiagnosticsSnapshot()
+    }
 }
 
 final class RealtimeAudioBufferPump {
@@ -97,7 +104,9 @@ final class RealtimeAudioBufferPump {
     }
 }
 
-actor BufferedRealtimeTranscriptionSession: RealtimeTranscriptionSession, RealtimeTranscriptionConnectionAwaiting {
+actor BufferedRealtimeTranscriptionSession: RealtimeTranscriptionSession,
+    RealtimeTranscriptionConnectionAwaiting,
+    RealtimeTransportDiagnosticsProviding {
     private enum State {
         case idle
         case starting
@@ -175,6 +184,11 @@ actor BufferedRealtimeTranscriptionSession: RealtimeTranscriptionSession, Realti
         pendingChunks.removeAll()
         chunker.reset()
         await upstream.cancel()
+    }
+
+    func transportDiagnosticsSnapshot() async -> NetworkTransportDiagnosticsSnapshot? {
+        guard let provider = upstream as? any RealtimeTransportDiagnosticsProviding else { return nil }
+        return await provider.transportDiagnosticsSnapshot()
     }
 
     private func completeStart() async {

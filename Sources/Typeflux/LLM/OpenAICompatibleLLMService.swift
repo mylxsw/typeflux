@@ -308,6 +308,7 @@ final class OpenAICompatibleLLMService: LLMService {
                 additionalHeaders: additionalHeaders,
                 systemPrompt: effectiveSystemPrompt,
                 userPrompt: effectiveUserPrompt,
+                diagnosticsRecorder: rewriteRequest.diagnosticsRecorder,
                 continuation: continuation
             )
         }
@@ -329,6 +330,7 @@ enum RemoteLLMClient {
         additionalHeaders: [String: String] = [:],
         systemPrompt: String,
         userPrompt: String,
+        diagnosticsRecorder: LLMRequestDiagnosticsRecorder? = nil,
         continuation: AsyncThrowingStream<String, Error>.Continuation
     ) async throws -> String {
         switch provider.apiStyle {
@@ -341,6 +343,7 @@ enum RemoteLLMClient {
                 additionalHeaders: additionalHeaders,
                 systemPrompt: systemPrompt,
                 userPrompt: userPrompt,
+                diagnosticsRecorder: diagnosticsRecorder,
                 continuation: continuation
             )
         case .anthropic:
@@ -466,6 +469,7 @@ enum RemoteLLMClient {
         additionalHeaders: [String: String],
         systemPrompt: String,
         userPrompt: String,
+        diagnosticsRecorder: LLMRequestDiagnosticsRecorder?,
         continuation: AsyncThrowingStream<String, Error>.Continuation
     ) async throws -> String {
         let url = OpenAIEndpointResolver.resolve(from: baseURL, path: "chat/completions")
@@ -516,17 +520,30 @@ enum RemoteLLMClient {
                     baseBody: baseBody,
                     provider: provider,
                     baseURL: baseURL,
+                    model: model,
+                    diagnosticsRecorder: diagnosticsRecorder,
                     candidate: currentCandidate
                 )
                 usedCandidate = stream.candidate
                 for try await line in stream.lines {
                     if line == "[DONE]" { break }
 
+                    let parseStartedAt = Date()
                     guard let data = line.data(using: .utf8) else { continue }
                     if let streamError = OpenAICompatibleResponseSupport.streamError(from: data) {
+                        diagnosticsRecorder?.recordJSONParsing(
+                            id: stream.attemptID,
+                            duration: Date().timeIntervalSince(parseStartedAt),
+                            producedOutput: false
+                        )
                         throw streamError
                     }
                     let content = OpenAICompatibleResponseSupport.extractTextDelta(from: data)
+                    diagnosticsRecorder?.recordJSONParsing(
+                        id: stream.attemptID,
+                        duration: Date().timeIntervalSince(parseStartedAt),
+                        producedOutput: !(content?.isEmpty ?? true)
+                    )
                     if let content, !content.isEmpty {
                         if let filtered = thinkingFilter.process(content) {
                             final += filtered
@@ -619,6 +636,8 @@ enum RemoteLLMClient {
                     baseBody: baseBody,
                     provider: provider,
                     baseURL: baseURL,
+                    model: model,
+                    diagnosticsRecorder: nil,
                     candidate: currentCandidate
                 )
                 usedCandidate = stream.candidate
@@ -924,6 +943,7 @@ enum RemoteLLMClient {
     struct CustomThinkingStreamResult {
         let lines: AsyncThrowingStream<String, Error>
         let candidate: LLMThinkingTuningCandidate?
+        let attemptID: UUID
     }
 
     static func performJSONRequestWithCustomThinkingAdaptation(
@@ -962,6 +982,8 @@ enum RemoteLLMClient {
         baseBody: [String: Any],
         provider: LLMRemoteProvider,
         baseURL: URL,
+        model: String,
+        diagnosticsRecorder: LLMRequestDiagnosticsRecorder?,
         candidate: LLMThinkingTuningCandidate?
     ) async throws -> CustomThinkingStreamResult {
         var currentRequest = request
@@ -969,8 +991,21 @@ enum RemoteLLMClient {
 
         while true {
             do {
-                let lines = try await SSEClient.lines(for: currentRequest)
-                return CustomThinkingStreamResult(lines: lines, candidate: currentCandidate)
+                let attemptID = diagnosticsRecorder?.beginAttempt(
+                    provider: provider.rawValue,
+                    endpoint: currentRequest.url ?? baseURL,
+                    model: model
+                ) ?? UUID()
+                let lines = try await SSEClient.lines(
+                    for: currentRequest,
+                    diagnosticsRecorder: diagnosticsRecorder,
+                    attemptID: attemptID
+                )
+                return CustomThinkingStreamResult(
+                    lines: lines,
+                    candidate: currentCandidate,
+                    attemptID: attemptID
+                )
             } catch {
                 guard let next = try nextCustomThinkingRetry(
                     after: error,
@@ -1050,12 +1085,26 @@ enum RemoteLLMClient {
 }
 
 enum SSEClient {
-    static func lines(for request: URLRequest) async throws -> AsyncThrowingStream<String, Error> {
-        let (bytes, response) = try await LLMHTTPSession.shared.bytes(for: request)
+    static func lines(
+        for request: URLRequest,
+        diagnosticsRecorder: LLMRequestDiagnosticsRecorder? = nil,
+        attemptID: UUID = UUID()
+    ) async throws -> AsyncThrowingStream<String, Error> {
+        var instrumentedRequest = request
+        if let diagnosticsRecorder {
+            instrumentedRequest.setValue(
+                attemptID.uuidString,
+                forHTTPHeaderField: LLMURLSessionMetricsDelegate.diagnosticsHeader
+            )
+            LLMHTTPSession.metricsDelegate.register(id: attemptID, recorder: diagnosticsRecorder)
+        }
+        let (bytes, response) = try await LLMHTTPSession.shared.bytes(for: instrumentedRequest)
         guard let http = response as? HTTPURLResponse else {
             NetworkDebugLogger.logResponse(response, bodyDescription: "<invalid non-http response>")
             throw NSError(domain: "SSE", code: 1)
         }
+
+        diagnosticsRecorder?.markResponseHeaders(id: attemptID, statusCode: http.statusCode)
 
         if !(200 ..< 300).contains(http.statusCode) {
             var errorBodyData = Data()
@@ -1076,10 +1125,14 @@ enum SSEClient {
 
         NetworkDebugLogger.logResponse(http, bodyDescription: "<stream opened>")
 
-        return lines(for: bytes)
+        return lines(for: bytes, diagnosticsRecorder: diagnosticsRecorder, attemptID: attemptID)
     }
 
-    static func lines(for bytes: URLSession.AsyncBytes) -> AsyncThrowingStream<String, Error> {
+    static func lines(
+        for bytes: URLSession.AsyncBytes,
+        diagnosticsRecorder: LLMRequestDiagnosticsRecorder? = nil,
+        attemptID: UUID = UUID()
+    ) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             Task {
                 do {
@@ -1088,6 +1141,7 @@ enum SSEClient {
                         buffer.append(byte)
 
                         while let newlineIndex = buffer.firstIndex(of: 0x0A) {
+                            let parseStartedAt = Date()
                             let lineData = buffer.prefix(upTo: newlineIndex)
                             buffer.removeSubrange(...newlineIndex)
 
@@ -1101,18 +1155,37 @@ enum SSEClient {
 
                             if line.hasPrefix("data:") {
                                 let payload = line.dropFirst("data:".count).trimmingCharacters(in: .whitespaces)
+                                diagnosticsRecorder?.recordSSEParsing(
+                                    id: attemptID,
+                                    duration: Date().timeIntervalSince(parseStartedAt),
+                                    yieldedEvent: true
+                                )
                                 continuation.yield(payload)
+                            } else {
+                                diagnosticsRecorder?.recordSSEParsing(
+                                    id: attemptID,
+                                    duration: Date().timeIntervalSince(parseStartedAt),
+                                    yieldedEvent: false
+                                )
                             }
                         }
                     }
 
                     if !buffer.isEmpty, let line = String(data: buffer, encoding: .utf8), line.hasPrefix("data:") {
+                        let parseStartedAt = Date()
                         let payload = line.dropFirst("data:".count).trimmingCharacters(in: .whitespaces)
+                        diagnosticsRecorder?.recordSSEParsing(
+                            id: attemptID,
+                            duration: Date().timeIntervalSince(parseStartedAt),
+                            yieldedEvent: true
+                        )
                         continuation.yield(payload)
                     }
 
+                    diagnosticsRecorder?.markResponseCompleted(id: attemptID)
                     continuation.finish()
                 } catch {
+                    diagnosticsRecorder?.markResponseCompleted(id: attemptID)
                     NetworkDebugLogger.logError(context: "SSE stream parsing failed", error: error)
                     continuation.finish(throwing: error)
                 }

@@ -108,6 +108,21 @@ final class RealtimeTranscriptionSessionTests: XCTestCase {
         XCTAssertEqual(sentByteCount, 3)
     }
 
+    func testDeferredPCM16SessionForwardsTransportDiagnostics() async throws {
+        let expected = NetworkTransportDiagnosticsSnapshot(endpoint: "wss://asr.example.com/realtime")
+        let upstream = DelayedStartPCMStream(finalText: "done", transportDiagnostics: expected)
+        let session = DeferredPCM16RealtimeTranscriptionSession { upstream }
+
+        let startTask = Task { try await session.start() }
+        await upstream.waitUntilStartCalled()
+        await upstream.releaseStart()
+        try await startTask.value
+
+        let snapshot = await session.transportDiagnosticsSnapshot()
+
+        XCTAssertEqual(snapshot, expected)
+    }
+
     private func makeFloatBuffer(frameCount: AVAudioFrameCount) throws -> AVAudioPCMBuffer {
         let format = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
@@ -125,15 +140,18 @@ final class RealtimeTranscriptionSessionTests: XCTestCase {
     }
 }
 
-private actor DelayedStartPCMStream: PCM16RealtimeTranscriptionSession {
+private actor DelayedStartPCMStream: PCM16RealtimeTranscriptionSession,
+    RealtimeTransportDiagnosticsProviding {
     private let finalText: String
+    private let transportDiagnostics: NetworkTransportDiagnosticsSnapshot?
     private var startContinuation: CheckedContinuation<Void, Never>?
     private var startRequestedContinuation: CheckedContinuation<Void, Never>?
     private var chunks: [Data] = []
     private var starts = 0
 
-    init(finalText: String) {
+    init(finalText: String, transportDiagnostics: NetworkTransportDiagnosticsSnapshot? = nil) {
         self.finalText = finalText
+        self.transportDiagnostics = transportDiagnostics
     }
 
     func start() async throws {
@@ -180,6 +198,10 @@ private actor DelayedStartPCMStream: PCM16RealtimeTranscriptionSession {
         await withCheckedContinuation { continuation in
             startRequestedContinuation = continuation
         }
+    }
+
+    func transportDiagnosticsSnapshot() -> NetworkTransportDiagnosticsSnapshot? {
+        transportDiagnostics
     }
 }
 

@@ -12,9 +12,11 @@ struct HistoryPipelineTiming: Codable, Equatable {
     var realtimeFinalResultReceivedAt: Date?
     var realtimeFinishStartedAt: Date?
     var realtimeFinishCompletedAt: Date?
+    var realtimeTransport: NetworkTransportDiagnosticsSnapshot?
     var llmProcessingStartedAt: Date?
     var llmFirstOutputAt: Date?
     var llmProcessingCompletedAt: Date?
+    var llmRequestAttempts: [LLMRequestAttemptDiagnostics]?
     var applyStartedAt: Date?
     var applyCompletedAt: Date?
 
@@ -30,9 +32,11 @@ struct HistoryPipelineTiming: Codable, Equatable {
             realtimeFinalResultReceivedAt != nil ||
             realtimeFinishStartedAt != nil ||
             realtimeFinishCompletedAt != nil ||
+            realtimeTransport != nil ||
             llmProcessingStartedAt != nil ||
             llmFirstOutputAt != nil ||
             llmProcessingCompletedAt != nil ||
+            !(llmRequestAttempts?.isEmpty ?? true) ||
             applyStartedAt != nil ||
             applyCompletedAt != nil
     }
@@ -55,9 +59,11 @@ struct HistoryPipelineTiming: Codable, Equatable {
             realtimeFinalResultReceivedAt: realtimeFinalResultReceivedAt,
             realtimeFinishStartedAt: realtimeFinishStartedAt,
             realtimeFinishCompletedAt: realtimeFinishCompletedAt,
+            realtimeTransport: realtimeTransport,
             llmProcessingStartedAt: llmProcessingStartedAt,
             llmFirstOutputAt: llmFirstOutputAt,
             llmProcessingCompletedAt: llmProcessingCompletedAt,
+            llmRequestAttempts: llmRequestAttempts,
             applyStartedAt: applyStartedAt,
             applyCompletedAt: applyCompletedAt,
             stopToAudioReadyMilliseconds: millisecondsBetween(recordingStoppedAt, audioFileReadyAt),
@@ -97,6 +103,7 @@ struct HistoryPipelineTiming: Codable, Equatable {
         realtimeFinalResultReceivedAt = diagnostics.finalResultReceivedAt
         realtimeFinishStartedAt = diagnostics.finishStartedAt
         realtimeFinishCompletedAt = diagnostics.finishCompletedAt
+        realtimeTransport = diagnostics.transport
     }
 }
 
@@ -112,9 +119,11 @@ struct HistoryPipelineStats: Codable, Equatable {
     var realtimeFinalResultReceivedAt: Date?
     var realtimeFinishStartedAt: Date?
     var realtimeFinishCompletedAt: Date?
+    var realtimeTransport: NetworkTransportDiagnosticsSnapshot?
     var llmProcessingStartedAt: Date?
     var llmFirstOutputAt: Date?
     var llmProcessingCompletedAt: Date?
+    var llmRequestAttempts: [LLMRequestAttemptDiagnostics]?
     var applyStartedAt: Date?
     var applyCompletedAt: Date?
     var stopToAudioReadyMilliseconds: Int?
@@ -143,9 +152,11 @@ struct HistoryPipelineStats: Codable, Equatable {
             realtimeFinalResultReceivedAt != nil ||
             realtimeFinishStartedAt != nil ||
             realtimeFinishCompletedAt != nil ||
+            realtimeTransport != nil ||
             llmProcessingStartedAt != nil ||
             llmFirstOutputAt != nil ||
             llmProcessingCompletedAt != nil ||
+            !(llmRequestAttempts?.isEmpty ?? true) ||
             applyStartedAt != nil ||
             applyCompletedAt != nil ||
             stopToAudioReadyMilliseconds != nil ||

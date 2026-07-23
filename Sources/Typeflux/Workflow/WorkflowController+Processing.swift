@@ -16,6 +16,7 @@ extension WorkflowController {
         let text: String
         let firstOutputAt: Date?
         let completedAt: Date
+        let requestAttempts: [LLMRequestAttemptDiagnostics]
     }
 
     struct AskSelectionDecisionResult {
@@ -56,7 +57,9 @@ extension WorkflowController {
         }
 
         func performRewrite() async throws -> RewriteGenerationResult {
-            try await RequestRetry.perform(
+            let diagnosticsRecorder = request.diagnosticsRecorder ?? LLMRequestDiagnosticsRecorder()
+            let instrumentedRequest = request.withDiagnosticsRecorder(diagnosticsRecorder)
+            return try await RequestRetry.perform(
                 operationName: "LLM rewrite stream",
                 onRetry: { [weak self] _, _, _ in
                     guard let self else { return }
@@ -72,7 +75,7 @@ extension WorkflowController {
                 var firstOutputAt: Date?
                 var lastChunkAt = Date()
 
-                let stream = llmService.streamRewrite(request: request)
+                let stream = llmService.streamRewrite(request: instrumentedRequest)
                 for try await chunk in stream {
                     try ensureProcessingIsActive(sessionID)
                     if firstOutputAt == nil, !chunk.isEmpty {
@@ -96,7 +99,8 @@ extension WorkflowController {
                 return RewriteGenerationResult(
                     text: buffer.trimmingCharacters(in: .whitespacesAndNewlines),
                     firstOutputAt: firstOutputAt,
-                    completedAt: Date()
+                    completedAt: Date(),
+                    requestAttempts: await diagnosticsRecorder.settledSnapshot()
                 )
             }
         }
@@ -1729,6 +1733,7 @@ extension WorkflowController {
                 try ensureProcessingIsActive(sessionID)
                 pipelineTiming.llmFirstOutputAt = rewriteResult.firstOutputAt
                 pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
+                pipelineTiming.llmRequestAttempts = rewriteResult.requestAttempts
                 if rewriteResult.text.isEmpty {
                     ErrorLogStore.shared.log("Persona rewrite returned an empty response, using transcript as fallback")
                     rewriteOutput = transcribedText
