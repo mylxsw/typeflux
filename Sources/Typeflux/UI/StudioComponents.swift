@@ -1662,9 +1662,9 @@ struct StudioHistoryRow: View {
                         title: L("history.detail.selectionEdited"),
                         content: record.selectionEditedText
                     )
-                    historyPipelineStatsSection(
+                    historyPipelineTimelineSection(
                         title: L("history.detail.pipelineStats"),
-                        items: record.pipelineStatItems
+                        timeline: record.pipelineTimeline
                     )
                     historyDetailSection(
                         title: L("history.detail.error"),
@@ -1780,72 +1780,13 @@ struct StudioHistoryRow: View {
     }
 
     @ViewBuilder
-    private func historyPipelineStatsSection(
+    private func historyPipelineTimelineSection(
         title: String,
-        items: [HistoryPipelineStatPresentationItem]
+        timeline: HistoryPipelineTimelinePresentation?
     ) -> some View {
-        if !items.isEmpty {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                Text(title)
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textTertiary)
-
-                LazyVGrid(
-                    columns: [
-                        GridItem(.adaptive(minimum: 180), spacing: StudioTheme.Spacing.small, alignment: .top)
-                    ],
-                    alignment: .leading,
-                    spacing: StudioTheme.Spacing.small
-                ) {
-                    ForEach(items) { item in
-                        historyPipelineStatCard(item)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(StudioTheme.Insets.cardDense)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                    .fill(StudioTheme.controlSurface)
-            )
+        if let timeline {
+            HistoryPipelineTimelineView(title: title, timeline: timeline)
         }
-    }
-
-    private func historyPipelineStatCard(_ item: HistoryPipelineStatPresentationItem) -> some View {
-        let isDuration = item.style == .duration
-
-        return VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-            Text(item.title)
-                .font(.studioBody(StudioTheme.Typography.caption, weight: .medium))
-                .foregroundStyle(StudioTheme.textTertiary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(item.value)
-                .font(.studioBody(
-                    isDuration ? StudioTheme.Typography.bodyLarge : StudioTheme.Typography.bodySmall,
-                    weight: isDuration ? .semibold : .medium
-                ))
-                .foregroundStyle(isDuration ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                .monospacedDigit()
-                .textSelection(.enabled)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
-        .padding(.horizontal, StudioTheme.Spacing.smallMedium)
-        .padding(.vertical, StudioTheme.Spacing.small)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                .fill(isDuration ? StudioTheme.rowSurface : StudioTheme.controlSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                .stroke(
-                    isDuration ? StudioTheme.accent.opacity(0.18) : StudioTheme.border
-                        .opacity(StudioTheme.Opacity.cardBorder),
-                    lineWidth: StudioTheme.BorderWidth.thin
-                )
-        )
     }
 
     @ViewBuilder

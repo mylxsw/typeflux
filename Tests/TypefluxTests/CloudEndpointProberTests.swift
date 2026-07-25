@@ -114,6 +114,46 @@ final class CloudEndpointProberTests: XCTestCase {
         }
     }
 
+    func testHealthProbeUsesASRHealthEndpointAndMeasuresLatency() async throws {
+        ProberURLProtocol.requestInspector = { request in
+            XCTAssertEqual(request.url?.path, "/api/v1/healthz")
+            XCTAssertNil(request.url?.query)
+        }
+        ProberURLProtocol.responder = { request in
+            Self.makeResponse(url: request.url!, status: 200, body: #"{"code":"OK","data":{"ok":true}}"#)
+        }
+
+        let prober = HTTPHealthEndpointProber(session: stubSession())
+        let result = try await prober.probe(
+            baseURL: XCTUnwrap(URL(string: "https://asr.example.com")),
+            nonce: "unused",
+            timeout: 1
+        )
+
+        XCTAssertGreaterThanOrEqual(result.latencyMs, 0)
+        XCTAssertTrue(result.nonceMatches)
+    }
+
+    func testHealthProbeRejectsUnhealthyPayload() async throws {
+        ProberURLProtocol.responder = { request in
+            Self.makeResponse(url: request.url!, status: 200, body: #"{"code":"OK","data":{"ok":false}}"#)
+        }
+
+        let prober = HTTPHealthEndpointProber(session: stubSession())
+        do {
+            _ = try await prober.probe(
+                baseURL: XCTUnwrap(URL(string: "https://asr.example.com")),
+                nonce: "unused",
+                timeout: 1
+            )
+            XCTFail("Expected decoding error")
+        } catch CloudEndpointProbeError.decoding {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     // MARK: - Helpers
 
     private func stubSession() -> URLSession {

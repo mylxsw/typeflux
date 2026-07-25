@@ -106,6 +106,12 @@ final class StudioViewModel: ObservableObject {
     @Published var preferredMicrophoneID: String
     @Published var muteSystemOutputDuringRecording: Bool
     @Published var soundEffectsEnabled: Bool
+    @Published var preferredAPIServer = CloudServerPreferences.automaticValue
+    @Published var preferredASRServer = CloudServerPreferences.automaticValue
+    @Published private(set) var apiServerStatuses: [CloudEndpointStatus] = []
+    @Published private(set) var asrServerStatuses: [CloudEndpointStatus] = []
+    @Published private(set) var isTestingCloudServers = false
+    @Published private(set) var cloudServerTestSummary: String?
 
     @Published var llmBaseURL: String
     @Published var llmModel: String
@@ -254,6 +260,7 @@ final class StudioViewModel: ObservableObject {
     private var mcpTestTask: Task<Void, Never>?
     private var historyRefreshTask: Task<Void, Never>?
     private var localSTTPreparationTask: Task<Void, Never>?
+    private var cloudServerTestTask: Task<Void, Never>?
     private var localSTTPreparationID: UUID?
     private var historyRefreshGeneration = 0
     private let audioPreviewPlayer: HistoryAudioPreviewPlaying
@@ -323,6 +330,8 @@ final class StudioViewModel: ObservableObject {
         preferredMicrophoneID = settingsStore.preferredMicrophoneID
         muteSystemOutputDuringRecording = settingsStore.muteSystemOutputDuringRecording
         soundEffectsEnabled = settingsStore.soundEffectsEnabled
+        preferredAPIServer = CloudServerPreferences.shared.preferredAPIServer
+        preferredASRServer = CloudServerPreferences.shared.preferredASRServer
         llmBaseURL = settingsStore.llmBaseURL(for: initialLLMRemoteProvider)
         llmModel = settingsStore.llmModel(for: initialLLMRemoteProvider)
         llmAPIKey = settingsStore.llmAPIKey(for: initialLLMRemoteProvider)
@@ -481,6 +490,7 @@ final class StudioViewModel: ObservableObject {
             }
         }
         syncLocalModelDownloadProgress()
+        refreshCloudServerStatuses()
         audioPreviewPlayer.onPlaybackFinished = { [weak self] in
             Task { @MainActor [weak self] in
                 self?.playingAudioRecordID = nil
@@ -514,6 +524,7 @@ final class StudioViewModel: ObservableObject {
             NotificationCenter.default.removeObserver(localModelDownloadProgressObserver)
         }
         historyRefreshTask?.cancel()
+        cloudServerTestTask?.cancel()
         audioPreviewPlayer.stop()
     }
 
@@ -834,6 +845,89 @@ final class StudioViewModel: ObservableObject {
             applyHistoryRetentionPolicy()
             refreshHistory(reset: true)
         }
+    }
+
+    var availableAPIServers: [String] {
+        let configured = AppServerConfiguration.apiBaseURLs.compactMap { URL(string: $0)?.absoluteString }
+        return uniqueServerURLs(configured + apiServerStatuses.map(\.baseURL.absoluteString))
+    }
+
+    var availableASRServers: [String] {
+        uniqueServerURLs(asrServerStatuses.map(\.baseURL.absoluteString))
+    }
+
+    func setPreferredAPIServer(_ value: String) {
+        preferredAPIServer = value
+        CloudServerPreferences.shared.preferredAPIServer = value
+    }
+
+    func setPreferredASRServer(_ value: String) {
+        preferredASRServer = value
+        CloudServerPreferences.shared.preferredASRServer = value
+    }
+
+    func refreshCloudServerStatuses() {
+        cloudServerTestTask?.cancel()
+        cloudServerTestTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            apiServerStatuses = await CloudEndpointRegistry.shared.snapshot()
+            asrServerStatuses = await TypefluxASRServerRegistry.shared.snapshot()
+            ensureAvailableServerSelections()
+        }
+    }
+
+    func testCloudServerLatency() {
+        guard !isTestingCloudServers else { return }
+        isTestingCloudServers = true
+        cloudServerTestSummary = nil
+        cloudServerTestTask?.cancel()
+        cloudServerTestTask = Task { @MainActor [weak self] in
+            async let apiProbe: Void = CloudEndpointRegistry.shared.probeAll()
+            async let asrProbe: Void = Self.probeASRServers()
+            _ = await (apiProbe, asrProbe)
+
+            guard let self, !Task.isCancelled else { return }
+            apiServerStatuses = await CloudEndpointRegistry.shared.snapshot()
+            asrServerStatuses = await TypefluxASRServerRegistry.shared.snapshot()
+            ensureAvailableServerSelections()
+            let apiAvailable = availableServerCount(in: apiServerStatuses)
+            let asrAvailable = availableServerCount(in: asrServerStatuses)
+            cloudServerTestSummary = L(
+                "settings.servers.speedTest.summary",
+                apiAvailable,
+                apiServerStatuses.count,
+                asrAvailable,
+                asrServerStatuses.count
+            )
+            isTestingCloudServers = false
+            if let cloudServerTestSummary {
+                showToast(cloudServerTestSummary)
+            }
+        }
+    }
+
+    private static func probeASRServers() async {
+        await TypefluxASRServerRegistry.shared.refreshPublicConfig()
+    }
+
+    private func availableServerCount(in statuses: [CloudEndpointStatus]) -> Int {
+        statuses.count { $0.lastProbeAt != nil && $0.lastError == nil && $0.latencyMs != nil }
+    }
+
+    private func ensureAvailableServerSelections() {
+        if !preferredAPIServer.isEmpty, !availableAPIServers.contains(preferredAPIServer) {
+            setPreferredAPIServer(CloudServerPreferences.automaticValue)
+        }
+        if !preferredASRServer.isEmpty,
+           !availableASRServers.isEmpty,
+           !availableASRServers.contains(preferredASRServer) {
+            setPreferredASRServer(CloudServerPreferences.automaticValue)
+        }
+    }
+
+    private func uniqueServerURLs(_ values: [String]) -> [String] {
+        var seen = Set<String>()
+        return values.filter { seen.insert($0).inserted }
     }
 
     func refreshHistory(reset: Bool = true) {
@@ -2950,8 +3044,7 @@ final class StudioViewModel: ObservableObject {
             postProcessedText: record.postProcessedText,
             selectionOriginalText: record.selectionOriginalText,
             selectionEditedText: record.selectionEditedText,
-            pipelineStatItems: historyPipelineStatItems(record.pipelineStats ?? record.pipelineTiming?
-                .generatedStats()),
+            pipelineTimeline: historyPipelineTimeline(record.pipelineStats ?? record.pipelineTiming?.generatedStats()),
             errorMessage: record.errorMessage,
             applyMessage: record.applyMessage,
             hasTranscriptToCopy: !(record.finalText?.isEmpty ?? true),
@@ -2963,26 +3056,428 @@ final class StudioViewModel: ObservableObject {
         )
     }
 
-    private func historyPipelineStatItems(_ stats: HistoryPipelineStats?) -> [HistoryPipelineStatPresentationItem] {
-        guard let stats, stats.hasData else { return [] }
+    private func historyPipelineTimeline(
+        _ stats: HistoryPipelineStats?
+    ) -> HistoryPipelineTimelinePresentation? {
+        guard let stats, stats.hasData else { return nil }
 
-        let durationRows: [(String, Int?)] = [
-            (L("history.stats.transcriptionDuration"), stats.transcriptionDurationMilliseconds),
-            (L("history.stats.llmDuration"), stats.llmDurationMilliseconds),
-            (L("history.stats.endToEnd"), stats.endToEndMilliseconds)
+        struct LaneSource {
+            let id: String
+            let title: String
+            let start: Date?
+            let end: Date?
+            let tone: HistoryPipelineTimelineTone
+            let isDetail: Bool
+        }
+
+        var sources = [
+            LaneSource(
+                id: "audio",
+                title: L("history.timeline.audio"),
+                start: stats.recordingStoppedAt,
+                end: stats.audioFileReadyAt,
+                tone: .audio,
+                isDetail: false
+            ),
+            LaneSource(
+                id: "realtime",
+                title: L("history.timeline.realtime"),
+                start: stats.realtimeSessionStartedAt ?? stats.realtimeFinishStartedAt,
+                end: stats.realtimeFinishCompletedAt,
+                tone: .realtime,
+                isDetail: false
+            ),
+            LaneSource(
+                id: "transcription",
+                title: L("history.timeline.transcription"),
+                start: stats.transcriptionStartedAt,
+                end: stats.transcriptionCompletedAt,
+                tone: .transcription,
+                isDetail: false
+            )
         ]
 
-        return durationRows.enumerated().compactMap { item -> HistoryPipelineStatPresentationItem? in
-            let index = item.offset
-            let row = item.element
-            guard let value = row.1 else { return nil }
-            return HistoryPipelineStatPresentationItem(
-                id: "duration-\(index)",
-                title: row.0,
-                value: historyDurationText(milliseconds: value),
-                style: .duration
+        if let transport = stats.realtimeTransport {
+            func appendASRStage(_ id: String, _ titleKey: String, _ start: Date?, _ end: Date?) {
+                guard let start, let end, end >= start else { return }
+                sources.append(
+                    LaneSource(
+                        id: id,
+                        title: L(titleKey),
+                        start: start,
+                        end: end,
+                        tone: .realtime,
+                        isDetail: true
+                    )
+                )
+            }
+
+            let firstNetworkActivity = [
+                transport.domainLookupStartedAt,
+                transport.connectionStartedAt,
+                transport.requestStartedAt
+            ].compactMap(\.self).min()
+            let hasPreparationBreakdown = transport.credentialLookupStartedAt != nil
+                || transport.routeLookupStartedAt != nil
+                || transport.webSocketTaskResumedAt != nil
+
+            if hasPreparationBreakdown {
+                appendASRStage(
+                    "asr-session-preparation",
+                    "history.stats.asrSessionPreparation",
+                    stats.realtimeSessionStartedAt,
+                    transport.credentialLookupStartedAt
+                )
+                appendASRStage(
+                    "asr-credential",
+                    "history.stats.asrCredentialLookup",
+                    transport.credentialLookupStartedAt,
+                    transport.credentialLookupCompletedAt
+                )
+                appendASRStage(
+                    "asr-route",
+                    "history.stats.asrRouteLookup",
+                    transport.routeLookupStartedAt,
+                    transport.routeLookupCompletedAt
+                )
+                appendASRStage(
+                    "asr-server-selection",
+                    "history.stats.asrServerSelection",
+                    transport.serverSelectionStartedAt,
+                    transport.serverSelectionCompletedAt
+                )
+                appendASRStage(
+                    "asr-socket-preparation",
+                    "history.stats.asrSocketPreparation",
+                    transport.serverSelectionCompletedAt ?? transport.routeLookupCompletedAt,
+                    transport.webSocketTaskResumedAt
+                )
+                appendASRStage(
+                    "asr-network-queue",
+                    "history.stats.asrNetworkQueue",
+                    transport.webSocketTaskResumedAt,
+                    firstNetworkActivity
+                )
+            } else {
+                appendASRStage(
+                    "asr-preconnect",
+                    "history.stats.asrPreconnect",
+                    stats.realtimeSessionStartedAt,
+                    firstNetworkActivity
+                )
+            }
+
+            appendASRStage(
+                "asr-first-audio-queue",
+                "history.stats.asrFirstAudioQueue",
+                stats.realtimeFirstAudioSubmittedAt,
+                stats.realtimeConnectionReadyAt
+            )
+            appendASRStage(
+                "asr-dns",
+                "history.stats.asrDNSLookup",
+                transport.domainLookupStartedAt,
+                transport.domainLookupCompletedAt
+            )
+            appendASRStage(
+                "asr-network-scheduling",
+                "history.stats.asrNetworkScheduling",
+                transport.domainLookupCompletedAt,
+                transport.connectionStartedAt
+            )
+            appendASRStage(
+                "asr-tcp",
+                "history.stats.asrTCPConnection",
+                transport.connectionStartedAt,
+                transport.secureConnectionStartedAt ?? transport.connectionCompletedAt
+            )
+            appendASRStage(
+                "asr-tls",
+                "history.stats.asrTLSHandshake",
+                transport.secureConnectionStartedAt,
+                transport.secureConnectionCompletedAt
+            )
+            appendASRStage(
+                "asr-request-preparation",
+                "history.stats.asrRequestPreparation",
+                transport.secureConnectionCompletedAt ?? transport.connectionCompletedAt,
+                transport.requestStartedAt
+            )
+            appendASRStage(
+                "asr-upload",
+                "history.stats.asrRequestUpload",
+                transport.requestStartedAt,
+                transport.requestCompletedAt
+            )
+            appendASRStage(
+                "asr-upgrade",
+                "history.stats.asrUpgradeResponse",
+                transport.requestCompletedAt,
+                transport.firstResponseByteAt
+            )
+            appendASRStage(
+                "asr-confirmation",
+                "history.stats.asrConnectionConfirmation",
+                transport.firstResponseByteAt,
+                transport.startMessageSentAt ?? stats.realtimeConnectionReadyAt
+            )
+            appendASRStage(
+                "asr-streaming",
+                "history.stats.asrStreamingRecognition",
+                stats.realtimeConnectionReadyAt ?? transport.startMessageSentAt,
+                stats.realtimeFinishStartedAt
+            )
+            appendASRStage(
+                "asr-final-wait",
+                "history.stats.asrFinalResultWait",
+                stats.realtimeFinishStartedAt,
+                stats.realtimeFinalResultReceivedAt ?? stats.realtimeFinishCompletedAt
+            )
+            appendASRStage(
+                "asr-cleanup",
+                "history.stats.asrSessionCleanup",
+                stats.realtimeFinalResultReceivedAt,
+                stats.realtimeFinishCompletedAt
             )
         }
+
+        sources.append(
+            LaneSource(
+                id: "llm",
+                title: L("history.timeline.llm"),
+                start: stats.llmProcessingStartedAt,
+                end: stats.llmProcessingCompletedAt,
+                tone: .llm,
+                isDetail: false
+            )
+        )
+
+        for (index, attempt) in (stats.llmRequestAttempts ?? []).enumerated() {
+            let suffix = (stats.llmRequestAttempts?.count ?? 0) > 1 ? " #\(index + 1)" : ""
+            let prefix = "llm-request-\(attempt.id.uuidString)"
+            sources.append(contentsOf: [
+                LaneSource(
+                    id: "\(prefix)-dns",
+                    title: L("history.stats.llmDNSLookup") + suffix,
+                    start: attempt.domainLookupStartedAt,
+                    end: attempt.domainLookupCompletedAt,
+                    tone: .llm,
+                    isDetail: true
+                ),
+                LaneSource(
+                    id: "\(prefix)-tcp",
+                    title: L("history.stats.llmTCPConnection") + suffix,
+                    start: attempt.connectionStartedAt,
+                    end: attempt.secureConnectionStartedAt ?? attempt.connectionCompletedAt,
+                    tone: .llm,
+                    isDetail: true
+                ),
+                LaneSource(
+                    id: "\(prefix)-tls",
+                    title: L("history.stats.llmTLSHandshake") + suffix,
+                    start: attempt.secureConnectionStartedAt,
+                    end: attempt.secureConnectionCompletedAt,
+                    tone: .llm,
+                    isDetail: true
+                ),
+                LaneSource(
+                    id: "\(prefix)-upload",
+                    title: L("history.stats.llmRequestUpload") + suffix,
+                    start: attempt.requestUploadStartedAt,
+                    end: attempt.requestUploadCompletedAt,
+                    tone: .llm,
+                    isDetail: true
+                ),
+                LaneSource(
+                    id: "\(prefix)-wait",
+                    title: L("history.stats.llmServerWait") + suffix,
+                    start: attempt.requestUploadCompletedAt,
+                    end: attempt.firstResponseByteAt,
+                    tone: .llm,
+                    isDetail: true
+                ),
+                LaneSource(
+                    id: "\(prefix)-download",
+                    title: L("history.stats.llmResponseDownload") + suffix,
+                    start: attempt.firstResponseByteAt,
+                    end: attempt.networkResponseCompletedAt ?? attempt.responseCompletedAt,
+                    tone: .llm,
+                    isDetail: true
+                )
+            ])
+        }
+
+        sources.append(
+            LaneSource(
+                id: "apply",
+                title: L("history.timeline.apply"),
+                start: stats.applyStartedAt,
+                end: stats.applyCompletedAt,
+                tone: .apply,
+                isDetail: false
+            )
+        )
+
+        let availableSources = sources.filter { $0.start != nil && $0.end != nil }
+        let origin = availableSources.compactMap(\.start).min()
+        let end = availableSources.compactMap(\.end).max()
+        let span = origin.flatMap { start in end.map { max(0.001, $0.timeIntervalSince(start)) } }
+
+        let detailedDurations = availableSources.compactMap { source -> (String, Int)? in
+            guard source.isDetail,
+                  source.id != "asr-streaming",
+                  let start = source.start,
+                  let end = source.end
+            else { return nil }
+            return (source.id, max(0, Int((end.timeIntervalSince(start) * 1000).rounded())))
+        }
+        let laneDurations = availableSources.compactMap { source -> (String, Int)? in
+            guard let start = source.start, let end = source.end else { return nil }
+            return (source.id, max(0, Int((end.timeIntervalSince(start) * 1000).rounded())))
+        }
+        let slowestID = (detailedDurations.isEmpty ? laneDurations : detailedDurations)
+            .max(by: { $0.1 < $1.1 })?.0
+        let lanes = availableSources.compactMap { source -> HistoryPipelineTimelinePresentation.Lane? in
+            guard let origin, let span, let start = source.start, let end = source.end else { return nil }
+            let clippedStart = max(start, origin)
+            let clippedEnd = max(clippedStart, end)
+            let duration = max(0, Int((end.timeIntervalSince(start) * 1000).rounded()))
+            return HistoryPipelineTimelinePresentation.Lane(
+                id: source.id,
+                title: source.title,
+                durationMilliseconds: duration,
+                durationText: historyDurationText(milliseconds: duration),
+                offsetFraction: min(1, max(0, clippedStart.timeIntervalSince(origin) / span)),
+                widthFraction: min(1, max(0, clippedEnd.timeIntervalSince(clippedStart) / span)),
+                tone: source.tone,
+                isDetail: source.isDetail,
+                isSlowest: source.id == slowestID
+            )
+        }
+
+        var keyMetricSources: [(String, String, Int?)] = [
+            ("connection", L("history.stats.realtimeConnection"), stats.realtimeConnectionDurationMilliseconds),
+            (
+                "first-result",
+                L("history.stats.realtimeFirstAudioToFirstResult"),
+                stats.realtimeAudioToFirstResultMilliseconds
+            ),
+            ("final-result", L("history.stats.realtimeStopToFinalResult"), stats.realtimeStopToFinalResultMilliseconds),
+            ("llm-first-output", L("history.stats.llmTimeToFirstOutput"), stats.llmTimeToFirstOutputMilliseconds)
+        ]
+        if let firstAudio = stats.realtimeFirstAudioSubmittedAt,
+           let connectionReady = stats.realtimeConnectionReadyAt,
+           connectionReady >= firstAudio {
+            keyMetricSources.append(
+                (
+                    "asr-first-audio-queue",
+                    L("history.stats.asrFirstAudioQueue"),
+                    max(0, Int((connectionReady.timeIntervalSince(firstAudio) * 1000).rounded()))
+                )
+            )
+        }
+        if let transport = stats.realtimeTransport {
+            keyMetricSources.append(contentsOf: [
+                ("asr-dns", L("history.stats.asrDNSLookup"), transport.dnsLookupMilliseconds),
+                ("asr-tcp", L("history.stats.asrTCPConnection"), transport.tcpConnectionMilliseconds),
+                ("asr-tls", L("history.stats.asrTLSHandshake"), transport.tlsHandshakeMilliseconds),
+                (
+                    "asr-upgrade",
+                    L("history.stats.asrUpgradeResponse"),
+                    transport.requestToUpgradeResponseMilliseconds
+                ),
+                ("asr-json", L("history.stats.asrJSONParsing"), transport.messageParsingMilliseconds)
+            ])
+        }
+        for (index, attempt) in (stats.llmRequestAttempts ?? []).enumerated() {
+            let suffix = (stats.llmRequestAttempts?.count ?? 0) > 1 ? " #\(index + 1)" : ""
+            let prefix = "llm-request-\(attempt.id.uuidString)"
+            keyMetricSources.append(contentsOf: [
+                ("\(prefix)-total", L("history.stats.llmRequestTotal") + suffix, attempt.totalRequestMilliseconds),
+                ("\(prefix)-dns", L("history.stats.llmDNSLookup") + suffix, attempt.dnsLookupMilliseconds),
+                ("\(prefix)-tcp", L("history.stats.llmTCPConnection") + suffix, attempt.tcpConnectionMilliseconds),
+                ("\(prefix)-tls", L("history.stats.llmTLSHandshake") + suffix, attempt.tlsHandshakeMilliseconds),
+                ("\(prefix)-upload", L("history.stats.llmRequestUpload") + suffix, attempt.requestUploadMilliseconds),
+                ("\(prefix)-server", L("history.stats.llmServerWait") + suffix, attempt.serverWaitMilliseconds),
+                ("\(prefix)-download", L("history.stats.llmResponseDownload") + suffix, attempt.responseDownloadMilliseconds),
+                ("\(prefix)-sse", L("history.stats.llmSSEParsing") + suffix, attempt.sseParsingMilliseconds),
+                ("\(prefix)-json", L("history.stats.llmJSONParsing") + suffix, attempt.jsonParsingMilliseconds),
+                ("\(prefix)-client", L("history.stats.llmClientOverhead") + suffix, attempt.unaccountedClientMilliseconds)
+            ])
+        }
+        let keyMetrics = keyMetricSources.compactMap { id, title, value in
+            value.map {
+                HistoryPipelineStatPresentationItem(
+                    id: id,
+                    title: title,
+                    value: historyDurationText(milliseconds: $0),
+                    style: .duration
+                )
+            }
+        }
+        var requestDetails: [HistoryPipelineRequestPresentationItem] = []
+        for (index, attempt) in (stats.llmRequestAttempts ?? []).enumerated() {
+            let suffix = (stats.llmRequestAttempts?.count ?? 0) > 1 ? " #\(index + 1)" : ""
+            let host = URL(string: attempt.endpoint)?.host ?? attempt.endpoint
+            let badges = [
+                attempt.reusedConnection.map {
+                    $0 ? L("history.stats.llmConnectionReused") : L("history.stats.llmConnectionNew")
+                },
+                attempt.networkProtocolName,
+                attempt.statusCode.map { "HTTP \($0)" }
+            ].compactMap(\.self)
+            requestDetails.append(
+                HistoryPipelineRequestPresentationItem(
+                    id: "llm-request-\(attempt.id.uuidString)",
+                    title: L("history.request.llm") + suffix,
+                    endpoint: host,
+                    badges: badges
+                )
+            )
+        }
+        if let transport = stats.realtimeTransport {
+            let host = transport.endpoint.flatMap { URL(string: $0)?.host } ?? transport.endpoint
+            let badges = [
+                transport.reusedConnection.map {
+                    $0 ? L("history.stats.llmConnectionReused") : L("history.stats.llmConnectionNew")
+                },
+                transport.networkProtocolName
+            ].compactMap(\.self)
+            if let host {
+                requestDetails.insert(
+                    HistoryPipelineRequestPresentationItem(
+                        id: "asr-request",
+                        title: L("history.request.asr"),
+                        endpoint: host,
+                        badges: badges
+                    ),
+                    at: 0
+                )
+            }
+        }
+        let slowestStageText = lanes.first(where: \.isSlowest).map {
+            "\($0.title) · \($0.durationText)"
+        }
+        let totalDurationText = stats.endToEndMilliseconds.map(historyDurationText(milliseconds:))
+        let timelineSpanDurationText = origin.flatMap { start in
+            end.map {
+                historyDurationText(
+                    milliseconds: max(0, Int(($0.timeIntervalSince(start) * 1000).rounded()))
+                )
+            }
+        }
+
+        guard !lanes.isEmpty || !keyMetrics.isEmpty || !requestDetails.isEmpty || totalDurationText != nil else {
+            return nil
+        }
+        return HistoryPipelineTimelinePresentation(
+            totalDurationText: totalDurationText,
+            timelineSpanDurationText: timelineSpanDurationText,
+            slowestStageText: slowestStageText,
+            lanes: lanes,
+            keyMetrics: keyMetrics,
+            requestDetails: requestDetails
+        )
     }
 
     private func historyDurationText(milliseconds: Int) -> String {

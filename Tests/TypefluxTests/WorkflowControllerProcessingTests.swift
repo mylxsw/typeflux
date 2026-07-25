@@ -1155,6 +1155,88 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(savedRecord?.personaResultText, "persona rewrite")
     }
 
+    @MainActor
+    func testLockedPersonaRewriteReusesRealtimeSessionWhenOptimizeDiffers() async {
+        let textInjector = MockProcessingTextInjector()
+        let historyStore = MockProcessingHistoryStore()
+        let realtimeSession = MockOptimizeRealtimeSession(
+            optimize: true,
+            transcript: "incorrect realtime transcript"
+        )
+        let controller = makeWorkflowController(
+            textInjector: textInjector,
+            sttTranscriber: MockProcessingTranscriber(transcript: "batch transcript"),
+            llmService: CountingProcessingLLMService(rewriteText: "persona rewrite"),
+            historyStore: historyStore,
+            configureSettings: configureReadyLLM
+        )
+
+        await controller.process(
+            audioFile: AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1),
+            realtimeTranscriptionSession: realtimeSession,
+            record: HistoryRecord(date: Date(), recordingStatus: .succeeded),
+            selectionSnapshot: TextSelectionSnapshot(),
+            selectedText: nil,
+            askContextText: nil,
+            inputContext: nil,
+            personaPrompt: "Use the selected persona.",
+            recordingIntent: .dictation,
+            sessionID: controller.processingSessionID
+        )
+
+        let sessionCalls = await realtimeSession.callCounts()
+        XCTAssertEqual(sessionCalls.finish, 1)
+        XCTAssertEqual(sessionCalls.cancel, 0)
+        XCTAssertEqual(historyStore.list().last?.transcriptText, "incorrect realtime transcript")
+        XCTAssertEqual(textInjector.insertedTexts, ["persona rewrite"])
+    }
+
+    @MainActor
+    func testInputContextRewriteReusesRealtimeSessionWhenOptimizeDiffers() async {
+        let textInjector = MockProcessingTextInjector()
+        let historyStore = MockProcessingHistoryStore()
+        let realtimeSession = MockOptimizeRealtimeSession(
+            optimize: true,
+            transcript: "incorrect realtime transcript"
+        )
+        let controller = makeWorkflowController(
+            textInjector: textInjector,
+            sttTranscriber: MockProcessingTranscriber(transcript: "batch transcript"),
+            llmService: CountingProcessingLLMService(rewriteText: "context rewrite"),
+            historyStore: historyStore,
+            configureSettings: configureReadyLLM
+        )
+        let inputContext = InputContextSnapshot(
+            appName: "Zed",
+            bundleIdentifier: "dev.zed.Zed",
+            role: "AXTextArea",
+            isEditable: true,
+            isFocusedTarget: true,
+            prefix: "Existing document text",
+            suffix: "",
+            selectedText: nil
+        )
+
+        await controller.process(
+            audioFile: AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1),
+            realtimeTranscriptionSession: realtimeSession,
+            record: HistoryRecord(date: Date(), recordingStatus: .succeeded),
+            selectionSnapshot: TextSelectionSnapshot(),
+            selectedText: nil,
+            askContextText: nil,
+            inputContext: inputContext,
+            personaPrompt: nil,
+            recordingIntent: .dictation,
+            sessionID: controller.processingSessionID
+        )
+
+        let sessionCalls = await realtimeSession.callCounts()
+        XCTAssertEqual(sessionCalls.finish, 1)
+        XCTAssertEqual(sessionCalls.cancel, 0)
+        XCTAssertEqual(historyStore.list().last?.transcriptText, "incorrect realtime transcript")
+        XCTAssertEqual(textInjector.insertedTexts, ["context rewrite"])
+    }
+
     func testFinishRecordingCancelsSilentAudioWhenPreviewTextIsEmpty() async throws {
         let audioURL = try writeSilentTestAudio(duration: 1.0)
 
@@ -1465,6 +1547,52 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         buffer.frameLength = AVAudioFrameCount(frameCount)
         try audioFile.write(from: buffer)
         return url
+    }
+
+    func testTypefluxASROptimizeIsDisabledForPersonaRewrite() {
+        let persona = PersonaProfile(name: "Meeting Notes", prompt: "Clean up dictation.")
+        let controller = makeWorkflowController(configureSettings: { settingsStore in
+            settingsStore.personaRewriteEnabled = true
+            settingsStore.personas += [persona]
+            settingsStore.activePersonaID = persona.id.uuidString
+        })
+
+        XCTAssertFalse(controller.shouldOptimizeTypefluxASR(
+            intent: .dictation,
+            recordingMode: .locked,
+            appName: nil,
+            bundleIdentifier: nil
+        ))
+    }
+
+    func testTypefluxASROptimizeIsEnabledForQuickInput() {
+        let persona = PersonaProfile(name: "Meeting Notes", prompt: "Clean up dictation.")
+        let controller = makeWorkflowController(configureSettings: { settingsStore in
+            settingsStore.quickInputEnabled = true
+            settingsStore.personaRewriteEnabled = true
+            settingsStore.personas += [persona]
+            settingsStore.activePersonaID = persona.id.uuidString
+        })
+
+        XCTAssertTrue(controller.shouldOptimizeTypefluxASR(
+            intent: .dictation,
+            recordingMode: .holdToTalk,
+            appName: nil,
+            bundleIdentifier: nil
+        ))
+    }
+
+    func testTypefluxASROptimizeIsEnabledWhenPersonaIsDisabled() {
+        let controller = makeWorkflowController(configureSettings: { settingsStore in
+            settingsStore.personaRewriteEnabled = false
+        })
+
+        XCTAssertTrue(controller.shouldOptimizeTypefluxASR(
+            intent: .dictation,
+            recordingMode: .locked,
+            appName: nil,
+            bundleIdentifier: nil
+        ))
     }
 }
 
@@ -2078,6 +2206,35 @@ private final class MockProcessingTranscriber: Transcriber {
             throw error
         }
         return transcript
+    }
+}
+
+private actor MockOptimizeRealtimeSession: RealtimeTranscriptionSession, RealtimeASROptimizeProviding {
+    nonisolated let asrOptimize: Bool?
+    private let transcript: String
+    private var finishCallCount = 0
+    private var cancelCallCount = 0
+
+    init(optimize: Bool, transcript: String) {
+        asrOptimize = optimize
+        self.transcript = transcript
+    }
+
+    func start() async {}
+
+    func append(_: AVAudioPCMBuffer) async {}
+
+    func finish() async throws -> String {
+        finishCallCount += 1
+        return transcript
+    }
+
+    func cancel() async {
+        cancelCallCount += 1
+    }
+
+    func callCounts() -> (finish: Int, cancel: Int) {
+        (finishCallCount, cancelCallCount)
     }
 }
 

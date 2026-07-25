@@ -193,6 +193,149 @@ private extension View {
     }
 }
 
+private enum CloudServerStatusTone {
+    case fast
+    case average
+    case slow
+    case unavailable
+    case untested
+
+    var color: Color {
+        switch self {
+        case .fast:
+            StudioTheme.success
+        case .average:
+            StudioTheme.warning
+        case .slow, .unavailable:
+            StudioTheme.danger
+        case .untested:
+            StudioTheme.textSecondary
+        }
+    }
+}
+
+private struct CloudServerPickerOption: Identifiable {
+    let value: String
+    let domain: String
+    let tagText: String?
+    let tone: CloudServerStatusTone
+
+    var id: String {
+        value
+    }
+}
+
+private struct CloudServerStatusTag: View {
+    let text: String
+    let tone: CloudServerStatusTone
+
+    var body: some View {
+        Text(text)
+            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+            .foregroundStyle(tone.color)
+            .padding(.horizontal, StudioTheme.Spacing.small)
+            .padding(.vertical, StudioTheme.Spacing.xxSmall)
+            .background(Capsule().fill(tone.color.opacity(0.12)))
+            .overlay(Capsule().stroke(tone.color.opacity(0.28), lineWidth: StudioTheme.BorderWidth.thin))
+    }
+}
+
+private struct CloudServerMenuPicker: View {
+    let options: [CloudServerPickerOption]
+    @Binding var selection: String
+    var width: CGFloat
+    @State private var isPresented = false
+
+    private var selectedOption: CloudServerPickerOption? {
+        options.first(where: { $0.value == selection }) ?? options.first
+    }
+
+    var body: some View {
+        Button {
+            isPresented.toggle()
+        } label: {
+            HStack(spacing: StudioTheme.Spacing.small) {
+                if let selectedOption {
+                    Text(selectedOption.domain)
+                        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    if let tagText = selectedOption.tagText {
+                        CloudServerStatusTag(text: tagText, tone: selectedOption.tone)
+                    }
+                }
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
+            .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
+            .padding(.vertical, StudioTheme.Insets.buttonVertical)
+            .frame(width: width)
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                    .fill(StudioTheme.controlSurface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                    .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                ForEach(options) { option in
+                    Button {
+                        selection = option.value
+                        isPresented = false
+                    } label: {
+                        HStack(spacing: StudioTheme.Spacing.small) {
+                            Group {
+                                if option.value == selection {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(
+                                            size: StudioTheme.Typography.iconXSmall,
+                                            weight: .semibold
+                                        ))
+                                        .foregroundStyle(StudioTheme.accent)
+                                } else {
+                                    Color.clear
+                                }
+                            }
+                            .frame(width: StudioTheme.Typography.iconSmall)
+                            Text(option.domain)
+                                .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
+                                .foregroundStyle(StudioTheme.textPrimary)
+                                .lineLimit(1)
+                            Spacer(minLength: StudioTheme.Spacing.large)
+                            if let tagText = option.tagText {
+                                CloudServerStatusTag(text: tagText, tone: option.tone)
+                            }
+                        }
+                        .padding(.horizontal, StudioTheme.Spacing.smallMedium)
+                        .padding(.vertical, StudioTheme.Spacing.small)
+                        .frame(width: max(width, 340), alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
+                                .fill(
+                                    option.value == selection
+                                        ? StudioTheme.accent.opacity(0.08)
+                                        : Color.clear
+                                )
+                        )
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(StudioTheme.Spacing.small)
+            .background(StudioTheme.surface)
+        }
+        .fixedSize()
+    }
+}
+
 // swiftlint:disable:next type_body_length
 struct StudioView: View {
     private struct ShortcutConfiguration {
@@ -2561,133 +2704,271 @@ struct StudioView: View {
             }
 
             if isAdvancedSettingsExpanded {
-                StudioCard {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                        StudioSettingRow(
-                            title: L("settings.advanced.localOptimization.title"),
-                            subtitle: L("settings.advanced.localOptimization.subtitle")
-                        ) {
-                            Toggle(
-                                "",
-                                isOn: Binding(
-                                    get: { viewModel.localOptimizationEnabled },
-                                    set: viewModel.setLocalOptimizationEnabled
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
+                    StudioCard {
+                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                            StudioSettingRow(
+                                title: L("settings.advanced.localOptimization.title"),
+                                subtitle: L("settings.advanced.localOptimization.subtitle")
+                            ) {
+                                Toggle(
+                                    "",
+                                    isOn: Binding(
+                                        get: { viewModel.localOptimizationEnabled },
+                                        set: viewModel.setLocalOptimizationEnabled
+                                    )
                                 )
-                            )
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                        }
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                            }
 
-                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
-                        StudioSettingRow(
-                            title: L("settings.advanced.localSTTMemoryOptimization.title"),
-                            subtitle: L("settings.advanced.localSTTMemoryOptimization.subtitle")
-                        ) {
-                            Toggle(
-                                "",
-                                isOn: Binding(
-                                    get: { viewModel.localSTTMemoryOptimizationEnabled },
-                                    set: viewModel.setLocalSTTMemoryOptimizationEnabled
+                            StudioSettingRow(
+                                title: L("settings.advanced.localSTTMemoryOptimization.title"),
+                                subtitle: L("settings.advanced.localSTTMemoryOptimization.subtitle")
+                            ) {
+                                Toggle(
+                                    "",
+                                    isOn: Binding(
+                                        get: { viewModel.localSTTMemoryOptimizationEnabled },
+                                        set: viewModel.setLocalSTTMemoryOptimizationEnabled
+                                    )
                                 )
-                            )
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                        }
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                            }
 
-                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
-                        StudioSettingRow(
-                            title: L("settings.advanced.personaHotkeyApply.title"),
-                            subtitle: L("settings.advanced.personaHotkeyApply.subtitle"),
-                            badge: "Beta"
-                        ) {
-                            Toggle(
-                                "",
-                                isOn: Binding(
-                                    get: { viewModel.personaHotkeyAppliesToSelection },
-                                    set: viewModel.setPersonaHotkeyAppliesToSelection
+                            StudioSettingRow(
+                                title: L("settings.advanced.personaHotkeyApply.title"),
+                                subtitle: L("settings.advanced.personaHotkeyApply.subtitle"),
+                                badge: "Beta"
+                            ) {
+                                Toggle(
+                                    "",
+                                    isOn: Binding(
+                                        get: { viewModel.personaHotkeyAppliesToSelection },
+                                        set: viewModel.setPersonaHotkeyAppliesToSelection
+                                    )
                                 )
-                            )
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                        }
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                            }
 
-                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
-                        StudioSettingRow(
-                            title: L("settings.advanced.inputContextOptimization.title"),
-                            subtitle: L("settings.advanced.inputContextOptimization.subtitle"),
-                            badge: "Beta"
-                        ) {
-                            Toggle(
-                                "",
-                                isOn: Binding(
-                                    get: { viewModel.inputContextOptimizationEnabled },
-                                    set: viewModel.setInputContextOptimizationEnabled
+                            StudioSettingRow(
+                                title: L("settings.advanced.inputContextOptimization.title"),
+                                subtitle: L("settings.advanced.inputContextOptimization.subtitle"),
+                                badge: "Beta"
+                            ) {
+                                Toggle(
+                                    "",
+                                    isOn: Binding(
+                                        get: { viewModel.inputContextOptimizationEnabled },
+                                        set: viewModel.setInputContextOptimizationEnabled
+                                    )
                                 )
-                            )
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                        }
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                            }
 
-                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
-                        StudioSettingRow(
-                            title: L("settings.advanced.agentFramework.title"),
-                            subtitle: L("settings.advanced.agentFramework.subtitle"),
-                            badge: "Beta"
-                        ) {
-                            Toggle(
-                                "",
-                                isOn: Binding(
-                                    get: { viewModel.agentFrameworkEnabled },
-                                    set: viewModel.setAgentFrameworkEnabled
+                            StudioSettingRow(
+                                title: L("settings.advanced.agentFramework.title"),
+                                subtitle: L("settings.advanced.agentFramework.subtitle"),
+                                badge: "Beta"
+                            ) {
+                                Toggle(
+                                    "",
+                                    isOn: Binding(
+                                        get: { viewModel.agentFrameworkEnabled },
+                                        set: viewModel.setAgentFrameworkEnabled
+                                    )
                                 )
-                            )
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                        }
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                            }
 
-                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
-                        StudioSettingRow(
-                            title: L("settings.advanced.stubbornPasteFallback.title"),
-                            subtitle: L("settings.advanced.stubbornPasteFallback.subtitle"),
-                            badge: "Beta"
-                        ) {
-                            Toggle(
-                                "",
-                                isOn: Binding(
-                                    get: { viewModel.stubbornPasteFallbackEnabled },
-                                    set: viewModel.setStubbornPasteFallbackEnabled
+                            StudioSettingRow(
+                                title: L("settings.advanced.stubbornPasteFallback.title"),
+                                subtitle: L("settings.advanced.stubbornPasteFallback.subtitle"),
+                                badge: "Beta"
+                            ) {
+                                Toggle(
+                                    "",
+                                    isOn: Binding(
+                                        get: { viewModel.stubbornPasteFallbackEnabled },
+                                        set: viewModel.setStubbornPasteFallbackEnabled
+                                    )
                                 )
-                            )
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                        }
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                            }
 
-                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
-                        StudioSettingRow(
-                            title: L("settings.models.appleFallback"),
-                            subtitle: L("settings.models.appleFallback.detail")
-                        ) {
-                            Toggle(
-                                "",
-                                isOn: Binding(
-                                    get: { viewModel.appleSpeechFallback },
-                                    set: viewModel.setAppleSpeechFallback
+                            StudioSettingRow(
+                                title: L("settings.models.appleFallback"),
+                                subtitle: L("settings.models.appleFallback.detail")
+                            ) {
+                                Toggle(
+                                    "",
+                                    isOn: Binding(
+                                        get: { viewModel.appleSpeechFallback },
+                                        set: viewModel.setAppleSpeechFallback
+                                    )
                                 )
-                            )
-                            .labelsHidden()
-                            .toggleStyle(.switch)
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                            }
                         }
                     }
+
+                    StudioSectionTitle(title: L("settings.servers.title"))
+                    cloudServerSettingsCard
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
+    }
+
+    private var cloudServerSettingsCard: some View {
+        StudioCard {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                StudioSettingRow(
+                    title: L("settings.servers.api.title"),
+                    subtitle: L("settings.servers.api.subtitle")
+                ) {
+                    CloudServerMenuPicker(
+                        options: cloudServerOptions(
+                            servers: viewModel.availableAPIServers,
+                            statuses: viewModel.apiServerStatuses
+                        ),
+                        selection: Binding(
+                            get: { viewModel.preferredAPIServer },
+                            set: viewModel.setPreferredAPIServer
+                        ),
+                        width: 310
+                    )
+                }
+
+                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                StudioSettingRow(
+                    title: L("settings.servers.asr.title"),
+                    subtitle: L("settings.servers.asr.subtitle")
+                ) {
+                    CloudServerMenuPicker(
+                        options: cloudServerOptions(
+                            servers: viewModel.availableASRServers,
+                            statuses: viewModel.asrServerStatuses
+                        ),
+                        selection: Binding(
+                            get: { viewModel.preferredASRServer },
+                            set: viewModel.setPreferredASRServer
+                        ),
+                        width: 310
+                    )
+                }
+
+                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                StudioSettingRow(
+                    title: L("settings.servers.speedTest.title"),
+                    subtitle: viewModel.cloudServerTestSummary
+                        ?? L("settings.servers.speedTest.subtitle")
+                ) {
+                    StudioButton(
+                        title: viewModel.isTestingCloudServers
+                            ? L("settings.servers.speedTest.testing")
+                            : L("settings.servers.speedTest.action"),
+                        systemImage: "gauge.with.dots.needle.67percent",
+                        variant: .secondary,
+                        isDisabled: viewModel.isTestingCloudServers,
+                        isLoading: viewModel.isTestingCloudServers
+                    ) {
+                        viewModel.testCloudServerLatency()
+                    }
+                }
+            }
+        }
+    }
+
+    private func cloudServerOptions(
+        servers: [String],
+        statuses: [CloudEndpointStatus]
+    ) -> [CloudServerPickerOption] {
+        [
+            CloudServerPickerOption(
+                value: CloudServerPreferences.automaticValue,
+                domain: L("settings.servers.automatic"),
+                tagText: nil,
+                tone: .untested
+            )
+        ] + servers.map { server in
+            cloudServerOption(server, statuses: statuses)
+        }
+    }
+
+    private func cloudServerOption(
+        _ server: String,
+        statuses: [CloudEndpointStatus]
+    ) -> CloudServerPickerOption {
+        let domain = URL(string: server)?.host ?? server
+        guard let status = statuses.first(where: { $0.baseURL.absoluteString == server }) else {
+            return CloudServerPickerOption(
+                value: server,
+                domain: domain,
+                tagText: L("settings.servers.tag.notTested"),
+                tone: .untested
+            )
+        }
+        if status.lastError != nil {
+            return CloudServerPickerOption(
+                value: server,
+                domain: domain,
+                tagText: L("settings.servers.tag.unavailable"),
+                tone: .unavailable
+            )
+        }
+        guard let latencyMs = status.latencyMs else {
+            return CloudServerPickerOption(
+                value: server,
+                domain: domain,
+                tagText: L("settings.servers.tag.notTested"),
+                tone: .untested
+            )
+        }
+
+        let roundedLatency = Int(latencyMs.rounded())
+        if latencyMs < 150 {
+            return CloudServerPickerOption(
+                value: server,
+                domain: domain,
+                tagText: L("settings.servers.tag.fast", roundedLatency),
+                tone: .fast
+            )
+        }
+        if latencyMs < 350 {
+            return CloudServerPickerOption(
+                value: server,
+                domain: domain,
+                tagText: L("settings.servers.tag.average", roundedLatency),
+                tone: .average
+            )
+        }
+        return CloudServerPickerOption(
+            value: server,
+            domain: domain,
+            tagText: L("settings.servers.tag.slow", roundedLatency),
+            tone: .slow
+        )
     }
 
     // MARK: - Agent Page

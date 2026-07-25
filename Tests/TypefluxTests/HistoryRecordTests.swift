@@ -68,6 +68,31 @@ final class HistoryRecordTests: XCTestCase {
         XCTAssertEqual(stats.endToEndMilliseconds, 2000)
     }
 
+    func testGeneratedStatsComputesRealtimeAndLLMStageDurations() {
+        let base = Date(timeIntervalSince1970: 1000)
+        var timing = HistoryPipelineTiming()
+        timing.realtimeSessionStartedAt = base
+        timing.realtimeConnectionReadyAt = base.addingTimeInterval(0.08)
+        timing.realtimeFirstAudioSubmittedAt = base.addingTimeInterval(0.1)
+        timing.realtimeFirstResultReceivedAt = base.addingTimeInterval(0.35)
+        timing.realtimeFinishStartedAt = base.addingTimeInterval(1.0)
+        timing.realtimeFinalResultReceivedAt = base.addingTimeInterval(1.18)
+        timing.realtimeFinishCompletedAt = base.addingTimeInterval(1.2)
+        timing.llmProcessingStartedAt = base.addingTimeInterval(1.3)
+        timing.llmFirstOutputAt = base.addingTimeInterval(1.55)
+        timing.llmProcessingCompletedAt = base.addingTimeInterval(2.0)
+
+        let stats = timing.generatedStats()
+
+        XCTAssertEqual(stats.realtimeConnectionDurationMilliseconds, 80)
+        XCTAssertEqual(stats.realtimeReadyToFirstAudioMilliseconds, 20)
+        XCTAssertEqual(stats.realtimeAudioToFirstResultMilliseconds, 250)
+        XCTAssertEqual(stats.realtimeStopToFinalResultMilliseconds, 180)
+        XCTAssertEqual(stats.realtimeFinishDurationMilliseconds, 200)
+        XCTAssertEqual(stats.llmTimeToFirstOutputMilliseconds, 250)
+        XCTAssertEqual(stats.llmDurationMilliseconds, 700)
+    }
+
     // MARK: - HistoryPipelineStats
 
     func testPipelineStatsHasDataWhenEmpty() {

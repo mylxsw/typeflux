@@ -23,6 +23,7 @@ extension STTRouter {
 
     func makeRealtimeTranscriptionSession(
         scenario: TypefluxCloudScenario = .voiceInput,
+        optimize: Bool = true,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async -> (any RealtimeTranscriptionSession)? {
         switch settingsStore.sttProvider {
@@ -58,6 +59,7 @@ extension STTRouter {
             await makeRealtimeTranscriptionSession(
                 provider: typefluxOfficial,
                 scenario: scenario,
+                optimize: optimize,
                 onUpdate: onUpdate,
                 failureContext: "Typeflux Cloud realtime session setup failed"
             )
@@ -69,6 +71,7 @@ extension STTRouter {
     private func makeRealtimeTranscriptionSession(
         provider: Transcriber,
         scenario: TypefluxCloudScenario,
+        optimize: Bool = true,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
         failureContext: String
     ) async -> (any RealtimeTranscriptionSession)? {
@@ -76,9 +79,31 @@ extension STTRouter {
             return nil
         }
         do {
-            return try await factory.makeRealtimeTranscriptionSession(
-                scenario: scenario,
-                onUpdate: onUpdate
+            let diagnostics = RealtimeTranscriptionDiagnostics()
+            let observedUpdate: @Sendable (TranscriptionSnapshot) async -> Void = { snapshot in
+                diagnostics.markResult(isFinal: snapshot.isFinal)
+                await onUpdate(snapshot)
+            }
+            let session: any RealtimeTranscriptionSession
+            let appliedOptimize: Bool?
+            if let optimizeAware = factory as? any OptimizeAwareRealtimeSessionFactory {
+                session = try await optimizeAware.makeRealtimeTranscriptionSession(
+                    scenario: scenario,
+                    optimize: optimize,
+                    onUpdate: observedUpdate
+                )
+                appliedOptimize = optimize
+            } else {
+                session = try await factory.makeRealtimeTranscriptionSession(
+                    scenario: scenario,
+                    onUpdate: observedUpdate
+                )
+                appliedOptimize = nil
+            }
+            return ObservedRealtimeTranscriptionSession(
+                upstream: session,
+                diagnostics: diagnostics,
+                asrOptimize: appliedOptimize
             )
         } catch {
             NetworkDebugLogger.logError(context: failureContext, error: error)

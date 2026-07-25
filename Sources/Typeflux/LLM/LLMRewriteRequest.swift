@@ -37,6 +37,7 @@ struct LLMRewriteRequest {
     let appSystemContext: AppSystemContext?
     let inputContext: InputContextSnapshot?
     let vocabularyTerms: [String]
+    let diagnosticsRecorder: LLMRequestDiagnosticsRecorder?
 
     init(
         mode: Mode,
@@ -46,7 +47,8 @@ struct LLMRewriteRequest {
         personaID: UUID? = nil,
         appSystemContext: AppSystemContext? = nil,
         inputContext: InputContextSnapshot? = nil,
-        vocabularyTerms: [String] = []
+        vocabularyTerms: [String] = [],
+        diagnosticsRecorder: LLMRequestDiagnosticsRecorder? = nil
     ) {
         self.mode = mode
         self.sourceText = sourceText
@@ -56,5 +58,20 @@ struct LLMRewriteRequest {
         self.appSystemContext = appSystemContext
         self.inputContext = inputContext
         self.vocabularyTerms = vocabularyTerms
+        self.diagnosticsRecorder = diagnosticsRecorder
+    }
+
+    func withDiagnosticsRecorder(_ recorder: LLMRequestDiagnosticsRecorder) -> LLMRewriteRequest {
+        LLMRewriteRequest(
+            mode: mode,
+            sourceText: sourceText,
+            spokenInstruction: spokenInstruction,
+            personaPrompt: personaPrompt,
+            personaID: personaID,
+            appSystemContext: appSystemContext,
+            inputContext: inputContext,
+            vocabularyTerms: vocabularyTerms,
+            diagnosticsRecorder: recorder
+        )
     }
 }

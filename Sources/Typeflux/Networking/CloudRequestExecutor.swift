@@ -97,11 +97,9 @@ struct CloudRequestExecutor: Sendable {
             try Task.checkCancellation()
             var request = build(endpoint)
             TypefluxCloudRequestHeaders.applyClientInfo(to: &request)
-            let start = ContinuousClock.now
 
             do {
                 let (data, response) = try await session.data(for: request)
-                let elapsed = ContinuousClock.now - start
                 guard let http = response as? HTTPURLResponse else {
                     throw CloudRequestExecutorError.invalidResponse
                 }
@@ -119,8 +117,7 @@ struct CloudRequestExecutor: Sendable {
                         )
                     continue
                 }
-                let latency = durationToMilliseconds(elapsed)
-                await selector.reportSuccess(endpoint, latencyMs: latency)
+                await selector.reportRequestSuccess(endpoint)
                 return (data, http)
             } catch is CancellationError {
                 throw CancellationError()
@@ -162,10 +159,4 @@ struct CloudRequestExecutor: Sendable {
             || normalized.contains("/api/v1/asr/")
     }
 
-    private func durationToMilliseconds(_ duration: Duration) -> Double {
-        let components = duration.components
-        let secondsAsMs = Double(components.seconds) * 1000.0
-        let attoAsMs = Double(components.attoseconds) / 1_000_000_000_000_000.0
-        return secondsAsMs + attoAsMs
-    }
 }

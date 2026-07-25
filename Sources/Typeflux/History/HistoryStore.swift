@@ -5,8 +5,18 @@ struct HistoryPipelineTiming: Codable, Equatable {
     var audioFileReadyAt: Date?
     var transcriptionStartedAt: Date?
     var transcriptionCompletedAt: Date?
+    var realtimeSessionStartedAt: Date?
+    var realtimeConnectionReadyAt: Date?
+    var realtimeFirstAudioSubmittedAt: Date?
+    var realtimeFirstResultReceivedAt: Date?
+    var realtimeFinalResultReceivedAt: Date?
+    var realtimeFinishStartedAt: Date?
+    var realtimeFinishCompletedAt: Date?
+    var realtimeTransport: NetworkTransportDiagnosticsSnapshot?
     var llmProcessingStartedAt: Date?
+    var llmFirstOutputAt: Date?
     var llmProcessingCompletedAt: Date?
+    var llmRequestAttempts: [LLMRequestAttemptDiagnostics]?
     var applyStartedAt: Date?
     var applyCompletedAt: Date?
 
@@ -15,8 +25,18 @@ struct HistoryPipelineTiming: Codable, Equatable {
             audioFileReadyAt != nil ||
             transcriptionStartedAt != nil ||
             transcriptionCompletedAt != nil ||
+            realtimeSessionStartedAt != nil ||
+            realtimeConnectionReadyAt != nil ||
+            realtimeFirstAudioSubmittedAt != nil ||
+            realtimeFirstResultReceivedAt != nil ||
+            realtimeFinalResultReceivedAt != nil ||
+            realtimeFinishStartedAt != nil ||
+            realtimeFinishCompletedAt != nil ||
+            realtimeTransport != nil ||
             llmProcessingStartedAt != nil ||
+            llmFirstOutputAt != nil ||
             llmProcessingCompletedAt != nil ||
+            !(llmRequestAttempts?.isEmpty ?? true) ||
             applyStartedAt != nil ||
             applyCompletedAt != nil
     }
@@ -32,14 +52,40 @@ struct HistoryPipelineTiming: Codable, Equatable {
             audioFileReadyAt: audioFileReadyAt,
             transcriptionStartedAt: transcriptionStartedAt,
             transcriptionCompletedAt: transcriptionCompletedAt,
+            realtimeSessionStartedAt: realtimeSessionStartedAt,
+            realtimeConnectionReadyAt: realtimeConnectionReadyAt,
+            realtimeFirstAudioSubmittedAt: realtimeFirstAudioSubmittedAt,
+            realtimeFirstResultReceivedAt: realtimeFirstResultReceivedAt,
+            realtimeFinalResultReceivedAt: realtimeFinalResultReceivedAt,
+            realtimeFinishStartedAt: realtimeFinishStartedAt,
+            realtimeFinishCompletedAt: realtimeFinishCompletedAt,
+            realtimeTransport: realtimeTransport,
             llmProcessingStartedAt: llmProcessingStartedAt,
+            llmFirstOutputAt: llmFirstOutputAt,
             llmProcessingCompletedAt: llmProcessingCompletedAt,
+            llmRequestAttempts: llmRequestAttempts,
             applyStartedAt: applyStartedAt,
             applyCompletedAt: applyCompletedAt,
             stopToAudioReadyMilliseconds: millisecondsBetween(recordingStoppedAt, audioFileReadyAt),
             transcriptionDurationMilliseconds: millisecondsBetween(transcriptionStartedAt, transcriptionCompletedAt),
             stopToTranscriptionCompletedMilliseconds: millisecondsBetween(recordingStoppedAt, transcriptionCompletedAt),
+            realtimeConnectionDurationMilliseconds: millisecondsBetween(
+                realtimeSessionStartedAt, realtimeConnectionReadyAt
+            ),
+            realtimeReadyToFirstAudioMilliseconds: millisecondsBetween(
+                realtimeConnectionReadyAt, realtimeFirstAudioSubmittedAt
+            ),
+            realtimeAudioToFirstResultMilliseconds: millisecondsBetween(
+                realtimeFirstAudioSubmittedAt, realtimeFirstResultReceivedAt
+            ),
+            realtimeFinishDurationMilliseconds: millisecondsBetween(
+                realtimeFinishStartedAt, realtimeFinishCompletedAt
+            ),
+            realtimeStopToFinalResultMilliseconds: millisecondsBetween(
+                realtimeFinishStartedAt, realtimeFinalResultReceivedAt
+            ),
             transcriptToLLMStartMilliseconds: millisecondsBetween(transcriptionCompletedAt, llmProcessingStartedAt),
+            llmTimeToFirstOutputMilliseconds: millisecondsBetween(llmProcessingStartedAt, llmFirstOutputAt),
             llmDurationMilliseconds: millisecondsBetween(llmProcessingStartedAt, llmProcessingCompletedAt),
             applyDurationMilliseconds: millisecondsBetween(applyStartedAt, applyCompletedAt),
             endToEndMilliseconds: millisecondsBetween(
@@ -48,6 +94,17 @@ struct HistoryPipelineTiming: Codable, Equatable {
             )
         )
     }
+
+    mutating func merge(_ diagnostics: RealtimeTranscriptionDiagnosticsSnapshot) {
+        realtimeSessionStartedAt = diagnostics.sessionStartedAt
+        realtimeConnectionReadyAt = diagnostics.connectionReadyAt
+        realtimeFirstAudioSubmittedAt = diagnostics.firstAudioSubmittedAt
+        realtimeFirstResultReceivedAt = diagnostics.firstResultReceivedAt
+        realtimeFinalResultReceivedAt = diagnostics.finalResultReceivedAt
+        realtimeFinishStartedAt = diagnostics.finishStartedAt
+        realtimeFinishCompletedAt = diagnostics.finishCompletedAt
+        realtimeTransport = diagnostics.transport
+    }
 }
 
 struct HistoryPipelineStats: Codable, Equatable {
@@ -55,14 +112,30 @@ struct HistoryPipelineStats: Codable, Equatable {
     var audioFileReadyAt: Date?
     var transcriptionStartedAt: Date?
     var transcriptionCompletedAt: Date?
+    var realtimeSessionStartedAt: Date?
+    var realtimeConnectionReadyAt: Date?
+    var realtimeFirstAudioSubmittedAt: Date?
+    var realtimeFirstResultReceivedAt: Date?
+    var realtimeFinalResultReceivedAt: Date?
+    var realtimeFinishStartedAt: Date?
+    var realtimeFinishCompletedAt: Date?
+    var realtimeTransport: NetworkTransportDiagnosticsSnapshot?
     var llmProcessingStartedAt: Date?
+    var llmFirstOutputAt: Date?
     var llmProcessingCompletedAt: Date?
+    var llmRequestAttempts: [LLMRequestAttemptDiagnostics]?
     var applyStartedAt: Date?
     var applyCompletedAt: Date?
     var stopToAudioReadyMilliseconds: Int?
     var transcriptionDurationMilliseconds: Int?
     var stopToTranscriptionCompletedMilliseconds: Int?
+    var realtimeConnectionDurationMilliseconds: Int?
+    var realtimeReadyToFirstAudioMilliseconds: Int?
+    var realtimeAudioToFirstResultMilliseconds: Int?
+    var realtimeFinishDurationMilliseconds: Int?
+    var realtimeStopToFinalResultMilliseconds: Int?
     var transcriptToLLMStartMilliseconds: Int?
+    var llmTimeToFirstOutputMilliseconds: Int?
     var llmDurationMilliseconds: Int?
     var applyDurationMilliseconds: Int?
     var endToEndMilliseconds: Int?
@@ -72,14 +145,30 @@ struct HistoryPipelineStats: Codable, Equatable {
             audioFileReadyAt != nil ||
             transcriptionStartedAt != nil ||
             transcriptionCompletedAt != nil ||
+            realtimeSessionStartedAt != nil ||
+            realtimeConnectionReadyAt != nil ||
+            realtimeFirstAudioSubmittedAt != nil ||
+            realtimeFirstResultReceivedAt != nil ||
+            realtimeFinalResultReceivedAt != nil ||
+            realtimeFinishStartedAt != nil ||
+            realtimeFinishCompletedAt != nil ||
+            realtimeTransport != nil ||
             llmProcessingStartedAt != nil ||
+            llmFirstOutputAt != nil ||
             llmProcessingCompletedAt != nil ||
+            !(llmRequestAttempts?.isEmpty ?? true) ||
             applyStartedAt != nil ||
             applyCompletedAt != nil ||
             stopToAudioReadyMilliseconds != nil ||
             transcriptionDurationMilliseconds != nil ||
             stopToTranscriptionCompletedMilliseconds != nil ||
+            realtimeConnectionDurationMilliseconds != nil ||
+            realtimeReadyToFirstAudioMilliseconds != nil ||
+            realtimeAudioToFirstResultMilliseconds != nil ||
+            realtimeFinishDurationMilliseconds != nil ||
+            realtimeStopToFinalResultMilliseconds != nil ||
             transcriptToLLMStartMilliseconds != nil ||
+            llmTimeToFirstOutputMilliseconds != nil ||
             llmDurationMilliseconds != nil ||
             applyDurationMilliseconds != nil ||
             endToEndMilliseconds != nil

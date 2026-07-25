@@ -613,36 +613,41 @@ final class SQLiteHistoryStore: HistoryStore {
     private func markdown(for stats: HistoryPipelineStats) -> String {
         var lines: [String] = []
 
-        if let value = stats.recordingStoppedAt {
-            lines.append("- Recording stopped: \(value.ISO8601Format())")
-        }
-        if let value = stats.audioFileReadyAt {
-            lines.append("- Audio file ready: \(value.ISO8601Format())")
-        }
-        if let value = stats.transcriptionStartedAt {
-            lines.append("- STT started: \(value.ISO8601Format())")
-        }
-        if let value = stats.transcriptionCompletedAt {
-            lines.append("- STT completed: \(value.ISO8601Format())")
-        }
-        if let value = stats.llmProcessingStartedAt {
-            lines.append("- LLM started: \(value.ISO8601Format())")
-        }
-        if let value = stats.llmProcessingCompletedAt {
-            lines.append("- LLM completed: \(value.ISO8601Format())")
-        }
-        if let value = stats.applyStartedAt {
-            lines.append("- Apply started: \(value.ISO8601Format())")
-        }
-        if let value = stats.applyCompletedAt {
-            lines.append("- Apply completed: \(value.ISO8601Format())")
+        let timestamps: [(String, Date?)] = [
+            ("Recording stopped", stats.recordingStoppedAt),
+            ("Audio file ready", stats.audioFileReadyAt),
+            ("STT started", stats.transcriptionStartedAt),
+            ("STT completed", stats.transcriptionCompletedAt),
+            ("Realtime session started", stats.realtimeSessionStartedAt),
+            ("Realtime connection ready", stats.realtimeConnectionReadyAt),
+            ("Realtime first audio submitted", stats.realtimeFirstAudioSubmittedAt),
+            ("Realtime first result received", stats.realtimeFirstResultReceivedAt),
+            ("Realtime final result received", stats.realtimeFinalResultReceivedAt),
+            ("Realtime finish started", stats.realtimeFinishStartedAt),
+            ("Realtime finish completed", stats.realtimeFinishCompletedAt),
+            ("LLM started", stats.llmProcessingStartedAt),
+            ("LLM first output", stats.llmFirstOutputAt),
+            ("LLM completed", stats.llmProcessingCompletedAt),
+            ("Apply started", stats.applyStartedAt),
+            ("Apply completed", stats.applyCompletedAt)
+        ]
+        for (label, value) in timestamps {
+            if let value {
+                lines.append("- \(label): \(value.ISO8601Format())")
+            }
         }
 
         let durations: [(String, Int?)] = [
             ("Stop -> audio ready", stats.stopToAudioReadyMilliseconds),
             ("STT duration", stats.transcriptionDurationMilliseconds),
             ("Stop -> STT completed", stats.stopToTranscriptionCompletedMilliseconds),
+            ("Realtime connection", stats.realtimeConnectionDurationMilliseconds),
+            ("Realtime ready -> first audio", stats.realtimeReadyToFirstAudioMilliseconds),
+            ("Realtime first audio -> first result", stats.realtimeAudioToFirstResultMilliseconds),
+            ("Realtime stop -> final result", stats.realtimeStopToFinalResultMilliseconds),
+            ("Realtime finish", stats.realtimeFinishDurationMilliseconds),
             ("Transcript -> LLM start", stats.transcriptToLLMStartMilliseconds),
+            ("LLM time to first output", stats.llmTimeToFirstOutputMilliseconds),
             ("LLM duration", stats.llmDurationMilliseconds),
             ("Apply duration", stats.applyDurationMilliseconds),
             ("End-to-end", stats.endToEndMilliseconds)
@@ -652,6 +657,49 @@ final class SQLiteHistoryStore: HistoryStore {
             if let value {
                 lines.append("- \(label): \(value) ms")
             }
+        }
+
+        if let transport = stats.realtimeTransport {
+            lines.append("- Realtime ASR endpoint: \(transport.endpoint ?? "<unknown>")")
+            if let value = transport.networkProtocolName { lines.append("  - Protocol: \(value)") }
+            if let value = transport.reusedConnection { lines.append("  - Reused connection: \(value)") }
+            let transportDurations: [(String, Int?)] = [
+                ("DNS lookup", transport.dnsLookupMilliseconds),
+                ("TCP connection", transport.tcpConnectionMilliseconds),
+                ("TLS handshake", transport.tlsHandshakeMilliseconds),
+                ("WebSocket upgrade response wait", transport.requestToUpgradeResponseMilliseconds),
+                ("ASR JSON parsing", transport.messageParsingMilliseconds)
+            ]
+            for (label, value) in transportDurations {
+                if let value { lines.append("  - \(label): \(value) ms") }
+            }
+            lines.append("  - Parsed ASR messages: \(transport.parsedMessageCount)")
+        }
+
+        for (index, attempt) in (stats.llmRequestAttempts ?? []).enumerated() {
+            lines.append("- LLM request #\(index + 1): \(attempt.endpoint)")
+            lines.append("  - Provider/model: \(attempt.provider) / \(attempt.model)")
+            if let value = attempt.statusCode { lines.append("  - HTTP status: \(value)") }
+            if let value = attempt.networkProtocolName { lines.append("  - Protocol: \(value)") }
+            if let value = attempt.reusedConnection { lines.append("  - Reused connection: \(value)") }
+            let requestDurations: [(String, Int?)] = [
+                ("Total request", attempt.totalRequestMilliseconds),
+                ("DNS lookup", attempt.dnsLookupMilliseconds),
+                ("TCP connection", attempt.tcpConnectionMilliseconds),
+                ("TLS handshake", attempt.tlsHandshakeMilliseconds),
+                ("Request upload", attempt.requestUploadMilliseconds),
+                ("Server wait", attempt.serverWaitMilliseconds),
+                ("Response download", attempt.responseDownloadMilliseconds),
+                ("First SSE event delay", attempt.firstSSEEventDelayMilliseconds),
+                ("First parsed output delay", attempt.firstParsedOutputDelayMilliseconds),
+                ("SSE parsing", attempt.sseParsingMilliseconds),
+                ("JSON parsing", attempt.jsonParsingMilliseconds),
+                ("Unaccounted client time", attempt.unaccountedClientMilliseconds)
+            ]
+            for (label, value) in requestDurations {
+                if let value { lines.append("  - \(label): \(value) ms") }
+            }
+            lines.append("  - SSE events / JSON payloads: \(attempt.sseEventCount) / \(attempt.jsonParseCount)")
         }
 
         return lines.joined(separator: "\n")

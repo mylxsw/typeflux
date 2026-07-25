@@ -8,6 +8,12 @@ protocol RealtimeTranscriptionSession: AnyObject {
     func cancel() async
 }
 
+/// Exposes the optimize value actually used to create a realtime ASR session.
+/// A nil value means the provider does not support this request option.
+protocol RealtimeASROptimizeProviding: AnyObject {
+    var asrOptimize: Bool? { get }
+}
+
 protocol PCM16RealtimeTranscriptionSession: AnyObject {
     func start() async throws
     func appendPCM16(_ data: Data) async throws
@@ -15,7 +21,8 @@ protocol PCM16RealtimeTranscriptionSession: AnyObject {
     func cancel() async
 }
 
-actor DeferredPCM16RealtimeTranscriptionSession: PCM16RealtimeTranscriptionSession {
+actor DeferredPCM16RealtimeTranscriptionSession: PCM16RealtimeTranscriptionSession,
+    RealtimeTransportDiagnosticsProviding {
     private let makeUpstream: @Sendable () async throws -> any PCM16RealtimeTranscriptionSession
     private var startingUpstream: (any PCM16RealtimeTranscriptionSession)?
     private var upstream: (any PCM16RealtimeTranscriptionSession)?
@@ -60,6 +67,12 @@ actor DeferredPCM16RealtimeTranscriptionSession: PCM16RealtimeTranscriptionSessi
         await upstream?.cancel()
         upstream = nil
     }
+
+    func transportDiagnosticsSnapshot() async -> NetworkTransportDiagnosticsSnapshot? {
+        let resolved = upstream ?? startingUpstream
+        guard let provider = resolved as? any RealtimeTransportDiagnosticsProviding else { return nil }
+        return await provider.transportDiagnosticsSnapshot()
+    }
 }
 
 final class RealtimeAudioBufferPump {
@@ -91,7 +104,9 @@ final class RealtimeAudioBufferPump {
     }
 }
 
-actor BufferedRealtimeTranscriptionSession: RealtimeTranscriptionSession {
+actor BufferedRealtimeTranscriptionSession: RealtimeTranscriptionSession,
+    RealtimeTranscriptionConnectionAwaiting,
+    RealtimeTransportDiagnosticsProviding {
     private enum State {
         case idle
         case starting
@@ -119,6 +134,10 @@ actor BufferedRealtimeTranscriptionSession: RealtimeTranscriptionSession {
             try await upstream.start()
         }
         Task { await completeStart() }
+    }
+
+    func waitUntilConnectionReady() async throws {
+        try await startTask?.value
     }
 
     func append(_ buffer: AVAudioPCMBuffer) async {
@@ -165,6 +184,11 @@ actor BufferedRealtimeTranscriptionSession: RealtimeTranscriptionSession {
         pendingChunks.removeAll()
         chunker.reset()
         await upstream.cancel()
+    }
+
+    func transportDiagnosticsSnapshot() async -> NetworkTransportDiagnosticsSnapshot? {
+        guard let provider = upstream as? any RealtimeTransportDiagnosticsProviding else { return nil }
+        return await provider.transportDiagnosticsSnapshot()
     }
 
     private func completeStart() async {

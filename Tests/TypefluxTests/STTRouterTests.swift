@@ -84,6 +84,37 @@ private final class MockScenarioAwareTranscriber: TypefluxCloudScenarioAwareTran
     }
 }
 
+private final class MockOptimizeAwareTranscriber: ASROptimizeAwareTranscriber {
+    var resultToReturn = "transcribed"
+    var transcribeCallCount = 0
+    var lastOptimize: Bool?
+
+    func transcribeStream(
+        audioFile _: AudioFile,
+        scenario _: TypefluxCloudScenario,
+        optimize: Bool,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> String {
+        transcribeCallCount += 1
+        lastOptimize = optimize
+        await onUpdate(TranscriptionSnapshot(text: resultToReturn, isFinal: true))
+        return resultToReturn
+    }
+
+    func transcribeStream(
+        audioFile: AudioFile,
+        scenario: TypefluxCloudScenario,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> String {
+        try await transcribeStream(
+            audioFile: audioFile,
+            scenario: scenario,
+            optimize: true,
+            onUpdate: onUpdate
+        )
+    }
+}
+
 private final class MockIntegratedTypefluxTranscriber: TypefluxCloudLLMIntegratedTranscriber {
     var resultToReturn: (transcript: String, rewritten: String?) = ("transcribed", "rewritten")
     var errorToThrow: Error?
@@ -337,6 +368,30 @@ final class STTRouterTests: XCTestCase {
         XCTAssertEqual(result, "cloud fallback")
         XCTAssertEqual(typefluxOfficial.transcribeCallCount, 1)
         XCTAssertEqual(appleSpeech.transcribeCallCount, 0)
+    }
+
+    func testLocalModelCloudFallbackPreservesOptimize() async throws {
+        settings.sttProvider = .localModel
+        settings.useAppleSpeechFallback = false
+        localModel.errorToThrow = NSError(
+            domain: LocalModelTranscriber.notPreparedErrorDomain,
+            code: LocalModelTranscriber.notPreparedErrorCode
+        )
+        let optimizeAwareCloud = MockOptimizeAwareTranscriber()
+        optimizeAwareCloud.resultToReturn = "cloud fallback"
+        let router = makeRouter(
+            typefluxOfficialOverride: optimizeAwareCloud,
+            isTypefluxCloudLoggedIn: { true }
+        )
+
+        let result = try await router.transcribeStream(
+            audioFile: dummyAudioFile(),
+            optimize: false
+        ) { _ in }
+
+        XCTAssertEqual(result, "cloud fallback")
+        XCTAssertEqual(optimizeAwareCloud.transcribeCallCount, 1)
+        XCTAssertEqual(optimizeAwareCloud.lastOptimize, false)
     }
 
     func testTypefluxOfficialBillingFailureDoesNotFallBackToAppleSpeech() async throws {
