@@ -43,6 +43,8 @@ final class SettingsWindowController: NSObject {
         settingsStore: SettingsStore,
         historyStore: HistoryStore,
         initialSection: StudioSection = .settings,
+        modelManager: OllamaModelManaging = OllamaLocalModelManager(),
+        localModelManager: LocalSTTModelManaging = LocalModelManager(),
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in }
     ) {
@@ -65,6 +67,8 @@ final class SettingsWindowController: NSObject {
             historyStore: historyStore,
             initialSection: initialSection,
             onRetryHistory: onRetryHistory,
+            modelManager: modelManager,
+            localModelManager: localModelManager,
             notificationService: notificationService
         )
         AppLocalization.shared.setLanguage(viewModel.appLanguage)

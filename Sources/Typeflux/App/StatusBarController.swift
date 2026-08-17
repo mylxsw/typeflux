@@ -29,6 +29,8 @@ final class StatusBarController: NSObject {
     private let settingsStore: SettingsStore
     private let historyStore: HistoryStore
     private let agentJobStore: AgentJobStore
+    private let modelManager: OllamaModelManaging
+    private let localModelManager: LocalSTTModelManaging
     private let notificationService: LocalNotificationSending
     private let onRetryHistory: (HistoryRecord) -> Void
     private let onOpenOnboarding: () -> Void
@@ -53,6 +55,8 @@ final class StatusBarController: NSObject {
         settingsStore: SettingsStore,
         historyStore: HistoryStore,
         agentJobStore: AgentJobStore,
+        modelManager: OllamaModelManaging = OllamaLocalModelManager(),
+        localModelManager: LocalSTTModelManaging = LocalModelManager(),
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
         onOpenOnboarding: @escaping () -> Void = {},
@@ -63,6 +67,8 @@ final class StatusBarController: NSObject {
         self.settingsStore = settingsStore
         self.historyStore = historyStore
         self.agentJobStore = agentJobStore
+        self.modelManager = modelManager
+        self.localModelManager = localModelManager
         self.notificationService = notificationService
         self.onRetryHistory = onRetryHistory
         self.onOpenOnboarding = onOpenOnboarding
@@ -477,6 +483,8 @@ final class StatusBarController: NSObject {
                 settingsStore: settingsStore,
                 historyStore: historyStore,
                 initialSection: section,
+                modelManager: modelManager,
+                localModelManager: localModelManager,
                 notificationService: notificationService,
                 onRetryHistory: onRetryHistory
             )
@@ -500,6 +508,8 @@ final class StatusBarController: NSObject {
             settingsStore: settingsStore,
             historyStore: historyStore,
             initialSection: .history,
+            modelManager: modelManager,
+            localModelManager: localModelManager,
             notificationService: notificationService,
             onRetryHistory: onRetryHistory
         )

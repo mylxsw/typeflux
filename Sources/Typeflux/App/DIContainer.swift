@@ -25,6 +25,7 @@ final class DIContainer {
     let localModelManager: LocalModelManager
     let bundledModelAutoSetup: BundledModelAutoSetup
     let autoModelDownloadService: AutoModelDownloadService
+    let analyticsReporter: AppAnalyticsReporter
     let agentJobStore: AgentJobStore
     let agentExecutionRegistry: AgentExecutionRegistry
     let agentJobsWindowController: AgentJobsWindowController
@@ -61,7 +62,8 @@ final class DIContainer {
             executionRegistry: agentExecutionRegistry
         )
         mcpRegistry = MCPRegistry()
-        ollamaModelManager = OllamaLocalModelManager()
+        analyticsReporter = AppAnalyticsReporter()
+        ollamaModelManager = OllamaLocalModelManager(analyticsReporter: analyticsReporter)
         llmAgentService = LLMAgentRouter(
             settingsStore: settingsStore,
             remote: OpenAICompatibleAgentService(settingsStore: settingsStore),
@@ -69,7 +71,7 @@ final class DIContainer {
         )
         notificationService = SystemLocalNotificationService.shared
         cloudLoginSyncCoordinator = CloudLoginSyncCoordinator(settingsStore: settingsStore)
-        localModelManager = LocalModelManager()
+        localModelManager = LocalModelManager(analyticsReporter: analyticsReporter)
         bundledModelAutoSetup = BundledModelAutoSetup(linker: localModelManager)
         autoModelDownloadService = AutoModelDownloadService(
             modelManager: localModelManager,

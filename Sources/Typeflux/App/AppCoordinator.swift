@@ -9,9 +9,18 @@ final class AppCoordinator {
     private var onboardingWindowController: OnboardingWindowController?
     private let cloudEndpointProbeScheduler = CloudEndpointProbeScheduler()
     private let asrPublicConfigRefreshScheduler = TypefluxASRPublicConfigRefreshScheduler()
+    private var authAnalyticsObserver: NSObjectProtocol?
 
     // swiftlint:disable:next function_body_length
     func start() {
+        di.analyticsReporter.reportFirstOpenIfNeeded()
+        authAnalyticsObserver = NotificationCenter.default.addObserver(
+            forName: .authDidLogin,
+            object: nil,
+            queue: .main
+        ) { [weak reporter = di.analyticsReporter] _ in
+            reporter?.report(eventName: "app_login", properties: [:])
+        }
         let settingsStore = di.settingsStore
         let localModelManager = di.localModelManager
         let workflowController = WorkflowController(
@@ -62,6 +71,8 @@ final class AppCoordinator {
             settingsStore: di.settingsStore,
             historyStore: di.historyStore,
             agentJobStore: di.agentJobStore,
+            modelManager: di.ollamaModelManager,
+            localModelManager: di.localModelManager,
             notificationService: di.notificationService,
             onRetryHistory: { [weak self] record in
                 self?.workflowController?.retry(record: record)
@@ -98,6 +109,8 @@ final class AppCoordinator {
     }
 
     func stop() {
+        if let authAnalyticsObserver { NotificationCenter.default.removeObserver(authAnalyticsObserver) }
+        authAnalyticsObserver = nil
         cloudEndpointProbeScheduler.stop()
         asrPublicConfigRefreshScheduler.stop()
         workflowController?.stop()
@@ -137,6 +150,8 @@ final class AppCoordinator {
             settingsStore: di.settingsStore,
             historyStore: di.historyStore,
             initialSection: .settings,
+            modelManager: di.ollamaModelManager,
+            localModelManager: di.localModelManager,
             notificationService: di.notificationService,
             onRetryHistory: { [weak self] record in
                 self?.workflowController?.retry(record: record)

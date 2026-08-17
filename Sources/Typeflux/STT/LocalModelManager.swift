@@ -137,6 +137,7 @@ final class LocalModelManager: LocalSTTModelManaging {
     private let remoteFileDownloader: RemoteFileDownloader
     private let downloadSourceResolver: LocalModelDownloadSourceResolving
     private let bundledModelLocator: BundledLocalModelLocator
+    private let analyticsReporter: AnalyticsEventReporting
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
     private let _modelsRootURL: URL
@@ -178,7 +179,8 @@ final class LocalModelManager: LocalSTTModelManaging {
             )
         },
         downloadSourceResolver: LocalModelDownloadSourceResolving = NetworkLocalModelDownloadSourceResolver(),
-        bundledModelsRootURL: URL? = nil
+        bundledModelsRootURL: URL? = nil,
+        analyticsReporter: AnalyticsEventReporting = NoopAnalyticsEventReporter.shared
     ) {
         self.fileManager = fileManager
         self.whisperKitPreparerFactory = whisperKitPreparerFactory
@@ -187,6 +189,7 @@ final class LocalModelManager: LocalSTTModelManaging {
         self.remoteRepositoryFileListLoader = remoteRepositoryFileListLoader
         self.remoteFileDownloader = remoteFileDownloader
         self.downloadSourceResolver = downloadSourceResolver
+        self.analyticsReporter = analyticsReporter
         bundledModelLocator = BundledLocalModelLocator(bundledModelsRootURL: bundledModelsRootURL)
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let base = applicationSupportURL
@@ -268,10 +271,19 @@ final class LocalModelManager: LocalSTTModelManaging {
         configuration: LocalSTTConfiguration,
         onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)? = nil
     ) async throws -> LocalModelDownloadResult {
+        let jobID = UUID().uuidString.lowercased()
+        let jobStartedAt = ContinuousClock.now
         let sources = await downloadSourceResolver.rankedSources(for: configuration)
         var lastError: Error?
 
-        for source in sources {
+        for (retryIndex, source) in sources.enumerated() {
+            let attemptID = UUID().uuidString.lowercased()
+            let attemptStartedAt = ContinuousClock.now
+            var baseProperties = analyticsProperties(
+                configuration: configuration, source: source, attemptID: attemptID, jobID: jobID
+            )
+            baseProperties["retry_index"] = String(retryIndex)
+            analyticsReporter.report(eventName: "model_download_started", properties: baseProperties)
             do {
                 let sourceConfiguration = LocalSTTConfiguration(
                     model: configuration.model,
@@ -284,9 +296,24 @@ final class LocalModelManager: LocalSTTModelManaging {
                     selectedSource: source,
                     onUpdate: onUpdate
                 )
+                var properties = baseProperties
+                properties["duration_ms"] = String(Self.milliseconds(from: attemptStartedAt, to: .now))
+                properties["job_duration_ms"] = String(Self.milliseconds(from: jobStartedAt, to: .now))
+                properties["status"] = "succeeded"
+                analyticsReporter.report(eventName: "model_download_succeeded", properties: properties)
                 return LocalModelDownloadResult(storagePath: storagePath, source: source)
             } catch {
                 lastError = error
+                let cancelled = error is CancellationError || Task.isCancelled
+                var properties = baseProperties
+                properties["duration_ms"] = String(Self.milliseconds(from: attemptStartedAt, to: .now))
+                properties["job_duration_ms"] = String(Self.milliseconds(from: jobStartedAt, to: .now))
+                properties["status"] = cancelled ? "cancelled" : "failed"
+                properties["error_category"] = Self.errorCategory(error)
+                analyticsReporter.report(
+                    eventName: cancelled ? "model_download_cancelled" : "model_download_failed",
+                    properties: properties
+                )
                 NetworkDebugLogger.logError(
                     context: "[Local Model Download] source failed: \(source.displayName)",
                     error: error
@@ -300,14 +327,45 @@ final class LocalModelManager: LocalSTTModelManaging {
                 if !isPreparedStoragePathValid(attemptedPath, for: configuration.model) {
                     try? fileManager.removeItem(at: URL(fileURLWithPath: attemptedPath, isDirectory: true))
                 }
+                if cancelled { break }
             }
         }
 
-        throw lastError ?? NSError(
+        let finalError = lastError ?? NSError(
             domain: "LocalModelManager",
             code: 8,
             userInfo: [NSLocalizedDescriptionKey: "All local model download sources failed."]
         )
+        throw finalError
+    }
+
+    private func analyticsProperties(
+        configuration: LocalSTTConfiguration,
+        source: ModelDownloadSource,
+        attemptID: String,
+        jobID: String
+    ) -> [String: String] {
+        [
+            "attempt_id": attemptID,
+            "job_id": jobID,
+            "model_kind": "stt",
+            "model_type": configuration.model.rawValue,
+            "model_identifier": configuration.modelIdentifier,
+            "download_source": source.rawValue,
+            "source_host": LocalModelDownloadCatalog.probeURLs(for: configuration.model, source: source).first?.host ?? "",
+            "normalized_path": configuration.modelIdentifier
+        ]
+    }
+
+    private static func errorCategory(_ error: Error) -> String {
+        if error is CancellationError || Task.isCancelled { return "cancelled" }
+        if let urlError = error as? URLError { return "network_\(urlError.code.rawValue)" }
+        return "download_failed"
+    }
+
+    private static func milliseconds(from start: ContinuousClock.Instant, to end: ContinuousClock.Instant) -> Int64 {
+        let components = start.duration(to: end).components
+        return components.seconds * 1_000 + Int64(components.attoseconds / 1_000_000_000_000_000)
     }
 
     private func downloadModelFilesOnly(

@@ -5,8 +5,20 @@ protocol OllamaModelManaging {
 }
 
 final class OllamaLocalModelManager: OllamaModelManaging {
-    private let commandRunner = ProcessCommandRunner()
+    private let commandRunner: ProcessCommandRunning
     private let fileManager = FileManager.default
+    private let analyticsReporter: AnalyticsEventReporting
+    private let session: URLSession
+
+    init(
+        analyticsReporter: AnalyticsEventReporting = NoopAnalyticsEventReporter.shared,
+        commandRunner: ProcessCommandRunning = ProcessCommandRunner(),
+        session: URLSession = .shared
+    ) {
+        self.analyticsReporter = analyticsReporter
+        self.commandRunner = commandRunner
+        self.session = session
+    }
 
     func ensureModelReady(settingsStore: SettingsStore) async throws {
         let model = settingsStore.ollamaModel.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -28,7 +40,32 @@ final class OllamaLocalModelManager: OllamaModelManaging {
 
         if try await !hasModel(named: model, baseURL: baseURL) {
             NetworkDebugLogger.logMessage("Ollama model \(model) is missing locally, pulling it now")
-            _ = try await commandRunner.run(executablePath: executable, arguments: ["pull", model])
+            let attemptID = UUID().uuidString.lowercased()
+            let startedAt = ContinuousClock.now
+            let baseProperties = [
+                "attempt_id": attemptID, "job_id": attemptID, "model_kind": "llm", "model_type": "ollama",
+                "model_identifier": model, "download_source": "ollama",
+                "source_host": baseURL.host ?? "local-ollama", "normalized_path": model
+            ]
+            analyticsReporter.report(eventName: "model_download_started", properties: baseProperties)
+            do {
+                _ = try await commandRunner.run(executablePath: executable, arguments: ["pull", model])
+                var properties = baseProperties
+                properties["duration_ms"] = String(startedAt.duration(to: .now).milliseconds)
+                properties["status"] = "succeeded"
+                analyticsReporter.report(eventName: "model_download_succeeded", properties: properties)
+            } catch {
+                let cancelled = error is CancellationError || Task.isCancelled
+                var properties = baseProperties
+                properties["duration_ms"] = String(startedAt.duration(to: .now).milliseconds)
+                properties["status"] = cancelled ? "cancelled" : "failed"
+                properties["error_category"] = cancelled ? "cancelled" : "ollama_pull_failed"
+                analyticsReporter.report(
+                    eventName: cancelled ? "model_download_cancelled" : "model_download_failed",
+                    properties: properties
+                )
+                throw error
+            }
         }
     }
 
@@ -104,7 +141,7 @@ final class OllamaLocalModelManager: OllamaModelManaging {
         request.timeoutInterval = 2
 
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
+            let (_, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse else { return false }
             return (200 ..< 300).contains(http.statusCode)
         } catch {
@@ -148,7 +185,7 @@ final class OllamaLocalModelManager: OllamaModelManaging {
 
     private func hasModel(named model: String, baseURL: URL) async throws -> Bool {
         let request = URLRequest(url: baseURL.appendingPathComponent("api/tags"))
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
             return false
         }
@@ -157,6 +194,13 @@ final class OllamaLocalModelManager: OllamaModelManaging {
         return payload.models.contains { entry in
             entry.name == model || entry.name.hasPrefix("\(model):")
         }
+    }
+}
+
+private extension Duration {
+    var milliseconds: Int64 {
+        let components = self.components
+        return components.seconds * 1_000 + Int64(components.attoseconds / 1_000_000_000_000_000)
     }
 }
 

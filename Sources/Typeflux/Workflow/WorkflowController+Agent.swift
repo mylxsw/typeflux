@@ -301,11 +301,7 @@ extension WorkflowController {
     /// Asynchronously generates and saves a summary title for the given job.
     private func scheduleJobTitle(for jobID: UUID) {
         let jobStore = agentJobStore
-        let titleLLMService = LLMRouter(
-            settingsStore: settingsStore,
-            openAICompatible: OpenAICompatibleLLMService(settingsStore: settingsStore),
-            ollama: OllamaLLMService(settingsStore: settingsStore, modelManager: OllamaLocalModelManager())
-        )
+        let titleLLMService = llmService
         Task.detached {
             if var job = try? await jobStore.job(id: jobID) {
                 let title = await AgentJobTitleGenerator.generateTitle(
