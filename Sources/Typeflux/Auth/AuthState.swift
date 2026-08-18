@@ -7,6 +7,10 @@ extension Notification.Name {
     /// token refresh or session restore at app launch.
     static let authDidLogin = Notification.Name("AuthState.authDidLogin")
 
+    /// Posted on the main actor after the local Cloud session is cleared so
+    /// presence heartbeats can immediately drop the previous user association.
+    static let authDidLogout = Notification.Name("AuthState.authDidLogout")
+
     /// Posted on the main actor when a checkout-started subscription refresh
     /// observes that the account has become entitled to Typeflux Cloud or has
     /// upgraded from a free/non-paid plan to a paid Cloud subscription.
@@ -191,6 +195,7 @@ final class AuthState: ObservableObject {
         checkoutPollingTask?.cancel()
         checkoutPollingTask = nil
         logger.info("User logged out")
+        NotificationCenter.default.post(name: .authDidLogout, object: self)
     }
 
     // MARK: - Token Refresh

@@ -53,6 +53,26 @@ final class CloudEndpointProberTests: XCTestCase {
         )
     }
 
+    func testProbeIncludesOptionalCloudAccessToken() async throws {
+        ProberURLProtocol.requestInspector = { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-access-token")
+        }
+        ProberURLProtocol.responder = { request in
+            let body = #"{"code":"OK","data":{"pong":true,"nonce":"n","server_id":"s1","server_time_ms":1,"version":"v1"}}"#
+            return Self.makeResponse(url: request.url!, status: 200, body: body)
+        }
+
+        let prober = HTTPCloudEndpointProber(
+            session: stubSession(),
+            accessTokenProvider: { "test-access-token" }
+        )
+        _ = try await prober.probe(
+            baseURL: XCTUnwrap(URL(string: "https://example.com")),
+            nonce: "n",
+            timeout: 1
+        )
+    }
+
     func testProbeThrowsOnNonceMismatch() async throws {
         ProberURLProtocol.responder = { request in
             let body = #"{"code":"OK","data":{"pong":true,"nonce":"DIFFERENT","server_id":"s","server_time_ms":1,"version":"v"}}"#

@@ -10,6 +10,7 @@ final class AppCoordinator {
     private let cloudEndpointProbeScheduler = CloudEndpointProbeScheduler()
     private let asrPublicConfigRefreshScheduler = TypefluxASRPublicConfigRefreshScheduler()
     private var authAnalyticsObserver: NSObjectProtocol?
+    private var authLogoutObserver: NSObjectProtocol?
 
     // swiftlint:disable:next function_body_length
     func start() {
@@ -20,6 +21,14 @@ final class AppCoordinator {
             queue: .main
         ) { [weak reporter = di.analyticsReporter] _ in
             reporter?.report(eventName: "app_login", properties: [:])
+            Task { await CloudEndpointRegistry.shared.probeAll() }
+        }
+        authLogoutObserver = NotificationCenter.default.addObserver(
+            forName: .authDidLogout,
+            object: nil,
+            queue: .main
+        ) { _ in
+            Task { await CloudEndpointRegistry.shared.probeAll() }
         }
         let settingsStore = di.settingsStore
         let localModelManager = di.localModelManager
@@ -110,7 +119,9 @@ final class AppCoordinator {
 
     func stop() {
         if let authAnalyticsObserver { NotificationCenter.default.removeObserver(authAnalyticsObserver) }
+        if let authLogoutObserver { NotificationCenter.default.removeObserver(authLogoutObserver) }
         authAnalyticsObserver = nil
+        authLogoutObserver = nil
         cloudEndpointProbeScheduler.stop()
         asrPublicConfigRefreshScheduler.stop()
         workflowController?.stop()

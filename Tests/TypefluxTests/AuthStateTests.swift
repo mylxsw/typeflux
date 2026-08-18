@@ -513,8 +513,18 @@ final class AuthStateTests: XCTestCase {
         await waitForRefreshCompletion(state)
         await state.refreshSubscription()
 
+        let logoutNotification = expectation(description: "logout presence notification")
+        let observer = NotificationCenter.default.addObserver(
+            forName: .authDidLogout,
+            object: state,
+            queue: .main
+        ) { _ in
+            logoutNotification.fulfill()
+        }
         state.logout()
 
+        await fulfillment(of: [logoutNotification], timeout: 1)
+        NotificationCenter.default.removeObserver(observer)
         XCTAssertFalse(state.isLoggedIn)
         XCTAssertEqual(state.subscription, .none)
     }

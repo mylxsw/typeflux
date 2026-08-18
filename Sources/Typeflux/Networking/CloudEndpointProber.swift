@@ -44,9 +44,14 @@ protocol CloudEndpointProbing: Sendable {
 /// Production prober that hits `<baseURL>/api/v1/ping?nonce=<nonce>` over HTTPS.
 struct HTTPCloudEndpointProber: CloudEndpointProbing {
     private let session: URLSession
+    private let accessTokenProvider: @Sendable () -> String?
 
-    init(session: URLSession = .shared) {
+    init(
+        session: URLSession = .shared,
+        accessTokenProvider: @escaping @Sendable () -> String? = { nil }
+    ) {
         self.session = session
+        self.accessTokenProvider = accessTokenProvider
     }
 
     func probe(baseURL: URL, nonce: String, timeout: TimeInterval) async throws -> CloudEndpointProbeResult {
@@ -65,6 +70,9 @@ struct HTTPCloudEndpointProber: CloudEndpointProbing {
         request.timeoutInterval = timeout
         request.setValue("no-store", forHTTPHeaderField: "Cache-Control")
         TypefluxCloudRequestHeaders.applyClientInfo(to: &request)
+        if let accessToken = accessTokenProvider() {
+            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        }
 
         let start = ContinuousClock.now
 
