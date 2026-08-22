@@ -187,6 +187,12 @@ struct BillingPortalSession: Decodable, Equatable {
 
 struct BillingPageTokenResponse: Decodable, Equatable {
     let token: String
+    let plansURL: URL
+
+    enum CodingKeys: String, CodingKey {
+        case token
+        case plansURL = "plans_url"
+    }
 }
 
 struct BillingCheckoutSessionRequest: Encodable {

@@ -97,12 +97,12 @@ extension AuthState {
         return session.url
     }
 
-    func requestBillingPageToken() async throws -> String {
+    func requestBillingPageToken() async throws -> URL {
         guard let token = accessToken else {
             throw AuthError.unauthorized
         }
         let response = try await issueBillingPageToken(token)
-        return response.token
+        return response.plansURL
     }
 
     private func startCheckoutPolling() {

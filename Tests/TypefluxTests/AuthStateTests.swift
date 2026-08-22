@@ -396,13 +396,16 @@ final class AuthStateTests: XCTestCase {
             fetchSubscription: { _ in .none },
             issueBillingPageToken: { token in
                 requestedAccessToken = token
-                return BillingPageTokenResponse(token: "billing.jwt.token")
+                return BillingPageTokenResponse(
+                    token: "billing.jwt.token",
+                    plansURL: URL(string: "https://billing.example/plans#t=billing.jwt.token")!
+                )
             }
         )
 
-        let pageToken = try await state.requestBillingPageToken()
+        let plansURL = try await state.requestBillingPageToken()
 
-        XCTAssertEqual(pageToken, "billing.jwt.token")
+        XCTAssertEqual(plansURL.absoluteString, "https://billing.example/plans#t=billing.jwt.token")
         XCTAssertEqual(requestedAccessToken, "valid-token")
     }
 
@@ -418,7 +421,10 @@ final class AuthStateTests: XCTestCase {
             fetchSubscription: { _ in .none },
             issueBillingPageToken: { _ in
                 XCTFail("Page token API should not be called without a session")
-                return BillingPageTokenResponse(token: "unexpected")
+                return BillingPageTokenResponse(
+                    token: "unexpected",
+                    plansURL: URL(string: "https://billing.example/plans#t=unexpected")!
+                )
             }
         )
 
