@@ -359,6 +359,9 @@
 "workflow.devApp.requiredMessage" = "请通过 scripts/run_dev_app.sh 运行（隐私权限需要 .app 包）";
 "workflow.devApp.requiredStatus" = "请以 .app 运行";
 "workflow.audioStart.failedStatus" = "音频启动失败";
+"workflow.audioStart.noMicrophone" = "未检测到可用的麦克风。请连接麦克风，或前往“系统设置 > 声音 > 输入”选择输入设备，然后重试。";
+"workflow.audioStart.microphoneNotReady" = "麦克风暂时没有准备好。请重新连接麦克风，或前往“系统设置 > 声音 > 输入”选择其他输入设备，然后重试。";
+"workflow.audioStart.genericFailure" = "无法开始录音。请确认麦克风已连接且可用，然后重试。";
 "workflow.processing.failed" = "处理失败";
 "workflow.recording.tooShort" = "说话时间太短，本次转写已取消。";
 "workflow.transcription.emptySkipped" = "由于转写结果为空，已跳过后续处理。";
@@ -1154,6 +1157,9 @@
 "cloud.error.rateLimited" = "请求过于频繁，请稍后再试。";
 "cloud.error.quotaExceeded" = "Typeflux Cloud 使用额度已用完。";
 "cloud.error.planRequired" = "当前套餐不包含此 Typeflux Cloud 功能。请打开账号页面订阅或管理账单。";
+"cloud.error.subscriptionExists" = "你已有订阅，请打开账单管理进行变更或恢复。";
+"cloud.error.billingConnectionUnavailable" = "暂时无法连接 Typeflux Cloud，因此未能加载订阅信息。请检查网络连接后重试；你的账号不会因此发生变化。";
+"cloud.error.billingServiceUnavailable" = "Typeflux Cloud 暂时无法加载订阅信息，你的账号不会因此发生变化。请过几分钟再试。";
 "cloud.error.server" = "Typeflux Cloud 暂时不可用，请稍后再试。";
 "cloud.billing.subscriptionRequired.title" = "需要开通 Typeflux Cloud";
 "cloud.billing.subscriptionRequired.body" = "当前套餐暂不包含这项云端功能。开通会员后即可继续使用 Typeflux Cloud。";

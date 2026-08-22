@@ -5,13 +5,26 @@ struct BillingAPIService: Sendable {
     private static let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "BillingAPIService")
 
     private let executor: CloudRequestExecutor
+    private let retrySleep: RequestRetry.SleepClosure
 
-    init(executor: CloudRequestExecutor = CloudRequestExecutor()) {
+    init(
+        executor: CloudRequestExecutor = CloudRequestExecutor(),
+        retrySleep: @escaping RequestRetry.SleepClosure = { duration in
+            try await Task.sleep(for: duration)
+        }
+    ) {
         self.executor = executor
+        self.retrySleep = retrySleep
     }
 
     func fetchSubscription(token: String) async throws -> BillingSubscriptionSnapshot {
-        try await execute(path: "/api/v1/billing/subscription", method: "GET", token: token, body: nil)
+        try await RequestRetry.perform(
+            operationName: "Billing subscription refresh",
+            shouldRetry: { error in Self.isRetryableAvailabilityError(error) },
+            sleep: retrySleep
+        ) {
+            try await execute(path: "/api/v1/billing/subscription", method: "GET", token: token, body: nil)
+        }
     }
 
     func createCheckoutSession(token: String, planCode: String) async throws -> BillingCheckoutSession {
@@ -66,10 +79,10 @@ struct BillingAPIService: Sendable {
             throw CancellationError()
         } catch let CloudRequestExecutorError.allEndpointsFailed(lastError) {
             Self.logger.error("All billing endpoints failed: \(lastError.localizedDescription)")
-            throw AuthError.networkError(lastError)
+            throw Self.availabilityError(for: lastError)
         } catch {
             Self.logger.error("Billing network error: \(error.localizedDescription)")
-            throw AuthError.networkError(error)
+            throw Self.availabilityError(for: error)
         }
 
         let envelope: APIResponse<Response>
@@ -77,7 +90,7 @@ struct BillingAPIService: Sendable {
             envelope = try JSONDecoder().decode(APIResponse<Response>.self, from: data)
         } catch {
             Self.logger.error("Billing decoding error: \(error.localizedDescription)")
-            throw AuthError.invalidResponse
+            throw AuthError.serverError(code: "BILLING_SERVICE_UNAVAILABLE", message: nil)
         }
 
         if httpResponse.statusCode == 401 {
@@ -92,5 +105,19 @@ struct BillingAPIService: Sendable {
         }
 
         return responseData
+    }
+
+    private static func availabilityError(for error: Error) -> AuthError {
+        let nsError = error as NSError
+        let code = nsError.domain == NSURLErrorDomain
+            ? "BILLING_CONNECTION_UNAVAILABLE"
+            : "BILLING_SERVICE_UNAVAILABLE"
+        return AuthError.serverError(code: code, message: nil)
+    }
+
+    private static func isRetryableAvailabilityError(_ error: Error) -> Bool {
+        guard let authError = error as? AuthError else { return false }
+        return authError.authErrorCode == "BILLING_CONNECTION_UNAVAILABLE"
+            || authError.authErrorCode == "BILLING_SERVICE_UNAVAILABLE"
     }
 }

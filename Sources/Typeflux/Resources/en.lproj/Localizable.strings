@@ -359,6 +359,9 @@
 "workflow.devApp.requiredMessage" = "Please run via scripts/run_dev_app.sh (app bundle required for privacy permissions)";
 "workflow.devApp.requiredStatus" = "Run as .app";
 "workflow.audioStart.failedStatus" = "Audio start failed";
+"workflow.audioStart.noMicrophone" = "No microphone is available. Connect a microphone, or choose an input device in System Settings > Sound > Input, then try again.";
+"workflow.audioStart.microphoneNotReady" = "The microphone isn't ready yet. Reconnect it or choose another input device in System Settings > Sound > Input, then try again.";
+"workflow.audioStart.genericFailure" = "Recording couldn't start. Check that your microphone is connected and available, then try again.";
 "workflow.processing.failed" = "Processing failed";
 "workflow.recording.tooShort" = "Speech was too short. Transcription cancelled.";
 "workflow.transcription.emptySkipped" = "Skipped because transcription was empty.";
@@ -1154,6 +1157,9 @@
 "cloud.error.rateLimited" = "Too many requests. Please wait a moment and try again.";
 "cloud.error.quotaExceeded" = "Your Typeflux Cloud usage quota has been exhausted.";
 "cloud.error.planRequired" = "Your current plan does not include this Typeflux Cloud feature. Open Account to subscribe or manage billing.";
+"cloud.error.subscriptionExists" = "You already have a subscription. Open billing management to change or resume it.";
+"cloud.error.billingConnectionUnavailable" = "We couldn't connect to Typeflux Cloud to load your subscription. Check your internet connection and try again. Your account has not been changed.";
+"cloud.error.billingServiceUnavailable" = "Typeflux Cloud couldn't load your subscription right now. Your account has not been changed. Please try again in a few minutes.";
 "cloud.error.server" = "Typeflux Cloud is temporarily unavailable. Please try again later.";
 "cloud.billing.subscriptionRequired.title" = "Typeflux Cloud needs a subscription";
 "cloud.billing.subscriptionRequired.body" = "This Cloud feature is not included in your current plan. Subscribe to keep using Typeflux Cloud.";

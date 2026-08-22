@@ -357,6 +357,9 @@
 "workflow.devApp.requiredMessage" = "請透過 scripts/run_dev_app.sh 執行（隱私權限需要 .app 包）";
 "workflow.devApp.requiredStatus" = "請以 .app 執行";
 "workflow.audioStart.failedStatus" = "音訊啟動失敗";
+"workflow.audioStart.noMicrophone" = "未偵測到可用的麥克風。請連接麥克風，或前往「系統設定 > 聲音 > 輸入」選擇輸入裝置，然後再試一次。";
+"workflow.audioStart.microphoneNotReady" = "麥克風尚未準備好。請重新連接麥克風，或前往「系統設定 > 聲音 > 輸入」選擇其他輸入裝置，然後再試一次。";
+"workflow.audioStart.genericFailure" = "無法開始錄音。請確認麥克風已連接且可用，然後再試一次。";
 "workflow.processing.failed" = "處理失敗";
 "workflow.recording.tooShort" = "說話時間太短，本次轉寫已取消。";
 "workflow.transcription.emptySkipped" = "因轉寫結果為空，已略過後續處理。";
@@ -1150,6 +1153,9 @@
 "cloud.error.rateLimited" = "請求過於頻繁，請稍後再試。";
 "cloud.error.quotaExceeded" = "Typeflux Cloud 使用額度已用完。";
 "cloud.error.planRequired" = "目前方案不包含此 Typeflux Cloud 功能。請開啟帳號頁面訂閱或管理帳單。";
+"cloud.error.subscriptionExists" = "你已有訂閱，請開啟帳單管理進行變更或恢復。";
+"cloud.error.billingConnectionUnavailable" = "暫時無法連接 Typeflux Cloud，因此未能載入訂閱資訊。請檢查網路連線後再試一次；你的帳號不會因此發生變更。";
+"cloud.error.billingServiceUnavailable" = "Typeflux Cloud 暫時無法載入訂閱資訊，你的帳號不會因此發生變更。請過幾分鐘再試一次。";
 "cloud.error.server" = "Typeflux Cloud 暫時無法使用，請稍後再試。";
 "cloud.billing.subscriptionRequired.title" = "需要開通 Typeflux Cloud";
 "cloud.billing.subscriptionRequired.body" = "目前方案暫不包含這項雲端功能。開通會員後即可繼續使用 Typeflux Cloud。";

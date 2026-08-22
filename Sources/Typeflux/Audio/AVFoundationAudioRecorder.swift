@@ -1,12 +1,18 @@
 import AVFoundation
+import AudioToolbox
 import Foundation
+import TypefluxAudioSafety
 
 final class AVFoundationAudioRecorder: AudioRecorder {
     private static let outputMuteDelayWithStartCue: Duration = .milliseconds(1225)
     private static let outputMuteDelayWithoutStartCue: Duration = .milliseconds(180)
-    private static let silentInputRecoveryDelay: Duration = .milliseconds(1000)
+    private static let silentInputRecoveryDelay: DispatchTimeInterval = .seconds(1)
     private static let silentInputRecoveryPeakPowerThreshold: Float = -58
     private static let audioStartupTimeout: DispatchTimeInterval = .seconds(5)
+    private static let configurationRecoveryDelay: DispatchTimeInterval = .milliseconds(200)
+    private static let configurationRecoveryContinuationDelay: DispatchTimeInterval = .seconds(1)
+    private static let configurationRecoveryRetryDelay: TimeInterval = 0.25
+    private static let configurationRecoveryMaxAttemptCount = 5
 
     enum RecorderError: LocalizedError, Equatable {
         case inputDeviceUnavailable
@@ -29,20 +35,26 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private let outputMuter: SystemAudioOutputMuting
     private let sleep: @Sendable (Duration) async -> Void
     private let writeCoordinator = AudioBufferWriteCoordinator()
+    private let configurationRecoveryQueue = DispatchQueue(label: "typeflux.audio.configuration-recovery")
     private let lifecycleLock = NSLock()
     private let stateCondition = NSCondition()
     private var audioFile: AVAudioFile?
+    private var recordingBufferConverter: AudioRecordingBufferConverter?
     private var startedAt: Date?
     private var levelHandler: ((Float) -> Void)?
     private var audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
     private var muteTask: Task<Void, Never>?
-    private var silentInputRecoveryTask: Task<Void, Never>?
+    private var inputHealthCheckWorkItem: DispatchWorkItem?
     private var isRecording = false
     private var isTapInstalled = false
     private var activeRecordingID: UUID?
     private var activeBufferCallbacks = 0
     private var inputBufferCallbackCount = 0
     private var peakInputPowerSinceStart: Float = -.infinity
+    private var engineConfigurationObserver: NSObjectProtocol?
+    private var preferredMicrophoneObserver: NSObjectProtocol?
+    private var defaultInputDeviceChangeObservation: AudioInputDeviceChangeObservation?
+    private var activeInputGenerationID: UUID?
 
     init(
         settingsStore: SettingsStore,
@@ -59,6 +71,11 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         self.makeAudioEngine = makeAudioEngine
         engine = makeAudioEngine()
         self.sleep = sleep
+    }
+
+    deinit {
+        removeInputChangeObservers()
+        inputHealthCheckWorkItem?.cancel()
     }
 
     func start(
@@ -103,28 +120,34 @@ final class AVFoundationAudioRecorder: AudioRecorder {
 
         engine = preparedSession.engine
         isTapInstalled = true
+        observeInputChanges(for: engine)
         let startedAt = Date()
         stateCondition.lock()
         audioFile = preparedSession.audioFile
+        recordingBufferConverter = preparedSession.recordingBufferConverter
         self.startedAt = startedAt
         self.levelHandler = levelHandler
         self.audioBufferHandler = audioBufferHandler
         activeRecordingID = preparedSession.id
+        activeInputGenerationID = preparedSession.inputGenerationID
         isRecording = true
-        let callbackCountAtStart = inputBufferCallbackCount
+        inputBufferCallbackCount = 0
+        let callbackCountAtStart = 0
         peakInputPowerSinceStart = -.infinity
         stateCondition.unlock()
 
-        do {
-            engine.prepare()
-            try engine.start()
-            RecordingStartupLatencyTrace.shared.mark("audio.engine_start_return")
-        } catch {
+        guard engine.isRunning else {
             stopInternal()
-            throw error
+            throw RecorderError.inputDeviceUnavailable
         }
 
-        scheduleSilentInputRecoveryIfNeeded(callbackCountAtStart: callbackCountAtStart)
+        scheduleInputHealthCheck(
+            for: engine,
+            recordingID: preparedSession.id,
+            inputGenerationID: preparedSession.inputGenerationID,
+            callbackCountAtStart: callbackCountAtStart,
+            requiresAudibleInput: true
+        )
         if settingsStore.muteSystemOutputDuringRecording {
             scheduleMutedSessionStart()
         }
@@ -144,6 +167,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             throw NSError(domain: "AudioRecorder", code: 1)
         }
 
+        removeInputChangeObservers()
+        cancelInputHealthCheck()
         removeInputTapIfInstalled()
         engine.stop()
 
@@ -160,17 +185,17 @@ final class AVFoundationAudioRecorder: AudioRecorder {
 
         stateCondition.lock()
         audioFile = nil
+        recordingBufferConverter = nil
         startedAt = nil
         levelHandler = nil
         audioBufferHandler = nil
         isRecording = false
         activeRecordingID = nil
+        activeInputGenerationID = nil
         peakInputPowerSinceStart = -.infinity
         stateCondition.unlock()
         muteTask?.cancel()
         muteTask = nil
-        silentInputRecoveryTask?.cancel()
-        silentInputRecoveryTask = nil
         outputMuter.endMutedSession()
 
         return AudioFile(fileURL: fileURL, duration: duration)
@@ -181,6 +206,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         let shouldStopEngine = isRecording || isTapInstalled
         stateCondition.unlock()
 
+        removeInputChangeObservers()
+        cancelInputHealthCheck()
         if shouldStopEngine {
             removeInputTapIfInstalled()
             engine.stop()
@@ -197,21 +224,22 @@ final class AVFoundationAudioRecorder: AudioRecorder {
 
         stateCondition.lock()
         audioFile = nil
+        recordingBufferConverter = nil
         startedAt = nil
         levelHandler = nil
         audioBufferHandler = nil
         isRecording = false
         activeRecordingID = nil
+        activeInputGenerationID = nil
         peakInputPowerSinceStart = -.infinity
         stateCondition.unlock()
         muteTask?.cancel()
         muteTask = nil
-        silentInputRecoveryTask?.cancel()
-        silentInputRecoveryTask = nil
         outputMuter.endMutedSession()
     }
 
     private func rebuildAudioEngine() {
+        removeInputChangeObservers()
         engine.stop()
         engine.reset()
         engine = makeAudioEngine()
@@ -266,10 +294,34 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         ]
 
         let outputFile = try AVAudioFile(forWriting: url, settings: outputSettings)
+        let recordingBufferConverter = AudioRecordingBufferConverter(targetFormat: outputFile.processingFormat)
+        let inputGenerationID = UUID()
         inputNode.removeTap(onBus: 0)
-        inputNode.installTap(onBus: 0, bufferSize: 2048, format: inputFormat) { [weak self, startupAttempt] buffer, _ in
+        try installInputTap(on: inputNode) { [weak self, startupAttempt] buffer, _ in
             guard !startupAttempt.isCancelled else { return }
-            self?.handleInputBuffer(buffer, recordingID: id)
+            self?.handleInputBuffer(
+                buffer,
+                recordingID: id,
+                inputGenerationID: inputGenerationID
+            )
+        }
+
+        guard !startupAttempt.isCancelled else {
+            inputNode.removeTap(onBus: 0)
+            sessionEngine.stop()
+            sessionEngine.reset()
+            throw RecorderError.inputStartupTimedOut
+        }
+
+        do {
+            sessionEngine.prepare()
+            try sessionEngine.start()
+            RecordingStartupLatencyTrace.shared.mark("audio.engine_start_return")
+        } catch {
+            inputNode.removeTap(onBus: 0)
+            sessionEngine.stop()
+            sessionEngine.reset()
+            throw error
         }
 
         guard !startupAttempt.isCancelled else {
@@ -282,7 +334,9 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         return PreparedRecordingSession(
             id: id,
             engine: sessionEngine,
-            audioFile: outputFile
+            audioFile: outputFile,
+            recordingBufferConverter: recordingBufferConverter,
+            inputGenerationID: inputGenerationID
         )
     }
 
@@ -292,10 +346,208 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         return (inputNode, inputFormat)
     }
 
+    private func observeInputChanges(for observedEngine: AVAudioEngine) {
+        removeInputChangeObservers()
+        engineConfigurationObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: observedEngine,
+            queue: nil
+        ) { [weak self, weak observedEngine] _ in
+            guard let self, let observedEngine else { return }
+            scheduleConfigurationRecovery(
+                for: observedEngine,
+                after: Self.configurationRecoveryDelay
+            )
+        }
+        preferredMicrophoneObserver = NotificationCenter.default.addObserver(
+            forName: .preferredMicrophoneDidChange,
+            object: settingsStore,
+            queue: nil
+        ) { [weak self, weak observedEngine] _ in
+            guard let self, let observedEngine else { return }
+            scheduleConfigurationRecovery(
+                for: observedEngine,
+                after: Self.configurationRecoveryDelay
+            )
+        }
+        defaultInputDeviceChangeObservation = audioDeviceManager.observeDefaultInputDeviceChanges {
+            [weak self, weak observedEngine] in
+            guard let self, let observedEngine else { return }
+            guard Self.shouldFollowSystemDefaultInputDevice(
+                preferredMicrophoneID: settingsStore.preferredMicrophoneID
+            ) else {
+                return
+            }
+            scheduleConfigurationRecovery(
+                for: observedEngine,
+                after: Self.configurationRecoveryDelay
+            )
+        }
+    }
+
+    private func scheduleConfigurationRecovery(
+        for observedEngine: AVAudioEngine,
+        after delay: DispatchTimeInterval,
+        nextHealthCheckRequiresAudibleInput: Bool = true
+    ) {
+        configurationRecoveryQueue.asyncAfter(
+            deadline: .now() + delay
+        ) { [weak self, weak observedEngine] in
+            guard let self, let observedEngine else { return }
+            recoverFromConfigurationChange(
+                for: observedEngine,
+                nextHealthCheckRequiresAudibleInput: nextHealthCheckRequiresAudibleInput
+            )
+        }
+    }
+
+    private func removeInputChangeObservers() {
+        if let engineConfigurationObserver {
+            NotificationCenter.default.removeObserver(engineConfigurationObserver)
+            self.engineConfigurationObserver = nil
+        }
+        if let preferredMicrophoneObserver {
+            NotificationCenter.default.removeObserver(preferredMicrophoneObserver)
+            self.preferredMicrophoneObserver = nil
+        }
+        defaultInputDeviceChangeObservation?.cancel()
+        defaultInputDeviceChangeObservation = nil
+    }
+
+    private func recoverFromConfigurationChange(
+        for observedEngine: AVAudioEngine,
+        nextHealthCheckRequiresAudibleInput: Bool = true
+    ) {
+        for attempt in 1 ... Self.configurationRecoveryMaxAttemptCount {
+            lifecycleLock.lock()
+
+            stateCondition.lock()
+            let shouldRecover = isRecording && engine === observedEngine
+            let recordingID = activeRecordingID
+            stateCondition.unlock()
+
+            guard shouldRecover, let recordingID else {
+                lifecycleLock.unlock()
+                return
+            }
+
+            do {
+                try replaceInputEngineAfterConfigurationChange(
+                    recordingID: recordingID,
+                    healthCheckRequiresAudibleInput: nextHealthCheckRequiresAudibleInput
+                )
+                lifecycleLock.unlock()
+                NetworkDebugLogger.logMessage(
+                    "[Audio Recorder] Restarted microphone input after a device change; awaiting audio buffers."
+                )
+                return
+            } catch {
+                lifecycleLock.unlock()
+                let isRecoverable = Self.isRecoverableInputReconfigurationError(error)
+                guard isRecoverable else {
+                    NetworkDebugLogger.logError(
+                        context: "Audio device configuration recovery failed",
+                        error: error
+                    )
+                    return
+                }
+
+                guard attempt < Self.configurationRecoveryMaxAttemptCount else {
+                    NetworkDebugLogger.logMessage(
+                        "[Audio Recorder] Microphone is still reconfiguring; recovery will continue in the background."
+                    )
+                    scheduleConfigurationRecovery(
+                        for: observedEngine,
+                        after: Self.configurationRecoveryContinuationDelay,
+                        nextHealthCheckRequiresAudibleInput: nextHealthCheckRequiresAudibleInput
+                    )
+                    return
+                }
+
+                Thread.sleep(forTimeInterval: Self.configurationRecoveryRetryDelay)
+            }
+        }
+    }
+
+    private func replaceInputEngineAfterConfigurationChange(
+        recordingID: UUID,
+        healthCheckRequiresAudibleInput: Bool
+    ) throws {
+        removeInputChangeObservers()
+        cancelInputHealthCheck()
+        removeInputTapIfInstalled()
+        engine.stop()
+        engine.reset()
+
+        let replacementEngine = makeAudioEngine()
+        let inputGenerationID = UUID()
+        var replacementTapInstalled = false
+        do {
+            let inputNodeAndFormat = try prepareInputNodeAndFormat(for: replacementEngine)
+            let inputNode = inputNodeAndFormat.0
+            inputNode.removeTap(onBus: 0)
+            try installInputTap(on: inputNode) { [weak self] buffer, _ in
+                self?.handleInputBuffer(
+                    buffer,
+                    recordingID: recordingID,
+                    inputGenerationID: inputGenerationID
+                )
+            }
+            replacementTapInstalled = true
+            replacementEngine.prepare()
+            observeInputChanges(for: replacementEngine)
+            try replacementEngine.start()
+            guard replacementEngine.isRunning else {
+                throw RecorderError.inputDeviceUnavailable
+            }
+        } catch {
+            removeInputChangeObservers()
+            if replacementTapInstalled {
+                replacementEngine.inputNode.removeTap(onBus: 0)
+            }
+            replacementEngine.stop()
+            replacementEngine.reset()
+            throw error
+        }
+
+        engine = replacementEngine
+        isTapInstalled = true
+        stateCondition.lock()
+        activeInputGenerationID = inputGenerationID
+        inputBufferCallbackCount = 0
+        peakInputPowerSinceStart = -.infinity
+        stateCondition.unlock()
+        scheduleInputHealthCheck(
+            for: replacementEngine,
+            recordingID: recordingID,
+            inputGenerationID: inputGenerationID,
+            callbackCountAtStart: 0,
+            requiresAudibleInput: healthCheckRequiresAudibleInput
+        )
+    }
+
     private func removeInputTapIfInstalled() {
         guard isTapInstalled else { return }
         engine.inputNode.removeTap(onBus: 0)
         isTapInstalled = false
+    }
+
+    private func installInputTap(
+        on inputNode: AVAudioInputNode,
+        handler: @escaping AVAudioNodeTapBlock
+    ) throws {
+        var installationError: NSError?
+        let installed = TFInstallAudioTapSafely(
+            inputNode,
+            0,
+            2048,
+            nil,
+            handler,
+            &installationError
+        )
+        guard installed else {
+            throw installationError ?? RecorderError.inputDeviceUnavailable
+        }
     }
 
     private func scheduleMutedSessionStart() {
@@ -312,51 +564,81 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         }
     }
 
-    private func scheduleSilentInputRecoveryIfNeeded(callbackCountAtStart: Int) {
-        silentInputRecoveryTask?.cancel()
-        silentInputRecoveryTask = Task { [weak self] in
-            guard let self else { return }
-            await sleep(Self.silentInputRecoveryDelay)
-            guard !Task.isCancelled else { return }
-            recoverSilentInputIfNeeded(callbackCountAtStart: callbackCountAtStart)
+    private func scheduleInputHealthCheck(
+        for observedEngine: AVAudioEngine,
+        recordingID: UUID,
+        inputGenerationID: UUID,
+        callbackCountAtStart: Int,
+        requiresAudibleInput: Bool
+    ) {
+        cancelInputHealthCheck()
+        let workItem = DispatchWorkItem { [weak self, weak observedEngine] in
+            guard let self, let observedEngine else { return }
+            verifyInputHealth(
+                for: observedEngine,
+                recordingID: recordingID,
+                inputGenerationID: inputGenerationID,
+                callbackCountAtStart: callbackCountAtStart,
+                requiresAudibleInput: requiresAudibleInput
+            )
         }
+        inputHealthCheckWorkItem = workItem
+        configurationRecoveryQueue.asyncAfter(
+            deadline: .now() + Self.silentInputRecoveryDelay,
+            execute: workItem
+        )
     }
 
-    private func recoverSilentInputIfNeeded(callbackCountAtStart: Int) {
-        lifecycleLock.lock()
-        defer { lifecycleLock.unlock() }
+    private func cancelInputHealthCheck() {
+        inputHealthCheckWorkItem?.cancel()
+        inputHealthCheckWorkItem = nil
+    }
 
+    private func verifyInputHealth(
+        for observedEngine: AVAudioEngine,
+        recordingID: UUID,
+        inputGenerationID: UUID,
+        callbackCountAtStart: Int,
+        requiresAudibleInput: Bool
+    ) {
+        lifecycleLock.lock()
         stateCondition.lock()
-        let shouldRecover = Self.shouldRecoverSilentInput(
-            isRecording: isRecording,
-            callbackCountAtStart: callbackCountAtStart,
-            currentCallbackCount: inputBufferCallbackCount,
-            peakInputPowerSinceStart: peakInputPowerSinceStart
-        )
+        let isCurrentInput = isRecording
+            && engine === observedEngine
+            && activeRecordingID == recordingID
+            && activeInputGenerationID == inputGenerationID
+        let currentCallbackCount = inputBufferCallbackCount
+        let currentPeakInputPower = peakInputPowerSinceStart
         stateCondition.unlock()
-        guard shouldRecover else { return }
+
+        guard isCurrentInput else {
+            lifecycleLock.unlock()
+            return
+        }
+
+        let shouldRecover = Self.shouldRecoverInputHealth(
+            requiresAudibleInput: requiresAudibleInput,
+            callbackCountAtStart: callbackCountAtStart,
+            currentCallbackCount: currentCallbackCount,
+            peakInputPowerSinceStart: currentPeakInputPower
+        )
+        inputHealthCheckWorkItem = nil
+        lifecycleLock.unlock()
+
+        guard shouldRecover else {
+            NetworkDebugLogger.logMessage(
+                "[Audio Recorder] Microphone input is healthy after audio device configuration."
+            )
+            return
+        }
 
         NetworkDebugLogger.logMessage(
-            "[Audio Recorder] Microphone input is silent after start; rebuilding audio engine."
+            "[Audio Recorder] Microphone input produced no usable audio after configuration; rebuilding audio engine."
         )
-
-        do {
-            removeInputTapIfInstalled()
-            engine.stop()
-            rebuildAudioEngine()
-            let inputNode = engine.inputNode
-            let inputFormat = try configureInputDeviceAndResolveFormat(for: inputNode)
-            inputNode.removeTap(onBus: 0)
-            let recordingID = currentRecordingID()
-            inputNode.installTap(onBus: 0, bufferSize: 2048, format: inputFormat) { [weak self] buffer, _ in
-                self?.handleInputBuffer(buffer, recordingID: recordingID)
-            }
-            isTapInstalled = true
-            engine.prepare()
-            try engine.start()
-        } catch {
-            NetworkDebugLogger.logError(context: "Silent input recovery failed", error: error)
-        }
+        recoverFromConfigurationChange(
+            for: observedEngine,
+            nextHealthCheckRequiresAudibleInput: false
+        )
     }
 
     #if DEBUG
@@ -403,12 +685,11 @@ final class AVFoundationAudioRecorder: AudioRecorder {
 
     private func configureInputDeviceAndResolveFormat(for inputNode: AVAudioInputNode) throws -> AVAudioFormat {
         let preferredID = settingsStore.preferredMicrophoneID
-        if let deviceID = resolveInputDeviceIDForRecording() {
-            inputNode.auAudioUnit.setValue(Int(deviceID), forKey: "deviceID")
-        }
+        let deviceID = try Self.requireInputDeviceID(resolveInputDeviceIDForRecording())
+        inputNode.auAudioUnit.setValue(Int(deviceID), forKey: "deviceID")
 
         if !preferredID.isEmpty, settingsStore.preferredMicrophoneID == preferredID {
-            let preferredFormat = inputNode.inputFormat(forBus: 0)
+            let preferredFormat = inputNode.outputFormat(forBus: 0)
             if Self.isUsableInputFormat(preferredFormat) {
                 return preferredFormat
             }
@@ -425,7 +706,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             throw RecorderError.inputDeviceUnavailable
         }
 
-        let automaticFormat = inputNode.inputFormat(forBus: 0)
+        let automaticFormat = inputNode.outputFormat(forBus: 0)
         try Self.validateInputFormat(automaticFormat)
         return automaticFormat
     }
@@ -465,13 +746,6 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         return isRecording
     }
 
-    private func currentRecordingID() -> UUID? {
-        stateCondition.lock()
-        let activeRecordingID = activeRecordingID
-        stateCondition.unlock()
-        return activeRecordingID
-    }
-
     static func validateInputFormat(_ format: AVAudioFormat) throws {
         try validateInputFormat(channelCount: format.channelCount, sampleRate: format.sampleRate)
     }
@@ -490,10 +764,55 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         channelCount > 0 && sampleRate > 0
     }
 
-    private func handleInputBuffer(_ buffer: AVAudioPCMBuffer, recordingID: UUID?) {
+    static func shouldFollowSystemDefaultInputDevice(preferredMicrophoneID: String) -> Bool {
+        preferredMicrophoneID == AudioDeviceManager.automaticDeviceID
+    }
+
+    static func isRecoverableInputReconfigurationError(_ error: Error) -> Bool {
+        if let recorderError = error as? RecorderError {
+            return recorderError == .inputDeviceUnavailable || recorderError == .inputStartupTimedOut
+        }
+
+        let nsError = error as NSError
+        if nsError.domain == TFAudioTapErrorDomain {
+            return true
+        }
+        let recoverableAudioUnitCodes = [
+            Int(kAudioUnitErr_FormatNotSupported),
+            Int(kAudioUnitErr_FailedInitialization),
+            Int(kAudioUnitErr_CannotDoInCurrentContext)
+        ]
+        if recoverableAudioUnitCodes.contains(nsError.code) {
+            return true
+        }
+
+        if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? Error {
+            return isRecoverableInputReconfigurationError(underlyingError)
+        }
+
+        return false
+    }
+
+    static func requireInputDeviceID(_ deviceID: AudioDeviceID?) throws -> AudioDeviceID {
+        guard let deviceID, deviceID != kAudioObjectUnknown else {
+            throw RecorderError.inputDeviceUnavailable
+        }
+        return deviceID
+    }
+
+    private func handleInputBuffer(
+        _ buffer: AVAudioPCMBuffer,
+        recordingID: UUID,
+        inputGenerationID: UUID
+    ) {
         autoreleasepool {
             stateCondition.lock()
-            guard let recordingID, activeRecordingID == recordingID, let audioFile = self.audioFile else {
+            guard
+                activeRecordingID == recordingID,
+                activeInputGenerationID == inputGenerationID,
+                let audioFile = self.audioFile,
+                let recordingBufferConverter
+            else {
                 stateCondition.unlock()
                 return
             }
@@ -515,13 +834,15 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             }
 
             do {
-                let monoBuffer = try makeMonoPCMBuffer(from: buffer)
+                let monoBuffer = try recordingBufferConverter.convert(buffer)
                 let previewBuffer = clone(buffer: monoBuffer)
                 let inputPower = rmsPower(for: monoBuffer)
                 let normalizedLevel = normalizePower(inputPower)
 
                 stateCondition.lock()
-                peakInputPowerSinceStart = max(peakInputPowerSinceStart, inputPower)
+                if activeRecordingID == recordingID, activeInputGenerationID == inputGenerationID {
+                    peakInputPowerSinceStart = max(peakInputPowerSinceStart, inputPower)
+                }
                 stateCondition.unlock()
 
                 writeCoordinator.enqueue {
@@ -539,78 +860,6 @@ final class AVFoundationAudioRecorder: AudioRecorder {
                 NetworkDebugLogger.logError(context: "Audio buffer handling failed", error: error)
             }
         }
-    }
-
-    private func makeMonoPCMBuffer(from buffer: AVAudioPCMBuffer) throws -> AVAudioPCMBuffer {
-        guard let monoFormat = AVAudioFormat(
-            commonFormat: .pcmFormatFloat32,
-            sampleRate: buffer.format.sampleRate,
-            channels: 1,
-            interleaved: false
-        ) else {
-            throw NSError(
-                domain: "AudioRecorder",
-                code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to create mono audio format."]
-            )
-        }
-
-        if buffer.format.channelCount == 1, buffer.format.commonFormat == .pcmFormatFloat32 {
-            guard let clone = clone(buffer: buffer, format: monoFormat) else {
-                throw NSError(
-                    domain: "AudioRecorder",
-                    code: 3,
-                    userInfo: [NSLocalizedDescriptionKey: "Unable to clone mono audio buffer."]
-                )
-            }
-            return clone
-        }
-
-        guard let converter = AVAudioConverter(from: buffer.format, to: monoFormat) else {
-            throw NSError(
-                domain: "AudioRecorder",
-                code: 4,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to create audio converter."]
-            )
-        }
-
-        guard let outputBuffer = AVAudioPCMBuffer(
-            pcmFormat: monoFormat,
-            frameCapacity: buffer.frameCapacity
-        ) else {
-            throw NSError(
-                domain: "AudioRecorder",
-                code: 5,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to allocate mono audio buffer."]
-            )
-        }
-
-        var error: NSError?
-        var didProvideInput = false
-        let status = converter.convert(to: outputBuffer, error: &error) { _, outStatus in
-            if didProvideInput {
-                outStatus.pointee = .noDataNow
-                return nil
-            }
-
-            didProvideInput = true
-            outStatus.pointee = .haveData
-            return buffer
-        }
-
-        if let error {
-            throw error
-        }
-
-        guard status != .error else {
-            throw NSError(
-                domain: "AudioRecorder",
-                code: 6,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to convert input audio."]
-            )
-        }
-
-        return outputBuffer
     }
 
     private func clone(buffer: AVAudioPCMBuffer, format: AVAudioFormat? = nil) -> AVAudioPCMBuffer? {
@@ -670,8 +919,23 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         peakInputPowerSinceStart: Float
     ) -> Bool {
         guard isRecording else { return false }
+        return shouldRecoverInputHealth(
+            requiresAudibleInput: true,
+            callbackCountAtStart: callbackCountAtStart,
+            currentCallbackCount: currentCallbackCount,
+            peakInputPowerSinceStart: peakInputPowerSinceStart
+        )
+    }
+
+    static func shouldRecoverInputHealth(
+        requiresAudibleInput: Bool,
+        callbackCountAtStart: Int,
+        currentCallbackCount: Int,
+        peakInputPowerSinceStart: Float
+    ) -> Bool {
         guard currentCallbackCount > callbackCountAtStart else { return true }
-        return peakInputPowerSinceStart <= silentInputRecoveryPeakPowerThreshold
+        return requiresAudibleInput
+            && peakInputPowerSinceStart <= silentInputRecoveryPeakPowerThreshold
     }
 }
 
@@ -679,6 +943,8 @@ private struct PreparedRecordingSession {
     let id: UUID
     let engine: AVAudioEngine
     let audioFile: AVAudioFile
+    let recordingBufferConverter: AudioRecordingBufferConverter
+    let inputGenerationID: UUID
 }
 
 private final class RecordingStartupAttempt {

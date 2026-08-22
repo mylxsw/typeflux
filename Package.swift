@@ -20,8 +20,14 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "TypefluxAudioSafety",
+            path: "Sources/TypefluxAudioSafety",
+            publicHeadersPath: "include"
+        ),
+        .target(
             name: "Typeflux",
             dependencies: [
+                "TypefluxAudioSafety",
                 .product(name: "Markdown", package: "swift-markdown"),
                 .product(name: "WhisperKit", package: "WhisperKit"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),

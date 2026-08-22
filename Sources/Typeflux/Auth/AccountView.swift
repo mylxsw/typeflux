@@ -15,7 +15,7 @@ struct AccountView: View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             if let profile = authState.userProfile {
                 profileCard(profile: profile)
-                if authState.subscription.shouldShowSubscriptionDetails {
+                if authState.subscription.shouldShowSubscriptionDetails || authState.subscriptionError != nil {
                     subscriptionCard
                 }
                 usageCard

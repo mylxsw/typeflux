@@ -189,7 +189,7 @@ final class AuthStateTests: XCTestCase {
         XCTAssertNotNil(state.subscriptionError)
     }
 
-    func testSubscriptionRefreshFailureFailsBillingVisibilityClosed() async {
+    func testSubscriptionRefreshFailurePreservesLastKnownSubscription() async {
         var storedToken: (token: String, expiresAt: Int)?
         var shouldFail = false
         let activeSubscription = BillingSubscriptionSnapshot(
@@ -222,8 +222,7 @@ final class AuthStateTests: XCTestCase {
         shouldFail = true
         await state.refreshSubscription()
 
-        XCTAssertFalse(state.subscription.billingEnabled)
-        XCTAssertEqual(state.subscription.planCode, BillingPlan.defaultPlanCode)
+        XCTAssertEqual(state.subscription, activeSubscription)
         XCTAssertNotNil(state.subscriptionError)
     }
 

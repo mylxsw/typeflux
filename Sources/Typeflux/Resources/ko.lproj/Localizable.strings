@@ -355,6 +355,9 @@
 "workflow.devApp.requiredMessage" = "scripts/run_dev_app.sh(개인 정보 보호 권한을 위해 필요한 App Bundle)를 통해 실행하세요.";
 "workflow.devApp.requiredStatus" = ".app으로 실행";
 "workflow.audioStart.failedStatus" = "오디오 시작 실패";
+"workflow.audioStart.noMicrophone" = "사용할 수 있는 마이크가 없습니다. 마이크를 연결하거나 시스템 설정 > 사운드 > 입력에서 입력 기기를 선택한 후 다시 시도하세요.";
+"workflow.audioStart.microphoneNotReady" = "마이크가 아직 준비되지 않았습니다. 마이크를 다시 연결하거나 시스템 설정 > 사운드 > 입력에서 다른 입력 기기를 선택한 후 다시 시도하세요.";
+"workflow.audioStart.genericFailure" = "녹음을 시작할 수 없습니다. 마이크가 연결되어 있고 사용 가능한지 확인한 후 다시 시도하세요.";
 "workflow.processing.failed" = "처리 실패";
 "workflow.recording.tooShort" = "말이 너무 짧았습니다. 스크립트 작성이 취소되었습니다.";
 "workflow.transcription.emptySkipped" = "텍스트 변환이 비어 있으므로 건너뛰었습니다.";
@@ -1139,6 +1142,9 @@
 "cloud.error.rateLimited" = "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.";
 "cloud.error.quotaExceeded" = "Typeflux Cloud 사용 한도를 모두 사용했습니다.";
 "cloud.error.planRequired" = "현재 요금제에는 이 Typeflux Cloud 기능이 포함되어 있지 않습니다. 계정 화면에서 구독하거나 결제를 관리해 주세요.";
+"cloud.error.subscriptionExists" = "이미 구독 중입니다. 결제 관리에서 구독을 변경하거나 재개해 주세요.";
+"cloud.error.billingConnectionUnavailable" = "Typeflux Cloud에 연결할 수 없어 구독 정보를 불러오지 못했습니다. 인터넷 연결을 확인한 후 다시 시도하세요. 계정 내용은 변경되지 않았습니다.";
+"cloud.error.billingServiceUnavailable" = "현재 Typeflux Cloud에서 구독 정보를 불러올 수 없습니다. 계정 내용은 변경되지 않았습니다. 몇 분 후 다시 시도하세요.";
 "cloud.error.server" = "Typeflux Cloud를 일시적으로 사용할 수 없습니다. 나중에 다시 시도해 주세요.";
 "cloud.billing.subscriptionRequired.title" = "Typeflux Cloud 구독이 필요합니다";
 "cloud.billing.subscriptionRequired.body" = "현재 요금제에는 이 클라우드 기능이 포함되어 있지 않습니다. 구독하면 Typeflux Cloud를 계속 사용할 수 있습니다.";

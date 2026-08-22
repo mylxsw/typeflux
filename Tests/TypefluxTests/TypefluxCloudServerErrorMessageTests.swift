@@ -28,6 +28,36 @@ final class TypefluxCloudServerErrorMessageTests: XCTestCase {
         )
     }
 
+    func testExistingSubscriptionCodeUsesLocalizedBillingMessage() {
+        withEnglishLocalization {
+            let message = TypefluxCloudServerErrorMessage.userMessage(
+                code: "BILLING_SUBSCRIPTION_EXISTS",
+                message: "raw backend message",
+                fallback: "fallback"
+            )
+
+            XCTAssertEqual(
+                message,
+                "You already have a subscription. Open billing management to change or resume it."
+            )
+        }
+    }
+
+    func testBillingAvailabilityCodesUseActionableLocalizedMessages() {
+        XCTAssertEqual(
+            TypefluxCloudServerErrorMessage.localizationKey(for: "BILLING_CONNECTION_UNAVAILABLE"),
+            "cloud.error.billingConnectionUnavailable"
+        )
+        XCTAssertEqual(
+            TypefluxCloudServerErrorMessage.localizationKey(for: "BILLING_SERVICE_UNAVAILABLE"),
+            "cloud.error.billingServiceUnavailable"
+        )
+        XCTAssertEqual(
+            TypefluxCloudServerErrorMessage.localizationKey(for: "BILLING_NOT_CONFIGURED"),
+            "cloud.error.billingServiceUnavailable"
+        )
+    }
+
     func testBillingErrorParsesSubscriptionRequiredHTTPBody() {
         let body = Data(#"{"code":"SUBSCRIPTION_REQUIRED","message":"active subscription required"}"#.utf8)
         let error = TypefluxCloudBillingError.fromHTTPStatus(402, bodyData: body)

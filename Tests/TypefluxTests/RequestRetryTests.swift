@@ -116,6 +116,33 @@ final class RequestRetryTests: XCTestCase {
         XCTAssertTrue(sleptDurations.isEmpty)
     }
 
+    func testRetryPredicateCanStopRetryingRecoverableOperation() async {
+        let recorder = Recorder()
+        let expectedError = NSError(domain: "RequestRetryTests", code: 503)
+
+        do {
+            _ = try await RequestRetry.perform(
+                operationName: "test-operation",
+                shouldRetry: { _ in false },
+                sleep: { duration in
+                    await recorder.recordSleep(duration)
+                },
+                operation: {
+                    _ = await recorder.incrementAttempt()
+                    throw expectedError
+                }
+            ) as String
+            XCTFail("Expected retry predicate to rethrow immediately")
+        } catch {
+            XCTAssertEqual((error as NSError).code, 503)
+        }
+
+        let attemptCount = await recorder.attemptCount
+        let sleptDurations = await recorder.sleptDurations
+        XCTAssertEqual(attemptCount, 1)
+        XCTAssertTrue(sleptDurations.isEmpty)
+    }
+
     func testDoesNotRetryTypefluxCloudBillingError() async {
         let recorder = Recorder()
         let expectedError = TypefluxCloudBillingError(reason: .subscriptionRequired, serverMessage: nil)

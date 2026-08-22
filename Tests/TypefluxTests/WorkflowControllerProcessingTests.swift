@@ -1,4 +1,5 @@
 import AVFoundation
+import AudioToolbox
 @testable import Typeflux
 import XCTest
 
@@ -750,8 +751,57 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         }
     }
 
+    func testAudioStartFailureCopyExplainsMissingMicrophoneAndRecovery() {
+        XCTAssertEqual(
+            WorkflowController.audioStartFailureLocalizationKey(
+                for: AVFoundationAudioRecorder.RecorderError.inputDeviceUnavailable
+            ),
+            "workflow.audioStart.noMicrophone"
+        )
+        XCTAssertEqual(
+            WorkflowController.audioStartFailureLocalizationKey(
+                for: AVFoundationAudioRecorder.RecorderError.inputStartupTimedOut
+            ),
+            "workflow.audioStart.microphoneNotReady"
+        )
+        XCTAssertEqual(
+            WorkflowController.audioStartFailureLocalizationKey(
+                for: NSError(domain: "unexpected", code: 1)
+            ),
+            "workflow.audioStart.genericFailure"
+        )
+    }
+
     func testBeginRecordingRetriesUntilAudioStartupSucceeds() async {
-        let audioRecorder = TransientTimeoutAudioRecorder(timeoutCount: 2)
+        let audioRecorder = TransientAudioStartupFailureRecorder(
+            failureCount: 2,
+            error: AVFoundationAudioRecorder.RecorderError.inputStartupTimedOut
+        )
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sleep: { _ in }
+        )
+
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+        await waitForMainActorWork()
+
+        XCTAssertTrue(controller.isRecording)
+        XCTAssertTrue(controller.isAudioRecorderStarted)
+        XCTAssertFalse(controller.isAudioRecorderStarting)
+        XCTAssertEqual(audioRecorder.startCallCount, 3)
+
+        controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
+    func testBeginRecordingRetriesFormatChangeUntilAudioStartupSucceeds() async {
+        let audioRecorder = TransientAudioStartupFailureRecorder(
+            failureCount: 2,
+            error: NSError(
+                domain: "com.apple.coreaudio.avfaudio",
+                code: Int(kAudioUnitErr_FormatNotSupported)
+            )
+        )
         let controller = makeWorkflowController(
             audioRecorder: audioRecorder,
             sleep: { _ in }
@@ -1970,14 +2020,16 @@ private final class ThrowingStartAudioRecorder: AudioRecorder {
     }
 }
 
-private final class TransientTimeoutAudioRecorder: AudioRecorder {
-    private let timeoutCount: Int
+private final class TransientAudioStartupFailureRecorder: AudioRecorder {
+    private let failureCount: Int
+    private let error: Error
     private let lock = NSLock()
     private var starts = 0
     private var stops = 0
 
-    init(timeoutCount: Int) {
-        self.timeoutCount = timeoutCount
+    init(failureCount: Int, error: Error) {
+        self.failureCount = failureCount
+        self.error = error
     }
 
     var startCallCount: Int {
@@ -1992,11 +2044,11 @@ private final class TransientTimeoutAudioRecorder: AudioRecorder {
     ) throws {
         lock.lock()
         starts += 1
-        let shouldTimeout = starts <= timeoutCount
+        let shouldFail = starts <= failureCount
         lock.unlock()
 
-        if shouldTimeout {
-            throw AVFoundationAudioRecorder.RecorderError.inputStartupTimedOut
+        if shouldFail {
+            throw error
         }
     }
 

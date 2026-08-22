@@ -202,6 +202,39 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(store.preferredMicrophoneID, "BuiltInMic-1234")
     }
 
+    func testPreferredMicrophoneChangePostsNotification() {
+        let expectation = XCTestExpectation(description: "Preferred microphone notification posted")
+        let observer = NotificationCenter.default.addObserver(
+            forName: .preferredMicrophoneDidChange,
+            object: store,
+            queue: nil
+        ) { _ in
+            expectation.fulfill()
+        }
+
+        store.preferredMicrophoneID = "BluetoothMic-1234"
+
+        wait(for: [expectation], timeout: 1.0)
+        NotificationCenter.default.removeObserver(observer)
+    }
+
+    func testPreferredMicrophoneDoesNotNotifyWhenValueIsUnchanged() {
+        store.preferredMicrophoneID = "BuiltInMic-1234"
+        var notificationFired = false
+        let observer = NotificationCenter.default.addObserver(
+            forName: .preferredMicrophoneDidChange,
+            object: store,
+            queue: nil
+        ) { _ in
+            notificationFired = true
+        }
+
+        store.preferredMicrophoneID = "BuiltInMic-1234"
+
+        XCTAssertFalse(notificationFired)
+        NotificationCenter.default.removeObserver(observer)
+    }
+
     // MARK: - History Retention Policy Store
 
     func testDefaultHistoryRetentionPolicy() {

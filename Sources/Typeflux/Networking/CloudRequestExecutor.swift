@@ -111,9 +111,12 @@ struct CloudRequestExecutor: Sendable {
                     )
                     await selector.reportFailure(endpoint, error: httpError)
                     lastError = httpError
+                    let retryDisposition = index + 1 < endpoints.count
+                        ? "will try next endpoint"
+                        : "no endpoints remaining"
                     logger
                         .error(
-                            "HTTP \(http.statusCode) from \(endpoint.absoluteString); will try next endpoint (\(index + 1)/\(endpoints.count))"
+                            "HTTP \(http.statusCode) from \(endpoint.absoluteString); \(retryDisposition) (\(index + 1)/\(endpoints.count))"
                         )
                     continue
                 }
@@ -128,9 +131,12 @@ struct CloudRequestExecutor: Sendable {
             } catch {
                 await selector.reportFailure(endpoint, error: error)
                 lastError = error
+                let retryDisposition = index + 1 < endpoints.count
+                    ? "will try next endpoint"
+                    : "no endpoints remaining"
                 logger
                     .error(
-                        "Endpoint \(endpoint.absoluteString) failed: \(error.localizedDescription); will try next (\(index + 1)/\(endpoints.count))"
+                        "Endpoint \(endpoint.absoluteString) failed: \(error.localizedDescription); \(retryDisposition) (\(index + 1)/\(endpoints.count))"
                     )
                 continue
             }

@@ -1161,15 +1161,16 @@ final class WorkflowController {
                 processingStatus: .skipped,
                 applyStatus: .skipped
             )
-            record.errorMessage = "Audio start failed: \(error.localizedDescription)"
+            let userMessage = Self.audioStartFailureMessage(for: error)
+            record.errorMessage = userMessage
             saveHistoryRecord(record)
+            NetworkDebugLogger.logError(context: "Audio recorder failed to start", error: error)
             Task { @MainActor in
-                let msg = "Audio start failed: \(error.localizedDescription)"
                 self.soundEffectPlayer.play(.error)
-                appState.setStatus(.failed(message: L("workflow.audioStart.failedStatus")))
-                overlayController.showFailure(message: msg)
-                overlayController.dismiss(after: 3.0)
-                ErrorLogStore.shared.log(msg)
+                appState.setStatus(.failed(message: userMessage))
+                overlayController.showFailure(message: userMessage)
+                overlayController.dismiss(after: 6.0)
+                ErrorLogStore.shared.log(userMessage)
             }
         }
     }
@@ -1293,7 +1294,14 @@ final class WorkflowController {
             isAudioRecorderStarted = false
             isClarificationRecording = false
             agentClarificationWindowController.updateRecordingState(.waitingForReply)
-            NSLog("[Workflow] Clarification recording failed to start: \(error)")
+            let userMessage = Self.audioStartFailureMessage(for: error)
+            NetworkDebugLogger.logError(context: "Clarification recording failed to start", error: error)
+            Task { @MainActor in
+                self.soundEffectPlayer.play(.error)
+                self.appState.setStatus(.failed(message: userMessage))
+                self.overlayController.showFailure(message: userMessage)
+                self.overlayController.dismiss(after: 6.0)
+            }
         }
     }
 

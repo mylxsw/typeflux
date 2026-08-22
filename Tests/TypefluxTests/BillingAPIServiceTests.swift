@@ -161,9 +161,72 @@ final class BillingAPIServiceTests: XCTestCase {
         XCTAssertEqual(portal.url.absoluteString, "https://billing.stripe.com/session/test")
     }
 
+    func testFetchSubscriptionRetriesTransientGatewayFailure() async throws {
+        let session = BillingStubSession()
+        await session.setHandler { request in
+            if await session.requestCount == 1 {
+                return (Data("bad gateway".utf8), Self.httpResponse(url: request.url!, status: 502))
+            }
+            let body = #"{"code":"OK","data":{"billing_enabled":true,"plan_code":"free","status":"free","active":true,"paid":false}}"#
+            return (Data(body.utf8), Self.httpResponse(url: request.url!, status: 200))
+        }
+        let service = makeService(session: session)
+
+        let snapshot = try await service.fetchSubscription(token: "token-1")
+
+        XCTAssertEqual(snapshot.planCode, "free")
+        let requestCount = await session.requestCount
+        XCTAssertEqual(requestCount, 2)
+    }
+
+    func testFetchSubscriptionReturnsFriendlyErrorAfterGatewayRetriesAreExhausted() async {
+        let session = BillingStubSession()
+        await session.setHandler { request in
+            (Data("bad gateway".utf8), Self.httpResponse(url: request.url!, status: 502))
+        }
+        let service = makeService(session: session)
+
+        do {
+            _ = try await service.fetchSubscription(token: "token-1")
+            XCTFail("Expected service unavailable error")
+        } catch let error as AuthError {
+            XCTAssertEqual(error.authErrorCode, "BILLING_SERVICE_UNAVAILABLE")
+            XCTAssertFalse(error.localizedDescription.contains("502"))
+            XCTAssertFalse(error.localizedDescription.contains("api.example"))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        let requestCount = await session.requestCount
+        XCTAssertEqual(requestCount, 4)
+    }
+
+    func testFetchSubscriptionDoesNotRetryUnauthorizedResponse() async {
+        let session = BillingStubSession()
+        await session.setHandler { request in
+            let body = #"{"code":"AUTH_REFRESH_TOKEN_INVALID","message":"expired"}"#
+            return (Data(body.utf8), Self.httpResponse(url: request.url!, status: 401))
+        }
+        let service = makeService(session: session)
+
+        do {
+            _ = try await service.fetchSubscription(token: "token-1")
+            XCTFail("Expected unauthorized error")
+        } catch is AuthError {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        let requestCount = await session.requestCount
+        XCTAssertEqual(requestCount, 1)
+    }
+
     private func makeService(session: BillingStubSession) -> BillingAPIService {
         let selector = CloudEndpointSelector(baseURLs: [baseURL], prober: BillingNoOpProber())
-        return BillingAPIService(executor: CloudRequestExecutor(selector: selector, session: session))
+        return BillingAPIService(
+            executor: CloudRequestExecutor(selector: selector, session: session),
+            retrySleep: { _ in }
+        )
     }
 
     private static func httpResponse(url: URL, status: Int) -> HTTPURLResponse {
@@ -175,12 +238,14 @@ private actor BillingStubSession: CloudHTTPSession {
     typealias Handler = @Sendable (URLRequest) async throws -> (Data, URLResponse)
 
     private var handler: Handler?
+    private(set) var requestCount = 0
 
     func setHandler(_ handler: @escaping Handler) {
         self.handler = handler
     }
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        requestCount += 1
         guard let handler else {
             throw URLError(.badServerResponse)
         }

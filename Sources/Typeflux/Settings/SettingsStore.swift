@@ -8,6 +8,7 @@ extension Notification.Name {
     static let hotkeySettingsDidChange = Notification.Name("SettingsStore.hotkeySettingsDidChange")
     static let appearanceModeDidChange = Notification.Name("SettingsStore.appearanceModeDidChange")
     static let overlayStyleDidChange = Notification.Name("SettingsStore.overlayStyleDidChange")
+    static let preferredMicrophoneDidChange = Notification.Name("SettingsStore.preferredMicrophoneDidChange")
     static let agentConfigurationDidChange = Notification.Name("SettingsStore.agentConfigurationDidChange")
     static let localOptimizationDidEnable = Notification.Name("SettingsStore.localOptimizationDidEnable")
 }
@@ -158,7 +159,12 @@ final class SettingsStore {
             defaults.string(forKey: "audio.input.preferredMicrophoneID")
                 ?? AudioDeviceManager.automaticDeviceID
         }
-        set { defaults.set(newValue, forKey: "audio.input.preferredMicrophoneID") }
+        set {
+            let currentValue = preferredMicrophoneID
+            guard currentValue != newValue else { return }
+            defaults.set(newValue, forKey: "audio.input.preferredMicrophoneID")
+            NotificationCenter.default.post(name: .preferredMicrophoneDidChange, object: self)
+        }
     }
 
     var muteSystemOutputDuringRecording: Bool {

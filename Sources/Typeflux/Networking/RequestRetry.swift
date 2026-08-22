@@ -8,11 +8,13 @@ enum RequestRetry {
     ]
 
     typealias RetryCallback = @Sendable (_ retryNumber: Int, _ error: Error, _ delay: Duration) async -> Void
+    typealias RetryPredicate = @Sendable (_ error: Error) -> Bool
     typealias SleepClosure = @Sendable (Duration) async throws -> Void
 
     static func perform<T>(
         operationName: String,
         onRetry: RetryCallback? = nil,
+        shouldRetry: @escaping RetryPredicate = { _ in true },
         sleep: SleepClosure = { duration in try await defaultSleep(for: duration) },
         operation: @escaping @Sendable () async throws -> T
     ) async throws -> T {
@@ -29,6 +31,9 @@ enum RequestRetry {
                     throw error
                 }
                 if TypefluxCloudLoginRequiredError.fromError(error) != nil {
+                    throw error
+                }
+                guard shouldRetry(error) else {
                     throw error
                 }
 

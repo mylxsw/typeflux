@@ -46,6 +46,12 @@ enum TypefluxCloudServerErrorMessage {
              "SUBSCRIPTION_PAST_DUE",
              "SUBSCRIPTION_UNPAID":
             return "cloud.error.planRequired"
+        case "BILLING_SUBSCRIPTION_EXISTS":
+            return "cloud.error.subscriptionExists"
+        case "BILLING_CONNECTION_UNAVAILABLE":
+            return "cloud.error.billingConnectionUnavailable"
+        case "BILLING_SERVICE_UNAVAILABLE", "BILLING_NOT_CONFIGURED":
+            return "cloud.error.billingServiceUnavailable"
         case "SERVER_ERROR", "INTERNAL", "INTERNAL_SERVER_ERROR":
             return "cloud.error.server"
         default:
