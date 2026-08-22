@@ -97,6 +97,14 @@ extension AuthState {
         return session.url
     }
 
+    func requestBillingPageToken() async throws -> String {
+        guard let token = accessToken else {
+            throw AuthError.unauthorized
+        }
+        let response = try await issueBillingPageToken(token)
+        return response.token
+    }
+
     private func startCheckoutPolling() {
         checkoutPollingTask?.cancel()
         checkoutPollingTask = Task { @MainActor [weak self] in

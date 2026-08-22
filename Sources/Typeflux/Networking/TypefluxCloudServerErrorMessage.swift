@@ -52,6 +52,8 @@ enum TypefluxCloudServerErrorMessage {
             return "cloud.error.billingConnectionUnavailable"
         case "BILLING_SERVICE_UNAVAILABLE", "BILLING_NOT_CONFIGURED":
             return "cloud.error.billingServiceUnavailable"
+        case "BILLING_PAGE_UNAVAILABLE":
+            return "cloud.error.billingPageUnavailable"
         case "SERVER_ERROR", "INTERNAL", "INTERNAL_SERVER_ERROR":
             return "cloud.error.server"
         default:

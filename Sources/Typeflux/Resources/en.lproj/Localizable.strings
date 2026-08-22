@@ -1160,6 +1160,7 @@
 "cloud.error.subscriptionExists" = "You already have a subscription. Open billing management to change or resume it.";
 "cloud.error.billingConnectionUnavailable" = "We couldn't connect to Typeflux Cloud to load your subscription. Check your internet connection and try again. Your account has not been changed.";
 "cloud.error.billingServiceUnavailable" = "Typeflux Cloud couldn't load your subscription right now. Your account has not been changed. Please try again in a few minutes.";
+"cloud.error.billingPageUnavailable" = "We couldn't open the subscription plans right now. Please try again.";
 "cloud.error.server" = "Typeflux Cloud is temporarily unavailable. Please try again later.";
 "cloud.billing.subscriptionRequired.title" = "Typeflux Cloud needs a subscription";
 "cloud.billing.subscriptionRequired.body" = "This Cloud feature is not included in your current plan. Subscribe to keep using Typeflux Cloud.";
