@@ -168,14 +168,15 @@ final class BillingAPIServiceTests: XCTestCase {
             XCTAssertEqual(request.httpMethod, "POST")
             XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer token-1")
             XCTAssertEqual(request.httpBody, Data("{}".utf8))
-            let body = #"{"code":"OK","data":{"token":"billing.jwt.token"}}"#
+            let body = #"{"code":"OK","data":{"token":"billing.jwt.token","plans_url":"https://billing.example/plans#t=billing.jwt.token"}}"#
             return (Data(body.utf8), Self.httpResponse(url: request.url!, status: 200))
         }
         let service = makeService(session: session)
 
         let response = try await service.requestBillingPageToken(token: "token-1")
 
-        XCTAssertEqual(response, BillingPageTokenResponse(token: "billing.jwt.token"))
+        XCTAssertEqual(response.token, "billing.jwt.token")
+        XCTAssertEqual(response.plansURL.absoluteString, "https://billing.example/plans#t=billing.jwt.token")
     }
 
     func testRequestBillingPageTokenSurfacesServerError() async {

@@ -3,20 +3,7 @@ import XCTest
 
 @MainActor
 final class AccountBillingFlowTests: XCTestCase {
-    func testBillingPlansURLPlacesEncodedTokenInFragment() throws {
-        let url = try AccountBillingFlow.billingPlansURL(token: "header.payload+/signature=")
-
-        XCTAssertEqual(url.scheme, "https")
-        XCTAssertEqual(url.host, "typeflux.app")
-        XCTAssertEqual(url.path, "/billing/plans")
-
-        let fragment = try XCTUnwrap(url.fragment)
-        let fragmentComponents = try XCTUnwrap(URLComponents(string: "?\(fragment)"))
-        XCTAssertEqual(fragmentComponents.queryItems, [URLQueryItem(name: "t", value: "header.payload+/signature=")])
-        XCTAssertNil(url.query)
-    }
-
-    func testSubscribeDestinationRequestsPageTokenWithoutCreatingPortal() async throws {
+    func testSubscribeDestinationUsesServerPlansURLWithoutCreatingPortal() async throws {
         var tokenRequests = 0
         var portalRequests = 0
 
@@ -24,7 +11,7 @@ final class AccountBillingFlowTests: XCTestCase {
             for: .subscribe,
             requestBillingPageToken: {
                 tokenRequests += 1
-                return "billing.jwt.token"
+                return URL(string: "https://billing.example/custom/plans#t=billing.jwt.token")!
             },
             createPortalSession: {
                 portalRequests += 1
@@ -32,7 +19,7 @@ final class AccountBillingFlowTests: XCTestCase {
             }
         )
 
-        XCTAssertEqual(url.absoluteString, "https://typeflux.app/billing/plans#t=billing.jwt.token")
+        XCTAssertEqual(url.absoluteString, "https://billing.example/custom/plans#t=billing.jwt.token")
         XCTAssertEqual(tokenRequests, 1)
         XCTAssertEqual(portalRequests, 0)
     }
@@ -45,7 +32,7 @@ final class AccountBillingFlowTests: XCTestCase {
             for: .manageBilling,
             requestBillingPageToken: {
                 tokenRequests += 1
-                return "billing.jwt.token"
+                return URL(string: "https://billing.example/custom/plans#t=billing.jwt.token")!
             },
             createPortalSession: {
                 portalRequests += 1
@@ -80,12 +67,5 @@ final class AccountBillingFlowTests: XCTestCase {
         }
 
         XCTAssertEqual(portalRequests, 0)
-    }
-
-    func testBillingPlansURLRejectsEmptyTokenWithLocalizedError() {
-        XCTAssertThrowsError(try AccountBillingFlow.billingPlansURL(token: "   \n")) { error in
-            XCTAssertFalse(error.localizedDescription.isEmpty)
-            XCTAssertNotEqual(error.localizedDescription, "cloud.error.billingPageUnavailable")
-        }
     }
 }
