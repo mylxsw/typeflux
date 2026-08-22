@@ -36,6 +36,10 @@ struct BillingAPIService: Sendable {
         try await execute(path: "/api/v1/billing/portal-session", method: "POST", token: token, body: Data("{}".utf8))
     }
 
+    func requestBillingPageToken(token: String) async throws -> BillingPageTokenResponse {
+        try await execute(path: "/api/v1/billing/page-token", method: "POST", token: token, body: Data("{}".utf8))
+    }
+
     static func fetchSubscription(token: String) async throws -> BillingSubscriptionSnapshot {
         try await BillingAPIService().fetchSubscription(token: token)
     }
@@ -46,6 +50,10 @@ struct BillingAPIService: Sendable {
 
     static func createPortalSession(token: String) async throws -> BillingPortalSession {
         try await BillingAPIService().createPortalSession(token: token)
+    }
+
+    static func requestBillingPageToken(token: String) async throws -> BillingPageTokenResponse {
+        try await BillingAPIService().requestBillingPageToken(token: token)
     }
 
     private func encode(_ body: some Encodable) throws -> Data {

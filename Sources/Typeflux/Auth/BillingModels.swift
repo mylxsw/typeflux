@@ -185,6 +185,10 @@ struct BillingPortalSession: Decodable, Equatable {
     let url: URL
 }
 
+struct BillingPageTokenResponse: Decodable, Equatable {
+    let token: String
+}
+
 struct BillingCheckoutSessionRequest: Encodable {
     let planCode: String
 

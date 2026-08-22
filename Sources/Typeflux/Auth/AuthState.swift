@@ -51,6 +51,7 @@ final class AuthState: ObservableObject {
     let fetchCurrentPeriodUsageStats: (String) async throws -> CloudUsageCurrentPeriodStats
     let createCheckoutSession: (String, String) async throws -> BillingCheckoutSession
     let createPortalSession: (String) async throws -> BillingPortalSession
+    let issueBillingPageToken: (String) async throws -> BillingPageTokenResponse
 
     @Published var isLoggedIn: Bool = false
     @Published var userProfile: UserProfile?
@@ -130,6 +131,9 @@ final class AuthState: ObservableObject {
         },
         createPortalSession: @escaping (String) async throws -> BillingPortalSession = { token in
             try await BillingAPIService.createPortalSession(token: token)
+        },
+        issueBillingPageToken: @escaping (String) async throws -> BillingPageTokenResponse = { token in
+            try await BillingAPIService.requestBillingPageToken(token: token)
         }
     ) {
         self.loadStoredToken = loadStoredToken
@@ -151,6 +155,7 @@ final class AuthState: ObservableObject {
         self.fetchCurrentPeriodUsageStats = fetchCurrentPeriodUsageStats
         self.createCheckoutSession = createCheckoutSession
         self.createPortalSession = createPortalSession
+        self.issueBillingPageToken = issueBillingPageToken
         restoreSession()
     }
 

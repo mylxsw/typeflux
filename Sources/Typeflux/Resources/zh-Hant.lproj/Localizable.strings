@@ -1156,6 +1156,7 @@
 "cloud.error.subscriptionExists" = "你已有訂閱，請開啟帳單管理進行變更或恢復。";
 "cloud.error.billingConnectionUnavailable" = "暫時無法連接 Typeflux Cloud，因此未能載入訂閱資訊。請檢查網路連線後再試一次；你的帳號不會因此發生變更。";
 "cloud.error.billingServiceUnavailable" = "Typeflux Cloud 暫時無法載入訂閱資訊，你的帳號不會因此發生變更。請過幾分鐘再試一次。";
+"cloud.error.billingPageUnavailable" = "暫時無法開啟訂閱方案頁面，請稍後再試一次。";
 "cloud.error.server" = "Typeflux Cloud 暫時無法使用，請稍後再試。";
 "cloud.billing.subscriptionRequired.title" = "需要開通 Typeflux Cloud";
 "cloud.billing.subscriptionRequired.body" = "目前方案暫不包含這項雲端功能。開通會員後即可繼續使用 Typeflux Cloud。";

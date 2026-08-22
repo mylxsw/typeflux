@@ -1145,6 +1145,7 @@
 "cloud.error.subscriptionExists" = "すでにサブスクリプションがあります。請求管理を開いて変更または再開してください。";
 "cloud.error.billingConnectionUnavailable" = "Typeflux Cloud に接続できなかったため、サブスクリプション情報を読み込めませんでした。インターネット接続を確認して、もう一度お試しください。アカウント内容は変更されていません。";
 "cloud.error.billingServiceUnavailable" = "Typeflux Cloud は現在サブスクリプション情報を読み込めません。アカウント内容は変更されていません。数分後にもう一度お試しください。";
+"cloud.error.billingPageUnavailable" = "現在サブスクリプションプランのページを開けません。もう一度お試しください。";
 "cloud.error.server" = "Typeflux Cloud は一時的に利用できません。後でもう一度お試しください。";
 "cloud.billing.subscriptionRequired.title" = "Typeflux Cloud の購読が必要です";
 "cloud.billing.subscriptionRequired.body" = "このクラウド機能は現在のプランに含まれていません。購読すると Typeflux Cloud を引き続き利用できます。";

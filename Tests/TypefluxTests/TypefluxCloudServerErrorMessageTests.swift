@@ -56,6 +56,10 @@ final class TypefluxCloudServerErrorMessageTests: XCTestCase {
             TypefluxCloudServerErrorMessage.localizationKey(for: "BILLING_NOT_CONFIGURED"),
             "cloud.error.billingServiceUnavailable"
         )
+        XCTAssertEqual(
+            TypefluxCloudServerErrorMessage.localizationKey(for: "BILLING_PAGE_UNAVAILABLE"),
+            "cloud.error.billingPageUnavailable"
+        )
     }
 
     func testBillingErrorParsesSubscriptionRequiredHTTPBody() {

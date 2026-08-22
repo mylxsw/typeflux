@@ -382,6 +382,55 @@ final class AuthStateTests: XCTestCase {
         XCTAssertEqual(state.subscription, activeSubscription)
     }
 
+    func testRequestBillingPageTokenForwardsAccessToken() async throws {
+        let storedToken = validStoredToken()
+        var requestedAccessToken: String?
+        let state = AuthState(
+            loadStoredToken: { storedToken },
+            loadStoredRefreshToken: { nil },
+            loadStoredUserProfile: { nil },
+            saveStoredToken: { _, _ in },
+            saveStoredUserProfile: { _ in },
+            clearStoredSession: {},
+            fetchProfile: { _ in self.makeProfile(email: "billing-page@test.com") },
+            fetchSubscription: { _ in .none },
+            issueBillingPageToken: { token in
+                requestedAccessToken = token
+                return BillingPageTokenResponse(token: "billing.jwt.token")
+            }
+        )
+
+        let pageToken = try await state.requestBillingPageToken()
+
+        XCTAssertEqual(pageToken, "billing.jwt.token")
+        XCTAssertEqual(requestedAccessToken, "valid-token")
+    }
+
+    func testRequestBillingPageTokenRequiresAuthenticatedSession() async {
+        let state = AuthState(
+            loadStoredToken: { nil },
+            loadStoredRefreshToken: { nil },
+            loadStoredUserProfile: { nil },
+            saveStoredToken: { _, _ in },
+            saveStoredUserProfile: { _ in },
+            clearStoredSession: {},
+            fetchProfile: { _ in self.makeProfile(email: "billing-page@test.com") },
+            fetchSubscription: { _ in .none },
+            issueBillingPageToken: { _ in
+                XCTFail("Page token API should not be called without a session")
+                return BillingPageTokenResponse(token: "unexpected")
+            }
+        )
+
+        do {
+            _ = try await state.requestBillingPageToken()
+            XCTFail("Expected unauthorized error")
+        } catch AuthError.unauthorized {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     func testStartCheckoutPostsEntitlementNotificationWhenSubscriptionBecomesActive() async throws {
         var storedToken: (token: String, expiresAt: Int)?
         var checkoutStarted = false

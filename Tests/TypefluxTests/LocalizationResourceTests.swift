@@ -29,6 +29,17 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testBillingPageUnavailableHasLocalizedValueForAllSupportedLanguages() throws {
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            let key = "cloud.error.billingPageUnavailable"
+            let localized = bundle.localizedString(forKey: key, value: nil, table: nil)
+
+            XCTAssertNotEqual(localized, key, "Missing localized value for \(key) in \(language.rawValue)")
+            XCTAssertFalse(localized.isEmpty)
+        }
+    }
+
     func testChineseOllamaProviderNameUsesRequestedWordOrder() throws {
         for language in [AppLanguage.simplifiedChinese, .traditionalChinese] {
             let bundle = try localizationBundle(for: language)

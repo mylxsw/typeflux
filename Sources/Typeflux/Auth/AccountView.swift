@@ -480,9 +480,11 @@ struct AccountView: View {
 
         Task {
             do {
-                let url = subscriptionPresentation.billingAction == .manageBilling
-                    ? try await authState.createBillingPortalSession()
-                    : try await authState.startCheckout()
+                let url = try await AccountBillingFlow.destination(
+                    for: subscriptionPresentation.billingAction,
+                    requestBillingPageToken: { try await authState.requestBillingPageToken() },
+                    createPortalSession: { try await authState.createBillingPortalSession() }
+                )
                 await MainActor.run {
                     NSWorkspace.shared.open(url)
                     isOpeningBilling = false

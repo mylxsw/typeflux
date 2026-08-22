@@ -1160,6 +1160,7 @@
 "cloud.error.subscriptionExists" = "你已有订阅，请打开账单管理进行变更或恢复。";
 "cloud.error.billingConnectionUnavailable" = "暂时无法连接 Typeflux Cloud，因此未能加载订阅信息。请检查网络连接后重试；你的账号不会因此发生变化。";
 "cloud.error.billingServiceUnavailable" = "Typeflux Cloud 暂时无法加载订阅信息，你的账号不会因此发生变化。请过几分钟再试。";
+"cloud.error.billingPageUnavailable" = "暂时无法打开订阅套餐页面，请稍后重试。";
 "cloud.error.server" = "Typeflux Cloud 暂时不可用，请稍后再试。";
 "cloud.billing.subscriptionRequired.title" = "需要开通 Typeflux Cloud";
 "cloud.billing.subscriptionRequired.body" = "当前套餐暂不包含这项云端功能。开通会员后即可继续使用 Typeflux Cloud。";

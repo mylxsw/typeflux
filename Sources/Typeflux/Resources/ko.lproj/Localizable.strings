@@ -1145,6 +1145,7 @@
 "cloud.error.subscriptionExists" = "이미 구독 중입니다. 결제 관리에서 구독을 변경하거나 재개해 주세요.";
 "cloud.error.billingConnectionUnavailable" = "Typeflux Cloud에 연결할 수 없어 구독 정보를 불러오지 못했습니다. 인터넷 연결을 확인한 후 다시 시도하세요. 계정 내용은 변경되지 않았습니다.";
 "cloud.error.billingServiceUnavailable" = "현재 Typeflux Cloud에서 구독 정보를 불러올 수 없습니다. 계정 내용은 변경되지 않았습니다. 몇 분 후 다시 시도하세요.";
+"cloud.error.billingPageUnavailable" = "현재 구독 요금제 페이지를 열 수 없습니다. 다시 시도하세요.";
 "cloud.error.server" = "Typeflux Cloud를 일시적으로 사용할 수 없습니다. 나중에 다시 시도해 주세요.";
 "cloud.billing.subscriptionRequired.title" = "Typeflux Cloud 구독이 필요합니다";
 "cloud.billing.subscriptionRequired.body" = "현재 요금제에는 이 클라우드 기능이 포함되어 있지 않습니다. 구독하면 Typeflux Cloud를 계속 사용할 수 있습니다.";

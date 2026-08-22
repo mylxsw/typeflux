@@ -161,6 +161,41 @@ final class BillingAPIServiceTests: XCTestCase {
         XCTAssertEqual(portal.url.absoluteString, "https://billing.stripe.com/session/test")
     }
 
+    func testRequestBillingPageTokenPostsAuthenticatedEmptyJSONAndDecodesToken() async throws {
+        let session = BillingStubSession()
+        await session.setHandler { request in
+            XCTAssertEqual(request.url?.absoluteString, "https://api.example/api/v1/billing/page-token")
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer token-1")
+            XCTAssertEqual(request.httpBody, Data("{}".utf8))
+            let body = #"{"code":"OK","data":{"token":"billing.jwt.token"}}"#
+            return (Data(body.utf8), Self.httpResponse(url: request.url!, status: 200))
+        }
+        let service = makeService(session: session)
+
+        let response = try await service.requestBillingPageToken(token: "token-1")
+
+        XCTAssertEqual(response, BillingPageTokenResponse(token: "billing.jwt.token"))
+    }
+
+    func testRequestBillingPageTokenSurfacesServerError() async {
+        let session = BillingStubSession()
+        await session.setHandler { request in
+            let body = #"{"code":"BILLING_NOT_CONFIGURED","message":"missing secret"}"#
+            return (Data(body.utf8), Self.httpResponse(url: request.url!, status: 400))
+        }
+        let service = makeService(session: session)
+
+        do {
+            _ = try await service.requestBillingPageToken(token: "token-1")
+            XCTFail("Expected billing configuration error")
+        } catch let error as AuthError {
+            XCTAssertEqual(error.authErrorCode, "BILLING_NOT_CONFIGURED")
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     func testFetchSubscriptionRetriesTransientGatewayFailure() async throws {
         let session = BillingStubSession()
         await session.setHandler { request in
