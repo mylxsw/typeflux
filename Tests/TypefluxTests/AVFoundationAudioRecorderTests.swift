@@ -4,6 +4,51 @@ import AudioToolbox
 import XCTest
 
 final class AVFoundationAudioRecorderTests: XCTestCase {
+    func testRecordingStartupBufferRelayPreservesPrefixAndOrdering() throws {
+        let format = try XCTUnwrap(AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 16000,
+            channels: 1,
+            interleaved: false
+        ))
+        let first = try makeTestBuffer(format: format, frameLength: 160, amplitude: 0.1)
+        let second = try makeTestBuffer(format: format, frameLength: 160, amplitude: 0.2)
+        let third = try makeTestBuffer(format: format, frameLength: 160, amplitude: 0.3)
+        let relay = RecordingStartupAudioBufferRelay()
+        var amplitudes: [Float] = []
+
+        relay.append(first)
+        relay.append(second)
+        relay.activate { buffer in
+            amplitudes.append(buffer.floatChannelData?[0][0] ?? 0)
+        }
+        relay.append(third)
+
+        XCTAssertEqual(amplitudes.count, 3)
+        XCTAssertEqual(amplitudes[0], 0.1, accuracy: 0.001)
+        XCTAssertEqual(amplitudes[1], 0.2, accuracy: 0.001)
+        XCTAssertEqual(amplitudes[2], 0.3, accuracy: 0.001)
+    }
+
+    func testRecordingStartupBufferRelayDropsBufferedAudioAfterCancellation() throws {
+        let format = try XCTUnwrap(AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 16000,
+            channels: 1,
+            interleaved: false
+        ))
+        let buffer = try makeTestBuffer(format: format, frameLength: 160, amplitude: 0.25)
+        let relay = RecordingStartupAudioBufferRelay()
+        var deliveryCount = 0
+
+        relay.append(buffer)
+        relay.cancel()
+        relay.activate { _ in deliveryCount += 1 }
+        relay.append(buffer)
+
+        XCTAssertEqual(deliveryCount, 0)
+    }
+
     func testValidateInputFormatAcceptsUsableMicrophoneFormat() throws {
         XCTAssertNoThrow(try AVFoundationAudioRecorder.validateInputFormat(channelCount: 1, sampleRate: 44100))
     }

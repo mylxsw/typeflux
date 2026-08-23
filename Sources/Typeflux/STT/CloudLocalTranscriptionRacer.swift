@@ -33,9 +33,55 @@ private struct EmptyTranscriptionResultError: LocalizedError {
 /// cloud-quality preference window. Once that window expires, the first usable
 /// result wins. The losing task is cancelled without delaying the selected result.
 final class CloudLocalTranscriptionRacer {
-    private enum Event {
+    enum Event {
         case completed(CloudLocalTranscriptionSource, Result<String, Error>)
         case priorityWindowExpired
+    }
+
+    struct Resolver {
+        private(set) var cachedLocalResult: String?
+        private(set) var cloudError: Error?
+        private(set) var localError: Error?
+        private(set) var priorityWindowExpired = false
+
+        mutating func receive(_ event: Event) throws -> CloudLocalTranscriptionRaceResult? {
+            switch event {
+            case let .completed(.cloud, .success(text)):
+                return CloudLocalTranscriptionRaceResult(text: text, source: .cloud)
+
+            case let .completed(.local, .success(text)):
+                if priorityWindowExpired || cloudError != nil {
+                    return CloudLocalTranscriptionRaceResult(text: text, source: .local)
+                }
+                cachedLocalResult = text
+
+            case let .completed(.cloud, .failure(error)):
+                cloudError = error
+                if let cachedLocalResult {
+                    return CloudLocalTranscriptionRaceResult(text: cachedLocalResult, source: .local)
+                }
+                if localError != nil {
+                    throw combinedError
+                }
+
+            case let .completed(.local, .failure(error)):
+                localError = error
+                if cloudError != nil {
+                    throw combinedError
+                }
+
+            case .priorityWindowExpired:
+                priorityWindowExpired = true
+                if let cachedLocalResult {
+                    return CloudLocalTranscriptionRaceResult(text: cachedLocalResult, source: .local)
+                }
+            }
+            return nil
+        }
+
+        var combinedError: CloudLocalTranscriptionRaceError {
+            CloudLocalTranscriptionRaceError(cloudError: cloudError, localError: localError)
+        }
     }
 
     private final class RaceTasks: @unchecked Sendable {
@@ -122,48 +168,17 @@ final class CloudLocalTranscriptionRacer {
     }
 
     private func resolve(_ stream: AsyncStream<Event>) async throws -> CloudLocalTranscriptionRaceResult {
-        var priorityWindowExpired = false
-        var cachedLocalResult: String?
-        var cloudError: Error?
-        var localError: Error?
+        var resolver = Resolver()
 
         for await event in stream {
             try Task.checkCancellation()
-            switch event {
-            case let .completed(.cloud, .success(text)):
-                return CloudLocalTranscriptionRaceResult(text: text, source: .cloud)
-
-            case let .completed(.local, .success(text)):
-                if priorityWindowExpired || cloudError != nil {
-                    return CloudLocalTranscriptionRaceResult(text: text, source: .local)
-                }
-                cachedLocalResult = text
-
-            case let .completed(.cloud, .failure(error)):
-                cloudError = error
-                if let cachedLocalResult {
-                    return CloudLocalTranscriptionRaceResult(text: cachedLocalResult, source: .local)
-                }
-                if localError != nil {
-                    throw CloudLocalTranscriptionRaceError(cloudError: cloudError, localError: localError)
-                }
-
-            case let .completed(.local, .failure(error)):
-                localError = error
-                if cloudError != nil {
-                    throw CloudLocalTranscriptionRaceError(cloudError: cloudError, localError: localError)
-                }
-
-            case .priorityWindowExpired:
-                priorityWindowExpired = true
-                if let cachedLocalResult {
-                    return CloudLocalTranscriptionRaceResult(text: cachedLocalResult, source: .local)
-                }
+            if let result = try resolver.receive(event) {
+                return result
             }
         }
 
         try Task.checkCancellation()
-        throw CloudLocalTranscriptionRaceError(cloudError: cloudError, localError: localError)
+        throw resolver.combinedError
     }
 
     private static func run(

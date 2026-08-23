@@ -423,12 +423,14 @@ final class STTRouterTests: XCTestCase {
 
     func testTypefluxOfficialPrefersCloudInsidePriorityWindow() async throws {
         settings.sttProvider = .typefluxOfficial
-        let cloud = DelayedMockTranscriber(delay: 0.02, result: .success("cloud result"))
-        let local = DelayedMockTranscriber(delay: 0.005, result: .success("local result"))
+        let cloud = MockTranscriber()
+        cloud.resultToReturn = "cloud result"
+        let local = MockTranscriber()
+        local.resultToReturn = "local result"
         let router = makeRouter(
             typefluxOfficialOverride: cloud,
             typefluxCloudLoginFallbackLocalModel: local,
-            typefluxOfficialCloudPriorityWindow: 0.1
+            typefluxOfficialCloudPriorityWindow: 60
         )
 
         let result = try await router.transcribe(audioFile: dummyAudioFile())
@@ -442,12 +444,13 @@ final class STTRouterTests: XCTestCase {
 
     func testTypefluxOfficialUsesReadyLocalResultWhenPriorityWindowExpires() async throws {
         settings.sttProvider = .typefluxOfficial
-        let cloud = DelayedMockTranscriber(delay: 0.2, result: .success("cloud result"))
-        let local = DelayedMockTranscriber(delay: 0.005, result: .success("local result"))
+        let cloud = DelayedMockTranscriber(delay: 60, result: .success("cloud result"))
+        let local = MockTranscriber()
+        local.resultToReturn = "local result"
         let router = makeRouter(
             typefluxOfficialOverride: cloud,
             typefluxCloudLoginFallbackLocalModel: local,
-            typefluxOfficialCloudPriorityWindow: 0.02
+            typefluxOfficialCloudPriorityWindow: 0
         )
 
         let result = try await router.transcribe(audioFile: dummyAudioFile())
@@ -455,14 +458,16 @@ final class STTRouterTests: XCTestCase {
         XCTAssertEqual(result, "local result")
     }
 
-    func testTypefluxOfficialTakesFirstResultAfterPriorityWindow() async throws {
+    func testTypefluxOfficialUsesCloudWhenLocalFailsAfterPriorityWindow() async throws {
         settings.sttProvider = .typefluxOfficial
-        let cloud = DelayedMockTranscriber(delay: 0.04, result: .success("cloud result"))
-        let local = DelayedMockTranscriber(delay: 0.08, result: .success("local result"))
+        let cloud = MockTranscriber()
+        cloud.resultToReturn = "cloud result"
+        let local = MockTranscriber()
+        local.errorToThrow = NSError(domain: "local", code: 1)
         let router = makeRouter(
             typefluxOfficialOverride: cloud,
             typefluxCloudLoginFallbackLocalModel: local,
-            typefluxOfficialCloudPriorityWindow: 0.01
+            typefluxOfficialCloudPriorityWindow: 0
         )
 
         let result = try await router.transcribe(audioFile: dummyAudioFile())

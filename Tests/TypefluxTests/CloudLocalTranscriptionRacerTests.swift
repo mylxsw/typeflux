@@ -2,66 +2,71 @@
 import XCTest
 
 final class CloudLocalTranscriptionRacerTests: XCTestCase {
-    func testCloudWinsWithinPriorityWindowEvenWhenLocalFinishesFirst() async throws {
-        let result = try await CloudLocalTranscriptionRacer(priorityWindow: 0.1).race(
-            cloud: { try await Self.succeed("cloud", after: 0.02) },
-            local: { try await Self.succeed("local", after: 0.005) }
-        )
+    func testCloudWinsWithinPriorityWindowEvenWhenLocalFinishesFirst() throws {
+        var resolver = CloudLocalTranscriptionRacer.Resolver()
 
-        XCTAssertEqual(result, CloudLocalTranscriptionRaceResult(text: "cloud", source: .cloud))
+        XCTAssertNil(try resolver.receive(.completed(.local, .success("local"))))
+        XCTAssertEqual(
+            try resolver.receive(.completed(.cloud, .success("cloud"))),
+            CloudLocalTranscriptionRaceResult(text: "cloud", source: .cloud)
+        )
     }
 
-    func testCachedLocalWinsWhenPriorityWindowExpires() async throws {
-        let result = try await CloudLocalTranscriptionRacer(priorityWindow: 0.02).race(
-            cloud: { try await Self.succeed("cloud", after: 0.2) },
-            local: { try await Self.succeed("local", after: 0.005) }
-        )
+    func testCachedLocalWinsWhenPriorityWindowExpires() throws {
+        var resolver = CloudLocalTranscriptionRacer.Resolver()
 
-        XCTAssertEqual(result, CloudLocalTranscriptionRaceResult(text: "local", source: .local))
+        XCTAssertNil(try resolver.receive(.completed(.local, .success("local"))))
+        XCTAssertEqual(
+            try resolver.receive(.priorityWindowExpired),
+            CloudLocalTranscriptionRaceResult(text: "local", source: .local)
+        )
     }
 
-    func testFirstCompletionWinsAfterPriorityWindowWhenNeitherWasReady() async throws {
-        let result = try await CloudLocalTranscriptionRacer(priorityWindow: 0.01).race(
-            cloud: { try await Self.succeed("cloud", after: 0.04) },
-            local: { try await Self.succeed("local", after: 0.08) }
-        )
+    func testCloudCompletionWinsAfterPriorityWindowWhenNeitherWasReady() throws {
+        var resolver = CloudLocalTranscriptionRacer.Resolver()
 
-        XCTAssertEqual(result, CloudLocalTranscriptionRaceResult(text: "cloud", source: .cloud))
+        XCTAssertNil(try resolver.receive(.priorityWindowExpired))
+        XCTAssertEqual(
+            try resolver.receive(.completed(.cloud, .success("cloud"))),
+            CloudLocalTranscriptionRaceResult(text: "cloud", source: .cloud)
+        )
     }
 
-    func testLocalCompletionWinsAfterPriorityWindowWhenNeitherWasReady() async throws {
-        let result = try await CloudLocalTranscriptionRacer(priorityWindow: 0.01).race(
-            cloud: { try await Self.succeed("cloud", after: 0.08) },
-            local: { try await Self.succeed("local", after: 0.04) }
-        )
+    func testLocalCompletionWinsAfterPriorityWindowWhenNeitherWasReady() throws {
+        var resolver = CloudLocalTranscriptionRacer.Resolver()
 
-        XCTAssertEqual(result, CloudLocalTranscriptionRaceResult(text: "local", source: .local))
+        XCTAssertNil(try resolver.receive(.priorityWindowExpired))
+        XCTAssertEqual(
+            try resolver.receive(.completed(.local, .success("local"))),
+            CloudLocalTranscriptionRaceResult(text: "local", source: .local)
+        )
     }
 
-    func testCloudFailureImmediatelyReleasesCachedLocalResult() async throws {
-        let startedAt = Date()
-        let result = try await CloudLocalTranscriptionRacer(priorityWindow: 0.2).race(
-            cloud: { try await Self.fail("cloud", after: 0.02) },
-            local: { try await Self.succeed("local", after: 0.005) }
-        )
+    func testCloudFailureImmediatelyReleasesCachedLocalResult() throws {
+        var resolver = CloudLocalTranscriptionRacer.Resolver()
 
-        XCTAssertEqual(result, CloudLocalTranscriptionRaceResult(text: "local", source: .local))
-        XCTAssertLessThan(Date().timeIntervalSince(startedAt), 0.15)
+        XCTAssertNil(try resolver.receive(.completed(.local, .success("local"))))
+        XCTAssertEqual(
+            try resolver.receive(.completed(.cloud, .failure(Self.error("cloud")))),
+            CloudLocalTranscriptionRaceResult(text: "local", source: .local)
+        )
     }
 
-    func testLocalFailureKeepsWaitingForCloudBeyondPriorityWindow() async throws {
-        let result = try await CloudLocalTranscriptionRacer(priorityWindow: 0.01).race(
-            cloud: { try await Self.succeed("cloud", after: 0.04) },
-            local: { try await Self.fail("local", after: 0.005) }
-        )
+    func testLocalFailureKeepsWaitingForCloudBeyondPriorityWindow() throws {
+        var resolver = CloudLocalTranscriptionRacer.Resolver()
 
-        XCTAssertEqual(result, CloudLocalTranscriptionRaceResult(text: "cloud", source: .cloud))
+        XCTAssertNil(try resolver.receive(.completed(.local, .failure(Self.error("local")))))
+        XCTAssertNil(try resolver.receive(.priorityWindowExpired))
+        XCTAssertEqual(
+            try resolver.receive(.completed(.cloud, .success("cloud"))),
+            CloudLocalTranscriptionRaceResult(text: "cloud", source: .cloud)
+        )
     }
 
     func testEmptyCloudResultFallsBackToCachedLocalResult() async throws {
-        let result = try await CloudLocalTranscriptionRacer(priorityWindow: 0.2).race(
-            cloud: { try await Self.succeed("  \n", after: 0.02) },
-            local: { try await Self.succeed("local", after: 0.005) }
+        let result = try await CloudLocalTranscriptionRacer(priorityWindow: 60).race(
+            cloud: { "  \n" },
+            local: { "local" }
         )
 
         XCTAssertEqual(result, CloudLocalTranscriptionRaceResult(text: "local", source: .local))
@@ -69,9 +74,9 @@ final class CloudLocalTranscriptionRacerTests: XCTestCase {
 
     func testBothFailuresArePreservedForFallbackHandling() async {
         do {
-            _ = try await CloudLocalTranscriptionRacer(priorityWindow: 0.1).race(
-                cloud: { try await Self.fail("cloud", after: 0.005) },
-                local: { try await Self.fail("local", after: 0.01) }
+            _ = try await CloudLocalTranscriptionRacer(priorityWindow: 60).race(
+                cloud: { throw Self.error("cloud") },
+                local: { throw Self.error("local") }
             )
             XCTFail("Expected both transcription operations to fail")
         } catch let error as CloudLocalTranscriptionRaceError {
@@ -87,15 +92,18 @@ final class CloudLocalTranscriptionRacerTests: XCTestCase {
         }
     }
 
-    func testCancellationStopsWaitingForRaceResults() async throws {
+    func testCancellationStopsWaitingForRaceResults() async {
+        let cloud = SuspendedTranscriptionOperation()
+        let local = SuspendedTranscriptionOperation()
         let task = Task {
-            try await CloudLocalTranscriptionRacer(priorityWindow: 1).race(
-                cloud: { try await Self.succeed("cloud", after: 1) },
-                local: { try await Self.succeed("local", after: 1) }
+            try await CloudLocalTranscriptionRacer(priorityWindow: 60).race(
+                cloud: { try await cloud.run() },
+                local: { try await local.run() }
             )
         }
 
-        try await Task.sleep(nanoseconds: 10_000_000)
+        await cloud.waitUntilStarted()
+        await local.waitUntilStarted()
         task.cancel()
 
         do {
@@ -108,13 +116,27 @@ final class CloudLocalTranscriptionRacerTests: XCTestCase {
         }
     }
 
-    private static func succeed(_ text: String, after delay: TimeInterval) async throws -> String {
-        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-        return text
+    private static func error(_ domain: String) -> NSError {
+        NSError(domain: domain, code: 1)
+    }
+}
+
+private actor SuspendedTranscriptionOperation {
+    private var hasStarted = false
+    private var startWaiters: [CheckedContinuation<Void, Never>] = []
+
+    func run() async throws -> String {
+        hasStarted = true
+        startWaiters.forEach { $0.resume() }
+        startWaiters.removeAll()
+        try await Task.sleep(for: .seconds(60))
+        return "unused"
     }
 
-    private static func fail(_ domain: String, after delay: TimeInterval) async throws -> String {
-        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-        throw NSError(domain: domain, code: 1)
+    func waitUntilStarted() async {
+        guard !hasStarted else { return }
+        await withCheckedContinuation { continuation in
+            startWaiters.append(continuation)
+        }
     }
 }
