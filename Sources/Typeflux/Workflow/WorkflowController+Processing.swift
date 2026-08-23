@@ -713,6 +713,7 @@ extension WorkflowController {
             // a persona rewrite is needed. The server will run the LLM after
             // transcription and stream results back over the same WebSocket.
             let canMergeWithLLM = settingsStore.sttProvider == .typefluxOfficial
+                && !sttRouter.usesTypefluxOfficialCloudLocalRace
                 && settingsStore.llmRemoteProvider == .typefluxCloud
                 && recordingIntent == .dictation
                 && !multimodalHandlesPersona
@@ -730,7 +731,17 @@ extension WorkflowController {
             NetworkDebugLogger.logMessage("[Ask Timing] transcription entered intent=\(recordingIntent.traceName)")
             if let realtimeTranscriptionSession = usableRealtimeTranscriptionSession {
                 do {
-                    rawTranscribedText = try await realtimeTranscriptionSession.finish()
+                    if settingsStore.sttProvider == .typefluxOfficial,
+                       sttRouter.usesTypefluxOfficialCloudLocalRace {
+                        rawTranscribedText = try await sttRouter.transcribeWithTypefluxOfficialCloudPriority(
+                            audioFile: audioFile,
+                            onUpdate: { _ in }
+                        ) {
+                            try await realtimeTranscriptionSession.finish()
+                        }
+                    } else {
+                        rawTranscribedText = try await realtimeTranscriptionSession.finish()
+                    }
                 } catch {
                     if Self.shouldUseRecordingPreviewOnTranscriptionFailure(error),
                        !fallbackPreviewText.isEmpty {

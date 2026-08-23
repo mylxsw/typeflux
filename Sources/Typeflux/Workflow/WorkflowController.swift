@@ -32,7 +32,7 @@ final class WorkflowController {
     static let recordingHintAutoHideDelay: TimeInterval = 3.0
     static let audioStartupMaxAttemptCount = 3
     static let audioStartupRetryDelay: Duration = .milliseconds(250)
-    static let llmTimeoutAfterTranscriptionSeconds: TimeInterval = 30
+    static let llmTimeoutAfterTranscriptionSeconds: TimeInterval = 3
     static let paidCreditExhaustedPromptSuppressionInterval: TimeInterval = 60 * 60
     var llmTimeoutAfterTranscription: TimeInterval = WorkflowController.llmTimeoutAfterTranscriptionSeconds
     struct LLMRequestTimeoutError: LocalizedError {
