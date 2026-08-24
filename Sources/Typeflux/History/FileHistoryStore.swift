@@ -141,6 +141,7 @@ final class FileHistoryStore: HistoryStore {
                 if let value = pipelineStats.endToEndMilliseconds {
                     md += "- End-to-end: \(value) ms\n"
                 }
+                md += diagnosticMarkdown(for: pipelineStats)
             } else if let pipelineStats = r.pipelineStats, pipelineStats.hasData {
                 md += "\n### Pipeline Stats\n\n"
                 md += "- Recording stopped: \(pipelineStats.recordingStoppedAt?.ISO8601Format() ?? "<none>")\n"
@@ -151,6 +152,7 @@ final class FileHistoryStore: HistoryStore {
                 md += "- LLM completed: \(pipelineStats.llmProcessingCompletedAt?.ISO8601Format() ?? "<none>")\n"
                 md += "- Apply started: \(pipelineStats.applyStartedAt?.ISO8601Format() ?? "<none>")\n"
                 md += "- Apply completed: \(pipelineStats.applyCompletedAt?.ISO8601Format() ?? "<none>")\n"
+                md += diagnosticMarkdown(for: pipelineStats)
             }
             if let personaResultText = r.personaResultText, !personaResultText.isEmpty {
                 md += "\n### Persona Result\n\n\(personaResultText)\n"
@@ -170,6 +172,32 @@ final class FileHistoryStore: HistoryStore {
         let url = baseDir.appendingPathComponent("history-\(Int(Date().timeIntervalSince1970)).md")
         try md.data(using: .utf8)?.write(to: url)
         return url
+    }
+
+    private func diagnosticMarkdown(for stats: HistoryPipelineStats) -> String {
+        var lines: [String] = []
+        if let race = stats.asrRace {
+            lines.append("- ASR race selected: \(race.selectedSource?.rawValue ?? "none")")
+            lines.append("  - Selection reason: \(race.selectionReason.rawValue)")
+            lines.append("  - Priority window: \(race.priorityWindowMilliseconds) ms")
+            lines.append("  - Priority window exceeded: \(race.cloudPriorityWindowExceeded)")
+            lines.append("  - Decision duration: \(race.decisionDurationMilliseconds) ms")
+            lines.append(
+                "  - Cloud: \(race.cloudAttempt.durationMilliseconds) ms (\(race.cloudAttempt.outcome.rawValue))"
+            )
+            lines.append(
+                "  - Local: \(race.localAttempt.durationMilliseconds) ms (\(race.localAttempt.outcome.rawValue))"
+            )
+        }
+        if let llmOutcome = stats.llmOutcome {
+            lines.append("- LLM outcome: \(llmOutcome.outcome.rawValue)")
+            lines.append("  - Duration: \(llmOutcome.durationMilliseconds) ms")
+            if let timeout = llmOutcome.timeoutMilliseconds {
+                lines.append("  - Timeout limit: \(timeout) ms")
+            }
+            lines.append("  - Used transcript fallback: \(llmOutcome.usedTranscriptFallback)")
+        }
+        return lines.isEmpty ? "" : lines.joined(separator: "\n") + "\n"
     }
 
     private func readIndex() -> [HistoryRecord] {

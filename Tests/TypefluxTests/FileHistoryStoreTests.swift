@@ -245,6 +245,47 @@ final class FileHistoryStoreTests: XCTestCase {
 // MARK: - Extended FileHistoryStore tests
 
 extension FileHistoryStoreTests {
+    func testExportMarkdownIncludesProcessingDiagnostics() throws {
+        let startedAt = Date(timeIntervalSince1970: 1_000)
+        let race = ASRRaceDiagnostics(
+            startedAt: startedAt,
+            selectedAt: startedAt.addingTimeInterval(1),
+            priorityWindowMilliseconds: 3_000,
+            decisionDurationMilliseconds: 1_000,
+            selectedSource: .cloud,
+            selectionReason: .cloudWithinPriorityWindow,
+            cloudPriorityWindowExceeded: false,
+            cloudAttempt: ASRAttemptDiagnostics(
+                outcome: .succeeded,
+                durationMilliseconds: 1_000,
+                completedAt: startedAt.addingTimeInterval(1)
+            ),
+            localAttempt: ASRAttemptDiagnostics(outcome: .cancelled, durationMilliseconds: 1_000)
+        )
+        let llmOutcome = LLMProcessingOutcomeDiagnostics(
+            startedAt: startedAt.addingTimeInterval(1),
+            completedAt: startedAt.addingTimeInterval(1.4),
+            timeoutMilliseconds: 3_000,
+            outcome: .completed,
+            usedTranscriptFallback: false
+        )
+        let record = HistoryRecord(
+            date: startedAt,
+            transcriptText: "diagnostic transcript",
+            pipelineTiming: HistoryPipelineTiming(asrRace: race, llmOutcome: llmOutcome)
+        )
+        store.save(record: record)
+        flush()
+
+        let exportURL = try store.exportMarkdown()
+        let markdown = try String(contentsOf: exportURL, encoding: .utf8)
+
+        XCTAssertTrue(markdown.contains("ASR race selected: cloud"))
+        XCTAssertTrue(markdown.contains("Local: 1000 ms (cancelled)"))
+        XCTAssertTrue(markdown.contains("LLM outcome: completed"))
+        XCTAssertEqual(markdown.components(separatedBy: "ASR race selected:").count - 1, 1)
+    }
+
     func testSavePreservesAllFields() {
         let id = UUID()
         let date = Date(timeIntervalSince1970: 5000)

@@ -670,6 +670,9 @@ extension WorkflowController {
         recordingPreviewText: String = ""
     ) async {
         var record = record
+        let asrRaceDiagnosticsRecorder = sttRouter.usesTypefluxOfficialCloudLocalRace
+            ? ASRRaceDiagnosticsRecorder()
+            : nil
         do {
             try ensureProcessingIsActive(sessionID)
             var pipelineTiming = record.pipelineTiming ?? HistoryPipelineTiming()
@@ -735,7 +738,8 @@ extension WorkflowController {
                        sttRouter.usesTypefluxOfficialCloudLocalRace {
                         rawTranscribedText = try await sttRouter.transcribeWithTypefluxOfficialCloudPriority(
                             audioFile: audioFile,
-                            onUpdate: { _ in }
+                            onUpdate: { _ in },
+                            diagnosticsRecorder: asrRaceDiagnosticsRecorder
                         ) {
                             try await realtimeTranscriptionSession.finish()
                         }
@@ -758,7 +762,8 @@ extension WorkflowController {
                         rawTranscribedText = try await sttRouter.transcribeStream(
                             audioFile: audioFile,
                             scenario: cloudScenario,
-                            optimize: !shouldRewriteTranscript
+                            optimize: !shouldRewriteTranscript,
+                            diagnosticsRecorder: asrRaceDiagnosticsRecorder
                         ) { _ in }
                     }
                 }
@@ -783,7 +788,8 @@ extension WorkflowController {
                     rawTranscribedText = try await sttRouter.transcribeStream(
                         audioFile: audioFile,
                         scenario: cloudScenario,
-                        optimize: !shouldRewriteTranscript
+                        optimize: !shouldRewriteTranscript,
+                        diagnosticsRecorder: asrRaceDiagnosticsRecorder
                     ) { _ in }
                 } catch {
                     guard Self.shouldUseRecordingPreviewOnTranscriptionFailure(error),
@@ -797,6 +803,10 @@ extension WorkflowController {
                     )
                     rawTranscribedText = ""
                 }
+            }
+            if let asrRaceDiagnostics = asrRaceDiagnosticsRecorder?.snapshot() {
+                pipelineTiming.asrRace = asrRaceDiagnostics
+                record.pipelineTiming = pipelineTiming
             }
             if let diagnosticsProvider = usableRealtimeTranscriptionSession as?
                 any RealtimeDiagnosticsProviding {
@@ -951,6 +961,7 @@ extension WorkflowController {
                 }
             }
         } catch let error as LLMConfigurationError {
+            mergeASRRaceDiagnostics(from: asrRaceDiagnosticsRecorder, into: &record)
             let message = error.localizedDescription
             ErrorLogStore.shared.log("Processing failed: \(message)")
             markFailure(&record, message: message)
@@ -959,6 +970,7 @@ extension WorkflowController {
             UsageStatsStore.shared.recordSession(record: record)
             enforceHistoryRetentionPolicy()
         } catch let error as TypefluxCloudLoginRequiredError {
+            mergeASRRaceDiagnostics(from: asrRaceDiagnosticsRecorder, into: &record)
             let message = error.localizedDescription
             ErrorLogStore.shared.log("Processing skipped because Typeflux Cloud login is required: \(message)")
             markFailure(&record, message: message)
@@ -976,11 +988,13 @@ extension WorkflowController {
                 await presentTypefluxCloudLoginRequired()
             }
         } catch is CancellationError {
+            mergeASRRaceDiagnostics(from: asrRaceDiagnosticsRecorder, into: &record)
             markCancelled(&record)
             saveHistoryRecord(record)
             logPipelineEvent("pipeline-cancelled", for: record)
             enforceHistoryRetentionPolicy()
         } catch {
+            mergeASRRaceDiagnostics(from: asrRaceDiagnosticsRecorder, into: &record)
             if shouldTreatAsSkippedSpeechInput(error: error, audioFile: audioFile) {
                 record.transcriptionStatus = .skipped
                 record.processingStatus = .skipped
@@ -1713,6 +1727,16 @@ extension WorkflowController {
                 ?? pipelineTiming.transcriptionCompletedAt
                 ?? Date()
             pipelineTiming.llmProcessingCompletedAt = pipelineTiming.llmProcessingCompletedAt ?? Date()
+            if let startedAt = pipelineTiming.llmProcessingStartedAt,
+               let completedAt = pipelineTiming.llmProcessingCompletedAt {
+                pipelineTiming.llmOutcome = LLMProcessingOutcomeDiagnostics(
+                    startedAt: startedAt,
+                    completedAt: completedAt,
+                    timeoutMilliseconds: nil,
+                    outcome: .completed,
+                    usedTranscriptFallback: false
+                )
+            }
             record.pipelineTiming = pipelineTiming
             rewriteOutput = merged
             logPipelineEvent("llm-processing-completed", for: record)
@@ -1722,6 +1746,10 @@ extension WorkflowController {
             record.pipelineTiming = pipelineTiming
             saveHistoryRecord(record)
             logPipelineEvent("llm-processing-started", for: record)
+            let llmStartedAt = pipelineTiming.llmProcessingStartedAt ?? Date()
+            let llmTimeoutMilliseconds = LLMProcessingOutcomeDiagnostics.clampedMilliseconds(
+                for: llmTimeoutAfterTranscription
+            )
 
             do {
                 let rewriteResult = try await generateRewrite(
@@ -1748,8 +1776,22 @@ extension WorkflowController {
                 if rewriteResult.text.isEmpty {
                     ErrorLogStore.shared.log("Persona rewrite returned an empty response, using transcript as fallback")
                     rewriteOutput = transcribedText
+                    pipelineTiming.llmOutcome = LLMProcessingOutcomeDiagnostics(
+                        startedAt: llmStartedAt,
+                        completedAt: rewriteResult.completedAt,
+                        timeoutMilliseconds: llmTimeoutMilliseconds,
+                        outcome: .emptyResponseFallback,
+                        usedTranscriptFallback: true
+                    )
                 } else {
                     rewriteOutput = rewriteResult.text
+                    pipelineTiming.llmOutcome = LLMProcessingOutcomeDiagnostics(
+                        startedAt: llmStartedAt,
+                        completedAt: rewriteResult.completedAt,
+                        timeoutMilliseconds: llmTimeoutMilliseconds,
+                        outcome: .completed,
+                        usedTranscriptFallback: false
+                    )
                 }
                 logPipelineEvent("llm-processing-completed", for: record)
             } catch is LLMRequestTimeoutError {
@@ -1758,31 +1800,85 @@ extension WorkflowController {
                 ErrorLogStore.shared.log(
                     "Persona rewrite timed out after \(String(format: "%.2f", llmTimeoutAfterTranscription))s, using transcript as fallback"
                 )
-                pipelineTiming.llmProcessingCompletedAt = Date()
+                let completedAt = Date()
+                pipelineTiming.llmProcessingCompletedAt = completedAt
+                pipelineTiming.llmOutcome = LLMProcessingOutcomeDiagnostics(
+                    startedAt: llmStartedAt,
+                    completedAt: completedAt,
+                    timeoutMilliseconds: llmTimeoutMilliseconds,
+                    outcome: .timedOutFallback,
+                    usedTranscriptFallback: true
+                )
                 rewriteOutput = transcribedText
             } catch let error where Self.isServiceOverloadedError(error) {
                 // Service overloaded (HTTP 529): all retries exhausted; insert transcript as
                 // fallback so the user isn't left with an error dialog.
                 ErrorLogStore.shared.log("LLM service overloaded after retries, using transcript as fallback")
-                pipelineTiming.llmProcessingCompletedAt = Date()
+                let completedAt = Date()
+                pipelineTiming.llmProcessingCompletedAt = completedAt
+                pipelineTiming.llmOutcome = LLMProcessingOutcomeDiagnostics(
+                    startedAt: llmStartedAt,
+                    completedAt: completedAt,
+                    timeoutMilliseconds: llmTimeoutMilliseconds,
+                    outcome: .serviceOverloadedFallback,
+                    usedTranscriptFallback: true
+                )
                 rewriteOutput = transcribedText
             } catch let error as LLMConfigurationError {
                 ErrorLogStore.shared.log(
                     "LLM configuration unavailable (\(error.localizedDescription)), using transcript as fallback"
                 )
-                pipelineTiming.llmProcessingCompletedAt = Date()
+                let completedAt = Date()
+                pipelineTiming.llmProcessingCompletedAt = completedAt
+                pipelineTiming.llmOutcome = LLMProcessingOutcomeDiagnostics(
+                    startedAt: llmStartedAt,
+                    completedAt: completedAt,
+                    timeoutMilliseconds: llmTimeoutMilliseconds,
+                    outcome: .configurationUnavailableFallback,
+                    usedTranscriptFallback: true
+                )
                 rewriteOutput = transcribedText
             } catch let error where TypefluxCloudBillingError.fromError(error) != nil {
                 let billingError = TypefluxCloudBillingError.fromError(error)
                 ErrorLogStore.shared.log(
                     "Typeflux Cloud billing requirement during persona rewrite, using transcript as fallback"
                 )
-                pipelineTiming.llmProcessingCompletedAt = Date()
+                let completedAt = Date()
+                pipelineTiming.llmProcessingCompletedAt = completedAt
+                pipelineTiming.llmOutcome = LLMProcessingOutcomeDiagnostics(
+                    startedAt: llmStartedAt,
+                    completedAt: completedAt,
+                    timeoutMilliseconds: llmTimeoutMilliseconds,
+                    outcome: .billingFallback,
+                    usedTranscriptFallback: true
+                )
                 rewriteOutput = transcribedText
                 billingFallbackError = billingError
+            } catch is CancellationError {
+                let completedAt = Date()
+                pipelineTiming.llmProcessingCompletedAt = completedAt
+                pipelineTiming.llmOutcome = LLMProcessingOutcomeDiagnostics(
+                    startedAt: llmStartedAt,
+                    completedAt: completedAt,
+                    timeoutMilliseconds: llmTimeoutMilliseconds,
+                    outcome: .cancelled,
+                    usedTranscriptFallback: false
+                )
+                record.pipelineTiming = pipelineTiming
+                throw CancellationError()
             } catch {
                 // All other failures (network error, API error, etc.) are surfaced to the
                 // user as a retryable failure so they are never silently swallowed.
+                let completedAt = Date()
+                pipelineTiming.llmProcessingCompletedAt = completedAt
+                pipelineTiming.llmOutcome = LLMProcessingOutcomeDiagnostics(
+                    startedAt: llmStartedAt,
+                    completedAt: completedAt,
+                    timeoutMilliseconds: llmTimeoutMilliseconds,
+                    outcome: .failed,
+                    usedTranscriptFallback: false
+                )
+                record.pipelineTiming = pipelineTiming
                 throw error
             }
         }
@@ -2212,6 +2308,16 @@ extension WorkflowController {
         } else {
             DispatchQueue.main.sync(execute: work)
         }
+    }
+
+    private func mergeASRRaceDiagnostics(
+        from recorder: ASRRaceDiagnosticsRecorder?,
+        into record: inout HistoryRecord
+    ) {
+        guard let diagnostics = recorder?.snapshot() else { return }
+        var timing = record.pipelineTiming ?? HistoryPipelineTiming()
+        timing.asrRace = diagnostics
+        record.pipelineTiming = timing
     }
 
     func saveHistoryRecord(_ record: HistoryRecord) {

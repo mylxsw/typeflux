@@ -191,6 +191,7 @@ final class CloudLoginSyncCoordinatorTests: XCTestCase {
     private func makeAuthState(subscription: BillingSubscriptionSnapshot) -> AuthState {
         AuthState(
             loadStoredToken: { nil },
+            loadStoredRefreshToken: { nil },
             loadStoredUserProfile: { nil },
             saveStoredToken: { _, _ in },
             saveStoredUserProfile: { _ in },

@@ -35,6 +35,7 @@ extension STTRouter {
         audioFile: AudioFile,
         scenario: TypefluxCloudScenario,
         optimize: Bool = true,
+        diagnosticsRecorder: ASRRaceDiagnosticsRecorder? = nil,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         guard typefluxCloudLoginFallbackLocalModel != nil else {
@@ -52,7 +53,8 @@ extension STTRouter {
 
         return try await transcribeWithTypefluxOfficialCloudPriority(
             audioFile: audioFile,
-            onUpdate: onUpdate
+            onUpdate: onUpdate,
+            diagnosticsRecorder: diagnosticsRecorder
         ) { [self] in
             try await transcribeWithTypefluxOfficial(
                 audioFile: audioFile,
@@ -66,6 +68,7 @@ extension STTRouter {
     func transcribeWithTypefluxOfficialCloudPriority(
         audioFile: AudioFile,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
+        diagnosticsRecorder: ASRRaceDiagnosticsRecorder? = nil,
         cloudOperation: @escaping @Sendable () async throws -> String
     ) async throws -> String {
         guard let localTranscriber = typefluxCloudLoginFallbackLocalModel else {
@@ -80,7 +83,8 @@ extension STTRouter {
                 cloud: cloudOperation,
                 local: {
                     try await localTranscriber.transcribeStream(audioFile: audioFile) { _ in }
-                }
+                },
+                diagnosticsRecorder: diagnosticsRecorder
             )
             if result.source == .local {
                 await onUpdate(TranscriptionSnapshot(text: result.text, isFinal: true))

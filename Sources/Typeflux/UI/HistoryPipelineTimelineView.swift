@@ -1,5 +1,55 @@
 import SwiftUI
 
+struct HistoryPipelineSummaryBadgesView: View {
+    let items: [HistoryPipelineBadgePresentationItem]
+
+    var body: some View {
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: 132, maximum: 220), spacing: StudioTheme.Spacing.xSmall)],
+            alignment: .leading,
+            spacing: StudioTheme.Spacing.xSmall
+        ) {
+            ForEach(items) { item in
+                HStack(spacing: StudioTheme.Spacing.xxSmall) {
+                    Text(item.title)
+                        .foregroundStyle(StudioTheme.textTertiary)
+                    Text(item.value)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(foregroundColor(for: item.tone))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                }
+                .font(.studioBody(StudioTheme.Typography.eyebrow, weight: .medium))
+                .padding(.horizontal, StudioTheme.Spacing.xSmall)
+                .padding(.vertical, StudioTheme.Spacing.xxxSmall)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    Capsule().fill(backgroundColor(for: item.tone))
+                )
+                .help("\(item.title) \(item.value)")
+                .accessibilityElement(children: .combine)
+            }
+        }
+    }
+
+    private func foregroundColor(for tone: HistoryPipelineBadgePresentationItem.Tone) -> Color {
+        switch tone {
+        case .neutral:
+            StudioTheme.textSecondary
+        case .selected:
+            StudioTheme.success
+        case .warning:
+            StudioTheme.warning
+        case .failure:
+            StudioTheme.danger
+        }
+    }
+
+    private func backgroundColor(for tone: HistoryPipelineBadgePresentationItem.Tone) -> Color {
+        foregroundColor(for: tone).opacity(0.09)
+    }
+}
+
 struct HistoryPipelineTimelineView: View {
     let title: String
     let timeline: HistoryPipelineTimelinePresentation
@@ -455,6 +505,10 @@ private struct HistoryPipelineTimelineLaneView: View {
             StudioTheme.accent
         case .transcription:
             Color(nsColor: .systemCyan)
+        case .cloud:
+            StudioTheme.accent
+        case .local:
+            Color(nsColor: .systemTeal)
         case .llm:
             Color(nsColor: .systemPurple)
         case .apply:

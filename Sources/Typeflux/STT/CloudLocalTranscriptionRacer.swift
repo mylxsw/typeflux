@@ -1,10 +1,5 @@
 import Foundation
 
-enum CloudLocalTranscriptionSource: String, Equatable {
-    case cloud
-    case local
-}
-
 struct CloudLocalTranscriptionRaceResult: Equatable {
     let text: String
     let source: CloudLocalTranscriptionSource
@@ -36,6 +31,77 @@ final class CloudLocalTranscriptionRacer {
     enum Event {
         case completed(CloudLocalTranscriptionSource, Result<String, Error>)
         case priorityWindowExpired
+    }
+
+    struct TimedEvent {
+        let event: Event
+        let elapsedMilliseconds: Int
+        let occurredAt: Date
+    }
+
+    struct DiagnosticsBuilder {
+        let startedAt: Date
+        let priorityWindowMilliseconds: Int
+        private(set) var cloudAttempt: ASRAttemptDiagnostics?
+        private(set) var localAttempt: ASRAttemptDiagnostics?
+        private(set) var priorityWindowExpired = false
+
+        mutating func receive(_ timedEvent: TimedEvent) {
+            switch timedEvent.event {
+            case let .completed(source, result):
+                let attempt: ASRAttemptDiagnostics
+                switch result {
+                case .success:
+                    attempt = ASRAttemptDiagnostics(
+                        outcome: .succeeded,
+                        durationMilliseconds: timedEvent.elapsedMilliseconds,
+                        completedAt: timedEvent.occurredAt
+                    )
+                case let .failure(error):
+                    let nsError = error as NSError
+                    attempt = ASRAttemptDiagnostics(
+                        outcome: .failed,
+                        durationMilliseconds: timedEvent.elapsedMilliseconds,
+                        completedAt: timedEvent.occurredAt,
+                        errorDomain: nsError.domain,
+                        errorCode: nsError.code
+                    )
+                }
+                switch source {
+                case .cloud:
+                    cloudAttempt = attempt
+                case .local:
+                    localAttempt = attempt
+                }
+
+            case .priorityWindowExpired:
+                priorityWindowExpired = true
+            }
+        }
+
+        func finalize(
+            selectedSource: CloudLocalTranscriptionSource?,
+            selectionReason: ASRRaceSelectionReason,
+            decision: TimedEvent
+        ) -> ASRRaceDiagnostics {
+            let decisionDuration = max(0, decision.elapsedMilliseconds)
+            let cancelledAttempt = ASRAttemptDiagnostics(
+                outcome: .cancelled,
+                durationMilliseconds: decisionDuration
+            )
+            return ASRRaceDiagnostics(
+                startedAt: startedAt,
+                selectedAt: decision.occurredAt,
+                priorityWindowMilliseconds: priorityWindowMilliseconds,
+                decisionDurationMilliseconds: decisionDuration,
+                selectedSource: selectedSource,
+                selectionReason: selectionReason,
+                cloudPriorityWindowExceeded: priorityWindowExpired ||
+                    decisionDuration > priorityWindowMilliseconds,
+                cloudAttempt: cloudAttempt ?? cancelledAttempt,
+                localAttempt: localAttempt ?? cancelledAttempt
+            )
+        }
     }
 
     struct Resolver {
@@ -86,12 +152,12 @@ final class CloudLocalTranscriptionRacer {
 
     private final class RaceTasks: @unchecked Sendable {
         private let lock = NSLock()
-        private var continuation: AsyncStream<Event>.Continuation?
+        private var continuation: AsyncStream<TimedEvent>.Continuation?
         private var tasks: [Task<Void, Never>] = []
         private var isFinished = false
 
         func install(
-            continuation: AsyncStream<Event>.Continuation,
+            continuation: AsyncStream<TimedEvent>.Continuation,
             tasks: [Task<Void, Never>]
         ) {
             lock.lock()
@@ -132,20 +198,42 @@ final class CloudLocalTranscriptionRacer {
 
     func race(
         cloud: @escaping @Sendable () async throws -> String,
-        local: @escaping @Sendable () async throws -> String
+        local: @escaping @Sendable () async throws -> String,
+        diagnosticsRecorder: ASRRaceDiagnosticsRecorder? = nil
     ) async throws -> CloudLocalTranscriptionRaceResult {
         let raceTasks = RaceTasks()
-        let stream = AsyncStream<Event> { continuation in
+        let clock = ContinuousClock()
+        let startedInstant = clock.now
+        let startedAt = Date()
+        let stream = AsyncStream<TimedEvent> { continuation in
             let cloudTask = Task {
-                await Self.run(source: .cloud, operation: cloud, continuation: continuation)
+                await Self.run(
+                    source: .cloud,
+                    operation: cloud,
+                    continuation: continuation,
+                    clock: clock,
+                    startedInstant: startedInstant
+                )
             }
             let localTask = Task {
-                await Self.run(source: .local, operation: local, continuation: continuation)
+                await Self.run(
+                    source: .local,
+                    operation: local,
+                    continuation: continuation,
+                    clock: clock,
+                    startedInstant: startedInstant
+                )
             }
             let timeoutTask = Task {
                 do {
                     try await Task.sleep(nanoseconds: Self.nanoseconds(for: priorityWindow))
-                    continuation.yield(.priorityWindowExpired)
+                    continuation.yield(
+                        Self.timedEvent(
+                            .priorityWindowExpired,
+                            clock: clock,
+                            startedInstant: startedInstant
+                        )
+                    )
                 } catch {
                     // Cancellation means another result was selected or the parent stopped.
                 }
@@ -161,44 +249,169 @@ final class CloudLocalTranscriptionRacer {
 
         return try await withTaskCancellationHandler {
             defer { raceTasks.finishAndCancelTasks() }
-            return try await resolve(stream)
+            return try await resolve(
+                stream,
+                startedAt: startedAt,
+                diagnosticsRecorder: diagnosticsRecorder
+            )
         } onCancel: {
             raceTasks.finishAndCancelTasks()
         }
     }
 
-    private func resolve(_ stream: AsyncStream<Event>) async throws -> CloudLocalTranscriptionRaceResult {
+    private func resolve(
+        _ stream: AsyncStream<TimedEvent>,
+        startedAt: Date,
+        diagnosticsRecorder: ASRRaceDiagnosticsRecorder?
+    ) async throws -> CloudLocalTranscriptionRaceResult {
         var resolver = Resolver()
+        var diagnostics = DiagnosticsBuilder(
+            startedAt: startedAt,
+            priorityWindowMilliseconds: Self.milliseconds(for: priorityWindow)
+        )
+        var lastEvent = TimedEvent(event: .priorityWindowExpired, elapsedMilliseconds: 0, occurredAt: startedAt)
 
-        for await event in stream {
+        for await timedEvent in stream {
             try Task.checkCancellation()
-            if let result = try resolver.receive(event) {
-                return result
+            lastEvent = timedEvent
+            let previousResolver = resolver
+            diagnostics.receive(timedEvent)
+            do {
+                if let result = try resolver.receive(timedEvent.event) {
+                    let snapshot = diagnostics.finalize(
+                        selectedSource: result.source,
+                        selectionReason: Self.selectionReason(
+                            for: result.source,
+                            event: timedEvent,
+                            previousResolver: previousResolver,
+                            priorityWindowMilliseconds: diagnostics.priorityWindowMilliseconds
+                        ),
+                        decision: timedEvent
+                    )
+                    if let diagnosticsRecorder {
+                        diagnosticsRecorder.record(snapshot)
+                    }
+                    return result
+                }
+            } catch {
+                let snapshot = diagnostics.finalize(
+                    selectedSource: nil,
+                    selectionReason: .bothFailed,
+                    decision: timedEvent
+                )
+                if let diagnosticsRecorder {
+                    diagnosticsRecorder.record(snapshot)
+                }
+                throw error
             }
         }
 
         try Task.checkCancellation()
+        let snapshot = diagnostics.finalize(
+            selectedSource: nil,
+            selectionReason: .bothFailed,
+            decision: lastEvent
+        )
+        if let diagnosticsRecorder {
+            diagnosticsRecorder.record(snapshot)
+        }
         throw resolver.combinedError
     }
 
     private static func run(
         source: CloudLocalTranscriptionSource,
         operation: @escaping @Sendable () async throws -> String,
-        continuation: AsyncStream<Event>.Continuation
+        continuation: AsyncStream<TimedEvent>.Continuation,
+        clock: ContinuousClock,
+        startedInstant: ContinuousClock.Instant
     ) async {
         do {
             let text = try await operation()
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                continuation.yield(.completed(source, .failure(EmptyTranscriptionResultError(source: source))))
+                continuation.yield(
+                    timedEvent(
+                        .completed(source, .failure(EmptyTranscriptionResultError(source: source))),
+                        clock: clock,
+                        startedInstant: startedInstant
+                    )
+                )
                 return
             }
-            continuation.yield(.completed(source, .success(text)))
+            continuation.yield(
+                timedEvent(
+                    .completed(source, .success(text)),
+                    clock: clock,
+                    startedInstant: startedInstant
+                )
+            )
         } catch {
-            continuation.yield(.completed(source, .failure(error)))
+            continuation.yield(
+                timedEvent(
+                    .completed(source, .failure(error)),
+                    clock: clock,
+                    startedInstant: startedInstant
+                )
+            )
         }
     }
 
+    private static func selectionReason(
+        for source: CloudLocalTranscriptionSource,
+        event: TimedEvent,
+        previousResolver: Resolver,
+        priorityWindowMilliseconds: Int
+    ) -> ASRRaceSelectionReason {
+        switch source {
+        case .cloud:
+            return previousResolver.priorityWindowExpired ||
+                event.elapsedMilliseconds > priorityWindowMilliseconds
+                ? .cloudAfterPriorityWindow
+                : .cloudWithinPriorityWindow
+
+        case .local:
+            if previousResolver.cloudError != nil {
+                return .localAfterCloudFailure
+            }
+            switch event.event {
+            case .completed(.cloud, .failure):
+                return .localAfterCloudFailure
+            case .priorityWindowExpired:
+                return .localAtPriorityDeadline
+            default:
+                return .localAfterPriorityWindow
+            }
+        }
+    }
+
+    private static func timedEvent(
+        _ event: Event,
+        clock: ContinuousClock,
+        startedInstant: ContinuousClock.Instant
+    ) -> TimedEvent {
+        TimedEvent(
+            event: event,
+            elapsedMilliseconds: milliseconds(from: startedInstant, to: clock.now),
+            occurredAt: Date()
+        )
+    }
+
+    private static func milliseconds(
+        from start: ContinuousClock.Instant,
+        to end: ContinuousClock.Instant
+    ) -> Int {
+        let components = start.duration(to: end).components
+        let milliseconds = components.seconds * 1_000 + components.attoseconds / 1_000_000_000_000_000
+        return max(0, Int(clamping: milliseconds))
+    }
+
+    private static func milliseconds(for interval: TimeInterval) -> Int {
+        LLMProcessingOutcomeDiagnostics.clampedMilliseconds(for: interval)
+    }
+
     private static func nanoseconds(for interval: TimeInterval) -> UInt64 {
+        guard interval.isFinite else {
+            return interval == .infinity ? UInt64.max : 0
+        }
         let clamped = min(max(0, interval), TimeInterval(UInt64.max) / 1_000_000_000)
         return UInt64(clamped * 1_000_000_000)
     }

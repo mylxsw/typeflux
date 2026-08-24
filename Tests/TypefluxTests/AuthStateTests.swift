@@ -3,6 +3,18 @@ import XCTest
 
 @MainActor
 final class AuthStateTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        KeychainTokenStore.clearAll()
+    }
+
+    override func tearDown() {
+        KeychainTokenStore.clearAll()
+        KeychainTokenStore.useInMemoryStoreForTesting = false
+        super.tearDown()
+    }
+
     func testRestoreSessionRefreshesProfileAndPersistsUser() async {
         let fetchExpectation = expectation(description: "fetch profile")
         let storedToken = validStoredToken()

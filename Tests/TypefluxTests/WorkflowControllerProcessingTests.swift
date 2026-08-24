@@ -4,6 +4,18 @@ import AudioToolbox
 import XCTest
 
 final class WorkflowControllerProcessingTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        KeychainTokenStore.clearAll()
+    }
+
+    override func tearDown() {
+        KeychainTokenStore.clearAll()
+        KeychainTokenStore.useInMemoryStoreForTesting = false
+        super.tearDown()
+    }
+
     func testApplyDetachedAgentEditResultInsertsIntoEditableInputWithoutSelection() async {
         let textInjector = MockProcessingTextInjector()
         let controller = makeWorkflowController(textInjector: textInjector)
@@ -652,6 +664,9 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(savedRecord?.personaResultText, transcript)
         XCTAssertEqual(savedRecord?.processingStatus, .succeeded)
         XCTAssertEqual(savedRecord?.applyStatus, .succeeded)
+        XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.outcome, .timedOutFallback)
+        XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.timeoutMilliseconds, 10)
+        XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.usedTranscriptFallback, true)
     }
 
     func testDecideAskSelectionThrowsConfigurationErrorWhenLLMIsNotConfigured() async {
@@ -1203,6 +1218,9 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(savedRecord?.mode, .personaRewrite)
         XCTAssertEqual(savedRecord?.transcriptText, "raw transcript")
         XCTAssertEqual(savedRecord?.personaResultText, "persona rewrite")
+        XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.outcome, .completed)
+        XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.timeoutMilliseconds, 3_000)
+        XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.usedTranscriptFallback, false)
     }
 
     @MainActor

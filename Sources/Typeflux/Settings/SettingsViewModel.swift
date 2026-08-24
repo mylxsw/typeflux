@@ -3097,6 +3097,27 @@ final class StudioViewModel: ObservableObject {
             )
         ]
 
+        if let race = stats.asrRace {
+            sources.append(contentsOf: [
+                LaneSource(
+                    id: "race-cloud",
+                    title: L("history.race.cloud"),
+                    start: race.startedAt,
+                    end: race.cloudAttempt.completedAt ?? race.selectedAt,
+                    tone: .cloud,
+                    isDetail: false
+                ),
+                LaneSource(
+                    id: "race-local",
+                    title: L("history.race.local"),
+                    start: race.startedAt,
+                    end: race.localAttempt.completedAt ?? race.selectedAt,
+                    tone: .local,
+                    isDetail: false
+                )
+            ])
+        }
+
         if let transport = stats.realtimeTransport {
             func appendASRStage(_ id: String, _ titleKey: String, _ start: Date?, _ end: Date?) {
                 guard let start, let end, end >= start else { return }
@@ -3365,6 +3386,13 @@ final class StudioViewModel: ObservableObject {
             ("final-result", L("history.stats.realtimeStopToFinalResult"), stats.realtimeStopToFinalResultMilliseconds),
             ("llm-first-output", L("history.stats.llmTimeToFirstOutput"), stats.llmTimeToFirstOutputMilliseconds)
         ]
+        if let race = stats.asrRace {
+            keyMetricSources.append(contentsOf: [
+                ("race-decision", L("history.race.decisionDuration"), race.decisionDurationMilliseconds),
+                ("race-cloud", L("history.race.cloudDuration"), race.cloudAttempt.durationMilliseconds),
+                ("race-local", L("history.race.localDuration"), race.localAttempt.durationMilliseconds)
+            ])
+        }
         if let firstAudio = stats.realtimeFirstAudioSubmittedAt,
            let connectionReady = stats.realtimeConnectionReadyAt,
            connectionReady >= firstAudio {
@@ -3414,6 +3442,59 @@ final class StudioViewModel: ObservableObject {
                     style: .duration
                 )
             }
+        }
+        var summaryBadges: [HistoryPipelineBadgePresentationItem] = []
+        if let total = stats.endToEndMilliseconds {
+            summaryBadges.append(
+                HistoryPipelineBadgePresentationItem(
+                    id: "total",
+                    title: L("history.race.total"),
+                    value: historyDurationText(milliseconds: total),
+                    tone: .neutral
+                )
+            )
+        }
+        if let race = stats.asrRace {
+            let selectedValue = race.selectedSource.map { source in
+                "\(historyRaceSourceText(source)) · \(historyRaceSelectionReasonText(race.selectionReason))"
+            } ?? historyRaceSelectionReasonText(race.selectionReason)
+            summaryBadges.append(
+                HistoryPipelineBadgePresentationItem(
+                    id: "race-selected",
+                    title: L("history.race.selected"),
+                    value: selectedValue,
+                    tone: race.selectedSource == nil ? .failure : .selected
+                )
+            )
+            summaryBadges.append(
+                historyRaceAttemptBadge(
+                    id: "race-cloud",
+                    title: L("history.race.cloud"),
+                    source: .cloud,
+                    attempt: race.cloudAttempt,
+                    race: race
+                )
+            )
+            summaryBadges.append(
+                historyRaceAttemptBadge(
+                    id: "race-local",
+                    title: L("history.race.local"),
+                    source: .local,
+                    attempt: race.localAttempt,
+                    race: race
+                )
+            )
+        }
+        if let llmOutcome = stats.llmOutcome {
+            summaryBadges.append(
+                HistoryPipelineBadgePresentationItem(
+                    id: "llm-outcome",
+                    title: L("history.race.llm"),
+                    value: "\(historyDurationText(milliseconds: llmOutcome.durationMilliseconds)) · " +
+                        historyLLMOutcomeText(llmOutcome.outcome),
+                    tone: historyLLMOutcomeTone(llmOutcome.outcome)
+                )
+            )
         }
         var requestDetails: [HistoryPipelineRequestPresentationItem] = []
         for (index, attempt) in (stats.llmRequestAttempts ?? []).enumerated() {
@@ -3467,7 +3548,9 @@ final class StudioViewModel: ObservableObject {
             }
         }
 
-        guard !lanes.isEmpty || !keyMetrics.isEmpty || !requestDetails.isEmpty || totalDurationText != nil else {
+        guard !lanes.isEmpty || !keyMetrics.isEmpty || !requestDetails.isEmpty ||
+            !summaryBadges.isEmpty || totalDurationText != nil
+        else {
             return nil
         }
         return HistoryPipelineTimelinePresentation(
@@ -3476,8 +3559,119 @@ final class StudioViewModel: ObservableObject {
             slowestStageText: slowestStageText,
             lanes: lanes,
             keyMetrics: keyMetrics,
-            requestDetails: requestDetails
+            requestDetails: requestDetails,
+            summaryBadges: summaryBadges
         )
+    }
+
+    private func historyRaceAttemptBadge(
+        id: String,
+        title: String,
+        source: CloudLocalTranscriptionSource,
+        attempt: ASRAttemptDiagnostics,
+        race: ASRRaceDiagnostics
+    ) -> HistoryPipelineBadgePresentationItem {
+        let durationPrefix = source == .cloud && race.cloudPriorityWindowExceeded && attempt.outcome == .cancelled
+            ? "≥"
+            : ""
+        var status = historyASRAttemptOutcomeText(attempt.outcome)
+        if source == .cloud, race.cloudPriorityWindowExceeded {
+            switch attempt.outcome {
+            case .succeeded:
+                status = L("history.race.priorityExceeded")
+            case .failed:
+                status += " · \(L("history.race.priorityExceeded"))"
+            case .cancelled:
+                status = L("history.race.priorityExceededCancelled")
+            }
+        }
+        let tone: HistoryPipelineBadgePresentationItem.Tone = if race.selectedSource == source {
+            .selected
+        } else if attempt.outcome == .failed {
+            .failure
+        } else if attempt.outcome == .cancelled || (source == .cloud && race.cloudPriorityWindowExceeded) {
+            .warning
+        } else {
+            .neutral
+        }
+        return HistoryPipelineBadgePresentationItem(
+            id: id,
+            title: title,
+            value: "\(durationPrefix)\(historyDurationText(milliseconds: attempt.durationMilliseconds)) · \(status)",
+            tone: tone
+        )
+    }
+
+    private func historyRaceSourceText(_ source: CloudLocalTranscriptionSource) -> String {
+        switch source {
+        case .cloud:
+            L("history.race.source.cloud")
+        case .local:
+            L("history.race.source.local")
+        }
+    }
+
+    private func historyASRAttemptOutcomeText(_ outcome: ASRAttemptOutcome) -> String {
+        switch outcome {
+        case .succeeded:
+            L("history.race.status.succeeded")
+        case .failed:
+            L("history.race.status.failed")
+        case .cancelled:
+            L("history.race.status.cancelled")
+        }
+    }
+
+    private func historyRaceSelectionReasonText(_ reason: ASRRaceSelectionReason) -> String {
+        switch reason {
+        case .cloudWithinPriorityWindow:
+            L("history.race.reason.cloudWithinWindow")
+        case .cloudAfterPriorityWindow:
+            L("history.race.reason.cloudAfterWindow")
+        case .localAtPriorityDeadline:
+            L("history.race.reason.localAtDeadline")
+        case .localAfterPriorityWindow:
+            L("history.race.reason.localAfterWindow")
+        case .localAfterCloudFailure:
+            L("history.race.reason.localAfterCloudFailure")
+        case .bothFailed:
+            L("history.race.reason.bothFailed")
+        }
+    }
+
+    private func historyLLMOutcomeText(_ outcome: LLMProcessingOutcome) -> String {
+        switch outcome {
+        case .completed:
+            L("history.llmOutcome.completed")
+        case .emptyResponseFallback:
+            L("history.llmOutcome.emptyFallback")
+        case .timedOutFallback:
+            L("history.llmOutcome.timedOutFallback")
+        case .serviceOverloadedFallback:
+            L("history.llmOutcome.overloadedFallback")
+        case .configurationUnavailableFallback:
+            L("history.llmOutcome.configurationFallback")
+        case .billingFallback:
+            L("history.llmOutcome.billingFallback")
+        case .cancelled:
+            L("history.llmOutcome.cancelled")
+        case .failed:
+            L("history.llmOutcome.failed")
+        }
+    }
+
+    private func historyLLMOutcomeTone(
+        _ outcome: LLMProcessingOutcome
+    ) -> HistoryPipelineBadgePresentationItem.Tone {
+        switch outcome {
+        case .completed:
+            .selected
+        case .failed:
+            .failure
+        case .emptyResponseFallback, .timedOutFallback, .serviceOverloadedFallback,
+             .configurationUnavailableFallback, .billingFallback, .cancelled:
+            .warning
+        }
     }
 
     private func historyDurationText(milliseconds: Int) -> String {

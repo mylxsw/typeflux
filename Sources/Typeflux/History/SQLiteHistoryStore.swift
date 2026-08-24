@@ -659,6 +659,30 @@ final class SQLiteHistoryStore: HistoryStore {
             }
         }
 
+        if let race = stats.asrRace {
+            let selectedSource = race.selectedSource?.rawValue ?? "none"
+            lines.append("- ASR race selected: \(selectedSource)")
+            lines.append("  - Selection reason: \(race.selectionReason.rawValue)")
+            lines.append("  - Priority window: \(race.priorityWindowMilliseconds) ms")
+            lines.append("  - Priority window exceeded: \(race.cloudPriorityWindowExceeded)")
+            lines.append("  - Decision duration: \(race.decisionDurationMilliseconds) ms")
+            lines.append(
+                "  - Cloud: \(race.cloudAttempt.durationMilliseconds) ms (\(race.cloudAttempt.outcome.rawValue))"
+            )
+            lines.append(
+                "  - Local: \(race.localAttempt.durationMilliseconds) ms (\(race.localAttempt.outcome.rawValue))"
+            )
+        }
+
+        if let llmOutcome = stats.llmOutcome {
+            lines.append("- LLM outcome: \(llmOutcome.outcome.rawValue)")
+            lines.append("  - Duration: \(llmOutcome.durationMilliseconds) ms")
+            if let timeout = llmOutcome.timeoutMilliseconds {
+                lines.append("  - Timeout limit: \(timeout) ms")
+            }
+            lines.append("  - Used transcript fallback: \(llmOutcome.usedTranscriptFallback)")
+        }
+
         if let transport = stats.realtimeTransport {
             lines.append("- Realtime ASR endpoint: \(transport.endpoint ?? "<unknown>")")
             if let value = transport.networkProtocolName { lines.append("  - Protocol: \(value)") }

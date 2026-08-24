@@ -432,10 +432,16 @@ final class STTRouterTests: XCTestCase {
             typefluxCloudLoginFallbackLocalModel: local,
             typefluxOfficialCloudPriorityWindow: 60
         )
+        let diagnosticsRecorder = ASRRaceDiagnosticsRecorder()
 
-        let result = try await router.transcribe(audioFile: dummyAudioFile())
+        let result = try await router.transcribeStream(
+            audioFile: dummyAudioFile(),
+            diagnosticsRecorder: diagnosticsRecorder
+        ) { _ in }
 
         XCTAssertEqual(result, "cloud result")
+        XCTAssertEqual(diagnosticsRecorder.snapshot()?.selectedSource, .cloud)
+        XCTAssertEqual(diagnosticsRecorder.snapshot()?.selectionReason, .cloudWithinPriorityWindow)
     }
 
     func testTypefluxOfficialCloudPriorityWindowIsThreeSeconds() {
@@ -452,10 +458,16 @@ final class STTRouterTests: XCTestCase {
             typefluxCloudLoginFallbackLocalModel: local,
             typefluxOfficialCloudPriorityWindow: 0
         )
+        let diagnosticsRecorder = ASRRaceDiagnosticsRecorder()
 
-        let result = try await router.transcribe(audioFile: dummyAudioFile())
+        let result = try await router.transcribeStream(
+            audioFile: dummyAudioFile(),
+            diagnosticsRecorder: diagnosticsRecorder
+        ) { _ in }
 
         XCTAssertEqual(result, "local result")
+        XCTAssertEqual(diagnosticsRecorder.snapshot()?.selectedSource, .local)
+        XCTAssertEqual(diagnosticsRecorder.snapshot()?.cloudAttempt.outcome, .cancelled)
     }
 
     func testTypefluxOfficialUsesCloudWhenLocalFailsAfterPriorityWindow() async throws {
