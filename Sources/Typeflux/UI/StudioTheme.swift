@@ -339,6 +339,8 @@ enum StudioTheme {
         light: NSColor(calibratedRed: 0.90, green: 0.94, blue: 1.0, alpha: 0.74),
         dark: NSColor(calibratedWhite: 0.245, alpha: 0.62)
     )
+    static let modelProviderIconPlate = Color.white
+    static let modelProviderFallbackSymbol = Color.black.opacity(0.72)
     static let border = dynamic(
         light: NSColor(calibratedRed: 0.38, green: 0.45, blue: 0.56, alpha: 0.14),
         dark: NSColor(calibratedWhite: 1.0, alpha: 0.115)

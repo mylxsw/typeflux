@@ -5702,7 +5702,7 @@ struct StudioView: View {
                         RoundedRectangle(
                             cornerRadius: StudioTheme.CornerRadius.large, style: .continuous
                         )
-                        .fill(providerBadgeBackground(for: providerID, isFocused: isFocused))
+                        .fill(StudioTheme.modelProviderIconPlate)
                         .frame(
                             width: StudioTheme.ControlSize.modelProviderBadge,
                             height: StudioTheme.ControlSize.modelProviderBadge
@@ -5778,19 +5778,6 @@ struct StudioView: View {
         return model.isEmpty ? L("settings.models.modelNotConfigured") : model
     }
 
-    private func providerBadgeBackground(for provider: StudioModelProviderID, isFocused: Bool)
-        -> Color {
-        if provider.usesTypefluxBranding {
-            return isFocused ? StudioTheme.controlSurface : Color.clear
-        }
-
-        if providerLogoResourceName(for: provider) != nil {
-            return isFocused ? StudioTheme.selectionSurfaceRaised : StudioTheme.iconTileSurface
-        }
-
-        return isFocused ? StudioTheme.selectionSurfaceRaised : StudioTheme.iconTileSurface
-    }
-
     @ViewBuilder
     private func providerIconView(for provider: StudioModelProviderID, isFocused: Bool) -> some View {
         if provider.usesTypefluxBranding {
@@ -5813,7 +5800,7 @@ struct StudioView: View {
                         size: StudioTheme.ControlSize.modelProviderBadgeSymbol, weight: .semibold
                     )
                 )
-                .foregroundStyle(isFocused ? StudioTheme.accent : StudioTheme.textSecondary)
+                .foregroundStyle(isFocused ? StudioTheme.accent : StudioTheme.modelProviderFallbackSymbol)
         }
     }
 
