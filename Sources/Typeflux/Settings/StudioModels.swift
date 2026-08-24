@@ -274,10 +274,26 @@ struct HistoryPipelineRequestPresentationItem: Identifiable {
     let badges: [String]
 }
 
+struct HistoryPipelineBadgePresentationItem: Identifiable {
+    enum Tone {
+        case neutral
+        case selected
+        case warning
+        case failure
+    }
+
+    let id: String
+    let title: String
+    let value: String
+    let tone: Tone
+}
+
 enum HistoryPipelineTimelineTone {
     case audio
     case realtime
     case transcription
+    case cloud
+    case local
     case llm
     case apply
 }
@@ -301,6 +317,7 @@ struct HistoryPipelineTimelinePresentation {
     let lanes: [Lane]
     let keyMetrics: [HistoryPipelineStatPresentationItem]
     let requestDetails: [HistoryPipelineRequestPresentationItem]
+    let summaryBadges: [HistoryPipelineBadgePresentationItem]
 }
 
 struct HistoryPresentationRecord: Identifiable {

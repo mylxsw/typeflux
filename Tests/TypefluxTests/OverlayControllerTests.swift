@@ -2,6 +2,25 @@
 import XCTest
 
 final class OverlayControllerTests: XCTestCase {
+    @MainActor
+    func testDeinitCleansUpInstalledPickerMonitoring() {
+        weak var weakController: OverlayController?
+
+        autoreleasepool {
+            let controller = OverlayController(appState: AppStateStore())
+            weakController = controller
+            controller.showPersonaPicker(
+                items: [.init(id: "test", title: "Test", subtitle: "")],
+                selectedIndex: 0,
+                title: "Picker",
+                instructions: "Choose",
+                icon: .none
+            )
+        }
+
+        XCTAssertNil(weakController)
+    }
+
     func testLiveTranscriptPreviewLayoutCapsVisibleTextToThreeLines() {
         XCTAssertEqual(LiveTranscriptPreviewLayout.maxVisibleLineCount, 3)
         XCTAssertEqual(

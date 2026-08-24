@@ -13,6 +13,7 @@ extension STTRouter {
         audioFile: AudioFile,
         scenario: TypefluxCloudScenario = .voiceInput,
         optimize: Bool = true,
+        diagnosticsRecorder: ASRRaceDiagnosticsRecorder? = nil,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         switch settingsStore.sttProvider {
@@ -42,6 +43,7 @@ extension STTRouter {
                 audioFile: audioFile,
                 scenario: scenario,
                 optimize: optimize,
+                diagnosticsRecorder: diagnosticsRecorder,
                 onUpdate: onUpdate
             )
         }

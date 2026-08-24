@@ -13,10 +13,12 @@ struct HistoryPipelineTiming: Codable, Equatable {
     var realtimeFinishStartedAt: Date?
     var realtimeFinishCompletedAt: Date?
     var realtimeTransport: NetworkTransportDiagnosticsSnapshot?
+    var asrRace: ASRRaceDiagnostics?
     var llmProcessingStartedAt: Date?
     var llmFirstOutputAt: Date?
     var llmProcessingCompletedAt: Date?
     var llmRequestAttempts: [LLMRequestAttemptDiagnostics]?
+    var llmOutcome: LLMProcessingOutcomeDiagnostics?
     var applyStartedAt: Date?
     var applyCompletedAt: Date?
 
@@ -33,10 +35,12 @@ struct HistoryPipelineTiming: Codable, Equatable {
             realtimeFinishStartedAt != nil ||
             realtimeFinishCompletedAt != nil ||
             realtimeTransport != nil ||
+            asrRace != nil ||
             llmProcessingStartedAt != nil ||
             llmFirstOutputAt != nil ||
             llmProcessingCompletedAt != nil ||
             !(llmRequestAttempts?.isEmpty ?? true) ||
+            llmOutcome != nil ||
             applyStartedAt != nil ||
             applyCompletedAt != nil
     }
@@ -60,10 +64,12 @@ struct HistoryPipelineTiming: Codable, Equatable {
             realtimeFinishStartedAt: realtimeFinishStartedAt,
             realtimeFinishCompletedAt: realtimeFinishCompletedAt,
             realtimeTransport: realtimeTransport,
+            asrRace: asrRace,
             llmProcessingStartedAt: llmProcessingStartedAt,
             llmFirstOutputAt: llmFirstOutputAt,
             llmProcessingCompletedAt: llmProcessingCompletedAt,
             llmRequestAttempts: llmRequestAttempts,
+            llmOutcome: llmOutcome,
             applyStartedAt: applyStartedAt,
             applyCompletedAt: applyCompletedAt,
             stopToAudioReadyMilliseconds: millisecondsBetween(recordingStoppedAt, audioFileReadyAt),
@@ -120,10 +126,12 @@ struct HistoryPipelineStats: Codable, Equatable {
     var realtimeFinishStartedAt: Date?
     var realtimeFinishCompletedAt: Date?
     var realtimeTransport: NetworkTransportDiagnosticsSnapshot?
+    var asrRace: ASRRaceDiagnostics?
     var llmProcessingStartedAt: Date?
     var llmFirstOutputAt: Date?
     var llmProcessingCompletedAt: Date?
     var llmRequestAttempts: [LLMRequestAttemptDiagnostics]?
+    var llmOutcome: LLMProcessingOutcomeDiagnostics?
     var applyStartedAt: Date?
     var applyCompletedAt: Date?
     var stopToAudioReadyMilliseconds: Int?
@@ -153,10 +161,12 @@ struct HistoryPipelineStats: Codable, Equatable {
             realtimeFinishStartedAt != nil ||
             realtimeFinishCompletedAt != nil ||
             realtimeTransport != nil ||
+            asrRace != nil ||
             llmProcessingStartedAt != nil ||
             llmFirstOutputAt != nil ||
             llmProcessingCompletedAt != nil ||
             !(llmRequestAttempts?.isEmpty ?? true) ||
+            llmOutcome != nil ||
             applyStartedAt != nil ||
             applyCompletedAt != nil ||
             stopToAudioReadyMilliseconds != nil ||

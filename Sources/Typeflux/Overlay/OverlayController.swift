@@ -323,13 +323,41 @@ final class OverlayController {
     }
 
     deinit {
-        if let overlayStyleObserver {
-            NotificationCenter.default.removeObserver(overlayStyleObserver)
+        // Copy resources to locals before cleanup. Calling instance methods from deinit can
+        // transiently retain `self` under Swift's ownership lowering and abort destruction.
+        // This also makes every AppKit/CoreGraphics registration visibly symmetric.
+        let styleObserver = overlayStyleObserver
+        let queuedWork = [
+            dismissWorkItem,
+            pendingFrameAnimationWorkItem,
+            pendingPresentationWorkItem,
+            recordingHintAutoHideWorkItem
+        ]
+        let tap = eventTap
+        let source = runLoopSource
+        let fallbackGlobalMonitor = _fallbackGlobalMonitor
+        let fallbackLocalMonitor = _fallbackLocalMonitor
+        let mouseOutsideMonitor = _mouseOutsideMonitor
+        let systemKeyRefs = Array(pickerSystemKeyRefs.values)
+        let systemKeyHandlerRef = pickerSystemKeyHandlerRef
+
+        queuedWork.forEach { $0?.cancel() }
+        if let tap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+            if let source {
+                CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+            }
+            CFMachPortInvalidate(tap)
         }
-        removeKeyMonitoring()
-        removePickerSystemKeyCapture()
-        if let pickerSystemKeyHandlerRef {
-            RemoveEventHandler(pickerSystemKeyHandlerRef)
+        if let fallbackGlobalMonitor { NSEvent.removeMonitor(fallbackGlobalMonitor) }
+        if let fallbackLocalMonitor { NSEvent.removeMonitor(fallbackLocalMonitor) }
+        if let mouseOutsideMonitor { NSEvent.removeMonitor(mouseOutsideMonitor) }
+        systemKeyRefs.forEach { UnregisterEventHotKey($0) }
+        if let systemKeyHandlerRef {
+            RemoveEventHandler(systemKeyHandlerRef)
+        }
+        if let styleObserver {
+            NotificationCenter.default.removeObserver(styleObserver)
         }
     }
 

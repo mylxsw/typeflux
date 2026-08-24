@@ -3,6 +3,78 @@ import XCTest
 
 @MainActor
 final class SettingsViewModelHistoryAudioTests: XCTestCase {
+    func testHistoryPresentationShowsRaceLanesAndCompactOutcomeBadges() throws {
+        let base = Date(timeIntervalSince1970: 900)
+        let recordID = UUID()
+        let race = ASRRaceDiagnostics(
+            startedAt: base,
+            selectedAt: base.addingTimeInterval(3),
+            priorityWindowMilliseconds: 3_000,
+            decisionDurationMilliseconds: 3_000,
+            selectedSource: .local,
+            selectionReason: .localAtPriorityDeadline,
+            cloudPriorityWindowExceeded: true,
+            cloudAttempt: ASRAttemptDiagnostics(outcome: .cancelled, durationMilliseconds: 3_000),
+            localAttempt: ASRAttemptDiagnostics(
+                outcome: .succeeded,
+                durationMilliseconds: 800,
+                completedAt: base.addingTimeInterval(0.8)
+            )
+        )
+        let llmOutcome = LLMProcessingOutcomeDiagnostics(
+            startedAt: base.addingTimeInterval(3),
+            completedAt: base.addingTimeInterval(6),
+            timeoutMilliseconds: 3_000,
+            outcome: .timedOutFallback,
+            usedTranscriptFallback: true
+        )
+        let record = HistoryRecord(
+            id: recordID,
+            date: base,
+            transcriptText: "hello",
+            pipelineTiming: HistoryPipelineTiming(
+                recordingStoppedAt: base,
+                transcriptionStartedAt: base,
+                transcriptionCompletedAt: base.addingTimeInterval(3),
+                asrRace: race,
+                llmProcessingStartedAt: base.addingTimeInterval(3),
+                llmProcessingCompletedAt: base.addingTimeInterval(6),
+                llmOutcome: llmOutcome,
+                applyStartedAt: base.addingTimeInterval(6),
+                applyCompletedAt: base.addingTimeInterval(6.2)
+            )
+        )
+        let viewModel = makeViewModel(
+            records: [record],
+            audioPreviewPlayer: FakeHistoryAudioPreviewPlayer(playResult: true)
+        )
+        waitForHistoryRecord(recordID, in: viewModel)
+
+        let timeline = try XCTUnwrap(viewModel.displayedHistory.first?.pipelineTimeline)
+        XCTAssertNotNil(timeline.lanes.first { $0.id == "race-cloud" })
+        XCTAssertNotNil(timeline.lanes.first { $0.id == "race-local" })
+        XCTAssertEqual(
+            timeline.summaryBadges.map(\.id),
+            ["total", "race-selected", "race-cloud", "race-local", "llm-outcome"]
+        )
+        XCTAssertEqual(
+            timeline.summaryBadges.first { $0.id == "race-selected" }?.value,
+            "Local · ready at 3s deadline"
+        )
+        XCTAssertEqual(
+            timeline.summaryBadges.first { $0.id == "race-cloud" }?.value,
+            "≥3.00 s · Past 3s · cancelled"
+        )
+        XCTAssertEqual(
+            timeline.summaryBadges.first { $0.id == "race-local" }?.value,
+            "800 ms · Succeeded"
+        )
+        XCTAssertEqual(
+            timeline.summaryBadges.first { $0.id == "llm-outcome" }?.value,
+            "3.00 s · Timed out · transcript fallback"
+        )
+    }
+
     func testHistoryPipelineTimelinePreservesStageOffsetsAndHighlightsSlowestLane() {
         let base = Date(timeIntervalSince1970: 1000)
         let recordID = UUID()

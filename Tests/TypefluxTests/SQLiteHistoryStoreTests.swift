@@ -79,6 +79,50 @@ final class SQLiteHistoryStoreTests: XCTestCase {
         XCTAssertEqual(list.first?.transcriptText, "updated")
     }
 
+    func testSaveFetchAndExportPreserveProcessingDiagnostics() throws {
+        let startedAt = Date(timeIntervalSince1970: 1_000)
+        let race = ASRRaceDiagnostics(
+            startedAt: startedAt,
+            selectedAt: startedAt.addingTimeInterval(3),
+            priorityWindowMilliseconds: 3_000,
+            decisionDurationMilliseconds: 3_000,
+            selectedSource: .local,
+            selectionReason: .localAtPriorityDeadline,
+            cloudPriorityWindowExceeded: true,
+            cloudAttempt: ASRAttemptDiagnostics(outcome: .cancelled, durationMilliseconds: 3_000),
+            localAttempt: ASRAttemptDiagnostics(
+                outcome: .succeeded,
+                durationMilliseconds: 800,
+                completedAt: startedAt.addingTimeInterval(0.8)
+            )
+        )
+        let llmOutcome = LLMProcessingOutcomeDiagnostics(
+            startedAt: startedAt.addingTimeInterval(3),
+            completedAt: startedAt.addingTimeInterval(6),
+            timeoutMilliseconds: 3_000,
+            outcome: .timedOutFallback,
+            usedTranscriptFallback: true
+        )
+        var record = makeRecord(transcriptText: "diagnostic transcript")
+        record.pipelineTiming = HistoryPipelineTiming(asrRace: race, llmOutcome: llmOutcome)
+
+        store.save(record: record)
+        flush()
+
+        let fetched = try XCTUnwrap(store.record(id: record.id))
+        XCTAssertEqual(fetched.pipelineTiming?.asrRace, race)
+        XCTAssertEqual(fetched.pipelineTiming?.llmOutcome, llmOutcome)
+        XCTAssertEqual(fetched.pipelineStats?.asrRace, race)
+        XCTAssertEqual(fetched.pipelineStats?.llmOutcome, llmOutcome)
+
+        let exportURL = try store.exportMarkdown()
+        let markdown = try String(contentsOf: exportURL, encoding: .utf8)
+        XCTAssertTrue(markdown.contains("ASR race selected: local"))
+        XCTAssertTrue(markdown.contains("Cloud: 3000 ms (cancelled)"))
+        XCTAssertTrue(markdown.contains("LLM outcome: timedOutFallback"))
+        XCTAssertTrue(markdown.contains("Used transcript fallback: true"))
+    }
+
     // MARK: - list
 
     func testListReturnsAllRecords() {

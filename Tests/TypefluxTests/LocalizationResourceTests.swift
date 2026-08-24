@@ -118,6 +118,28 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testHistoryRaceAndLLMOutcomeCopyExistsForAllSupportedLanguages() throws {
+        let keys = [
+            "history.race.selected",
+            "history.race.cloud",
+            "history.race.local",
+            "history.race.priorityExceededCancelled",
+            "history.race.reason.localAtDeadline",
+            "history.llmOutcome.completed",
+            "history.llmOutcome.timedOutFallback",
+            "history.llmOutcome.failed"
+        ]
+
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            for key in keys {
+                let localized = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(localized, key, "Missing localized value for \(key) in \(language.rawValue)")
+                XCTAssertFalse(localized.isEmpty)
+            }
+        }
+    }
+
     func testAgentClarificationTranscribingHintUsesThinkingCopyForAllSupportedLanguages() throws {
         let expectedValues: [AppLanguage: String] = [
             .english: "Thinking...",

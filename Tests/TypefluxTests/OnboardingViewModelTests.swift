@@ -8,6 +8,8 @@ final class OnboardingViewModelTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        KeychainTokenStore.clearAll()
         suiteName = "OnboardingViewModelTests-\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)
         store = SettingsStore(defaults: defaults)
@@ -18,6 +20,8 @@ final class OnboardingViewModelTests: XCTestCase {
         defaults = nil
         suiteName = nil
         store = nil
+        KeychainTokenStore.clearAll()
+        KeychainTokenStore.useInMemoryStoreForTesting = false
         super.tearDown()
     }
 
@@ -403,6 +407,7 @@ final class OnboardingViewModelTests: XCTestCase {
         )
         return AuthState(
             loadStoredToken: { storedToken },
+            loadStoredRefreshToken: { nil },
             loadStoredUserProfile: { storedProfile },
             saveStoredToken: { _, _ in },
             saveStoredUserProfile: { _ in },

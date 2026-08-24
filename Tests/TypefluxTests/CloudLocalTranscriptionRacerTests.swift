@@ -2,6 +2,97 @@
 import XCTest
 
 final class CloudLocalTranscriptionRacerTests: XCTestCase {
+    func testDiagnosticsPreserveCachedLocalCompletionAndCancelCloudAtDeadline() {
+        let startedAt = Date(timeIntervalSince1970: 1_000)
+        var builder = CloudLocalTranscriptionRacer.DiagnosticsBuilder(
+            startedAt: startedAt,
+            priorityWindowMilliseconds: 3_000
+        )
+        let localCompletion = CloudLocalTranscriptionRacer.TimedEvent(
+            event: .completed(.local, .success("local")),
+            elapsedMilliseconds: 640,
+            occurredAt: startedAt.addingTimeInterval(0.64)
+        )
+        let deadline = CloudLocalTranscriptionRacer.TimedEvent(
+            event: .priorityWindowExpired,
+            elapsedMilliseconds: 3_000,
+            occurredAt: startedAt.addingTimeInterval(3)
+        )
+
+        builder.receive(localCompletion)
+        builder.receive(deadline)
+        let diagnostics = builder.finalize(
+            selectedSource: .local,
+            selectionReason: .localAtPriorityDeadline,
+            decision: deadline
+        )
+
+        XCTAssertEqual(diagnostics.selectedSource, .local)
+        XCTAssertEqual(diagnostics.selectionReason, .localAtPriorityDeadline)
+        XCTAssertTrue(diagnostics.cloudPriorityWindowExceeded)
+        XCTAssertEqual(diagnostics.decisionDurationMilliseconds, 3_000)
+        XCTAssertEqual(diagnostics.localAttempt.outcome, .succeeded)
+        XCTAssertEqual(diagnostics.localAttempt.durationMilliseconds, 640)
+        XCTAssertEqual(diagnostics.localAttempt.completedAt, localCompletion.occurredAt)
+        XCTAssertEqual(diagnostics.cloudAttempt.outcome, .cancelled)
+        XCTAssertEqual(diagnostics.cloudAttempt.durationMilliseconds, 3_000)
+        XCTAssertNil(diagnostics.cloudAttempt.completedAt)
+    }
+
+    func testDiagnosticsCaptureFailureMetadataBeforeLocalFallbackWins() {
+        let startedAt = Date(timeIntervalSince1970: 2_000)
+        var builder = CloudLocalTranscriptionRacer.DiagnosticsBuilder(
+            startedAt: startedAt,
+            priorityWindowMilliseconds: 3_000
+        )
+        let cloudFailure = CloudLocalTranscriptionRacer.TimedEvent(
+            event: .completed(.cloud, .failure(Self.error("cloud"))),
+            elapsedMilliseconds: 220,
+            occurredAt: startedAt.addingTimeInterval(0.22)
+        )
+        let localCompletion = CloudLocalTranscriptionRacer.TimedEvent(
+            event: .completed(.local, .success("local")),
+            elapsedMilliseconds: 780,
+            occurredAt: startedAt.addingTimeInterval(0.78)
+        )
+
+        builder.receive(cloudFailure)
+        builder.receive(localCompletion)
+        let diagnostics = builder.finalize(
+            selectedSource: .local,
+            selectionReason: .localAfterCloudFailure,
+            decision: localCompletion
+        )
+
+        XCTAssertFalse(diagnostics.cloudPriorityWindowExceeded)
+        XCTAssertEqual(diagnostics.cloudAttempt.outcome, .failed)
+        XCTAssertEqual(diagnostics.cloudAttempt.durationMilliseconds, 220)
+        XCTAssertEqual(diagnostics.cloudAttempt.errorDomain, "cloud")
+        XCTAssertEqual(diagnostics.cloudAttempt.errorCode, 1)
+        XCTAssertEqual(diagnostics.localAttempt.outcome, .succeeded)
+        XCTAssertEqual(diagnostics.localAttempt.durationMilliseconds, 780)
+    }
+
+    func testRacePublishesDiagnosticsToRecorder() async throws {
+        let recorder = ASRRaceDiagnosticsRecorder()
+        let result = try await CloudLocalTranscriptionRacer(priorityWindow: 60).race(
+            cloud: { "cloud" },
+            local: {
+                try await Task.sleep(for: .seconds(60))
+                return "local"
+            },
+            diagnosticsRecorder: recorder
+        )
+
+        let diagnostics = try XCTUnwrap(recorder.snapshot())
+        XCTAssertEqual(result.source, .cloud)
+        XCTAssertEqual(diagnostics.selectedSource, .cloud)
+        XCTAssertEqual(diagnostics.selectionReason, .cloudWithinPriorityWindow)
+        XCTAssertEqual(diagnostics.cloudAttempt.outcome, .succeeded)
+        XCTAssertEqual(diagnostics.localAttempt.outcome, .cancelled)
+        XCTAssertFalse(diagnostics.cloudPriorityWindowExceeded)
+    }
+
     func testCloudWinsWithinPriorityWindowEvenWhenLocalFinishesFirst() throws {
         var resolver = CloudLocalTranscriptionRacer.Resolver()
 
