@@ -49,6 +49,27 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testPersonaDefinitionUsesUserFriendlyCopyForAllSupportedLanguages() throws {
+        let expectedValues: [AppLanguage: String] = [
+            .english: "Persona Definition",
+            .simplifiedChinese: "人设定义",
+            .traditionalChinese: "人設定義",
+            .japanese: "ペルソナ定義",
+            .korean: "페르소나 정의"
+        ]
+
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            let localized = bundle.localizedString(forKey: "settings.personas.prompt", value: nil, table: nil)
+
+            XCTAssertEqual(
+                localized,
+                expectedValues[language],
+                "Unexpected persona definition copy in \(language.rawValue)"
+            )
+        }
+    }
+
     func testOverlayProcessingPhaseKeysExistForAllSupportedLanguages() throws {
         let keys = [
             "overlay.processing.transcribing",

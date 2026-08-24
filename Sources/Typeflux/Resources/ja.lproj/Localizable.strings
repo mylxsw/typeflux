@@ -599,7 +599,7 @@
 "settings.personas.editTitle" = "ペルソナを編集";
 "settings.personas.name" = "ペルソナ名";
 "settings.personas.namePlaceholder" = "ペルソナ名を入力してください";
-"settings.personas.prompt" = "システムプロンプト";
+"settings.personas.prompt" = "ペルソナ定義";
 "settings.personas.saved" = "ペルソナが保存されました。";
 "settings.personas.tag.system" = "システム";
 "settings.personas.deleteDialog.title" = "ペルソナを削除しますか?";

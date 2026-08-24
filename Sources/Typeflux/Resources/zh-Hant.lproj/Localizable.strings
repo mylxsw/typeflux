@@ -606,7 +606,7 @@
 "settings.personas.editTitle" = "編輯人設";
 "settings.personas.name" = "人設名稱";
 "settings.personas.namePlaceholder" = "輸入人設名稱";
-"settings.personas.prompt" = "系統提示詞";
+"settings.personas.prompt" = "人設定義";
 "settings.personas.saved" = "人設已儲存。";
 "settings.personas.tag.system" = "系統";
 "settings.personas.deleteDialog.title" = "刪除人設？";
