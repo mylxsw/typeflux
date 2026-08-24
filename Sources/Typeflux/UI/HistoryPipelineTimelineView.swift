@@ -5,26 +5,34 @@ private struct HistoryPipelineSummaryBadgesView: View {
 
     var body: some View {
         LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: 132, maximum: 220), spacing: StudioTheme.Spacing.xSmall)],
+            columns: [GridItem(.adaptive(minimum: 168, maximum: 240), spacing: StudioTheme.Spacing.xSmall)],
             alignment: .leading,
             spacing: StudioTheme.Spacing.xSmall
         ) {
             ForEach(items) { item in
-                HStack(spacing: StudioTheme.Spacing.xxSmall) {
-                    Text(item.title)
-                        .foregroundStyle(StudioTheme.textTertiary)
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
                     Text(item.value)
-                        .fontWeight(.semibold)
+                        .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
                         .foregroundStyle(foregroundColor(for: item.tone))
                         .monospacedDigit()
                         .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                    Text(item.title)
+                        .font(.studioBody(StudioTheme.Typography.eyebrow, weight: .medium))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
                 }
-                .font(.studioBody(StudioTheme.Typography.eyebrow, weight: .medium))
-                .padding(.horizontal, StudioTheme.Spacing.xSmall)
-                .padding(.vertical, StudioTheme.Spacing.xxxSmall)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .padding(.horizontal, StudioTheme.Spacing.small)
+                .padding(.vertical, StudioTheme.Spacing.xSmall)
                 .background(
-                    Capsule().fill(backgroundColor(for: item.tone))
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
+                        .fill(backgroundColor(for: item.tone))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
+                        .stroke(foregroundColor(for: item.tone).opacity(0.12), lineWidth: 1)
                 )
                 .help("\(item.title) \(item.value)")
                 .accessibilityElement(children: .combine)
