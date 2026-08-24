@@ -37,15 +37,75 @@ extension STTRouter {
         optimize: Bool = true,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
-        do {
-            return try await transcribeWithTypefluxOfficial(
+        guard typefluxCloudLoginFallbackLocalModel != nil else {
+            do {
+                return try await transcribeWithTypefluxOfficial(
+                    audioFile: audioFile,
+                    scenario: scenario,
+                    optimize: optimize,
+                    onUpdate: onUpdate
+                )
+            } catch {
+                return try await handleTypefluxOfficialFailure(error, audioFile: audioFile, onUpdate: onUpdate)
+            }
+        }
+
+        return try await transcribeWithTypefluxOfficialCloudPriority(
+            audioFile: audioFile,
+            onUpdate: onUpdate
+        ) { [self] in
+            try await transcribeWithTypefluxOfficial(
                 audioFile: audioFile,
                 scenario: scenario,
                 optimize: optimize,
                 onUpdate: onUpdate
             )
-        } catch {
-            return try await handleTypefluxOfficialFailure(error, audioFile: audioFile, onUpdate: onUpdate)
+        }
+    }
+
+    func transcribeWithTypefluxOfficialCloudPriority(
+        audioFile: AudioFile,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
+        cloudOperation: @escaping @Sendable () async throws -> String
+    ) async throws -> String {
+        guard let localTranscriber = typefluxCloudLoginFallbackLocalModel else {
+            return try await cloudOperation()
+        }
+
+        let startedAt = Date()
+        do {
+            let result = try await CloudLocalTranscriptionRacer(
+                priorityWindow: typefluxOfficialCloudPriorityWindow
+            ).race(
+                cloud: cloudOperation,
+                local: {
+                    try await localTranscriber.transcribeStream(audioFile: audioFile) { _ in }
+                }
+            )
+            if result.source == .local {
+                await onUpdate(TranscriptionSnapshot(text: result.text, isFinal: true))
+            }
+            NetworkDebugLogger.logMessage(
+                "[ASR Race] selected=\(result.source.rawValue) " +
+                    "elapsed_ms=\(String(format: "%.1f", Date().timeIntervalSince(startedAt) * 1000)) " +
+                    "cloud_priority_window_s=\(String(format: "%.1f", typefluxOfficialCloudPriorityWindow))"
+            )
+            return result.text
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch let raceError as CloudLocalTranscriptionRaceError {
+            if let localError = raceError.localError {
+                NetworkDebugLogger.logError(context: "Concurrent local STT failed", error: localError)
+            }
+            guard let cloudError = raceError.cloudError else {
+                throw raceError
+            }
+            return try await handleTypefluxOfficialFailure(
+                cloudError,
+                audioFile: audioFile,
+                onUpdate: onUpdate,
+                skipTypefluxCloudLocalFallback: true
+            )
         }
     }
 
@@ -171,11 +231,13 @@ extension STTRouter {
     private func handleTypefluxOfficialFailure(
         _ error: Error,
         audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
+        skipTypefluxCloudLocalFallback: Bool = false
     ) async throws -> String {
         NetworkDebugLogger.logError(context: "Typeflux Official STT failed", error: error)
         if let billingError = TypefluxCloudBillingError.fromError(error) {
-            if let localResult = await transcribeWithTypefluxCloudCreditFallbackModelIfAvailable(
+            if !skipTypefluxCloudLocalFallback,
+               let localResult = await transcribeWithTypefluxCloudCreditFallbackModelIfAvailable(
                 billingError: billingError,
                 audioFile: audioFile,
                 onUpdate: onUpdate
@@ -184,7 +246,8 @@ extension STTRouter {
             }
             throw billingError
         }
-        if let fallback = await transcribeWithCloudLoginFallbackIfNeeded(
+        if !skipTypefluxCloudLocalFallback,
+           let fallback = await transcribeWithCloudLoginFallbackIfNeeded(
             error,
             audioFile: audioFile,
             onUpdate: onUpdate

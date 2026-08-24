@@ -86,6 +86,8 @@ extension TypefluxCloudScenarioAwareTranscriber {
 }
 
 final class STTRouter {
+    static let typefluxOfficialCloudPriorityWindowSeconds: TimeInterval = 3
+
     let settingsStore: SettingsStore
     let whisper: Transcriber
     let freeSTT: Transcriber
@@ -102,6 +104,11 @@ final class STTRouter {
     let autoModelDownloadService: AutoModelDownloadService?
     let isTypefluxCloudLoggedIn: @Sendable () async -> Bool
     let hasPaidTypefluxCloudSubscription: @Sendable () async -> Bool
+    let typefluxOfficialCloudPriorityWindow: TimeInterval
+
+    var usesTypefluxOfficialCloudLocalRace: Bool {
+        typefluxCloudLoginFallbackLocalModel != nil
+    }
 
     init(
         settingsStore: SettingsStore,
@@ -118,6 +125,8 @@ final class STTRouter {
         typefluxOfficial: Transcriber,
         typefluxCloudLoginFallbackLocalModel: Transcriber? = nil,
         autoModelDownloadService: AutoModelDownloadService? = nil,
+        typefluxOfficialCloudPriorityWindow: TimeInterval = STTRouter
+            .typefluxOfficialCloudPriorityWindowSeconds,
         isTypefluxCloudLoggedIn: @escaping @Sendable () async -> Bool = {
             await MainActor.run { AuthState.shared.isLoggedIn }
         },
@@ -139,6 +148,7 @@ final class STTRouter {
         self.typefluxOfficial = typefluxOfficial
         self.typefluxCloudLoginFallbackLocalModel = typefluxCloudLoginFallbackLocalModel
         self.autoModelDownloadService = autoModelDownloadService
+        self.typefluxOfficialCloudPriorityWindow = typefluxOfficialCloudPriorityWindow
         self.isTypefluxCloudLoggedIn = isTypefluxCloudLoggedIn
         self.hasPaidTypefluxCloudSubscription = hasPaidTypefluxCloudSubscription
     }

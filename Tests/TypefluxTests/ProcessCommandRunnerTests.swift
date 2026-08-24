@@ -58,4 +58,27 @@ final class ProcessCommandRunnerTests: XCTestCase {
             )
         }
     }
+
+    func testCancellationTerminatesRunningProcess() async {
+        let started = expectation(description: "process started")
+        let completed = expectation(description: "cancelled process completed")
+        let runner = ProcessCommandRunner {
+            started.fulfill()
+        }
+        let task = Task {
+            defer { completed.fulfill() }
+            do {
+                _ = try await runner.run(executablePath: "/bin/sleep", arguments: ["60"])
+                XCTFail("Expected cancellation")
+            } catch is CancellationError {
+                // Expected.
+            } catch {
+                XCTFail("Unexpected error: \(error)")
+            }
+        }
+
+        await fulfillment(of: [started], timeout: 2)
+        task.cancel()
+        await fulfillment(of: [completed], timeout: 2)
+    }
 }

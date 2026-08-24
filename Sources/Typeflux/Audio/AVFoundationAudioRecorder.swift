@@ -141,6 +141,19 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             throw RecorderError.inputDeviceUnavailable
         }
 
+        // AVAudioEngine may deliver tap callbacks before the new recording state
+        // is published. Replay that startup prefix now instead of dropping the
+        // first spoken frames while the hotkey-triggered session is activating.
+        let recordingID = preparedSession.id
+        let inputGenerationID = preparedSession.inputGenerationID
+        preparedSession.startupBufferRelay.activate { [weak self] buffer in
+            self?.handleInputBuffer(
+                buffer,
+                recordingID: recordingID,
+                inputGenerationID: inputGenerationID
+            )
+        }
+
         scheduleInputHealthCheck(
             for: engine,
             recordingID: preparedSession.id,
@@ -296,14 +309,11 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         let outputFile = try AVAudioFile(forWriting: url, settings: outputSettings)
         let recordingBufferConverter = AudioRecordingBufferConverter(targetFormat: outputFile.processingFormat)
         let inputGenerationID = UUID()
+        let startupBufferRelay = RecordingStartupAudioBufferRelay()
         inputNode.removeTap(onBus: 0)
-        try installInputTap(on: inputNode) { [weak self, startupAttempt] buffer, _ in
+        try installInputTap(on: inputNode) { [startupAttempt, startupBufferRelay] buffer, _ in
             guard !startupAttempt.isCancelled else { return }
-            self?.handleInputBuffer(
-                buffer,
-                recordingID: id,
-                inputGenerationID: inputGenerationID
-            )
+            startupBufferRelay.append(buffer)
         }
 
         guard !startupAttempt.isCancelled else {
@@ -336,7 +346,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             engine: sessionEngine,
             audioFile: outputFile,
             recordingBufferConverter: recordingBufferConverter,
-            inputGenerationID: inputGenerationID
+            inputGenerationID: inputGenerationID,
+            startupBufferRelay: startupBufferRelay
         )
     }
 
@@ -945,6 +956,71 @@ private struct PreparedRecordingSession {
     let audioFile: AVAudioFile
     let recordingBufferConverter: AudioRecordingBufferConverter
     let inputGenerationID: UUID
+    let startupBufferRelay: RecordingStartupAudioBufferRelay
+}
+
+/// Preserves tap buffers emitted after AVAudioEngine starts but before the
+/// recorder publishes its active session. Activation drains the prefix in order
+/// and then forwards subsequent buffers directly.
+final class RecordingStartupAudioBufferRelay: @unchecked Sendable {
+    private let lock = NSLock()
+    private var pendingBuffers: [AVAudioPCMBuffer] = []
+    private var handler: ((AVAudioPCMBuffer) -> Void)?
+    private var isCancelled = false
+
+    func append(_ buffer: AVAudioPCMBuffer) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !isCancelled else { return }
+        if let handler {
+            // Once active, stay on the audio tap's zero-copy path. Copies are
+            // needed only while preserving the short pre-activation prefix.
+            handler(buffer)
+            return
+        }
+        guard let copiedBuffer = Self.copy(buffer) else { return }
+        pendingBuffers.append(copiedBuffer)
+    }
+
+    func activate(_ handler: @escaping (AVAudioPCMBuffer) -> Void) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !isCancelled, self.handler == nil else { return }
+        pendingBuffers.forEach(handler)
+        pendingBuffers.removeAll(keepingCapacity: false)
+        self.handler = handler
+    }
+
+    func cancel() {
+        lock.lock()
+        isCancelled = true
+        pendingBuffers.removeAll(keepingCapacity: false)
+        handler = nil
+        lock.unlock()
+    }
+
+    private static func copy(_ buffer: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
+        guard let copy = AVAudioPCMBuffer(
+            pcmFormat: buffer.format,
+            frameCapacity: buffer.frameCapacity
+        ) else { return nil }
+        copy.frameLength = buffer.frameLength
+
+        let sourceBuffers = UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList)
+        let destinationBuffers = UnsafeMutableAudioBufferListPointer(copy.mutableAudioBufferList)
+        guard sourceBuffers.count == destinationBuffers.count else { return nil }
+        for (source, destination) in zip(sourceBuffers, destinationBuffers) {
+            guard let sourceData = source.mData,
+                  let destinationData = destination.mData
+            else { continue }
+            memcpy(
+                destinationData,
+                sourceData,
+                Int(min(source.mDataByteSize, destination.mDataByteSize))
+            )
+        }
+        return copy
+    }
 }
 
 private final class RecordingStartupAttempt {

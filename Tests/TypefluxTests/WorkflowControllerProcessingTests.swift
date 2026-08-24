@@ -588,8 +588,8 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         )
     }
 
-    func testPersonaRewriteTimeoutAfterTranscriptionIsThirtySeconds() {
-        XCTAssertEqual(WorkflowController.llmTimeoutAfterTranscriptionSeconds, 30)
+    func testPersonaRewriteTimeoutAfterTranscriptionIsThreeSeconds() {
+        XCTAssertEqual(WorkflowController.llmTimeoutAfterTranscriptionSeconds, 3)
     }
 
     func testGenerateRewriteThrowsTimeoutWhenStreamDoesNotFinish() async {
