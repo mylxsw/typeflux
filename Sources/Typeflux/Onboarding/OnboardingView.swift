@@ -1365,11 +1365,11 @@ struct OnboardingView: View {
 
     private func providerIconBadge(for providerID: StudioModelProviderID, isSelected: Bool) -> some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(providerIconBadgeBackground(for: providerID, isSelected: isSelected))
+            .fill(StudioTheme.modelProviderIconPlate)
             .frame(width: 38, height: 38)
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(providerIconBadgeBorder(for: providerID, isSelected: isSelected), lineWidth: 1)
+                    .stroke(providerIconBadgeBorder(isSelected: isSelected), lineWidth: 1)
             )
             .overlay(
                 Group {
@@ -1389,43 +1389,16 @@ struct OnboardingView: View {
                     } else {
                         Image(systemName: providerSymbol(for: providerID))
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(isSelected ? StudioTheme.accent : onboardingSecondaryText)
+                            .foregroundStyle(
+                                isSelected ? StudioTheme.accent : StudioTheme.modelProviderFallbackSymbol
+                            )
                     }
                 }
             )
     }
 
-    private func providerIconBadgeBackground(for providerID: StudioModelProviderID,
-                                             isSelected: Bool) -> LinearGradient {
-        switch OnboardingProviderStyle.iconPlateStyle(for: providerID) {
-        case .light:
-            let top = isSelected
-                ? StudioTheme.accent.opacity(0.18)
-                : Color.white.opacity(0.92)
-            let bottom = isSelected
-                ? StudioTheme.accent.opacity(0.34)
-                : Color(red: 0.84, green: 0.87, blue: 0.93).opacity(0.84)
-            return LinearGradient(colors: [top, bottom], startPoint: .topLeading, endPoint: .bottomTrailing)
-        case .neutral:
-            let top = isDarkMode
-                ? Color.white.opacity(isSelected ? 0.1 : 0.07)
-                : StudioTheme.surface.opacity(isSelected ? 0.96 : 0.92)
-            let bottom = isDarkMode
-                ? Color(red: 0.12, green: 0.13, blue: 0.17).opacity(isSelected ? 0.72 : 0.82)
-                : StudioTheme.surfaceMuted.opacity(isSelected ? 0.98 : 0.94)
-            return LinearGradient(colors: [top, bottom], startPoint: .topLeading, endPoint: .bottomTrailing)
-        }
-    }
-
-    private func providerIconBadgeBorder(for providerID: StudioModelProviderID, isSelected: Bool) -> Color {
-        switch OnboardingProviderStyle.iconPlateStyle(for: providerID) {
-        case .light:
-            isDarkMode ? Color.white.opacity(isSelected ? 0.28 : 0.18) : StudioTheme.border
-                .opacity(isSelected ? 0.9 : 0.72)
-        case .neutral:
-            isDarkMode ? Color.white.opacity(isSelected ? 0.12 : 0.08) : StudioTheme.border
-                .opacity(isSelected ? 0.85 : 0.72)
-        }
+    private func providerIconBadgeBorder(isSelected: Bool) -> Color {
+        isSelected ? StudioTheme.accent.opacity(0.55) : Color.black.opacity(0.12)
     }
 
     private func permissionsStep(contentHeight: CGFloat) -> some View {

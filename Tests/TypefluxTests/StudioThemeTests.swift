@@ -54,6 +54,14 @@ final class StudioThemeTests: XCTestCase {
         XCTAssertEqual(StudioTheme.contentInset, StudioTheme.Layout.contentInset)
     }
 
+    func testModelProviderIconPlateUsesWhiteBackground() {
+        XCTAssertEqual(StudioTheme.modelProviderIconPlate, .white)
+    }
+
+    func testModelProviderFallbackSymbolUsesDarkForeground() {
+        XCTAssertEqual(StudioTheme.modelProviderFallbackSymbol, .black.opacity(0.72))
+    }
+
     // MARK: - Overview Layout
 
     func testOverviewLayoutUsesStackedArrangementForNarrowContent() {
