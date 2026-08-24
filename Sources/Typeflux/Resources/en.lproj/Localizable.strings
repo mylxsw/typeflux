@@ -608,7 +608,7 @@
 "settings.personas.editTitle" = "Edit Persona";
 "settings.personas.name" = "Persona Name";
 "settings.personas.namePlaceholder" = "Enter persona name";
-"settings.personas.prompt" = "System Prompt";
+"settings.personas.prompt" = "Persona Definition";
 "settings.personas.saved" = "Persona saved.";
 "settings.personas.tag.system" = "System";
 "settings.personas.deleteDialog.title" = "Delete Persona?";

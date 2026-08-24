@@ -599,7 +599,7 @@
 "settings.personas.editTitle" = "페르소나 편집";
 "settings.personas.name" = "페르소나 이름";
 "settings.personas.namePlaceholder" = "페르소나 이름을 입력하세요";
-"settings.personas.prompt" = "시스템 프롬프트";
+"settings.personas.prompt" = "페르소나 정의";
 "settings.personas.saved" = "페르소나가 저장되었습니다.";
 "settings.personas.tag.system" = "시스템";
 "settings.personas.deleteDialog.title" = "페르소나를 삭제하시겠습니까?";
