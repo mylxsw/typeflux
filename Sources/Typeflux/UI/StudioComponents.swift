@@ -1587,10 +1587,6 @@ struct StudioHistoryRow: View {
                                 .studioTooltip(record.failureMessage ?? L("workflow.processing.failed"), yOffset: 28)
                         }
                     }
-
-                    if let timeline = record.pipelineTimeline, !timeline.summaryBadges.isEmpty {
-                        HistoryPipelineSummaryBadgesView(items: timeline.summaryBadges)
-                    }
                 }
 
                 Spacer(minLength: StudioTheme.Spacing.small)

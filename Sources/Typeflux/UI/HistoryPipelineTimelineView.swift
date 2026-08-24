@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct HistoryPipelineSummaryBadgesView: View {
+private struct HistoryPipelineSummaryBadgesView: View {
     let items: [HistoryPipelineBadgePresentationItem]
 
     var body: some View {
@@ -57,6 +57,7 @@ struct HistoryPipelineTimelineView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
             header
+            summaryBadges
             slowestStage
             lanes
             requestDetails
@@ -68,6 +69,13 @@ struct HistoryPipelineTimelineView: View {
             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
                 .fill(StudioTheme.controlSurface)
         )
+    }
+
+    @ViewBuilder
+    private var summaryBadges: some View {
+        if !timeline.summaryBadges.isEmpty {
+            HistoryPipelineSummaryBadgesView(items: timeline.summaryBadges)
+        }
     }
 
     @ViewBuilder
