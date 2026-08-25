@@ -858,6 +858,55 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         }
     }
 
+    func testBeginRecordingCapturesAndReplaysAudioWhileRealtimeSessionIsPreparing() async throws {
+        let format = try XCTUnwrap(AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 16000,
+            channels: 1,
+            interleaved: false
+        ))
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 160))
+        buffer.frameLength = 160
+        buffer.floatChannelData?[0][0] = 0.25
+
+        let gate = AsyncTestGate()
+        let realtimeSession = PrefixCapturingRealtimeSession()
+        let transcriber = DelayedRealtimeFactoryTranscriber(
+            gate: gate,
+            session: realtimeSession
+        )
+        let audioRecorder = BufferEmittingAudioRecorder(buffer: buffer)
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sttTranscriber: transcriber,
+            sleep: { _ in },
+            configureSettings: { settingsStore in
+                settingsStore.sttProvider = .typefluxOfficial
+            }
+        )
+
+        let recordingTask = Task {
+            await controller.beginRecording(intent: .dictation, startLocked: false)
+        }
+        await gate.waitUntilBlocked()
+
+        XCTAssertEqual(audioRecorder.startCallCount, 1)
+        let appendCountWhilePreparing = await realtimeSession.appendCount
+        XCTAssertEqual(appendCountWhilePreparing, 0)
+
+        await gate.release()
+        await recordingTask.value
+        await realtimeSession.waitUntilAudioArrives()
+
+        let appendCountAfterSetup = await realtimeSession.appendCount
+        let firstSample = await realtimeSession.firstSample
+        XCTAssertEqual(appendCountAfterSetup, 1)
+        XCTAssertEqual(firstSample, 0.25, accuracy: 0.001)
+
+        controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
     func testReleasingAfterImmediateAudioStartStopsRecorder() async {
         let eventRecorder = ThreadSafeEventRecorder()
         let audioRecorder = MockProcessingAudioRecorder {
@@ -1953,6 +2002,118 @@ private final class FileReturningAudioRecorder: AudioRecorder {
         stops += 1
         lock.unlock()
         return AudioFile(fileURL: fileURL, duration: 1)
+    }
+}
+
+private final class BufferEmittingAudioRecorder: AudioRecorder {
+    private let buffer: AVAudioPCMBuffer
+    private let lock = NSLock()
+    private var starts = 0
+
+    init(buffer: AVAudioPCMBuffer) {
+        self.buffer = buffer
+    }
+
+    var startCallCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return starts
+    }
+
+    func start(
+        levelHandler _: @escaping (Float) -> Void,
+        audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
+    ) throws {
+        lock.lock()
+        starts += 1
+        lock.unlock()
+        audioBufferHandler?(buffer)
+    }
+
+    func stop() throws -> AudioFile {
+        AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1)
+    }
+}
+
+private actor AsyncTestGate {
+    private var blocked = false
+    private var released = false
+    private var blockContinuation: CheckedContinuation<Void, Never>?
+    private var releaseContinuation: CheckedContinuation<Void, Never>?
+
+    func wait() async {
+        blocked = true
+        blockContinuation?.resume()
+        blockContinuation = nil
+        guard !released else { return }
+        await withCheckedContinuation { continuation in
+            releaseContinuation = continuation
+        }
+    }
+
+    func waitUntilBlocked() async {
+        guard !blocked else { return }
+        await withCheckedContinuation { continuation in
+            blockContinuation = continuation
+        }
+    }
+
+    func release() {
+        released = true
+        releaseContinuation?.resume()
+        releaseContinuation = nil
+    }
+}
+
+private final class DelayedRealtimeFactoryTranscriber: RealtimeTranscriptionSessionFactory {
+    private let gate: AsyncTestGate
+    private let session: any RealtimeTranscriptionSession
+
+    init(gate: AsyncTestGate, session: any RealtimeTranscriptionSession) {
+        self.gate = gate
+        self.session = session
+    }
+
+    func transcribe(audioFile _: AudioFile) async throws -> String {
+        ""
+    }
+
+    func makeRealtimeTranscriptionSession(
+        scenario _: TypefluxCloudScenario,
+        onUpdate _: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> any RealtimeTranscriptionSession {
+        await gate.wait()
+        return session
+    }
+}
+
+private actor PrefixCapturingRealtimeSession: RealtimeTranscriptionSession {
+    private(set) var appendCount = 0
+    private(set) var firstSample: Float = 0
+    private var audioContinuation: CheckedContinuation<Void, Never>?
+
+    func start() async {}
+
+    func append(_ buffer: AVAudioPCMBuffer) async {
+        appendCount += 1
+        if appendCount == 1 {
+            firstSample = buffer.floatChannelData?[0][0] ?? 0
+            audioContinuation?.resume()
+            audioContinuation = nil
+        }
+    }
+
+    func finish() async throws -> String {
+        ""
+    }
+
+    func cancel() async {}
+
+    func waitUntilAudioArrives() async {
+        guard appendCount == 0 else { return }
+        await withCheckedContinuation { continuation in
+            audioContinuation = continuation
+        }
     }
 }
 

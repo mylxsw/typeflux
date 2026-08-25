@@ -1021,9 +1021,28 @@ final class WorkflowController {
             let livePreviewer = liveTranscriptionPreviewer
             let canUseRealtimeTranscription = effectiveIntent != .askSelection
             let usesLivePreview = canUseRealtimeTranscription && shouldUseLiveTranscriptionPreview()
+            let startupAudioBufferRelay = canUseRealtimeTranscription
+                ? RecordingStartupAudioBufferRelay()
+                : nil
+
+            // Begin local capture before resolving credentials or constructing a
+            // realtime transcription session. Some providers perform asynchronous
+            // setup here, and waiting for it used to leave the first spoken words
+            // outside both the recorded file and the streaming transcript.
+            try await startAudioRecorderWithStartupRetry(
+                levelHandler: { [weak self] level in
+                    self?.overlayController.updateLevel(level)
+                },
+                audioBufferHandler: startupAudioBufferRelay.map { relay in
+                    { buffer in relay.append(buffer) }
+                }
+            )
+            RecordingStartupLatencyTrace.shared.mark("workflow.audio_start_return")
+
             if usesLivePreview {
                 await livePreviewer?.prepareForStart()
             }
+            RecordingStartupLatencyTrace.shared.mark("workflow.transcription_setup_enter")
             let realtimeSession: (any RealtimeTranscriptionSession)? = if canUseRealtimeTranscription {
                 await sttRouter.makeRealtimeTranscriptionSession(
                     scenario: .voiceInput,
@@ -1049,20 +1068,21 @@ final class WorkflowController {
             activeRealtimeTranscriptionSession = realtimeSession
             activeRealtimeAudioBufferPump = realtimeAudioBufferPump
             await realtimeSession?.start()
-            try await startAudioRecorderWithStartupRetry(
-                levelHandler: { [weak self] level in
-                    self?.overlayController.updateLevel(level)
-                },
-                audioBufferHandler: (usesLivePreview || realtimeSession != nil) ? { buffer in
+            RecordingStartupLatencyTrace.shared.mark("workflow.transcription_setup_return")
+
+            if usesLivePreview || realtimeSession != nil {
+                startupAudioBufferRelay?.activate { buffer in
                     realtimeAudioBufferPump?.append(buffer)
                     Task {
                         if usesLivePreview {
                             await livePreviewer?.append(buffer)
                         }
                     }
-                } : nil
-            )
-            RecordingStartupLatencyTrace.shared.mark("workflow.audio_start_return")
+                }
+            } else {
+                startupAudioBufferRelay?.cancel()
+            }
+
             isAudioRecorderStarting = false
             isAudioRecorderStarted = true
             pendingRecordingStartID = nil
