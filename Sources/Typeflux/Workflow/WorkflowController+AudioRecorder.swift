@@ -26,15 +26,17 @@ extension WorkflowController {
         levelHandler: @escaping (Float) -> Void,
         audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
     ) async throws {
-        for attempt in 1 ... Self.audioStartupMaxAttemptCount {
+        var attempt = 1
+        while true {
             do {
                 try audioRecorder.start(levelHandler: levelHandler, audioBufferHandler: audioBufferHandler)
                 return
             } catch {
+                let maxAttemptCount = Self.audioStartupMaxAttemptCount(for: error)
                 guard
                     AVFoundationAudioRecorder.isRecoverableInputReconfigurationError(error),
                     isRecording,
-                    attempt < Self.audioStartupMaxAttemptCount
+                    attempt < maxAttemptCount
                 else {
                     throw error
                 }
@@ -43,7 +45,7 @@ extension WorkflowController {
                     """
                     [Audio Recorder] Microphone input is reconfiguring; retrying with a fresh audio engine.
                     attempt: \(attempt)
-                    maxAttempts: \(Self.audioStartupMaxAttemptCount)
+                    maxAttempts: \(maxAttemptCount)
                     retryDelayMilliseconds: 250
                     """
                 )
@@ -51,7 +53,20 @@ extension WorkflowController {
                 guard isRecording else {
                     throw error
                 }
+                attempt += 1
             }
         }
+    }
+
+    static func audioStartupMaxAttemptCount(for error: Error) -> Int {
+        if let recorderError = error as? AVFoundationAudioRecorder.RecorderError,
+           recorderError == .inputStartupTimedOut
+        {
+            return audioStartupMaxAttemptCount
+        }
+
+        return AVFoundationAudioRecorder.isRecoverableInputReconfigurationError(error)
+            ? audioReconfigurationStartupMaxAttemptCount
+            : audioStartupMaxAttemptCount
     }
 }

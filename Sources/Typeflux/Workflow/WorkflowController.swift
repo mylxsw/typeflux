@@ -31,6 +31,9 @@ final class WorkflowController {
     static let localModelPreheatDebounce: Duration = .milliseconds(180)
     static let recordingHintAutoHideDelay: TimeInterval = 3.0
     static let audioStartupMaxAttemptCount = 3
+    // Bluetooth routes can need several seconds to publish a stable input format.
+    // At the 250ms retry interval this allows about 2.75 seconds to settle.
+    static let audioReconfigurationStartupMaxAttemptCount = 12
     static let audioStartupRetryDelay: Duration = .milliseconds(250)
     static let llmTimeoutAfterTranscriptionSeconds: TimeInterval = 3
     static let paidCreditExhaustedPromptSuppressionInterval: TimeInterval = 60 * 60
