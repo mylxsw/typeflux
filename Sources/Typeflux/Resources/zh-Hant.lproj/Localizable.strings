@@ -364,6 +364,7 @@
 "workflow.recording.tooShort" = "說話時間太短，本次轉寫已取消。";
 "workflow.transcription.emptySkipped" = "因轉寫結果為空，已略過後續處理。";
 "workflow.transcription.noSpeech" = "未偵測到清晰語音，本次轉寫已取消。";
+"workflow.transcription.serverUnavailableNotice" = "伺服器和本地語音辨識暫時無法使用，錄音已儲存在歷史記錄中，可稍後重試。";
 "workflow.result.copyTitle" = "複製結果";
 "workflow.ask.answerTitle" = "隨便問";
 "workflow.ask.questionSectionTitle" = "你的問題";

@@ -74,4 +74,9 @@ final class OverlayControllerTests: XCTestCase {
         XCTAssertEqual(wrapped[0].style, .text)
         XCTAssertEqual(wrapped[0].trailingSystemImage, "gearshape")
     }
+
+    func testPassiveNoticeDoesNotAcceptMouseInteraction() {
+        XCTAssertFalse(OverlayController.noticeIsInteractive(dismissible: false))
+        XCTAssertTrue(OverlayController.noticeIsInteractive(dismissible: true))
+    }
 }

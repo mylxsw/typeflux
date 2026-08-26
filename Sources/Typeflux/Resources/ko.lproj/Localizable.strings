@@ -362,6 +362,7 @@
 "workflow.recording.tooShort" = "말이 너무 짧았습니다. 스크립트 작성이 취소되었습니다.";
 "workflow.transcription.emptySkipped" = "텍스트 변환이 비어 있으므로 건너뛰었습니다.";
 "workflow.transcription.noSpeech" = "명확한 음성이 감지되지 않았습니다. 스크립트 작성이 취소되었습니다.";
+"workflow.transcription.serverUnavailableNotice" = "서버와 로컬 음성 인식을 일시적으로 사용할 수 없습니다. 녹음은 기록에 저장되어 나중에 다시 시도할 수 있습니다.";
 "workflow.result.copyTitle" = "결과 복사";
 "workflow.ask.answerTitle" = "무엇이든 물어보세요";
 "workflow.ask.questionSectionTitle" = "질문";

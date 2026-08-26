@@ -1062,13 +1062,21 @@ extension WorkflowController {
             await MainActor.run {
                 if self.processingSessionID == sessionID {
                     self.lastRetryableFailureRecord = retryableFailureRecord
-                    self.soundEffectPlayer.play(.error)
-                    self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
-                    if retryableFailureRecord == nil {
-                        self.overlayController.showFailure(message: msg)
-                        self.overlayController.dismiss(after: 3.0)
+                    if ServerConnectivityFailure.matches(error) {
+                        self.soundEffectPlayer.play(.tip)
+                        self.appState.setStatus(.idle)
+                        self.overlayController.showPassiveNotice(
+                            message: L("workflow.transcription.serverUnavailableNotice")
+                        )
                     } else {
-                        self.overlayController.showRetryableFailure(message: msg)
+                        self.soundEffectPlayer.play(.error)
+                        self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
+                        if retryableFailureRecord == nil {
+                            self.overlayController.showFailure(message: msg)
+                            self.overlayController.dismiss(after: 3.0)
+                        } else {
+                            self.overlayController.showRetryableFailure(message: msg)
+                        }
                     }
                 }
             }

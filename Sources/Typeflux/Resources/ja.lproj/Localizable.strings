@@ -362,6 +362,7 @@
 "workflow.recording.tooShort" = "スピーチが短すぎました。転写はキャンセルされました。";
 "workflow.transcription.emptySkipped" = "転写が空だったのでスキップされました。";
 "workflow.transcription.noSpeech" = "明瞭な音声が検出されませんでした。転写はキャンセルされました。";
+"workflow.transcription.serverUnavailableNotice" = "サーバーとローカル音声認識を一時的に利用できません。録音は履歴に保存され、後で再試行できます。";
 "workflow.result.copyTitle" = "コピー結果";
 "workflow.ask.answerTitle" = "何でも聞いてください";
 "workflow.ask.questionSectionTitle" = "あなたの質問";

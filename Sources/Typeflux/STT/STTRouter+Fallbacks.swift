@@ -168,6 +168,28 @@ extension STTRouter {
         return try? await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
     }
 
+    func transcribeWithConnectivityFallbackIfAvailable(
+        error: Error,
+        audioFile: AudioFile,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async -> String? {
+        guard ServerConnectivityFailure.matches(error),
+              let fallback = typefluxCloudLoginFallbackLocalModel
+        else {
+            return nil
+        }
+
+        do {
+            NetworkDebugLogger.logMessage(
+                "Server unavailable; falling back to the default local speech model"
+            )
+            return try await fallback.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+        } catch {
+            NetworkDebugLogger.logError(context: "Default local connectivity fallback failed", error: error)
+            return nil
+        }
+    }
+
     func transcribeWithAppleSpeechFallbackIfEnabled(
         message: String,
         audioFile: AudioFile,

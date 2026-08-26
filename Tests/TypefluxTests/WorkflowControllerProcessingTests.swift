@@ -669,6 +669,38 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.usedTranscriptFallback, true)
     }
 
+    func testConnectivityFailureKeepsRecordingRetryableAndShowsPassiveNotice() async {
+        let historyStore = MockProcessingHistoryStore()
+        let audioPath = "/tmp/connectivity-fallback.wav"
+        let controller = makeWorkflowController(
+            sttTranscriber: MockProcessingTranscriber(error: URLError(.cannotConnectToHost)),
+            historyStore: historyStore,
+            configureSettings: { $0.sttProvider = .whisperAPI }
+        )
+
+        await controller.process(
+            audioFile: AudioFile(fileURL: URL(fileURLWithPath: audioPath), duration: 1),
+            record: HistoryRecord(
+                date: Date(),
+                audioFilePath: audioPath,
+                recordingStatus: .succeeded,
+                transcriptionStatus: .running
+            ),
+            selectionSnapshot: TextSelectionSnapshot(),
+            selectedText: nil,
+            askContextText: nil,
+            inputContext: nil,
+            personaPrompt: nil,
+            recordingIntent: .dictation,
+            sessionID: controller.processingSessionID
+        )
+
+        XCTAssertEqual(controller.appState.status, .idle)
+        XCTAssertEqual(controller.lastRetryableFailureRecord?.audioFilePath, audioPath)
+        XCTAssertTrue(controller.overlayController.isShowingPassiveNotice)
+        XCTAssertEqual(historyStore.list().last?.transcriptionStatus, .failed)
+    }
+
     func testDecideAskSelectionThrowsConfigurationErrorWhenLLMIsNotConfigured() async {
         let controller = makeWorkflowController()
 

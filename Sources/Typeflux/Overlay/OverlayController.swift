@@ -257,6 +257,14 @@ final class OverlayController {
     private static let shadowGutter: CGFloat = 32
     private static let processingStatusLocalizationKey = "overlay.processing.thinking"
 
+    static func noticeIsInteractive(dismissible: Bool) -> Bool {
+        dismissible
+    }
+
+    var isShowingPassiveNotice: Bool {
+        model.presentation == .notice && !model.noticeDismissible
+    }
+
     struct PersonaPickerItem: Identifiable, Equatable {
         let id: String
         let title: String
@@ -735,6 +743,22 @@ final class OverlayController {
         }
         cancelPendingPresentationTransition()
         dismissWorkItem?.cancel()
+        model.noticeDismissible = true
+        model.presentation = .notice
+        model.statusText = L("overlay.notice.title")
+        model.detailText = message
+        refreshWindow()
+        dismiss(after: Self.autoDismissDelay)
+    }
+
+    func showPassiveNotice(message: String) {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.showPassiveNotice(message: message) }
+            return
+        }
+        cancelPendingPresentationTransition()
+        dismissWorkItem?.cancel()
+        model.noticeDismissible = false
         model.presentation = .notice
         model.statusText = L("overlay.notice.title")
         model.detailText = message
@@ -1079,7 +1103,7 @@ final class OverlayController {
         case .notice:
             return OverlayMetrics(
                 size: NSSize(width: 344, height: 108), anchor: .bottom, offset: 80,
-                interactive: true
+                interactive: Self.noticeIsInteractive(dismissible: model.noticeDismissible)
             )
         case .failure:
             let actionHeight = model.failureActions.reduce(CGFloat(0)) { height, action in
@@ -1423,6 +1447,7 @@ final class OverlayViewModel: ObservableObject {
     @Published var pickerStyle: OverlayController.PickerStyle = .persona
     @Published var failureActions: [OverlayFailureAction] = []
     @Published var failureTone: OverlayFailureTone = .error
+    @Published var noticeDismissible = true
     @Published var overlayStyle: OverlayStyle = .liquidGlass
     var onDismissRequested: (() -> Void)?
     var onCancelRequested: (() -> Void)?
@@ -1796,7 +1821,7 @@ private struct OverlayView: View {
                     icon: "info.circle",
                     accent: StudioTheme.accent,
                     title: model.statusText,
-                    dismissible: true,
+                    dismissible: model.noticeDismissible,
                     titleSize: 13.5
                 )
 

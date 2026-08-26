@@ -25,7 +25,10 @@ final class DefaultSenseVoiceFallbackTranscriber: Transcriber {
         settingsStore.localSTTModel = .senseVoiceSmall
         settingsStore.localSTTModelIdentifier = LocalSTTModel.senseVoiceSmall.defaultModelIdentifier
         settingsStore.localSTTDownloadSource = LocalSTTModel.senseVoiceSmall.recommendedDownloadSource
-        settingsStore.localSTTAutoSetup = true
+        // A connectivity fallback must never turn into a blocking network download.
+        // The full app links its bundled SenseVoice model during startup; lightweight
+        // installs fail fast here and keep the saved recording available for retry.
+        settingsStore.localSTTAutoSetup = false
 
         return try await LocalModelTranscriber(
             settingsStore: settingsStore,
