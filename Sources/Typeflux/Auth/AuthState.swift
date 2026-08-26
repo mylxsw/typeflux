@@ -48,6 +48,7 @@ final class AuthState: ObservableObject {
     let fetchProfile: (String) async throws -> UserProfile
     let refreshAccessToken: (String) async throws -> LoginResponse
     let fetchSubscription: (String) async throws -> BillingSubscriptionSnapshot
+    let syncBillingSubscription: (String) async throws -> BillingSubscriptionSnapshot
     let fetchCurrentPeriodUsageStats: (String) async throws -> CloudUsageCurrentPeriodStats
     let createCheckoutSession: (String, String) async throws -> BillingCheckoutSession
     let createPortalSession: (String) async throws -> BillingPortalSession
@@ -58,6 +59,7 @@ final class AuthState: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var subscription: BillingSubscriptionSnapshot = .none
     @Published var isLoadingSubscription: Bool = false
+    @Published var isSyncingSubscription: Bool = false
     @Published var subscriptionError: String?
     @Published var usageStats: CloudUsageStats = .empty
     @Published var usageCredits: CloudCreditSummary?
@@ -123,6 +125,9 @@ final class AuthState: ObservableObject {
         fetchSubscription: @escaping (String) async throws -> BillingSubscriptionSnapshot = { token in
             try await BillingAPIService.fetchSubscription(token: token)
         },
+        syncSubscription: @escaping (String) async throws -> BillingSubscriptionSnapshot = { token in
+            try await BillingAPIService.syncSubscription(token: token)
+        },
         fetchCurrentPeriodUsageStats: @escaping (String) async throws -> CloudUsageCurrentPeriodStats = { token in
             try await CloudUsageAPIService.fetchCurrentPeriodStats(token: token)
         },
@@ -152,6 +157,7 @@ final class AuthState: ObservableObject {
         self.fetchProfile = fetchProfile
         self.refreshAccessToken = refreshAccessToken
         self.fetchSubscription = fetchSubscription
+        syncBillingSubscription = syncSubscription
         self.fetchCurrentPeriodUsageStats = fetchCurrentPeriodUsageStats
         self.createCheckoutSession = createCheckoutSession
         self.createPortalSession = createPortalSession
@@ -191,6 +197,7 @@ final class AuthState: ObservableObject {
         userProfile = nil
         subscription = .none
         subscriptionError = nil
+        isSyncingSubscription = false
         usageStats = .empty
         usageCredits = nil
         usagePeriodStart = nil

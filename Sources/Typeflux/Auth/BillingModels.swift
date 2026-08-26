@@ -231,6 +231,7 @@ struct AccountSubscriptionPresentation: Equatable {
     let periodLabelKey: String
     let period: PeriodValue
     let billingAction: BillingAction
+    let showsSubscriptionSyncAction: Bool
 
     static func make(from snapshot: BillingSubscriptionSnapshot) -> AccountSubscriptionPresentation {
         AccountSubscriptionPresentation(
@@ -239,7 +240,8 @@ struct AccountSubscriptionPresentation: Equatable {
             status: statusValue(for: snapshot),
             periodLabelKey: periodLabelKey(for: snapshot),
             period: periodValue(for: snapshot),
-            billingAction: snapshot.hasPaidSubscription ? .manageBilling : .subscribe
+            billingAction: snapshot.hasPaidSubscription ? .manageBilling : .subscribe,
+            showsSubscriptionSyncAction: snapshot.billingEnabled && !snapshot.hasPaidSubscription
         )
     }
 

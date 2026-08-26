@@ -11,6 +11,7 @@ final class AccountSubscriptionPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.status, .localized("auth.account.subscriptionStatusNone"))
         XCTAssertEqual(presentation.periodLabelKey, "auth.account.subscriptionPeriod")
         XCTAssertEqual(presentation.period, .unavailable)
+        XCTAssertFalse(presentation.showsSubscriptionSyncAction)
     }
 
     func testActiveDefaultPlanSelectsManageBillingAndRenewalPeriod() {
@@ -31,6 +32,41 @@ final class AccountSubscriptionPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.status, .localized("auth.account.subscriptionStatusActive"))
         XCTAssertEqual(presentation.periodLabelKey, "auth.account.subscriptionPeriod")
         XCTAssertEqual(presentation.period, .renewsOn("2026-06-01T00:00:00Z"))
+        XCTAssertFalse(presentation.showsSubscriptionSyncAction)
+    }
+
+    func testBillingEnabledFreePlanShowsSubscriptionSyncAction() {
+        let snapshot = BillingSubscriptionSnapshot(
+            planCode: "free",
+            status: "free",
+            currentPeriodStart: nil,
+            currentPeriodEnd: nil,
+            cancelAtPeriodEnd: false,
+            entitled: true,
+            active: true,
+            paid: false,
+            periodSource: "free",
+            billingEnabled: true
+        )
+
+        XCTAssertTrue(AccountSubscriptionPresentation.make(from: snapshot).showsSubscriptionSyncAction)
+    }
+
+    func testBillingDisabledUnpaidPlanHidesSubscriptionSyncAction() {
+        let snapshot = BillingSubscriptionSnapshot(
+            planCode: "free",
+            status: "free",
+            currentPeriodStart: nil,
+            currentPeriodEnd: nil,
+            cancelAtPeriodEnd: false,
+            entitled: true,
+            active: true,
+            paid: false,
+            periodSource: "free",
+            billingEnabled: false
+        )
+
+        XCTAssertFalse(AccountSubscriptionPresentation.make(from: snapshot).showsSubscriptionSyncAction)
     }
 
     func testFreePlanIsActiveButSelectsSubscribeAction() {

@@ -1231,6 +1231,9 @@
 "auth.account.subscriptionPeriodRange" = "%@ から %@";
 "auth.account.subscriptionPeriodUntil" = "%@ まで";
 "auth.account.refreshSubscription" = "更新";
+"auth.account.subscriptionSyncAction" = "支払い済みなのに未反映ですか？";
+"auth.account.subscriptionSyncRateLimited" = "操作が多すぎます。しばらく待ってからもう一度お試しください。";
+"auth.account.subscriptionSyncRateLimitedWait" = "操作が多すぎます。%@ 秒後にもう一度お試しください。";
 "auth.account.subscribe" = "購読";
 "auth.account.manageBilling" = "請求管理";
 "auth.account.usage" = "使用明細";

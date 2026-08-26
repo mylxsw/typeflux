@@ -120,6 +120,117 @@ final class BillingAPIServiceTests: XCTestCase {
         XCTAssertFalse(snapshot.hasPaidSubscription)
         XCTAssertTrue(snapshot.isFreePlan)
     }
+}
+
+extension BillingAPIServiceTests {
+    func testSyncSubscriptionPostsAuthenticatedEmptyJSONAndUpdatesSnapshot() async throws {
+        let session = BillingStubSession()
+        await session.setHandler { request in
+            XCTAssertEqual(request.url?.absoluteString, "https://api.example/api/v1/billing/subscription/sync")
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer token-1")
+            XCTAssertEqual(request.httpBody, Data("{}".utf8))
+            let body = """
+            {
+              "code": "OK",
+              "data": {
+                "billing_enabled": true,
+                "plan_code": "pro",
+                "status": "active",
+                "active": true,
+                "paid": true,
+                "entitled": true
+              }
+            }
+            """
+            return (Data(body.utf8), Self.httpResponse(url: request.url!, status: 200))
+        }
+        let service = makeService(session: session)
+
+        let snapshot = try await service.syncSubscription(token: "token-1")
+
+        XCTAssertEqual(snapshot.planCode, "pro")
+        XCTAssertTrue(snapshot.hasPaidSubscription)
+    }
+
+    func testSyncSubscriptionSurfacesRateLimitWithRetryAfterSeconds() async {
+        let session = BillingStubSession()
+        await session.setHandler { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 429,
+                httpVersion: nil,
+                headerFields: ["Retry-After": "37"]
+            )!
+            return (Data("not required for rate limits".utf8), response)
+        }
+        let service = makeService(session: session)
+
+        do {
+            _ = try await service.syncSubscription(token: "token-1")
+            XCTFail("Expected rate limit error")
+        } catch let error as BillingSubscriptionSyncError {
+            XCTAssertEqual(error, .rateLimited(retryAfterSeconds: 37))
+            XCTAssertTrue(error.localizedDescription.contains("37"))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testSyncSubscriptionUsesGenericRateLimitMessageWithoutRetryAfter() async {
+        let session = BillingStubSession()
+        await session.setHandler { request in
+            (Data(), Self.httpResponse(url: request.url!, status: 429))
+        }
+        let service = makeService(session: session)
+
+        do {
+            _ = try await service.syncSubscription(token: "token-1")
+            XCTFail("Expected rate limit error")
+        } catch let error as BillingSubscriptionSyncError {
+            XCTAssertEqual(error, .rateLimited(retryAfterSeconds: nil))
+            XCTAssertFalse(error.localizedDescription.isEmpty)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testRetryAfterParsesHTTPDateAndClampsExpiredValues() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let futureResponse = HTTPURLResponse(
+            url: baseURL,
+            statusCode: 429,
+            httpVersion: nil,
+            headerFields: ["Retry-After": "Fri, 15 Jan 2027 08:01:00 GMT"]
+        )!
+        let expiredResponse = HTTPURLResponse(
+            url: baseURL,
+            statusCode: 429,
+            httpVersion: nil,
+            headerFields: ["Retry-After": "Fri, 15 Jan 2021 08:00:00 GMT"]
+        )!
+
+        XCTAssertEqual(BillingAPIService.retryAfterSeconds(from: futureResponse, now: now), 60)
+        XCTAssertEqual(BillingAPIService.retryAfterSeconds(from: expiredResponse, now: now), 0)
+    }
+
+    func testSyncSubscriptionPreservesStandardServerErrors() async {
+        let session = BillingStubSession()
+        await session.setHandler { request in
+            let body = #"{"code":"BILLING_NOT_CONFIGURED","message":"billing unavailable"}"#
+            return (Data(body.utf8), Self.httpResponse(url: request.url!, status: 400))
+        }
+        let service = makeService(session: session)
+
+        do {
+            _ = try await service.syncSubscription(token: "token-1")
+            XCTFail("Expected server error")
+        } catch let error as AuthError {
+            XCTAssertEqual(error.authErrorCode, "BILLING_NOT_CONFIGURED")
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
 
     func testCreateCheckoutSessionPostsPlanCodeAndDecodesURL() async throws {
         let session = BillingStubSession()
