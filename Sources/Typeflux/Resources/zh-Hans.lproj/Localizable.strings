@@ -1245,6 +1245,9 @@
 "auth.account.subscriptionPeriodRange" = "%@ 至 %@";
 "auth.account.subscriptionPeriodUntil" = "至 %@";
 "auth.account.refreshSubscription" = "刷新";
+"auth.account.subscriptionSyncAction" = "已支付但未生效？";
+"auth.account.subscriptionSyncRateLimited" = "操作太频繁，请稍后再试。";
+"auth.account.subscriptionSyncRateLimitedWait" = "操作太频繁，请在 %@ 秒后再试。";
 "auth.account.subscribe" = "订阅";
 "auth.account.manageBilling" = "管理账单";
 "auth.account.usage" = "使用明细";

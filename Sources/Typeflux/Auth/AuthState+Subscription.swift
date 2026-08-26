@@ -20,17 +20,8 @@ extension AuthState {
         defer { isLoadingSubscription = false }
 
         do {
-            let wasEntitled = subscription.entitled
-            let hadPaidSubscription = subscription.hasPaidSubscription
             let snapshot = try await fetchSubscription(token)
-            subscription = snapshot
-            subscriptionError = nil
-            let becameEntitled = !wasEntitled && snapshot.entitled
-            let becamePaid = !hadPaidSubscription && snapshot.hasPaidSubscription
-            if pendingCheckoutSubscriptionEntitlement, becameEntitled || becamePaid {
-                pendingCheckoutSubscriptionEntitlement = false
-                NotificationCenter.default.post(name: .authCheckoutSubscriptionDidBecomeEntitled, object: self)
-            }
+            applySubscriptionSnapshot(snapshot)
             return snapshot
         } catch let error as AuthError {
             subscriptionError = error.localizedDescription
@@ -39,6 +30,21 @@ extension AuthState {
             subscriptionError = error.localizedDescription
             return nil
         }
+    }
+
+    @discardableResult
+    func syncSubscription() async throws -> BillingSubscriptionSnapshot {
+        guard let token = accessToken else {
+            throw AuthError.unauthorized
+        }
+        guard !isSyncingSubscription else { return subscription }
+
+        isSyncingSubscription = true
+        defer { isSyncingSubscription = false }
+
+        let snapshot = try await syncBillingSubscription(token)
+        applySubscriptionSnapshot(snapshot)
+        return snapshot
     }
 
     @discardableResult
@@ -120,6 +126,19 @@ extension AuthState {
                 }
             }
             pendingCheckoutSubscriptionEntitlement = false
+        }
+    }
+
+    private func applySubscriptionSnapshot(_ snapshot: BillingSubscriptionSnapshot) {
+        let wasEntitled = subscription.entitled
+        let hadPaidSubscription = subscription.hasPaidSubscription
+        subscription = snapshot
+        subscriptionError = nil
+        let becameEntitled = !wasEntitled && snapshot.entitled
+        let becamePaid = !hadPaidSubscription && snapshot.hasPaidSubscription
+        if pendingCheckoutSubscriptionEntitlement, becameEntitled || becamePaid {
+            pendingCheckoutSubscriptionEntitlement = false
+            NotificationCenter.default.post(name: .authCheckoutSubscriptionDidBecomeEntitled, object: self)
         }
     }
 }

@@ -1230,6 +1230,9 @@
 "auth.account.subscriptionPeriodRange" = "%@ ~ %@";
 "auth.account.subscriptionPeriodUntil" = "%@까지";
 "auth.account.refreshSubscription" = "새로고침";
+"auth.account.subscriptionSyncAction" = "결제했지만 반영되지 않았나요?";
+"auth.account.subscriptionSyncRateLimited" = "요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요.";
+"auth.account.subscriptionSyncRateLimitedWait" = "요청이 너무 잦습니다. %@초 후 다시 시도해 주세요.";
 "auth.account.subscribe" = "구독";
 "auth.account.manageBilling" = "결제 관리";
 "auth.account.usage" = "사용 상세";

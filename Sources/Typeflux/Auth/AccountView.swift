@@ -69,10 +69,33 @@ struct AccountView: View {
                             AccountRefreshIconButton(
                                 helpText: L("auth.account.refreshSubscription"),
                                 isVisible: isHoveringSubscriptionCard,
-                                isDisabled: authState.isLoadingSubscription || isOpeningBilling,
+                                isDisabled: authState.isLoadingSubscription
+                                    || authState.isSyncingSubscription
+                                    || isOpeningBilling,
                                 isLoading: authState.isLoadingSubscription
                             ) {
                                 Task { await authState.refreshSubscription() }
+                            }
+
+                            if subscriptionPresentation.showsSubscriptionSyncAction {
+                                Button(action: syncBillingSubscription) {
+                                    Group {
+                                        if authState.isSyncingSubscription {
+                                            ProgressView()
+                                                .controlSize(.small)
+                                        } else {
+                                            Text(L("auth.account.subscriptionSyncAction"))
+                                        }
+                                    }
+                                    .font(.studioBody(StudioTheme.Typography.caption))
+                                    .foregroundStyle(StudioTheme.textSecondary)
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(
+                                    authState.isSyncingSubscription
+                                        || authState.isLoadingSubscription
+                                        || isOpeningBilling
+                                )
                             }
 
                             StudioButton(
@@ -81,7 +104,7 @@ struct AccountView: View {
                                     : L("auth.account.subscribe"),
                                 systemImage: "arrow.up.forward.app",
                                 variant: .primary,
-                                isDisabled: isOpeningBilling,
+                                isDisabled: isOpeningBilling || authState.isSyncingSubscription,
                                 isLoading: isOpeningBilling
                             ) {
                                 openBillingFlow()
@@ -494,6 +517,17 @@ struct AccountView: View {
                     isOpeningBilling = false
                     billingActionError = error.localizedDescription
                 }
+            }
+        }
+    }
+
+    private func syncBillingSubscription() {
+        billingActionError = nil
+        Task {
+            do {
+                _ = try await authState.syncSubscription()
+            } catch {
+                billingActionError = error.localizedDescription
             }
         }
     }

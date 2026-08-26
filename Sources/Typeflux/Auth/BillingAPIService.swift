@@ -1,6 +1,19 @@
 import Foundation
 import os
 
+enum BillingSubscriptionSyncError: LocalizedError, Equatable {
+    case rateLimited(retryAfterSeconds: Int?)
+
+    var errorDescription: String? {
+        switch self {
+        case let .rateLimited(.some(seconds)):
+            String(format: L("auth.account.subscriptionSyncRateLimitedWait"), String(seconds))
+        case .rateLimited(.none):
+            L("auth.account.subscriptionSyncRateLimited")
+        }
+    }
+}
+
 struct BillingAPIService: Sendable {
     private static let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "BillingAPIService")
 
@@ -27,6 +40,16 @@ struct BillingAPIService: Sendable {
         }
     }
 
+    func syncSubscription(token: String) async throws -> BillingSubscriptionSnapshot {
+        try await execute(
+            path: "/api/v1/billing/subscription/sync",
+            method: "POST",
+            token: token,
+            body: Data("{}".utf8),
+            handlesRateLimit: true
+        )
+    }
+
     func createCheckoutSession(token: String, planCode: String) async throws -> BillingCheckoutSession {
         let body = try encode(BillingCheckoutSessionRequest(planCode: planCode))
         return try await execute(path: "/api/v1/billing/checkout-session", method: "POST", token: token, body: body)
@@ -42,6 +65,10 @@ struct BillingAPIService: Sendable {
 
     static func fetchSubscription(token: String) async throws -> BillingSubscriptionSnapshot {
         try await BillingAPIService().fetchSubscription(token: token)
+    }
+
+    static func syncSubscription(token: String) async throws -> BillingSubscriptionSnapshot {
+        try await BillingAPIService().syncSubscription(token: token)
     }
 
     static func createCheckoutSession(token: String, planCode: String) async throws -> BillingCheckoutSession {
@@ -68,7 +95,8 @@ struct BillingAPIService: Sendable {
         path: String,
         method: String,
         token: String,
-        body: Data?
+        body: Data?,
+        handlesRateLimit: Bool = false
     ) async throws -> Response {
         let data: Data
         let httpResponse: HTTPURLResponse
@@ -91,6 +119,12 @@ struct BillingAPIService: Sendable {
         } catch {
             Self.logger.error("Billing network error: \(error.localizedDescription)")
             throw Self.availabilityError(for: error)
+        }
+
+        if handlesRateLimit, httpResponse.statusCode == 429 {
+            throw BillingSubscriptionSyncError.rateLimited(
+                retryAfterSeconds: Self.retryAfterSeconds(from: httpResponse)
+            )
         }
 
         let envelope: APIResponse<Response>
@@ -127,5 +161,24 @@ struct BillingAPIService: Sendable {
         guard let authError = error as? AuthError else { return false }
         return authError.authErrorCode == "BILLING_CONNECTION_UNAVAILABLE"
             || authError.authErrorCode == "BILLING_SERVICE_UNAVAILABLE"
+    }
+
+    static func retryAfterSeconds(from response: HTTPURLResponse, now: Date = Date()) -> Int? {
+        guard let value = response.value(forHTTPHeaderField: "Retry-After")?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !value.isEmpty
+        else {
+            return nil
+        }
+        if let seconds = Int(value) {
+            return max(0, seconds)
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "EEE',' dd MMM yyyy HH':'mm':'ss z"
+        guard let retryDate = formatter.date(from: value) else { return nil }
+        return max(0, Int(ceil(retryDate.timeIntervalSince(now))))
     }
 }

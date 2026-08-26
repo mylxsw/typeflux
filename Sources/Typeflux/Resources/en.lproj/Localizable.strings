@@ -1245,6 +1245,9 @@
 "auth.account.subscriptionPeriodRange" = "%@ to %@";
 "auth.account.subscriptionPeriodUntil" = "Until %@";
 "auth.account.refreshSubscription" = "Refresh";
+"auth.account.subscriptionSyncAction" = "Paid but not active?";
+"auth.account.subscriptionSyncRateLimited" = "Too many attempts. Please wait a moment and try again.";
+"auth.account.subscriptionSyncRateLimitedWait" = "Too many attempts. Please try again in %@ seconds.";
 "auth.account.subscribe" = "Subscribe";
 "auth.account.manageBilling" = "Manage Billing";
 "auth.account.usage" = "Usage Details";

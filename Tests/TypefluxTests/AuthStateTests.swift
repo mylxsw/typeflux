@@ -238,6 +238,154 @@ final class AuthStateTests: XCTestCase {
         XCTAssertNotNil(state.subscriptionError)
     }
 
+    func testSyncSubscriptionUsesAccessTokenAndAppliesReturnedSnapshot() async throws {
+        let storedToken = validStoredToken()
+        var requestedToken: String?
+        let paidSubscription = BillingSubscriptionSnapshot(
+            planCode: "pro",
+            status: "active",
+            currentPeriodStart: nil,
+            currentPeriodEnd: "2999-06-01T00:00:00Z",
+            cancelAtPeriodEnd: false,
+            entitled: true,
+            active: true,
+            paid: true,
+            billingEnabled: true
+        )
+        let state = AuthState(
+            loadStoredToken: { storedToken },
+            loadStoredUserProfile: { nil },
+            saveStoredToken: { _, _ in },
+            saveStoredUserProfile: { _ in },
+            clearStoredSession: {},
+            fetchProfile: { _ in self.makeProfile(email: "subscription-sync@test.com") },
+            fetchSubscription: { _ in .none },
+            syncSubscription: { token in
+                requestedToken = token
+                return paidSubscription
+            }
+        )
+        state.subscriptionError = "stale error"
+
+        let result = try await state.syncSubscription()
+
+        XCTAssertEqual(requestedToken, "valid-token")
+        XCTAssertEqual(result, paidSubscription)
+        XCTAssertEqual(state.subscription, paidSubscription)
+        XCTAssertNil(state.subscriptionError)
+        XCTAssertFalse(state.isSyncingSubscription)
+    }
+
+    func testSyncSubscriptionFailurePreservesStateAndResetsLoading() async {
+        let storedToken = validStoredToken()
+        let freeSubscription = BillingSubscriptionSnapshot(
+            planCode: "free",
+            status: "free",
+            currentPeriodStart: nil,
+            currentPeriodEnd: nil,
+            cancelAtPeriodEnd: false,
+            entitled: true,
+            active: true,
+            paid: false,
+            periodSource: "free",
+            billingEnabled: true
+        )
+        let state = AuthState(
+            loadStoredToken: { storedToken },
+            loadStoredUserProfile: { nil },
+            saveStoredToken: { _, _ in },
+            saveStoredUserProfile: { _ in },
+            clearStoredSession: {},
+            fetchProfile: { _ in self.makeProfile(email: "subscription-sync-error@test.com") },
+            fetchSubscription: { _ in .none },
+            syncSubscription: { _ in
+                throw BillingSubscriptionSyncError.rateLimited(retryAfterSeconds: 42)
+            }
+        )
+        state.subscription = freeSubscription
+
+        do {
+            _ = try await state.syncSubscription()
+            XCTFail("Expected rate limit error")
+        } catch let error as BillingSubscriptionSyncError {
+            XCTAssertEqual(error, .rateLimited(retryAfterSeconds: 42))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(state.subscription, freeSubscription)
+        XCTAssertFalse(state.isSyncingSubscription)
+    }
+
+    func testSyncSubscriptionLoadingStatePreventsDuplicateRequests() async throws {
+        let storedToken = validStoredToken()
+        let started = expectation(description: "subscription sync started")
+        let gate = SubscriptionSyncGate()
+        var requestCount = 0
+        let paidSubscription = BillingSubscriptionSnapshot(
+            planCode: "pro",
+            status: "active",
+            currentPeriodStart: nil,
+            currentPeriodEnd: "2999-06-01T00:00:00Z",
+            cancelAtPeriodEnd: false,
+            entitled: true,
+            active: true,
+            paid: true,
+            billingEnabled: true
+        )
+        let state = AuthState(
+            loadStoredToken: { storedToken },
+            loadStoredUserProfile: { nil },
+            saveStoredToken: { _, _ in },
+            saveStoredUserProfile: { _ in },
+            clearStoredSession: {},
+            fetchProfile: { _ in self.makeProfile(email: "subscription-sync-loading@test.com") },
+            fetchSubscription: { _ in .none },
+            syncSubscription: { _ in
+                requestCount += 1
+                started.fulfill()
+                await gate.wait()
+                return paidSubscription
+            }
+        )
+
+        let firstRequest = Task { try await state.syncSubscription() }
+        await fulfillment(of: [started], timeout: 1)
+
+        XCTAssertTrue(state.isSyncingSubscription)
+        let duplicateResult = try await state.syncSubscription()
+        XCTAssertEqual(duplicateResult, state.subscription)
+        XCTAssertEqual(requestCount, 1)
+
+        await gate.release()
+        let result = try await firstRequest.value
+        XCTAssertEqual(result, paidSubscription)
+        XCTAssertFalse(state.isSyncingSubscription)
+    }
+
+    func testSyncSubscriptionRequiresAuthenticatedSession() async {
+        let state = AuthState(
+            loadStoredToken: { nil },
+            loadStoredUserProfile: { nil },
+            saveStoredToken: { _, _ in },
+            saveStoredUserProfile: { _ in },
+            clearStoredSession: {},
+            fetchProfile: { _ in self.makeProfile(email: "subscription-sync-auth@test.com") },
+            syncSubscription: { _ in
+                XCTFail("Sync API should not be called without a session")
+                return .none
+            }
+        )
+
+        do {
+            _ = try await state.syncSubscription()
+            XCTFail("Expected unauthorized error")
+        } catch AuthError.unauthorized {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     func testLoginSuccessUsesInMemoryTokenWhenPersistenceDoesNotImmediatelyLoad() async {
         var savedProfile: UserProfile?
         var fetchedProfileToken: String?
@@ -734,5 +882,20 @@ final class AuthStateTests: XCTestCase {
         for _ in 0 ..< 100 where count() == 0 {
             await Task.yield()
         }
+    }
+}
+
+private actor SubscriptionSyncGate {
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    func wait() async {
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+
+    func release() {
+        continuation?.resume()
+        continuation = nil
     }
 }
