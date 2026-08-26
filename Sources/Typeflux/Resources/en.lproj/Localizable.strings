@@ -366,6 +366,7 @@
 "workflow.recording.tooShort" = "Speech was too short. Transcription cancelled.";
 "workflow.transcription.emptySkipped" = "Skipped because transcription was empty.";
 "workflow.transcription.noSpeech" = "No clear speech detected. Transcription cancelled.";
+"workflow.transcription.serverUnavailableNotice" = "The server and local speech recognition are temporarily unavailable. Your recording was saved in History for retry.";
 "workflow.result.copyTitle" = "Copy Result";
 "workflow.ask.answerTitle" = "Ask Anything";
 "workflow.ask.questionSectionTitle" = "Your Question";

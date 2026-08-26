@@ -33,9 +33,11 @@ extension STTRouter {
                 onUpdate: onUpdate
             )
         case .multimodalLLM:
-            try await RequestRetry.perform(operationName: "Multimodal STT request") { [self] in
-                try await multimodal.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
-            }
+            try await transcribeWithRemoteProvider(
+                route: remoteSTTRoute(for: .multimodalLLM),
+                audioFile: audioFile,
+                onUpdate: onUpdate
+            )
         case .groq:
             try await transcribeWithGroq(audioFile: audioFile, onUpdate: onUpdate)
         case .typefluxOfficial:
@@ -87,13 +89,26 @@ extension STTRouter {
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         do {
-            return try await RequestRetry.perform(operationName: route.operationName) {
+            return try await RequestRetry.perform(
+                operationName: route.operationName,
+                shouldRetry: { !ServerConnectivityFailure.matches($0) }
+            ) {
                 try await route.provider.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
             }
         } catch {
             NetworkDebugLogger.logError(context: route.failureContext, error: error)
             if let localResult = await transcribeWithAutoModelIfReady(audioFile: audioFile, onUpdate: onUpdate) {
                 NetworkDebugLogger.logMessage(route.autoModelSuccessMessage)
+                return localResult
+            }
+            if let localResult = await transcribeWithConnectivityFallbackIfAvailable(
+                error: error,
+                audioFile: audioFile,
+                onUpdate: onUpdate
+            ) {
+                NetworkDebugLogger.logMessage(
+                    "Default local model succeeded after a server connectivity failure"
+                )
                 return localResult
             }
             if let appleResult = try await transcribeWithAppleSpeechFallbackIfEnabled(
@@ -218,6 +233,14 @@ extension STTRouter {
                 failureContext: "Soniox ASR failed",
                 autoModelSuccessMessage: "Auto local model succeeded after Soniox ASR failure",
                 appleFallbackMessage: "Falling back to Apple Speech after Soniox ASR failure"
+            )
+        case .multimodalLLM:
+            return RemoteSTTRoute(
+                provider: multimodal,
+                operationName: "Multimodal STT request",
+                failureContext: "Multimodal STT failed",
+                autoModelSuccessMessage: "Auto local model succeeded after multimodal STT failure",
+                appleFallbackMessage: "Falling back to Apple Speech after multimodal STT failure"
             )
         default:
             assertionFailure("Unexpected non-remote STT provider")

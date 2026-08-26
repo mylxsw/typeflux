@@ -366,6 +366,7 @@
 "workflow.recording.tooShort" = "说话时间太短，本次转写已取消。";
 "workflow.transcription.emptySkipped" = "由于转写结果为空，已跳过后续处理。";
 "workflow.transcription.noSpeech" = "未检测到清晰语音，本次转写已取消。";
+"workflow.transcription.serverUnavailableNotice" = "服务器和本地语音识别暂时不可用，录音已保存在历史记录中，可稍后重试。";
 "workflow.result.copyTitle" = "复制结果";
 "workflow.ask.answerTitle" = "随便问";
 "workflow.ask.questionSectionTitle" = "你的问题";

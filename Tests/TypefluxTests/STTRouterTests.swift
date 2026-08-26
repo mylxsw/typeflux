@@ -711,6 +711,42 @@ final class STTRouterTests: XCTestCase {
         }
     }
 
+    func testConnectivityFailureUsesBundledLocalFallbackWhenOptimizationIsDisabled() async throws {
+        settings.sttProvider = .whisperAPI
+        settings.localOptimizationEnabled = false
+        settings.useAppleSpeechFallback = false
+        whisper.errorToThrow = URLError(.cannotConnectToHost)
+        let bundledLocalFallback = MockTranscriber()
+        bundledLocalFallback.resultToReturn = "offline transcript"
+        let router = makeRouter(typefluxCloudLoginFallbackLocalModel: bundledLocalFallback)
+
+        let result = try await router.transcribe(audioFile: dummyAudioFile())
+
+        XCTAssertEqual(result, "offline transcript")
+        XCTAssertEqual(whisper.transcribeCallCount, 1)
+        XCTAssertEqual(bundledLocalFallback.transcribeCallCount, 1)
+        XCTAssertEqual(appleSpeech.transcribeCallCount, 0)
+    }
+
+    func testNonConnectivityFailureDoesNotUseBundledLocalFallback() async {
+        settings.sttProvider = .whisperAPI
+        settings.localOptimizationEnabled = false
+        settings.useAppleSpeechFallback = false
+        whisper.errorToThrow = NSError(domain: "RemoteSTT", code: 401)
+        let bundledLocalFallback = MockTranscriber()
+        bundledLocalFallback.resultToReturn = "must not be used"
+        let router = makeRouter(typefluxCloudLoginFallbackLocalModel: bundledLocalFallback)
+
+        do {
+            _ = try await router.transcribe(audioFile: dummyAudioFile())
+            XCTFail("Expected remote provider error")
+        } catch {
+            XCTAssertEqual((error as NSError).domain, "RemoteSTT")
+        }
+
+        XCTAssertEqual(bundledLocalFallback.transcribeCallCount, 0)
+    }
+
     // MARK: - WhisperAPI default OpenAI endpoint
 
     func testWhisperAPIWithEmptyBaseURLStillRoutesToWhisperTranscriber() async throws {
