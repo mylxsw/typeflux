@@ -20,8 +20,8 @@ final class AudioContentAnalyzerExtendedTests: XCTestCase {
     func testIsAudibleAtExactRMSThreshold() {
         let analysis = AudioContentAnalysis(
             duration: 1.0,
-            rmsPowerDB: -42,
-            peakPowerDB: -50,
+            rmsPowerDB: -48,
+            peakPowerDB: -55,
             audibleDuration: 0,
             audibleFrameRatio: 0,
             frameCount: 16000
@@ -98,8 +98,8 @@ final class AudioContentAnalyzerExtendedTests: XCTestCase {
     func testPeakExactlyAtThresholdWithSufficientDurationAndRatio() {
         let analysis = AudioContentAnalysis(
             duration: 1.0,
-            rmsPowerDB: -50,
-            peakPowerDB: -35,
+            rmsPowerDB: -55,
+            peakPowerDB: -42,
             audibleDuration: 0.08,
             audibleFrameRatio: 0.04,
             frameCount: 16000
@@ -110,12 +110,36 @@ final class AudioContentAnalyzerExtendedTests: XCTestCase {
     func testRMSJustBelowThresholdFallsThroughToPeakCheck() {
         let analysis = AudioContentAnalysis(
             duration: 1.0,
-            rmsPowerDB: -42.01,
-            peakPowerDB: -36,
+            rmsPowerDB: -48.01,
+            peakPowerDB: -43,
             audibleDuration: 0.1,
             audibleFrameRatio: 0.05,
             frameCount: 16000
         )
         XCTAssertFalse(analysis.containsAudibleSignal)
+    }
+
+    func testIsAudibleForQuietButLegitimateSpeech() {
+        let analysis = AudioContentAnalysis(
+            duration: 2.0,
+            rmsPowerDB: -45,
+            peakPowerDB: -38,
+            audibleDuration: 0.5,
+            audibleFrameRatio: 0.1,
+            frameCount: 32000
+        )
+        XCTAssertTrue(analysis.containsAudibleSignal)
+    }
+
+    func testIsAudibleForPreviouslyRejectedModerateSignal() {
+        let analysis = AudioContentAnalysis(
+            duration: 1.5,
+            rmsPowerDB: -44,
+            peakPowerDB: -36,
+            audibleDuration: 0.3,
+            audibleFrameRatio: 0.08,
+            frameCount: 24000
+        )
+        XCTAssertTrue(analysis.containsAudibleSignal)
     }
 }
