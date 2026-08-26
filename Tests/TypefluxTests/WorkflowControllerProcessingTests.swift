@@ -881,7 +881,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             sttTranscriber: transcriber,
             sleep: { _ in },
             configureSettings: { settingsStore in
-                settingsStore.sttProvider = .typefluxOfficial
+                settingsStore.sttProvider = .googleCloud
             }
         )
 
@@ -905,6 +905,102 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         controller.cancelRecording()
         await waitForMainActorWork()
+    }
+
+    func testCancelDuringRealtimeSessionPreparationStopsCaptureAndDropsBufferedAudio() async throws {
+        let format = try XCTUnwrap(AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 16000,
+            channels: 1,
+            interleaved: false
+        ))
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 160))
+        buffer.frameLength = 160
+        buffer.floatChannelData?[0][0] = 0.25
+
+        let gate = AsyncTestGate()
+        let realtimeSession = PrefixCapturingRealtimeSession()
+        let transcriber = DelayedRealtimeFactoryTranscriber(
+            gate: gate,
+            session: realtimeSession
+        )
+        let audioRecorder = BufferEmittingAudioRecorder(buffer: buffer)
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sttTranscriber: transcriber,
+            sleep: { _ in },
+            configureSettings: { settingsStore in
+                settingsStore.sttProvider = .googleCloud
+            }
+        )
+
+        let recordingTask = Task {
+            await controller.beginRecording(intent: .dictation, startLocked: false)
+        }
+        await gate.waitUntilBlocked()
+
+        XCTAssertEqual(audioRecorder.startCallCount, 1)
+        controller.cancelRecording()
+        XCTAssertEqual(audioRecorder.stopCallCount, 1)
+
+        await gate.release()
+        await recordingTask.value
+        await waitForMainActorWork()
+
+        let appendCount = await realtimeSession.appendCount
+        XCTAssertEqual(appendCount, 0)
+        XCTAssertFalse(controller.isRecording)
+        XCTAssertFalse(controller.isAudioRecorderStarted)
+        XCTAssertFalse(controller.isAudioRecorderStarting)
+    }
+
+    func testCancelDuringRealtimeSessionStartStopsCaptureAndDropsBufferedAudio() async throws {
+        let format = try XCTUnwrap(AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 16000,
+            channels: 1,
+            interleaved: false
+        ))
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 160))
+        buffer.frameLength = 160
+        buffer.floatChannelData?[0][0] = 0.25
+
+        let factoryGate = AsyncTestGate()
+        await factoryGate.release()
+        let startGate = AsyncTestGate()
+        let realtimeSession = PrefixCapturingRealtimeSession(startGate: startGate)
+        let transcriber = DelayedRealtimeFactoryTranscriber(
+            gate: factoryGate,
+            session: realtimeSession
+        )
+        let audioRecorder = BufferEmittingAudioRecorder(buffer: buffer)
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sttTranscriber: transcriber,
+            sleep: { _ in },
+            configureSettings: { settingsStore in
+                settingsStore.sttProvider = .googleCloud
+            }
+        )
+
+        let recordingTask = Task {
+            await controller.beginRecording(intent: .dictation, startLocked: false)
+        }
+        await startGate.waitUntilBlocked()
+
+        XCTAssertEqual(audioRecorder.startCallCount, 1)
+        controller.cancelRecording()
+        XCTAssertEqual(audioRecorder.stopCallCount, 1)
+
+        await startGate.release()
+        await recordingTask.value
+        await waitForMainActorWork()
+
+        let appendCount = await realtimeSession.appendCount
+        XCTAssertEqual(appendCount, 0)
+        XCTAssertFalse(controller.isRecording)
+        XCTAssertFalse(controller.isAudioRecorderStarted)
+        XCTAssertFalse(controller.isAudioRecorderStarting)
     }
 
     func testReleasingAfterImmediateAudioStartStopsRecorder() async {
@@ -2009,6 +2105,7 @@ private final class BufferEmittingAudioRecorder: AudioRecorder {
     private let buffer: AVAudioPCMBuffer
     private let lock = NSLock()
     private var starts = 0
+    private var stops = 0
 
     init(buffer: AVAudioPCMBuffer) {
         self.buffer = buffer
@@ -2018,6 +2115,12 @@ private final class BufferEmittingAudioRecorder: AudioRecorder {
         lock.lock()
         defer { lock.unlock() }
         return starts
+    }
+
+    var stopCallCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return stops
     }
 
     func start(
@@ -2031,7 +2134,10 @@ private final class BufferEmittingAudioRecorder: AudioRecorder {
     }
 
     func stop() throws -> AudioFile {
-        AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1)
+        lock.lock()
+        stops += 1
+        lock.unlock()
+        return AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1)
     }
 }
 
@@ -2088,11 +2194,18 @@ private final class DelayedRealtimeFactoryTranscriber: RealtimeTranscriptionSess
 }
 
 private actor PrefixCapturingRealtimeSession: RealtimeTranscriptionSession {
+    private let startGate: AsyncTestGate?
     private(set) var appendCount = 0
     private(set) var firstSample: Float = 0
     private var audioContinuation: CheckedContinuation<Void, Never>?
 
-    func start() async {}
+    init(startGate: AsyncTestGate? = nil) {
+        self.startGate = startGate
+    }
+
+    func start() async {
+        await startGate?.wait()
+    }
 
     func append(_ buffer: AVAudioPCMBuffer) async {
         appendCount += 1

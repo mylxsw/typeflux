@@ -1038,6 +1038,11 @@ final class WorkflowController {
                 }
             )
             RecordingStartupLatencyTrace.shared.mark("workflow.audio_start_return")
+            // Capture is physically active now even though transcription setup is
+            // still pending. Publish that state so cancellation can stop the
+            // microphone immediately; isAudioRecorderStarting keeps a normal key
+            // release deferred until the streaming pipeline is ready.
+            isAudioRecorderStarted = true
 
             if usesLivePreview {
                 await livePreviewer?.prepareForStart()
@@ -1060,6 +1065,12 @@ final class WorkflowController {
             } else {
                 nil
             }
+            guard isRecording else {
+                startupAudioBufferRelay?.cancel()
+                await livePreviewer?.cancel()
+                await realtimeSession?.cancel()
+                return
+            }
             if effectiveIntent == .askSelection {
                 NetworkDebugLogger
                     .logMessage("[Ask Flow] realtime transcription disabled for isolated Ask Anything recording")
@@ -1069,6 +1080,16 @@ final class WorkflowController {
             activeRealtimeAudioBufferPump = realtimeAudioBufferPump
             await realtimeSession?.start()
             RecordingStartupLatencyTrace.shared.mark("workflow.transcription_setup_return")
+
+            guard isRecording else {
+                startupAudioBufferRelay?.cancel()
+                realtimeAudioBufferPump?.cancel()
+                await livePreviewer?.cancel()
+                await realtimeSession?.cancel()
+                activeRealtimeTranscriptionSession = nil
+                activeRealtimeAudioBufferPump = nil
+                return
+            }
 
             if usesLivePreview || realtimeSession != nil {
                 startupAudioBufferRelay?.activate { buffer in
@@ -1084,21 +1105,9 @@ final class WorkflowController {
             }
 
             isAudioRecorderStarting = false
-            isAudioRecorderStarted = true
             pendingRecordingStartID = nil
             if usesLivePreview {
                 startLiveTranscriptionPreviewIfNeeded(livePreviewer)
-            }
-
-            guard isRecording else {
-                isAudioRecorderStarted = false
-                _ = try? audioRecorder.stop()
-                Task { await livePreviewer?.cancel() }
-                realtimeAudioBufferPump?.cancel()
-                Task { await realtimeSession?.cancel() }
-                activeRealtimeTranscriptionSession = nil
-                activeRealtimeAudioBufferPump = nil
-                return
             }
 
             if shouldFinishRecordingAfterAudioStart {
@@ -1250,8 +1259,7 @@ final class WorkflowController {
     func finishRecordingFromCurrentMode() {
         guard isRecording else { return }
 
-        let shouldStopAudioRecorder = isAudioRecorderStarted
-        if !shouldStopAudioRecorder, isAudioRecorderStarting {
+        if isAudioRecorderStarting {
             shouldFinishRecordingAfterAudioStart = true
             recordingMode = .holdToTalk
             hotkeyPressedAt = nil
@@ -1260,6 +1268,7 @@ final class WorkflowController {
             return
         }
 
+        let shouldStopAudioRecorder = isAudioRecorderStarted
         let useQuickInput = shouldUseQuickInput(
             recordingMode: recordingMode,
             recordingIntent: recordingIntent
