@@ -811,7 +811,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
     func testBeginRecordingRetriesFormatChangeUntilAudioStartupSucceeds() async {
         let audioRecorder = TransientAudioStartupFailureRecorder(
-            failureCount: 2,
+            failureCount: 5,
             error: NSError(
                 domain: "com.apple.coreaudio.avfaudio",
                 code: Int(kAudioUnitErr_FormatNotSupported)
@@ -828,10 +828,34 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertTrue(controller.isRecording)
         XCTAssertTrue(controller.isAudioRecorderStarted)
         XCTAssertFalse(controller.isAudioRecorderStarting)
-        XCTAssertEqual(audioRecorder.startCallCount, 3)
+        XCTAssertEqual(audioRecorder.startCallCount, 6)
 
         controller.cancelRecording()
         await waitForMainActorWork()
+    }
+
+    func testBeginRecordingBoundsPersistentFormatChangeRetries() async {
+        let audioRecorder = ThrowingStartAudioRecorder(
+            error: NSError(
+                domain: "com.apple.coreaudio.avfaudio",
+                code: Int(kAudioUnitErr_FormatNotSupported)
+            )
+        )
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sleep: { _ in }
+        )
+
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+        await waitForMainActorWork()
+
+        XCTAssertFalse(controller.isRecording)
+        XCTAssertFalse(controller.isAudioRecorderStarted)
+        XCTAssertFalse(controller.isAudioRecorderStarting)
+        XCTAssertEqual(audioRecorder.startCallCount, 12)
+        await MainActor.run {
+            controller.overlayController.dismissImmediately()
+        }
     }
 
     func testReleasingAfterImmediateAudioStartStopsRecorder() async {
