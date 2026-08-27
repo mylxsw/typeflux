@@ -779,23 +779,15 @@ struct StudioSidebar: View {
 
             VStack(spacing: StudioTheme.Spacing.xxSmall) {
                 ForEach(StudioSection.sidebarUpperCases, id: \.self) { section in
-                    sidebarNavigationButton(for: section)
+                    if section != .agent || agentEnabled {
+                        sidebarNavigationButton(for: section)
+                    }
                 }
             }
 
             Spacer()
 
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                VStack(spacing: StudioTheme.Spacing.xxSmall) {
-                    ForEach(StudioSection.sidebarLowerCases, id: \.self) { section in
-                        sidebarNavigationButton(for: section)
-                    }
-
-                    if agentEnabled {
-                        sidebarNavigationButton(for: .agent)
-                    }
-                }
-
                 Rectangle()
                     .fill(StudioTheme.border.opacity(0.42))
                     .frame(height: 1)

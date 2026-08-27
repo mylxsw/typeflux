@@ -50,12 +50,12 @@ final class StudioModelsTests: XCTestCase {
 
     func testSidebarUpperCases() {
         let upper = StudioSection.sidebarUpperCases
-        XCTAssertEqual(upper, [.home, .vocabulary, .history])
+        XCTAssertEqual(upper, [.home, .vocabulary, .history, .models, .personas, .agent])
     }
 
     func testSidebarLowerCases() {
         let lower = StudioSection.sidebarLowerCases
-        XCTAssertEqual(lower, [.models, .personas])
+        XCTAssertTrue(lower.isEmpty)
     }
 
     func testSubheadingNilForCertainSections() {

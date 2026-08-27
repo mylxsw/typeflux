@@ -16,12 +16,12 @@ enum StudioSection: String, CaseIterable, Identifiable {
 
     /// Sections that appear in the upper sidebar group.
     static var sidebarUpperCases: [StudioSection] {
-        [.home, .vocabulary, .history]
+        [.home, .vocabulary, .history, .models, .personas, .agent]
     }
 
     /// Sections that appear in the lower sidebar group.
     static var sidebarLowerCases: [StudioSection] {
-        [.models, .personas]
+        []
     }
 
     var title: String {
