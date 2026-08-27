@@ -10,11 +10,14 @@ struct AccountView: View {
     @State private var billingActionError: String?
     @State private var isHoveringSubscriptionCard = false
     @State private var isHoveringUsageCard = false
+    @ObservedObject private var cloudDataSync = CloudDataSyncCoordinator.shared
+    @State private var isConfirmingCloudSync = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             if let profile = authState.userProfile {
                 profileCard(profile: profile)
+                cloudDataSyncCard
                 if authState.subscription.shouldShowSubscriptionDetails || authState.subscriptionError != nil {
                     subscriptionCard
                 }
@@ -52,6 +55,59 @@ struct AccountView: View {
                 }
             }
         }
+        .alert(L("cloudDataSync.consent.title"), isPresented: $isConfirmingCloudSync) {
+            Button(L("common.cancel"), role: .cancel) {}
+            Button(L("cloudDataSync.consent.confirm")) { cloudDataSync.setEnabled(true) }
+        } message: {
+            Text(L("cloudDataSync.consent.message"))
+        }
+    }
+
+    private var cloudDataSyncCard: some View {
+        StudioCard {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+                StudioSettingRow(
+                    title: L("cloudDataSync.title"),
+                    subtitle: L("cloudDataSync.subtitle")
+                ) {
+                    Toggle("", isOn: Binding(
+                        get: { cloudDataSync.isEnabled },
+                        set: { enabled in
+                            if enabled { isConfirmingCloudSync = true }
+                            else { cloudDataSync.setEnabled(false) }
+                        }
+                    ))
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                }
+
+                if cloudDataSync.isEnabled {
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                    HStack {
+                        Text(cloudDataSyncStatus)
+                            .font(.studioBody(StudioTheme.Typography.caption))
+                            .foregroundStyle(
+                                cloudDataSync.lastError == nil ? StudioTheme.textSecondary : StudioTheme.danger
+                            )
+                        Spacer()
+                        StudioButton(
+                            title: L("cloudDataSync.syncNow"), systemImage: "arrow.triangle.2.circlepath",
+                            variant: .secondary, isDisabled: cloudDataSync.isSyncing,
+                            isLoading: cloudDataSync.isSyncing
+                        ) { cloudDataSync.synchronizeNow() }
+                    }
+                }
+            }
+        }
+    }
+
+    private var cloudDataSyncStatus: String {
+        if cloudDataSync.isSyncing { return L("cloudDataSync.status.syncing") }
+        if let error = cloudDataSync.lastError { return L("cloudDataSync.status.failed", error) }
+        if let date = cloudDataSync.lastSyncAt {
+            return L("cloudDataSync.status.lastSync", date.formatted(date: .omitted, time: .shortened))
+        }
+        return L("cloudDataSync.status.waiting")
     }
 
     private var subscriptionCard: some View {

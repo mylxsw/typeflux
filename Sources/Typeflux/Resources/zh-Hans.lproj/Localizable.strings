@@ -1277,3 +1277,13 @@
 "agent.clarification.hotkeyHint" = "按住快捷键录制回复";
 "agent.clarification.recordingHint" = "录音中... 说完后松开快捷键";
 "agent.clarification.transcribingHint" = "思考中...";
+"cloudDataSync.title" = "词库与人设云同步";
+"cloudDataSync.subtitle" = "默认关闭。开启后，仅同步自定义词库和自定义人设到当前账号的其他设备。";
+"cloudDataSync.consent.title" = "开启云同步？";
+"cloudDataSync.consent.message" = "本地词库和自定义人设将上传至 Typeflux 云端，并与已有云端数据合并。系统人设、API 密钥、历史记录、应用绑定和其他设置不会上传。";
+"cloudDataSync.consent.confirm" = "开启并合并";
+"cloudDataSync.syncNow" = "立即同步";
+"cloudDataSync.status.syncing" = "正在同步…";
+"cloudDataSync.status.failed" = "同步失败：%@";
+"cloudDataSync.status.lastSync" = "上次同步于 %@";
+"cloudDataSync.status.waiting" = "等待首次同步";

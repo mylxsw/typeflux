@@ -1273,3 +1273,13 @@
 "agent.clarification.hotkeyHint" = "按住快捷鍵錄製回覆";
 "agent.clarification.recordingHint" = "錄音中... 說完後鬆開快捷鍵";
 "agent.clarification.transcribingHint" = "思考中...";
+"cloudDataSync.title" = "詞庫與人設雲端同步";
+"cloudDataSync.subtitle" = "預設關閉。開啟後，僅同步自訂詞庫和自訂人設到目前帳號的其他裝置。";
+"cloudDataSync.consent.title" = "開啟雲端同步？";
+"cloudDataSync.consent.message" = "本機詞庫和自訂人設將上傳至 Typeflux 雲端，並與既有雲端資料合併。系統人設、API 金鑰、歷史記錄、應用程式綁定和其他設定不會上傳。";
+"cloudDataSync.consent.confirm" = "開啟並合併";
+"cloudDataSync.syncNow" = "立即同步";
+"cloudDataSync.status.syncing" = "正在同步…";
+"cloudDataSync.status.failed" = "同步失敗：%@";
+"cloudDataSync.status.lastSync" = "上次同步於 %@";
+"cloudDataSync.status.waiting" = "等待首次同步";

@@ -1277,3 +1277,13 @@
 "agent.clarification.hotkeyHint" = "Press and hold your hotkey to record a reply";
 "agent.clarification.recordingHint" = "Recording... release hotkey when done";
 "agent.clarification.transcribingHint" = "Thinking...";
+"cloudDataSync.title" = "Cloud sync for vocabulary and personas";
+"cloudDataSync.subtitle" = "Off by default. When enabled, only custom vocabulary and custom personas are synced across your signed-in devices.";
+"cloudDataSync.consent.title" = "Enable cloud sync?";
+"cloudDataSync.consent.message" = "Your local vocabulary and custom personas will be uploaded to Typeflux Cloud and merged with existing cloud data. System personas, API keys, history, app bindings, and other settings are never uploaded.";
+"cloudDataSync.consent.confirm" = "Enable and merge";
+"cloudDataSync.syncNow" = "Sync now";
+"cloudDataSync.status.syncing" = "Syncing…";
+"cloudDataSync.status.failed" = "Sync failed: %@";
+"cloudDataSync.status.lastSync" = "Last synced at %@";
+"cloudDataSync.status.waiting" = "Waiting for first sync";

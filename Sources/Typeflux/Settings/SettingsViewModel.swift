@@ -249,6 +249,7 @@ final class StudioViewModel: ObservableObject {
     private let historyRefreshQueue = DispatchQueue(label: "typeflux.settings.history-refresh", qos: .userInitiated)
     private var historyObserver: NSObjectProtocol?
     private var personaSelectionObserver: NSObjectProtocol?
+    private var personaStoreObserver: NSObjectProtocol?
     private var hotkeySettingsObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
     private var vocabularyObserver: NSObjectProtocol?
@@ -429,6 +430,20 @@ final class StudioViewModel: ObservableObject {
                 self?.syncPersonaSelectionFromStore()
             }
         }
+        personaStoreObserver = NotificationCenter.default.addObserver(
+            forName: .personaStoreDidChange,
+            object: settingsStore,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                personas = self.settingsStore.personas
+                if let selectedPersonaID, !personas.contains(where: { $0.id == selectedPersonaID }) {
+                    self.selectedPersonaID = personas.first?.id
+                }
+                loadPersonaDraft()
+            }
+        }
         hotkeySettingsObserver = NotificationCenter.default.addObserver(
             forName: .hotkeySettingsDidChange,
             object: settingsStore,
@@ -504,6 +519,9 @@ final class StudioViewModel: ObservableObject {
         }
         if let personaSelectionObserver {
             NotificationCenter.default.removeObserver(personaSelectionObserver)
+        }
+        if let personaStoreObserver {
+            NotificationCenter.default.removeObserver(personaStoreObserver)
         }
         if let hotkeySettingsObserver {
             NotificationCenter.default.removeObserver(hotkeySettingsObserver)

@@ -2,6 +2,7 @@ import Foundation
 
 // swiftlint:disable type_body_length file_length
 extension Notification.Name {
+    static let personaStoreDidChange = Notification.Name("SettingsStore.personaStoreDidChange")
     static let personaSelectionDidChange = Notification.Name(
         "SettingsStore.personaSelectionDidChange"
     )
@@ -451,6 +452,11 @@ final class SettingsStore {
             let customPersonas = newValue.filter { !$0.isSystem }
             let data = (try? JSONEncoder().encode(customPersonas)) ?? Data("[]".utf8)
             personasJSON = String(decoding: data, as: UTF8.self)
+            NotificationCenter.default.post(
+                name: .personaStoreDidChange,
+                object: self,
+                userInfo: ["personas": customPersonas]
+            )
         }
     }
 
