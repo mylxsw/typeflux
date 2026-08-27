@@ -35,6 +35,11 @@ final class OverlayControllerTests: XCTestCase {
         XCTAssertLessThan(LiveTranscriptPreviewLayout.expandedOverlayHeight, 218)
     }
 
+    func testNoticeLayoutSupportsThreeLinesOfDetailText() {
+        XCTAssertEqual(NoticeToastLayout.maxVisibleLineCount, 3)
+        XCTAssertEqual(NoticeToastLayout.overlayHeight, 126)
+    }
+
     func testWrapFailureActionsRunsDismissBeforeOriginalHandler() {
         var events: [String] = []
         let wrapped = OverlayController.wrapFailureActions(
