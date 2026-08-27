@@ -153,6 +153,8 @@
 "settings.advanced.soundEffects.subtitle" = "ワークフローのフィードバックの記録中に、開始音、完了音、エラー音を再生します。";
 "settings.advanced.autoUpdate.title" = "自動アップデート";
 "settings.advanced.autoUpdate.subtitle" = "3 時間ごとに自動的に新しいバージョンを確認してインストールします。";
+"settings.analyticsSharing.title" = "匿名の使用状況分析を共有";
+"settings.analyticsSharing.subtitle" = "匿名のアプリおよびモデルダウンロードイベントを共有し、Typeflux の改善に役立てます。音声やテキストの内容は収集されません。";
 "settings.permissionStatus.title" = "許可ステータス";
 "settings.permissionStatus.subtitle" = "Typeflux が依存する macOS 権限を確認し、必要に応じてアクセスを許可します。";
 

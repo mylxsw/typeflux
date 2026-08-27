@@ -11,6 +11,7 @@ extension Notification.Name {
     static let preferredMicrophoneDidChange = Notification.Name("SettingsStore.preferredMicrophoneDidChange")
     static let agentConfigurationDidChange = Notification.Name("SettingsStore.agentConfigurationDidChange")
     static let localOptimizationDidEnable = Notification.Name("SettingsStore.localOptimizationDidEnable")
+    static let analyticsSharingDidChange = Notification.Name("SettingsStore.analyticsSharingDidChange")
 }
 
 enum HistoryRetentionPolicy: String, CaseIterable, Identifiable {
@@ -180,6 +181,18 @@ final class SettingsStore {
     var autoUpdateEnabled: Bool {
         get { defaults.object(forKey: "app.autoUpdate.enabled") as? Bool ?? true }
         set { defaults.set(newValue, forKey: "app.autoUpdate.enabled") }
+    }
+
+    var analyticsSharingEnabled: Bool {
+        get { defaults.object(forKey: "analytics.sharingEnabled") as? Bool ?? true }
+        set {
+            guard analyticsSharingEnabled != newValue else { return }
+            defaults.set(newValue, forKey: "analytics.sharingEnabled")
+            if !newValue {
+                defaults.removeObject(forKey: "analytics.pendingEvents")
+            }
+            NotificationCenter.default.post(name: .analyticsSharingDidChange, object: defaults)
+        }
     }
 
     var historyRetentionPolicy: HistoryRetentionPolicy {

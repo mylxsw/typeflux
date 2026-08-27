@@ -171,6 +171,7 @@ final class StudioViewModel: ObservableObject {
     @Published var textTransformationEnabled: Bool
     @Published var textTransformationRule: String
     @Published var autoUpdateEnabled: Bool
+    @Published var analyticsSharingEnabled: Bool
 
     var isTextTransformationAvailable: Bool {
         appLanguage == .traditionalChinese
@@ -372,6 +373,7 @@ final class StudioViewModel: ObservableObject {
         textTransformationEnabled = settingsStore.outputOpenCCEnabled
         textTransformationRule = settingsStore.outputOpenCCConfig
         autoUpdateEnabled = settingsStore.autoUpdateEnabled
+        analyticsSharingEnabled = settingsStore.analyticsSharingEnabled
         stubbornPasteFallbackEnabled = settingsStore.stubbornPasteFallbackEnabled
         agentFrameworkEnabled = settingsStore.agentFrameworkEnabled
         agentEnabled = settingsStore.agentEnabled
@@ -1475,6 +1477,11 @@ final class StudioViewModel: ObservableObject {
         } else {
             AutoUpdater.shared.stopAutoCheck()
         }
+    }
+
+    func setAnalyticsSharingEnabled(_ value: Bool) {
+        analyticsSharingEnabled = value
+        settingsStore.analyticsSharingEnabled = value
     }
 
     // MARK: - Output Post-Processing

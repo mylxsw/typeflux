@@ -145,6 +145,8 @@
 "settings.advanced.soundEffects.subtitle" = "在開始錄音、完成操作與發生錯誤時播放提示音。";
 "settings.advanced.autoUpdate.title" = "自動更新";
 "settings.advanced.autoUpdate.subtitle" = "每 3 小時自動檢查並安裝新版本。";
+"settings.analyticsSharing.title" = "分享匿名使用情況分析";
+"settings.analyticsSharing.subtitle" = "分享匿名應用程式與模型下載事件，協助改進 Typeflux。絕不會收集語音和文字內容。";
 "settings.permissionStatus.title" = "權限狀態";
 "settings.permissionStatus.subtitle" = "檢視 Typeflux 依賴的 macOS 權限，並在需要時完成授權。";
 "settings.output.title" = "輸出";
