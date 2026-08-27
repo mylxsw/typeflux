@@ -5,11 +5,16 @@ import XCTest
 final class VocabularyStoreTests: XCTestCase {
     override func setUp() {
         super.setUp()
+        CloudDataLocalScope.useGuest()
         UserDefaults.standard.removeObject(forKey: "vocabulary.entries")
+        UserDefaults.standard.removeObject(forKey: "vocabulary.entries.guest")
     }
 
     override func tearDown() {
+        CloudDataLocalScope.useGuest()
         UserDefaults.standard.removeObject(forKey: "vocabulary.entries")
+        UserDefaults.standard.removeObject(forKey: "vocabulary.entries.guest")
+        UserDefaults.standard.removeObject(forKey: "vocabulary.entries.user.test-user")
         super.tearDown()
     }
 
@@ -91,6 +96,39 @@ final class VocabularyStoreTests: XCTestCase {
 
         XCTAssertEqual(viewModel.filteredVocabularyEntries.map(\.term), ["Alpha", "beta", "zeta"])
     }
+
+    func testVocabularyIsIsolatedBetweenGuestAndAccountScopes() {
+        VocabularyStore.save([VocabularyEntry(term: "GuestOnly", source: .manual)])
+
+        CloudDataLocalScope.useAccount("test-user")
+        XCTAssertTrue(VocabularyStore.load().isEmpty)
+        VocabularyStore.save([VocabularyEntry(term: "AccountOnly", source: .manual)])
+
+        CloudDataLocalScope.useGuest()
+        XCTAssertEqual(VocabularyStore.load().map(\.term), ["GuestOnly"])
+        CloudDataLocalScope.useAccount("test-user")
+        XCTAssertEqual(VocabularyStore.load().map(\.term), ["AccountOnly"])
+    }
+
+    func testPersonasAreIsolatedBetweenGuestAndAccountScopes() {
+        let suiteName = "VocabularyStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = SettingsStore(defaults: defaults)
+        let guest = PersonaProfile(name: "Guest", prompt: "guest")
+        let account = PersonaProfile(name: "Account", prompt: "account")
+
+        CloudDataLocalScope.useGuest()
+        store.personas = [guest]
+        CloudDataLocalScope.useAccount("test-user")
+        XCTAssertTrue(store.personas.filter { !$0.isSystem }.isEmpty)
+        store.personas = [account]
+
+        CloudDataLocalScope.useGuest()
+        XCTAssertEqual(store.personas.filter { !$0.isSystem }.map(\.id), [guest.id])
+        CloudDataLocalScope.useAccount("test-user")
+        XCTAssertEqual(store.personas.filter { !$0.isSystem }.map(\.id), [account.id])
+    }
 }
 
 private final class InMemoryHistoryStore: HistoryStore {
@@ -118,15 +156,19 @@ private final class InMemoryHistoryStore: HistoryStore {
 // MARK: - Extended VocabularyStore tests
 
 final class VocabularyStoreExtendedTests: XCTestCase {
-    private let defaultsKey = "vocabulary.entries"
+    private let defaultsKey = "vocabulary.entries.guest"
 
     override func setUp() {
         super.setUp()
+        CloudDataLocalScope.useGuest()
+        UserDefaults.standard.removeObject(forKey: "vocabulary.entries")
         UserDefaults.standard.removeObject(forKey: defaultsKey)
     }
 
     override func tearDown() {
+        CloudDataLocalScope.useGuest()
         UserDefaults.standard.removeObject(forKey: defaultsKey)
+        UserDefaults.standard.removeObject(forKey: "vocabulary.entries")
         super.tearDown()
     }
 

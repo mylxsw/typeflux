@@ -11,6 +11,10 @@ extension Notification.Name {
     /// presence heartbeats can immediately drop the previous user association.
     static let authDidLogout = Notification.Name("AuthState.authDidLogout")
 
+    /// Posted after an access token is refreshed, including silent session
+    /// restoration where `authDidLogin` is intentionally not emitted.
+    static let authTokenDidRefresh = Notification.Name("AuthState.authTokenDidRefresh")
+
     /// Posted on the main actor when a checkout-started subscription refresh
     /// observes that the account has become entitled to Typeflux Cloud or has
     /// upgraded from a free/non-paid plan to a paid Cloud subscription.

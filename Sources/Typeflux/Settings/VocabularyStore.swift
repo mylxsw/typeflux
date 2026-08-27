@@ -94,14 +94,17 @@ enum VocabularyImportError: LocalizedError, Equatable {
 }
 
 enum VocabularyStore {
-    private static let key = "vocabulary.entries"
+    private static let legacyKey = "vocabulary.entries"
+    private static var key: String { "\(legacyKey).\(CloudDataLocalScope.key)" }
     /// Maximum number of terms returned to speech recognition as hints. Beyond this
     /// point most ASR backends either truncate silently or waste prompt budget, so
     /// we cap the list and let ranking decide who stays.
     static let activeTermLimit = 500
 
     static func load() -> [VocabularyEntry] {
-        guard let data = UserDefaults.standard.data(forKey: key) else {
+        let storageKey = key
+        migrateLegacyGuestDataIfNeeded(storageKey: storageKey)
+        guard let data = UserDefaults.standard.data(forKey: storageKey) else {
             return []
         }
 
@@ -115,11 +118,13 @@ enum VocabularyStore {
     }
 
     static func save(_ entries: [VocabularyEntry]) {
+        let storageKey = key
+        migrateLegacyGuestDataIfNeeded(storageKey: storageKey)
         let deduplicatedEntries = deduplicated(entries)
 
         do {
             let data = try JSONEncoder().encode(deduplicatedEntries)
-            UserDefaults.standard.set(data, forKey: key)
+            UserDefaults.standard.set(data, forKey: storageKey)
             NotificationCenter.default.post(
                 name: .vocabularyStoreDidChange,
                 object: nil,
@@ -128,6 +133,14 @@ enum VocabularyStore {
         } catch {
             ErrorLogStore.shared.log("Vocabulary save failed: \(error.localizedDescription)")
         }
+    }
+
+    private static func migrateLegacyGuestDataIfNeeded(storageKey: String) {
+        guard storageKey == "\(legacyKey).guest",
+              UserDefaults.standard.object(forKey: storageKey) == nil,
+              let legacy = UserDefaults.standard.data(forKey: legacyKey)
+        else { return }
+        UserDefaults.standard.set(legacy, forKey: storageKey)
     }
 
     static func exportData() throws -> Data {
