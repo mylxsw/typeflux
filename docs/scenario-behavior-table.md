@@ -7,9 +7,9 @@ This document describes the trigger conditions and corresponding system behavior
 | Scenario | Behavior |
 |----------|----------|
 | Hold-to-talk mode | User holds the activation hotkey (default FN) → recording starts, floating recording capsule appears, start sound effect plays |
-| Tap-to-lock mode | User quickly taps the hotkey (<220ms) → enters locked recording mode, overlay shows confirm/cancel buttons |
-| Hotkey release (short press) | Hotkey released with hold duration <220ms → switches to locked recording mode |
-| Hotkey release (long press ends) | Hotkey released with hold duration ≥220ms → recording stops, post-processing begins |
+| Tap-to-lock mode | User taps the hotkey (<450ms) → enters locked recording mode, overlay shows confirm/cancel buttons |
+| Hotkey release (short press) | Hotkey released with hold duration <450ms, or before 350ms of audio has been captured → switches to locked recording mode |
+| Hotkey release (long press ends) | Hotkey released with hold duration ≥450ms and captured audio duration ≥350ms → recording stops, post-processing begins |
 | Ask hotkey triggered | Ask hotkey pressed (⌘⇧Space) → starts locked recording for querying selected text |
 | Persona selection hotkey triggered | Persona hotkey pressed (⌘⇧P) → displays the persona selector overlay |
 
