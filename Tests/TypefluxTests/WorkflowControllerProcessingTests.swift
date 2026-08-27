@@ -1530,6 +1530,101 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         ))
     }
 
+    func testDictationAnalyticsCorrelatesStartedAndCompletedWithoutTextOrAppIdentity() throws {
+        let recorder = AnalyticsEventRecorder()
+        let controller = makeWorkflowController(analyticsReporter: recorder)
+        let record = HistoryRecord(
+            date: Date(),
+            postProcessedText: "private transcript",
+            recordingDurationSeconds: 1.25,
+            recordingStatus: .succeeded,
+            transcriptionStatus: .succeeded,
+            processingStatus: .skipped,
+            applyStatus: .succeeded
+        )
+
+        controller.beginDictationAnalytics(
+            intent: .dictation,
+            mode: .locked,
+            targetBundleIdentifier: "com.google.Chrome"
+        )
+        controller.bindPendingDictationAnalytics(to: record.id)
+        controller.recordDictationApplyAnalytics(recordID: record.id, outcome: .inserted)
+        controller.reportDictationTerminal(record: record)
+
+        XCTAssertEqual(recorder.events.map(\.name), ["dictation_session_started", "dictation_session_completed"])
+        let started = recorder.events[0].properties
+        let completed = recorder.events[1].properties
+        XCTAssertEqual(started["recording_mode"], "locked")
+        XCTAssertEqual(started["intent"], "dictation")
+        XCTAssertEqual(completed["flow_id"], started["flow_id"])
+        XCTAssertEqual(completed["audio_seconds"], "1.250")
+        XCTAssertEqual(completed["output_chars"], "18")
+        XCTAssertEqual(completed["apply_outcome"], "inserted")
+        XCTAssertEqual(completed["injection_method"], "ax")
+        XCTAssertEqual(completed["target_app_category"], "browser")
+        XCTAssertFalse(recorder.events.flatMap { $0.properties.values }.contains("private transcript"))
+        XCTAssertFalse(recorder.events.flatMap { $0.properties.values }.contains("com.google.Chrome"))
+    }
+
+    func testDictationAnalyticsFailureReportsStageAndSanitizedKind() throws {
+        let recorder = AnalyticsEventRecorder()
+        let controller = makeWorkflowController(analyticsReporter: recorder)
+        let record = HistoryRecord(
+            date: Date(),
+            errorMessage: "secret provider response",
+            recordingStatus: .succeeded,
+            transcriptionStatus: .failed,
+            processingStatus: .skipped,
+            applyStatus: .skipped
+        )
+
+        controller.beginDictationAnalytics(intent: .dictation, mode: .holdToTalk, targetBundleIdentifier: nil)
+        controller.bindPendingDictationAnalytics(to: record.id)
+        controller.reportDictationTerminal(record: record)
+
+        let failed = try XCTUnwrap(recorder.events.last)
+        XCTAssertEqual(failed.name, "dictation_session_failed")
+        XCTAssertEqual(failed.properties["stage"], "transcription")
+        XCTAssertEqual(failed.properties["error_kind"], "transcription_failed")
+        XCTAssertFalse(failed.properties.values.contains("secret provider response"))
+    }
+
+    func testDictationAnalyticsClosesSkippedTerminalPathAsFailure() throws {
+        let recorder = AnalyticsEventRecorder()
+        let controller = makeWorkflowController(analyticsReporter: recorder)
+        let record = HistoryRecord(
+            date: Date(),
+            recordingStatus: .succeeded,
+            transcriptionStatus: .succeeded,
+            processingStatus: .skipped,
+            applyStatus: .skipped
+        )
+
+        controller.beginDictationAnalytics(intent: .dictation, mode: .holdToTalk, targetBundleIdentifier: nil)
+        controller.bindPendingDictationAnalytics(to: record.id)
+        controller.reportDictationTerminal(record: record)
+
+        let failed = try XCTUnwrap(recorder.events.last)
+        XCTAssertEqual(failed.name, "dictation_session_failed")
+        XCTAssertEqual(failed.properties["stage"], "processing")
+        XCTAssertEqual(failed.properties["error_kind"], "processing_skipped")
+    }
+
+    func testDictationAnalyticsReportsPendingFailureAndClearsContext() throws {
+        let recorder = AnalyticsEventRecorder()
+        let controller = makeWorkflowController(analyticsReporter: recorder)
+
+        controller.beginDictationAnalytics(intent: .dictation, mode: .holdToTalk, targetBundleIdentifier: nil)
+        controller.reportPendingDictationFailure(stage: "recording", kind: "recording_too_short")
+        controller.reportPendingDictationFailure(stage: "recording", kind: "recording_too_short")
+
+        XCTAssertEqual(recorder.events.map(\.name), ["dictation_session_started", "dictation_session_failed"])
+        let failed = try XCTUnwrap(recorder.events.last)
+        XCTAssertEqual(failed.properties["stage"], "recording")
+        XCTAssertEqual(failed.properties["error_kind"], "recording_too_short")
+    }
+
     private func makeWorkflowController(
         textInjector: TextInjector = MockProcessingTextInjector(),
         audioRecorder: AudioRecorder = MockProcessingAudioRecorder(),
@@ -1541,6 +1636,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         localModelManager: (any LocalSTTModelManaging)? = nil,
         localModelDownloadAlertPresenter: any LocalModelDownloadAlertPresenting =
             MockLocalModelDownloadAlertPresenter(),
+        analyticsReporter: AnalyticsEventReporting = NoopAnalyticsEventReporter.shared,
         sleep: @escaping @Sendable (Duration) async -> Void = { _ in },
         configureSettings: ((SettingsStore) -> Void)? = nil
     ) -> WorkflowController {
@@ -1592,6 +1688,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             localModelManager: localModelManager,
             localModelDownloadAlertPresenter: localModelDownloadAlertPresenter,
             outputPostProcessor: NoopOutputPostProcessor(),
+            analyticsReporter: analyticsReporter,
             sleep: sleep
         )
     }

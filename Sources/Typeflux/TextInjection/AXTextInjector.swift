@@ -132,6 +132,7 @@ final class AXTextInjector: TextInjector {
     static let focusedDescendantSearchDepth = 10
 
     var latestSelectionContext: SelectionContext?
+    var lastInjectionMethod: TextInjectionMethod?
 
     func isTypefluxOwnedTarget(processID: pid_t?, bundleIdentifier: String?) -> Bool {
         if processID == getpid() {

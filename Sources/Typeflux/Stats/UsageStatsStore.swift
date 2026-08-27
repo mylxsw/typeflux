@@ -146,10 +146,13 @@ final class UsageStatsStore {
 
     // MARK: - Backfill
 
-    func backfillIfNeeded(from historyStore: HistoryStore) {
+    func backfillIfNeeded(from historyStore: HistoryStore, completion: @escaping () -> Void = {}) {
         let didBackfill = defaults.bool(forKey: Key.didBackfill.rawValue)
         let storedVersion = defaults.integer(forKey: Key.calculationVersion.rawValue)
-        guard !didBackfill || storedVersion < Self.calculationVersion else { return }
+        guard !didBackfill || storedVersion < Self.calculationVersion else {
+            queue.async(execute: completion)
+            return
+        }
 
         queue.async { [self] in
             let records = historyStore.list()
@@ -172,6 +175,7 @@ final class UsageStatsStore {
             defaults.set(aggregate.askAnswerCount, forKey: Key.askAnswerCount.rawValue)
             defaults.set(true, forKey: Key.didBackfill.rawValue)
             defaults.set(Self.calculationVersion, forKey: Key.calculationVersion.rawValue)
+            completion()
         }
     }
 

@@ -531,6 +531,51 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.activationHotkey.signature, HotkeyBinding.rightOptionActivation.signature)
         XCTAssertEqual(viewModel.askHotkey?.signature, HotkeyBinding.rightOptionAsk.signature)
     }
+
+    @MainActor
+    func testAnalyticsReportsStepCompletionAndCompletedWithoutConfigurationContent() {
+        let recorder = AnalyticsEventRecorder()
+        var now = Date(timeIntervalSince1970: 1_000)
+        let viewModel = OnboardingViewModel(
+            settingsStore: store,
+            analyticsReporter: recorder,
+            now: { now },
+            onComplete: {}
+        )
+
+        viewModel.advance()
+        viewModel.currentStep = .shortcuts
+        now = Date(timeIntervalSince1970: 1_012)
+        viewModel.advance()
+
+        XCTAssertEqual(
+            recorder.events.map(\.name),
+            ["onboarding_step_completed", "onboarding_step_completed", "onboarding_completed"]
+        )
+        XCTAssertEqual(recorder.events[0].properties, ["step": "language", "skipped": "false"])
+        XCTAssertEqual(recorder.events[1].properties, ["step": "shortcuts", "skipped": "false"])
+        XCTAssertEqual(recorder.events[2].properties["duration_seconds"], "12")
+        XCTAssertEqual(recorder.events[2].properties["stt_provider"], viewModel.sttProvider.rawValue)
+        XCTAssertEqual(recorder.events[2].properties["llm_provider"], viewModel.llmProvider.rawValue)
+    }
+
+    @MainActor
+    func testAnalyticsReportsSkippedStepAndAbandonmentOnlyOnce() {
+        let recorder = AnalyticsEventRecorder()
+        let viewModel = OnboardingViewModel(
+            settingsStore: store,
+            analyticsReporter: recorder,
+            onComplete: {}
+        )
+
+        viewModel.skip()
+        viewModel.skipWithoutAnimation()
+        viewModel.skipWithoutAnimation()
+
+        XCTAssertEqual(recorder.events.map(\.name), ["onboarding_step_completed", "onboarding_abandoned"])
+        XCTAssertEqual(recorder.events[0].properties, ["step": "language", "skipped": "true"])
+        XCTAssertEqual(recorder.events[1].properties, ["last_step": "account"])
+    }
 }
 
 private final class StubGlobeKeyPreferenceReader: GlobeKeyPreferenceReading {

@@ -11,10 +11,21 @@ final class AppCoordinator {
     private let asrPublicConfigRefreshScheduler = TypefluxASRPublicConfigRefreshScheduler()
     private var authAnalyticsObserver: NSObjectProtocol?
     private var authLogoutObserver: NSObjectProtocol?
+    private var permissionAnalyticsTimer: Timer?
 
     // swiftlint:disable:next function_body_length
     func start() {
         di.analyticsReporter.reportFirstOpenIfNeeded()
+        di.analyticsReporter.report(
+            eventName: "app_launch",
+            properties: ["launch_type": LaunchAtLoginManager.isEnabled ? "login_item" : "manual"]
+        )
+        di.permissionStatusAnalyticsMonitor.observeCurrentStatuses()
+        permissionAnalyticsTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.di.permissionStatusAnalyticsMonitor.observeCurrentStatuses()
+            }
+        }
         authAnalyticsObserver = NotificationCenter.default.addObserver(
             forName: .authDidLogin,
             object: nil,
@@ -71,7 +82,8 @@ final class AppCoordinator {
             ),
             localModelManager: localModelManager,
             notificationService: di.notificationService,
-            outputPostProcessor: di.outputPostProcessor
+            outputPostProcessor: di.outputPostProcessor,
+            analyticsReporter: di.analyticsReporter
         )
         self.workflowController = workflowController
 
@@ -105,7 +117,10 @@ final class AppCoordinator {
         di.bundledModelAutoSetup.applyIfNeeded()
         di.autoModelDownloadService.triggerIfNeeded()
         AutoUpdater.shared.startAutoCheck(settingsStore: di.settingsStore)
-        UsageStatsStore.shared.backfillIfNeeded(from: di.historyStore)
+        UsageStatsStore.shared.backfillIfNeeded(from: di.historyStore) { [weak self] in
+            guard let self else { return }
+            di.usageDailySummaryReporter.reportIfNeeded(snapshot: .current(from: UsageStatsStore.shared))
+        }
         cloudEndpointProbeScheduler.start()
         asrPublicConfigRefreshScheduler.start()
         Task { await AuthState.shared.refreshTokenIfNeeded() }
@@ -122,6 +137,8 @@ final class AppCoordinator {
         if let authLogoutObserver { NotificationCenter.default.removeObserver(authLogoutObserver) }
         authAnalyticsObserver = nil
         authLogoutObserver = nil
+        permissionAnalyticsTimer?.invalidate()
+        permissionAnalyticsTimer = nil
         cloudEndpointProbeScheduler.stop()
         asrPublicConfigRefreshScheduler.stop()
         workflowController?.stop()
@@ -134,7 +151,9 @@ final class AppCoordinator {
         controller.show(
             settingsStore: di.settingsStore,
             localModelManager: di.localModelManager,
-            notificationService: di.notificationService
+            notificationService: di.notificationService,
+            analyticsReporter: di.analyticsReporter,
+            permissionStatusAnalyticsMonitor: di.permissionStatusAnalyticsMonitor
         ) { [weak self] in
             self?.onboardingWindowController = nil
             self?.presentPermissionGuidanceIfNeeded()

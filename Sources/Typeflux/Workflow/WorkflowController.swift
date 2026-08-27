@@ -99,6 +99,7 @@ final class WorkflowController {
     let notificationService: LocalNotificationSending
     let localModelDownloadAlertPresenter: any LocalModelDownloadAlertPresenting
     let outputPostProcessor: OutputPostProcessing
+    let analyticsReporter: AnalyticsEventReporting
     let sleep: @Sendable (Duration) async -> Void
 
     var currentSelectedText: String?
@@ -144,6 +145,9 @@ final class WorkflowController {
     var historyPickerItems: [HistoryPickerEntry] = []
     var historyPickerSelectedIndex = 0
     var lastPaidCreditExhaustedPromptPresentedAt: Date?
+    let analyticsLock = NSLock()
+    var pendingDictationAnalyticsContext: DictationAnalyticsContext?
+    var dictationAnalyticsContexts: [UUID: DictationAnalyticsContext] = [:]
 
     // Clarification mode: set when the agent workflow is paused waiting for a user voice reply.
     var pendingClarificationContinuation: CheckedContinuation<String, Error>?
@@ -198,6 +202,7 @@ final class WorkflowController {
         localModelDownloadAlertPresenter: any LocalModelDownloadAlertPresenting =
             SystemLocalModelDownloadAlertPresenter(),
         outputPostProcessor: OutputPostProcessing,
+        analyticsReporter: AnalyticsEventReporting = NoopAnalyticsEventReporter.shared,
         sleep: @escaping @Sendable (Duration) async -> Void = { duration in
             try? await Task.sleep(for: duration)
         }
@@ -224,6 +229,7 @@ final class WorkflowController {
         self.notificationService = notificationService
         self.localModelDownloadAlertPresenter = localModelDownloadAlertPresenter
         self.outputPostProcessor = outputPostProcessor
+        self.analyticsReporter = analyticsReporter
         self.sleep = sleep
         self.overlayController.setRecordingActionHandlers(
             onCancel: { [weak self] in
@@ -414,6 +420,7 @@ final class WorkflowController {
     /// Force cancel any ongoing recording
     func cancelRecording() {
         guard isRecording else { return }
+        discardPendingDictationAnalytics()
         isRecording = false
         let shouldStopAudioRecorder = isAudioRecorderStarted
         isAudioRecorderStarted = false
@@ -508,11 +515,14 @@ final class WorkflowController {
     func handleProcessingTimeout(sessionID: UUID) {
         guard processingSessionID == sessionID else { return }
         let recordID = activeProcessingRecordID
-        cancelCurrentProcessing(resetUI: false, reason: L("workflow.timeout.reason"))
-        var timeoutRecord: HistoryRecord?
-        if let recordID {
-            timeoutRecord = historyStore.record(id: recordID)
+        let timeoutRecord = recordID.flatMap { historyStore.record(id: $0) }
+        if let timeoutRecord {
+            reportDictationTerminal(
+                record: timeoutRecord,
+                forcedFailure: (stage: "processing", kind: "processing_timeout")
+            )
         }
+        cancelCurrentProcessing(resetUI: false, reason: L("workflow.timeout.reason"))
         Task { @MainActor in
             self.lastRetryableFailureRecord = timeoutRecord
             self.soundEffectPlayer.play(.error)
@@ -982,6 +992,11 @@ final class WorkflowController {
         lastRetryableFailureRecord = nil
         latestRecordingPreviewText = ""
         let frontmostApplicationContext = Self.frontmostApplicationContext()
+        beginDictationAnalytics(
+            intent: effectiveIntent,
+            mode: recordingMode,
+            targetBundleIdentifier: frontmostApplicationContext.bundleIdentifier
+        )
         let recordingHint = recordingHintPresentation(
             intent: effectiveIntent,
             recordingMode: recordingMode,
@@ -1167,6 +1182,9 @@ final class WorkflowController {
             let userMessage = Self.audioStartFailureMessage(for: error)
             record.errorMessage = userMessage
             saveHistoryRecord(record)
+            bindPendingDictationAnalytics(to: record.id)
+            UsageStatsStore.shared.recordSession(record: record)
+            reportDictationTerminal(record: record)
             NetworkDebugLogger.logError(context: "Audio recorder failed to start", error: error)
             Task { @MainActor in
                 self.soundEffectPlayer.play(.error)

@@ -12,6 +12,17 @@ final class OnboardingViewModel: ObservableObject {
         case llm = 3
         case permissions = 4
         case shortcuts = 5
+
+        var analyticsName: String {
+            switch self {
+            case .language: "language"
+            case .account: "account"
+            case .stt: "stt"
+            case .llm: "llm"
+            case .permissions: "permissions"
+            case .shortcuts: "shortcuts"
+            }
+        }
     }
 
     enum ConnectionTestState: Equatable {
@@ -110,6 +121,11 @@ final class OnboardingViewModel: ObservableObject {
     private let globeKeyReader: GlobeKeyPreferenceReading
     private let localModelManager: (any LocalSTTModelManaging)?
     private let notificationService: LocalNotificationSending
+    private let analyticsReporter: AnalyticsEventReporting
+    private let permissionStatusAnalyticsMonitor: PermissionStatusAnalyticsMonitor?
+    private let onboardingStartedAt: Date
+    private let now: () -> Date
+    private var didReportTerminalEvent = false
     let onComplete: () -> Void
     private var cloudAccountModelDefaultsObserver: NSObjectProtocol?
     private var localSTTPreparationTask: Task<Void, Never>?
@@ -121,6 +137,9 @@ final class OnboardingViewModel: ObservableObject {
         globeKeyReader: GlobeKeyPreferenceReading = SystemGlobeKeyPreferenceReader(),
         localModelManager: (any LocalSTTModelManaging)? = nil,
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
+        analyticsReporter: AnalyticsEventReporting = NoopAnalyticsEventReporter.shared,
+        permissionStatusAnalyticsMonitor: PermissionStatusAnalyticsMonitor? = nil,
+        now: @escaping () -> Date = { Date() },
         onComplete: @escaping () -> Void
     ) {
         self.settingsStore = settingsStore
@@ -129,6 +148,10 @@ final class OnboardingViewModel: ObservableObject {
         self.globeKeyReader = globeKeyReader
         self.localModelManager = localModelManager
         self.notificationService = notificationService
+        self.analyticsReporter = analyticsReporter
+        self.permissionStatusAnalyticsMonitor = permissionStatusAnalyticsMonitor
+        self.now = now
+        onboardingStartedAt = now()
         self.onComplete = onComplete
         let initialUseCloudAccountModels = resolvedAuthState.isLoggedIn
             && settingsStore.sttProvider == .typefluxOfficial
@@ -319,10 +342,12 @@ final class OnboardingViewModel: ObservableObject {
         }
 
         saveCurrentStepSettings()
+        reportCurrentStepCompleted(skipped: false)
         advanceToNextStepOrComplete()
     }
 
     func skip() {
+        reportCurrentStepCompleted(skipped: true)
         if isLastStep {
             complete()
         } else {
@@ -337,6 +362,7 @@ final class OnboardingViewModel: ObservableObject {
     /// Marks onboarding as complete without triggering the completion callback.
     /// Used when the window is closed externally (e.g., user clicks the close button).
     func skipWithoutAnimation() {
+        reportAbandonedIfNeeded()
         settingsStore.applyDefaultPersonaIfLLMConfigured()
         settingsStore.isOnboardingCompleted = true
     }
@@ -356,6 +382,7 @@ final class OnboardingViewModel: ObservableObject {
         guard currentStep == .llm else { return }
         showIncompleteLLMConfigurationAlert = false
         saveCurrentStepSettings()
+        reportCurrentStepCompleted(skipped: true)
         advanceToNextStepOrComplete()
     }
 
@@ -599,6 +626,7 @@ final class OnboardingViewModel: ObservableObject {
         Task {
             await PrivacyGuard.requestPermission(id)
             refreshPermissions()
+            permissionStatusAnalyticsMonitor?.observe(permissions)
             requestingPermissions.remove(id)
             if willShowInAppDialog {
                 NSApp.activate(ignoringOtherApps: true)
@@ -689,9 +717,39 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     private func complete() {
+        guard !didReportTerminalEvent else { return }
+        didReportTerminalEvent = true
+        let duration = max(0, Int(now().timeIntervalSince(onboardingStartedAt)))
+        analyticsReporter.report(
+            eventName: "onboarding_completed",
+            properties: [
+                "duration_seconds": "\(duration)",
+                "stt_provider": sttProvider.rawValue,
+                "llm_provider": llmProvider.rawValue
+            ]
+        )
         settingsStore.applyDefaultPersonaIfLLMConfigured()
         settingsStore.isOnboardingCompleted = true
         onComplete()
+    }
+
+    private func reportCurrentStepCompleted(skipped: Bool) {
+        analyticsReporter.report(
+            eventName: "onboarding_step_completed",
+            properties: [
+                "step": currentStep.analyticsName,
+                "skipped": "\(skipped)"
+            ]
+        )
+    }
+
+    private func reportAbandonedIfNeeded() {
+        guard !didReportTerminalEvent else { return }
+        didReportTerminalEvent = true
+        analyticsReporter.report(
+            eventName: "onboarding_abandoned",
+            properties: ["last_step": currentStep.analyticsName]
+        )
     }
 
     private func advanceToNextStepOrComplete() {
