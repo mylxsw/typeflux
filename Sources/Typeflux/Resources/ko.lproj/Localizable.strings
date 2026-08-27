@@ -37,7 +37,7 @@
 "sidebar.accountCard.signedOutSubtitle" = "무료 크레딧을 사용하고 구독을 관리하세요.";
 "sidebar.accountCard.loading" = "계정 상태 업데이트 중…";
 "sidebar.accountCard.unavailable" = "사용량 데이터를 일시적으로 불러올 수 없습니다.";
-"sidebar.accountCard.cloudCredits" = "이번 달 클라우드 크레딧";
+"sidebar.accountCard.cloudCredits" = "클라우드 크레딧";
 "sidebar.accountCard.usagePair" = "%@ / %@";
 "sidebar.accountCard.billingAttention" = "결제 확인이 필요합니다";
 "sidebar.accountCard.billingAttentionSubtitle" = "클라우드 이용을 계속하려면 결제 정보를 업데이트하세요.";
@@ -1216,6 +1216,8 @@
 "auth.account.provider" = "로그인 방법";
 "auth.account.memberSince" = "가입일";
 "auth.account.logout" = "로그아웃";
+"auth.account.logoutConfirmTitle" = "로그아웃하시겠습니까?";
+"auth.account.logoutConfirmMessage" = "이 계정의 클라우드 서비스를 이용하려면 다시 로그인해야 합니다.";
 "auth.account.providerEmail" = "이메일 및 비밀번호";
 "auth.account.signIn" = "로그인";
 "auth.account.passwordSection" = "비밀번호 관리";
@@ -1312,7 +1314,7 @@
 "auth.account.signedInWith" = "%@ 로그인";
 "auth.account.usageQuotaCurrentPeriod" = "이번 기간의 클라우드 크레딧";
 "auth.account.usageQuotaUsedPercentage" = "%@ 사용됨";
-"auth.account.usageQuotaUsedPair" = "%@ / %@ 사용됨";
+"auth.account.usageQuotaUsedPair" = "%@ / %@";
 "auth.account.usageQuotaExplanationTitle" = "크레딧 안내";
 "auth.account.usageQuotaExplanation" = "클라우드 크레딧은 이번 기간의 사용량과 총 한도를 나타내며 진행 막대는 사용 비율을 표시합니다. 아래 사용 데이터는 각각 다른 단위를 사용하며 크레딧 수와 같지 않습니다.";
 "cloudDataSync.accountDescription" = "사용자 지정 어휘와 페르소나만 이 계정으로 로그인한 다른 기기에 동기화합니다.";

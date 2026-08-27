@@ -11,6 +11,7 @@ struct AccountView: View {
     @ObservedObject private var cloudDataSync = CloudDataSyncCoordinator.shared
     @State private var isConfirmingCloudSync = false
     @State private var isConfirmingCloudDataDeletion = false
+    @State private var isConfirmingLogout = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
@@ -70,56 +71,68 @@ struct AccountView: View {
         } message: {
             Text(L("cloudDataSync.delete.message"))
         }
+        .alert(L("auth.account.logoutConfirmTitle"), isPresented: $isConfirmingLogout) {
+            Button(L("common.cancel"), role: .cancel) {}
+            Button(L("auth.account.logout"), role: .destructive) {
+                authState.logout()
+                onLogout()
+            }
+        } message: {
+            Text(L("auth.account.logoutConfirmMessage"))
+        }
     }
 
     private var cloudDataSyncSection: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-            HStack(alignment: .center, spacing: StudioTheme.Spacing.large) {
-                Text(L("cloudDataSync.title"))
-                    .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
+        StudioCard {
+            HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
+                HStack(alignment: .center, spacing: StudioTheme.Spacing.large) {
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
+                        Text(L("cloudDataSync.title"))
+                            .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
 
-                Spacer(minLength: StudioTheme.Spacing.large)
+                        Text(L("cloudDataSync.accountDescription"))
+                            .font(.studioBody(StudioTheme.Typography.body))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
 
-                Toggle(L("cloudDataSync.title"), isOn: Binding(
-                    get: { cloudDataSync.isEnabled },
-                    set: { enabled in
-                        if enabled && cloudDataSync.requiresInitialChoice {
-                            isConfirmingCloudSync = true
-                        } else if enabled {
-                            cloudDataSync.setEnabled(true)
-                        } else {
-                            cloudDataSync.setEnabled(false)
+                        if let error = cloudDataSync.lastError, !cloudDataSync.isSyncing {
+                            Text(L("cloudDataSync.status.failed", error))
+                                .font(.studioBody(StudioTheme.Typography.bodySmall))
+                                .foregroundStyle(StudioTheme.danger)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
+
+                        cloudDataSyncStatus
                     }
-                ))
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .tint(StudioTheme.accent)
-            }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(L("cloudDataSync.accountDescription"))
-                .font(.studioBody(StudioTheme.Typography.body))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            if let error = cloudDataSync.lastError, !cloudDataSync.isSyncing {
-                Text(L("cloudDataSync.status.failed", error))
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.danger)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            HStack(alignment: .firstTextBaseline, spacing: StudioTheme.Spacing.large) {
-                cloudDataSyncStatus
-                Spacer(minLength: StudioTheme.Spacing.medium)
-                if cloudDataSync.canDeleteCloudData {
-                    cloudDataManagementMenu
+                    cloudDataSyncToggle
                 }
+
+                cloudDataManagementMenu
             }
         }
-        .padding(.vertical, StudioTheme.Spacing.xSmall)
+    }
+
+    private var cloudDataSyncToggle: some View {
+        Toggle(L("cloudDataSync.title"), isOn: Binding(
+            get: { cloudDataSync.isEnabled },
+            set: { enabled in
+                if enabled && cloudDataSync.requiresInitialChoice {
+                    isConfirmingCloudSync = true
+                } else if enabled {
+                    cloudDataSync.setEnabled(true)
+                } else {
+                    cloudDataSync.setEnabled(false)
+                }
+            }
+        ))
+        .labelsHidden()
+        .toggleStyle(.switch)
+        .tint(StudioTheme.accent)
+        .fixedSize()
     }
 
     private var cloudDataSyncStatus: some View {
@@ -157,21 +170,24 @@ struct AccountView: View {
             }
             .disabled(cloudDataSync.isDeletingCloudData || cloudDataSync.isSyncing)
         } label: {
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
+            ZStack {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
+                    .opacity(cloudDataSync.isDeletingCloudData ? 0 : 1)
                 if cloudDataSync.isDeletingCloudData {
                     ProgressView().controlSize(.mini)
                 }
-                Text(L("cloudDataSync.manageData"))
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                Image(systemName: "chevron.right")
-                    .font(.system(size: StudioTheme.Typography.iconTiny, weight: .medium))
             }
             .foregroundStyle(StudioTheme.textSecondary)
+            .frame(width: 32, height: 32)
+            .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize(horizontal: true, vertical: false)
         .accessibilityLabel(L("cloudDataSync.manageData"))
+        .help(L("cloudDataSync.manageData"))
+        .disabled(!cloudDataSync.canDeleteCloudData || cloudDataSync.isDeletingCloudData)
     }
 
     private var accountOverview: some View {
@@ -425,6 +441,16 @@ struct AccountView: View {
                 .font(.studioBody(StudioTheme.Typography.bodySmall))
                 .foregroundStyle(StudioTheme.textSecondary)
             }
+
+            Button(L("auth.account.logout")) {
+                isConfirmingLogout = true
+            }
+            .buttonStyle(.plain)
+            .font(.studioBody(StudioTheme.Typography.bodySmall))
+            .foregroundStyle(StudioTheme.textSecondary)
+            .padding(.vertical, StudioTheme.Spacing.small)
+            .contentShape(Rectangle())
+            .fixedSize()
         }
         .padding(.vertical, StudioTheme.Spacing.xSmall)
     }
@@ -523,8 +549,7 @@ struct AccountView: View {
 
     private func handlePrimaryAction() {
         if authState.isLoggedIn {
-            authState.logout()
-            onLogout()
+            isConfirmingLogout = true
         } else {
             LoginWindowController.shared.show()
         }

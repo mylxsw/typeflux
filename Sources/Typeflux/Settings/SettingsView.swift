@@ -945,31 +945,8 @@ struct StudioView: View {
                 }
             } else if viewModel.currentSection == .account {
                 Spacer()
-
-                accountMoreMenuButton
             }
         }
-    }
-
-    private var accountMoreMenuButton: some View {
-        Menu {
-            Button(role: .destructive) {
-                authState.logout()
-                viewModel.navigate(to: .home)
-            } label: {
-                Label(L("auth.account.logout"), systemImage: "rectangle.portrait.and.arrow.forward")
-            }
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
-                .frame(width: 32, height: 32)
-                .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .accessibilityLabel(L("history.action.more"))
-        .help(L("history.action.more"))
-        .disabled(!authState.isLoggedIn)
     }
 
     @ViewBuilder

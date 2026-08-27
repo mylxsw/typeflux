@@ -37,7 +37,7 @@
 "sidebar.accountCard.signedOutSubtitle" = "Use included credits and manage subscriptions.";
 "sidebar.accountCard.loading" = "Updating account status…";
 "sidebar.accountCard.unavailable" = "Usage data temporarily unavailable.";
-"sidebar.accountCard.cloudCredits" = "Monthly cloud credits";
+"sidebar.accountCard.cloudCredits" = "Cloud credits";
 "sidebar.accountCard.usagePair" = "%@ / %@";
 "sidebar.accountCard.billingAttention" = "Payment needs attention";
 "sidebar.accountCard.billingAttentionSubtitle" = "Update billing to keep cloud access.";
@@ -1231,6 +1231,8 @@
 "auth.account.provider" = "Login Method";
 "auth.account.memberSince" = "Member Since";
 "auth.account.logout" = "Sign Out";
+"auth.account.logoutConfirmTitle" = "Sign out?";
+"auth.account.logoutConfirmMessage" = "You will need to sign in again to use cloud services with this account.";
 "auth.account.providerEmail" = "Email & Password";
 "auth.account.signIn" = "Sign In";
 "auth.account.passwordSection" = "Password";
@@ -1327,7 +1329,7 @@
 "auth.account.signedInWith" = "Signed in with %@";
 "auth.account.usageQuotaCurrentPeriod" = "Cloud credits this period";
 "auth.account.usageQuotaUsedPercentage" = "%@ used";
-"auth.account.usageQuotaUsedPair" = "Used %@ / %@";
+"auth.account.usageQuotaUsedPair" = "%@ / %@";
 "auth.account.usageQuotaExplanationTitle" = "About cloud credits";
 "auth.account.usageQuotaExplanation" = "Cloud credits show the amount used and the total allowance for this period. The progress bar shows the used proportion. The activity metrics below use their own units and do not equal credits.";
 "cloudDataSync.accountDescription" = "Sync only custom vocabulary and personas across devices signed in to this account.";

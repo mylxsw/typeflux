@@ -37,7 +37,7 @@
 "sidebar.accountCard.signedOutSubtitle" = "取得免費額度，並可隨時管理訂閱。";
 "sidebar.accountCard.loading" = "正在更新帳號狀態…";
 "sidebar.accountCard.unavailable" = "用量資料暫時無法使用。";
-"sidebar.accountCard.cloudCredits" = "本月雲端額度";
+"sidebar.accountCard.cloudCredits" = "雲端額度";
 "sidebar.accountCard.usagePair" = "%@ / %@";
 "sidebar.accountCard.billingAttention" = "付款需要處理";
 "sidebar.accountCard.billingAttentionSubtitle" = "請更新帳單資訊以繼續使用雲端服務。";
@@ -1227,6 +1227,8 @@
 "auth.account.provider" = "登入方式";
 "auth.account.memberSince" = "註冊時間";
 "auth.account.logout" = "登出";
+"auth.account.logoutConfirmTitle" = "確定登出？";
+"auth.account.logoutConfirmMessage" = "登出後，您需要重新登入才能使用此帳號的雲端服務。";
 "auth.account.providerEmail" = "電子郵件與密碼";
 "auth.account.signIn" = "登入帳號";
 "auth.account.passwordSection" = "密碼管理";
@@ -1323,7 +1325,7 @@
 "auth.account.signedInWith" = "%@ 登入";
 "auth.account.usageQuotaCurrentPeriod" = "本期雲端額度";
 "auth.account.usageQuotaUsedPercentage" = "已用 %@";
-"auth.account.usageQuotaUsedPair" = "已用 %@ / %@";
+"auth.account.usageQuotaUsedPair" = "%@ / %@";
 "auth.account.usageQuotaExplanationTitle" = "額度說明";
 "auth.account.usageQuotaExplanation" = "雲端額度顯示本期已用量和總額度，進度條表示已用比例。下方各項使用資料有獨立單位，不等同於額度數值。";
 "cloudDataSync.accountDescription" = "僅同步自訂詞庫與人設至此帳號的其他裝置。";

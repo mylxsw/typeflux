@@ -66,7 +66,7 @@ struct StudioSidebarAccountCard<Footer: View>: View {
             if presentation.state != .loading {
                 Button(action: action) {
                     Text(actionTitle)
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                        .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
                         .foregroundStyle(actionColor)
                         .lineLimit(1)
                         .fixedSize(horizontal: true, vertical: false)
@@ -142,11 +142,11 @@ struct StudioSidebarAccountCard<Footer: View>: View {
         case .unavailable:
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
                 Text(L("sidebar.accountCard.cloudAccount"))
-                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
+                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
 
                 Text(L("sidebar.accountCard.unavailable"))
-                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
@@ -162,7 +162,7 @@ struct StudioSidebarAccountCard<Footer: View>: View {
     private var loadingContent: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
             Text(L("sidebar.accountCard.cloudAccount"))
-                .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
+                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
                 .foregroundStyle(StudioTheme.textPrimary)
 
             HStack(spacing: StudioTheme.Spacing.xSmall) {
@@ -190,16 +190,16 @@ struct StudioSidebarAccountCard<Footer: View>: View {
         if presentation.needsAttention {
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
                 Text(planTitle)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
+                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
 
                 Text(L("sidebar.accountCard.billingAttention"))
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
                     .foregroundStyle(StudioTheme.warning)
                     .lineLimit(1)
 
                 Text(L("sidebar.accountCard.billingAttentionSubtitle"))
-                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(2)
             }
@@ -211,47 +211,64 @@ struct StudioSidebarAccountCard<Footer: View>: View {
     private var accountUsage: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
             Text(planTitle)
-                .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
+                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
 
-            Text(L("sidebar.accountCard.cloudCredits"))
-                .font(.studioBody(StudioTheme.Typography.caption))
-                .foregroundStyle(StudioTheme.textSecondary)
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: StudioTheme.Spacing.xSmall) {
+                    quotaLabel
+                    Spacer(minLength: StudioTheme.Spacing.xSmall)
+                    quotaValue
+                }
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                    quotaLabel
+                    quotaValue
+                }
+            }
 
-            if let credits = presentation.credits {
-                if credits.unlimited {
-                    Text(L("sidebar.accountCard.unlimited"))
-                        .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                } else {
-                    Text(usageText(for: credits, compact: true))
-                        .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .lineLimit(1)
-                        .studioTooltip(usageText(for: credits, compact: false), yOffset: 18)
-
-                    if let progress = presentation.progress {
-                        GeometryReader { proxy in
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(StudioTheme.surfaceMuted)
-                                Capsule()
-                                    .fill(progress >= 1 ? StudioTheme.danger : StudioTheme.accent)
-                                    .frame(width: proxy.size.width * progress)
-                            }
-                        }
-                        .frame(height: 4)
-                        .accessibilityHidden(true)
+            if let progress = presentation.progress {
+                GeometryReader { proxy in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(StudioTheme.surfaceMuted)
+                        Capsule()
+                            .fill(progress >= 1 ? StudioTheme.danger : StudioTheme.accent)
+                            .frame(width: proxy.size.width * progress)
                     }
                 }
-            } else {
-                Text(L("sidebar.accountCard.quotaUnavailable"))
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
+                .frame(height: 4)
+                .accessibilityHidden(true)
             }
         }
+    }
+
+    private var quotaLabel: some View {
+        Text(L("sidebar.accountCard.cloudCredits"))
+            .font(.studioBody(StudioTheme.Typography.bodySmall))
+            .foregroundStyle(StudioTheme.textSecondary)
+            .fixedSize()
+    }
+
+    private var quotaValue: some View {
+        Group {
+            if let credits = presentation.credits {
+                if credits.unlimited {
+                    Text(L("auth.account.usageQuotaUnlimited"))
+                } else {
+                    Text(usageText(for: credits, compact: true))
+                        .studioTooltip(usageText(for: credits, compact: false), yOffset: 18)
+                }
+            } else {
+                Text("—")
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .help(L("sidebar.accountCard.quotaUnavailable"))
+                    .accessibilityLabel(L("sidebar.accountCard.quotaUnavailable"))
+            }
+        }
+        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+        .foregroundStyle(StudioTheme.textPrimary)
+        .monospacedDigit()
+        .fixedSize()
     }
 
     private var divider: some View {

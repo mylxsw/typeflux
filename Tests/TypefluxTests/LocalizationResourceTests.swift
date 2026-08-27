@@ -32,6 +32,9 @@ final class LocalizationResourceTests: XCTestCase {
     func testSidebarAccountCardStateCopyExistsForAllSupportedLanguages() throws {
         let keys = [
             "sidebar.accountCard.guest",
+            "sidebar.accountCard.cloudCredits",
+            "auth.account.usageQuotaUnlimited",
+            "auth.account.logout",
             "sidebar.accountCard.usagePair",
             "sidebar.accountCard.viewAccountAccessibility",
             "sidebar.accountCard.billingAttention",
@@ -208,6 +211,8 @@ final class LocalizationResourceTests: XCTestCase {
 
     func testAccountOverviewCopyAndFormatArgumentsExistInEveryLanguage() throws {
         let keysAndArgumentCounts = [
+            "auth.account.logoutConfirmTitle": 0,
+            "auth.account.logoutConfirmMessage": 0,
             "auth.account.nextRenewal": 1,
             "auth.account.refreshOverview": 0,
             "auth.account.signedInWith": 1,
@@ -227,6 +232,13 @@ final class LocalizationResourceTests: XCTestCase {
                 XCTAssertNotEqual(localized, key, "Missing \(key) in \(language.rawValue)")
                 XCTAssertEqual(localized.components(separatedBy: "%@").count - 1, argumentCount, key)
             }
+
+            let quotaPair = bundle.localizedString(forKey: "auth.account.usageQuotaUsedPair", value: nil, table: nil)
+            XCTAssertEqual(
+                String(format: quotaPair, "1,234", "90,000"),
+                "1,234 / 90,000",
+                "The quota header should show only the numeric pair in \(language.rawValue)"
+            )
         }
     }
 

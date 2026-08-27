@@ -37,7 +37,7 @@
 "sidebar.accountCard.signedOutSubtitle" = "無料クレジットの利用とサブスクリプション管理ができます。";
 "sidebar.accountCard.loading" = "アカウント状態を更新中…";
 "sidebar.accountCard.unavailable" = "使用量データを一時的に取得できません。";
-"sidebar.accountCard.cloudCredits" = "今月のクラウドクレジット";
+"sidebar.accountCard.cloudCredits" = "クラウドクレジット";
 "sidebar.accountCard.usagePair" = "%@ / %@";
 "sidebar.accountCard.billingAttention" = "お支払いの確認が必要です";
 "sidebar.accountCard.billingAttentionSubtitle" = "クラウド利用を継続するには請求情報を更新してください。";
@@ -1216,6 +1216,8 @@
 "auth.account.provider" = "ログイン方法";
 "auth.account.memberSince" = "登録日";
 "auth.account.logout" = "サインアウト";
+"auth.account.logoutConfirmTitle" = "サインアウトしますか？";
+"auth.account.logoutConfirmMessage" = "このアカウントのクラウドサービスを利用するには、再度サインインする必要があります。";
 "auth.account.providerEmail" = "メールとパスワード";
 "auth.account.signIn" = "サインイン";
 "auth.account.passwordSection" = "パスワード管理";
@@ -1312,7 +1314,7 @@
 "auth.account.signedInWith" = "%@ でログイン";
 "auth.account.usageQuotaCurrentPeriod" = "今期のクラウドクレジット";
 "auth.account.usageQuotaUsedPercentage" = "%@ 使用済み";
-"auth.account.usageQuotaUsedPair" = "%@ / %@ 使用済み";
+"auth.account.usageQuotaUsedPair" = "%@ / %@";
 "auth.account.usageQuotaExplanationTitle" = "クレジットについて";
 "auth.account.usageQuotaExplanation" = "クラウドクレジットは今期の使用量と上限を示し、プログレスバーは使用済みの割合を示します。以下の各使用データはそれぞれ異なる単位で表示され、クレジット数とは一致しません。";
 "cloudDataSync.accountDescription" = "カスタム語彙とペルソナのみを、このアカウントでログインした他のデバイスと同期します。";

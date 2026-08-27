@@ -37,7 +37,7 @@
 "sidebar.accountCard.signedOutSubtitle" = "获得免费额度，并可随时管理订阅。";
 "sidebar.accountCard.loading" = "正在更新账号状态…";
 "sidebar.accountCard.unavailable" = "用量数据暂时不可用。";
-"sidebar.accountCard.cloudCredits" = "本月云端额度";
+"sidebar.accountCard.cloudCredits" = "云端额度";
 "sidebar.accountCard.usagePair" = "%@ / %@";
 "sidebar.accountCard.billingAttention" = "付款需要处理";
 "sidebar.accountCard.billingAttentionSubtitle" = "请更新账单信息以继续使用云服务。";
@@ -1231,6 +1231,8 @@
 "auth.account.provider" = "登录方式";
 "auth.account.memberSince" = "注册时间";
 "auth.account.logout" = "退出登录";
+"auth.account.logoutConfirmTitle" = "确定退出登录？";
+"auth.account.logoutConfirmMessage" = "退出后，您需要重新登录才能使用此账号的云端服务。";
 "auth.account.providerEmail" = "邮箱与密码";
 "auth.account.signIn" = "登录账号";
 "auth.account.passwordSection" = "密码管理";
@@ -1327,7 +1329,7 @@
 "auth.account.signedInWith" = "%@ 登录";
 "auth.account.usageQuotaCurrentPeriod" = "本期云端额度";
 "auth.account.usageQuotaUsedPercentage" = "已用 %@";
-"auth.account.usageQuotaUsedPair" = "已用 %@ / %@";
+"auth.account.usageQuotaUsedPair" = "%@ / %@";
 "auth.account.usageQuotaExplanationTitle" = "额度说明";
 "auth.account.usageQuotaExplanation" = "云端额度显示本期已用量和总额度，进度条表示已用比例。下方各项使用数据有独立单位，不等同于额度数值。";
 "cloudDataSync.accountDescription" = "仅同步自定义词库与人设到此账号的其他设备。";

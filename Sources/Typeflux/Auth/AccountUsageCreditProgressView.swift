@@ -38,17 +38,19 @@ struct AccountUsageCreditProgressView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-            HStack(alignment: .center, spacing: StudioTheme.Spacing.mediumLarge) {
+            HStack(alignment: .firstTextBaseline, spacing: StudioTheme.Spacing.mediumLarge) {
                 quotaLabel
                 Spacer(minLength: StudioTheme.Spacing.mediumLarge)
                 Text(usedTotalDescription)
-                    .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .medium))
+                    .font(.studioBody(StudioTheme.Typography.body))
                     .foregroundStyle(presentation.usage == .unavailable
                         ? StudioTheme.textSecondary : StudioTheme.textPrimary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                     .multilineTextAlignment(.trailing)
+                    .accessibilityLabel(presentation.usage == .unavailable
+                        ? usedTotalDescription : L("auth.account.usageQuotaUsedPercentage", usedTotalDescription))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
