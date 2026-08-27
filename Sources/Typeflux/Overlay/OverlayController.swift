@@ -11,6 +11,12 @@ enum LiveTranscriptPreviewLayout {
     static let expandedOverlayHeight: CGFloat = 194
 }
 
+enum NoticeToastLayout {
+    static let width: CGFloat = 344
+    static let maxVisibleLineCount = 3
+    static let overlayHeight: CGFloat = 126
+}
+
 private final class TransparentHostingView<Content: View>: NSHostingView<Content> {
     override var isOpaque: Bool {
         false
@@ -1102,7 +1108,8 @@ final class OverlayController {
             )
         case .notice:
             return OverlayMetrics(
-                size: NSSize(width: 344, height: 108), anchor: .bottom, offset: 80,
+                size: NSSize(width: NoticeToastLayout.width, height: NoticeToastLayout.overlayHeight),
+                anchor: .bottom, offset: 80,
                 interactive: Self.noticeIsInteractive(dismissible: model.noticeDismissible)
             )
         case .failure:
@@ -1815,7 +1822,7 @@ private struct OverlayView: View {
     }
 
     private var noticeToast: some View {
-        OverlayCompactToast(width: 344, hostedInWindowChrome: true) {
+        OverlayCompactToast(width: NoticeToastLayout.width, hostedInWindowChrome: true) {
             VStack(alignment: .leading, spacing: 8) {
                 cardHeader(
                     icon: "info.circle",
@@ -1828,7 +1835,7 @@ private struct OverlayView: View {
                 Text(model.detailText)
                     .font(.system(size: 12.5, weight: .semibold))
                     .foregroundStyle(Color.white.opacity(0.92))
-                    .lineLimit(2)
+                    .lineLimit(NoticeToastLayout.maxVisibleLineCount)
             }
         }
     }
