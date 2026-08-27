@@ -12,7 +12,7 @@ final class WorkflowController {
     /// Ambiguous short releases stay recoverable by switching to locked recording.
     /// Keep this above `minimumRecordingDuration` so a release is never classified
     /// as hold-to-talk and then immediately rejected as too short.
-    static let tapToLockThreshold: TimeInterval = minimumRecordingDuration + 0.10
+    static let tapToLockThreshold: TimeInterval = 0.60
     static let selectionRestoreDelayMicroseconds: useconds_t = 120_000
     static let automaticVocabularyObservationWindow: TimeInterval = 30
     static let automaticVocabularyPollInterval: Duration = .seconds(1)
