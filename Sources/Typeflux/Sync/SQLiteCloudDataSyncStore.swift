@@ -10,6 +10,7 @@ final class SQLiteCloudDataSyncStore {
         var checkpoint: Int64
         var datasetGeneration: Int64
         var needsReauthorization: Bool
+        var lastSyncedAt: Date?
     }
 
     private let queue = DispatchQueue(label: "typeflux.cloud-data-sync.sqlite")
@@ -38,12 +39,13 @@ final class SQLiteCloudDataSyncStore {
             try execute("PRAGMA journal_mode=WAL")
             try execute("PRAGMA synchronous=NORMAL")
             try execute("PRAGMA busy_timeout=5000")
-            try execute("""
+        try execute("""
         CREATE TABLE IF NOT EXISTS sync_accounts(
           user_id TEXT PRIMARY KEY, enabled INTEGER NOT NULL DEFAULT 0,
           cursor INTEGER NOT NULL DEFAULT 0, checkpoint INTEGER NOT NULL DEFAULT 0,
           dataset_generation INTEGER NOT NULL DEFAULT 0,
-          needs_reauthorization INTEGER NOT NULL DEFAULT 0
+          needs_reauthorization INTEGER NOT NULL DEFAULT 0,
+          last_synced_at INTEGER NOT NULL DEFAULT 0
         )
         """)
             try addColumnIfMissing(
@@ -52,6 +54,10 @@ final class SQLiteCloudDataSyncStore {
             )
             try addColumnIfMissing(
                 table: "sync_accounts", column: "needs_reauthorization",
+                definition: "INTEGER NOT NULL DEFAULT 0"
+            )
+            try addColumnIfMissing(
+                table: "sync_accounts", column: "last_synced_at",
                 definition: "INTEGER NOT NULL DEFAULT 0"
             )
             try execute("""
@@ -82,15 +88,18 @@ final class SQLiteCloudDataSyncStore {
         queue.sync {
             var result = State(
                 enabled: false, cursor: 0, checkpoint: 0,
-                datasetGeneration: 0, needsReauthorization: false
+                datasetGeneration: 0, needsReauthorization: false, lastSyncedAt: nil
             )
             query(
-                "SELECT enabled,cursor,checkpoint,dataset_generation,needs_reauthorization FROM sync_accounts WHERE user_id=?",
+                "SELECT enabled,cursor,checkpoint,dataset_generation,needs_reauthorization,last_synced_at FROM sync_accounts WHERE user_id=?",
                 [userID]
             ) { row in
+                let timestamp = row.int64(5)
+                let lastSyncedAt = timestamp > 0 ? Date(timeIntervalSince1970: TimeInterval(timestamp)) : nil
                 result = State(
                     enabled: row.int(0) != 0, cursor: row.int64(1), checkpoint: row.int64(2),
-                    datasetGeneration: row.int64(3), needsReauthorization: row.int(4) != 0
+                    datasetGeneration: row.int64(3), needsReauthorization: row.int(4) != 0,
+                    lastSyncedAt: lastSyncedAt
                 )
             }
             return result
@@ -121,16 +130,17 @@ final class SQLiteCloudDataSyncStore {
         }
     }
 
-    func setProgress(userID: String, cursor: Int64, checkpoint: Int64, datasetGeneration: Int64) {
+    func setProgress(userID: String, cursor: Int64, checkpoint: Int64, datasetGeneration: Int64, lastSyncedAt: Date? = nil) {
         queue.sync {
+            let syncTimestamp = Int64((lastSyncedAt ?? Date()).timeIntervalSince1970)
             try? execute(
                 """
-                INSERT INTO sync_accounts(user_id,cursor,checkpoint,dataset_generation) VALUES(?,?,?,?)
+                INSERT INTO sync_accounts(user_id,cursor,checkpoint,dataset_generation,last_synced_at) VALUES(?,?,?,?,?)
                 ON CONFLICT(user_id) DO UPDATE SET
                   cursor=excluded.cursor,checkpoint=excluded.checkpoint,
-                  dataset_generation=excluded.dataset_generation
+                  dataset_generation=excluded.dataset_generation,last_synced_at=excluded.last_synced_at
                 """,
-                [userID, cursor, checkpoint, datasetGeneration]
+                [userID, cursor, checkpoint, datasetGeneration, syncTimestamp]
             )
         }
     }
@@ -153,11 +163,12 @@ final class SQLiteCloudDataSyncStore {
                 try execute(
                     """
                     INSERT INTO sync_accounts(
-                      user_id,enabled,cursor,checkpoint,dataset_generation,needs_reauthorization
-                    ) VALUES(?,0,?,0,?,1)
+                      user_id,enabled,cursor,checkpoint,dataset_generation,needs_reauthorization,last_synced_at
+                    ) VALUES(?,0,?,0,?,1,0)
                     ON CONFLICT(user_id) DO UPDATE SET
                       enabled=0,cursor=excluded.cursor,checkpoint=0,
-                      dataset_generation=excluded.dataset_generation,needs_reauthorization=1
+                      dataset_generation=excluded.dataset_generation,needs_reauthorization=1,
+                      last_synced_at=0
                     """,
                     [userID, cursor, datasetGeneration]
                 )
@@ -187,7 +198,7 @@ final class SQLiteCloudDataSyncStore {
     func stageLocalChanges(userID: String, type: CloudSyncEntityType, entities: [UUID: Data]) {
         queue.sync {
             let known = knownEntitiesUnsafe(userID: userID, type: type)
-            for (id, payload) in entities where known[id]?.payload != payload {
+            for (id, payload) in entities where !payloadsMatch(type: type, known[id]?.payload, payload) {
                 let revision = known[id]?.revision ?? 0
                 let mutation = vocabularyIncrement(
                     type: type, previous: known[id]?.payload, current: payload
@@ -313,6 +324,35 @@ final class SQLiteCloudDataSyncStore {
                 operation, baseRevision, payload, Date().timeIntervalSince1970
             ]
         )
+    }
+
+    private func payloadsMatch(type: CloudSyncEntityType, _ previous: Data?, _ current: Data) -> Bool {
+        guard let previous else { return false }
+        if previous == current { return true }
+        // Compare fields owned by the client, not JSON ordering or server metadata.
+        switch type {
+        case .vocabulary:
+            let decoder = JSONDecoder.cloudSyncStore
+            if let old = try? decoder.decode(VocabularyCloudPayload.self, from: previous),
+               let new = try? decoder.decode(VocabularyCloudPayload.self, from: current) {
+                return old.term == new.term && old.source == new.source
+                    && old.createdAt == new.createdAt && old.occurrenceCount == new.occurrenceCount
+            }
+        case .persona:
+            let decoder = JSONDecoder()
+            if let old = try? decoder.decode(PersonaCloudPayload.self, from: previous),
+               let new = try? decoder.decode(PersonaCloudPayload.self, from: current) {
+                return old.name == new.name && old.prompt == new.prompt
+            }
+        }
+        // Increment payloads and legacy records may not have every model field.
+        guard let oldObject = try? JSONSerialization.jsonObject(with: previous),
+              let newObject = try? JSONSerialization.jsonObject(with: current),
+              let oldData = try? JSONSerialization.data(withJSONObject: oldObject, options: [.sortedKeys]),
+              let newData = try? JSONSerialization.data(withJSONObject: newObject, options: [.sortedKeys]) else {
+            return false
+        }
+        return oldData == newData
     }
 
     private func upsertEntity(userID: String, type: CloudSyncEntityType, id: UUID,

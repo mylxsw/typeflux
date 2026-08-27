@@ -29,6 +29,12 @@ struct CloudDataSyncAPIService: Sendable {
             urlRequest.timeoutInterval = 30
             return urlRequest
         }
+        if response.statusCode == 401 {
+            throw AuthError.unauthorized
+        }
+        if response.statusCode == 429 {
+            throw CloudDataSyncError.rateLimited(retryAfterSeconds: Self.retryAfterSeconds(from: response))
+        }
         guard response.statusCode >= 200, response.statusCode < 300 else {
             throw AuthError.invalidResponse
         }
@@ -46,12 +52,37 @@ struct CloudDataSyncAPIService: Sendable {
             request.timeoutInterval = 30
             return request
         }
+        if response.statusCode == 401 {
+            throw AuthError.unauthorized
+        }
+        if response.statusCode == 429 {
+            throw CloudDataSyncError.rateLimited(retryAfterSeconds: Self.retryAfterSeconds(from: response))
+        }
         guard response.statusCode >= 200, response.statusCode < 300 else {
             throw AuthError.invalidResponse
         }
         let envelope = try JSONDecoder.cloudSync.decode(APIResponse<CloudSyncResetResponse>.self, from: data)
         guard envelope.code == "OK", let result = envelope.data else { throw AuthError.invalidResponse }
         return result
+    }
+
+    private static func retryAfterSeconds(from response: HTTPURLResponse, now: Date = Date()) -> Int? {
+        guard let value = response.value(forHTTPHeaderField: "Retry-After")?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !value.isEmpty
+        else {
+            return nil
+        }
+        if let seconds = Int(value) {
+            return max(0, seconds)
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "EEE',' dd MMM yyyy HH':'mm':'ss z"
+        guard let retryDate = formatter.date(from: value) else { return nil }
+        return max(0, Int(ceil(retryDate.timeIntervalSince(now))))
     }
 }
 

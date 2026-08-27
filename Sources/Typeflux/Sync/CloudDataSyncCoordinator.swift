@@ -1,6 +1,4 @@
-import AppKit
 import Foundation
-import Network
 import os
 
 @MainActor
@@ -17,19 +15,26 @@ final class CloudDataSyncCoordinator: ObservableObject {
     private let authState: AuthState
     private let settingsStore: SettingsStore
     private let store: SQLiteCloudDataSyncStore
-    private let monitor = NWPathMonitor()
-    private let monitorQueue = DispatchQueue(label: "typeflux.cloud-data-sync.network")
     private var observers: [NSObjectProtocol] = []
-    private var workspaceObservers: [NSObjectProtocol] = []
     private var periodicTask: Task<Void, Never>?
-    private var debounceTask: Task<Void, Never>?
     private var syncTask: Task<Void, Never>?
+    private var startupSyncTask: Task<Void, Never>?
     private var applyingRemote = false
     private var localChangeDuringSync = false
     private var syncGeneration = 0
+    private var syncCooldownUntil: Date?
     var canDeleteCloudData: Bool {
         guard let userID = authState.userProfile?.id else { return false }
         return store.hasAccount(userID: userID)
+    }
+
+    private static let minPeriodicInterval: Int = 60
+    private static let maxPeriodicInterval: Int = 300
+    private static let defaultRateLimitDelay: Int = 120
+    private static let startupSyncDelay: Int = 5
+
+    private static var nextPeriodicDelay: Duration {
+        .seconds(Int.random(in: minPeriodicInterval...maxPeriodicInterval))
     }
 
     private static let deviceID: UUID = {
@@ -51,16 +56,14 @@ final class CloudDataSyncCoordinator: ObservableObject {
         observe()
         refreshEnabledState(switchScope: true)
         startPeriodicSync()
-        synchronizeNow()
+        scheduleStartupSync()
     }
 
     deinit {
         observers.forEach(NotificationCenter.default.removeObserver)
-        workspaceObservers.forEach(NSWorkspace.shared.notificationCenter.removeObserver)
-        monitor.cancel()
         periodicTask?.cancel()
-        debounceTask?.cancel()
         syncTask?.cancel()
+        startupSyncTask?.cancel()
     }
 
     func setEnabled(_ enabled: Bool, mergeGuestData: Bool = true) {
@@ -90,9 +93,11 @@ final class CloudDataSyncCoordinator: ObservableObject {
         isEnabled = enabled
         requiresInitialChoice = false
         lastError = nil
-        if enabled { synchronizeNow() } else {
-            syncGeneration += 1
-            debounceTask?.cancel()
+        syncGeneration += 1
+        if enabled {
+            syncCooldownUntil = nil
+            syncTask?.cancel()
+        } else {
             syncTask?.cancel()
             syncTask = nil
             isSyncing = false
@@ -112,7 +117,6 @@ final class CloudDataSyncCoordinator: ObservableObject {
         let activeSync = syncTask
         isDeletingCloudData = true
         syncGeneration += 1
-        debounceTask?.cancel()
         activeSync?.cancel()
         syncTask = nil
         isSyncing = false
@@ -133,7 +137,6 @@ final class CloudDataSyncCoordinator: ObservableObject {
                     lastSyncAt = nil
                     lastError = nil
                     syncGeneration += 1
-                    debounceTask?.cancel()
                     syncTask?.cancel()
                     syncTask = nil
                     isSyncing = false
@@ -157,7 +160,18 @@ final class CloudDataSyncCoordinator: ObservableObject {
     }
 
     func synchronizeNow() {
-        guard syncTask == nil, syncContext() != nil else { return }
+        guard syncTask == nil, let context = syncContext() else { return }
+        let retryKey = "cloudDataSync.nextAttemptAt.\(context.userID)"
+        let nextAttemptAt = UserDefaults.standard.double(forKey: retryKey)
+        guard Date().timeIntervalSince1970 >= nextAttemptAt else { return }
+        if let cooldown = syncCooldownUntil, cooldown > Date() {
+            return
+        }
+        // Share the minimum interval across startup, periodic work, and restarts.
+        UserDefaults.standard.set(
+            Date().addingTimeInterval(TimeInterval(Self.minPeriodicInterval)).timeIntervalSince1970,
+            forKey: retryKey
+        )
         let generation = syncGeneration
         syncTask = Task { [weak self] in
             guard let self else { return }
@@ -173,7 +187,6 @@ final class CloudDataSyncCoordinator: ObservableObject {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor [weak self] in
                     self?.refreshEnabledState(switchScope: true)
-                    self?.synchronizeNow()
                 }
             })
         }
@@ -182,22 +195,6 @@ final class CloudDataSyncCoordinator: ObservableObject {
                 Task { @MainActor [weak self] in self?.scheduleLocalPush() }
             })
         }
-        observers.append(center.addObserver(
-            forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.synchronizeNow() }
-        })
-        let workspaceCenter = NSWorkspace.shared.notificationCenter
-        workspaceObservers.append(workspaceCenter.addObserver(
-            forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.synchronizeNow() }
-        })
-        monitor.pathUpdateHandler = { [weak self] path in
-            guard path.status == .satisfied else { return }
-            Task { @MainActor [weak self] in self?.synchronizeNow() }
-        }
-        monitor.start(queue: monitorQueue)
     }
 
     private func refreshEnabledState(switchScope: Bool = false) {
@@ -205,8 +202,8 @@ final class CloudDataSyncCoordinator: ObservableObject {
             if switchScope { switchToGuestScope() }
             isEnabled = false
             requiresInitialChoice = false
+            lastSyncAt = nil
             syncGeneration += 1
-            debounceTask?.cancel()
             syncTask?.cancel()
             syncTask = nil
             isSyncing = false
@@ -215,6 +212,7 @@ final class CloudDataSyncCoordinator: ObservableObject {
         let hasAccount = store.hasAccount(userID: userID)
         let state = store.state(userID: userID)
         isEnabled = state.enabled
+        lastSyncAt = state.lastSyncedAt
         requiresInitialChoice = !hasAccount || state.needsReauthorization
         if switchScope {
             applyingRemote = true
@@ -222,6 +220,7 @@ final class CloudDataSyncCoordinator: ObservableObject {
             applyingRemote = false
             postScopeChangeNotifications()
         }
+        scheduleStartupSync()
     }
 
     private func prepareInitialAccountScope(userID: String, mergeGuestData: Bool) {
@@ -312,22 +311,30 @@ final class CloudDataSyncCoordinator: ObservableObject {
     private func startPeriodicSync() {
         periodicTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(60))
+                try? await Task.sleep(for: Self.nextPeriodicDelay)
                 guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    self?.synchronizeNow()
+                }
+            }
+        }
+    }
+
+    private func scheduleStartupSync() {
+        startupSyncTask?.cancel()
+        guard isEnabled && syncTask == nil else { return }
+        startupSyncTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.startupSyncDelay))
+            guard !Task.isCancelled else { return }
+            await MainActor.run { [weak self] in
                 self?.synchronizeNow()
             }
         }
     }
 
     private func scheduleLocalPush() {
-        guard !applyingRemote, syncContext() != nil else { return }
-        if syncTask != nil { localChangeDuringSync = true }
-        debounceTask?.cancel()
-        debounceTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled else { return }
-            self?.synchronizeNow()
-        }
+        guard !applyingRemote, syncTask != nil, syncContext() != nil else { return }
+        localChangeDuringSync = true
     }
 
     private func syncContext() -> (userID: String, token: String, state: SQLiteCloudDataSyncStore.State)? {
@@ -339,13 +346,14 @@ final class CloudDataSyncCoordinator: ObservableObject {
     }
 
     private func performSync() async {
-        guard var context = syncContext() else { return }
+        guard let context = syncContext() else { return }
         isSyncing = true
         defer { isSyncing = false }
         do {
             try stageLocalData(userID: context.userID)
-            var hasMore = true
-            while hasMore, !Task.isCancelled {
+            // One exchange per scheduled run. Persisted cursors and the outbox
+            // carry remaining pages and mutations into the next periodic run.
+            if !Task.isCancelled {
                 let pending = store.pending(userID: context.userID)
                 localChangeDuringSync = false
                 let response = try await CloudDataSyncAPIService.sync(
@@ -381,24 +389,37 @@ final class CloudDataSyncCoordinator: ObservableObject {
                     // A local edit landed while the request was in flight. Keep the old cursor so
                     // the response can be replayed after that newer local intent has been staged.
                     try stageLocalData(userID: context.userID)
-                    hasMore = true
-                    continue
+                    return
                 }
                 try apply(changes: response.changes, userID: context.userID)
                 store.setProgress(
                     userID: context.userID, cursor: response.cursor,
                     checkpoint: response.hasMore ? response.checkpoint : 0,
-                    datasetGeneration: response.datasetGeneration
+                    datasetGeneration: response.datasetGeneration,
+                    lastSyncedAt: Date()
                 )
-                context.state.cursor = response.cursor
-                context.state.checkpoint = response.hasMore ? response.checkpoint : 0
-                context.state.datasetGeneration = response.datasetGeneration
                 try stageLocalData(userID: context.userID)
-                hasMore = response.hasMore || !store.pending(userID: context.userID).isEmpty
             }
             lastSyncAt = Date()
             lastError = nil
         } catch is CancellationError {
+        } catch let error as CloudDataSyncError {
+            if case .rateLimited(let retryAfterSeconds) = error {
+                let delay = Int(retryAfterSeconds ?? Self.defaultRateLimitDelay)
+                let cooldown = max(Self.minPeriodicInterval, delay)
+                syncCooldownUntil = Date().addingTimeInterval(TimeInterval(cooldown))
+                UserDefaults.standard.set(
+                    syncCooldownUntil?.timeIntervalSince1970,
+                    forKey: "cloudDataSync.nextAttemptAt.\(context.userID)"
+                )
+                lastError = error.localizedDescription
+                Logger(subsystem: "ai.gulu.app.typeflux", category: "CloudDataSync")
+                    .error("Sync rate limited; retry after \(cooldown)s")
+            } else {
+                lastError = error.localizedDescription
+                Logger(subsystem: "ai.gulu.app.typeflux", category: "CloudDataSync")
+                    .error("Sync failed: \(error.localizedDescription, privacy: .public)")
+            }
         } catch {
             lastError = error.localizedDescription
             Logger(subsystem: "ai.gulu.app.typeflux", category: "CloudDataSync")
@@ -541,16 +562,6 @@ final class CloudDataSyncCoordinator: ObservableObject {
                 settingsStore.activePersonaID = ""
             }
             settingsStore.personaAppBindings.removeAll { $0.personaID == id }
-        }
-    }
-}
-
-private enum CloudDataSyncError: LocalizedError {
-    case invalidMutation(String)
-
-    var errorDescription: String? {
-        switch self {
-        case .invalidMutation(let message): message
         }
     }
 }

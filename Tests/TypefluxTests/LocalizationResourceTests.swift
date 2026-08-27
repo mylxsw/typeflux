@@ -206,6 +206,30 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testAccountOverviewCopyAndFormatArgumentsExistInEveryLanguage() throws {
+        let keysAndArgumentCounts = [
+            "auth.account.nextRenewal": 1,
+            "auth.account.refreshOverview": 0,
+            "auth.account.signedInWith": 1,
+            "auth.account.usageQuotaCurrentPeriod": 0,
+            "auth.account.usageQuotaUsedPercentage": 1,
+            "auth.account.usageQuotaUsedPair": 2,
+            "auth.account.usageQuotaExplanationTitle": 0,
+            "auth.account.usageQuotaExplanation": 0,
+            "cloudDataSync.accountDescription": 0,
+            "cloudDataSync.manageData": 0,
+            "cloudDataSync.status.lastSyncAgo": 1
+        ]
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            for (key, argumentCount) in keysAndArgumentCounts {
+                let localized = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(localized, key, "Missing \(key) in \(language.rawValue)")
+                XCTAssertEqual(localized.components(separatedBy: "%@").count - 1, argumentCount, key)
+            }
+        }
+    }
+
     private func localizationBundle(for language: AppLanguage) throws -> Bundle {
         let path = try XCTUnwrap(
             language.bundleLocalizationCandidates.compactMap {

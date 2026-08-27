@@ -8,8 +8,6 @@ struct AccountView: View {
     @State private var passwordChangeFlow = PasswordChangeFlow()
     @State private var isOpeningBilling = false
     @State private var billingActionError: String?
-    @State private var isHoveringSubscriptionCard = false
-    @State private var isHoveringUsageCard = false
     @ObservedObject private var cloudDataSync = CloudDataSyncCoordinator.shared
     @State private var isConfirmingCloudSync = false
     @State private var isConfirmingCloudDataDeletion = false
@@ -17,12 +15,9 @@ struct AccountView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             if let profile = authState.userProfile {
-                profileCard(profile: profile)
-                cloudDataSyncCard
-                if authState.subscription.shouldShowSubscriptionDetails || authState.subscriptionError != nil {
-                    subscriptionCard
-                }
-                usageCard
+                profileSummary(profile: profile)
+                accountOverview
+                cloudDataSyncSection
             } else if authState.isLoading {
                 loadingCard
             } else {
@@ -77,158 +72,216 @@ struct AccountView: View {
         }
     }
 
-    private var cloudDataSyncCard: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
-                StudioSettingRow(
-                    title: L("cloudDataSync.title"),
-                    subtitle: L("cloudDataSync.subtitle")
-                ) {
-                    Toggle("", isOn: Binding(
-                        get: { cloudDataSync.isEnabled },
-                        set: { enabled in
-                            if enabled && cloudDataSync.requiresInitialChoice {
-                                isConfirmingCloudSync = true
-                            } else if enabled {
-                                cloudDataSync.setEnabled(true)
-                            } else {
-                                cloudDataSync.setEnabled(false)
-                            }
-                        }
-                    ))
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                }
+    private var cloudDataSyncSection: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
+            HStack(alignment: .center, spacing: StudioTheme.Spacing.large) {
+                Text(L("cloudDataSync.title"))
+                    .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                if cloudDataSync.isEnabled || cloudDataSync.lastError != nil {
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                    HStack {
-                        Text(cloudDataSyncStatus)
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(
-                                cloudDataSync.lastError == nil ? StudioTheme.textSecondary : StudioTheme.danger
-                            )
-                        Spacer()
-                        if cloudDataSync.isEnabled {
-                            StudioButton(
-                                title: L("cloudDataSync.syncNow"), systemImage: "arrow.triangle.2.circlepath",
-                                variant: .secondary, isDisabled: cloudDataSync.isSyncing,
-                                isLoading: cloudDataSync.isSyncing
-                            ) { cloudDataSync.synchronizeNow() }
+                Spacer(minLength: StudioTheme.Spacing.large)
+
+                Toggle(L("cloudDataSync.title"), isOn: Binding(
+                    get: { cloudDataSync.isEnabled },
+                    set: { enabled in
+                        if enabled && cloudDataSync.requiresInitialChoice {
+                            isConfirmingCloudSync = true
+                        } else if enabled {
+                            cloudDataSync.setEnabled(true)
+                        } else {
+                            cloudDataSync.setEnabled(false)
                         }
                     }
-                }
+                ))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(StudioTheme.accent)
+            }
 
+            Text(L("cloudDataSync.accountDescription"))
+                .font(.studioBody(StudioTheme.Typography.body))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let error = cloudDataSync.lastError, !cloudDataSync.isSyncing {
+                Text(L("cloudDataSync.status.failed", error))
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                    .foregroundStyle(StudioTheme.danger)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: StudioTheme.Spacing.large) {
+                cloudDataSyncStatus
+                Spacer(minLength: StudioTheme.Spacing.medium)
                 if cloudDataSync.canDeleteCloudData {
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                    Button {
-                        isConfirmingCloudDataDeletion = true
-                    } label: {
-                        HStack(spacing: StudioTheme.Spacing.small) {
-                            if cloudDataSync.isDeletingCloudData { ProgressView().controlSize(.small) }
-                            Text(L("cloudDataSync.delete.action"))
-                        }
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.danger)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(cloudDataSync.isDeletingCloudData || cloudDataSync.isSyncing)
+                    cloudDataManagementMenu
                 }
+            }
+        }
+        .padding(.vertical, StudioTheme.Spacing.xSmall)
+    }
+
+    private var cloudDataSyncStatus: some View {
+        HStack(spacing: StudioTheme.Spacing.xSmall) {
+            if cloudDataSync.isSyncing {
+                ProgressView()
+                    .controlSize(.mini)
+                    .accessibilityLabel(L("cloudDataSync.status.syncing"))
+            }
+            if let date = cloudDataSync.lastSyncAt {
+                TimelineView(.periodic(from: .now, by: 30)) { context in
+                    Text(L(
+                        "cloudDataSync.status.lastSyncAgo",
+                        AccountDateDisplayFormatter.relativeTime(
+                            since: date, now: context.date, locale: localization.locale
+                        )
+                    ))
+                    .monospacedDigit()
+                }
+            } else if cloudDataSync.isEnabled || cloudDataSync.isSyncing {
+                Text(L(cloudDataSync.isSyncing ? "cloudDataSync.status.syncing" : "cloudDataSync.status.waiting"))
+            }
+        }
+        .font(.studioBody(StudioTheme.Typography.bodySmall))
+        .foregroundStyle(StudioTheme.textSecondary)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var cloudDataManagementMenu: some View {
+        Menu {
+            Button(role: .destructive) {
+                isConfirmingCloudDataDeletion = true
+            } label: {
+                Label(L("cloudDataSync.delete.action"), systemImage: "trash")
+            }
+            .disabled(cloudDataSync.isDeletingCloudData || cloudDataSync.isSyncing)
+        } label: {
+            HStack(spacing: StudioTheme.Spacing.xSmall) {
+                if cloudDataSync.isDeletingCloudData {
+                    ProgressView().controlSize(.mini)
+                }
+                Text(L("cloudDataSync.manageData"))
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                Image(systemName: "chevron.right")
+                    .font(.system(size: StudioTheme.Typography.iconTiny, weight: .medium))
+            }
+            .foregroundStyle(StudioTheme.textSecondary)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize(horizontal: true, vertical: false)
+        .accessibilityLabel(L("cloudDataSync.manageData"))
+    }
+
+    private var accountOverview: some View {
+        StudioCard {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                subscriptionHeader
+
+                AccountUsageCreditProgressView(
+                    credits: authState.usageCredits,
+                    isFreeAllowance: authState.subscription.treatsCreditsAsFreeAllowance,
+                    periodDescription: usageRangeDescription
+                )
+
+                usageDetails
             }
         }
     }
 
-    private var cloudDataSyncStatus: String {
-        if cloudDataSync.isSyncing { return L("cloudDataSync.status.syncing") }
-        if let error = cloudDataSync.lastError { return L("cloudDataSync.status.failed", error) }
-        if let date = cloudDataSync.lastSyncAt {
-            return L("cloudDataSync.status.lastSync", date.formatted(date: .omitted, time: .shortened))
-        }
-        return L("cloudDataSync.status.waiting")
+    private var showsSubscriptionDetails: Bool {
+        authState.subscription.shouldShowSubscriptionDetails || authState.subscriptionError != nil
     }
 
-    private var subscriptionCard: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
+    private var subscriptionHeader: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-                    HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
-                        Text(L("auth.account.subscription"))
-                            .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .bold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-
-                        Spacer()
-
-                        HStack(spacing: StudioTheme.Spacing.small) {
-                            AccountRefreshIconButton(
-                                helpText: L("auth.account.refreshSubscription"),
-                                isVisible: isHoveringSubscriptionCard,
-                                isDisabled: authState.isLoadingSubscription
-                                    || authState.isSyncingSubscription
-                                    || isOpeningBilling,
-                                isLoading: authState.isLoadingSubscription
-                            ) {
-                                Task { await authState.refreshSubscription() }
-                            }
-
-                            StudioButton(
-                                title: subscriptionPresentation.billingAction == .manageBilling
-                                    ? L("auth.account.manageBilling")
-                                    : L("auth.account.subscribe"),
-                                systemImage: "arrow.up.forward.app",
-                                variant: .primary,
-                                isDisabled: isOpeningBilling || authState.isSyncingSubscription,
-                                isLoading: isOpeningBilling
-                            ) {
-                                openBillingFlow()
-                            }
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: StudioTheme.Spacing.medium) {
+                            subscriptionTitle
+                            if showsSubscriptionDetails { subscriptionStatus }
+                        }
+                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
+                            subscriptionTitle
+                            if showsSubscriptionDetails { subscriptionStatus }
                         }
                     }
 
-                    HStack(alignment: .firstTextBaseline, spacing: StudioTheme.Spacing.medium) {
-                        Text(L(subscriptionPresentation.subtitleKey))
-                            .font(.studioBody(StudioTheme.Typography.body))
+                    if showsSubscriptionDetails {
+                        Text(localized(subscriptionPresentation.period))
+                            .font(.studioBody(StudioTheme.Typography.bodySmall))
                             .foregroundStyle(StudioTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
-
-                        Spacer(minLength: StudioTheme.Spacing.medium)
-
-                        if subscriptionPresentation.showsSubscriptionSyncAction {
-                            subscriptionSyncButton
-                        }
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
 
-                HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
-                    accountSummaryItem(
-                        label: L("auth.account.subscriptionPlan"),
-                        value: localized(subscriptionPresentation.plan),
-                        systemImage: "creditcard"
+                Spacer(minLength: 0)
+
+                HStack(spacing: StudioTheme.Spacing.xSmall) {
+                    AccountRefreshIconButton(
+                        helpText: L("auth.account.refreshOverview"),
+                        isDisabled: authState.isLoadingSubscription || authState.isLoadingUsage
+                            || authState.isSyncingSubscription || isOpeningBilling,
+                        isLoading: authState.isLoadingSubscription || authState.isLoadingUsage,
+                        action: refreshAccountOverview
                     )
 
-                    accountSummaryItem(
-                        label: L("auth.account.subscriptionStatus"),
-                        value: localized(subscriptionPresentation.status),
-                        systemImage: "checkmark.seal"
-                    )
-
-                    accountSummaryItem(
-                        label: L(subscriptionPresentation.periodLabelKey),
-                        value: localized(subscriptionPresentation.period),
-                        systemImage: "calendar.badge.clock"
-                    )
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                if let error = billingActionError ?? authState.subscriptionError {
-                    Text(error)
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.danger)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if showsSubscriptionDetails {
+                        StudioButton(
+                            title: L(subscriptionPresentation.billingAction == .manageBilling
+                                ? "auth.account.manageBilling" : "auth.account.subscribe"),
+                            systemImage: nil,
+                            variant: .primary,
+                            isDisabled: isOpeningBilling || authState.isSyncingSubscription,
+                            isLoading: isOpeningBilling,
+                            action: openBillingFlow
+                        )
+                    }
                 }
             }
+
+            if showsSubscriptionDetails, !authState.subscription.entitled {
+                Text(L(subscriptionPresentation.subtitleKey))
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if subscriptionPresentation.showsSubscriptionSyncAction {
+                subscriptionSyncButton
+            }
+            if let error = billingActionError ?? authState.subscriptionError {
+                Text(error)
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                    .foregroundStyle(StudioTheme.danger)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .onHover { isHoveringSubscriptionCard = $0 }
+    }
+
+    private var subscriptionTitle: some View {
+        Text(showsSubscriptionDetails
+            ? "\(L("sidebar.accountCard.cloudAccount")) · \(localized(subscriptionPresentation.plan))"
+            : L("sidebar.accountCard.cloudAccount"))
+            .font(.studioBody(StudioTheme.Typography.cardTitle, weight: .semibold))
+            .foregroundStyle(StudioTheme.textPrimary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var subscriptionStatus: some View {
+        HStack(spacing: StudioTheme.Spacing.xxSmall) {
+            Circle()
+                .fill(authState.subscription.entitled ? StudioTheme.success : StudioTheme.textSecondary)
+                .frame(width: 6, height: 6)
+                .accessibilityHidden(true)
+            Text(localized(subscriptionPresentation.status))
+                .font(.studioBody(StudioTheme.Typography.bodySmall))
+                .foregroundStyle(StudioTheme.textSecondary)
+        }
+        .fixedSize()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(L("auth.account.subscriptionStatus")): \(localized(subscriptionPresentation.status))")
     }
 
     private var subscriptionPresentation: AccountSubscriptionPresentation {
@@ -239,103 +292,75 @@ struct AccountView: View {
         Button(action: syncBillingSubscription) {
             Group {
                 if authState.isSyncingSubscription {
-                    ProgressView()
-                        .controlSize(.small)
+                    ProgressView().controlSize(.small)
                 } else {
                     Text(L("auth.account.subscriptionSyncAction"))
                 }
             }
-            .font(.studioBody(StudioTheme.Typography.caption))
+            .font(.studioBody(StudioTheme.Typography.bodySmall))
             .foregroundStyle(StudioTheme.textSecondary)
-            .lineLimit(1)
-            .fixedSize(horizontal: true, vertical: false)
         }
         .buttonStyle(.plain)
-        .disabled(
-            authState.isSyncingSubscription
-                || authState.isLoadingSubscription
-                || isOpeningBilling
-        )
+        .disabled(authState.isSyncingSubscription || authState.isLoadingSubscription || isOpeningBilling)
     }
 
-    private var usageCard: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-                    HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
-                        Text(L("auth.account.usage"))
-                            .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .bold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-
-                        Spacer()
-
-                        AccountRefreshIconButton(
-                            helpText: L("auth.account.refreshUsage"),
-                            isVisible: isHoveringUsageCard,
-                            isDisabled: authState.isLoadingUsage,
-                            isLoading: authState.isLoadingUsage
-                        ) {
-                            Task { await authState.refreshUsage() }
-                        }
-                    }
-
-                    Text(usageRangeDescription)
-                        .font(.studioBody(StudioTheme.Typography.body))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                AccountUsageCreditProgressView(
-                    credits: authState.usageCredits,
-                    isFreeAllowance: authState.subscription.treatsCreditsAsFreeAllowance
+    private var usageDetails: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
+            LazyVGrid(
+                columns: Array(
+                    repeating: GridItem(
+                        .flexible(minimum: 100), spacing: StudioTheme.Spacing.mediumLarge, alignment: .leading
+                    ),
+                    count: 5
+                ),
+                alignment: .leading,
+                spacing: StudioTheme.Spacing.mediumLarge
+            ) {
+                usageMetric(
+                    label: L("auth.account.usageAudio"),
+                    value: formattedAudioDuration(authState.usageStats.asrAudioDurationMs)
                 )
+                usageMetric(
+                    label: L("auth.account.usageTokens"), value: formattedCount(authState.usageStats.chatTotalTokens)
+                )
+                usageMetric(
+                    label: L("auth.account.usageRequests"), value: formattedCount(authState.usageStats.totalRequests)
+                )
+                usageMetric(
+                    label: L("auth.account.usageTranscripts"),
+                    value: formattedCount(authState.usageStats.asrOutputChars)
+                )
+                usageMetric(
+                    label: L("auth.account.usageAnswers"), value: formattedCount(authState.usageStats.chatOutputChars)
+                )
+            }
 
-                HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
-                    accountSummaryItem(
-                        label: L("auth.account.usageAudio"),
-                        value: formattedAudioDuration(authState.usageStats.asrAudioDurationMs),
-                        systemImage: "waveform"
-                    )
-
-                    accountSummaryItem(
-                        label: L("auth.account.usageTokens"),
-                        value: formattedCount(authState.usageStats.chatTotalTokens),
-                        systemImage: "text.bubble"
-                    )
-
-                    accountSummaryItem(
-                        label: L("auth.account.usageRequests"),
-                        value: formattedCount(authState.usageStats.totalRequests),
-                        systemImage: "bolt.horizontal"
-                    )
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
-                    accountSummaryItem(
-                        label: L("auth.account.usageTranscripts"),
-                        value: formattedCount(authState.usageStats.asrOutputChars),
-                        systemImage: "character.cursor.ibeam"
-                    )
-
-                    accountSummaryItem(
-                        label: L("auth.account.usageAnswers"),
-                        value: formattedCount(authState.usageStats.chatOutputChars),
-                        systemImage: "quote.bubble"
-                    )
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                if let error = authState.usageError {
-                    Text(error)
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.danger)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            if let error = authState.usageError {
+                Text(error)
+                    .font(.studioBody(StudioTheme.Typography.bodySmall))
+                    .foregroundStyle(StudioTheme.danger)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .onHover { isHoveringUsageCard = $0 }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L("auth.account.usage"))
+    }
+
+    private func usageMetric(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
+            Text(label)
+                .font(.studioBody(StudioTheme.Typography.bodySmall))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(value)
+                .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .medium))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 
     private func localized(_ value: AccountSubscriptionPresentation.TextValue) -> String {
@@ -354,7 +379,7 @@ struct AccountView: View {
         case let .endsOn(dateString):
             String(format: L("auth.account.subscriptionEndsOn"), formattedDate(dateString))
         case let .renewsOn(dateString):
-            String(format: L("auth.account.subscriptionRenewsOn"), formattedDate(dateString))
+            String(format: L("auth.account.nextRenewal"), formattedDate(dateString))
         case let .cycle(startString, endString):
             if let startString {
                 String(
@@ -368,81 +393,40 @@ struct AccountView: View {
         }
     }
 
-    // MARK: - Profile Card
+    // MARK: - Profile
 
-    private func profileCard(profile: UserProfile) -> some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
-                HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
-                    ZStack {
-                        Circle()
-                            .fill(StudioTheme.accentSoft)
-                            .frame(width: 60, height: 60)
-                        Text(avatarInitial(from: profile))
-                            .font(.studioDisplay(StudioTheme.Typography.pageTitle, weight: .bold))
-                            .foregroundStyle(StudioTheme.accent)
-                    }
+    private func profileSummary(profile: UserProfile) -> some View {
+        HStack(alignment: .center, spacing: StudioTheme.Spacing.mediumLarge) {
+            Text(avatarInitial(from: profile))
+                .font(.studioBody(StudioTheme.Typography.sectionTitle, weight: .semibold))
+                .foregroundStyle(StudioTheme.accent)
+                .frame(width: 48, height: 48)
+                .background(Circle().fill(StudioTheme.accentSoft))
+                .accessibilityHidden(true)
 
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
-                        Text(profile.resolvedDisplayName)
-                            .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .bold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-
-                        Text(profile.email)
-                            .font(.studioBody(StudioTheme.Typography.body))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                    }
-
-                    Spacer()
-                }
-
-                HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
-                    accountSummaryItem(
-                        label: L("auth.account.provider"),
-                        value: providerDisplayName(profile.provider),
-                        systemImage: "person.crop.circle.badge.checkmark"
-                    )
-
-                    accountSummaryItem(
-                        label: L("auth.account.memberSince"),
-                        value: formattedDate(profile.createdAt),
-                        systemImage: "calendar"
-                    )
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                if profile.canChangePassword {
-                    passwordManagementSection
-                }
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                Text(profile.resolvedDisplayName)
+                    .font(.studioBody(StudioTheme.Typography.cardTitle, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Text("\(profile.email) · \(providerDisplayName(profile.provider))")
+                    .font(.studioBody(StudioTheme.Typography.body))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-        }
-    }
 
-    private var passwordManagementSection: some View {
-        StudioCard(padding: StudioTheme.Spacing.medium) {
-            HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-                    Text(L("auth.account.passwordSection"))
-                        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
+            Spacer(minLength: StudioTheme.Spacing.medium)
 
-                    Text(L("auth.account.passwordHint"))
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer()
-
-                StudioButton(
-                    title: L("auth.account.changePassword"),
-                    systemImage: "key",
-                    variant: .secondary
-                ) {
+            if profile.canChangePassword {
+                Button(L("auth.account.changePassword")) {
                     passwordChangeFlow.presentForm()
                 }
+                .buttonStyle(.plain)
+                .font(.studioBody(StudioTheme.Typography.bodySmall))
+                .foregroundStyle(StudioTheme.textSecondary)
             }
         }
+        .padding(.vertical, StudioTheme.Spacing.xSmall)
     }
 
     // MARK: - Loading Card
@@ -486,38 +470,6 @@ struct AccountView: View {
 
     // MARK: - Helpers
 
-    private func accountSummaryItem(label: String, value: String, systemImage: String) -> some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
-                Image(systemName: systemImage)
-                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                Text(label)
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
-            }
-
-            Text(value)
-                .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(StudioTheme.Spacing.medium)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                .fill(StudioTheme.surfaceMuted.opacity(StudioTheme.Opacity.textFieldFill))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                .stroke(
-                    StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
-                    lineWidth: StudioTheme.BorderWidth.thin
-                )
-        )
-    }
-
     private func avatarInitial(from profile: UserProfile) -> String {
         let source = profile.resolvedDisplayName
         return String(source.prefix(1)).uppercased()
@@ -528,32 +480,16 @@ struct AccountView: View {
         case "password":
             L("auth.account.providerEmail")
         case "google":
-            "Google"
+            L("auth.account.signedInWith", "Google")
         case "apple":
-            "Apple"
+            L("auth.account.signedInWith", "Apple")
         default:
             provider
         }
     }
 
     private func formattedDate(_ dateString: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: dateString) {
-            let display = DateFormatter()
-            display.dateStyle = .medium
-            display.timeStyle = .none
-            return display.string(from: date)
-        }
-
-        formatter.formatOptions = [.withInternetDateTime]
-        if let date = formatter.date(from: dateString) {
-            let display = DateFormatter()
-            display.dateStyle = .medium
-            display.timeStyle = .none
-            return display.string(from: date)
-        }
-        return dateString
+        AccountDateDisplayFormatter.date(dateString, locale: localization.locale)
     }
 
     private var usageRangeDescription: String {
@@ -783,7 +719,6 @@ private struct ChangePasswordSheet: View {
 
 private struct AccountRefreshIconButton: View {
     let helpText: String
-    var isVisible = true
     var isDisabled = false
     var isLoading = false
     let action: () -> Void
@@ -808,9 +743,6 @@ private struct AccountRefreshIconButton: View {
         }
         .buttonStyle(.plain)
         .disabled(isDisabled || isLoading)
-        .allowsHitTesting(isVisible)
-        .opacity(isVisible ? (isDisabled && !isLoading ? 0.45 : 1) : 0)
-        .animation(.easeOut(duration: 0.14), value: isVisible)
         .onHover { isHovering = $0 }
         .help(helpText)
         .accessibilityLabel(helpText)

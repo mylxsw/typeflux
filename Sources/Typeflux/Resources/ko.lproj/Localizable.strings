@@ -1299,9 +1299,21 @@
 "cloudDataSync.status.syncing" = "동기화 중…";
 "cloudDataSync.status.failed" = "동기화 실패: %@";
 "cloudDataSync.status.lastSync" = "마지막 동기화: %@";
+"cloudDataSync.status.lastSyncAgo" = "마지막 동기화: %@";
 "cloudDataSync.status.waiting" = "첫 동기화 대기 중";
 "cloudDataSync.resetRequired" = "클라우드 데이터가 크게 변경되었습니다. 동기화를 다시 켜고 로컬 데이터를 병합할지 클라우드 데이터를 사용할지 선택하세요.";
 "cloudDataSync.delete.action" = "모든 클라우드 동기화 데이터 삭제";
 "cloudDataSync.delete.title" = "클라우드 동기화 데이터를 삭제할까요?";
 "cloudDataSync.delete.message" = "클라우드의 어휘와 사용자 지정 페르소나가 영구 삭제됩니다. 이 기기의 로컬 데이터는 유지되며 다른 기기는 다시 승인할 때까지 동기화를 중지합니다.";
 "cloudDataSync.delete.confirm" = "클라우드 데이터 삭제";
+
+"auth.account.nextRenewal" = "다음 갱신: %@";
+"auth.account.refreshOverview" = "구독 및 사용량 새로 고침";
+"auth.account.signedInWith" = "%@ 로그인";
+"auth.account.usageQuotaCurrentPeriod" = "이번 기간의 클라우드 크레딧";
+"auth.account.usageQuotaUsedPercentage" = "%@ 사용됨";
+"auth.account.usageQuotaUsedPair" = "%@ / %@ 사용됨";
+"auth.account.usageQuotaExplanationTitle" = "크레딧 안내";
+"auth.account.usageQuotaExplanation" = "클라우드 크레딧은 이번 기간의 사용량과 총 한도를 나타내며 진행 막대는 사용 비율을 표시합니다. 아래 사용 데이터는 각각 다른 단위를 사용하며 크레딧 수와 같지 않습니다.";
+"cloudDataSync.accountDescription" = "사용자 지정 어휘와 페르소나만 이 계정으로 로그인한 다른 기기에 동기화합니다.";
+"cloudDataSync.manageData" = "클라우드 데이터 관리";

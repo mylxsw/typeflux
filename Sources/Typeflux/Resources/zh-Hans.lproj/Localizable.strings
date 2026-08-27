@@ -1230,7 +1230,7 @@
 
 "auth.account.provider" = "登录方式";
 "auth.account.memberSince" = "注册时间";
-"auth.account.logout" = "退出";
+"auth.account.logout" = "退出登录";
 "auth.account.providerEmail" = "邮箱与密码";
 "auth.account.signIn" = "登录账号";
 "auth.account.passwordSection" = "密码管理";
@@ -1280,9 +1280,9 @@
 "auth.account.usage" = "使用明细";
 "auth.account.usagePeriodHint" = "统计周期：%@ 至 %@。";
 "auth.account.usageCycleUnavailable" = "统计周期暂不可用。";
-"auth.account.usageAudio" = "音频";
-"auth.account.usageTokens" = "Token";
-"auth.account.usageRequests" = "请求";
+"auth.account.usageAudio" = "音频时长";
+"auth.account.usageTokens" = "Token 用量";
+"auth.account.usageRequests" = "请求次数";
 "auth.account.usageTranscripts" = "转写字符";
 "auth.account.usageAnswers" = "回复字符";
 "auth.account.refreshUsage" = "刷新用量";
@@ -1314,9 +1314,21 @@
 "cloudDataSync.status.syncing" = "正在同步…";
 "cloudDataSync.status.failed" = "同步失败：%@";
 "cloudDataSync.status.lastSync" = "上次同步于 %@";
+"cloudDataSync.status.lastSyncAgo" = "上次同步于 %@";
 "cloudDataSync.status.waiting" = "等待首次同步";
 "cloudDataSync.resetRequired" = "云端数据已发生重大变化。请重新开启同步，并选择合并本地数据或使用云端数据。";
 "cloudDataSync.delete.action" = "删除全部云同步数据";
 "cloudDataSync.delete.title" = "删除云同步数据？";
 "cloudDataSync.delete.message" = "这会永久删除云端保存的词库和自定义人设。本机数据会保留，其他设备将停止同步，直到你重新确认是否合并。";
 "cloudDataSync.delete.confirm" = "删除云端数据";
+
+"auth.account.nextRenewal" = "下次续费：%@";
+"auth.account.refreshOverview" = "刷新订阅与用量";
+"auth.account.signedInWith" = "%@ 登录";
+"auth.account.usageQuotaCurrentPeriod" = "本期云端额度";
+"auth.account.usageQuotaUsedPercentage" = "已用 %@";
+"auth.account.usageQuotaUsedPair" = "已用 %@ / %@";
+"auth.account.usageQuotaExplanationTitle" = "额度说明";
+"auth.account.usageQuotaExplanation" = "云端额度显示本期已用量和总额度，进度条表示已用比例。下方各项使用数据有独立单位，不等同于额度数值。";
+"cloudDataSync.accountDescription" = "仅同步自定义词库与人设到此账号的其他设备。";
+"cloudDataSync.manageData" = "云端数据管理";

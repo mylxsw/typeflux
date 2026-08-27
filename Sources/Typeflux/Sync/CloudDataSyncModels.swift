@@ -66,6 +66,21 @@ struct CloudSyncMutation: Codable, Equatable {
     }
 }
 
+enum CloudDataSyncError: LocalizedError, Equatable {
+    case invalidMutation(String)
+    case rateLimited(retryAfterSeconds: Int?)
+
+    var errorDescription: String? {
+        switch self {
+        case let .invalidMutation(message): message
+        case let .rateLimited(.some(seconds)):
+            "Cloud sync is rate limited. Retry after \(seconds) seconds."
+        case .rateLimited(.none):
+            "Cloud sync is rate limited."
+        }
+    }
+}
+
 struct CloudSyncRequest: Encodable {
     let protocolVersion = 2
     let datasetGeneration: Int64
@@ -73,7 +88,7 @@ struct CloudSyncRequest: Encodable {
     let cursor: Int64
     let ackCursor: Int64
     let checkpoint: Int64
-    let limit = 200
+    let limit = 500
     let mutations: [CloudSyncMutation]
 
     private enum CodingKeys: String, CodingKey {

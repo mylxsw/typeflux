@@ -1299,9 +1299,21 @@
 "cloudDataSync.status.syncing" = "同期中…";
 "cloudDataSync.status.failed" = "同期に失敗しました：%@";
 "cloudDataSync.status.lastSync" = "最終同期：%@";
+"cloudDataSync.status.lastSyncAgo" = "最終同期：%@";
 "cloudDataSync.status.waiting" = "初回同期を待機中";
 "cloudDataSync.resetRequired" = "クラウドデータが大きく変更されました。同期を再度有効にし、ローカルデータを統合するかクラウド版を使用するか選択してください。";
 "cloudDataSync.delete.action" = "クラウド同期データをすべて削除";
 "cloudDataSync.delete.title" = "クラウド同期データを削除しますか？";
 "cloudDataSync.delete.message" = "クラウド上の単語帳とカスタムペルソナを完全に削除します。この端末のデータは残り、他の端末は再承認するまで同期を停止します。";
 "cloudDataSync.delete.confirm" = "クラウドデータを削除";
+
+"auth.account.nextRenewal" = "次回更新：%@";
+"auth.account.refreshOverview" = "サブスクリプションと使用量を更新";
+"auth.account.signedInWith" = "%@ でログイン";
+"auth.account.usageQuotaCurrentPeriod" = "今期のクラウドクレジット";
+"auth.account.usageQuotaUsedPercentage" = "%@ 使用済み";
+"auth.account.usageQuotaUsedPair" = "%@ / %@ 使用済み";
+"auth.account.usageQuotaExplanationTitle" = "クレジットについて";
+"auth.account.usageQuotaExplanation" = "クラウドクレジットは今期の使用量と上限を示し、プログレスバーは使用済みの割合を示します。以下の各使用データはそれぞれ異なる単位で表示され、クレジット数とは一致しません。";
+"cloudDataSync.accountDescription" = "カスタム語彙とペルソナのみを、このアカウントでログインした他のデバイスと同期します。";
+"cloudDataSync.manageData" = "クラウドデータを管理";

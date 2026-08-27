@@ -1314,9 +1314,21 @@
 "cloudDataSync.status.syncing" = "Syncing…";
 "cloudDataSync.status.failed" = "Sync failed: %@";
 "cloudDataSync.status.lastSync" = "Last synced at %@";
+"cloudDataSync.status.lastSyncAgo" = "Last synced %@";
 "cloudDataSync.status.waiting" = "Waiting for first sync";
 "cloudDataSync.resetRequired" = "Cloud data changed significantly. Review and enable sync again to choose whether to merge local data or use the cloud copy.";
 "cloudDataSync.delete.action" = "Delete all cloud sync data";
 "cloudDataSync.delete.title" = "Delete cloud sync data?";
 "cloudDataSync.delete.message" = "This permanently deletes cloud copies of your vocabulary and custom personas. Local data stays on this device. Other devices will stop syncing until you approve a new merge.";
 "cloudDataSync.delete.confirm" = "Delete cloud data";
+
+"auth.account.nextRenewal" = "Next renewal: %@";
+"auth.account.refreshOverview" = "Refresh subscription and usage";
+"auth.account.signedInWith" = "Signed in with %@";
+"auth.account.usageQuotaCurrentPeriod" = "Cloud credits this period";
+"auth.account.usageQuotaUsedPercentage" = "%@ used";
+"auth.account.usageQuotaUsedPair" = "Used %@ / %@";
+"auth.account.usageQuotaExplanationTitle" = "About cloud credits";
+"auth.account.usageQuotaExplanation" = "Cloud credits show the amount used and the total allowance for this period. The progress bar shows the used proportion. The activity metrics below use their own units and do not equal credits.";
+"cloudDataSync.accountDescription" = "Sync only custom vocabulary and personas across devices signed in to this account.";
+"cloudDataSync.manageData" = "Manage cloud data";

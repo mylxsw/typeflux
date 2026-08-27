@@ -160,6 +160,47 @@ struct SQLiteCloudDataSyncStoreTests {
         #expect(store.pending(userID: "u").map(\.mutationID) == [mutation.mutationID])
     }
 
+    @Test func unchangedVocabularyDoesNotUploadAgainAfterJSONReordering() throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = SQLiteCloudDataSyncStore(baseDirectory: directory)
+        let id = UUID()
+        let server = Data(#"{"term":"Typeflux","source":"manual","created_at":"2023-11-14T22:13:20Z","occurrence_count":2}"#.utf8)
+        let local = Data(#"{ "occurrence_count":2, "created_at":"2023-11-14T22:13:20Z", "source":"manual", "term":"Typeflux" }"#.utf8)
+        store.apply(change: CloudSyncChange(
+            sequence: 1, entityType: .vocabulary, entityID: id, operation: "create",
+            revision: 1, payload: JSONValue(data: server)
+        ), userID: "u")
+
+        for _ in 0 ..< 3 {
+            store.stageLocalChanges(userID: "u", type: .vocabulary, entities: [id: local])
+            #expect(store.pending(userID: "u").isEmpty)
+        }
+    }
+
+    @Test func personaServerMetadataDoesNotBecomeALocalEdit() throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = SQLiteCloudDataSyncStore(baseDirectory: directory)
+        let id = UUID()
+        let server = Data(#"{"created_at":"2023-11-14T22:13:20Z","name":"Editor","prompt":"draft"}"#.utf8)
+        let local = Data(#"{"prompt":"draft","name":"Editor"}"#.utf8)
+        store.apply(change: CloudSyncChange(
+            sequence: 1, entityType: .persona, entityID: id, operation: "create",
+            revision: 1, payload: JSONValue(data: server)
+        ), userID: "u")
+
+        store.stageLocalChanges(userID: "u", type: .persona, entities: [id: local])
+        #expect(store.pending(userID: "u").isEmpty)
+
+        let edited = Data(#"{"name":"Editor","prompt":"revised"}"#.utf8)
+        store.stageLocalChanges(userID: "u", type: .persona, entities: [id: edited])
+        let mutation = try #require(store.pending(userID: "u").first)
+        #expect(mutation.operation == "update")
+        #expect(mutation.baseRevision == 1)
+        #expect(mutation.payload == edited)
+    }
+
     private func temporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)

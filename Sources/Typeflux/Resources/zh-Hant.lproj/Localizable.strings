@@ -1310,9 +1310,21 @@
 "cloudDataSync.status.syncing" = "正在同步…";
 "cloudDataSync.status.failed" = "同步失敗：%@";
 "cloudDataSync.status.lastSync" = "上次同步於 %@";
+"cloudDataSync.status.lastSyncAgo" = "上次同步：%@";
 "cloudDataSync.status.waiting" = "等待首次同步";
 "cloudDataSync.resetRequired" = "雲端資料已發生重大變化。請重新開啟同步，並選擇合併本機資料或使用雲端資料。";
 "cloudDataSync.delete.action" = "刪除全部雲端同步資料";
 "cloudDataSync.delete.title" = "刪除雲端同步資料？";
 "cloudDataSync.delete.message" = "這會永久刪除雲端儲存的詞庫和自訂人設。本機資料會保留，其他裝置將停止同步，直到你重新確認是否合併。";
 "cloudDataSync.delete.confirm" = "刪除雲端資料";
+
+"auth.account.nextRenewal" = "下次續費：%@";
+"auth.account.refreshOverview" = "重新整理訂閱與用量";
+"auth.account.signedInWith" = "%@ 登入";
+"auth.account.usageQuotaCurrentPeriod" = "本期雲端額度";
+"auth.account.usageQuotaUsedPercentage" = "已用 %@";
+"auth.account.usageQuotaUsedPair" = "已用 %@ / %@";
+"auth.account.usageQuotaExplanationTitle" = "額度說明";
+"auth.account.usageQuotaExplanation" = "雲端額度顯示本期已用量和總額度，進度條表示已用比例。下方各項使用資料有獨立單位，不等同於額度數值。";
+"cloudDataSync.accountDescription" = "僅同步自訂詞庫與人設至此帳號的其他裝置。";
+"cloudDataSync.manageData" = "雲端資料管理";

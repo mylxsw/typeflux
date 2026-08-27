@@ -82,6 +82,48 @@ final class CloudDataSyncAPIServiceTests: XCTestCase {
         let response = try await service.reset(token: "token-1")
         XCTAssertEqual(response.datasetGeneration, 5)
     }
+
+    func testSyncHandlesRateLimitWithRetryAfter() async throws {
+        let session = CloudDataSyncStubSession()
+        await session.setHandler { request in
+            XCTAssertEqual(request.url?.path, "/api/v1/sync")
+            XCTAssertEqual(request.httpMethod, "POST")
+            return (
+                Data(#"{"code":"RATE_LIMITED","message":"too many requests","data":null}"#.utf8),
+                HTTPURLResponse(
+                    url: request.url!,
+                    statusCode: 429,
+                    httpVersion: nil,
+                    headerFields: ["Retry-After": "17"]
+                )!
+            )
+        }
+        let selector = CloudEndpointSelector(
+            baseURLs: [URL(string: "https://api.example")!], prober: CloudDataSyncNoOpProber()
+        )
+        let service = CloudDataSyncAPIService(
+            executor: CloudRequestExecutor(selector: selector, session: session)
+        )
+
+        do {
+            _ = try await service.sync(
+                token: "token-1",
+                request: CloudSyncRequest(
+                    datasetGeneration: 3,
+                    deviceID: UUID(uuidString: "33333333-3333-4333-8333-333333333333")!,
+                    cursor: 0, ackCursor: 0, checkpoint: 0,
+                    mutations: []
+                )
+            )
+            XCTFail("Expected rate limit error")
+        } catch let error as CloudDataSyncError {
+            guard case let .rateLimited(retryAfterSeconds) = error else {
+                XCTFail("Expected rate limit error, got \(error)")
+                return
+            }
+            XCTAssertEqual(retryAfterSeconds, 17)
+        }
+    }
 }
 
 private actor CloudDataSyncStubSession: CloudHTTPSession {
