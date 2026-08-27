@@ -1265,8 +1265,10 @@
 "cloudDataSync.title" = "단어장 및 페르소나 클라우드 동기화";
 "cloudDataSync.subtitle" = "기본값은 꺼짐입니다. 활성화하면 사용자 단어장과 사용자 페르소나만 같은 계정의 기기 간에 동기화됩니다.";
 "cloudDataSync.consent.title" = "클라우드 동기화를 켤까요?";
-"cloudDataSync.consent.message" = "로컬 단어장과 사용자 페르소나를 Typeflux Cloud에 업로드하고 기존 클라우드 데이터와 병합합니다. 시스템 페르소나, API 키, 기록, 앱 연결 및 기타 설정은 업로드하지 않습니다.";
+"cloudDataSync.consent.message" = "로컬과 클라우드 데이터를 병합하거나 클라우드 데이터만 사용할지 선택하세요. 활성화하면 단어장과 사용자 페르소나는 암호화된 연결로 전송되며 다른 설정은 업로드되지 않습니다.";
 "cloudDataSync.consent.confirm" = "켜고 병합";
+"cloudDataSync.consent.merge" = "로컬 및 클라우드 병합";
+"cloudDataSync.consent.cloudOnly" = "클라우드 데이터 사용";
 "cloudDataSync.syncNow" = "지금 동기화";
 "cloudDataSync.status.syncing" = "동기화 중…";
 "cloudDataSync.status.failed" = "동기화 실패: %@";

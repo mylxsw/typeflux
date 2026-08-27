@@ -1,5 +1,22 @@
 import Foundation
 
+enum CloudDataLocalScope {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var value = "guest"
+
+    static var key: String {
+        lock.withLock { value }
+    }
+
+    static func useGuest() {
+        lock.withLock { value = "guest" }
+    }
+
+    static func useAccount(_ userID: String) {
+        lock.withLock { value = "user.\(userID)" }
+    }
+}
+
 enum CloudSyncEntityType: String, Codable {
     case vocabulary
     case persona
@@ -79,13 +96,41 @@ struct CloudSyncMutationResult: Decodable {
     let canonicalID: UUID
     let revision: Int64
     let current: JSONValue?
+    let deleted: Bool
+    let message: String?
 
     private enum CodingKeys: String, CodingKey {
         case mutationID = "mutation_id"
         case status
         case entityID = "entity_id"
         case canonicalID = "canonical_id"
-        case revision, current
+        case revision, current, deleted, message
+    }
+
+    init(
+        mutationID: UUID, status: String, entityID: UUID, canonicalID: UUID,
+        revision: Int64, current: JSONValue?, deleted: Bool = false, message: String? = nil
+    ) {
+        self.mutationID = mutationID
+        self.status = status
+        self.entityID = entityID
+        self.canonicalID = canonicalID
+        self.revision = revision
+        self.current = current
+        self.deleted = deleted
+        self.message = message
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        mutationID = try container.decode(UUID.self, forKey: .mutationID)
+        status = try container.decode(String.self, forKey: .status)
+        entityID = try container.decode(UUID.self, forKey: .entityID)
+        canonicalID = try container.decodeIfPresent(UUID.self, forKey: .canonicalID) ?? entityID
+        revision = try container.decodeIfPresent(Int64.self, forKey: .revision) ?? 0
+        current = try container.decodeIfPresent(JSONValue.self, forKey: .current)
+        deleted = try container.decodeIfPresent(Bool.self, forKey: .deleted) ?? false
+        message = try container.decodeIfPresent(String.self, forKey: .message)
     }
 }
 

@@ -1280,8 +1280,10 @@
 "cloudDataSync.title" = "Cloud sync for vocabulary and personas";
 "cloudDataSync.subtitle" = "Off by default. When enabled, only custom vocabulary and custom personas are synced across your signed-in devices.";
 "cloudDataSync.consent.title" = "Enable cloud sync?";
-"cloudDataSync.consent.message" = "Your local vocabulary and custom personas will be uploaded to Typeflux Cloud and merged with existing cloud data. System personas, API keys, history, app bindings, and other settings are never uploaded.";
+"cloudDataSync.consent.message" = "Choose whether to merge local and cloud data or use cloud data only. Once enabled, vocabulary and custom personas are encrypted in transit to Typeflux Cloud; other settings are not uploaded.";
 "cloudDataSync.consent.confirm" = "Enable and merge";
+"cloudDataSync.consent.merge" = "Merge local and cloud";
+"cloudDataSync.consent.cloudOnly" = "Use cloud data";
 "cloudDataSync.syncNow" = "Sync now";
 "cloudDataSync.status.syncing" = "Syncing…";
 "cloudDataSync.status.failed" = "Sync failed: %@";

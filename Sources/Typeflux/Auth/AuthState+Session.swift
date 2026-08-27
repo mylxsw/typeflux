@@ -89,6 +89,7 @@ extension AuthState {
             cachedStoredToken = (response.accessToken, normalizedExpiresAt)
             cachedRefreshToken = response.refreshToken ?? refreshToken
             logger.info("Token refreshed successfully")
+            NotificationCenter.default.post(name: .authTokenDidRefresh, object: self)
             return .refreshed
         } catch let error as AuthError {
             logger.error("Token refresh failed: \(error.localizedDescription)")

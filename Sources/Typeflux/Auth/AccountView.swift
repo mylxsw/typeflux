@@ -57,7 +57,12 @@ struct AccountView: View {
         }
         .alert(L("cloudDataSync.consent.title"), isPresented: $isConfirmingCloudSync) {
             Button(L("common.cancel"), role: .cancel) {}
-            Button(L("cloudDataSync.consent.confirm")) { cloudDataSync.setEnabled(true) }
+            Button(L("cloudDataSync.consent.merge")) {
+                cloudDataSync.setEnabled(true, mergeGuestData: true)
+            }
+            Button(L("cloudDataSync.consent.cloudOnly")) {
+                cloudDataSync.setEnabled(true, mergeGuestData: false)
+            }
         } message: {
             Text(L("cloudDataSync.consent.message"))
         }
@@ -73,8 +78,13 @@ struct AccountView: View {
                     Toggle("", isOn: Binding(
                         get: { cloudDataSync.isEnabled },
                         set: { enabled in
-                            if enabled { isConfirmingCloudSync = true }
-                            else { cloudDataSync.setEnabled(false) }
+                            if enabled && cloudDataSync.requiresInitialChoice {
+                                isConfirmingCloudSync = true
+                            } else if enabled {
+                                cloudDataSync.setEnabled(true)
+                            } else {
+                                cloudDataSync.setEnabled(false)
+                            }
                         }
                     ))
                     .labelsHidden()

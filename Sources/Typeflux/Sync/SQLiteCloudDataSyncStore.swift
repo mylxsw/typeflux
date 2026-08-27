@@ -12,37 +12,56 @@ final class SQLiteCloudDataSyncStore {
 
     private let queue = DispatchQueue(label: "typeflux.cloud-data-sync.sqlite")
     private var db: OpaquePointer?
+    private(set) var initializationError: Error?
+    var isAvailable: Bool { db != nil && initializationError == nil }
 
     init(baseDirectory: URL? = nil) {
         let directory = baseDirectory ?? FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask
         )[0].appendingPathComponent("Typeflux", isDirectory: true)
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        } catch {
+            initializationError = error
+            return
+        }
         let url = directory.appendingPathComponent("cloud-sync.sqlite")
-        guard sqlite3_open(url.path, &db) == SQLITE_OK else { return }
-        try? execute("PRAGMA journal_mode=WAL")
-        try? execute("PRAGMA synchronous=NORMAL")
-        try? execute("""
+        guard sqlite3_open(url.path, &db) == SQLITE_OK else {
+            initializationError = databaseError()
+            if let db { sqlite3_close(db) }
+            db = nil
+            return
+        }
+        do {
+            try execute("PRAGMA journal_mode=WAL")
+            try execute("PRAGMA synchronous=NORMAL")
+            try execute("PRAGMA busy_timeout=5000")
+            try execute("""
         CREATE TABLE IF NOT EXISTS sync_accounts(
           user_id TEXT PRIMARY KEY, enabled INTEGER NOT NULL DEFAULT 0,
           cursor INTEGER NOT NULL DEFAULT 0, checkpoint INTEGER NOT NULL DEFAULT 0
         )
         """)
-        try? execute("""
+            try execute("""
         CREATE TABLE IF NOT EXISTS sync_entities(
           user_id TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL,
           revision INTEGER NOT NULL, payload BLOB NOT NULL, deleted INTEGER NOT NULL DEFAULT 0,
           PRIMARY KEY(user_id,entity_type,entity_id)
         )
         """)
-        try? execute("""
+            try execute("""
         CREATE TABLE IF NOT EXISTS sync_outbox(
           user_id TEXT NOT NULL, mutation_id TEXT PRIMARY KEY, entity_type TEXT NOT NULL,
           entity_id TEXT NOT NULL, operation TEXT NOT NULL, base_revision INTEGER NOT NULL,
           payload BLOB NOT NULL, created_at REAL NOT NULL
         )
         """)
-        try? execute("CREATE INDEX IF NOT EXISTS sync_outbox_user_created ON sync_outbox(user_id,created_at)")
+            try execute("CREATE INDEX IF NOT EXISTS sync_outbox_user_created ON sync_outbox(user_id,created_at)")
+        } catch {
+            initializationError = error
+            if let db { sqlite3_close(db) }
+            db = nil
+        }
     }
 
     deinit { if let db { sqlite3_close(db) } }
@@ -54,6 +73,14 @@ final class SQLiteCloudDataSyncStore {
                 result = State(enabled: row.int(0) != 0, cursor: row.int64(1), checkpoint: row.int64(2))
             }
             return result
+        }
+    }
+
+    func hasAccount(userID: String) -> Bool {
+        queue.sync {
+            var found = false
+            query("SELECT 1 FROM sync_accounts WHERE user_id=? LIMIT 1", [userID]) { _ in found = true }
+            return found
         }
     }
 
@@ -102,9 +129,13 @@ final class SQLiteCloudDataSyncStore {
             let known = knownEntitiesUnsafe(userID: userID, type: type)
             for (id, payload) in entities where known[id]?.payload != payload {
                 let revision = known[id]?.revision ?? 0
+                let mutation = vocabularyIncrement(
+                    type: type, previous: known[id]?.payload, current: payload
+                )
                 upsertOutbox(
                     userID: userID, type: type, id: id,
-                    operation: revision == 0 ? "create" : "update", baseRevision: revision, payload: payload
+                    operation: revision == 0 ? "create" : mutation?.operation ?? "update",
+                    baseRevision: revision, payload: mutation?.payload ?? payload
                 )
             }
             for (id, record) in known where entities[id] == nil {
@@ -138,17 +169,21 @@ final class SQLiteCloudDataSyncStore {
         }
     }
 
-    func accept(_ results: [CloudSyncMutationResult], mutations: [CloudSyncMutation], userID: String) {
+    func accept(
+        _ results: [CloudSyncMutationResult], mutations: [CloudSyncMutation], userID: String,
+        removeRejected: Bool = true
+    ) {
         queue.sync {
             let mutationsByID = Dictionary(uniqueKeysWithValues: mutations.map { ($0.mutationID, $0) })
             for result in results {
                 guard let mutation = mutationsByID[result.mutationID] else { continue }
+                guard result.status == "accepted" || removeRejected else { continue }
                 try? execute(
                     "DELETE FROM sync_outbox WHERE user_id=? AND mutation_id=?",
                     [userID, result.mutationID.uuidString]
                 )
                 guard result.status == "accepted" else { continue }
-                if mutation.operation == "delete" {
+                if mutation.operation == "delete" || result.deleted {
                     try? execute(
                         """
                         UPDATE sync_entities SET revision=?,deleted=1
@@ -157,8 +192,9 @@ final class SQLiteCloudDataSyncStore {
                         [result.revision, userID, mutation.entityType.rawValue, mutation.entityID.uuidString]
                     )
                 } else {
+                    let acceptedPayload = result.current?.data ?? mutation.payload
                     upsertEntity(userID: userID, type: mutation.entityType, id: result.canonicalID,
-                                 revision: result.revision, payload: mutation.payload, deleted: false)
+                                 revision: result.revision, payload: acceptedPayload, deleted: false)
                     if result.canonicalID != mutation.entityID {
                         try? execute("DELETE FROM sync_entities WHERE user_id=? AND entity_type=? AND entity_id=?",
                                      [userID, mutation.entityType.rawValue, mutation.entityID.uuidString])
@@ -166,6 +202,21 @@ final class SQLiteCloudDataSyncStore {
                 }
             }
         }
+    }
+
+    private func vocabularyIncrement(
+        type: CloudSyncEntityType, previous: Data?, current: Data
+    ) -> (operation: String, payload: Data)? {
+        guard type == .vocabulary, let previous,
+              let old = try? JSONDecoder.cloudSyncStore.decode(VocabularyCloudPayload.self, from: previous),
+              let new = try? JSONDecoder.cloudSyncStore.decode(VocabularyCloudPayload.self, from: current),
+              old.term == new.term, old.source == new.source, old.createdAt == new.createdAt,
+              new.occurrenceCount > old.occurrenceCount,
+              let payload = try? JSONSerialization.data(withJSONObject: [
+                  "delta": new.occurrenceCount - old.occurrenceCount
+              ])
+        else { return nil }
+        return ("increment", payload)
     }
 
     func apply(change: CloudSyncChange, userID: String) {
@@ -254,6 +305,14 @@ final class SQLiteCloudDataSyncStore {
     private func databaseError() -> NSError {
         NSError(domain: "CloudDataSyncSQLite", code: Int(sqlite3_errcode(db)),
                 userInfo: [NSLocalizedDescriptionKey: String(cString: sqlite3_errmsg(db))])
+    }
+}
+
+private extension JSONDecoder {
+    static var cloudSyncStore: JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
     }
 }
 

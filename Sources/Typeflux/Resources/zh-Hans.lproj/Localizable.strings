@@ -1280,8 +1280,10 @@
 "cloudDataSync.title" = "词库与人设云同步";
 "cloudDataSync.subtitle" = "默认关闭。开启后，仅同步自定义词库和自定义人设到当前账号的其他设备。";
 "cloudDataSync.consent.title" = "开启云同步？";
-"cloudDataSync.consent.message" = "本地词库和自定义人设将上传至 Typeflux 云端，并与已有云端数据合并。系统人设、API 密钥、历史记录、应用绑定和其他设置不会上传。";
+"cloudDataSync.consent.message" = "请选择合并本机与云端数据，或仅使用云端数据。开启后，词库和自定义人设会加密传输至 Typeflux 云端；其他设置不会上传。";
 "cloudDataSync.consent.confirm" = "开启并合并";
+"cloudDataSync.consent.merge" = "合并本机与云端";
+"cloudDataSync.consent.cloudOnly" = "使用云端数据";
 "cloudDataSync.syncNow" = "立即同步";
 "cloudDataSync.status.syncing" = "正在同步…";
 "cloudDataSync.status.failed" = "同步失败：%@";

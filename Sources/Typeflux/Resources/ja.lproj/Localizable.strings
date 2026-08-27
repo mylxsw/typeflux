@@ -1265,8 +1265,10 @@
 "cloudDataSync.title" = "単語帳とペルソナのクラウド同期";
 "cloudDataSync.subtitle" = "初期設定ではオフです。有効にすると、カスタム単語帳とカスタムペルソナのみを同じアカウントの端末間で同期します。";
 "cloudDataSync.consent.title" = "クラウド同期を有効にしますか？";
-"cloudDataSync.consent.message" = "ローカルの単語帳とカスタムペルソナを Typeflux Cloud にアップロードし、既存データと統合します。システムペルソナ、API キー、履歴、アプリ連携、その他の設定はアップロードされません。";
+"cloudDataSync.consent.message" = "ローカルとクラウドを統合するか、クラウドデータのみを使用するか選択してください。有効化後、単語帳とカスタムペルソナは暗号化通信で送信され、その他の設定はアップロードされません。";
 "cloudDataSync.consent.confirm" = "有効にして統合";
+"cloudDataSync.consent.merge" = "ローカルとクラウドを統合";
+"cloudDataSync.consent.cloudOnly" = "クラウドデータを使用";
 "cloudDataSync.syncNow" = "今すぐ同期";
 "cloudDataSync.status.syncing" = "同期中…";
 "cloudDataSync.status.failed" = "同期に失敗しました：%@";

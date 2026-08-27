@@ -94,13 +94,15 @@ enum VocabularyImportError: LocalizedError, Equatable {
 }
 
 enum VocabularyStore {
-    private static let key = "vocabulary.entries"
+    private static let legacyKey = "vocabulary.entries"
+    private static var key: String { "\(legacyKey).\(CloudDataLocalScope.key)" }
     /// Maximum number of terms returned to speech recognition as hints. Beyond this
     /// point most ASR backends either truncate silently or waste prompt budget, so
     /// we cap the list and let ranking decide who stays.
     static let activeTermLimit = 500
 
     static func load() -> [VocabularyEntry] {
+        migrateLegacyGuestDataIfNeeded()
         guard let data = UserDefaults.standard.data(forKey: key) else {
             return []
         }
@@ -115,6 +117,7 @@ enum VocabularyStore {
     }
 
     static func save(_ entries: [VocabularyEntry]) {
+        migrateLegacyGuestDataIfNeeded()
         let deduplicatedEntries = deduplicated(entries)
 
         do {
@@ -128,6 +131,14 @@ enum VocabularyStore {
         } catch {
             ErrorLogStore.shared.log("Vocabulary save failed: \(error.localizedDescription)")
         }
+    }
+
+    private static func migrateLegacyGuestDataIfNeeded() {
+        guard CloudDataLocalScope.key == "guest",
+              UserDefaults.standard.object(forKey: key) == nil,
+              let legacy = UserDefaults.standard.data(forKey: legacyKey)
+        else { return }
+        UserDefaults.standard.set(legacy, forKey: key)
     }
 
     static func exportData() throws -> Data {
