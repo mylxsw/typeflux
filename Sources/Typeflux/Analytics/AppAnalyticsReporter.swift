@@ -23,7 +23,14 @@ enum AnalyticsPropertyKeys {
     static let allowedEventProperties: Set<String> = [
         "attempt_id", "job_id", "model_kind", "model_type", "model_identifier",
         "download_source", "source_host", "normalized_path", "retry_index",
-        "duration_ms", "job_duration_ms", "status", "error_category"
+        "duration_ms", "job_duration_ms", "status", "error_category",
+        "launch_type", "flow_id", "recording_mode", "intent", "stt_provider",
+        "local_model", "streaming_preview", "audio_seconds", "output_chars",
+        "pipeline_duration_ms", "apply_outcome", "injection_method", "target_app_category",
+        "stage", "error_kind", "step", "last_step", "skipped", "duration_seconds", "llm_provider",
+        "permission", "granted", "totalSessions", "successfulSessions", "failedSessions",
+        "dictationCount", "personaRewriteCount", "editSelectionCount", "askAnswerCount",
+        "totalRecordingSeconds", "totalCharacters"
     ]
 }
 

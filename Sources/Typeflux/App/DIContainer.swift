@@ -26,6 +26,8 @@ final class DIContainer {
     let bundledModelAutoSetup: BundledModelAutoSetup
     let autoModelDownloadService: AutoModelDownloadService
     let analyticsReporter: AnalyticsEventReporting
+    let permissionStatusAnalyticsMonitor: PermissionStatusAnalyticsMonitor
+    let usageDailySummaryReporter: UsageDailySummaryReporter
     let agentJobStore: AgentJobStore
     let agentExecutionRegistry: AgentExecutionRegistry
     let agentJobsWindowController: AgentJobsWindowController
@@ -64,6 +66,14 @@ final class DIContainer {
         )
         mcpRegistry = MCPRegistry()
         analyticsReporter = SettingsAwareAnalyticsEventReporter(settingsStore: settingsStore)
+        permissionStatusAnalyticsMonitor = PermissionStatusAnalyticsMonitor(
+            defaults: settingsStore.defaults,
+            reporter: analyticsReporter
+        )
+        usageDailySummaryReporter = UsageDailySummaryReporter(
+            defaults: settingsStore.defaults,
+            reporter: analyticsReporter
+        )
         ollamaModelManager = OllamaLocalModelManager(analyticsReporter: analyticsReporter)
         llmAgentService = LLMAgentRouter(
             settingsStore: settingsStore,

@@ -51,9 +51,19 @@ struct CurrentInputTextSnapshot {
 }
 
 protocol TextInjector {
+    var lastInjectionMethod: TextInjectionMethod? { get }
     func getSelectionSnapshot() async -> TextSelectionSnapshot
     func currentInputTextSnapshot() async -> CurrentInputTextSnapshot
     func currentInputText() async -> String?
     func insert(text: String) throws
     func replaceSelection(text: String) throws
+}
+
+enum TextInjectionMethod: String {
+    case ax
+    case paste
+}
+
+extension TextInjector {
+    var lastInjectionMethod: TextInjectionMethod? { nil }
 }

@@ -22,6 +22,8 @@ final class OnboardingWindowController: NSObject {
         settingsStore: SettingsStore,
         localModelManager: LocalModelManager? = nil,
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
+        analyticsReporter: AnalyticsEventReporting = NoopAnalyticsEventReporter.shared,
+        permissionStatusAnalyticsMonitor: PermissionStatusAnalyticsMonitor? = nil,
         onComplete: @escaping () -> Void
     ) {
         if let window {
@@ -36,7 +38,9 @@ final class OnboardingWindowController: NSObject {
         let viewModel = OnboardingViewModel(
             settingsStore: settingsStore,
             localModelManager: localModelManager,
-            notificationService: notificationService
+            notificationService: notificationService,
+            analyticsReporter: analyticsReporter,
+            permissionStatusAnalyticsMonitor: permissionStatusAnalyticsMonitor
         ) { [weak self] in
             self?.handleComplete()
         }

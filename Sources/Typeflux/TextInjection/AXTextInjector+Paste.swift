@@ -6,7 +6,9 @@ import Foundation
 // swiftlint:disable identifier_name line_length
 extension AXTextInjector {
     func setText(_ text: String, replaceSelection: Bool) throws {
+        lastInjectionMethod = nil
         if try insertIntoTypefluxNativeTextTarget(text, replaceSelection: replaceSelection) {
+            lastInjectionMethod = .ax
             return
         }
 
@@ -81,6 +83,7 @@ extension AXTextInjector {
                     "[Text Injection] replace completed via AX selected-text write"
                 )
                 latestSelectionContext = nil
+                lastInjectionMethod = .ax
                 return
             }
             NetworkDebugLogger.logMessage(
@@ -100,6 +103,7 @@ extension AXTextInjector {
             if replaceSelection {
                 latestSelectionContext = nil
             }
+            lastInjectionMethod = .ax
             return
         }
 
@@ -109,6 +113,7 @@ extension AXTextInjector {
             replaceSelection: replaceSelection,
             contextAlreadyRestored: contextRestored
         )
+        lastInjectionMethod = .paste
         if replaceSelection {
             latestSelectionContext = nil
         }

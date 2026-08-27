@@ -258,6 +258,7 @@ extension WorkflowController {
             record.pipelineTiming = pipelineTiming
             record.applyStatus = .succeeded
             record.applyMessage = L("workflow.ask.answerPresented")
+            recordDictationApplyAnalytics(recordID: record.id, outcome: .presentedInDialog)
 
         case .edit:
             try ensureProcessingIsActive(sessionID)
@@ -283,6 +284,7 @@ extension WorkflowController {
             record.processingStatus = .succeeded
             record.applyStatus = .succeeded
             record.applyMessage = outcome.message
+            recordDictationApplyAnalytics(recordID: record.id, outcome: outcome)
             saveHistoryRecord(record)
         }
     }
@@ -440,6 +442,7 @@ extension WorkflowController {
                     self.appState.setStatus(.idle)
                     self.overlayController.showNotice(message: L("workflow.recording.tooShort"))
                 }
+                reportPendingDictationFailure(stage: "recording", kind: "recording_too_short")
                 return
             }
 
@@ -452,6 +455,7 @@ extension WorkflowController {
                     self.appState.setStatus(.idle)
                     self.overlayController.showNotice(message: L("workflow.transcription.noSpeech"))
                 }
+                reportPendingDictationFailure(stage: "transcription", kind: "no_speech")
                 return
             }
 
@@ -519,6 +523,7 @@ extension WorkflowController {
                 applyStatus: .pending
             )
             saveHistoryRecord(record)
+            bindPendingDictationAnalytics(to: record.id)
             logPipelineEvent("audio-file-ready", for: record)
             activeProcessingRecordID = record.id
             let sessionID = beginProcessingSession()
@@ -581,6 +586,9 @@ extension WorkflowController {
             )
             record.errorMessage = msg
             saveHistoryRecord(record)
+            bindPendingDictationAnalytics(to: record.id)
+            UsageStatsStore.shared.recordSession(record: record)
+            reportDictationTerminal(record: record)
 
             await MainActor.run {
                 self.soundEffectPlayer.play(.error)
@@ -855,6 +863,10 @@ extension WorkflowController {
                 record.applyStatus = .skipped
                 record.applyMessage = L("workflow.transcription.emptySkipped")
                 saveHistoryRecord(record)
+                reportDictationTerminal(
+                    record: record,
+                    forcedFailure: (stage: "transcription", kind: "no_speech")
+                )
 
                 await MainActor.run {
                     if self.processingSessionID == sessionID {
@@ -919,6 +931,7 @@ extension WorkflowController {
             saveHistoryRecord(record)
             logPipelineEvent("pipeline-completed", for: record)
             UsageStatsStore.shared.recordSession(record: record)
+            reportDictationTerminal(record: record)
             enforceHistoryRetentionPolicy()
             if await shouldShowTypefluxCloudASRLoginFallbackNotice() {
                 let isAlreadyPreservingNotice = await MainActor.run {
@@ -968,6 +981,7 @@ extension WorkflowController {
             saveHistoryRecord(record)
             logPipelineEvent("pipeline-failed", for: record)
             UsageStatsStore.shared.recordSession(record: record)
+            reportDictationTerminal(record: record)
             enforceHistoryRetentionPolicy()
         } catch let error as TypefluxCloudLoginRequiredError {
             mergeASRRaceDiagnostics(from: asrRaceDiagnosticsRecorder, into: &record)
@@ -977,6 +991,7 @@ extension WorkflowController {
             saveHistoryRecord(record)
             logPipelineEvent("pipeline-failed", for: record)
             UsageStatsStore.shared.recordSession(record: record)
+            reportDictationTerminal(record: record)
             enforceHistoryRetentionPolicy()
             let shouldPresentLogin = await MainActor.run {
                 guard self.processingSessionID == sessionID else { return false }
@@ -992,6 +1007,7 @@ extension WorkflowController {
             markCancelled(&record)
             saveHistoryRecord(record)
             logPipelineEvent("pipeline-cancelled", for: record)
+            discardDictationAnalytics(recordID: record.id)
             enforceHistoryRetentionPolicy()
         } catch {
             mergeASRRaceDiagnostics(from: asrRaceDiagnosticsRecorder, into: &record)
@@ -1002,6 +1018,10 @@ extension WorkflowController {
                 record.applyMessage = L("workflow.transcription.emptySkipped")
                 record.errorMessage = nil
                 saveHistoryRecord(record)
+                reportDictationTerminal(
+                    record: record,
+                    forcedFailure: (stage: "transcription", kind: "no_speech")
+                )
 
                 await MainActor.run {
                     if self.processingSessionID == sessionID {
@@ -1021,6 +1041,7 @@ extension WorkflowController {
                 saveHistoryRecord(record)
                 logPipelineEvent("pipeline-failed", for: record)
                 UsageStatsStore.shared.recordSession(record: record)
+                reportDictationTerminal(record: record)
                 enforceHistoryRetentionPolicy()
                 let shouldPresentLogin = await MainActor.run {
                     guard self.processingSessionID == sessionID else { return false }
@@ -1040,6 +1061,7 @@ extension WorkflowController {
             saveHistoryRecord(record)
             logPipelineEvent("pipeline-failed", for: record)
             UsageStatsStore.shared.recordSession(record: record)
+            reportDictationTerminal(record: record)
             enforceHistoryRetentionPolicy()
             if let billingError = TypefluxCloudBillingError.fromError(error) {
                 let shouldPresentBilling = await MainActor.run {
@@ -1381,6 +1403,7 @@ extension WorkflowController {
                 saveHistoryRecord(record)
                 logPipelineEvent("pipeline-completed", for: record)
                 UsageStatsStore.shared.recordSession(record: record)
+                reportDictationTerminal(record: record)
                 enforceHistoryRetentionPolicy()
                 await MainActor.run {
                     guard self.processingSessionID == sessionID else { return }
@@ -1465,6 +1488,7 @@ extension WorkflowController {
             record.pipelineTiming = pipelineTiming
             record.applyStatus = .succeeded
             record.applyMessage = L("workflow.ask.answerPresented")
+            recordDictationApplyAnalytics(recordID: record.id, outcome: .presentedInDialog)
 
         case let .insert(text):
             record.mode = .editSelection
@@ -1484,6 +1508,7 @@ extension WorkflowController {
             record.pipelineTiming = pipelineTiming
             record.applyStatus = .succeeded
             record.applyMessage = outcome.message
+            recordDictationApplyAnalytics(recordID: record.id, outcome: outcome)
 
             await MainActor.run {
                 guard self.processingSessionID == sessionID else { return }
@@ -1494,6 +1519,7 @@ extension WorkflowController {
         saveHistoryRecord(record)
         logPipelineEvent("pipeline-completed", for: record)
         UsageStatsStore.shared.recordSession(record: record)
+        reportDictationTerminal(record: record)
         enforceHistoryRetentionPolicy()
         _ = execution.jobID
     }
@@ -1523,6 +1549,7 @@ extension WorkflowController {
         saveHistoryRecord(record)
         logPipelineEvent("pipeline-failed", for: record)
         UsageStatsStore.shared.recordSession(record: record)
+        reportDictationTerminal(record: record)
         enforceHistoryRetentionPolicy()
 
         await MainActor.run {
@@ -1718,6 +1745,7 @@ extension WorkflowController {
             record.pipelineTiming = pipelineTiming
             record.applyStatus = .succeeded
             record.applyMessage = result.outcome.message
+            recordDictationApplyAnalytics(recordID: record.id, outcome: result.outcome)
             saveHistoryRecord(record)
             return
         }
@@ -1907,6 +1935,7 @@ extension WorkflowController {
         record.pipelineTiming = pipelineTiming
         record.applyStatus = .succeeded
         record.applyMessage = result.outcome.message
+        recordDictationApplyAnalytics(recordID: record.id, outcome: result.outcome)
         saveHistoryRecord(record)
 
         if let billingFallbackError {
@@ -1937,6 +1966,7 @@ extension WorkflowController {
         record.pipelineTiming = pipelineTiming
         record.applyStatus = .succeeded
         record.applyMessage = result.outcome.message
+        recordDictationApplyAnalytics(recordID: record.id, outcome: result.outcome)
     }
 
     static func isServiceOverloadedError(_ error: Error) -> Bool {
@@ -2070,6 +2100,7 @@ extension WorkflowController {
                 record.applyStatus = .failed
             }
             saveHistoryRecord(record)
+            discardDictationAnalytics(recordID: activeProcessingRecordID)
         }
         activeProcessingRecordID = nil
 
