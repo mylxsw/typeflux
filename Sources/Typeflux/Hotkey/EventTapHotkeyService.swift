@@ -135,7 +135,9 @@ private final class SystemHotkeyRegistrar {
 }
 
 final class EventTapHotkeyService: HotkeyService {
-    private static let modifierActivationHoldDelay: TimeInterval = 0.22
+    /// Allows competing modifier shortcuts to win without delaying recording start.
+    /// Recording mode is decided by `WorkflowController`, not by this timer.
+    private static let modifierShortcutArbitrationDelay: TimeInterval = 0.22
     private static let duplicateHistoryRequestSuppression: TimeInterval = 0.18
 
     var onActivationTap: (() -> Void)?
@@ -504,7 +506,7 @@ final class EventTapHotkeyService: HotkeyService {
         }
         pendingModifierActivationWorkItem = workItem
         DispatchQueue.main.asyncAfter(
-            deadline: .now() + Self.modifierActivationHoldDelay,
+            deadline: .now() + Self.modifierShortcutArbitrationDelay,
             execute: workItem
         )
     }

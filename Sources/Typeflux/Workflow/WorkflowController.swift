@@ -8,8 +8,11 @@ final class WorkflowController {
     static let recordingTimeoutNanoseconds: UInt64 = 600_000_000_000 // 10 minutes
     static let minimumProcessingTimeoutSeconds: TimeInterval = 120
     static let processingTimeoutGraceSeconds: TimeInterval = 90
-    static let tapToLockThreshold: TimeInterval = 0.22
     static let minimumRecordingDuration: TimeInterval = 0.35
+    /// Ambiguous short releases stay recoverable by switching to locked recording.
+    /// Keep this above `minimumRecordingDuration` so a release is never classified
+    /// as hold-to-talk and then immediately rejected as too short.
+    static let tapToLockThreshold: TimeInterval = minimumRecordingDuration + 0.10
     static let selectionRestoreDelayMicroseconds: useconds_t = 120_000
     static let automaticVocabularyObservationWindow: TimeInterval = 30
     static let automaticVocabularyPollInterval: Duration = .seconds(1)
@@ -100,6 +103,7 @@ final class WorkflowController {
     let localModelDownloadAlertPresenter: any LocalModelDownloadAlertPresenting
     let outputPostProcessor: OutputPostProcessing
     let sleep: @Sendable (Duration) async -> Void
+    let monotonicNow: () -> TimeInterval
 
     var currentSelectedText: String?
     var isRecording = false
@@ -110,7 +114,8 @@ final class WorkflowController {
     var suppressActivationTapUntil: Date?
     var recordingMode: RecordingMode = .holdToTalk
     var recordingIntent: RecordingIntent = .dictation
-    var hotkeyPressedAt: Date?
+    var hotkeyPressedAt: TimeInterval?
+    var audioRecorderStartedAt: TimeInterval?
     var recordingTimeoutTask: Task<Void, Never>?
     var processingTimeoutTask: Task<Void, Never>?
     var selectionTask: Task<TextSelectionSnapshot, Never>?
@@ -200,7 +205,8 @@ final class WorkflowController {
         outputPostProcessor: OutputPostProcessing,
         sleep: @escaping @Sendable (Duration) async -> Void = { duration in
             try? await Task.sleep(for: duration)
-        }
+        },
+        monotonicNow: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
     ) {
         self.appState = appState
         self.settingsStore = settingsStore
@@ -225,6 +231,7 @@ final class WorkflowController {
         self.localModelDownloadAlertPresenter = localModelDownloadAlertPresenter
         self.outputPostProcessor = outputPostProcessor
         self.sleep = sleep
+        self.monotonicNow = monotonicNow
         self.overlayController.setRecordingActionHandlers(
             onCancel: { [weak self] in
                 guard let self else { return }
@@ -419,6 +426,7 @@ final class WorkflowController {
         isAudioRecorderStarted = false
         isAudioRecorderStarting = false
         shouldFinishRecordingAfterAudioStart = false
+        audioRecorderStartedAt = nil
         pendingRecordingStartID = nil
         suppressActivationTapUntil = nil
         recordingMode = .holdToTalk
@@ -599,7 +607,7 @@ final class WorkflowController {
             dismissClarification()
         }
 
-        hotkeyPressedAt = startLocked ? nil : Date()
+        hotkeyPressedAt = startLocked ? nil : monotonicNow()
 
         cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.newRecording"))
         isRecording = true
@@ -977,6 +985,7 @@ final class WorkflowController {
         isAudioRecorderStarted = false
         isAudioRecorderStarting = true
         shouldFinishRecordingAfterAudioStart = false
+        audioRecorderStartedAt = nil
         recordingMode = effectiveStartLocked ? .locked : .holdToTalk
         recordingIntent = effectiveIntent
         lastRetryableFailureRecord = nil
@@ -1065,6 +1074,7 @@ final class WorkflowController {
             RecordingStartupLatencyTrace.shared.mark("workflow.audio_start_return")
             isAudioRecorderStarting = false
             isAudioRecorderStarted = true
+            audioRecorderStartedAt = monotonicNow()
             pendingRecordingStartID = nil
             if usesLivePreview {
                 startLiveTranscriptionPreviewIfNeeded(livePreviewer)
@@ -1072,6 +1082,7 @@ final class WorkflowController {
 
             guard isRecording else {
                 isAudioRecorderStarted = false
+                audioRecorderStartedAt = nil
                 _ = try? audioRecorder.stop()
                 Task { await livePreviewer?.cancel() }
                 realtimeAudioBufferPump?.cancel()
@@ -1154,6 +1165,7 @@ final class WorkflowController {
             isAudioRecorderStarted = false
             isAudioRecorderStarting = false
             shouldFinishRecordingAfterAudioStart = false
+            audioRecorderStartedAt = nil
             pendingRecordingStartID = nil
             suppressActivationTapUntil = nil
             recordingMode = .holdToTalk
@@ -1193,18 +1205,15 @@ final class WorkflowController {
 
         guard recordingMode == .holdToTalk else { return }
 
-        let pressDuration = Date().timeIntervalSince(hotkeyPressedAt ?? Date.distantPast)
+        let releasedAt = monotonicNow()
+        let pressDuration = hotkeyPressedAt.map { max(0, releasedAt - $0) } ?? .infinity
         hotkeyPressedAt = nil
 
-        if pressDuration < Self.tapToLockThreshold {
-            recordingMode = .locked
-            let recordingHint = currentRecordingHintPresentation()
-            Task { @MainActor in
-                overlayController.showLockedRecording(
-                    hintText: recordingHint.text,
-                    autoHideHintAfter: recordingHint.autoHideAfter
-                )
-            }
+        let recordedDuration = audioRecorderStartedAt.map { max(0, releasedAt - $0) } ?? 0
+        if pressDuration < Self.tapToLockThreshold
+            || isAudioRecorderStarting
+            || recordedDuration < Self.minimumRecordingDuration {
+            lockActiveRecording()
             return
         }
 
@@ -1251,6 +1260,7 @@ final class WorkflowController {
         pendingRecordingStartID = nil
         recordingMode = .holdToTalk
         hotkeyPressedAt = nil
+        audioRecorderStartedAt = nil
         recordingTimeoutTask?.cancel()
         recordingTimeoutTask = nil
         NSLog("[Workflow] Recording stopped")
