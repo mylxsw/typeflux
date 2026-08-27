@@ -33,6 +33,7 @@ final class DIContainer {
     let agentJobsWindowController: AgentJobsWindowController
     let mcpRegistry: MCPRegistry
     let cloudLoginSyncCoordinator: CloudLoginSyncCoordinator
+    let cloudDataSyncCoordinator: CloudDataSyncCoordinator
     let outputPostProcessor: OutputPostProcessing
 
     // swiftlint:disable:next function_body_length
@@ -81,6 +82,7 @@ final class DIContainer {
         )
         notificationService = SystemLocalNotificationService.shared
         cloudLoginSyncCoordinator = CloudLoginSyncCoordinator(settingsStore: settingsStore)
+        cloudDataSyncCoordinator = CloudDataSyncCoordinator.shared
         localModelManager = LocalModelManager(analyticsReporter: analyticsReporter)
         bundledModelAutoSetup = BundledModelAutoSetup(linker: localModelManager)
         autoModelDownloadService = AutoModelDownloadService(

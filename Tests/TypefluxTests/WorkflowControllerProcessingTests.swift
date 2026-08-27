@@ -903,13 +903,87 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         await controller.beginRecording(intent: .dictation, startLocked: false)
 
-        controller.hotkeyPressedAt = Date(timeIntervalSinceNow: -0.5)
+        let now = controller.monotonicNow()
+        controller.hotkeyPressedAt = now - 0.7
+        controller.audioRecorderStartedAt = now - 0.7
         controller.handlePressEnded()
         await audioRecorder.waitUntilStopCount(isAtLeast: 1)
 
         XCTAssertEqual(audioRecorder.startCallCount, 1)
         XCTAssertEqual(audioRecorder.stopCallCount, 1)
         XCTAssertTrue(eventRecorder.snapshot().contains("audio-start"))
+    }
+
+    func testTapToLockThresholdExceedsMinimumRecordingDuration() {
+        XCTAssertGreaterThan(
+            WorkflowController.tapToLockThreshold,
+            WorkflowController.minimumRecordingDuration
+        )
+    }
+
+    func testReleaseAt599MillisecondsKeepsRecordingLocked() async {
+        let audioRecorder = MockProcessingAudioRecorder()
+        let releasedAt: TimeInterval = 0.599
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sleep: { _ in },
+            monotonicNow: { releasedAt }
+        )
+
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+
+        controller.hotkeyPressedAt = 0
+        controller.audioRecorderStartedAt = 0
+        controller.handlePressEnded()
+
+        XCTAssertTrue(controller.isRecording)
+        XCTAssertEqual(controller.recordingMode, .locked)
+        XCTAssertEqual(audioRecorder.stopCallCount, 0)
+
+        controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
+    func testReleaseAt600MillisecondBoundaryStopsRecording() async {
+        let audioRecorder = MockProcessingAudioRecorder()
+        let releasedAt = WorkflowController.tapToLockThreshold
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sleep: { _ in },
+            monotonicNow: { releasedAt }
+        )
+
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+
+        controller.hotkeyPressedAt = 0
+        controller.audioRecorderStartedAt = 0
+        controller.handlePressEnded()
+        await audioRecorder.waitUntilStopCount(isAtLeast: 1)
+
+        XCTAssertFalse(controller.isRecording)
+        XCTAssertEqual(audioRecorder.stopCallCount, 1)
+    }
+
+    func testReleaseWithInsufficientCapturedAudioKeepsRecordingLocked() async {
+        let audioRecorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sleep: { _ in }
+        )
+
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+
+        let now = controller.monotonicNow()
+        controller.hotkeyPressedAt = now - 0.5
+        controller.audioRecorderStartedAt = now - 0.2
+        controller.handlePressEnded()
+
+        XCTAssertTrue(controller.isRecording)
+        XCTAssertEqual(controller.recordingMode, .locked)
+        XCTAssertEqual(audioRecorder.stopCallCount, 0)
+
+        controller.cancelRecording()
+        await waitForMainActorWork()
     }
 
     func testAskPressDuringActiveDictationPromotesExistingRecording() async {
@@ -1022,7 +1096,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         await waitForMainActorWork()
     }
 
-    func testReleasingWhileAudioStartIsPendingStopsAfterStartCompletes() async {
+    func testReleasingWhileAudioStartIsPendingKeepsRecordingLocked() async {
         let audioRecorder = BlockingStartAudioRecorder()
         let controller = makeWorkflowController(
             audioRecorder: audioRecorder,
@@ -1034,21 +1108,25 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         }
         audioRecorder.waitUntilStartIsPending()
 
-        controller.hotkeyPressedAt = Date(timeIntervalSinceNow: -0.5)
+        controller.hotkeyPressedAt = controller.monotonicNow() - 0.5
         controller.handlePressEnded()
 
         XCTAssertTrue(controller.isRecording)
-        XCTAssertTrue(controller.shouldFinishRecordingAfterAudioStart)
+        XCTAssertEqual(controller.recordingMode, .locked)
+        XCTAssertFalse(controller.shouldFinishRecordingAfterAudioStart)
         XCTAssertEqual(audioRecorder.stopCallCount, 0)
 
         audioRecorder.releasePendingStart()
         await recordingTask.value
-        await audioRecorder.waitUntilStopCount(isAtLeast: 1)
 
-        XCTAssertFalse(controller.isRecording)
+        XCTAssertTrue(controller.isRecording)
+        XCTAssertEqual(controller.recordingMode, .locked)
         XCTAssertFalse(controller.isAudioRecorderStarting)
         XCTAssertEqual(audioRecorder.startCallCount, 1)
-        XCTAssertEqual(audioRecorder.stopCallCount, 1)
+        XCTAssertEqual(audioRecorder.stopCallCount, 0)
+
+        controller.cancelRecording()
+        await waitForMainActorWork()
     }
 
     func testNewPressIsIgnoredWhileAudioRecorderStopIsPending() async {
@@ -1638,6 +1716,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             MockLocalModelDownloadAlertPresenter(),
         analyticsReporter: AnalyticsEventReporting = NoopAnalyticsEventReporter.shared,
         sleep: @escaping @Sendable (Duration) async -> Void = { _ in },
+        monotonicNow: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
         configureSettings: ((SettingsStore) -> Void)? = nil
     ) -> WorkflowController {
         let suiteName = "WorkflowControllerProcessingTests.\(UUID().uuidString)"
@@ -1689,7 +1768,8 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             localModelDownloadAlertPresenter: localModelDownloadAlertPresenter,
             outputPostProcessor: NoopOutputPostProcessor(),
             analyticsReporter: analyticsReporter,
-            sleep: sleep
+            sleep: sleep,
+            monotonicNow: monotonicNow
         )
     }
 

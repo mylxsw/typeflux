@@ -2,6 +2,7 @@ import Foundation
 
 // swiftlint:disable type_body_length file_length
 extension Notification.Name {
+    static let personaStoreDidChange = Notification.Name("SettingsStore.personaStoreDidChange")
     static let personaSelectionDidChange = Notification.Name(
         "SettingsStore.personaSelectionDidChange"
     )
@@ -426,8 +427,25 @@ final class SettingsStore {
     }
 
     var personasJSON: String {
-        get { defaults.string(forKey: "persona.items") ?? "" }
-        set { defaults.set(newValue, forKey: "persona.items") }
+        get {
+            let storageKey = scopedPersonasKey
+            migrateLegacyGuestPersonasIfNeeded(storageKey: storageKey)
+            return defaults.string(forKey: storageKey) ?? ""
+        }
+        set {
+            let storageKey = scopedPersonasKey
+            migrateLegacyGuestPersonasIfNeeded(storageKey: storageKey)
+            defaults.set(newValue, forKey: storageKey)
+        }
+    }
+
+    private var scopedPersonasKey: String { "persona.items.\(CloudDataLocalScope.key)" }
+
+    private func migrateLegacyGuestPersonasIfNeeded(storageKey: String) {
+        guard storageKey == "persona.items.guest", defaults.object(forKey: storageKey) == nil,
+              let legacy = defaults.string(forKey: "persona.items")
+        else { return }
+        defaults.set(legacy, forKey: storageKey)
     }
 
     var personaAppBindings: [PersonaAppBinding] {
@@ -464,6 +482,11 @@ final class SettingsStore {
             let customPersonas = newValue.filter { !$0.isSystem }
             let data = (try? JSONEncoder().encode(customPersonas)) ?? Data("[]".utf8)
             personasJSON = String(decoding: data, as: UTF8.self)
+            NotificationCenter.default.post(
+                name: .personaStoreDidChange,
+                object: self,
+                userInfo: ["personas": customPersonas]
+            )
         }
     }
 

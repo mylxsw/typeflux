@@ -10,11 +10,15 @@ struct AccountView: View {
     @State private var billingActionError: String?
     @State private var isHoveringSubscriptionCard = false
     @State private var isHoveringUsageCard = false
+    @ObservedObject private var cloudDataSync = CloudDataSyncCoordinator.shared
+    @State private var isConfirmingCloudSync = false
+    @State private var isConfirmingCloudDataDeletion = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             if let profile = authState.userProfile {
                 profileCard(profile: profile)
+                cloudDataSyncCard
                 if authState.subscription.shouldShowSubscriptionDetails || authState.subscriptionError != nil {
                     subscriptionCard
                 }
@@ -52,6 +56,95 @@ struct AccountView: View {
                 }
             }
         }
+        .alert(L("cloudDataSync.consent.title"), isPresented: $isConfirmingCloudSync) {
+            Button(L("common.cancel"), role: .cancel) {}
+            Button(L("cloudDataSync.consent.merge")) {
+                cloudDataSync.setEnabled(true, mergeGuestData: true)
+            }
+            Button(L("cloudDataSync.consent.cloudOnly")) {
+                cloudDataSync.setEnabled(true, mergeGuestData: false)
+            }
+        } message: {
+            Text(L("cloudDataSync.consent.message"))
+        }
+        .alert(L("cloudDataSync.delete.title"), isPresented: $isConfirmingCloudDataDeletion) {
+            Button(L("common.cancel"), role: .cancel) {}
+            Button(L("cloudDataSync.delete.confirm"), role: .destructive) {
+                cloudDataSync.deleteCloudData()
+            }
+        } message: {
+            Text(L("cloudDataSync.delete.message"))
+        }
+    }
+
+    private var cloudDataSyncCard: some View {
+        StudioCard {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+                StudioSettingRow(
+                    title: L("cloudDataSync.title"),
+                    subtitle: L("cloudDataSync.subtitle")
+                ) {
+                    Toggle("", isOn: Binding(
+                        get: { cloudDataSync.isEnabled },
+                        set: { enabled in
+                            if enabled && cloudDataSync.requiresInitialChoice {
+                                isConfirmingCloudSync = true
+                            } else if enabled {
+                                cloudDataSync.setEnabled(true)
+                            } else {
+                                cloudDataSync.setEnabled(false)
+                            }
+                        }
+                    ))
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                }
+
+                if cloudDataSync.isEnabled || cloudDataSync.lastError != nil {
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                    HStack {
+                        Text(cloudDataSyncStatus)
+                            .font(.studioBody(StudioTheme.Typography.caption))
+                            .foregroundStyle(
+                                cloudDataSync.lastError == nil ? StudioTheme.textSecondary : StudioTheme.danger
+                            )
+                        Spacer()
+                        if cloudDataSync.isEnabled {
+                            StudioButton(
+                                title: L("cloudDataSync.syncNow"), systemImage: "arrow.triangle.2.circlepath",
+                                variant: .secondary, isDisabled: cloudDataSync.isSyncing,
+                                isLoading: cloudDataSync.isSyncing
+                            ) { cloudDataSync.synchronizeNow() }
+                        }
+                    }
+                }
+
+                if cloudDataSync.canDeleteCloudData {
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                    Button {
+                        isConfirmingCloudDataDeletion = true
+                    } label: {
+                        HStack(spacing: StudioTheme.Spacing.small) {
+                            if cloudDataSync.isDeletingCloudData { ProgressView().controlSize(.small) }
+                            Text(L("cloudDataSync.delete.action"))
+                        }
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.danger)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(cloudDataSync.isDeletingCloudData || cloudDataSync.isSyncing)
+                }
+            }
+        }
+    }
+
+    private var cloudDataSyncStatus: String {
+        if cloudDataSync.isSyncing { return L("cloudDataSync.status.syncing") }
+        if let error = cloudDataSync.lastError { return L("cloudDataSync.status.failed", error) }
+        if let date = cloudDataSync.lastSyncAt {
+            return L("cloudDataSync.status.lastSync", date.formatted(date: .omitted, time: .shortened))
+        }
+        return L("cloudDataSync.status.waiting")
     }
 
     private var subscriptionCard: some View {
