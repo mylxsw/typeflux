@@ -1274,3 +1274,8 @@
 "cloudDataSync.status.failed" = "同期に失敗しました：%@";
 "cloudDataSync.status.lastSync" = "最終同期：%@";
 "cloudDataSync.status.waiting" = "初回同期を待機中";
+"cloudDataSync.resetRequired" = "クラウドデータが大きく変更されました。同期を再度有効にし、ローカルデータを統合するかクラウド版を使用するか選択してください。";
+"cloudDataSync.delete.action" = "クラウド同期データをすべて削除";
+"cloudDataSync.delete.title" = "クラウド同期データを削除しますか？";
+"cloudDataSync.delete.message" = "クラウド上の単語帳とカスタムペルソナを完全に削除します。この端末のデータは残り、他の端末は再承認するまで同期を停止します。";
+"cloudDataSync.delete.confirm" = "クラウドデータを削除";

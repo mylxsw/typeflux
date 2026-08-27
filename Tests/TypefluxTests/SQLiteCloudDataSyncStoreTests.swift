@@ -9,9 +9,40 @@ struct SQLiteCloudDataSyncStoreTests {
         let store = SQLiteCloudDataSyncStore(baseDirectory: directory)
 
         #expect(store.state(userID: "user-a").enabled == false)
-        store.setEnabled(true, userID: "user-a")
+        try store.setEnabled(true, userID: "user-a")
         #expect(store.state(userID: "user-a").enabled == true)
         #expect(store.state(userID: "user-b").enabled == false)
+    }
+
+    @Test func resetBaselineDropsStaleOutboxAndRequiresNewConsent() throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = SQLiteCloudDataSyncStore(baseDirectory: directory)
+        let localID = UUID()
+        let cloudID = UUID()
+        try store.setEnabled(true, userID: "u")
+        store.stageLocalChanges(
+            userID: "u", type: .persona,
+            entities: [localID: Data(#"{"name":"Local","prompt":"draft"}"#.utf8)]
+        )
+        let snapshot = [CloudSyncChange(
+            sequence: 42, entityType: .persona, entityID: cloudID, operation: "create",
+            revision: 7, payload: JSONValue(data: Data(#"{"name":"Cloud","prompt":"latest"}"#.utf8))
+        )]
+
+        try store.replaceBaseline(userID: "u", datasetGeneration: 4, cursor: 42, snapshot: snapshot)
+
+        let state = store.state(userID: "u")
+        #expect(state.enabled == false)
+        #expect(state.needsReauthorization == true)
+        #expect(state.datasetGeneration == 4)
+        #expect(state.cursor == 42)
+        #expect(store.pending(userID: "u").isEmpty)
+        #expect(store.knownEntities(userID: "u", type: .persona)[localID] == nil)
+        #expect(store.knownEntities(userID: "u", type: .persona)[cloudID]?.revision == 7)
+
+        try store.setEnabled(true, userID: "u")
+        #expect(store.state(userID: "u").needsReauthorization == false)
     }
 
     @Test func localChangesBecomeCreateUpdateAndDeleteMutations() throws {

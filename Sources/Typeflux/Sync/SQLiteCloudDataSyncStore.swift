@@ -8,6 +8,8 @@ final class SQLiteCloudDataSyncStore {
         var enabled: Bool
         var cursor: Int64
         var checkpoint: Int64
+        var datasetGeneration: Int64
+        var needsReauthorization: Bool
     }
 
     private let queue = DispatchQueue(label: "typeflux.cloud-data-sync.sqlite")
@@ -39,9 +41,19 @@ final class SQLiteCloudDataSyncStore {
             try execute("""
         CREATE TABLE IF NOT EXISTS sync_accounts(
           user_id TEXT PRIMARY KEY, enabled INTEGER NOT NULL DEFAULT 0,
-          cursor INTEGER NOT NULL DEFAULT 0, checkpoint INTEGER NOT NULL DEFAULT 0
+          cursor INTEGER NOT NULL DEFAULT 0, checkpoint INTEGER NOT NULL DEFAULT 0,
+          dataset_generation INTEGER NOT NULL DEFAULT 0,
+          needs_reauthorization INTEGER NOT NULL DEFAULT 0
         )
         """)
+            try addColumnIfMissing(
+                table: "sync_accounts", column: "dataset_generation",
+                definition: "INTEGER NOT NULL DEFAULT 0"
+            )
+            try addColumnIfMissing(
+                table: "sync_accounts", column: "needs_reauthorization",
+                definition: "INTEGER NOT NULL DEFAULT 0"
+            )
             try execute("""
         CREATE TABLE IF NOT EXISTS sync_entities(
           user_id TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL,
@@ -68,9 +80,18 @@ final class SQLiteCloudDataSyncStore {
 
     func state(userID: String) -> State {
         queue.sync {
-            var result = State(enabled: false, cursor: 0, checkpoint: 0)
-            query("SELECT enabled,cursor,checkpoint FROM sync_accounts WHERE user_id=?", [userID]) { row in
-                result = State(enabled: row.int(0) != 0, cursor: row.int64(1), checkpoint: row.int64(2))
+            var result = State(
+                enabled: false, cursor: 0, checkpoint: 0,
+                datasetGeneration: 0, needsReauthorization: false
+            )
+            query(
+                "SELECT enabled,cursor,checkpoint,dataset_generation,needs_reauthorization FROM sync_accounts WHERE user_id=?",
+                [userID]
+            ) { row in
+                result = State(
+                    enabled: row.int(0) != 0, cursor: row.int64(1), checkpoint: row.int64(2),
+                    datasetGeneration: row.int64(3), needsReauthorization: row.int(4) != 0
+                )
             }
             return result
         }
@@ -84,28 +105,67 @@ final class SQLiteCloudDataSyncStore {
         }
     }
 
-    func setEnabled(_ enabled: Bool, userID: String) {
-        queue.sync {
-            try? execute(
+    func setEnabled(_ enabled: Bool, userID: String) throws {
+        try queue.sync {
+            try execute(
                 """
                 INSERT INTO sync_accounts(user_id,enabled) VALUES(?,?)
-                ON CONFLICT(user_id) DO UPDATE SET enabled=excluded.enabled
+                ON CONFLICT(user_id) DO UPDATE SET
+                  enabled=excluded.enabled,
+                  needs_reauthorization=CASE
+                    WHEN excluded.enabled=1 THEN 0 ELSE sync_accounts.needs_reauthorization
+                  END
                 """,
                 [userID, enabled ? 1 : 0]
             )
         }
     }
 
-    func setProgress(userID: String, cursor: Int64, checkpoint: Int64) {
+    func setProgress(userID: String, cursor: Int64, checkpoint: Int64, datasetGeneration: Int64) {
         queue.sync {
             try? execute(
                 """
-                INSERT INTO sync_accounts(user_id,cursor,checkpoint) VALUES(?,?,?)
+                INSERT INTO sync_accounts(user_id,cursor,checkpoint,dataset_generation) VALUES(?,?,?,?)
                 ON CONFLICT(user_id) DO UPDATE SET
-                  cursor=excluded.cursor,checkpoint=excluded.checkpoint
+                  cursor=excluded.cursor,checkpoint=excluded.checkpoint,
+                  dataset_generation=excluded.dataset_generation
                 """,
-                [userID, cursor, checkpoint]
+                [userID, cursor, checkpoint, datasetGeneration]
             )
+        }
+    }
+
+    func replaceBaseline(
+        userID: String, datasetGeneration: Int64, cursor: Int64,
+        snapshot: [CloudSyncChange]
+    ) throws {
+        try queue.sync {
+            try execute("BEGIN IMMEDIATE")
+            do {
+                try execute("DELETE FROM sync_outbox WHERE user_id=?", [userID])
+                try execute("DELETE FROM sync_entities WHERE user_id=?", [userID])
+                for change in snapshot {
+                    try upsertEntityThrowing(
+                        userID: userID, type: change.entityType, id: change.entityID,
+                        revision: change.revision, payload: change.payload.data, deleted: false
+                    )
+                }
+                try execute(
+                    """
+                    INSERT INTO sync_accounts(
+                      user_id,enabled,cursor,checkpoint,dataset_generation,needs_reauthorization
+                    ) VALUES(?,0,?,0,?,1)
+                    ON CONFLICT(user_id) DO UPDATE SET
+                      enabled=0,cursor=excluded.cursor,checkpoint=0,
+                      dataset_generation=excluded.dataset_generation,needs_reauthorization=1
+                    """,
+                    [userID, cursor, datasetGeneration]
+                )
+                try execute("COMMIT")
+            } catch {
+                try? execute("ROLLBACK")
+                throw error
+            }
         }
     }
 
@@ -257,7 +317,16 @@ final class SQLiteCloudDataSyncStore {
 
     private func upsertEntity(userID: String, type: CloudSyncEntityType, id: UUID,
                               revision: Int64, payload: Data, deleted: Bool) {
-        try? execute(
+        try? upsertEntityThrowing(
+            userID: userID, type: type, id: id, revision: revision, payload: payload, deleted: deleted
+        )
+    }
+
+    private func upsertEntityThrowing(
+        userID: String, type: CloudSyncEntityType, id: UUID,
+        revision: Int64, payload: Data, deleted: Bool
+    ) throws {
+        try execute(
             """
             INSERT INTO sync_entities(user_id,entity_type,entity_id,revision,payload,deleted)
             VALUES(?,?,?,?,?,?)
@@ -266,6 +335,14 @@ final class SQLiteCloudDataSyncStore {
             """,
             [userID, type.rawValue, id.uuidString, revision, payload, deleted ? 1 : 0]
         )
+    }
+
+    private func addColumnIfMissing(table: String, column: String, definition: String) throws {
+        var found = false
+        query("PRAGMA table_info(\(table))", []) { row in
+            if row.string(1) == column { found = true }
+        }
+        if !found { try execute("ALTER TABLE \(table) ADD COLUMN \(column) \(definition)") }
     }
 
     private func execute(_ sql: String, _ values: [Any] = []) throws {

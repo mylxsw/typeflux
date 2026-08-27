@@ -1289,3 +1289,8 @@
 "cloudDataSync.status.failed" = "同步失败：%@";
 "cloudDataSync.status.lastSync" = "上次同步于 %@";
 "cloudDataSync.status.waiting" = "等待首次同步";
+"cloudDataSync.resetRequired" = "云端数据已发生重大变化。请重新开启同步，并选择合并本地数据或使用云端数据。";
+"cloudDataSync.delete.action" = "删除全部云同步数据";
+"cloudDataSync.delete.title" = "删除云同步数据？";
+"cloudDataSync.delete.message" = "这会永久删除云端保存的词库和自定义人设。本机数据会保留，其他设备将停止同步，直到你重新确认是否合并。";
+"cloudDataSync.delete.confirm" = "删除云端数据";

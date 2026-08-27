@@ -9,6 +9,7 @@ final class CloudDataSyncCoordinator: ObservableObject {
 
     @Published private(set) var isEnabled = false
     @Published private(set) var isSyncing = false
+    @Published private(set) var isDeletingCloudData = false
     @Published private(set) var lastSyncAt: Date?
     @Published private(set) var lastError: String?
     @Published private(set) var requiresInitialChoice = false
@@ -26,6 +27,10 @@ final class CloudDataSyncCoordinator: ObservableObject {
     private var applyingRemote = false
     private var localChangeDuringSync = false
     private var syncGeneration = 0
+    var canDeleteCloudData: Bool {
+        guard let userID = authState.userProfile?.id else { return false }
+        return store.hasAccount(userID: userID)
+    }
 
     private static let deviceID: UUID = {
         let key = "cloudDataSync.deviceID"
@@ -64,10 +69,24 @@ final class CloudDataSyncCoordinator: ObservableObject {
             lastError = store.initializationError?.localizedDescription ?? "Local sync storage is unavailable"
             return
         }
-        if enabled && !store.hasAccount(userID: userID) {
+        let hasAccount = store.hasAccount(userID: userID)
+        let state = store.state(userID: userID)
+        if enabled && !hasAccount {
             prepareInitialAccountScope(userID: userID, mergeGuestData: mergeGuestData)
+        } else if enabled && state.needsReauthorization && !mergeGuestData {
+            do {
+                try applyCloudBaseline(userID: userID)
+            } catch {
+                lastError = error.localizedDescription
+                return
+            }
         }
-        store.setEnabled(enabled, userID: userID)
+        do {
+            try store.setEnabled(enabled, userID: userID)
+        } catch {
+            lastError = error.localizedDescription
+            return
+        }
         isEnabled = enabled
         requiresInitialChoice = false
         lastError = nil
@@ -77,6 +96,63 @@ final class CloudDataSyncCoordinator: ObservableObject {
             syncTask?.cancel()
             syncTask = nil
             isSyncing = false
+        }
+    }
+
+    func deleteCloudData() {
+        guard !isDeletingCloudData, let userID = authState.userProfile?.id,
+              let token = authState.accessToken, store.isAvailable else { return }
+        let wasEnabled = isEnabled
+        do {
+            try store.setEnabled(false, userID: userID)
+        } catch {
+            lastError = error.localizedDescription
+            return
+        }
+        let activeSync = syncTask
+        isDeletingCloudData = true
+        syncGeneration += 1
+        debounceTask?.cancel()
+        activeSync?.cancel()
+        syncTask = nil
+        isSyncing = false
+        isEnabled = false
+        Task { [weak self] in
+            guard let self else { return }
+            defer { isDeletingCloudData = false }
+            do {
+                await activeSync?.value
+                let response = try await CloudDataSyncAPIService.reset(token: token)
+                try store.replaceBaseline(
+                    userID: userID, datasetGeneration: response.datasetGeneration,
+                    cursor: 0, snapshot: []
+                )
+                if authState.userProfile?.id == userID {
+                    isEnabled = false
+                    requiresInitialChoice = true
+                    lastSyncAt = nil
+                    lastError = nil
+                    syncGeneration += 1
+                    debounceTask?.cancel()
+                    syncTask?.cancel()
+                    syncTask = nil
+                    isSyncing = false
+                }
+            } catch {
+                let failure = error.localizedDescription
+                var restored = false
+                var restoreFailure: String?
+                do {
+                    try store.setEnabled(wasEnabled, userID: userID)
+                    restored = true
+                } catch let restoreError {
+                    restoreFailure = restoreError.localizedDescription
+                }
+                if authState.userProfile?.id == userID {
+                    isEnabled = restored && wasEnabled
+                    lastError = restoreFailure ?? failure
+                }
+            }
         }
     }
 
@@ -137,8 +213,9 @@ final class CloudDataSyncCoordinator: ObservableObject {
             return
         }
         let hasAccount = store.hasAccount(userID: userID)
-        isEnabled = store.state(userID: userID).enabled
-        requiresInitialChoice = !hasAccount
+        let state = store.state(userID: userID)
+        isEnabled = state.enabled
+        requiresInitialChoice = !hasAccount || state.needsReauthorization
         if switchScope {
             applyingRemote = true
             if hasAccount { CloudDataLocalScope.useAccount(userID) } else { CloudDataLocalScope.useGuest() }
@@ -164,6 +241,37 @@ final class CloudDataSyncCoordinator: ObservableObject {
             settingsStore.personas = []
         }
         applyingRemote = false
+        postScopeChangeNotifications()
+    }
+
+    private func applyCloudBaseline(userID: String) throws {
+        applyingRemote = true
+        defer { applyingRemote = false }
+        let vocabulary = try store.knownEntities(userID: userID, type: .vocabulary).map { id, record in
+            let value = try JSONDecoder.cloudSyncDates.decode(
+                VocabularyCloudPayload.self, from: record.payload
+            )
+            return VocabularyEntry(
+                id: id, term: value.term,
+                source: VocabularySource(rawValue: value.source) ?? .manual,
+                createdAt: value.createdAt, occurrenceCount: value.occurrenceCount
+            )
+        }
+        let personas = try store.knownEntities(userID: userID, type: .persona).map { id, record in
+            let value = try JSONDecoder().decode(PersonaCloudPayload.self, from: record.payload)
+            return PersonaProfile(id: id, name: value.name, prompt: value.prompt)
+        }
+        VocabularyStore.save(vocabulary)
+        settingsStore.personas = personas
+        let personaIDs = Set(settingsStore.personas.map(\.id))
+        if let activeID = UUID(uuidString: settingsStore.activePersonaID),
+           !settingsStore.personas.contains(where: { $0.id == activeID }) {
+            settingsStore.activePersonaID = ""
+        }
+        settingsStore.personaAppBindings.removeAll { binding in
+            guard let personaID = binding.personaID else { return false }
+            return !personaIDs.contains(personaID)
+        }
         postScopeChangeNotifications()
     }
 
@@ -223,7 +331,7 @@ final class CloudDataSyncCoordinator: ObservableObject {
     }
 
     private func syncContext() -> (userID: String, token: String, state: SQLiteCloudDataSyncStore.State)? {
-        guard store.isAvailable else { return nil }
+        guard store.isAvailable, !isDeletingCloudData else { return nil }
         guard let userID = authState.userProfile?.id, let token = authState.accessToken else { return nil }
         let state = store.state(userID: userID)
         guard state.enabled else { return nil }
@@ -243,11 +351,24 @@ final class CloudDataSyncCoordinator: ObservableObject {
                 let response = try await CloudDataSyncAPIService.sync(
                     token: context.token,
                     request: CloudSyncRequest(
+                        datasetGeneration: context.state.datasetGeneration,
                         deviceID: Self.deviceID, cursor: context.state.cursor,
                         ackCursor: context.state.cursor, checkpoint: context.state.checkpoint,
                         mutations: pending
                     )
                 )
+                guard !Task.isCancelled, authState.userProfile?.id == context.userID else { return }
+                if response.resetRequired {
+                    try store.replaceBaseline(
+                        userID: context.userID, datasetGeneration: response.datasetGeneration,
+                        cursor: response.cursor, snapshot: response.snapshot
+                    )
+                    isEnabled = false
+                    requiresInitialChoice = true
+                    lastSyncAt = nil
+                    lastError = L("cloudDataSync.resetRequired")
+                    return
+                }
                 try resolve(
                     results: response.results, mutations: pending, userID: context.userID,
                     applyAccepted: !localChangeDuringSync
@@ -264,10 +385,14 @@ final class CloudDataSyncCoordinator: ObservableObject {
                     continue
                 }
                 try apply(changes: response.changes, userID: context.userID)
-                store.setProgress(userID: context.userID, cursor: response.cursor,
-                                  checkpoint: response.hasMore ? response.checkpoint : 0)
+                store.setProgress(
+                    userID: context.userID, cursor: response.cursor,
+                    checkpoint: response.hasMore ? response.checkpoint : 0,
+                    datasetGeneration: response.datasetGeneration
+                )
                 context.state.cursor = response.cursor
                 context.state.checkpoint = response.hasMore ? response.checkpoint : 0
+                context.state.datasetGeneration = response.datasetGeneration
                 try stageLocalData(userID: context.userID)
                 hasMore = response.hasMore || !store.pending(userID: context.userID).isEmpty
             }

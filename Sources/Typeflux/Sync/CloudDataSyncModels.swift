@@ -66,7 +66,8 @@ struct CloudSyncMutation: Codable, Equatable {
 }
 
 struct CloudSyncRequest: Encodable {
-    let protocolVersion = 1
+    let protocolVersion = 2
+    let datasetGeneration: Int64
     let deviceID: UUID
     let cursor: Int64
     let ackCursor: Int64
@@ -76,6 +77,7 @@ struct CloudSyncRequest: Encodable {
 
     private enum CodingKeys: String, CodingKey {
         case protocolVersion = "protocol_version"
+        case datasetGeneration = "dataset_generation"
         case deviceID = "device_id"
         case cursor
         case ackCursor = "ack_cursor"
@@ -86,6 +88,10 @@ struct CloudSyncRequest: Encodable {
 }
 
 struct CloudSyncResponse: Decodable {
+    let datasetGeneration: Int64
+    let resetRequired: Bool
+    let resetReason: String?
+    let snapshot: [CloudSyncChange]
     let cursor: Int64
     let checkpoint: Int64
     let hasMore: Bool
@@ -94,7 +100,19 @@ struct CloudSyncResponse: Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case cursor, checkpoint, results, changes
+        case datasetGeneration = "dataset_generation"
+        case resetRequired = "reset_required"
+        case resetReason = "reset_reason"
+        case snapshot
         case hasMore = "has_more"
+    }
+}
+
+struct CloudSyncResetResponse: Decodable {
+    let datasetGeneration: Int64
+
+    private enum CodingKeys: String, CodingKey {
+        case datasetGeneration = "dataset_generation"
     }
 }
 

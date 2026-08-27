@@ -1285,3 +1285,8 @@
 "cloudDataSync.status.failed" = "同步失敗：%@";
 "cloudDataSync.status.lastSync" = "上次同步於 %@";
 "cloudDataSync.status.waiting" = "等待首次同步";
+"cloudDataSync.resetRequired" = "雲端資料已發生重大變化。請重新開啟同步，並選擇合併本機資料或使用雲端資料。";
+"cloudDataSync.delete.action" = "刪除全部雲端同步資料";
+"cloudDataSync.delete.title" = "刪除雲端同步資料？";
+"cloudDataSync.delete.message" = "這會永久刪除雲端儲存的詞庫和自訂人設。本機資料會保留，其他裝置將停止同步，直到你重新確認是否合併。";
+"cloudDataSync.delete.confirm" = "刪除雲端資料";

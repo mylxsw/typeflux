@@ -12,6 +12,7 @@ struct AccountView: View {
     @State private var isHoveringUsageCard = false
     @ObservedObject private var cloudDataSync = CloudDataSyncCoordinator.shared
     @State private var isConfirmingCloudSync = false
+    @State private var isConfirmingCloudDataDeletion = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
@@ -66,6 +67,14 @@ struct AccountView: View {
         } message: {
             Text(L("cloudDataSync.consent.message"))
         }
+        .alert(L("cloudDataSync.delete.title"), isPresented: $isConfirmingCloudDataDeletion) {
+            Button(L("common.cancel"), role: .cancel) {}
+            Button(L("cloudDataSync.delete.confirm"), role: .destructive) {
+                cloudDataSync.deleteCloudData()
+            }
+        } message: {
+            Text(L("cloudDataSync.delete.message"))
+        }
     }
 
     private var cloudDataSyncCard: some View {
@@ -91,7 +100,7 @@ struct AccountView: View {
                     .toggleStyle(.switch)
                 }
 
-                if cloudDataSync.isEnabled {
+                if cloudDataSync.isEnabled || cloudDataSync.lastError != nil {
                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
                     HStack {
                         Text(cloudDataSyncStatus)
@@ -100,12 +109,30 @@ struct AccountView: View {
                                 cloudDataSync.lastError == nil ? StudioTheme.textSecondary : StudioTheme.danger
                             )
                         Spacer()
-                        StudioButton(
-                            title: L("cloudDataSync.syncNow"), systemImage: "arrow.triangle.2.circlepath",
-                            variant: .secondary, isDisabled: cloudDataSync.isSyncing,
-                            isLoading: cloudDataSync.isSyncing
-                        ) { cloudDataSync.synchronizeNow() }
+                        if cloudDataSync.isEnabled {
+                            StudioButton(
+                                title: L("cloudDataSync.syncNow"), systemImage: "arrow.triangle.2.circlepath",
+                                variant: .secondary, isDisabled: cloudDataSync.isSyncing,
+                                isLoading: cloudDataSync.isSyncing
+                            ) { cloudDataSync.synchronizeNow() }
+                        }
                     }
+                }
+
+                if cloudDataSync.canDeleteCloudData {
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                    Button {
+                        isConfirmingCloudDataDeletion = true
+                    } label: {
+                        HStack(spacing: StudioTheme.Spacing.small) {
+                            if cloudDataSync.isDeletingCloudData { ProgressView().controlSize(.small) }
+                            Text(L("cloudDataSync.delete.action"))
+                        }
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.danger)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(cloudDataSync.isDeletingCloudData || cloudDataSync.isSyncing)
                 }
             }
         }
