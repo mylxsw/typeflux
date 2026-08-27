@@ -28,6 +28,7 @@ enum AnalyticsPropertyKeys {
         "local_model", "streaming_preview", "audio_seconds", "output_chars",
         "pipeline_duration_ms", "apply_outcome", "injection_method", "target_app_category",
         "stage", "error_kind", "step", "last_step", "skipped", "duration_seconds", "llm_provider",
+        "audio_signal", "audio_duration_seconds", "audio_rms_db", "audio_peak_db", "low_energy_retry",
         "permission", "granted", "totalSessions", "successfulSessions", "failedSessions",
         "dictationCount", "personaRewriteCount", "editSelectionCount", "askAnswerCount",
         "totalRecordingSeconds", "totalCharacters"

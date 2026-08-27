@@ -50,11 +50,22 @@ final class WhisperKitTranscriber: Transcriber {
 
     func transcribeStream(
         audioFile: AudioFile,
+        profile: TranscriptionProfile = .standard,
+        prompt: String? = nil,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         let pipe = try await ensurePipeline()
 
-        let options = Self.decodingOptions()
+        var options = Self.decodingOptions(profile: profile)
+        if profile == .lowEnergyRetry,
+           let prompt = prompt?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !prompt.isEmpty,
+           let tokenizer = pipe.tokenizer {
+            options.promptTokens = tokenizer
+                .encode(text: " " + prompt)
+                .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
+            options.usePrefillPrompt = true
+        }
 
         let results: [TranscriptionResult] = try await pipe.transcribe(
             audioPath: audioFile.fileURL.path,
@@ -73,14 +84,21 @@ final class WhisperKitTranscriber: Transcriber {
         return text
     }
 
-    static func decodingOptions() -> DecodingOptions {
-        DecodingOptions(
+    static func decodingOptions(
+        profile: TranscriptionProfile = .standard,
+        preferredLanguages: [String] = Locale.preferredLanguages
+    ) -> DecodingOptions {
+        let retryLanguage = profile == .lowEnergyRetry
+            ? TranscriptionLanguageHints.preferredWhisperLanguageCode(preferredLanguages: preferredLanguages)
+            : nil
+        return DecodingOptions(
             verbose: false,
             task: .transcribe,
-            language: nil,
+            language: retryLanguage,
             usePrefillPrompt: true,
-            detectLanguage: true,
-            withoutTimestamps: true
+            detectLanguage: retryLanguage == nil,
+            withoutTimestamps: true,
+            noSpeechThreshold: profile == .lowEnergyRetry ? 0.8 : 0.6
         )
     }
 

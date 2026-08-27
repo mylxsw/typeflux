@@ -1,7 +1,7 @@
 import AVFoundation
 import Foundation
 
-struct AudioFile {
+struct AudioFile: Sendable {
     let fileURL: URL
     let duration: TimeInterval
 }

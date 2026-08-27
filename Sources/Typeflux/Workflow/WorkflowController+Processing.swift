@@ -395,6 +395,9 @@ extension WorkflowController {
             let finishStartedAt = Date()
             NetworkDebugLogger
                 .logMessage("[Ask Timing] finishRecordingAndProcess entered intent=\(recordingIntent.traceName)")
+            // Keep capturing briefly after the release event so final consonants and
+            // short utterances are not clipped at the hotkey boundary.
+            await sleep(Self.recordingTailCaptureDuration)
             let audioFile = try audioRecorder.stop()
             NetworkDebugLogger.logMessage(
                 "[Ask Timing] audioRecorder.stop completed in \(Self.formatDurationSince(finishStartedAt))"
@@ -432,6 +435,21 @@ extension WorkflowController {
                 fileURL: audioFile.fileURL,
                 duration: audioAnalysis.duration
             )
+            let signalClassification = audioAnalysis.signalClassification
+            recordPendingDictationAudioAnalysis(
+                classification: signalClassification,
+                analysis: audioAnalysis
+            )
+            NetworkDebugLogger.logMessage(
+                """
+                [Audio Analysis] classification=\(signalClassification.rawValue)
+                duration=\(String(format: "%.3f", audioAnalysis.duration))
+                rmsPowerDB=\(audioAnalysis.rmsPowerDB)
+                peakPowerDB=\(audioAnalysis.peakPowerDB)
+                audibleDuration=\(String(format: "%.3f", audioAnalysis.audibleDuration))
+                audibleFrameRatio=\(audioAnalysis.audibleFrameRatio)
+                """
+            )
 
             if validatedAudioFile.duration < Self.minimumRecordingDuration {
                 try? FileManager.default.removeItem(at: validatedAudioFile.fileURL)
@@ -446,7 +464,7 @@ extension WorkflowController {
                 return
             }
 
-            if !audioAnalysis.containsAudibleSignal, recordingPreviewText.isEmpty {
+            if signalClassification == .hardSilence, recordingPreviewText.isEmpty {
                 try? FileManager.default.removeItem(at: validatedAudioFile.fileURL)
                 realtimeAudioBufferPump?.cancel()
                 await realtimeTranscriptionSession?.cancel()
@@ -455,11 +473,11 @@ extension WorkflowController {
                     self.appState.setStatus(.idle)
                     self.overlayController.showNotice(message: L("workflow.transcription.noSpeech"))
                 }
-                reportPendingDictationFailure(stage: "transcription", kind: "no_speech")
+                reportPendingDictationFailure(stage: "transcription", kind: "client_hard_silence")
                 return
             }
 
-            if !audioAnalysis.containsAudibleSignal {
+            if signalClassification != .audible {
                 NetworkDebugLogger.logMessage(
                     """
                     [Audio Analysis] continuing despite low saved-audio signal because recording preview produced text
@@ -472,6 +490,29 @@ extension WorkflowController {
                     """
                 )
             }
+
+            let shouldPrepareRetryAudio = recordingPreviewText.isEmpty
+                && (signalClassification == .lowEnergy
+                    || validatedAudioFile.duration <= Self.shortAudioRetryDuration)
+            var retryAudioFile: AudioFile?
+            if shouldPrepareRetryAudio {
+                do {
+                    retryAudioFile = try await Task.detached(priority: .userInitiated) {
+                        try LowEnergyAudioPreparer.prepare(
+                            audioFile: validatedAudioFile,
+                            analysis: audioAnalysis
+                        )
+                    }.value
+                } catch {
+                    NetworkDebugLogger.logError(
+                        context: "Low-energy audio preparation failed; using original audio",
+                        error: error
+                    )
+                }
+            }
+            let transcriptionAudioFile = signalClassification == .lowEnergy
+                ? (retryAudioFile ?? validatedAudioFile)
+                : validatedAudioFile
 
             await MainActor.run {
                 _ = self.soundEffectPlayer.play(.done)
@@ -534,6 +575,12 @@ extension WorkflowController {
             )
             processingTask = Task { [weak self] in
                 guard let self else { return }
+                defer {
+                    if let retryAudioFile,
+                       retryAudioFile.fileURL != validatedAudioFile.fileURL {
+                        try? FileManager.default.removeItem(at: retryAudioFile.fileURL)
+                    }
+                }
                 let processingStartedAt = Date()
                 NetworkDebugLogger
                     .logMessage("[Ask Timing] processing task entered intent=\(recordingIntent.traceName)")
@@ -542,7 +589,8 @@ extension WorkflowController {
                     "[Ask Timing] realtime audio pump finished in \(Self.formatDurationSince(processingStartedAt))"
                 )
                 await process(
-                    audioFile: validatedAudioFile,
+                    audioFile: transcriptionAudioFile,
+                    lowEnergyRetryAudioFile: retryAudioFile,
                     realtimeTranscriptionSession: realtimeTranscriptionSession,
                     record: record,
                     selectionSnapshot: selectionSnapshot,
@@ -664,6 +712,7 @@ extension WorkflowController {
     // swiftlint:disable:next cyclomatic_complexity
     func process(
         audioFile: AudioFile,
+        lowEnergyRetryAudioFile: AudioFile? = nil,
         realtimeTranscriptionSession: (any RealtimeTranscriptionSession)? = nil,
         record: HistoryRecord,
         selectionSnapshot: TextSelectionSnapshot,
@@ -731,7 +780,7 @@ extension WorkflowController {
                 && inputContext == nil
                 && hasRewritePersona
 
-            let rawTranscribedText: String
+            var rawTranscribedText: String
             var mergedLLMResult: String?
             var mergedLLMStartedAt: Date?
             var mergedLLMFirstOutputAt: Date?
@@ -829,10 +878,40 @@ extension WorkflowController {
             )
 
             try ensureProcessingIsActive(sessionID)
-            let transcriptChoice = Self.preferredTranscript(
+            var transcriptChoice = Self.preferredTranscript(
                 rawTranscribedText: rawTranscribedText,
                 recordingPreviewText: fallbackPreviewText
             )
+            if transcriptChoice.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               fallbackPreviewText.isEmpty,
+               let lowEnergyRetryAudioFile {
+                markDictationLowEnergyRetry(recordID: record.id)
+                NetworkDebugLogger.logMessage(
+                    "[Transcription] empty result; retrying low-energy audio once"
+                )
+                do {
+                    let retryText = try await sttRouter.transcribeStream(
+                        audioFile: lowEnergyRetryAudioFile,
+                        scenario: cloudScenario,
+                        optimize: !shouldRewriteTranscript,
+                        profile: .lowEnergyRetry,
+                        diagnosticsRecorder: asrRaceDiagnosticsRecorder
+                    ) { _ in }
+                    if !retryText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        rawTranscribedText = retryText
+                        mergedLLMResult = nil
+                        transcriptChoice = Self.preferredTranscript(
+                            rawTranscribedText: retryText,
+                            recordingPreviewText: fallbackPreviewText
+                        )
+                    }
+                } catch {
+                    NetworkDebugLogger.logError(
+                        context: "Low-energy transcription retry failed",
+                        error: error
+                    )
+                }
+            }
             let transcribedText = transcriptChoice.text
             if transcriptChoice.reason == .emptyFinalUsedPreview {
                 NetworkDebugLogger.logMessage(
@@ -865,7 +944,7 @@ extension WorkflowController {
                 saveHistoryRecord(record)
                 reportDictationTerminal(
                     record: record,
-                    forcedFailure: (stage: "transcription", kind: "no_speech")
+                    forcedFailure: (stage: "transcription", kind: "model_empty_result")
                 )
 
                 await MainActor.run {

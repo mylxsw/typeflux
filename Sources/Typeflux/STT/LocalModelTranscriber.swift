@@ -3,13 +3,15 @@ import Foundation
 protocol LocalWhisperKitTranscribing: AnyObject {
     func transcribeStream(
         audioFile: AudioFile,
+        profile: TranscriptionProfile,
+        prompt: String?,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String
 
     func prepare(onProgress: ((Double, String) -> Void)?) async throws
 }
 
-final class LocalModelTranscriber: Transcriber {
+final class LocalModelTranscriber: TranscriptionProfileAwareTranscriber {
     static let defaultWhisperKitKeepAliveDuration: TimeInterval = 30 * 60
     static let persistentWhisperKitKeepAliveDuration: TimeInterval? = nil
     static let notPreparedErrorDomain = "LocalModelTranscriber"
@@ -49,6 +51,14 @@ final class LocalModelTranscriber: Transcriber {
         audioFile: AudioFile,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
+        try await transcribeStream(audioFile: audioFile, profile: .standard, onUpdate: onUpdate)
+    }
+
+    func transcribeStream(
+        audioFile: AudioFile,
+        profile: TranscriptionProfile,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> String {
         let model = selectedModelIdentifier()
         NetworkDebugLogger.logRequest(
             URLRequest(url: audioFile.fileURL),
@@ -69,7 +79,12 @@ final class LocalModelTranscriber: Transcriber {
         case .whisperLocal, .whisperLocalLarge:
             let modelInfo = try await preparedModelInfo()
             let transcriber = whisperKitTranscriber(for: model, modelFolder: modelInfo.storagePath)
-            return try await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+            return try await transcriber.transcribeStream(
+                audioFile: audioFile,
+                profile: profile,
+                prompt: profile == .lowEnergyRetry ? vocabularyPromptText() : nil,
+                onUpdate: onUpdate
+            )
 
         case .senseVoiceSmall:
             removeWhisperKitCache(keepingCapacity: false)

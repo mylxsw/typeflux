@@ -13,6 +13,7 @@ extension STTRouter {
         audioFile: AudioFile,
         scenario: TypefluxCloudScenario = .voiceInput,
         optimize: Bool = true,
+        profile: TranscriptionProfile = .standard,
         diagnosticsRecorder: ASRRaceDiagnosticsRecorder? = nil,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
@@ -30,6 +31,7 @@ extension STTRouter {
                 audioFile: audioFile,
                 scenario: scenario,
                 optimize: optimize,
+                profile: profile,
                 onUpdate: onUpdate
             )
         case .multimodalLLM:
@@ -126,9 +128,17 @@ extension STTRouter {
         audioFile: AudioFile,
         scenario: TypefluxCloudScenario,
         optimize: Bool,
+        profile: TranscriptionProfile,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         do {
+            if let profileAware = localModel as? any TranscriptionProfileAwareTranscriber {
+                return try await profileAware.transcribeStream(
+                    audioFile: audioFile,
+                    profile: profile,
+                    onUpdate: onUpdate
+                )
+            }
             return try await localModel.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
         } catch {
             return try await handleLocalModelFailure(
