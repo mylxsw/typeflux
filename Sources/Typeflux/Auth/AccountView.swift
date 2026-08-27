@@ -77,27 +77,6 @@ struct AccountView: View {
                                 Task { await authState.refreshSubscription() }
                             }
 
-                            if subscriptionPresentation.showsSubscriptionSyncAction {
-                                Button(action: syncBillingSubscription) {
-                                    Group {
-                                        if authState.isSyncingSubscription {
-                                            ProgressView()
-                                                .controlSize(.small)
-                                        } else {
-                                            Text(L("auth.account.subscriptionSyncAction"))
-                                        }
-                                    }
-                                    .font(.studioBody(StudioTheme.Typography.caption))
-                                    .foregroundStyle(StudioTheme.textSecondary)
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(
-                                    authState.isSyncingSubscription
-                                        || authState.isLoadingSubscription
-                                        || isOpeningBilling
-                                )
-                            }
-
                             StudioButton(
                                 title: subscriptionPresentation.billingAction == .manageBilling
                                     ? L("auth.account.manageBilling")
@@ -112,10 +91,18 @@ struct AccountView: View {
                         }
                     }
 
-                    Text(L(subscriptionPresentation.subtitleKey))
-                        .font(.studioBody(StudioTheme.Typography.body))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    HStack(alignment: .firstTextBaseline, spacing: StudioTheme.Spacing.medium) {
+                        Text(L(subscriptionPresentation.subtitleKey))
+                            .font(.studioBody(StudioTheme.Typography.body))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Spacer(minLength: StudioTheme.Spacing.medium)
+
+                        if subscriptionPresentation.showsSubscriptionSyncAction {
+                            subscriptionSyncButton
+                        }
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -153,6 +140,29 @@ struct AccountView: View {
 
     private var subscriptionPresentation: AccountSubscriptionPresentation {
         AccountSubscriptionPresentation.make(from: authState.subscription)
+    }
+
+    private var subscriptionSyncButton: some View {
+        Button(action: syncBillingSubscription) {
+            Group {
+                if authState.isSyncingSubscription {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Text(L("auth.account.subscriptionSyncAction"))
+                }
+            }
+            .font(.studioBody(StudioTheme.Typography.caption))
+            .foregroundStyle(StudioTheme.textSecondary)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+        }
+        .buttonStyle(.plain)
+        .disabled(
+            authState.isSyncingSubscription
+                || authState.isLoadingSubscription
+                || isOpeningBilling
+        )
     }
 
     private var usageCard: some View {

@@ -437,6 +437,17 @@ struct StudioView: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject private var authState = AuthState.shared
 
+    private var sidebarAccountPresentation: SidebarAccountCardPresentation {
+        SidebarAccountCardPresentation.make(
+            isLoggedIn: authState.isLoggedIn,
+            subscription: authState.subscription,
+            credits: authState.usageCredits,
+            subscriptionError: authState.subscriptionError,
+            usageError: authState.usageError,
+            displayName: authState.userProfile?.resolvedDisplayName
+        )
+    }
+
     var body: some View {
         StudioShell(
             currentSection: viewModel.currentSection,
@@ -449,7 +460,8 @@ struct StudioView: View {
             searchText: $viewModel.searchQuery,
             searchPlaceholder: viewModel.currentSection.searchPlaceholder,
             agentEnabled: viewModel.agentFrameworkEnabled,
-            isLoggedIn: authState.isLoggedIn
+            isLoggedIn: authState.isLoggedIn,
+            sidebarAccountPresentation: sidebarAccountPresentation
         ) { viewportSize in
             let viewportHeight = viewportContentHeight(from: viewportSize)
 
@@ -480,13 +492,29 @@ struct StudioView: View {
             AppLocalization.shared.setLanguage(viewModel.appLanguage)
             viewModel.schedulePermissionRefresh()
         }
+        .task(id: authState.isLoggedIn) {
+            guard authState.isLoggedIn else { return }
+            await refreshSidebarAccountStatus()
+
+            while !Task.isCancelled, authState.isLoggedIn {
+                do {
+                    try await Task.sleep(for: .seconds(60))
+                } catch {
+                    return
+                }
+                await refreshSidebarAccountStatus()
+            }
+        }
         .preferredColorScheme(viewModel.preferredColorScheme)
         .environment(\.locale, viewModel.locale)
         .onReceive(
             NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
         ) { _ in
             viewModel.schedulePermissionRefresh()
-            authState.refreshSubscriptionIfNeeded()
+            Task { await refreshSidebarAccountStatus() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .authDidLogin)) { _ in
+            Task { await refreshSidebarAccountStatus() }
         }
         .overlay(alignment: .bottom) {
             if let toast = viewModel.toastMessage {
@@ -793,13 +821,28 @@ struct StudioView: View {
             return
         }
 
+        viewModel.navigate(to: .account)
         Task { @MainActor in
             switch await authState.refreshProfile() {
             case .authenticated, .failed:
-                viewModel.navigate(to: .account)
+                break
             case .unauthenticated:
                 LoginWindowController.shared.show()
             }
+        }
+    }
+
+    private func refreshSidebarAccountStatus() async {
+        guard authState.isLoggedIn else { return }
+
+        await authState.refreshTokenIfNeeded()
+        guard authState.isLoggedIn else { return }
+
+        if !authState.isLoadingSubscription {
+            await authState.refreshSubscription()
+        }
+        if !authState.isLoadingUsage {
+            await authState.refreshUsage()
         }
     }
 

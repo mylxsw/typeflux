@@ -563,6 +563,7 @@ struct StudioShell<Content: View>: View {
     let searchPlaceholder: String
     let agentEnabled: Bool
     let isLoggedIn: Bool
+    let sidebarAccountPresentation: SidebarAccountCardPresentation
     let content: (CGSize) -> Content
 
     init(
@@ -577,6 +578,7 @@ struct StudioShell<Content: View>: View {
         searchPlaceholder: String,
         agentEnabled: Bool = false,
         isLoggedIn: Bool = false,
+        sidebarAccountPresentation: SidebarAccountCardPresentation,
         @ViewBuilder content: @escaping (CGSize) -> Content
     ) {
         self.currentSection = currentSection
@@ -590,6 +592,7 @@ struct StudioShell<Content: View>: View {
         self.searchPlaceholder = searchPlaceholder
         self.agentEnabled = agentEnabled
         self.isLoggedIn = isLoggedIn
+        self.sidebarAccountPresentation = sidebarAccountPresentation
         self.content = content
     }
 
@@ -608,7 +611,8 @@ struct StudioShell<Content: View>: View {
                     onOpenAbout: onOpenAbout,
                     onAccountAction: onAccountAction,
                     agentEnabled: agentEnabled,
-                    isLoggedIn: isLoggedIn
+                    isLoggedIn: isLoggedIn,
+                    accountPresentation: sidebarAccountPresentation
                 )
                 .frame(width: StudioTheme.sidebarWidth)
                 .background(
@@ -746,6 +750,7 @@ struct StudioSidebar: View {
     let onAccountAction: () -> Void
     let agentEnabled: Bool
     let isLoggedIn: Bool
+    let accountPresentation: SidebarAccountCardPresentation
     @ObservedObject private var localization = AppLocalization.shared
 
     var body: some View {
@@ -788,32 +793,22 @@ struct StudioSidebar: View {
             Spacer()
 
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                Rectangle()
-                    .fill(StudioTheme.border.opacity(0.42))
-                    .frame(height: 1)
-                    .padding(.vertical, StudioTheme.Spacing.xxSmall)
+                StudioSidebarAccountCard(
+                    presentation: accountPresentation,
+                    action: onAccountAction,
+                    identityAction: onAccountAction
+                ) {
+                    HStack(spacing: StudioTheme.Spacing.xxSmall) {
+                        compactFeedbackMenuButton
 
-                HStack(spacing: StudioTheme.Spacing.none) {
-                    utilityButton(
-                        systemImage: isLoggedIn ? "person.circle.fill" : "person.circle",
-                        accessibilityLabel: L("sidebar.accountAccessibility"),
-                        isActive: currentSection == .account,
-                        action: onAccountAction
-                    )
-
-                    Spacer()
-
-                    HStack(spacing: StudioTheme.Spacing.smallMedium) {
-                        feedbackMenuButton
-
-                        utilityButton(
+                        compactUtilityButton(
                             systemImage: "questionmark.circle",
                             accessibilityLabel: L("sidebar.aboutAccessibility"),
                             isActive: false,
                             action: onOpenAbout
                         )
 
-                        utilityButton(
+                        compactUtilityButton(
                             systemImage: "gearshape",
                             accessibilityLabel: L("sidebar.settingsAccessibility"),
                             isActive: currentSection == .settings,
@@ -821,11 +816,14 @@ struct StudioSidebar: View {
                         )
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(.horizontal, StudioTheme.Insets.sidebarOuterHorizontal)
-        .padding(.vertical, StudioTheme.Insets.sidebarOuterVertical)
+        .padding(.top, StudioTheme.Insets.sidebarOuterVertical)
+        .padding(
+            .bottom,
+            StudioTheme.Insets.sidebarOuterHorizontal - StudioTheme.Spacing.small
+        )
         .environment(\.locale, localization.locale)
     }
 
@@ -833,7 +831,7 @@ struct StudioSidebar: View {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
     }
 
-    private func utilityButton(
+    private func compactUtilityButton(
         systemImage: String,
         accessibilityLabel: String,
         isActive: Bool,
@@ -843,14 +841,18 @@ struct StudioSidebar: View {
             systemImage: systemImage,
             accessibilityLabel: accessibilityLabel,
             isActive: isActive,
+            size: 24,
+            symbolSize: 12,
             action: action
         )
     }
 
-    private var feedbackMenuButton: some View {
+    private var compactFeedbackMenuButton: some View {
         StudioSidebarIconMenuButton(
-            systemImage: "envelope.fill",
-            accessibilityLabel: L("sidebar.feedbackAccessibility")
+            systemImage: "envelope",
+            accessibilityLabel: L("sidebar.feedbackAccessibility"),
+            size: 24,
+            symbolSize: 11
         ) {
             Button(L("sidebar.feedback.directOption"), action: onSendDirectFeedback)
             Button(L("sidebar.feedback.emailOption"), action: onSendFeedbackEmail)
@@ -863,6 +865,8 @@ private struct StudioSidebarIconButton: View {
     let systemImage: String
     let accessibilityLabel: String
     let isActive: Bool
+    var size: CGFloat = StudioTheme.ControlSize.sidebarUtilityButton
+    var symbolSize: CGFloat = StudioTheme.Typography.iconSmall
     let action: () -> Void
     @State private var isHovered = false
 
@@ -872,7 +876,9 @@ private struct StudioSidebarIconButton: View {
                 systemImage: systemImage,
                 accessibilityLabel: accessibilityLabel,
                 isActive: isActive,
-                isHovered: isHovered
+                isHovered: isHovered,
+                size: size,
+                symbolSize: symbolSize
             )
         }
         .buttonStyle(StudioInteractiveButtonStyle())
@@ -885,6 +891,8 @@ private struct StudioSidebarIconButton: View {
 private struct StudioSidebarIconMenuButton<MenuContent: View>: View {
     let systemImage: String
     let accessibilityLabel: String
+    var size: CGFloat = StudioTheme.ControlSize.sidebarUtilityButton
+    var symbolSize: CGFloat = StudioTheme.Typography.iconSmall
     @ViewBuilder let menuContent: () -> MenuContent
     @State private var isHovered = false
 
@@ -896,7 +904,9 @@ private struct StudioSidebarIconMenuButton<MenuContent: View>: View {
                 systemImage: systemImage,
                 accessibilityLabel: accessibilityLabel,
                 isActive: false,
-                isHovered: isHovered
+                isHovered: isHovered,
+                size: size,
+                symbolSize: symbolSize
             )
         }
         .menuStyle(.borderlessButton)
@@ -904,8 +914,8 @@ private struct StudioSidebarIconMenuButton<MenuContent: View>: View {
         .buttonStyle(StudioInteractiveButtonStyle())
         .tint(StudioTheme.textSecondary)
         .frame(
-            width: StudioTheme.ControlSize.sidebarUtilityButton,
-            height: StudioTheme.ControlSize.sidebarUtilityButton
+            width: size,
+            height: size
         )
         .contentShape(Circle())
         .accessibilityLabel(accessibilityLabel)
@@ -919,14 +929,16 @@ private struct StudioSidebarIconLabel: View {
     let accessibilityLabel: String
     let isActive: Bool
     var isHovered: Bool = false
+    var size: CGFloat = StudioTheme.ControlSize.sidebarUtilityButton
+    var symbolSize: CGFloat = StudioTheme.Typography.iconSmall
 
     var body: some View {
         Image(systemName: systemImage)
-            .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
+            .font(.system(size: symbolSize, weight: .semibold))
             .foregroundStyle(isActive ? StudioTheme.textPrimary : StudioTheme.textSecondary)
             .frame(
-                width: StudioTheme.ControlSize.sidebarUtilityButton,
-                height: StudioTheme.ControlSize.sidebarUtilityButton
+                width: size,
+                height: size
             )
             .background(
                 Circle()

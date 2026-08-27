@@ -25,9 +25,19 @@ final class AccountUsageDisplayFormatterTests: XCTestCase {
         XCTAssertEqual(AccountUsageDisplayFormatter.count(-12345), "-12.3K")
     }
 
-    func testCreditAmountUsesTwoFractionDigits() {
-        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(0), "0.00")
-        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(1997), "1,997.00")
+    func testSidebarCreditAmountAbbreviatesFromOneThousandWithLowercaseK() {
+        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(999), "999")
+        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(1000), "1k")
+        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(1280), "1.3k")
+        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(4500), "4.5k")
+        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(20000), "20k")
+    }
+
+    func testCreditAmountUsesUpToTwoFractionDigits() {
+        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(0), "0")
+        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(1997), "1,997")
+        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(1997.5), "1,997.5")
+        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(1997.456), "1,997.46")
     }
 
     func testPercentageUsesTwoFractionDigits() {

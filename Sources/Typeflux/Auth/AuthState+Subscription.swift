@@ -15,6 +15,7 @@ extension AuthState {
             subscription = .none
             return nil
         }
+        guard !isLoadingSubscription else { return subscription }
 
         isLoadingSubscription = true
         defer { isLoadingSubscription = false }
@@ -54,6 +55,7 @@ extension AuthState {
             usageCredits = nil
             return nil
         }
+        guard !isLoadingUsage else { return usageStats }
 
         isLoadingUsage = true
         defer { isLoadingUsage = false }

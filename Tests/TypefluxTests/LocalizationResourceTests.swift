@@ -29,6 +29,26 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testSidebarAccountCardStateCopyExistsForAllSupportedLanguages() throws {
+        let keys = [
+            "sidebar.accountCard.guest",
+            "sidebar.accountCard.usagePair",
+            "sidebar.accountCard.viewAccountAccessibility",
+            "sidebar.accountCard.billingAttention",
+            "sidebar.accountCard.billingAttentionSubtitle",
+            "sidebar.accountCard.unavailable"
+        ]
+
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            for key in keys {
+                let localized = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(localized, key, "Missing localized value for \(key) in \(language.rawValue)")
+                XCTAssertFalse(localized.isEmpty)
+            }
+        }
+    }
+
     func testBillingPageUnavailableHasLocalizedValueForAllSupportedLanguages() throws {
         for language in AppLanguage.allCases {
             let bundle = try localizationBundle(for: language)

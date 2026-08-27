@@ -57,7 +57,29 @@ enum AccountUsageDisplayFormatter {
     }
 
     static func creditAmount(_ value: Int) -> String {
-        fixedDecimal(Double(value), maximumFractionDigits: 2)
+        creditAmount(Double(value))
+    }
+
+    static func creditAmount(_ value: Double) -> String {
+        flexibleDecimal(value, maximumFractionDigits: 2)
+    }
+
+    static func sidebarCreditAmount(_ value: Int) -> String {
+        let absoluteValue = abs(Double(value))
+        guard absoluteValue >= 1000 else {
+            return count(Int64(value))
+        }
+
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = false
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 1
+        formatter.roundingMode = .halfUp
+
+        let compactValue = Double(value) / 1000
+        return (formatter.string(from: NSNumber(value: compactValue)) ?? "\(compactValue)") + "k"
     }
 
     static func percentage(_ value: Double) -> String {
@@ -93,5 +115,16 @@ enum AccountUsageDisplayFormatter {
         formatter.maximumFractionDigits = maximumFractionDigits
         formatter.roundingMode = .halfUp
         return formatter.string(from: NSNumber(value: value)) ?? String(format: "%.\(maximumFractionDigits)f", value)
+    }
+
+    private static func flexibleDecimal(_ value: Double, maximumFractionDigits: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = true
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = maximumFractionDigits
+        formatter.roundingMode = .halfUp
+        return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 }

@@ -238,6 +238,31 @@ final class AuthStateTests: XCTestCase {
         XCTAssertNotNil(state.subscriptionError)
     }
 
+    func testSubscriptionRefreshSkipsDuplicateRequestWhileLoading() async {
+        let storedToken = validStoredToken()
+        var fetchCount = 0
+        let state = AuthState(
+            loadStoredToken: { storedToken },
+            loadStoredUserProfile: { nil },
+            saveStoredToken: { _, _ in },
+            saveStoredUserProfile: { _ in },
+            clearStoredSession: {},
+            fetchProfile: { _ in self.makeProfile(email: "refresh-loading@test.com") },
+            fetchSubscription: { _ in
+                fetchCount += 1
+                return .none
+            }
+        )
+        await waitForRefreshCompletion(state)
+        fetchCount = 0
+        state.isLoadingSubscription = true
+
+        let snapshot = await state.refreshSubscription()
+
+        XCTAssertEqual(snapshot, state.subscription)
+        XCTAssertEqual(fetchCount, 0)
+    }
+
     func testSyncSubscriptionUsesAccessTokenAndAppliesReturnedSnapshot() async throws {
         let storedToken = validStoredToken()
         var requestedToken: String?
@@ -795,6 +820,36 @@ final class AuthStateTests: XCTestCase {
         )
         XCTAssertEqual(state.usagePeriodStart, "2026-05-01T00:00:00Z")
         XCTAssertEqual(state.usagePeriodEnd, "2026-06-01T00:00:00Z")
+    }
+
+    func testUsageRefreshSkipsDuplicateRequestWhileLoading() async {
+        let storedToken = validStoredToken()
+        var usageFetchCount = 0
+        let state = AuthState(
+            loadStoredToken: { storedToken },
+            loadStoredUserProfile: { nil },
+            saveStoredToken: { _, _ in },
+            saveStoredUserProfile: { _ in },
+            clearStoredSession: {},
+            fetchProfile: { _ in self.makeProfile(email: "usage-loading@test.com") },
+            fetchSubscription: { _ in .none },
+            fetchCurrentPeriodUsageStats: { _ in
+                usageFetchCount += 1
+                return CloudUsageCurrentPeriodStats(
+                    periodStart: "2026-08-01T00:00:00Z",
+                    periodEnd: "2026-09-01T00:00:00Z",
+                    stats: .empty,
+                    credits: nil
+                )
+            }
+        )
+        await waitForRefreshCompletion(state)
+        state.isLoadingUsage = true
+
+        let stats = await state.refreshUsage()
+
+        XCTAssertEqual(stats, state.usageStats)
+        XCTAssertEqual(usageFetchCount, 0)
     }
 
     func testRefreshUsageSurfacesServerPeriodError() async {
