@@ -2729,6 +2729,23 @@ struct StudioView: View {
                         .labelsHidden()
                         .toggleStyle(.switch)
                     }
+
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                    StudioSettingRow(
+                        title: L("settings.analyticsSharing.title"),
+                        subtitle: L("settings.analyticsSharing.subtitle")
+                    ) {
+                        Toggle(
+                            "",
+                            isOn: Binding(
+                                get: { viewModel.analyticsSharingEnabled },
+                                set: viewModel.setAnalyticsSharingEnabled
+                            )
+                        )
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
                 }
             }
 

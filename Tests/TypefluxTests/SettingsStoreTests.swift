@@ -136,6 +136,25 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertFalse(store.soundEffectsEnabled)
     }
 
+    // MARK: - Analytics Sharing
+
+    func testAnalyticsSharingDefaultsToEnabledAndPersists() {
+        XCTAssertTrue(store.analyticsSharingEnabled)
+
+        store.analyticsSharingEnabled = false
+
+        XCTAssertFalse(store.analyticsSharingEnabled)
+        XCTAssertFalse(SettingsStore(defaults: defaults).analyticsSharingEnabled)
+    }
+
+    func testDisablingAnalyticsSharingClearsPendingEvents() {
+        defaults.set(Data("pending".utf8), forKey: "analytics.pendingEvents")
+
+        store.analyticsSharingEnabled = false
+
+        XCTAssertNil(defaults.object(forKey: "analytics.pendingEvents"))
+    }
+
     // MARK: - Mute System Output
 
     func testDefaultMuteSystemOutput() {

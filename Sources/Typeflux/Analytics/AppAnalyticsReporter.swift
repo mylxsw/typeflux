@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 protocol AnalyticsEventReporting: AnyObject, Sendable {
     func report(eventName: String, properties: [String: String])
@@ -10,6 +11,75 @@ final class NoopAnalyticsEventReporter: AnalyticsEventReporting, @unchecked Send
     private init() {}
     func report(eventName _: String, properties _: [String: String]) {}
     func reportFirstOpenIfNeeded() {}
+}
+
+enum AnalyticsPropertyKeys {
+    static let appVersion = "app_version"
+    static let osName = "os_name"
+    static let osVersion = "os_version"
+    static let locale = "locale"
+    static let sessionID = "session_id"
+
+    static let allowedEventProperties: Set<String> = [
+        "attempt_id", "job_id", "model_kind", "model_type", "model_identifier",
+        "download_source", "source_host", "normalized_path", "retry_index",
+        "duration_ms", "job_duration_ms", "status", "error_category"
+    ]
+}
+
+final class SettingsAwareAnalyticsEventReporter: AnalyticsEventReporting, @unchecked Sendable {
+    private let settingsStore: SettingsStore
+    private let reporter: AppAnalyticsReporter
+    private let lock = NSLock()
+    private var isEnabled: Bool
+    private var settingsObserver: NSObjectProtocol?
+
+    init(
+        settingsStore: SettingsStore,
+        reporter: AppAnalyticsReporter? = nil
+    ) {
+        self.settingsStore = settingsStore
+        self.reporter = reporter ?? AppAnalyticsReporter(defaults: settingsStore.defaults)
+        isEnabled = settingsStore.analyticsSharingEnabled
+        self.reporter.setEnabled(isEnabled)
+        settingsObserver = NotificationCenter.default.addObserver(
+            forName: .analyticsSharingDidChange,
+            object: settingsStore.defaults,
+            queue: nil
+        ) { [weak self] _ in
+            self?.refreshEnabledState()
+        }
+    }
+
+    deinit {
+        if let settingsObserver { NotificationCenter.default.removeObserver(settingsObserver) }
+    }
+
+    func report(eventName: String, properties: [String: String]) {
+        activeReporter().report(eventName: eventName, properties: properties)
+    }
+
+    func reportFirstOpenIfNeeded() {
+        activeReporter().reportFirstOpenIfNeeded()
+    }
+
+    private func activeReporter() -> AnalyticsEventReporting {
+        refreshEnabledState()
+        return lock.withLock {
+            if isEnabled { return reporter }
+            return NoopAnalyticsEventReporter.shared
+        }
+    }
+
+    private func refreshEnabledState() {
+        let nextValue = settingsStore.analyticsSharingEnabled
+        let changed = lock.withLock { () -> Bool in
+            guard isEnabled != nextValue else { return false }
+            isEnabled = nextValue
+            return true
+        }
+        if changed { reporter.setEnabled(nextValue) }
+    }
 }
 
 struct AppAnalyticsEvent: Codable, Equatable, Sendable {
@@ -107,6 +177,7 @@ struct URLSessionAppAnalyticsTransport: AppAnalyticsTransporting {
 }
 
 final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
+    private static let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "AppAnalyticsReporter")
     private let defaults: UserDefaults
     private let transport: AppAnalyticsTransporting
     private let clientInfoProvider: TypefluxCloudClientInfoProvider
@@ -116,8 +187,12 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
     private let firstOpenKey: String
     private let maximumQueueSize: Int
     private let retryDelay: Duration
+    private let sessionID: String
+    private var isEnabled = true
+    private var generation = 0
     private var isFlushing = false
     private var retryTask: Task<Void, Never>?
+    private var flushTask: Task<Void, Never>?
 
     init(
         defaults: UserDefaults = .standard,
@@ -127,6 +202,7 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
         firstOpenKey: String = "analytics.firstOpenReported",
         maximumQueueSize: Int = 100,
         retryDelay: Duration = .seconds(30),
+        sessionID: String = UUID().uuidString.lowercased(),
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.defaults = defaults
@@ -136,11 +212,29 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
         self.firstOpenKey = firstOpenKey
         self.maximumQueueSize = maximumQueueSize
         self.retryDelay = retryDelay
+        self.sessionID = sessionID
         self.now = now
+    }
+
+    func setEnabled(_ enabled: Bool) {
+        lock.withLock {
+            guard isEnabled != enabled else { return }
+            isEnabled = enabled
+            generation += 1
+            guard !enabled else { return }
+            retryTask?.cancel()
+            retryTask = nil
+            flushTask?.cancel()
+            flushTask = nil
+            isFlushing = false
+            defaults.removeObject(forKey: queueKey)
+        }
+        if enabled { flush() }
     }
 
     func reportFirstOpenIfNeeded() {
         lock.withLock {
+            guard isEnabled else { return }
             guard !defaults.bool(forKey: firstOpenKey) else { return }
             appendToQueue(makeEvent(eventName: "app_first_open", properties: clientProperties()))
             defaults.set(true, forKey: firstOpenKey)
@@ -149,31 +243,44 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
     }
 
     func report(eventName: String, properties: [String: String] = [:]) {
-        lock.withLock { appendToQueue(makeEvent(eventName: eventName, properties: properties)) }
+        let filteredProperties = properties.filter { key, _ in
+            let allowed = AnalyticsPropertyKeys.allowedEventProperties.contains(key)
+            if !allowed { Self.logger.debug("Dropping non-allowlisted analytics property: \(key, privacy: .public)") }
+            return allowed
+        }
+        lock.withLock {
+            guard isEnabled else { return }
+            appendToQueue(makeEvent(eventName: eventName, properties: filteredProperties))
+        }
         flush()
     }
 
     func flush() {
-        let events = lock.withLock { () -> [AppAnalyticsEvent] in
-            guard !isFlushing else { return [] }
+        let pending = lock.withLock { () -> (events: [AppAnalyticsEvent], generation: Int)? in
+            guard isEnabled, !isFlushing else { return nil }
             let events = loadQueue()
-            guard !events.isEmpty else { return [] }
+            guard !events.isEmpty else { return nil }
             isFlushing = true
-            return Array(events.prefix(20))
+            return (Array(events.prefix(20)), generation)
         }
-        guard !events.isEmpty else { return }
-        Task { [weak self] in
+        guard let pending else { return }
+        let events = pending.events
+        let flushGeneration = pending.generation
+        let task = Task { [weak self] in
             guard let self else { return }
             do {
                 try await transport.send(events: events)
                 let sentIDs = Set(events.map(\.eventID))
-                self.lock.withLock {
+                let shouldContinue = self.lock.withLock { () -> Bool in
+                    guard self.isEnabled, self.generation == flushGeneration else { return false }
                     self.saveQueue(self.loadQueue().filter { !sentIDs.contains($0.eventID) })
                     self.isFlushing = false
+                    self.flushTask = nil
                     self.retryTask?.cancel()
                     self.retryTask = nil
+                    return true
                 }
-                self.flush()
+                if shouldContinue { self.flush() }
             } catch AppAnalyticsTransportError.permanent {
                 var terminalIDs = Set<String>()
                 var hasTransientFailure = false
@@ -188,15 +295,27 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
                         break
                     }
                 }
-                self.lock.withLock {
+                let shouldContinue = self.lock.withLock { () -> Bool in
+                    guard self.isEnabled, self.generation == flushGeneration else { return false }
                     self.saveQueue(self.loadQueue().filter { !terminalIDs.contains($0.eventID) })
                     self.isFlushing = false
+                    self.flushTask = nil
+                    return true
                 }
+                guard shouldContinue else { return }
                 if hasTransientFailure { self.scheduleRetry() } else { self.flush() }
             } catch {
-                self.lock.withLock { self.isFlushing = false }
-                self.scheduleRetry()
+                let shouldRetry = self.lock.withLock { () -> Bool in
+                    guard self.isEnabled, self.generation == flushGeneration else { return false }
+                    self.isFlushing = false
+                    self.flushTask = nil
+                    return true
+                }
+                if shouldRetry { self.scheduleRetry() }
             }
+        }
+        lock.withLock {
+            if isEnabled, isFlushing, generation == flushGeneration { flushTask = task } else { task.cancel() }
         }
     }
 
@@ -225,7 +344,7 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
     private func scheduleRetry() {
         let delay = retryDelay
         lock.withLock {
-            guard retryTask == nil else { return }
+            guard isEnabled, retryTask == nil else { return }
             retryTask = Task { [weak self] in
                 try? await Task.sleep(for: delay)
                 guard let self, !Task.isCancelled else { return }
@@ -237,8 +356,13 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
 
     private func clientProperties() -> [String: String] {
         let info = clientInfoProvider.info()
-        return ["app_version": info.appVersion, "os_name": info.osName, "os_version": info.osVersion,
-                "locale": info.localeIdentifier]
+        return [
+            AnalyticsPropertyKeys.appVersion: info.appVersion,
+            AnalyticsPropertyKeys.osName: info.osName,
+            AnalyticsPropertyKeys.osVersion: info.osVersion,
+            AnalyticsPropertyKeys.locale: info.localeIdentifier,
+            AnalyticsPropertyKeys.sessionID: sessionID
+        ]
     }
 
     private func loadQueue() -> [AppAnalyticsEvent] {

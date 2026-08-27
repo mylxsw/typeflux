@@ -24,11 +24,13 @@ final class AppAnalyticsReporterTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suite) }
         let reporter = makeReporter(defaults: defaults, transport: FailingAnalyticsTransport(), maximumQueueSize: 3)
 
-        for index in 0..<5 { reporter.report(eventName: "model_download_started", properties: ["index": "\(index)"]) }
+        for index in 0..<5 {
+            reporter.report(eventName: "model_download_started", properties: ["retry_index": "\(index)"])
+        }
 
         let events = queuedEvents(defaults: defaults)
         XCTAssertEqual(events.count, 3)
-        XCTAssertEqual(events.map { $0.properties["index"] }, ["2", "3", "4"])
+        XCTAssertEqual(events.map { $0.properties["retry_index"] }, ["2", "3", "4"])
     }
 
     func testSuccessfulFlushRemovesPersistedEvent() async throws {
@@ -95,10 +97,90 @@ final class AppAnalyticsReporterTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suite) }
         let reporter = makeReporter(defaults: defaults, transport: FailingAnalyticsTransport(), maximumQueueSize: 2)
         reporter.reportFirstOpenIfNeeded()
-        reporter.report(eventName: "model_download_started", properties: ["index": "1"])
-        reporter.report(eventName: "model_download_started", properties: ["index": "2"])
+        reporter.report(eventName: "model_download_started", properties: ["retry_index": "1"])
+        reporter.report(eventName: "model_download_started", properties: ["retry_index": "2"])
 
         XCTAssertEqual(queuedEvents(defaults: defaults).map(\.eventName), ["app_first_open", "model_download_started"])
+    }
+
+    func testNonAllowlistedPropertiesAreDroppedAndSessionIsStable() throws {
+        let suite = "AppAnalyticsReporterTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let reporter = makeReporter(defaults: defaults, transport: FailingAnalyticsTransport())
+
+        reporter.report(
+            eventName: "model_download_started",
+            properties: ["model_kind": "stt", "transcript": "sensitive text"]
+        )
+        reporter.report(eventName: "app_login", properties: [:])
+
+        let events = queuedEvents(defaults: defaults)
+        XCTAssertEqual(events.count, 2)
+        XCTAssertEqual(events[0].properties["model_kind"], "stt")
+        XCTAssertNil(events[0].properties["transcript"])
+        XCTAssertEqual(events[0].properties["session_id"], events[1].properties["session_id"])
+        XCTAssertEqual(events[0].properties["session_id"], "test-session")
+    }
+
+    func testNewReporterGetsNewSessionID() throws {
+        let firstSuite = "AppAnalyticsReporterTests-first-\(UUID().uuidString)"
+        let secondSuite = "AppAnalyticsReporterTests-second-\(UUID().uuidString)"
+        let firstDefaults = try XCTUnwrap(UserDefaults(suiteName: firstSuite))
+        let secondDefaults = try XCTUnwrap(UserDefaults(suiteName: secondSuite))
+        defer {
+            firstDefaults.removePersistentDomain(forName: firstSuite)
+            secondDefaults.removePersistentDomain(forName: secondSuite)
+        }
+        let first = AppAnalyticsReporter(defaults: firstDefaults, transport: FailingAnalyticsTransport())
+        let second = AppAnalyticsReporter(defaults: secondDefaults, transport: FailingAnalyticsTransport())
+
+        first.report(eventName: "app_login", properties: [:])
+        second.report(eventName: "app_login", properties: [:])
+
+        XCTAssertNotEqual(
+            queuedEvents(defaults: firstDefaults)[0].properties["session_id"],
+            queuedEvents(defaults: secondDefaults)[0].properties["session_id"]
+        )
+    }
+
+    func testSettingsAwareReporterDisablesImmediatelyAndClearsQueue() throws {
+        let suite = "AppAnalyticsReporterTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settingsStore = SettingsStore(defaults: defaults)
+        let appReporter = makeReporter(defaults: defaults, transport: FailingAnalyticsTransport())
+        let reporter = SettingsAwareAnalyticsEventReporter(settingsStore: settingsStore, reporter: appReporter)
+
+        reporter.report(eventName: "app_login", properties: [:])
+        XCTAssertEqual(queuedEvents(defaults: defaults).count, 1)
+
+        settingsStore.analyticsSharingEnabled = false
+        XCTAssertTrue(queuedEvents(defaults: defaults).isEmpty)
+        reporter.report(eventName: "app_login", properties: [:])
+        XCTAssertTrue(queuedEvents(defaults: defaults).isEmpty)
+
+        settingsStore.analyticsSharingEnabled = true
+        reporter.report(eventName: "app_login", properties: [:])
+        XCTAssertEqual(queuedEvents(defaults: defaults).count, 1)
+    }
+
+    func testDisabledSettingsAwareReporterDoesNotUseTransport() async throws {
+        let suite = "AppAnalyticsReporterTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.analyticsSharingEnabled = false
+        let transport = CountingAnalyticsTransport()
+        let appReporter = makeReporter(defaults: defaults, transport: transport)
+        let reporter = SettingsAwareAnalyticsEventReporter(settingsStore: settingsStore, reporter: appReporter)
+
+        reporter.reportFirstOpenIfNeeded()
+        reporter.report(eventName: "app_login", properties: [:])
+        try await Task.sleep(for: .milliseconds(30))
+
+        XCTAssertEqual(transport.attemptCount, 0)
+        XCTAssertTrue(queuedEvents(defaults: defaults).isEmpty)
     }
 
     func testTransportRetriesWithoutInvalidAuthorization() async throws {
@@ -135,6 +217,7 @@ final class AppAnalyticsReporterTests: XCTestCase {
             transport: transport,
             clientInfoProvider: TypefluxCloudClientInfoProvider { Self.clientInfo },
             maximumQueueSize: maximumQueueSize,
+            sessionID: "test-session",
             now: { Date(timeIntervalSince1970: 1_700_000_000) }
         )
     }
@@ -201,6 +284,16 @@ private final class RetryOnceAnalyticsTransport: AppAnalyticsTransporting, @unch
             return attempts
         }
         if attempt == 1 { throw URLError(.notConnectedToInternet) }
+    }
+}
+
+private final class CountingAnalyticsTransport: AppAnalyticsTransporting, @unchecked Sendable {
+    private let lock = NSLock()
+    private var attempts = 0
+    var attemptCount: Int { lock.withLock { attempts } }
+
+    func send(events _: [AppAnalyticsEvent]) async throws {
+        lock.withLock { attempts += 1 }
     }
 }
 
