@@ -1,3 +1,4 @@
+import CoreFoundation
 import Foundation
 
 enum CloudDataLocalScope {
@@ -230,6 +231,18 @@ private struct SyncJSONAny: Codable {
         var container = encoder.singleValueContainer()
         switch value {
         case is NSNull: try container.encodeNil()
+        case let value as NSNumber:
+            // JSONSerialization represents both JSON booleans and numbers as
+            // NSNumber. Swift's bridging also lets NSNumber(0/1) match Bool,
+            // so checking `Bool` first corrupts numeric payload fields such as
+            // occurrence_count and delta into false/true.
+            if CFGetTypeID(value) == CFBooleanGetTypeID() {
+                try container.encode(value.boolValue)
+            } else if ["f", "d"].contains(String(cString: value.objCType)) {
+                try container.encode(value.doubleValue)
+            } else {
+                try container.encode(value.int64Value)
+            }
         case let value as Bool: try container.encode(value)
         case let value as Int: try container.encode(value)
         case let value as Double: try container.encode(value)
