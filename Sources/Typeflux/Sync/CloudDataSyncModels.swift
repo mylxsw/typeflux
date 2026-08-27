@@ -1,19 +1,28 @@
 import Foundation
 
 enum CloudDataLocalScope {
+    private static let defaultsKey = "cloudDataSync.activeLocalScope"
     private static let lock = NSLock()
-    nonisolated(unsafe) private static var value = "guest"
+    nonisolated(unsafe) private static var value =
+        UserDefaults.standard.string(forKey: defaultsKey) ?? "guest"
 
     static var key: String {
         lock.withLock { value }
     }
 
     static func useGuest() {
-        lock.withLock { value = "guest" }
+        set("guest")
     }
 
     static func useAccount(_ userID: String) {
-        lock.withLock { value = "user.\(userID)" }
+        set("user.\(userID)")
+    }
+
+    private static func set(_ scope: String) {
+        lock.withLock {
+            value = scope
+            UserDefaults.standard.set(scope, forKey: defaultsKey)
+        }
     }
 }
 

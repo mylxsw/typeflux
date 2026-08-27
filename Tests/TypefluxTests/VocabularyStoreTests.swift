@@ -109,6 +109,26 @@ final class VocabularyStoreTests: XCTestCase {
         CloudDataLocalScope.useAccount("test-user")
         XCTAssertEqual(VocabularyStore.load().map(\.term), ["AccountOnly"])
     }
+
+    func testPersonasAreIsolatedBetweenGuestAndAccountScopes() {
+        let suiteName = "VocabularyStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = SettingsStore(defaults: defaults)
+        let guest = PersonaProfile(name: "Guest", prompt: "guest")
+        let account = PersonaProfile(name: "Account", prompt: "account")
+
+        CloudDataLocalScope.useGuest()
+        store.personas = [guest]
+        CloudDataLocalScope.useAccount("test-user")
+        XCTAssertTrue(store.personas.filter { !$0.isSystem }.isEmpty)
+        store.personas = [account]
+
+        CloudDataLocalScope.useGuest()
+        XCTAssertEqual(store.personas.filter { !$0.isSystem }.map(\.id), [guest.id])
+        CloudDataLocalScope.useAccount("test-user")
+        XCTAssertEqual(store.personas.filter { !$0.isSystem }.map(\.id), [account.id])
+    }
 }
 
 private final class InMemoryHistoryStore: HistoryStore {

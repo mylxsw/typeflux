@@ -102,8 +102,9 @@ enum VocabularyStore {
     static let activeTermLimit = 500
 
     static func load() -> [VocabularyEntry] {
-        migrateLegacyGuestDataIfNeeded()
-        guard let data = UserDefaults.standard.data(forKey: key) else {
+        let storageKey = key
+        migrateLegacyGuestDataIfNeeded(storageKey: storageKey)
+        guard let data = UserDefaults.standard.data(forKey: storageKey) else {
             return []
         }
 
@@ -117,12 +118,13 @@ enum VocabularyStore {
     }
 
     static func save(_ entries: [VocabularyEntry]) {
-        migrateLegacyGuestDataIfNeeded()
+        let storageKey = key
+        migrateLegacyGuestDataIfNeeded(storageKey: storageKey)
         let deduplicatedEntries = deduplicated(entries)
 
         do {
             let data = try JSONEncoder().encode(deduplicatedEntries)
-            UserDefaults.standard.set(data, forKey: key)
+            UserDefaults.standard.set(data, forKey: storageKey)
             NotificationCenter.default.post(
                 name: .vocabularyStoreDidChange,
                 object: nil,
@@ -133,12 +135,12 @@ enum VocabularyStore {
         }
     }
 
-    private static func migrateLegacyGuestDataIfNeeded() {
-        guard CloudDataLocalScope.key == "guest",
-              UserDefaults.standard.object(forKey: key) == nil,
+    private static func migrateLegacyGuestDataIfNeeded(storageKey: String) {
+        guard storageKey == "\(legacyKey).guest",
+              UserDefaults.standard.object(forKey: storageKey) == nil,
               let legacy = UserDefaults.standard.data(forKey: legacyKey)
         else { return }
-        UserDefaults.standard.set(legacy, forKey: key)
+        UserDefaults.standard.set(legacy, forKey: storageKey)
     }
 
     static func exportData() throws -> Data {

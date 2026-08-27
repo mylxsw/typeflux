@@ -415,22 +415,24 @@ final class SettingsStore {
 
     var personasJSON: String {
         get {
-            migrateLegacyGuestPersonasIfNeeded()
-            return defaults.string(forKey: scopedPersonasKey) ?? ""
+            let storageKey = scopedPersonasKey
+            migrateLegacyGuestPersonasIfNeeded(storageKey: storageKey)
+            return defaults.string(forKey: storageKey) ?? ""
         }
         set {
-            migrateLegacyGuestPersonasIfNeeded()
-            defaults.set(newValue, forKey: scopedPersonasKey)
+            let storageKey = scopedPersonasKey
+            migrateLegacyGuestPersonasIfNeeded(storageKey: storageKey)
+            defaults.set(newValue, forKey: storageKey)
         }
     }
 
     private var scopedPersonasKey: String { "persona.items.\(CloudDataLocalScope.key)" }
 
-    private func migrateLegacyGuestPersonasIfNeeded() {
-        guard CloudDataLocalScope.key == "guest", defaults.object(forKey: scopedPersonasKey) == nil,
+    private func migrateLegacyGuestPersonasIfNeeded(storageKey: String) {
+        guard storageKey == "persona.items.guest", defaults.object(forKey: storageKey) == nil,
               let legacy = defaults.string(forKey: "persona.items")
         else { return }
-        defaults.set(legacy, forKey: scopedPersonasKey)
+        defaults.set(legacy, forKey: storageKey)
     }
 
     var personaAppBindings: [PersonaAppBinding] {
