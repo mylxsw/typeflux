@@ -2,6 +2,19 @@
 import XCTest
 
 final class TranscriptionLanguageHintsTests: XCTestCase {
+    func testPreferredWhisperLanguageUsesChineseAndEnglishOnly() {
+        XCTAssertEqual(
+            TranscriptionLanguageHints.preferredWhisperLanguageCode(preferredLanguages: ["zh-Hant-TW"]),
+            "zh"
+        )
+        XCTAssertEqual(
+            TranscriptionLanguageHints.preferredWhisperLanguageCode(preferredLanguages: ["en-US"]),
+            "en"
+        )
+        XCTAssertNil(TranscriptionLanguageHints.preferredWhisperLanguageCode(preferredLanguages: ["ja-JP"]))
+        XCTAssertNil(TranscriptionLanguageHints.preferredWhisperLanguageCode(preferredLanguages: []))
+    }
+
     // MARK: - mappedLocaleCandidates
 
     func testChineseTraditionalTW() {

@@ -1444,12 +1444,15 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         let textInjector = MockProcessingTextInjector()
         let audioRecorder = FileReturningAudioRecorder(fileURL: audioURL)
+        let analytics = AnalyticsEventRecorder()
         let controller = makeWorkflowController(
             textInjector: textInjector,
             audioRecorder: audioRecorder,
             sttTranscriber: MockProcessingTranscriber(transcript: "should not transcribe"),
+            analyticsReporter: analytics,
             sleep: { _ in }
         )
+        controller.beginDictationAnalytics(intent: .dictation, mode: .holdToTalk, targetBundleIdentifier: nil)
         controller.isAudioRecorderStarted = true
 
         await controller.finishRecordingAndProcess(recordingStoppedAt: Date())
@@ -1458,6 +1461,106 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(audioRecorder.stopCallCount, 1)
         XCTAssertFalse(FileManager.default.fileExists(atPath: audioURL.path))
         XCTAssertTrue(textInjector.insertedTexts.isEmpty)
+        let failed = try XCTUnwrap(analytics.events.last)
+        XCTAssertEqual(failed.name, "dictation_session_failed")
+        XCTAssertEqual(failed.properties["error_kind"], "client_hard_silence")
+        XCTAssertEqual(failed.properties["audio_signal"], "hard_silence")
+    }
+
+    func testFinishRecordingRetriesLowEnergyAudioOnceAndUsesRetryResult() async throws {
+        let audioURL = try writeTestAudio(
+            samples: sineWaveSamples(amplitude: 0.003, frameCount: 16_000)
+        )
+        defer { try? FileManager.default.removeItem(at: audioURL) }
+
+        let transcriber = SequencedProfileAwareTranscriber(transcripts: ["", "OK"])
+        let textInjector = MockProcessingTextInjector()
+        let analytics = AnalyticsEventRecorder()
+        let controller = makeWorkflowController(
+            textInjector: textInjector,
+            audioRecorder: FileReturningAudioRecorder(fileURL: audioURL),
+            sttTranscriber: transcriber,
+            analyticsReporter: analytics,
+            sleep: { _ in },
+            configureSettings: { $0.sttProvider = .localModel }
+        )
+        controller.beginDictationAnalytics(intent: .dictation, mode: .holdToTalk, targetBundleIdentifier: nil)
+        controller.isAudioRecorderStarted = true
+
+        await controller.finishRecordingAndProcess(recordingStoppedAt: Date())
+        await waitUntil { textInjector.insertedTexts == ["OK"] }
+
+        XCTAssertEqual(textInjector.insertedTexts, ["OK"])
+        XCTAssertEqual(transcriber.profiles, [.standard, .lowEnergyRetry])
+        XCTAssertEqual(transcriber.audioURLs.count, 2)
+        XCTAssertEqual(transcriber.audioURLs[0], transcriber.audioURLs[1])
+        XCTAssertNotEqual(transcriber.audioURLs[0], audioURL)
+        let completed = try XCTUnwrap(analytics.events.last)
+        XCTAssertEqual(completed.name, "dictation_session_completed")
+        XCTAssertEqual(completed.properties["audio_signal"], "low_energy")
+        XCTAssertEqual(completed.properties["low_energy_retry"], "true")
+    }
+
+    func testFinishRecordingDoesNotRetryShortAudibleAudioAfterSuccessfulResult() async throws {
+        let audioURL = try writeTestAudio(
+            samples: sineWaveSamples(amplitude: 0.2, frameCount: 16_000)
+        )
+        defer { try? FileManager.default.removeItem(at: audioURL) }
+
+        let transcriber = SequencedProfileAwareTranscriber(transcripts: ["OK"])
+        let textInjector = MockProcessingTextInjector()
+        let controller = makeWorkflowController(
+            textInjector: textInjector,
+            audioRecorder: FileReturningAudioRecorder(fileURL: audioURL),
+            sttTranscriber: transcriber,
+            sleep: { _ in },
+            configureSettings: { $0.sttProvider = .localModel }
+        )
+        controller.isAudioRecorderStarted = true
+
+        await controller.finishRecordingAndProcess(recordingStoppedAt: Date())
+        await waitUntil { textInjector.insertedTexts == ["OK"] }
+
+        XCTAssertEqual(transcriber.profiles, [.standard])
+        XCTAssertEqual(transcriber.audioURLs, [audioURL])
+    }
+
+    func testFinishRecordingStopsAfterOneEmptyLowEnergyRetry() async throws {
+        let audioURL = try writeTestAudio(
+            samples: sineWaveSamples(amplitude: 0.003, frameCount: 16_000)
+        )
+        defer { try? FileManager.default.removeItem(at: audioURL) }
+
+        let transcriber = SequencedProfileAwareTranscriber(transcripts: ["", "", "unexpected"])
+        let controller = makeWorkflowController(
+            audioRecorder: FileReturningAudioRecorder(fileURL: audioURL),
+            sttTranscriber: transcriber,
+            sleep: { _ in },
+            configureSettings: { $0.sttProvider = .localModel }
+        )
+        controller.isAudioRecorderStarted = true
+
+        await controller.finishRecordingAndProcess(recordingStoppedAt: Date())
+        await waitUntil { transcriber.profiles.count == 2 }
+        await waitForMainActorWork()
+
+        XCTAssertEqual(transcriber.profiles, [.standard, .lowEnergyRetry])
+    }
+
+    func testFinishRecordingCapturesTailBeforeStoppingRecorder() async throws {
+        let audioURL = try writeSilentTestAudio(duration: 1)
+        let durations = ThreadSafeDurationRecorder()
+        let audioRecorder = FileReturningAudioRecorder(fileURL: audioURL)
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sleep: { durations.append($0) }
+        )
+        controller.isAudioRecorderStarted = true
+
+        await controller.finishRecordingAndProcess(recordingStoppedAt: Date())
+
+        XCTAssertEqual(durations.values.first, WorkflowController.recordingTailCaptureDuration)
+        XCTAssertEqual(audioRecorder.stopCallCount, 1)
     }
 
     func testPressShowsLocalModelDownloadAlertAndDoesNotRecord() async {
@@ -1848,6 +1951,37 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         buffer.frameLength = AVAudioFrameCount(frameCount)
         try audioFile.write(from: buffer)
         return url
+    }
+
+    private func writeTestAudio(samples: [Float], sampleRate: Double = 16_000) throws -> URL {
+        guard let format = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: sampleRate,
+            channels: 1,
+            interleaved: false
+        ) else {
+            throw NSError(domain: "WorkflowControllerProcessingTests", code: 3)
+        }
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("wav")
+        let file = try AVAudioFile(forWriting: url, settings: format.settings)
+        guard let buffer = AVAudioPCMBuffer(
+            pcmFormat: format,
+            frameCapacity: AVAudioFrameCount(samples.count)
+        ) else {
+            throw NSError(domain: "WorkflowControllerProcessingTests", code: 4)
+        }
+        buffer.frameLength = AVAudioFrameCount(samples.count)
+        buffer.floatChannelData?[0].update(from: samples, count: samples.count)
+        try file.write(from: buffer)
+        return url
+    }
+
+    private func sineWaveSamples(amplitude: Float, frameCount: Int) -> [Float] {
+        (0 ..< frameCount).map { frame in
+            amplitude * Float(sin(2 * .pi * 440 * Double(frame) / 16_000))
+        }
     }
 
     func testTypefluxASROptimizeIsDisabledForPersonaRewrite() {
@@ -2509,6 +2643,56 @@ private final class MockProcessingTranscriber: Transcriber {
             throw error
         }
         return transcript
+    }
+}
+
+private final class SequencedProfileAwareTranscriber: TranscriptionProfileAwareTranscriber, @unchecked Sendable {
+    private let lock = NSLock()
+    private var remainingTranscripts: [String]
+    private var capturedProfiles: [TranscriptionProfile] = []
+    private var capturedAudioURLs: [URL] = []
+
+    init(transcripts: [String]) {
+        remainingTranscripts = transcripts
+    }
+
+    var profiles: [TranscriptionProfile] {
+        lock.withLock { capturedProfiles }
+    }
+
+    var audioURLs: [URL] {
+        lock.withLock { capturedAudioURLs }
+    }
+
+    func transcribe(audioFile: AudioFile) async throws -> String {
+        try await transcribeStream(audioFile: audioFile, profile: .standard) { _ in }
+    }
+
+    func transcribeStream(
+        audioFile: AudioFile,
+        profile: TranscriptionProfile,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> String {
+        let transcript: String = lock.withLock {
+            capturedProfiles.append(profile)
+            capturedAudioURLs.append(audioFile.fileURL)
+            return remainingTranscripts.isEmpty ? "" : remainingTranscripts.removeFirst()
+        }
+        await onUpdate(TranscriptionSnapshot(text: transcript, isFinal: true))
+        return transcript
+    }
+}
+
+private final class ThreadSafeDurationRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var capturedValues: [Duration] = []
+
+    var values: [Duration] {
+        lock.withLock { capturedValues }
+    }
+
+    func append(_ duration: Duration) {
+        lock.withLock { capturedValues.append(duration) }
     }
 }
 

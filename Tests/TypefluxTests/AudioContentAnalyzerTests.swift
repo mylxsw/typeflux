@@ -12,6 +12,7 @@ final class AudioContentAnalyzerTests: XCTestCase {
         XCTAssertEqual(analysis.frameCount, 16000)
         XCTAssertEqual(analysis.duration, 1.0, accuracy: 0.001)
         XCTAssertTrue(analysis.containsAudibleSignal)
+        XCTAssertEqual(analysis.signalClassification, .audible)
         XCTAssertGreaterThan(analysis.peakPowerDB, -20)
         XCTAssertGreaterThan(analysis.rmsPowerDB, -25)
     }
@@ -24,6 +25,7 @@ final class AudioContentAnalyzerTests: XCTestCase {
 
         XCTAssertEqual(analysis.duration, 0.5, accuracy: 0.001)
         XCTAssertFalse(analysis.containsAudibleSignal)
+        XCTAssertEqual(analysis.signalClassification, .hardSilence)
         XCTAssertLessThan(analysis.peakPowerDB, -90)
         XCTAssertLessThan(analysis.rmsPowerDB, -90)
     }
@@ -37,6 +39,7 @@ final class AudioContentAnalyzerTests: XCTestCase {
         let analysis = try AudioContentAnalyzer.analyze(fileURL: url)
 
         XCTAssertFalse(analysis.containsAudibleSignal)
+        XCTAssertEqual(analysis.signalClassification, .lowEnergy)
         XCTAssertLessThan(analysis.audibleDuration, 0.01)
         XCTAssertLessThan(analysis.audibleFrameRatio, 0.001)
         XCTAssertGreaterThan(analysis.peakPowerDB, -5)
@@ -51,6 +54,19 @@ final class AudioContentAnalyzerTests: XCTestCase {
         XCTAssertEqual(analysis.frameCount, 0)
         XCTAssertEqual(analysis.duration, 0)
         XCTAssertFalse(analysis.containsAudibleSignal)
+        XCTAssertEqual(analysis.signalClassification, .hardSilence)
+    }
+
+    func testAnalyzeClassifiesQuietSpeechLikeSignalAsLowEnergy() throws {
+        let url = try writeTestAudio(samples: sineWaveSamples(amplitude: 0.003, frameCount: 16000))
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let analysis = try AudioContentAnalyzer.analyze(fileURL: url)
+
+        XCTAssertEqual(analysis.signalClassification, .lowEnergy)
+        XCTAssertFalse(analysis.containsAudibleSignal)
+        XCTAssertGreaterThan(analysis.peakPowerDB, -55)
+        XCTAssertLessThan(analysis.rmsPowerDB, -42)
     }
 
     private func writeTestAudio(samples: [Float], sampleRate: Double = 16000) throws -> URL {

@@ -9,6 +9,8 @@ final class WorkflowController {
     static let minimumProcessingTimeoutSeconds: TimeInterval = 120
     static let processingTimeoutGraceSeconds: TimeInterval = 90
     static let minimumRecordingDuration: TimeInterval = 0.35
+    static let recordingTailCaptureDuration: Duration = .milliseconds(200)
+    static let shortAudioRetryDuration: TimeInterval = 1.5
     /// Ambiguous short releases stay recoverable by switching to locked recording.
     /// Keep this above `minimumRecordingDuration` so a release is never classified
     /// as hold-to-talk and then immediately rejected as too short.

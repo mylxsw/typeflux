@@ -7,6 +7,11 @@ extension WorkflowController {
         let sttProvider: STTProvider
         var applyOutcome: ApplyOutcome?
         var injectionMethod: String?
+        var audioSignalClassification: String?
+        var audioDurationSeconds: String?
+        var audioRMSPowerDB: String?
+        var audioPeakPowerDB: String?
+        var lowEnergyRetryAttempted = false
     }
 
     func beginDictationAnalytics(
@@ -42,6 +47,28 @@ extension WorkflowController {
             guard let context = pendingDictationAnalyticsContext else { return }
             dictationAnalyticsContexts[recordID] = context
             pendingDictationAnalyticsContext = nil
+        }
+    }
+
+    func recordPendingDictationAudioAnalysis(
+        classification: AudioSignalClassification,
+        analysis: AudioContentAnalysis
+    ) {
+        analyticsLock.withLock {
+            guard var context = pendingDictationAnalyticsContext else { return }
+            context.audioSignalClassification = classification.rawValue
+            context.audioDurationSeconds = String(format: "%.3f", max(0, analysis.duration))
+            context.audioRMSPowerDB = String(format: "%.2f", analysis.rmsPowerDB)
+            context.audioPeakPowerDB = String(format: "%.2f", analysis.peakPowerDB)
+            pendingDictationAnalyticsContext = context
+        }
+    }
+
+    func markDictationLowEnergyRetry(recordID: UUID) {
+        analyticsLock.withLock {
+            guard var context = dictationAnalyticsContexts[recordID] else { return }
+            context.lowEnergyRetryAttempted = true
+            dictationAnalyticsContexts[recordID] = context
         }
     }
 
@@ -84,17 +111,19 @@ extension WorkflowController {
         let durationMilliseconds = record.pipelineStats?.endToEndMilliseconds
             ?? record.pipelineTiming?.generatedStats().endToEndMilliseconds
             ?? 0
+        var properties = [
+            "flow_id": context.flowID,
+            "audio_seconds": String(format: "%.3f", max(0, record.recordingDurationSeconds ?? 0)),
+            "output_chars": "\(record.finalText?.count ?? 0)",
+            "pipeline_duration_ms": "\(max(0, durationMilliseconds))",
+            "apply_outcome": outcome == .inserted ? "inserted" : "presentedInDialog",
+            "injection_method": context.injectionMethod ?? "clipboard_fallback",
+            "target_app_category": context.targetAppCategory.rawValue
+        ]
+        appendAudioAnalysisProperties(context: context, to: &properties)
         analyticsReporter.report(
             eventName: "dictation_session_completed",
-            properties: [
-                "flow_id": context.flowID,
-                "audio_seconds": String(format: "%.3f", max(0, record.recordingDurationSeconds ?? 0)),
-                "output_chars": "\(record.finalText?.count ?? 0)",
-                "pipeline_duration_ms": "\(max(0, durationMilliseconds))",
-                "apply_outcome": outcome == .inserted ? "inserted" : "presentedInDialog",
-                "injection_method": context.injectionMethod ?? "clipboard_fallback",
-                "target_app_category": context.targetAppCategory.rawValue
-            ]
+            properties: properties
         )
     }
 
@@ -127,14 +156,27 @@ extension WorkflowController {
         context: DictationAnalyticsContext,
         failure: (stage: String, kind: String)
     ) {
+        var properties = [
+            "flow_id": context.flowID,
+            "stage": failure.stage,
+            "stt_provider": context.sttProvider.rawValue,
+            "error_kind": failure.kind
+        ]
+        appendAudioAnalysisProperties(context: context, to: &properties)
         analyticsReporter.report(
             eventName: "dictation_session_failed",
-            properties: [
-                "flow_id": context.flowID,
-                "stage": failure.stage,
-                "stt_provider": context.sttProvider.rawValue,
-                "error_kind": failure.kind
-            ]
+            properties: properties
         )
+    }
+
+    private func appendAudioAnalysisProperties(
+        context: DictationAnalyticsContext,
+        to properties: inout [String: String]
+    ) {
+        properties["audio_signal"] = context.audioSignalClassification ?? "unknown"
+        properties["audio_duration_seconds"] = context.audioDurationSeconds ?? "unknown"
+        properties["audio_rms_db"] = context.audioRMSPowerDB ?? "unknown"
+        properties["audio_peak_db"] = context.audioPeakPowerDB ?? "unknown"
+        properties["low_energy_retry"] = context.lowEnergyRetryAttempted ? "true" : "false"
     }
 }

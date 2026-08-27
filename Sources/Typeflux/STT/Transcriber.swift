@@ -5,10 +5,23 @@ struct TranscriptionSnapshot {
     let isFinal: Bool
 }
 
+enum TranscriptionProfile: Sendable, Equatable {
+    case standard
+    case lowEnergyRetry
+}
+
 protocol Transcriber {
     func transcribe(audioFile: AudioFile) async throws -> String
     func transcribeStream(
         audioFile: AudioFile,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> String
+}
+
+protocol TranscriptionProfileAwareTranscriber: Transcriber {
+    func transcribeStream(
+        audioFile: AudioFile,
+        profile: TranscriptionProfile,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String
 }

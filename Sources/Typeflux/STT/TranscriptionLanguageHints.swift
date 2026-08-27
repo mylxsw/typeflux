@@ -2,6 +2,15 @@ import Foundation
 import Speech
 
 enum TranscriptionLanguageHints {
+    static func preferredWhisperLanguageCode(
+        preferredLanguages: [String] = Locale.preferredLanguages
+    ) -> String? {
+        guard let language = preferredLanguages.first?.lowercased() else { return nil }
+        if language.hasPrefix("zh") { return "zh" }
+        if language.hasPrefix("en") { return "en" }
+        return nil
+    }
+
     static func speechRecognizerLocale() -> Locale? {
         for identifier in preferredLocaleCandidates() {
             let locale = Locale(identifier: identifier)

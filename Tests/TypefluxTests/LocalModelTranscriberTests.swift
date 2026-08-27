@@ -15,6 +15,25 @@ final class LocalModelTranscriberTests: XCTestCase {
         XCTAssertTrue(options.detectLanguage)
         XCTAssertTrue(options.usePrefillPrompt)
         XCTAssertTrue(options.withoutTimestamps)
+        XCTAssertEqual(options.noSpeechThreshold, 0.6)
+    }
+
+    func testWhisperKitLowEnergyRetryUsesLanguageHintAndRelaxedNoSpeechThreshold() {
+        let chineseOptions = WhisperKitTranscriber.decodingOptions(
+            profile: .lowEnergyRetry,
+            preferredLanguages: ["zh-CN"]
+        )
+        XCTAssertEqual(chineseOptions.language, "zh")
+        XCTAssertFalse(chineseOptions.detectLanguage)
+        XCTAssertEqual(chineseOptions.noSpeechThreshold, 0.8)
+
+        let unsupportedLanguageOptions = WhisperKitTranscriber.decodingOptions(
+            profile: .lowEnergyRetry,
+            preferredLanguages: ["ja-JP"]
+        )
+        XCTAssertNil(unsupportedLanguageOptions.language)
+        XCTAssertTrue(unsupportedLanguageOptions.detectLanguage)
+        XCTAssertEqual(unsupportedLanguageOptions.noSpeechThreshold, 0.8)
     }
 
     func testSenseVoiceTranscriberUsesAutomaticLanguageDetectionAndParsesTranscript() async throws {
@@ -769,6 +788,37 @@ final class LocalModelTranscriberTests: XCTestCase {
 
         XCTAssertEqual(factory.createdTranscribers.count, 1)
         XCTAssertEqual(factory.createdTranscribers.map(\.modelName), ["base"])
+    }
+
+    func testWhisperKitLowEnergyProfileIsPropagatedToCachedTranscriber() async throws {
+        let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.sttProvider = .localModel
+        settingsStore.localSTTModel = .whisperLocal
+        settingsStore.localSTTModelIdentifier = "whisperkit-base"
+        settingsStore.localSTTAutoSetup = false
+        let manager = FakeLocalSTTModelManager(preparedInfo: LocalSTTPreparedModelInfo(
+            storagePath: "/tmp/typeflux-whisperkit-test",
+            sourceDisplayName: ModelDownloadSource.huggingFace.displayName
+        ))
+        let factory = FakeWhisperKitTranscriberFactory()
+        let transcriber = LocalModelTranscriber(
+            settingsStore: settingsStore,
+            modelManager: manager,
+            whisperKitTranscriberFactory: factory.makeTranscriber(modelName:modelFolder:)
+        )
+        let audioFile = try makeTestWAVFile()
+
+        _ = try await transcriber.transcribeStream(
+            audioFile: audioFile,
+            profile: .lowEnergyRetry
+        ) { _ in }
+
+        let whisper = try XCTUnwrap(factory.createdTranscribers.first)
+        XCTAssertEqual(whisper.profiles, [.lowEnergyRetry])
     }
 
     func testSherpaLayoutRejectsASCIIExecutableFixture() throws {
@@ -1557,6 +1607,7 @@ private final class FakeWhisperKitTranscriberFactory {
 private final class FakeWhisperKitTranscriber: LocalWhisperKitTranscribing {
     let modelName: String
     let modelFolder: String
+    private(set) var profiles: [TranscriptionProfile] = []
 
     init(modelName: String, modelFolder: String) {
         self.modelName = modelName
@@ -1565,8 +1616,11 @@ private final class FakeWhisperKitTranscriber: LocalWhisperKitTranscribing {
 
     func transcribeStream(
         audioFile _: AudioFile,
+        profile: TranscriptionProfile,
+        prompt _: String?,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
+        profiles.append(profile)
         await onUpdate(TranscriptionSnapshot(text: "cached transcript", isFinal: true))
         return "cached transcript"
     }
