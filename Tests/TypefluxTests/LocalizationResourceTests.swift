@@ -29,6 +29,31 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testInstantVoiceInputExplainsBenefitAndMicrophoneTradeoffInEveryLanguage() throws {
+        let keys = [
+            "settings.instantVoiceInput.title",
+            "settings.instantVoiceInput.subtitle"
+        ]
+
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            for key in keys {
+                let localized = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(localized, key, "Missing localized value for \(key) in \(language.rawValue)")
+                XCTAssertFalse(localized.isEmpty)
+            }
+        }
+
+        let chineseBundle = try localizationBundle(for: .simplifiedChinese)
+        let chineseDetail = chineseBundle.localizedString(
+            forKey: "settings.instantVoiceInput.subtitle",
+            value: nil,
+            table: nil
+        )
+        XCTAssertTrue(chineseDetail.contains("麦克风正在使用"))
+        XCTAssertTrue(chineseDetail.contains("内存"))
+    }
+
     func testSidebarAccountCardStateCopyExistsForAllSupportedLanguages() throws {
         let keys = [
             "sidebar.accountCard.guest",

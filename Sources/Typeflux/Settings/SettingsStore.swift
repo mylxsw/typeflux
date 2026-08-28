@@ -10,6 +10,7 @@ extension Notification.Name {
     static let appearanceModeDidChange = Notification.Name("SettingsStore.appearanceModeDidChange")
     static let overlayStyleDidChange = Notification.Name("SettingsStore.overlayStyleDidChange")
     static let preferredMicrophoneDidChange = Notification.Name("SettingsStore.preferredMicrophoneDidChange")
+    static let instantVoiceInputDidChange = Notification.Name("SettingsStore.instantVoiceInputDidChange")
     static let agentConfigurationDidChange = Notification.Name("SettingsStore.agentConfigurationDidChange")
     static let localOptimizationDidEnable = Notification.Name("SettingsStore.localOptimizationDidEnable")
     static let analyticsSharingDidChange = Notification.Name("SettingsStore.analyticsSharingDidChange")
@@ -172,6 +173,15 @@ final class SettingsStore {
     var muteSystemOutputDuringRecording: Bool {
         get { defaults.object(forKey: "audio.recording.muteSystemOutput") as? Bool ?? false }
         set { defaults.set(newValue, forKey: "audio.recording.muteSystemOutput") }
+    }
+
+    var instantVoiceInputEnabled: Bool {
+        get { defaults.object(forKey: "audio.recording.instantVoiceInput") as? Bool ?? false }
+        set {
+            guard instantVoiceInputEnabled != newValue else { return }
+            defaults.set(newValue, forKey: "audio.recording.instantVoiceInput")
+            NotificationCenter.default.post(name: .instantVoiceInputDidChange, object: self)
+        }
     }
 
     var soundEffectsEnabled: Bool {

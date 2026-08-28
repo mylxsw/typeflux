@@ -143,6 +143,8 @@
 "settings.microphone.title" = "マイク";
 "settings.microphone.subtitle" = "ディクテーションに使用するデバイスを選択します。自動は、現在の macOS デフォルト入力に従います。";
 "settings.microphone.automatic" = "自動";
+"settings.instantVoiceInput.title" = "すぐに話す（試験機能）";
+"settings.instantVoiceInput.subtitle" = "ショートカットを押した瞬間から冒頭を録音できるよう、マイクを準備状態に保ちます。直近約0.5秒の音声はメモリーだけに保持され、音声入力を開始したときに限り今回の録音へ加えられ、それ以外は上書きされ続けます。有効にすると macOS にマイク使用中と表示され、バッテリー消費が少し増える場合があります。";
 "settings.mute.title" = "録音中にミュートする";
 "settings.mute.subtitle" = "録音中にシステム出力を一時的にミュートして、マイクに漏れるフィードバックやシステム音を軽減します。";
 "settings.permissions" = "権限";

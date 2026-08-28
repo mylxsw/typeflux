@@ -143,6 +143,8 @@
 "settings.microphone.title" = "Microphone";
 "settings.microphone.subtitle" = "Pick the device used for dictation. Automatic follows the current macOS default input.";
 "settings.microphone.automatic" = "Automatic";
+"settings.instantVoiceInput.title" = "Speak Immediately (Experimental)";
+"settings.instantVoiceInput.subtitle" = "Keep the microphone ready so your first words are captured when you press the shortcut. The most recent half-second stays in memory and joins a recording only when you start dictation; otherwise it is continuously discarded. macOS will show the microphone as in use and battery use may increase.";
 "settings.mute.title" = "Mute During Recording";
 "settings.mute.subtitle" = "Temporarily mute the system output while recording to reduce feedback or system sounds leaking into the microphone.";
 "settings.permissions" = "Permissions";

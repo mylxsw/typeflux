@@ -2320,6 +2320,23 @@ struct StudioView: View {
                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                     StudioSettingRow(
+                        title: L("settings.instantVoiceInput.title"),
+                        subtitle: L("settings.instantVoiceInput.subtitle")
+                    ) {
+                        Toggle(
+                            "",
+                            isOn: Binding(
+                                get: { viewModel.instantVoiceInputEnabled },
+                                set: viewModel.setInstantVoiceInputEnabled
+                            )
+                        )
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
+
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                    StudioSettingRow(
                         title: L("settings.mute.title"),
                         subtitle: L("settings.mute.subtitle")
                     ) {
