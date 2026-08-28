@@ -1320,3 +1320,18 @@
 "auth.account.usageQuotaExplanation" = "클라우드 크레딧은 이번 기간의 잔여 크레딧과 총 한도를 나타내며 진행 막대는 남은 비율을 표시합니다.";
 "cloudDataSync.accountDescription" = "사용자 지정 어휘와 페르소나만 이 계정으로 로그인한 다른 기기에 동기화합니다.";
 "cloudDataSync.manageData" = "클라우드 데이터 관리";
+
+// Persona library
+"settings.personas.settingsTitle" = "페르소나 설정";
+"settings.personas.none" = "페르소나 사용 안 함";
+"settings.personas.builtIn" = "기본 제공 페르소나";
+"settings.personas.custom" = "내 페르소나";
+"settings.personas.clearSearch" = "검색 지우기";
+"settings.personas.noResults" = "일치하는 페르소나가 없습니다";
+"settings.personas.default" = "기본 페르소나";
+"settings.personas.readOnly" = "기본 제공 페르소나는 읽기 전용입니다";
+"settings.personas.unsaved" = "저장하지 않은 변경 사항";
+"settings.personas.saveChanges" = "변경 사항 저장";
+"settings.personas.summary.typeflux" = "의미를 유지하면서 음성 입력 정리";
+"settings.personas.summary.translator" = "음성 입력을 영어로 번역";
+"settings.personas.customPersona" = "사용자 지정 페르소나";

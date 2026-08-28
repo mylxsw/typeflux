@@ -1335,3 +1335,18 @@
 "auth.account.usageQuotaExplanation" = "云端额度显示本期剩余额度与总额度，进度条表示剩余比例。";
 "cloudDataSync.accountDescription" = "仅同步自定义词库与人设到此账号的其他设备。";
 "cloudDataSync.manageData" = "云端数据管理";
+
+// Persona library
+"settings.personas.settingsTitle" = "人设设置";
+"settings.personas.none" = "不使用人设";
+"settings.personas.builtIn" = "内置人设";
+"settings.personas.custom" = "我的人设";
+"settings.personas.clearSearch" = "清除搜索";
+"settings.personas.noResults" = "未找到匹配的人设";
+"settings.personas.default" = "默认人设";
+"settings.personas.readOnly" = "内置人设不可编辑";
+"settings.personas.unsaved" = "未保存的修改";
+"settings.personas.saveChanges" = "保存修改";
+"settings.personas.summary.typeflux" = "整理口述，保留原意";
+"settings.personas.summary.translator" = "将口述内容翻译为英文";
+"settings.personas.customPersona" = "自定义人设";

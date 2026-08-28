@@ -660,10 +660,12 @@ final class StudioViewModel: ObservableObject {
     }
 
     var filteredPersonas: [PersonaProfile] {
-        guard !searchQuery.isEmpty else { return personas }
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return personas }
         return personas.filter {
-            $0.name.localizedCaseInsensitiveContains(searchQuery) ||
-                personaDisplayPrompt(for: $0).localizedCaseInsensitiveContains(searchQuery)
+            $0.name.localizedCaseInsensitiveContains(query) ||
+                personaDisplayPrompt(for: $0).localizedCaseInsensitiveContains(query) ||
+                personaListSubtitle(for: $0).localizedCaseInsensitiveContains(query)
         }
     }
 
@@ -1830,6 +1832,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func selectPersona(_ id: UUID?) {
+        isCreatingPersonaDraft = false
         selectedPersonaID = id
         loadPersonaDraft()
     }
@@ -2101,6 +2104,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func beginCreatingPersona() {
+        searchQuery = ""
         isCreatingPersonaDraft = true
         selectedPersonaID = nil
         personaDraftName = ""
@@ -2129,8 +2133,13 @@ final class StudioViewModel: ObservableObject {
 
     func activateSelectedPersona() {
         guard let selectedPersona else { return }
+        let draftName = personaDraftName
+        let draftPrompt = personaDraftPrompt
         settingsStore.applyPersonaSelection(selectedPersona.id)
         syncPersonaSelectionFromStore()
+        // Setting the default must not discard edits that have not been saved yet.
+        personaDraftName = draftName
+        personaDraftPrompt = draftPrompt
     }
 
     func deactivatePersonaRewrite() {

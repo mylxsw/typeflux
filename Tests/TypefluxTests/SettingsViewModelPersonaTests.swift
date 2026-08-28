@@ -1,3 +1,5 @@
+import AppKit
+import SwiftUI
 @testable import Typeflux
 import XCTest
 
@@ -291,6 +293,158 @@ final class SettingsViewModelPersonaTests: XCTestCase {
 
         XCTAssertFalse(settingsStore.personaAppBindings.first?.isEnabled ?? true)
         XCTAssertFalse(viewModel.personaAppBindings.first?.isEnabled ?? true)
+    }
+
+    func testPersonaLibrarySeparatesEditingFromDefaultAndPreservesUnsavedChanges() throws {
+        let suite = "SettingsViewModelPersonaTests.library.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = SettingsStore(defaults: defaults)
+        let persona = PersonaProfile(name: "Writing", prompt: "Original instructions")
+        store.personas = store.personas + [persona]
+        store.applyPersonaSelection(SettingsStore.defaultPersonaID)
+        let model = StudioViewModel(settingsStore: store, historyStore: InMemoryHistoryStore(), initialSection: .personas)
+
+        model.selectPersona(persona.id)
+        XCTAssertFalse(model.isEditingDefaultPersona)
+        XCTAssertTrue(model.isDefaultPersona(SettingsStore.defaultPersonaID))
+        model.personaDraftName = "Edited name"
+        model.personaDraftPrompt = "Unsaved instructions"
+        model.activateSelectedPersona()
+
+        XCTAssertTrue(model.isEditingDefaultPersona)
+        XCTAssertFalse(model.isDefaultPersona(SettingsStore.defaultPersonaID))
+        XCTAssertEqual(model.personaDraftName, "Edited name")
+        XCTAssertEqual(model.personaDraftPrompt, "Unsaved instructions")
+        XCTAssertEqual(store.personas.first { $0.id == persona.id }?.prompt, "Original instructions")
+        XCTAssertTrue(model.hasPersonaDraftChanges)
+
+        model.savePersonaDraft()
+        XCTAssertFalse(model.hasPersonaDraftChanges)
+        XCTAssertEqual(store.personas.first { $0.id == persona.id }?.prompt, "Unsaved instructions")
+        model.personaDraftPrompt = "Discard this change"
+        model.cancelPersonaEditing()
+        XCTAssertEqual(model.personaDraftPrompt, "Unsaved instructions")
+        XCTAssertTrue(model.isEditingDefaultPersona)
+    }
+
+    func testPersonaLibraryDefaultIndicatorRespectsDisabledRewriteAndNewDraft() throws {
+        let suite = "SettingsViewModelPersonaTests.library.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = SettingsStore(defaults: defaults)
+        // A remembered active ID must not make a disabled persona appear as default.
+        store.activePersonaID = SettingsStore.defaultPersonaID.uuidString
+        store.personaRewriteEnabled = false
+        let model = StudioViewModel(settingsStore: store, historyStore: InMemoryHistoryStore(), initialSection: .personas)
+        XCTAssertTrue(model.isDefaultPersona(nil))
+        XCTAssertFalse(model.isDefaultPersona(SettingsStore.defaultPersonaID))
+        XCTAssertTrue(model.isEditingDefaultPersona)
+
+        model.beginCreatingPersona()
+        XCTAssertFalse(model.isEditingDefaultPersona)
+        model.selectPersona(SettingsStore.defaultPersonaID)
+        XCTAssertFalse(model.isCreatingPersonaDraft)
+        XCTAssertTrue(model.selectedPersonaIsSystem)
+        XCTAssertFalse(model.canSavePersonaDraft)
+        XCTAssertFalse(model.hasPersonaDraftChanges)
+        XCTAssertEqual(model.personaDraftName, "Typeflux")
+
+        model.beginCreatingPersona()
+        model.selectPersona(nil)
+        XCTAssertFalse(model.isCreatingPersonaDraft)
+        XCTAssertTrue(model.isEditingDefaultPersona)
+        XCTAssertEqual(model.personaDraftName, "")
+    }
+
+    func testPersonaLibraryGroupsFilterAndUsesRealCustomPromptPreview() throws {
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        let suite = "SettingsViewModelPersonaTests.library.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = SettingsStore(defaults: defaults)
+        store.appLanguage = .simplifiedChinese
+        let persona = PersonaProfile(name: "Writing", prompt: "\n  Summarize the report.  \nKeep the decisions.")
+        let emptyPersona = PersonaProfile(name: "Empty", prompt: " \n ")
+        store.personas = store.personas + [persona, emptyPersona]
+        let model = StudioViewModel(settingsStore: store, historyStore: InMemoryHistoryStore(), initialSection: .personas)
+        XCTAssertEqual(model.filteredBuiltInPersonas.count, 2)
+        XCTAssertEqual(Set(model.filteredCustomPersonas.map(\.id)), [persona.id, emptyPersona.id])
+        XCTAssertEqual(model.personaListSubtitle(for: persona), "Summarize the report.")
+        XCTAssertEqual(model.personaListSubtitle(for: emptyPersona), "自定义人设")
+        let builtIn = try XCTUnwrap(model.filteredBuiltInPersonas.first { $0.id == SettingsStore.defaultPersonaID })
+        XCTAssertEqual(model.personaListSubtitle(for: builtIn), "整理口述，保留原意")
+        let translator = try XCTUnwrap(model.filteredBuiltInPersonas.first { $0.id != SettingsStore.defaultPersonaID })
+        XCTAssertEqual(model.personaListSubtitle(for: translator), "将口述内容翻译为英文")
+
+        model.searchQuery = "  整理口述  "
+        XCTAssertEqual(model.filteredBuiltInPersonas.map(\.id), [SettingsStore.defaultPersonaID])
+        XCTAssertTrue(model.filteredCustomPersonas.isEmpty)
+        model.searchQuery = "decisions"
+        XCTAssertTrue(model.filteredBuiltInPersonas.isEmpty)
+        XCTAssertEqual(model.filteredCustomPersonas.map(\.id), [persona.id])
+        model.searchQuery = "no-match-12345"
+        XCTAssertTrue(model.filteredPersonas.isEmpty)
+        model.searchQuery = ""
+        XCTAssertEqual(model.filteredCustomPersonas.count, 2)
+    }
+
+    func testCreatingPersonaFromFilteredLibraryKeepsSavedItemVisible() throws {
+        let suite = "SettingsViewModelPersonaTests.creating.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = SettingsStore(defaults: defaults)
+        let persona = PersonaProfile(name: "Writing", prompt: "Write clearly.")
+        store.personas = store.personas + [persona]
+        let model = StudioViewModel(settingsStore: store, historyStore: InMemoryHistoryStore(), initialSection: .personas)
+        model.searchQuery = "no-match"
+        model.beginCreatingPersona()
+        XCTAssertEqual(model.searchQuery, "")
+        XCTAssertFalse(model.canSavePersonaDraft)
+        model.personaDraftName = "New Persona"
+        model.personaDraftPrompt = "Write concisely."
+        XCTAssertTrue(model.canSavePersonaDraft)
+        model.savePersonaDraft()
+        XCTAssertFalse(model.isCreatingPersonaDraft)
+        XCTAssertFalse(model.hasPersonaDraftChanges)
+        XCTAssertTrue(model.filteredCustomPersonas.contains { $0.id == model.selectedPersonaID })
+        XCTAssertTrue(store.personas.contains { $0.name == "New Persona" })
+    }
+
+    func testPersonaEditorBoundsLongPromptAtSmallAndLargeWindowSizes() throws {
+        let suite = "SettingsViewModelPersonaTests.layout.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = SettingsStore(defaults: defaults)
+        let prompt = Array(repeating: "Keep the original meaning and write clearly.", count: 100).joined(separator: "\n")
+        let persona = PersonaProfile(name: "Writing", prompt: prompt)
+        store.personas = store.personas + [persona]
+        let model = StudioViewModel(settingsStore: store, historyStore: InMemoryHistoryStore(), initialSection: .personas)
+        model.selectPersona(persona.id)
+
+        for size in [CGSize(width: 842, height: 436), CGSize(width: 1000, height: 668)] {
+            let target = StudioPersonaLibraryView(viewModel: model) { _ in }
+                .frame(width: size.width, height: size.height)
+                .preferredColorScheme(.dark)
+            let host = NSHostingView(rootView: target)
+            host.frame = NSRect(origin: .zero, size: size)
+            let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.contentView = host
+            defer { window.close() }
+            host.layoutSubtreeIfNeeded()
+
+            func descendants(_ view: NSView) -> [NSView] {
+                view.subviews.flatMap { [$0] + descendants($0) }
+            }
+            let textView = try XCTUnwrap(descendants(host).compactMap { $0 as? NSTextView }.first)
+            let scroll = try XCTUnwrap(textView.enclosingScrollView)
+            let rect = host.convert(scroll.bounds, from: scroll)
+            XCTAssertGreaterThan(rect.height, 100)
+            XCTAssertGreaterThanOrEqual(rect.minY, 0)
+            XCTAssertLessThanOrEqual(rect.maxY, size.height - 54, "Prompt must leave room for pinned footer")
+            XCTAssertEqual(textView.string, prompt)
+        }
     }
 
     // MARK: - Auto persona default when LLM becomes configured via Settings

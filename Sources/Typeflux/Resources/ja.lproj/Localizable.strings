@@ -1320,3 +1320,18 @@
 "auth.account.usageQuotaExplanation" = "クラウドクレジットは今期の残りクレジットと上限を示し、プログレスバーは残りの割合を示します。";
 "cloudDataSync.accountDescription" = "カスタム語彙とペルソナのみを、このアカウントでログインした他のデバイスと同期します。";
 "cloudDataSync.manageData" = "クラウドデータを管理";
+
+// Persona library
+"settings.personas.settingsTitle" = "ペルソナ設定";
+"settings.personas.none" = "ペルソナを使わない";
+"settings.personas.builtIn" = "組み込みペルソナ";
+"settings.personas.custom" = "マイペルソナ";
+"settings.personas.clearSearch" = "検索をクリア";
+"settings.personas.noResults" = "一致するペルソナがありません";
+"settings.personas.default" = "デフォルトのペルソナ";
+"settings.personas.readOnly" = "組み込みペルソナは編集できません";
+"settings.personas.unsaved" = "未保存の変更";
+"settings.personas.saveChanges" = "変更を保存";
+"settings.personas.summary.typeflux" = "意味を保ちながら音声入力を整理";
+"settings.personas.summary.translator" = "音声入力を英語に翻訳";
+"settings.personas.customPersona" = "カスタムペルソナ";

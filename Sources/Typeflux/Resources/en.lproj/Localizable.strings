@@ -1335,3 +1335,18 @@
 "auth.account.usageQuotaExplanation" = "Cloud credits show the remaining balance and total allowance for this period. The progress bar shows the remaining proportion.";
 "cloudDataSync.accountDescription" = "Sync only custom vocabulary and personas across devices signed in to this account.";
 "cloudDataSync.manageData" = "Manage cloud data";
+
+// Persona library
+"settings.personas.settingsTitle" = "Persona Settings";
+"settings.personas.none" = "No Persona";
+"settings.personas.builtIn" = "Built-in Personas";
+"settings.personas.custom" = "My Personas";
+"settings.personas.clearSearch" = "Clear search";
+"settings.personas.noResults" = "No matching personas";
+"settings.personas.default" = "Default persona";
+"settings.personas.readOnly" = "Built-in personas are read-only";
+"settings.personas.unsaved" = "Unsaved changes";
+"settings.personas.saveChanges" = "Save Changes";
+"settings.personas.summary.typeflux" = "Organize speech while preserving meaning";
+"settings.personas.summary.translator" = "Translate spoken input into English";
+"settings.personas.customPersona" = "Custom persona";

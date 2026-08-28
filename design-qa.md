@@ -1,3 +1,47 @@
+# Persona Library Design QA — 2026-08-28
+
+## Scope and evidence
+
+- Target: approved final persona-library mockup, `/Users/mylxsw/.codex/generated_images/01a043ac-6dbd-7c40-8c92-db615d4cf01d/exec-89e92c8b-ab19-4378-92af-2105d4a39ffc.png` (1448 x 1086 pixels).
+- Full native render: `/Users/mylxsw/.codex/visualizations/2026/08/27/01a043ac-6dbd-7c40-8c92-db615d4cf01d/persona-library-implementation/full-native-render.png` (2200 x 1600 pixels, 1100 x 800 points at 2x).
+- Focused native render: `/Users/mylxsw/.codex/visualizations/2026/08/27/01a043ac-6dbd-7c40-8c92-db615d4cf01d/persona-library-implementation/editor-native-render.png` (1780 x 1408 pixels, 890 x 704 points at 2x).
+- Both implementation images were captured from the actual SwiftUI views using NSHostingView, synthetic persona data, and an isolated UserDefaults suite. They are NOT captures of interactive operation in the signed app. Temporary capture code was removed afterward.
+- State: dark appearance, Simplified Chinese, Native English Speaker selected and default, unsaved draft, name and definition visible. The synthetic custom persona text is the same writing example as the design. Custom list previews use actual prompt content; no summary is fabricated or persisted.
+- Comparison: the full native render and reference were opened together in one comparison input; the focused native render and reference were likewise opened together. The reference includes a macOS frame and outer canvas; native renders exclude that chrome. Compare app-owned content at logical scale (native 2x); ignore the existing sidebar, account state, and test-host version string.
+
+## Required fidelity surfaces
+
+- Typography: existing system font tokens; 22pt page heading, 15pt editor heading, 13pt input/body/list names, 12pt labels, 11pt preview text. The prompt is proportional rather than monospaced. This keeps the page consistent with the rest of the production app.
+- Layout: unbordered grouped roster, fixed search field, separate scrolling list and text editor, selected row fill, bounded editor, and visible footer. The page uses the window viewport instead of growing with the prompt. A layout regression test renders a 100-line definition at 842 x 436 and 1000 x 668 points and verifies the text viewport leaves room for the footer.
+- Colors: existing StudioTheme surfaces and borders rather than the generated image's variable material shading. Blue editing selection is separate from the green default mark. The default button retains its text and turns green for the active default.
+- Assets: native SF Symbols for search, no-persona, and circle-check; existing initial badges and global sidebar reused. No raster mockup is embedded in the UI.
+- Copy: no purpose field or editing-type subtitle; built-in/custom groups, localized search/empty/read-only/unsaved states, and Save Changes in all five supported locales.
+
+## Findings and verification boundary
+
+- The native rendered layout has no observed clipping or actionable P0/P1/P2 visual mismatch. Built-in personas remain read-only; saved custom definitions and default behavior are preserved.
+- Unit tests cover grouping, search including localized summaries, default versus editing state, disabled rewrite, creation from search, save/cancel, and preserving drafts when setting the default.
+- Final `swift test` passed: 2461 XCTest tests plus 8 Swift Testing tests (2469 total), zero failures. Logs: `/tmp/typeflux-persona-final-tests.log`.
+- `swift build` and the final signed `make run` workflow succeeded. The app was launched. Build log: `/tmp/typeflux-persona-final-run.log`.
+- Computer Use can read the signed app but every click fails with `Sky Computer Use native pipe closed before response`. Keyboard Tab did not navigate. Consequently the actual app's persona navigation, resizing, and clicking Save/Set Default have NOT been manually verified in this run.
+- The user was asked to open the Personas page so live capture can continue. No account, persona, or cloud data was changed by interactive testing.
+- Formatting automation is unavailable: `swiftformat` is not installed. Changes were checked with `git diff --check`.
+
+## Remaining check checklist
+
+- Open the signed app's Personas page and inspect the full window.
+- Exercise search, select, default, edit/save/cancel, and app-specific persona entry.
+- Resize to the smallest supported window and check footer visibility and long-text scrolling.
+
+The implementation and automated checks are complete; full interactive design QA remains blocked by the click tool.
+
+final result: blocked
+
+---
+
+<details>
+<summary>Earlier account-page QA (archived)</summary>
+
 # Design QA
 
 - Source visual truth: `/var/folders/2b/zzmzm98j5dj0y7kshprwwjkh0000gn/T/codex-clipboard-a095be40-3223-4e06-9cf5-8d43b8ed69c9.png`
@@ -53,3 +97,5 @@ The implementation preserves the approved Account page layout, sidebar card prop
 - Temporary preview hooks were removed before the final production build.
 
 final result: passed
+
+</details>

@@ -72,6 +72,22 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testPersonaLibraryCopyExistsForAllSupportedLanguages() throws {
+        let keys = [
+            "settingsTitle", "none", "builtIn", "custom", "clearSearch", "noResults",
+            "default", "readOnly", "unsaved", "saveChanges", "summary.typeflux",
+            "summary.translator", "customPersona"
+        ].map { "settings.personas." + $0 }
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            for key in keys {
+                let value = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(value, key, "Missing \(key) in \(language.rawValue)")
+                XCTAssertFalse(value.isEmpty)
+            }
+        }
+    }
+
     func testPersonaDefinitionUsesUserFriendlyCopyForAllSupportedLanguages() throws {
         let expectedValues: [AppLanguage: String] = [
             .english: "Persona Definition",
