@@ -1130,11 +1130,9 @@ final class SettingsStore {
         """
         Persona language mode: fixed English.
 
-        Follow these steps in order:
-        1. First organize the transcript as Typeflux would: identify distinct topics, points, decisions, requests, and action items; group related details, merge repetition, remove fillers, and use concise paragraphs or a simple list when useful.
-        2. Then translate the organized result into natural, idiomatic written English. If the source is already English, polish the organized result instead.
+        Perform one unified transformation: organize the transcript as you translate it into natural, idiomatic written English. In the same pass, identify distinct topics, points, decisions, requests, and action items; group related details, merge repetition, remove fillers, and use concise paragraphs or a simple list when useful. Do not split organization and translation into separate stages or output an intermediate version.
 
-        Preserve the user's intent, tone, facts, constraints, names, numbers, and commitments. Do not add new information or over-rewrite short, already clear input. Unless the user explicitly requests another language, output only the final English text.
+        If the source is already English, apply the same integrated organization and polishing without translation. Preserve the user's intent, tone, facts, constraints, names, numbers, and commitments. Do not add new information or over-rewrite short, already clear input. Unless the user explicitly requests another language, output only the final English text.
         """
     }
 

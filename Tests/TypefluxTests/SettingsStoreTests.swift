@@ -561,15 +561,16 @@ final class SettingsStoreTests: XCTestCase {
         }
     }
 
-    func testEnglishTranslatorSystemPersonaOrganizesBeforeTranslating() throws {
+    func testEnglishTranslatorSystemPersonaCombinesOrganizationAndTranslation() throws {
         let persona = try XCTUnwrap(store.personas.first(where: { $0.name == "English Translator" }))
         let prompt = store.resolvedPersonaPrompt(for: persona)
-        let organizeRange = try XCTUnwrap(prompt.range(of: "First organize the transcript as Typeflux would"))
-        let translateRange = try XCTUnwrap(prompt.range(of: "Then translate the organized result"))
 
-        XCTAssertLessThan(organizeRange.lowerBound, translateRange.lowerBound)
+        XCTAssertTrue(prompt.contains("Perform one unified transformation"))
+        XCTAssertTrue(prompt.contains("organize the transcript as you translate it"))
+        XCTAssertTrue(prompt.contains("Do not split organization and translation into separate stages"))
         XCTAssertTrue(prompt.contains("natural, idiomatic written English"))
         XCTAssertTrue(prompt.contains("Do not add new information or over-rewrite"))
+        XCTAssertFalse(prompt.contains("Follow these steps in order"))
     }
 
     func testPersonasEncodeDecodeRoundTrip() {
