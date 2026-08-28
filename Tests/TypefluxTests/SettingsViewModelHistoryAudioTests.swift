@@ -138,6 +138,38 @@ final class SettingsViewModelHistoryAudioTests: XCTestCase {
         XCTAssertNotNil(timeline?.totalDurationText)
     }
 
+    func testHistoryPipelineTimelineIncludesRecordingStartupAndUserKeyPressMetric() {
+        let base = Date(timeIntervalSince1970: 1000)
+        let recordID = UUID()
+        let record = HistoryRecord(
+            id: recordID,
+            date: base,
+            pipelineTiming: HistoryPipelineTiming(
+                hotkeyDetectedAt: base,
+                recordingWorkflowStartedAt: base.addingTimeInterval(0.01),
+                audioEngineStartedAt: base.addingTimeInterval(0.08),
+                firstAudioBufferAt: base.addingTimeInterval(0.12),
+                recordingStoppedAt: base.addingTimeInterval(1.12),
+                audioFileReadyAt: base.addingTimeInterval(1.2)
+            )
+        )
+        let viewModel = makeViewModel(
+            records: [record],
+            audioPreviewPlayer: FakeHistoryAudioPreviewPlayer(playResult: true)
+        )
+        waitForHistoryRecord(recordID, in: viewModel)
+
+        let timeline = viewModel.displayedHistory.first?.pipelineTimeline
+
+        XCTAssertEqual(timeline?.lanes.first(where: { $0.id == "recording-startup" })?.durationMilliseconds, 120)
+        XCTAssertEqual(timeline?.lanes.first(where: { $0.id == "recording" })?.durationMilliseconds, 1000)
+        XCTAssertEqual(
+            timeline?.keyMetrics.first(where: { $0.id == "hotkey-to-first-audio" })?.value,
+            "120 ms"
+        )
+        XCTAssertEqual(timeline?.timelineSpanDurationText, "1.20 s")
+    }
+
     func testHistoryPipelineTimelineIncludesASRAndLLMNetworkStages() {
         let base = Date(timeIntervalSince1970: 2_000)
         let recordID = UUID()

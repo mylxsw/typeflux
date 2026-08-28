@@ -1,6 +1,10 @@
 import Foundation
 
 struct HistoryPipelineTiming: Codable, Equatable {
+    var hotkeyDetectedAt: Date?
+    var recordingWorkflowStartedAt: Date?
+    var audioEngineStartedAt: Date?
+    var firstAudioBufferAt: Date?
     var recordingStoppedAt: Date?
     var audioFileReadyAt: Date?
     var transcriptionStartedAt: Date?
@@ -23,7 +27,11 @@ struct HistoryPipelineTiming: Codable, Equatable {
     var applyCompletedAt: Date?
 
     var hasData: Bool {
-        recordingStoppedAt != nil ||
+        hotkeyDetectedAt != nil ||
+            recordingWorkflowStartedAt != nil ||
+            audioEngineStartedAt != nil ||
+            firstAudioBufferAt != nil ||
+            recordingStoppedAt != nil ||
             audioFileReadyAt != nil ||
             transcriptionStartedAt != nil ||
             transcriptionCompletedAt != nil ||
@@ -52,6 +60,10 @@ struct HistoryPipelineTiming: Codable, Equatable {
 
     func generatedStats() -> HistoryPipelineStats {
         HistoryPipelineStats(
+            hotkeyDetectedAt: hotkeyDetectedAt,
+            recordingWorkflowStartedAt: recordingWorkflowStartedAt,
+            audioEngineStartedAt: audioEngineStartedAt,
+            firstAudioBufferAt: firstAudioBufferAt,
             recordingStoppedAt: recordingStoppedAt,
             audioFileReadyAt: audioFileReadyAt,
             transcriptionStartedAt: transcriptionStartedAt,
@@ -72,6 +84,10 @@ struct HistoryPipelineTiming: Codable, Equatable {
             llmOutcome: llmOutcome,
             applyStartedAt: applyStartedAt,
             applyCompletedAt: applyCompletedAt,
+            hotkeyToFirstAudioMilliseconds: millisecondsBetween(hotkeyDetectedAt, firstAudioBufferAt),
+            hotkeyDispatchMilliseconds: millisecondsBetween(hotkeyDetectedAt, recordingWorkflowStartedAt),
+            recordingPreparationMilliseconds: millisecondsBetween(recordingWorkflowStartedAt, audioEngineStartedAt),
+            audioEngineToFirstBufferMilliseconds: millisecondsBetween(audioEngineStartedAt, firstAudioBufferAt),
             stopToAudioReadyMilliseconds: millisecondsBetween(recordingStoppedAt, audioFileReadyAt),
             transcriptionDurationMilliseconds: millisecondsBetween(transcriptionStartedAt, transcriptionCompletedAt),
             stopToTranscriptionCompletedMilliseconds: millisecondsBetween(recordingStoppedAt, transcriptionCompletedAt),
@@ -114,6 +130,10 @@ struct HistoryPipelineTiming: Codable, Equatable {
 }
 
 struct HistoryPipelineStats: Codable, Equatable {
+    var hotkeyDetectedAt: Date?
+    var recordingWorkflowStartedAt: Date?
+    var audioEngineStartedAt: Date?
+    var firstAudioBufferAt: Date?
     var recordingStoppedAt: Date?
     var audioFileReadyAt: Date?
     var transcriptionStartedAt: Date?
@@ -134,6 +154,10 @@ struct HistoryPipelineStats: Codable, Equatable {
     var llmOutcome: LLMProcessingOutcomeDiagnostics?
     var applyStartedAt: Date?
     var applyCompletedAt: Date?
+    var hotkeyToFirstAudioMilliseconds: Int?
+    var hotkeyDispatchMilliseconds: Int?
+    var recordingPreparationMilliseconds: Int?
+    var audioEngineToFirstBufferMilliseconds: Int?
     var stopToAudioReadyMilliseconds: Int?
     var transcriptionDurationMilliseconds: Int?
     var stopToTranscriptionCompletedMilliseconds: Int?
@@ -149,7 +173,11 @@ struct HistoryPipelineStats: Codable, Equatable {
     var endToEndMilliseconds: Int?
 
     var hasData: Bool {
-        recordingStoppedAt != nil ||
+        hotkeyDetectedAt != nil ||
+            recordingWorkflowStartedAt != nil ||
+            audioEngineStartedAt != nil ||
+            firstAudioBufferAt != nil ||
+            recordingStoppedAt != nil ||
             audioFileReadyAt != nil ||
             transcriptionStartedAt != nil ||
             transcriptionCompletedAt != nil ||
@@ -169,6 +197,10 @@ struct HistoryPipelineStats: Codable, Equatable {
             llmOutcome != nil ||
             applyStartedAt != nil ||
             applyCompletedAt != nil ||
+            hotkeyToFirstAudioMilliseconds != nil ||
+            hotkeyDispatchMilliseconds != nil ||
+            recordingPreparationMilliseconds != nil ||
+            audioEngineToFirstBufferMilliseconds != nil ||
             stopToAudioReadyMilliseconds != nil ||
             transcriptionDurationMilliseconds != nil ||
             stopToTranscriptionCompletedMilliseconds != nil ||

@@ -58,6 +58,23 @@ final class HistoryRecordTests: XCTestCase {
         XCTAssertEqual(stats.stopToTranscriptionCompletedMilliseconds, 1200)
     }
 
+    func testGeneratedStatsComputesRecordingStartupDurations() {
+        let base = Date(timeIntervalSince1970: 1000)
+        let timing = HistoryPipelineTiming(
+            hotkeyDetectedAt: base,
+            recordingWorkflowStartedAt: base.addingTimeInterval(0.015),
+            audioEngineStartedAt: base.addingTimeInterval(0.095),
+            firstAudioBufferAt: base.addingTimeInterval(0.135)
+        )
+
+        let stats = timing.generatedStats()
+
+        XCTAssertEqual(stats.hotkeyToFirstAudioMilliseconds, 135)
+        XCTAssertEqual(stats.hotkeyDispatchMilliseconds, 15)
+        XCTAssertEqual(stats.recordingPreparationMilliseconds, 80)
+        XCTAssertEqual(stats.audioEngineToFirstBufferMilliseconds, 40)
+    }
+
     func testGeneratedStatsEndToEndUsesLatestAvailableTimestamp() {
         let base = Date(timeIntervalSince1970: 1000)
         var timing = HistoryPipelineTiming()

@@ -43,6 +43,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private var startedAt: Date?
     private var levelHandler: ((Float) -> Void)?
     private var audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
+    private var audioEngineStartedAt: Date?
+    private var firstAudioBufferAt: Date?
     private var muteTask: Task<Void, Never>?
     private var inputHealthCheckWorkItem: DispatchWorkItem?
     private var isRecording = false
@@ -128,6 +130,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         self.startedAt = startedAt
         self.levelHandler = levelHandler
         self.audioBufferHandler = audioBufferHandler
+        audioEngineStartedAt = preparedSession.audioEngineStartedAt
+        firstAudioBufferAt = nil
         activeRecordingID = preparedSession.id
         activeInputGenerationID = preparedSession.inputGenerationID
         isRecording = true
@@ -174,6 +178,10 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         let currentAudioFile = audioFile
         let currentStartedAt = startedAt
         let currentlyRecording = isRecording
+        let startupTiming = AudioRecorderStartupTiming(
+            audioEngineStartedAt: audioEngineStartedAt,
+            firstAudioBufferAt: firstAudioBufferAt
+        )
         stateCondition.unlock()
 
         guard currentlyRecording, let currentAudioFile else {
@@ -202,6 +210,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         startedAt = nil
         levelHandler = nil
         audioBufferHandler = nil
+        audioEngineStartedAt = nil
+        firstAudioBufferAt = nil
         isRecording = false
         activeRecordingID = nil
         activeInputGenerationID = nil
@@ -211,7 +221,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         muteTask = nil
         outputMuter.endMutedSession()
 
-        return AudioFile(fileURL: fileURL, duration: duration)
+        return AudioFile(fileURL: fileURL, duration: duration, startupTiming: startupTiming)
     }
 
     private func stopInternal() {
@@ -241,6 +251,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         startedAt = nil
         levelHandler = nil
         audioBufferHandler = nil
+        audioEngineStartedAt = nil
+        firstAudioBufferAt = nil
         isRecording = false
         activeRecordingID = nil
         activeInputGenerationID = nil
@@ -323,9 +335,11 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             throw RecorderError.inputStartupTimedOut
         }
 
+        let audioEngineStartedAt: Date
         do {
             sessionEngine.prepare()
             try sessionEngine.start()
+            audioEngineStartedAt = Date()
             RecordingStartupLatencyTrace.shared.mark("audio.engine_start_return")
         } catch {
             inputNode.removeTap(onBus: 0)
@@ -347,7 +361,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             audioFile: outputFile,
             recordingBufferConverter: recordingBufferConverter,
             inputGenerationID: inputGenerationID,
-            startupBufferRelay: startupBufferRelay
+            startupBufferRelay: startupBufferRelay,
+            audioEngineStartedAt: audioEngineStartedAt
         )
     }
 
@@ -831,6 +846,9 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             let audioBufferHandler = self.audioBufferHandler
             activeBufferCallbacks += 1
             inputBufferCallbackCount += 1
+            if firstAudioBufferAt == nil {
+                firstAudioBufferAt = Date()
+            }
             stateCondition.unlock()
 
             RecordingStartupLatencyTrace.shared.markFirstAudioBuffer()
@@ -957,6 +975,7 @@ private struct PreparedRecordingSession {
     let recordingBufferConverter: AudioRecordingBufferConverter
     let inputGenerationID: UUID
     let startupBufferRelay: RecordingStartupAudioBufferRelay
+    let audioEngineStartedAt: Date
 }
 
 /// Preserves tap buffers emitted after AVAudioEngine starts but before the

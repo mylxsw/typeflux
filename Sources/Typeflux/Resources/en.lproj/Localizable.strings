@@ -444,6 +444,10 @@
 "history.detail.error" = "Error";
 "history.stats.recordingStoppedAt" = "Recording stopped";
 "history.stats.audioFileReadyAt" = "Audio file ready";
+"history.stats.hotkeyToFirstAudio" = "User key press";
+"history.stats.hotkeyDispatch" = "Hotkey dispatch";
+"history.stats.recordingPreparation" = "Recording preparation";
+"history.stats.audioEngineToFirstBuffer" = "Device first buffer";
 "history.stats.transcriptionStartedAt" = "STT started";
 "history.stats.transcriptionCompletedAt" = "STT completed";
 "history.stats.llmProcessingStartedAt" = "Submitted to LLM";
@@ -516,6 +520,8 @@
 "history.timeline.slowest" = "Longest stage";
 "history.timeline.keyWaits" = "Key waits";
 "history.timeline.audio" = "Audio prep";
+"history.timeline.recordingStartup" = "Recording startup";
+"history.timeline.recording" = "Recording";
 "history.timeline.realtime" = "Realtime speech";
 "history.timeline.transcription" = "Recognition finalization";
 "history.timeline.llm" = "AI generation";

@@ -457,11 +457,11 @@ private final class MockWorkflowLLMAgentService: LLMAgentService {
 }
 
 private final class MockWorkflowHotkeyService: HotkeyService {
-    var onActivationTap: (() -> Void)?
-    var onActivationPressBegan: (() -> Void)?
+    var onActivationTap: ((HotkeyEventContext) -> Void)?
+    var onActivationPressBegan: ((HotkeyEventContext) -> Void)?
     var onActivationPressEnded: (() -> Void)?
     var onActivationCancelled: (() -> Void)?
-    var onAskPressBegan: (() -> Void)?
+    var onAskPressBegan: ((HotkeyEventContext) -> Void)?
     var onAskPressEnded: (() -> Void)?
     var onPersonaPickerRequested: (() -> Void)?
     var onHistoryRequested: (() -> Void)?

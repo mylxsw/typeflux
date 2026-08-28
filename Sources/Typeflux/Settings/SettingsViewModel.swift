@@ -3097,6 +3097,22 @@ final class StudioViewModel: ObservableObject {
 
         var sources = [
             LaneSource(
+                id: "recording-startup",
+                title: L("history.timeline.recordingStartup"),
+                start: stats.hotkeyDetectedAt,
+                end: stats.firstAudioBufferAt,
+                tone: .audio,
+                isDetail: false
+            ),
+            LaneSource(
+                id: "recording",
+                title: L("history.timeline.recording"),
+                start: stats.firstAudioBufferAt,
+                end: stats.recordingStoppedAt,
+                tone: .audio,
+                isDetail: false
+            ),
+            LaneSource(
                 id: "audio",
                 title: L("history.timeline.audio"),
                 start: stats.recordingStoppedAt,
@@ -3402,6 +3418,18 @@ final class StudioViewModel: ObservableObject {
         }
 
         var keyMetricSources: [(String, String, Int?)] = [
+            ("hotkey-to-first-audio", L("history.stats.hotkeyToFirstAudio"), stats.hotkeyToFirstAudioMilliseconds),
+            ("hotkey-dispatch", L("history.stats.hotkeyDispatch"), stats.hotkeyDispatchMilliseconds),
+            (
+                "recording-preparation",
+                L("history.stats.recordingPreparation"),
+                stats.recordingPreparationMilliseconds
+            ),
+            (
+                "audio-engine-first-buffer",
+                L("history.stats.audioEngineToFirstBuffer"),
+                stats.audioEngineToFirstBufferMilliseconds
+            ),
             ("connection", L("history.stats.realtimeConnection"), stats.realtimeConnectionDurationMilliseconds),
             (
                 "first-result",
