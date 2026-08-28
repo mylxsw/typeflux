@@ -1231,10 +1231,13 @@
 "cloud.billing.subscriptionRequired.body" = "This Cloud feature is not included in your current plan. Subscribe to keep using Typeflux Cloud.";
 "cloud.billing.quotaExceeded.title" = "Typeflux Cloud credits used up";
 "cloud.billing.quotaExceeded.body" = "Your Cloud quota or credits are currently unavailable. Open Account to review your subscription or billing.";
+"cloud.billing.freePlanQuotaExceeded.title" = "Free Cloud credits used up";
+"cloud.billing.freePlanQuotaExceeded.body" = "Your free Cloud credits have been used up for this period. Upgrade your plan to keep using Typeflux Cloud, or switch to another model.";
 "cloud.billing.freeQuotaExceeded.title" = "Free Cloud credits used up";
 "cloud.billing.freeQuotaExceeded.body" = "Your free Cloud credits have been used up for this period. Open Account to review usage or switch to another model.";
 "cloud.billing.action.openAccount" = "Open Account";
 "cloud.billing.action.subscribe" = "Subscribe";
+"cloud.billing.action.upgradePlan" = "Upgrade Plan";
 "cloud.billing.action.switchModel" = "Switch Model";
 
 "auth.account.provider" = "Login Method";

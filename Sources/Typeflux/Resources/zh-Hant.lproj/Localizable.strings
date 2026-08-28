@@ -1227,10 +1227,13 @@
 "cloud.billing.subscriptionRequired.body" = "目前方案暫不包含這項雲端功能。開通會員後即可繼續使用 Typeflux Cloud。";
 "cloud.billing.quotaExceeded.title" = "Typeflux Cloud 額度暫不可用";
 "cloud.billing.quotaExceeded.body" = "目前雲端額度或餘額不足。請前往帳號頁處理訂閱或帳單。";
+"cloud.billing.freePlanQuotaExceeded.title" = "免費雲端額度已用完";
+"cloud.billing.freePlanQuotaExceeded.body" = "本週期的免費雲端額度已用完。升級會員後即可繼續使用 Typeflux Cloud，也可以切換其他模型。";
 "cloud.billing.freeQuotaExceeded.title" = "免費雲端額度已用完";
 "cloud.billing.freeQuotaExceeded.body" = "目前週期的免費雲端額度已用完。你可以前往帳號頁查看用量，或切換其他模型。";
 "cloud.billing.action.openAccount" = "開啟帳號";
 "cloud.billing.action.subscribe" = "訂閱會員";
+"cloud.billing.action.upgradePlan" = "升級方案";
 "cloud.billing.action.switchModel" = "切換其他模型";
 
 "auth.account.provider" = "登入方式";

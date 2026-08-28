@@ -6,6 +6,11 @@ struct TypefluxCloudBillingError: LocalizedError, Equatable {
         case quotaExceeded
     }
 
+    enum PrimaryAction: Equatable {
+        case openAccount
+        case openPlans
+    }
+
     let reason: Reason
     let serverMessage: String?
 
@@ -37,7 +42,7 @@ struct TypefluxCloudBillingError: LocalizedError, Equatable {
         case .quotaExceeded:
             return hasPaidSubscription
                 ? L("cloud.billing.quotaExceeded.title")
-                : L("cloud.billing.subscriptionRequired.title")
+                : L("cloud.billing.freePlanQuotaExceeded.title")
         }
     }
 
@@ -51,7 +56,7 @@ struct TypefluxCloudBillingError: LocalizedError, Equatable {
         case .quotaExceeded:
             return hasPaidSubscription
                 ? L("cloud.billing.quotaExceeded.body")
-                : L("cloud.billing.subscriptionRequired.body")
+                : L("cloud.billing.freePlanQuotaExceeded.body")
         }
     }
 
@@ -60,16 +65,24 @@ struct TypefluxCloudBillingError: LocalizedError, Equatable {
     }
 
     func primaryActionTitle(hasPaidSubscription: Bool, billingEnabled: Bool = true) -> String {
-        if !billingEnabled {
+        if primaryAction(hasPaidSubscription: hasPaidSubscription, billingEnabled: billingEnabled) == .openAccount {
             return L("cloud.billing.action.openAccount")
         }
         switch reason {
         case .subscriptionRequired:
             return L("cloud.billing.action.subscribe")
         case .quotaExceeded:
-            return hasPaidSubscription
-                ? L("cloud.billing.action.openAccount")
-                : L("cloud.billing.action.subscribe")
+            return L("cloud.billing.action.upgradePlan")
+        }
+    }
+
+    func primaryAction(hasPaidSubscription: Bool, billingEnabled: Bool = true) -> PrimaryAction {
+        guard billingEnabled else { return .openAccount }
+        switch reason {
+        case .subscriptionRequired:
+            return .openPlans
+        case .quotaExceeded:
+            return hasPaidSubscription ? .openAccount : .openPlans
         }
     }
 

@@ -1513,6 +1513,11 @@ final class WorkflowController {
             self.shouldPreserveLLMConfigurationNotice = true
             self.soundEffectPlayer.play(.tip)
 
+            let primaryAction = error.primaryAction(
+                hasPaidSubscription: hasPaidSubscription,
+                billingEnabled: billingEnabled
+            )
+
             let actions: [OverlayFailureAction] = [
                 OverlayFailureAction(
                     title: error.primaryActionTitle(
@@ -1523,11 +1528,39 @@ final class WorkflowController {
                     trailingSystemImage: "arrow.up.right",
                     handler: { [weak self] in
                         guard let self else { return }
-                        SettingsWindowController.shared.show(
-                            settingsStore: settingsStore,
-                            historyStore: historyStore,
-                            initialSection: .account
-                        )
+                        switch primaryAction {
+                        case .openAccount:
+                            SettingsWindowController.shared.show(
+                                settingsStore: settingsStore,
+                                historyStore: historyStore,
+                                initialSection: .account
+                            )
+                        case .openPlans:
+                            Task { @MainActor [weak self] in
+                                guard let self else { return }
+                                do {
+                                    let url = try await AccountBillingFlow.destination(
+                                        for: .subscribe,
+                                        requestBillingPageToken: {
+                                            try await AuthState.shared.requestBillingPageToken()
+                                        },
+                                        createPortalSession: {
+                                            try await AuthState.shared.createBillingPortalSession()
+                                        }
+                                    )
+                                    NSWorkspace.shared.open(url)
+                                } catch {
+                                    self.logger.error(
+                                        "Failed to open Typeflux Cloud plans: \(error.localizedDescription, privacy: .public)"
+                                    )
+                                    SettingsWindowController.shared.show(
+                                        settingsStore: self.settingsStore,
+                                        historyStore: self.historyStore,
+                                        initialSection: .account
+                                    )
+                                }
+                            }
+                        }
                     }
                 ),
                 OverlayFailureAction(
