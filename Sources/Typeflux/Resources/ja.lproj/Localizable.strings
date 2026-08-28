@@ -37,7 +37,7 @@
 "sidebar.accountCard.signedOutSubtitle" = "無料クレジットの利用とサブスクリプション管理ができます。";
 "sidebar.accountCard.loading" = "アカウント状態を更新中…";
 "sidebar.accountCard.unavailable" = "使用量データを一時的に取得できません。";
-"sidebar.accountCard.cloudCredits" = "クラウドクレジット";
+"sidebar.accountCard.cloudCredits" = "残りクレジット";
 "sidebar.accountCard.usagePair" = "%@ / %@";
 "sidebar.accountCard.billingAttention" = "お支払いの確認が必要です";
 "sidebar.accountCard.billingAttentionSubtitle" = "クラウド利用を継続するには請求情報を更新してください。";
@@ -388,7 +388,7 @@
 "workflow.recording.tooShort" = "スピーチが短すぎました。転写はキャンセルされました。";
 "workflow.transcription.emptySkipped" = "転写が空だったのでスキップされました。";
 "workflow.transcription.noSpeech" = "明瞭な音声が検出されませんでした。転写はキャンセルされました。";
-"workflow.transcription.serverUnavailableNotice" = "サーバーとローカル音声認識を一時的に利用できません。録音は履歴に保存され、後で再試行できます。";
+"workflow.transcription.serverUnavailableNotice" = "サーバーに接続できません。録音は履歴に保存され、後で再試行できます。";
 "workflow.result.copyTitle" = "コピー結果";
 "workflow.ask.answerTitle" = "何でも聞いてください";
 "workflow.ask.questionSectionTitle" = "あなたの質問";
@@ -543,6 +543,7 @@
 "history.llmOutcome.billingFallback" = "課金制限 · 元の文字起こしを使用";
 "history.llmOutcome.cancelled" = "キャンセル済み";
 "history.llmOutcome.failed" = "失敗";
+"history.llmOutcome.requestFailedFallback" = "リクエスト失敗 · 元の文字起こしを使用";
 "history.keep.title" = "履歴を保存する";
 "history.keep.subtitle" = "Typeflux がこのデバイス上でローカルのディクテーション履歴を保存する期間を選択します。";
 "history.privacy.title" = "データは機密性を保ちます";
@@ -1274,7 +1275,7 @@
 "auth.account.usageAnswers" = "回答文字数";
 "auth.account.refreshUsage" = "使用量を更新";
 "auth.account.usageQuota" = "クラウドクレジット";
-"auth.account.usageFreeQuota" = "毎月の無料クレジット";
+"auth.account.usageFreeQuota" = "残り無料クレジット";
 "auth.account.usageQuotaRemaining" = "残り %@";
 "auth.account.usageQuotaUnlimited" = "無制限";
 "auth.account.usageQuotaUsedOfLimit" = "%@ / %@ 使用済み（%@）";
@@ -1312,10 +1313,10 @@
 "auth.account.nextRenewal" = "次回更新：%@";
 "auth.account.refreshOverview" = "サブスクリプションと使用量を更新";
 "auth.account.signedInWith" = "%@ でログイン";
-"auth.account.usageQuotaCurrentPeriod" = "今期のクラウドクレジット";
-"auth.account.usageQuotaUsedPercentage" = "%@ 使用済み";
-"auth.account.usageQuotaUsedPair" = "%@ / %@";
+"auth.account.usageQuotaCurrentPeriod" = "今期の残りクレジット";
+"auth.account.usageQuotaRemainingPercentage" = "残り %@";
+"auth.account.usageQuotaRemainingPair" = "%@ / %@";
 "auth.account.usageQuotaExplanationTitle" = "クレジットについて";
-"auth.account.usageQuotaExplanation" = "クラウドクレジットは今期の使用量と上限を示し、プログレスバーは使用済みの割合を示します。以下の各使用データはそれぞれ異なる単位で表示され、クレジット数とは一致しません。";
+"auth.account.usageQuotaExplanation" = "クラウドクレジットは今期の残りクレジットと上限を示し、プログレスバーは残りの割合を示します。";
 "cloudDataSync.accountDescription" = "カスタム語彙とペルソナのみを、このアカウントでログインした他のデバイスと同期します。";
 "cloudDataSync.manageData" = "クラウドデータを管理";

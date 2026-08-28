@@ -44,7 +44,7 @@ final class SidebarAccountCardPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.state, .unavailable)
     }
 
-    func testFreePlanShowsUpgradeAndClampedCreditProgress() {
+    func testFreePlanShowsUpgradeAndRemainingCreditProgress() {
         let subscription = BillingSubscriptionSnapshot(
             planCode: "free",
             status: "free",
@@ -72,7 +72,28 @@ final class SidebarAccountCardPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.action, .upgrade)
         XCTAssertEqual(presentation.displayName, "Alex")
         XCTAssertEqual(presentation.planName, "Free")
-        XCTAssertEqual(presentation.progress ?? 0, 1_280.0 / 4_500.0, accuracy: 0.0001)
+        XCTAssertEqual(presentation.progress ?? 0, 3_220.0 / 4_500.0, accuracy: 0.0001)
+    }
+
+    func testSidebarAndAccountCenterShareRemainingCreditSemantics() {
+        let summaries: [CloudCreditSummary?] = [
+            nil,
+            .init(limit: 100, used: 30, remaining: 55, unlimited: false),
+            .init(limit: 100, used: 0, remaining: 100, unlimited: false),
+            .init(limit: 100, used: 125, remaining: 0, unlimited: false),
+            .init(limit: -1, used: 100, remaining: -1, unlimited: true),
+            .init(limit: 0, used: 0, remaining: 0, unlimited: false),
+            .init(limit: -1, used: 0, remaining: 0, unlimited: false)
+        ]
+        for credits in summaries {
+            let sidebar = SidebarAccountCardPresentation.make(
+                isLoggedIn: true, subscription: .none, credits: credits,
+                subscriptionError: nil, usageError: nil
+            )
+            let account = AccountUsageCreditPresentation(credits: credits)
+            XCTAssertEqual(sidebar.creditPresentation.balance, account.balance)
+            XCTAssertEqual(sidebar.progress, account.progress)
+        }
     }
 
     func testPaidPlanShowsBillingManagement() {

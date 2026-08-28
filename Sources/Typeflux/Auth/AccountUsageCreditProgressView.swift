@@ -1,28 +1,33 @@
 import SwiftUI
 
 struct AccountUsageCreditPresentation: Equatable {
-    enum Usage: Equatable {
+    enum Balance: Equatable {
         case unavailable
-        case unlimited(used: Int)
-        case limited(used: Int, limit: Int)
+        case unlimited
+        case limited(remaining: Int, limit: Int)
     }
 
     let credits: CloudCreditSummary?
 
-    var usage: Usage {
+    var balance: Balance {
         guard let credits else { return .unavailable }
-        if credits.unlimited { return .unlimited(used: credits.used) }
+        if credits.unlimited { return .unlimited }
         guard credits.limit >= 0 else { return .unavailable }
-        return .limited(used: credits.used, limit: credits.limit)
+        return .limited(remaining: max(0, credits.remaining), limit: credits.limit)
     }
 
-    var usageFraction: Double? {
-        guard let credits, !credits.unlimited, credits.limit > 0 else { return nil }
-        return max(0, Double(credits.used) / Double(credits.limit))
+    var remainingFraction: Double? {
+        guard case let .limited(remaining, limit) = balance, limit > 0 else { return nil }
+        return Double(remaining) / Double(limit)
     }
 
     var progress: Double? {
-        usageFraction.map { min($0, 1) }
+        remainingFraction.map { min($0, 1) }
+    }
+
+    var isExhausted: Bool {
+        guard case let .limited(remaining, limit) = balance else { return false }
+        return limit > 0 && remaining == 0
     }
 }
 
@@ -41,16 +46,18 @@ struct AccountUsageCreditProgressView: View {
             HStack(alignment: .firstTextBaseline, spacing: StudioTheme.Spacing.mediumLarge) {
                 quotaLabel
                 Spacer(minLength: StudioTheme.Spacing.mediumLarge)
-                Text(usedTotalDescription)
+                Text(remainingTotalDescription)
                     .font(.studioBody(StudioTheme.Typography.body))
-                    .foregroundStyle(presentation.usage == .unavailable
-                        ? StudioTheme.textSecondary : StudioTheme.textPrimary)
+                    .foregroundStyle(presentation.balance == .unavailable
+                        ? StudioTheme.textSecondary
+                        : (presentation.isExhausted ? StudioTheme.danger : StudioTheme.textPrimary))
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                     .multilineTextAlignment(.trailing)
-                    .accessibilityLabel(presentation.usage == .unavailable
-                        ? usedTotalDescription : L("auth.account.usageQuotaUsedPercentage", usedTotalDescription))
+                    .accessibilityLabel(presentation.balance == .unavailable
+                        ? remainingTotalDescription
+                        : L("auth.account.usageQuotaRemainingPercentage", remainingTotalDescription))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -59,23 +66,23 @@ struct AccountUsageCreditProgressView: View {
                     ZStack(alignment: .leading) {
                         Capsule().fill(StudioTheme.surfaceMuted)
                         Capsule()
-                            .fill((presentation.usageFraction ?? 0) >= 1 ? StudioTheme.danger : StudioTheme.accent)
+                            .fill(presentation.isExhausted ? StudioTheme.danger : StudioTheme.accent)
                             .frame(width: max(0, proxy.size.width * progress))
                     }
                 }
                 .frame(height: 6)
                 .accessibilityLabel(L("auth.account.usageQuota"))
-                .accessibilityValue(usedTotalDescription + (percentageDescription.map { " · \($0)" } ?? ""))
+                .accessibilityValue(remainingTotalDescription + (percentageDescription.map { " · \($0)" } ?? ""))
             }
 
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .firstTextBaseline, spacing: StudioTheme.Spacing.large) {
-                    usagePercentage
+                    remainingPercentage
                     Spacer(minLength: StudioTheme.Spacing.large)
                     periodLabel
                 }
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-                    usagePercentage
+                    remainingPercentage
                     periodLabel
                 }
             }
@@ -113,7 +120,7 @@ struct AccountUsageCreditProgressView: View {
     }
 
     @ViewBuilder
-    private var usagePercentage: some View {
+    private var remainingPercentage: some View {
         if let percentageDescription {
             Text(percentageDescription)
                 .monospacedDigit()
@@ -129,25 +136,22 @@ struct AccountUsageCreditProgressView: View {
         }
     }
 
-    private var usedTotalDescription: String {
-        switch presentation.usage {
+    private var remainingTotalDescription: String {
+        switch presentation.balance {
         case .unavailable:
             L("auth.account.usageQuotaUnavailable")
-        case let .unlimited(used):
+        case .unlimited:
+            L("auth.account.usageQuotaUnlimited")
+        case let .limited(remaining, limit):
             L(
-                "auth.account.usageQuotaUsedPair",
-                AccountUsageDisplayFormatter.creditAmount(used), L("auth.account.usageQuotaUnlimited")
-            )
-        case let .limited(used, limit):
-            L(
-                "auth.account.usageQuotaUsedPair",
-                AccountUsageDisplayFormatter.creditAmount(used), AccountUsageDisplayFormatter.creditAmount(limit)
+                "auth.account.usageQuotaRemainingPair",
+                AccountUsageDisplayFormatter.creditAmount(remaining), AccountUsageDisplayFormatter.creditAmount(limit)
             )
         }
     }
 
     private var percentageDescription: String? {
-        guard let fraction = presentation.usageFraction else { return nil }
-        return L("auth.account.usageQuotaUsedPercentage", AccountUsageDisplayFormatter.percentage(fraction * 100))
+        guard let fraction = presentation.remainingFraction else { return nil }
+        return L("auth.account.usageQuotaRemainingPercentage", AccountUsageDisplayFormatter.percentage(fraction * 100))
     }
 }

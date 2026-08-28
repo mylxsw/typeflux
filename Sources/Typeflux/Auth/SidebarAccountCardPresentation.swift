@@ -80,9 +80,12 @@ struct SidebarAccountCardPresentation: Equatable {
         )
     }
 
+    var creditPresentation: AccountUsageCreditPresentation {
+        AccountUsageCreditPresentation(credits: credits)
+    }
+
     var progress: Double? {
-        guard let credits, !credits.unlimited, credits.limit > 0 else { return nil }
-        return min(max(Double(credits.used) / Double(credits.limit), 0), 1)
+        creditPresentation.progress
     }
 
     var usesFilledIdentityIcon: Bool {

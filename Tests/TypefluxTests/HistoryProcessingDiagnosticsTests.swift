@@ -3,18 +3,20 @@ import XCTest
 
 final class HistoryProcessingDiagnosticsTests: XCTestCase {
     func testPipelineTimingRoundTripPreservesRaceAndLLMOutcomes() throws {
-        let timing = HistoryPipelineTiming(
-            asrRace: Self.raceDiagnostics(),
-            llmOutcome: Self.llmDiagnostics()
-        )
+        for outcome: LLMProcessingOutcome in [.timedOutFallback, .requestFailedFallback] {
+            let timing = HistoryPipelineTiming(
+                asrRace: Self.raceDiagnostics(),
+                llmOutcome: Self.llmDiagnostics(outcome: outcome)
+            )
 
-        let data = try JSONEncoder().encode(timing)
-        let decoded = try JSONDecoder().decode(HistoryPipelineTiming.self, from: data)
+            let data = try JSONEncoder().encode(timing)
+            let decoded = try JSONDecoder().decode(HistoryPipelineTiming.self, from: data)
 
-        XCTAssertEqual(decoded, timing)
-        XCTAssertTrue(decoded.hasData)
-        XCTAssertEqual(decoded.generatedStats().asrRace, timing.asrRace)
-        XCTAssertEqual(decoded.generatedStats().llmOutcome, timing.llmOutcome)
+            XCTAssertEqual(decoded, timing)
+            XCTAssertTrue(decoded.hasData)
+            XCTAssertEqual(decoded.generatedStats().asrRace, timing.asrRace)
+            XCTAssertEqual(decoded.generatedStats().llmOutcome, timing.llmOutcome)
+        }
     }
 
     func testPipelineTimingDecodesLegacyPayloadWithoutDiagnostics() throws {
@@ -72,13 +74,13 @@ final class HistoryProcessingDiagnosticsTests: XCTestCase {
         )
     }
 
-    private static func llmDiagnostics() -> LLMProcessingOutcomeDiagnostics {
+    private static func llmDiagnostics(outcome: LLMProcessingOutcome) -> LLMProcessingOutcomeDiagnostics {
         let start = Date(timeIntervalSince1970: 1_003)
         return LLMProcessingOutcomeDiagnostics(
             startedAt: start,
             completedAt: start.addingTimeInterval(3),
             timeoutMilliseconds: 3_000,
-            outcome: .timedOutFallback,
+            outcome: outcome,
             usedTranscriptFallback: true
         )
     }

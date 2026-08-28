@@ -37,7 +37,7 @@
 "sidebar.accountCard.signedOutSubtitle" = "取得免費額度，並可隨時管理訂閱。";
 "sidebar.accountCard.loading" = "正在更新帳號狀態…";
 "sidebar.accountCard.unavailable" = "用量資料暫時無法使用。";
-"sidebar.accountCard.cloudCredits" = "雲端額度";
+"sidebar.accountCard.cloudCredits" = "剩餘額度";
 "sidebar.accountCard.usagePair" = "%@ / %@";
 "sidebar.accountCard.billingAttention" = "付款需要處理";
 "sidebar.accountCard.billingAttentionSubtitle" = "請更新帳單資訊以繼續使用雲端服務。";
@@ -390,7 +390,7 @@
 "workflow.recording.tooShort" = "說話時間太短，本次轉寫已取消。";
 "workflow.transcription.emptySkipped" = "因轉寫結果為空，已略過後續處理。";
 "workflow.transcription.noSpeech" = "未偵測到清晰語音，本次轉寫已取消。";
-"workflow.transcription.serverUnavailableNotice" = "伺服器和本地語音辨識暫時無法使用，錄音已儲存在歷史記錄中，可稍後重試。";
+"workflow.transcription.serverUnavailableNotice" = "暫時無法連線至伺服器，錄音已儲存在歷史記錄中，可稍後重試。";
 "workflow.result.copyTitle" = "複製結果";
 "workflow.ask.answerTitle" = "隨便問";
 "workflow.ask.questionSectionTitle" = "你的問題";
@@ -547,6 +547,7 @@
 "history.llmOutcome.billingFallback" = "計費限制 · 使用原始轉寫";
 "history.llmOutcome.cancelled" = "已取消";
 "history.llmOutcome.failed" = "失敗";
+"history.llmOutcome.requestFailedFallback" = "請求失敗 · 已使用原始轉寫";
 "history.keep.title" = "保留歷史";
 "history.keep.subtitle" = "選擇 Typeflux 在這台裝置上保留本地聽寫歷史的時間。";
 "history.privacy.title" = "你的資料保持私密";
@@ -1285,7 +1286,7 @@
 "auth.account.usageAnswers" = "回覆字元";
 "auth.account.refreshUsage" = "重新整理用量";
 "auth.account.usageQuota" = "雲端額度";
-"auth.account.usageFreeQuota" = "每月免費額度";
+"auth.account.usageFreeQuota" = "剩餘免費額度";
 "auth.account.usageQuotaRemaining" = "剩餘 %@";
 "auth.account.usageQuotaUnlimited" = "不限額度";
 "auth.account.usageQuotaUsedOfLimit" = "已用 %@ / %@（%@）";
@@ -1323,10 +1324,10 @@
 "auth.account.nextRenewal" = "下次續費：%@";
 "auth.account.refreshOverview" = "重新整理訂閱與用量";
 "auth.account.signedInWith" = "%@ 登入";
-"auth.account.usageQuotaCurrentPeriod" = "本期雲端額度";
-"auth.account.usageQuotaUsedPercentage" = "已用 %@";
-"auth.account.usageQuotaUsedPair" = "%@ / %@";
+"auth.account.usageQuotaCurrentPeriod" = "本期剩餘額度";
+"auth.account.usageQuotaRemainingPercentage" = "剩餘 %@";
+"auth.account.usageQuotaRemainingPair" = "%@ / %@";
 "auth.account.usageQuotaExplanationTitle" = "額度說明";
-"auth.account.usageQuotaExplanation" = "雲端額度顯示本期已用量和總額度，進度條表示已用比例。下方各項使用資料有獨立單位，不等同於額度數值。";
+"auth.account.usageQuotaExplanation" = "雲端額度顯示本期剩餘額度與總額度，進度條表示剩餘比例。";
 "cloudDataSync.accountDescription" = "僅同步自訂詞庫與人設至此帳號的其他裝置。";
 "cloudDataSync.manageData" = "雲端資料管理";

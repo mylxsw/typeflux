@@ -75,6 +75,34 @@ final class SettingsViewModelHistoryAudioTests: XCTestCase {
         )
     }
 
+    func testHistoryPresentationShowsFailedRewriteAsTranscriptFallback() throws {
+        let base = Date(timeIntervalSince1970: 900)
+        let record = HistoryRecord(
+            date: base,
+            transcriptText: "Local transcript",
+            pipelineTiming: HistoryPipelineTiming(
+                llmOutcome: LLMProcessingOutcomeDiagnostics(
+                    startedAt: base,
+                    completedAt: base.addingTimeInterval(1),
+                    timeoutMilliseconds: 3_000,
+                    outcome: .requestFailedFallback,
+                    usedTranscriptFallback: true
+                )
+            )
+        )
+        let viewModel = makeViewModel(
+            records: [record],
+            audioPreviewPlayer: FakeHistoryAudioPreviewPlayer(playResult: true)
+        )
+        waitForHistoryRecord(record.id, in: viewModel)
+
+        let badge = try XCTUnwrap(viewModel.displayedHistory.first?.pipelineTimeline?.summaryBadges.first {
+            $0.id == "llm-outcome"
+        })
+        XCTAssertEqual(badge.value, "1.00 s · Request failed · transcript fallback")
+        XCTAssertEqual(badge.tone, .warning)
+    }
+
     func testHistoryPipelineTimelinePreservesStageOffsetsAndHighlightsSlowestLane() {
         let base = Date(timeIntervalSince1970: 1000)
         let recordID = UUID()

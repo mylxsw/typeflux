@@ -195,13 +195,20 @@ struct AccountView: View {
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
                 subscriptionHeader
 
-                AccountUsageCreditProgressView(
-                    credits: authState.usageCredits,
-                    isFreeAllowance: authState.subscription.treatsCreditsAsFreeAllowance,
-                    periodDescription: usageRangeDescription
-                )
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    AccountUsageCreditProgressView(
+                        credits: authState.usageCredits,
+                        isFreeAllowance: authState.subscription.treatsCreditsAsFreeAllowance,
+                        periodDescription: usageRangeDescription
+                    )
 
-                usageDetails
+                    if let error = authState.usageError {
+                        Text(error)
+                            .font(.studioBody(StudioTheme.Typography.bodySmall))
+                            .foregroundStyle(StudioTheme.danger)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             }
         }
     }
@@ -225,11 +232,14 @@ struct AccountView: View {
                         }
                     }
 
-                    if showsSubscriptionDetails {
-                        Text(localized(subscriptionPresentation.period))
+                    if showsSubscriptionDetails, let dateNotice = subscriptionDateNotice {
+                        Text(dateNotice)
                             .font(.studioBody(StudioTheme.Typography.bodySmall))
                             .foregroundStyle(StudioTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if subscriptionPresentation.showsSubscriptionSyncAction {
+                        subscriptionSyncButton
                     }
                 }
 
@@ -263,9 +273,6 @@ struct AccountView: View {
                     .font(.studioBody(StudioTheme.Typography.bodySmall))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-            }
-            if subscriptionPresentation.showsSubscriptionSyncAction {
-                subscriptionSyncButton
             }
             if let error = billingActionError ?? authState.subscriptionError {
                 Text(error)
@@ -320,65 +327,6 @@ struct AccountView: View {
         .disabled(authState.isSyncingSubscription || authState.isLoadingSubscription || isOpeningBilling)
     }
 
-    private var usageDetails: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-            LazyVGrid(
-                columns: Array(
-                    repeating: GridItem(
-                        .flexible(minimum: 100), spacing: StudioTheme.Spacing.mediumLarge, alignment: .leading
-                    ),
-                    count: 5
-                ),
-                alignment: .leading,
-                spacing: StudioTheme.Spacing.mediumLarge
-            ) {
-                usageMetric(
-                    label: L("auth.account.usageAudio"),
-                    value: formattedAudioDuration(authState.usageStats.asrAudioDurationMs)
-                )
-                usageMetric(
-                    label: L("auth.account.usageTokens"), value: formattedCount(authState.usageStats.chatTotalTokens)
-                )
-                usageMetric(
-                    label: L("auth.account.usageRequests"), value: formattedCount(authState.usageStats.totalRequests)
-                )
-                usageMetric(
-                    label: L("auth.account.usageTranscripts"),
-                    value: formattedCount(authState.usageStats.asrOutputChars)
-                )
-                usageMetric(
-                    label: L("auth.account.usageAnswers"), value: formattedCount(authState.usageStats.chatOutputChars)
-                )
-            }
-
-            if let error = authState.usageError {
-                Text(error)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.danger)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(L("auth.account.usage"))
-    }
-
-    private func usageMetric(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-            Text(label)
-                .font(.studioBody(StudioTheme.Typography.bodySmall))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(value)
-                .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .medium))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-    }
-
     private func localized(_ value: AccountSubscriptionPresentation.TextValue) -> String {
         switch value {
         case let .localized(key):
@@ -388,24 +336,14 @@ struct AccountView: View {
         }
     }
 
-    private func localized(_ period: AccountSubscriptionPresentation.PeriodValue) -> String {
-        switch period {
-        case .unavailable:
-            L("auth.account.subscriptionPeriodUnavailable")
+    private var subscriptionDateNotice: String? {
+        switch subscriptionPresentation.period {
+        case .unavailable, .cycle:
+            nil
         case let .endsOn(dateString):
             String(format: L("auth.account.subscriptionEndsOn"), formattedDate(dateString))
         case let .renewsOn(dateString):
             String(format: L("auth.account.nextRenewal"), formattedDate(dateString))
-        case let .cycle(startString, endString):
-            if let startString {
-                String(
-                    format: L("auth.account.subscriptionPeriodRange"),
-                    formattedDate(startString),
-                    formattedDate(endString)
-                )
-            } else {
-                String(format: L("auth.account.subscriptionPeriodUntil"), formattedDate(endString))
-            }
         }
     }
 
@@ -529,14 +467,6 @@ struct AccountView: View {
             formattedDate(start),
             formattedDate(end)
         )
-    }
-
-    private func formattedAudioDuration(_ milliseconds: Int64) -> String {
-        AccountUsageDisplayFormatter.audioDuration(milliseconds)
-    }
-
-    private func formattedCount(_ value: Int64) -> String {
-        AccountUsageDisplayFormatter.count(value)
     }
 
     private func refreshAccountOverview() {

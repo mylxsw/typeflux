@@ -171,6 +171,7 @@ final class LocalizationResourceTests: XCTestCase {
             "history.race.reason.localAtDeadline",
             "history.llmOutcome.completed",
             "history.llmOutcome.timedOutFallback",
+            "history.llmOutcome.requestFailedFallback",
             "history.llmOutcome.failed"
         ]
 
@@ -217,8 +218,10 @@ final class LocalizationResourceTests: XCTestCase {
             "auth.account.refreshOverview": 0,
             "auth.account.signedInWith": 1,
             "auth.account.usageQuotaCurrentPeriod": 0,
-            "auth.account.usageQuotaUsedPercentage": 1,
-            "auth.account.usageQuotaUsedPair": 2,
+            "auth.account.usageFreeQuota": 0,
+            "sidebar.accountCard.remaining": 1,
+            "auth.account.usageQuotaRemainingPercentage": 1,
+            "auth.account.usageQuotaRemainingPair": 2,
             "auth.account.usageQuotaExplanationTitle": 0,
             "auth.account.usageQuotaExplanation": 0,
             "cloudDataSync.accountDescription": 0,
@@ -233,7 +236,7 @@ final class LocalizationResourceTests: XCTestCase {
                 XCTAssertEqual(localized.components(separatedBy: "%@").count - 1, argumentCount, key)
             }
 
-            let quotaPair = bundle.localizedString(forKey: "auth.account.usageQuotaUsedPair", value: nil, table: nil)
+            let quotaPair = bundle.localizedString(forKey: "auth.account.usageQuotaRemainingPair", value: nil, table: nil)
             XCTAssertEqual(
                 String(format: quotaPair, "1,234", "90,000"),
                 "1,234 / 90,000",

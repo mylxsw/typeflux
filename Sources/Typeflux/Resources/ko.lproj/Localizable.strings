@@ -37,7 +37,7 @@
 "sidebar.accountCard.signedOutSubtitle" = "무료 크레딧을 사용하고 구독을 관리하세요.";
 "sidebar.accountCard.loading" = "계정 상태 업데이트 중…";
 "sidebar.accountCard.unavailable" = "사용량 데이터를 일시적으로 불러올 수 없습니다.";
-"sidebar.accountCard.cloudCredits" = "클라우드 크레딧";
+"sidebar.accountCard.cloudCredits" = "잔여 크레딧";
 "sidebar.accountCard.usagePair" = "%@ / %@";
 "sidebar.accountCard.billingAttention" = "결제 확인이 필요합니다";
 "sidebar.accountCard.billingAttentionSubtitle" = "클라우드 이용을 계속하려면 결제 정보를 업데이트하세요.";
@@ -388,7 +388,7 @@
 "workflow.recording.tooShort" = "말이 너무 짧았습니다. 스크립트 작성이 취소되었습니다.";
 "workflow.transcription.emptySkipped" = "텍스트 변환이 비어 있으므로 건너뛰었습니다.";
 "workflow.transcription.noSpeech" = "명확한 음성이 감지되지 않았습니다. 스크립트 작성이 취소되었습니다.";
-"workflow.transcription.serverUnavailableNotice" = "서버와 로컬 음성 인식을 일시적으로 사용할 수 없습니다. 녹음은 기록에 저장되어 나중에 다시 시도할 수 있습니다.";
+"workflow.transcription.serverUnavailableNotice" = "서버에 연결할 수 없습니다. 녹음은 기록에 저장되어 나중에 다시 시도할 수 있습니다.";
 "workflow.result.copyTitle" = "결과 복사";
 "workflow.ask.answerTitle" = "무엇이든 물어보세요";
 "workflow.ask.questionSectionTitle" = "질문";
@@ -543,6 +543,7 @@
 "history.llmOutcome.billingFallback" = "결제 제한 · 원본 전사 사용";
 "history.llmOutcome.cancelled" = "취소됨";
 "history.llmOutcome.failed" = "실패";
+"history.llmOutcome.requestFailedFallback" = "요청 실패 · 원본 전사 사용";
 "history.keep.title" = "기록 보관";
 "history.keep.subtitle" = "Typeflux이 이 기기에서 로컬 받아쓰기 기록을 보관하는 기간을 선택하세요.";
 "history.privacy.title" = "귀하의 데이터는 비공개로 유지됩니다";
@@ -1274,7 +1275,7 @@
 "auth.account.usageAnswers" = "답변 문자";
 "auth.account.refreshUsage" = "사용량 새로고침";
 "auth.account.usageQuota" = "클라우드 크레딧";
-"auth.account.usageFreeQuota" = "월간 무료 크레딧";
+"auth.account.usageFreeQuota" = "잔여 무료 크레딧";
 "auth.account.usageQuotaRemaining" = "%@ 남음";
 "auth.account.usageQuotaUnlimited" = "무제한";
 "auth.account.usageQuotaUsedOfLimit" = "%@ / %@ 사용됨(%@)";
@@ -1312,10 +1313,10 @@
 "auth.account.nextRenewal" = "다음 갱신: %@";
 "auth.account.refreshOverview" = "구독 및 사용량 새로 고침";
 "auth.account.signedInWith" = "%@ 로그인";
-"auth.account.usageQuotaCurrentPeriod" = "이번 기간의 클라우드 크레딧";
-"auth.account.usageQuotaUsedPercentage" = "%@ 사용됨";
-"auth.account.usageQuotaUsedPair" = "%@ / %@";
+"auth.account.usageQuotaCurrentPeriod" = "이번 기간의 잔여 크레딧";
+"auth.account.usageQuotaRemainingPercentage" = "%@ 남음";
+"auth.account.usageQuotaRemainingPair" = "%@ / %@";
 "auth.account.usageQuotaExplanationTitle" = "크레딧 안내";
-"auth.account.usageQuotaExplanation" = "클라우드 크레딧은 이번 기간의 사용량과 총 한도를 나타내며 진행 막대는 사용 비율을 표시합니다. 아래 사용 데이터는 각각 다른 단위를 사용하며 크레딧 수와 같지 않습니다.";
+"auth.account.usageQuotaExplanation" = "클라우드 크레딧은 이번 기간의 잔여 크레딧과 총 한도를 나타내며 진행 막대는 남은 비율을 표시합니다.";
 "cloudDataSync.accountDescription" = "사용자 지정 어휘와 페르소나만 이 계정으로 로그인한 다른 기기에 동기화합니다.";
 "cloudDataSync.manageData" = "클라우드 데이터 관리";

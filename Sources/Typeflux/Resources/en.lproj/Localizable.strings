@@ -37,7 +37,7 @@
 "sidebar.accountCard.signedOutSubtitle" = "Use included credits and manage subscriptions.";
 "sidebar.accountCard.loading" = "Updating account status…";
 "sidebar.accountCard.unavailable" = "Usage data temporarily unavailable.";
-"sidebar.accountCard.cloudCredits" = "Cloud credits";
+"sidebar.accountCard.cloudCredits" = "Credits left";
 "sidebar.accountCard.usagePair" = "%@ / %@";
 "sidebar.accountCard.billingAttention" = "Payment needs attention";
 "sidebar.accountCard.billingAttentionSubtitle" = "Update billing to keep cloud access.";
@@ -392,7 +392,7 @@
 "workflow.recording.tooShort" = "Speech was too short. Transcription cancelled.";
 "workflow.transcription.emptySkipped" = "Skipped because transcription was empty.";
 "workflow.transcription.noSpeech" = "No clear speech detected. Transcription cancelled.";
-"workflow.transcription.serverUnavailableNotice" = "The server and local speech recognition are temporarily unavailable. Your recording was saved in History for retry.";
+"workflow.transcription.serverUnavailableNotice" = "Unable to connect to the server. Your recording was saved in History for retry.";
 "workflow.result.copyTitle" = "Copy Result";
 "workflow.ask.answerTitle" = "Ask Anything";
 "workflow.ask.questionSectionTitle" = "Your Question";
@@ -549,6 +549,7 @@
 "history.llmOutcome.billingFallback" = "Billing fallback";
 "history.llmOutcome.cancelled" = "Cancelled";
 "history.llmOutcome.failed" = "Failed";
+"history.llmOutcome.requestFailedFallback" = "Request failed · transcript fallback";
 "history.keep.title" = "Keep history";
 "history.keep.subtitle" = "Choose how long Typeflux keeps local dictation history on this device.";
 "history.privacy.title" = "Your data stays private";
@@ -1289,7 +1290,7 @@
 "auth.account.usageAnswers" = "Answer Chars";
 "auth.account.refreshUsage" = "Refresh Usage";
 "auth.account.usageQuota" = "Cloud Credits";
-"auth.account.usageFreeQuota" = "Monthly Free Credits";
+"auth.account.usageFreeQuota" = "Free credits remaining";
 "auth.account.usageQuotaRemaining" = "%@ remaining";
 "auth.account.usageQuotaUnlimited" = "Unlimited allowance";
 "auth.account.usageQuotaUsedOfLimit" = "%@ / %@ used (%@)";
@@ -1327,10 +1328,10 @@
 "auth.account.nextRenewal" = "Next renewal: %@";
 "auth.account.refreshOverview" = "Refresh subscription and usage";
 "auth.account.signedInWith" = "Signed in with %@";
-"auth.account.usageQuotaCurrentPeriod" = "Cloud credits this period";
-"auth.account.usageQuotaUsedPercentage" = "%@ used";
-"auth.account.usageQuotaUsedPair" = "%@ / %@";
+"auth.account.usageQuotaCurrentPeriod" = "Credits remaining this period";
+"auth.account.usageQuotaRemainingPercentage" = "%@ remaining";
+"auth.account.usageQuotaRemainingPair" = "%@ / %@";
 "auth.account.usageQuotaExplanationTitle" = "About cloud credits";
-"auth.account.usageQuotaExplanation" = "Cloud credits show the amount used and the total allowance for this period. The progress bar shows the used proportion. The activity metrics below use their own units and do not equal credits.";
+"auth.account.usageQuotaExplanation" = "Cloud credits show the remaining balance and total allowance for this period. The progress bar shows the remaining proportion.";
 "cloudDataSync.accountDescription" = "Sync only custom vocabulary and personas across devices signed in to this account.";
 "cloudDataSync.manageData" = "Manage cloud data";

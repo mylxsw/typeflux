@@ -3678,6 +3678,8 @@ final class StudioViewModel: ObservableObject {
             L("history.llmOutcome.configurationFallback")
         case .billingFallback:
             L("history.llmOutcome.billingFallback")
+        case .requestFailedFallback:
+            L("history.llmOutcome.requestFailedFallback")
         case .cancelled:
             L("history.llmOutcome.cancelled")
         case .failed:
@@ -3694,7 +3696,7 @@ final class StudioViewModel: ObservableObject {
         case .failed:
             .failure
         case .emptyResponseFallback, .timedOutFallback, .serviceOverloadedFallback,
-             .configurationUnavailableFallback, .billingFallback, .cancelled:
+             .configurationUnavailableFallback, .billingFallback, .requestFailedFallback, .cancelled:
             .warning
         }
     }

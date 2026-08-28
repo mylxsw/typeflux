@@ -78,6 +78,7 @@ enum LLMProcessingOutcome: String, Codable, Equatable, Sendable {
     case serviceOverloadedFallback
     case configurationUnavailableFallback
     case billingFallback
+    case requestFailedFallback
     case cancelled
     case failed
 }

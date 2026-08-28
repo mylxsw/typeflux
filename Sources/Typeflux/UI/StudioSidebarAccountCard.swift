@@ -232,7 +232,7 @@ struct StudioSidebarAccountCard<Footer: View>: View {
                     ZStack(alignment: .leading) {
                         Capsule().fill(StudioTheme.surfaceMuted)
                         Capsule()
-                            .fill(progress >= 1 ? StudioTheme.danger : StudioTheme.accent)
+                            .fill(presentation.creditPresentation.isExhausted ? StudioTheme.danger : StudioTheme.accent)
                             .frame(width: proxy.size.width * progress)
                     }
                 }
@@ -251,14 +251,19 @@ struct StudioSidebarAccountCard<Footer: View>: View {
 
     private var quotaValue: some View {
         Group {
-            if let credits = presentation.credits {
-                if credits.unlimited {
-                    Text(L("auth.account.usageQuotaUnlimited"))
-                } else {
-                    Text(usageText(for: credits, compact: true))
-                        .studioTooltip(usageText(for: credits, compact: false), yOffset: 18)
-                }
-            } else {
+            switch presentation.creditPresentation.balance {
+            case .unlimited:
+                Text(L("auth.account.usageQuotaUnlimited"))
+            case let .limited(remaining, limit):
+                Text(remainingText(remaining: remaining, limit: limit, compact: true))
+                    .foregroundStyle(presentation.creditPresentation.isExhausted
+                        ? StudioTheme.danger : StudioTheme.textPrimary)
+                    .studioTooltip(remainingText(remaining: remaining, limit: limit, compact: false), yOffset: 18)
+                    .accessibilityLabel(L(
+                        "sidebar.accountCard.remaining",
+                        remainingText(remaining: remaining, limit: limit, compact: false)
+                    ))
+            case .unavailable:
                 Text("—")
                     .foregroundStyle(StudioTheme.textSecondary)
                     .help(L("sidebar.accountCard.quotaUnavailable"))
@@ -332,13 +337,13 @@ struct StudioSidebarAccountCard<Footer: View>: View {
             : actionTitle
     }
 
-    private func usageText(for credits: CloudCreditSummary, compact: Bool) -> String {
-        let used = compact
-            ? AccountUsageDisplayFormatter.sidebarCreditAmount(credits.used)
-            : AccountUsageDisplayFormatter.count(Int64(credits.used))
-        let limit = compact
-            ? AccountUsageDisplayFormatter.sidebarCreditAmount(credits.limit)
-            : AccountUsageDisplayFormatter.count(Int64(credits.limit))
-        return String(format: L("sidebar.accountCard.usagePair"), used, limit)
+    private func remainingText(remaining: Int, limit: Int, compact: Bool) -> String {
+        let remainingAmount = compact
+            ? AccountUsageDisplayFormatter.sidebarCreditAmount(remaining)
+            : AccountUsageDisplayFormatter.count(Int64(remaining))
+        let limitAmount = compact
+            ? AccountUsageDisplayFormatter.sidebarCreditAmount(limit)
+            : AccountUsageDisplayFormatter.count(Int64(limit))
+        return String(format: L("sidebar.accountCard.usagePair"), remainingAmount, limitAmount)
     }
 }

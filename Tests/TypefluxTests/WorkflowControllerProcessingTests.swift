@@ -669,6 +669,168 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.usedTranscriptFallback, true)
     }
 
+    func testLocalTranscriptIsAppliedWhenCloudASRAndRewriteFail() async {
+        let transcript = "Keep this complete local transcript"
+        let cases: [(Bool, Error)] = [
+            (false, URLError(.cannotConnectToHost)),
+            (true, NSError(domain: "LLMService", code: 503))
+        ]
+        for (replaceSelection, rewriteError) in cases {
+            let textInjector = MockProcessingTextInjector()
+            let historyStore = MockProcessingHistoryStore()
+            let controller = makeWorkflowController(
+                textInjector: textInjector,
+                sttTranscriber: MockProcessingTranscriber(error: URLError(.cannotConnectToHost)),
+                localFallbackTranscriber: MockProcessingTranscriber(transcript: transcript),
+                llmService: CountingProcessingLLMService(
+                    rewriteText: "Incomplete rewrite",
+                    error: rewriteError
+                ),
+                historyStore: historyStore,
+                configureSettings: {
+                    self.configureReadyLLM(settingsStore: $0)
+                    $0.sttProvider = .typefluxOfficial
+                }
+            )
+            let snapshot = TextSelectionSnapshot(
+                selectedRange: CFRange(location: 0, length: replaceSelection ? 5 : 0),
+                selectedText: replaceSelection ? "draft" : nil,
+                source: "accessibility",
+                isEditable: true,
+                role: "AXTextArea",
+                isFocusedTarget: true
+            )
+
+            await controller.process(
+                audioFile: AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1),
+                record: HistoryRecord(date: Date(), recordingStatus: .succeeded),
+                selectionSnapshot: snapshot,
+                selectedText: snapshot.selectedText,
+                askContextText: nil,
+                inputContext: nil,
+                personaPrompt: "Clean up the transcript.",
+                recordingIntent: .dictation,
+                sessionID: controller.processingSessionID
+            )
+
+            XCTAssertEqual(textInjector.insertedTexts, replaceSelection ? [] : [transcript])
+            XCTAssertEqual(textInjector.replacedTexts, replaceSelection ? [transcript] : [])
+            let savedRecord = historyStore.list().last
+            XCTAssertEqual(savedRecord?.pipelineTiming?.asrRace?.selectedSource, .local)
+            XCTAssertEqual(savedRecord?.pipelineTiming?.asrRace?.cloudAttempt.outcome, .failed)
+            XCTAssertEqual(savedRecord?.pipelineTiming?.asrRace?.localAttempt.outcome, .succeeded)
+            XCTAssertEqual(savedRecord?.transcriptText, transcript)
+            XCTAssertEqual(savedRecord?.postProcessedText, transcript)
+            XCTAssertEqual(savedRecord?.transcriptionStatus, .succeeded)
+            XCTAssertEqual(savedRecord?.processingStatus, .succeeded)
+            XCTAssertEqual(savedRecord?.applyStatus, .succeeded)
+            XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.usedTranscriptFallback, true)
+            XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.outcome, .requestFailedFallback)
+            XCTAssertNil(savedRecord?.errorMessage)
+            XCTAssertNil(controller.lastRetryableFailureRecord)
+            XCTAssertFalse(controller.overlayController.isShowingPassiveNotice)
+        }
+    }
+
+    func testCancelledRewriteDoesNotInsertTranscriptFallback() async {
+        for error: Error in [CancellationError(), URLError(.cancelled)] {
+            let textInjector = MockProcessingTextInjector()
+            let historyStore = MockProcessingHistoryStore()
+            let controller = makeWorkflowController(
+                textInjector: textInjector,
+                sttTranscriber: MockProcessingTranscriber(transcript: "Do not insert this transcript"),
+                llmService: CountingProcessingLLMService(rewriteText: "Partial rewrite", error: error),
+                historyStore: historyStore,
+                configureSettings: configureReadyLLM
+            )
+            await controller.process(
+                audioFile: AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1),
+                record: HistoryRecord(date: Date(), recordingStatus: .succeeded),
+                selectionSnapshot: TextSelectionSnapshot(),
+                selectedText: nil,
+                askContextText: nil,
+                inputContext: nil,
+                personaPrompt: "Clean up the transcript.",
+                recordingIntent: .dictation,
+                sessionID: controller.processingSessionID
+            )
+
+            XCTAssertTrue(textInjector.insertedTexts.isEmpty)
+            XCTAssertTrue(textInjector.replacedTexts.isEmpty)
+            XCTAssertEqual(historyStore.list().last?.pipelineTiming?.llmOutcome?.outcome, .cancelled)
+            XCTAssertEqual(historyStore.list().last?.pipelineTiming?.llmOutcome?.usedTranscriptFallback, false)
+        }
+    }
+
+    @MainActor
+    func testCancelledOrSupersededRewriteDoesNotApplyLateTranscript() async {
+        for cancelTask in [true, false] {
+            let started = expectation(description: "rewrite started")
+            let textInjector = MockProcessingTextInjector()
+            let controller = makeWorkflowController(
+                textInjector: textInjector,
+                sttTranscriber: MockProcessingTranscriber(transcript: "Do not insert this transcript"),
+                llmService: SlowProcessingLLMService(delay: .milliseconds(200), onStart: { started.fulfill() }),
+                configureSettings: configureReadyLLM
+            )
+            let sessionID = controller.processingSessionID
+            let task = Task {
+                await controller.process(
+                    audioFile: AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1),
+                    record: HistoryRecord(date: Date(), recordingStatus: .succeeded),
+                    selectionSnapshot: TextSelectionSnapshot(),
+                    selectedText: nil,
+                    askContextText: nil,
+                    inputContext: nil,
+                    personaPrompt: "Clean up the transcript.",
+                    recordingIntent: .dictation,
+                    sessionID: sessionID
+                )
+            }
+            await fulfillment(of: [started], timeout: 2)
+            if cancelTask {
+                task.cancel()
+            } else {
+                _ = controller.beginProcessingSession()
+            }
+            await task.value
+
+            XCTAssertTrue(textInjector.insertedTexts.isEmpty)
+            XCTAssertTrue(textInjector.replacedTexts.isEmpty)
+        }
+    }
+
+    func testAskFailureDoesNotInsertSpokenInstructionAsFallback() async {
+        let textInjector = MockProcessingTextInjector()
+        let historyStore = MockProcessingHistoryStore()
+        let controller = makeWorkflowController(
+            textInjector: textInjector,
+            sttTranscriber: MockProcessingTranscriber(transcript: "Summarize this draft"),
+            historyStore: historyStore,
+            configureSettings: {
+                self.configureReadyLLM(settingsStore: $0)
+                $0.agentEnabled = false
+            }
+        )
+        await controller.process(
+            audioFile: AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1),
+            record: HistoryRecord(date: Date(), audioFilePath: "/tmp/mock.wav", recordingStatus: .succeeded),
+            selectionSnapshot: TextSelectionSnapshot(),
+            selectedText: nil,
+            askContextText: nil,
+            inputContext: nil,
+            personaPrompt: nil,
+            recordingIntent: .askSelection,
+            sessionID: controller.processingSessionID
+        )
+
+        XCTAssertTrue(textInjector.insertedTexts.isEmpty)
+        XCTAssertTrue(textInjector.replacedTexts.isEmpty)
+        XCTAssertEqual(historyStore.list().last?.transcriptionStatus, .succeeded)
+        XCTAssertEqual(historyStore.list().last?.processingStatus, .failed)
+        XCTAssertEqual(historyStore.list().last?.applyStatus, .skipped)
+    }
+
     func testConnectivityFailureKeepsRecordingRetryableAndShowsPassiveNotice() async {
         let historyStore = MockProcessingHistoryStore()
         let audioPath = "/tmp/connectivity-fallback.wav"
@@ -1810,6 +1972,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         textInjector: TextInjector = MockProcessingTextInjector(),
         audioRecorder: AudioRecorder = MockProcessingAudioRecorder(),
         sttTranscriber: Transcriber = MockProcessingTranscriber(),
+        localFallbackTranscriber: Transcriber? = nil,
         llmService: LLMService = MockProcessingLLMService(),
         historyStore: HistoryStore = MockProcessingHistoryStore(),
         clipboard: ClipboardService = MockClipboardService(),
@@ -1847,7 +2010,8 @@ final class WorkflowControllerProcessingTests: XCTestCase {
                 googleCloud: sttTranscriber,
                 groq: sttTranscriber,
                 soniox: sttTranscriber,
-                typefluxOfficial: sttTranscriber
+                typefluxOfficial: sttTranscriber,
+                typefluxCloudLoginFallbackLocalModel: localFallbackTranscriber
             ),
             llmService: llmService,
             llmAgentService: MockProcessingLLMAgentService(),
@@ -2138,11 +2302,13 @@ private final class MockProcessingLLMService: LLMService {
 
 private final class CountingProcessingLLMService: LLMService {
     private let rewriteText: String
+    private let error: Error?
     private let lock = NSLock()
     private var rewriteCalls = 0
 
-    init(rewriteText: String) {
+    init(rewriteText: String, error: Error? = nil) {
         self.rewriteText = rewriteText
+        self.error = error
     }
 
     var streamRewriteCallCount: Int {
@@ -2158,7 +2324,7 @@ private final class CountingProcessingLLMService: LLMService {
         let rewriteText = rewriteText
         return AsyncThrowingStream { continuation in
             continuation.yield(rewriteText)
-            continuation.finish()
+            continuation.finish(throwing: error)
         }
     }
 
@@ -2173,13 +2339,16 @@ private final class CountingProcessingLLMService: LLMService {
 
 private final class SlowProcessingLLMService: LLMService {
     private let delay: Duration
+    private let onStart: (() -> Void)?
 
-    init(delay: Duration) {
+    init(delay: Duration, onStart: (() -> Void)? = nil) {
         self.delay = delay
+        self.onStart = onStart
     }
 
     func streamRewrite(request _: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
+            onStart?()
             Task {
                 do {
                     try await Task.sleep(for: delay)

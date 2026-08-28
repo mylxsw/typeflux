@@ -1969,7 +1969,7 @@ extension WorkflowController {
                 )
                 rewriteOutput = transcribedText
                 billingFallbackError = billingError
-            } catch is CancellationError {
+            } catch let error where error is CancellationError || (error as? URLError)?.code == .cancelled {
                 let completedAt = Date()
                 pipelineTiming.llmProcessingCompletedAt = completedAt
                 pipelineTiming.llmOutcome = LLMProcessingOutcomeDiagnostics(
@@ -1982,19 +1982,20 @@ extension WorkflowController {
                 record.pipelineTiming = pipelineTiming
                 throw CancellationError()
             } catch {
-                // All other failures (network error, API error, etc.) are surfaced to the
-                // user as a retryable failure so they are never silently swallowed.
+                // Rewriting is optional for dictation: preserve the complete transcript
+                // when the request fails, never a partially streamed rewrite.
+                try ensureProcessingIsActive(sessionID)
+                ErrorLogStore.shared.log("Persona rewrite request failed, using transcript as fallback")
                 let completedAt = Date()
                 pipelineTiming.llmProcessingCompletedAt = completedAt
                 pipelineTiming.llmOutcome = LLMProcessingOutcomeDiagnostics(
                     startedAt: llmStartedAt,
                     completedAt: completedAt,
                     timeoutMilliseconds: llmTimeoutMilliseconds,
-                    outcome: .failed,
-                    usedTranscriptFallback: false
+                    outcome: .requestFailedFallback,
+                    usedTranscriptFallback: true
                 )
-                record.pipelineTiming = pipelineTiming
-                throw error
+                rewriteOutput = transcribedText
             }
         }
 

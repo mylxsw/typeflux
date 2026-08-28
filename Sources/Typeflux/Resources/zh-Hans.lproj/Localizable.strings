@@ -37,7 +37,7 @@
 "sidebar.accountCard.signedOutSubtitle" = "获得免费额度，并可随时管理订阅。";
 "sidebar.accountCard.loading" = "正在更新账号状态…";
 "sidebar.accountCard.unavailable" = "用量数据暂时不可用。";
-"sidebar.accountCard.cloudCredits" = "云端额度";
+"sidebar.accountCard.cloudCredits" = "剩余额度";
 "sidebar.accountCard.usagePair" = "%@ / %@";
 "sidebar.accountCard.billingAttention" = "付款需要处理";
 "sidebar.accountCard.billingAttentionSubtitle" = "请更新账单信息以继续使用云服务。";
@@ -392,7 +392,7 @@
 "workflow.recording.tooShort" = "说话时间太短，本次转写已取消。";
 "workflow.transcription.emptySkipped" = "由于转写结果为空，已跳过后续处理。";
 "workflow.transcription.noSpeech" = "未检测到清晰语音，本次转写已取消。";
-"workflow.transcription.serverUnavailableNotice" = "服务器和本地语音识别暂时不可用，录音已保存在历史记录中，可稍后重试。";
+"workflow.transcription.serverUnavailableNotice" = "暂时无法连接服务器，录音已保存在历史记录中，可稍后重试。";
 "workflow.result.copyTitle" = "复制结果";
 "workflow.ask.answerTitle" = "随便问";
 "workflow.ask.questionSectionTitle" = "你的问题";
@@ -549,6 +549,7 @@
 "history.llmOutcome.billingFallback" = "计费限制 · 使用原始转写";
 "history.llmOutcome.cancelled" = "已取消";
 "history.llmOutcome.failed" = "失败";
+"history.llmOutcome.requestFailedFallback" = "请求失败 · 已使用原始转写";
 "history.keep.title" = "保留历史";
 "history.keep.subtitle" = "选择 Typeflux 在这台设备上保留本地听写历史的时长。";
 "history.privacy.title" = "你的数据保持私密";
@@ -1289,7 +1290,7 @@
 "auth.account.usageAnswers" = "回复字符";
 "auth.account.refreshUsage" = "刷新用量";
 "auth.account.usageQuota" = "云端额度";
-"auth.account.usageFreeQuota" = "每月免费额度";
+"auth.account.usageFreeQuota" = "剩余免费额度";
 "auth.account.usageQuotaRemaining" = "剩余 %@";
 "auth.account.usageQuotaUnlimited" = "不限额度";
 "auth.account.usageQuotaUsedOfLimit" = "已用 %@ / %@（%@）";
@@ -1327,10 +1328,10 @@
 "auth.account.nextRenewal" = "下次续费：%@";
 "auth.account.refreshOverview" = "刷新订阅与用量";
 "auth.account.signedInWith" = "%@ 登录";
-"auth.account.usageQuotaCurrentPeriod" = "本期云端额度";
-"auth.account.usageQuotaUsedPercentage" = "已用 %@";
-"auth.account.usageQuotaUsedPair" = "%@ / %@";
+"auth.account.usageQuotaCurrentPeriod" = "本期剩余额度";
+"auth.account.usageQuotaRemainingPercentage" = "剩余 %@";
+"auth.account.usageQuotaRemainingPair" = "%@ / %@";
 "auth.account.usageQuotaExplanationTitle" = "额度说明";
-"auth.account.usageQuotaExplanation" = "云端额度显示本期已用量和总额度，进度条表示已用比例。下方各项使用数据有独立单位，不等同于额度数值。";
+"auth.account.usageQuotaExplanation" = "云端额度显示本期剩余额度与总额度，进度条表示剩余比例。";
 "cloudDataSync.accountDescription" = "仅同步自定义词库与人设到此账号的其他设备。";
 "cloudDataSync.manageData" = "云端数据管理";
