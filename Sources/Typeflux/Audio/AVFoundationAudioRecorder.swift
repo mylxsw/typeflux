@@ -1,3 +1,4 @@
+import AppKit
 import AVFoundation
 import AudioToolbox
 import Foundation
@@ -5,11 +6,14 @@ import TypefluxAudioSafety
 
 final class AVFoundationAudioRecorder: AudioRecorder {
     static let inputTapBufferSize: AVAudioFrameCount = 512
+    static let instantVoiceInputPreRollDuration: TimeInterval = 0.5
     private static let outputMuteDelayWithStartCue: Duration = .milliseconds(1225)
     private static let outputMuteDelayWithoutStartCue: Duration = .milliseconds(180)
     private static let silentInputRecoveryDelay: DispatchTimeInterval = .seconds(1)
     private static let silentInputRecoveryPeakPowerThreshold: Float = -58
     private static let audioStartupTimeout: DispatchTimeInterval = .seconds(5)
+    private static let instantCaptureArmingTimeout: DispatchTimeInterval = .seconds(2)
+    private static let preparedInputBuildWaitTimeout: DispatchTimeInterval = .seconds(4)
     private static let configurationRecoveryDelay: DispatchTimeInterval = .milliseconds(200)
     private static let configurationRecoveryContinuationDelay: DispatchTimeInterval = .seconds(1)
     private static let configurationRecoveryRetryDelay: TimeInterval = 0.25
@@ -40,6 +44,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private let inputPreparationQueue = DispatchQueue(label: "typeflux.audio.input-preparation", qos: .userInitiated)
     private let lifecycleLock = NSLock()
     private let preparedInputLock = NSLock()
+    private let preparedInputBuildGroup = DispatchGroup()
     private let stateCondition = NSCondition()
     private var audioFile: AVAudioFile?
     private var recordingBufferConverter: AudioRecordingBufferConverter?
@@ -63,8 +68,13 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private var preparedInputEngine: PreparedInputEngine?
     private var preparedInputGeneration: UInt64 = 0
     private var preparedInputBuildIsPending = false
+    private var preparedInputBuildNeedsRetry = false
+    private var preparedInputIsSuspended = false
     private var preparedMicrophoneObserver: NSObjectProtocol?
+    private var instantVoiceInputObserver: NSObjectProtocol?
+    private var preparedEngineConfigurationObserver: NSObjectProtocol?
     private var preparedDefaultInputDeviceChangeObservation: AudioInputDeviceChangeObservation?
+    private var workspaceObservers: [NSObjectProtocol] = []
 
     init(
         settingsStore: SettingsStore,
@@ -81,13 +91,13 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         self.makeAudioEngine = makeAudioEngine
         engine = makeAudioEngine()
         self.sleep = sleep
-        observePreparedInputInvalidation()
+        observePreparedInputLifecycle()
         schedulePreparedInputEngineBuild()
     }
 
     deinit {
         removeInputChangeObservers()
-        removePreparedInputInvalidationObservers()
+        removePreparedInputLifecycleObservers()
         discardPreparedInputEngine()
         inputHealthCheckWorkItem?.cancel()
     }
@@ -213,7 +223,11 @@ final class AVFoundationAudioRecorder: AudioRecorder {
 
         writeCoordinator.drain()
 
-        let duration = Date().timeIntervalSince(currentStartedAt ?? Date())
+        let wallClockDuration = Date().timeIntervalSince(currentStartedAt ?? Date())
+        let writtenAudioDuration = currentAudioFile.processingFormat.sampleRate > 0
+            ? Double(currentAudioFile.length) / currentAudioFile.processingFormat.sampleRate
+            : 0
+        let duration = max(wallClockDuration, writtenAudioDuration)
         let fileURL = currentAudioFile.url
 
         stateCondition.lock()
@@ -299,21 +313,27 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         let sessionEngine = preparedInput.engine
         let inputFormat = preparedInput.inputFormat
         let startupBufferRelay = preparedInput.startupBufferRelay
+        let usesInstantPreRoll = preparedInput.includesInstantPreRoll && sessionEngine.isRunning
+
+        if preparedInput.includesInstantPreRoll, !usesInstantPreRoll {
+            startupBufferRelay.discardBufferedAudio()
+        }
 
         guard !startupAttempt.isCancelled else {
             disposePreparedInputEngine(preparedInput)
             throw RecorderError.inputStartupTimedOut
         }
 
-        let audioEngineStartedAt: Date
-        do {
-            try sessionEngine.start()
-            audioEngineStartedAt = Date()
-            RecordingStartupLatencyTrace.shared.mark("audio.engine_start_return")
-        } catch {
-            disposePreparedInputEngine(preparedInput)
-            throw error
+        let audioEngineStartedAt = Date()
+        if !sessionEngine.isRunning {
+            do {
+                try sessionEngine.start()
+            } catch {
+                disposePreparedInputEngine(preparedInput)
+                throw error
+            }
         }
+        RecordingStartupLatencyTrace.shared.mark("audio.engine_start_return")
 
         guard isPreparedInputEngineCurrent(preparedInput.signature) else {
             NetworkDebugLogger.logMessage(
@@ -371,11 +391,16 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             inputGenerationID: inputGenerationID,
             startupBufferRelay: startupBufferRelay,
             audioEngineStartedAt: audioEngineStartedAt,
-            firstAudioBufferAt: startupBufferRelay.firstBufferReceivedAt
+            firstAudioBufferAt: usesInstantPreRoll
+                ? audioEngineStartedAt
+                : startupBufferRelay.firstBufferReceivedAt
         )
     }
 
     private func takePreparedInputEngineOrBuild() throws -> PreparedInputEngine {
+        guard waitForPendingPreparedInputBuild() else {
+            throw RecorderError.inputStartupTimedOut
+        }
         let currentSignature = try currentPreparedInputSignature()
         var cachedInput: PreparedInputEngine?
         var staleInput: PreparedInputEngine?
@@ -404,7 +429,10 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         return try buildPreparedInputEngine(signature: currentSignature)
     }
 
-    private func buildPreparedInputEngine(signature: PreparedInputEngineSignature) throws -> PreparedInputEngine {
+    private func buildPreparedInputEngine(
+        signature: PreparedInputEngineSignature,
+        includesInstantPreRoll: Bool = false
+    ) throws -> PreparedInputEngine {
         var preparedEngine = makeAudioEngine()
         let inputNodeAndFormat: (AVAudioInputNode, AVAudioFormat)
         do {
@@ -420,7 +448,9 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         }
 
         let inputNode = inputNodeAndFormat.0
-        let startupBufferRelay = RecordingStartupAudioBufferRelay()
+        let startupBufferRelay = RecordingStartupAudioBufferRelay(
+            maximumBufferedDuration: includesInstantPreRoll ? Self.instantVoiceInputPreRollDuration : nil
+        )
         inputNode.removeTap(onBus: 0)
         do {
             try installInputTap(on: inputNode) { [startupBufferRelay] buffer, _ in
@@ -437,17 +467,22 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             engine: preparedEngine,
             inputFormat: inputNodeAndFormat.1,
             startupBufferRelay: startupBufferRelay,
-            signature: signature
+            signature: signature,
+            includesInstantPreRoll: includesInstantPreRoll
         )
     }
 
     private func schedulePreparedInputEngineBuild() {
         preparedInputLock.lock()
-        guard preparedInputEngine == nil, !preparedInputBuildIsPending else {
+        guard preparedInputEngine == nil,
+              !preparedInputBuildIsPending,
+              !preparedInputIsSuspended
+        else {
             preparedInputLock.unlock()
             return
         }
         preparedInputBuildIsPending = true
+        preparedInputBuildGroup.enter()
         preparedInputLock.unlock()
 
         inputPreparationQueue.async { [weak self] in
@@ -459,21 +494,49 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         defer {
             preparedInputLock.lock()
             preparedInputBuildIsPending = false
+            let shouldRetry = preparedInputBuildNeedsRetry && !preparedInputIsSuspended
+            preparedInputBuildNeedsRetry = false
             preparedInputLock.unlock()
+            if shouldRetry {
+                schedulePreparedInputEngineBuild()
+            }
+            preparedInputBuildGroup.leave()
         }
         guard !currentRecordingState() else { return }
 
         do {
             let signature = try currentPreparedInputSignature()
-            let preparedInput = try buildPreparedInputEngine(signature: signature)
+            let instantVoiceInputEnabled = settingsStore.instantVoiceInputEnabled
+            let preparedInput = try buildPreparedInputEngine(
+                signature: signature,
+                includesInstantPreRoll: instantVoiceInputEnabled
+            )
+            if instantVoiceInputEnabled {
+                do {
+                    try preparedInput.engine.start()
+                } catch {
+                    disposePreparedInputEngine(preparedInput)
+                    throw error
+                }
+                guard preparedInput.startupBufferRelay.waitForFirstBuffer(
+                    timeout: Self.instantCaptureArmingTimeout
+                ) else {
+                    disposePreparedInputEngine(preparedInput)
+                    throw RecorderError.inputStartupTimedOut
+                }
+            }
             preparedInputLock.lock()
-            let canStore = preparedInputEngine == nil && preparedInputGeneration == signature.generation
+            let canStore = preparedInputEngine == nil
+                && preparedInputGeneration == signature.generation
+                && !preparedInputIsSuspended
+                && settingsStore.instantVoiceInputEnabled == instantVoiceInputEnabled
             if canStore {
                 preparedInputEngine = preparedInput
             }
             preparedInputLock.unlock()
             if canStore {
-                NetworkDebugLogger.logMessage("[Audio Recorder] Prepared microphone input for the next recording.")
+                let mode = instantVoiceInputEnabled ? "armed with in-memory pre-roll" : "prepared"
+                NetworkDebugLogger.logMessage("[Audio Recorder] Microphone input is \(mode) for the next recording.")
             } else {
                 disposePreparedInputEngine(preparedInput)
             }
@@ -482,6 +545,16 @@ final class AVFoundationAudioRecorder: AudioRecorder {
                 "[Audio Recorder] Microphone input preconfiguration unavailable; next recording will use cold start."
             )
         }
+    }
+
+    private func waitForPendingPreparedInputBuild() -> Bool {
+        preparedInputLock.lock()
+        let buildIsPending = preparedInputBuildIsPending
+        preparedInputLock.unlock()
+        guard buildIsPending else { return true }
+        return preparedInputBuildGroup.wait(
+            timeout: .now() + Self.preparedInputBuildWaitTimeout
+        ) == .success
     }
 
     private func currentPreparedInputSignature() throws -> PreparedInputEngineSignature {
@@ -501,7 +574,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         return Self.canReusePreparedInputEngine(prepared: signature, current: currentSignature)
     }
 
-    private func observePreparedInputInvalidation() {
+    private func observePreparedInputLifecycle() {
         preparedMicrophoneObserver = NotificationCenter.default.addObserver(
             forName: .preferredMicrophoneDidChange,
             object: settingsStore,
@@ -518,15 +591,70 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             else { return }
             invalidatePreparedInputEngine(reason: "default input device changed")
         }
+        instantVoiceInputObserver = NotificationCenter.default.addObserver(
+            forName: .instantVoiceInputDidChange,
+            object: settingsStore,
+            queue: nil
+        ) { [weak self] _ in
+            self?.invalidatePreparedInputEngine(reason: "instant voice input setting changed")
+        }
+        preparedEngineConfigurationObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: nil,
+            queue: nil
+        ) { [weak self] notification in
+            guard let self,
+                  let changedEngine = notification.object as? AVAudioEngine,
+                  preparedInputEngineMatches(changedEngine)
+            else { return }
+            inputPreparationQueue.async { [weak self] in
+                self?.invalidatePreparedInputEngine(reason: "prepared engine configuration changed")
+            }
+        }
+
+        let workspaceCenter = NSWorkspace.shared.notificationCenter
+        workspaceObservers = [
+            workspaceCenter.addObserver(
+                forName: NSWorkspace.willSleepNotification,
+                object: nil,
+                queue: nil
+            ) { [weak self] _ in self?.suspendPreparedInputEngine(reason: "system sleeping") },
+            workspaceCenter.addObserver(
+                forName: NSWorkspace.sessionDidResignActiveNotification,
+                object: nil,
+                queue: nil
+            ) { [weak self] _ in self?.suspendPreparedInputEngine(reason: "session locked") },
+            workspaceCenter.addObserver(
+                forName: NSWorkspace.didWakeNotification,
+                object: nil,
+                queue: nil
+            ) { [weak self] _ in self?.resumePreparedInputEngine(reason: "system woke") },
+            workspaceCenter.addObserver(
+                forName: NSWorkspace.sessionDidBecomeActiveNotification,
+                object: nil,
+                queue: nil
+            ) { [weak self] _ in self?.resumePreparedInputEngine(reason: "session unlocked") }
+        ]
     }
 
-    private func removePreparedInputInvalidationObservers() {
+    private func removePreparedInputLifecycleObservers() {
         if let preparedMicrophoneObserver {
             NotificationCenter.default.removeObserver(preparedMicrophoneObserver)
             self.preparedMicrophoneObserver = nil
         }
         preparedDefaultInputDeviceChangeObservation?.cancel()
         preparedDefaultInputDeviceChangeObservation = nil
+        if let instantVoiceInputObserver {
+            NotificationCenter.default.removeObserver(instantVoiceInputObserver)
+            self.instantVoiceInputObserver = nil
+        }
+        if let preparedEngineConfigurationObserver {
+            NotificationCenter.default.removeObserver(preparedEngineConfigurationObserver)
+            self.preparedEngineConfigurationObserver = nil
+        }
+        let workspaceCenter = NSWorkspace.shared.notificationCenter
+        workspaceObservers.forEach(workspaceCenter.removeObserver)
+        workspaceObservers.removeAll()
     }
 
     private func invalidatePreparedInputEngine(reason: String) {
@@ -534,11 +662,53 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         preparedInputGeneration &+= 1
         let staleInput = preparedInputEngine
         preparedInputEngine = nil
+        if preparedInputBuildIsPending {
+            preparedInputBuildNeedsRetry = true
+        }
         preparedInputLock.unlock()
         if let staleInput {
             disposePreparedInputEngine(staleInput)
         }
         NetworkDebugLogger.logMessage("[Audio Recorder] Invalidated prepared input: \(reason).")
+        schedulePreparedInputEngineBuild()
+    }
+
+    private func preparedInputEngineMatches(_ changedEngine: AVAudioEngine) -> Bool {
+        preparedInputLock.lock()
+        defer { preparedInputLock.unlock() }
+        return preparedInputEngine?.engine === changedEngine
+    }
+
+    private func suspendPreparedInputEngine(reason: String) {
+        preparedInputLock.lock()
+        guard !preparedInputIsSuspended else {
+            preparedInputLock.unlock()
+            return
+        }
+        preparedInputIsSuspended = true
+        preparedInputGeneration &+= 1
+        let staleInput = preparedInputEngine
+        preparedInputEngine = nil
+        preparedInputLock.unlock()
+        if let staleInput {
+            disposePreparedInputEngine(staleInput)
+        }
+        NetworkDebugLogger.logMessage("[Audio Recorder] Suspended prepared input: \(reason).")
+    }
+
+    private func resumePreparedInputEngine(reason: String) {
+        preparedInputLock.lock()
+        guard preparedInputIsSuspended else {
+            preparedInputLock.unlock()
+            return
+        }
+        preparedInputIsSuspended = false
+        preparedInputGeneration &+= 1
+        if preparedInputBuildIsPending {
+            preparedInputBuildNeedsRetry = true
+        }
+        preparedInputLock.unlock()
+        NetworkDebugLogger.logMessage("[Audio Recorder] Resuming prepared input: \(reason).")
         schedulePreparedInputEngineBuild()
     }
 
@@ -902,6 +1072,20 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             defer { preparedInputLock.unlock() }
             return preparedInputGeneration
         }
+
+        var preparedInputIsSuspendedForTesting: Bool {
+            preparedInputLock.lock()
+            defer { preparedInputLock.unlock() }
+            return preparedInputIsSuspended
+        }
+
+        func suspendPreparedInputForTesting() {
+            suspendPreparedInputEngine(reason: "test")
+        }
+
+        func resumePreparedInputForTesting() {
+            resumePreparedInputEngine(reason: "test")
+        }
     #endif
 
     private func resolveInputDeviceID() -> AudioDeviceID? {
@@ -1196,6 +1380,7 @@ private struct PreparedInputEngine {
     let inputFormat: AVAudioFormat
     let startupBufferRelay: RecordingStartupAudioBufferRelay
     let signature: PreparedInputEngineSignature
+    let includesInstantPreRoll: Bool
 }
 
 /// Preserves tap buffers emitted after AVAudioEngine starts but before the
@@ -1203,10 +1388,17 @@ private struct PreparedInputEngine {
 /// and then forwards subsequent buffers directly.
 final class RecordingStartupAudioBufferRelay: @unchecked Sendable {
     private let lock = NSLock()
+    private let firstBufferSemaphore = DispatchSemaphore(value: 0)
+    private let maximumBufferedDuration: TimeInterval?
     private var pendingBuffers: [AVAudioPCMBuffer] = []
+    private var pendingDuration: TimeInterval = 0
     private var handler: ((AVAudioPCMBuffer) -> Void)?
     private var isCancelled = false
     private var firstReceivedAt: Date?
+
+    init(maximumBufferedDuration: TimeInterval? = nil) {
+        self.maximumBufferedDuration = maximumBufferedDuration
+    }
 
     var firstBufferReceivedAt: Date? {
         lock.lock()
@@ -1220,6 +1412,7 @@ final class RecordingStartupAudioBufferRelay: @unchecked Sendable {
         guard !isCancelled else { return }
         if firstReceivedAt == nil {
             firstReceivedAt = receivedAt
+            firstBufferSemaphore.signal()
         }
         if let handler {
             // Once active, stay on the audio tap's zero-copy path. Copies are
@@ -1229,6 +1422,8 @@ final class RecordingStartupAudioBufferRelay: @unchecked Sendable {
         }
         guard let copiedBuffer = Self.copy(buffer) else { return }
         pendingBuffers.append(copiedBuffer)
+        pendingDuration += Self.duration(of: copiedBuffer)
+        trimBufferedAudioIfNeeded()
     }
 
     func activate(_ handler: @escaping (AVAudioPCMBuffer) -> Void) {
@@ -1237,15 +1432,52 @@ final class RecordingStartupAudioBufferRelay: @unchecked Sendable {
         guard !isCancelled, self.handler == nil else { return }
         pendingBuffers.forEach(handler)
         pendingBuffers.removeAll(keepingCapacity: false)
+        pendingDuration = 0
         self.handler = handler
+    }
+
+    func waitForFirstBuffer(timeout: DispatchTimeInterval) -> Bool {
+        lock.lock()
+        let hasReceivedBuffer = firstReceivedAt != nil
+        lock.unlock()
+        return hasReceivedBuffer || firstBufferSemaphore.wait(timeout: .now() + timeout) == .success
     }
 
     func cancel() {
         lock.lock()
         isCancelled = true
         pendingBuffers.removeAll(keepingCapacity: false)
+        pendingDuration = 0
         handler = nil
         lock.unlock()
+    }
+
+    func discardBufferedAudio() {
+        lock.lock()
+        pendingBuffers.removeAll(keepingCapacity: false)
+        pendingDuration = 0
+        firstReceivedAt = nil
+        lock.unlock()
+    }
+
+    #if DEBUG
+        var bufferedFrameCountForTesting: AVAudioFrameCount {
+            lock.lock()
+            defer { lock.unlock() }
+            return pendingBuffers.reduce(0) { $0 + $1.frameLength }
+        }
+    #endif
+
+    private func trimBufferedAudioIfNeeded() {
+        guard let maximumBufferedDuration else { return }
+        while pendingDuration > maximumBufferedDuration, pendingBuffers.count > 1 {
+            pendingDuration -= Self.duration(of: pendingBuffers.removeFirst())
+        }
+    }
+
+    private static func duration(of buffer: AVAudioPCMBuffer) -> TimeInterval {
+        guard buffer.format.sampleRate > 0 else { return 0 }
+        return TimeInterval(buffer.frameLength) / buffer.format.sampleRate
     }
 
     private static func copy(_ buffer: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {

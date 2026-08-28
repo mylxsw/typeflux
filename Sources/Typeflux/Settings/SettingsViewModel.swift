@@ -104,6 +104,7 @@ final class StudioViewModel: ObservableObject {
     @Published var appLanguage: AppLanguage
     @Published var availableMicrophones: [AudioInputDevice] = []
     @Published var preferredMicrophoneID: String
+    @Published var instantVoiceInputEnabled: Bool
     @Published var muteSystemOutputDuringRecording: Bool
     @Published var soundEffectsEnabled: Bool
     @Published var preferredAPIServer = CloudServerPreferences.automaticValue
@@ -330,6 +331,7 @@ final class StudioViewModel: ObservableObject {
         overlayStyle = settingsStore.overlayStyle
         appLanguage = settingsStore.appLanguage
         preferredMicrophoneID = settingsStore.preferredMicrophoneID
+        instantVoiceInputEnabled = settingsStore.instantVoiceInputEnabled
         muteSystemOutputDuringRecording = settingsStore.muteSystemOutputDuringRecording
         soundEffectsEnabled = settingsStore.soundEffectsEnabled
         preferredAPIServer = CloudServerPreferences.shared.preferredAPIServer
@@ -1095,6 +1097,11 @@ final class StudioViewModel: ObservableObject {
     func setMuteSystemOutputDuringRecording(_ value: Bool) {
         muteSystemOutputDuringRecording = value
         settingsStore.muteSystemOutputDuringRecording = value
+    }
+
+    func setInstantVoiceInputEnabled(_ value: Bool) {
+        instantVoiceInputEnabled = value
+        settingsStore.instantVoiceInputEnabled = value
     }
 
     func setSoundEffectsEnabled(_ value: Bool) {
