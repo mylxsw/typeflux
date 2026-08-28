@@ -7,6 +7,7 @@ import TypefluxAudioSafety
 final class AVFoundationAudioRecorder: AudioRecorder {
     static let inputTapBufferSize: AVAudioFrameCount = 512
     static let instantVoiceInputPreRollDuration: TimeInterval = 0.5
+    static let instantVoiceInputIdleTimeout: TimeInterval = 15 * 60
     private static let outputMuteDelayWithStartCue: Duration = .milliseconds(1225)
     private static let outputMuteDelayWithoutStartCue: Duration = .milliseconds(180)
     private static let silentInputRecoveryDelay: DispatchTimeInterval = .seconds(1)
@@ -39,6 +40,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private let audioDeviceManager: AudioDeviceManaging
     private let outputMuter: SystemAudioOutputMuting
     private let sleep: @Sendable (Duration) async -> Void
+    private let configuredInstantVoiceInputIdleTimeout: TimeInterval
     private let writeCoordinator = AudioBufferWriteCoordinator()
     private let configurationRecoveryQueue = DispatchQueue(label: "typeflux.audio.configuration-recovery")
     private let inputPreparationQueue = DispatchQueue(label: "typeflux.audio.input-preparation", qos: .userInitiated)
@@ -72,6 +74,9 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private var preparedInputIsSuspended = false
     private var preparedMicrophoneObserver: NSObjectProtocol?
     private var instantVoiceInputObserver: NSObjectProtocol?
+    private var instantVoiceInputWarmWindowIsActive = false
+    private var instantVoiceInputWarmWindowGeneration: UInt64 = 0
+    private var instantVoiceInputIdleReleaseWorkItem: DispatchWorkItem?
     private var preparedEngineConfigurationObserver: NSObjectProtocol?
     private var preparedDefaultInputDeviceChangeObservation: AudioInputDeviceChangeObservation?
     private var workspaceObservers: [NSObjectProtocol] = []
@@ -81,6 +86,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         audioDeviceManager: AudioDeviceManaging = AudioDeviceManager(),
         outputMuter: SystemAudioOutputMuting = SystemAudioOutputMuter(),
         makeAudioEngine: @escaping () -> AVAudioEngine = { AVAudioEngine() },
+        instantVoiceInputIdleTimeout: TimeInterval = AVFoundationAudioRecorder.instantVoiceInputIdleTimeout,
         sleep: @escaping @Sendable (Duration) async -> Void = { duration in
             try? await Task.sleep(for: duration)
         }
@@ -90,12 +96,14 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         self.outputMuter = outputMuter
         self.makeAudioEngine = makeAudioEngine
         engine = makeAudioEngine()
+        configuredInstantVoiceInputIdleTimeout = instantVoiceInputIdleTimeout
         self.sleep = sleep
         observePreparedInputLifecycle()
         schedulePreparedInputEngineBuild()
     }
 
     deinit {
+        cancelInstantVoiceInputIdleRelease()
         removeInputChangeObservers()
         removePreparedInputLifecycleObservers()
         discardPreparedInputEngine()
@@ -246,7 +254,11 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         muteTask?.cancel()
         muteTask = nil
         outputMuter.endMutedSession()
-        schedulePreparedInputEngineBuild()
+        if settingsStore.instantVoiceInputEnabled {
+            beginInstantVoiceInputWarmWindow()
+        } else {
+            schedulePreparedInputEngineBuild()
+        }
 
         return AudioFile(fileURL: fileURL, duration: duration, startupTiming: startupTiming)
     }
@@ -401,6 +413,17 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         guard waitForPendingPreparedInputBuild() else {
             throw RecorderError.inputStartupTimedOut
         }
+        preparedInputLock.lock()
+        // A recording consumes the current warm window. Cancelling its idle
+        // release here prevents the timeout from invalidating the device
+        // generation while this prepared engine is moving into an active
+        // session. A successful stop opens a fresh full-length window.
+        instantVoiceInputWarmWindowIsActive = false
+        instantVoiceInputWarmWindowGeneration &+= 1
+        instantVoiceInputIdleReleaseWorkItem?.cancel()
+        instantVoiceInputIdleReleaseWorkItem = nil
+        preparedInputLock.unlock()
+
         let currentSignature = try currentPreparedInputSignature()
         var cachedInput: PreparedInputEngine?
         var staleInput: PreparedInputEngine?
@@ -506,7 +529,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
 
         do {
             let signature = try currentPreparedInputSignature()
-            let instantVoiceInputEnabled = settingsStore.instantVoiceInputEnabled
+            let instantVoiceInputEnabled = shouldArmInstantVoiceInput()
             let preparedInput = try buildPreparedInputEngine(
                 signature: signature,
                 includesInstantPreRoll: instantVoiceInputEnabled
@@ -526,10 +549,12 @@ final class AVFoundationAudioRecorder: AudioRecorder {
                 }
             }
             preparedInputLock.lock()
+            let shouldArmNow = settingsStore.instantVoiceInputEnabled
+                && instantVoiceInputWarmWindowIsActive
             let canStore = preparedInputEngine == nil
                 && preparedInputGeneration == signature.generation
                 && !preparedInputIsSuspended
-                && settingsStore.instantVoiceInputEnabled == instantVoiceInputEnabled
+                && shouldArmNow == instantVoiceInputEnabled
             if canStore {
                 preparedInputEngine = preparedInput
             }
@@ -596,6 +621,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             object: settingsStore,
             queue: nil
         ) { [weak self] _ in
+            self?.cancelInstantVoiceInputWarmWindowIfDisabled()
             self?.invalidatePreparedInputEngine(reason: "instant voice input setting changed")
         }
         preparedEngineConfigurationObserver = NotificationCenter.default.addObserver(
@@ -680,6 +706,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     }
 
     private func suspendPreparedInputEngine(reason: String) {
+        cancelInstantVoiceInputIdleRelease()
         preparedInputLock.lock()
         guard !preparedInputIsSuspended else {
             preparedInputLock.unlock()
@@ -720,6 +747,77 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         if let staleInput {
             disposePreparedInputEngine(staleInput)
         }
+    }
+
+    private func shouldArmInstantVoiceInput() -> Bool {
+        preparedInputLock.lock()
+        defer { preparedInputLock.unlock() }
+        return settingsStore.instantVoiceInputEnabled && instantVoiceInputWarmWindowIsActive
+    }
+
+    private func beginInstantVoiceInputWarmWindow() {
+        guard settingsStore.instantVoiceInputEnabled else {
+            schedulePreparedInputEngineBuild()
+            return
+        }
+
+        preparedInputLock.lock()
+        instantVoiceInputWarmWindowIsActive = true
+        instantVoiceInputWarmWindowGeneration &+= 1
+        let generation = instantVoiceInputWarmWindowGeneration
+        instantVoiceInputIdleReleaseWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.expireInstantVoiceInputWarmWindow(generation: generation)
+        }
+        instantVoiceInputIdleReleaseWorkItem = workItem
+        preparedInputLock.unlock()
+
+        inputPreparationQueue.asyncAfter(
+            deadline: .now() + configuredInstantVoiceInputIdleTimeout,
+            execute: workItem
+        )
+        schedulePreparedInputEngineBuild()
+    }
+
+    private func cancelInstantVoiceInputWarmWindowIfDisabled() {
+        guard !settingsStore.instantVoiceInputEnabled else { return }
+        cancelInstantVoiceInputIdleRelease()
+    }
+
+    private func cancelInstantVoiceInputIdleRelease() {
+        preparedInputLock.lock()
+        instantVoiceInputWarmWindowGeneration &+= 1
+        instantVoiceInputWarmWindowIsActive = false
+        instantVoiceInputIdleReleaseWorkItem?.cancel()
+        instantVoiceInputIdleReleaseWorkItem = nil
+        preparedInputLock.unlock()
+    }
+
+    private func expireInstantVoiceInputWarmWindow(generation: UInt64) {
+        preparedInputLock.lock()
+        guard instantVoiceInputWarmWindowGeneration == generation,
+              instantVoiceInputWarmWindowIsActive
+        else {
+            preparedInputLock.unlock()
+            return
+        }
+        instantVoiceInputWarmWindowIsActive = false
+        instantVoiceInputIdleReleaseWorkItem = nil
+        preparedInputGeneration &+= 1
+        let staleInput = preparedInputEngine
+        preparedInputEngine = nil
+        if preparedInputBuildIsPending {
+            preparedInputBuildNeedsRetry = true
+        }
+        preparedInputLock.unlock()
+
+        if let staleInput {
+            disposePreparedInputEngine(staleInput)
+        }
+        NetworkDebugLogger.logMessage(
+            "[Audio Recorder] Released instant voice input after the idle timeout."
+        )
+        schedulePreparedInputEngineBuild()
     }
 
     private func disposePreparedInputEngine(_ preparedInput: PreparedInputEngine) {
@@ -1077,6 +1175,16 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             preparedInputLock.lock()
             defer { preparedInputLock.unlock() }
             return preparedInputIsSuspended
+        }
+
+        var instantVoiceInputWarmWindowIsActiveForTesting: Bool {
+            preparedInputLock.lock()
+            defer { preparedInputLock.unlock() }
+            return instantVoiceInputWarmWindowIsActive
+        }
+
+        func beginInstantVoiceInputWarmWindowForTesting() {
+            beginInstantVoiceInputWarmWindow()
         }
 
         func suspendPreparedInputForTesting() {

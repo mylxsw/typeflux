@@ -2321,7 +2321,8 @@ struct StudioView: View {
 
                     StudioSettingRow(
                         title: L("settings.instantVoiceInput.title"),
-                        subtitle: L("settings.instantVoiceInput.subtitle")
+                        subtitle: L("settings.instantVoiceInput.subtitle"),
+                        badge: "Beta"
                     ) {
                         Toggle(
                             "",
