@@ -255,6 +255,64 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         XCTAssertEqual(AVFoundationAudioRecorder.instantVoiceInputPreRollDuration, 0.5)
     }
 
+    func testInstantVoiceInputUsesFifteenMinuteIdleWindow() {
+        XCTAssertEqual(AVFoundationAudioRecorder.instantVoiceInputIdleTimeout, 15 * 60)
+    }
+
+    func testInstantVoiceInputWarmWindowExpiresAfterIdleTimeout() throws {
+        let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.instantVoiceInputEnabled = true
+        let recorder = AVFoundationAudioRecorder(
+            settingsStore: settingsStore,
+            audioDeviceManager: MockAudioDeviceManager(defaultInputDeviceID: nil),
+            instantVoiceInputIdleTimeout: 0.05
+        )
+
+        recorder.beginInstantVoiceInputWarmWindowForTesting()
+
+        XCTAssertTrue(recorder.instantVoiceInputWarmWindowIsActiveForTesting)
+        let released = expectation(description: "Instant voice input is released after being idle")
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.15) {
+            XCTAssertFalse(recorder.instantVoiceInputWarmWindowIsActiveForTesting)
+            released.fulfill()
+        }
+        wait(for: [released], timeout: 1)
+    }
+
+    func testInstantVoiceInputStartsColdUntilARecordingCompletes() throws {
+        let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.instantVoiceInputEnabled = true
+        let recorder = AVFoundationAudioRecorder(
+            settingsStore: settingsStore,
+            audioDeviceManager: MockAudioDeviceManager(defaultInputDeviceID: nil)
+        )
+
+        XCTAssertFalse(recorder.instantVoiceInputWarmWindowIsActiveForTesting)
+    }
+
+    func testDisablingInstantVoiceInputCancelsActiveWarmWindow() throws {
+        let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.instantVoiceInputEnabled = true
+        let recorder = AVFoundationAudioRecorder(
+            settingsStore: settingsStore,
+            audioDeviceManager: MockAudioDeviceManager(defaultInputDeviceID: nil)
+        )
+        recorder.beginInstantVoiceInputWarmWindowForTesting()
+
+        settingsStore.instantVoiceInputEnabled = false
+
+        XCTAssertFalse(recorder.instantVoiceInputWarmWindowIsActiveForTesting)
+    }
+
     func testPreparedInputSuspendsAndRebuildsAcrossSleepLifecycle() throws {
         let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))

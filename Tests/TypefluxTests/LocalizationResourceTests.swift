@@ -45,11 +45,19 @@ final class LocalizationResourceTests: XCTestCase {
         }
 
         let chineseBundle = try localizationBundle(for: .simplifiedChinese)
+        let chineseTitle = chineseBundle.localizedString(
+            forKey: "settings.instantVoiceInput.title",
+            value: nil,
+            table: nil
+        )
         let chineseDetail = chineseBundle.localizedString(
             forKey: "settings.instantVoiceInput.subtitle",
             value: nil,
             table: nil
         )
+        XCTAssertEqual(chineseTitle, "按键即说")
+        XCTAssertTrue(chineseDetail.contains("15 分钟"))
+        XCTAssertTrue(chineseDetail.contains("自动释放"))
         XCTAssertTrue(chineseDetail.contains("麦克风正在使用"))
         XCTAssertTrue(chineseDetail.contains("内存"))
     }
