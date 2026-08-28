@@ -49,6 +49,129 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         XCTAssertEqual(deliveryCount, 0)
     }
 
+    func testRecordingStartupBufferRelayPreservesFirstBufferArrivalTime() throws {
+        let format = try XCTUnwrap(AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 16000,
+            channels: 1,
+            interleaved: false
+        ))
+        let buffer = try makeTestBuffer(format: format, frameLength: 160)
+        let receivedAt = Date(timeIntervalSince1970: 1234)
+        let relay = RecordingStartupAudioBufferRelay()
+
+        relay.append(buffer, receivedAt: receivedAt)
+        relay.append(buffer, receivedAt: receivedAt.addingTimeInterval(1))
+
+        XCTAssertEqual(relay.firstBufferReceivedAt, receivedAt)
+    }
+
+    func testInputTapUsesLowLatencyBufferSize() {
+        XCTAssertEqual(AVFoundationAudioRecorder.inputTapBufferSize, 512)
+    }
+
+    func testPreparedInputFastPathAcceptsUnchangedMicrophoneGeneration() {
+        let signature = PreparedInputEngineSignature(
+            deviceID: 7,
+            preferredMicrophoneID: AudioDeviceManager.automaticDeviceID,
+            generation: 3
+        )
+
+        XCTAssertTrue(AVFoundationAudioRecorder.canReusePreparedInputEngine(
+            prepared: signature,
+            current: signature
+        ))
+    }
+
+    func testPreparedInputFastPathRejectsDefaultBluetoothDeviceSwitch() {
+        let prepared = PreparedInputEngineSignature(
+            deviceID: 7,
+            preferredMicrophoneID: AudioDeviceManager.automaticDeviceID,
+            generation: 3
+        )
+        let bluetoothInput = PreparedInputEngineSignature(
+            deviceID: 42,
+            preferredMicrophoneID: AudioDeviceManager.automaticDeviceID,
+            generation: 4
+        )
+
+        XCTAssertFalse(AVFoundationAudioRecorder.canReusePreparedInputEngine(
+            prepared: prepared,
+            current: bluetoothInput
+        ))
+    }
+
+    func testPreparedInputFastPathRejectsPreferredMicrophoneSwitch() {
+        let prepared = PreparedInputEngineSignature(
+            deviceID: 7,
+            preferredMicrophoneID: "built-in",
+            generation: 3
+        )
+        let bluetoothInput = PreparedInputEngineSignature(
+            deviceID: 42,
+            preferredMicrophoneID: "bluetooth-headset",
+            generation: 4
+        )
+
+        XCTAssertFalse(AVFoundationAudioRecorder.canReusePreparedInputEngine(
+            prepared: prepared,
+            current: bluetoothInput
+        ))
+    }
+
+    func testPreparedInputFastPathRejectsConfigurationGenerationChangeOnSameDevice() {
+        let prepared = PreparedInputEngineSignature(
+            deviceID: 42,
+            preferredMicrophoneID: "bluetooth-headset",
+            generation: 3
+        )
+        let reconfiguredInput = PreparedInputEngineSignature(
+            deviceID: 42,
+            preferredMicrophoneID: "bluetooth-headset",
+            generation: 4
+        )
+
+        XCTAssertFalse(AVFoundationAudioRecorder.canReusePreparedInputEngine(
+            prepared: prepared,
+            current: reconfiguredInput
+        ))
+    }
+
+    func testAutomaticDefaultInputChangeInvalidatesPreparedInputGeneration() throws {
+        let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let audioDeviceManager = MockAudioDeviceManager(defaultInputDeviceID: 7)
+        let recorder = AVFoundationAudioRecorder(
+            settingsStore: SettingsStore(defaults: defaults),
+            audioDeviceManager: audioDeviceManager
+        )
+        let initialGeneration = recorder.preparedInputGenerationForTesting
+
+        audioDeviceManager.simulateDefaultInputDeviceChange()
+
+        XCTAssertEqual(recorder.preparedInputGenerationForTesting, initialGeneration + 1)
+    }
+
+    func testPreferredMicrophoneChangeInvalidatesPreparedInputGeneration() throws {
+        let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let settingsStore = SettingsStore(defaults: defaults)
+        let recorder = AVFoundationAudioRecorder(
+            settingsStore: settingsStore,
+            audioDeviceManager: MockAudioDeviceManager(
+                resolvedInputDeviceIDs: ["bluetooth-headset": 42],
+                defaultInputDeviceID: 7
+            )
+        )
+        let initialGeneration = recorder.preparedInputGenerationForTesting
+
+        settingsStore.preferredMicrophoneID = "bluetooth-headset"
+
+        XCTAssertEqual(recorder.preparedInputGenerationForTesting, initialGeneration + 1)
+    }
+
     func testValidateInputFormatAcceptsUsableMicrophoneFormat() throws {
         XCTAssertNoThrow(try AVFoundationAudioRecorder.validateInputFormat(channelCount: 1, sampleRate: 44100))
     }
@@ -528,6 +651,7 @@ private final class MockAudioDeviceManager: AudioDeviceManaging {
     private let devices: [AudioInputDevice]
     private let resolvedInputDeviceIDs: [String: AudioDeviceID]
     private let defaultInputDevice: AudioDeviceID?
+    private var defaultInputDeviceChangeHandler: (@Sendable () -> Void)?
 
     init(
         devices: [AudioInputDevice] = [],
@@ -552,9 +676,14 @@ private final class MockAudioDeviceManager: AudioDeviceManaging {
     }
 
     func observeDefaultInputDeviceChanges(
-        _: @escaping @Sendable () -> Void
+        _ handler: @escaping @Sendable () -> Void
     ) -> AudioInputDeviceChangeObservation? {
-        MockAudioInputDeviceChangeObservation()
+        defaultInputDeviceChangeHandler = handler
+        return MockAudioInputDeviceChangeObservation()
+    }
+
+    func simulateDefaultInputDeviceChange() {
+        defaultInputDeviceChangeHandler?()
     }
 }
 
