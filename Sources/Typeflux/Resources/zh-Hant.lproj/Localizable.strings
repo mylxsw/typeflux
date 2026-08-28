@@ -442,6 +442,10 @@
 "history.detail.error" = "錯誤資訊";
 "history.stats.recordingStoppedAt" = "停止錄音";
 "history.stats.audioFileReadyAt" = "音訊檔就緒";
+"history.stats.hotkeyToFirstAudio" = "使用者按鍵時間";
+"history.stats.hotkeyDispatch" = "按鍵事件排程";
+"history.stats.recordingPreparation" = "錄音準備";
+"history.stats.audioEngineToFirstBuffer" = "裝置首幀等待";
 "history.stats.transcriptionStartedAt" = "開始語音轉寫";
 "history.stats.transcriptionCompletedAt" = "完成語音轉寫";
 "history.stats.llmProcessingStartedAt" = "提交給大語言模型";
@@ -514,6 +518,8 @@
 "history.timeline.slowest" = "耗時最長";
 "history.timeline.keyWaits" = "關鍵等待";
 "history.timeline.audio" = "音訊整理";
+"history.timeline.recordingStartup" = "錄音啟動";
+"history.timeline.recording" = "錄音中";
 "history.timeline.realtime" = "即時語音";
 "history.timeline.transcription" = "辨識確認";
 "history.timeline.llm" = "AI 生成";

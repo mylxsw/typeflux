@@ -140,11 +140,11 @@ final class EventTapHotkeyService: HotkeyService {
     private static let modifierShortcutArbitrationDelay: TimeInterval = 0.22
     private static let duplicateHistoryRequestSuppression: TimeInterval = 0.18
 
-    var onActivationTap: (() -> Void)?
-    var onActivationPressBegan: (() -> Void)?
+    var onActivationTap: ((HotkeyEventContext) -> Void)?
+    var onActivationPressBegan: ((HotkeyEventContext) -> Void)?
     var onActivationPressEnded: (() -> Void)?
     var onActivationCancelled: (() -> Void)?
-    var onAskPressBegan: (() -> Void)?
+    var onAskPressBegan: ((HotkeyEventContext) -> Void)?
     var onAskPressEnded: (() -> Void)?
     var onPersonaPickerRequested: (() -> Void)?
     var onHistoryRequested: (() -> Void)?
@@ -428,14 +428,16 @@ final class EventTapHotkeyService: HotkeyService {
             case .activationTapped:
                 ErrorLogStore.shared.log("Hotkey(NSEvent): activation tap")
                 RecordingStartupLatencyTrace.shared.mark("hotkey.activation_tap")
+                let context = HotkeyEventContext()
                 DispatchQueue.main.async { [weak self] in
-                    self?.onActivationTap?()
+                    self?.onActivationTap?(context)
                 }
             case .begin(.activation):
                 ErrorLogStore.shared.log("Hotkey(NSEvent): activation down")
                 RecordingStartupLatencyTrace.shared.begin("hotkey.activation_begin")
+                let context = HotkeyEventContext()
                 DispatchQueue.main.async { [weak self] in
-                    self?.onActivationPressBegan?()
+                    self?.onActivationPressBegan?(context)
                 }
             case .end(.activation):
                 ErrorLogStore.shared.log("Hotkey(NSEvent): activation up")
@@ -454,8 +456,9 @@ final class EventTapHotkeyService: HotkeyService {
             case .begin(.ask):
                 ErrorLogStore.shared.log("Hotkey(NSEvent): ask down")
                 RecordingStartupLatencyTrace.shared.mark("hotkey.ask_begin")
+                let context = HotkeyEventContext()
                 DispatchQueue.main.async { [weak self] in
-                    self?.onAskPressBegan?()
+                    self?.onAskPressBegan?(context)
                 }
             case .end(.ask):
                 ErrorLogStore.shared.log("Hotkey(NSEvent): ask up")

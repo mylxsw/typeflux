@@ -444,6 +444,10 @@
 "history.detail.error" = "错误信息";
 "history.stats.recordingStoppedAt" = "停止录音";
 "history.stats.audioFileReadyAt" = "音频文件就绪";
+"history.stats.hotkeyToFirstAudio" = "用户按键时间";
+"history.stats.hotkeyDispatch" = "按键事件调度";
+"history.stats.recordingPreparation" = "录音准备";
+"history.stats.audioEngineToFirstBuffer" = "设备首帧等待";
 "history.stats.transcriptionStartedAt" = "开始语音转写";
 "history.stats.transcriptionCompletedAt" = "完成语音转写";
 "history.stats.llmProcessingStartedAt" = "提交给大语言模型";
@@ -516,6 +520,8 @@
 "history.timeline.slowest" = "耗时最长";
 "history.timeline.keyWaits" = "关键等待";
 "history.timeline.audio" = "音频整理";
+"history.timeline.recordingStartup" = "录音启动";
+"history.timeline.recording" = "录音中";
 "history.timeline.realtime" = "实时语音";
 "history.timeline.transcription" = "识别确认";
 "history.timeline.llm" = "AI 生成";

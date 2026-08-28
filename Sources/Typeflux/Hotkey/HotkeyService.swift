@@ -7,12 +7,20 @@ enum HotkeyAction {
     case history
 }
 
+struct HotkeyEventContext: Sendable, Equatable {
+    let detectedAt: Date
+
+    init(detectedAt: Date = Date()) {
+        self.detectedAt = detectedAt
+    }
+}
+
 protocol HotkeyService: AnyObject {
-    var onActivationTap: (() -> Void)? { get set }
-    var onActivationPressBegan: (() -> Void)? { get set }
+    var onActivationTap: ((HotkeyEventContext) -> Void)? { get set }
+    var onActivationPressBegan: ((HotkeyEventContext) -> Void)? { get set }
     var onActivationPressEnded: (() -> Void)? { get set }
     var onActivationCancelled: (() -> Void)? { get set }
-    var onAskPressBegan: (() -> Void)? { get set }
+    var onAskPressBegan: ((HotkeyEventContext) -> Void)? { get set }
     var onAskPressEnded: (() -> Void)? { get set }
     var onPersonaPickerRequested: (() -> Void)? { get set }
     var onHistoryRequested: (() -> Void)? { get set }

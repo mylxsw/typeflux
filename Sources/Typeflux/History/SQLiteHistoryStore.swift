@@ -614,6 +614,10 @@ final class SQLiteHistoryStore: HistoryStore {
         var lines: [String] = []
 
         let timestamps: [(String, Date?)] = [
+            ("Hotkey detected", stats.hotkeyDetectedAt),
+            ("Recording workflow started", stats.recordingWorkflowStartedAt),
+            ("Audio engine started", stats.audioEngineStartedAt),
+            ("First audio buffer", stats.firstAudioBufferAt),
             ("Recording stopped", stats.recordingStoppedAt),
             ("Audio file ready", stats.audioFileReadyAt),
             ("STT started", stats.transcriptionStartedAt),
@@ -638,6 +642,10 @@ final class SQLiteHistoryStore: HistoryStore {
         }
 
         let durations: [(String, Int?)] = [
+            ("Hotkey -> first audio", stats.hotkeyToFirstAudioMilliseconds),
+            ("Hotkey dispatch", stats.hotkeyDispatchMilliseconds),
+            ("Recording preparation", stats.recordingPreparationMilliseconds),
+            ("Audio engine -> first buffer", stats.audioEngineToFirstBufferMilliseconds),
             ("Stop -> audio ready", stats.stopToAudioReadyMilliseconds),
             ("STT duration", stats.transcriptionDurationMilliseconds),
             ("Stop -> STT completed", stats.stopToTranscriptionCompletedMilliseconds),
