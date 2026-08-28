@@ -66,6 +66,69 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         XCTAssertEqual(relay.firstBufferReceivedAt, receivedAt)
     }
 
+    func testRecordingStartupBufferRelayKeepsOnlyTheConfiguredPreRollTail() throws {
+        let format = try XCTUnwrap(AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 16000,
+            channels: 1,
+            interleaved: false
+        ))
+        let relay = RecordingStartupAudioBufferRelay(maximumBufferedDuration: 0.25)
+        var amplitudes: [Float] = []
+
+        for amplitude: Float in [0.1, 0.2, 0.3, 0.4] {
+            relay.append(try makeTestBuffer(
+                format: format,
+                frameLength: 1600,
+                amplitude: amplitude
+            ))
+        }
+        relay.activate { buffer in
+            amplitudes.append(buffer.floatChannelData?[0][0] ?? 0)
+        }
+
+        XCTAssertEqual(amplitudes.count, 2)
+        XCTAssertEqual(amplitudes[0], 0.3, accuracy: 0.001)
+        XCTAssertEqual(amplitudes[1], 0.4, accuracy: 0.001)
+    }
+
+    func testRecordingStartupBufferRelaySignalsWhenInstantCaptureIsArmed() throws {
+        let format = try XCTUnwrap(AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 16000,
+            channels: 1,
+            interleaved: false
+        ))
+        let relay = RecordingStartupAudioBufferRelay(maximumBufferedDuration: 0.5)
+
+        XCTAssertFalse(relay.waitForFirstBuffer(timeout: .milliseconds(0)))
+        relay.append(try makeTestBuffer(format: format, frameLength: 160))
+        XCTAssertTrue(relay.waitForFirstBuffer(timeout: .milliseconds(0)))
+    }
+
+    func testRecordingStartupBufferRelayDropsStalePreRollWhenWarmEngineStopped() throws {
+        let format = try XCTUnwrap(AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 16000,
+            channels: 1,
+            interleaved: false
+        ))
+        let relay = RecordingStartupAudioBufferRelay(maximumBufferedDuration: 0.5)
+        let staleBuffer = try makeTestBuffer(format: format, frameLength: 160, amplitude: 0.1)
+        let freshBuffer = try makeTestBuffer(format: format, frameLength: 160, amplitude: 0.4)
+        var amplitudes: [Float] = []
+
+        relay.append(staleBuffer)
+        relay.discardBufferedAudio()
+        relay.append(freshBuffer)
+        relay.activate { buffer in
+            amplitudes.append(buffer.floatChannelData?[0][0] ?? 0)
+        }
+
+        XCTAssertEqual(amplitudes.count, 1)
+        XCTAssertEqual(amplitudes[0], 0.4, accuracy: 0.001)
+    }
+
     func testInputTapUsesLowLatencyBufferSize() {
         XCTAssertEqual(AVFoundationAudioRecorder.inputTapBufferSize, 512)
     }
@@ -170,6 +233,47 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         settingsStore.preferredMicrophoneID = "bluetooth-headset"
 
         XCTAssertEqual(recorder.preparedInputGenerationForTesting, initialGeneration + 1)
+    }
+
+    func testInstantVoiceInputChangeInvalidatesPreparedInputGeneration() throws {
+        let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let settingsStore = SettingsStore(defaults: defaults)
+        let recorder = AVFoundationAudioRecorder(
+            settingsStore: settingsStore,
+            audioDeviceManager: MockAudioDeviceManager(defaultInputDeviceID: nil)
+        )
+        let initialGeneration = recorder.preparedInputGenerationForTesting
+
+        settingsStore.instantVoiceInputEnabled = true
+
+        XCTAssertEqual(recorder.preparedInputGenerationForTesting, initialGeneration + 1)
+    }
+
+    func testInstantVoiceInputUsesHalfSecondPreRoll() {
+        XCTAssertEqual(AVFoundationAudioRecorder.instantVoiceInputPreRollDuration, 0.5)
+    }
+
+    func testPreparedInputSuspendsAndRebuildsAcrossSleepLifecycle() throws {
+        let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let recorder = AVFoundationAudioRecorder(
+            settingsStore: SettingsStore(defaults: defaults),
+            audioDeviceManager: MockAudioDeviceManager(defaultInputDeviceID: nil)
+        )
+        let initialGeneration = recorder.preparedInputGenerationForTesting
+
+        recorder.suspendPreparedInputForTesting()
+
+        XCTAssertTrue(recorder.preparedInputIsSuspendedForTesting)
+        XCTAssertEqual(recorder.preparedInputGenerationForTesting, initialGeneration + 1)
+
+        recorder.resumePreparedInputForTesting()
+
+        XCTAssertFalse(recorder.preparedInputIsSuspendedForTesting)
+        XCTAssertEqual(recorder.preparedInputGenerationForTesting, initialGeneration + 2)
     }
 
     func testValidateInputFormatAcceptsUsableMicrophoneFormat() throws {
