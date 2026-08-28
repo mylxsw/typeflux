@@ -389,6 +389,7 @@ extension WorkflowController {
 
     func finishRecordingAndProcess(
         recordingStoppedAt: Date,
+        startupContext: RecordingStartupContext? = nil,
         bypassPersonaRewrite: Bool = false
     ) async {
         do {
@@ -555,6 +556,10 @@ extension WorkflowController {
                 selectionOriginalText: recordingIntent == .askSelection ? selectedText : nil,
                 recordingDurationSeconds: validatedAudioFile.duration,
                 pipelineTiming: HistoryPipelineTiming(
+                    hotkeyDetectedAt: startupContext?.hotkeyDetectedAt,
+                    recordingWorkflowStartedAt: startupContext?.recordingWorkflowStartedAt,
+                    audioEngineStartedAt: audioFile.startupTiming?.audioEngineStartedAt,
+                    firstAudioBufferAt: audioFile.startupTiming?.firstAudioBufferAt,
                     recordingStoppedAt: recordingStoppedAt,
                     audioFileReadyAt: audioFileReadyAt
                 ),
@@ -2449,6 +2454,16 @@ extension WorkflowController {
         guard let timing = record.pipelineTiming, timing.hasData else { return }
 
         let durations: [(String, Int?)] = [
+            ("hotkey_to_first_audio_ms", timing.millisecondsBetween(timing.hotkeyDetectedAt, timing.firstAudioBufferAt)),
+            ("hotkey_dispatch_ms", timing.millisecondsBetween(timing.hotkeyDetectedAt, timing.recordingWorkflowStartedAt)),
+            (
+                "recording_preparation_ms",
+                timing.millisecondsBetween(timing.recordingWorkflowStartedAt, timing.audioEngineStartedAt)
+            ),
+            (
+                "audio_engine_to_first_buffer_ms",
+                timing.millisecondsBetween(timing.audioEngineStartedAt, timing.firstAudioBufferAt)
+            ),
             ("stop_to_audio_ms", timing.millisecondsBetween(timing.recordingStoppedAt, timing.audioFileReadyAt)),
             ("stt_ms", timing.millisecondsBetween(timing.transcriptionStartedAt, timing.transcriptionCompletedAt)),
             ("stop_to_stt_ms", timing.millisecondsBetween(timing.recordingStoppedAt, timing.transcriptionCompletedAt)),

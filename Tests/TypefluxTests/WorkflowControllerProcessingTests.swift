@@ -914,6 +914,36 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         await waitForMainActorWork()
     }
 
+    func testBeginRecordingStartsAudioBeforeRealtimeSessionSetupCompletes() async throws {
+        let eventRecorder = ThreadSafeEventRecorder()
+        let realtimeTranscriber = DelayedRealtimeSessionFactory(eventRecorder: eventRecorder)
+        let audioRecorder = MockProcessingAudioRecorder {
+            eventRecorder.append("audio-start")
+        }
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sttTranscriber: realtimeTranscriber,
+            configureSettings: { $0.sttProvider = .aliCloud }
+        )
+
+        let recordingTask = Task {
+            await controller.beginRecording(intent: .dictation, startLocked: false)
+        }
+        await waitUntil {
+            eventRecorder.snapshot().contains("realtime-setup")
+        }
+
+        let events = eventRecorder.snapshot()
+        let audioStartIndex = try XCTUnwrap(events.firstIndex(of: "audio-start"))
+        let realtimeSetupIndex = try XCTUnwrap(events.firstIndex(of: "realtime-setup"))
+        XCTAssertLessThan(audioStartIndex, realtimeSetupIndex)
+
+        realtimeTranscriber.releaseSetup()
+        await recordingTask.value
+        controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
     func testBeginRecordingDoesNotPlayCueWhileAudioStartIsPending() async {
         let eventRecorder = ThreadSafeEventRecorder()
         let audioRecorder = BlockingStartAudioRecorder()
@@ -2377,11 +2407,11 @@ private final class MockProcessingLLMAgentService: LLMAgentService {
 }
 
 private final class MockProcessingHotkeyService: HotkeyService {
-    var onActivationTap: (() -> Void)?
-    var onActivationPressBegan: (() -> Void)?
+    var onActivationTap: ((HotkeyEventContext) -> Void)?
+    var onActivationPressBegan: ((HotkeyEventContext) -> Void)?
     var onActivationPressEnded: (() -> Void)?
     var onActivationCancelled: (() -> Void)?
-    var onAskPressBegan: (() -> Void)?
+    var onAskPressBegan: ((HotkeyEventContext) -> Void)?
     var onAskPressEnded: (() -> Void)?
     var onPersonaPickerRequested: (() -> Void)?
     var onHistoryRequested: (() -> Void)?
@@ -2891,6 +2921,47 @@ private actor MockOptimizeRealtimeSession: RealtimeTranscriptionSession, Realtim
 
     func callCounts() -> (finish: Int, cancel: Int) {
         (finishCallCount, cancelCallCount)
+    }
+}
+
+private final class DelayedRealtimeSessionFactory: RealtimeTranscriptionSessionFactory, @unchecked Sendable {
+    private let eventRecorder: ThreadSafeEventRecorder
+    private let lock = NSLock()
+    private var setupContinuation: CheckedContinuation<Void, Never>?
+    private var setupWasReleased = false
+
+    init(eventRecorder: ThreadSafeEventRecorder) {
+        self.eventRecorder = eventRecorder
+    }
+
+    func transcribe(audioFile _: AudioFile) async throws -> String {
+        ""
+    }
+
+    func makeRealtimeTranscriptionSession(
+        scenario _: TypefluxCloudScenario,
+        onUpdate _: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> any RealtimeTranscriptionSession {
+        eventRecorder.append("realtime-setup")
+        await withCheckedContinuation { continuation in
+            lock.withLock {
+                if setupWasReleased {
+                    continuation.resume()
+                } else {
+                    setupContinuation = continuation
+                }
+            }
+        }
+        return MockOptimizeRealtimeSession(optimize: true, transcript: "")
+    }
+
+    func releaseSetup() {
+        let continuation = lock.withLock { () -> CheckedContinuation<Void, Never>? in
+            setupWasReleased = true
+            defer { setupContinuation = nil }
+            return setupContinuation
+        }
+        continuation?.resume()
     }
 }
 

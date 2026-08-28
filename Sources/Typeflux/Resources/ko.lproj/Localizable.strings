@@ -438,6 +438,10 @@
 "history.detail.error" = "오류";
 "history.stats.recordingStoppedAt" = "녹음이 중지되었습니다.";
 "history.stats.audioFileReadyAt" = "오디오 파일 준비됨";
+"history.stats.hotkeyToFirstAudio" = "키 입력 후 녹음 시작";
+"history.stats.hotkeyDispatch" = "단축키 이벤트 처리";
+"history.stats.recordingPreparation" = "녹음 준비";
+"history.stats.audioEngineToFirstBuffer" = "장치 첫 버퍼 대기";
 "history.stats.transcriptionStartedAt" = "STT 시작됨";
 "history.stats.transcriptionCompletedAt" = "STT 완료됨";
 "history.stats.llmProcessingStartedAt" = "LLM에 제출됨";
@@ -510,6 +514,8 @@
 "history.timeline.slowest" = "가장 긴 단계";
 "history.timeline.keyWaits" = "주요 대기 시간";
 "history.timeline.audio" = "오디오 준비";
+"history.timeline.recordingStartup" = "녹음 시작 준비";
+"history.timeline.recording" = "녹음 중";
 "history.timeline.realtime" = "실시간 음성";
 "history.timeline.transcription" = "인식 확정";
 "history.timeline.llm" = "AI 생성";

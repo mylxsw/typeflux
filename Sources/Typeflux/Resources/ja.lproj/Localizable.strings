@@ -438,6 +438,10 @@
 "history.detail.error" = "エラー";
 "history.stats.recordingStoppedAt" = "録音停止";
 "history.stats.audioFileReadyAt" = "音声ファイルの準備ができました";
+"history.stats.hotkeyToFirstAudio" = "キー入力から録音開始";
+"history.stats.hotkeyDispatch" = "ホットキー処理";
+"history.stats.recordingPreparation" = "録音準備";
+"history.stats.audioEngineToFirstBuffer" = "デバイス初回バッファ待機";
 "history.stats.transcriptionStartedAt" = "STT が開始されました";
 "history.stats.transcriptionCompletedAt" = "STT が完了しました";
 "history.stats.llmProcessingStartedAt" = "LLM に送信されました";
@@ -510,6 +514,8 @@
 "history.timeline.slowest" = "最長ステージ";
 "history.timeline.keyWaits" = "主な待ち時間";
 "history.timeline.audio" = "音声準備";
+"history.timeline.recordingStartup" = "録音開始準備";
+"history.timeline.recording" = "録音中";
 "history.timeline.realtime" = "リアルタイム音声";
 "history.timeline.transcription" = "認識確定";
 "history.timeline.llm" = "AI 生成";
