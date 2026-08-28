@@ -542,6 +542,36 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertTrue(personas.contains(where: { $0.name == "English Translator" }))
     }
 
+    func testTypefluxSystemPersonaRequiresStructuralOrganizationInEveryAppLanguage() throws {
+        let persona = try XCTUnwrap(store.personas.first(where: { $0.name == "Typeflux" }))
+        let expectations: [(AppLanguage, String)] = [
+            (.english, "Identify distinct topics, points, decisions, requests, and action items"),
+            (.simplifiedChinese, "识别不同的主题、要点、决定、请求和行动项"),
+            (.traditionalChinese, "識別不同的主題、要點、決定、請求和行動項目"),
+            (.japanese, "異なるトピック、要点、決定、依頼、アクション項目を特定"),
+            (.korean, "서로 다른 주제, 요점, 결정, 요청, 실행 항목을 식별")
+        ]
+
+        for (language, expectedInstruction) in expectations {
+            store.appLanguage = language
+            XCTAssertTrue(
+                store.resolvedPersonaPrompt(for: persona).contains(expectedInstruction),
+                "Missing structural organization instruction for \(language)"
+            )
+        }
+    }
+
+    func testEnglishTranslatorSystemPersonaOrganizesBeforeTranslating() throws {
+        let persona = try XCTUnwrap(store.personas.first(where: { $0.name == "English Translator" }))
+        let prompt = store.resolvedPersonaPrompt(for: persona)
+        let organizeRange = try XCTUnwrap(prompt.range(of: "First organize the transcript as Typeflux would"))
+        let translateRange = try XCTUnwrap(prompt.range(of: "Then translate the organized result"))
+
+        XCTAssertLessThan(organizeRange.lowerBound, translateRange.lowerBound)
+        XCTAssertTrue(prompt.contains("natural, idiomatic written English"))
+        XCTAssertTrue(prompt.contains("Do not add new information or over-rewrite"))
+    }
+
     func testPersonasEncodeDecodeRoundTrip() {
         let custom = PersonaProfile(name: "Test Persona", prompt: "Be helpful")
         store.personas = store.personas + [custom]
