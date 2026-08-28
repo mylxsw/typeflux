@@ -1231,10 +1231,13 @@
 "cloud.billing.subscriptionRequired.body" = "当前套餐暂不包含这项云端功能。开通会员后即可继续使用 Typeflux Cloud。";
 "cloud.billing.quotaExceeded.title" = "Typeflux Cloud 额度暂不可用";
 "cloud.billing.quotaExceeded.body" = "当前云端额度或余额不足。请前往账号页处理订阅或账单。";
+"cloud.billing.freePlanQuotaExceeded.title" = "免费云端额度已用完";
+"cloud.billing.freePlanQuotaExceeded.body" = "本周期的免费云端额度已用完。升级会员后即可继续使用 Typeflux Cloud，也可以切换其他模型。";
 "cloud.billing.freeQuotaExceeded.title" = "免费云端额度已用完";
 "cloud.billing.freeQuotaExceeded.body" = "当前周期的免费云端额度已用完。你可以前往账号页查看用量，或切换其他模型。";
 "cloud.billing.action.openAccount" = "打开账号";
 "cloud.billing.action.subscribe" = "订阅会员";
+"cloud.billing.action.upgradePlan" = "升级套餐";
 "cloud.billing.action.switchModel" = "切换其他模型";
 
 "auth.account.provider" = "登录方式";

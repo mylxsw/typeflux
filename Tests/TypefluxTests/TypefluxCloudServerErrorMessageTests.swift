@@ -105,7 +105,11 @@ final class TypefluxCloudServerErrorMessageTests: XCTestCase {
                 subscriptionRequired.title(hasPaidSubscription: false),
                 "Typeflux Cloud needs a subscription"
             )
-            XCTAssertEqual(quotaExceeded.title(hasPaidSubscription: false), "Typeflux Cloud needs a subscription")
+            XCTAssertEqual(quotaExceeded.title(hasPaidSubscription: false), "Free Cloud credits used up")
+            XCTAssertEqual(
+                quotaExceeded.message(hasPaidSubscription: false),
+                "Your free Cloud credits have been used up for this period. Upgrade your plan to keep using Typeflux Cloud, or switch to another model."
+            )
             XCTAssertEqual(quotaExceeded.title(hasPaidSubscription: true), "Typeflux Cloud credits used up")
             XCTAssertEqual(
                 subscriptionRequired.primaryActionTitle,
@@ -113,11 +117,23 @@ final class TypefluxCloudServerErrorMessageTests: XCTestCase {
             )
             XCTAssertEqual(
                 quotaExceeded.primaryActionTitle,
-                "Subscribe"
+                "Upgrade Plan"
             )
             XCTAssertEqual(
                 quotaExceeded.primaryActionTitle(hasPaidSubscription: true),
                 "Open Account"
+            )
+            XCTAssertEqual(
+                subscriptionRequired.primaryAction(hasPaidSubscription: false),
+                .openPlans
+            )
+            XCTAssertEqual(
+                quotaExceeded.primaryAction(hasPaidSubscription: false),
+                .openPlans
+            )
+            XCTAssertEqual(
+                quotaExceeded.primaryAction(hasPaidSubscription: true),
+                .openAccount
             )
         }
     }
@@ -133,6 +149,10 @@ final class TypefluxCloudServerErrorMessageTests: XCTestCase {
             XCTAssertEqual(
                 error.primaryActionTitle(hasPaidSubscription: false, billingEnabled: false),
                 "Open Account"
+            )
+            XCTAssertEqual(
+                error.primaryAction(hasPaidSubscription: false, billingEnabled: false),
+                .openAccount
             )
             XCTAssertFalse(
                 error.message(hasPaidSubscription: false, billingEnabled: false).localizedCaseInsensitiveContains(
