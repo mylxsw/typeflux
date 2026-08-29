@@ -84,4 +84,30 @@ final class OverlayControllerTests: XCTestCase {
         XCTAssertFalse(OverlayController.noticeIsInteractive(dismissible: false))
         XCTAssertTrue(OverlayController.noticeIsInteractive(dismissible: true))
     }
+
+    @MainActor
+    func testProcessingProgressAdvancesUntilPresentationStops() async throws {
+        let controller = OverlayController(appState: AppStateStore())
+
+        controller.showProcessing(timeout: 1)
+        XCTAssertTrue(controller.isProcessingProgressActiveForTesting)
+
+        try await Task.sleep(for: .milliseconds(120))
+
+        XCTAssertGreaterThan(controller.processingProgressForTesting, 0)
+        controller.showFailure(message: "Failed")
+        XCTAssertFalse(controller.isProcessingProgressActiveForTesting)
+        XCTAssertEqual(controller.processingProgressForTesting, 0)
+    }
+
+    @MainActor
+    func testSuccessfulProcessingStopsTimelineAndCompletesProgress() {
+        let controller = OverlayController(appState: AppStateStore())
+
+        controller.showProcessing(timeout: 1)
+        controller.dismissSoon()
+
+        XCTAssertFalse(controller.isProcessingProgressActiveForTesting)
+        XCTAssertEqual(controller.processingProgressForTesting, 1)
+    }
 }

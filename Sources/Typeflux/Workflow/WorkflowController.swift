@@ -419,15 +419,18 @@ final class WorkflowController {
         cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.retry"))
 
         let sessionID = beginProcessingSession()
+        let timeoutSeconds = Self.processingTimeoutSeconds(
+            recordingDurationSeconds: record.recordingDurationSeconds
+        )
         startProcessingTimeout(
             sessionID: sessionID,
-            recordingDurationSeconds: record.recordingDurationSeconds
+            timeoutSeconds: timeoutSeconds
         )
         processingTask = Task { [weak self] in
             guard let self else { return }
             await MainActor.run {
                 self.appState.setStatus(.processing)
-                self.overlayController.showProcessing()
+                self.overlayController.showProcessing(timeout: timeoutSeconds)
             }
             await reprocess(record: record, sessionID: sessionID)
             cancelProcessingTimeout()
@@ -507,22 +510,26 @@ final class WorkflowController {
         }
     }
 
-    static func processingTimeoutNanoseconds(recordingDurationSeconds: TimeInterval?) -> UInt64 {
+    static func processingTimeoutSeconds(recordingDurationSeconds: TimeInterval?) -> TimeInterval {
         let recordingDuration = max(0, recordingDurationSeconds ?? 0)
-        let timeoutSeconds = max(
+        return max(
             minimumProcessingTimeoutSeconds,
             recordingDuration + processingTimeoutGraceSeconds
+        )
+    }
+
+    static func processingTimeoutNanoseconds(recordingDurationSeconds: TimeInterval?) -> UInt64 {
+        let timeoutSeconds = processingTimeoutSeconds(
+            recordingDurationSeconds: recordingDurationSeconds
         )
         return UInt64(timeoutSeconds * 1_000_000_000)
     }
 
     func startProcessingTimeout(
         sessionID: UUID,
-        recordingDurationSeconds: TimeInterval? = nil
+        timeoutSeconds: TimeInterval
     ) {
-        let timeoutNanoseconds = Self.processingTimeoutNanoseconds(
-            recordingDurationSeconds: recordingDurationSeconds
-        )
+        let timeoutNanoseconds = UInt64(max(0, timeoutSeconds) * 1_000_000_000)
         processingTimeoutTask?.cancel()
         processingTimeoutTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: timeoutNanoseconds)
