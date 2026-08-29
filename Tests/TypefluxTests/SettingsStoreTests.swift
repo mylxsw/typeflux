@@ -136,6 +136,29 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertFalse(store.soundEffectsEnabled)
     }
 
+    // MARK: - Voice Processing Timeout
+
+    func testVoiceProcessingTimeoutDefaultsToThreeSeconds() {
+        XCTAssertEqual(store.voiceProcessingTimeout, .threeSeconds)
+    }
+
+    func testVoiceProcessingTimeoutPersistsAllowedValue() {
+        store.voiceProcessingTimeout = .thirtySeconds
+
+        XCTAssertEqual(store.voiceProcessingTimeout, .thirtySeconds)
+        XCTAssertEqual(SettingsStore(defaults: defaults).voiceProcessingTimeout, .thirtySeconds)
+    }
+
+    func testVoiceProcessingTimeoutRejectsUnsupportedStoredValue() {
+        defaults.set(7, forKey: "voice.processing.timeoutSeconds")
+
+        XCTAssertEqual(store.voiceProcessingTimeout, .threeSeconds)
+    }
+
+    func testVoiceProcessingTimeoutProvidesRequiredChoices() {
+        XCTAssertEqual(VoiceProcessingTimeout.allCases.map(\.rawValue), [1, 3, 5, 10, 30, 60])
+    }
+
     // MARK: - Analytics Sharing
 
     func testAnalyticsSharingDefaultsToEnabledAndPersists() {

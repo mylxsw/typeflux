@@ -29,6 +29,36 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testVoiceProcessingTimeoutCopyAndFormatArgumentsExistInEveryLanguage() throws {
+        let plainKeys = [
+            "settings.advanced.voiceProcessingTimeout.title",
+            "settings.advanced.voiceProcessingTimeout.subtitle"
+        ]
+        let formattedKeys = [
+            "settings.advanced.voiceProcessingTimeout.option",
+            "history.race.priorityExceeded",
+            "history.race.priorityExceededCancelled",
+            "history.race.reason.cloudWithinWindow",
+            "history.race.reason.cloudAfterWindow",
+            "history.race.reason.localAtDeadline",
+            "history.race.reason.localAfterWindow"
+        ]
+
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            for key in plainKeys {
+                let localized = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(localized, key, "Missing localized value for \(key) in \(language.rawValue)")
+                XCTAssertFalse(localized.isEmpty)
+            }
+            for key in formattedKeys {
+                let localized = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(localized, key, "Missing localized value for \(key) in \(language.rawValue)")
+                XCTAssertEqual(localized.components(separatedBy: "%d").count - 1, 1, key)
+            }
+        }
+    }
+
     func testInstantVoiceInputExplainsBenefitAndMicrophoneTradeoffInEveryLanguage() throws {
         let keys = [
             "settings.instantVoiceInput.title",

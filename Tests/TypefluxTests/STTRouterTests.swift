@@ -230,8 +230,7 @@ final class STTRouterTests: XCTestCase {
         doubaoRealtimeOverride: Transcriber? = nil,
         typefluxOfficialOverride: Transcriber? = nil,
         typefluxCloudLoginFallbackLocalModel: Transcriber? = nil,
-        typefluxOfficialCloudPriorityWindow: TimeInterval = STTRouter
-            .typefluxOfficialCloudPriorityWindowSeconds,
+        typefluxOfficialCloudPriorityWindow: TimeInterval? = nil,
         isTypefluxCloudLoggedIn: @escaping @Sendable () async -> Bool = { false },
         hasPaidTypefluxCloudSubscription: @escaping @Sendable () async -> Bool = { false }
     ) -> STTRouter {
@@ -446,6 +445,15 @@ final class STTRouterTests: XCTestCase {
 
     func testTypefluxOfficialCloudPriorityWindowIsThreeSeconds() {
         XCTAssertEqual(STTRouter.typefluxOfficialCloudPriorityWindowSeconds, 3)
+    }
+
+    func testTypefluxOfficialCloudPriorityWindowUsesCurrentSetting() {
+        let router = makeRouter(typefluxOfficialCloudPriorityWindow: nil)
+        XCTAssertEqual(router.typefluxOfficialCloudPriorityWindow, 3)
+
+        settings.voiceProcessingTimeout = .thirtySeconds
+
+        XCTAssertEqual(router.typefluxOfficialCloudPriorityWindow, 30)
     }
 
     func testTypefluxOfficialUsesReadyLocalResultWhenPriorityWindowExpires() async throws {

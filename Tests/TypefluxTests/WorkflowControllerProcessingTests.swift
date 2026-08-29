@@ -612,6 +612,17 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(WorkflowController.llmTimeoutAfterTranscriptionSeconds, 3)
     }
 
+    func testPersonaRewriteTimeoutUsesCurrentSetting() {
+        let controller = makeWorkflowController(configureSettings: { settingsStore in
+            settingsStore.voiceProcessingTimeout = .tenSeconds
+        })
+        XCTAssertEqual(controller.llmTimeoutAfterTranscription, 10)
+
+        controller.settingsStore.voiceProcessingTimeout = .sixtySeconds
+
+        XCTAssertEqual(controller.llmTimeoutAfterTranscription, 60)
+    }
+
     func testGenerateRewriteThrowsTimeoutWhenStreamDoesNotFinish() async {
         let controller = makeWorkflowController(
             llmService: SlowProcessingLLMService(delay: .milliseconds(200)),

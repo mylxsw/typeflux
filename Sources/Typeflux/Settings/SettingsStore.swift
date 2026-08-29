@@ -73,6 +73,24 @@ enum HistoryRetentionPolicy: String, CaseIterable, Identifiable {
     }
 }
 
+enum VoiceProcessingTimeout: Int, CaseIterable, Identifiable {
+    case oneSecond = 1
+    case threeSeconds = 3
+    case fiveSeconds = 5
+    case tenSeconds = 10
+    case thirtySeconds = 30
+    case sixtySeconds = 60
+
+    static let defaultValue: VoiceProcessingTimeout = .threeSeconds
+
+    var id: Int { rawValue }
+    var seconds: TimeInterval { TimeInterval(rawValue) }
+
+    var displayName: String {
+        L("settings.advanced.voiceProcessingTimeout.option", rawValue)
+    }
+}
+
 final class SettingsStore {
     struct TextLLMConfiguration {
         let provider: LLMRemoteProvider
@@ -187,6 +205,18 @@ final class SettingsStore {
     var soundEffectsEnabled: Bool {
         get { defaults.object(forKey: "audio.soundEffects.enabled") as? Bool ?? true }
         set { defaults.set(newValue, forKey: "audio.soundEffects.enabled") }
+    }
+
+    var voiceProcessingTimeout: VoiceProcessingTimeout {
+        get {
+            guard defaults.object(forKey: "voice.processing.timeoutSeconds") != nil else {
+                return .defaultValue
+            }
+            return VoiceProcessingTimeout(
+                rawValue: defaults.integer(forKey: "voice.processing.timeoutSeconds")
+            ) ?? .defaultValue
+        }
+        set { defaults.set(newValue.rawValue, forKey: "voice.processing.timeoutSeconds") }
     }
 
     var autoUpdateEnabled: Bool {

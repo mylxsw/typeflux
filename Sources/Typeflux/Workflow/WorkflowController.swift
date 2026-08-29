@@ -47,10 +47,16 @@ final class WorkflowController {
     static let audioStartupRetryDelay: Duration = .milliseconds(250)
     static let llmTimeoutAfterTranscriptionSeconds: TimeInterval = 3
     static let paidCreditExhaustedPromptSuppressionInterval: TimeInterval = 60 * 60
-    var llmTimeoutAfterTranscription: TimeInterval = WorkflowController.llmTimeoutAfterTranscriptionSeconds
+    private var llmTimeoutAfterTranscriptionOverride: TimeInterval?
+    var llmTimeoutAfterTranscription: TimeInterval {
+        get { llmTimeoutAfterTranscriptionOverride ?? settingsStore.voiceProcessingTimeout.seconds }
+        set { llmTimeoutAfterTranscriptionOverride = max(0, newValue) }
+    }
     struct LLMRequestTimeoutError: LocalizedError {
+        let timeoutSeconds: TimeInterval
+
         var errorDescription: String? {
-            "Persona rewrite timed out after \(Int(WorkflowController.llmTimeoutAfterTranscriptionSeconds)) seconds, inserting transcript as fallback"
+            "Persona rewrite timed out after \(Int(timeoutSeconds)) seconds, inserting transcript as fallback"
         }
     }
 
