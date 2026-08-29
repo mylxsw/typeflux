@@ -107,6 +107,7 @@ final class StudioViewModel: ObservableObject {
     @Published var instantVoiceInputEnabled: Bool
     @Published var muteSystemOutputDuringRecording: Bool
     @Published var soundEffectsEnabled: Bool
+    @Published var voiceProcessingTimeout: VoiceProcessingTimeout
     @Published var preferredAPIServer = CloudServerPreferences.automaticValue
     @Published var preferredASRServer = CloudServerPreferences.automaticValue
     @Published private(set) var apiServerStatuses: [CloudEndpointStatus] = []
@@ -334,6 +335,7 @@ final class StudioViewModel: ObservableObject {
         instantVoiceInputEnabled = settingsStore.instantVoiceInputEnabled
         muteSystemOutputDuringRecording = settingsStore.muteSystemOutputDuringRecording
         soundEffectsEnabled = settingsStore.soundEffectsEnabled
+        voiceProcessingTimeout = settingsStore.voiceProcessingTimeout
         preferredAPIServer = CloudServerPreferences.shared.preferredAPIServer
         preferredASRServer = CloudServerPreferences.shared.preferredASRServer
         llmBaseURL = settingsStore.llmBaseURL(for: initialLLMRemoteProvider)
@@ -1109,6 +1111,11 @@ final class StudioViewModel: ObservableObject {
     func setSoundEffectsEnabled(_ value: Bool) {
         soundEffectsEnabled = value
         settingsStore.soundEffectsEnabled = value
+    }
+
+    func setVoiceProcessingTimeout(_ value: VoiceProcessingTimeout) {
+        voiceProcessingTimeout = value
+        settingsStore.voiceProcessingTimeout = value
     }
 
     func setHistoryRetentionPolicy(_ value: HistoryRetentionPolicy) {
@@ -3524,9 +3531,13 @@ final class StudioViewModel: ObservableObject {
             )
         }
         if let race = stats.asrRace {
+            let selectionReason = historyRaceSelectionReasonText(
+                race.selectionReason,
+                priorityWindowMilliseconds: race.priorityWindowMilliseconds
+            )
             let selectedValue = race.selectedSource.map { source in
-                "\(historyRaceSourceText(source)) · \(historyRaceSelectionReasonText(race.selectionReason))"
-            } ?? historyRaceSelectionReasonText(race.selectionReason)
+                "\(historyRaceSourceText(source)) · \(selectionReason)"
+            } ?? selectionReason
             summaryBadges.append(
                 HistoryPipelineBadgePresentationItem(
                     id: "race-selected",
@@ -3645,13 +3656,14 @@ final class StudioViewModel: ObservableObject {
             : ""
         var status = historyASRAttemptOutcomeText(attempt.outcome)
         if source == .cloud, race.cloudPriorityWindowExceeded {
+            let timeoutSeconds = race.priorityWindowMilliseconds / 1_000
             switch attempt.outcome {
             case .succeeded:
-                status = L("history.race.priorityExceeded")
+                status = L("history.race.priorityExceeded", timeoutSeconds)
             case .failed:
-                status += " · \(L("history.race.priorityExceeded"))"
+                status += " · \(L("history.race.priorityExceeded", timeoutSeconds))"
             case .cancelled:
-                status = L("history.race.priorityExceededCancelled")
+                status = L("history.race.priorityExceededCancelled", timeoutSeconds)
             }
         }
         let tone: HistoryPipelineBadgePresentationItem.Tone = if race.selectedSource == source {
@@ -3691,16 +3703,20 @@ final class StudioViewModel: ObservableObject {
         }
     }
 
-    private func historyRaceSelectionReasonText(_ reason: ASRRaceSelectionReason) -> String {
-        switch reason {
+    private func historyRaceSelectionReasonText(
+        _ reason: ASRRaceSelectionReason,
+        priorityWindowMilliseconds: Int
+    ) -> String {
+        let timeoutSeconds = priorityWindowMilliseconds / 1_000
+        return switch reason {
         case .cloudWithinPriorityWindow:
-            L("history.race.reason.cloudWithinWindow")
+            L("history.race.reason.cloudWithinWindow", timeoutSeconds)
         case .cloudAfterPriorityWindow:
-            L("history.race.reason.cloudAfterWindow")
+            L("history.race.reason.cloudAfterWindow", timeoutSeconds)
         case .localAtPriorityDeadline:
-            L("history.race.reason.localAtDeadline")
+            L("history.race.reason.localAtDeadline", timeoutSeconds)
         case .localAfterPriorityWindow:
-            L("history.race.reason.localAfterWindow")
+            L("history.race.reason.localAfterWindow", timeoutSeconds)
         case .localAfterCloudFailure:
             L("history.race.reason.localAfterCloudFailure")
         case .bothFailed:

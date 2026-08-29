@@ -117,7 +117,11 @@ final class STTRouter {
     let autoModelDownloadService: AutoModelDownloadService?
     let isTypefluxCloudLoggedIn: @Sendable () async -> Bool
     let hasPaidTypefluxCloudSubscription: @Sendable () async -> Bool
-    let typefluxOfficialCloudPriorityWindow: TimeInterval
+    private let typefluxOfficialCloudPriorityWindowOverride: TimeInterval?
+
+    var typefluxOfficialCloudPriorityWindow: TimeInterval {
+        typefluxOfficialCloudPriorityWindowOverride ?? settingsStore.voiceProcessingTimeout.seconds
+    }
 
     var usesTypefluxOfficialCloudLocalRace: Bool {
         typefluxCloudLoginFallbackLocalModel != nil
@@ -138,8 +142,7 @@ final class STTRouter {
         typefluxOfficial: Transcriber,
         typefluxCloudLoginFallbackLocalModel: Transcriber? = nil,
         autoModelDownloadService: AutoModelDownloadService? = nil,
-        typefluxOfficialCloudPriorityWindow: TimeInterval = STTRouter
-            .typefluxOfficialCloudPriorityWindowSeconds,
+        typefluxOfficialCloudPriorityWindow: TimeInterval? = nil,
         isTypefluxCloudLoggedIn: @escaping @Sendable () async -> Bool = {
             await MainActor.run { AuthState.shared.isLoggedIn }
         },
@@ -161,7 +164,7 @@ final class STTRouter {
         self.typefluxOfficial = typefluxOfficial
         self.typefluxCloudLoginFallbackLocalModel = typefluxCloudLoginFallbackLocalModel
         self.autoModelDownloadService = autoModelDownloadService
-        self.typefluxOfficialCloudPriorityWindow = typefluxOfficialCloudPriorityWindow
+        typefluxOfficialCloudPriorityWindowOverride = typefluxOfficialCloudPriorityWindow.map { max(0, $0) }
         self.isTypefluxCloudLoggedIn = isTypefluxCloudLoggedIn
         self.hasPaidTypefluxCloudSubscription = hasPaidTypefluxCloudSubscription
     }

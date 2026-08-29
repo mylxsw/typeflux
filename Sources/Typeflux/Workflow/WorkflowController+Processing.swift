@@ -113,7 +113,7 @@ extension WorkflowController {
             group.addTask { try await performRewrite() }
             group.addTask {
                 try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-                throw LLMRequestTimeoutError()
+                throw LLMRequestTimeoutError(timeoutSeconds: timeout)
             }
             defer { group.cancelAll() }
             guard let result = try await group.next() else {

@@ -2497,6 +2497,24 @@ struct StudioView: View {
                             Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                             StudioSettingRow(
+                                title: L("settings.advanced.voiceProcessingTimeout.title"),
+                                subtitle: L("settings.advanced.voiceProcessingTimeout.subtitle")
+                            ) {
+                                StudioMenuPicker(
+                                    options: VoiceProcessingTimeout.allCases.map {
+                                        (label: $0.displayName, value: $0)
+                                    },
+                                    selection: Binding(
+                                        get: { viewModel.voiceProcessingTimeout },
+                                        set: viewModel.setVoiceProcessingTimeout
+                                    ),
+                                    width: StudioTheme.Layout.appearancePickerWidth
+                                )
+                            }
+
+                            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                            StudioSettingRow(
                                 title: L("settings.advanced.localSTTMemoryOptimization.title"),
                                 subtitle: L("settings.advanced.localSTTMemoryOptimization.subtitle")
                             ) {

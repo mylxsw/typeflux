@@ -148,6 +148,7 @@ Application settings are managed through the `SettingsStore` singleton, backed b
 | `stt.local.downloadSource` | String | Model download source |
 | `stt.local.autoSetup` | Bool | Auto-setup local model |
 | `stt.multimodal.baseURL` | String | Multimodal LLM base URL |
+| `voice.processing.timeoutSeconds` | Int | Cloud ASR and post-transcription LLM priority wait (1, 3, 5, 10, 30, or 60 seconds; default 3) |
 | `stt.multimodal.model` | String | Multimodal model |
 | `stt.multimodal.apiKey` | String | Multimodal API key |
 | `stt.alicloud.apiKey` | String | AliCloud API key |
