@@ -1,5 +1,5 @@
 {
-  "originHash" : "940c260f97b1f05407b3b6be0d162a7a22a862544fc4f5db2bba5adcf5f71e16",
+  "originHash" : "b995604b965e45e8e0359b9d52377eea716d5a0da87e14c653b4e4d7dee7ffc5",
   "pins" : [
     {
       "identity" : "grpc-swift",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "6a8927df5a91710b414caba4f8a088dead4633db",
         "version" : "1.27.5"
+      }
+    },
+    {
+      "identity" : "opencc-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/doggy8088/opencc-swift.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "69fdd9601a7bee4485ea60847910e40744608012"
       }
     },
     {

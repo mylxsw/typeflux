@@ -28,6 +28,36 @@ profile_supports_apple_sign_in() {
   [[ "$entitlement_output" == *"Default"* ]]
 }
 
+profile_contains_signing_identity() {
+  local profile_path="$1"
+  local signing_identity="$2"
+  local decoded_profile
+  local identity_certificate
+  decoded_profile="$(mktemp "${TMPDIR:-/tmp}/typeflux-profile.XXXXXX")"
+  identity_certificate="$(mktemp "${TMPDIR:-/tmp}/typeflux-identity.XXXXXX")"
+
+  if ! security cms -D -i "$profile_path" >"$decoded_profile" 2>/dev/null; then
+    rm -f "$decoded_profile" "$identity_certificate"
+    return 1
+  fi
+
+  if ! security find-certificate -c "$signing_identity" -p >"$identity_certificate" 2>/dev/null; then
+    rm -f "$decoded_profile" "$identity_certificate"
+    return 1
+  fi
+
+  local certificate_base64
+  certificate_base64="$(
+    sed -e '/^-----BEGIN CERTIFICATE-----$/d' -e '/^-----END CERTIFICATE-----$/d' "$identity_certificate" \
+      | tr -d '[:space:]'
+  )"
+  local compact_profile
+  compact_profile="$(tr -d '[:space:]' <"$decoded_profile")"
+  rm -f "$decoded_profile" "$identity_certificate"
+
+  [[ -n "$certificate_base64" ]] && [[ "$compact_profile" == *"$certificate_base64"* ]]
+}
+
 identity_supports_restricted_entitlements() {
   [[ "${TYPEFLUX_DEV_CODESIGN_IDENTITY:-}" == Apple\ Development:* ]]
 }
@@ -182,6 +212,14 @@ fi
 if [[ "$use_apple_sign_in_entitlements" == true ]] && ! identity_supports_restricted_entitlements; then
   use_apple_sign_in_entitlements=false
   echo "Warning: provisioning profile grants Sign In with Apple, but no Apple Development signing identity was found."
+  echo "Warning: signing dev app with runtime-only entitlements so it can still launch."
+fi
+
+if [[ "$use_apple_sign_in_entitlements" == true ]] \
+  && ! profile_contains_signing_identity "$TYPEFLUX_DEV_PROVISIONING_PROFILE" "$TYPEFLUX_DEV_CODESIGN_IDENTITY"; then
+  use_apple_sign_in_entitlements=false
+  echo "Warning: provisioning profile does not include the selected Apple Development certificate."
+  echo "Warning: regenerate the profile after adding the current certificate to enable Sign In with Apple."
   echo "Warning: signing dev app with runtime-only entitlements so it can still launch."
 fi
 
