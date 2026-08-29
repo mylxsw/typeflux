@@ -374,6 +374,7 @@
 
 "workflow.apply.inserted" = "활성 앱에 적용됩니다.";
 "workflow.apply.presentedInDialog" = "직접 삽입이 불가능하여 결과가 대화상자에 표시되었습니다.";
+"workflow.apply.copiedToClipboard" = "직접 삽입하지 못해 결과를 클립보드에 복사했습니다.";
 "workflow.cancel.stopping" = "정차 중 취소되었습니다.";
 "workflow.cancel.retry" = "재시도 때문에 취소되었습니다.";
 "workflow.cancel.newRecording" = "새 녹음으로 인해 취소되었습니다.";
@@ -392,6 +393,7 @@
 "workflow.transcription.noSpeech" = "명확한 음성이 감지되지 않았습니다. 스크립트 작성이 취소되었습니다.";
 "workflow.transcription.serverUnavailableNotice" = "서버에 연결할 수 없습니다. 녹음은 기록에 저장되어 나중에 다시 시도할 수 있습니다.";
 "workflow.result.copyTitle" = "결과 복사";
+"workflow.result.insertionFailedCopied" = "텍스트를 삽입하지 못해 복사했습니다. ⌘V로 붙여넣으세요.";
 "workflow.ask.answerTitle" = "무엇이든 물어보세요";
 "workflow.ask.questionSectionTitle" = "질문";
 "workflow.ask.answerSectionTitle" = "답변";

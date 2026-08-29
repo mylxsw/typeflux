@@ -76,6 +76,7 @@ final class WorkflowController {
     enum ApplyOutcome {
         case inserted
         case presentedInDialog
+        case copiedToClipboard
 
         var message: String {
             switch self {
@@ -83,6 +84,8 @@ final class WorkflowController {
                 L("workflow.apply.inserted")
             case .presentedInDialog:
                 L("workflow.apply.presentedInDialog")
+            case .copiedToClipboard:
+                L("workflow.apply.copiedToClipboard")
             }
         }
     }

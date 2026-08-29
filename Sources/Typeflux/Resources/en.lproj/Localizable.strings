@@ -378,6 +378,7 @@
 
 "workflow.apply.inserted" = "Applied to the active app.";
 "workflow.apply.presentedInDialog" = "Direct insertion was unavailable, so the result was shown in a dialog.";
+"workflow.apply.copiedToClipboard" = "Direct insertion was unavailable, so the result was copied to the clipboard.";
 "workflow.cancel.stopping" = "Cancelled while stopping.";
 "workflow.cancel.retry" = "Cancelled due to retry.";
 "workflow.cancel.newRecording" = "Cancelled by a new recording.";
@@ -396,6 +397,7 @@
 "workflow.transcription.noSpeech" = "No clear speech detected. Transcription cancelled.";
 "workflow.transcription.serverUnavailableNotice" = "Unable to connect to the server. Your recording was saved in History for retry.";
 "workflow.result.copyTitle" = "Copy Result";
+"workflow.result.insertionFailedCopied" = "Text couldn't be inserted. It has been copied; press ⌘V to paste.";
 "workflow.ask.answerTitle" = "Ask Anything";
 "workflow.ask.questionSectionTitle" = "Your Question";
 "workflow.ask.answerSectionTitle" = "Answer";

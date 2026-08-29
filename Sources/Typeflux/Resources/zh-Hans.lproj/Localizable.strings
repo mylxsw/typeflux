@@ -378,6 +378,7 @@
 
 "workflow.apply.inserted" = "已应用到当前活动应用。";
 "workflow.apply.presentedInDialog" = "由于无法直接插入，结果已显示在提示框中。";
+"workflow.apply.copiedToClipboard" = "由于无法直接插入，结果已复制到剪贴板。";
 "workflow.cancel.stopping" = "停止应用时已取消。";
 "workflow.cancel.retry" = "由于重试已取消。";
 "workflow.cancel.newRecording" = "已被新的录音任务取消。";
@@ -396,6 +397,7 @@
 "workflow.transcription.noSpeech" = "未检测到清晰语音，本次转写已取消。";
 "workflow.transcription.serverUnavailableNotice" = "暂时无法连接服务器，录音已保存在历史记录中，可稍后重试。";
 "workflow.result.copyTitle" = "复制结果";
+"workflow.result.insertionFailedCopied" = "未能插入文本，内容已复制，可按 ⌘V 粘贴。";
 "workflow.ask.answerTitle" = "随便问";
 "workflow.ask.questionSectionTitle" = "你的问题";
 "workflow.ask.answerSectionTitle" = "回答";

@@ -172,27 +172,21 @@ extension AXTextInjector {
     }
 
     func isLikelyEditable(element: AXUIElement) -> Bool {
+        targetCapability(element: element) == .writable
+    }
+
+    func targetCapability(element: AXUIElement) -> TextTargetCapability {
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
         let selectedRange = copySelectedTextRange(from: element)
-
-        if Self.nativeEditableRoles.contains(role ?? "") {
-            return true
-        }
-
-        if let role, Self.nonEditableFalsePositiveRoles.contains(role) {
-            return false
-        }
-
         let hasSettableTextAttributes =
             isAttributeSettable(kAXSelectedTextRangeAttribute as CFString, on: element)
                 || isAttributeSettable(kAXValueAttribute as CFString, on: element)
                 || isAttributeSettable(kAXSelectedTextAttribute as CFString, on: element)
-
-        if Self.genericEditableRoles.contains(role ?? "") {
-            return selectedRange != nil || hasSettableTextAttributes
-        }
-
-        return selectedRange != nil && hasSettableTextAttributes
+        return Self.targetCapability(
+            role: role,
+            hasSelectedRange: selectedRange != nil,
+            hasSettableTextAttributes: hasSettableTextAttributes
+        )
     }
 
     func systemFocusedElement() -> AXUIElement? {

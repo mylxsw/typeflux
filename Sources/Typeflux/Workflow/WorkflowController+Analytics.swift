@@ -81,6 +81,8 @@ extension WorkflowController {
                 textInjector.lastInjectionMethod?.rawValue ?? TextInjectionMethod.ax.rawValue
             case .presentedInDialog:
                 "clipboard_fallback"
+            case .copiedToClipboard:
+                "clipboard_fallback"
             }
             dictationAnalyticsContexts[recordID] = context
         }
@@ -111,12 +113,17 @@ extension WorkflowController {
         let durationMilliseconds = record.pipelineStats?.endToEndMilliseconds
             ?? record.pipelineTiming?.generatedStats().endToEndMilliseconds
             ?? 0
+        let applyOutcomeName = switch outcome {
+        case .inserted: "inserted"
+        case .presentedInDialog: "presentedInDialog"
+        case .copiedToClipboard: "copiedToClipboard"
+        }
         var properties = [
             "flow_id": context.flowID,
             "audio_seconds": String(format: "%.3f", max(0, record.recordingDurationSeconds ?? 0)),
             "output_chars": "\(record.finalText?.count ?? 0)",
             "pipeline_duration_ms": "\(max(0, durationMilliseconds))",
-            "apply_outcome": outcome == .inserted ? "inserted" : "presentedInDialog",
+            "apply_outcome": applyOutcomeName,
             "injection_method": context.injectionMethod ?? "clipboard_fallback",
             "target_app_category": context.targetAppCategory.rawValue
         ]

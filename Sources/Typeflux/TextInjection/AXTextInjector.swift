@@ -4,6 +4,61 @@ import ApplicationServices
 import Foundation
 import os
 
+enum TextTargetCapability: Equatable {
+    case writable
+    case notWritable
+    case opaque
+}
+
+final class PasteboardDeliveryProbe: NSObject, NSPasteboardItemDataProvider, @unchecked Sendable {
+    private let text: String
+    private let now: @Sendable () -> TimeInterval
+    private let lock = NSLock()
+    private var dispatchedAt: TimeInterval?
+    private var requestTimes: [TimeInterval] = []
+
+    init(
+        text: String,
+        now: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
+    ) {
+        self.text = text
+        self.now = now
+    }
+
+    func markDispatched() {
+        lock.lock()
+        dispatchedAt = now()
+        lock.unlock()
+    }
+
+    var wasRequestedAfterDispatch: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let dispatchedAt else { return false }
+        return requestTimes.contains { $0 >= dispatchedAt }
+    }
+
+    var wasRequestedBeforeDispatch: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let dispatchedAt else { return !requestTimes.isEmpty }
+        return requestTimes.contains { $0 < dispatchedAt }
+    }
+
+    func pasteboard(
+        _: NSPasteboard?,
+        item: NSPasteboardItem,
+        provideDataForType type: NSPasteboard.PasteboardType
+    ) {
+        lock.lock()
+        requestTimes.append(now())
+        lock.unlock()
+        item.setString(text, forType: type)
+    }
+
+    func pasteboardFinishedWithDataProvider(_: NSPasteboard) {}
+}
+
 final class AXTextInjector: TextInjector {
     static let nativeEditableRoles: Set<String> = [
         "AXTextArea",
@@ -16,6 +71,20 @@ final class AXTextInjector: TextInjector {
         "AXGroup",
         "AXWebArea",
         "AXUnknown"
+    ]
+
+    static let opaqueContainerRoles: Set<String> = [
+        "AXColumn",
+        "AXGrid",
+        "AXLayoutArea",
+        "AXList",
+        "AXOutline",
+        "AXRow",
+        "AXScrollArea",
+        "AXSplitGroup",
+        "AXTabGroup",
+        "AXTable",
+        "AXWindow"
     ]
 
     static let nonEditableFalsePositiveRoles: Set<String> = [
@@ -133,6 +202,7 @@ final class AXTextInjector: TextInjector {
 
     var latestSelectionContext: SelectionContext?
     var lastInjectionMethod: TextInjectionMethod?
+    var activePasteboardDeliveryProbe: PasteboardDeliveryProbe?
 
     func isTypefluxOwnedTarget(processID: pid_t?, bundleIdentifier: String?) -> Bool {
         if processID == getpid() {
@@ -276,6 +346,42 @@ final class AXTextInjector: TextInjector {
         case success
         case failure(String)
         case indeterminate
+    }
+
+    static func targetCapability(
+        role: String?,
+        hasSelectedRange: Bool,
+        hasSettableTextAttributes: Bool
+    ) -> TextTargetCapability {
+        if nativeEditableRoles.contains(role ?? "") {
+            return .writable
+        }
+
+        if opaqueContainerRoles.contains(role ?? "") {
+            return .opaque
+        }
+
+        if let role, nonEditableFalsePositiveRoles.contains(role) {
+            return .notWritable
+        }
+
+        if genericEditableRoles.contains(role ?? "") {
+            return hasSelectedRange || hasSettableTextAttributes ? .writable : .opaque
+        }
+
+        if hasSelectedRange && hasSettableTextAttributes {
+            return .writable
+        }
+
+        return .opaque
+    }
+
+    static func replacingUTF16Range(in source: String, range: CFRange, with replacement: String) -> String? {
+        guard range.location >= 0, range.length >= 0 else { return nil }
+        let nsRange = NSRange(location: range.location, length: range.length)
+        let source = source as NSString
+        guard NSMaxRange(nsRange) <= source.length else { return nil }
+        return source.replacingCharacters(in: nsRange, with: replacement)
     }
 
     enum PasteDispatchMethod: Equatable {
