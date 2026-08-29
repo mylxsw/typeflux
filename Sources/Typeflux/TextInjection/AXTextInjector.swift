@@ -348,6 +348,49 @@ final class AXTextInjector: TextInjector {
         case indeterminate
     }
 
+    static func finalPasteVerification(
+        lastReadback: PasteVerificationResult,
+        payloadRequestedAfterDispatch: Bool,
+        payloadRequestedBeforeDispatch: Bool,
+        targetStableThroughout: Bool
+    ) -> PasteVerificationResult {
+        guard targetStableThroughout else {
+            return .failure("focused-target-changed")
+        }
+
+        switch lastReadback {
+        case .success:
+            return .success
+        case .failure:
+            return lastReadback
+        case .indeterminate:
+            break
+        }
+
+        if payloadRequestedAfterDispatch {
+            return .success
+        }
+
+        return .failure(
+            payloadRequestedBeforeDispatch
+                ? "pasteboard-request-contaminated-before-dispatch"
+                : "pasteboard-payload-not-requested"
+        )
+    }
+
+    static func successfulAXWriteIsCommitted(verification: PasteVerificationResult) -> Bool {
+        switch verification {
+        case .success, .indeterminate:
+            return true
+        case let .failure(reason):
+            // AX reported that the write itself succeeded synchronously. A later focus change
+            // only makes read-back unavailable; retrying with Cmd+V could duplicate the text in
+            // a new target. Only a stable, readable target that stayed unchanged contradicts
+            // the AX acknowledgement strongly enough to justify a paste fallback.
+            return reason != "input-text-unchanged"
+        }
+    }
+
     static func targetCapability(
         role: String?,
         hasSelectedRange: Bool,
@@ -440,11 +483,11 @@ final class AXTextInjector: TextInjector {
         strictFallbackEnabled && replaceSelection
     }
 
-    /// Plain insertions (voice dictation) cannot be reliably verified through
-    /// AX on apps like WeChat, Warp, Codex, terminals, and the Safari address
-    /// bar. We still run fail-open verification so deterministic failures can
-    /// surface the copy dialog, while indeterminate targets keep best-effort
-    /// paste behavior.
+    /// Plain insertions (voice dictation) cannot always be read back through AX
+    /// on apps like WeChat, Warp, Codex, terminals, and browser address bars.
+    /// Still attempt verification: readable unchanged targets fail explicitly;
+    /// opaque targets require post-dispatch pasteboard delivery evidence while
+    /// the focused target remains stable.
     static func shouldAttemptPasteVerification(
         replaceSelection: Bool,
         strictFallbackEnabled: Bool

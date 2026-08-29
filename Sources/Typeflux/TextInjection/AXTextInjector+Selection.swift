@@ -171,6 +171,18 @@ extension AXTextInjector {
         return status == .success && settable.boolValue
     }
 
+    func processID(of element: AXUIElement) -> pid_t? {
+        var processID: pid_t = 0
+        guard AXUIElementGetPid(element, &processID) == .success else { return nil }
+        return processID
+    }
+
+    func focusedElementMatches(_ expected: AXUIElement?) -> Bool {
+        guard let expected else { return true }
+        guard let current = focusedElement() else { return false }
+        return CFEqual(expected, current)
+    }
+
     func isLikelyEditable(element: AXUIElement) -> Bool {
         targetCapability(element: element) == .writable
     }

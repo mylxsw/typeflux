@@ -80,6 +80,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(processed, "Manual copy fallback")
         XCTAssertEqual(controller.lastDialogResultText, "Manual copy fallback")
         XCTAssertEqual(clipboard.storedText, "Manual copy fallback")
+        XCTAssertTrue(controller.overlayController.isShowingPassiveNotice)
         XCTAssertTrue(textInjector.insertedTexts.isEmpty)
     }
 

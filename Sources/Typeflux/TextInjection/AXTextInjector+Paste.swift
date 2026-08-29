@@ -53,8 +53,9 @@ extension AXTextInjector {
         }
 
         var contextRestored = false
-        let beforeSnapshot = readCurrentInputTextSnapshot()
         let currentFocusedElement = focusedElement()
+        let beforeSnapshot = readCurrentInputTextSnapshot()
+        let focusedElementWasStableDuringSnapshot = focusedElementMatches(currentFocusedElement)
         let currentTargetCapability = currentFocusedElement
             .map(targetCapability(element:)) ?? .opaque
         NetworkDebugLogger.logMessage(
@@ -66,6 +67,7 @@ extension AXTextInjector {
             beforeSnapshot: \(snapshotSummary(beforeSnapshot))
             activeSelectionContext: \(selectionContextSummary(activeSelectionContext()))
             currentTargetCapability: \(String(describing: currentTargetCapability))
+            focusedElementWasStableDuringSnapshot: \(focusedElementWasStableDuringSnapshot)
             """
         )
 
@@ -79,6 +81,7 @@ extension AXTextInjector {
             }
 
             if let currentFocusedElement,
+               focusedElementWasStableDuringSnapshot,
                currentTargetCapability == .writable,
                try insertTextViaAX(
                    text,
@@ -167,22 +170,24 @@ extension AXTextInjector {
             text as CFTypeRef
         )
         if replaceSelectedText == .success {
+            let targetProcessID = processID(of: element) ?? beforeSnapshot.processID
             let verification = verifyAXWriteApplied(
                 insertedText: text,
                 replaceSelection: replaceSelection,
-                targetProcessID: frontmostProcessID(),
+                targetProcessID: targetProcessID,
                 beforeSnapshot: beforeSnapshot
             )
-            switch verification {
-            case .success:
+            if Self.successfulAXWriteIsCommitted(verification: verification) {
+                if verification == .indeterminate {
+                    NetworkDebugLogger.logMessage(
+                        "[Text Injection] AX write accepted; read-back unavailable, treating AX acknowledgement as committed"
+                    )
+                } else if case let .failure(reason) = verification {
+                    NetworkDebugLogger.logMessage(
+                        "[Text Injection] AX write accepted before read-back lost target: \(reason)"
+                    )
+                }
                 return true
-            case .indeterminate:
-                NetworkDebugLogger.logMessage(
-                    "[Text Injection] AX write accepted; read-back unavailable, treating AX acknowledgement as committed"
-                )
-                return true
-            case .failure:
-                break
             }
             let afterSnapshot = readCurrentInputTextSnapshot()
             logger.debug(
@@ -207,7 +212,7 @@ extension AXTextInjector {
         targetProcessID: pid_t?,
         beforeSnapshot: CurrentInputTextSnapshot
     ) -> PasteVerificationResult {
-        var lastFailure: PasteVerificationResult?
+        var lastReadback: PasteVerificationResult = .indeterminate
         for attempt in 0 ..< Self.axWriteVerificationAttempts {
             usleep(Self.axWriteVerificationPollIntervalMicroseconds)
             let afterSnapshot = readCurrentInputTextSnapshot()
@@ -230,14 +235,12 @@ extension AXTextInjector {
             switch verification {
             case .success:
                 return .success
-            case .failure:
-                lastFailure = verification
-            case .indeterminate:
-                continue
+            case .failure, .indeterminate:
+                lastReadback = verification
             }
         }
 
-        return lastFailure ?? .indeterminate
+        return lastReadback
     }
 
     func setTextViaPaste(
@@ -274,7 +277,15 @@ extension AXTextInjector {
             targetProcessID: targetPID
         )
 
+        let targetElement = focusedElement()
         let initialSnapshot = readCurrentInputTextSnapshot()
+        guard focusedElementMatches(targetElement) else {
+            throw NSError(
+                domain: "AXTextInjector",
+                code: 14,
+                userInfo: [NSLocalizedDescriptionKey: "Focused target changed before paste dispatch"]
+            )
+        }
         let beforeSnapshot = initialSnapshot.isEditable ? initialSnapshot : nil
         let allowClipboardSelectionFallback =
             Self.shouldAllowClipboardSelectionReplacementWithoutAXBaseline(
@@ -374,7 +385,8 @@ extension AXTextInjector {
             targetPID: targetPID,
             beforeSnapshot: beforeSnapshot,
             previousSnapshot: previousSnapshot,
-            deliveryProbe: deliveryProbe
+            deliveryProbe: deliveryProbe,
+            targetElement: targetElement
         )
     }
 
@@ -384,11 +396,23 @@ extension AXTextInjector {
         targetPID: pid_t?,
         beforeSnapshot: CurrentInputTextSnapshot?,
         previousSnapshot: PasteboardSnapshot,
-        deliveryProbe: PasteboardDeliveryProbe
+        deliveryProbe: PasteboardDeliveryProbe,
+        targetElement: AXUIElement?
     ) throws {
-        var lastFailureReason: String?
+        var lastReadback: PasteVerificationResult = .indeterminate
+        var targetStableThroughout = true
         for attempt in 0 ..< Self.pasteVerificationAttempts {
-            waitForPasteEvidence(microseconds: Self.pasteVerificationPollIntervalMicroseconds)
+            let payloadWasAlreadyObserved = deliveryProbe.wasRequestedAfterDispatch
+            let remainedStable = waitForPasteEvidence(
+                microseconds: Self.pasteVerificationPollIntervalMicroseconds,
+                targetProcessID: targetPID,
+                targetElement: targetElement,
+                deliveryProbe: deliveryProbe,
+                stopWhenPayloadRequested: !payloadWasAlreadyObserved
+            )
+            if !remainedStable {
+                targetStableThroughout = false
+            }
             let afterSnapshot = readCurrentInputTextSnapshot()
             let verification = Self.evaluatePasteVerification(
                 insertedText: text,
@@ -397,6 +421,7 @@ extension AXTextInjector {
                 before: beforeSnapshot,
                 after: afterSnapshot
             )
+            lastReadback = verification
             NetworkDebugLogger.logMessage(
                 """
                 [Text Injection] paste verification attempt \(attempt + 1)
@@ -408,27 +433,59 @@ extension AXTextInjector {
 
             switch verification {
             case .success:
-                restorePasteboardAfterPaste(
-                    previousSnapshot,
-                    delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds
-                )
-                return
+                if targetStableThroughout {
+                    restorePasteboardAfterPaste(
+                        previousSnapshot,
+                        delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds
+                    )
+                    return
+                }
             case let .failure(reason):
-                lastFailureReason = reason
                 logger.debug(
                     "paste verification failed on attempt \(attempt + 1, privacy: .public): \(reason, privacy: .public)"
                 )
             case .indeterminate:
+                if targetStableThroughout, deliveryProbe.wasRequestedAfterDispatch {
+                    restorePasteboardAfterPaste(
+                        previousSnapshot,
+                        delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds
+                    )
+                    return
+                }
                 logger.debug("paste verification indeterminate on attempt \(attempt + 1, privacy: .public)")
             }
         }
 
-        if let lastFailureReason {
+        let currentPID = frontmostProcessID()
+        if let targetPID, currentPID != targetPID {
+            targetStableThroughout = false
+        }
+        if !focusedElementMatches(targetElement) {
+            targetStableThroughout = false
+        }
+        let finalVerification = Self.finalPasteVerification(
+            lastReadback: lastReadback,
+            payloadRequestedAfterDispatch: deliveryProbe.wasRequestedAfterDispatch,
+            payloadRequestedBeforeDispatch: deliveryProbe.wasRequestedBeforeDispatch,
+            targetStableThroughout: targetStableThroughout
+        )
+
+        switch finalVerification {
+        case .success:
+            NetworkDebugLogger.logMessage(
+                "[Text Injection] paste committed via verified readback or post-dispatch payload request"
+            )
+            restorePasteboardAfterPaste(
+                previousSnapshot,
+                delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds
+            )
+            return
+        case let .failure(reason):
             let finalSnapshot = readCurrentInputTextSnapshot()
             NetworkDebugLogger.logMessage(
                 """
                 [Text Injection] paste verification exhausted
-                lastFailureReason: \(lastFailureReason)
+                failureReason: \(reason)
                 finalSnapshot: \(snapshotSummary(finalSnapshot))
                 """
             )
@@ -437,43 +494,44 @@ extension AXTextInjector {
                 code: 2,
                 userInfo: [
                     NSLocalizedDescriptionKey:
-                        "Paste insertion could not be verified: \(lastFailureReason)"
+                        "Paste insertion could not be verified: \(reason)"
                 ]
             )
+        case .indeterminate:
+            preconditionFailure("finalPasteVerification must return a terminal result")
         }
-
-        let currentPID = frontmostProcessID()
-        if deliveryProbe.wasRequestedAfterDispatch,
-           targetPID == nil || currentPID == targetPID {
-            NetworkDebugLogger.logMessage(
-                "[Text Injection] paste committed via post-dispatch pasteboard payload request"
-            )
-            restorePasteboardAfterPaste(
-                previousSnapshot,
-                delayNanoseconds: Self.verifiedPasteRestoreDelayNanoseconds
-            )
-            return
-        }
-
-        let reason = deliveryProbe.wasRequestedBeforeDispatch
-            ? "pasteboard-request-contaminated-before-dispatch"
-            : "pasteboard-payload-not-requested"
-        throw NSError(
-            domain: "AXTextInjector",
-            code: 2,
-            userInfo: [NSLocalizedDescriptionKey: "Paste insertion could not be verified: \(reason)"]
-        )
     }
 
-    private func waitForPasteEvidence(microseconds: useconds_t) {
-        let deadline = Date().addingTimeInterval(Double(microseconds) / 1_000_000)
-        if Thread.isMainThread {
-            while Date() < deadline {
-                _ = RunLoop.current.run(mode: .default, before: deadline)
+    private func waitForPasteEvidence(
+        microseconds: useconds_t,
+        targetProcessID: pid_t?,
+        targetElement: AXUIElement?,
+        deliveryProbe: PasteboardDeliveryProbe,
+        stopWhenPayloadRequested: Bool
+    ) -> Bool {
+        func targetIsStable() -> Bool {
+            if let targetProcessID, frontmostProcessID() != targetProcessID {
+                return false
             }
-        } else {
-            usleep(microseconds)
+            return focusedElementMatches(targetElement)
         }
+
+        let deadline = Date().addingTimeInterval(Double(microseconds) / 1_000_000)
+        let pollInterval: TimeInterval = 0.01
+        while Date() < deadline {
+            guard targetIsStable() else { return false }
+            if stopWhenPayloadRequested, deliveryProbe.wasRequestedAfterDispatch {
+                return true
+            }
+
+            if Thread.isMainThread {
+                let nextPoll = min(deadline, Date().addingTimeInterval(pollInterval))
+                _ = RunLoop.current.run(mode: .default, before: nextPoll)
+            } else {
+                usleep(useconds_t(pollInterval * 1_000_000))
+            }
+        }
+        return targetIsStable()
     }
 
     static func evaluatePasteVerification(
@@ -514,9 +572,17 @@ extension AXTextInjector {
             }
 
             if let beforeText = before?.text {
-                let normalizedBeforeText = beforeText.trimmingCharacters(in: .whitespacesAndNewlines)
-                if normalizedBeforeText == normalizedAfterText {
+                if beforeText == afterText {
                     if !after.isFocusedTarget || before?.isFocusedTarget == false {
+                        return .indeterminate
+                    }
+                    if !replaceSelection,
+                       before?.textSource == "ax-value",
+                       after.textSource == "ax-value",
+                       (
+                           normalizedAfterText.isEmpty
+                               || browserAutomationKind(for: before?.bundleIdentifier) != nil
+                       ) {
                         return .indeterminate
                     }
                     return .failure("input-text-unchanged")
