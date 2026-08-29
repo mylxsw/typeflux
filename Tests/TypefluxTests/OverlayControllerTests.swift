@@ -91,28 +91,32 @@ final class OverlayControllerTests: XCTestCase {
 
         controller.showProcessing(timeout: 1)
         XCTAssertTrue(controller.isProcessingProgressActiveForTesting)
+        XCTAssertEqual(controller.processingProgressForTesting, 0.5)
 
         try await Task.sleep(for: .milliseconds(120))
 
-        XCTAssertGreaterThan(controller.processingProgressForTesting, 0)
+        XCTAssertGreaterThan(controller.processingProgressForTesting, 0.5)
+        XCTAssertLessThan(controller.processingProgressForTesting, 0.7)
         controller.showFailure(message: "Failed")
         XCTAssertFalse(controller.isProcessingProgressActiveForTesting)
         XCTAssertEqual(controller.processingProgressForTesting, 0)
     }
 
     @MainActor
-    func testProcessingProgressWaitsAtHalfUntilLLMPhase() async throws {
+    func testProcessingProgressMovesFromRecognitionIntoLLMPhase() async throws {
         let controller = OverlayController(appState: AppStateStore())
 
-        controller.showProcessing(timeout: 0.4)
-        try await Task.sleep(for: .milliseconds(260))
-
-        XCTAssertEqual(controller.processingProgressForTesting, 0.5, accuracy: 0.001)
-
-        controller.transitionToLLMPhase()
-        try await Task.sleep(for: .milliseconds(70))
+        controller.showProcessing(timeout: 1)
+        try await Task.sleep(for: .milliseconds(120))
 
         XCTAssertGreaterThan(controller.processingProgressForTesting, 0.5)
+        XCTAssertLessThan(controller.processingProgressForTesting, 0.7)
+
+        controller.transitionToLLMPhase()
+        XCTAssertEqual(controller.processingProgressForTesting, 0.7, accuracy: 0.001)
+        try await Task.sleep(for: .milliseconds(70))
+
+        XCTAssertGreaterThan(controller.processingProgressForTesting, 0.7)
     }
 
     @MainActor
