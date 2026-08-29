@@ -377,6 +377,7 @@
 
 "workflow.apply.inserted" = "アクティブなアプリに適用されます。";
 "workflow.apply.presentedInDialog" = "直接挿入は利用できないため、結果はダイアログに表示されました。";
+"workflow.apply.copiedToClipboard" = "直接挿入できなかったため、結果をクリップボードにコピーしました。";
 "workflow.cancel.stopping" = "停止中にキャンセルされました。";
 "workflow.cancel.retry" = "再試行のためキャンセルされました。";
 "workflow.cancel.newRecording" = "新規録音によりキャンセルされました。";
@@ -395,6 +396,7 @@
 "workflow.transcription.noSpeech" = "明瞭な音声が検出されませんでした。転写はキャンセルされました。";
 "workflow.transcription.serverUnavailableNotice" = "サーバーに接続できません。録音は履歴に保存され、後で再試行できます。";
 "workflow.result.copyTitle" = "コピー結果";
+"workflow.result.insertionFailedCopied" = "テキストを挿入できなかったためコピーしました。⌘V で貼り付けできます。";
 "workflow.ask.answerTitle" = "何でも聞いてください";
 "workflow.ask.questionSectionTitle" = "あなたの質問";
 "workflow.ask.answerSectionTitle" = "答え";

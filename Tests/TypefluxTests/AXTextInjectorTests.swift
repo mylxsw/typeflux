@@ -3,6 +3,161 @@ import ApplicationServices
 import XCTest
 
 final class AXTextInjectorTests: XCTestCase {
+    func testTargetCapabilityDistinguishesWritableNonWritableAndOpaqueTargets() {
+        XCTAssertEqual(
+            AXTextInjector.targetCapability(
+                role: "AXTextArea",
+                hasSelectedRange: false,
+                hasSettableTextAttributes: false
+            ),
+            .writable
+        )
+        XCTAssertEqual(
+            AXTextInjector.targetCapability(
+                role: "AXButton",
+                hasSelectedRange: true,
+                hasSettableTextAttributes: true
+            ),
+            .notWritable
+        )
+        XCTAssertEqual(
+            AXTextInjector.targetCapability(
+                role: "AXGroup",
+                hasSelectedRange: false,
+                hasSettableTextAttributes: false
+            ),
+            .opaque
+        )
+        XCTAssertEqual(
+            AXTextInjector.targetCapability(
+                role: "AXGroup",
+                hasSelectedRange: true,
+                hasSettableTextAttributes: false
+            ),
+            .writable
+        )
+        XCTAssertEqual(
+            AXTextInjector.targetCapability(
+                role: "AXWindow",
+                hasSelectedRange: false,
+                hasSettableTextAttributes: false
+            ),
+            .opaque
+        )
+    }
+
+    func testReplacingUTF16RangeHandlesEmojiAndRejectsInvalidRanges() {
+        XCTAssertEqual(
+            AXTextInjector.replacingUTF16Range(
+                in: "A😀B",
+                range: CFRange(location: 1, length: 2),
+                with: "hello"
+            ),
+            "AhelloB"
+        )
+        XCTAssertNil(
+            AXTextInjector.replacingUTF16Range(
+                in: "short",
+                range: CFRange(location: 4, length: 2),
+                with: "x"
+            )
+        )
+    }
+
+    func testPasteboardDeliveryProbeSeparatesRequestsBeforeAndAfterDispatch() {
+        let clock = TestMonotonicClock(now: 1)
+        let contaminatedProbe = PasteboardDeliveryProbe(text: "hello", now: { clock.read() })
+        contaminatedProbe.pasteboard(
+            nil,
+            item: NSPasteboardItem(),
+            provideDataForType: .string
+        )
+        clock.set(2)
+        contaminatedProbe.markDispatched()
+
+        XCTAssertTrue(contaminatedProbe.wasRequestedBeforeDispatch)
+        XCTAssertFalse(contaminatedProbe.wasRequestedAfterDispatch)
+
+        let deliveredProbe = PasteboardDeliveryProbe(text: "hello", now: { clock.read() })
+        deliveredProbe.markDispatched()
+        clock.set(3)
+        deliveredProbe.pasteboard(
+            nil,
+            item: NSPasteboardItem(),
+            provideDataForType: .string
+        )
+
+        XCTAssertFalse(deliveredProbe.wasRequestedBeforeDispatch)
+        XCTAssertTrue(deliveredProbe.wasRequestedAfterDispatch)
+    }
+
+    func testFinalPasteVerificationUsesLatestReadbackAndDeliveryEvidence() {
+        XCTAssertEqual(
+            AXTextInjector.finalPasteVerification(
+                lastReadback: .indeterminate,
+                payloadRequestedAfterDispatch: true,
+                payloadRequestedBeforeDispatch: false,
+                targetStableThroughout: true
+            ),
+            .success
+        )
+        XCTAssertEqual(
+            AXTextInjector.finalPasteVerification(
+                lastReadback: .failure("input-text-unchanged"),
+                payloadRequestedAfterDispatch: true,
+                payloadRequestedBeforeDispatch: false,
+                targetStableThroughout: true
+            ),
+            .failure("input-text-unchanged")
+        )
+        XCTAssertEqual(
+            AXTextInjector.finalPasteVerification(
+                lastReadback: .indeterminate,
+                payloadRequestedAfterDispatch: true,
+                payloadRequestedBeforeDispatch: false,
+                targetStableThroughout: false
+            ),
+            .failure("focused-target-changed")
+        )
+        XCTAssertEqual(
+            AXTextInjector.finalPasteVerification(
+                lastReadback: .indeterminate,
+                payloadRequestedAfterDispatch: false,
+                payloadRequestedBeforeDispatch: true,
+                targetStableThroughout: true
+            ),
+            .failure("pasteboard-request-contaminated-before-dispatch")
+        )
+        XCTAssertEqual(
+            AXTextInjector.finalPasteVerification(
+                lastReadback: .indeterminate,
+                payloadRequestedAfterDispatch: false,
+                payloadRequestedBeforeDispatch: false,
+                targetStableThroughout: true
+            ),
+            .failure("pasteboard-payload-not-requested")
+        )
+    }
+
+    func testSuccessfulAXWriteOnlyFallsBackForStableUnchangedInput() {
+        XCTAssertTrue(
+            AXTextInjector.successfulAXWriteIsCommitted(verification: .success)
+        )
+        XCTAssertTrue(
+            AXTextInjector.successfulAXWriteIsCommitted(verification: .indeterminate)
+        )
+        XCTAssertTrue(
+            AXTextInjector.successfulAXWriteIsCommitted(
+                verification: .failure("focused-process-changed")
+            )
+        )
+        XCTAssertFalse(
+            AXTextInjector.successfulAXWriteIsCommitted(
+                verification: .failure("input-text-unchanged")
+            )
+        )
+    }
+
     private final class InjectorBox: @unchecked Sendable {
         let value = AXTextInjector()
     }
@@ -488,6 +643,7 @@ final class AXTextInjectorTests: XCTestCase {
             processName: "Notes",
             role: "AXTextArea",
             text: "Hello",
+            selectedRange: CFRange(location: 5, length: 0),
             isEditable: true,
             isFocusedTarget: true,
             failureReason: nil
@@ -503,7 +659,7 @@ final class AXTextInjectorTests: XCTestCase {
         )
 
         let result = AXTextInjector.evaluatePasteVerification(
-            insertedText: "world",
+            insertedText: " world",
             replaceSelection: false,
             targetProcessID: 42,
             before: before,
@@ -511,6 +667,69 @@ final class AXTextInjectorTests: XCTestCase {
         )
 
         XCTAssertEqual(result, .success)
+    }
+
+    func testEvaluatePasteVerificationRequiresExactCaretTransition() {
+        let before = CurrentInputTextSnapshot(
+            processID: 42,
+            processName: "Notes",
+            role: "AXTextArea",
+            text: "world Hello",
+            selectedRange: CFRange(location: 11, length: 0),
+            isEditable: true,
+            isFocusedTarget: true,
+            failureReason: nil
+        )
+        let after = CurrentInputTextSnapshot(
+            processID: 42,
+            processName: "Notes",
+            role: "AXTextArea",
+            text: "world Hello",
+            isEditable: true,
+            isFocusedTarget: true,
+            failureReason: nil
+        )
+
+        let result = AXTextInjector.evaluatePasteVerification(
+            insertedText: "world",
+            replaceSelection: false,
+            targetProcessID: 42,
+            before: before,
+            after: after
+        )
+
+        XCTAssertEqual(result, .failure("input-text-unchanged"))
+    }
+
+    func testEvaluatePasteVerificationDoesNotTreatWhitespaceChangeAsUnchanged() {
+        let before = CurrentInputTextSnapshot(
+            processID: 42,
+            processName: "Notes",
+            role: "AXTextArea",
+            text: "Hello",
+            isEditable: true,
+            isFocusedTarget: true,
+            failureReason: nil
+        )
+        let after = CurrentInputTextSnapshot(
+            processID: 42,
+            processName: "Notes",
+            role: "AXTextArea",
+            text: "Hello\n",
+            isEditable: true,
+            isFocusedTarget: true,
+            failureReason: nil
+        )
+
+        let result = AXTextInjector.evaluatePasteVerification(
+            insertedText: "\n",
+            replaceSelection: false,
+            targetProcessID: 42,
+            before: before,
+            after: after
+        )
+
+        XCTAssertEqual(result, .indeterminate)
     }
 
     func testEvaluatePasteVerificationFailsWhenFocusedProcessChanges() {
@@ -544,7 +763,7 @@ final class AXTextInjectorTests: XCTestCase {
         XCTAssertEqual(result, .failure("focused-process-changed"))
     }
 
-    func testEvaluatePasteVerificationIsIndeterminateWhenReadableInputTextDoesNotChangeForInsert() {
+    func testEvaluatePasteVerificationFailsWhenReadableInputTextDoesNotChangeForInsert() {
         let before = CurrentInputTextSnapshot(
             processID: 42,
             processName: "Notes",
@@ -576,7 +795,7 @@ final class AXTextInjectorTests: XCTestCase {
             after: after
         )
 
-        XCTAssertEqual(result, .indeterminate)
+        XCTAssertEqual(result, .failure("input-text-unchanged"))
     }
 
     func testEvaluatePasteVerificationFailsWhenReadableInputTextDoesNotChangeForReplace() {
@@ -640,6 +859,41 @@ final class AXTextInjectorTests: XCTestCase {
 
         let result = AXTextInjector.evaluatePasteVerification(
             insertedText: "这是语音输入",
+            replaceSelection: false,
+            targetProcessID: 42,
+            before: before,
+            after: after
+        )
+
+        XCTAssertEqual(result, .indeterminate)
+    }
+
+    func testEvaluatePasteVerificationIsIndeterminateWhenKnownBrowserAXValueIsStale() {
+        let before = CurrentInputTextSnapshot(
+            processID: 42,
+            processName: "Arc",
+            bundleIdentifier: "company.thebrowser.Browser",
+            role: "AXTextArea",
+            text: "Stale editor value",
+            isEditable: true,
+            isFocusedTarget: true,
+            failureReason: nil,
+            textSource: "ax-value"
+        )
+        let after = CurrentInputTextSnapshot(
+            processID: 42,
+            processName: "Arc",
+            bundleIdentifier: "company.thebrowser.Browser",
+            role: "AXTextArea",
+            text: "Stale editor value",
+            isEditable: true,
+            isFocusedTarget: true,
+            failureReason: nil,
+            textSource: "ax-value"
+        )
+
+        let result = AXTextInjector.evaluatePasteVerification(
+            insertedText: "new text",
             replaceSelection: false,
             targetProcessID: 42,
             before: before,
@@ -1042,5 +1296,26 @@ final class AXTextInjectorTests: XCTestCase {
         )
 
         XCTAssertEqual(result, .indeterminate)
+    }
+}
+
+private final class TestMonotonicClock: @unchecked Sendable {
+    private let lock = NSLock()
+    private var now: TimeInterval
+
+    init(now: TimeInterval) {
+        self.now = now
+    }
+
+    func read() -> TimeInterval {
+        lock.lock()
+        defer { lock.unlock() }
+        return now
+    }
+
+    func set(_ value: TimeInterval) {
+        lock.lock()
+        now = value
+        lock.unlock()
     }
 }

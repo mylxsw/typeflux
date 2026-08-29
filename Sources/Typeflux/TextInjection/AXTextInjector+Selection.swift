@@ -171,28 +171,34 @@ extension AXTextInjector {
         return status == .success && settable.boolValue
     }
 
+    func processID(of element: AXUIElement) -> pid_t? {
+        var processID: pid_t = 0
+        guard AXUIElementGetPid(element, &processID) == .success else { return nil }
+        return processID
+    }
+
+    func focusedElementMatches(_ expected: AXUIElement?) -> Bool {
+        guard let expected else { return true }
+        guard let current = focusedElement() else { return false }
+        return CFEqual(expected, current)
+    }
+
     func isLikelyEditable(element: AXUIElement) -> Bool {
+        targetCapability(element: element) == .writable
+    }
+
+    func targetCapability(element: AXUIElement) -> TextTargetCapability {
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
         let selectedRange = copySelectedTextRange(from: element)
-
-        if Self.nativeEditableRoles.contains(role ?? "") {
-            return true
-        }
-
-        if let role, Self.nonEditableFalsePositiveRoles.contains(role) {
-            return false
-        }
-
         let hasSettableTextAttributes =
             isAttributeSettable(kAXSelectedTextRangeAttribute as CFString, on: element)
                 || isAttributeSettable(kAXValueAttribute as CFString, on: element)
                 || isAttributeSettable(kAXSelectedTextAttribute as CFString, on: element)
-
-        if Self.genericEditableRoles.contains(role ?? "") {
-            return selectedRange != nil || hasSettableTextAttributes
-        }
-
-        return selectedRange != nil && hasSettableTextAttributes
+        return Self.targetCapability(
+            role: role,
+            hasSelectedRange: selectedRange != nil,
+            hasSettableTextAttributes: hasSettableTextAttributes
+        )
     }
 
     func systemFocusedElement() -> AXUIElement? {

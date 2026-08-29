@@ -60,7 +60,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertTrue(textInjector.insertedTexts.isEmpty)
     }
 
-    func testApplyTextPresentsCopyDialogWhenInsertThrows() async {
+    func testApplyTextCopiesResultWhenInsertThrows() async {
         let textInjector = MockProcessingTextInjector(
             insertError: NSError(
                 domain: "AXTextInjector",
@@ -68,13 +68,19 @@ final class WorkflowControllerProcessingTests: XCTestCase {
                 userInfo: [NSLocalizedDescriptionKey: "Paste insertion could not be verified"]
             )
         )
-        let controller = makeWorkflowController(textInjector: textInjector)
+        let clipboard = MockClipboardService()
+        let controller = makeWorkflowController(
+            textInjector: textInjector,
+            clipboard: clipboard
+        )
 
         let (outcome, processed) = await controller.applyText("Manual copy fallback", replace: false)
 
-        XCTAssertEqual(outcome, .presentedInDialog)
+        XCTAssertEqual(outcome, .copiedToClipboard)
         XCTAssertEqual(processed, "Manual copy fallback")
         XCTAssertEqual(controller.lastDialogResultText, "Manual copy fallback")
+        XCTAssertEqual(clipboard.storedText, "Manual copy fallback")
+        XCTAssertTrue(controller.overlayController.isShowingPassiveNotice)
         XCTAssertTrue(textInjector.insertedTexts.isEmpty)
     }
 
