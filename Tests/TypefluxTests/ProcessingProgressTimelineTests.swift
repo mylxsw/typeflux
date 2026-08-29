@@ -41,6 +41,30 @@ final class ProcessingProgressTimelineTests: XCTestCase {
         )
     }
 
+    func testContentProgressMovesVisiblyDuringTypicalResponseTime() {
+        let timeline = ProcessingProgressTimeline(timeout: 120)
+        let progressAfterOneSecond = timeline.progress(
+            elapsed: 31,
+            contentProcessingStartedAt: 30
+        )
+        let progressAfterThreeSeconds = timeline.progress(
+            elapsed: 33,
+            contentProcessingStartedAt: 30
+        )
+        let progressAfterFiveSeconds = timeline.progress(
+            elapsed: 35,
+            contentProcessingStartedAt: 30
+        )
+
+        XCTAssertGreaterThanOrEqual(progressAfterOneSecond, 0.77)
+        XCTAssertGreaterThanOrEqual(progressAfterThreeSeconds, 0.85)
+        XCTAssertGreaterThanOrEqual(progressAfterFiveSeconds, 0.9)
+        XCTAssertLessThan(
+            progressAfterFiveSeconds,
+            ProcessingProgressTimeline.maximumIncompleteProgress
+        )
+    }
+
     func testContentProgressContinuouslyAdvancesAcrossRemainingTimeout() {
         let timeline = ProcessingProgressTimeline(timeout: 120)
         let checkpoints = stride(from: 30.0, through: 120.0, by: 1.0)
