@@ -176,7 +176,8 @@ extension WorkflowController {
 
         cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.newRecording"))
         let sessionID = beginProcessingSession()
-        startProcessingTimeout(sessionID: sessionID)
+        let timeoutSeconds = Self.processingTimeoutSeconds(recordingDurationSeconds: nil)
+        startProcessingTimeout(sessionID: sessionID, timeoutSeconds: timeoutSeconds)
 
         var record = HistoryRecord(
             date: Date(),
@@ -193,7 +194,7 @@ extension WorkflowController {
 
         Task { @MainActor in
             self.appState.setStatus(.processing)
-            self.overlayController.showLLMProcessing()
+            self.overlayController.showLLMProcessing(timeout: timeoutSeconds)
         }
 
         let shouldShowResultDialog = shouldPresentResultDialog(for: context.snapshot)

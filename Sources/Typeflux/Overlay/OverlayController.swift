@@ -262,6 +262,7 @@ final class OverlayController {
     private static let autoDismissDelay: TimeInterval = 6.0
     private static let shadowGutter: CGFloat = 32
     private static let processingStatusLocalizationKey = "overlay.processing.thinking"
+    private static let processingProgressRefreshInterval: Duration = .milliseconds(50)
 
     static func noticeIsInteractive(dismissible: Bool) -> Bool {
         dismissible
@@ -269,6 +270,14 @@ final class OverlayController {
 
     var isShowingPassiveNotice: Bool {
         model.presentation == .notice && !model.noticeDismissible
+    }
+
+    var processingProgressForTesting: CGFloat {
+        model.processingProgress
+    }
+
+    var isProcessingProgressActiveForTesting: Bool {
+        processingProgressTask?.isCancelled == false
     }
 
     struct PersonaPickerItem: Identifiable, Equatable {
@@ -313,6 +322,9 @@ final class OverlayController {
     private var pendingFrameAnimationWorkItem: DispatchWorkItem?
     private var pendingPresentationWorkItem: DispatchWorkItem?
     private var recordingHintAutoHideWorkItem: DispatchWorkItem?
+    private var processingProgressTask: Task<Void, Never>?
+    private var processingProgressStartedAt: TimeInterval?
+    private var processingProgressTimeline: ProcessingProgressTimeline?
 
     init(appState: AppStateStore, settingsStore: SettingsStore) {
         self.appState = appState
@@ -347,6 +359,7 @@ final class OverlayController {
             pendingPresentationWorkItem,
             recordingHintAutoHideWorkItem
         ]
+        let progressTask = processingProgressTask
         let tap = eventTap
         let source = runLoopSource
         let fallbackGlobalMonitor = _fallbackGlobalMonitor
@@ -356,6 +369,7 @@ final class OverlayController {
         let systemKeyHandlerRef = pickerSystemKeyHandlerRef
 
         queuedWork.forEach { $0?.cancel() }
+        progressTask?.cancel()
         if let tap {
             CGEvent.tapEnable(tap: tap, enable: false)
             if let source {
@@ -421,6 +435,7 @@ final class OverlayController {
         }
         pendingPresentationWorkItem?.cancel()
         pendingPresentationWorkItem = nil
+        stopProcessingProgress()
         dismissWorkItem?.cancel()
         dismissWorkItem = nil
         cancelRecordingHintAutoHide()
@@ -480,6 +495,7 @@ final class OverlayController {
         }
         pendingPresentationWorkItem?.cancel()
         pendingPresentationWorkItem = nil
+        stopProcessingProgress()
         dismissWorkItem?.cancel()
         dismissWorkItem = nil
         cancelRecordingHintAutoHide()
@@ -512,23 +528,21 @@ final class OverlayController {
         refreshWindow()
     }
 
-    func showProcessing() {
+    func showProcessing(timeout: TimeInterval = 120) {
         if !Thread.isMainThread {
-            DispatchQueue.main.async { [weak self] in self?.showProcessing() }
+            DispatchQueue.main.async { [weak self] in self?.showProcessing(timeout: timeout) }
             return
         }
         cancelPendingPresentationTransition()
         dismissWorkItem?.cancel()
         dismissWorkItem = nil
         ensureWindow()
+        startProcessingProgress(timeout: timeout)
         if model.presentation.isRecordingPreview {
             model.recordingPreviewExpanded = false
             model.statusText = L(Self.processingStatusLocalizationKey)
             model.recordingHintText = ""
             cancelRecordingHintAutoHide()
-            model.processingProgress = 0
-            model.processingPhase = 1
-            model.processingEpoch += 1
             refreshWindow()
 
             let workItem = DispatchWorkItem { [weak self] in
@@ -550,15 +564,12 @@ final class OverlayController {
         model.detailText = ""
         model.recordingHintText = ""
         cancelRecordingHintAutoHide()
-        model.processingProgress = 0
-        model.processingPhase = 1
-        model.processingEpoch += 1
         refreshWindow()
     }
 
-    func showLLMProcessing() {
+    func showLLMProcessing(timeout: TimeInterval = 120) {
         if !Thread.isMainThread {
-            DispatchQueue.main.async { [weak self] in self?.showLLMProcessing() }
+            DispatchQueue.main.async { [weak self] in self?.showLLMProcessing(timeout: timeout) }
             return
         }
         cancelPendingPresentationTransition()
@@ -570,9 +581,7 @@ final class OverlayController {
         model.detailText = ""
         model.recordingHintText = ""
         cancelRecordingHintAutoHide()
-        model.processingProgress = 0
-        model.processingPhase = 1
-        model.processingEpoch += 1
+        startProcessingProgress(timeout: timeout)
         refreshWindow()
     }
 
@@ -590,15 +599,11 @@ final class OverlayController {
             model.statusText = L(Self.processingStatusLocalizationKey)
             model.detailText = ""
             model.recordingHintText = ""
-            model.processingProgress = 0
-            model.processingPhase = 1
-            model.processingEpoch += 1
             shouldRefresh = true
         }
         guard model.presentation.isProcessing else { return }
-        if model.processingPhase == 0 {
+        if model.statusText.isEmpty {
             model.statusText = L(Self.processingStatusLocalizationKey)
-            model.processingPhase = 1
             shouldRefresh = true
         }
         if shouldRefresh {
@@ -613,6 +618,7 @@ final class OverlayController {
         }
         cancelPendingPresentationTransition()
         dismissWorkItem?.cancel()
+        stopProcessingProgress()
         ensureWindow()
         model.presentation = .failure
         model.statusText = L("overlay.failure.title")
@@ -629,6 +635,7 @@ final class OverlayController {
         }
         cancelPendingPresentationTransition()
         dismissWorkItem?.cancel()
+        stopProcessingProgress()
         ensureWindow()
         model.presentation = .failure
         model.statusText = L("overlay.failure.title")
@@ -651,6 +658,7 @@ final class OverlayController {
         }
         cancelPendingPresentationTransition()
         dismissWorkItem?.cancel()
+        stopProcessingProgress()
         ensureWindow()
         model.presentation = .failure
         model.statusText = L("overlay.timeout.title")
@@ -685,6 +693,7 @@ final class OverlayController {
         }
         cancelPendingPresentationTransition()
         dismissWorkItem?.cancel()
+        stopProcessingProgress()
         ensureWindow()
         model.presentation = .failure
         model.statusText = title
@@ -749,6 +758,7 @@ final class OverlayController {
         }
         cancelPendingPresentationTransition()
         dismissWorkItem?.cancel()
+        stopProcessingProgress()
         model.noticeDismissible = true
         model.presentation = .notice
         model.statusText = L("overlay.notice.title")
@@ -764,6 +774,7 @@ final class OverlayController {
         }
         cancelPendingPresentationTransition()
         dismissWorkItem?.cancel()
+        stopProcessingProgress()
         model.noticeDismissible = false
         model.presentation = .notice
         model.statusText = L("overlay.notice.title")
@@ -781,6 +792,7 @@ final class OverlayController {
         }
         cancelPendingPresentationTransition()
         dismissWorkItem?.cancel()
+        stopProcessingProgress()
         ensureWindow()
         model.presentation = .resultDialog
         model.statusText = title
@@ -808,6 +820,7 @@ final class OverlayController {
 
         cancelPendingPresentationTransition()
         dismissWorkItem?.cancel()
+        stopProcessingProgress()
         ensureWindow()
         model.presentation = .personaPicker
         model.personaItems = items
@@ -839,6 +852,7 @@ final class OverlayController {
         cancelPendingPresentationTransition()
 
         if model.presentation.isProcessing {
+            stopProcessingProgress(resetProgress: false)
             model.processingProgress = 1
             dismiss(after: 0.18)
         } else if model.presentation == .notice || model.presentation == .resultDialog {
@@ -878,6 +892,7 @@ final class OverlayController {
             dismissWorkItem?.cancel()
             dismissWorkItem = nil
             cancelRecordingHintAutoHide()
+            stopProcessingProgress()
             window?.orderOut(nil)
             model.detailText = ""
             model.recordingHintText = ""
@@ -900,6 +915,7 @@ final class OverlayController {
             return
         }
         cancelPendingPresentationTransition()
+        stopProcessingProgress(resetProgress: false)
         if model.presentation == .failure, delay > 0 {
             return
         }
@@ -926,6 +942,40 @@ final class OverlayController {
         }
         recordingHintAutoHideWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+    }
+
+    private func startProcessingProgress(timeout: TimeInterval) {
+        stopProcessingProgress()
+        processingProgressStartedAt = ProcessInfo.processInfo.systemUptime
+        processingProgressTimeline = ProcessingProgressTimeline(timeout: timeout)
+        processingProgressTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: Self.processingProgressRefreshInterval)
+                guard !Task.isCancelled else { return }
+                await MainActor.run { [weak self] in
+                    self?.updateProcessingProgress()
+                }
+            }
+        }
+    }
+
+    private func updateProcessingProgress() {
+        guard let startedAt = processingProgressStartedAt,
+              let timeline = processingProgressTimeline
+        else { return }
+
+        let elapsed = ProcessInfo.processInfo.systemUptime - startedAt
+        model.processingProgress = timeline.progress(elapsed: elapsed)
+    }
+
+    private func stopProcessingProgress(resetProgress: Bool = true) {
+        processingProgressTask?.cancel()
+        processingProgressTask = nil
+        processingProgressStartedAt = nil
+        processingProgressTimeline = nil
+        if resetProgress {
+            model.processingProgress = 0
+        }
     }
 
     private func cancelRecordingHintAutoHide() {
@@ -1445,8 +1495,6 @@ final class OverlayViewModel: ObservableObject {
     @Published var recordingPreviewExpanded: Bool = false
     @Published var level: Float = 0
     @Published var processingProgress: CGFloat = 0
-    @Published var processingEpoch: Int = 0
-    @Published var processingPhase: Int = 0
     @Published var personaItems: [OverlayController.PersonaPickerItem] = []
     @Published var personaSelectedIndex: Int = 0
     @Published var personaViewportHeight: CGFloat = 240
@@ -1673,9 +1721,7 @@ private struct OverlayView: View {
     private var processingCapsule: some View {
         ThinkingProgressCapsule(
             title: model.statusText.isEmpty ? L("overlay.processing.thinking") : model.statusText,
-            progress: model.processingProgress,
-            epoch: model.processingEpoch,
-            phase: model.processingPhase
+            progress: model.processingProgress
         )
     }
 
@@ -1683,9 +1729,7 @@ private struct OverlayView: View {
         ProcessingTranscriptCapsule(
             text: model.detailText,
             title: model.statusText.isEmpty ? L("overlay.processing.thinking") : model.statusText,
-            progress: model.processingProgress,
-            epoch: model.processingEpoch,
-            phase: model.processingPhase
+            progress: model.processingProgress
         )
         .fixedSize(horizontal: true, vertical: true)
     }
@@ -2445,9 +2489,6 @@ private struct LiveTranscriptPreviewText: View {
 private struct ThinkingProgressCapsule: View {
     let title: String
     let progress: CGFloat
-    let epoch: Int
-    let phase: Int
-    @State private var displayProgress: CGFloat = 0
 
     var body: some View {
         let capsuleShape = Capsule(style: .continuous)
@@ -2468,7 +2509,7 @@ private struct ThinkingProgressCapsule: View {
                     Color.clear
                     Rectangle()
                         .fill(Color.white.opacity(0.22))
-                        .frame(width: max(0, width * displayProgress))
+                        .frame(width: max(0, width * progress))
                 }
             }
             .mask(capsuleShape)
@@ -2484,34 +2525,7 @@ private struct ThinkingProgressCapsule: View {
         .compositingGroup()
         .shadow(color: Color.black.opacity(0.24), radius: 16, x: 0, y: 12)
         .environment(\.colorScheme, .dark)
-        .onAppear {
-            startProcessingPhase()
-        }
-        .onChange(of: epoch) { _ in
-            displayProgress = 0
-            startProcessingPhase()
-        }
-        .onChange(of: phase) { newPhase in
-            guard newPhase == 1, progress < 1 else { return }
-            withAnimation(.easeOut(duration: 2.0)) {
-                displayProgress = 0.85
-            }
-        }
-        .onChange(of: progress) { newValue in
-            if newValue >= 1 {
-                withAnimation(.easeOut(duration: 0.22)) {
-                    displayProgress = 1
-                }
-            }
-        }
-    }
-
-    private func startProcessingPhase() {
-        guard progress < 1 else { return }
-        let targetProgress: CGFloat = phase == 1 ? 0.85 : 0.5
-        withAnimation(.easeOut(duration: 1.5)) {
-            displayProgress = targetProgress
-        }
+        .animation(.linear(duration: 0.06), value: progress)
     }
 }
 
@@ -2519,9 +2533,6 @@ private struct ProcessingTranscriptCapsule: View {
     let text: String
     let title: String
     let progress: CGFloat
-    let epoch: Int
-    let phase: Int
-    @State private var displayProgress: CGFloat = 0
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -2548,26 +2559,7 @@ private struct ProcessingTranscriptCapsule: View {
         )
         .shadow(color: Color.black.opacity(0.24), radius: 18, x: 0, y: 12)
         .environment(\.colorScheme, .dark)
-        .onAppear {
-            startProcessingPhase()
-        }
-        .onChange(of: epoch) { _ in
-            displayProgress = 0
-            startProcessingPhase()
-        }
-        .onChange(of: phase) { newPhase in
-            guard newPhase == 1, progress < 1 else { return }
-            withAnimation(.easeOut(duration: 2.0)) {
-                displayProgress = 0.85
-            }
-        }
-        .onChange(of: progress) { newValue in
-            if newValue >= 1 {
-                withAnimation(.easeOut(duration: 0.22)) {
-                    displayProgress = 1
-                }
-            }
-        }
+        .animation(.linear(duration: 0.06), value: progress)
     }
 
     private var processingRow: some View {
@@ -2579,7 +2571,7 @@ private struct ProcessingTranscriptCapsule: View {
                     Color.white.opacity(0.08)
                     Rectangle()
                         .fill(Color.white.opacity(0.24))
-                        .frame(width: max(0, geo.size.width * displayProgress))
+                        .frame(width: max(0, geo.size.width * progress))
                 }
             }
             .mask(capsuleShape)
@@ -2598,13 +2590,6 @@ private struct ProcessingTranscriptCapsule: View {
         )
     }
 
-    private func startProcessingPhase() {
-        guard progress < 1 else { return }
-        let targetProgress: CGFloat = phase == 1 ? 0.85 : 0.5
-        withAnimation(.easeOut(duration: 1.5)) {
-            displayProgress = targetProgress
-        }
-    }
 }
 
 private struct OverlayCapsule<Content: View>: View {
