@@ -606,7 +606,7 @@ final class OverlayController {
         if contentProcessingStartedElapsed == nil,
            let startedAt = processingProgressStartedAt {
             contentProcessingStartedElapsed = ProcessInfo.processInfo.systemUptime - startedAt
-            updateProcessingProgress()
+            model.processingProgress = ProcessingProgressTimeline.recognitionCompleteProgress
         }
         if model.statusText.isEmpty {
             model.statusText = L(Self.processingStatusLocalizationKey)
@@ -958,6 +958,9 @@ final class OverlayController {
         processingProgressStartedAt = ProcessInfo.processInfo.systemUptime
         contentProcessingStartedElapsed = contentProcessingAlreadyStarted ? 0 : nil
         processingProgressTimeline = ProcessingProgressTimeline(timeout: timeout)
+        model.processingProgress = contentProcessingAlreadyStarted
+            ? ProcessingProgressTimeline.recognitionCompleteProgress
+            : ProcessingProgressTimeline.initialProgress
         processingProgressTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: Self.processingProgressRefreshInterval)

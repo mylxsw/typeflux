@@ -1,18 +1,15 @@
 import Foundation
 
 struct ProcessingProgressTimeline {
-    static let initialStageProgress: CGFloat = 0.5
-    static let initialStageDuration: TimeInterval = 1.5
+    static let initialProgress: CGFloat = 0.5
+    static let recognitionCompleteProgress: CGFloat = 0.7
     static let maximumIncompleteProgress: CGFloat = 0.95
 
+    private static let recognitionResponseTime: TimeInterval = 0.45
     private let timeout: TimeInterval
 
     init(timeout: TimeInterval) {
         self.timeout = max(timeout, 0.001)
-    }
-
-    func progress(elapsed: TimeInterval) -> CGFloat {
-        progress(elapsed: elapsed, contentProcessingStartedAt: initialStageDuration)
     }
 
     func progress(
@@ -21,24 +18,16 @@ struct ProcessingProgressTimeline {
     ) -> CGFloat {
         let elapsed = min(max(elapsed, 0), timeout)
 
-        // Give transcription immediate visual momentum, then reserve the
-        // remaining progress for the slower content-processing phase.
-        if elapsed <= initialStageDuration {
-            let normalizedElapsed = elapsed / initialStageDuration
-            let easedProgress = 1 - pow(1 - normalizedElapsed, 3)
-            return CGFloat(easedProgress) * Self.initialStageProgress
-        }
-
         guard let contentProcessingStartedAt else {
-            return Self.initialStageProgress
+            return recognitionProgress(elapsed: elapsed)
         }
 
         let normalizedContentProcessingStart = min(
-            max(contentProcessingStartedAt, initialStageDuration),
+            max(contentProcessingStartedAt, 0),
             timeout
         )
         guard elapsed > normalizedContentProcessingStart else {
-            return Self.initialStageProgress
+            return Self.recognitionCompleteProgress
         }
 
         let remainingDuration = timeout - normalizedContentProcessingStart
@@ -47,11 +36,15 @@ struct ProcessingProgressTimeline {
             1
         )
         let easedProgress = log1p(9 * normalizedElapsed) / log(10)
-        let remainingProgress = Self.maximumIncompleteProgress - Self.initialStageProgress
-        return Self.initialStageProgress + CGFloat(easedProgress) * remainingProgress
+        let remainingProgress = Self.maximumIncompleteProgress - Self.recognitionCompleteProgress
+        return Self.recognitionCompleteProgress + CGFloat(easedProgress) * remainingProgress
     }
 
-    private var initialStageDuration: TimeInterval {
-        min(Self.initialStageDuration, timeout / 2)
+    private func recognitionProgress(elapsed: TimeInterval) -> CGFloat {
+        // Approach 70% asymptotically so recognition keeps moving without
+        // reaching its phase boundary before transcription actually finishes.
+        let easedProgress = 1 - exp(-elapsed / Self.recognitionResponseTime)
+        let recognitionProgress = Self.recognitionCompleteProgress - Self.initialProgress
+        return Self.initialProgress + CGFloat(easedProgress) * recognitionProgress
     }
 }

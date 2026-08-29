@@ -2,99 +2,94 @@
 import XCTest
 
 final class ProcessingProgressTimelineTests: XCTestCase {
-    func testProgressStartsAtZeroAndClampsNegativeElapsedTime() {
+    func testRecognitionStartsAtHalfAndClampsNegativeElapsedTime() {
         let timeline = ProcessingProgressTimeline(timeout: 120)
 
-        XCTAssertEqual(timeline.progress(elapsed: -1), 0)
-        XCTAssertEqual(timeline.progress(elapsed: 0), 0)
+        XCTAssertEqual(
+            timeline.progress(elapsed: -1, contentProcessingStartedAt: nil),
+            ProcessingProgressTimeline.initialProgress
+        )
+        XCTAssertEqual(
+            timeline.progress(elapsed: 0, contentProcessingStartedAt: nil),
+            ProcessingProgressTimeline.initialProgress
+        )
     }
 
-    func testProgressContinuouslyAdvancesAcrossEntireTimeout() {
+    func testRecognitionContinuouslyApproachesSeventyPercent() {
         let timeline = ProcessingProgressTimeline(timeout: 120)
-        let checkpoints = stride(from: 0.0, through: 120.0, by: 1.0)
-            .map(timeline.progress(elapsed:))
+        let checkpoints = stride(from: 0.0, through: 10.0, by: 0.1)
+            .map { timeline.progress(elapsed: $0, contentProcessingStartedAt: nil) }
+
+        for (earlier, later) in zip(checkpoints, checkpoints.dropFirst()) {
+            XCTAssertGreaterThan(later, earlier)
+        }
+        XCTAssertGreaterThan(checkpoints[5], 0.6)
+        XCTAssertLessThan(checkpoints.last!, ProcessingProgressTimeline.recognitionCompleteProgress)
+    }
+
+    func testContentProcessingStartsAtSeventyPercentAndContinuesForward() {
+        let timeline = ProcessingProgressTimeline(timeout: 120)
+
+        XCTAssertEqual(
+            timeline.progress(elapsed: 30, contentProcessingStartedAt: 30),
+            ProcessingProgressTimeline.recognitionCompleteProgress,
+            accuracy: 0.0001
+        )
+        XCTAssertGreaterThan(
+            timeline.progress(elapsed: 31, contentProcessingStartedAt: 30),
+            ProcessingProgressTimeline.recognitionCompleteProgress
+        )
+    }
+
+    func testContentProgressContinuouslyAdvancesAcrossRemainingTimeout() {
+        let timeline = ProcessingProgressTimeline(timeout: 120)
+        let checkpoints = stride(from: 30.0, through: 120.0, by: 1.0)
+            .map { timeline.progress(elapsed: $0, contentProcessingStartedAt: 30) }
 
         for (earlier, later) in zip(checkpoints, checkpoints.dropFirst()) {
             XCTAssertGreaterThan(later, earlier)
         }
     }
 
-    func testProgressQuicklyReachesHalfBeforeSlowerSecondStage() {
-        let timeline = ProcessingProgressTimeline(timeout: 120)
-
-        XCTAssertGreaterThan(timeline.progress(elapsed: 0.5), 0.3)
-        XCTAssertEqual(
-            timeline.progress(elapsed: ProcessingProgressTimeline.initialStageDuration),
-            ProcessingProgressTimeline.initialStageProgress,
-            accuracy: 0.0001
-        )
-        XCTAssertGreaterThan(
-            timeline.progress(elapsed: ProcessingProgressTimeline.initialStageDuration + 1),
-            ProcessingProgressTimeline.initialStageProgress
-        )
-    }
-
-    func testProgressWaitsAtHalfUntilContentProcessingStarts() {
+    func testIncompleteContentProgressNeverReachesCompletion() {
         let timeline = ProcessingProgressTimeline(timeout: 120)
 
         XCTAssertEqual(
-            timeline.progress(elapsed: 30, contentProcessingStartedAt: nil),
-            ProcessingProgressTimeline.initialStageProgress,
-            accuracy: 0.0001
-        )
-        XCTAssertEqual(
-            timeline.progress(elapsed: 30, contentProcessingStartedAt: 30),
-            ProcessingProgressTimeline.initialStageProgress,
-            accuracy: 0.0001
-        )
-        XCTAssertGreaterThan(
-            timeline.progress(elapsed: 31, contentProcessingStartedAt: 30),
-            ProcessingProgressTimeline.initialStageProgress
-        )
-    }
-
-    func testIncompleteProgressNeverReachesCompletion() {
-        let timeline = ProcessingProgressTimeline(timeout: 120)
-
-        XCTAssertEqual(
-            timeline.progress(elapsed: 120),
+            timeline.progress(elapsed: 120, contentProcessingStartedAt: 30),
             ProcessingProgressTimeline.maximumIncompleteProgress,
             accuracy: 0.0001
         )
         XCTAssertEqual(
-            timeline.progress(elapsed: 300),
+            timeline.progress(elapsed: 300, contentProcessingStartedAt: 30),
             ProcessingProgressTimeline.maximumIncompleteProgress,
             accuracy: 0.0001
         )
-        XCTAssertLessThan(timeline.progress(elapsed: 300), 1)
+        XCTAssertLessThan(
+            timeline.progress(elapsed: 300, contentProcessingStartedAt: 30),
+            1
+        )
     }
 
-    func testProgressSlowsDownWithoutStoppingNearTimeout() {
+    func testContentProgressSlowsDownWithoutStoppingNearTimeout() {
         let timeline = ProcessingProgressTimeline(timeout: 120)
-        let earlyGain = timeline.progress(elapsed: 1.5) - timeline.progress(elapsed: 0)
-        let lateGain = timeline.progress(elapsed: 120) - timeline.progress(elapsed: 90)
+        let earlyGain = timeline.progress(elapsed: 60, contentProcessingStartedAt: 30)
+            - timeline.progress(elapsed: 30, contentProcessingStartedAt: 30)
+        let lateGain = timeline.progress(elapsed: 120, contentProcessingStartedAt: 30)
+            - timeline.progress(elapsed: 90, contentProcessingStartedAt: 30)
 
         XCTAssertGreaterThan(earlyGain, lateGain)
         XCTAssertGreaterThan(lateGain, 0)
     }
 
-    func testShortTimeoutStillUsesBothStagesAndReachesIncompleteMaximum() {
-        let timeline = ProcessingProgressTimeline(timeout: 1)
+    func testNonPositiveTimeoutRemainsFinite() {
+        let timeline = ProcessingProgressTimeline(timeout: 0)
+        let progress = timeline.progress(elapsed: 1, contentProcessingStartedAt: 0)
 
-        XCTAssertEqual(timeline.progress(elapsed: 0.5), 0.5, accuracy: 0.0001)
-        XCTAssertGreaterThan(timeline.progress(elapsed: 0.75), 0.5)
+        XCTAssertTrue(progress.isFinite)
         XCTAssertEqual(
-            timeline.progress(elapsed: 1),
+            progress,
             ProcessingProgressTimeline.maximumIncompleteProgress,
             accuracy: 0.0001
         )
-    }
-
-    func testNonPositiveTimeoutRemainsFinite() {
-        let timeline = ProcessingProgressTimeline(timeout: 0)
-        let progress = timeline.progress(elapsed: 1)
-
-        XCTAssertTrue(progress.isFinite)
-        XCTAssertEqual(progress, ProcessingProgressTimeline.maximumIncompleteProgress, accuracy: 0.0001)
     }
 }
