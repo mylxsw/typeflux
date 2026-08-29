@@ -144,7 +144,7 @@
 "settings.microphone.subtitle" = "Pick the device used for dictation. Automatic follows the current macOS default input.";
 "settings.microphone.automatic" = "Automatic";
 "settings.instantVoiceInput.title" = "Speak Immediately";
-"settings.instantVoiceInput.subtitle" = "The first dictation starts normally. After each dictation, the microphone stays ready for up to 15 minutes so your next first words are captured; each use resets the timer, and the microphone is released after the idle period. The most recent half-second cycles only in memory and joins a recording only when you start dictation. While ready, macOS will show the microphone as in use and battery use may increase.";
+"settings.instantVoiceInput.subtitle" = "Shortens microphone startup time, so you can speak as soon as you press the shortcut without missing anything. The microphone stays on for 15 minutes after use.";
 "settings.mute.title" = "Mute During Recording";
 "settings.mute.subtitle" = "Temporarily mute the system output while recording to reduce feedback or system sounds leaking into the microphone.";
 "settings.permissions" = "Permissions";

@@ -64,6 +64,13 @@ final class LocalizationResourceTests: XCTestCase {
             "settings.instantVoiceInput.title",
             "settings.instantVoiceInput.subtitle"
         ]
+        let expectedSubtitles: [AppLanguage: String] = [
+            .english: "Shortens microphone startup time, so you can speak as soon as you press the shortcut without missing anything. The microphone stays on for 15 minutes after use.",
+            .simplifiedChinese: "缩短麦克风启动耗时，按下快捷键就能直接说话，不漏任何内容。使用后麦克风会保持启用 15 分钟。",
+            .traditionalChinese: "縮短麥克風啟動時間，按下快速鍵就能直接說話，不漏掉任何內容。使用後麥克風會保持啟用 15 分鐘。",
+            .japanese: "マイクの起動時間を短縮し、ショートカットを押したらすぐに話せます。話した内容を最初から漏らさず記録します。使用後はマイクが15分間オンになります。",
+            .korean: "마이크 시작 시간을 줄여 단축키를 누르자마자 말해도 모든 내용을 빠짐없이 녹음합니다. 사용 후 마이크는 15분 동안 켜진 상태를 유지합니다."
+        ]
 
         for language in AppLanguage.allCases {
             let bundle = try localizationBundle(for: language)
@@ -72,6 +79,13 @@ final class LocalizationResourceTests: XCTestCase {
                 XCTAssertNotEqual(localized, key, "Missing localized value for \(key) in \(language.rawValue)")
                 XCTAssertFalse(localized.isEmpty)
             }
+
+            let subtitle = bundle.localizedString(
+                forKey: "settings.instantVoiceInput.subtitle",
+                value: nil,
+                table: nil
+            )
+            XCTAssertEqual(subtitle, try XCTUnwrap(expectedSubtitles[language]))
         }
 
         let chineseBundle = try localizationBundle(for: .simplifiedChinese)
@@ -80,16 +94,7 @@ final class LocalizationResourceTests: XCTestCase {
             value: nil,
             table: nil
         )
-        let chineseDetail = chineseBundle.localizedString(
-            forKey: "settings.instantVoiceInput.subtitle",
-            value: nil,
-            table: nil
-        )
         XCTAssertEqual(chineseTitle, "按键即说")
-        XCTAssertTrue(chineseDetail.contains("15 分钟"))
-        XCTAssertTrue(chineseDetail.contains("自动释放"))
-        XCTAssertTrue(chineseDetail.contains("麦克风正在使用"))
-        XCTAssertTrue(chineseDetail.contains("内存"))
     }
 
     func testSidebarAccountCardStateCopyExistsForAllSupportedLanguages() throws {
