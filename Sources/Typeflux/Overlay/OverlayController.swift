@@ -67,7 +67,7 @@ private struct RoundedVisualEffectBlur: NSViewRepresentable {
     }
 }
 
-private extension EnvironmentValues {
+extension EnvironmentValues {
     @Entry var overlayStyle: OverlayStyle = .liquidGlass
 }
 
@@ -2503,7 +2503,7 @@ private struct LiveTranscriptPreviewText: View {
     }
 }
 
-private struct ThinkingProgressCapsule: View {
+struct ThinkingProgressCapsule: View {
     let title: String
     let progress: CGFloat
 
@@ -2546,7 +2546,7 @@ private struct ThinkingProgressCapsule: View {
     }
 }
 
-private struct ProcessingTranscriptCapsule: View {
+struct ProcessingTranscriptCapsule: View {
     let text: String
     let title: String
     let progress: CGFloat
