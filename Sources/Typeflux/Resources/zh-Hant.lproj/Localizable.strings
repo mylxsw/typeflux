@@ -136,7 +136,7 @@
 "settings.microphone.subtitle" = "選擇聽寫使用的輸入裝置。自動模式會跟隨目前 macOS 預設輸入裝置。";
 "settings.microphone.automatic" = "自動";
 "settings.instantVoiceInput.title" = "按鍵即說";
-"settings.instantVoiceInput.subtitle" = "讓接下來的語音輸入啟動更快，避免漏掉開頭。每次使用後，麥克風會保持就緒 15 分鐘，期間 macOS 會顯示麥克風正在使用。";
+"settings.instantVoiceInput.subtitle" = "按下快速鍵就能直接說話，不易漏掉開頭。使用後麥克風會保持啟用 15 分鐘。";
 "settings.mute.title" = "錄音時靜音";
 "settings.mute.subtitle" = "錄音期間暫時靜音系統輸出，減少回聲或系統聲音進入麥克風。";
 "settings.permissions" = "權限";
