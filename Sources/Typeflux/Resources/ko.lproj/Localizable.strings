@@ -144,7 +144,7 @@
 "settings.microphone.subtitle" = "받아쓰기에 사용되는 장치를 선택하세요. 자동은 현재 macOS 기본 입력을 따릅니다.";
 "settings.microphone.automatic" = "자동";
 "settings.instantVoiceInput.title" = "바로 말하기";
-"settings.instantVoiceInput.subtitle" = "첫 음성 입력은 평소처럼 시작됩니다. 음성 입력이 끝나면 마이크가 최대 15분 동안 준비 상태를 유지해 다음 입력의 첫말부터 녹음합니다. 사용할 때마다 시간이 다시 시작되며, 유휴 시간이 지나면 마이크가 자동으로 해제됩니다. 최근 약 0.5초의 음성은 메모리에서만 순환하며 음성 입력을 시작할 때만 녹음에 포함됩니다. 준비 상태에서는 macOS에 마이크 사용 중으로 표시되고 배터리 사용량이 조금 늘 수 있습니다.";
+"settings.instantVoiceInput.subtitle" = "다음 음성 입력을 더 빠르게 시작해 첫말을 놓치지 않습니다. 사용 후 마이크는 15분 동안 준비 상태를 유지하며, 이때 macOS에 마이크 사용 중으로 표시됩니다.";
 "settings.mute.title" = "녹음 중 음소거";
 "settings.mute.subtitle" = "녹음하는 동안 일시적으로 시스템 출력을 음소거하여 피드백이나 시스템 사운드가 마이크에 새는 것을 줄입니다.";
 "settings.permissions" = "권한";

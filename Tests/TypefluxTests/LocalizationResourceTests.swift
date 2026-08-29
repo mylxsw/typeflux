@@ -56,10 +56,13 @@ final class LocalizationResourceTests: XCTestCase {
             table: nil
         )
         XCTAssertEqual(chineseTitle, "按键即说")
+        XCTAssertLessThanOrEqual(chineseDetail.count, 70)
+        XCTAssertTrue(chineseDetail.contains("启动更快"))
+        XCTAssertTrue(chineseDetail.contains("避免漏掉开头"))
         XCTAssertTrue(chineseDetail.contains("15 分钟"))
-        XCTAssertTrue(chineseDetail.contains("自动释放"))
         XCTAssertTrue(chineseDetail.contains("麦克风正在使用"))
-        XCTAssertTrue(chineseDetail.contains("内存"))
+        XCTAssertFalse(chineseDetail.contains("内存"))
+        XCTAssertFalse(chineseDetail.contains("冷启动"))
     }
 
     func testSidebarAccountCardStateCopyExistsForAllSupportedLanguages() throws {

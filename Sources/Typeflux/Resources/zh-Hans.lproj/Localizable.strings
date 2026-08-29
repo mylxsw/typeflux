@@ -136,7 +136,7 @@
 "settings.microphone.subtitle" = "选择听写使用的输入设备。自动模式会跟随当前 macOS 默认输入设备。";
 "settings.microphone.automatic" = "自动";
 "settings.instantVoiceInput.title" = "按键即说";
-"settings.instantVoiceInput.subtitle" = "首次使用为正常启动。每次语音输入结束后，麦克风会保持就绪最多 15 分钟；期间再次使用可完整录下开头，每次使用都会重新计时，空闲超时后自动释放。最近约半秒音频只在内存中循环覆盖，仅在开始语音输入时并入本次录音。保持就绪期间，macOS 会显示麦克风正在使用，并可能略微增加耗电。";
+"settings.instantVoiceInput.subtitle" = "让接下来的语音输入启动更快，避免漏掉开头。每次使用后，麦克风会保持就绪 15 分钟，期间 macOS 会显示麦克风正在使用。";
 "settings.mute.title" = "录音时静音";
 "settings.mute.subtitle" = "录音期间临时静音系统输出，减少回声或系统声音串入麦克风。";
 "settings.permissions" = "权限";
