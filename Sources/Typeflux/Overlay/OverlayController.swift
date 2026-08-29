@@ -324,6 +324,7 @@ final class OverlayController {
     private var recordingHintAutoHideWorkItem: DispatchWorkItem?
     private var processingProgressTask: Task<Void, Never>?
     private var processingProgressStartedAt: TimeInterval?
+    private var contentProcessingStartedElapsed: TimeInterval?
     private var processingProgressTimeline: ProcessingProgressTimeline?
 
     init(appState: AppStateStore, settingsStore: SettingsStore) {
@@ -581,7 +582,7 @@ final class OverlayController {
         model.detailText = ""
         model.recordingHintText = ""
         cancelRecordingHintAutoHide()
-        startProcessingProgress(timeout: timeout)
+        startProcessingProgress(timeout: timeout, contentProcessingAlreadyStarted: true)
         refreshWindow()
     }
 
@@ -602,6 +603,11 @@ final class OverlayController {
             shouldRefresh = true
         }
         guard model.presentation.isProcessing else { return }
+        if contentProcessingStartedElapsed == nil,
+           let startedAt = processingProgressStartedAt {
+            contentProcessingStartedElapsed = ProcessInfo.processInfo.systemUptime - startedAt
+            updateProcessingProgress()
+        }
         if model.statusText.isEmpty {
             model.statusText = L(Self.processingStatusLocalizationKey)
             shouldRefresh = true
@@ -944,9 +950,13 @@ final class OverlayController {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
     }
 
-    private func startProcessingProgress(timeout: TimeInterval) {
+    private func startProcessingProgress(
+        timeout: TimeInterval,
+        contentProcessingAlreadyStarted: Bool = false
+    ) {
         stopProcessingProgress()
         processingProgressStartedAt = ProcessInfo.processInfo.systemUptime
+        contentProcessingStartedElapsed = contentProcessingAlreadyStarted ? 0 : nil
         processingProgressTimeline = ProcessingProgressTimeline(timeout: timeout)
         processingProgressTask = Task { [weak self] in
             while !Task.isCancelled {
@@ -965,13 +975,17 @@ final class OverlayController {
         else { return }
 
         let elapsed = ProcessInfo.processInfo.systemUptime - startedAt
-        model.processingProgress = timeline.progress(elapsed: elapsed)
+        model.processingProgress = timeline.progress(
+            elapsed: elapsed,
+            contentProcessingStartedAt: contentProcessingStartedElapsed
+        )
     }
 
     private func stopProcessingProgress(resetProgress: Bool = true) {
         processingProgressTask?.cancel()
         processingProgressTask = nil
         processingProgressStartedAt = nil
+        contentProcessingStartedElapsed = nil
         processingProgressTimeline = nil
         if resetProgress {
             model.processingProgress = 0
