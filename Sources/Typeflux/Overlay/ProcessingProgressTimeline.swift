@@ -6,6 +6,7 @@ struct ProcessingProgressTimeline {
     static let maximumIncompleteProgress: CGFloat = 0.95
 
     private static let recognitionResponseTime: TimeInterval = 0.45
+    private static let contentResponseTime: TimeInterval = 3
     private let timeout: TimeInterval
 
     init(timeout: TimeInterval) {
@@ -31,11 +32,12 @@ struct ProcessingProgressTimeline {
         }
 
         let remainingDuration = timeout - normalizedContentProcessingStart
-        let normalizedElapsed = min(
-            (elapsed - normalizedContentProcessingStart) / remainingDuration,
-            1
-        )
-        let easedProgress = log1p(9 * normalizedElapsed) / log(10)
+        let contentElapsed = elapsed - normalizedContentProcessingStart
+        // Drive the visible response on a human-scale curve instead of spreading
+        // it across the much longer hard timeout, then normalize at the deadline.
+        let responseAtTimeout = 1 - exp(-remainingDuration / Self.contentResponseTime)
+        let responseAtElapsed = 1 - exp(-contentElapsed / Self.contentResponseTime)
+        let easedProgress = min(responseAtElapsed / responseAtTimeout, 1)
         let remainingProgress = Self.maximumIncompleteProgress - Self.recognitionCompleteProgress
         return Self.recognitionCompleteProgress + CGFloat(easedProgress) * remainingProgress
     }

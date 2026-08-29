@@ -120,6 +120,24 @@ final class OverlayControllerTests: XCTestCase {
     }
 
     @MainActor
+    func testLLMProgressMovesByVisibleAmountWithinFirstSecond() async throws {
+        let controller = OverlayController(appState: AppStateStore())
+
+        controller.showProcessing(timeout: 120)
+        controller.transitionToLLMPhase()
+        for _ in 0 ..< 20 {
+            if controller.processingProgressForTesting >= 0.738 { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+
+        XCTAssertGreaterThanOrEqual(controller.processingProgressForTesting, 0.738)
+        XCTAssertLessThan(
+            controller.processingProgressForTesting,
+            ProcessingProgressTimeline.maximumIncompleteProgress
+        )
+    }
+
+    @MainActor
     func testSuccessfulProcessingStopsTimelineAndCompletesProgress() {
         let controller = OverlayController(appState: AppStateStore())
 

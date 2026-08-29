@@ -45,6 +45,52 @@ final class ProcessingProgressCapsuleRenderingTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testThinkingCapsuleVisiblyMovesDuringFirstFiveSecondsOfLLMProcessing() throws {
+        let progress = typicalLLMProgressCheckpoints()
+
+        for style in OverlayStyle.allCases {
+            let images = try progress.map { value in
+                try render(
+                    ThinkingProgressCapsule(title: "Thinking", progress: value)
+                        .environment(\.overlayStyle, style)
+                        .frame(width: 132, height: 35),
+                    size: CGSize(width: 132, height: 35)
+                )
+            }
+
+            assertStageImagesDiffer(images, context: "\(style.rawValue) first five seconds")
+        }
+    }
+
+    @MainActor
+    func testTranscriptCapsuleVisiblyMovesDuringFirstFiveSecondsOfLLMProcessing() throws {
+        let progress = typicalLLMProgressCheckpoints()
+
+        for style in OverlayStyle.allCases {
+            let images = try progress.map { value in
+                try render(
+                    ProcessingTranscriptCapsule(
+                        text: "A stable transcript preview",
+                        title: "Thinking",
+                        progress: value
+                    )
+                    .environment(\.overlayStyle, style),
+                    size: CGSize(width: 360, height: 127)
+                )
+            }
+
+            assertStageImagesDiffer(images, context: "\(style.rawValue) first five seconds")
+        }
+    }
+
+    private func typicalLLMProgressCheckpoints() -> [CGFloat] {
+        let timeline = ProcessingProgressTimeline(timeout: 120)
+        return [30.0, 31.0, 33.0, 35.0].map {
+            timeline.progress(elapsed: $0, contentProcessingStartedAt: 30)
+        }
+    }
+
     private func assertIncreasingBrightness(
         _ images: [NSBitmapImageRep],
         stages: [CGFloat],
