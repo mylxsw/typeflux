@@ -41,7 +41,9 @@ final class LocalizationResourceTests: XCTestCase {
             "history.race.reason.cloudWithinWindow",
             "history.race.reason.cloudAfterWindow",
             "history.race.reason.localAtDeadline",
-            "history.race.reason.localAfterWindow"
+            "history.race.reason.localAfterWindow",
+            "overlay.timeout.message",
+            "workflow.timeout.reason"
         ]
 
         for language in AppLanguage.allCases {

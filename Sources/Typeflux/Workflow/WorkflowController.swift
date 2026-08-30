@@ -11,8 +11,6 @@ struct RecordingStartupContext: Sendable, Equatable {
 final class WorkflowController {
     let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "WorkflowController")
     static let recordingTimeoutNanoseconds: UInt64 = 600_000_000_000 // 10 minutes
-    static let minimumProcessingTimeoutSeconds: TimeInterval = 120
-    static let processingTimeoutGraceSeconds: TimeInterval = 90
     static let minimumRecordingDuration: TimeInterval = 0.35
     static let recordingTailCaptureDuration: Duration = .milliseconds(200)
     static let shortAudioRetryDuration: TimeInterval = 1.5
@@ -428,9 +426,7 @@ final class WorkflowController {
         cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.retry"))
 
         let sessionID = beginProcessingSession()
-        let timeoutSeconds = Self.processingTimeoutSeconds(
-            recordingDurationSeconds: record.recordingDurationSeconds
-        )
+        let timeoutSeconds = settingsStore.voiceProcessingTimeout.seconds
         startProcessingTimeout(
             sessionID: sessionID,
             timeoutSeconds: timeoutSeconds
@@ -519,21 +515,6 @@ final class WorkflowController {
         }
     }
 
-    static func processingTimeoutSeconds(recordingDurationSeconds: TimeInterval?) -> TimeInterval {
-        let recordingDuration = max(0, recordingDurationSeconds ?? 0)
-        return max(
-            minimumProcessingTimeoutSeconds,
-            recordingDuration + processingTimeoutGraceSeconds
-        )
-    }
-
-    static func processingTimeoutNanoseconds(recordingDurationSeconds: TimeInterval?) -> UInt64 {
-        let timeoutSeconds = processingTimeoutSeconds(
-            recordingDurationSeconds: recordingDurationSeconds
-        )
-        return UInt64(timeoutSeconds * 1_000_000_000)
-    }
-
     func startProcessingTimeout(
         sessionID: UUID,
         timeoutSeconds: TimeInterval
@@ -544,7 +525,7 @@ final class WorkflowController {
             try? await Task.sleep(nanoseconds: timeoutNanoseconds)
             guard !Task.isCancelled else { return }
             NSLog("[Workflow] Processing timeout after %llu seconds", timeoutNanoseconds / 1_000_000_000)
-            self?.handleProcessingTimeout(sessionID: sessionID)
+            self?.handleProcessingTimeout(sessionID: sessionID, timeoutSeconds: timeoutSeconds)
         }
     }
 
@@ -553,7 +534,7 @@ final class WorkflowController {
         processingTimeoutTask = nil
     }
 
-    func handleProcessingTimeout(sessionID: UUID) {
+    func handleProcessingTimeout(sessionID: UUID, timeoutSeconds: TimeInterval) {
         guard processingSessionID == sessionID else { return }
         let recordID = activeProcessingRecordID
         let timeoutRecord = recordID.flatMap { historyStore.record(id: $0) }
@@ -563,12 +544,13 @@ final class WorkflowController {
                 forcedFailure: (stage: "processing", kind: "processing_timeout")
             )
         }
-        cancelCurrentProcessing(resetUI: false, reason: L("workflow.timeout.reason"))
+        let timeoutSeconds = Int(timeoutSeconds)
+        cancelCurrentProcessing(resetUI: false, reason: L("workflow.timeout.reason", timeoutSeconds))
         Task { @MainActor in
             self.lastRetryableFailureRecord = timeoutRecord
             self.soundEffectPlayer.play(.error)
             self.appState.setStatus(.failed(message: L("workflow.timeout.status")))
-            self.overlayController.showTimeoutFailure()
+            self.overlayController.showTimeoutFailure(timeoutSeconds: timeoutSeconds)
         }
     }
 

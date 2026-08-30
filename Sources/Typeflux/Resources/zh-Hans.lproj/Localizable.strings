@@ -146,7 +146,7 @@
 "settings.advanced.soundEffects.title" = "启用声音特效";
 "settings.advanced.soundEffects.subtitle" = "在开始录音、完成操作和发生错误时播放提示音。";
 "settings.advanced.voiceProcessingTimeout.title" = "识别等待时间";
-"settings.advanced.voiceProcessingTimeout.subtitle" = "设置云端语音识别和 AI 改写的优先等待时间，超时后使用已有的备用结果。";
+"settings.advanced.voiceProcessingTimeout.subtitle" = "设置语音识别和 AI 处理的最长时间，未能按时完成时将停止处理并提示超时。";
 "settings.advanced.voiceProcessingTimeout.option" = "%d 秒";
 "settings.advanced.autoUpdate.title" = "自动更新";
 "settings.advanced.autoUpdate.subtitle" = "每 3 小时自动检查并安装新版本。";
@@ -364,7 +364,7 @@
 "overlay.processing.thinking" = "思考中";
 "overlay.failure.title" = "处理失败";
 "overlay.timeout.title" = "处理超时";
-"overlay.timeout.message" = "处理时间超过 120 秒，请重试。";
+"overlay.timeout.message" = "处理时间超过 %d 秒，请重试。";
 "overlay.notice.title" = "提示";
 "overlay.personaPicker.switchTitle" = "切换全局人设";
 "overlay.personaPicker.switchInstructions" = "选择当前应用没有启用应用人设时使用的全局人设。";
@@ -386,7 +386,7 @@
 "workflow.cancel.retry" = "由于重试已取消。";
 "workflow.cancel.newRecording" = "已被新的录音任务取消。";
 "workflow.cancel.userCancelled" = "已被用户取消。";
-"workflow.timeout.reason" = "处理超时（超过 120 秒）。";
+"workflow.timeout.reason" = "处理超时（超过 %d 秒）。";
 "workflow.timeout.status" = "处理超时";
 "workflow.devApp.requiredMessage" = "请通过 scripts/run_dev_app.sh 运行（隐私权限需要 .app 包）";
 "workflow.devApp.requiredStatus" = "请以 .app 运行";

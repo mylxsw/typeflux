@@ -155,8 +155,15 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(store.voiceProcessingTimeout, .threeSeconds)
     }
 
+    func testVoiceProcessingTimeoutMigratesLegacySixtySecondsToThirtySeconds() {
+        defaults.set(60, forKey: "voice.processing.timeoutSeconds")
+
+        XCTAssertEqual(store.voiceProcessingTimeout, .thirtySeconds)
+        XCTAssertEqual(defaults.integer(forKey: "voice.processing.timeoutSeconds"), 30)
+    }
+
     func testVoiceProcessingTimeoutProvidesRequiredChoices() {
-        XCTAssertEqual(VoiceProcessingTimeout.allCases.map(\.rawValue), [1, 3, 5, 10, 30, 60])
+        XCTAssertEqual(VoiceProcessingTimeout.allCases.map(\.rawValue), [1, 3, 5, 10, 30])
     }
 
     // MARK: - Analytics Sharing

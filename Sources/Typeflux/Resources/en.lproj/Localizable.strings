@@ -154,7 +154,7 @@
 "settings.advanced.soundEffects.title" = "Enable sound effects";
 "settings.advanced.soundEffects.subtitle" = "Play start, done, and error sounds during recording workflow feedback.";
 "settings.advanced.voiceProcessingTimeout.title" = "Recognition wait time";
-"settings.advanced.voiceProcessingTimeout.subtitle" = "Choose how long cloud speech recognition and AI rewriting get priority before Typeflux uses the available fallback result.";
+"settings.advanced.voiceProcessingTimeout.subtitle" = "Set the maximum time for speech recognition and AI processing. Typeflux stops and reports a timeout if processing does not finish in time.";
 "settings.advanced.voiceProcessingTimeout.option" = "%d seconds";
 "settings.advanced.autoUpdate.title" = "Automatic Updates";
 "settings.advanced.autoUpdate.subtitle" = "Automatically check for and install updates every 3 hours.";
@@ -364,7 +364,7 @@
 "overlay.processing.thinking" = "Thinking";
 "overlay.failure.title" = "Processing failed";
 "overlay.timeout.title" = "Processing timed out";
-"overlay.timeout.message" = "Processing took longer than 120 seconds. Please try again.";
+"overlay.timeout.message" = "Processing took longer than %d seconds. Please try again.";
 "overlay.notice.title" = "Notice";
 "overlay.personaPicker.switchTitle" = "Switch Global Persona";
 "overlay.personaPicker.switchInstructions" = "Choose the global persona used when the current application has no active app persona.";
@@ -386,7 +386,7 @@
 "workflow.cancel.retry" = "Cancelled due to retry.";
 "workflow.cancel.newRecording" = "Cancelled by a new recording.";
 "workflow.cancel.userCancelled" = "Cancelled by user.";
-"workflow.timeout.reason" = "Processing timed out after 120 seconds.";
+"workflow.timeout.reason" = "Processing timed out after %d seconds.";
 "workflow.timeout.status" = "Processing timed out";
 "workflow.devApp.requiredMessage" = "Please run via scripts/run_dev_app.sh (app bundle required for privacy permissions)";
 "workflow.devApp.requiredStatus" = "Run as .app";

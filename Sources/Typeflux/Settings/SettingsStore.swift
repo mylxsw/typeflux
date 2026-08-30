@@ -79,7 +79,6 @@ enum VoiceProcessingTimeout: Int, CaseIterable, Identifiable {
     case fiveSeconds = 5
     case tenSeconds = 10
     case thirtySeconds = 30
-    case sixtySeconds = 60
 
     static let defaultValue: VoiceProcessingTimeout = .threeSeconds
 
@@ -212,9 +211,15 @@ final class SettingsStore {
             guard defaults.object(forKey: "voice.processing.timeoutSeconds") != nil else {
                 return .defaultValue
             }
-            return VoiceProcessingTimeout(
-                rawValue: defaults.integer(forKey: "voice.processing.timeoutSeconds")
-            ) ?? .defaultValue
+            let storedSeconds = defaults.integer(forKey: "voice.processing.timeoutSeconds")
+            if storedSeconds == 60 {
+                defaults.set(
+                    VoiceProcessingTimeout.thirtySeconds.rawValue,
+                    forKey: "voice.processing.timeoutSeconds"
+                )
+                return .thirtySeconds
+            }
+            return VoiceProcessingTimeout(rawValue: storedSeconds) ?? .defaultValue
         }
         set { defaults.set(newValue.rawValue, forKey: "voice.processing.timeoutSeconds") }
     }

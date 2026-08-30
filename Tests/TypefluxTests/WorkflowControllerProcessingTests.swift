@@ -588,32 +588,6 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         }
     }
 
-    func testProcessingTimeoutUsesMinimumForShortOrMissingRecordings() {
-        XCTAssertEqual(
-            WorkflowController.processingTimeoutSeconds(recordingDurationSeconds: nil),
-            120
-        )
-        XCTAssertEqual(
-            WorkflowController.processingTimeoutSeconds(recordingDurationSeconds: 30),
-            120
-        )
-        XCTAssertEqual(
-            WorkflowController.processingTimeoutNanoseconds(recordingDurationSeconds: nil),
-            120_000_000_000
-        )
-        XCTAssertEqual(
-            WorkflowController.processingTimeoutNanoseconds(recordingDurationSeconds: 30),
-            120_000_000_000
-        )
-    }
-
-    func testProcessingTimeoutScalesWithRecordingDuration() {
-        XCTAssertEqual(
-            WorkflowController.processingTimeoutNanoseconds(recordingDurationSeconds: 132),
-            222_000_000_000
-        )
-    }
-
     func testPersonaRewriteTimeoutAfterTranscriptionIsThreeSeconds() {
         XCTAssertEqual(WorkflowController.llmTimeoutAfterTranscriptionSeconds, 3)
     }
@@ -624,9 +598,35 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         })
         XCTAssertEqual(controller.llmTimeoutAfterTranscription, 10)
 
-        controller.settingsStore.voiceProcessingTimeout = .sixtySeconds
+        controller.settingsStore.voiceProcessingTimeout = .thirtySeconds
 
-        XCTAssertEqual(controller.llmTimeoutAfterTranscription, 60)
+        XCTAssertEqual(controller.llmTimeoutAfterTranscription, 30)
+    }
+
+    func testProcessingDeadlineCancelsSessionAndReportsConfiguredTimeout() async throws {
+        let historyStore = MockProcessingHistoryStore()
+        let controller = makeWorkflowController(historyStore: historyStore)
+        let record = HistoryRecord(
+            date: Date(),
+            recordingStatus: .succeeded,
+            transcriptionStatus: .running,
+            processingStatus: .pending,
+            applyStatus: .pending
+        )
+        controller.saveHistoryRecord(record)
+        controller.activeProcessingRecordID = record.id
+        let sessionID = controller.beginProcessingSession()
+
+        controller.startProcessingTimeout(sessionID: sessionID, timeoutSeconds: 0.01)
+        await waitUntil { controller.processingSessionID != sessionID }
+        await waitForMainActorWork()
+
+        XCTAssertNotEqual(controller.processingSessionID, sessionID)
+        XCTAssertEqual(controller.appState.status, .failed(message: L("workflow.timeout.status")))
+        XCTAssertEqual(
+            try XCTUnwrap(historyStore.record(id: record.id)).errorMessage,
+            L("workflow.timeout.reason", 0)
+        )
     }
 
     func testGenerateRewriteThrowsTimeoutWhenStreamDoesNotFinish() async {

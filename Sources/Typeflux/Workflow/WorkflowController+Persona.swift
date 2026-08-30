@@ -176,7 +176,7 @@ extension WorkflowController {
 
         cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.newRecording"))
         let sessionID = beginProcessingSession()
-        let timeoutSeconds = Self.processingTimeoutSeconds(recordingDurationSeconds: nil)
+        let timeoutSeconds = settingsStore.voiceProcessingTimeout.seconds
         startProcessingTimeout(sessionID: sessionID, timeoutSeconds: timeoutSeconds)
 
         var record = HistoryRecord(

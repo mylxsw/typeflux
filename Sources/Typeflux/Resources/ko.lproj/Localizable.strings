@@ -154,7 +154,7 @@
 "settings.advanced.soundEffects.title" = "음향 효과 활성화";
 "settings.advanced.soundEffects.subtitle" = "워크플로 피드백을 기록하는 동안 시작, 완료 및 오류 소리를 재생합니다.";
 "settings.advanced.voiceProcessingTimeout.title" = "인식 대기 시간";
-"settings.advanced.voiceProcessingTimeout.subtitle" = "클라우드 음성 인식과 AI 재작성 결과를 우선 대기할 시간을 선택합니다. 시간이 지나면 사용 가능한 대체 결과를 사용합니다.";
+"settings.advanced.voiceProcessingTimeout.subtitle" = "음성 인식과 AI 처리의 최대 시간을 설정합니다. 제시간에 완료되지 않으면 처리를 중지하고 시간 초과를 알립니다.";
 "settings.advanced.voiceProcessingTimeout.option" = "%d초";
 "settings.advanced.autoUpdate.title" = "자동 업데이트";
 "settings.advanced.autoUpdate.subtitle" = "3시간마다 자동으로 새 버전을 확인하고 설치합니다.";
@@ -360,7 +360,7 @@
 "overlay.processing.thinking" = "생각 중";
 "overlay.failure.title" = "처리 실패";
 "overlay.timeout.title" = "처리 시간이 초과되었습니다.";
-"overlay.timeout.message" = "처리하는 데 120초 이상이 걸렸습니다. 다시 시도해 주세요.";
+"overlay.timeout.message" = "처리하는 데 %d초 이상이 걸렸습니다. 다시 시도해 주세요.";
 "overlay.notice.title" = "공지사항";
 "overlay.personaPicker.switchTitle" = "전역 페르소나 전환";
 "overlay.personaPicker.switchInstructions" = "현재 애플리케이션에 활성 앱 페르소나가 없을 때 사용할 전역 페르소나를 선택하세요.";
@@ -382,7 +382,7 @@
 "workflow.cancel.retry" = "재시도 때문에 취소되었습니다.";
 "workflow.cancel.newRecording" = "새 녹음으로 인해 취소되었습니다.";
 "workflow.cancel.userCancelled" = "사용자가 취소했습니다.";
-"workflow.timeout.reason" = "120초 후에 처리 시간이 초과되었습니다.";
+"workflow.timeout.reason" = "%d초 후에 처리 시간이 초과되었습니다.";
 "workflow.timeout.status" = "처리 시간이 초과되었습니다.";
 "workflow.devApp.requiredMessage" = "scripts/run_dev_app.sh(개인 정보 보호 권한을 위해 필요한 App Bundle)를 통해 실행하세요.";
 "workflow.devApp.requiredStatus" = ".app으로 실행";
