@@ -52,12 +52,36 @@ extension AXTextInjector {
             )
         }
 
-        var contextRestored = false
         let currentFocusedElement = focusedElement()
-        let beforeSnapshot = readCurrentInputTextSnapshot()
-        let focusedElementWasStableDuringSnapshot = focusedElementMatches(currentFocusedElement)
         let currentTargetCapability = currentFocusedElement
             .map(targetCapability(element:)) ?? .opaque
+
+        if !replaceSelection {
+            guard currentFocusedElement != nil else {
+                throw NSError(
+                    domain: "AXTextInjector",
+                    code: 12,
+                    userInfo: [NSLocalizedDescriptionKey: "No focused target is available"]
+                )
+            }
+            if currentTargetCapability == .notWritable {
+                throw NSError(
+                    domain: "AXTextInjector",
+                    code: 13,
+                    userInfo: [NSLocalizedDescriptionKey: "Focused target is not writable"]
+                )
+            }
+
+            NetworkDebugLogger.logMessage(
+                "[Text Injection] plain insert using eager paste path | capability: \(String(describing: currentTargetCapability))"
+            )
+            try setTextViaPaste(text, replaceSelection: false)
+            lastInjectionMethod = .paste
+            return
+        }
+
+        var contextRestored = false
+        let beforeSnapshot = readCurrentInputTextSnapshot()
         NetworkDebugLogger.logMessage(
             """
             [Text Injection] start
@@ -67,34 +91,8 @@ extension AXTextInjector {
             beforeSnapshot: \(snapshotSummary(beforeSnapshot))
             activeSelectionContext: \(selectionContextSummary(activeSelectionContext()))
             currentTargetCapability: \(String(describing: currentTargetCapability))
-            focusedElementWasStableDuringSnapshot: \(focusedElementWasStableDuringSnapshot)
             """
         )
-
-        if !replaceSelection {
-            if currentTargetCapability == .notWritable {
-                throw NSError(
-                    domain: "AXTextInjector",
-                    code: 13,
-                    userInfo: [NSLocalizedDescriptionKey: "Focused target is not writable"]
-                )
-            }
-
-            if let currentFocusedElement,
-               focusedElementWasStableDuringSnapshot,
-               currentTargetCapability == .writable,
-               try insertTextViaAX(
-                   text,
-                   into: currentFocusedElement,
-                   replaceSelection: false,
-                   selectionRange: beforeSnapshot.selectedRange,
-                   beforeSnapshot: beforeSnapshot
-               ) {
-                NetworkDebugLogger.logMessage("[Text Injection] insert completed via focused AX path")
-                lastInjectionMethod = .ax
-                return
-            }
-        }
 
         if replaceSelection, let context = activeSelectionContext() {
             NetworkDebugLogger.logMessage(
@@ -277,6 +275,24 @@ extension AXTextInjector {
             targetProcessID: targetPID
         )
 
+        if !replaceSelection {
+            pasteboard.clearContents()
+            guard pasteboard.setString(text, forType: .string) else {
+                throw NSError(
+                    domain: "AXTextInjector",
+                    code: 15,
+                    userInfo: [NSLocalizedDescriptionKey: "Unable to prepare text for paste"]
+                )
+            }
+            dispatchPasteShortcut(method: dispatchMethod, targetPID: targetPID)
+            restorePasteboardAfterPaste(
+                previousSnapshot,
+                delayNanoseconds: Self.unverifiedPasteRestoreDelayNanoseconds
+            )
+            NetworkDebugLogger.logMessage("[Text Injection] eager paste dispatched")
+            return
+        }
+
         let targetElement = focusedElement()
         let initialSnapshot = readCurrentInputTextSnapshot()
         guard focusedElementMatches(targetElement) else {
@@ -333,26 +349,8 @@ extension AXTextInjector {
         pasteboard.writeObjects([pasteboardItem])
         activePasteboardDeliveryProbe = deliveryProbe
 
-        let source = CGEventSource(stateID: .combinedSessionState)
-        let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)
-        vDown?.flags = .maskCommand
-        let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
-        vUp?.flags = .maskCommand
-
         deliveryProbe.markDispatched()
-        switch dispatchMethod {
-        case .postToPid:
-            if let targetPID {
-                vDown?.postToPid(targetPID)
-                vUp?.postToPid(targetPID)
-            } else {
-                vDown?.post(tap: .cghidEventTap)
-                vUp?.post(tap: .cghidEventTap)
-            }
-        case .hidTap:
-            vDown?.post(tap: .cghidEventTap)
-            vUp?.post(tap: .cghidEventTap)
-        }
+        dispatchPasteShortcut(method: dispatchMethod, targetPID: targetPID)
 
         if allowClipboardSelectionFallback {
             NetworkDebugLogger.logMessage(
@@ -388,6 +386,28 @@ extension AXTextInjector {
             deliveryProbe: deliveryProbe,
             targetElement: targetElement
         )
+    }
+
+    private func dispatchPasteShortcut(method: PasteDispatchMethod, targetPID: pid_t?) {
+        let source = CGEventSource(stateID: .combinedSessionState)
+        let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)
+        vDown?.flags = .maskCommand
+        let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
+        vUp?.flags = .maskCommand
+
+        switch method {
+        case .postToPid:
+            if let targetPID {
+                vDown?.postToPid(targetPID)
+                vUp?.postToPid(targetPID)
+            } else {
+                vDown?.post(tap: .cghidEventTap)
+                vUp?.post(tap: .cghidEventTap)
+            }
+        case .hidTap:
+            vDown?.post(tap: .cghidEventTap)
+            vUp?.post(tap: .cghidEventTap)
+        }
     }
 
     private func verifyPasteInsertion(
