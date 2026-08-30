@@ -534,9 +534,7 @@ extension WorkflowController {
             let personaPrompt = activePersonaProfile.map {
                 settingsStore.resolvedPersonaPrompt(for: $0)
             }
-            let processingTimeoutSeconds = Self.processingTimeoutSeconds(
-                recordingDurationSeconds: validatedAudioFile.duration
-            )
+            let processingTimeoutSeconds = settingsStore.voiceProcessingTimeout.seconds
 
             NetworkDebugLogger.logMessage(selectionSnapshotLog(selectionSnapshot))
             if WorkflowOverlayPresentationPolicy.shouldShowProcessingAfterRecording() {

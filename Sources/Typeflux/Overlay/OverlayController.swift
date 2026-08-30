@@ -657,9 +657,11 @@ final class OverlayController {
         refreshWindow()
     }
 
-    func showTimeoutFailure() {
+    func showTimeoutFailure(timeoutSeconds: Int) {
         if !Thread.isMainThread {
-            DispatchQueue.main.async { [weak self] in self?.showTimeoutFailure() }
+            DispatchQueue.main.async { [weak self] in
+                self?.showTimeoutFailure(timeoutSeconds: timeoutSeconds)
+            }
             return
         }
         cancelPendingPresentationTransition()
@@ -668,7 +670,7 @@ final class OverlayController {
         ensureWindow()
         model.presentation = .failure
         model.statusText = L("overlay.timeout.title")
-        model.detailText = L("overlay.timeout.message")
+        model.detailText = L("overlay.timeout.message", timeoutSeconds)
         model.failureTone = .error
         model.failureActions = wrapFailureActions([
             OverlayFailureAction(
