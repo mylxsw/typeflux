@@ -483,16 +483,14 @@ final class AXTextInjector: TextInjector {
         strictFallbackEnabled && replaceSelection
     }
 
-    /// Plain insertions (voice dictation) cannot always be read back through AX
-    /// on apps like WeChat, Warp, Codex, terminals, and browser address bars.
-    /// Still attempt verification: readable unchanged targets fail explicitly;
-    /// opaque targets require post-dispatch pasteboard delivery evidence while
-    /// the focused target remains stable.
+    /// Plain dictation uses the eager paste fast path and must never enter the
+    /// synchronous verification loop. Strict verification remains scoped to
+    /// selection replacement, where the original text is available for recovery.
     static func shouldAttemptPasteVerification(
         replaceSelection: Bool,
         strictFallbackEnabled: Bool
     ) -> Bool {
-        !replaceSelection || shouldPerformStrictPasteVerification(
+        shouldPerformStrictPasteVerification(
             replaceSelection: replaceSelection,
             strictFallbackEnabled: strictFallbackEnabled
         )

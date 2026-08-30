@@ -1195,22 +1195,22 @@ final class AXTextInjectorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testShouldAttemptPasteVerificationReturnsTrueForInsertWhenFlagDisabled() {
+    func testShouldAttemptPasteVerificationReturnsFalseForInsertWhenFlagDisabled() {
         let result = AXTextInjector.shouldAttemptPasteVerification(
             replaceSelection: false,
             strictFallbackEnabled: false
         )
 
-        XCTAssertTrue(result)
+        XCTAssertFalse(result)
     }
 
-    func testShouldAttemptPasteVerificationReturnsTrueForInsertWhenFlagEnabled() {
+    func testShouldAttemptPasteVerificationReturnsFalseForInsertWhenFlagEnabled() {
         let result = AXTextInjector.shouldAttemptPasteVerification(
             replaceSelection: false,
             strictFallbackEnabled: true
         )
 
-        XCTAssertTrue(result)
+        XCTAssertFalse(result)
     }
 
     func testShouldAttemptPasteVerificationReturnsFalseForReplaceWhenFlagDisabled() {
