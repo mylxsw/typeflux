@@ -69,18 +69,15 @@ final class SettingsStoreFeatureFlagTests: XCTestCase {
         XCTAssertTrue(store.inputContextOptimizationEnabled)
     }
 
-    func testInputContextOptimizationEnabledCanBeEnabledAndDisabled() {
-        store.inputContextOptimizationEnabled = true
-        XCTAssertTrue(store.inputContextOptimizationEnabled)
-
+    func testInputContextOptimizationEnabledCannotBeDisabled() {
         store.inputContextOptimizationEnabled = false
-        XCTAssertFalse(store.inputContextOptimizationEnabled)
+        XCTAssertTrue(store.inputContextOptimizationEnabled)
     }
 
-    func testInputContextOptimizationEnabledPersistsExplicitFalse() {
-        store.inputContextOptimizationEnabled = false
+    func testInputContextOptimizationEnabledOverridesPersistedFalse() {
+        defaults.set(false, forKey: "inputContext.optimization.enabled")
 
         let reloaded = SettingsStore(defaults: defaults)
-        XCTAssertFalse(reloaded.inputContextOptimizationEnabled)
+        XCTAssertTrue(reloaded.inputContextOptimizationEnabled)
     }
 }

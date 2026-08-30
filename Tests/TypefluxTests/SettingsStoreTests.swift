@@ -127,12 +127,15 @@ final class SettingsStoreTests: XCTestCase {
 
     // MARK: - Sound Effects
 
-    func testDefaultSoundEffectsEnabled() {
-        XCTAssertTrue(store.soundEffectsEnabled)
+    func testDefaultSoundEffectsDisabled() {
+        XCTAssertFalse(store.soundEffectsEnabled)
     }
 
-    func testSetSoundEffectsDisabled() {
-        store.soundEffectsEnabled = false
+    func testSoundEffectsRemainDisabledWhenPersistedOrSetToTrue() {
+        defaults.set(true, forKey: "audio.soundEffects.enabled")
+        XCTAssertFalse(store.soundEffectsEnabled)
+
+        store.soundEffectsEnabled = true
         XCTAssertFalse(store.soundEffectsEnabled)
     }
 
@@ -502,9 +505,12 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertTrue(store.personaHotkeyAppliesToSelection)
     }
 
-    func testSetPersonaHotkeyAppliesToSelection() {
+    func testPersonaHotkeyAlwaysAppliesToSelection() {
+        defaults.set(false, forKey: "persona.hotkeyAppliesToSelection")
+        XCTAssertTrue(store.personaHotkeyAppliesToSelection)
+
         store.personaHotkeyAppliesToSelection = false
-        XCTAssertFalse(store.personaHotkeyAppliesToSelection)
+        XCTAssertTrue(store.personaHotkeyAppliesToSelection)
     }
 
     func testDefaultQuickInputDisabled() {
@@ -550,8 +556,11 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertFalse(store.localSTTMemoryOptimizationEnabled)
     }
 
-    func testSetLocalSTTMemoryOptimizationDisabled() {
-        store.localSTTMemoryOptimizationEnabled = false
+    func testLocalSTTMemoryOptimizationRemainsDisabledWhenPersistedOrSetToTrue() {
+        defaults.set(true, forKey: "stt.local.memoryOptimization.enabled")
+        XCTAssertFalse(store.localSTTMemoryOptimizationEnabled)
+
+        store.localSTTMemoryOptimizationEnabled = true
         XCTAssertFalse(store.localSTTMemoryOptimizationEnabled)
     }
 

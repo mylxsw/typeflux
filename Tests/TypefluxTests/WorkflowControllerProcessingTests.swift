@@ -2111,7 +2111,10 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         defaults.removePersistentDomain(forName: suiteName)
         let settingsStore = SettingsStore(defaults: defaults)
         settingsStore.soundEffectsEnabled = soundEffectsEnabled
-        return SoundEffectPlayer(settingsStore: settingsStore) { _ in
+        return SoundEffectPlayer(
+            settingsStore: settingsStore,
+            isEnabledOverride: { soundEffectsEnabled }
+        ) { _ in
             MockSoundEffectPlayback(eventRecorder: eventRecorder)
         }
     }
@@ -2125,7 +2128,10 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         defaults.removePersistentDomain(forName: suiteName)
         let settingsStore = SettingsStore(defaults: defaults)
         settingsStore.soundEffectsEnabled = soundEffectsEnabled
-        return SoundEffectPlayer(settingsStore: settingsStore) { url in
+        return SoundEffectPlayer(
+            settingsStore: settingsStore,
+            isEnabledOverride: { soundEffectsEnabled }
+        ) { url in
             let effectName = url.deletingPathExtension().lastPathComponent
             return MockSoundEffectPlayback(eventRecorder: eventRecorder, eventName: "cue-play-\(effectName)")
         }

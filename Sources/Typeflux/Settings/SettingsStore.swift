@@ -203,8 +203,17 @@ final class SettingsStore {
     }
 
     var soundEffectsEnabled: Bool {
-        get { defaults.object(forKey: "audio.soundEffects.enabled") as? Bool ?? true }
-        set { defaults.set(newValue, forKey: "audio.soundEffects.enabled") }
+        get {
+            // Sound effects are temporarily disabled until there is time to optimize them.
+            // Keep the persisted implementation here so the feature can be restored later.
+            // defaults.object(forKey: "audio.soundEffects.enabled") as? Bool ?? true
+            false
+        }
+        set {
+            // Sound effects are temporarily disabled until there is time to optimize them.
+            // defaults.set(newValue, forKey: "audio.soundEffects.enabled")
+            _ = newValue
+        }
     }
 
     var voiceProcessingTimeout: VoiceProcessingTimeout {
@@ -440,8 +449,16 @@ final class SettingsStore {
     }
 
     var personaHotkeyAppliesToSelection: Bool {
-        get { defaults.object(forKey: "persona.hotkeyAppliesToSelection") as? Bool ?? true }
-        set { defaults.set(newValue, forKey: "persona.hotkeyAppliesToSelection") }
+        get {
+            // Keep selection application enabled while its setting is hidden from users.
+            // defaults.object(forKey: "persona.hotkeyAppliesToSelection") as? Bool ?? true
+            true
+        }
+        set {
+            // Preserve the original persistence code for a future settings reintroduction.
+            // defaults.set(newValue, forKey: "persona.hotkeyAppliesToSelection")
+            _ = newValue
+        }
     }
 
     var quickInputEnabled: Bool {
@@ -814,8 +831,16 @@ final class SettingsStore {
     }
 
     var localSTTMemoryOptimizationEnabled: Bool {
-        get { defaults.object(forKey: "stt.local.memoryOptimization.enabled") as? Bool ?? false }
-        set { defaults.set(newValue, forKey: "stt.local.memoryOptimization.enabled") }
+        get {
+            // Memory optimization is paused until the implementation can be improved.
+            // defaults.object(forKey: "stt.local.memoryOptimization.enabled") as? Bool ?? false
+            false
+        }
+        set {
+            // Preserve the original persistence code so the feature can be restored later.
+            // defaults.set(newValue, forKey: "stt.local.memoryOptimization.enabled")
+            _ = newValue
+        }
     }
 
     var automaticVocabularyCollectionEnabled: Bool {
@@ -824,8 +849,16 @@ final class SettingsStore {
     }
 
     var inputContextOptimizationEnabled: Bool {
-        get { defaults.object(forKey: "inputContext.optimization.enabled") as? Bool ?? true }
-        set { defaults.set(newValue, forKey: "inputContext.optimization.enabled") }
+        get {
+            // Keep input-context optimization enabled while its beta setting is hidden.
+            // defaults.object(forKey: "inputContext.optimization.enabled") as? Bool ?? true
+            true
+        }
+        set {
+            // Preserve the original persistence code for a future settings reintroduction.
+            // defaults.set(newValue, forKey: "inputContext.optimization.enabled")
+            _ = newValue
+        }
     }
 
     // MARK: - Output Post-Processing
