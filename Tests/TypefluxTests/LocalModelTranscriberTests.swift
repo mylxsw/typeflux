@@ -432,6 +432,108 @@ final class LocalModelTranscriberTests: XCTestCase {
         await fulfillment(of: [progressNotification], timeout: 2)
     }
 
+    func testAutoModelDownloadServiceInstallsBaselineWhenOptimizationIsDisabled() async throws {
+        let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.localOptimizationEnabled = false
+        let fakeInstaller = FakeSherpaOnnxInstaller()
+        let manager = LocalModelManager(
+            fileManager: .default,
+            sherpaOnnxInstaller: fakeInstaller,
+            applicationSupportURL: makeTemporaryApplicationSupportURL(),
+            downloadSourceResolver: FixedLocalModelDownloadSourceResolver(sources: [.huggingFace]),
+            bundledModelsRootURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("typeflux-auto-empty-bundle-\(UUID().uuidString)", isDirectory: true)
+        )
+        let service = AutoModelDownloadService(modelManager: manager, settingsStore: settingsStore)
+
+        service.triggerIfNeeded()
+        try await waitForAutoModel(service)
+
+        let configuration = AutoModelDownloadService.recommendedConfiguration()
+        XCTAssertEqual(service.status, .completed)
+        XCTAssertTrue(service.isModelReady)
+        XCTAssertNotNil(manager.preparedModelInfo(for: configuration))
+        XCTAssertEqual(fakeInstaller.preparedSources, [.huggingFace])
+    }
+
+    func testAutoModelDownloadServiceCoalescesConcurrentTriggers() async throws {
+        let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settingsStore = SettingsStore(defaults: defaults)
+        let fakeInstaller = FakeSherpaOnnxInstaller()
+        let manager = LocalModelManager(
+            fileManager: .default,
+            sherpaOnnxInstaller: fakeInstaller,
+            applicationSupportURL: makeTemporaryApplicationSupportURL(),
+            downloadSourceResolver: FixedLocalModelDownloadSourceResolver(sources: [.huggingFace]),
+            bundledModelsRootURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("typeflux-auto-empty-bundle-\(UUID().uuidString)", isDirectory: true)
+        )
+        let service = AutoModelDownloadService(modelManager: manager, settingsStore: settingsStore)
+
+        service.triggerIfNeeded()
+        service.triggerIfNeeded()
+        service.triggerIfNeeded()
+        try await waitForAutoModel(service)
+
+        XCTAssertEqual(fakeInstaller.preparedSources, [.huggingFace])
+    }
+
+    func testAutoModelDownloadServiceRepairsFilesThatBecomeInvalid() async throws {
+        let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settingsStore = SettingsStore(defaults: defaults)
+        let fakeInstaller = FakeSherpaOnnxInstaller()
+        let manager = LocalModelManager(
+            fileManager: .default,
+            sherpaOnnxInstaller: fakeInstaller,
+            applicationSupportURL: makeTemporaryApplicationSupportURL(),
+            downloadSourceResolver: FixedLocalModelDownloadSourceResolver(sources: [.huggingFace]),
+            bundledModelsRootURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("typeflux-auto-empty-bundle-\(UUID().uuidString)", isDirectory: true)
+        )
+        let service = AutoModelDownloadService(modelManager: manager, settingsStore: settingsStore)
+
+        service.triggerIfNeeded()
+        try await waitForAutoModel(service)
+        let configuration = AutoModelDownloadService.recommendedConfiguration()
+        let prepared = try XCTUnwrap(manager.preparedModelInfo(for: configuration))
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
+        let tokensURL = URL(fileURLWithPath: prepared.storagePath, isDirectory: true)
+            .appendingPathComponent(layout.modelRootDirectory, isDirectory: true)
+            .appendingPathComponent("tokens.txt", isDirectory: false)
+        try FileManager.default.removeItem(at: tokensURL)
+
+        XCTAssertNil(service.makeTranscriberIfReady())
+        try await waitForAutoModel(service)
+
+        XCTAssertEqual(service.status, .completed)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tokensURL.path))
+        XCTAssertEqual(fakeInstaller.preparedSources, [.huggingFace, .huggingFace])
+    }
+
+    private func waitForAutoModel(
+        _ service: AutoModelDownloadService,
+        timeout: TimeInterval = 2
+    ) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if service.status == .completed {
+                return
+            }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTFail("Timed out waiting for the baseline model")
+    }
+
     func testLocalModelManagerPersistsQwen3PreparedModelInfo() async throws {
         let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -1491,7 +1593,7 @@ private final class CapturingProcessRunner: ProcessCommandRunning {
     }
 }
 
-private final class FakeSherpaOnnxInstaller: SherpaOnnxModelInstalling {
+final class FakeSherpaOnnxInstaller: SherpaOnnxModelInstalling {
     private let failingSources: Set<ModelDownloadSource>
     var lastPreparedModel: LocalSTTModel?
     var lastStorageURL: URL?

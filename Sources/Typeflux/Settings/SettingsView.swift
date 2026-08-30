@@ -5778,7 +5778,9 @@ struct StudioView: View {
                 )
             }
 
-            if viewModel.isModelAvailable(model) {
+            // SenseVoice is the system-managed baseline fallback. It can be repaired or
+            // re-downloaded, but must not be permanently removed from the app.
+            if model != .senseVoiceSmall, viewModel.isModelAvailable(model) {
                 Divider()
                 Button(role: .destructive) {
                     localSTTPendingDelete = model

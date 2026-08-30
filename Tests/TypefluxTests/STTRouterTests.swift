@@ -783,6 +783,49 @@ final class STTRouterTests: XCTestCase {
         XCTAssertEqual(appleSpeech.transcribeCallCount, 1)
     }
 
+    func testAutoModelFallbackReconcilesBaselineWhenOptimizationIsDisabled() async throws {
+        settings.localOptimizationEnabled = false
+        let applicationSupportURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-router-auto-model-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: applicationSupportURL) }
+
+        let manager = LocalModelManager(
+            fileManager: .default,
+            sherpaOnnxInstaller: FakeSherpaOnnxInstaller(),
+            applicationSupportURL: applicationSupportURL,
+            downloadSourceResolver: FixedLocalModelDownloadSourceResolver(sources: [.huggingFace]),
+            bundledModelsRootURL: applicationSupportURL.appendingPathComponent("empty-bundle", isDirectory: true)
+        )
+        let service = AutoModelDownloadService(modelManager: manager, settingsStore: settings)
+        let router = STTRouter(
+            settingsStore: settings,
+            whisper: whisper,
+            freeSTT: freeSTT,
+            appleSpeech: appleSpeech,
+            localModel: localModel,
+            multimodal: multimodal,
+            aliCloud: aliCloud,
+            doubaoRealtime: doubaoRealtime,
+            googleCloud: googleCloud,
+            groq: groq,
+            soniox: MockTranscriber(),
+            typefluxOfficial: typefluxOfficial,
+            autoModelDownloadService: service
+        )
+
+        let result = await router.transcribeWithAutoModelIfReady(
+            audioFile: dummyAudioFile(),
+            onUpdate: { _ in }
+        )
+
+        XCTAssertNil(result)
+        let deadline = Date().addingTimeInterval(2)
+        while service.status != .completed, Date() < deadline {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTAssertEqual(service.status, .completed)
+    }
+
     // MARK: - prepareForRecording
 
     func testPrepareForRecordingDelegatesToDoubaoRealtime() async {
