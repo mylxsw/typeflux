@@ -160,8 +160,7 @@ extension STTRouter {
         audioFile: AudioFile,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async -> String? {
-        guard settingsStore.localOptimizationEnabled,
-              let transcriber = autoModelDownloadService?.makeTranscriberIfReady()
+        guard let transcriber = autoModelDownloadService?.makeTranscriberIfReady()
         else {
             return nil
         }
