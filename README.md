@@ -124,6 +124,9 @@ make release-continue # resume an interrupted local release
 swift test        # run tests
 ```
 
+CI tests are opt-in. On an open pull request, a repository owner, member, or
+collaborator can comment `@autotest` to run the test workflow.
+
 > ⚠️ If you skip `setup_dev_cert.sh`, `make run` still works but macOS will re-prompt for permissions on each build (ad-hoc signing).
 
 See [CLAUDE.md](./CLAUDE.md) for the full development guide.
