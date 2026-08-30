@@ -8,9 +8,11 @@ struct AccountView: View {
     @State private var passwordChangeFlow = PasswordChangeFlow()
     @State private var isOpeningBilling = false
     @State private var billingActionError: String?
-    @ObservedObject private var cloudDataSync = CloudDataSyncCoordinator.shared
-    @State private var isConfirmingCloudSync = false
-    @State private var isConfirmingCloudDataDeletion = false
+    // TODO(GUL-57): Cloud data sync is not stable enough for this release. Keep its
+    // account-page entry points commented out so the implementation can be restored later.
+    // @ObservedObject private var cloudDataSync = CloudDataSyncCoordinator.shared
+    // @State private var isConfirmingCloudSync = false
+    // @State private var isConfirmingCloudDataDeletion = false
     @State private var isConfirmingLogout = false
 
     var body: some View {
@@ -18,7 +20,8 @@ struct AccountView: View {
             if let profile = authState.userProfile {
                 profileSummary(profile: profile)
                 accountOverview
-                cloudDataSyncSection
+                // TODO(GUL-57): Restore this entry after cloud data sync is ready to ship.
+                // cloudDataSyncSection
             } else if authState.isLoading {
                 loadingCard
             } else {
@@ -52,25 +55,27 @@ struct AccountView: View {
                 }
             }
         }
-        .alert(L("cloudDataSync.consent.title"), isPresented: $isConfirmingCloudSync) {
-            Button(L("common.cancel"), role: .cancel) {}
-            Button(L("cloudDataSync.consent.merge")) {
-                cloudDataSync.setEnabled(true, mergeGuestData: true)
-            }
-            Button(L("cloudDataSync.consent.cloudOnly")) {
-                cloudDataSync.setEnabled(true, mergeGuestData: false)
-            }
-        } message: {
-            Text(L("cloudDataSync.consent.message"))
-        }
-        .alert(L("cloudDataSync.delete.title"), isPresented: $isConfirmingCloudDataDeletion) {
-            Button(L("common.cancel"), role: .cancel) {}
-            Button(L("cloudDataSync.delete.confirm"), role: .destructive) {
-                cloudDataSync.deleteCloudData()
-            }
-        } message: {
-            Text(L("cloudDataSync.delete.message"))
-        }
+        // TODO(GUL-57): Cloud data sync is intentionally hidden for this release because
+        // it is not stable enough to ship. Keep these alerts commented out for restoration.
+        // .alert(L("cloudDataSync.consent.title"), isPresented: $isConfirmingCloudSync) {
+        //     Button(L("common.cancel"), role: .cancel) {}
+        //     Button(L("cloudDataSync.consent.merge")) {
+        //         cloudDataSync.setEnabled(true, mergeGuestData: true)
+        //     }
+        //     Button(L("cloudDataSync.consent.cloudOnly")) {
+        //         cloudDataSync.setEnabled(true, mergeGuestData: false)
+        //     }
+        // } message: {
+        //     Text(L("cloudDataSync.consent.message"))
+        // }
+        // .alert(L("cloudDataSync.delete.title"), isPresented: $isConfirmingCloudDataDeletion) {
+        //     Button(L("common.cancel"), role: .cancel) {}
+        //     Button(L("cloudDataSync.delete.confirm"), role: .destructive) {
+        //         cloudDataSync.deleteCloudData()
+        //     }
+        // } message: {
+        //     Text(L("cloudDataSync.delete.message"))
+        // }
         .alert(L("auth.account.logoutConfirmTitle"), isPresented: $isConfirmingLogout) {
             Button(L("common.cancel"), role: .cancel) {}
             Button(L("auth.account.logout"), role: .destructive) {
@@ -82,113 +87,117 @@ struct AccountView: View {
         }
     }
 
-    private var cloudDataSyncSection: some View {
-        StudioCard {
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
-                HStack(alignment: .center, spacing: StudioTheme.Spacing.large) {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-                        Text(L("cloudDataSync.title"))
-                            .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        Text(L("cloudDataSync.accountDescription"))
-                            .font(.studioBody(StudioTheme.Typography.body))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        if let error = cloudDataSync.lastError, !cloudDataSync.isSyncing {
-                            Text(L("cloudDataSync.status.failed", error))
-                                .font(.studioBody(StudioTheme.Typography.bodySmall))
-                                .foregroundStyle(StudioTheme.danger)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-
-                        cloudDataSyncStatus
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    cloudDataSyncToggle
-                }
-
-                cloudDataManagementMenu
-            }
-        }
-    }
-
-    private var cloudDataSyncToggle: some View {
-        Toggle(L("cloudDataSync.title"), isOn: Binding(
-            get: { cloudDataSync.isEnabled },
-            set: { enabled in
-                if enabled && cloudDataSync.requiresInitialChoice {
-                    isConfirmingCloudSync = true
-                } else if enabled {
-                    cloudDataSync.setEnabled(true)
-                } else {
-                    cloudDataSync.setEnabled(false)
-                }
-            }
-        ))
-        .labelsHidden()
-        .toggleStyle(.switch)
-        .tint(StudioTheme.accent)
-        .fixedSize()
-    }
-
-    private var cloudDataSyncStatus: some View {
-        HStack(spacing: StudioTheme.Spacing.xSmall) {
-            if cloudDataSync.isSyncing {
-                ProgressView()
-                    .controlSize(.mini)
-                    .accessibilityLabel(L("cloudDataSync.status.syncing"))
-            }
-            if let date = cloudDataSync.lastSyncAt {
-                TimelineView(.periodic(from: .now, by: 30)) { context in
-                    Text(L(
-                        "cloudDataSync.status.lastSyncAgo",
-                        AccountDateDisplayFormatter.relativeTime(
-                            since: date, now: context.date, locale: localization.locale
-                        )
-                    ))
-                    .monospacedDigit()
-                }
-            } else if cloudDataSync.isEnabled || cloudDataSync.isSyncing {
-                Text(L(cloudDataSync.isSyncing ? "cloudDataSync.status.syncing" : "cloudDataSync.status.waiting"))
-            }
-        }
-        .font(.studioBody(StudioTheme.Typography.bodySmall))
-        .foregroundStyle(StudioTheme.textSecondary)
-        .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private var cloudDataManagementMenu: some View {
-        Menu {
-            Button(role: .destructive) {
-                isConfirmingCloudDataDeletion = true
-            } label: {
-                Label(L("cloudDataSync.delete.action"), systemImage: "trash")
-            }
-            .disabled(cloudDataSync.isDeletingCloudData || cloudDataSync.isSyncing)
-        } label: {
-            ZStack {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
-                    .opacity(cloudDataSync.isDeletingCloudData ? 0 : 1)
-                if cloudDataSync.isDeletingCloudData {
-                    ProgressView().controlSize(.mini)
-                }
-            }
-            .foregroundStyle(StudioTheme.textSecondary)
-            .frame(width: 32, height: 32)
-            .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize(horizontal: true, vertical: false)
-        .accessibilityLabel(L("cloudDataSync.manageData"))
-        .help(L("cloudDataSync.manageData"))
-        .disabled(!cloudDataSync.canDeleteCloudData || cloudDataSync.isDeletingCloudData)
-    }
+    // TODO(GUL-57): Cloud data sync is intentionally hidden for this release because
+    // it is not stable enough to ship. Keep the complete entry-point implementation
+    // commented out so it can be restored when the feature is ready.
+    //
+    // private var cloudDataSyncSection: some View {
+    //     StudioCard {
+    //         HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
+    //             HStack(alignment: .center, spacing: StudioTheme.Spacing.large) {
+    //                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
+    //                     Text(L("cloudDataSync.title"))
+    //                         .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
+    //                         .foregroundStyle(StudioTheme.textPrimary)
+    //                         .fixedSize(horizontal: false, vertical: true)
+    //
+    //                     Text(L("cloudDataSync.accountDescription"))
+    //                         .font(.studioBody(StudioTheme.Typography.body))
+    //                         .foregroundStyle(StudioTheme.textSecondary)
+    //                         .fixedSize(horizontal: false, vertical: true)
+    //
+    //                     if let error = cloudDataSync.lastError, !cloudDataSync.isSyncing {
+    //                         Text(L("cloudDataSync.status.failed", error))
+    //                             .font(.studioBody(StudioTheme.Typography.bodySmall))
+    //                             .foregroundStyle(StudioTheme.danger)
+    //                             .fixedSize(horizontal: false, vertical: true)
+    //                     }
+    //
+    //                     cloudDataSyncStatus
+    //                 }
+    //                 .frame(maxWidth: .infinity, alignment: .leading)
+    //
+    //                 cloudDataSyncToggle
+    //             }
+    //
+    //             cloudDataManagementMenu
+    //         }
+    //     }
+    // }
+    //
+    // private var cloudDataSyncToggle: some View {
+    //     Toggle(L("cloudDataSync.title"), isOn: Binding(
+    //         get: { cloudDataSync.isEnabled },
+    //         set: { enabled in
+    //             if enabled && cloudDataSync.requiresInitialChoice {
+    //                 isConfirmingCloudSync = true
+    //             } else if enabled {
+    //                 cloudDataSync.setEnabled(true)
+    //             } else {
+    //                 cloudDataSync.setEnabled(false)
+    //             }
+    //         }
+    //     ))
+    //     .labelsHidden()
+    //     .toggleStyle(.switch)
+    //     .tint(StudioTheme.accent)
+    //     .fixedSize()
+    // }
+    //
+    // private var cloudDataSyncStatus: some View {
+    //     HStack(spacing: StudioTheme.Spacing.xSmall) {
+    //         if cloudDataSync.isSyncing {
+    //             ProgressView()
+    //                 .controlSize(.mini)
+    //                 .accessibilityLabel(L("cloudDataSync.status.syncing"))
+    //         }
+    //         if let date = cloudDataSync.lastSyncAt {
+    //             TimelineView(.periodic(from: .now, by: 30)) { context in
+    //                 Text(L(
+    //                     "cloudDataSync.status.lastSyncAgo",
+    //                     AccountDateDisplayFormatter.relativeTime(
+    //                         since: date, now: context.date, locale: localization.locale
+    //                     )
+    //                 ))
+    //                 .monospacedDigit()
+    //             }
+    //         } else if cloudDataSync.isEnabled || cloudDataSync.isSyncing {
+    //             Text(L(cloudDataSync.isSyncing ? "cloudDataSync.status.syncing" : "cloudDataSync.status.waiting"))
+    //         }
+    //     }
+    //     .font(.studioBody(StudioTheme.Typography.bodySmall))
+    //     .foregroundStyle(StudioTheme.textSecondary)
+    //     .fixedSize(horizontal: false, vertical: true)
+    // }
+    //
+    // private var cloudDataManagementMenu: some View {
+    //     Menu {
+    //         Button(role: .destructive) {
+    //             isConfirmingCloudDataDeletion = true
+    //         } label: {
+    //             Label(L("cloudDataSync.delete.action"), systemImage: "trash")
+    //         }
+    //         .disabled(cloudDataSync.isDeletingCloudData || cloudDataSync.isSyncing)
+    //     } label: {
+    //         ZStack {
+    //             Image(systemName: "ellipsis")
+    //                 .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
+    //                 .opacity(cloudDataSync.isDeletingCloudData ? 0 : 1)
+    //             if cloudDataSync.isDeletingCloudData {
+    //                 ProgressView().controlSize(.mini)
+    //             }
+    //         }
+    //         .foregroundStyle(StudioTheme.textSecondary)
+    //         .frame(width: 32, height: 32)
+    //         .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
+    //     }
+    //     .menuStyle(.borderlessButton)
+    //     .menuIndicator(.hidden)
+    //     .fixedSize(horizontal: true, vertical: false)
+    //     .accessibilityLabel(L("cloudDataSync.manageData"))
+    //     .help(L("cloudDataSync.manageData"))
+    //     .disabled(!cloudDataSync.canDeleteCloudData || cloudDataSync.isDeletingCloudData)
+    // }
 
     private var accountOverview: some View {
         StudioCard {
