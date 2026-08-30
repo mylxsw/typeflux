@@ -30,16 +30,19 @@ final class SoundEffectPlayer {
     }
 
     private let settingsStore: SettingsStore
+    private let isEnabledOverride: (() -> Bool)?
     private let playerFactory: (URL) throws -> SoundEffectPlayback
     private var players: [Effect: SoundEffectPlayback] = [:]
 
     init(
         settingsStore: SettingsStore,
+        isEnabledOverride: (() -> Bool)? = nil,
         playerFactory: @escaping (URL) throws -> SoundEffectPlayback = { url in
             try AVAudioPlayer(contentsOf: url)
         }
     ) {
         self.settingsStore = settingsStore
+        self.isEnabledOverride = isEnabledOverride
         self.playerFactory = playerFactory
 
         preloadPlayers()
@@ -48,7 +51,7 @@ final class SoundEffectPlayer {
     @discardableResult
     @MainActor
     func play(_ effect: Effect) -> Bool {
-        guard settingsStore.soundEffectsEnabled else {
+        guard isEnabledOverride?() ?? settingsStore.soundEffectsEnabled else {
             stopPlayers()
             return false
         }

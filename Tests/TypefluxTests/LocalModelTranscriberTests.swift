@@ -741,6 +741,7 @@ final class LocalModelTranscriberTests: XCTestCase {
             settingsStore: settingsStore,
             modelManager: manager,
             whisperKitKeepAliveDuration: 0.05,
+            memoryOptimizationEnabledOverride: { true },
             whisperKitTranscriberFactory: factory.makeTranscriber(modelName:modelFolder:)
         )
         let audioFile = try makeTestWAVFile()

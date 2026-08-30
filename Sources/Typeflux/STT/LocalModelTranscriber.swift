@@ -21,6 +21,7 @@ final class LocalModelTranscriber: TranscriptionProfileAwareTranscriber {
     private let modelManager: LocalSTTModelManaging
     private let whisperKitTranscriberFactory: (String, String) -> LocalWhisperKitTranscribing
     private let whisperKitKeepAliveDurationWhenMemoryOptimized: TimeInterval
+    private let memoryOptimizationEnabledOverride: (() -> Bool)?
     private let whisperKitCacheLock = NSLock()
     /// Single active WhisperKit pipeline cache keyed by model name + resolved model folder.
     /// WhisperKit keeps CoreML graphs resident after the first load, so we drop stale
@@ -32,6 +33,7 @@ final class LocalModelTranscriber: TranscriptionProfileAwareTranscriber {
         settingsStore: SettingsStore,
         modelManager: LocalSTTModelManaging,
         whisperKitKeepAliveDuration: TimeInterval = defaultWhisperKitKeepAliveDuration,
+        memoryOptimizationEnabledOverride: (() -> Bool)? = nil,
         whisperKitTranscriberFactory: @escaping (String, String)
             -> LocalWhisperKitTranscribing = { modelName, modelFolder in
                 WhisperKitTranscriber(modelName: modelName, modelFolder: modelFolder)
@@ -40,6 +42,7 @@ final class LocalModelTranscriber: TranscriptionProfileAwareTranscriber {
         self.settingsStore = settingsStore
         self.modelManager = modelManager
         whisperKitKeepAliveDurationWhenMemoryOptimized = whisperKitKeepAliveDuration
+        self.memoryOptimizationEnabledOverride = memoryOptimizationEnabledOverride
         self.whisperKitTranscriberFactory = whisperKitTranscriberFactory
     }
 
@@ -187,7 +190,7 @@ final class LocalModelTranscriber: TranscriptionProfileAwareTranscriber {
     }
 
     private var whisperKitKeepAliveDuration: TimeInterval? {
-        settingsStore.localSTTMemoryOptimizationEnabled
+        (memoryOptimizationEnabledOverride?() ?? settingsStore.localSTTMemoryOptimizationEnabled)
             ? whisperKitKeepAliveDurationWhenMemoryOptimized
             : Self.persistentWhisperKitKeepAliveDuration
     }

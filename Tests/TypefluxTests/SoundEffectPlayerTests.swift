@@ -38,7 +38,7 @@ final class SoundEffectPlayerTests: XCTestCase {
         let settingsStore = try makeSettingsStore()
         var requestedURLs: [URL] = []
 
-        _ = SoundEffectPlayer(settingsStore: settingsStore) { url in
+        _ = SoundEffectPlayer(settingsStore: settingsStore, isEnabledOverride: { true }) { url in
             requestedURLs.append(url)
             return MockSoundEffectPlayback()
         }
@@ -52,7 +52,7 @@ final class SoundEffectPlayerTests: XCTestCase {
         let settingsStore = try makeSettingsStore()
         let playbackByName = PlaybackRegistry()
         var requestedURLs: [URL] = []
-        let player = SoundEffectPlayer(settingsStore: settingsStore) { url in
+        let player = SoundEffectPlayer(settingsStore: settingsStore, isEnabledOverride: { true }) { url in
             requestedURLs.append(url)
             let playback = MockSoundEffectPlayback()
             playbackByName[url.deletingPathExtension().lastPathComponent] = playback
@@ -74,7 +74,7 @@ final class SoundEffectPlayerTests: XCTestCase {
     func testPlayStopsOtherEffectPlayers() throws {
         let settingsStore = try makeSettingsStore()
         let playbackByName = PlaybackRegistry()
-        let player = SoundEffectPlayer(settingsStore: settingsStore) { url in
+        let player = SoundEffectPlayer(settingsStore: settingsStore, isEnabledOverride: { true }) { url in
             let playback = MockSoundEffectPlayback()
             playback.currentTime = 0.8
             playbackByName[url.deletingPathExtension().lastPathComponent] = playback
@@ -96,7 +96,7 @@ final class SoundEffectPlayerTests: XCTestCase {
         let settingsStore = try makeSettingsStore()
         settingsStore.soundEffectsEnabled = false
         let playbackByName = PlaybackRegistry()
-        let player = SoundEffectPlayer(settingsStore: settingsStore) { url in
+        let player = SoundEffectPlayer(settingsStore: settingsStore, isEnabledOverride: { false }) { url in
             let playback = MockSoundEffectPlayback()
             playback.currentTime = 0.6
             playbackByName[url.deletingPathExtension().lastPathComponent] = playback
@@ -118,7 +118,7 @@ final class SoundEffectPlayerTests: XCTestCase {
     func testPlayReturnsTrueWhenPlaybackStarts() throws {
         let settingsStore = try makeSettingsStore()
         let playback = MockSoundEffectPlayback()
-        let player = SoundEffectPlayer(settingsStore: settingsStore) { _ in
+        let player = SoundEffectPlayer(settingsStore: settingsStore, isEnabledOverride: { true }) { _ in
             playback
         }
 
@@ -129,7 +129,7 @@ final class SoundEffectPlayerTests: XCTestCase {
     func testPlayReturnsFalseWhenSoundEffectsAreDisabled() throws {
         let settingsStore = try makeSettingsStore()
         settingsStore.soundEffectsEnabled = false
-        let player = SoundEffectPlayer(settingsStore: settingsStore) { _ in
+        let player = SoundEffectPlayer(settingsStore: settingsStore, isEnabledOverride: { false }) { _ in
             MockSoundEffectPlayback()
         }
 
@@ -140,7 +140,7 @@ final class SoundEffectPlayerTests: XCTestCase {
         let settingsStore = try makeSettingsStore()
         let playbackByName = PlaybackRegistry()
         let playExpectation = expectation(description: "Async sound effect playback started")
-        let player = SoundEffectPlayer(settingsStore: settingsStore) { url in
+        let player = SoundEffectPlayer(settingsStore: settingsStore, isEnabledOverride: { true }) { url in
             let playback = MockSoundEffectPlayback()
             playbackByName[url.deletingPathExtension().lastPathComponent] = playback
             if url.lastPathComponent == "done.mp3" {

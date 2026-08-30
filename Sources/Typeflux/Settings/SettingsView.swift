@@ -2393,6 +2393,9 @@ struct StudioView: View {
 
             StudioCard {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                    /*
+                     Sound effects are temporarily disabled until there is time to optimize them.
+                     Keep this setting UI for a future reintroduction.
                     StudioSettingRow(
                         title: L("settings.advanced.soundEffects.title"),
                         subtitle: L("settings.advanced.soundEffects.subtitle")
@@ -2409,6 +2412,7 @@ struct StudioView: View {
                     }
 
                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                    */
 
                     StudioSettingRow(
                         title: L("settings.advanced.autoVocabulary.title"),
@@ -2514,6 +2518,10 @@ struct StudioView: View {
 
                             Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
+                            /*
+                             Memory optimization is temporarily hidden and forced off until it can be
+                             improved.
+                             Keep this setting UI for a future reintroduction.
                             StudioSettingRow(
                                 title: L("settings.advanced.localSTTMemoryOptimization.title"),
                                 subtitle: L("settings.advanced.localSTTMemoryOptimization.subtitle")
@@ -2530,7 +2538,11 @@ struct StudioView: View {
                             }
 
                             Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                            */
 
+                            /*
+                             Applying personas to selected text now remains enabled without a user setting.
+                             Keep this beta setting UI in case configurability returns later.
                             StudioSettingRow(
                                 title: L("settings.advanced.personaHotkeyApply.title"),
                                 subtitle: L("settings.advanced.personaHotkeyApply.subtitle"),
@@ -2548,7 +2560,11 @@ struct StudioView: View {
                             }
 
                             Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                            */
 
+                            /*
+                             Input-context optimization now remains enabled without a user setting.
+                             Keep this beta setting UI in case configurability returns later.
                             StudioSettingRow(
                                 title: L("settings.advanced.inputContextOptimization.title"),
                                 subtitle: L("settings.advanced.inputContextOptimization.subtitle"),
@@ -2566,6 +2582,7 @@ struct StudioView: View {
                             }
 
                             Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                            */
 
                             StudioSettingRow(
                                 title: L("settings.advanced.agentFramework.title"),
@@ -2601,6 +2618,9 @@ struct StudioView: View {
                                 .toggleStyle(.switch)
                             }
 
+                            /*
+                             Apple Speech fallback is intentionally hidden from settings and should no longer
+                             be presented to users. Keep the entry code because the underlying fallback remains.
                             Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                             StudioSettingRow(
@@ -2617,6 +2637,7 @@ struct StudioView: View {
                                 .labelsHidden()
                                 .toggleStyle(.switch)
                             }
+                            */
                         }
                     }
 
@@ -6193,8 +6214,10 @@ struct StudioView: View {
 
     private var modelOverviewExtraPill: String? {
         if viewModel.modelDomain == .stt {
-            return viewModel.appleSpeechFallback
-                ? L("settings.models.fallback.enabled") : L("settings.models.fallback.off")
+            // Apple Speech fallback is intentionally hidden from all settings summaries.
+            // return viewModel.appleSpeechFallback
+            //     ? L("settings.models.fallback.enabled") : L("settings.models.fallback.off")
+            return nil
         }
 
         return providerIsConfigured(activeModelProviderID)
@@ -6360,7 +6383,9 @@ struct StudioView: View {
 
     private var modelRoutingSecondaryTitle: String? {
         if viewModel.modelDomain == .stt {
-            return L("settings.models.routing.fallback")
+            // Apple Speech fallback is intentionally hidden from all settings summaries.
+            // return L("settings.models.routing.fallback")
+            return nil
         }
 
         return activeModelProviderID == .ollama
@@ -6369,9 +6394,11 @@ struct StudioView: View {
 
     private var modelRoutingSecondaryValue: String? {
         if viewModel.modelDomain == .stt {
-            return viewModel.appleSpeechFallback
-                ? L("settings.models.routing.fallbackEnabled")
-                : L("settings.models.routing.fallbackDisabled")
+            // Apple Speech fallback is intentionally hidden from all settings summaries.
+            // return viewModel.appleSpeechFallback
+            //     ? L("settings.models.routing.fallbackEnabled")
+            //     : L("settings.models.routing.fallbackDisabled")
+            return nil
         }
 
         if activeModelProviderID == .ollama {

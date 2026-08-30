@@ -605,7 +605,7 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         XCTAssertEqual(muter.beginCallCount, 1)
     }
 
-    func testDelayedMuteWaitsForStartCueWhenSoundEffectsAreEnabled() async throws {
+    func testDelayedMuteUsesShortDelayWhenPersistedSoundEffectsValueIsEnabled() async throws {
         let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -627,7 +627,7 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         await sleepController.waitUntilSleeping()
 
         let durations = await sleepController.recordedDurations()
-        XCTAssertEqual(durations, [.milliseconds(1225)])
+        XCTAssertEqual(durations, [.milliseconds(180)])
         recorder.cancelMutedSessionForTesting()
         await sleepController.resume()
     }
