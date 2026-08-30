@@ -2483,6 +2483,10 @@ struct StudioView: View {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
                     StudioCard {
                         VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                            /*
+                             Local optimization is hidden because SenseVoice availability and the
+                             cloud-local race are system-managed fallback policies, not user choices.
+                             Keep this setting UI until the model lifecycle is fully unified.
                             StudioSettingRow(
                                 title: L("settings.advanced.localOptimization.title"),
                                 subtitle: L("settings.advanced.localOptimization.subtitle")
@@ -2499,6 +2503,7 @@ struct StudioView: View {
                             }
 
                             Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                            */
 
                             StudioSettingRow(
                                 title: L("settings.advanced.voiceProcessingTimeout.title"),
