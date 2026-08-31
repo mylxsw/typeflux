@@ -198,11 +198,19 @@ final class AXTextInjector: TextInjector {
     static let visibleTextContextMaxCharacters = 60000
     static let copyShortcutKeyCode: CGKeyCode = 8
     static let selectionContextLifetime: TimeInterval = 180
+    static let maximumSelectionContextCount = 16
     static let focusedDescendantSearchDepth = 10
+    static let replacementAXMessagingTimeout: Float = 0.25
 
     var latestSelectionContext: SelectionContext?
     var lastInjectionMethod: TextInjectionMethod?
     var activePasteboardDeliveryProbe: PasteboardDeliveryProbe?
+    let selectionContextLock = NSLock()
+    var selectionContexts: [UUID: SelectionContext] = [:]
+    let selectionReplacementQueue = DispatchQueue(
+        label: "ai.gulu.app.typeflux.selection-replacement",
+        qos: .userInitiated
+    )
 
     func isTypefluxOwnedTarget(processID: pid_t?, bundleIdentifier: String?) -> Bool {
         if processID == getpid() {
@@ -671,6 +679,7 @@ final class AXTextInjector: TextInjector {
             // avoiding a race where a second focusedElement() call returns a different element.
             let editability = isLikelyEditable(element: result.context.element)
             latestSelectionContext = result.context
+            let replacementContextID = registerSelectionContext(result.context)
             logger
                 .debug(
                     "source=ax-api  role=\(result.context.role ?? "nil", privacy: .public)  range=\(result.context.range.map { "[\($0.location),\($0.length)]" } ?? "nil", privacy: .public)  isEditable=\(editability ? "true" : "false", privacy: .public)  isFocusedTarget=\(result.context.isFocusedTarget ? "true" : "false", privacy: .public)  text(32)=\(String(result.text.prefix(32)), privacy: .public)"
@@ -685,7 +694,8 @@ final class AXTextInjector: TextInjector {
                 isEditable: editability,
                 role: result.context.role,
                 windowTitle: result.context.windowTitle,
-                isFocusedTarget: result.context.isFocusedTarget
+                isFocusedTarget: result.context.isFocusedTarget,
+                replacementContextID: replacementContextID
             )
         }
         logger.debug("ax-api returned nil — trying clipboard-copy")
@@ -718,6 +728,7 @@ final class AXTextInjector: TextInjector {
                 capturedAt: Date()
             )
             latestSelectionContext = context
+            let replacementContextID = registerSelectionContext(context)
             logger
                 .debug(
                     "source=clipboard-copy  focusedWindow=\(focusedWindow != nil ? "present" : "nil", privacy: .public)  selectionWindow=\(selectionWindow != nil ? "present" : "nil", privacy: .public)  isFocusedTarget=\(isFocusedTarget ? "true" : "false", privacy: .public)  text(32)=\(String(copiedText.prefix(32)), privacy: .public)"
@@ -735,7 +746,8 @@ final class AXTextInjector: TextInjector {
                 isEditable: editability,
                 role: nil,
                 windowTitle: context.windowTitle,
-                isFocusedTarget: context.isFocusedTarget
+                isFocusedTarget: context.isFocusedTarget,
+                replacementContextID: replacementContextID
             )
         }
         logger.debug("clipboard-copy returned nil — no selection detected")
@@ -1046,7 +1058,13 @@ final class AXTextInjector: TextInjector {
 
     func replaceSelection(text: String) throws {
         try performAXOperationOnMainThread {
-            try self.setText(text, replaceSelection: true)
+            guard try self.insertIntoTypefluxNativeTextTarget(text, replaceSelection: true) else {
+                throw self.selectionReplacementError(
+                    code: 32,
+                    description: "External selection replacement requires a captured target"
+                )
+            }
+            self.lastInjectionMethod = .ax
         }
     }
 

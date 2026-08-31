@@ -154,7 +154,7 @@ extension AXTextInjector {
             range: range,
             processID: processID,
             processName: frontmostApplicationName(),
-            selectedText: trimmed,
+            selectedText: text,
             role: role,
             windowTitle: selectionWindow.flatMap(windowTitle(of:)),
             isFocusedTarget: isFocusedTarget,
@@ -1182,6 +1182,30 @@ extension AXTextInjector {
             return nil
         }
         return latestSelectionContext
+    }
+
+    func registerSelectionContext(_ context: SelectionContext) -> UUID {
+        let contextID = UUID()
+        let expiry = Date().addingTimeInterval(-Self.selectionContextLifetime)
+        selectionContextLock.lock()
+        selectionContexts = selectionContexts.filter { $0.value.capturedAt >= expiry }
+        if selectionContexts.count >= Self.maximumSelectionContextCount,
+           let oldestID = selectionContexts.min(by: { $0.value.capturedAt < $1.value.capturedAt })?.key {
+            selectionContexts.removeValue(forKey: oldestID)
+        }
+        selectionContexts[contextID] = context
+        selectionContextLock.unlock()
+        return contextID
+    }
+
+    func consumeSelectionContext(id: UUID) -> SelectionContext? {
+        selectionContextLock.lock()
+        defer { selectionContextLock.unlock() }
+        guard let context = selectionContexts.removeValue(forKey: id) else { return nil }
+        guard Date().timeIntervalSince(context.capturedAt) <= Self.selectionContextLifetime else {
+            return nil
+        }
+        return context
     }
 
     func restoreSelectionContext(_ context: SelectionContext) {

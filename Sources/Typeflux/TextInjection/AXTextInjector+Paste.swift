@@ -12,6 +12,13 @@ extension AXTextInjector {
             return
         }
 
+        guard !replaceSelection else {
+            throw selectionReplacementError(
+                code: 32,
+                description: "External selection replacement requires a captured target"
+            )
+        }
+
         if TypefluxWindowIdentity.isAskAnswerWindow(typefluxFrontmostWindow()) {
             NetworkDebugLogger.logMessage(
                 "[Text Injection] blocked Typeflux Ask Answer window before AX write"
@@ -246,6 +253,13 @@ extension AXTextInjector {
         replaceSelection: Bool,
         contextAlreadyRestored: Bool = false
     ) throws {
+        guard !replaceSelection else {
+            throw selectionReplacementError(
+                code: 32,
+                description: "External selection replacement requires a captured target"
+            )
+        }
+
         let pasteboard = NSPasteboard.general
         let previousSnapshot = capturePasteboardSnapshot(from: pasteboard)
         let strictFallbackEnabled = settingsStore?.strictEditApplyFallbackEnabled ?? false

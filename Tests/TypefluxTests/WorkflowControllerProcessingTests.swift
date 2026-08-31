@@ -57,6 +57,40 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         XCTAssertEqual(outcome, .inserted)
         XCTAssertEqual(textInjector.replacedTexts, ["updated"])
+        XCTAssertEqual(textInjector.replacementTargets.first.flatMap { $0 }?.processID, snapshot.processID)
+        XCTAssertTrue(textInjector.insertedTexts.isEmpty)
+    }
+
+    func testApplyPersonaToSelectionPreservesCapturedReplacementTarget() async {
+        let contextID = UUID()
+        let snapshot = TextSelectionSnapshot(
+            processID: 42,
+            processName: "Notes",
+            bundleIdentifier: "com.apple.Notes",
+            selectedRange: CFRange(location: 0, length: 5),
+            selectedText: "hello",
+            source: "accessibility",
+            isEditable: true,
+            role: "AXTextArea",
+            windowTitle: "Draft",
+            isFocusedTarget: true,
+            replacementContextID: contextID
+        )
+        let textInjector = MockProcessingTextInjector(selectionSnapshot: snapshot)
+        let persona = PersonaProfile(name: "Concise", prompt: "Make it concise.")
+        let controller = makeWorkflowController(
+            textInjector: textInjector,
+            llmService: CountingProcessingLLMService(rewriteText: "updated"),
+            configureSettings: configureReadyLLM
+        )
+
+        controller.applyPersonaToSelection(
+            WorkflowController.PersonaSelectionContext(snapshot: snapshot, selectedText: "hello"),
+            persona: persona
+        )
+        await waitUntil { textInjector.replacedTexts == ["updated"] }
+
+        XCTAssertEqual(textInjector.replacementTargets.first.flatMap { $0 }?.replacementContextID, contextID)
         XCTAssertTrue(textInjector.insertedTexts.isEmpty)
     }
 
@@ -2273,6 +2307,7 @@ private func XCTAssertThrowsErrorAsync(
 private final class MockProcessingTextInjector: TextInjector {
     private(set) var insertedTexts: [String] = []
     private(set) var replacedTexts: [String] = []
+    private(set) var replacementTargets: [TextSelectionSnapshot?] = []
     private let selectionSnapshot: TextSelectionSnapshot
     private let inputSnapshot: CurrentInputTextSnapshot
     private let insertError: Error?
@@ -2314,6 +2349,14 @@ private final class MockProcessingTextInjector: TextInjector {
             throw replaceError
         }
         replacedTexts.append(text)
+    }
+
+    func replaceSelection(text: String, target: TextSelectionSnapshot?) async throws {
+        if let replaceError {
+            throw replaceError
+        }
+        replacedTexts.append(text)
+        replacementTargets.append(target)
     }
 }
 
