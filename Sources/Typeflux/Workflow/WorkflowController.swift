@@ -18,7 +18,6 @@ final class WorkflowController {
     /// Keep this above `minimumRecordingDuration` so a release is never classified
     /// as hold-to-talk and then immediately rejected as too short.
     static let tapToLockThreshold: TimeInterval = 0.60
-    static let selectionRestoreDelayMicroseconds: useconds_t = 120_000
     static let automaticVocabularyObservationWindow: TimeInterval = 30
     static let automaticVocabularyPollInterval: Duration = .seconds(1)
     // Bumped from 600ms to 900ms so the paste fallback path has time for focus and

@@ -59,6 +59,31 @@ final class PasteboardDeliveryProbe: NSObject, NSPasteboardItemDataProvider, @un
     func pasteboardFinishedWithDataProvider(_: NSPasteboard) {}
 }
 
+final class LockedPasteboardStringResult: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: String?
+
+    func store(_ value: String?) {
+        lock.lock()
+        self.value = value
+        lock.unlock()
+    }
+
+    func load() -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
+    }
+}
+
+final class UncheckedSendableReference<Value>: @unchecked Sendable {
+    let value: Value
+
+    init(_ value: Value) {
+        self.value = value
+    }
+}
+
 final class AXTextInjector: TextInjector {
     static let nativeEditableRoles: Set<String> = [
         "AXTextArea",
@@ -159,10 +184,46 @@ final class AXTextInjector: TextInjector {
         let processName: String?
         let selectedText: String?
         let role: String?
+        let subrole: String?
+        let identifier: String?
+        let position: CGPoint?
+        let size: CGSize?
         let windowTitle: String?
         let isFocusedTarget: Bool
         let source: String
         let capturedAt: Date
+
+        init(
+            element: AXUIElement,
+            range: CFRange?,
+            processID: pid_t?,
+            processName: String?,
+            selectedText: String?,
+            role: String?,
+            subrole: String? = nil,
+            identifier: String? = nil,
+            position: CGPoint? = nil,
+            size: CGSize? = nil,
+            windowTitle: String?,
+            isFocusedTarget: Bool,
+            source: String,
+            capturedAt: Date
+        ) {
+            self.element = element
+            self.range = range
+            self.processID = processID
+            self.processName = processName
+            self.selectedText = selectedText
+            self.role = role
+            self.subrole = subrole
+            self.identifier = identifier
+            self.position = position
+            self.size = size
+            self.windowTitle = windowTitle
+            self.isFocusedTarget = isFocusedTarget
+            self.source = source
+            self.capturedAt = capturedAt
+        }
     }
 
     struct ApplicationStateContext {
@@ -175,7 +236,18 @@ final class AXTextInjector: TextInjector {
         let window: NSWindow?
     }
 
-    static var didRequestAccessibility = false
+    struct ExternalSelectionCaptureTarget {
+        let processID: pid_t?
+        let processName: String?
+        let bundleIdentifier: String?
+    }
+
+    enum SelectionCapturePreflight {
+        case completed(TextSelectionSnapshot)
+        case external(ExternalSelectionCaptureTarget)
+    }
+
+    nonisolated(unsafe) static var didRequestAccessibility = false
     static let legacyPasteRestoreDelayNanoseconds: UInt64 = 150_000_000
     static let verifiedPasteRestoreDelayNanoseconds: UInt64 = 150_000_000
     /// Slow clipboard consumers (iTerm2 / Terminal.app / Warp bracketed paste,
@@ -198,11 +270,49 @@ final class AXTextInjector: TextInjector {
     static let visibleTextContextMaxCharacters = 60000
     static let copyShortcutKeyCode: CGKeyCode = 8
     static let selectionContextLifetime: TimeInterval = 180
+    static let maximumSelectionContextCount = 16
     static let focusedDescendantSearchDepth = 10
+    static let replacementAXMessagingTimeout: Float = 0.25
+    static let pasteboardReadTimeoutMilliseconds = 250
 
-    var latestSelectionContext: SelectionContext?
-    var lastInjectionMethod: TextInjectionMethod?
+    var storedLatestSelectionContext: SelectionContext?
+    var storedLastInjectionMethod: TextInjectionMethod?
+    let stateLock = NSLock()
+    var latestSelectionContext: SelectionContext? {
+        get {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            return storedLatestSelectionContext
+        }
+        set {
+            stateLock.lock()
+            storedLatestSelectionContext = newValue
+            stateLock.unlock()
+        }
+    }
+    var lastInjectionMethod: TextInjectionMethod? {
+        get {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            return storedLastInjectionMethod
+        }
+        set {
+            stateLock.lock()
+            storedLastInjectionMethod = newValue
+            stateLock.unlock()
+        }
+    }
     var activePasteboardDeliveryProbe: PasteboardDeliveryProbe?
+    let selectionContextLock = NSLock()
+    var selectionContexts: [UUID: SelectionContext] = [:]
+    let selectionReplacementQueue = DispatchQueue(
+        label: "ai.gulu.app.typeflux.selection-replacement",
+        qos: .userInitiated
+    )
+    let pasteboardReadQueue = DispatchQueue(
+        label: "ai.gulu.app.typeflux.pasteboard-read",
+        qos: .userInitiated
+    )
 
     func isTypefluxOwnedTarget(processID: pid_t?, bundleIdentifier: String?) -> Bool {
         if processID == getpid() {
@@ -607,18 +717,32 @@ final class AXTextInjector: TextInjector {
     }
 
     func getSelectionSnapshot() async -> TextSelectionSnapshot {
-        await performAXReadOnMainActor {
-            self.readSelectionSnapshot()
+        let preflight = await MainActor.run {
+            self.selectionCapturePreflight()
+        }
+        switch preflight {
+        case let .completed(snapshot):
+            return snapshot
+        case let .external(target):
+            let injector = UncheckedSendableReference(self)
+            return await withCheckedContinuation { continuation in
+                selectionReplacementQueue.async {
+                    continuation.resume(
+                        returning: injector.value.readExternalSelectionSnapshot(target: target)
+                    )
+                }
+            }
         }
     }
 
-    func readSelectionSnapshot() -> TextSelectionSnapshot {
+    @MainActor
+    func selectionCapturePreflight() -> SelectionCapturePreflight {
         if let target = typefluxNativeTextTarget() {
             NetworkDebugLogger.logMessage(
                 "[AXTextInjector] captured Typeflux native text selection"
             )
             latestSelectionContext = nil
-            return typefluxNativeSelectionSnapshot(target: target)
+            return .completed(typefluxNativeSelectionSnapshot(target: target))
         }
 
         if TypefluxWindowIdentity.isAskAnswerWindow(typefluxFrontmostWindow()) {
@@ -626,7 +750,7 @@ final class AXTextInjector: TextInjector {
                 "[AXTextInjector] skipped selection snapshot for Typeflux Ask Answer window"
             )
             latestSelectionContext = nil
-            return typefluxReadOnlyWindowSelectionSnapshot(source: "typeflux-ask-answer-window")
+            return .completed(typefluxReadOnlyWindowSelectionSnapshot(source: "typeflux-ask-answer-window"))
         }
 
         guard AXIsProcessTrusted() else {
@@ -637,7 +761,7 @@ final class AXTextInjector: TextInjector {
                     NSWorkspace.shared.open(url)
                 }
             }
-            return TextSelectionSnapshot(
+            return .completed(TextSelectionSnapshot(
                 processID: frontmostProcessID(),
                 processName: frontmostApplicationName(),
                 bundleIdentifier: frontmostApplicationBundleIdentifier(),
@@ -648,29 +772,42 @@ final class AXTextInjector: TextInjector {
                 role: nil,
                 windowTitle: nil,
                 isFocusedTarget: false
-            )
+            ))
         }
 
         let processID = frontmostProcessID()
         let processName = frontmostApplicationName()
         let bundleIdentifier = frontmostApplicationBundleIdentifier()
-        logger
-            .debug(
-                "getSelectionSnapshot — app: \(processName ?? "?", privacy: .public) (pid: \(processID.map(String.init) ?? "?", privacy: .public))"
-            )
         if isTypefluxOwnedTarget(processID: processID, bundleIdentifier: bundleIdentifier) {
             NetworkDebugLogger.logMessage(
                 "[AXTextInjector] skipped selection snapshot for Typeflux non-text frontmost target"
             )
             latestSelectionContext = nil
-            return typefluxReadOnlyWindowSelectionSnapshot(source: "typeflux-non-text-window")
+            return .completed(typefluxReadOnlyWindowSelectionSnapshot(source: "typeflux-non-text-window"))
         }
 
-        if let result = readSelectedText() {
+        return .external(ExternalSelectionCaptureTarget(
+            processID: processID,
+            processName: processName,
+            bundleIdentifier: bundleIdentifier
+        ))
+    }
+
+    func readExternalSelectionSnapshot(target: ExternalSelectionCaptureTarget) -> TextSelectionSnapshot {
+        let processID = target.processID
+        let processName = target.processName
+        let bundleIdentifier = target.bundleIdentifier
+        logger
+            .debug(
+                "getSelectionSnapshot — app: \(processName ?? "?", privacy: .public) (pid: \(processID.map(String.init) ?? "?", privacy: .public))"
+            )
+
+        if let result = readSelectedText(processID: processID, processName: processName) {
             // Compute editability from the SAME element that produced the text,
             // avoiding a race where a second focusedElement() call returns a different element.
             let editability = isLikelyEditable(element: result.context.element)
             latestSelectionContext = result.context
+            let replacementContextID = registerSelectionContext(result.context)
             logger
                 .debug(
                     "source=ax-api  role=\(result.context.role ?? "nil", privacy: .public)  range=\(result.context.range.map { "[\($0.location),\($0.length)]" } ?? "nil", privacy: .public)  isEditable=\(editability ? "true" : "false", privacy: .public)  isFocusedTarget=\(result.context.isFocusedTarget ? "true" : "false", privacy: .public)  text(32)=\(String(result.text.prefix(32)), privacy: .public)"
@@ -685,7 +822,8 @@ final class AXTextInjector: TextInjector {
                 isEditable: editability,
                 role: result.context.role,
                 windowTitle: result.context.windowTitle,
-                isFocusedTarget: result.context.isFocusedTarget
+                isFocusedTarget: result.context.isFocusedTarget,
+                replacementContextID: replacementContextID
             )
         }
         logger.debug("ax-api returned nil — trying clipboard-copy")
@@ -694,7 +832,11 @@ final class AXTextInjector: TextInjector {
             processID: processID,
             milliseconds: Self.copySelectionTimeoutMilliseconds
         ) {
-            let focusedElement = focusedElement()
+            let focusedElement = processID.flatMap { processID -> AXUIElement? in
+                let application = AXUIElementCreateApplication(processID)
+                AXUIElementSetMessagingTimeout(application, Self.replacementAXMessagingTimeout)
+                return lightweightFocusedElement(application: application)
+            }
             let focusedWindow = processID.flatMap(focusedWindowElement(for:))
             let selectionWindow = focusedElement.flatMap(containingWindow(of:))
             let editability = focusedElement.map(isLikelyEditable(element:)) ?? false
@@ -711,13 +853,28 @@ final class AXTextInjector: TextInjector {
                 processID: processID,
                 processName: processName,
                 selectedText: copiedText,
-                role: nil,
+                role: focusedElement.flatMap {
+                    copyStringAttribute(kAXRoleAttribute as String, from: $0)
+                },
+                subrole: focusedElement.flatMap {
+                    copyStringAttribute(kAXSubroleAttribute as String, from: $0)
+                },
+                identifier: focusedElement.flatMap {
+                    copyStringAttribute(kAXIdentifierAttribute as String, from: $0)
+                },
+                position: focusedElement.flatMap {
+                    copyCGPointAttribute(kAXPositionAttribute as String, from: $0)
+                },
+                size: focusedElement.flatMap {
+                    copyCGSizeAttribute(kAXSizeAttribute as String, from: $0)
+                },
                 windowTitle: selectionWindow.flatMap(windowTitle(of:)) ?? focusedWindowTitle(for: processID),
                 isFocusedTarget: isFocusedTarget,
                 source: "clipboard-copy",
                 capturedAt: Date()
             )
             latestSelectionContext = context
+            let replacementContextID = registerSelectionContext(context)
             logger
                 .debug(
                     "source=clipboard-copy  focusedWindow=\(focusedWindow != nil ? "present" : "nil", privacy: .public)  selectionWindow=\(selectionWindow != nil ? "present" : "nil", privacy: .public)  isFocusedTarget=\(isFocusedTarget ? "true" : "false", privacy: .public)  text(32)=\(String(copiedText.prefix(32)), privacy: .public)"
@@ -733,9 +890,10 @@ final class AXTextInjector: TextInjector {
                 selectedText: copiedText,
                 source: "clipboard-copy",
                 isEditable: editability,
-                role: nil,
+                role: context.role,
                 windowTitle: context.windowTitle,
-                isFocusedTarget: context.isFocusedTarget
+                isFocusedTarget: context.isFocusedTarget,
+                replacementContextID: replacementContextID
             )
         }
         logger.debug("clipboard-copy returned nil — no selection detected")
@@ -1046,7 +1204,13 @@ final class AXTextInjector: TextInjector {
 
     func replaceSelection(text: String) throws {
         try performAXOperationOnMainThread {
-            try self.setText(text, replaceSelection: true)
+            guard try self.insertIntoTypefluxNativeTextTarget(text, replaceSelection: true) else {
+                throw self.selectionReplacementError(
+                    code: 32,
+                    description: "External selection replacement requires a captured target"
+                )
+            }
+            self.lastInjectionMethod = .ax
         }
     }
 

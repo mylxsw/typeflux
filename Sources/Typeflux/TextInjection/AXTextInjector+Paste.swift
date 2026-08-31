@@ -12,6 +12,13 @@ extension AXTextInjector {
             return
         }
 
+        guard !replaceSelection else {
+            throw selectionReplacementError(
+                code: 32,
+                description: "External selection replacement requires a captured target"
+            )
+        }
+
         if TypefluxWindowIdentity.isAskAnswerWindow(typefluxFrontmostWindow()) {
             NetworkDebugLogger.logMessage(
                 "[Text Injection] blocked Typeflux Ask Answer window before AX write"
@@ -246,8 +253,17 @@ extension AXTextInjector {
         replaceSelection: Bool,
         contextAlreadyRestored: Bool = false
     ) throws {
+        guard !replaceSelection else {
+            throw selectionReplacementError(
+                code: 32,
+                description: "External selection replacement requires a captured target"
+            )
+        }
+
         let pasteboard = NSPasteboard.general
-        let previousSnapshot = capturePasteboardSnapshot(from: pasteboard)
+        // The external replacement branch below is retained only for source compatibility;
+        // the guard above makes it unreachable. Never materialize arbitrary clipboard data.
+        let previousSnapshot = PasteboardSnapshot(items: [])
         let strictFallbackEnabled = settingsStore?.strictEditApplyFallbackEnabled ?? false
         let stubbornPasteFallbackEnabled = settingsStore?.stubbornPasteFallbackEnabled ?? false
         let replacementContext = replaceSelection ? activeSelectionContext() : nil
@@ -285,10 +301,6 @@ extension AXTextInjector {
                 )
             }
             dispatchPasteShortcut(method: dispatchMethod, targetPID: targetPID)
-            restorePasteboardAfterPaste(
-                previousSnapshot,
-                delayNanoseconds: Self.unverifiedPasteRestoreDelayNanoseconds
-            )
             NetworkDebugLogger.logMessage("[Text Injection] eager paste dispatched")
             return
         }
@@ -630,7 +642,6 @@ extension AXTextInjector {
 
     func readSelectedTextViaCopy(processID: pid_t?, milliseconds: Int) -> String? {
         let pasteboard = NSPasteboard.general
-        let previousSnapshot = capturePasteboardSnapshot(from: pasteboard)
         let previousChangeCount = pasteboard.changeCount
 
         sendCopyShortcut(to: processID)
@@ -638,22 +649,33 @@ extension AXTextInjector {
         let timeout = Date().addingTimeInterval(Double(milliseconds) / 1000.0)
         while Date() < timeout {
             if pasteboard.changeCount != previousChangeCount {
-                let copiedText = pasteboard.string(forType: .string)
-                restorePasteboardAfterPaste(
-                    previousSnapshot,
-                    delayNanoseconds: Self.legacyPasteRestoreDelayNanoseconds
-                )
+                let copiedText = readPasteboardStringWithTimeout()
                 let trimmed = copiedText?.trimmingCharacters(in: .whitespacesAndNewlines)
                 return trimmed?.isEmpty == false ? trimmed : nil
             }
             usleep(10000)
         }
 
-        restorePasteboardAfterPaste(
-            previousSnapshot,
-            delayNanoseconds: Self.legacyPasteRestoreDelayNanoseconds
-        )
         return nil
+    }
+
+    /// Pasteboard owners can provide data lazily and may block indefinitely. Read on a
+    /// dedicated serial queue so a broken provider cannot freeze Typeflux's main thread.
+    /// Once that queue is wedged, later reads still time out without creating more workers.
+    func readPasteboardStringWithTimeout() -> String? {
+        let result = LockedPasteboardStringResult()
+        let completed = DispatchSemaphore(value: 0)
+        pasteboardReadQueue.async {
+            result.store(NSPasteboard.general.string(forType: .string))
+            completed.signal()
+        }
+        guard completed.wait(
+            timeout: .now() + .milliseconds(Self.pasteboardReadTimeoutMilliseconds)
+        ) == .success else {
+            NetworkDebugLogger.logMessage("[Text Injection] pasteboard string read timed out")
+            return nil
+        }
+        return result.load()
     }
 
     func activateTargetProcess(_ processID: pid_t?) {

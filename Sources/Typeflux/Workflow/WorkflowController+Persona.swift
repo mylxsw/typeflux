@@ -239,7 +239,8 @@ extension WorkflowController {
                     let applyResult = await applyText(
                         processedText,
                         replace: true,
-                        fallbackTitle: L("workflow.result.copyTitle")
+                        fallbackTitle: L("workflow.result.copyTitle"),
+                        targetSnapshot: context.snapshot
                     )
                     outcome = applyResult.0
                 }

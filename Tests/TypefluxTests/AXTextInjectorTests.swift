@@ -3,6 +3,146 @@ import ApplicationServices
 import XCTest
 
 final class AXTextInjectorTests: XCTestCase {
+    func testSelectionReplacementWorkRunsOffMainThread() async throws {
+        let injector = AXTextInjector()
+
+        let ranOnMainThread = try await injector.performSelectionReplacementWork {
+            Thread.isMainThread
+        }
+
+        XCTAssertFalse(ranOnMainThread)
+    }
+
+    func testSelectionReplacementContextCanOnlyBeConsumedOnce() {
+        let injector = AXTextInjector()
+        let context = AXTextInjector.SelectionContext(
+            element: AXUIElementCreateSystemWide(),
+            range: CFRange(location: 0, length: 5),
+            processID: 42,
+            processName: "Notes",
+            selectedText: "hello",
+            role: "AXTextArea",
+            windowTitle: "Draft",
+            isFocusedTarget: true,
+            source: "accessibility",
+            capturedAt: Date()
+        )
+        let contextID = injector.registerSelectionContext(context)
+
+        XCTAssertNotNil(injector.consumeSelectionContext(id: contextID))
+        XCTAssertNil(injector.consumeSelectionContext(id: contextID))
+    }
+
+    func testSelectionReplacementContextRegistryIsBounded() {
+        let injector = AXTextInjector()
+
+        for offset in 0 ... AXTextInjector.maximumSelectionContextCount {
+            _ = injector.registerSelectionContext(AXTextInjector.SelectionContext(
+                element: AXUIElementCreateSystemWide(),
+                range: CFRange(location: offset, length: 1),
+                processID: 42,
+                processName: "Notes",
+                selectedText: "x",
+                role: "AXTextArea",
+                windowTitle: "Draft",
+                isFocusedTarget: true,
+                source: "accessibility",
+                capturedAt: Date().addingTimeInterval(Double(offset))
+            ))
+        }
+
+        XCTAssertEqual(injector.selectionContexts.count, AXTextInjector.maximumSelectionContextCount)
+    }
+
+    func testCapturedSelectionAcceptsRebuiltElementOnlyWithMatchingSemanticIdentity() {
+        let range = CFRange(location: 4, length: 7)
+
+        XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
+            source: "accessibility",
+            elementMatches: false,
+            capturedRange: range,
+            currentRange: range,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
+            capturedPosition: CGPoint(x: 10, y: 20),
+            currentPosition: CGPoint(x: 10, y: 20),
+            capturedSize: CGSize(width: 300, height: 120),
+            currentSize: CGSize(width: 300, height: 120),
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
+    }
+
+    func testCapturedSelectionRejectsChangedTextOrRange() {
+        let range = CFRange(location: 4, length: 7)
+
+        XCTAssertFalse(AXTextInjector.capturedSelectionStillMatches(
+            source: "accessibility",
+            elementMatches: true,
+            capturedRange: range,
+            currentRange: CFRange(location: 5, length: 7),
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
+        XCTAssertFalse(AXTextInjector.capturedSelectionStillMatches(
+            source: "accessibility",
+            elementMatches: true,
+            capturedRange: range,
+            currentRange: range,
+            capturedText: "meeting",
+            currentText: "changed",
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
+    }
+
+    func testClipboardCapturedSelectionRequiresExactElementIdentity() {
+        XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: true,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: nil,
+            currentRole: nil,
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
+        XCTAssertFalse(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: true,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "changed",
+            capturedRole: nil,
+            currentRole: nil,
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
+        XCTAssertFalse(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: nil,
+            currentRole: nil,
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
+    }
+
     func testTargetCapabilityDistinguishesWritableNonWritableAndOpaqueTargets() {
         XCTAssertEqual(
             AXTextInjector.targetCapability(

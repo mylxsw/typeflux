@@ -11,6 +11,7 @@ struct TextSelectionSnapshot {
     var role: String?
     var windowTitle: String?
     var isFocusedTarget: Bool = false
+    var replacementContextID: UUID?
 
     var hasSelection: Bool {
         let trimmed = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -57,6 +58,7 @@ protocol TextInjector {
     func currentInputText() async -> String?
     func insert(text: String) throws
     func replaceSelection(text: String) throws
+    func replaceSelection(text: String, target: TextSelectionSnapshot?) async throws
 }
 
 enum TextInjectionMethod: String {
@@ -66,4 +68,8 @@ enum TextInjectionMethod: String {
 
 extension TextInjector {
     var lastInjectionMethod: TextInjectionMethod? { nil }
+
+    func replaceSelection(text: String, target _: TextSelectionSnapshot?) async throws {
+        try replaceSelection(text: text)
+    }
 }
