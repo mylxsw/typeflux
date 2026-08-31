@@ -96,8 +96,16 @@ extension AXTextInjector {
         return systemFocusedElement()
     }
 
-    func readSelectedText() -> (text: String, context: SelectionContext)? {
-        guard let element = focusedElement() else {
+    func readSelectedText(
+        processID: pid_t?,
+        processName: String?
+    ) -> (text: String, context: SelectionContext)? {
+        guard let processID else {
+            return nil
+        }
+        let application = AXUIElementCreateApplication(processID)
+        AXUIElementSetMessagingTimeout(application, Self.replacementAXMessagingTimeout)
+        guard let element = lightweightFocusedElement(application: application) else {
             return nil
         }
 
@@ -142,8 +150,7 @@ extension AXTextInjector {
 
         guard let range else { return nil }
 
-        let processID = frontmostProcessID()
-        let focusedWindow = processID.flatMap(focusedWindowElement(for:))
+        let focusedWindow = focusedWindowElement(for: processID)
         let selectionWindow = containingWindow(of: element)
         let isFocusedTarget = focusedWindow.map { window in
             selectionWindow.map { selection in windowsMatch(window, selection) } ?? true
@@ -153,9 +160,13 @@ extension AXTextInjector {
             element: element,
             range: range,
             processID: processID,
-            processName: frontmostApplicationName(),
+            processName: processName,
             selectedText: text,
             role: role,
+            subrole: copyStringAttribute(kAXSubroleAttribute as String, from: element),
+            identifier: copyStringAttribute(kAXIdentifierAttribute as String, from: element),
+            position: copyCGPointAttribute(kAXPositionAttribute as String, from: element),
+            size: copyCGSizeAttribute(kAXSizeAttribute as String, from: element),
             windowTitle: selectionWindow.flatMap(windowTitle(of:)),
             isFocusedTarget: isFocusedTarget,
             source: "accessibility",
@@ -166,6 +177,7 @@ extension AXTextInjector {
     }
 
     func isAttributeSettable(_ attribute: CFString, on element: AXUIElement) -> Bool {
+        AXUIElementSetMessagingTimeout(element, Self.replacementAXMessagingTimeout)
         var settable = DarwinBoolean(false)
         let status = AXUIElementIsAttributeSettable(element, attribute, &settable)
         return status == .success && settable.boolValue
@@ -203,6 +215,7 @@ extension AXTextInjector {
 
     func systemFocusedElement() -> AXUIElement? {
         let system = AXUIElementCreateSystemWide()
+        AXUIElementSetMessagingTimeout(system, Self.replacementAXMessagingTimeout)
         if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: system),
            let resolved = resolveFocusedElement(focused) {
             logFocusResolution(
@@ -218,6 +231,7 @@ extension AXTextInjector {
 
     func focusedElement(for processID: pid_t) -> AXUIElement? {
         let appElement = AXUIElementCreateApplication(processID)
+        AXUIElementSetMessagingTimeout(appElement, Self.replacementAXMessagingTimeout)
 
         if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: appElement),
            let resolved = resolveFocusedElement(focused) {
@@ -244,6 +258,7 @@ extension AXTextInjector {
 
     func focusedWindowElement(for processID: pid_t) -> AXUIElement? {
         let appElement = AXUIElementCreateApplication(processID)
+        AXUIElementSetMessagingTimeout(appElement, Self.replacementAXMessagingTimeout)
         return copyElementAttribute(kAXFocusedWindowAttribute as String, from: appElement)
     }
 
@@ -1182,6 +1197,19 @@ extension AXTextInjector {
             return nil
         }
         return latestSelectionContext
+    }
+
+    func clearLatestSelectionContext(ifMatching context: SelectionContext) {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        guard let latest = storedLatestSelectionContext,
+              latest.capturedAt == context.capturedAt,
+              latest.processID == context.processID,
+              CFEqual(latest.element, context.element)
+        else {
+            return
+        }
+        storedLatestSelectionContext = nil
     }
 
     func registerSelectionContext(_ context: SelectionContext) -> UUID {

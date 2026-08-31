@@ -332,7 +332,8 @@ extension WorkflowController {
         }
         do {
             if replace {
-                await dismissOverlayForExternalReplacement()
+                try await dismissOverlayForExternalReplacement()
+                try Task.checkCancellation()
                 try await textInjector.replaceSelection(text: text, target: targetSnapshot)
             } else {
                 try textInjector.insert(text: text)
@@ -2367,11 +2368,11 @@ extension WorkflowController {
         snapshot.canReplaceSelection
     }
 
-    func dismissOverlayForExternalReplacement() async {
+    func dismissOverlayForExternalReplacement() async throws {
         await MainActor.run {
             overlayController.dismissImmediately()
         }
-        try? await Task.sleep(for: .milliseconds(50))
+        try await Task.sleep(for: .milliseconds(50))
     }
 
     func handleDetachedAgentLaunch() {

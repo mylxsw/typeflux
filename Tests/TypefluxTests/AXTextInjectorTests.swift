@@ -66,6 +66,10 @@ final class AXTextInjectorTests: XCTestCase {
             currentText: "meeting",
             capturedRole: "AXTextArea",
             currentRole: "AXTextArea",
+            capturedPosition: CGPoint(x: 10, y: 20),
+            currentPosition: CGPoint(x: 10, y: 20),
+            capturedSize: CGSize(width: 300, height: 120),
+            currentSize: CGSize(width: 300, height: 120),
             capturedWindowTitle: "Draft",
             currentWindowTitle: "Draft"
         ))
@@ -107,7 +111,19 @@ final class AXTextInjectorTests: XCTestCase {
             capturedRange: nil,
             currentRange: nil,
             capturedText: "meeting",
-            currentText: nil,
+            currentText: "meeting",
+            capturedRole: nil,
+            currentRole: nil,
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
+        XCTAssertFalse(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: true,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "changed",
             capturedRole: nil,
             currentRole: nil,
             capturedWindowTitle: "Draft",

@@ -87,7 +87,7 @@ final class SettingsViewModelPersonaTests: XCTestCase {
         viewModel.selectPersona(persona.id)
 
         XCTAssertTrue(viewModel.personaDraftPrompt.contains("人设语言模式：继承。"))
-        XCTAssertTrue(viewModel.personaDisplayPrompt(for: persona).contains("保持整体语气专业、正式、自然。"))
+        XCTAssertTrue(viewModel.personaDisplayPrompt(for: persona).contains("保持用户整体语气自然"))
         XCTAssertFalse(viewModel.personaDraftPrompt.contains("You are Typeflux AI"))
     }
 
@@ -364,7 +364,7 @@ final class SettingsViewModelPersonaTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suite) }
         let store = SettingsStore(defaults: defaults)
         store.appLanguage = .simplifiedChinese
-        let persona = PersonaProfile(name: "Writing", prompt: "\n  Summarize the report.  \nKeep the decisions.")
+        let persona = PersonaProfile(name: "Writing", prompt: "\n  Summarize the report.  \nKeep the zebraquartz decisions.")
         let emptyPersona = PersonaProfile(name: "Empty", prompt: " \n ")
         store.personas = store.personas + [persona, emptyPersona]
         let model = StudioViewModel(settingsStore: store, historyStore: InMemoryHistoryStore(), initialSection: .personas)
@@ -380,7 +380,7 @@ final class SettingsViewModelPersonaTests: XCTestCase {
         model.searchQuery = "  整理口述  "
         XCTAssertEqual(model.filteredBuiltInPersonas.map(\.id), [SettingsStore.defaultPersonaID])
         XCTAssertTrue(model.filteredCustomPersonas.isEmpty)
-        model.searchQuery = "decisions"
+        model.searchQuery = "zebraquartz"
         XCTAssertTrue(model.filteredBuiltInPersonas.isEmpty)
         XCTAssertEqual(model.filteredCustomPersonas.map(\.id), [persona.id])
         model.searchQuery = "no-match-12345"

@@ -118,6 +118,31 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertTrue(textInjector.insertedTexts.isEmpty)
     }
 
+    func testCancelledSelectionApplyDoesNotCommitLateReplacement() async {
+        let injector = MockProcessingTextInjector()
+        let controller = makeWorkflowController(textInjector: injector)
+        let task = Task {
+            await controller.applyText(
+                "replacement",
+                replace: true,
+                targetSnapshot: TextSelectionSnapshot(
+                    processID: 42,
+                    selectedText: "original",
+                    source: "accessibility",
+                    isEditable: true,
+                    isFocusedTarget: true,
+                    replacementContextID: UUID()
+                )
+            )
+        }
+
+        task.cancel()
+        let (outcome, _) = await task.value
+
+        XCTAssertEqual(outcome, .copiedToClipboard)
+        XCTAssertTrue(injector.replacedTexts.isEmpty)
+    }
+
     func testHandleDetachedAgentLaunchKeepsProcessingStatusVisible() {
         let controller = makeWorkflowController()
         controller.activeProcessingRecordID = UUID()
