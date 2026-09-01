@@ -670,7 +670,16 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(controller.llmTimeoutAfterTranscription, 30)
     }
 
-    func testProcessingDeadlineCancelsSessionAndReportsConfiguredTimeout() async throws {
+    func testProcessingWatchdogIsIndependentFromFallbackWaitSetting() {
+        let controller = makeWorkflowController(configureSettings: { settingsStore in
+            settingsStore.voiceProcessingTimeout = .oneSecond
+        })
+
+        XCTAssertEqual(controller.settingsStore.voiceProcessingTimeout.seconds, 1)
+        XCTAssertEqual(WorkflowController.processingWatchdogTimeoutSeconds, 30)
+    }
+
+    func testProcessingWatchdogCancelsStuckSession() async throws {
         let historyStore = MockProcessingHistoryStore()
         let controller = makeWorkflowController(historyStore: historyStore)
         let record = HistoryRecord(
@@ -684,7 +693,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         controller.activeProcessingRecordID = record.id
         let sessionID = controller.beginProcessingSession()
 
-        controller.startProcessingTimeout(sessionID: sessionID, timeoutSeconds: 0.01)
+        controller.startProcessingWatchdog(sessionID: sessionID, timeoutSeconds: 0.01)
         await waitUntil { controller.processingSessionID != sessionID }
         await waitForMainActorWork()
 

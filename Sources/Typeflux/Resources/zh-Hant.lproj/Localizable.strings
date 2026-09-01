@@ -146,7 +146,7 @@
 "settings.advanced.soundEffects.title" = "啟用音效";
 "settings.advanced.soundEffects.subtitle" = "在開始錄音、完成操作與發生錯誤時播放提示音。";
 "settings.advanced.voiceProcessingTimeout.title" = "辨識等待時間";
-"settings.advanced.voiceProcessingTimeout.subtitle" = "設定語音辨識和 AI 處理的最長時間，未能按時完成時將停止處理並提示逾時。";
+"settings.advanced.voiceProcessingTimeout.subtitle" = "設定雲端語音辨識和 AI 改寫的優先等待時間，逾時後使用已有的備用結果。";
 "settings.advanced.voiceProcessingTimeout.option" = "%d 秒";
 "settings.advanced.autoUpdate.title" = "自動更新";
 "settings.advanced.autoUpdate.subtitle" = "每 3 小時自動檢查並安裝新版本。";

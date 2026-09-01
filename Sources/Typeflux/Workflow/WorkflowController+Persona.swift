@@ -176,8 +176,8 @@ extension WorkflowController {
 
         cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.newRecording"))
         let sessionID = beginProcessingSession()
-        let timeoutSeconds = settingsStore.voiceProcessingTimeout.seconds
-        startProcessingTimeout(sessionID: sessionID, timeoutSeconds: timeoutSeconds)
+        let fallbackWaitSeconds = settingsStore.voiceProcessingTimeout.seconds
+        startProcessingWatchdog(sessionID: sessionID)
 
         var record = HistoryRecord(
             date: Date(),
@@ -194,7 +194,7 @@ extension WorkflowController {
 
         Task { @MainActor in
             self.appState.setStatus(.processing)
-            self.overlayController.showLLMProcessing(timeout: timeoutSeconds)
+            self.overlayController.showLLMProcessing(timeout: fallbackWaitSeconds)
         }
 
         let shouldShowResultDialog = shouldPresentResultDialog(for: context.snapshot)
@@ -300,7 +300,7 @@ extension WorkflowController {
                     if shouldPresentBilling {
                         await presentCloudBillingError(billingError)
                     }
-                    cancelProcessingTimeout()
+                    cancelProcessingWatchdog()
                     return
                 }
 
@@ -316,7 +316,7 @@ extension WorkflowController {
                 }
             }
 
-            cancelProcessingTimeout()
+            cancelProcessingWatchdog()
         }
     }
 }

@@ -154,7 +154,7 @@
 "settings.advanced.soundEffects.title" = "Enable sound effects";
 "settings.advanced.soundEffects.subtitle" = "Play start, done, and error sounds during recording workflow feedback.";
 "settings.advanced.voiceProcessingTimeout.title" = "Recognition wait time";
-"settings.advanced.voiceProcessingTimeout.subtitle" = "Set the maximum time for speech recognition and AI processing. Typeflux stops and reports a timeout if processing does not finish in time.";
+"settings.advanced.voiceProcessingTimeout.subtitle" = "Choose how long cloud speech recognition and AI rewriting get priority before Typeflux uses the available fallback result.";
 "settings.advanced.voiceProcessingTimeout.option" = "%d seconds";
 "settings.advanced.autoUpdate.title" = "Automatic Updates";
 "settings.advanced.autoUpdate.subtitle" = "Automatically check for and install updates every 3 hours.";
