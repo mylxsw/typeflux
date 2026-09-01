@@ -826,9 +826,22 @@ final class AXTextInjector: TextInjector {
                 replacementContextID: replacementContextID
             )
         }
-        logger.debug("ax-api returned nil — trying clipboard-copy")
+        // If the focused element reports a selectedRange with length == 0, there is no
+        // text selected — just a cursor position.  Skip the clipboard-copy probe because
+        // synthesising Cmd+C in TUI / terminal apps (e.g. cmux) is forwarded as a literal
+        // 'c' keystroke, leaking a stray character into the input.
+        let skipClipboardCopy: Bool = {
+            guard let element = focusedElement() else { return false }
+            return copySelectedTextRange(from: element).map { $0.length == 0 } ?? false
+        }()
 
-        if let copiedText = readSelectedTextViaCopy(
+        if skipClipboardCopy {
+            logger.debug("ax-api returned nil — empty selection range, skipping clipboard-copy")
+        } else {
+            logger.debug("ax-api returned nil — trying clipboard-copy")
+        }
+
+        if !skipClipboardCopy, let copiedText = readSelectedTextViaCopy(
             processID: processID,
             milliseconds: Self.copySelectionTimeoutMilliseconds
         ) {
