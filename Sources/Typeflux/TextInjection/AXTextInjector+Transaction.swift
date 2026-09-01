@@ -2,6 +2,26 @@ import AppKit
 import ApplicationServices
 import Foundation
 
+private final class SelectionReplacementCancellationToken: @unchecked Sendable {
+    private let lock = NSLock()
+    private var cancelled = false
+
+    func cancel() {
+        lock.lock()
+        cancelled = true
+        lock.unlock()
+    }
+
+    func checkCancellation() throws {
+        lock.lock()
+        let isCancelled = cancelled
+        lock.unlock()
+        if isCancelled {
+            throw CancellationError()
+        }
+    }
+}
+
 extension AXTextInjector {
     enum SelectionReplacementPreparation: Equatable {
         case committedViaAX
@@ -78,9 +98,6 @@ extension AXTextInjector {
             return true
         }
 
-        let identifierMatches = capturedIdentifier?.isEmpty == false && capturedIdentifier == currentIdentifier
-        let frameMatches = capturedPosition != nil && capturedPosition == currentPosition &&
-            capturedSize != nil && capturedSize == currentSize
         guard capturedRole == currentRole,
               capturedSubrole == currentSubrole,
               capturedRole?.isEmpty == false
@@ -100,10 +117,24 @@ extension AXTextInjector {
         // original selected text is strong enough evidence for clipboard-backed
         // selections. Prefer identifier/frame when available; otherwise use the
         // focused window title, which is also captured for opaque AX hierarchies.
-        if allowsWindowScopedMatch {
-            return identifierMatches || frameMatches || windowMatches
+        // Prefer the strongest evidence that both snapshots expose. A matching
+        // window title must never override an explicitly different identifier or
+        // frame; that could redirect a result to another editor in the same window.
+        let hasCapturedIdentifier = capturedIdentifier?.isEmpty == false
+        let hasCurrentIdentifier = currentIdentifier?.isEmpty == false
+        if hasCapturedIdentifier, hasCurrentIdentifier {
+            let identifierMatches = capturedIdentifier == currentIdentifier
+            return identifierMatches && (allowsWindowScopedMatch || windowMatches)
         }
-        return (identifierMatches || frameMatches) && windowMatches
+
+        let hasCapturedFrame = capturedPosition != nil && capturedSize != nil
+        let hasCurrentFrame = currentPosition != nil && currentSize != nil
+        if hasCapturedFrame, hasCurrentFrame {
+            let frameMatches = capturedPosition == currentPosition && capturedSize == currentSize
+            return frameMatches && (allowsWindowScopedMatch || windowMatches)
+        }
+
+        return allowsWindowScopedMatch && windowMatches
     }
 
     func replaceSelection(text: String, target: TextSelectionSnapshot?) async throws {
@@ -134,17 +165,20 @@ extension AXTextInjector {
                 description: "The captured selection is no longer available"
             )
         }
+        defer { clearLatestSelectionContext(ifMatching: context) }
 
         try Task.checkCancellation()
         let currentProcessID = await MainActor.run {
             NSWorkspace.shared.frontmostApplication?.processIdentifier
         }
         try Task.checkCancellation()
-        let preparation = try await performSelectionReplacementWork {
+        let cancellationToken = SelectionReplacementCancellationToken()
+        let preparation = try await performSelectionReplacementWork(cancellationToken: cancellationToken) {
             try self.prepareSelectionReplacement(
                 text: text,
                 context: context,
-                currentFrontmostProcessID: currentProcessID
+                currentFrontmostProcessID: currentProcessID,
+                cancellationToken: cancellationToken
             )
         }
 
@@ -156,29 +190,44 @@ extension AXTextInjector {
             try await commitSelectionPaste(text: text, targetProcessID: context.processID)
             lastInjectionMethod = .paste
         }
-
-        clearLatestSelectionContext(ifMatching: context)
     }
 
     func performSelectionReplacementWork<T>(
         _ work: @escaping () throws -> T
     ) async throws -> T {
+        let cancellationToken = SelectionReplacementCancellationToken()
+        return try await performSelectionReplacementWork(
+            cancellationToken: cancellationToken,
+            work
+        )
+    }
+
+    private func performSelectionReplacementWork<T>(
+        cancellationToken: SelectionReplacementCancellationToken,
+        _ work: @escaping () throws -> T
+    ) async throws -> T {
         let sendableWork = UncheckedSendableReference(work)
-        return try await withCheckedThrowingContinuation { continuation in
-            selectionReplacementQueue.async {
-                do {
-                    continuation.resume(returning: try sendableWork.value())
-                } catch {
-                    continuation.resume(throwing: error)
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                selectionReplacementQueue.async {
+                    do {
+                        try cancellationToken.checkCancellation()
+                        continuation.resume(returning: try sendableWork.value())
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
                 }
             }
+        } onCancel: {
+            cancellationToken.cancel()
         }
     }
 
-    func prepareSelectionReplacement(
+    private func prepareSelectionReplacement(
         text: String,
         context: SelectionContext,
-        currentFrontmostProcessID: pid_t?
+        currentFrontmostProcessID: pid_t?,
+        cancellationToken: SelectionReplacementCancellationToken
     ) throws -> SelectionReplacementPreparation {
         let element = try validatedCurrentSelectionElement(
             context: context,
@@ -192,6 +241,7 @@ extension AXTextInjector {
             return .requiresPaste
         }
 
+        try cancellationToken.checkCancellation()
         guard setSelectedTextRange(range, on: element) else {
             throw selectionReplacementError(
                 code: 22,
