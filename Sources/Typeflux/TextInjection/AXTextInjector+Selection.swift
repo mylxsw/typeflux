@@ -158,6 +158,7 @@ extension AXTextInjector {
 
         let context = SelectionContext(
             element: element,
+            windowElement: selectionWindow ?? focusedWindow,
             range: range,
             processID: processID,
             processName: processName,
@@ -167,6 +168,12 @@ extension AXTextInjector {
             identifier: copyStringAttribute(kAXIdentifierAttribute as String, from: element),
             position: copyCGPointAttribute(kAXPositionAttribute as String, from: element),
             size: copyCGSizeAttribute(kAXSizeAttribute as String, from: element),
+            windowPosition: (selectionWindow ?? focusedWindow).flatMap {
+                copyCGPointAttribute(kAXPositionAttribute as String, from: $0)
+            },
+            windowSize: (selectionWindow ?? focusedWindow).flatMap {
+                copyCGSizeAttribute(kAXSizeAttribute as String, from: $0)
+            },
             windowTitle: selectionWindow.flatMap(windowTitle(of:)),
             isFocusedTarget: isFocusedTarget,
             source: "accessibility",

@@ -28,6 +28,30 @@ extension AXTextInjector {
         case requiresPaste
     }
 
+    enum SelectionEvidence: String, Equatable {
+        case match
+        case conflict
+        case unavailable
+    }
+
+    struct SelectionFingerprintAssessment: Equatable {
+        let accepted: Bool
+        let text: SelectionEvidence
+        let range: SelectionEvidence
+        let role: SelectionEvidence
+        let subrole: SelectionEvidence
+        let identifier: SelectionEvidence
+        let frame: SelectionEvidence
+        let window: SelectionEvidence
+
+        var diagnosticSummary: String {
+            "accepted=\(accepted) text=\(text.rawValue) range=\(range.rawValue) "
+                + "role=\(role.rawValue) subrole=\(subrole.rawValue) "
+                + "identifier=\(identifier.rawValue) frame=\(frame.rawValue) "
+                + "window=\(window.rawValue)"
+        }
+    }
+
     static func capturedSelectionStillMatches(
         source: String,
         elementMatches: Bool,
@@ -45,23 +69,21 @@ extension AXTextInjector {
         currentPosition: CGPoint? = nil,
         capturedSize: CGSize? = nil,
         currentSize: CGSize? = nil,
+        windowElementMatches: Bool? = nil,
+        capturedWindowPosition: CGPoint? = nil,
+        currentWindowPosition: CGPoint? = nil,
+        capturedWindowSize: CGSize? = nil,
+        currentWindowSize: CGSize? = nil,
         capturedWindowTitle: String?,
         currentWindowTitle: String?
     ) -> Bool {
-        guard capturedText == currentText else {
-            return false
-        }
-
-        if source != "clipboard-copy" {
-            guard capturedRange?.location == currentRange?.location,
-                  capturedRange?.length == currentRange?.length
-            else {
-                return false
-            }
-        }
-
-        return capturedElementStillMatches(
+        selectionFingerprintAssessment(
+            source: source,
             elementMatches: elementMatches,
+            capturedRange: capturedRange,
+            currentRange: currentRange,
+            capturedText: capturedText,
+            currentText: currentText,
             capturedRole: capturedRole,
             currentRole: currentRole,
             capturedSubrole: capturedSubrole,
@@ -72,14 +94,23 @@ extension AXTextInjector {
             currentPosition: currentPosition,
             capturedSize: capturedSize,
             currentSize: currentSize,
+            windowElementMatches: windowElementMatches,
+            capturedWindowPosition: capturedWindowPosition,
+            currentWindowPosition: currentWindowPosition,
+            capturedWindowSize: capturedWindowSize,
+            currentWindowSize: currentWindowSize,
             capturedWindowTitle: capturedWindowTitle,
-            currentWindowTitle: currentWindowTitle,
-            allowsWindowScopedMatch: source == "clipboard-copy"
-        )
+            currentWindowTitle: currentWindowTitle
+        ).accepted
     }
 
-    private static func capturedElementStillMatches(
+    static func selectionFingerprintAssessment(
+        source: String,
         elementMatches: Bool,
+        capturedRange: CFRange?,
+        currentRange: CFRange?,
+        capturedText: String?,
+        currentText: String?,
         capturedRole: String?,
         currentRole: String?,
         capturedSubrole: String?,
@@ -90,51 +121,145 @@ extension AXTextInjector {
         currentPosition: CGPoint?,
         capturedSize: CGSize?,
         currentSize: CGSize?,
+        windowElementMatches: Bool?,
+        capturedWindowPosition: CGPoint?,
+        currentWindowPosition: CGPoint?,
+        capturedWindowSize: CGSize?,
+        currentWindowSize: CGSize?,
         capturedWindowTitle: String?,
-        currentWindowTitle: String?,
-        allowsWindowScopedMatch: Bool
-    ) -> Bool {
-        if elementMatches {
-            return true
-        }
+        currentWindowTitle: String?
+    ) -> SelectionFingerprintAssessment {
+        let textEvidence = compare(capturedText, currentText)
+        let rangeEvidence = source == "clipboard-copy"
+            ? .unavailable
+            : compareRange(capturedRange, currentRange)
+        let roleEvidence = compareRoleCapability(capturedRole, currentRole)
+        let subroleEvidence = compareNormalized(capturedSubrole, currentSubrole)
+        let identifierEvidence = compareNormalized(capturedIdentifier, currentIdentifier)
+        let frameEvidence = compareFrame(
+            capturedPosition: capturedPosition,
+            capturedSize: capturedSize,
+            currentPosition: currentPosition,
+            currentSize: currentSize
+        )
+        let windowEvidence = compareWindow(
+            elementMatches: windowElementMatches,
+            capturedPosition: capturedWindowPosition,
+            capturedSize: capturedWindowSize,
+            currentPosition: currentWindowPosition,
+            currentSize: currentWindowSize,
+            capturedTitle: capturedWindowTitle,
+            currentTitle: currentWindowTitle
+        )
 
-        guard capturedRole == currentRole,
-              capturedSubrole == currentSubrole,
-              capturedRole?.isEmpty == false
+        let semanticElementEvidence = [roleEvidence, subroleEvidence, identifierEvidence, frameEvidence]
+        let hasElementConflict = roleEvidence == .conflict
+            || (!elementMatches && semanticElementEvidence.dropFirst().contains(.conflict))
+        let hasConflict = hasElementConflict
+            || (source == "clipboard-copy" && !elementMatches && windowEvidence == .conflict)
+        let hasStrongIdentityMatch = elementMatches
+            || identifierEvidence == .match
+            || frameEvidence == .match
+            || windowEvidence == .match
+        let nativeIdentityMatches = elementMatches || (
+            roleEvidence == .match
+                && (identifierEvidence == .match || frameEvidence == .match)
+        )
+        let accepted = textEvidence == .match
+            && (source == "clipboard-copy" || rangeEvidence == .match)
+            && !hasConflict
+            && (source == "clipboard-copy" ? hasStrongIdentityMatch : nativeIdentityMatches)
+
+        return SelectionFingerprintAssessment(
+            accepted: accepted,
+            text: textEvidence,
+            range: rangeEvidence,
+            role: roleEvidence,
+            subrole: subroleEvidence,
+            identifier: identifierEvidence,
+            frame: frameEvidence,
+            window: windowEvidence
+        )
+    }
+
+    private static func compare<T: Equatable>(_ captured: T?, _ current: T?) -> SelectionEvidence {
+        guard let captured, let current else { return .unavailable }
+        return captured == current ? .match : .conflict
+    }
+
+    private static func compareNormalized(_ captured: String?, _ current: String?) -> SelectionEvidence {
+        compare(normalizedEvidence(captured), normalizedEvidence(current))
+    }
+
+    private static func compareRange(_ captured: CFRange?, _ current: CFRange?) -> SelectionEvidence {
+        guard let captured, let current else { return .unavailable }
+        return captured.location == current.location && captured.length == current.length ? .match : .conflict
+    }
+
+    private static func compareFrame(
+        capturedPosition: CGPoint?,
+        capturedSize: CGSize?,
+        currentPosition: CGPoint?,
+        currentSize: CGSize?
+    ) -> SelectionEvidence {
+        guard let capturedPosition, let capturedSize, let currentPosition, let currentSize else {
+            return .unavailable
+        }
+        return capturedPosition == currentPosition && capturedSize == currentSize ? .match : .conflict
+    }
+
+    private static func compareRoleCapability(_ captured: String?, _ current: String?) -> SelectionEvidence {
+        let captured = normalizedEvidence(captured)
+        let current = normalizedEvidence(current)
+        if captured.map(nonEditableFalsePositiveRoles.contains) == true
+            || current.map(nonEditableFalsePositiveRoles.contains) == true {
+            return .conflict
+        }
+        guard let captured, let current else { return .unavailable }
+        if captured == current {
+            return .match
+        }
+        let compatibleRoles = nativeEditableRoles.union(genericEditableRoles).union(opaqueContainerRoles)
+        return compatibleRoles.contains(captured) && compatibleRoles.contains(current) ? .match : .conflict
+    }
+
+    private static func compareWindow(
+        elementMatches: Bool?,
+        capturedPosition: CGPoint?,
+        capturedSize: CGSize?,
+        currentPosition: CGPoint?,
+        currentSize: CGSize?,
+        capturedTitle: String?,
+        currentTitle: String?
+    ) -> SelectionEvidence {
+        if elementMatches == true {
+            return .match
+        }
+        let frame = compareFrame(
+            capturedPosition: capturedPosition,
+            capturedSize: capturedSize,
+            currentPosition: currentPosition,
+            currentSize: currentSize
+        )
+        let title = compareNormalized(capturedTitle, currentTitle)
+        if frame == .conflict || title == .conflict {
+            return .conflict
+        }
+        // A title is not unique enough to identify a window by itself. A stable
+        // frame plus a non-conflicting title can identify a rebuilt AXWindow.
+        if frame == .match {
+            return .match
+        }
+        return elementMatches == false ? .conflict : .unavailable
+    }
+
+    private static func normalizedEvidence(_ value: String?) -> String? {
+        guard let normalized = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !normalized.isEmpty
         else {
-            return false
+            return nil
         }
-
-        let normalizedCapturedWindowTitle = capturedWindowTitle?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let normalizedCurrentWindowTitle = currentWindowTitle?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let windowMatches = normalizedCapturedWindowTitle?.isEmpty == false &&
-            normalizedCapturedWindowTitle == normalizedCurrentWindowTitle
-
-        // Electron and Chromium frequently recreate the focused AX element while
-        // preserving the same role and window. A fresh Cmd-C that returned the
-        // original selected text is strong enough evidence for clipboard-backed
-        // selections. Prefer identifier/frame when available; otherwise use the
-        // focused window title, which is also captured for opaque AX hierarchies.
-        // Prefer the strongest evidence that both snapshots expose. A matching
-        // window title must never override an explicitly different identifier or
-        // frame; that could redirect a result to another editor in the same window.
-        let hasCapturedIdentifier = capturedIdentifier?.isEmpty == false
-        let hasCurrentIdentifier = currentIdentifier?.isEmpty == false
-        if hasCapturedIdentifier, hasCurrentIdentifier {
-            let identifierMatches = capturedIdentifier == currentIdentifier
-            return identifierMatches && (allowsWindowScopedMatch || windowMatches)
-        }
-
-        let hasCapturedFrame = capturedPosition != nil && capturedSize != nil
-        let hasCurrentFrame = currentPosition != nil && currentSize != nil
-        if hasCapturedFrame, hasCurrentFrame {
-            let frameMatches = capturedPosition == currentPosition && capturedSize == currentSize
-            return frameMatches && (allowsWindowScopedMatch || windowMatches)
-        }
-
-        return allowsWindowScopedMatch && windowMatches
+        return normalized
     }
 
     func replaceSelection(text: String, target: TextSelectionSnapshot?) async throws {
@@ -324,12 +449,28 @@ extension AXTextInjector {
         let currentIdentifier = copyStringAttribute(kAXIdentifierAttribute as String, from: currentElement)
         let currentPosition = copyCGPointAttribute(kAXPositionAttribute as String, from: currentElement)
         let currentSize = copyCGSizeAttribute(kAXSizeAttribute as String, from: currentElement)
+        let currentWindowElement = focusedWindowElement(for: processID) ?? containingWindow(of: currentElement)
+        if let currentWindowElement {
+            AXUIElementSetMessagingTimeout(currentWindowElement, Self.replacementAXMessagingTimeout)
+        }
+        let windowElementMatches: Bool? = if let capturedWindow = context.windowElement,
+                                            let currentWindowElement {
+            CFEqual(capturedWindow, currentWindowElement)
+        } else {
+            nil
+        }
+        let currentWindowPosition = currentWindowElement.flatMap {
+            copyCGPointAttribute(kAXPositionAttribute as String, from: $0)
+        }
+        let currentWindowSize = currentWindowElement.flatMap {
+            copyCGSizeAttribute(kAXSizeAttribute as String, from: $0)
+        }
         let currentWindowTitle = lightweightWindowTitle(
             of: currentElement,
             fallbackProcessID: processID
         )
 
-        guard Self.capturedSelectionStillMatches(
+        let assessment = Self.selectionFingerprintAssessment(
             source: context.source,
             elementMatches: elementMatches,
             capturedRange: context.range,
@@ -346,9 +487,18 @@ extension AXTextInjector {
             currentPosition: currentPosition,
             capturedSize: context.size,
             currentSize: currentSize,
+            windowElementMatches: windowElementMatches,
+            capturedWindowPosition: context.windowPosition,
+            currentWindowPosition: currentWindowPosition,
+            capturedWindowSize: context.windowSize,
+            currentWindowSize: currentWindowSize,
             capturedWindowTitle: context.windowTitle,
             currentWindowTitle: currentWindowTitle
-        ) else {
+        )
+        NetworkDebugLogger.logMessage(
+            "[Text Injection] selection fingerprint \(assessment.diagnosticSummary)"
+        )
+        guard assessment.accepted else {
             throw selectionReplacementError(
                 code: 29,
                 description: "The selected text changed while the result was being generated"
