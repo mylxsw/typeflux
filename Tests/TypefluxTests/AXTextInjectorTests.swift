@@ -104,7 +104,7 @@ final class AXTextInjectorTests: XCTestCase {
         ))
     }
 
-    func testClipboardCapturedSelectionRequiresExactElementIdentity() {
+    func testClipboardCapturedSelectionAcceptsExactOrSemanticElementIdentity() {
         XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
             source: "clipboard-copy",
             elementMatches: true,
@@ -117,15 +117,59 @@ final class AXTextInjectorTests: XCTestCase {
             capturedWindowTitle: "Draft",
             currentWindowTitle: "Draft"
         ))
+        XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
+            capturedPosition: CGPoint(x: 10, y: 20),
+            currentPosition: CGPoint(x: 10, y: 20),
+            capturedSize: CGSize(width: 300, height: 120),
+            currentSize: CGSize(width: 300, height: 120),
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
+        XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
+            capturedPosition: CGPoint(x: 10, y: 20),
+            currentPosition: CGPoint(x: 10, y: 20),
+            capturedSize: CGSize(width: 300, height: 120),
+            currentSize: CGSize(width: 300, height: 120),
+            capturedWindowTitle: nil,
+            currentWindowTitle: nil
+        ))
+        XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
         XCTAssertFalse(AXTextInjector.capturedSelectionStillMatches(
             source: "clipboard-copy",
-            elementMatches: true,
+            elementMatches: false,
             capturedRange: nil,
             currentRange: nil,
             capturedText: "meeting",
             currentText: "changed",
-            capturedRole: nil,
-            currentRole: nil,
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
             capturedWindowTitle: "Draft",
             currentWindowTitle: "Draft"
         ))
@@ -136,10 +180,10 @@ final class AXTextInjectorTests: XCTestCase {
             currentRange: nil,
             capturedText: "meeting",
             currentText: "meeting",
-            capturedRole: nil,
-            currentRole: nil,
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
             capturedWindowTitle: "Draft",
-            currentWindowTitle: "Draft"
+            currentWindowTitle: "Other Draft"
         ))
     }
 

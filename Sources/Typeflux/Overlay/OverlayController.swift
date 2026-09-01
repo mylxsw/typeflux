@@ -272,6 +272,10 @@ final class OverlayController {
         model.presentation == .notice && !model.noticeDismissible
     }
 
+    var isShowingResultDialogForTesting: Bool {
+        model.presentation == .resultDialog
+    }
+
     var processingProgressForTesting: CGFloat {
         model.processingProgress
     }

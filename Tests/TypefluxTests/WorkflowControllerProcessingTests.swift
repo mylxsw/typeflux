@@ -94,9 +94,9 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertTrue(textInjector.insertedTexts.isEmpty)
     }
 
-    func testApplyTextCopiesResultWhenInsertThrows() async {
+    func testApplyTextPresentsResultWithoutChangingClipboardWhenReplacementThrows() async {
         let textInjector = MockProcessingTextInjector(
-            insertError: NSError(
+            replaceError: NSError(
                 domain: "AXTextInjector",
                 code: 2,
                 userInfo: [NSLocalizedDescriptionKey: "Paste insertion could not be verified"]
@@ -108,14 +108,20 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             clipboard: clipboard
         )
 
-        let (outcome, processed) = await controller.applyText("Manual copy fallback", replace: false)
+        let (outcome, processed) = await controller.applyText("Manual copy fallback", replace: true)
 
-        XCTAssertEqual(outcome, .copiedToClipboard)
+        XCTAssertEqual(outcome, .presentedInDialog)
         XCTAssertEqual(processed, "Manual copy fallback")
         XCTAssertEqual(controller.lastDialogResultText, "Manual copy fallback")
-        XCTAssertEqual(clipboard.storedText, "Manual copy fallback")
-        XCTAssertTrue(controller.overlayController.isShowingPassiveNotice)
+        XCTAssertNil(clipboard.storedText)
+        XCTAssertTrue(controller.overlayController.isShowingResultDialogForTesting)
+        XCTAssertFalse(controller.overlayController.isShowingPassiveNotice)
         XCTAssertTrue(textInjector.insertedTexts.isEmpty)
+        XCTAssertTrue(textInjector.replacedTexts.isEmpty)
+
+        controller.copyLastResultFromDialog()
+
+        XCTAssertEqual(clipboard.storedText, "Manual copy fallback")
     }
 
     func testCancelledSelectionApplyDoesNotCommitLateReplacement() async {
@@ -139,7 +145,9 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         task.cancel()
         let (outcome, _) = await task.value
 
-        XCTAssertEqual(outcome, .copiedToClipboard)
+        XCTAssertEqual(outcome, .presentedInDialog)
+        XCTAssertNil(controller.clipboard.getString())
+        XCTAssertTrue(controller.overlayController.isShowingResultDialogForTesting)
         XCTAssertTrue(injector.replacedTexts.isEmpty)
     }
 

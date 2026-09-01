@@ -354,9 +354,9 @@ extension WorkflowController {
             )
             return (.inserted, text)
         } catch {
-            NetworkDebugLogger.logError(context: "[Apply Text] fallback to copied result notice", error: error)
-            presentInsertionFailureFallback(text: text)
-            return (.copiedToClipboard, text)
+            NetworkDebugLogger.logError(context: "[Apply Text] fallback to result dialog", error: error)
+            presentResultDialog(title: fallbackTitle, text: text)
+            return (.presentedInDialog, text)
         }
     }
 
@@ -2429,23 +2429,6 @@ extension WorkflowController {
             guard let self else { return }
             lastDialogResultText = text
             overlayController.showResultDialog(title: title, message: text)
-        }
-
-        if Thread.isMainThread {
-            work()
-        } else {
-            DispatchQueue.main.sync(execute: work)
-        }
-    }
-
-    func presentInsertionFailureFallback(text: String) {
-        let work = { [weak self] in
-            guard let self else { return }
-            clipboard.write(text: text)
-            lastDialogResultText = text
-            overlayController.showPassiveNotice(
-                message: L("workflow.result.insertionFailedCopied")
-            )
         }
 
         if Thread.isMainThread {
