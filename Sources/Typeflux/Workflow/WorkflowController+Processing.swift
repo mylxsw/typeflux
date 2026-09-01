@@ -535,13 +535,13 @@ extension WorkflowController {
             let personaPrompt = activePersonaProfile.map {
                 settingsStore.resolvedPersonaPrompt(for: $0)
             }
-            let processingTimeoutSeconds = settingsStore.voiceProcessingTimeout.seconds
+            let fallbackWaitSeconds = settingsStore.voiceProcessingTimeout.seconds
 
             NetworkDebugLogger.logMessage(selectionSnapshotLog(selectionSnapshot))
             if WorkflowOverlayPresentationPolicy.shouldShowProcessingAfterRecording() {
                 await MainActor.run {
                     self.appState.setStatus(.processing)
-                    self.overlayController.showProcessing(timeout: processingTimeoutSeconds)
+                    self.overlayController.showProcessing(timeout: fallbackWaitSeconds)
                 }
             }
 
@@ -576,10 +576,7 @@ extension WorkflowController {
             activeProcessingRecordID = record.id
             let sessionID = beginProcessingSession()
 
-            startProcessingTimeout(
-                sessionID: sessionID,
-                timeoutSeconds: processingTimeoutSeconds
-            )
+            startProcessingWatchdog(sessionID: sessionID)
             processingTask = Task { [weak self] in
                 guard let self else { return }
                 defer {
@@ -613,7 +610,7 @@ extension WorkflowController {
                 NetworkDebugLogger.logMessage(
                     "[Ask Timing] process completed in \(Self.formatDurationSince(processingStartedAt))"
                 )
-                cancelProcessingTimeout()
+                cancelProcessingWatchdog()
                 await MainActor.run {
                     if self.processingSessionID == sessionID {
                         self.processingTask = nil
@@ -2170,7 +2167,7 @@ extension WorkflowController {
         processingSessionID = UUID()
         processingTask?.cancel()
         processingTask = nil
-        cancelProcessingTimeout()
+        cancelProcessingWatchdog()
         lastRetryableFailureRecord = nil
 
         if let activeProcessingRecordID,
