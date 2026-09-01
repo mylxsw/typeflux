@@ -149,6 +149,25 @@ final class AXTextInjectorTests: XCTestCase {
         ))
     }
 
+    func testAccessibilitySelectionUsesElementIdentityWhenWindowTitleChanges() {
+        let range = CFRange(location: 4, length: 7)
+
+        XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
+            source: "accessibility",
+            elementMatches: false,
+            capturedRange: range,
+            currentRange: range,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
+            capturedIdentifier: "editor",
+            currentIdentifier: "editor",
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft — Edited"
+        ))
+    }
+
     func testClipboardCapturedSelectionAcceptsExactOrSemanticElementIdentity() {
         XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
             source: "clipboard-copy",
@@ -194,7 +213,7 @@ final class AXTextInjectorTests: XCTestCase {
             capturedWindowTitle: nil,
             currentWindowTitle: nil
         ))
-        XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
+        XCTAssertFalse(AXTextInjector.capturedSelectionStillMatches(
             source: "clipboard-copy",
             elementMatches: false,
             capturedRange: nil,
@@ -264,6 +283,200 @@ final class AXTextInjectorTests: XCTestCase {
             capturedWindowTitle: "Draft",
             currentWindowTitle: "Draft"
         ))
+    }
+
+    func testClipboardFingerprintAcceptsMissingRoleBecomingEditableContainerInSameWindow() {
+        let assessment = AXTextInjector.selectionFingerprintAssessment(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: CFRange(location: 0, length: 0),
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: nil,
+            currentRole: "AXGroup",
+            capturedSubrole: nil,
+            currentSubrole: nil,
+            capturedIdentifier: nil,
+            currentIdentifier: nil,
+            capturedPosition: nil,
+            currentPosition: nil,
+            capturedSize: nil,
+            currentSize: nil,
+            windowElementMatches: true,
+            capturedWindowPosition: nil,
+            currentWindowPosition: nil,
+            capturedWindowSize: nil,
+            currentWindowSize: nil,
+            capturedWindowTitle: "ChatGPT",
+            currentWindowTitle: "ChatGPT"
+        )
+
+        XCTAssertTrue(assessment.accepted)
+        XCTAssertEqual(assessment.role, .unavailable)
+        XCTAssertEqual(assessment.window, .match)
+    }
+
+    func testClipboardFingerprintAcceptsCompatibleEditableRoleDrift() {
+        XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXWebArea",
+            currentRole: "AXTextArea",
+            capturedIdentifier: "composer",
+            currentIdentifier: "composer",
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
+    }
+
+    func testClipboardFingerprintRejectsNonEditableRoleEvenWhenWindowMatches() {
+        let assessment = AXTextInjector.selectionFingerprintAssessment(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: nil,
+            currentRole: "AXButton",
+            capturedSubrole: nil,
+            currentSubrole: nil,
+            capturedIdentifier: nil,
+            currentIdentifier: nil,
+            capturedPosition: nil,
+            currentPosition: nil,
+            capturedSize: nil,
+            currentSize: nil,
+            windowElementMatches: true,
+            capturedWindowPosition: nil,
+            currentWindowPosition: nil,
+            capturedWindowSize: nil,
+            currentWindowSize: nil,
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        )
+
+        XCTAssertFalse(assessment.accepted)
+        XCTAssertEqual(assessment.role, .conflict)
+    }
+
+    func testClipboardFingerprintRejectsSameTitleForDifferentWindow() {
+        let assessment = AXTextInjector.selectionFingerprintAssessment(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXGroup",
+            currentRole: "AXGroup",
+            capturedSubrole: nil,
+            currentSubrole: nil,
+            capturedIdentifier: nil,
+            currentIdentifier: nil,
+            capturedPosition: nil,
+            currentPosition: nil,
+            capturedSize: nil,
+            currentSize: nil,
+            windowElementMatches: false,
+            capturedWindowPosition: nil,
+            currentWindowPosition: nil,
+            capturedWindowSize: nil,
+            currentWindowSize: nil,
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        )
+
+        XCTAssertFalse(assessment.accepted)
+        XCTAssertEqual(assessment.window, .conflict)
+    }
+
+    func testClipboardFingerprintUsesAvailableStrongEvidenceWhenIdentifierDisappears() {
+        let assessment = AXTextInjector.selectionFingerprintAssessment(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXGroup",
+            currentRole: "AXGroup",
+            capturedSubrole: nil,
+            currentSubrole: nil,
+            capturedIdentifier: "composer",
+            currentIdentifier: nil,
+            capturedPosition: nil,
+            currentPosition: nil,
+            capturedSize: nil,
+            currentSize: nil,
+            windowElementMatches: true,
+            capturedWindowPosition: nil,
+            currentWindowPosition: nil,
+            capturedWindowSize: nil,
+            currentWindowSize: nil,
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        )
+
+        XCTAssertTrue(assessment.accepted)
+        XCTAssertEqual(assessment.identifier, .unavailable)
+    }
+
+    func testClipboardFingerprintAcceptsRebuiltWindowWithMatchingFrame() {
+        XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXGroup",
+            currentRole: "AXGroup",
+            windowElementMatches: false,
+            capturedWindowPosition: CGPoint(x: 100, y: 80),
+            currentWindowPosition: CGPoint(x: 100, y: 80),
+            capturedWindowSize: CGSize(width: 900, height: 700),
+            currentWindowSize: CGSize(width: 900, height: 700),
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
+    }
+
+    func testClipboardFingerprintRejectsExplicitSubroleConflict() {
+        let assessment = AXTextInjector.selectionFingerprintAssessment(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXGroup",
+            currentRole: "AXGroup",
+            capturedSubrole: "AXDocument",
+            currentSubrole: "AXDialog",
+            capturedIdentifier: nil,
+            currentIdentifier: nil,
+            capturedPosition: nil,
+            currentPosition: nil,
+            capturedSize: nil,
+            currentSize: nil,
+            windowElementMatches: true,
+            capturedWindowPosition: nil,
+            currentWindowPosition: nil,
+            capturedWindowSize: nil,
+            currentWindowSize: nil,
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        )
+
+        XCTAssertFalse(assessment.accepted)
+        XCTAssertEqual(assessment.subrole, .conflict)
+        XCTAssertFalse(assessment.diagnosticSummary.contains("meeting"))
     }
 
     func testTargetCapabilityDistinguishesWritableNonWritableAndOpaqueTargets() {

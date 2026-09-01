@@ -179,6 +179,7 @@ final class AXTextInjector: TextInjector {
 
     struct SelectionContext {
         let element: AXUIElement
+        let windowElement: AXUIElement?
         let range: CFRange?
         let processID: pid_t?
         let processName: String?
@@ -188,6 +189,8 @@ final class AXTextInjector: TextInjector {
         let identifier: String?
         let position: CGPoint?
         let size: CGSize?
+        let windowPosition: CGPoint?
+        let windowSize: CGSize?
         let windowTitle: String?
         let isFocusedTarget: Bool
         let source: String
@@ -195,6 +198,7 @@ final class AXTextInjector: TextInjector {
 
         init(
             element: AXUIElement,
+            windowElement: AXUIElement? = nil,
             range: CFRange?,
             processID: pid_t?,
             processName: String?,
@@ -204,12 +208,15 @@ final class AXTextInjector: TextInjector {
             identifier: String? = nil,
             position: CGPoint? = nil,
             size: CGSize? = nil,
+            windowPosition: CGPoint? = nil,
+            windowSize: CGSize? = nil,
             windowTitle: String?,
             isFocusedTarget: Bool,
             source: String,
             capturedAt: Date
         ) {
             self.element = element
+            self.windowElement = windowElement
             self.range = range
             self.processID = processID
             self.processName = processName
@@ -219,6 +226,8 @@ final class AXTextInjector: TextInjector {
             self.identifier = identifier
             self.position = position
             self.size = size
+            self.windowPosition = windowPosition
+            self.windowSize = windowSize
             self.windowTitle = windowTitle
             self.isFocusedTarget = isFocusedTarget
             self.source = source
@@ -849,6 +858,7 @@ final class AXTextInjector: TextInjector {
             } ?? (focusedElement != nil)
             let context = SelectionContext(
                 element: focusedElement ?? AXUIElementCreateSystemWide(),
+                windowElement: focusedWindow ?? selectionWindow,
                 range: nil,
                 processID: processID,
                 processName: processName,
@@ -866,6 +876,12 @@ final class AXTextInjector: TextInjector {
                     copyCGPointAttribute(kAXPositionAttribute as String, from: $0)
                 },
                 size: focusedElement.flatMap {
+                    copyCGSizeAttribute(kAXSizeAttribute as String, from: $0)
+                },
+                windowPosition: (focusedWindow ?? selectionWindow).flatMap {
+                    copyCGPointAttribute(kAXPositionAttribute as String, from: $0)
+                },
+                windowSize: (focusedWindow ?? selectionWindow).flatMap {
                     copyCGSizeAttribute(kAXSizeAttribute as String, from: $0)
                 },
                 windowTitle: selectionWindow.flatMap(windowTitle(of:)) ?? focusedWindowTitle(for: processID),
