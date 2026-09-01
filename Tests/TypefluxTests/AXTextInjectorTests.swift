@@ -2,6 +2,23 @@ import ApplicationServices
 @testable import Typeflux
 import XCTest
 
+private final class LockedTestFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedValue = false
+
+    var value: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedValue
+    }
+
+    func setTrue() {
+        lock.lock()
+        storedValue = true
+        lock.unlock()
+    }
+}
+
 final class AXTextInjectorTests: XCTestCase {
     func testSelectionReplacementWorkRunsOffMainThread() async throws {
         let injector = AXTextInjector()
@@ -11,6 +28,34 @@ final class AXTextInjectorTests: XCTestCase {
         }
 
         XCTAssertFalse(ranOnMainThread)
+    }
+
+    func testCancelledQueuedSelectionReplacementWorkDoesNotRun() async throws {
+        let injector = AXTextInjector()
+        let queueBlocked = DispatchSemaphore(value: 0)
+        let releaseQueue = DispatchSemaphore(value: 0)
+        injector.selectionReplacementQueue.async {
+            queueBlocked.signal()
+            releaseQueue.wait()
+        }
+        XCTAssertEqual(queueBlocked.wait(timeout: .now() + 1), .success)
+
+        let workRan = LockedTestFlag()
+        let task = Task {
+            try await injector.performSelectionReplacementWork {
+                workRan.setTrue()
+            }
+        }
+        task.cancel()
+        releaseQueue.signal()
+
+        do {
+            try await task.value
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {
+            // Expected.
+        }
+        XCTAssertFalse(workRan.value)
     }
 
     func testSelectionReplacementContextCanOnlyBeConsumedOnce() {
@@ -104,7 +149,7 @@ final class AXTextInjectorTests: XCTestCase {
         ))
     }
 
-    func testClipboardCapturedSelectionRequiresExactElementIdentity() {
+    func testClipboardCapturedSelectionAcceptsExactOrSemanticElementIdentity() {
         XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
             source: "clipboard-copy",
             elementMatches: true,
@@ -117,15 +162,59 @@ final class AXTextInjectorTests: XCTestCase {
             capturedWindowTitle: "Draft",
             currentWindowTitle: "Draft"
         ))
+        XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
+            capturedPosition: CGPoint(x: 10, y: 20),
+            currentPosition: CGPoint(x: 10, y: 20),
+            capturedSize: CGSize(width: 300, height: 120),
+            currentSize: CGSize(width: 300, height: 120),
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
+        XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
+            capturedPosition: CGPoint(x: 10, y: 20),
+            currentPosition: CGPoint(x: 10, y: 20),
+            capturedSize: CGSize(width: 300, height: 120),
+            currentSize: CGSize(width: 300, height: 120),
+            capturedWindowTitle: nil,
+            currentWindowTitle: nil
+        ))
+        XCTAssertTrue(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
         XCTAssertFalse(AXTextInjector.capturedSelectionStillMatches(
             source: "clipboard-copy",
-            elementMatches: true,
+            elementMatches: false,
             capturedRange: nil,
             currentRange: nil,
             capturedText: "meeting",
             currentText: "changed",
-            capturedRole: nil,
-            currentRole: nil,
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
             capturedWindowTitle: "Draft",
             currentWindowTitle: "Draft"
         ))
@@ -136,8 +225,42 @@ final class AXTextInjectorTests: XCTestCase {
             currentRange: nil,
             capturedText: "meeting",
             currentText: "meeting",
-            capturedRole: nil,
-            currentRole: nil,
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Other Draft"
+        ))
+        XCTAssertFalse(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
+            capturedIdentifier: "composer-a",
+            currentIdentifier: "composer-b",
+            capturedPosition: CGPoint(x: 10, y: 20),
+            currentPosition: CGPoint(x: 10, y: 20),
+            capturedSize: CGSize(width: 300, height: 120),
+            currentSize: CGSize(width: 300, height: 120),
+            capturedWindowTitle: "Draft",
+            currentWindowTitle: "Draft"
+        ))
+        XCTAssertFalse(AXTextInjector.capturedSelectionStillMatches(
+            source: "clipboard-copy",
+            elementMatches: false,
+            capturedRange: nil,
+            currentRange: nil,
+            capturedText: "meeting",
+            currentText: "meeting",
+            capturedRole: "AXTextArea",
+            currentRole: "AXTextArea",
+            capturedPosition: CGPoint(x: 10, y: 20),
+            currentPosition: CGPoint(x: 40, y: 20),
+            capturedSize: CGSize(width: 300, height: 120),
+            currentSize: CGSize(width: 300, height: 120),
             capturedWindowTitle: "Draft",
             currentWindowTitle: "Draft"
         ))

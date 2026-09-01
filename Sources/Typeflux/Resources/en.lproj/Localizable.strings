@@ -400,7 +400,6 @@
 "workflow.transcription.noSpeech" = "No clear speech detected. Transcription cancelled.";
 "workflow.transcription.serverUnavailableNotice" = "Unable to connect to the server. Your recording was saved in History for retry.";
 "workflow.result.copyTitle" = "Copy Result";
-"workflow.result.insertionFailedCopied" = "Text couldn't be inserted. It has been copied; press ⌘V to paste.";
 "workflow.ask.answerTitle" = "Ask Anything";
 "workflow.ask.questionSectionTitle" = "Your Question";
 "workflow.ask.answerSectionTitle" = "Answer";

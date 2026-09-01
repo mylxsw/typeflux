@@ -2,6 +2,26 @@ import AppKit
 import ApplicationServices
 import Foundation
 
+private final class SelectionReplacementCancellationToken: @unchecked Sendable {
+    private let lock = NSLock()
+    private var cancelled = false
+
+    func cancel() {
+        lock.lock()
+        cancelled = true
+        lock.unlock()
+    }
+
+    func checkCancellation() throws {
+        lock.lock()
+        let isCancelled = cancelled
+        lock.unlock()
+        if isCancelled {
+            throw CancellationError()
+        }
+    }
+}
+
 extension AXTextInjector {
     enum SelectionReplacementPreparation: Equatable {
         case committedViaAX
@@ -28,36 +48,93 @@ extension AXTextInjector {
         capturedWindowTitle: String?,
         currentWindowTitle: String?
     ) -> Bool {
-        if source == "clipboard-copy" {
-            return elementMatches && capturedText == currentText
-        }
-
-        guard capturedRange?.location == currentRange?.location,
-              capturedRange?.length == currentRange?.length,
-              capturedText == currentText
-        else {
+        guard capturedText == currentText else {
             return false
         }
 
+        if source != "clipboard-copy" {
+            guard capturedRange?.location == currentRange?.location,
+                  capturedRange?.length == currentRange?.length
+            else {
+                return false
+            }
+        }
+
+        return capturedElementStillMatches(
+            elementMatches: elementMatches,
+            capturedRole: capturedRole,
+            currentRole: currentRole,
+            capturedSubrole: capturedSubrole,
+            currentSubrole: currentSubrole,
+            capturedIdentifier: capturedIdentifier,
+            currentIdentifier: currentIdentifier,
+            capturedPosition: capturedPosition,
+            currentPosition: currentPosition,
+            capturedSize: capturedSize,
+            currentSize: currentSize,
+            capturedWindowTitle: capturedWindowTitle,
+            currentWindowTitle: currentWindowTitle,
+            allowsWindowScopedMatch: source == "clipboard-copy"
+        )
+    }
+
+    private static func capturedElementStillMatches(
+        elementMatches: Bool,
+        capturedRole: String?,
+        currentRole: String?,
+        capturedSubrole: String?,
+        currentSubrole: String?,
+        capturedIdentifier: String?,
+        currentIdentifier: String?,
+        capturedPosition: CGPoint?,
+        currentPosition: CGPoint?,
+        capturedSize: CGSize?,
+        currentSize: CGSize?,
+        capturedWindowTitle: String?,
+        currentWindowTitle: String?,
+        allowsWindowScopedMatch: Bool
+    ) -> Bool {
         if elementMatches {
             return true
         }
 
-        let identifierMatches = capturedIdentifier?.isEmpty == false && capturedIdentifier == currentIdentifier
-        let frameMatches = capturedPosition != nil && capturedPosition == currentPosition &&
-            capturedSize != nil && capturedSize == currentSize
         guard capturedRole == currentRole,
               capturedSubrole == currentSubrole,
-              identifierMatches || frameMatches,
-              let capturedWindowTitle = capturedWindowTitle?.trimmingCharacters(in: .whitespacesAndNewlines),
-              let currentWindowTitle = currentWindowTitle?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !capturedWindowTitle.isEmpty,
-              capturedWindowTitle == currentWindowTitle
+              capturedRole?.isEmpty == false
         else {
             return false
         }
 
-        return true
+        let normalizedCapturedWindowTitle = capturedWindowTitle?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedCurrentWindowTitle = currentWindowTitle?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let windowMatches = normalizedCapturedWindowTitle?.isEmpty == false &&
+            normalizedCapturedWindowTitle == normalizedCurrentWindowTitle
+
+        // Electron and Chromium frequently recreate the focused AX element while
+        // preserving the same role and window. A fresh Cmd-C that returned the
+        // original selected text is strong enough evidence for clipboard-backed
+        // selections. Prefer identifier/frame when available; otherwise use the
+        // focused window title, which is also captured for opaque AX hierarchies.
+        // Prefer the strongest evidence that both snapshots expose. A matching
+        // window title must never override an explicitly different identifier or
+        // frame; that could redirect a result to another editor in the same window.
+        let hasCapturedIdentifier = capturedIdentifier?.isEmpty == false
+        let hasCurrentIdentifier = currentIdentifier?.isEmpty == false
+        if hasCapturedIdentifier, hasCurrentIdentifier {
+            let identifierMatches = capturedIdentifier == currentIdentifier
+            return identifierMatches && (allowsWindowScopedMatch || windowMatches)
+        }
+
+        let hasCapturedFrame = capturedPosition != nil && capturedSize != nil
+        let hasCurrentFrame = currentPosition != nil && currentSize != nil
+        if hasCapturedFrame, hasCurrentFrame {
+            let frameMatches = capturedPosition == currentPosition && capturedSize == currentSize
+            return frameMatches && (allowsWindowScopedMatch || windowMatches)
+        }
+
+        return allowsWindowScopedMatch && windowMatches
     }
 
     func replaceSelection(text: String, target: TextSelectionSnapshot?) async throws {
@@ -88,17 +165,20 @@ extension AXTextInjector {
                 description: "The captured selection is no longer available"
             )
         }
+        defer { clearLatestSelectionContext(ifMatching: context) }
 
         try Task.checkCancellation()
         let currentProcessID = await MainActor.run {
             NSWorkspace.shared.frontmostApplication?.processIdentifier
         }
         try Task.checkCancellation()
-        let preparation = try await performSelectionReplacementWork {
+        let cancellationToken = SelectionReplacementCancellationToken()
+        let preparation = try await performSelectionReplacementWork(cancellationToken: cancellationToken) {
             try self.prepareSelectionReplacement(
                 text: text,
                 context: context,
-                currentFrontmostProcessID: currentProcessID
+                currentFrontmostProcessID: currentProcessID,
+                cancellationToken: cancellationToken
             )
         }
 
@@ -107,43 +187,47 @@ extension AXTextInjector {
             lastInjectionMethod = .ax
         case .requiresPaste:
             try Task.checkCancellation()
-            try await prepareEagerPasteboard(text: text, targetProcessID: context.processID)
-            try Task.checkCancellation()
-            let pasteProcessID = await MainActor.run {
-                NSWorkspace.shared.frontmostApplication?.processIdentifier
-            }
-            try Task.checkCancellation()
-            try await performSelectionReplacementWork {
-                try self.dispatchSelectionPaste(
-                    context: context,
-                    currentFrontmostProcessID: pasteProcessID
-                )
-            }
+            try await commitSelectionPaste(text: text, targetProcessID: context.processID)
             lastInjectionMethod = .paste
         }
-
-        clearLatestSelectionContext(ifMatching: context)
     }
 
     func performSelectionReplacementWork<T>(
         _ work: @escaping () throws -> T
     ) async throws -> T {
+        let cancellationToken = SelectionReplacementCancellationToken()
+        return try await performSelectionReplacementWork(
+            cancellationToken: cancellationToken,
+            work
+        )
+    }
+
+    private func performSelectionReplacementWork<T>(
+        cancellationToken: SelectionReplacementCancellationToken,
+        _ work: @escaping () throws -> T
+    ) async throws -> T {
         let sendableWork = UncheckedSendableReference(work)
-        return try await withCheckedThrowingContinuation { continuation in
-            selectionReplacementQueue.async {
-                do {
-                    continuation.resume(returning: try sendableWork.value())
-                } catch {
-                    continuation.resume(throwing: error)
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                selectionReplacementQueue.async {
+                    do {
+                        try cancellationToken.checkCancellation()
+                        continuation.resume(returning: try sendableWork.value())
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
                 }
             }
+        } onCancel: {
+            cancellationToken.cancel()
         }
     }
 
-    func prepareSelectionReplacement(
+    private func prepareSelectionReplacement(
         text: String,
         context: SelectionContext,
-        currentFrontmostProcessID: pid_t?
+        currentFrontmostProcessID: pid_t?,
+        cancellationToken: SelectionReplacementCancellationToken
     ) throws -> SelectionReplacementPreparation {
         let element = try validatedCurrentSelectionElement(
             context: context,
@@ -157,6 +241,7 @@ extension AXTextInjector {
             return .requiresPaste
         }
 
+        try cancellationToken.checkCancellation()
         guard setSelectedTextRange(range, on: element) else {
             throw selectionReplacementError(
                 code: 22,
@@ -187,34 +272,6 @@ extension AXTextInjector {
         }
     }
 
-    func dispatchSelectionPaste(
-        context: SelectionContext,
-        currentFrontmostProcessID: pid_t?
-    ) throws {
-        _ = try validatedCurrentSelectionElement(
-            context: context,
-            currentFrontmostProcessID: currentFrontmostProcessID,
-            verifyClipboardText: false
-        )
-        guard let processID = context.processID else {
-            throw selectionReplacementError(code: 24, description: "The target application is unavailable")
-        }
-
-        let source = CGEventSource(stateID: .combinedSessionState)
-        guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true),
-              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
-        else {
-            throw selectionReplacementError(code: 25, description: "Unable to create the paste shortcut")
-        }
-        keyDown.flags = .maskCommand
-        keyUp.flags = .maskCommand
-        keyDown.postToPid(processID)
-        keyUp.postToPid(processID)
-        NetworkDebugLogger.logMessage(
-            "[Text Injection] selection transaction dispatched via eager paste"
-        )
-    }
-
     func validatedCurrentSelectionElement(
         context: SelectionContext,
         currentFrontmostProcessID: pid_t?,
@@ -236,41 +293,41 @@ extension AXTextInjector {
         AXUIElementSetMessagingTimeout(application, Self.replacementAXMessagingTimeout)
         AXUIElementSetMessagingTimeout(context.element, Self.replacementAXMessagingTimeout)
 
-        guard let currentElement = lightweightFocusedElement(application: application) else {
+        guard var currentElement = lightweightFocusedElement(application: application) else {
             throw selectionReplacementError(code: 28, description: "The target no longer has a focused input")
         }
         AXUIElementSetMessagingTimeout(currentElement, Self.replacementAXMessagingTimeout)
 
-        let elementMatches = CFEqual(context.element, currentElement)
-        let currentRange = copySelectedTextRange(from: currentElement)
         let currentText: String?
         if context.source == "clipboard-copy", verifyClipboardText {
             currentText = readSelectedTextViaCopy(
                 processID: processID,
                 milliseconds: Self.copySelectionTimeoutMilliseconds
             )
-            guard let focusedAfterCopy = lightweightFocusedElement(application: application),
-                  CFEqual(currentElement, focusedAfterCopy)
-            else {
+            guard let focusedAfterCopy = lightweightFocusedElement(application: application) else {
                 throw selectionReplacementError(
                     code: 29,
                     description: "The selected text changed while the result was being generated"
                 )
             }
+            AXUIElementSetMessagingTimeout(focusedAfterCopy, Self.replacementAXMessagingTimeout)
+            currentElement = focusedAfterCopy
         } else if context.source == "clipboard-copy" {
-            // The clipboard already contains the replacement at dispatch time. The
-            // selection text was re-copied and verified during preparation; copying
-            // again here would overwrite the replacement immediately before Cmd+V.
             currentText = context.selectedText
         } else {
             currentText = copyStringAttribute(kAXSelectedTextAttribute as String, from: currentElement)
         }
+        let elementMatches = CFEqual(context.element, currentElement)
+        let currentRange = copySelectedTextRange(from: currentElement)
         let currentRole = copyStringAttribute(kAXRoleAttribute as String, from: currentElement)
         let currentSubrole = copyStringAttribute(kAXSubroleAttribute as String, from: currentElement)
         let currentIdentifier = copyStringAttribute(kAXIdentifierAttribute as String, from: currentElement)
         let currentPosition = copyCGPointAttribute(kAXPositionAttribute as String, from: currentElement)
         let currentSize = copyCGSizeAttribute(kAXSizeAttribute as String, from: currentElement)
-        let currentWindowTitle = lightweightWindowTitle(of: currentElement)
+        let currentWindowTitle = lightweightWindowTitle(
+            of: currentElement,
+            fallbackProcessID: processID
+        )
 
         guard Self.capturedSelectionStillMatches(
             source: context.source,
@@ -311,24 +368,45 @@ extension AXTextInjector {
         return copyElementAttribute(kAXFocusedUIElementAttribute as String, from: focused) ?? focused
     }
 
-    func lightweightWindowTitle(of element: AXUIElement) -> String? {
+    func lightweightWindowTitle(of element: AXUIElement, fallbackProcessID: pid_t?) -> String? {
         if let window = copyElementAttribute(kAXWindowAttribute as String, from: element) {
             AXUIElementSetMessagingTimeout(window, Self.replacementAXMessagingTimeout)
-            return copyTextAttribute(kAXTitleAttribute as String, from: window)
+            if let title = copyTextAttribute(kAXTitleAttribute as String, from: window) {
+                return title
+            }
         }
-        return nil
+        return focusedWindowTitle(for: fallbackProcessID)
     }
 
-    func prepareEagerPasteboard(text: String, targetProcessID: pid_t?) async throws {
+    func commitSelectionPaste(text: String, targetProcessID: pid_t?) async throws {
         let injector = UncheckedSendableReference(self)
         try await MainActor.run {
             try Task.checkCancellation()
-            guard NSWorkspace.shared.frontmostApplication?.processIdentifier == targetProcessID else {
+            guard let targetProcessID,
+                  NSWorkspace.shared.frontmostApplication?.processIdentifier == targetProcessID
+            else {
                 throw injector.value.selectionReplacementError(
                     code: 30,
                     description: "The user moved away from the captured selection"
                 )
             }
+
+            let source = CGEventSource(stateID: .combinedSessionState)
+            guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true),
+                  let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
+            else {
+                throw injector.value.selectionReplacementError(
+                    code: 25,
+                    description: "Unable to create the paste shortcut"
+                )
+            }
+            keyDown.flags = .maskCommand
+            keyUp.flags = .maskCommand
+
+            // All target validation has completed before the pasteboard changes.
+            // After this point, dispatch immediately without another AX round-trip:
+            // a rejected post-write validation would leave a failed transaction's
+            // result on the user's clipboard.
             let pasteboard = NSPasteboard.general
             pasteboard.clearContents()
             guard pasteboard.setString(text, forType: .string) else {
@@ -337,6 +415,11 @@ extension AXTextInjector {
                     description: "Unable to prepare the replacement text"
                 )
             }
+            keyDown.postToPid(targetProcessID)
+            keyUp.postToPid(targetProcessID)
+            NetworkDebugLogger.logMessage(
+                "[Text Injection] selection transaction dispatched via eager paste"
+            )
         }
     }
 

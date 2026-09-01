@@ -400,7 +400,6 @@
 "workflow.transcription.noSpeech" = "未检测到清晰语音，本次转写已取消。";
 "workflow.transcription.serverUnavailableNotice" = "暂时无法连接服务器，录音已保存在历史记录中，可稍后重试。";
 "workflow.result.copyTitle" = "复制结果";
-"workflow.result.insertionFailedCopied" = "未能插入文本，内容已复制，可按 ⌘V 粘贴。";
 "workflow.ask.answerTitle" = "随便问";
 "workflow.ask.questionSectionTitle" = "你的问题";
 "workflow.ask.answerSectionTitle" = "回答";

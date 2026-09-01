@@ -398,7 +398,6 @@
 "workflow.transcription.noSpeech" = "未偵測到清晰語音，本次轉寫已取消。";
 "workflow.transcription.serverUnavailableNotice" = "暫時無法連線至伺服器，錄音已儲存在歷史記錄中，可稍後重試。";
 "workflow.result.copyTitle" = "複製結果";
-"workflow.result.insertionFailedCopied" = "未能插入文字，內容已複製，可按 ⌘V 貼上。";
 "workflow.ask.answerTitle" = "隨便問";
 "workflow.ask.questionSectionTitle" = "你的問題";
 "workflow.ask.answerSectionTitle" = "回答";
