@@ -572,8 +572,7 @@ extension AXTextInjector {
                     description: "The clipboard changed before replacement could begin"
                 )
             }
-            pasteboard.clearContents()
-            guard pasteboard.setString(text, forType: .string) else {
+            guard injector.value.writeTransientPasteboardString(text, to: pasteboard) else {
                 throw injector.value.selectionReplacementError(
                     code: 31,
                     description: "Unable to prepare the replacement text"

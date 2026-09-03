@@ -309,8 +309,7 @@ extension AXTextInjector {
                     ]
                 )
             }
-            pasteboard.clearContents()
-            guard pasteboard.setString(text, forType: .string) else {
+            guard writeTransientPasteboardString(text, to: pasteboard) else {
                 throw NSError(
                     domain: "AXTextInjector",
                     code: 15,
@@ -380,6 +379,7 @@ extension AXTextInjector {
         let deliveryProbe = PasteboardDeliveryProbe(text: text)
         let pasteboardItem = NSPasteboardItem()
         pasteboardItem.setDataProvider(deliveryProbe, forTypes: [.string])
+        pasteboardItem.setData(Data(), forType: Self.transientPasteboardType)
         pasteboard.clearContents()
         pasteboard.writeObjects([pasteboardItem])
         activePasteboardDeliveryProbe = deliveryProbe
@@ -845,6 +845,16 @@ extension AXTextInjector {
 
         guard pasteboard.changeCount == initialChangeCount else { return nil }
         return PasteboardSnapshot(changeCount: initialChangeCount, items: capturedItems)
+    }
+
+    func writeTransientPasteboardString(_ text: String, to pasteboard: NSPasteboard) -> Bool {
+        let item = NSPasteboardItem()
+        guard item.setString(text, forType: .string),
+              item.setData(Data(), forType: Self.transientPasteboardType)
+        else { return false }
+
+        pasteboard.clearContents()
+        return pasteboard.writeObjects([item])
     }
 
     func restorePasteboard(_ snapshot: PasteboardSnapshot, to pasteboard: NSPasteboard) {
