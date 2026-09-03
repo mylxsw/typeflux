@@ -1728,6 +1728,89 @@ final class AXTextInjectorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testClipboardSelectionProbeSkipsCollapsedSelection() {
+        XCTAssertTrue(AXTextInjector.shouldSkipClipboardSelectionProbe(
+            selectedRange: CFRange(location: 12, length: 0)
+        ))
+    }
+
+    func testClipboardSelectionProbeAllowsUnknownOrNonEmptySelection() {
+        XCTAssertFalse(AXTextInjector.shouldSkipClipboardSelectionProbe(selectedRange: nil))
+        XCTAssertFalse(AXTextInjector.shouldSkipClipboardSelectionProbe(
+            selectedRange: CFRange(location: 4, length: 8)
+        ))
+    }
+
+    func testClipboardCopyProbeRejectsStaleTextWhenCopyDoesNothing() {
+        let injector = AXTextInjector()
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.setString("previous transcription", forType: .string)
+
+        let selectedText = injector.readSelectedTextViaCopy(
+            milliseconds: 1,
+            pasteboard: pasteboard,
+            sendCopy: {}
+        )
+
+        XCTAssertNil(selectedText)
+        XCTAssertEqual(pasteboard.string(forType: .string), "previous transcription")
+    }
+
+    func testClipboardCopyProbeRejectsChangeWithoutCopiedText() {
+        let injector = AXTextInjector()
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.setString("previous transcription", forType: .string)
+
+        let selectedText = injector.readSelectedTextViaCopy(
+            milliseconds: 25,
+            pasteboard: pasteboard,
+            sendCopy: {
+                pasteboard.clearContents()
+            }
+        )
+
+        XCTAssertNil(selectedText)
+        XCTAssertEqual(pasteboard.string(forType: .string), "previous transcription")
+    }
+
+    func testClipboardCopyProbeReturnsNewSelectionAndRestoresClipboard() {
+        let injector = AXTextInjector()
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.setString("original clipboard", forType: .string)
+
+        let selectedText = injector.readSelectedTextViaCopy(
+            milliseconds: 25,
+            pasteboard: pasteboard,
+            sendCopy: {
+                pasteboard.clearContents()
+                pasteboard.setString("selected text", forType: .string)
+            }
+        )
+
+        XCTAssertEqual(selectedText, "selected text")
+        XCTAssertEqual(pasteboard.string(forType: .string), "original clipboard")
+    }
+
+    func testClipboardProbeDoesNotOverwriteLaterClipboardChange() throws {
+        let injector = AXTextInjector()
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.setString("original clipboard", forType: .string)
+        let snapshot = try XCTUnwrap(AXTextInjector.capturePasteboardSnapshot(
+            from: pasteboard,
+            maximumBytes: 1024
+        ))
+
+        pasteboard.clearContents()
+        pasteboard.setString("new clipboard", forType: .string)
+        injector.restorePasteboardIfUnchanged(
+            snapshot,
+            to: pasteboard,
+            expectedChangeCount: snapshot.changeCount
+        )
+
+        XCTAssertEqual(pasteboard.string(forType: .string), "new clipboard")
+    }
+
     func testCapturePasteboardSnapshotPreservesAllRepresentations() throws {
         let pasteboard = NSPasteboard.withUniqueName()
         let item = NSPasteboardItem()
