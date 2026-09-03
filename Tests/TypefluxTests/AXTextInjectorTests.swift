@@ -1728,15 +1728,20 @@ final class AXTextInjectorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testClipboardSelectionProbeSkipsCollapsedSelection() {
-        XCTAssertTrue(AXTextInjector.shouldSkipClipboardSelectionProbe(
+    func testClipboardSelectionProbeRejectsCollapsedSelection() {
+        XCTAssertFalse(AXTextInjector.shouldProbeClipboardSelection(
             selectedRange: CFRange(location: 12, length: 0)
         ))
     }
 
-    func testClipboardSelectionProbeAllowsUnknownOrNonEmptySelection() {
-        XCTAssertFalse(AXTextInjector.shouldSkipClipboardSelectionProbe(selectedRange: nil))
-        XCTAssertFalse(AXTextInjector.shouldSkipClipboardSelectionProbe(
+    func testClipboardSelectionProbeRejectsOpaqueTargetWithoutRange() {
+        XCTAssertFalse(AXTextInjector.shouldProbeClipboardSelection(
+            selectedRange: nil
+        ))
+    }
+
+    func testClipboardSelectionProbeAllowsExplicitNonEmptyRange() {
+        XCTAssertTrue(AXTextInjector.shouldProbeClipboardSelection(
             selectedRange: CFRange(location: 4, length: 8)
         ))
     }
