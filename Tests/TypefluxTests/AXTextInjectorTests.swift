@@ -1838,6 +1838,33 @@ final class AXTextInjectorTests: XCTestCase {
         )
     }
 
+    func testWriteTransientPasteboardStringMarksPayloadForClipboardHistoryExclusion() {
+        let injector = AXTextInjector()
+        let pasteboard = NSPasteboard.withUniqueName()
+
+        XCTAssertTrue(injector.writeTransientPasteboardString("dictation", to: pasteboard))
+
+        XCTAssertEqual(pasteboard.string(forType: .string), "dictation")
+        XCTAssertNotNil(pasteboard.data(forType: AXTextInjector.transientPasteboardType))
+        XCTAssertEqual(pasteboard.pasteboardItems?.count, 1)
+    }
+
+    func testTransientPasteboardPayloadCanBeCapturedAndRestored() throws {
+        let injector = AXTextInjector()
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.setString("original", forType: .string)
+        let snapshot = try XCTUnwrap(AXTextInjector.capturePasteboardSnapshot(
+            from: pasteboard,
+            maximumBytes: 1_024
+        ))
+
+        XCTAssertTrue(injector.writeTransientPasteboardString("dictation", to: pasteboard))
+        injector.restorePasteboard(snapshot, to: pasteboard)
+
+        XCTAssertEqual(pasteboard.string(forType: .string), "original")
+        XCTAssertNil(pasteboard.data(forType: AXTextInjector.transientPasteboardType))
+    }
+
     func testCapturePasteboardSnapshotPreservesEmptyClipboard() throws {
         let pasteboard = NSPasteboard.withUniqueName()
         pasteboard.clearContents()
