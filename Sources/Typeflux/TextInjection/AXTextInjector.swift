@@ -753,7 +753,7 @@ final class AXTextInjector: TextInjector {
         }
     }
 
-    func getSelectionSnapshot() async -> TextSelectionSnapshot {
+    func selectionSnapshot(for intent: SelectionCaptureIntent) async -> TextSelectionSnapshot {
         let preflight = await MainActor.run {
             self.selectionCapturePreflight()
         }
@@ -765,7 +765,10 @@ final class AXTextInjector: TextInjector {
             return await withCheckedContinuation { continuation in
                 selectionReplacementQueue.async {
                     continuation.resume(
-                        returning: injector.value.readExternalSelectionSnapshot(target: target)
+                        returning: injector.value.readExternalSelectionSnapshot(
+                            target: target,
+                            intent: intent
+                        )
                     )
                 }
             }
@@ -830,7 +833,10 @@ final class AXTextInjector: TextInjector {
         ))
     }
 
-    func readExternalSelectionSnapshot(target: ExternalSelectionCaptureTarget) -> TextSelectionSnapshot {
+    func readExternalSelectionSnapshot(
+        target: ExternalSelectionCaptureTarget,
+        intent: SelectionCaptureIntent
+    ) -> TextSelectionSnapshot {
         let processID = target.processID
         let processName = target.processName
         let bundleIdentifier = target.bundleIdentifier
@@ -868,7 +874,8 @@ final class AXTextInjector: TextInjector {
         let clipboardProbeRange = clipboardProbeElement.flatMap(copySelectedTextRange(from:))
         let clipboardProbeIsEditable = clipboardProbeElement.map(isLikelyEditable(element:)) ?? false
         let shouldProbeClipboardSelection = Self.shouldProbeClipboardSelection(
-            selectedRange: clipboardProbeRange
+            selectedRange: clipboardProbeRange,
+            intent: intent
         )
         if shouldProbeClipboardSelection {
             logger.debug("ax-api returned nil — trying clipboard-copy")
@@ -968,10 +975,19 @@ final class AXTextInjector: TextInjector {
     }
 
     /// A copy response alone is not proof of a selection: some applications copy the
-    /// entire field when no range is selected. Require positive range evidence before
-    /// using Cmd+C as a fallback for reading the selected text.
-    static func shouldProbeClipboardSelection(selectedRange: CFRange?) -> Bool {
-        selectedRange?.length ?? 0 > 0
+    /// entire field when no range is selected. Ordinary dictation therefore requires
+    /// positive range evidence. An explicit selection command may probe an opaque target,
+    /// while still respecting a range that Accessibility confirms is collapsed.
+    static func shouldProbeClipboardSelection(
+        selectedRange: CFRange?,
+        intent: SelectionCaptureIntent
+    ) -> Bool {
+        switch intent {
+        case .automaticInsertion:
+            selectedRange?.length ?? 0 > 0
+        case .explicitSelectionAction:
+            selectedRange?.length != 0
+        }
     }
 
     func insert(text: String) throws {

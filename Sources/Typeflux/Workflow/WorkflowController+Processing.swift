@@ -2309,6 +2309,11 @@ extension WorkflowController {
         return snapshot.selectedText?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    func selectionContextText(from snapshot: TextSelectionSnapshot) -> String? {
+        guard snapshot.hasAskSelectionContext else { return nil }
+        return snapshot.selectedText?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     func askContextText(
         from snapshot: TextSelectionSnapshot,
         inputContext: InputContextSnapshot?

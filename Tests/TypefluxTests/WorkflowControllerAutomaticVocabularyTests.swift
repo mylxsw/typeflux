@@ -398,7 +398,7 @@ private final class MockWorkflowTextInjector: TextInjector {
         self.snapshots = snapshots
     }
 
-    func getSelectionSnapshot() async -> TextSelectionSnapshot {
+    func selectionSnapshot(for _: SelectionCaptureIntent) async -> TextSelectionSnapshot {
         TextSelectionSnapshot()
     }
 
