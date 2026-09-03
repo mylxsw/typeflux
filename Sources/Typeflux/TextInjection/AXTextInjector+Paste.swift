@@ -261,9 +261,16 @@ extension AXTextInjector {
         }
 
         let pasteboard = NSPasteboard.general
-        // The external replacement branch below is retained only for source compatibility;
-        // the guard above makes it unreachable. Never materialize arbitrary clipboard data.
-        let previousSnapshot = PasteboardSnapshot(items: [])
+        guard let previousSnapshot = capturePasteboardSnapshotWithTimeout(from: pasteboard) else {
+            throw NSError(
+                domain: "AXTextInjector",
+                code: 16,
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "Unable to preserve the current clipboard before paste"
+                ]
+            )
+        }
         let strictFallbackEnabled = settingsStore?.strictEditApplyFallbackEnabled ?? false
         let stubbornPasteFallbackEnabled = settingsStore?.stubbornPasteFallbackEnabled ?? false
         let replacementContext = replaceSelection ? activeSelectionContext() : nil
@@ -292,6 +299,16 @@ extension AXTextInjector {
         )
 
         if !replaceSelection {
+            guard pasteboard.changeCount == previousSnapshot.changeCount else {
+                throw NSError(
+                    domain: "AXTextInjector",
+                    code: 17,
+                    userInfo: [
+                        NSLocalizedDescriptionKey:
+                            "The clipboard changed before paste could begin"
+                    ]
+                )
+            }
             pasteboard.clearContents()
             guard pasteboard.setString(text, forType: .string) else {
                 throw NSError(
@@ -300,7 +317,13 @@ extension AXTextInjector {
                     userInfo: [NSLocalizedDescriptionKey: "Unable to prepare text for paste"]
                 )
             }
+            let injectionChangeCount = pasteboard.changeCount
             dispatchPasteShortcut(method: dispatchMethod, targetPID: targetPID)
+            restorePasteboardAfterPaste(
+                previousSnapshot,
+                capturedChangeCount: injectionChangeCount,
+                delayNanoseconds: Self.unverifiedPasteRestoreDelayNanoseconds
+            )
             NetworkDebugLogger.logMessage("[Text Injection] eager paste dispatched")
             return
         }
@@ -718,16 +741,52 @@ extension AXTextInjector {
         }
     }
 
-    func capturePasteboardSnapshot(from pasteboard: NSPasteboard) -> PasteboardSnapshot {
-        let items = (pasteboard.pasteboardItems ?? []).map { item in
-            let representations = item.types.compactMap {
-                type -> (type: NSPasteboard.PasteboardType, data: Data)? in
-                guard let data = item.data(forType: type) else { return nil }
-                return (type: type, data: data)
-            }
-            return PasteboardItemSnapshot(representations: representations)
+    func capturePasteboardSnapshotWithTimeout(from pasteboard: NSPasteboard) -> PasteboardSnapshot? {
+        let result = LockedPasteboardSnapshotResult()
+        let completed = DispatchSemaphore(value: 0)
+        let pasteboardReference = UncheckedSendableReference(pasteboard)
+        pasteboardSnapshotQueue.async {
+            result.store(Self.capturePasteboardSnapshot(
+                from: pasteboardReference.value,
+                maximumBytes: Self.maximumPasteboardSnapshotBytes
+            ))
+            completed.signal()
         }
-        return PasteboardSnapshot(items: items)
+        guard completed.wait(
+            timeout: .now() + .milliseconds(Self.pasteboardSnapshotTimeoutMilliseconds)
+        ) == .success else {
+            NetworkDebugLogger.logMessage("[Text Injection] pasteboard snapshot timed out")
+            return nil
+        }
+        guard let snapshot = result.load() else {
+            NetworkDebugLogger.logMessage("[Text Injection] pasteboard snapshot exceeded size limit")
+            return nil
+        }
+        return snapshot
+    }
+
+    static func capturePasteboardSnapshot(
+        from pasteboard: NSPasteboard,
+        maximumBytes: Int
+    ) -> PasteboardSnapshot? {
+        guard maximumBytes >= 0 else { return nil }
+        let initialChangeCount = pasteboard.changeCount
+        var totalBytes = 0
+        var capturedItems: [PasteboardItemSnapshot] = []
+
+        for item in pasteboard.pasteboardItems ?? [] {
+            var representations: [(type: NSPasteboard.PasteboardType, data: Data)] = []
+            for type in item.types {
+                guard let data = item.data(forType: type) else { return nil }
+                guard data.count <= maximumBytes - totalBytes else { return nil }
+                totalBytes += data.count
+                representations.append((type: type, data: data))
+            }
+            capturedItems.append(PasteboardItemSnapshot(representations: representations))
+        }
+
+        guard pasteboard.changeCount == initialChangeCount else { return nil }
+        return PasteboardSnapshot(changeCount: initialChangeCount, items: capturedItems)
     }
 
     func restorePasteboard(_ snapshot: PasteboardSnapshot, to pasteboard: NSPasteboard) {
@@ -748,20 +807,23 @@ extension AXTextInjector {
 
     func restorePasteboardAfterPaste(
         _ previousSnapshot: PasteboardSnapshot,
+        to pasteboard: NSPasteboard = .general,
+        capturedChangeCount: Int? = nil,
         delayNanoseconds: UInt64
     ) {
-        let capturedChangeCount = NSPasteboard.general.changeCount
+        let pasteboardReference = UncheckedSendableReference(pasteboard)
+        let expectedChangeCount = capturedChangeCount ?? pasteboard.changeCount
         Task.detached {
             try? await Task.sleep(nanoseconds: delayNanoseconds)
             await MainActor.run {
-                let pasteboard = NSPasteboard.general
+                let pasteboard = pasteboardReference.value
                 let currentChangeCount = pasteboard.changeCount
                 guard Self.shouldRestoreCapturedPasteboard(
-                    capturedChangeCount: capturedChangeCount,
+                    capturedChangeCount: expectedChangeCount,
                     currentChangeCount: currentChangeCount
                 ) else {
                     NetworkDebugLogger.logMessage(
-                        "[Text Injection] pasteboard restore skipped; changeCount moved \(capturedChangeCount) → \(currentChangeCount)"
+                        "[Text Injection] pasteboard restore skipped; changeCount moved \(expectedChangeCount) → \(currentChangeCount)"
                     )
                     return
                 }
