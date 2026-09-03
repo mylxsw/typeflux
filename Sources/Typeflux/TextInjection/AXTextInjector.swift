@@ -303,6 +303,10 @@ final class AXTextInjector: TextInjector {
     static let pasteboardReadTimeoutMilliseconds = 250
     static let pasteboardSnapshotTimeoutMilliseconds = 250
     static let maximumPasteboardSnapshotBytes = 8 * 1_024 * 1_024
+    /// Pasteboard history tools use this convention to exclude temporary payloads.
+    static let transientPasteboardType = NSPasteboard.PasteboardType(
+        "org.nspasteboard.TransientType"
+    )
 
     var storedLatestSelectionContext: SelectionContext?
     var storedLastInjectionMethod: TextInjectionMethod?
@@ -859,17 +863,24 @@ final class AXTextInjector: TextInjector {
                 replacementContextID: replacementContextID
             )
         }
-        logger.debug("ax-api returned nil — trying clipboard-copy")
 
-        if let copiedText = readSelectedTextViaCopy(
+        let clipboardProbeElement = processID.flatMap(focusedElement(for:))
+        let clipboardProbeRange = clipboardProbeElement.flatMap(copySelectedTextRange(from:))
+        let shouldSkipClipboardProbe = Self.shouldSkipClipboardSelectionProbe(
+            selectedRange: clipboardProbeRange
+        )
+        if shouldSkipClipboardProbe {
+            logger.debug("ax-api returned nil — empty selection range, skipping clipboard-copy")
+        } else {
+            logger.debug("ax-api returned nil — trying clipboard-copy")
+        }
+
+        if !shouldSkipClipboardProbe,
+           let copiedText = readSelectedTextViaCopy(
             processID: processID,
             milliseconds: Self.copySelectionTimeoutMilliseconds
         ) {
-            let focusedElement = processID.flatMap { processID -> AXUIElement? in
-                let application = AXUIElementCreateApplication(processID)
-                AXUIElementSetMessagingTimeout(application, Self.replacementAXMessagingTimeout)
-                return lightweightFocusedElement(application: application)
-            }
+            let focusedElement = clipboardProbeElement
             let focusedWindow = processID.flatMap(focusedWindowElement(for:))
             let selectionWindow = focusedElement.flatMap(containingWindow(of:))
             let editability = focusedElement.map(isLikelyEditable(element:)) ?? false
@@ -953,6 +964,10 @@ final class AXTextInjector: TextInjector {
             windowTitle: focused.flatMap(containingWindowTitle(of:)),
             isFocusedTarget: false
         )
+    }
+
+    static func shouldSkipClipboardSelectionProbe(selectedRange: CFRange?) -> Bool {
+        selectedRange?.length == 0
     }
 
     func insert(text: String) throws {
