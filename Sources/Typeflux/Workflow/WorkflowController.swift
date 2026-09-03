@@ -818,7 +818,7 @@ final class WorkflowController {
             guard let self else { return }
 
             let selectionSnapshot: TextSelectionSnapshot = if settingsStore.personaHotkeyAppliesToSelection {
-                await textInjector.getSelectionSnapshot()
+                await textInjector.selectionSnapshot(for: .explicitSelectionAction)
             } else {
                 TextSelectionSnapshot()
             }
@@ -828,7 +828,7 @@ final class WorkflowController {
                     "snapshot: isFocusedTarget=\(selectionSnapshot.isFocusedTarget) isEditable=\(selectionSnapshot.isEditable) hasSelection=\(selectionSnapshot.hasSelection) source=\(selectionSnapshot.source) selectedText=\(selectionSnapshot.selectedText?.prefix(32) ?? "nil")"
                 )
 
-            let selectedText = editingSelectedText(from: selectionSnapshot)
+            let selectedText = selectionContextText(from: selectionSnapshot)
             let frontmostApplicationContext = Self.frontmostApplicationContext()
             let appName = selectionSnapshot.processName ?? frontmostApplicationContext.appName
             let bundleIdentifier = selectionSnapshot.bundleIdentifier ?? frontmostApplicationContext.bundleIdentifier
@@ -1181,7 +1181,7 @@ final class WorkflowController {
                         isFocusedTarget: false
                     )
                 }
-                return await textInjector.getSelectionSnapshot()
+                return await textInjector.selectionSnapshot(for: .automaticInsertion)
             }
             if settingsStore.inputContextOptimizationEnabled, !shouldSkipSelectionCapture {
                 let selectionTask = selectionTask

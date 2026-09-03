@@ -511,6 +511,70 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertFalse(eventRecorder.snapshot().contains("cue-play"))
     }
 
+    func testPersonaPickerUsesExplicitCaptureForOpaqueSelection() async throws {
+        let selectedText = "Selected in Zed"
+        let snapshot = TextSelectionSnapshot(
+            processID: 42,
+            processName: "Zed",
+            bundleIdentifier: "dev.zed.Zed",
+            selectedRange: nil,
+            selectedText: selectedText,
+            source: "clipboard-copy",
+            isEditable: false,
+            role: "AXWindow",
+            windowTitle: "Editor",
+            isFocusedTarget: true,
+            replacementContextID: UUID()
+        )
+        let textInjector = MockProcessingTextInjector(selectionSnapshot: snapshot)
+        let controller = makeWorkflowController(
+            textInjector: textInjector,
+            configureSettings: { $0.personaHotkeyAppliesToSelection = true }
+        )
+
+        controller.handlePersonaPickerRequested()
+        await waitUntil { controller.isPersonaPickerPresented }
+
+        XCTAssertEqual(textInjector.selectionCaptureIntents, [.explicitSelectionAction])
+        guard case let .applySelection(context) = controller.personaPickerMode else {
+            return XCTFail("Expected persona picker to apply a persona to the selected text")
+        }
+        XCTAssertEqual(context.selectedText, selectedText)
+        XCTAssertEqual(
+            controller.personaPickerTitle(for: controller.personaPickerMode),
+            L("overlay.personaPicker.applyTitle")
+        )
+    }
+
+    func testPersonaPickerSeparatesSelectionContextFromReplacementCapability() async {
+        let snapshot = TextSelectionSnapshot(
+            processID: 42,
+            processName: "Preview",
+            bundleIdentifier: "com.apple.Preview",
+            selectedRange: CFRange(location: 2, length: 8),
+            selectedText: "Read only",
+            source: "accessibility",
+            isEditable: false,
+            role: "AXStaticText",
+            windowTitle: "Document",
+            isFocusedTarget: true
+        )
+        let controller = makeWorkflowController(
+            textInjector: MockProcessingTextInjector(selectionSnapshot: snapshot),
+            configureSettings: { $0.personaHotkeyAppliesToSelection = true }
+        )
+
+        controller.handlePersonaPickerRequested()
+        await waitUntil { controller.isPersonaPickerPresented }
+
+        guard case let .applySelection(context) = controller.personaPickerMode else {
+            return XCTFail("Expected read-only selected text to remain valid persona context")
+        }
+        XCTAssertEqual(context.selectedText, "Read only")
+        XCTAssertFalse(context.snapshot.canReplaceSelection)
+        XCTAssertTrue(controller.shouldPresentResultDialog(for: context.snapshot))
+    }
+
     func testHistoryPickerConfirmCopiesAndInsertsSelectedHistory() async {
         let textInjector = MockProcessingTextInjector()
         let clipboard = MockClipboardService()
@@ -1007,6 +1071,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         let audioStartIndex = try XCTUnwrap(events.firstIndex(of: "audio-start"))
         let selectionStartIndex = try XCTUnwrap(events.firstIndex(of: "selection-start"))
         XCTAssertLessThan(audioStartIndex, selectionStartIndex)
+        XCTAssertTrue(events.contains("selection-intent-automatic"))
         XCTAssertFalse(events.contains("cue-play"))
         XCTAssertFalse(events.contains("unexpected-sleep"))
         XCTAssertEqual(eventRecorder.durationSnapshot(), [])
@@ -2350,6 +2415,7 @@ private final class MockProcessingTextInjector: TextInjector {
     private(set) var insertedTexts: [String] = []
     private(set) var replacedTexts: [String] = []
     private(set) var replacementTargets: [TextSelectionSnapshot?] = []
+    private(set) var selectionCaptureIntents: [SelectionCaptureIntent] = []
     private let selectionSnapshot: TextSelectionSnapshot
     private let inputSnapshot: CurrentInputTextSnapshot
     private let insertError: Error?
@@ -2367,8 +2433,9 @@ private final class MockProcessingTextInjector: TextInjector {
         self.replaceError = replaceError
     }
 
-    func getSelectionSnapshot() async -> TextSelectionSnapshot {
-        selectionSnapshot
+    func selectionSnapshot(for intent: SelectionCaptureIntent) async -> TextSelectionSnapshot {
+        selectionCaptureIntents.append(intent)
+        return selectionSnapshot
     }
 
     func currentInputTextSnapshot() async -> CurrentInputTextSnapshot {
@@ -2409,7 +2476,13 @@ private final class SlowSelectionTextInjector: TextInjector {
         self.eventRecorder = eventRecorder
     }
 
-    func getSelectionSnapshot() async -> TextSelectionSnapshot {
+    func selectionSnapshot(for intent: SelectionCaptureIntent) async -> TextSelectionSnapshot {
+        switch intent {
+        case .automaticInsertion:
+            eventRecorder.append("selection-intent-automatic")
+        case .explicitSelectionAction:
+            eventRecorder.append("selection-intent-explicit")
+        }
         eventRecorder.append("selection-start")
         try? await Task.sleep(for: .seconds(30))
         return TextSelectionSnapshot()

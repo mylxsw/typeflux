@@ -1730,19 +1730,37 @@ final class AXTextInjectorTests: XCTestCase {
 
     func testClipboardSelectionProbeRejectsCollapsedSelection() {
         XCTAssertFalse(AXTextInjector.shouldProbeClipboardSelection(
-            selectedRange: CFRange(location: 12, length: 0)
+            selectedRange: CFRange(location: 12, length: 0),
+            intent: .automaticInsertion
+        ))
+        XCTAssertFalse(AXTextInjector.shouldProbeClipboardSelection(
+            selectedRange: CFRange(location: 12, length: 0),
+            intent: .explicitSelectionAction
         ))
     }
 
-    func testClipboardSelectionProbeRejectsOpaqueTargetWithoutRange() {
+    func testAutomaticClipboardSelectionProbeRejectsOpaqueTargetWithoutRange() {
         XCTAssertFalse(AXTextInjector.shouldProbeClipboardSelection(
-            selectedRange: nil
+            selectedRange: nil,
+            intent: .automaticInsertion
+        ))
+    }
+
+    func testExplicitClipboardSelectionProbeAllowsOpaqueTargetWithoutRange() {
+        XCTAssertTrue(AXTextInjector.shouldProbeClipboardSelection(
+            selectedRange: nil,
+            intent: .explicitSelectionAction
         ))
     }
 
     func testClipboardSelectionProbeAllowsExplicitNonEmptyRange() {
         XCTAssertTrue(AXTextInjector.shouldProbeClipboardSelection(
-            selectedRange: CFRange(location: 4, length: 8)
+            selectedRange: CFRange(location: 4, length: 8),
+            intent: .automaticInsertion
+        ))
+        XCTAssertTrue(AXTextInjector.shouldProbeClipboardSelection(
+            selectedRange: CFRange(location: 4, length: 8),
+            intent: .explicitSelectionAction
         ))
     }
 

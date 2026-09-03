@@ -1,5 +1,15 @@
 import Foundation
 
+enum SelectionCaptureIntent: Equatable {
+    /// Selection detection is incidental to ordinary dictation. Ambiguous clipboard
+    /// responses must not turn insertion into replacement.
+    case automaticInsertion
+
+    /// The user explicitly invoked an action that operates on selected text. Apps
+    /// with opaque accessibility trees may use the transactional clipboard fallback.
+    case explicitSelectionAction
+}
+
 struct TextSelectionSnapshot {
     var processID: pid_t?
     var processName: String?
@@ -53,7 +63,7 @@ struct CurrentInputTextSnapshot {
 
 protocol TextInjector {
     var lastInjectionMethod: TextInjectionMethod? { get }
-    func getSelectionSnapshot() async -> TextSelectionSnapshot
+    func selectionSnapshot(for intent: SelectionCaptureIntent) async -> TextSelectionSnapshot
     func currentInputTextSnapshot() async -> CurrentInputTextSnapshot
     func currentInputText() async -> String?
     func insert(text: String) throws
