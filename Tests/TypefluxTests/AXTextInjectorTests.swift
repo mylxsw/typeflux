@@ -1728,6 +1728,175 @@ final class AXTextInjectorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testCapturePasteboardSnapshotPreservesAllRepresentations() throws {
+        let pasteboard = NSPasteboard.withUniqueName()
+        let item = NSPasteboardItem()
+        item.setString("original", forType: .string)
+        item.setData(Data([0x01, 0x02, 0x03]), forType: .init("dev.typeflux.test-data"))
+        pasteboard.writeObjects([item])
+
+        let snapshot = try XCTUnwrap(AXTextInjector.capturePasteboardSnapshot(
+            from: pasteboard,
+            maximumBytes: 1_024
+        ))
+
+        XCTAssertEqual(snapshot.items.count, 1)
+        XCTAssertEqual(snapshot.changeCount, pasteboard.changeCount)
+        XCTAssertEqual(snapshot.items[0].representations.count, 2)
+        XCTAssertEqual(
+            snapshot.items[0].representations.first { $0.type == .string }?.data,
+            "original".data(using: .utf8)
+        )
+        XCTAssertEqual(
+            snapshot.items[0].representations.first {
+                $0.type == .init("dev.typeflux.test-data")
+            }?.data,
+            Data([0x01, 0x02, 0x03])
+        )
+    }
+
+    func testCapturePasteboardSnapshotPreservesEmptyClipboard() throws {
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.clearContents()
+
+        let snapshot = try XCTUnwrap(AXTextInjector.capturePasteboardSnapshot(
+            from: pasteboard,
+            maximumBytes: 1_024
+        ))
+
+        XCTAssertTrue(snapshot.items.isEmpty)
+    }
+
+    func testCapturePasteboardSnapshotRejectsOversizedClipboard() {
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.setData(
+            Data(repeating: 0x01, count: 5),
+            forType: .init("dev.typeflux.oversized-test-data")
+        )
+
+        XCTAssertNil(AXTextInjector.capturePasteboardSnapshot(
+            from: pasteboard,
+            maximumBytes: 4
+        ))
+    }
+
+    func testCapturePasteboardSnapshotRejectsNegativeSizeLimit() {
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.setString("original", forType: .string)
+
+        XCTAssertNil(AXTextInjector.capturePasteboardSnapshot(
+            from: pasteboard,
+            maximumBytes: -1
+        ))
+    }
+
+    func testCapturePasteboardSnapshotWithTimeoutReturnsAvailableSnapshot() throws {
+        let injector = AXTextInjector()
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.setString("original", forType: .string)
+
+        let snapshot = try XCTUnwrap(injector.capturePasteboardSnapshotWithTimeout(
+            from: pasteboard
+        ))
+
+        XCTAssertEqual(snapshot.changeCount, pasteboard.changeCount)
+        XCTAssertEqual(snapshot.items.count, 1)
+    }
+
+    func testCapturePasteboardSnapshotWithTimeoutRejectsBlockingProvider() {
+        let injector = AXTextInjector()
+        let pasteboard = NSPasteboard.withUniqueName()
+        let provider = SlowPasteboardDataProvider(delay: 0.75, text: "original")
+        let item = NSPasteboardItem()
+        item.setDataProvider(provider, forTypes: [.string])
+        pasteboard.writeObjects([item])
+
+        let startedAt = Date()
+        let snapshot = injector.capturePasteboardSnapshotWithTimeout(from: pasteboard)
+
+        XCTAssertNil(snapshot)
+        XCTAssertLessThan(Date().timeIntervalSince(startedAt), 0.6)
+    }
+
+    func testRestorePasteboardRestoresSnapshotAndClearsTemporaryText() throws {
+        let injector = AXTextInjector()
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.setString("original", forType: .string)
+        let snapshot = try XCTUnwrap(AXTextInjector.capturePasteboardSnapshot(
+            from: pasteboard,
+            maximumBytes: 1_024
+        ))
+        pasteboard.clearContents()
+        pasteboard.setString("transcription", forType: .string)
+
+        injector.restorePasteboard(snapshot, to: pasteboard)
+
+        XCTAssertEqual(pasteboard.string(forType: .string), "original")
+    }
+
+    func testRestorePasteboardRestoresEmptySnapshot() throws {
+        let injector = AXTextInjector()
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.clearContents()
+        let snapshot = try XCTUnwrap(AXTextInjector.capturePasteboardSnapshot(
+            from: pasteboard,
+            maximumBytes: 1_024
+        ))
+        pasteboard.setString("transcription", forType: .string)
+
+        injector.restorePasteboard(snapshot, to: pasteboard)
+
+        XCTAssertTrue(pasteboard.pasteboardItems?.isEmpty ?? true)
+    }
+
+    func testRestorePasteboardAfterPasteRestoresWhenClipboardIsUnchanged() async throws {
+        let injector = AXTextInjector()
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.setString("original", forType: .string)
+        let snapshot = try XCTUnwrap(AXTextInjector.capturePasteboardSnapshot(
+            from: pasteboard,
+            maximumBytes: 1_024
+        ))
+        pasteboard.clearContents()
+        pasteboard.setString("transcription", forType: .string)
+        let injectionChangeCount = pasteboard.changeCount
+
+        injector.restorePasteboardAfterPaste(
+            snapshot,
+            to: pasteboard,
+            capturedChangeCount: injectionChangeCount,
+            delayNanoseconds: 1_000_000
+        )
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(pasteboard.string(forType: .string), "original")
+    }
+
+    func testRestorePasteboardAfterPasteKeepsNewUserClipboard() async throws {
+        let injector = AXTextInjector()
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.setString("original", forType: .string)
+        let snapshot = try XCTUnwrap(AXTextInjector.capturePasteboardSnapshot(
+            from: pasteboard,
+            maximumBytes: 1_024
+        ))
+        pasteboard.clearContents()
+        pasteboard.setString("transcription", forType: .string)
+        let injectionChangeCount = pasteboard.changeCount
+
+        injector.restorePasteboardAfterPaste(
+            snapshot,
+            to: pasteboard,
+            capturedChangeCount: injectionChangeCount,
+            delayNanoseconds: 25_000_000
+        )
+        pasteboard.clearContents()
+        pasteboard.setString("new user copy", forType: .string)
+        try await Task.sleep(nanoseconds: 75_000_000)
+
+        XCTAssertEqual(pasteboard.string(forType: .string), "new user copy")
+    }
+
     func testUnverifiedPasteRestoreDelayIsLongerThanVerifiedDelay() {
         // Slow clipboard consumers (iTerm2, Terminal, Warp) may not read the
         // pasteboard until well after Cmd+V is dispatched. When we cannot
@@ -1794,4 +1963,25 @@ private final class TestMonotonicClock: @unchecked Sendable {
         now = value
         lock.unlock()
     }
+}
+
+private final class SlowPasteboardDataProvider: NSObject, NSPasteboardItemDataProvider {
+    private let delay: TimeInterval
+    private let text: String
+
+    init(delay: TimeInterval, text: String) {
+        self.delay = delay
+        self.text = text
+    }
+
+    func pasteboard(
+        _: NSPasteboard?,
+        item: NSPasteboardItem,
+        provideDataForType type: NSPasteboard.PasteboardType
+    ) {
+        Thread.sleep(forTimeInterval: delay)
+        item.setString(text, forType: type)
+    }
+
+    func pasteboardFinishedWithDataProvider(_: NSPasteboard) {}
 }

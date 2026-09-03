@@ -76,6 +76,23 @@ final class LockedPasteboardStringResult: @unchecked Sendable {
     }
 }
 
+final class LockedPasteboardSnapshotResult: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: AXTextInjector.PasteboardSnapshot?
+
+    func store(_ value: AXTextInjector.PasteboardSnapshot?) {
+        lock.lock()
+        self.value = value
+        lock.unlock()
+    }
+
+    func load() -> AXTextInjector.PasteboardSnapshot? {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
+    }
+}
+
 final class UncheckedSendableReference<Value>: @unchecked Sendable {
     let value: Value
 
@@ -174,6 +191,7 @@ final class AXTextInjector: TextInjector {
     }
 
     struct PasteboardSnapshot {
+        let changeCount: Int
         let items: [PasteboardItemSnapshot]
     }
 
@@ -283,6 +301,8 @@ final class AXTextInjector: TextInjector {
     static let focusedDescendantSearchDepth = 10
     static let replacementAXMessagingTimeout: Float = 0.25
     static let pasteboardReadTimeoutMilliseconds = 250
+    static let pasteboardSnapshotTimeoutMilliseconds = 250
+    static let maximumPasteboardSnapshotBytes = 8 * 1_024 * 1_024
 
     var storedLatestSelectionContext: SelectionContext?
     var storedLastInjectionMethod: TextInjectionMethod?
@@ -320,6 +340,10 @@ final class AXTextInjector: TextInjector {
     )
     let pasteboardReadQueue = DispatchQueue(
         label: "ai.gulu.app.typeflux.pasteboard-read",
+        qos: .userInitiated
+    )
+    let pasteboardSnapshotQueue = DispatchQueue(
+        label: "ai.gulu.app.typeflux.pasteboard-snapshot",
         qos: .userInitiated
     )
 

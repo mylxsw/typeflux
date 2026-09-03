@@ -558,6 +558,20 @@ extension AXTextInjector {
             // a rejected post-write validation would leave a failed transaction's
             // result on the user's clipboard.
             let pasteboard = NSPasteboard.general
+            guard let previousSnapshot = injector.value.capturePasteboardSnapshotWithTimeout(
+                from: pasteboard
+            ) else {
+                throw injector.value.selectionReplacementError(
+                    code: 33,
+                    description: "Unable to preserve the current clipboard before replacement"
+                )
+            }
+            guard pasteboard.changeCount == previousSnapshot.changeCount else {
+                throw injector.value.selectionReplacementError(
+                    code: 34,
+                    description: "The clipboard changed before replacement could begin"
+                )
+            }
             pasteboard.clearContents()
             guard pasteboard.setString(text, forType: .string) else {
                 throw injector.value.selectionReplacementError(
@@ -565,8 +579,14 @@ extension AXTextInjector {
                     description: "Unable to prepare the replacement text"
                 )
             }
+            let injectionChangeCount = pasteboard.changeCount
             keyDown.postToPid(targetProcessID)
             keyUp.postToPid(targetProcessID)
+            injector.value.restorePasteboardAfterPaste(
+                previousSnapshot,
+                capturedChangeCount: injectionChangeCount,
+                delayNanoseconds: Self.unverifiedPasteRestoreDelayNanoseconds
+            )
             NetworkDebugLogger.logMessage(
                 "[Text Injection] selection transaction dispatched via eager paste"
             )
