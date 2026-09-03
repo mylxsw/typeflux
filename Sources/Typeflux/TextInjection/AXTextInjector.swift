@@ -866,16 +866,17 @@ final class AXTextInjector: TextInjector {
 
         let clipboardProbeElement = processID.flatMap(focusedElement(for:))
         let clipboardProbeRange = clipboardProbeElement.flatMap(copySelectedTextRange(from:))
-        let shouldSkipClipboardProbe = Self.shouldSkipClipboardSelectionProbe(
+        let clipboardProbeIsEditable = clipboardProbeElement.map(isLikelyEditable(element:)) ?? false
+        let shouldProbeClipboardSelection = Self.shouldProbeClipboardSelection(
             selectedRange: clipboardProbeRange
         )
-        if shouldSkipClipboardProbe {
-            logger.debug("ax-api returned nil — empty selection range, skipping clipboard-copy")
-        } else {
+        if shouldProbeClipboardSelection {
             logger.debug("ax-api returned nil — trying clipboard-copy")
+        } else {
+            logger.debug("ax-api returned nil — no reliable selection target, skipping clipboard-copy")
         }
 
-        if !shouldSkipClipboardProbe,
+        if shouldProbeClipboardSelection,
            let copiedText = readSelectedTextViaCopy(
             processID: processID,
             milliseconds: Self.copySelectionTimeoutMilliseconds
@@ -883,7 +884,7 @@ final class AXTextInjector: TextInjector {
             let focusedElement = clipboardProbeElement
             let focusedWindow = processID.flatMap(focusedWindowElement(for:))
             let selectionWindow = focusedElement.flatMap(containingWindow(of:))
-            let editability = focusedElement.map(isLikelyEditable(element:)) ?? false
+            let editability = clipboardProbeIsEditable
             // Clipboard copy succeeded → text IS selected in the frontmost app's process.
             // When selectionWindow is nil (e.g. Electron/Chromium AX hierarchy doesn't expose
             // a traversable parent chain to the window), we still trust isFocusedTarget = true
@@ -966,8 +967,11 @@ final class AXTextInjector: TextInjector {
         )
     }
 
-    static func shouldSkipClipboardSelectionProbe(selectedRange: CFRange?) -> Bool {
-        selectedRange?.length == 0
+    /// A copy response alone is not proof of a selection: some applications copy the
+    /// entire field when no range is selected. Require positive range evidence before
+    /// using Cmd+C as a fallback for reading the selected text.
+    static func shouldProbeClipboardSelection(selectedRange: CFRange?) -> Bool {
+        selectedRange?.length ?? 0 > 0
     }
 
     func insert(text: String) throws {
