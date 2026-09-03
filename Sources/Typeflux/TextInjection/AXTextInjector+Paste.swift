@@ -664,15 +664,58 @@ extension AXTextInjector {
     }
 
     func readSelectedTextViaCopy(processID: pid_t?, milliseconds: Int) -> String? {
-        let pasteboard = NSPasteboard.general
-        let previousChangeCount = pasteboard.changeCount
+        readSelectedTextViaCopy(
+            milliseconds: milliseconds,
+            pasteboard: .general,
+            sendCopy: { sendCopyShortcut(to: processID) }
+        )
+    }
 
-        sendCopyShortcut(to: processID)
+    func readSelectedTextViaCopy(
+        milliseconds: Int,
+        pasteboard: NSPasteboard,
+        sendCopy: () -> Void
+    ) -> String? {
+        guard let previousSnapshot = capturePasteboardSnapshotWithTimeout(from: pasteboard) else {
+            NetworkDebugLogger.logMessage(
+                "[Text Selection] clipboard-copy skipped because the clipboard could not be preserved"
+            )
+            return nil
+        }
+        guard pasteboard.changeCount == previousSnapshot.changeCount else {
+            NetworkDebugLogger.logMessage(
+                "[Text Selection] clipboard-copy skipped because the clipboard changed before probing"
+            )
+            return nil
+        }
+
+        let probeType = NSPasteboard.PasteboardType("ai.gulu.app.typeflux.selection-probe")
+        pasteboard.clearContents()
+        guard pasteboard.setData(Data(UUID().uuidString.utf8), forType: probeType) else {
+            restorePasteboardIfUnchanged(
+                previousSnapshot,
+                to: pasteboard,
+                expectedChangeCount: pasteboard.changeCount
+            )
+            return nil
+        }
+
+        var transactionChangeCount = pasteboard.changeCount
+        defer {
+            restorePasteboardIfUnchanged(
+                previousSnapshot,
+                to: pasteboard,
+                expectedChangeCount: transactionChangeCount
+            )
+        }
+
+        sendCopy()
 
         let timeout = Date().addingTimeInterval(Double(milliseconds) / 1000.0)
         while Date() < timeout {
-            if pasteboard.changeCount != previousChangeCount {
-                let copiedText = readPasteboardStringWithTimeout()
+            if pasteboard.changeCount != transactionChangeCount {
+                transactionChangeCount = pasteboard.changeCount
+                let copiedText = readPasteboardStringWithTimeout(from: pasteboard)
                 let trimmed = copiedText?.trimmingCharacters(in: .whitespacesAndNewlines)
                 return trimmed?.isEmpty == false ? trimmed : nil
             }
@@ -682,14 +725,29 @@ extension AXTextInjector {
         return nil
     }
 
+    func restorePasteboardIfUnchanged(
+        _ snapshot: PasteboardSnapshot,
+        to pasteboard: NSPasteboard,
+        expectedChangeCount: Int
+    ) {
+        guard pasteboard.changeCount == expectedChangeCount else {
+            NetworkDebugLogger.logMessage(
+                "[Text Selection] clipboard restore skipped because it changed after probing"
+            )
+            return
+        }
+        restorePasteboard(snapshot, to: pasteboard)
+    }
+
     /// Pasteboard owners can provide data lazily and may block indefinitely. Read on a
     /// dedicated serial queue so a broken provider cannot freeze Typeflux's main thread.
     /// Once that queue is wedged, later reads still time out without creating more workers.
-    func readPasteboardStringWithTimeout() -> String? {
+    func readPasteboardStringWithTimeout(from pasteboard: NSPasteboard) -> String? {
         let result = LockedPasteboardStringResult()
         let completed = DispatchSemaphore(value: 0)
+        let pasteboardReference = UncheckedSendableReference(pasteboard)
         pasteboardReadQueue.async {
-            result.store(NSPasteboard.general.string(forType: .string))
+            result.store(pasteboardReference.value.string(forType: .string))
             completed.signal()
         }
         guard completed.wait(
