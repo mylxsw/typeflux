@@ -443,17 +443,17 @@ final class STTRouterTests: XCTestCase {
         XCTAssertEqual(diagnosticsRecorder.snapshot()?.selectionReason, .cloudWithinPriorityWindow)
     }
 
-    func testTypefluxOfficialCloudPriorityWindowIsLowLatencyGracePeriod() {
-        XCTAssertEqual(STTRouter.typefluxOfficialCloudPriorityWindowSeconds, 0.25)
+    func testTypefluxOfficialCloudPriorityWindowIsOneSecondQualityGracePeriod() {
+        XCTAssertEqual(STTRouter.typefluxOfficialCloudPriorityWindowSeconds, 1)
     }
 
     func testTypefluxOfficialCloudPriorityWindowDoesNotFollowVoiceProcessingTimeout() {
         let router = makeRouter(typefluxOfficialCloudPriorityWindow: nil)
-        XCTAssertEqual(router.typefluxOfficialCloudPriorityWindow, 0.25)
+        XCTAssertEqual(router.typefluxOfficialCloudPriorityWindow, 1)
 
         settings.voiceProcessingTimeout = .thirtySeconds
 
-        XCTAssertEqual(router.typefluxOfficialCloudPriorityWindow, 0.25)
+        XCTAssertEqual(router.typefluxOfficialCloudPriorityWindow, 1)
     }
 
     func testTypefluxOfficialUsesReadyLocalResultWhenPriorityWindowExpires() async throws {

@@ -99,7 +99,7 @@ extension TypefluxCloudScenarioAwareTranscriber {
 }
 
 final class STTRouter {
-    static let typefluxOfficialCloudPriorityWindowSeconds: TimeInterval = 0.25
+    static let typefluxOfficialCloudPriorityWindowSeconds: TimeInterval = 1
 
     let settingsStore: SettingsStore
     let whisper: Transcriber
