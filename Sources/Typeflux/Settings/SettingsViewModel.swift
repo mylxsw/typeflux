@@ -179,7 +179,6 @@ final class StudioViewModel: ObservableObject {
         appLanguage == .traditionalChinese
     }
 
-    @Published var stubbornPasteFallbackEnabled: Bool
     @Published var agentFrameworkEnabled: Bool
     @Published var agentEnabled: Bool
     @Published var agentStepLoggingEnabled: Bool
@@ -379,7 +378,6 @@ final class StudioViewModel: ObservableObject {
         textTransformationRule = settingsStore.outputOpenCCConfig
         autoUpdateEnabled = settingsStore.autoUpdateEnabled
         analyticsSharingEnabled = settingsStore.analyticsSharingEnabled
-        stubbornPasteFallbackEnabled = settingsStore.stubbornPasteFallbackEnabled
         agentFrameworkEnabled = settingsStore.agentFrameworkEnabled
         agentEnabled = settingsStore.agentEnabled
         agentStepLoggingEnabled = settingsStore.agentStepLoggingEnabled
@@ -1530,13 +1528,6 @@ final class StudioViewModel: ObservableObject {
         guard isTextTransformationAvailable else { return }
         textTransformationRule = value
         settingsStore.outputOpenCCConfig = value
-    }
-
-    // MARK: - Text Injection
-
-    func setStubbornPasteFallbackEnabled(_ value: Bool) {
-        stubbornPasteFallbackEnabled = value
-        settingsStore.stubbornPasteFallbackEnabled = value
     }
 
     // MARK: - Agent Framework

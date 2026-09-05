@@ -72,30 +72,6 @@ extension AXTextInjector {
     }
 
     @discardableResult
-    func setSelectedTextRange(_ range: CFRange, on element: AXUIElement) -> Bool {
-        AXUIElementSetMessagingTimeout(element, Self.replacementAXMessagingTimeout)
-        var mutableRange = range
-        guard let axRange = AXValueCreate(.cfRange, &mutableRange) else { return false }
-        let result = AXUIElementSetAttributeValue(
-            element,
-            kAXSelectedTextRangeAttribute as CFString,
-            axRange
-        )
-        return result == .success
-    }
-
-    @discardableResult
-    func setFocused(_ focused: Bool, on element: AXUIElement) -> Bool {
-        AXUIElementSetMessagingTimeout(element, Self.replacementAXMessagingTimeout)
-        let value: CFBoolean = focused ? true as CFBoolean : false as CFBoolean
-        let result = AXUIElementSetAttributeValue(
-            element,
-            kAXFocusedAttribute as CFString,
-            value
-        )
-        return result == .success
-    }
-
     func frontmostProcessID() -> pid_t? {
         NSWorkspace.shared.frontmostApplication?.processIdentifier
     }

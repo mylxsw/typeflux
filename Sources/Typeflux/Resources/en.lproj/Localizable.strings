@@ -1365,3 +1365,7 @@
 "settings.personas.summary.typeflux" = "Organize speech while preserving meaning";
 "settings.personas.summary.translator" = "Translate spoken input into English";
 "settings.personas.customPersona" = "Custom persona";
+
+"workflow.result.unconfirmedTitle" = "Insertion could not be confirmed — copy the result if needed";
+
+"workflow.apply.dispatchedUnverified" = "Sent to the current app; confirmation unavailable. Result retained in history.";

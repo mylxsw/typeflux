@@ -10,55 +10,6 @@ enum TextTargetCapability: Equatable {
     case opaque
 }
 
-final class PasteboardDeliveryProbe: NSObject, NSPasteboardItemDataProvider, @unchecked Sendable {
-    private let text: String
-    private let now: @Sendable () -> TimeInterval
-    private let lock = NSLock()
-    private var dispatchedAt: TimeInterval?
-    private var requestTimes: [TimeInterval] = []
-
-    init(
-        text: String,
-        now: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
-    ) {
-        self.text = text
-        self.now = now
-    }
-
-    func markDispatched() {
-        lock.lock()
-        dispatchedAt = now()
-        lock.unlock()
-    }
-
-    var wasRequestedAfterDispatch: Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        guard let dispatchedAt else { return false }
-        return requestTimes.contains { $0 >= dispatchedAt }
-    }
-
-    var wasRequestedBeforeDispatch: Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        guard let dispatchedAt else { return !requestTimes.isEmpty }
-        return requestTimes.contains { $0 < dispatchedAt }
-    }
-
-    func pasteboard(
-        _: NSPasteboard?,
-        item: NSPasteboardItem,
-        provideDataForType type: NSPasteboard.PasteboardType
-    ) {
-        lock.lock()
-        requestTimes.append(now())
-        lock.unlock()
-        item.setString(text, forType: type)
-    }
-
-    func pasteboardFinishedWithDataProvider(_: NSPasteboard) {}
-}
-
 final class LockedPasteboardStringResult: @unchecked Sendable {
     private let lock = NSLock()
     private var value: String?
@@ -184,7 +135,6 @@ final class AXTextInjector: TextInjector {
     }
 
     let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "AXTextInjector")
-    let settingsStore: SettingsStore?
     var lastApplicationStateFailureReason: String?
     struct PasteboardItemSnapshot {
         let representations: [(type: NSPasteboard.PasteboardType, data: Data)]
@@ -275,20 +225,6 @@ final class AXTextInjector: TextInjector {
     }
 
     nonisolated(unsafe) static var didRequestAccessibility = false
-    static let legacyPasteRestoreDelayNanoseconds: UInt64 = 150_000_000
-    static let verifiedPasteRestoreDelayNanoseconds: UInt64 = 150_000_000
-    /// Slow clipboard consumers (iTerm2 / Terminal.app / Warp bracketed paste,
-    /// "warn before pasting" dialogs, paste-slowly modes) may not read the
-    /// pasteboard until well after Cmd+V is dispatched. When we have no way to
-    /// verify the paste landed (plain insert into non-AX-readable targets),
-    /// keep our transcription on the pasteboard long enough that the consumer
-    /// reads it before we restore the user's previous clipboard content.
-    static let unverifiedPasteRestoreDelayNanoseconds: UInt64 = 1_500_000_000
-    static let pasteVerificationPollIntervalMicroseconds: useconds_t = 120_000
-    static let pasteVerificationAttempts = 4
-    static let axWriteVerificationPollIntervalMicroseconds: useconds_t = 120_000
-    static let axWriteVerificationAttempts = 4
-    static let focusRestoreDelayMicroseconds: useconds_t = 250_000
     static let copySelectionTimeoutMilliseconds = 180
     static let documentContextMaxBytes = 2_000_000
     static let applicationStateContextMaxBytes = 2_000_000
@@ -310,7 +246,6 @@ final class AXTextInjector: TextInjector {
     )
 
     var storedLatestSelectionContext: SelectionContext?
-    var storedLastInjectionMethod: TextInjectionMethod?
     let stateLock = NSLock()
     var latestSelectionContext: SelectionContext? {
         get {
@@ -324,19 +259,19 @@ final class AXTextInjector: TextInjector {
             stateLock.unlock()
         }
     }
-    var lastInjectionMethod: TextInjectionMethod? {
-        get {
-            stateLock.lock()
-            defer { stateLock.unlock() }
-            return storedLastInjectionMethod
+    @MainActor var deliveryInProgress = false
+
+    @MainActor
+    func acquireTextOperation() async throws {
+        let deadline = ProcessInfo.processInfo.systemUptime + 3
+        while deliveryInProgress {
+            try Task.checkCancellation()
+            guard ProcessInfo.processInfo.systemUptime < deadline else { throw TextDeliveryError.busy }
+            try await Task.sleep(for: .milliseconds(20))
         }
-        set {
-            stateLock.lock()
-            storedLastInjectionMethod = newValue
-            stateLock.unlock()
-        }
+        try Task.checkCancellation()
+        deliveryInProgress = true
     }
-    var activePasteboardDeliveryProbe: PasteboardDeliveryProbe?
     let selectionContextLock = NSLock()
     var selectionContexts: [UUID: SelectionContext] = [:]
     let selectionReplacementQueue = DispatchQueue(
@@ -419,7 +354,8 @@ final class AXTextInjector: TextInjector {
             isEditable: target.textView.isEditable,
             role: "NSTextView",
             windowTitle: target.window?.title,
-            isFocusedTarget: true
+            isFocusedTarget: true,
+            nativeTarget: NativeTextSelectionTarget(textView: target.textView, window: target.window)
         )
     }
 
@@ -438,27 +374,6 @@ final class AXTextInjector: TextInjector {
             documentURL: nil,
             textSource: "typeflux-native"
         )
-    }
-
-    func insertIntoTypefluxNativeTextTarget(_ text: String, replaceSelection: Bool) throws -> Bool {
-        guard let target = typefluxNativeTextTarget() else { return false }
-        guard target.textView.isEditable else {
-            throw NSError(
-                domain: "AXTextInjector",
-                code: 11,
-                userInfo: [NSLocalizedDescriptionKey: "Focused Typeflux text target is not editable"]
-            )
-        }
-
-        let selectedRange = target.textView.selectedRange()
-        let replacementRange = replaceSelection
-            ? selectedRange
-            : NSRange(location: selectedRange.location, length: selectedRange.length)
-        target.textView.insertText(text, replacementRange: replacementRange)
-        NetworkDebugLogger.logMessage(
-            "[Text Injection] completed via Typeflux native text target"
-        )
-        return true
     }
 
     func typefluxOwnedSelectionSnapshot(source: String) -> TextSelectionSnapshot {
@@ -488,55 +403,6 @@ final class AXTextInjector: TextInjector {
             isFocusedTarget: false,
             failureReason: failureReason
         )
-    }
-
-    enum PasteVerificationResult: Equatable {
-        case success
-        case failure(String)
-        case indeterminate
-    }
-
-    static func finalPasteVerification(
-        lastReadback: PasteVerificationResult,
-        payloadRequestedAfterDispatch: Bool,
-        payloadRequestedBeforeDispatch: Bool,
-        targetStableThroughout: Bool
-    ) -> PasteVerificationResult {
-        guard targetStableThroughout else {
-            return .failure("focused-target-changed")
-        }
-
-        switch lastReadback {
-        case .success:
-            return .success
-        case .failure:
-            return lastReadback
-        case .indeterminate:
-            break
-        }
-
-        if payloadRequestedAfterDispatch {
-            return .success
-        }
-
-        return .failure(
-            payloadRequestedBeforeDispatch
-                ? "pasteboard-request-contaminated-before-dispatch"
-                : "pasteboard-payload-not-requested"
-        )
-    }
-
-    static func successfulAXWriteIsCommitted(verification: PasteVerificationResult) -> Bool {
-        switch verification {
-        case .success, .indeterminate:
-            return true
-        case let .failure(reason):
-            // AX reported that the write itself succeeded synchronously. A later focus change
-            // only makes read-back unavailable; retrying with Cmd+V could duplicate the text in
-            // a new target. Only a stable, readable target that stayed unchanged contradicts
-            // the AX acknowledgement strongly enough to justify a paste fallback.
-            return reason != "input-text-unchanged"
-        }
     }
 
     static func targetCapability(
@@ -571,99 +437,8 @@ final class AXTextInjector: TextInjector {
         guard range.location >= 0, range.length >= 0 else { return nil }
         let nsRange = NSRange(location: range.location, length: range.length)
         let source = source as NSString
-        guard NSMaxRange(nsRange) <= source.length else { return nil }
+        guard range.location <= source.length, range.length <= source.length - range.location else { return nil }
         return source.replacingCharacters(in: nsRange, with: replacement)
-    }
-
-    enum PasteDispatchMethod: Equatable {
-        case postToPid
-        case hidTap
-    }
-
-    /// When enabled, we re-activate the target process if it is not currently the
-    /// frontmost app, so that panel-style windows (Alfred, Raycast, Warp/iTerm2
-    /// hotkey windows, ...) remain key and the synthesized Cmd+V reaches the
-    /// correct window.
-    static func shouldActivateTargetBeforePaste(
-        flagEnabled: Bool,
-        targetProcessID: pid_t?,
-        frontmostProcessID: pid_t?
-    ) -> Bool {
-        guard flagEnabled, let target = targetProcessID else { return false }
-        return target != frontmostProcessID
-    }
-
-    /// Chromium-based apps (Arc, Chrome, Edge, Electron) reset their keyboard
-    /// focus to the window's default control (the URL bar) when they receive
-    /// an `activate` call while already frontmost. Skipping the redundant
-    /// activation keeps the original editable focus intact so the subsequent
-    /// AX write / paste lands in the correct field. Apps that are *not*
-    /// frontmost still need activation so their window accepts our keystrokes.
-    static func shouldReactivateProcessForSelectionRestore(
-        targetProcessID: pid_t?,
-        frontmostProcessID: pid_t?
-    ) -> Bool {
-        guard let target = targetProcessID else { return false }
-        return target != frontmostProcessID
-    }
-
-    /// When the stubborn-paste flag is on, route Cmd+V through the HID tap so the
-    /// event behaves like a real physical keystroke and survives non-standard
-    /// event pipelines (Electron, NSPanel hotkey windows, etc.). Otherwise keep
-    /// the process-scoped delivery that has been the default.
-    static func pasteEventDispatchMethod(
-        flagEnabled: Bool,
-        targetProcessID: pid_t?
-    ) -> PasteDispatchMethod {
-        if flagEnabled {
-            return .hidTap
-        }
-        return targetProcessID != nil ? .postToPid : .hidTap
-    }
-
-    /// Strict paste verification is scoped to edit-apply (replace selection)
-    /// flows, where a silently failed replacement must be surfaced so the user
-    /// can copy the result manually.
-    static func shouldPerformStrictPasteVerification(
-        replaceSelection: Bool,
-        strictFallbackEnabled: Bool
-    ) -> Bool {
-        strictFallbackEnabled && replaceSelection
-    }
-
-    /// Plain dictation uses the eager paste fast path and must never enter the
-    /// synchronous verification loop. Strict verification remains scoped to
-    /// selection replacement, where the original text is available for recovery.
-    static func shouldAttemptPasteVerification(
-        replaceSelection: Bool,
-        strictFallbackEnabled: Bool
-    ) -> Bool {
-        shouldPerformStrictPasteVerification(
-            replaceSelection: replaceSelection,
-            strictFallbackEnabled: strictFallbackEnabled
-        )
-    }
-
-    static func shouldAllowClipboardSelectionReplacementWithoutAXBaseline(
-        replaceSelection: Bool,
-        selectionSource: String?,
-        focusMatched: Bool,
-        baselineAvailable: Bool
-    ) -> Bool {
-        guard replaceSelection, !baselineAvailable else { return false }
-        return selectionSource == "clipboard-copy" && focusMatched
-    }
-
-    /// Only restore the user's previous pasteboard if no other writer has
-    /// touched `NSPasteboard.general` since we wrote the transcription. If the
-    /// change count has advanced, either the user copied something new or a
-    /// clipboard manager updated the contents — in both cases overwriting with
-    /// our stale snapshot would destroy their data.
-    static func shouldRestoreCapturedPasteboard(
-        capturedChangeCount: Int,
-        currentChangeCount: Int
-    ) -> Bool {
-        capturedChangeCount == currentChangeCount
     }
 
     static func shouldPreferEditableDescendant(
@@ -730,10 +505,6 @@ final class AXTextInjector: TextInjector {
         return score
     }
 
-    init(settingsStore: SettingsStore? = nil) {
-        self.settingsStore = settingsStore
-    }
-
     func performAXReadOnMainActor<T: Sendable>(
         _ body: @escaping @MainActor () -> T
     ) async -> T {
@@ -742,36 +513,23 @@ final class AXTextInjector: TextInjector {
         }
     }
 
-    func performAXOperationOnMainThread<T>(
-        _ body: () throws -> T
-    ) rethrows -> T {
-        if Thread.isMainThread {
-            return try body()
-        }
-
-        return try DispatchQueue.main.sync {
-            try body()
-        }
-    }
-
+    @MainActor
     func selectionSnapshot(for intent: SelectionCaptureIntent) async -> TextSelectionSnapshot {
-        let preflight = await MainActor.run {
-            self.selectionCapturePreflight()
-        }
+        do { try await acquireTextOperation() }
+        catch { return TextSelectionSnapshot(source: "capture-cancelled-or-busy") }
+        defer { deliveryInProgress = false }
+        let preflight = selectionCapturePreflight()
         switch preflight {
         case let .completed(snapshot):
             return snapshot
         case let .external(target):
-            let injector = UncheckedSendableReference(self)
-            return await withCheckedContinuation { continuation in
-                selectionReplacementQueue.async {
-                    continuation.resume(
-                        returning: injector.value.readExternalSelectionSnapshot(
-                            target: target,
-                            intent: intent
-                        )
-                    )
+            let cancellation = SelectionReplacementCancellationToken()
+            do {
+                return try await performSelectionReplacementWork(cancellationToken: cancellation) {
+                    try self.readExternalSelectionSnapshot(target: target, intent: intent, cancellation: cancellation)
                 }
+            } catch {
+                return TextSelectionSnapshot(source: "capture-cancelled-or-busy")
             }
         }
     }
@@ -836,8 +594,10 @@ final class AXTextInjector: TextInjector {
 
     func readExternalSelectionSnapshot(
         target: ExternalSelectionCaptureTarget,
-        intent: SelectionCaptureIntent
-    ) -> TextSelectionSnapshot {
+        intent: SelectionCaptureIntent,
+        cancellation: SelectionReplacementCancellationToken
+    ) throws -> TextSelectionSnapshot {
+        try cancellation.checkCancellation()
         let processID = target.processID
         let processName = target.processName
         let bundleIdentifier = target.bundleIdentifier
@@ -860,6 +620,7 @@ final class AXTextInjector: TextInjector {
             )
 
         if let result = readSelectedText(processID: processID, processName: processName) {
+            try cancellation.checkCancellation()
             // Compute editability from the SAME element that produced the text,
             // avoiding a race where a second focusedElement() call returns a different element.
             let editability = isLikelyEditable(element: result.context.element)
@@ -867,14 +628,14 @@ final class AXTextInjector: TextInjector {
             let replacementContextID = registerSelectionContext(result.context)
             logger
                 .debug(
-                    "source=ax-api  role=\(result.context.role ?? "nil", privacy: .public)  range=\(result.context.range.map { "[\($0.location),\($0.length)]" } ?? "nil", privacy: .public)  isEditable=\(editability ? "true" : "false", privacy: .public)  isFocusedTarget=\(result.context.isFocusedTarget ? "true" : "false", privacy: .public)  text(32)=\(String(result.text.prefix(32)), privacy: .public)"
+                    "source=ax-api  role=\(result.context.role ?? "nil", privacy: .public)  range=\(result.context.range.map { "[\($0.location),\($0.length)]" } ?? "nil", privacy: .public)  isEditable=\(editability ? "true" : "false", privacy: .public)  isFocusedTarget=\(result.context.isFocusedTarget ? "true" : "false", privacy: .public)  textLength=\(result.text.utf16.count)"
                 )
             return TextSelectionSnapshot(
                 processID: result.context.processID,
                 processName: result.context.processName,
                 bundleIdentifier: bundleIdentifier,
                 selectedRange: result.context.range,
-                selectedText: result.text.trimmingCharacters(in: .whitespacesAndNewlines),
+                selectedText: result.text,
                 source: result.context.source,
                 isEditable: editability,
                 role: result.context.role,
@@ -885,14 +646,18 @@ final class AXTextInjector: TextInjector {
                     source: result.context.source,
                     selectedRange: result.context.range,
                     isEditable: editability,
-                    isFocusedTarget: result.context.isFocusedTarget
+                    isFocusedTarget: result.context.isFocusedTarget,
+                    selectedText: result.text,
+                    intent: intent,
+                    capability: targetCapability(element: result.context.element)
                 )
             )
         }
 
-        let clipboardProbeElement = processID.flatMap(focusedElement(for:))
+        let clipboardProbeElement = processID.flatMap(deliveryFocusedElement(for:))
         let clipboardProbeRange = clipboardProbeElement.flatMap(copySelectedTextRange(from:))
         let clipboardProbeIsEditable = clipboardProbeElement.map(isLikelyEditable(element:)) ?? false
+        let clipboardProbeCapability = clipboardProbeElement.map(targetCapability(element:))
         let shouldProbeClipboardSelection = Self.shouldProbeClipboardSelection(
             selectedRange: clipboardProbeRange,
             intent: intent
@@ -903,6 +668,7 @@ final class AXTextInjector: TextInjector {
             logger.debug("ax-api returned nil — no reliable selection target, skipping clipboard-copy")
         }
 
+        try cancellation.checkCancellation()
         if shouldProbeClipboardSelection,
            let copiedText = readSelectedTextViaCopy(
             processID: processID,
@@ -957,11 +723,18 @@ final class AXTextInjector: TextInjector {
             let replacementContextID = registerSelectionContext(context)
             logger
                 .debug(
-                    "source=clipboard-copy  focusedWindow=\(focusedWindow != nil ? "present" : "nil", privacy: .public)  selectionWindow=\(selectionWindow != nil ? "present" : "nil", privacy: .public)  isFocusedTarget=\(isFocusedTarget ? "true" : "false", privacy: .public)  text(32)=\(String(copiedText.prefix(32)), privacy: .public)"
+                    "source=clipboard-copy  focusedWindow=\(focusedWindow != nil ? "present" : "nil", privacy: .public)  selectionWindow=\(selectionWindow != nil ? "present" : "nil", privacy: .public)  isFocusedTarget=\(isFocusedTarget ? "true" : "false", privacy: .public)  textLength=\(copiedText.utf16.count)"
                 )
-            // Cmd+C proves that text is currently selected. Editability still comes from
-            // the focused element. This path is replaceable when the target is editable,
-            // but it is not safe to treat it as restorable selection state.
+            let safety = Self.replacementSafety(
+                source: "clipboard-copy", selectedRange: clipboardProbeRange,
+                isEditable: editability, isFocusedTarget: context.isFocusedTarget,
+                selectedText: copiedText, intent: intent, capability: clipboardProbeCapability
+            )
+            NetworkDebugLogger.logMessage(
+                "[Text Selection] copy authorization capability=\(String(describing: clipboardProbeCapability)) safety=\(safety) focused=\(context.isFocusedTarget)"
+            )
+            // Preserve the distinction between observed AX editability and authority
+            // to attempt an explicitly requested, revalidated paste replacement.
             return TextSelectionSnapshot(
                 processID: processID,
                 processName: processName,
@@ -974,12 +747,7 @@ final class AXTextInjector: TextInjector {
                 windowTitle: context.windowTitle,
                 isFocusedTarget: context.isFocusedTarget,
                 replacementContextID: replacementContextID,
-                replacementSafety: Self.replacementSafety(
-                    source: "clipboard-copy",
-                    selectedRange: clipboardProbeRange,
-                    isEditable: editability,
-                    isFocusedTarget: context.isFocusedTarget
-                )
+                replacementSafety: safety
             )
         }
         logger.debug("clipboard-copy returned nil — no selection detected")
@@ -1004,8 +772,8 @@ final class AXTextInjector: TextInjector {
     /// A copy response alone is not proof of a selection: some applications copy the
     /// entire field when no range is selected. Ordinary dictation therefore requires
     /// positive range evidence. An explicit selection command may probe an opaque target,
-    /// including web bridges that report a stale collapsed range; ambiguous results are
-    /// context-only and never authorized for destructive replacement.
+    /// including web bridges that report a stale collapsed range. Explicit copy-backed
+    /// replacement requires target and source-text revalidation before dispatch.
     static func shouldProbeClipboardSelection(
         selectedRange: CFRange?,
         intent: SelectionCaptureIntent
@@ -1022,18 +790,28 @@ final class AXTextInjector: TextInjector {
         source: String,
         selectedRange: CFRange?,
         isEditable: Bool,
-        isFocusedTarget: Bool
+        isFocusedTarget: Bool,
+        selectedText: String? = nil,
+        intent: SelectionCaptureIntent = .automaticInsertion,
+        capability: TextTargetCapability? = nil
     ) -> SelectionReplacementSafety {
-        guard isFocusedTarget else { return .resultOnly }
-        guard selectedRange?.length ?? 0 > 0 else { return .resultOnly }
-        guard isEditable else { return .resultOnly }
-        return source == "clipboard-copy" ? .verifiedPaste : .directAccessibility
-    }
-
-    func insert(text: String) throws {
-        try performAXOperationOnMainThread {
-            try self.setText(text, replaceSelection: false)
+        guard isFocusedTarget, capability != .notWritable else { return .resultOnly }
+        // Explicit selection intent plus captured AX/copied text can authorize an
+        // opaque editor without an AX range. The one-shot context must revalidate
+        // the exact source text through the capture mechanism in the same target
+        // immediately before dispatch.
+        if intent == .explicitSelectionAction, selectedText?.isEmpty == false,
+           (source == "clipboard-copy" || (source == "accessibility" && !isEditable)),
+           capability == .writable || capability == .opaque {
+            return .verifiedPaste
         }
+        guard isEditable else { return .resultOnly }
+        if selectedRange?.length ?? 0 <= 0 {
+            // Valid AX selected text is positive evidence even when a web bridge
+            // omits its range. Incidental copy capture alone grants no authority.
+            return source == "accessibility" && selectedText?.isEmpty == false ? .verifiedPaste : .resultOnly
+        }
+        return source == "clipboard-copy" ? .verifiedPaste : .directAccessibility
     }
 
     func currentInputTextSnapshot() async -> CurrentInputTextSnapshot {
@@ -1317,18 +1095,6 @@ final class AXTextInjector: TextInjector {
         return "\(defaultReason)-\(stateFailure)"
     }
 
-    func replaceSelection(text: String) throws {
-        try performAXOperationOnMainThread {
-            guard try self.insertIntoTypefluxNativeTextTarget(text, replaceSelection: true) else {
-                throw self.selectionReplacementError(
-                    code: 32,
-                    description: "External selection replacement requires a captured target"
-                )
-            }
-            self.lastInjectionMethod = .ax
-        }
-    }
-
     func selectionContextSummary(_ context: SelectionContext?) -> String {
         guard let context else { return "<nil>" }
         let range = context.range.map { "[\($0.location),\($0.length)]" } ?? "nil"
@@ -1340,38 +1106,18 @@ final class AXTextInjector: TextInjector {
     }
 
     func snapshotSummary(_ snapshot: CurrentInputTextSnapshot) -> String {
-        let preview = snapshot.text.map {
-            String($0.trimmingCharacters(in: .whitespacesAndNewlines).prefix(80))
-        } ?? "nil"
-        return
-            "pid=\(snapshot.processID.map(String.init) ?? "nil") process=\(snapshot.processName ?? "nil") "
-                + "role=\(snapshot.role ?? "nil") editable=\(snapshot.isEditable) "
-                + "focused=\(snapshot.isFocusedTarget) "
-                + "failure=\(snapshot.failureReason ?? "nil") textLength=\(snapshot.text?.count ?? 0) "
-                + "document=\(snapshot.documentURL?.path ?? "nil") "
-                + "textSource=\(snapshot.textSource ?? "nil") "
-                + "preview=\(preview)"
+        "role=\(snapshot.role ?? "nil") editable=\(snapshot.isEditable) "
+            + "focused=\(snapshot.isFocusedTarget) failure=\(snapshot.failureReason ?? "nil") "
+            + "textLength=\(snapshot.text?.utf16.count ?? 0) textSource=\(snapshot.textSource ?? "nil")"
     }
 
     func elementSummary(_ element: AXUIElement) -> String {
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element) ?? "nil"
-        let subrole = copyStringAttribute(kAXSubroleAttribute as String, from: element) ?? "nil"
-        let title = copyTextAttribute(kAXTitleAttribute as String, from: element) ?? "nil"
-        let description = copyTextAttribute(kAXDescriptionAttribute as String, from: element) ?? "nil"
-        let value = copyTextAttribute(kAXValueAttribute as String, from: element)
-        let placeholder = copyTextAttribute(kAXPlaceholderValueAttribute as String, from: element)
         let focused = copyBooleanAttribute(kAXFocusedAttribute as String, from: element).map(String.init) ?? "nil"
-        let editable = isLikelyEditable(element: element)
-        let selectedRange = copySelectedTextRange(from: element).map { "[\($0.location),\($0.length)]" } ?? "nil"
-        let valuePreview = value.map { String($0.trimmingCharacters(in: .whitespacesAndNewlines).prefix(60)) } ?? "nil"
-        let placeholderPreview = placeholder
-            .map { String($0.trimmingCharacters(in: .whitespacesAndNewlines).prefix(60)) } ?? "nil"
-
-        return
-            "role=\(role) subrole=\(subrole) focused=\(focused) editable=\(editable) "
-                + "selectedRange=\(selectedRange) title=\(title) description=\(description) "
-                + "valuePreview=\(valuePreview) placeholderPreview=\(placeholderPreview)"
+        let range = copySelectedTextRange(from: element).map { "[\($0.location),\($0.length)]" } ?? "nil"
+        return "role=\(role) focused=\(focused) selectedRange=\(range)"
     }
+
 }
 
 // swiftlint:enable file_length function_body_length identifier_name line_length trailing_comma type_body_length

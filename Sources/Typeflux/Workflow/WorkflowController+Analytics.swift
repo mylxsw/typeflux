@@ -78,8 +78,10 @@ extension WorkflowController {
             context.applyOutcome = outcome
             context.injectionMethod = switch outcome {
             case .inserted:
-                textInjector.lastInjectionMethod?.rawValue ?? TextInjectionMethod.ax.rawValue
-            case .presentedInDialog:
+                TextInjectionMethod.ax.rawValue
+            case .pasted:
+                TextInjectionMethod.paste.rawValue
+            case .unconfirmed, .cancelled, .presentedInDialog:
                 "clipboard_fallback"
             case .copiedToClipboard:
                 "clipboard_fallback"
@@ -97,7 +99,7 @@ extension WorkflowController {
             return
         }
 
-        guard record.applyStatus == .succeeded else {
+        guard record.applyStatus == .succeeded || context.applyOutcome == .unconfirmed else {
             let failure: (stage: String, kind: String)
             if record.transcriptionStatus != .succeeded {
                 failure = ("transcription", "transcription_\(record.transcriptionStatus.rawValue)")
@@ -114,7 +116,9 @@ extension WorkflowController {
             ?? record.pipelineTiming?.generatedStats().endToEndMilliseconds
             ?? 0
         let applyOutcomeName = switch outcome {
-        case .inserted: "inserted"
+        case .inserted, .pasted: "inserted"
+        case .unconfirmed: "unconfirmed"
+        case .cancelled: "cancelled"
         case .presentedInDialog: "presentedInDialog"
         case .copiedToClipboard: "copiedToClipboard"
         }

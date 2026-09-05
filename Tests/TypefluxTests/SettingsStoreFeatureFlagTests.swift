@@ -22,37 +22,6 @@ final class SettingsStoreFeatureFlagTests: XCTestCase {
         super.tearDown()
     }
 
-    func testStrictEditApplyFallbackEnabledDefaultsToFalse() {
-        XCTAssertFalse(store.strictEditApplyFallbackEnabled)
-    }
-
-    func testStrictEditApplyFallbackEnabledCanBeEnabledAndDisabled() {
-        store.strictEditApplyFallbackEnabled = true
-        XCTAssertTrue(store.strictEditApplyFallbackEnabled)
-
-        store.strictEditApplyFallbackEnabled = false
-        XCTAssertFalse(store.strictEditApplyFallbackEnabled)
-    }
-
-    func testStubbornPasteFallbackEnabledDefaultsToTrue() {
-        XCTAssertTrue(store.stubbornPasteFallbackEnabled)
-    }
-
-    func testStubbornPasteFallbackEnabledCanBeEnabledAndDisabled() {
-        store.stubbornPasteFallbackEnabled = true
-        XCTAssertTrue(store.stubbornPasteFallbackEnabled)
-
-        store.stubbornPasteFallbackEnabled = false
-        XCTAssertFalse(store.stubbornPasteFallbackEnabled)
-    }
-
-    func testStubbornPasteFallbackEnabledPersistsExplicitFalse() {
-        store.stubbornPasteFallbackEnabled = false
-
-        let reloaded = SettingsStore(defaults: defaults)
-        XCTAssertFalse(reloaded.stubbornPasteFallbackEnabled)
-    }
-
     func testLocalOptimizationEnabledDefaultsToFalse() {
         XCTAssertFalse(store.localOptimizationEnabled)
     }

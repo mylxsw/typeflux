@@ -1,4 +1,10 @@
+import AppKit
 import Foundation
+
+struct NativeTextSelectionTarget {
+    weak var textView: NSTextView?
+    weak var window: NSWindow?
+}
 
 enum SelectionCaptureIntent: Equatable {
     /// Selection detection is incidental to ordinary dictation. Ambiguous clipboard
@@ -17,8 +23,8 @@ enum SelectionReplacementSafety: Equatable {
     /// Accessibility exposed a stable, writable non-empty range.
     case directAccessibility
 
-    /// A non-empty Accessibility range was completed through a clipboard read and
-    /// must be revalidated immediately before paste.
+    /// Captured selection text authorizes paste replacement after target/text
+    /// revalidation. Explicit copy-backed actions may have no accessible range.
     case verifiedPaste
 
     /// The text is valid context for an explicit action, but the target does not
@@ -39,6 +45,7 @@ struct TextSelectionSnapshot {
     var isFocusedTarget: Bool = false
     var replacementContextID: UUID?
     var replacementSafety: SelectionReplacementSafety?
+    var nativeTarget: NativeTextSelectionTarget?
 
     var hasSelection: Bool {
         let trimmed = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -85,24 +92,36 @@ struct CurrentInputTextSnapshot {
 }
 
 protocol TextInjector {
-    var lastInjectionMethod: TextInjectionMethod? { get }
     func selectionSnapshot(for intent: SelectionCaptureIntent) async -> TextSelectionSnapshot
     func currentInputTextSnapshot() async -> CurrentInputTextSnapshot
     func currentInputText() async -> String?
-    func insert(text: String) throws
-    func replaceSelection(text: String) throws
-    func replaceSelection(text: String, target: TextSelectionSnapshot?) async throws
+    @MainActor
+    func deliver(text: String, to destination: TextDeliveryDestination) async throws -> TextDeliveryResult
 }
 
-enum TextInjectionMethod: String {
+enum TextInjectionMethod: String, Sendable {
     case ax
     case paste
 }
 
-extension TextInjector {
-    var lastInjectionMethod: TextInjectionMethod? { nil }
+enum TextDeliveryDestination {
+    case currentInput
+    case selection(TextSelectionSnapshot)
+}
 
-    func replaceSelection(text: String, target _: TextSelectionSnapshot?) async throws {
-        try replaceSelection(text: text)
-    }
+enum TextDeliveryResult: Equatable {
+    case delivered(TextInjectionMethod)
+    case unconfirmed(TextInjectionMethod)
+    case notApplied(TextInjectionMethod)
+}
+
+enum TextDeliveryError: String, Error, Equatable {
+    case emptyOutput
+    case busy
+    case noInput
+    case targetChanged
+    case selectionChanged
+    case permissionRequired
+    case clipboardUnavailable
+    case eventUnavailable
 }

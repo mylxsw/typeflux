@@ -105,7 +105,7 @@ extension AXTextInjector {
         }
         let application = AXUIElementCreateApplication(processID)
         AXUIElementSetMessagingTimeout(application, Self.replacementAXMessagingTimeout)
-        guard let element = resolvedFocusedElement(application: application) else {
+        guard let element = deliveryFocusedElement(for: processID) else {
             return nil
         }
 
@@ -180,7 +180,7 @@ extension AXTextInjector {
             // even with a collapsed caret. Do not treat that as a real selection.
             return nil
         }
-        return trimmed
+        return selectedText
     }
 
     func isAttributeSettable(_ attribute: CFString, on element: AXUIElement) -> Bool {
@@ -1262,15 +1262,6 @@ extension AXTextInjector {
         return lhsPosition == rhsPosition && lhsSize == rhsSize
     }
 
-    func activeSelectionContext() -> SelectionContext? {
-        guard let latestSelectionContext else { return nil }
-        guard Date().timeIntervalSince(latestSelectionContext.capturedAt) <= Self.selectionContextLifetime else {
-            self.latestSelectionContext = nil
-            return nil
-        }
-        return latestSelectionContext
-    }
-
     func clearLatestSelectionContext(ifMatching context: SelectionContext) {
         stateLock.lock()
         defer { stateLock.unlock() }
@@ -1308,38 +1299,6 @@ extension AXTextInjector {
         return context
     }
 
-    func restoreSelectionContext(_ context: SelectionContext) {
-        let needsReactivation = Self.shouldReactivateProcessForSelectionRestore(
-            targetProcessID: context.processID,
-            frontmostProcessID: frontmostProcessID()
-        )
-
-        if needsReactivation,
-           let processID = context.processID,
-           let app = NSRunningApplication(processIdentifier: processID) {
-            app.activate(options: [.activateIgnoringOtherApps])
-
-            let deadline = Date().addingTimeInterval(0.8)
-            var activated = false
-            while Date() < deadline {
-                usleep(50000)
-                if NSWorkspace.shared.frontmostApplication?.processIdentifier == processID {
-                    activated = true
-                    break
-                }
-            }
-
-            if !activated {
-                app.activate(options: [.activateIgnoringOtherApps])
-                usleep(Self.focusRestoreDelayMicroseconds)
-            }
-        }
-
-        _ = setFocused(true, on: context.element)
-        if let range = context.range {
-            _ = setSelectedTextRange(range, on: context.element)
-        }
-    }
 }
 
 // swiftlint:enable file_length function_body_length

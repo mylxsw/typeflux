@@ -414,9 +414,10 @@ private final class MockWorkflowTextInjector: TextInjector {
         await currentInputTextSnapshot().text
     }
 
-    func insert(text _: String) throws {}
-
-    func replaceSelection(text _: String) throws {}
+    @MainActor
+    func deliver(text _: String, to _: TextDeliveryDestination) async throws -> TextDeliveryResult {
+        .delivered(.ax)
+    }
 }
 
 private final class MockWorkflowLLMService: LLMService, @unchecked Sendable {

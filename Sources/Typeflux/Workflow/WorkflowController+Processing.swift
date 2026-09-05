@@ -282,7 +282,7 @@ extension WorkflowController {
             pipelineTiming.applyCompletedAt = Date()
             record.pipelineTiming = pipelineTiming
             record.processingStatus = .succeeded
-            record.applyStatus = .succeeded
+            record.applyStatus = outcome.historyStatus
             record.applyMessage = outcome.message
             recordDictationApplyAnalytics(recordID: record.id, outcome: outcome)
             saveHistoryRecord(record)
@@ -301,60 +301,60 @@ extension WorkflowController {
         return false
     }
 
+    @MainActor
     func applyText(
         _ text: String,
         replace: Bool,
         fallbackTitle: String = L("workflow.result.copyTitle"),
-        targetSnapshot: TextSelectionSnapshot? = nil
+        targetSnapshot: TextSelectionSnapshot? = nil,
+        expectedSessionID: UUID? = nil
     ) async -> (ApplyOutcome, String) {
-        let normalizedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        NetworkDebugLogger.logMessage(
-            """
-            [Apply Text] start
-            replace: \(replace)
-            fallbackTitle: \(fallbackTitle)
-            textLength: \(text.count)
-            normalizedPreview: \(String(normalizedText.prefix(120)))
-            """
-        )
-        if let targetSnapshot, shouldBypassTextInjection(for: targetSnapshot) {
-            NetworkDebugLogger.logMessage(
-                """
-                [Apply Text] bypassing text injection for Typeflux-owned target
-                process: \(targetSnapshot.processName ?? "<unknown>")
-                bundleIdentifier: \(targetSnapshot.bundleIdentifier ?? "<unknown>")
-                source: \(targetSnapshot.source)
-                window: \(targetSnapshot.windowTitle ?? "<unknown>")
-                """
-            )
-            presentResultDialog(title: fallbackTitle, text: text)
-            return (.presentedInDialog, text)
-        }
+        // Retain the result before the first suspension or external write.
+        let applySessionID = expectedSessionID ?? processingSessionID
+        guard processingSessionID == applySessionID, !Task.isCancelled else { return (.cancelled, text) }
+        lastDialogResultText = text
         do {
+            try Task.checkCancellation()
+            if replace, let targetSnapshot, shouldBypassTextInjection(for: targetSnapshot) {
+                presentResultDialog(title: fallbackTitle, text: text)
+                return (.presentedInDialog, text)
+            }
+            overlayController.dismissProcessingImmediatelyIfVisible()
+            let destination: TextDeliveryDestination
             if replace {
-                try await dismissOverlayForExternalReplacement()
-                try Task.checkCancellation()
-                try await textInjector.replaceSelection(text: text, target: targetSnapshot)
+                guard let targetSnapshot else { throw TextDeliveryError.selectionChanged }
+                destination = .selection(targetSnapshot)
             } else {
-                try textInjector.insert(text: text)
+                destination = .currentInput
             }
-            let bumpedTerms = VocabularyStore.incrementOccurrences(in: text)
-            if !bumpedTerms.isEmpty {
-                NetworkDebugLogger.logMessage(
-                    "[Apply Text] vocabulary occurrences bumped: \(bumpedTerms.joined(separator: ", "))"
-                )
+            let result = try await textInjector.deliver(text: text, to: destination)
+            NetworkDebugLogger.logMessage("[Text Delivery] completed result=\(result)")
+            // A cancelled/older session must not replace the new session's overlay.
+            guard !Task.isCancelled, processingSessionID == applySessionID else {
+                return (.cancelled, text)
             }
-            scheduleAutomaticVocabularyObservation(for: text)
-            NetworkDebugLogger.logMessage(
-                """
-                [Apply Text] success
-                replace: \(replace)
-                textLength: \(text.count)
-                """
-            )
-            return (.inserted, text)
+            switch result {
+            case let .delivered(method):
+                _ = VocabularyStore.incrementOccurrences(in: text)
+                scheduleAutomaticVocabularyObservation(for: text)
+                return (method == .ax ? .inserted : .pasted, text)
+            case .unconfirmed:
+                // Missing AX confirmation is common even after a successful paste.
+                // Keep the result recoverable without interrupting the user's editor.
+                return (.unconfirmed, text)
+            case .notApplied:
+                presentResultDialog(title: fallbackTitle, text: text)
+                return (.presentedInDialog, text)
+            }
+        } catch is CancellationError {
+            return (.cancelled, text)
         } catch {
-            NetworkDebugLogger.logError(context: "[Apply Text] fallback to result dialog", error: error)
+            guard !Task.isCancelled, processingSessionID == applySessionID else {
+                return (.cancelled, text)
+            }
+            let reason = (error as? TextDeliveryError)?.rawValue
+                ?? "\((error as NSError).domain):\((error as NSError).code)"
+            NetworkDebugLogger.logMessage("[Text Delivery] blocked reason=\(reason) session=\(applySessionID)")
             presentResultDialog(title: fallbackTitle, text: text)
             return (.presentedInDialog, text)
         }
@@ -365,6 +365,7 @@ extension WorkflowController {
         selectionSnapshot: TextSelectionSnapshot,
         record: inout HistoryRecord
     ) async -> (outcome: ApplyOutcome, openCCResult: String?, finalResult: String) {
+        let applySessionID = processingSessionID
         // 1. Final optimization (punctuation, spaces)
         let optimizedText = DictationOutputOptimizer.optimize(text)
 
@@ -379,11 +380,13 @@ extension WorkflowController {
             afterOpenCC = optimizedText
         }
 
-        // 3. Apply to target
+        // Generation context does not own the dictation destination. Resolve the
+        // current input and active range when the result is ready.
+        record.postProcessedText = afterOpenCC
+        record.openCCResultText = openCCResult
+        saveHistoryRecord(record)
         let (outcome, finalAppliedText) = await applyText(
-            afterOpenCC,
-            replace: shouldReplaceActiveSelection(for: selectionSnapshot),
-            targetSnapshot: selectionSnapshot
+            afterOpenCC, replace: false, expectedSessionID: applySessionID
         )
         return (outcome, openCCResult, finalAppliedText)
     }
@@ -1589,13 +1592,13 @@ extension WorkflowController {
             record.postProcessedText = processedText
             pipelineTiming.applyCompletedAt = Date()
             record.pipelineTiming = pipelineTiming
-            record.applyStatus = .succeeded
+            record.applyStatus = outcome.historyStatus
             record.applyMessage = outcome.message
             recordDictationApplyAnalytics(recordID: record.id, outcome: outcome)
 
             await MainActor.run {
                 guard self.processingSessionID == sessionID else { return }
-                self.finishDetachedAskOverlay(dismiss: outcome == .inserted)
+                self.finishDetachedAskOverlay(dismiss: outcome.wasInserted || outcome == .unconfirmed)
             }
         }
 
@@ -1826,7 +1829,7 @@ extension WorkflowController {
             record.postProcessedText = result.finalResult
             pipelineTiming.applyCompletedAt = Date()
             record.pipelineTiming = pipelineTiming
-            record.applyStatus = .succeeded
+            record.applyStatus = result.outcome.historyStatus
             record.applyMessage = result.outcome.message
             recordDictationApplyAnalytics(recordID: record.id, outcome: result.outcome)
             saveHistoryRecord(record)
@@ -2017,7 +2020,7 @@ extension WorkflowController {
         record.postProcessedText = result.finalResult
         pipelineTiming.applyCompletedAt = Date()
         record.pipelineTiming = pipelineTiming
-        record.applyStatus = .succeeded
+        record.applyStatus = result.outcome.historyStatus
         record.applyMessage = result.outcome.message
         recordDictationApplyAnalytics(recordID: record.id, outcome: result.outcome)
         saveHistoryRecord(record)
@@ -2048,7 +2051,7 @@ extension WorkflowController {
         record.postProcessedText = result.finalResult
         pipelineTiming.applyCompletedAt = Date()
         record.pipelineTiming = pipelineTiming
-        record.applyStatus = .succeeded
+        record.applyStatus = result.outcome.historyStatus
         record.applyMessage = result.outcome.message
         recordDictationApplyAnalytics(recordID: record.id, outcome: result.outcome)
     }
@@ -2259,12 +2262,6 @@ extension WorkflowController {
             "<none>"
         }
 
-        let contentDescription: String = if let text = snapshot.selectedText, !text.isEmpty {
-            text
-        } else {
-            "<none>"
-        }
-
         return """
         [Selection Context]
         Process: \(processDescription)
@@ -2275,7 +2272,7 @@ extension WorkflowController {
         Window: \(snapshot.windowTitle ?? "<unknown>")
         Has selection: \(snapshot.hasSelection)
         Selected range: \(rangeDescription)
-        Selected text: \(contentDescription)
+        Selected text length: \(snapshot.selectedText?.utf16.count ?? 0)
         """
     }
 
@@ -2370,13 +2367,6 @@ extension WorkflowController {
         snapshot.canReplaceSelection
     }
 
-    func dismissOverlayForExternalReplacement() async throws {
-        await MainActor.run {
-            overlayController.dismissImmediately()
-        }
-        try await Task.sleep(for: .milliseconds(50))
-    }
-
     func handleDetachedAgentLaunch() {
         activeProcessingRecordID = nil
         lastRetryableFailureRecord = nil
@@ -2390,6 +2380,7 @@ extension WorkflowController {
         _ text: String,
         selectionSnapshot: TextSelectionSnapshot
     ) async -> (ApplyOutcome, String) {
+        let applySessionID = processingSessionID
         let replaceSelection = shouldReplaceActiveSelection(for: selectionSnapshot)
         let shouldShowResultDialog = shouldShowDialogForDetachedAgentEdit(using: selectionSnapshot)
         NetworkDebugLogger.logMessage(
@@ -2399,6 +2390,7 @@ extension WorkflowController {
         )
 
         let processedText = await outputPostProcessor.process(text)
+        guard !Task.isCancelled, processingSessionID == applySessionID else { return (.cancelled, processedText) }
         if shouldShowResultDialog {
             presentResultDialog(title: L("workflow.result.copyTitle"), text: processedText)
             return (.presentedInDialog, processedText)
@@ -2408,7 +2400,8 @@ extension WorkflowController {
             processedText,
             replace: replaceSelection,
             fallbackTitle: L("workflow.result.copyTitle"),
-            targetSnapshot: selectionSnapshot
+            targetSnapshot: selectionSnapshot,
+            expectedSessionID: applySessionID
         )
     }
 
@@ -2424,7 +2417,6 @@ extension WorkflowController {
             [Result Dialog] presenting
             title: \(title)
             textLength: \(text.count)
-            preview: \(String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(120)))
             """
         )
         let work = { [weak self] in

@@ -1361,3 +1361,7 @@
 "settings.personas.summary.typeflux" = "整理口述，保留原意";
 "settings.personas.summary.translator" = "將口述內容翻譯為英文";
 "settings.personas.customPersona" = "自訂人設";
+
+"workflow.result.unconfirmedTitle" = "無法確認是否已插入，可按需複製結果";
+
+"workflow.apply.dispatchedUnverified" = "已傳送至目前應用程式，未取得寫入確認；結果已保留在歷史記錄中。";

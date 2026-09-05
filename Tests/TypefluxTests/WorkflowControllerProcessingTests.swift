@@ -16,6 +16,115 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         super.tearDown()
     }
 
+    func testDictationUsesCurrentInputEvenWhenOriginalTargetWasReadOnly() async {
+        let injector = MockProcessingTextInjector()
+        let history = MockProcessingHistoryStore()
+        let controller = makeWorkflowController(textInjector: injector, historyStore: history)
+        var record = HistoryRecord(date: Date())
+        injector.onDeliver = {
+            XCTAssertEqual(history.list().last?.postProcessedText, "new result")
+        }
+        let result = await controller.applyTranscribedText(
+            "new result",
+            selectionSnapshot: TextSelectionSnapshot(
+                processID: getpid(), source: "typeflux-ask-answer-window", isEditable: false
+            ),
+            record: &record
+        )
+        XCTAssertEqual(result.outcome, .inserted)
+        XCTAssertEqual(injector.insertedTexts, ["new result"])
+        XCTAssertTrue(injector.replacedTexts.isEmpty)
+    }
+
+    func testCurrentInputFailureKeepsCompleteCopyableResult() async {
+        let injector = MockProcessingTextInjector(insertError: TextDeliveryError.noInput)
+        let clipboard = MockClipboardService()
+        let controller = makeWorkflowController(textInjector: injector, clipboard: clipboard)
+        let (outcome, _) = await controller.applyText("  full result\n", replace: false)
+        XCTAssertEqual(outcome, .presentedInDialog)
+        XCTAssertEqual(outcome.historyStatus, .failed)
+        XCTAssertEqual(controller.lastDialogResultText, "  full result\n")
+        XCTAssertTrue(controller.overlayController.isShowingResultDialogForTesting)
+        controller.copyLastResultFromDialog()
+        XCTAssertEqual(clipboard.storedText, "  full result\n")
+    }
+
+    func testUnconfirmedDeliveryDoesNotClaimSuccessOrRetry() async {
+        let injector = MockProcessingTextInjector()
+        injector.deliveryResult = .unconfirmed(.paste)
+        let controller = makeWorkflowController(textInjector: injector)
+        let (outcome, _) = await controller.applyText("recoverable", replace: false)
+        XCTAssertEqual(outcome, .unconfirmed)
+        XCTAssertFalse(outcome.wasInserted)
+        XCTAssertEqual(outcome.historyStatus, .skipped)
+        XCTAssertEqual(injector.deliveryCallCount, 1)
+        XCTAssertEqual(controller.lastDialogResultText, "recoverable")
+        XCTAssertFalse(controller.overlayController.isShowingResultDialogForTesting)
+    }
+
+    func testUnverifiedDispatchAnalyticsIsNeitherFailureNorConfirmedInsertion() {
+        let recorder = AnalyticsEventRecorder()
+        let controller = makeWorkflowController(analyticsReporter: recorder)
+        let record = HistoryRecord(
+            date: Date(), postProcessedText: "retained", recordingStatus: .succeeded,
+            transcriptionStatus: .succeeded, processingStatus: .skipped, applyStatus: .skipped
+        )
+        controller.beginDictationAnalytics(intent: .dictation, mode: .locked, targetBundleIdentifier: nil)
+        controller.bindPendingDictationAnalytics(to: record.id)
+        controller.recordDictationApplyAnalytics(recordID: record.id, outcome: .unconfirmed)
+        controller.reportDictationTerminal(record: record)
+        XCTAssertEqual(recorder.events.map(\.name), ["dictation_session_started", "dictation_session_completed"])
+        XCTAssertEqual(recorder.events.last?.properties["apply_outcome"], "unconfirmed")
+    }
+
+    func testObservedUnchangedDeliveryStillPresentsRecovery() async {
+        let injector = MockProcessingTextInjector()
+        injector.deliveryResult = .notApplied(.paste)
+        let controller = makeWorkflowController(textInjector: injector)
+        let (outcome, _) = await controller.applyText("retained", replace: false)
+        XCTAssertEqual(outcome, .presentedInDialog)
+        XCTAssertEqual(outcome.historyStatus, .failed)
+        XCTAssertEqual(controller.lastDialogResultText, "retained")
+        XCTAssertTrue(controller.overlayController.isShowingResultDialogForTesting)
+        XCTAssertEqual(injector.deliveryCallCount, 1)
+    }
+
+    func testConfirmedPasteCompletesWithoutFailureDialog() async {
+        let injector = MockProcessingTextInjector()
+        injector.deliveryResult = .delivered(.paste)
+        let controller = makeWorkflowController(textInjector: injector)
+        let (outcome, _) = await controller.applyText("inserted", replace: false)
+        XCTAssertEqual(outcome, .pasted)
+        XCTAssertTrue(outcome.wasInserted)
+        XCTAssertEqual(outcome.historyStatus, .succeeded)
+        XCTAssertFalse(controller.overlayController.isShowingResultDialogForTesting)
+    }
+
+    func testSupersededDeliveryDoesNotOverwriteNewRecoveryResult() async {
+        let injector = MockProcessingTextInjector()
+        let controller = makeWorkflowController(textInjector: injector)
+        let oldSession = controller.processingSessionID
+        _ = controller.beginProcessingSession()
+        controller.lastDialogResultText = "new result"
+        let (outcome, _) = await controller.applyText("old result", replace: false, expectedSessionID: oldSession)
+        XCTAssertEqual(outcome, .cancelled)
+        XCTAssertEqual(injector.deliveryCallCount, 0)
+        XCTAssertEqual(controller.lastDialogResultText, "new result")
+    }
+
+    func testCancellationAfterDispatchDoesNotShowStaleFailureDialog() async {
+        let injector = MockProcessingTextInjector()
+        injector.deliveryResult = .unconfirmed(.paste)
+        injector.onDeliver = { withUnsafeCurrentTask { $0?.cancel() } }
+        let controller = makeWorkflowController(textInjector: injector)
+        let task = Task { await controller.applyText("retained", replace: false) }
+        let (outcome, _) = await task.value
+        XCTAssertEqual(outcome, .cancelled)
+        XCTAssertEqual(controller.lastDialogResultText, "retained")
+        XCTAssertFalse(controller.overlayController.isShowingResultDialogForTesting)
+        XCTAssertEqual(injector.deliveryCallCount, 1)
+    }
+
     func testApplyDetachedAgentEditResultInsertsIntoEditableInputWithoutSelection() async {
         let textInjector = MockProcessingTextInjector()
         let controller = makeWorkflowController(textInjector: textInjector)
@@ -77,13 +186,20 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             replacementContextID: contextID
         )
         let textInjector = MockProcessingTextInjector(selectionSnapshot: snapshot)
+        let recorder = MockProcessingAudioRecorder()
+        let history = MockProcessingHistoryStore()
         let persona = PersonaProfile(name: "Concise", prompt: "Make it concise.")
         let controller = makeWorkflowController(
             textInjector: textInjector,
+            audioRecorder: recorder,
             llmService: CountingProcessingLLMService(rewriteText: "updated"),
+            historyStore: history,
             configureSettings: configureReadyLLM
         )
 
+        textInjector.onDeliver = {
+            XCTAssertEqual(history.list().last?.postProcessedText, "updated")
+        }
         controller.applyPersonaToSelection(
             WorkflowController.PersonaSelectionContext(snapshot: snapshot, selectedText: "hello"),
             persona: persona
@@ -92,6 +208,40 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         XCTAssertEqual(textInjector.replacementTargets.first.flatMap { $0 }?.replacementContextID, contextID)
         XCTAssertTrue(textInjector.insertedTexts.isEmpty)
+        XCTAssertEqual(recorder.startCallCount, 0)
+    }
+
+    func testPersonaRewritesOpaqueCopySelectionWithoutShowingCopyDialog() async {
+        let contextID = UUID()
+        let safety = AXTextInjector.replacementSafety(
+            source: "clipboard-copy", selectedRange: nil, isEditable: false, isFocusedTarget: true,
+            selectedText: "original", intent: .explicitSelectionAction, capability: .opaque
+        )
+        let snapshot = TextSelectionSnapshot(
+            processID: 42, selectedText: "original", source: "clipboard-copy", isEditable: false,
+            role: "AXWindow", isFocusedTarget: true,
+            replacementContextID: contextID, replacementSafety: safety
+        )
+        let injector = MockProcessingTextInjector(selectionSnapshot: snapshot)
+        injector.deliveryResult = .unconfirmed(.paste)
+        let recorder = MockProcessingAudioRecorder()
+        let history = MockProcessingHistoryStore()
+        let controller = makeWorkflowController(
+            textInjector: injector, audioRecorder: recorder,
+            llmService: CountingProcessingLLMService(rewriteText: "rewritten"),
+            historyStore: history, configureSettings: configureReadyLLM
+        )
+        controller.applyPersonaToSelection(
+            WorkflowController.PersonaSelectionContext(snapshot: snapshot, selectedText: "original"),
+            persona: PersonaProfile(name: "Concise", prompt: "Make it concise.")
+        )
+        await waitUntil { history.list().last?.applyStatus == .skipped }
+        XCTAssertEqual(injector.replacedTexts, ["rewritten"])
+        XCTAssertEqual(injector.replacementTargets.first.flatMap { $0 }?.replacementContextID, contextID)
+        XCTAssertEqual(history.list().last?.postProcessedText, "rewritten")
+        XCTAssertEqual(injector.deliveryCallCount, 1)
+        XCTAssertEqual(recorder.startCallCount, 0)
+        XCTAssertFalse(controller.overlayController.isShowingResultDialogForTesting)
     }
 
     func testApplyTextPresentsResultWithoutChangingClipboardWhenReplacementThrows() async {
@@ -145,9 +295,9 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         task.cancel()
         let (outcome, _) = await task.value
 
-        XCTAssertEqual(outcome, .presentedInDialog)
+        XCTAssertEqual(outcome, .cancelled)
         XCTAssertNil(controller.clipboard.getString())
-        XCTAssertTrue(controller.overlayController.isShowingResultDialogForTesting)
+        XCTAssertFalse(controller.overlayController.isShowingResultDialogForTesting)
         XCTAssertTrue(injector.replacedTexts.isEmpty)
     }
 
@@ -880,8 +1030,8 @@ final class WorkflowControllerProcessingTests: XCTestCase {
                 sessionID: controller.processingSessionID
             )
 
-            XCTAssertEqual(textInjector.insertedTexts, replaceSelection ? [] : [transcript])
-            XCTAssertEqual(textInjector.replacedTexts, replaceSelection ? [transcript] : [])
+            XCTAssertEqual(textInjector.insertedTexts, [transcript])
+            XCTAssertTrue(textInjector.replacedTexts.isEmpty)
             let savedRecord = historyStore.list().last
             XCTAssertEqual(savedRecord?.pipelineTiming?.asrRace?.selectedSource, .local)
             XCTAssertEqual(savedRecord?.pipelineTiming?.asrRace?.cloudAttempt.outcome, .cancelled)
@@ -1614,7 +1764,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         await controller.finishRecordingAndProcess(recordingStoppedAt: Date())
         await waitUntil {
-            historyStore.list().last?.transcriptText == "前半段内容，后半段内容。"
+            historyStore.list().last?.applyStatus == .succeeded
         }
 
         XCTAssertEqual(textInjector.insertedTexts, ["前半段内容，后半段内容"])
@@ -1848,7 +1998,9 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         controller.isAudioRecorderStarted = true
 
         await controller.finishRecordingAndProcess(recordingStoppedAt: Date())
-        await waitUntil { textInjector.insertedTexts == ["OK"] }
+        await waitUntil {
+            textInjector.insertedTexts == ["OK"] && analytics.events.last?.name == "dictation_session_completed"
+        }
 
         XCTAssertEqual(textInjector.insertedTexts, ["OK"])
         XCTAssertEqual(transcriber.profiles, [.standard, .lowEnergyRetry])
@@ -2418,6 +2570,9 @@ private final class MockProcessingTextInjector: TextInjector {
     private(set) var replacedTexts: [String] = []
     private(set) var replacementTargets: [TextSelectionSnapshot?] = []
     private(set) var selectionCaptureIntents: [SelectionCaptureIntent] = []
+    var deliveryResult: TextDeliveryResult = .delivered(.ax)
+    var onDeliver: (() -> Void)?
+    private(set) var deliveryCallCount = 0
     private let selectionSnapshot: TextSelectionSnapshot
     private let inputSnapshot: CurrentInputTextSnapshot
     private let insertError: Error?
@@ -2448,27 +2603,23 @@ private final class MockProcessingTextInjector: TextInjector {
         nil
     }
 
-    func insert(text: String) throws {
-        if let insertError {
-            throw insertError
+    @MainActor
+    func deliver(text: String, to destination: TextDeliveryDestination) async throws -> TextDeliveryResult {
+        try Task.checkCancellation()
+        deliveryCallCount += 1
+        onDeliver?()
+        switch destination {
+        case .currentInput:
+            if let insertError { throw insertError }
+            insertedTexts.append(text)
+        case let .selection(target):
+            if let replaceError { throw replaceError }
+            replacedTexts.append(text)
+            replacementTargets.append(target)
         }
-        insertedTexts.append(text)
+        return deliveryResult
     }
 
-    func replaceSelection(text: String) throws {
-        if let replaceError {
-            throw replaceError
-        }
-        replacedTexts.append(text)
-    }
-
-    func replaceSelection(text: String, target: TextSelectionSnapshot?) async throws {
-        if let replaceError {
-            throw replaceError
-        }
-        replacedTexts.append(text)
-        replacementTargets.append(target)
-    }
 }
 
 private final class SlowSelectionTextInjector: TextInjector {
@@ -2500,9 +2651,10 @@ private final class SlowSelectionTextInjector: TextInjector {
         nil
     }
 
-    func insert(text _: String) throws {}
-
-    func replaceSelection(text _: String) throws {}
+    @MainActor
+    func deliver(text _: String, to _: TextDeliveryDestination) async throws -> TextDeliveryResult {
+        .delivered(.ax)
+    }
 }
 
 private final class MockProcessingLLMService: LLMService {

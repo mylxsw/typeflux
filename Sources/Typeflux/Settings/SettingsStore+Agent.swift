@@ -1,26 +1,6 @@
 import Foundation
 
 extension SettingsStore {
-    var strictEditApplyFallbackEnabled: Bool {
-        get {
-            defaults.bool(forKey: "feature.strictEditApplyFallbackEnabled")
-        }
-        set {
-            defaults.set(newValue, forKey: "feature.strictEditApplyFallbackEnabled")
-            NotificationCenter.default.post(name: .agentConfigurationDidChange, object: self)
-        }
-    }
-
-    var stubbornPasteFallbackEnabled: Bool {
-        get {
-            let stored = defaults.object(forKey: "feature.stubbornPasteFallbackEnabled")
-            return stored == nil ? true : defaults.bool(forKey: "feature.stubbornPasteFallbackEnabled")
-        }
-        set {
-            defaults.set(newValue, forKey: "feature.stubbornPasteFallbackEnabled")
-        }
-    }
-
     var agentFrameworkEnabled: Bool {
         get { defaults.bool(forKey: "agent.frameworkEnabled") }
         set {

@@ -2605,24 +2605,6 @@ struct StudioView: View {
                                 .toggleStyle(.switch)
                             }
 
-                            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                            StudioSettingRow(
-                                title: L("settings.advanced.stubbornPasteFallback.title"),
-                                subtitle: L("settings.advanced.stubbornPasteFallback.subtitle"),
-                                badge: "Beta"
-                            ) {
-                                Toggle(
-                                    "",
-                                    isOn: Binding(
-                                        get: { viewModel.stubbornPasteFallbackEnabled },
-                                        set: viewModel.setStubbornPasteFallbackEnabled
-                                    )
-                                )
-                                .labelsHidden()
-                                .toggleStyle(.switch)
-                            }
-
                             /*
                              Apple Speech fallback is intentionally hidden from settings and should no longer
                              be presented to users. Keep the entry code because the underlying fallback remains.

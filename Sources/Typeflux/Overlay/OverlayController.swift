@@ -24,8 +24,10 @@ private final class TransparentHostingView<Content: View>: NSHostingView<Content
 }
 
 private final class OverlayPanel: NSPanel {
+    var allowsKeyboardFocus = false
+
     override var canBecomeKey: Bool {
-        true
+        allowsKeyboardFocus
     }
 }
 
@@ -184,6 +186,14 @@ private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
     }
 }
 
+/// The native registrations reference this box, never an unretained controller.
+/// Cleanup keeps the box alive on the main run loop after its owner is released.
+final class OverlayCallbackTarget {
+    weak var controller: OverlayController?
+
+    init(_ controller: OverlayController) { self.controller = controller }
+}
+
 /// CGEventTap callback — intercepts and consumes keyboard events (Return/Esc/arrows)
 /// system-wide so the panel never needs to steal focus from the original app.
 private func overlayEventTapCallback(
@@ -193,7 +203,8 @@ private func overlayEventTapCallback(
     refcon: UnsafeMutableRawPointer?
 ) -> Unmanaged<CGEvent>? {
     guard let refcon else { return Unmanaged.passUnretained(event) }
-    let controller = Unmanaged<OverlayController>.fromOpaque(refcon).takeUnretainedValue()
+    let target = Unmanaged<OverlayCallbackTarget>.fromOpaque(refcon).takeUnretainedValue()
+    guard let controller = target.controller else { return Unmanaged.passUnretained(event) }
     return controller.handleEventTapEvent(type: type, event: event)
 }
 
@@ -220,8 +231,8 @@ private func overlayPickerSystemKeyCallback(
         return noErr
     }
 
-    let controller = Unmanaged<OverlayController>.fromOpaque(userData).takeUnretainedValue()
-    controller.handlePickerSystemKey(keyCode: Int(hotkeyID.id))
+    let target = Unmanaged<OverlayCallbackTarget>.fromOpaque(userData).takeUnretainedValue()
+    target.controller?.handlePickerSystemKey(keyCode: Int(hotkeyID.id))
     return noErr
 }
 
@@ -314,6 +325,7 @@ final class OverlayController {
     private let settingsStore: SettingsStore
     private var window: NSPanel?
     private var overlayStyleObserver: NSObjectProtocol?
+    private var callbackTarget: OverlayCallbackTarget?
 
     private let model = OverlayViewModel()
     private var dismissWorkItem: DispatchWorkItem?
@@ -347,6 +359,7 @@ final class OverlayController {
             model.overlayStyle = self.settingsStore.overlayStyle
             configureWindowAppearance()
         }
+        callbackTarget = OverlayCallbackTarget(self)
     }
 
     convenience init(appState: AppStateStore) {
@@ -372,25 +385,35 @@ final class OverlayController {
         let mouseOutsideMonitor = _mouseOutsideMonitor
         let systemKeyRefs = Array(pickerSystemKeyRefs.values)
         let systemKeyHandlerRef = pickerSystemKeyHandlerRef
+        let target = callbackTarget
+        let ownedWindow = window
 
         queuedWork.forEach { $0?.cancel() }
         progressTask?.cancel()
-        if let tap {
-            CGEvent.tapEnable(tap: tap, enable: false)
-            if let source {
-                CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+        let cleanup = {
+            // Registration callbacks execute on the main run loop. Retain their
+            // weak target box until unregistration has finished on that run loop.
+            withExtendedLifetime(target) {
+                ownedWindow?.orderOut(nil)
+                if let tap {
+                    CGEvent.tapEnable(tap: tap, enable: false)
+                    if let source {
+                        CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+                    }
+                    CFMachPortInvalidate(tap)
+                }
+                if let fallbackGlobalMonitor { NSEvent.removeMonitor(fallbackGlobalMonitor) }
+                if let fallbackLocalMonitor { NSEvent.removeMonitor(fallbackLocalMonitor) }
+                if let mouseOutsideMonitor { NSEvent.removeMonitor(mouseOutsideMonitor) }
+                systemKeyRefs.forEach { UnregisterEventHotKey($0) }
+                if let systemKeyHandlerRef { RemoveEventHandler(systemKeyHandlerRef) }
+                if let styleObserver { NotificationCenter.default.removeObserver(styleObserver) }
             }
-            CFMachPortInvalidate(tap)
         }
-        if let fallbackGlobalMonitor { NSEvent.removeMonitor(fallbackGlobalMonitor) }
-        if let fallbackLocalMonitor { NSEvent.removeMonitor(fallbackLocalMonitor) }
-        if let mouseOutsideMonitor { NSEvent.removeMonitor(mouseOutsideMonitor) }
-        systemKeyRefs.forEach { UnregisterEventHotKey($0) }
-        if let systemKeyHandlerRef {
-            RemoveEventHandler(systemKeyHandlerRef)
-        }
-        if let styleObserver {
-            NotificationCenter.default.removeObserver(styleObserver)
+        if Thread.isMainThread {
+            cleanup()
+        } else {
+            DispatchQueue.main.async(execute: cleanup)
         }
     }
 
@@ -1018,6 +1041,12 @@ final class OverlayController {
     }
 
     private func refreshWindow() {
+        if let panel = window as? OverlayPanel {
+            panel.allowsKeyboardFocus = model.presentation.acceptsKeyboardFocus
+            if panel.isKeyWindow, !panel.allowsKeyboardFocus {
+                panel.orderOut(nil)
+            }
+        }
         positionWindow()
         configureWindowAppearance()
         // Always use orderFrontRegardless — never makeKeyAndOrderFront.
@@ -1277,13 +1306,13 @@ final class OverlayController {
     }
 
     private func installPickerSystemKeyHandlerIfNeeded() {
-        guard pickerSystemKeyHandlerRef == nil else { return }
+        guard pickerSystemKeyHandlerRef == nil, let callbackTarget else { return }
 
         var eventType = EventTypeSpec(
             eventClass: OSType(kEventClassKeyboard),
             eventKind: UInt32(kEventHotKeyPressed)
         )
-        let userData = Unmanaged.passUnretained(self).toOpaque()
+        let userData = Unmanaged.passUnretained(callbackTarget).toOpaque()
         let status = InstallEventHandler(
             GetApplicationEventTarget(),
             overlayPickerSystemKeyCallback,
@@ -1305,10 +1334,10 @@ final class OverlayController {
     }
 
     private func installKeyMonitoringIfNeeded() {
-        guard eventTap == nil else { return }
+        guard eventTap == nil, let callbackTarget else { return }
 
         let mask: CGEventMask = (1 << CGEventType.keyDown.rawValue)
-        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
+        let selfPtr = Unmanaged.passUnretained(callbackTarget).toOpaque()
 
         guard
             let tap = CGEvent.tapCreate(
@@ -1509,6 +1538,10 @@ final class OverlayViewModel: ObservableObject {
         var isProcessing: Bool {
             self == .processing || self == .processingPreview
         }
+
+        /// Pickers use the existing system key capture. Mouse clicks must not
+        /// take keyboard focus (and selection) away from the source editor.
+        var acceptsKeyboardFocus: Bool { self == .resultDialog }
     }
 
     @Published var presentation: Presentation = .recordingHold

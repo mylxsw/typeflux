@@ -81,13 +81,30 @@ final class WorkflowController {
 
     enum ApplyOutcome {
         case inserted
+        case pasted
+        case unconfirmed
+        case cancelled
         case presentedInDialog
         case copiedToClipboard
 
+        var wasInserted: Bool { self == .inserted || self == .pasted }
+
+        var historyStatus: HistoryRecord.StepStatus {
+            switch self {
+            case .inserted, .pasted, .copiedToClipboard: .succeeded
+            case .cancelled, .unconfirmed: .skipped
+            case .presentedInDialog: .failed
+            }
+        }
+
         var message: String {
             switch self {
-            case .inserted:
+            case .inserted, .pasted:
                 L("workflow.apply.inserted")
+            case .unconfirmed:
+                L("workflow.apply.dispatchedUnverified")
+            case .cancelled:
+                L("workflow.cancel.newRecording")
             case .presentedInDialog:
                 L("workflow.apply.presentedInDialog")
             case .copiedToClipboard:
@@ -825,7 +842,7 @@ final class WorkflowController {
 
             logger
                 .debug(
-                    "snapshot: isFocusedTarget=\(selectionSnapshot.isFocusedTarget) isEditable=\(selectionSnapshot.isEditable) hasSelection=\(selectionSnapshot.hasSelection) source=\(selectionSnapshot.source) selectedText=\(selectionSnapshot.selectedText?.prefix(32) ?? "nil")"
+                    "snapshot: isFocusedTarget=\(selectionSnapshot.isFocusedTarget) isEditable=\(selectionSnapshot.isEditable) hasSelection=\(selectionSnapshot.hasSelection) source=\(selectionSnapshot.source) selectedTextLength=\(selectionSnapshot.selectedText?.utf16.count ?? 0)"
                 )
 
             let selectedText = selectionContextText(from: selectionSnapshot)

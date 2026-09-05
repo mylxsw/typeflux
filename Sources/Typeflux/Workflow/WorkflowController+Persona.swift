@@ -193,6 +193,7 @@ extension WorkflowController {
         activeProcessingRecordID = record.id
 
         Task { @MainActor in
+            guard self.processingSessionID == sessionID else { return }
             self.appState.setStatus(.processing)
             self.overlayController.showLLMProcessing(timeout: fallbackWaitSeconds)
         }
@@ -225,9 +226,16 @@ extension WorkflowController {
                 record.pipelineTiming = pipelineTiming
 
                 let processedText = await outputPostProcessor.process(rewriteResult.text)
+                record.selectionEditedText = processedText
+                record.postProcessedText = processedText
+                record.processingStatus = .succeeded
+                record.applyStatus = .running
+                saveHistoryRecord(record)
+                try ensureProcessingIsActive(sessionID)
                 let outcome: ApplyOutcome
                 if shouldShowResultDialog {
-                    await MainActor.run {
+                    try await MainActor.run {
+                        try self.ensureProcessingIsActive(sessionID)
                         self.lastDialogResultText = processedText
                         self.overlayController.showResultDialog(
                             title: L("workflow.result.copyTitle"),
@@ -240,14 +248,15 @@ extension WorkflowController {
                         processedText,
                         replace: true,
                         fallbackTitle: L("workflow.result.copyTitle"),
-                        targetSnapshot: context.snapshot
+                        targetSnapshot: context.snapshot,
+                        expectedSessionID: sessionID
                     )
                     outcome = applyResult.0
                 }
 
                 try ensureProcessingIsActive(sessionID)
                 record.selectionEditedText = processedText
-                record.applyStatus = .succeeded
+                record.applyStatus = outcome.historyStatus
                 record.applyMessage = outcome.message
                 saveHistoryRecord(record)
                 UsageStatsStore.shared.recordSession(record: record)
