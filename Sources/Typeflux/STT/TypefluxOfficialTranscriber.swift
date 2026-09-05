@@ -70,14 +70,14 @@ protocol TypefluxOfficialASRTransport: Sendable {
 // MARK: - Main Transcriber
 
 final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCloudLLMIntegratedTranscriber,
-    OptimizeAwareRealtimeSessionFactory {
+    OptimizeAwareRealtimeSessionFactory, RecordingPrewarmingTranscriber {
     private let routingClient: any TypefluxOfficialASRRoutingClient
     private let transport: any TypefluxOfficialASRTransport
     private let serverRegistry: any TypefluxASRServerProviding
     private let accessTokenProvider: @Sendable () async -> String?
 
     init(
-        routingClient: any TypefluxOfficialASRRoutingClient = TypefluxOfficialASRRoutingHTTPClient(),
+        routingClient: any TypefluxOfficialASRRoutingClient = TypefluxOfficialASRRouteCache.shared,
         transport: any TypefluxOfficialASRTransport = DefaultTypefluxOfficialASRTransport(),
         serverRegistry: any TypefluxASRServerProviding = TypefluxASRServerRegistry.shared,
         accessTokenProvider: @escaping @Sendable () async -> String? = {
@@ -88,6 +88,18 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
         self.transport = transport
         self.serverRegistry = serverRegistry
         self.accessTokenProvider = accessTokenProvider
+    }
+
+    func prepareForRecording() async {
+        guard let cache = routingClient as? TypefluxOfficialASRRouteCache,
+              let token = await accessTokenProvider(),
+              !token.isEmpty
+        else { return }
+        await cache.prefetch(accessToken: token)
+    }
+
+    func cancelPreparedRecording() async {
+        // The prefetched route remains useful for the next recording.
     }
 
     func transcribeStream(

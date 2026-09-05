@@ -836,7 +836,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.usedTranscriptFallback, true)
     }
 
-    func testLocalTranscriptIsAppliedWhenCloudASRAndRewriteFail() async {
+    func testLocalTranscriptIsAppliedWhenCloudASRIsCancelledAndRewriteFails() async {
         let transcript = "Keep this complete local transcript"
         let cases: [(Bool, Error)] = [
             (false, URLError(.cannotConnectToHost)),
@@ -884,7 +884,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             XCTAssertEqual(textInjector.replacedTexts, replaceSelection ? [transcript] : [])
             let savedRecord = historyStore.list().last
             XCTAssertEqual(savedRecord?.pipelineTiming?.asrRace?.selectedSource, .local)
-            XCTAssertEqual(savedRecord?.pipelineTiming?.asrRace?.cloudAttempt.outcome, .failed)
+            XCTAssertEqual(savedRecord?.pipelineTiming?.asrRace?.cloudAttempt.outcome, .cancelled)
             XCTAssertEqual(savedRecord?.pipelineTiming?.asrRace?.localAttempt.outcome, .succeeded)
             XCTAssertEqual(savedRecord?.transcriptText, transcript)
             XCTAssertEqual(savedRecord?.postProcessedText, transcript)

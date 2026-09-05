@@ -126,7 +126,7 @@ final class TypefluxCloudClientIdentityStore: @unchecked Sendable {
     }
 }
 
-enum TypefluxCloudScenario: String, CaseIterable, Sendable {
+enum TypefluxCloudScenario: String, CaseIterable, Hashable, Sendable {
     case voiceInput = "voice-input"
     case askAnything = "ask-anything"
     case textRewrite = "text-rewrite"

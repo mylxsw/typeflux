@@ -32,14 +32,23 @@ final class AppCoordinator {
             queue: .main
         ) { [weak reporter = di.analyticsReporter] _ in
             reporter?.report(eventName: "app_login", properties: [:])
-            Task { await CloudEndpointRegistry.shared.probeAll() }
+            Task {
+                await CloudEndpointRegistry.shared.probeAll()
+                await TypefluxOfficialASRRouteCache.shared.invalidate()
+                if let token = await MainActor.run(body: { AuthState.shared.accessToken }) {
+                    await TypefluxOfficialASRRouteCache.shared.prefetch(accessToken: token)
+                }
+            }
         }
         authLogoutObserver = NotificationCenter.default.addObserver(
             forName: .authDidLogout,
             object: nil,
             queue: .main
         ) { _ in
-            Task { await CloudEndpointRegistry.shared.probeAll() }
+            Task {
+                await CloudEndpointRegistry.shared.probeAll()
+                await TypefluxOfficialASRRouteCache.shared.invalidate()
+            }
         }
         let settingsStore = di.settingsStore
         let localModelManager = di.localModelManager
@@ -123,7 +132,12 @@ final class AppCoordinator {
         }
         cloudEndpointProbeScheduler.start()
         asrPublicConfigRefreshScheduler.start()
-        Task { await AuthState.shared.refreshTokenIfNeeded() }
+        Task {
+            await AuthState.shared.refreshTokenIfNeeded()
+            if let token = await MainActor.run(body: { AuthState.shared.accessToken }) {
+                await TypefluxOfficialASRRouteCache.shared.prefetch(accessToken: token)
+            }
+        }
 
         if !di.settingsStore.isOnboardingCompleted {
             presentOnboarding()
@@ -141,6 +155,7 @@ final class AppCoordinator {
         permissionAnalyticsTimer = nil
         cloudEndpointProbeScheduler.stop()
         asrPublicConfigRefreshScheduler.stop()
+        Task { await TypefluxOfficialASRRouteCache.shared.invalidate() }
         workflowController?.stop()
         statusBarController?.stop()
     }
