@@ -66,4 +66,28 @@ final class TextSelectionSnapshotTests: XCTestCase {
         XCTAssertTrue(snapshot.canReplaceSelection)
         XCTAssertFalse(snapshot.canSafelyRestoreSelection)
     }
+
+    func testExplicitReplacementSafetyOverridesLegacySourceInference() {
+        var snapshot = TextSelectionSnapshot()
+        snapshot.selectedText = "Selected from an opaque web view"
+        snapshot.isFocusedTarget = true
+        snapshot.isEditable = true
+        snapshot.source = "clipboard-copy"
+        snapshot.replacementSafety = .resultOnly
+
+        XCTAssertTrue(snapshot.hasAskSelectionContext)
+        XCTAssertFalse(snapshot.canReplaceSelection)
+        XCTAssertFalse(snapshot.canSafelyRestoreSelection)
+    }
+
+    func testVerifiedPasteSafetyAllowsReplacement() {
+        var snapshot = TextSelectionSnapshot()
+        snapshot.selectedText = "Verified selection"
+        snapshot.isFocusedTarget = true
+        snapshot.source = "clipboard-copy"
+        snapshot.replacementSafety = .verifiedPaste
+
+        XCTAssertTrue(snapshot.canReplaceSelection)
+        XCTAssertFalse(snapshot.canSafelyRestoreSelection)
+    }
 }

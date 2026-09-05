@@ -105,56 +105,27 @@ extension AXTextInjector {
         }
         let application = AXUIElementCreateApplication(processID)
         AXUIElementSetMessagingTimeout(application, Self.replacementAXMessagingTimeout)
-        guard let element = lightweightFocusedElement(application: application) else {
+        guard let element = resolvedFocusedElement(application: application) else {
             return nil
         }
 
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
-        let isNativeText = Self.nativeEditableRoles.contains(role ?? "")
-        let isSettable = isAttributeSettable(kAXSelectedTextRangeAttribute as CFString, on: element)
-            || isAttributeSettable(kAXValueAttribute as CFString, on: element)
-            || isAttributeSettable(kAXSelectedTextAttribute as CFString, on: element)
-
-        if !isNativeText, !isSettable {
-            return nil
-        }
-
         let range = copySelectedTextRange(from: element)
-        if let range, range.length == 0 {
-            return nil
-        }
-
-        guard let text = copyStringAttribute(kAXSelectedTextAttribute, from: element) else {
-            return nil
-        }
-
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            return nil
-        }
-
-        if let placeholder = copyStringAttribute(kAXPlaceholderValueAttribute as String, from: element),
-           placeholder == text {
-            return nil
-        }
-        if let title = copyStringAttribute(kAXTitleAttribute as String, from: element),
-           title == text {
-            return nil
-        }
-
-        if range == nil, role == "AXWebArea" || role == "AXGroup" || role == "AXUnknown",
-           let value = copyStringAttribute(kAXValueAttribute as String, from: element),
-           value == text {
-            return nil
-        }
-
-        guard let range else { return nil }
+        guard let text = Self.validSelectionText(
+            selectedText: copyTextAttribute(kAXSelectedTextAttribute as String, from: element),
+            selectedRange: range,
+            value: copyTextAttribute(kAXValueAttribute as String, from: element),
+            placeholder: copyTextAttribute(kAXPlaceholderValueAttribute as String, from: element),
+            title: copyTextAttribute(kAXTitleAttribute as String, from: element),
+            role: role
+        ) else { return nil }
 
         let focusedWindow = focusedWindowElement(for: processID)
         let selectionWindow = containingWindow(of: element)
-        let isFocusedTarget = focusedWindow.map { window in
+        let windowMatches = focusedWindow.map { window in
             selectionWindow.map { selection in windowsMatch(window, selection) } ?? true
-        } ?? false
+        } ?? true
+        let isFocusedTarget = frontmostProcessID() == processID && windowMatches
 
         let context = SelectionContext(
             element: element,
@@ -181,6 +152,35 @@ extension AXTextInjector {
         )
 
         return (text, context)
+    }
+
+    /// Web accessibility bridges can expose a stale collapsed range while still
+    /// returning the real DOM selection. Non-empty selected text is therefore
+    /// positive context evidence; the range only controls replacement safety.
+    static func validSelectionText(
+        selectedText: String?,
+        selectedRange: CFRange?,
+        value: String?,
+        placeholder: String?,
+        title: String?,
+        role: String?
+    ) -> String? {
+        guard let selectedText else { return nil }
+        let trimmed = selectedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let normalizedPlaceholder = placeholder?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard normalizedPlaceholder != trimmed, normalizedTitle != trimmed else { return nil }
+
+        let lacksPositiveRange = selectedRange?.length ?? 0 <= 0
+        let isOpaqueContainer = role == "AXWebArea" || role == "AXGroup" || role == "AXUnknown"
+        let normalizedValue = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if lacksPositiveRange, isOpaqueContainer, normalizedValue == trimmed {
+            // Several web containers expose their full value through AXSelectedText
+            // even with a collapsed caret. Do not treat that as a real selection.
+            return nil
+        }
+        return trimmed
     }
 
     func isAttributeSettable(_ attribute: CFString, on element: AXUIElement) -> Bool {
@@ -240,7 +240,11 @@ extension AXTextInjector {
         let appElement = AXUIElementCreateApplication(processID)
         AXUIElementSetMessagingTimeout(appElement, Self.replacementAXMessagingTimeout)
 
-        if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: appElement),
+        return resolvedFocusedElement(application: appElement)
+    }
+
+    func resolvedFocusedElement(application: AXUIElement) -> AXUIElement? {
+        if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: application),
            let resolved = resolveFocusedElement(focused) {
             logFocusResolution(
                 context: "focusedElement(appFocusedUIElement)",
@@ -250,7 +254,7 @@ extension AXTextInjector {
             return resolved
         }
 
-        if let focusedWindow = copyElementAttribute(kAXFocusedWindowAttribute as String, from: appElement),
+        if let focusedWindow = copyElementAttribute(kAXFocusedWindowAttribute as String, from: application),
            let resolved = resolveFocusedElement(focusedWindow) {
             logFocusResolution(
                 context: "focusedElement(focusedWindow)",
@@ -1091,8 +1095,15 @@ extension AXTextInjector {
 
     func resolveFocusedElement(_ element: AXUIElement) -> AXUIElement? {
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
+        let isContainer = role == "AXWindow"
+            || Self.genericEditableRoles.contains(role ?? "")
+            || Self.opaqueContainerRoles.contains(role ?? "")
 
-        if role != "AXWindow" {
+        if !isContainer {
+            return element
+        }
+
+        if role != "AXWindow", validSelectionText(from: element) != nil {
             return element
         }
 
@@ -1107,6 +1118,13 @@ extension AXTextInjector {
             depthRemaining: Self.focusedDescendantSearchDepth
         ) {
             return descendant
+        }
+
+        if let selectionDescendant = findSelectionDescendant(
+            in: element,
+            depthRemaining: Self.focusedDescendantSearchDepth
+        ) {
+            return selectionDescendant
         }
 
         if let editableDescendant = findBestEditableDescendant(
@@ -1134,6 +1152,53 @@ extension AXTextInjector {
         }
 
         return element
+    }
+
+    func validSelectionText(from element: AXUIElement) -> String? {
+        guard let selectedText = copyTextAttribute(kAXSelectedTextAttribute as String, from: element) else {
+            return nil
+        }
+        return Self.validSelectionText(
+            selectedText: selectedText,
+            selectedRange: copySelectedTextRange(from: element),
+            value: copyTextAttribute(kAXValueAttribute as String, from: element),
+            placeholder: copyTextAttribute(kAXPlaceholderValueAttribute as String, from: element),
+            title: copyTextAttribute(kAXTitleAttribute as String, from: element),
+            role: copyStringAttribute(kAXRoleAttribute as String, from: element)
+        )
+    }
+
+    func findSelectionDescendant(in element: AXUIElement, depthRemaining: Int) -> AXUIElement? {
+        var remainingNodes = Self.selectionDescendantSearchMaxNodes
+        return findSelectionDescendant(
+            in: element,
+            depthRemaining: depthRemaining,
+            remainingNodes: &remainingNodes
+        )
+    }
+
+    private func findSelectionDescendant(
+        in element: AXUIElement,
+        depthRemaining: Int,
+        remainingNodes: inout Int
+    ) -> AXUIElement? {
+        guard depthRemaining > 0, remainingNodes > 0 else { return nil }
+
+        for child in copyElementArrayAttribute(kAXChildrenAttribute as String, from: element) {
+            guard remainingNodes > 0 else { return nil }
+            remainingNodes -= 1
+            if validSelectionText(from: child) != nil {
+                return child
+            }
+            if let nested = findSelectionDescendant(
+                in: child,
+                depthRemaining: depthRemaining - 1,
+                remainingNodes: &remainingNodes
+            ) {
+                return nested
+            }
+        }
+        return nil
     }
 
     func findFocusedDescendant(in element: AXUIElement, depthRemaining: Int) -> AXUIElement? {

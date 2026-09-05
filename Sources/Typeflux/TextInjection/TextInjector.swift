@@ -10,6 +10,22 @@ enum SelectionCaptureIntent: Equatable {
     case explicitSelectionAction
 }
 
+enum SelectionReplacementSafety: Equatable {
+    /// The capture did not produce usable selection context.
+    case none
+
+    /// Accessibility exposed a stable, writable non-empty range.
+    case directAccessibility
+
+    /// A non-empty Accessibility range was completed through a clipboard read and
+    /// must be revalidated immediately before paste.
+    case verifiedPaste
+
+    /// The text is valid context for an explicit action, but the target does not
+    /// expose enough evidence for safe in-place replacement.
+    case resultOnly
+}
+
 struct TextSelectionSnapshot {
     var processID: pid_t?
     var processName: String?
@@ -22,6 +38,7 @@ struct TextSelectionSnapshot {
     var windowTitle: String?
     var isFocusedTarget: Bool = false
     var replacementContextID: UUID?
+    var replacementSafety: SelectionReplacementSafety?
 
     var hasSelection: Bool {
         let trimmed = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -33,7 +50,13 @@ struct TextSelectionSnapshot {
     }
 
     var canReplaceSelection: Bool {
-        hasAskSelectionContext && (
+        if let replacementSafety {
+            return hasAskSelectionContext && (
+                replacementSafety == .directAccessibility ||
+                    replacementSafety == .verifiedPaste
+            )
+        }
+        return hasAskSelectionContext && (
             isEditable ||
                 source == "clipboard-copy"
         )
