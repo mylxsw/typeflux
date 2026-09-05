@@ -1728,12 +1728,15 @@ final class AXTextInjectorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testClipboardSelectionProbeRejectsCollapsedSelection() {
+    func testAutomaticClipboardSelectionProbeRejectsCollapsedSelection() {
         XCTAssertFalse(AXTextInjector.shouldProbeClipboardSelection(
             selectedRange: CFRange(location: 12, length: 0),
             intent: .automaticInsertion
         ))
-        XCTAssertFalse(AXTextInjector.shouldProbeClipboardSelection(
+    }
+
+    func testExplicitClipboardSelectionProbeAllowsStaleCollapsedRange() {
+        XCTAssertTrue(AXTextInjector.shouldProbeClipboardSelection(
             selectedRange: CFRange(location: 12, length: 0),
             intent: .explicitSelectionAction
         ))
@@ -1762,6 +1765,123 @@ final class AXTextInjectorTests: XCTestCase {
             selectedRange: CFRange(location: 4, length: 8),
             intent: .explicitSelectionAction
         ))
+    }
+
+    func testValidSelectionTextAcceptsWebSelectionWithStaleCollapsedRange() {
+        XCTAssertEqual(
+            AXTextInjector.validSelectionText(
+                selectedText: "selected words",
+                selectedRange: CFRange(location: 42, length: 0),
+                value: "the selected words remain inside a larger value",
+                placeholder: nil,
+                title: nil,
+                role: "AXWebArea"
+            ),
+            "selected words"
+        )
+    }
+
+    func testValidSelectionTextRejectsOpaqueFullValueAtCollapsedCaret() {
+        XCTAssertNil(AXTextInjector.validSelectionText(
+            selectedText: "entire editor",
+            selectedRange: CFRange(location: 13, length: 0),
+            value: "entire editor",
+            placeholder: nil,
+            title: nil,
+            role: "AXGroup"
+        ))
+    }
+
+    func testValidSelectionTextAcceptsReadOnlySelectionWithoutRange() {
+        XCTAssertEqual(
+            AXTextInjector.validSelectionText(
+                selectedText: "message excerpt",
+                selectedRange: nil,
+                value: nil,
+                placeholder: nil,
+                title: nil,
+                role: "AXStaticText"
+            ),
+            "message excerpt"
+        )
+    }
+
+    func testValidSelectionTextRejectsPlaceholderTitleAndWhitespace() {
+        XCTAssertNil(AXTextInjector.validSelectionText(
+            selectedText: "Prompt",
+            selectedRange: CFRange(location: 0, length: 6),
+            value: nil,
+            placeholder: "Prompt",
+            title: nil,
+            role: "AXTextArea"
+        ))
+        XCTAssertNil(AXTextInjector.validSelectionText(
+            selectedText: "Window",
+            selectedRange: CFRange(location: 0, length: 6),
+            value: nil,
+            placeholder: nil,
+            title: "Window",
+            role: "AXTextArea"
+        ))
+        XCTAssertNil(AXTextInjector.validSelectionText(
+            selectedText: " \n ",
+            selectedRange: CFRange(location: 0, length: 3),
+            value: nil,
+            placeholder: nil,
+            title: nil,
+            role: "AXTextArea"
+        ))
+    }
+
+    func testReplacementSafetyRequiresPositiveWritableFocusedRange() {
+        XCTAssertEqual(
+            AXTextInjector.replacementSafety(
+                source: "accessibility",
+                selectedRange: CFRange(location: 4, length: 8),
+                isEditable: true,
+                isFocusedTarget: true
+            ),
+            .directAccessibility
+        )
+        XCTAssertEqual(
+            AXTextInjector.replacementSafety(
+                source: "clipboard-copy",
+                selectedRange: CFRange(location: 4, length: 8),
+                isEditable: true,
+                isFocusedTarget: true
+            ),
+            .verifiedPaste
+        )
+    }
+
+    func testReplacementSafetyFallsBackToResultForAmbiguousTargets() {
+        XCTAssertEqual(
+            AXTextInjector.replacementSafety(
+                source: "clipboard-copy",
+                selectedRange: nil,
+                isEditable: true,
+                isFocusedTarget: true
+            ),
+            .resultOnly
+        )
+        XCTAssertEqual(
+            AXTextInjector.replacementSafety(
+                source: "accessibility",
+                selectedRange: CFRange(location: 4, length: 8),
+                isEditable: false,
+                isFocusedTarget: true
+            ),
+            .resultOnly
+        )
+        XCTAssertEqual(
+            AXTextInjector.replacementSafety(
+                source: "accessibility",
+                selectedRange: CFRange(location: 4, length: 8),
+                isEditable: true,
+                isFocusedTarget: false
+            ),
+            .resultOnly
+        )
     }
 
     func testClipboardCopyProbeRejectsStaleTextWhenCopyDoesNothing() {

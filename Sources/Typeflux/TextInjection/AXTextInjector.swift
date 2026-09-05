@@ -299,6 +299,7 @@ final class AXTextInjector: TextInjector {
     static let selectionContextLifetime: TimeInterval = 180
     static let maximumSelectionContextCount = 16
     static let focusedDescendantSearchDepth = 10
+    static let selectionDescendantSearchMaxNodes = 96
     static let replacementAXMessagingTimeout: Float = 0.25
     static let pasteboardReadTimeoutMilliseconds = 250
     static let pasteboardSnapshotTimeoutMilliseconds = 250
@@ -840,6 +841,19 @@ final class AXTextInjector: TextInjector {
         let processID = target.processID
         let processName = target.processName
         let bundleIdentifier = target.bundleIdentifier
+        guard processID != nil, processID == frontmostProcessID() else {
+            logger.debug("selection target changed before capture started")
+            latestSelectionContext = nil
+            return TextSelectionSnapshot(
+                processID: processID,
+                processName: processName,
+                bundleIdentifier: bundleIdentifier,
+                source: "target-changed",
+                isEditable: false,
+                isFocusedTarget: false,
+                replacementSafety: SelectionReplacementSafety.none
+            )
+        }
         logger
             .debug(
                 "getSelectionSnapshot — app: \(processName ?? "?", privacy: .public) (pid: \(processID.map(String.init) ?? "?", privacy: .public))"
@@ -866,7 +880,13 @@ final class AXTextInjector: TextInjector {
                 role: result.context.role,
                 windowTitle: result.context.windowTitle,
                 isFocusedTarget: result.context.isFocusedTarget,
-                replacementContextID: replacementContextID
+                replacementContextID: replacementContextID,
+                replacementSafety: Self.replacementSafety(
+                    source: result.context.source,
+                    selectedRange: result.context.range,
+                    isEditable: editability,
+                    isFocusedTarget: result.context.isFocusedTarget
+                )
             )
         }
 
@@ -896,9 +916,10 @@ final class AXTextInjector: TextInjector {
             // When selectionWindow is nil (e.g. Electron/Chromium AX hierarchy doesn't expose
             // a traversable parent chain to the window), we still trust isFocusedTarget = true
             // because the Cmd+C was sent to processID (the frontmost app) and succeeded.
-            let isFocusedTarget = focusedWindow.map { w in
+            let windowMatches = focusedWindow.map { w in
                 selectionWindow.map { s in windowsMatch(w, s) } ?? true
             } ?? (focusedElement != nil)
+            let isFocusedTarget = frontmostProcessID() == processID && windowMatches
             let context = SelectionContext(
                 element: focusedElement ?? AXUIElementCreateSystemWide(),
                 windowElement: focusedWindow ?? selectionWindow,
@@ -952,7 +973,13 @@ final class AXTextInjector: TextInjector {
                 role: context.role,
                 windowTitle: context.windowTitle,
                 isFocusedTarget: context.isFocusedTarget,
-                replacementContextID: replacementContextID
+                replacementContextID: replacementContextID,
+                replacementSafety: Self.replacementSafety(
+                    source: "clipboard-copy",
+                    selectedRange: clipboardProbeRange,
+                    isEditable: editability,
+                    isFocusedTarget: context.isFocusedTarget
+                )
             )
         }
         logger.debug("clipboard-copy returned nil — no selection detected")
@@ -977,7 +1004,8 @@ final class AXTextInjector: TextInjector {
     /// A copy response alone is not proof of a selection: some applications copy the
     /// entire field when no range is selected. Ordinary dictation therefore requires
     /// positive range evidence. An explicit selection command may probe an opaque target,
-    /// while still respecting a range that Accessibility confirms is collapsed.
+    /// including web bridges that report a stale collapsed range; ambiguous results are
+    /// context-only and never authorized for destructive replacement.
     static func shouldProbeClipboardSelection(
         selectedRange: CFRange?,
         intent: SelectionCaptureIntent
@@ -986,8 +1014,20 @@ final class AXTextInjector: TextInjector {
         case .automaticInsertion:
             selectedRange?.length ?? 0 > 0
         case .explicitSelectionAction:
-            selectedRange?.length != 0
+            true
         }
+    }
+
+    static func replacementSafety(
+        source: String,
+        selectedRange: CFRange?,
+        isEditable: Bool,
+        isFocusedTarget: Bool
+    ) -> SelectionReplacementSafety {
+        guard isFocusedTarget else { return .resultOnly }
+        guard selectedRange?.length ?? 0 > 0 else { return .resultOnly }
+        guard isEditable else { return .resultOnly }
+        return source == "clipboard-copy" ? .verifiedPaste : .directAccessibility
     }
 
     func insert(text: String) throws {

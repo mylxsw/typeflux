@@ -418,7 +418,7 @@ extension AXTextInjector {
         AXUIElementSetMessagingTimeout(application, Self.replacementAXMessagingTimeout)
         AXUIElementSetMessagingTimeout(context.element, Self.replacementAXMessagingTimeout)
 
-        guard var currentElement = lightweightFocusedElement(application: application) else {
+        guard var currentElement = resolvedFocusedElement(application: application) else {
             throw selectionReplacementError(code: 28, description: "The target no longer has a focused input")
         }
         AXUIElementSetMessagingTimeout(currentElement, Self.replacementAXMessagingTimeout)
@@ -429,7 +429,7 @@ extension AXTextInjector {
                 processID: processID,
                 milliseconds: Self.copySelectionTimeoutMilliseconds
             )
-            guard let focusedAfterCopy = lightweightFocusedElement(application: application) else {
+            guard let focusedAfterCopy = resolvedFocusedElement(application: application) else {
                 throw selectionReplacementError(
                     code: 29,
                     description: "The selected text changed while the result was being generated"
@@ -440,7 +440,7 @@ extension AXTextInjector {
         } else if context.source == "clipboard-copy" {
             currentText = context.selectedText
         } else {
-            currentText = copyStringAttribute(kAXSelectedTextAttribute as String, from: currentElement)
+            currentText = copyTextAttribute(kAXSelectedTextAttribute as String, from: currentElement)
         }
         let elementMatches = CFEqual(context.element, currentElement)
         let currentRange = copySelectedTextRange(from: currentElement)

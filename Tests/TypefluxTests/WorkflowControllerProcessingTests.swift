@@ -524,7 +524,8 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             role: "AXWindow",
             windowTitle: "Editor",
             isFocusedTarget: true,
-            replacementContextID: UUID()
+            replacementContextID: UUID(),
+            replacementSafety: .resultOnly
         )
         let textInjector = MockProcessingTextInjector(selectionSnapshot: snapshot)
         let controller = makeWorkflowController(
@@ -544,6 +545,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             controller.personaPickerTitle(for: controller.personaPickerMode),
             L("overlay.personaPicker.applyTitle")
         )
+        XCTAssertTrue(controller.shouldPresentResultDialog(for: context.snapshot))
     }
 
     func testPersonaPickerSeparatesSelectionContextFromReplacementCapability() async {

@@ -664,10 +664,23 @@ extension AXTextInjector {
     }
 
     func readSelectedTextViaCopy(processID: pid_t?, milliseconds: Int) -> String? {
-        readSelectedTextViaCopy(
+        let processScopedResult = readSelectedTextViaCopy(
             milliseconds: milliseconds,
             pasteboard: .general,
             sendCopy: { sendCopyShortcut(to: processID) }
+        )
+        if let processScopedResult {
+            return processScopedResult
+        }
+
+        guard let processID, frontmostProcessID() == processID else { return nil }
+        NetworkDebugLogger.logMessage(
+            "[Text Selection] process-scoped copy did not respond; retrying through HID event tap"
+        )
+        return readSelectedTextViaCopy(
+            milliseconds: milliseconds,
+            pasteboard: .general,
+            sendCopy: { sendCopyShortcutViaHID() }
         )
     }
 
@@ -776,6 +789,20 @@ extension AXTextInjector {
     }
 
     func sendCopyShortcut(to processID: pid_t?) {
+        postCopyShortcut { event in
+            if let processID {
+                event.postToPid(processID)
+            } else {
+                event.post(tap: .cghidEventTap)
+            }
+        }
+    }
+
+    func sendCopyShortcutViaHID() {
+        postCopyShortcut { $0.post(tap: .cghidEventTap) }
+    }
+
+    private func postCopyShortcut(post: (CGEvent) -> Void) {
         let source = CGEventSource(stateID: .combinedSessionState)
         let down = CGEvent(
             keyboardEventSource: source,
@@ -790,13 +817,8 @@ extension AXTextInjector {
         )
         up?.flags = .maskCommand
 
-        if let processID {
-            down?.postToPid(processID)
-            up?.postToPid(processID)
-        } else {
-            down?.post(tap: .cghidEventTap)
-            up?.post(tap: .cghidEventTap)
-        }
+        if let down { post(down) }
+        if let up { post(up) }
     }
 
     func capturePasteboardSnapshotWithTimeout(from pasteboard: NSPasteboard) -> PasteboardSnapshot? {
