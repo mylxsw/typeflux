@@ -54,6 +54,7 @@ struct TypefluxOfficialASRRoutingHTTPClient: TypefluxOfficialASRRoutingClient {
             request.httpMethod = "POST"
             request.timeoutInterval = 30
             request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            request.setValue(UUID().uuidString.lowercased(), forHTTPHeaderField: TypefluxOfficialASRRequestFactory.traceIDHeader)
             TypefluxCloudRequestHeaders.applyScenario(scenario, to: &request)
             return request
         }

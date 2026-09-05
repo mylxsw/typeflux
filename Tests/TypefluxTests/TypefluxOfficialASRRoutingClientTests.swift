@@ -8,6 +8,7 @@ final class TypefluxOfficialASRRoutingClientTests: XCTestCase {
             XCTAssertEqual(request.url?.path, "/api/v1/asr/token")
             XCTAssertEqual(request.httpMethod, "POST")
             XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer cloud-token")
+            XCTAssertNotNil(request.value(forHTTPHeaderField: TypefluxOfficialASRRequestFactory.traceIDHeader))
             XCTAssertEqual(request.value(forHTTPHeaderField: TypefluxCloudRequestHeaders.scenarioField), "voice-input")
             XCTAssertNil(request.httpBody)
             return (

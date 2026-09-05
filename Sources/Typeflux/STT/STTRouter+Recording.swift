@@ -5,6 +5,8 @@ extension STTRouter {
             await (doubaoRealtime as? RecordingPrewarmingTranscriber)?.prepareForRecording()
         case .localModel:
             await (localModel as? RecordingPrewarmingTranscriber)?.prepareForRecording()
+        case .typefluxOfficial:
+            await (typefluxOfficial as? RecordingPrewarmingTranscriber)?.prepareForRecording()
         default:
             break
         }
@@ -16,6 +18,8 @@ extension STTRouter {
             await (doubaoRealtime as? RecordingPrewarmingTranscriber)?.cancelPreparedRecording()
         case .localModel:
             await (localModel as? RecordingPrewarmingTranscriber)?.cancelPreparedRecording()
+        case .typefluxOfficial:
+            await (typefluxOfficial as? RecordingPrewarmingTranscriber)?.cancelPreparedRecording()
         default:
             break
         }
