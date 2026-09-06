@@ -1354,3 +1354,6 @@
 "workflow.result.unconfirmedTitle" = "挿入を確認できませんでした。必要に応じて結果をコピーしてください";
 
 "workflow.apply.dispatchedUnverified" = "現在のアプリに送信しました。入力の確認はできませんでした。結果は履歴に保存されています。";
+
+"history.stats.hotkeyToFirstSignal" = "キー操作からマイク信号まで";
+"history.stats.inputZeroPrefix" = "先頭のデジタル無音";

@@ -12,8 +12,8 @@ struct HotkeyEventContext: Sendable, Equatable {
     /// Physical event time in seconds since system startup.
     let uptime: TimeInterval
 
-    init(detectedAt: Date = Date(), uptime: TimeInterval = ProcessInfo.processInfo.systemUptime) {
-        self.detectedAt = detectedAt
+    init(detectedAt: Date? = nil, uptime: TimeInterval = ProcessInfo.processInfo.systemUptime) {
+        self.detectedAt = detectedAt ?? Date().addingTimeInterval(uptime - ProcessInfo.processInfo.systemUptime)
         self.uptime = uptime
     }
 }

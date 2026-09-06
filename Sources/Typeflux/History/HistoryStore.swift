@@ -5,6 +5,8 @@ struct HistoryPipelineTiming: Codable, Equatable {
     var recordingWorkflowStartedAt: Date?
     var audioEngineStartedAt: Date?
     var firstAudioBufferAt: Date?
+    var firstAudioSignalAt: Date?
+    var leadingZeroDuration: TimeInterval?
     var recordingStoppedAt: Date?
     var audioFileReadyAt: Date?
     var transcriptionStartedAt: Date?
@@ -31,6 +33,8 @@ struct HistoryPipelineTiming: Codable, Equatable {
             recordingWorkflowStartedAt != nil ||
             audioEngineStartedAt != nil ||
             firstAudioBufferAt != nil ||
+            firstAudioSignalAt != nil ||
+            leadingZeroDuration != nil ||
             recordingStoppedAt != nil ||
             audioFileReadyAt != nil ||
             transcriptionStartedAt != nil ||
@@ -64,6 +68,8 @@ struct HistoryPipelineTiming: Codable, Equatable {
             recordingWorkflowStartedAt: recordingWorkflowStartedAt,
             audioEngineStartedAt: audioEngineStartedAt,
             firstAudioBufferAt: firstAudioBufferAt,
+            firstAudioSignalAt: firstAudioSignalAt,
+            leadingZeroDuration: leadingZeroDuration,
             recordingStoppedAt: recordingStoppedAt,
             audioFileReadyAt: audioFileReadyAt,
             transcriptionStartedAt: transcriptionStartedAt,
@@ -134,6 +140,8 @@ struct HistoryPipelineStats: Codable, Equatable {
     var recordingWorkflowStartedAt: Date?
     var audioEngineStartedAt: Date?
     var firstAudioBufferAt: Date?
+    var firstAudioSignalAt: Date?
+    var leadingZeroDuration: TimeInterval?
     var recordingStoppedAt: Date?
     var audioFileReadyAt: Date?
     var transcriptionStartedAt: Date?
@@ -177,6 +185,8 @@ struct HistoryPipelineStats: Codable, Equatable {
             recordingWorkflowStartedAt != nil ||
             audioEngineStartedAt != nil ||
             firstAudioBufferAt != nil ||
+            firstAudioSignalAt != nil ||
+            leadingZeroDuration != nil ||
             recordingStoppedAt != nil ||
             audioFileReadyAt != nil ||
             transcriptionStartedAt != nil ||

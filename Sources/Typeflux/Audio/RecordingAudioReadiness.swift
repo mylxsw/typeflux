@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 
 /// Joins first audio arrival with successful workflow setup without blocking either.
@@ -11,6 +12,12 @@ final class RecordingAudioReadiness: @unchecked Sendable {
 
     var isReady: Bool {
         lock.withLock { receivedAudio && !cancelled }
+    }
+
+    func receiveAudio(_ buffer: AVAudioPCMBuffer) {
+        // Signal onset remains diagnostic; silence must not hold the recording UI.
+        guard buffer.frameLength > 0 else { return }
+        receiveAudio()
     }
 
     func receiveAudio() {

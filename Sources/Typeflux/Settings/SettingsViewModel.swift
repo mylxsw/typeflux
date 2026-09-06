@@ -3114,14 +3114,15 @@ final class StudioViewModel: ObservableObject {
                 id: "recording-startup",
                 title: L("history.timeline.recordingStartup"),
                 start: stats.hotkeyDetectedAt,
-                end: stats.firstAudioBufferAt,
+                end: stats.firstAudioSignalAt ?? (stats.leadingZeroDuration == nil
+                    ? stats.firstAudioBufferAt : stats.recordingStoppedAt),
                 tone: .audio,
                 isDetail: false
             ),
             LaneSource(
                 id: "recording",
                 title: L("history.timeline.recording"),
-                start: stats.firstAudioBufferAt,
+                start: stats.firstAudioSignalAt ?? (stats.leadingZeroDuration == nil ? stats.firstAudioBufferAt : nil),
                 end: stats.recordingStoppedAt,
                 tone: .audio,
                 isDetail: false
@@ -3433,6 +3434,12 @@ final class StudioViewModel: ObservableObject {
 
         var keyMetricSources: [(String, String, Int?)] = [
             ("hotkey-to-first-audio", L("history.stats.hotkeyToFirstAudio"), stats.hotkeyToFirstAudioMilliseconds),
+            ("hotkey-to-first-signal", L("history.stats.hotkeyToFirstSignal"),
+             stats.hotkeyDetectedAt.flatMap { start in stats.firstAudioSignalAt.map {
+                 max(0, Int(($0.timeIntervalSince(start) * 1000).rounded()))
+             } }),
+            ("input-zero-prefix", L("history.stats.inputZeroPrefix"),
+             stats.leadingZeroDuration.map { Int(($0 * 1000).rounded()) }),
             ("hotkey-dispatch", L("history.stats.hotkeyDispatch"), stats.hotkeyDispatchMilliseconds),
             (
                 "recording-preparation",

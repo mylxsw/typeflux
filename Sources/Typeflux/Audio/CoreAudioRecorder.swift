@@ -37,6 +37,7 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
         let levelHandler: (Float) -> Void
         let bufferHandler: ((AVAudioPCMBuffer) -> Void)?
         var firstCallbackDate: Date?
+        var signalTracker = AudioInputSignalTracker()
         var error: Error?
         var lastCallbackHostTime: UInt64
         var lastMeterHostTime: UInt64 = 0
@@ -188,7 +189,9 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
             return AudioFile(
                 fileURL: current.url, duration: duration,
                 startupTiming: .init(
-                    audioEngineStartedAt: current.startDate, firstAudioBufferAt: firstCallbackDate
+                    audioEngineStartedAt: current.startDate, firstAudioBufferAt: firstCallbackDate,
+                    firstAudioSignalAt: current.signalTracker.firstSignalAt,
+                    leadingZeroDuration: current.signalTracker.leadingZeroDuration
                 ))
         }
     }
@@ -197,6 +200,15 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
         guard let current = session else { return }
         while let packet = current.input.read() {
             current.lastCallbackHostTime = packet.callbackHostTime
+            let hadSignal = current.signalTracker.firstSignalAt != nil
+            current.signalTracker.observe(packet.buffer, receivedAt: current.startDate.addingTimeInterval(
+                Self.seconds(from: current.startHostTime, to: packet.callbackHostTime)))
+            if !hadSignal, let signalAt = current.signalTracker.firstSignalAt {
+                NetworkDebugLogger.logMessage(
+                    "[Audio Input Signal] firstSignalMs=\(signalAt.timeIntervalSince(current.startDate) * 1000) "
+                    + "leadingZeroMs=\(current.signalTracker.leadingZeroDuration * 1000)"
+                )
+            }
             if current.firstCallbackDate == nil {
                 let callbackDelta = Self.seconds(from: current.startHostTime, to: packet.callbackHostTime)
                 current.firstCallbackDate = current.startDate.addingTimeInterval(callbackDelta)

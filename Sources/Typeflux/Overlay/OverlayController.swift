@@ -454,6 +454,14 @@ final class OverlayController {
         model.onFailureRetryHandler = onRetry
     }
 
+    @MainActor
+    func prepareRecordingPresentation() {
+        ensureWindow()
+        window?.contentView?.layoutSubtreeIfNeeded()
+    }
+
+    var recordingPresentationForTesting: OverlayViewModel.Presentation { model.presentation }
+
     func show(hintText: String? = nil, autoHideHintAfter: TimeInterval? = nil) {
         if !Thread.isMainThread {
             DispatchQueue.main.async { [weak self] in
@@ -475,6 +483,7 @@ final class OverlayController {
         model.recordingHintText = hintText ?? ""
         model.processingProgress = 0
         refreshWindow()
+        RecordingStartupLatencyTrace.shared.mark("ui.recording_ordered_front", logSummary: true)
         scheduleRecordingHintAutoHideIfNeeded(after: autoHideHintAfter, expectedText: hintText)
     }
 
@@ -1704,7 +1713,9 @@ private struct OverlayView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: contentAlignment)
                 .padding(containerPadding)
-                .animation(model.presentation == .notice ? nil : recordingMotion, value: model.presentation)
+                .animation([.notice, .recordingHold, .recordingLocked].contains(model.presentation)
+                           ? nil : recordingMotion,
+                           value: model.presentation)
             }
         }
         .environment(\.overlayStyle, model.overlayStyle)

@@ -4,6 +4,8 @@ import Foundation
 struct AudioRecorderStartupTiming: Sendable, Equatable {
     let audioEngineStartedAt: Date?
     let firstAudioBufferAt: Date?
+    var firstAudioSignalAt: Date? = nil
+    var leadingZeroDuration: TimeInterval? = nil
 }
 
 struct AudioFile: Sendable {

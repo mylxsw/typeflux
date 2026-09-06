@@ -1369,3 +1369,6 @@
 "workflow.result.unconfirmedTitle" = "无法确认是否已插入，可按需复制结果";
 
 "workflow.apply.dispatchedUnverified" = "已发送到当前应用，未获得写入确认；结果已保留在历史记录中。";
+
+"history.stats.hotkeyToFirstSignal" = "按键到麦克风有声音";
+"history.stats.inputZeroPrefix" = "开头全零音频";

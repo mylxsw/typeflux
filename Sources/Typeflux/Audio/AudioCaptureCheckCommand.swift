@@ -51,7 +51,7 @@
                             metrics.append(
                                 frames: buffer.frameLength, sampleRate: buffer.format.sampleRate,
                                 sampleHostTime: timestamp.isHostTimeValid ? timestamp.hostTime : 0,
-                                callbackHostTime: mach_absolute_time())
+                                callbackHostTime: mach_absolute_time(), buffer: buffer)
                         }
                         newEngine.prepare()
                         engine = newEngine
@@ -65,12 +65,12 @@
                     let startReturnedMs = CoreAudioRecorder.seconds(from: start, to: mach_absolute_time()) * 1000
                     let isRunning = running(device)
                     let processRecording = processInputRunning()
-                    for _ in 0..<125 {
+                    for _ in 0..<400 {
                         if let input {
                             while let packet = input.read() {
                                 metrics.append(
                                     frames: packet.buffer.frameLength, sampleRate: packet.buffer.format.sampleRate,
-                                    sampleHostTime: packet.sampleHostTime, callbackHostTime: packet.callbackHostTime)
+                                    sampleHostTime: packet.sampleHostTime, callbackHostTime: packet.callbackHostTime, buffer: packet.buffer)
                             }
                         }
                         try await Task.sleep(for: .milliseconds(4))
@@ -81,7 +81,7 @@
                         while let packet = input.read() {
                             metrics.append(
                                 frames: packet.buffer.frameLength, sampleRate: packet.buffer.format.sampleRate,
-                                sampleHostTime: packet.sampleHostTime, callbackHostTime: packet.callbackHostTime)
+                                sampleHostTime: packet.sampleHostTime, callbackHostTime: packet.callbackHostTime, buffer: packet.buffer)
                         }
                         if let error = input.captureError { throw error }
                     }
@@ -173,8 +173,10 @@
             private var previousSample: UInt64?
             private var previousFrames: UInt32 = 0
             private var maximumGap: Double = 0
+            private var firstNonzeroFrame: UInt64?
+            private var firstNonzeroCallback: UInt64?
 
-            func append(frames: UInt32, sampleRate: Double, sampleHostTime: UInt64, callbackHostTime: UInt64) {
+            func append(frames: UInt32, sampleRate: Double, sampleHostTime: UInt64, callbackHostTime: UInt64, buffer: AVAudioPCMBuffer) {
                 lock.lock()
                 defer { lock.unlock() }
                 if firstCallback == nil {
@@ -190,6 +192,21 @@
                 }
                 previousSample = sampleHostTime == 0 ? nil : sampleHostTime
                 previousFrames = frames
+                if firstNonzeroFrame == nil, let channels = buffer.floatChannelData {
+                    let channelCount = Int(buffer.format.channelCount)
+                    for frame in 0..<Int(frames) {
+                        let nonzero = (0..<channelCount).contains { channel in
+                            let value = buffer.format.isInterleaved
+                                ? channels[0][frame * channelCount + channel] : channels[channel][frame]
+                            return value.isFinite && value != 0
+                        }
+                        if nonzero {
+                            firstNonzeroFrame = totalFrames + UInt64(frame)
+                            firstNonzeroCallback = callbackHostTime
+                            break
+                        }
+                    }
+                }
                 totalFrames += UInt64(frames)
                 rate = sampleRate
             }
@@ -203,6 +220,10 @@
                     "firstSampleMs": firstSample.map { CoreAudioRecorder.seconds(from: start, to: $0) * 1000 } ?? -1,
                     "firstFrames": firstFrames, "totalFrames": totalFrames, "sampleRate": rate,
                     "maximumTimestampGapMs": maximumGap * 1000,
+                    "leadingZeroMs": firstNonzeroFrame.map { Double($0) / rate * 1000 } ?? -1,
+                    "firstNonzeroCallbackMs": firstNonzeroCallback.map {
+                        CoreAudioRecorder.seconds(from: start, to: $0) * 1000
+                    } ?? -1,
                 ]
             }
         }

@@ -378,6 +378,9 @@ final class WorkflowController {
         }
 
         hotkeyService.start()
+        Task { @MainActor [weak self] in
+            self?.overlayController.prepareRecordingPresentation()
+        }
 
         // Pre-warm the local STT model on startup, and re-warm whenever
         // the user switches provider or model in Settings.
@@ -1096,7 +1099,7 @@ final class WorkflowController {
                 audioBufferHandler: { buffer in
                     guard buffer.frameLength > 0 else { return }
                     recordingAudioBufferRelay?.append(buffer)
-                    readiness.receiveAudio()
+                    readiness.receiveAudio(buffer)
                 }
             )
             RecordingStartupLatencyTrace.shared.mark("workflow.audio_start_return")

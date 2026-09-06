@@ -116,6 +116,30 @@ struct CoreAudioRecorderTests {
         let file = try recorder.stop()
         #expect(input.starts == 1)
         #expect(file.duration == 0.01)
+        #expect(file.startupTiming?.firstAudioSignalAt == nil)
+        #expect(file.startupTiming?.leadingZeroDuration == 0.01)
+    }
+
+    @Test func measuresDigitalZeroPrefixWithoutRemovingItFromRecording() throws {
+        let fixture = Fixture()
+        defer { fixture.cleanup() }
+        let input = try FakeInput()
+        input.packetsOnStart = [
+            try input.packet(amplitude: 0), try input.packet(amplitude: 0),
+            try input.packet(amplitude: 0.2),
+        ]
+        let recorder = fixture.recorder { _ in input }
+        try recorder.start(levelHandler: { _ in })
+        let result = try recorder.stop()
+        #expect(result.startupTiming?.firstAudioSignalAt != nil)
+        #expect(result.startupTiming?.leadingZeroDuration == 0.02)
+        let file = try AVAudioFile(forReading: result.fileURL)
+        #expect(file.length == 480)
+        let buffer = try #require(AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: 480))
+        try file.read(into: buffer)
+        let samples = try #require(buffer.floatChannelData?[0])
+        #expect((0..<320).allSatisfy { samples[$0] == 0 })
+        #expect(abs(samples[320] - 0.2) < 0.001)
     }
 
     @Test func startFailureReleasesInputAndAllowsRetry() throws {
@@ -211,12 +235,14 @@ struct CoreAudioRecorderTests {
         let fixture = Fixture()
         defer { fixture.cleanup() }
         let input = try FakeInput()
-        input.startDelay = 0.05
+        // Leave enough dispatch time under concurrent coverage instrumentation so
+        // this exercises a late hardware start, rather than a timeout before start.
+        input.startDelay = 0.5
         input.packetsOnStart = [try input.packet(amplitude: 0.3)]
         let recorder = CoreAudioRecorder(
             settingsStore: fixture.settings, audioDeviceManager: Devices(),
             outputDirectory: fixture.directory, prepareImmediately: false, observeChanges: false,
-            startupTimeout: 0.01, makeInput: { _ in input })
+            startupTimeout: 0.25, makeInput: { _ in input })
         var deliveredFrames = 0
         #expect(throws: AVFoundationAudioRecorder.RecorderError.self) {
             try recorder.start(levelHandler: { _ in }, audioBufferHandler: { deliveredFrames += Int($0.frameLength) })

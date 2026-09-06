@@ -447,7 +447,7 @@ final class EventTapHotkeyService: HotkeyService {
                 }
             case .begin(.activation):
                 ErrorLogStore.shared.log("Hotkey(NSEvent): activation down")
-                RecordingStartupLatencyTrace.shared.begin("hotkey.activation_begin")
+                RecordingStartupLatencyTrace.shared.begin("hotkey.activation_begin", physicalUptime: context.uptime)
                 DispatchQueue.main.async { [weak self] in
                     self?.onActivationPressBegan?(context)
                 }

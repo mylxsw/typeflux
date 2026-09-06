@@ -10,9 +10,10 @@ when launching the app to force the compatible capture path for diagnosis.
 - In the workflow, request capture before resolving application metadata,
   reporting analytics, or constructing the recording UI. Application icons are
   not loaded for recording hints. These tasks must not delay microphone startup.
-- Publish recording-ready UI only after startup succeeds and a nonempty audio
-  buffer arrives. Quiet samples count as ready. Keep this signal separate from
-  realtime recognition setup, and buffer audio while that setup is pending.
+- Show the existing recording controls after startup succeeds and a nonempty
+  audio buffer arrives, including silence. Do not add a waiting capsule or delay
+  the interface until a nonzero sample arrives. Signal onset remains diagnostic.
+  Buffer audio independently while realtime recognition setup is pending.
 - Readiness belongs to one recording. Cancellation invalidates it, so late audio
   cannot make a later session appear ready. A cancelled in-flight hardware start
   retains ownership until its result is stopped; new presses cannot reuse it.
@@ -64,10 +65,15 @@ microphone input, even when another application keeps the hardware running.
 `workflow.context_begin` / `workflow.context_end`, `audio.first_buffer`, and
 `workflow.recording_ready`. A second summary is emitted when the UI becomes ready.
 Compare the whole hotkey-to-audio path, not just the hardware start call. The
-ready signal confirms buffer delivery; it does not prove that speech began after
-the microphone started or that recognition preserved every word.
+ready signal confirms buffer delivery; it does not prove that speech began
+after the microphone started or that recognition preserved every word. Raw probes
+also report `leadingZeroMs` and `firstNonzeroCallbackMs`: a fast callback can still
+contain hundreds of milliseconds of driver-supplied zeros. See the
+[full startup investigation](recording-startup-investigation.md) for the controlled
+Bluetooth reproduction and the ordered network-writer repair.
 
-Observed on one selected microphone on 2026-09-07 (five alternating runs per path):
+Historical callback-only measurements (not signal-readiness measurements):
+observed on one selected microphone on 2026-09-07 (five alternating runs per path):
 
 | Metric | AVAudioEngine tap | Direct HAL |
 | --- | --- | --- |

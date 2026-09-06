@@ -565,6 +565,8 @@ extension WorkflowController {
                     recordingWorkflowStartedAt: startupContext?.recordingWorkflowStartedAt,
                     audioEngineStartedAt: audioFile.startupTiming?.audioEngineStartedAt,
                     firstAudioBufferAt: audioFile.startupTiming?.firstAudioBufferAt,
+                    firstAudioSignalAt: audioFile.startupTiming?.firstAudioSignalAt,
+                    leadingZeroDuration: audioFile.startupTiming?.leadingZeroDuration,
                     recordingStoppedAt: recordingStoppedAt,
                     audioFileReadyAt: audioFileReadyAt
                 ),

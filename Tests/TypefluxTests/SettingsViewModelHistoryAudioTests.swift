@@ -170,6 +170,41 @@ final class SettingsViewModelHistoryAudioTests: XCTestCase {
         XCTAssertEqual(timeline?.timelineSpanDurationText, "1.20 s")
     }
 
+    func testStartupTimelineIncludesDigitalZeroPrefixUntilRealSignalArrives() throws {
+        let base = Date(timeIntervalSince1970: 1000)
+        let timing = HistoryPipelineTiming(
+            hotkeyDetectedAt: base,
+            firstAudioBufferAt: base.addingTimeInterval(0.03),
+            firstAudioSignalAt: base.addingTimeInterval(0.83),
+            leadingZeroDuration: 0.8,
+            recordingStoppedAt: base.addingTimeInterval(1.83)
+        )
+        let decoded = try JSONDecoder().decode(HistoryPipelineTiming.self, from: JSONEncoder().encode(timing))
+        XCTAssertEqual(decoded, timing)
+        let record = HistoryRecord(date: base, pipelineTiming: decoded)
+        let viewModel = makeViewModel(records: [record],
+            audioPreviewPlayer: FakeHistoryAudioPreviewPlayer(playResult: true))
+        waitForHistoryRecord(record.id, in: viewModel)
+        let timeline = viewModel.displayedHistory.first?.pipelineTimeline
+        XCTAssertEqual(timeline?.lanes.first { $0.id == "recording-startup" }?.durationMilliseconds, 830)
+        XCTAssertEqual(timeline?.lanes.first { $0.id == "recording" }?.durationMilliseconds, 1000)
+        XCTAssertEqual(timeline?.keyMetrics.first { $0.id == "hotkey-to-first-signal" }?.value, "830 ms")
+        XCTAssertEqual(timeline?.keyMetrics.first { $0.id == "input-zero-prefix" }?.value, "800 ms")
+    }
+
+    func testAllZeroRecordingDoesNotReportSuccessfulSignalStartup() {
+        let base = Date(timeIntervalSince1970: 1000)
+        let record = HistoryRecord(date: base, pipelineTiming: HistoryPipelineTiming(
+            hotkeyDetectedAt: base, firstAudioBufferAt: base.addingTimeInterval(0.03),
+            leadingZeroDuration: 1.0, recordingStoppedAt: base.addingTimeInterval(1.03)))
+        let viewModel = makeViewModel(records: [record],
+            audioPreviewPlayer: FakeHistoryAudioPreviewPlayer(playResult: true))
+        waitForHistoryRecord(record.id, in: viewModel)
+        let timeline = viewModel.displayedHistory.first?.pipelineTimeline
+        XCTAssertEqual(timeline?.lanes.first { $0.id == "recording-startup" }?.durationMilliseconds, 1030)
+        XCTAssertNil(timeline?.lanes.first { $0.id == "recording" })
+    }
+
     func testHistoryPipelineTimelineIncludesASRAndLLMNetworkStages() {
         let base = Date(timeIntervalSince1970: 2_000)
         let recordID = UUID()
