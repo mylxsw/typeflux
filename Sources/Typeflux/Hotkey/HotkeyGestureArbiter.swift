@@ -16,7 +16,7 @@ enum HotkeyGestureEvent: Equatable {
 }
 
 struct HotkeyGestureArbiter {
-    private static let doubleTapMaximumInterval: TimeInterval = 0.45
+    static let doubleTapMaximumInterval: TimeInterval = 0.45
 
     enum Phase: Equatable {
         case idle
@@ -26,6 +26,12 @@ struct HotkeyGestureArbiter {
 
     private(set) var phase: Phase = .idle
     private var lastModifierTap: ModifierTap?
+    private var suppressCurrentModifierTap = false
+
+    mutating func settleActivationGesture() {
+        lastModifierTap = nil
+        suppressCurrentModifierTap = phase != .idle
+    }
 
     var hasPendingModifierActivation: Bool {
         phase == .pendingModifierActivation
@@ -208,6 +214,7 @@ struct HotkeyGestureArbiter {
            activationHotkey.isModifierOnlyTrigger,
            activationHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags),
            phase == .idle {
+            suppressCurrentModifierTap = false
             if shouldDeferModifierActivation(
                 activationHotkey: activationHotkey,
                 askHotkey: askHotkey,
@@ -341,6 +348,11 @@ struct HotkeyGestureArbiter {
         askHotkey: HotkeyBinding?,
         timestamp: TimeInterval
     ) {
+        if suppressCurrentModifierTap {
+            suppressCurrentModifierTap = false
+            lastModifierTap = nil
+            return
+        }
         guard let askHotkey, askHotkey.isModifierDoubleTapTrigger else {
             lastModifierTap = nil
             return

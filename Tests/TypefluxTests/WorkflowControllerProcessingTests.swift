@@ -1414,8 +1414,8 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         await controller.beginRecording(intent: .dictation, startLocked: false)
 
         let now = controller.monotonicNow()
-        controller.hotkeyPressedAt = now - 0.7
-        controller.audioRecorderStartedAt = now - 0.7
+        controller.hotkeyPressedAt = now - 1.1
+        controller.audioRecorderStartedAt = now - 1.1
         controller.handlePressEnded()
         await audioRecorder.waitUntilStopCount(isAtLeast: 1)
 
@@ -1431,9 +1431,9 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         )
     }
 
-    func testReleaseAt599MillisecondsKeepsRecordingLocked() async {
+    func testReleaseAtOneSecondKeepsRecordingLocked() async {
         let audioRecorder = MockProcessingAudioRecorder()
-        let releasedAt: TimeInterval = 0.599
+        let releasedAt: TimeInterval = 1.0
         let controller = makeWorkflowController(
             audioRecorder: audioRecorder,
             sleep: { _ in },
@@ -1454,9 +1454,50 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         await waitForMainActorWork()
     }
 
-    func testReleaseAt600MillisecondBoundaryStopsRecording() async {
+    func testDelayedShortReleaseUsesPhysicalTimestampAndKeepsRecording() async {
         let audioRecorder = MockProcessingAudioRecorder()
-        let releasedAt = WorkflowController.tapToLockThreshold
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sleep: { _ in },
+            monotonicNow: { 12 }
+        )
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+        controller.hotkeyPressedAt = 10
+        controller.audioRecorderStartedAt = 9
+
+        // A 100ms physical tap is delivered two seconds after the press.
+        controller.handlePressEnded(hotkeyUptime: 10.1)
+
+        XCTAssertTrue(controller.isRecording)
+        XCTAssertEqual(controller.recordingMode, .locked)
+        XCTAssertEqual(audioRecorder.stopCallCount, 0)
+        controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
+    func testReleaseBeforeAudioStartStaysLockedWhenDeliveryIsDelayed() async {
+        let audioRecorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sleep: { _ in },
+            monotonicNow: { 12 }
+        )
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+        controller.hotkeyPressedAt = 10
+        controller.audioRecorderStartedAt = 11.5
+
+        controller.handlePressEnded(hotkeyUptime: 11.1)
+
+        XCTAssertTrue(controller.isRecording)
+        XCTAssertEqual(controller.recordingMode, .locked)
+        XCTAssertEqual(audioRecorder.stopCallCount, 0)
+        controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
+    func testReleaseJustAfterOneSecondStopsRecording() async {
+        let audioRecorder = MockProcessingAudioRecorder()
+        let releasedAt: TimeInterval = 1.001
         let controller = makeWorkflowController(
             audioRecorder: audioRecorder,
             sleep: { _ in },
@@ -1493,6 +1534,79 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(audioRecorder.stopCallCount, 0)
 
         controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
+    func testProvisionalRecordingStartsAudioBeforeSelectingAskMode() async {
+        let audioRecorder = MockProcessingAudioRecorder()
+        let injector = MockProcessingTextInjector()
+        let controller = makeWorkflowController(textInjector: injector, audioRecorder: audioRecorder)
+        let decision = RecordingGestureDecision()
+        controller.recordingGestureDecision = decision
+        let startup = Task { await controller.beginRecording(intent: .dictation, startLocked: false) }
+        for _ in 0..<100 {
+            if controller.isAudioRecorderStarted { break }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertEqual(audioRecorder.startCallCount, 1)
+        XCTAssertTrue(controller.isAudioRecorderStarted)
+        XCTAssertNil(controller.selectionTask)
+        XCTAssertNil(controller.activeRealtimeTranscriptionSession)
+        XCTAssertTrue(injector.selectionCaptureIntents.isEmpty)
+
+        controller.handlePressBegan(intent: .askSelection, startLocked: true)
+        await startup.value
+
+        XCTAssertEqual(controller.recordingIntent, .askSelection)
+        XCTAssertEqual(controller.recordingMode, .locked)
+        XCTAssertEqual(audioRecorder.startCallCount, 1)
+        XCTAssertEqual(audioRecorder.stopCallCount, 0)
+        let selection = await controller.selectionTask?.value
+        XCTAssertEqual(selection?.source, "ask-isolated")
+        XCTAssertTrue(injector.selectionCaptureIntents.isEmpty)
+        XCTAssertNil(controller.activeRealtimeTranscriptionSession)
+        controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
+    func testProvisionalRecordingContinuesDictationAfterDecision() async {
+        let audioRecorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: audioRecorder)
+        let decision = RecordingGestureDecision()
+        controller.recordingGestureDecision = decision
+        let startup = Task { await controller.beginRecording(intent: .dictation, startLocked: false) }
+        for _ in 0..<100 {
+            if controller.isAudioRecorderStarted { break }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertTrue(controller.isAudioRecorderStarted)
+        controller.handleActivationTap()
+        decision.resolve()
+        await startup.value
+        XCTAssertEqual(controller.recordingIntent, .dictation)
+        XCTAssertEqual(controller.recordingMode, .locked)
+        XCTAssertEqual(audioRecorder.stopCallCount, 0)
+        controller.confirmLockedRecording()
+        await audioRecorder.waitUntilStopCount(isAtLeast: 1)
+        XCTAssertEqual(audioRecorder.stopCallCount, 1)
+        await waitForMainActorWork()
+    }
+
+    func testCancelProvisionalRecordingReleasesStartupWithoutSelectingMode() async {
+        let audioRecorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: audioRecorder)
+        controller.recordingGestureDecision = RecordingGestureDecision()
+        let startup = Task { await controller.beginRecording(intent: .dictation, startLocked: false) }
+        for _ in 0..<100 {
+            if controller.isAudioRecorderStarted { break }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        controller.cancelRecording()
+        await startup.value
+        XCTAssertFalse(controller.isRecording)
+        XCTAssertNil(controller.recordingGestureDecision)
+        XCTAssertNil(controller.selectionTask)
+        XCTAssertEqual(audioRecorder.stopCallCount, 1)
         await waitForMainActorWork()
     }
 
@@ -2752,7 +2866,7 @@ private final class MockProcessingLLMAgentService: LLMAgentService {
 private final class MockProcessingHotkeyService: HotkeyService {
     var onActivationTap: ((HotkeyEventContext) -> Void)?
     var onActivationPressBegan: ((HotkeyEventContext) -> Void)?
-    var onActivationPressEnded: (() -> Void)?
+    var onActivationPressEnded: ((HotkeyEventContext) -> Void)?
     var onActivationCancelled: (() -> Void)?
     var onAskPressBegan: ((HotkeyEventContext) -> Void)?
     var onAskPressEnded: (() -> Void)?

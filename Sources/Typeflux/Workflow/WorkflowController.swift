@@ -20,7 +20,7 @@ final class WorkflowController {
     /// Ambiguous short releases stay recoverable by switching to locked recording.
     /// Keep this above `minimumRecordingDuration` so a release is never classified
     /// as hold-to-talk and then immediately rejected as too short.
-    static let tapToLockThreshold: TimeInterval = 0.60
+    static let tapToLockThreshold: TimeInterval = 1.0
     static let automaticVocabularyObservationWindow: TimeInterval = 30
     static let automaticVocabularyPollInterval: Duration = .seconds(1)
     // Bumped from 600ms to 900ms so the paste fallback path has time for focus and
@@ -146,6 +146,7 @@ final class WorkflowController {
     var shouldFinishRecordingAfterAudioStart = false
     var pendingRecordingStartID: UUID?
     var suppressActivationTapUntil: Date?
+    var recordingGestureDecision: RecordingGestureDecision?
     var recordingMode: RecordingMode = .holdToTalk
     var recordingIntent: RecordingIntent = .dictation
     var hotkeyPressedAt: TimeInterval?
@@ -331,17 +332,18 @@ final class WorkflowController {
 
     func start() {
         hotkeyService.onActivationTap = { [weak self] context in
-            self?.handleActivationTap(hotkeyDetectedAt: context.detectedAt)
+            self?.handleActivationTap(hotkeyDetectedAt: context.detectedAt, hotkeyUptime: context.uptime)
         }
         hotkeyService.onActivationPressBegan = { [weak self] context in
             self?.handlePressBegan(
                 intent: .dictation,
                 startLocked: false,
-                hotkeyDetectedAt: context.detectedAt
+                hotkeyDetectedAt: context.detectedAt,
+                hotkeyUptime: context.uptime
             )
         }
-        hotkeyService.onActivationPressEnded = { [weak self] in
-            self?.handlePressEnded()
+        hotkeyService.onActivationPressEnded = { [weak self] context in
+            self?.handlePressEnded(hotkeyUptime: context.uptime)
         }
         hotkeyService.onActivationCancelled = { [weak self] in
             self?.cancelRecording()
@@ -350,7 +352,8 @@ final class WorkflowController {
             self?.handlePressBegan(
                 intent: .askSelection,
                 startLocked: true,
-                hotkeyDetectedAt: context.detectedAt
+                hotkeyDetectedAt: context.detectedAt,
+                hotkeyUptime: context.uptime
             )
         }
         hotkeyService.onAskPressEnded = { [weak self] in
@@ -468,6 +471,8 @@ final class WorkflowController {
     func cancelRecording() {
         guard isRecording else { return }
         discardPendingDictationAnalytics()
+        recordingGestureDecision?.resolve()
+        recordingGestureDecision = nil
         isRecording = false
         let shouldStopAudioRecorder = isAudioRecorderStarted
         isAudioRecorderStarted = false
@@ -570,7 +575,8 @@ final class WorkflowController {
         }
     }
 
-    func handleActivationTap(hotkeyDetectedAt: Date = Date()) {
+    func handleActivationTap(hotkeyDetectedAt: Date = Date(), hotkeyUptime: TimeInterval? = nil) {
+        extendRecordingGestureDecision(releasedAt: hotkeyUptime ?? monotonicNow())
         if suppressNextActivationTapAfterLocalModelDownloadAlert {
             suppressNextActivationTapAfterLocalModelDownloadAlert = false
             RecordingStartupLatencyTrace.shared.mark("workflow.activation_tap_suppressed.local_model_download")
@@ -592,7 +598,8 @@ final class WorkflowController {
     func handlePressBegan(
         intent: RecordingIntent,
         startLocked: Bool,
-        hotkeyDetectedAt: Date = Date()
+        hotkeyDetectedAt: Date = Date(),
+        hotkeyUptime: TimeInterval? = nil
     ) {
         RecordingStartupLatencyTrace.shared.mark("workflow.press_began.\(intent.traceName)")
         if isPersonaPickerPresented {
@@ -656,7 +663,17 @@ final class WorkflowController {
             dismissClarification()
         }
 
-        hotkeyPressedAt = startLocked ? nil : monotonicNow()
+        let activation = settingsStore.activationHotkey
+        let ask = settingsStore.askHotkey
+        if !startLocked, intent == .dictation,
+           let activation, let ask,
+           activation.isModifierOnlyTrigger, ask.isModifierDoubleTapTrigger,
+           activation.keyCode == ask.keyCode, activation.modifierFlags == ask.modifierFlags {
+            let decision = RecordingGestureDecision()
+            recordingGestureDecision = decision
+            decision.schedule(after: Self.tapToLockThreshold)
+        }
+        hotkeyPressedAt = startLocked ? nil : (hotkeyUptime ?? monotonicNow())
         recordingStartupContext = RecordingStartupContext(
             hotkeyDetectedAt: hotkeyDetectedAt,
             recordingWorkflowStartedAt: Date()
@@ -753,7 +770,24 @@ final class WorkflowController {
         }
     }
 
+    func extendRecordingGestureDecision(releasedAt: TimeInterval) {
+        recordingGestureDecision?.schedule(
+            after: releasedAt + HotkeyGestureArbiter.doubleTapMaximumInterval - monotonicNow()
+        )
+    }
+
     private func promoteActiveRecordingToAskSelection() {
+        if let decision = recordingGestureDecision {
+            recordingIntent = .askSelection
+            recordingMode = .locked
+            hotkeyPressedAt = nil
+            decision.resolve()
+            Task { @MainActor in
+                guard self.isRecording, self.recordingIntent == .askSelection else { return }
+                self.overlayController.showLockedRecording(hintText: L("overlay.ask.guidance"))
+            }
+            return
+        }
         RecordingStartupLatencyTrace.shared.mark("workflow.promote_to_ask")
         recordingIntent = .askSelection
         recordingMode = .locked
@@ -1030,7 +1064,8 @@ final class WorkflowController {
             return
         }
         RecordingStartupLatencyTrace.shared.mark("workflow.begin_recording")
-        let effectiveIntent = recordingIntent == .askSelection && intent == .dictation
+        let gestureDecision = recordingGestureDecision
+        var effectiveIntent = recordingIntent == .askSelection && intent == .dictation
             ? RecordingIntent.askSelection
             : intent
         let effectiveStartLocked = recordingMode == .locked || startLocked
@@ -1050,12 +1085,6 @@ final class WorkflowController {
             targetBundleIdentifier: frontmostApplicationContext.bundleIdentifier
         )
         let recordingHint = recordingHintPresentation(
-            intent: effectiveIntent,
-            recordingMode: recordingMode,
-            appName: frontmostApplicationContext.appName,
-            bundleIdentifier: frontmostApplicationContext.bundleIdentifier
-        )
-        let optimizeASR = shouldOptimizeTypefluxASR(
             intent: effectiveIntent,
             recordingMode: recordingMode,
             appName: frontmostApplicationContext.appName,
@@ -1086,9 +1115,7 @@ final class WorkflowController {
         do {
             RecordingStartupLatencyTrace.shared.mark("workflow.audio_start_enter")
             let livePreviewer = liveTranscriptionPreviewer
-            let canUseRealtimeTranscription = effectiveIntent != .askSelection
-            let usesLivePreview = canUseRealtimeTranscription && shouldUseLiveTranscriptionPreview()
-            let recordingAudioBufferRelay = canUseRealtimeTranscription
+            let recordingAudioBufferRelay = (gestureDecision != nil || effectiveIntent != .askSelection)
                 ? RecordingStartupAudioBufferRelay()
                 : nil
             try await startAudioRecorderWithStartupRetry(
@@ -1121,6 +1148,33 @@ final class WorkflowController {
                 return
             }
 
+            if let gestureDecision {
+                await gestureDecision.wait()
+                guard isRecording, recordingGestureDecision === gestureDecision else {
+                    recordingAudioBufferRelay?.cancel()
+                    return
+                }
+                await MainActor.run {
+                    if self.isRecording, self.recordingGestureDecision === gestureDecision {
+                        self.hotkeyService.settleActivationGesture()
+                    }
+                }
+                guard isRecording, recordingGestureDecision === gestureDecision else {
+                    recordingAudioBufferRelay?.cancel()
+                    return
+                }
+                recordingGestureDecision = nil
+                effectiveIntent = recordingIntent
+            }
+            let canUseRealtimeTranscription = effectiveIntent != .askSelection
+            let usesLivePreview = canUseRealtimeTranscription && shouldUseLiveTranscriptionPreview()
+            let optimizeASR = shouldOptimizeTypefluxASR(
+                intent: effectiveIntent,
+                recordingMode: recordingMode,
+                appName: frontmostApplicationContext.appName,
+                bundleIdentifier: frontmostApplicationContext.bundleIdentifier
+            )
+            if !canUseRealtimeTranscription { recordingAudioBufferRelay?.cancel() }
             if usesLivePreview {
                 await livePreviewer?.prepareForStart()
             }
@@ -1239,6 +1293,8 @@ final class WorkflowController {
             Task { await activeRealtimeTranscriptionSession?.cancel() }
             activeRealtimeTranscriptionSession = nil
             activeRealtimeAudioBufferPump = nil
+            recordingGestureDecision?.resolve()
+            recordingGestureDecision = nil
             isRecording = false
             isAudioRecorderStarted = false
             isAudioRecorderStarting = false
@@ -1277,7 +1333,7 @@ final class WorkflowController {
         }
     }
 
-    func handlePressEnded() {
+    func handlePressEnded(hotkeyUptime: TimeInterval? = nil) {
         // Prevent double-end or end without start
         guard isRecording else {
             NSLog("[Workflow] Not recording, ignoring release")
@@ -1292,14 +1348,20 @@ final class WorkflowController {
 
         guard recordingMode == .holdToTalk else { return }
 
-        let releasedAt = monotonicNow()
+        let handledAt = monotonicNow()
+        let releasedAt = hotkeyUptime ?? handledAt
+        extendRecordingGestureDecision(releasedAt: releasedAt)
         let pressDuration = hotkeyPressedAt.map { max(0, releasedAt - $0) } ?? .infinity
         hotkeyPressedAt = nil
 
         let recordedDuration = audioRecorderStartedAt.map { max(0, releasedAt - $0) } ?? 0
-        if pressDuration < Self.tapToLockThreshold
+        let shouldLock = pressDuration <= Self.tapToLockThreshold
             || isAudioRecorderStarting
-            || recordedDuration < Self.minimumRecordingDuration {
+            || recordedDuration < Self.minimumRecordingDuration
+        ErrorLogStore.shared.log(
+            "Hotkey release: press=\(pressDuration)s delay=\(max(0, handledAt - releasedAt))s audio=\(recordedDuration)s starting=\(isAudioRecorderStarting) decision=\(shouldLock ? "lock" : "stop")"
+        )
+        if shouldLock {
             lockActiveRecording()
             return
         }
@@ -1325,6 +1387,7 @@ final class WorkflowController {
 
     func finishRecordingFromCurrentMode() {
         guard isRecording else { return }
+        hotkeyService.settleActivationGesture()
 
         let shouldStopAudioRecorder = isAudioRecorderStarted
         if !shouldStopAudioRecorder, isAudioRecorderStarting {
@@ -1342,6 +1405,8 @@ final class WorkflowController {
         )
         let startupContext = recordingStartupContext
         recordingStartupContext = nil
+        recordingGestureDecision?.resolve()
+        recordingGestureDecision = nil
         isRecording = false
         if !shouldStopAudioRecorder {
             isAudioRecorderStarted = false
@@ -1393,6 +1458,8 @@ final class WorkflowController {
             )
             isAudioRecorderStarted = true
         } catch {
+            recordingGestureDecision?.resolve()
+            recordingGestureDecision = nil
             isRecording = false
             isAudioRecorderStarted = false
             isClarificationRecording = false

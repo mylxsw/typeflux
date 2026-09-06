@@ -142,7 +142,7 @@ final class EventTapHotkeyService: HotkeyService {
 
     var onActivationTap: ((HotkeyEventContext) -> Void)?
     var onActivationPressBegan: ((HotkeyEventContext) -> Void)?
-    var onActivationPressEnded: (() -> Void)?
+    var onActivationPressEnded: ((HotkeyEventContext) -> Void)?
     var onActivationCancelled: (() -> Void)?
     var onAskPressBegan: ((HotkeyEventContext) -> Void)?
     var onAskPressEnded: (() -> Void)?
@@ -186,6 +186,10 @@ final class EventTapHotkeyService: HotkeyService {
             self?.registerHistorySystemHotkey()
         }
         installEventTapIfPossible()
+    }
+
+    func settleActivationGesture() {
+        arbiter.settleActivationGesture()
     }
 
     func stop() {
@@ -301,7 +305,8 @@ final class EventTapHotkeyService: HotkeyService {
             keyCode: Int(event.keyCode),
             modifierFlags: filteredFlags(event.modifierFlags),
             isRepeat: event.isARepeat,
-            canConsume: canConsume
+            canConsume: canConsume,
+            timestamp: event.timestamp
         )
     }
 
@@ -325,7 +330,8 @@ final class EventTapHotkeyService: HotkeyService {
             keyCode: keyCode,
             modifierFlags: flags,
             isRepeat: isRepeat,
-            canConsume: true
+            canConsume: true,
+            timestamp: TimeInterval(event.timestamp) / 1_000_000_000
         )
         return shouldConsume ? nil : Unmanaged.passUnretained(event)
     }
@@ -335,7 +341,8 @@ final class EventTapHotkeyService: HotkeyService {
         keyCode: Int,
         modifierFlags: UInt,
         isRepeat: Bool,
-        canConsume: Bool
+        canConsume: Bool,
+        timestamp: TimeInterval
     ) -> Bool {
         guard let eventType else { return false }
 
@@ -364,7 +371,8 @@ final class EventTapHotkeyService: HotkeyService {
                     askHotkey: askHotkey,
                     personaHotkey: personaHotkey,
                     historyHotkey: historyHotkey
-                )
+                ),
+                context: HotkeyEventContext(uptime: timestamp)
             )
         case .keyUp:
             handleGestureEvents(
@@ -372,7 +380,8 @@ final class EventTapHotkeyService: HotkeyService {
                     keyCode: keyCode,
                     activationHotkey: activationHotkey,
                     askHotkey: askHotkey
-                )
+                ),
+                context: HotkeyEventContext(uptime: timestamp)
             )
         case .flagsChanged:
             handleGestureEvents(
@@ -382,8 +391,10 @@ final class EventTapHotkeyService: HotkeyService {
                     activationHotkey: activationHotkey,
                     askHotkey: askHotkey,
                     personaHotkey: personaHotkey,
-                    historyHotkey: historyHotkey
-                )
+                    historyHotkey: historyHotkey,
+                    timestamp: timestamp
+                ),
+                context: HotkeyEventContext(uptime: timestamp)
             )
         }
 
@@ -420,7 +431,10 @@ final class EventTapHotkeyService: HotkeyService {
         }
     }
 
-    private func handleGestureEvents(_ events: [HotkeyGestureEvent]) {
+    private func handleGestureEvents(
+        _ events: [HotkeyGestureEvent],
+        context: HotkeyEventContext = HotkeyEventContext()
+    ) {
         syncPendingModifierActivationTimer()
 
         for event in events {
@@ -428,14 +442,12 @@ final class EventTapHotkeyService: HotkeyService {
             case .activationTapped:
                 ErrorLogStore.shared.log("Hotkey(NSEvent): activation tap")
                 RecordingStartupLatencyTrace.shared.mark("hotkey.activation_tap")
-                let context = HotkeyEventContext()
                 DispatchQueue.main.async { [weak self] in
                     self?.onActivationTap?(context)
                 }
             case .begin(.activation):
                 ErrorLogStore.shared.log("Hotkey(NSEvent): activation down")
                 RecordingStartupLatencyTrace.shared.begin("hotkey.activation_begin")
-                let context = HotkeyEventContext()
                 DispatchQueue.main.async { [weak self] in
                     self?.onActivationPressBegan?(context)
                 }
@@ -443,7 +455,7 @@ final class EventTapHotkeyService: HotkeyService {
                 ErrorLogStore.shared.log("Hotkey(NSEvent): activation up")
                 RecordingStartupLatencyTrace.shared.mark("hotkey.activation_end")
                 DispatchQueue.main.async { [weak self] in
-                    self?.onActivationPressEnded?()
+                    self?.onActivationPressEnded?(context)
                 }
             case .cancel(.activation):
                 ErrorLogStore.shared.log("Hotkey(NSEvent): activation cancel")
@@ -456,7 +468,6 @@ final class EventTapHotkeyService: HotkeyService {
             case .begin(.ask):
                 ErrorLogStore.shared.log("Hotkey(NSEvent): ask down")
                 RecordingStartupLatencyTrace.shared.mark("hotkey.ask_begin")
-                let context = HotkeyEventContext()
                 DispatchQueue.main.async { [weak self] in
                     self?.onAskPressBegan?(context)
                 }

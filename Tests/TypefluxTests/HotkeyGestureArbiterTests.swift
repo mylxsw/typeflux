@@ -264,6 +264,24 @@ final class HotkeyGestureArbiterTests: XCTestCase {
         XCTAssertEqual(events, [.activationTapped])
     }
 
+    func testSettledHoldDoesNotBecomeFirstTapOfAskShortcut() {
+        var arbiter = HotkeyGestureArbiter()
+        _ = arbiter.handleFlagsChanged(
+            keyCode: HotkeyBinding.functionKeyCode, modifierFlags: activation.modifierFlags,
+            activationHotkey: activation, askHotkey: .defaultAsk, timestamp: 1
+        )
+        arbiter.settleActivationGesture()
+        _ = arbiter.handleFlagsChanged(
+            keyCode: HotkeyBinding.functionKeyCode, modifierFlags: 0,
+            activationHotkey: activation, askHotkey: .defaultAsk, timestamp: 2.1
+        )
+        let events = arbiter.handleFlagsChanged(
+            keyCode: HotkeyBinding.functionKeyCode, modifierFlags: activation.modifierFlags,
+            activationHotkey: activation, askHotkey: .defaultAsk, timestamp: 2.2
+        )
+        XCTAssertEqual(events, [.begin(.activation)])
+    }
+
     func testSecondFnTapBeginsDefaultAskShortcut() {
         var arbiter = HotkeyGestureArbiter()
         let doubleFnAsk = HotkeyBinding.defaultAsk
