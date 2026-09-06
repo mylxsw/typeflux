@@ -7,6 +7,15 @@ when launching the app to force the compatible capture path for diagnosis.
 
 ## Lifecycle
 
+- In the workflow, request capture before resolving application metadata,
+  reporting analytics, or constructing the recording UI. Application icons are
+  not loaded for recording hints. These tasks must not delay microphone startup.
+- Publish recording-ready UI only after startup succeeds and a nonempty audio
+  buffer arrives. Quiet samples count as ready. Keep this signal separate from
+  realtime recognition setup, and buffer audio while that setup is pending.
+- Readiness belongs to one recording. Cancellation invalidates it, so late audio
+  cannot make a later session appear ready. A cancelled in-flight hardware start
+  retains ownership until its result is stopped; new presses cannot reuse it.
 - After microphone permission has been granted, prepare an input-only AUHAL and
   bounded memory buffers on the recorder queue. Do not call `AudioOutputUnitStart`
   while idle. Rebuild preparation after device changes and sleep/wake.
@@ -51,6 +60,13 @@ The device-wide running flag includes other clients/output. On macOS 14.2+, use
 `processInputPrepared` and `processInputStopped` to verify this process releases
 microphone input, even when another application keeps the hardware running.
 
+`[Recording Startup]` traces distinguish `workflow.audio_start_enter`,
+`workflow.context_begin` / `workflow.context_end`, `audio.first_buffer`, and
+`workflow.recording_ready`. A second summary is emitted when the UI becomes ready.
+Compare the whole hotkey-to-audio path, not just the hardware start call. The
+ready signal confirms buffer delivery; it does not prove that speech began after
+the microphone started or that recognition preserved every word.
+
 Observed on one selected microphone on 2026-09-07 (five alternating runs per path):
 
 | Metric | AVAudioEngine tap | Direct HAL |
@@ -68,12 +84,26 @@ Three complete new-recorder checks produced valid mono files with first callback
 around 31–32 ms. These checks do not prove real spoken-prefix accuracy, Bluetooth
 reconnection, or behavior on untested hardware.
 
+After moving workflow setup behind capture, two observed starts in the signed
+development app on the same date reached `workflow.audio_start_enter` in 0.3 and
+1.0 ms from the hotkey trace. First buffers were consumed at 36.7 and 47.8 ms;
+recording-ready presentation was requested at 38.5 and 101.3 ms respectively.
+The slower first presentation did not delay capture. These are individual local
+observations, not a hardware-independent latency guarantee. A separate packaged
+recorder check produced a valid 10,240-frame mono WAV (0.64 seconds), and no
+process was using microphone input after the check ended.
+
 ## Regression checks
 
 `CoreAudioRecorderTests`, `CoreAudioRingTests`, and `SwitchableAudioRecorderTests`
 cover prefix/order preservation, tail draining, bounded overflow, short recording,
 silence, failure cleanup, device replacement, late startup cancellation, backend
 selection and compatible startup fallback. Run `make coverage` for the full suite.
+
+`RecordingAudioReadinessTests` and `WorkflowControllerProcessingTests` also cover
+audio-before-setup, setup-before-audio, empty/quiet buffers, quick release,
+cancelled startup ownership, stale callbacks, and ordered delivery of the audio
+prefix when realtime session setup is delayed.
 
 Run `bash scripts/check_audio_ring.sh` for 100,000 concurrent stereo packets with
 AddressSanitizer/UndefinedBehaviorSanitizer and ThreadSanitizer. This check uses

@@ -2,6 +2,20 @@ import AVFoundation
 import Foundation
 
 extension WorkflowController {
+    @MainActor
+    func presentReadyRecording() {
+        guard isRecording, isAudioRecorderStarted,
+              recordingAudioReadiness?.isReady == true else { return }
+        RecordingStartupLatencyTrace.shared.mark("workflow.recording_ready", logSummary: true)
+        appState.setStatus(.recording)
+        let hint = currentRecordingHintPresentation()
+        if recordingMode == .locked {
+            overlayController.showLockedRecording(hintText: hint.text, autoHideHintAfter: hint.autoHideAfter)
+        } else {
+            overlayController.show(hintText: hint.text, autoHideHintAfter: hint.autoHideAfter)
+        }
+    }
+
     static func audioStartFailureMessage(for error: Error) -> String {
         L(audioStartFailureLocalizationKey(for: error))
     }

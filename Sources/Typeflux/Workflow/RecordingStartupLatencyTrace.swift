@@ -18,7 +18,7 @@ final class RecordingStartupLatencyTrace {
         lock.unlock()
     }
 
-    func mark(_ label: String) {
+    func mark(_ label: String, logSummary: Bool = false) {
         lock.lock()
         if events.isEmpty {
             events = [(label, Self.now())]
@@ -26,7 +26,9 @@ final class RecordingStartupLatencyTrace {
         } else {
             events.append((label, Self.now()))
         }
+        let summary = logSummary ? summaryLocked() : nil
         lock.unlock()
+        if let summary { NetworkDebugLogger.logMessage(summary) }
     }
 
     func markFirstAudioBuffer() {

@@ -143,6 +143,7 @@ final class WorkflowController {
     var isRecording = false
     var isAudioRecorderStarted = false
     var isAudioRecorderStarting = false
+    var recordingAudioReadiness: RecordingAudioReadiness?
     var shouldFinishRecordingAfterAudioStart = false
     var pendingRecordingStartID: UUID?
     var suppressActivationTapUntil: Date?
@@ -470,13 +471,15 @@ final class WorkflowController {
     /// Force cancel any ongoing recording
     func cancelRecording() {
         guard isRecording else { return }
+        recordingAudioReadiness?.cancel()
         discardPendingDictationAnalytics()
         recordingGestureDecision?.resolve()
         recordingGestureDecision = nil
         isRecording = false
         let shouldStopAudioRecorder = isAudioRecorderStarted
         isAudioRecorderStarted = false
-        isAudioRecorderStarting = false
+        // An in-flight driver start still owns the recorder until it returns.
+        // Keep new presses out while its eventual success is being stopped.
         shouldFinishRecordingAfterAudioStart = false
         audioRecorderStartedAt = nil
         recordingStartupContext = nil
@@ -609,8 +612,8 @@ final class WorkflowController {
             dismissHistoryPicker()
         }
 
-        if !isRecording, isAudioRecorderStarted {
-            NSLog("[Workflow] Audio recorder is still stopping, ignoring press")
+        if !isRecording, isAudioRecorderStarted || isAudioRecorderStarting {
+            NSLog("[Workflow] Audio recorder is still starting or stopping, ignoring press")
             return
         }
 
@@ -784,7 +787,7 @@ final class WorkflowController {
             decision.resolve()
             Task { @MainActor in
                 guard self.isRecording, self.recordingIntent == .askSelection else { return }
-                self.overlayController.showLockedRecording(hintText: L("overlay.ask.guidance"))
+                self.presentReadyRecording()
             }
             return
         }
@@ -820,7 +823,7 @@ final class WorkflowController {
         }
         Task { @MainActor in
             guard self.isRecording else { return }
-            self.overlayController.showLockedRecording(hintText: L("overlay.ask.guidance"))
+            self.presentReadyRecording()
         }
     }
 
@@ -828,13 +831,9 @@ final class WorkflowController {
         RecordingStartupLatencyTrace.shared.mark("workflow.lock_active_recording")
         recordingMode = .locked
         hotkeyPressedAt = nil
-        let recordingHint = currentRecordingHintPresentation()
         Task { @MainActor in
             guard self.isRecording else { return }
-            self.overlayController.showLockedRecording(
-                hintText: recordingHint.text,
-                autoHideHintAfter: recordingHint.autoHideAfter
-            )
+            self.presentReadyRecording()
         }
     }
 
@@ -958,13 +957,13 @@ final class WorkflowController {
         let autoHideAfter: TimeInterval?
     }
 
-    private static func frontmostApplicationContext() -> FrontmostApplicationContext {
+    private static func frontmostApplicationContext(includeIcon: Bool = true) -> FrontmostApplicationContext {
         let application = NSWorkspace.shared.frontmostApplication
         let isTypeflux = application?.bundleIdentifier == Bundle.main.bundleIdentifier
         return FrontmostApplicationContext(
             appName: isTypeflux ? nil : application?.localizedName,
             bundleIdentifier: isTypeflux ? nil : application?.bundleIdentifier,
-            icon: isTypeflux ? nil : application?.icon
+            icon: isTypeflux || !includeIcon ? nil : application?.icon
         )
     }
 
@@ -1049,7 +1048,7 @@ final class WorkflowController {
     }
 
     func currentRecordingHintPresentation() -> RecordingHintPresentation {
-        let frontmostApplicationContext = Self.frontmostApplicationContext()
+        let frontmostApplicationContext = Self.frontmostApplicationContext(includeIcon: false)
         return recordingHintPresentation(
             intent: recordingIntent,
             recordingMode: recordingMode,
@@ -1060,6 +1059,9 @@ final class WorkflowController {
 
     func beginRecording(intent: RecordingIntent, startLocked: Bool, startID: UUID? = nil) async {
         if let startID, pendingRecordingStartID != startID {
+            if !isRecording, pendingRecordingStartID == nil {
+                isAudioRecorderStarting = false
+            }
             RecordingStartupLatencyTrace.shared.mark("workflow.begin_recording_cancelled")
             return
         }
@@ -1078,39 +1080,8 @@ final class WorkflowController {
         recordingIntent = effectiveIntent
         lastRetryableFailureRecord = nil
         latestRecordingPreviewText = ""
-        let frontmostApplicationContext = Self.frontmostApplicationContext()
-        beginDictationAnalytics(
-            intent: effectiveIntent,
-            mode: recordingMode,
-            targetBundleIdentifier: frontmostApplicationContext.bundleIdentifier
-        )
-        let recordingHint = recordingHintPresentation(
-            intent: effectiveIntent,
-            recordingMode: recordingMode,
-            appName: frontmostApplicationContext.appName,
-            bundleIdentifier: frontmostApplicationContext.bundleIdentifier
-        )
-        NSLog("[Workflow] Recording started")
-
-        Task { @MainActor in
-            guard self.isRecording else { return }
-            appState.setStatus(.recording)
-            if effectiveStartLocked {
-                if effectiveIntent == .askSelection {
-                    overlayController.showLockedRecording(hintText: L("overlay.ask.guidance"))
-                } else {
-                    overlayController.showLockedRecording(
-                        hintText: recordingHint.text,
-                        autoHideHintAfter: recordingHint.autoHideAfter
-                    )
-                }
-            } else {
-                overlayController.show(
-                    hintText: recordingHint.text,
-                    autoHideHintAfter: recordingHint.autoHideAfter
-                )
-            }
-        }
+        let readiness = RecordingAudioReadiness()
+        recordingAudioReadiness = readiness
 
         do {
             RecordingStartupLatencyTrace.shared.mark("workflow.audio_start_enter")
@@ -1122,23 +1093,45 @@ final class WorkflowController {
                 levelHandler: { [weak self] level in
                     self?.overlayController.updateLevel(level)
                 },
-                audioBufferHandler: recordingAudioBufferRelay.map { relay in
-                    { buffer in relay.append(buffer) }
+                audioBufferHandler: { buffer in
+                    guard buffer.frameLength > 0 else { return }
+                    recordingAudioBufferRelay?.append(buffer)
+                    readiness.receiveAudio()
                 }
             )
             RecordingStartupLatencyTrace.shared.mark("workflow.audio_start_return")
-            isAudioRecorderStarting = false
             isAudioRecorderStarted = true
+            isAudioRecorderStarting = false
             audioRecorderStartedAt = monotonicNow()
             pendingRecordingStartID = nil
 
             guard isRecording else {
                 recordingAudioBufferRelay?.cancel()
-                isAudioRecorderStarted = false
                 audioRecorderStartedAt = nil
                 _ = try? audioRecorder.stop()
+                isAudioRecorderStarted = false
                 Task { await livePreviewer?.cancel() }
                 return
+            }
+
+            // Capture is already running while app metadata and analytics are resolved.
+            // Loading an application icon here used to delay the microphone itself.
+            RecordingStartupLatencyTrace.shared.mark("workflow.context_begin")
+            let frontmostApplicationContext = Self.frontmostApplicationContext(includeIcon: false)
+            beginDictationAnalytics(
+                intent: recordingIntent,
+                mode: recordingMode,
+                targetBundleIdentifier: frontmostApplicationContext.bundleIdentifier
+            )
+            RecordingStartupLatencyTrace.shared.mark("workflow.context_end")
+            readiness.whenReady { [weak self, weak readiness] in
+                Task { @MainActor [weak self, weak readiness] in
+                    guard let self, let readiness,
+                          self.recordingAudioReadiness === readiness,
+                          self.isRecording, self.isAudioRecorderStarted,
+                          !self.shouldFinishRecordingAfterAudioStart else { return }
+                    self.presentReadyRecording()
+                }
             }
 
             if shouldFinishRecordingAfterAudioStart {
@@ -1288,6 +1281,14 @@ final class WorkflowController {
                 self?.finishRecordingFromCurrentMode()
             }
         } catch {
+            readiness.cancel()
+            guard isRecording else {
+                isAudioRecorderStarting = false
+                return
+            }
+            // Failed starts still need a correlated analytics event; defer this
+            // work until failure rather than putting it ahead of capture.
+            beginDictationAnalytics(intent: recordingIntent, mode: recordingMode, targetBundleIdentifier: nil)
             Task { await liveTranscriptionPreviewer?.cancel() }
             activeRealtimeAudioBufferPump?.cancel()
             Task { await activeRealtimeTranscriptionSession?.cancel() }
@@ -1387,6 +1388,7 @@ final class WorkflowController {
 
     func finishRecordingFromCurrentMode() {
         guard isRecording else { return }
+        recordingAudioReadiness?.cancel()
         hotkeyService.settleActivationGesture()
 
         let shouldStopAudioRecorder = isAudioRecorderStarted

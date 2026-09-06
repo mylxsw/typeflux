@@ -1199,6 +1199,69 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         }
     }
 
+    func testBeginRecordingStartsAudioBeforeAnalytics() async {
+        let analytics = AnalyticsEventRecorder()
+        let recorder = MockProcessingAudioRecorder {
+            XCTAssertTrue(analytics.events.isEmpty, "Analytics must not delay microphone startup")
+        }
+        let controller = makeWorkflowController(audioRecorder: recorder, analyticsReporter: analytics)
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+        XCTAssertEqual(analytics.events.first?.name, "dictation_session_started")
+        controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
+    func testRecordingReadinessWaitsForNonemptyAudioEvenAfterQuickRelease() async throws {
+        let recorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: recorder)
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+        controller.hotkeyPressedAt = controller.monotonicNow()
+        controller.handlePressEnded()
+        await waitForMainActorWork()
+        XCTAssertEqual(controller.recordingMode, .locked)
+        XCTAssertEqual(controller.appState.status, .idle)
+
+        try recorder.emitAudio(frameCount: 0)
+        await waitForMainActorWork()
+        XCTAssertEqual(controller.appState.status, .idle)
+        // Quiet samples are valid captured audio; readiness must not wait for speech.
+        try recorder.emitAudio(frameCount: 320)
+        await waitForMainActorWork()
+        XCTAssertEqual(controller.appState.status, .recording)
+        controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
+    func testAskRecordingWaitsForAudioBeforeShowingReady() async throws {
+        let recorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: recorder)
+        await controller.beginRecording(intent: .askSelection, startLocked: true)
+        await waitForMainActorWork()
+        XCTAssertEqual(controller.appState.status, .idle)
+        try recorder.emitAudio(frameCount: 320)
+        await waitForMainActorWork()
+        XCTAssertEqual(controller.appState.status, .recording)
+        controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
+    func testCancelledRecordingAudioCannotMakeNextRecordingReady() async throws {
+        let recorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: recorder)
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+        controller.cancelRecording()
+        await waitForMainActorWork()
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+        try recorder.emitAudio(frameCount: 320, recordingIndex: 0)
+        await waitForMainActorWork()
+        XCTAssertEqual(controller.appState.status, .idle)
+        try recorder.emitAudio(frameCount: 320, recordingIndex: 1)
+        await waitForMainActorWork()
+        XCTAssertEqual(controller.appState.status, .recording)
+        controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
     func testBeginRecordingStartsAudioBeforeCueSelectionOrDelay() async throws {
         let eventRecorder = ThreadSafeEventRecorder()
         let audioStarted = expectation(description: "audio recorder started")
@@ -1262,6 +1325,29 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         await waitForMainActorWork()
     }
 
+    func testAudioPrefixSurvivesDelayedRealtimeSetupInOrder() async throws {
+        let events = ThreadSafeEventRecorder()
+        let factory = DelayedRealtimeSessionFactory(eventRecorder: events)
+        let recorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(
+            audioRecorder: recorder,
+            sttTranscriber: factory,
+            configureSettings: { $0.sttProvider = .aliCloud }
+        )
+        let startup = Task { await controller.beginRecording(intent: .dictation, startLocked: false) }
+        await waitUntil { events.snapshot().contains("realtime-setup") }
+        try recorder.emitAudio(frameCount: 320, value: 0.1)
+        try recorder.emitAudio(frameCount: 320, value: 0.2)
+        factory.releaseSetup()
+        await startup.value
+        try recorder.emitAudio(frameCount: 320, value: 0.3)
+        await controller.activeRealtimeAudioBufferPump?.finishInput()
+        let samples = await factory.session.receivedFirstSamples
+        XCTAssertEqual(samples, [0.1, 0.2, 0.3])
+        controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
     func testBeginRecordingDoesNotPlayCueWhileAudioStartIsPending() async {
         let eventRecorder = ThreadSafeEventRecorder()
         let audioRecorder = BlockingStartAudioRecorder()
@@ -1282,6 +1368,39 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         audioRecorder.releasePendingStart()
         await recordingTask.value
         XCTAssertFalse(eventRecorder.snapshot().contains("cue-play"))
+    }
+
+    func testCancelledDriverStartKeepsOwnershipUntilStopped() async {
+        let recorder = BlockingStartAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: recorder)
+        let startup = Task { await controller.beginRecording(intent: .dictation, startLocked: false) }
+        recorder.waitUntilStartIsPending()
+        controller.cancelRecording()
+        controller.handlePressBegan(intent: .dictation, startLocked: false)
+        XCTAssertFalse(controller.isRecording)
+        XCTAssertTrue(controller.isAudioRecorderStarting)
+        XCTAssertEqual(recorder.startCallCount, 1)
+        recorder.releasePendingStart()
+        await startup.value
+        XCTAssertEqual(recorder.stopCallCount, 1)
+        XCTAssertFalse(controller.isAudioRecorderStarting)
+        XCTAssertFalse(controller.isAudioRecorderStarted)
+        await waitForMainActorWork()
+        XCTAssertEqual(controller.appState.status, .idle)
+    }
+
+    func testCancellationBeforeQueuedStartupReleasesOwnership() async {
+        let recorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: recorder)
+        let startID = UUID()
+        controller.pendingRecordingStartID = startID
+        controller.isRecording = true
+        controller.isAudioRecorderStarting = true
+        controller.cancelRecording()
+        await controller.beginRecording(intent: .dictation, startLocked: false, startID: startID)
+        XCTAssertEqual(recorder.startCallCount, 0)
+        XCTAssertFalse(controller.isAudioRecorderStarting)
+        await waitForMainActorWork()
     }
 
     func testBeginRecordingResetsStateWhenAudioStartFails() async {
@@ -2189,6 +2308,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(audioRecorder.stopCallCount, 1)
     }
 
+    @MainActor
     func testPressShowsLocalModelDownloadAlertAndDoesNotRecord() async {
         LocalModelDownloadProgressCenter.shared.clear()
         defer { LocalModelDownloadProgressCenter.shared.clear() }
@@ -2883,6 +3003,7 @@ private final class MockProcessingAudioRecorder: AudioRecorder {
     private let lock = NSLock()
     private var starts = 0
     private var stops = 0
+    private var bufferHandlers: [((AVAudioPCMBuffer) -> Void)?] = []
 
     init(onStart: @escaping () -> Void = {}) {
         self.onStart = onStart
@@ -2911,12 +3032,22 @@ private final class MockProcessingAudioRecorder: AudioRecorder {
 
     func start(
         levelHandler _: @escaping (Float) -> Void,
-        audioBufferHandler _: ((AVAudioPCMBuffer) -> Void)?
+        audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
     ) throws {
         lock.lock()
         starts += 1
+        bufferHandlers.append(audioBufferHandler)
         lock.unlock()
         onStart()
+    }
+
+    func emitAudio(frameCount: AVAudioFrameCount, recordingIndex: Int = 0, value: Float = 0) throws {
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 16000, channels: 1))
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: max(1, frameCount)))
+        buffer.frameLength = frameCount
+        buffer.floatChannelData?[0].update(repeating: value, count: Int(frameCount))
+        let handler = lock.withLock { bufferHandlers[recordingIndex] }
+        handler?(buffer)
     }
 
     func stop() throws -> AudioFile {
@@ -3357,6 +3488,7 @@ private actor MockOptimizeRealtimeSession: RealtimeTranscriptionSession, Realtim
     private let transcript: String
     private var finishCallCount = 0
     private var cancelCallCount = 0
+    private(set) var receivedFirstSamples: [Float] = []
 
     init(optimize: Bool, transcript: String) {
         asrOptimize = optimize
@@ -3365,7 +3497,11 @@ private actor MockOptimizeRealtimeSession: RealtimeTranscriptionSession, Realtim
 
     func start() async {}
 
-    func append(_: AVAudioPCMBuffer) async {}
+    func append(_ buffer: AVAudioPCMBuffer) async {
+        if buffer.frameLength > 0, let samples = buffer.floatChannelData?[0] {
+            receivedFirstSamples.append(samples[0])
+        }
+    }
 
     func finish() async throws -> String {
         finishCallCount += 1
@@ -3382,6 +3518,7 @@ private actor MockOptimizeRealtimeSession: RealtimeTranscriptionSession, Realtim
 }
 
 private final class DelayedRealtimeSessionFactory: RealtimeTranscriptionSessionFactory, @unchecked Sendable {
+    let session = MockOptimizeRealtimeSession(optimize: true, transcript: "")
     private let eventRecorder: ThreadSafeEventRecorder
     private let lock = NSLock()
     private var setupContinuation: CheckedContinuation<Void, Never>?
@@ -3409,7 +3546,7 @@ private final class DelayedRealtimeSessionFactory: RealtimeTranscriptionSessionF
                 }
             }
         }
-        return MockOptimizeRealtimeSession(optimize: true, transcript: "")
+        return session
     }
 
     func releaseSetup() {
