@@ -29,7 +29,7 @@ extension WorkflowController {
         var attempt = 1
         while true {
             do {
-                try audioRecorder.start(levelHandler: levelHandler, audioBufferHandler: audioBufferHandler)
+                try await audioRecorder.startInBackground(levelHandler: levelHandler, audioBufferHandler: audioBufferHandler)
                 return
             } catch {
                 let maxAttemptCount = Self.audioStartupMaxAttemptCount(for: error)

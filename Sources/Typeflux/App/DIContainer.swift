@@ -39,7 +39,7 @@ final class DIContainer {
     // swiftlint:disable:next function_body_length
     init() {
         hotkeyService = EventTapHotkeyService(settingsStore: settingsStore)
-        audioRecorder = AVFoundationAudioRecorder(
+        audioRecorder = SwitchableAudioRecorder(
             settingsStore: settingsStore,
             audioDeviceManager: audioDeviceManager
         )

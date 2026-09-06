@@ -1,4 +1,5 @@
 #import <AVFoundation/AVFoundation.h>
+#import "TFHALInput.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

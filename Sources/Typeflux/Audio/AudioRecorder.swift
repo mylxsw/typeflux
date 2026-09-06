@@ -31,7 +31,28 @@ protocol AudioRecorder {
 }
 
 extension AudioRecorder {
+    /// Hardware start may block inside a driver. Keep it off the workflow/UI executor.
+    func startInBackground(
+        levelHandler: @escaping (Float) -> Void,
+        audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
+    ) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            AudioRecorderStartupQueue.queue.async {
+                do {
+                    try self.start(levelHandler: levelHandler, audioBufferHandler: audioBufferHandler)
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
     func start(levelHandler: @escaping (Float) -> Void) throws {
         try start(levelHandler: levelHandler, audioBufferHandler: nil)
     }
+}
+
+private enum AudioRecorderStartupQueue {
+    static let queue = DispatchQueue(label: "typeflux.audio.startup", qos: .userInitiated)
 }

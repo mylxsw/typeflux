@@ -417,6 +417,9 @@ final class LocalModelTranscriberTests: XCTestCase {
         )
         let progressNotification = expectation(description: "Auto model download progress notifications")
         progressNotification.expectedFulfillmentCount = 2
+        // Progress may legitimately emit more than two updates before this async
+        // test resumes and removes its observer. Require at least two updates.
+        progressNotification.assertForOverFulfill = false
 
         let observer = NotificationCenter.default.addObserver(
             forName: .autoModelDownloadStateDidChange,
