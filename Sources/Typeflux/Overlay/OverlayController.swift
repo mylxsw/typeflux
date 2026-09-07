@@ -1693,13 +1693,11 @@ private struct OverlayView: View {
         case .recordingHold, .recordingHoldPreview, .recordingLocked, .recordingLockedPreview,
              .processing, .processingPreview:
             // Keep one structural identity while captions and controls change.
-            recordingStack {
-                recordingMorphCapsule(
-                    expanded: model.presentation.isRecording
-                        ? model.recordingPreviewExpanded : model.presentation == .processingPreview,
-                    showControls: model.presentation.showsRecordingControls
-                )
-            }
+            recordingMorphCapsule(
+                expanded: model.presentation.isRecording
+                    ? model.recordingPreviewExpanded : model.presentation == .processingPreview,
+                showControls: model.presentation.showsRecordingControls
+            )
         case .transcriptPreview:
             previewCard
         case .notice:
@@ -1747,41 +1745,10 @@ private struct OverlayView: View {
         }
     }
 
-    private func recordingStack(@ViewBuilder content: () -> some View) -> some View {
-        VStack(spacing: RecordingHintLayout.spacing) {
-            if !model.recordingHintText.isEmpty {
-                recordingHintBanner
-            }
-            content()
-        }
-        .fixedSize(horizontal: true, vertical: true)
-    }
-
-    private var recordingHintBanner: some View {
-        let layout = RecordingHintLayout(text: model.recordingHintText)
-        return Text(model.recordingHintText)
-            .font(Font(RecordingHintLayout.font))
-            .foregroundStyle(Color.white.opacity(0.92))
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(width: layout.textSize.width, height: layout.textSize.height)
-            .padding(.horizontal, RecordingHintLayout.horizontalPadding)
-            .padding(.vertical, RecordingHintLayout.verticalPadding)
-            .background(
-                LiquidGlassShapeBackground(
-                    shape: RoundedRectangle(cornerRadius: layout.cornerRadius, style: .continuous),
-                    cornerRadius: layout.cornerRadius,
-                    tintOpacity: 0.05,
-                    strokeOpacity: 0.14,
-                    lineWidth: 0.8
-                )
-            )
-            .fixedSize(horizontal: true, vertical: true)
-    }
-
     private func recordingMorphCapsule(expanded: Bool, showControls: Bool) -> some View {
         MorphingRecordingCapsule(
             text: model.detailText,
+            hintText: model.recordingHintText,
             level: model.level,
             expanded: expanded,
             showControls: showControls,
@@ -2411,10 +2378,35 @@ private struct LockedRecordingCapsule: View {
     }
 }
 
-private struct MorphingRecordingCapsule: View, Animatable {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
+private struct RecordingHintBanner: View {
     let text: String
+
+    var body: some View {
+        let layout = RecordingHintLayout(text: text)
+        Text(text)
+            .font(Font(RecordingHintLayout.font))
+            .foregroundStyle(Color.white.opacity(0.92))
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(width: layout.textSize.width, height: layout.textSize.height)
+            .padding(.horizontal, RecordingHintLayout.horizontalPadding)
+            .padding(.vertical, RecordingHintLayout.verticalPadding)
+            .background(
+                LiquidGlassShapeBackground(
+                    shape: RoundedRectangle(cornerRadius: layout.cornerRadius, style: .continuous),
+                    cornerRadius: layout.cornerRadius,
+                    tintOpacity: 0.05,
+                    strokeOpacity: 0.14,
+                    lineWidth: 0.8
+                )
+            )
+            .fixedSize(horizontal: true, vertical: true)
+    }
+}
+
+private struct MorphingRecordingCapsule: View, Animatable {
+    let text: String
+    let hintText: String
     let level: Float
     let expanded: Bool
     let showControls: Bool
@@ -2428,11 +2420,12 @@ private struct MorphingRecordingCapsule: View, Animatable {
     private var processingVisibility: CGFloat
 
     init(
-        text: String, level: Float, expanded: Bool, showControls: Bool,
+        text: String, hintText: String, level: Float, expanded: Bool, showControls: Bool,
         isProcessing: Bool, processingTitle: String, processingProgress: CGFloat,
         onCancel: @escaping () -> Void, onConfirm: @escaping () -> Void
     ) {
         self.text = text
+        self.hintText = hintText
         self.level = level
         self.expanded = expanded
         self.showControls = showControls
@@ -2463,6 +2456,10 @@ private struct MorphingRecordingCapsule: View, Animatable {
         let compactWidth = recordingWidth + (processingWidth - recordingWidth) * processingVisibility
         let width = compactWidth + (360 - compactWidth) * expansion
         let height = 35 + (LiveTranscriptPreviewLayout.expandedCapsuleHeight - 35) * expansion
+        // Reveal text only when there is room for its fixed-width viewport.
+        let captionVisibility = max(0, min(1, (expansion - 0.9) / 0.1))
+        let recordingOpacity = max(0, 1 - processingVisibility / 0.35)
+        let processingOpacity = max(0, (processingVisibility - 0.35) / 0.65)
 
         ZStack(alignment: .bottom) {
             Rectangle()
@@ -2477,12 +2474,7 @@ private struct MorphingRecordingCapsule: View, Animatable {
                 .frame(width: 330, height: LiveTranscriptPreviewLayout.textViewportHeight, alignment: .topLeading)
                 .padding(.top, 12)
                 .padding(.bottom, 43)
-                .opacity(expanded ? 1 : 0)
-                .animation(
-                    reduceMotion ? nil : .easeOut(duration: expanded ? 0.18 : 0.10)
-                        .delay(expanded ? 0.06 : 0),
-                    value: expanded
-                )
+                .opacity(captionVisibility)
                 .allowsHitTesting(expanded)
                 .accessibilityHidden(!expanded)
 
@@ -2490,7 +2482,7 @@ private struct MorphingRecordingCapsule: View, Animatable {
                 .frame(height: OverlayWaveformMetrics.maximumBarHeight)
                 .padding(.horizontal, 20 - 13 * controlsVisibility)
                 .padding(.bottom, 5.5)
-                .opacity(1 - processingVisibility)
+                .opacity(recordingOpacity)
                 .allowsHitTesting(!isProcessing)
                 .accessibilityHidden(isProcessing)
 
@@ -2501,7 +2493,7 @@ private struct MorphingRecordingCapsule: View, Animatable {
                 .minimumScaleFactor(0.9)
                 .padding(.horizontal, 12)
                 .frame(width: processingWidth, height: 35)
-                .opacity(processingVisibility)
+                .opacity(processingOpacity)
                 .accessibilityHidden(!isProcessing)
         }
         .frame(width: width, height: height, alignment: .bottom)
@@ -2510,13 +2502,19 @@ private struct MorphingRecordingCapsule: View, Animatable {
             LiquidGlassShapeBackground(
                 shape: shape,
                 cornerRadius: cornerRadius,
-                tintOpacity: expanded ? 0.06 : 0.045,
+                tintOpacity: 0.045 + 0.015 * expansion,
                 strokeOpacity: 0.15,
                 lineWidth: 0.9,
                 interactive: showControls
             )
         )
         .shadow(color: Color.black.opacity(0.24), radius: 18, x: 0, y: 12)
+        .overlay(alignment: .bottom) {
+            if !hintText.isEmpty {
+                RecordingHintBanner(text: hintText)
+                    .offset(y: -height - RecordingHintLayout.spacing)
+            }
+        }
         .environment(\.colorScheme, .dark)
         // Geometry is interpolated once, above. Re-lay out children at each
         // intermediate size instead of animating their positions a second time.

@@ -4,6 +4,47 @@ import Testing
 
 @Suite(.serialized)
 struct OverlayTransitionRenderingTests {
+    @Test @MainActor
+    func recordingHintStaysCenteredAndFollowsTheCapsuleDuringMorphing() async throws {
+        let application = NSApplication.shared
+        let previousWindows = Set(application.windows.map(\.windowNumber))
+        let suiteName = "OverlayHintMotionTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(OverlayStyle.classic.rawValue, forKey: "ui.overlayStyle")
+        let controller = OverlayController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults))
+        defer { controller.dismissImmediately() }
+        controller.showLockedRecording(hintText: "Using the structured writing expert persona")
+        let window = try #require(application.windows.first {
+            !previousWindows.contains($0.windowNumber) && $0.isVisible
+        })
+        let metering = Task { @MainActor in
+            var frame = 0
+            while !Task.isCancelled {
+                controller.updateLevel(Float(frame % 8) / 10)
+                frame += 1
+                try? await Task.sleep(for: .milliseconds(16))
+            }
+        }
+        defer { metering.cancel() }
+        try await Task.sleep(for: .milliseconds(450))
+        for (transition, caption) in ["A caption expands beneath the recording hint.", ""].enumerated() {
+            controller.updateRecordingPreviewText(caption)
+            for frame in 0 ..< 12 {
+                try await Task.sleep(for: .milliseconds(25))
+                let bitmap = try capture(window, name: "hint-motion-\(transition)-\(frame)")
+                let bands = bitmap.opaqueHorizontalBands
+                let hint = try #require(bands.first)
+                let capsule = try #require(bands.last)
+                let scale = CGFloat(bitmap.pixelsWide) / window.frame.width
+                #expect(bands.count == 2)
+                #expect(abs(hint.midX - CGFloat(bitmap.pixelsWide) / 2) <= scale)
+                #expect(abs(hint.midX - capsule.midX) <= scale)
+                #expect(abs(capsule.minY - hint.maxY - 10 * scale) <= 2 * scale)
+            }
+        }
+    }
+
     @Test(arguments: OverlayStyle.allCases) @MainActor
     func recordingHintsKeepTheirRoundedEndsInsideTheWindow(style: OverlayStyle) async throws {
         let application = NSApplication.shared
@@ -86,6 +127,10 @@ struct OverlayTransitionRenderingTests {
         if style == .classic {
             #expect(expanding.opaqueWidth > compact.opaqueWidth + 12)
             #expect(expanding.opaqueWidth < expanded.opaqueWidth - 12)
+            let scale = CGFloat(expanding.pixelsWide) / window.frame.width
+            if CGFloat(expanding.opaqueWidth) < 330 * scale {
+                #expect(expanding.captionBrightness(scale: scale) < 0.02)
+            }
         }
 
         controller.updateRecordingPreviewText("")
@@ -97,6 +142,10 @@ struct OverlayTransitionRenderingTests {
             #expect(collapsing.opaqueWidth > collapsed.opaqueWidth + 12)
             #expect(collapsing.opaqueWidth < expanded.opaqueWidth - 12)
             #expect(abs(collapsed.opaqueWidth - compact.opaqueWidth) <= 2)
+            let scale = CGFloat(collapsing.pixelsWide) / expanded.size.width
+            if CGFloat(collapsing.opaqueWidth) < 330 * scale {
+                #expect(collapsing.captionBrightness(scale: scale) < 0.02)
+            }
         }
 
         let compactCenter = try #require(compact.waveformCenter)
@@ -169,6 +218,42 @@ struct OverlayTransitionRenderingTests {
 }
 
 private extension NSBitmapImageRep {
+    func captionBrightness(scale: CGFloat) -> CGFloat {
+        var brightest: CGFloat = 0
+        for y in stride(from: 0, to: max(0, pixelsHigh - Int(87 * scale)), by: 2) {
+            for x in stride(from: 0, to: pixelsWide, by: 2) {
+                if let color = colorAt(x: x, y: y)?.usingColorSpace(.sRGB) {
+                    brightest = max(brightest, color.redComponent * color.alphaComponent)
+                }
+            }
+        }
+        return brightest
+    }
+
+    var opaqueHorizontalBands: [CGRect] {
+        guard bitsPerSample == 8, samplesPerPixel == 4, let data = bitmapData else { return [] }
+        let alphaOffset = bitmapFormat.contains(.alphaFirst) ? 0 : 3
+        var bands: [CGRect] = []
+        var current: CGRect?
+        for y in 0 ..< pixelsHigh {
+            var left = pixelsWide
+            var right = -1
+            for x in 0 ..< pixelsWide where data[y * bytesPerRow + x * 4 + alphaOffset] > 230 {
+                left = min(left, x)
+                right = max(right, x)
+            }
+            if right > left {
+                let row = CGRect(x: left, y: y, width: right - left + 1, height: 1)
+                current = current.map { $0.union(row) } ?? row
+            } else if let completed = current {
+                bands.append(completed)
+                current = nil
+            }
+        }
+        if let current { bands.append(current) }
+        return bands
+    }
+
     var totalBrightness: CGFloat {
         var sum: CGFloat = 0
         for y in stride(from: 0, to: pixelsHigh, by: 2) {
