@@ -4,6 +4,52 @@ import Testing
 
 @Suite(.serialized)
 struct OverlayTransitionRenderingTests {
+    @Test(arguments: OverlayStyle.allCases) @MainActor
+    func resultDialogFitsShortTextAndCapsLongTextAfterRecording(style: OverlayStyle) async throws {
+        let application = NSApplication.shared
+        let previousWindows = Set(application.windows.map(\.windowNumber))
+        let suiteName = "OverlayResultLayoutTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(style.rawValue, forKey: "ui.overlayStyle")
+        let controller = OverlayController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults))
+        defer { controller.dismissImmediately() }
+        controller.showLockedRecording()
+        let window = try #require(application.windows.first {
+            !previousWindows.contains($0.windowNumber) && $0.isVisible
+        })
+        controller.updateRecordingPreviewText("A recording caption before the result dialog.")
+        try await Task.sleep(for: .milliseconds(400))
+        controller.showResultDialog(title: "Copy result", message: "Explain how these topics were chosen and describe the complete process.")
+        try await Task.sleep(for: .milliseconds(400))
+        let shortHeight = window.frame.height
+        #expect(window.frame.width == 446)
+        #expect(shortHeight > 100)
+        #expect(shortHeight < 170)
+        let short = try capture(window, name: "result-short-\(style.rawValue)")
+        let scale = CGFloat(short.pixelsWide) / window.frame.width
+        var firstTextRow = short.pixelsHigh
+        for y in 0 ..< short.pixelsHigh {
+            for x in stride(from: 0, to: short.pixelsWide, by: 2) {
+                if let color = short.colorAt(x: x, y: y)?.usingColorSpace(.sRGB),
+                   color.redComponent > 0.7, color.greenComponent > 0.7, color.blueComponent > 0.7 {
+                    firstTextRow = min(firstTextRow, y)
+                }
+            }
+        }
+        #expect(CGFloat(firstTextRow) / scale >= 10)
+        #expect(CGFloat(firstTextRow) / scale < 25)
+
+        controller.showResultDialog(title: "Copy result", message: String(repeating: "A long result remains available for scrolling and copying.\n", count: 30))
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(window.frame.height > shortHeight + 40)
+        #expect(window.frame.height <= 240)
+        _ = try capture(window, name: "result-long-\(style.rawValue)")
+        controller.showResultDialog(title: "Copy result", message: "A short result again.")
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(window.frame.height <= shortHeight)
+    }
+
     @Test @MainActor
     func recordingHintStaysCenteredAndFollowsTheCapsuleDuringMorphing() async throws {
         let application = NSApplication.shared
@@ -281,7 +327,8 @@ private extension NSBitmapImageRep {
         var maxX = -1
         var minY = pixelsHigh
         var maxY = -1
-        for y in max(0, pixelsHigh - 150) ..< max(0, pixelsHigh - 80) {
+        let scale = CGFloat(pixelsWide) / size.width
+        for y in max(0, pixelsHigh - Int(75 * scale)) ..< max(0, pixelsHigh - Int(40 * scale)) {
             for x in 0 ..< pixelsWide {
                 guard let color = colorAt(x: x, y: y)?.usingColorSpace(.sRGB),
                       color.alphaComponent > 0.5, color.redComponent > 0.8,

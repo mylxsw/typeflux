@@ -1251,8 +1251,12 @@ final class OverlayController {
                 interactive: true
             )
         case .resultDialog:
+            // Measure the same fixed-width card that is rendered in the panel.
+            // Capsule animation owns its window size, but a result card should
+            // fit its content, including the capped scrolling text viewport.
+            let measured = NSHostingView(rootView: OverlayView(model: model)).fittingSize
             return OverlayMetrics(
-                size: NSSize(width: 446, height: 236), anchor: .bottom, offset: 36,
+                size: NSSize(width: 446, height: ceil(measured.height)), anchor: .bottom, offset: 36,
                 interactive: true
             )
         }
