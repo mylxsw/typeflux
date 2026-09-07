@@ -2385,7 +2385,7 @@ private struct LockedRecordingCapsule: View {
             roundIconButton(systemName: "xmark", action: onCancel)
 
             LevelWaveform(level: level, activeColor: Color.white.opacity(0.95))
-                .frame(width: 38, height: 14)
+                .frame(width: 38, height: OverlayWaveformMetrics.maximumBarHeight)
 
             roundIconButton(systemName: "checkmark", action: onConfirm, inverted: true)
         }
@@ -2451,9 +2451,9 @@ private struct MorphingRecordingCapsule: View {
             }
 
             controlsRow
-                .frame(height: showControls ? 24 : 14)
+                .frame(height: OverlayWaveformMetrics.maximumBarHeight)
                 .padding(.horizontal, showControls ? 7 : 20)
-                .padding(.bottom, showControls ? 5.5 : 10.5)
+                .padding(.bottom, 5.5)
         }
         .frame(width: width, height: height, alignment: .bottom)
         .background(
@@ -2478,13 +2478,13 @@ private struct MorphingRecordingCapsule: View {
                 roundIconButton(systemName: "xmark", action: onCancel)
 
                 LevelWaveform(level: level, activeColor: Color.white.opacity(0.95))
-                    .frame(width: 38, height: 14)
+                    .frame(width: 38, height: OverlayWaveformMetrics.maximumBarHeight)
 
                 roundIconButton(systemName: "checkmark", action: onConfirm, inverted: true)
             }
         } else {
             LevelWaveform(level: level, activeColor: Color.white.opacity(0.95))
-                .frame(width: 38, height: 14)
+                .frame(width: 38, height: OverlayWaveformMetrics.maximumBarHeight)
         }
     }
 
@@ -2795,6 +2795,8 @@ private struct OverlayButton: View {
 }
 
 private struct LevelWaveform: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let level: Float
     let activeColor: Color
 
@@ -2811,5 +2813,6 @@ private struct LevelWaveform: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.08), value: level)
     }
 }
