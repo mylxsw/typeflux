@@ -5,6 +5,50 @@ import Testing
 @Suite(.serialized)
 struct OverlayTransitionRenderingTests {
     @Test(arguments: OverlayStyle.allCases) @MainActor
+    func noticesAndFailuresFitTheirContentAfterCapsuleTransitions(style: OverlayStyle) async throws {
+        let previousWindows = Set(NSApplication.shared.windows.map(\.windowNumber))
+        let suiteName = "OverlaySharedLayoutTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(style.rawValue, forKey: "ui.overlayStyle")
+        let controller = OverlayController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults))
+        defer { controller.dismissImmediately() }
+        controller.showLockedRecording()
+        let window = try #require(NSApplication.shared.windows.first {
+            !previousWindows.contains($0.windowNumber) && $0.isVisible
+        })
+        controller.showNotice(message: "Copied to clipboard")
+        try await Task.sleep(for: .milliseconds(400))
+        let shortHeight = window.frame.height
+        #expect(window.frame.width == 344)
+        #expect(shortHeight >= 55 && shortHeight < 90)
+        _ = try capture(window, name: "notice-short-\(style.rawValue)")
+        controller.showNotice(message: String(repeating: "A notice can contain several lines of text. ", count: 20))
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(window.frame.height > shortHeight)
+        #expect(window.frame.height < 125)
+        _ = try capture(window, name: "notice-long-\(style.rawValue)")
+        controller.showPassiveNotice(message: "Copied")
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(window.frame.height <= shortHeight)
+        #expect(window.ignoresMouseEvents)
+        controller.showFailure(message: "Please try again.")
+        try await Task.sleep(for: .milliseconds(400))
+        let failureHeight = window.frame.height
+        #expect(window.frame.width == 372)
+        #expect(failureHeight < 180)
+        _ = try capture(window, name: "failure-short-\(style.rawValue)")
+        controller.showRetryableFailure(message: String(repeating: "A detailed failure remains scrollable.\n", count: 30))
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(window.frame.height > failureHeight)
+        #expect(window.frame.height < 320)
+        _ = try capture(window, name: "failure-long-\(style.rawValue)")
+        controller.showNotice(message: "Copied to clipboard")
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(window.frame.height == shortHeight)
+    }
+
+    @Test(arguments: OverlayStyle.allCases) @MainActor
     func resultDialogFitsShortTextAndCapsLongTextAfterRecording(style: OverlayStyle) async throws {
         let application = NSApplication.shared
         let previousWindows = Set(application.windows.map(\.windowNumber))

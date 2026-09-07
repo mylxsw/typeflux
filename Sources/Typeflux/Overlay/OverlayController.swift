@@ -14,7 +14,6 @@ enum LiveTranscriptPreviewLayout {
 enum NoticeToastLayout {
     static let width: CGFloat = 344
     static let maxVisibleLineCount = 3
-    static let overlayHeight: CGFloat = 126
 }
 
 private final class TransparentHostingView<Content: View>: NSHostingView<Content> {
@@ -1224,40 +1223,17 @@ final class OverlayController {
                 anchor: .bottom, offset: 16,
                 interactive: false
             )
-        case .transcriptPreview:
-            return OverlayMetrics(
-                size: NSSize(width: 344, height: 108), anchor: .bottom, offset: 80,
-                interactive: false
-            )
-        case .notice:
-            return OverlayMetrics(
-                size: NSSize(width: NoticeToastLayout.width, height: NoticeToastLayout.overlayHeight),
-                anchor: .bottom, offset: 80,
-                interactive: Self.noticeIsInteractive(dismissible: model.noticeDismissible)
-            )
-        case .failure:
-            let actionHeight = model.failureActions.reduce(CGFloat(0)) { height, action in
-                height + (action.style == .text ? 28 : 44)
-            }
-            let failureHeight: CGFloat = model.failureActions.isEmpty ? 208 : 212 + actionHeight
-            return OverlayMetrics(
-                size: NSSize(width: 372, height: failureHeight), anchor: .bottom, offset: 80,
-                interactive: true
-            )
-        case .personaPicker:
-            let viewportHeight = min(320, max(180, model.personaViewportHeight))
-            return OverlayMetrics(
-                size: NSSize(width: 458, height: viewportHeight + 152), anchor: .center, offset: 36,
-                interactive: true
-            )
-        case .resultDialog:
-            // Measure the same fixed-width card that is rendered in the panel.
-            // Capsule animation owns its window size, but a result card should
-            // fit its content, including the capped scrolling text viewport.
+        case .transcriptPreview, .notice, .failure, .personaPicker, .resultDialog:
+            // Every non-capsule presentation owns its height through its content.
+            // Keep native sizing disabled: capsule transitions still own their
+            // animated envelope, and scroll views retain their explicit limits.
             let measured = NSHostingView(rootView: OverlayView(model: model)).fittingSize
             return OverlayMetrics(
-                size: NSSize(width: 446, height: ceil(measured.height)), anchor: .bottom, offset: 36,
-                interactive: true
+                size: NSSize(width: ceil(measured.width), height: ceil(measured.height)),
+                anchor: presentation == .personaPicker ? .center : .bottom,
+                offset: presentation == .personaPicker || presentation == .resultDialog ? 36 : 80,
+                interactive: presentation != .transcriptPreview
+                    && (presentation != .notice || Self.noticeIsInteractive(dismissible: model.noticeDismissible))
             )
         }
     }
