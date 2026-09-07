@@ -23,6 +23,12 @@ struct TextFocusSearchBudget {
 }
 
 enum FocusedTextTargetResolver {
+    static func applicationRoot<Node>(focusedElement: () -> Node?, focusedWindow: () -> Node?) -> Node? {
+        // A known focused control always wins, including a read-only control.
+        // The window is a fallback only when the app exposes no focused control.
+        focusedElement() ?? focusedWindow()
+    }
+
     static func resolve<Node>(
         root: Node,
         role: (Node) -> String?,
@@ -40,8 +46,9 @@ enum FocusedTextTargetResolver {
             seen.append(current)
             let currentRole = role(current)
             if AXTextInjector.nativeEditableRoles.contains(currentRole ?? "") { return current }
-            guard budget.take() else { return nil }
+            guard budget.take() else { return current }
             if let nested = nestedFocus(current), !matches(nested, current) {
+                guard !seen.contains(where: { matches($0, nested) }) else { return nil }
                 current = nested
                 continue
             }
@@ -65,24 +72,15 @@ enum FocusedTextTargetResolver {
             // an unfocused child or claim success without edit evidence.
             return current
         }
-        return nil
+        return seen.isEmpty ? nil : current
     }
 }
 
 extension AXTextInjector {
     /// Never promote an unfocused editable sibling merely because it has a caret.
     func deliveryFocusedElement(for processID: pid_t) -> AXUIElement? {
-        let application = AXUIElementCreateApplication(processID)
-        guard let root = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: application) else {
-            return nil
-        }
-        return FocusedTextTargetResolver.resolve(
-            root: root,
-            role: { copyStringAttribute(kAXRoleAttribute as String, from: $0) },
-            nestedFocus: { copyElementAttribute(kAXFocusedUIElementAttribute as String, from: $0) },
-            focused: { copyBooleanAttribute(kAXFocusedAttribute as String, from: $0) == true },
-            children: { copyElementArrayAttribute(kAXChildrenAttribute as String, from: $0) },
-            matches: { CFEqual($0, $1) }
-        )
+        // Capture and delivery must agree, including applications that expose
+        // AXFocusedWindow but omit AXFocusedUIElement.
+        focusedElement(for: processID)
     }
 }

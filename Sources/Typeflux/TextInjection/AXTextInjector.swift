@@ -875,7 +875,9 @@ final class AXTextInjector: TextInjector {
 
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
         let isEditable = isLikelyEditable(element: element)
-        let isFocusedTarget = copyBooleanAttribute(kAXFocusedAttribute as String, from: element) ?? false
+        // The shared resolver follows the application's explicit focus chain.
+        // Some custom editors omit AXFocused (or report false on their window).
+        let isFocusedTarget = processID != nil && frontmostProcessID() == processID
         let selectedRange = copySelectedTextRange(from: element)
         let documentURL = documentURL(for: element, processID: processID)
         let shouldPreferApplicationState = Self.shouldPreferApplicationStateContextBeforeAXValue(

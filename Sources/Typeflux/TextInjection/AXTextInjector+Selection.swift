@@ -244,27 +244,16 @@ extension AXTextInjector {
     }
 
     func resolvedFocusedElement(application: AXUIElement) -> AXUIElement? {
-        if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: application),
-           let resolved = resolveFocusedElement(focused) {
-            logFocusResolution(
-                context: "focusedElement(appFocusedUIElement)",
-                rootElement: focused,
-                resolvedElement: resolved
-            )
-            return resolved
+        guard let root = FocusedTextTargetResolver.applicationRoot(
+            focusedElement: { copyElementAttribute(kAXFocusedUIElementAttribute as String, from: application) },
+            focusedWindow: { copyElementAttribute(kAXFocusedWindowAttribute as String, from: application) }
+        ) else {
+            NetworkDebugLogger.logMessage("[Focus Resolution] application exposes neither focused control nor focused window")
+            return nil
         }
-
-        if let focusedWindow = copyElementAttribute(kAXFocusedWindowAttribute as String, from: application),
-           let resolved = resolveFocusedElement(focusedWindow) {
-            logFocusResolution(
-                context: "focusedElement(focusedWindow)",
-                rootElement: focusedWindow,
-                resolvedElement: resolved
-            )
-            return resolved
-        }
-
-        return nil
+        let resolved = resolveFocusedElement(root)
+        logFocusResolution(context: "application-focus", rootElement: root, resolvedElement: resolved)
+        return resolved
     }
 
     func focusedWindowElement(for processID: pid_t) -> AXUIElement? {
@@ -1094,64 +1083,14 @@ extension AXTextInjector {
     }
 
     func resolveFocusedElement(_ element: AXUIElement) -> AXUIElement? {
-        let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
-        let isContainer = role == "AXWindow"
-            || Self.genericEditableRoles.contains(role ?? "")
-            || Self.opaqueContainerRoles.contains(role ?? "")
-
-        if !isContainer {
-            return element
-        }
-
-        if role != "AXWindow", validSelectionText(from: element) != nil {
-            return element
-        }
-
-        if let nestedFocused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: element),
-           nestedFocused != element,
-           let resolved = resolveFocusedElement(nestedFocused) {
-            return resolved
-        }
-
-        if let descendant = findFocusedDescendant(
-            in: element,
-            depthRemaining: Self.focusedDescendantSearchDepth
-        ) {
-            return descendant
-        }
-
-        if let selectionDescendant = findSelectionDescendant(
-            in: element,
-            depthRemaining: Self.focusedDescendantSearchDepth
-        ) {
-            return selectionDescendant
-        }
-
-        if let editableDescendant = findBestEditableDescendant(
-            in: element,
-            depthRemaining: Self.focusedDescendantSearchDepth
-        ) {
-            let candidate = focusResolutionCandidate(for: editableDescendant)
-            NetworkDebugLogger.logMessage(
-                """
-                [Focus Resolution] no focused descendant found; editable descendant exists
-                window: \(elementSummary(element))
-                editableDescendant: \(elementSummary(editableDescendant))
-                """
-            )
-            if Self.shouldPreferEditableDescendant(overWindowRole: role, candidate: candidate) {
-                NetworkDebugLogger.logMessage(
-                    """
-                    [Focus Resolution] promoting editable descendant as focused target
-                    window: \(elementSummary(element))
-                    promotedDescendant: \(elementSummary(editableDescendant))
-                    """
-                )
-                return editableDescendant
-            }
-        }
-
-        return element
+        FocusedTextTargetResolver.resolve(
+            root: element,
+            role: { copyStringAttribute(kAXRoleAttribute as String, from: $0) },
+            nestedFocus: { copyElementAttribute(kAXFocusedUIElementAttribute as String, from: $0) },
+            focused: { copyBooleanAttribute(kAXFocusedAttribute as String, from: $0) == true },
+            children: { copyElementArrayAttribute(kAXChildrenAttribute as String, from: $0) },
+            matches: { CFEqual($0, $1) }
+        )
     }
 
     func validSelectionText(from element: AXUIElement) -> String? {

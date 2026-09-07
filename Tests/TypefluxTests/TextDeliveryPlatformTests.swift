@@ -126,6 +126,45 @@ struct TextDeliveryPlatformTests {
         #expect(result == 2)
     }
 
+    @Test func applicationFocusFallsBackOnlyWhenTheFocusedControlIsMissing() {
+        #expect(FocusedTextTargetResolver.applicationRoot(
+            focusedElement: { Optional<Int>.none }, focusedWindow: { 7 }
+        ) == 7)
+        var readWindow = false
+        #expect(FocusedTextTargetResolver.applicationRoot(
+            focusedElement: { 3 }, focusedWindow: { readWindow = true; return 7 }
+        ) == 3)
+        #expect(!readWindow)
+        #expect(FocusedTextTargetResolver.applicationRoot(
+            focusedElement: { Optional<Int>.none }, focusedWindow: { Optional<Int>.none }
+        ) == nil)
+    }
+
+    @Test func slowFocusAttributesRetainTheExplicitTarget() {
+        var time: TimeInterval = 0
+        let result = FocusedTextTargetResolver.resolve(
+            root: 0, role: { _ in time = 1; return "AXWindow" },
+            nestedFocus: { _ in nil }, focused: { _ in false }, children: { _ in [] },
+            matches: { (left: Int, right: Int) in left == right },
+            budget: TextFocusSearchBudget(seconds: 0.5, now: { time })
+        )
+        #expect(result == 0)
+    }
+
+    @Test func zeroLengthCaretOnAnUnfocusedGroupDoesNotAuthorizePromotion() {
+        // AXGroup may expose [0, 0] without AXValue or AXFocused. Its capability
+        // must not make it the target instead of the explicit focused window.
+        #expect(AXTextInjector.targetCapability(
+            role: "AXGroup", hasSelectedRange: true, hasSettableTextAttributes: false
+        ) == .writable)
+        let result = FocusedTextTargetResolver.resolve(
+            root: 0, role: { $0 == 0 ? "AXWindow" : "AXGroup" },
+            nestedFocus: { _ in nil }, focused: { _ in false }, children: { $0 == 0 ? [1] : [] },
+            matches: { (left: Int, right: Int) in left == right }
+        )
+        #expect(result == 0)
+    }
+
     @Test func focusSearchDoesNotChooseAnUnfocusedEditableSibling() {
         let result = FocusedTextTargetResolver.resolve(
             root: 0, role: { $0 == 0 ? "AXWindow" : "AXTextArea" },
