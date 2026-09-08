@@ -26,7 +26,6 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         }
         let result = await controller.applyTranscribedText(
             "new result",
-            origin: .rawTranscription,
             selectionSnapshot: TextSelectionSnapshot(
                 processID: getpid(), source: "typeflux-ask-answer-window", isEditable: false
             ),
@@ -37,14 +36,13 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertTrue(injector.replacedTexts.isEmpty)
     }
 
-    func testApplyTranscribedTextRemovesPeriodFromShortRawDictation() async {
+    func testApplyTranscribedTextRemovesPeriodFromShortDictation() async {
         let injector = MockProcessingTextInjector()
         let controller = makeWorkflowController(textInjector: injector)
         var record = HistoryRecord(date: Date())
 
         let result = await controller.applyTranscribedText(
             "谢谢。",
-            origin: .rawTranscription,
             selectionSnapshot: TextSelectionSnapshot(),
             record: &record
         )
@@ -54,21 +52,20 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(record.postProcessedText, "谢谢")
     }
 
-    func testApplyTranscribedTextPreservesPeriodFromRewrite() async {
+    func testApplyTranscribedTextRemovesPeriodFromProcessedShortDictation() async {
         let injector = MockProcessingTextInjector()
         let controller = makeWorkflowController(textInjector: injector)
         var record = HistoryRecord(date: Date())
 
         let result = await controller.applyTranscribedText(
-            "谢谢。",
-            origin: .rewritten,
+            "算了，还是选择2吧。",
             selectionSnapshot: TextSelectionSnapshot(),
             record: &record
         )
 
-        XCTAssertEqual(result.finalResult, "谢谢。")
-        XCTAssertEqual(injector.insertedTexts, ["谢谢。"])
-        XCTAssertEqual(record.postProcessedText, "谢谢。")
+        XCTAssertEqual(result.finalResult, "算了，还是选择2吧")
+        XCTAssertEqual(injector.insertedTexts, ["算了，还是选择2吧"])
+        XCTAssertEqual(record.postProcessedText, "算了，还是选择2吧")
     }
 
     func testApplyTranscribedTextDeduplicatesPunctuationAtCurrentInsertionPoint() async {
@@ -85,7 +82,6 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         let result = await controller.applyTranscribedText(
             "真的吗？",
-            origin: .rewritten,
             selectionSnapshot: TextSelectionSnapshot(),
             record: &record
         )

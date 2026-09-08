@@ -362,13 +362,12 @@ extension WorkflowController {
 
     func applyTranscribedText(
         _ text: String,
-        origin: DictationOutputOrigin,
         selectionSnapshot: TextSelectionSnapshot,
         record: inout HistoryRecord
     ) async -> (outcome: ApplyOutcome, openCCResult: String?, finalResult: String) {
         let applySessionID = processingSessionID
-        // 1. Remove a neutral period only from short, raw conversational dictation.
-        let optimizedText = DictationOutputOptimizer.optimize(text, origin: origin)
+        // 1. Remove a neutral period from short conversational dictation output.
+        let optimizedText = DictationOutputOptimizer.optimize(text)
 
         // 2. OpenCC
         var openCCResult: String?
@@ -1831,7 +1830,6 @@ extension WorkflowController {
             record.pipelineTiming = pipelineTiming
             let result = await applyTranscribedText(
                 transcribedText,
-                origin: .rewritten,
                 selectionSnapshot: selectionSnapshot,
                 record: &record
             )
@@ -1851,7 +1849,6 @@ extension WorkflowController {
         saveHistoryRecord(record)
 
         let rewriteOutput: String
-        var rewriteOutputOrigin = DictationOutputOrigin.rewritten
         var billingFallbackError: TypefluxCloudBillingError?
         if let merged = mergedLLMResult {
             // Rewrite already completed as part of the merged ASR+LLM WebSocket session.
@@ -1910,7 +1907,6 @@ extension WorkflowController {
                 if rewriteResult.text.isEmpty {
                     ErrorLogStore.shared.log("Persona rewrite returned an empty response, using transcript as fallback")
                     rewriteOutput = transcribedText
-                    rewriteOutputOrigin = .rawTranscription
                     pipelineTiming.llmOutcome = LLMProcessingOutcomeDiagnostics(
                         startedAt: llmStartedAt,
                         completedAt: rewriteResult.completedAt,
@@ -1945,7 +1941,6 @@ extension WorkflowController {
                     usedTranscriptFallback: true
                 )
                 rewriteOutput = transcribedText
-                rewriteOutputOrigin = .rawTranscription
             } catch let error where Self.isServiceOverloadedError(error) {
                 // Service overloaded (HTTP 529): all retries exhausted; insert transcript as
                 // fallback so the user isn't left with an error dialog.
@@ -1960,7 +1955,6 @@ extension WorkflowController {
                     usedTranscriptFallback: true
                 )
                 rewriteOutput = transcribedText
-                rewriteOutputOrigin = .rawTranscription
             } catch let error as LLMConfigurationError {
                 ErrorLogStore.shared.log(
                     "LLM configuration unavailable (\(error.localizedDescription)), using transcript as fallback"
@@ -1975,7 +1969,6 @@ extension WorkflowController {
                     usedTranscriptFallback: true
                 )
                 rewriteOutput = transcribedText
-                rewriteOutputOrigin = .rawTranscription
             } catch let error where TypefluxCloudBillingError.fromError(error) != nil {
                 let billingError = TypefluxCloudBillingError.fromError(error)
                 ErrorLogStore.shared.log(
@@ -1991,7 +1984,6 @@ extension WorkflowController {
                     usedTranscriptFallback: true
                 )
                 rewriteOutput = transcribedText
-                rewriteOutputOrigin = .rawTranscription
                 billingFallbackError = billingError
             } catch let error where error is CancellationError || (error as? URLError)?.code == .cancelled {
                 let completedAt = Date()
@@ -2020,7 +2012,6 @@ extension WorkflowController {
                     usedTranscriptFallback: true
                 )
                 rewriteOutput = transcribedText
-                rewriteOutputOrigin = .rawTranscription
             }
         }
 
@@ -2034,7 +2025,6 @@ extension WorkflowController {
         record.pipelineTiming = pipelineTiming
         let result = await applyTranscribedText(
             rewriteOutput,
-            origin: rewriteOutputOrigin,
             selectionSnapshot: selectionSnapshot,
             record: &record
         )
@@ -2070,7 +2060,6 @@ extension WorkflowController {
         record.pipelineTiming = pipelineTiming
         let result = await applyTranscribedText(
             transcribedText,
-            origin: .rawTranscription,
             selectionSnapshot: selectionSnapshot,
             record: &record
         )

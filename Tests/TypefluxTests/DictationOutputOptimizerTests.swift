@@ -3,11 +3,13 @@ import Foundation
 import XCTest
 
 final class DictationOutputOptimizerTests: XCTestCase {
-    func testOptimizeRemovesPeriodFromShortRawConversationalText() {
+    func testOptimizeRemovesPeriodFromShortConversationalText() {
         XCTAssertEqual(DictationOutputOptimizer.optimize("OK."), "OK")
         XCTAssertEqual(DictationOutputOptimizer.optimize("Thanks."), "Thanks")
         XCTAssertEqual(DictationOutputOptimizer.optimize("谢谢。"), "谢谢")
         XCTAssertEqual(DictationOutputOptimizer.optimize("我晚点回复你。"), "我晚点回复你")
+        XCTAssertEqual(DictationOutputOptimizer.optimize("按推荐来。"), "按推荐来")
+        XCTAssertEqual(DictationOutputOptimizer.optimize("算了，还是选择2吧。"), "算了，还是选择2吧")
     }
 
     func testOptimizePreservesExpressivePunctuation() {
@@ -18,17 +20,6 @@ final class DictationOutputOptimizerTests: XCTestCase {
         XCTAssertEqual(DictationOutputOptimizer.optimize("等等……"), "等等……")
         XCTAssertEqual(DictationOutputOptimizer.optimize("Wait..."), "Wait...")
         XCTAssertEqual(DictationOutputOptimizer.optimize("Sounds good?!"), "Sounds good?!")
-    }
-
-    func testOptimizePreservesRewrittenText() {
-        XCTAssertEqual(
-            DictationOutputOptimizer.optimize("谢谢。", origin: .rewritten),
-            "谢谢。"
-        )
-        XCTAssertEqual(
-            DictationOutputOptimizer.optimize("OK.", origin: .rewritten),
-            "OK."
-        )
     }
 
     func testOptimizePreservesLongText() {

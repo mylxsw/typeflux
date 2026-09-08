@@ -1,10 +1,5 @@
 import Foundation
 
-enum DictationOutputOrigin: Equatable {
-    case rawTranscription
-    case rewritten
-}
-
 enum DictationOutputOptimizer {
     private static let maximumCJKShortTextLength = 15
     private static let maximumNonCJKShortTextLength = 30
@@ -12,11 +7,7 @@ enum DictationOutputOptimizer {
     private static let removablePeriods: Set<Character> = [".", "。"]
     private static let sentenceBoundaryCharacters: Set<Character> = [".", "!", "?", "。", "！", "？", "…"]
 
-    static func optimize(
-        _ text: String,
-        origin: DictationOutputOrigin = .rawTranscription
-    ) -> String {
-        guard origin == .rawTranscription else { return text }
+    static func optimize(_ text: String) -> String {
         guard let contentRange = nonWhitespaceContentRange(in: text) else { return text }
 
         let content = String(text[contentRange])
