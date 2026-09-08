@@ -26,6 +26,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         }
         let result = await controller.applyTranscribedText(
             "new result",
+            origin: .rawTranscription,
             selectionSnapshot: TextSelectionSnapshot(
                 processID: getpid(), source: "typeflux-ask-answer-window", isEditable: false
             ),
@@ -34,6 +35,64 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(result.outcome, .inserted)
         XCTAssertEqual(injector.insertedTexts, ["new result"])
         XCTAssertTrue(injector.replacedTexts.isEmpty)
+    }
+
+    func testApplyTranscribedTextRemovesPeriodFromShortRawDictation() async {
+        let injector = MockProcessingTextInjector()
+        let controller = makeWorkflowController(textInjector: injector)
+        var record = HistoryRecord(date: Date())
+
+        let result = await controller.applyTranscribedText(
+            "谢谢。",
+            origin: .rawTranscription,
+            selectionSnapshot: TextSelectionSnapshot(),
+            record: &record
+        )
+
+        XCTAssertEqual(result.finalResult, "谢谢")
+        XCTAssertEqual(injector.insertedTexts, ["谢谢"])
+        XCTAssertEqual(record.postProcessedText, "谢谢")
+    }
+
+    func testApplyTranscribedTextPreservesPeriodFromRewrite() async {
+        let injector = MockProcessingTextInjector()
+        let controller = makeWorkflowController(textInjector: injector)
+        var record = HistoryRecord(date: Date())
+
+        let result = await controller.applyTranscribedText(
+            "谢谢。",
+            origin: .rewritten,
+            selectionSnapshot: TextSelectionSnapshot(),
+            record: &record
+        )
+
+        XCTAssertEqual(result.finalResult, "谢谢。")
+        XCTAssertEqual(injector.insertedTexts, ["谢谢。"])
+        XCTAssertEqual(record.postProcessedText, "谢谢。")
+    }
+
+    func testApplyTranscribedTextDeduplicatesPunctuationAtCurrentInsertionPoint() async {
+        let injector = MockProcessingTextInjector(
+            inputSnapshot: CurrentInputTextSnapshot(
+                text: "前文？后文",
+                selectedRange: CFRange(location: 2, length: 0),
+                isEditable: true,
+                isFocusedTarget: true
+            )
+        )
+        let controller = makeWorkflowController(textInjector: injector)
+        var record = HistoryRecord(date: Date())
+
+        let result = await controller.applyTranscribedText(
+            "真的吗？",
+            origin: .rewritten,
+            selectionSnapshot: TextSelectionSnapshot(),
+            record: &record
+        )
+
+        XCTAssertEqual(result.finalResult, "真的吗")
+        XCTAssertEqual(injector.insertedTexts, ["真的吗"])
+        XCTAssertEqual(record.postProcessedText, "真的吗")
     }
 
     func testCurrentInputFailureKeepsCompleteCopyableResult() async {

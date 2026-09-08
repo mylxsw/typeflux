@@ -362,12 +362,13 @@ extension WorkflowController {
 
     func applyTranscribedText(
         _ text: String,
+        origin: DictationOutputOrigin,
         selectionSnapshot: TextSelectionSnapshot,
         record: inout HistoryRecord
     ) async -> (outcome: ApplyOutcome, openCCResult: String?, finalResult: String) {
         let applySessionID = processingSessionID
-        // 1. Final optimization (punctuation, spaces)
-        let optimizedText = DictationOutputOptimizer.optimize(text)
+        // 1. Remove a neutral period only from short, raw conversational dictation.
+        let optimizedText = DictationOutputOptimizer.optimize(text, origin: origin)
 
         // 2. OpenCC
         var openCCResult: String?
@@ -380,13 +381,20 @@ extension WorkflowController {
             afterOpenCC = optimizedText
         }
 
+        // 3. Avoid duplicating punctuation already present at the live insertion point.
+        let inputSnapshot = await textInjector.currentInputTextSnapshot()
+        let insertionReadyText = DictationOutputOptimizer.deduplicatingTrailingPunctuation(
+            in: afterOpenCC,
+            against: inputSnapshot
+        )
+
         // Generation context does not own the dictation destination. Resolve the
         // current input and active range when the result is ready.
-        record.postProcessedText = afterOpenCC
+        record.postProcessedText = insertionReadyText
         record.openCCResultText = openCCResult
         saveHistoryRecord(record)
         let (outcome, finalAppliedText) = await applyText(
-            afterOpenCC, replace: false, expectedSessionID: applySessionID
+            insertionReadyText, replace: false, expectedSessionID: applySessionID
         )
         return (outcome, openCCResult, finalAppliedText)
     }
@@ -1823,6 +1831,7 @@ extension WorkflowController {
             record.pipelineTiming = pipelineTiming
             let result = await applyTranscribedText(
                 transcribedText,
+                origin: .rewritten,
                 selectionSnapshot: selectionSnapshot,
                 record: &record
             )
@@ -1842,6 +1851,7 @@ extension WorkflowController {
         saveHistoryRecord(record)
 
         let rewriteOutput: String
+        var rewriteOutputOrigin = DictationOutputOrigin.rewritten
         var billingFallbackError: TypefluxCloudBillingError?
         if let merged = mergedLLMResult {
             // Rewrite already completed as part of the merged ASR+LLM WebSocket session.
@@ -1900,6 +1910,7 @@ extension WorkflowController {
                 if rewriteResult.text.isEmpty {
                     ErrorLogStore.shared.log("Persona rewrite returned an empty response, using transcript as fallback")
                     rewriteOutput = transcribedText
+                    rewriteOutputOrigin = .rawTranscription
                     pipelineTiming.llmOutcome = LLMProcessingOutcomeDiagnostics(
                         startedAt: llmStartedAt,
                         completedAt: rewriteResult.completedAt,
@@ -1934,6 +1945,7 @@ extension WorkflowController {
                     usedTranscriptFallback: true
                 )
                 rewriteOutput = transcribedText
+                rewriteOutputOrigin = .rawTranscription
             } catch let error where Self.isServiceOverloadedError(error) {
                 // Service overloaded (HTTP 529): all retries exhausted; insert transcript as
                 // fallback so the user isn't left with an error dialog.
@@ -1948,6 +1960,7 @@ extension WorkflowController {
                     usedTranscriptFallback: true
                 )
                 rewriteOutput = transcribedText
+                rewriteOutputOrigin = .rawTranscription
             } catch let error as LLMConfigurationError {
                 ErrorLogStore.shared.log(
                     "LLM configuration unavailable (\(error.localizedDescription)), using transcript as fallback"
@@ -1962,6 +1975,7 @@ extension WorkflowController {
                     usedTranscriptFallback: true
                 )
                 rewriteOutput = transcribedText
+                rewriteOutputOrigin = .rawTranscription
             } catch let error where TypefluxCloudBillingError.fromError(error) != nil {
                 let billingError = TypefluxCloudBillingError.fromError(error)
                 ErrorLogStore.shared.log(
@@ -1977,6 +1991,7 @@ extension WorkflowController {
                     usedTranscriptFallback: true
                 )
                 rewriteOutput = transcribedText
+                rewriteOutputOrigin = .rawTranscription
                 billingFallbackError = billingError
             } catch let error where error is CancellationError || (error as? URLError)?.code == .cancelled {
                 let completedAt = Date()
@@ -2005,6 +2020,7 @@ extension WorkflowController {
                     usedTranscriptFallback: true
                 )
                 rewriteOutput = transcribedText
+                rewriteOutputOrigin = .rawTranscription
             }
         }
 
@@ -2016,7 +2032,12 @@ extension WorkflowController {
         try ensureProcessingIsActive(sessionID)
         pipelineTiming.applyStartedAt = Date()
         record.pipelineTiming = pipelineTiming
-        let result = await applyTranscribedText(rewriteOutput, selectionSnapshot: selectionSnapshot, record: &record)
+        let result = await applyTranscribedText(
+            rewriteOutput,
+            origin: rewriteOutputOrigin,
+            selectionSnapshot: selectionSnapshot,
+            record: &record
+        )
         record.personaResultText = rewriteOutput
         record.openCCResultText = result.openCCResult
         record.postProcessedText = result.finalResult
@@ -2047,7 +2068,12 @@ extension WorkflowController {
         try ensureProcessingIsActive(sessionID)
         pipelineTiming.applyStartedAt = Date()
         record.pipelineTiming = pipelineTiming
-        let result = await applyTranscribedText(transcribedText, selectionSnapshot: selectionSnapshot, record: &record)
+        let result = await applyTranscribedText(
+            transcribedText,
+            origin: .rawTranscription,
+            selectionSnapshot: selectionSnapshot,
+            record: &record
+        )
         record.transcriptText = transcribedText
         record.openCCResultText = result.openCCResult
         record.postProcessedText = result.finalResult
