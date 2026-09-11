@@ -864,6 +864,165 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertNotNil(controller.processingTask)
     }
 
+    func testRetrySelectionPersonaRewritesStoredTextWithoutAudio() async {
+        let historyStore = MockProcessingHistoryStore()
+        let llmService = CountingProcessingLLMService(rewriteText: "Concise result")
+        let record = HistoryRecord(
+            date: Date(),
+            mode: .editSelection,
+            personaPrompt: "Make it concise.",
+            selectionOriginalText: "Original selection",
+            errorMessage: "Timed out",
+            recordingStatus: .skipped,
+            transcriptionStatus: .skipped,
+            processingStatus: .failed,
+            applyStatus: .skipped
+        )
+        historyStore.save(record: record)
+        let controller = makeWorkflowController(
+            llmService: llmService,
+            historyStore: historyStore,
+            configureSettings: configureReadyLLM
+        )
+
+        controller.retry(record: record)
+        await waitUntil { controller.overlayController.isShowingResultDialogForTesting }
+
+        let savedRecord = historyStore.record(id: record.id)
+        XCTAssertEqual(llmService.streamRewriteCallCount, 1)
+        XCTAssertEqual(savedRecord?.selectionOriginalText, "Original selection")
+        XCTAssertEqual(savedRecord?.selectionEditedText, "Concise result")
+        XCTAssertEqual(savedRecord?.applyStatus, .succeeded)
+        XCTAssertNil(savedRecord?.audioFilePath)
+        XCTAssertTrue(controller.overlayController.isShowingResultDialogForTesting)
+    }
+
+    func testRetryPersonaRewriteUsesCompletedTranscriptWhenAudioIsGone() async {
+        let historyStore = MockProcessingHistoryStore()
+        let llmService = CountingProcessingLLMService(rewriteText: "Polished transcript")
+        let record = HistoryRecord(
+            date: Date(),
+            mode: .personaRewrite,
+            audioFilePath: "/missing/retry-audio.wav",
+            transcriptText: "Raw transcript",
+            personaPrompt: "Polish this.",
+            errorMessage: "Timed out",
+            recordingStatus: .succeeded,
+            transcriptionStatus: .succeeded,
+            processingStatus: .failed,
+            applyStatus: .skipped
+        )
+        historyStore.save(record: record)
+        let controller = makeWorkflowController(
+            llmService: llmService,
+            historyStore: historyStore,
+            configureSettings: configureReadyLLM
+        )
+
+        controller.retry(record: record)
+        await waitUntil { controller.overlayController.isShowingResultDialogForTesting }
+
+        let savedRecord = historyStore.record(id: record.id)
+        XCTAssertEqual(llmService.streamRewriteCallCount, 1)
+        XCTAssertEqual(savedRecord?.transcriptText, "Raw transcript")
+        XCTAssertEqual(savedRecord?.personaResultText, "Polished transcript")
+        XCTAssertEqual(savedRecord?.postProcessedText, "Polished transcript")
+        XCTAssertNil(savedRecord?.errorMessage)
+        XCTAssertTrue(controller.overlayController.isShowingResultDialogForTesting)
+    }
+
+    func testRetryFailedApplyPresentsExistingResultWithoutRepeatingLLM() async {
+        let historyStore = MockProcessingHistoryStore()
+        let llmService = CountingProcessingLLMService(rewriteText: "Unexpected rewrite")
+        let record = HistoryRecord(
+            date: Date(),
+            mode: .personaRewrite,
+            transcriptText: "Raw transcript",
+            personaPrompt: "Polish this.",
+            postProcessedText: "Existing result",
+            errorMessage: "Apply failed",
+            recordingStatus: .succeeded,
+            transcriptionStatus: .succeeded,
+            processingStatus: .succeeded,
+            applyStatus: .failed
+        )
+        historyStore.save(record: record)
+        let controller = makeWorkflowController(
+            llmService: llmService,
+            historyStore: historyStore,
+            configureSettings: configureReadyLLM
+        )
+
+        controller.retry(record: record)
+        await waitUntil { controller.overlayController.isShowingResultDialogForTesting }
+
+        XCTAssertEqual(llmService.streamRewriteCallCount, 0)
+        XCTAssertEqual(controller.lastDialogResultText, "Existing result")
+        XCTAssertNil(historyStore.record(id: record.id)?.errorMessage)
+        XCTAssertTrue(controller.overlayController.isShowingResultDialogForTesting)
+    }
+
+    func testRetryFailedTranscriptionUsesExistingAudio() async throws {
+        let audioURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("history-retry-\(UUID().uuidString).wav")
+        try Data().write(to: audioURL)
+        defer { try? FileManager.default.removeItem(at: audioURL) }
+
+        let historyStore = MockProcessingHistoryStore()
+        let record = HistoryRecord(
+            date: Date(),
+            mode: .dictation,
+            audioFilePath: audioURL.path,
+            errorMessage: "ASR failed",
+            recordingStatus: .succeeded,
+            transcriptionStatus: .failed,
+            processingStatus: .skipped,
+            applyStatus: .skipped
+        )
+        historyStore.save(record: record)
+        let controller = makeWorkflowController(
+            sttTranscriber: MockProcessingTranscriber(transcript: "Recovered transcript"),
+            historyStore: historyStore
+        )
+
+        controller.retry(record: record)
+        await waitUntil { controller.overlayController.isShowingResultDialogForTesting }
+
+        let savedRecord = historyStore.record(id: record.id)
+        XCTAssertEqual(savedRecord?.transcriptText, "Recovered transcript")
+        XCTAssertEqual(savedRecord?.transcriptionStatus, .succeeded)
+        XCTAssertNil(savedRecord?.errorMessage)
+    }
+
+    func testRetryRewriteFailureRemainsRetryableWithoutAudio() async {
+        let historyStore = MockProcessingHistoryStore()
+        let llmService = CountingProcessingLLMService(rewriteText: "")
+        let record = HistoryRecord(
+            date: Date(),
+            mode: .editSelection,
+            personaPrompt: "Make it concise.",
+            selectionOriginalText: "Original selection",
+            errorMessage: "Timed out",
+            recordingStatus: .skipped,
+            transcriptionStatus: .skipped,
+            processingStatus: .failed,
+            applyStatus: .skipped
+        )
+        historyStore.save(record: record)
+        let controller = makeWorkflowController(
+            llmService: llmService,
+            historyStore: historyStore,
+            configureSettings: configureReadyLLM
+        )
+
+        controller.retry(record: record)
+        await waitUntil { controller.lastRetryableFailureRecord != nil }
+
+        XCTAssertEqual(llmService.streamRewriteCallCount, 1)
+        XCTAssertEqual(historyStore.record(id: record.id)?.processingStatus, .failed)
+        XCTAssertNotNil(controller.lastRetryableFailureRecord)
+    }
+
     func testConfirmingPersonaSelectionPlaysTipCue() async throws {
         let eventRecorder = ThreadSafeEventRecorder()
         let controller = makeWorkflowController(

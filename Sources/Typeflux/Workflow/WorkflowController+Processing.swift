@@ -664,17 +664,35 @@ extension WorkflowController {
     }
 
     func reprocess(record: HistoryRecord, sessionID: UUID) async {
-        guard let audioFilePath = record.audioFilePath, !audioFilePath.isEmpty else {
+        switch HistoryRetryPlanner.plan(for: record) {
+        case let .retranscribe(audioURL):
+            await retranscribe(record: record, audioURL: audioURL, sessionID: sessionID)
+        case let .rewriteSelection(sourceText, personaPrompt):
+            await retryRewrite(
+                record: record,
+                sourceText: sourceText,
+                personaPrompt: personaPrompt,
+                source: .selection,
+                sessionID: sessionID
+            )
+        case let .rewriteTranscript(sourceText, personaPrompt):
+            await retryRewrite(
+                record: record,
+                sourceText: sourceText,
+                personaPrompt: personaPrompt,
+                source: .transcript,
+                sessionID: sessionID
+            )
+        case let .presentResult(text):
+            await presentRetryResult(text, record: record, sessionID: sessionID)
+        case .unavailable(.audioMissing):
             await failRetry(record: record, message: L("workflow.retry.audioMissing"))
-            return
-        }
-
-        let audioURL = URL(fileURLWithPath: audioFilePath)
-        guard FileManager.default.fileExists(atPath: audioURL.path) else {
+        case .unavailable(.audioGone):
             await failRetry(record: record, message: L("workflow.retry.audioGone"))
-            return
         }
+    }
 
+    private func retranscribe(record: HistoryRecord, audioURL: URL, sessionID: UUID) async {
         var mutableRecord = record
         mutableRecord.errorMessage = nil
         mutableRecord.applyMessage = nil
@@ -723,6 +741,152 @@ extension WorkflowController {
             sessionID: sessionID,
             forceResultDialogOnSuccess: true
         )
+    }
+
+    private enum RetryRewriteSource {
+        case selection
+        case transcript
+    }
+
+    private func retryRewrite(
+        record: HistoryRecord,
+        sourceText: String,
+        personaPrompt: String,
+        source: RetryRewriteSource,
+        sessionID: UUID
+    ) async {
+        var mutableRecord = record
+        mutableRecord.errorMessage = nil
+        mutableRecord.applyMessage = nil
+        mutableRecord.personaResultText = nil
+        mutableRecord.openCCResultText = nil
+        mutableRecord.postProcessedText = nil
+        mutableRecord.selectionEditedText = nil
+        mutableRecord.processingStatus = .running
+        mutableRecord.applyStatus = .pending
+        var pipelineTiming = mutableRecord.pipelineTiming ?? HistoryPipelineTiming()
+        pipelineTiming.llmProcessingStartedAt = Date()
+        pipelineTiming.llmFirstOutputAt = nil
+        pipelineTiming.llmProcessingCompletedAt = nil
+        pipelineTiming.llmOutcome = nil
+        mutableRecord.pipelineTiming = pipelineTiming
+        saveHistoryRecord(mutableRecord)
+        activeProcessingRecordID = mutableRecord.id
+
+        await MainActor.run {
+            guard self.processingSessionID == sessionID else { return }
+            self.lastRetryableFailureRecord = nil
+            self.overlayController.transitionToLLMPhase()
+        }
+
+        do {
+            let showsStreamingPreview = switch source {
+            case .selection:
+                WorkflowOverlayPresentationPolicy.shouldShowLLMStreamingPreviewForPersonaSelectionApplication()
+            case .transcript:
+                WorkflowOverlayPresentationPolicy.shouldShowLLMStreamingPreviewAfterTranscription()
+            }
+            let rewriteResult = try await generateRewrite(
+                request: LLMRewriteRequest(
+                    mode: .rewriteTranscript,
+                    sourceText: sourceText,
+                    spokenInstruction: nil,
+                    personaPrompt: personaPrompt,
+                    appSystemContext: AppSystemContext(snapshot: TextSelectionSnapshot())
+                ),
+                sessionID: sessionID,
+                showsStreamingPreview: showsStreamingPreview
+            )
+            try ensureProcessingIsActive(sessionID)
+
+            pipelineTiming.llmFirstOutputAt = rewriteResult.firstOutputAt
+            pipelineTiming.llmProcessingCompletedAt = rewriteResult.completedAt
+            pipelineTiming.llmRequestAttempts = rewriteResult.requestAttempts
+            mutableRecord.pipelineTiming = pipelineTiming
+
+            let rewrittenText = rewriteResult.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !rewrittenText.isEmpty else {
+                throw NSError(
+                    domain: "HistoryRetry",
+                    code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: "Persona rewrite returned an empty response"]
+                )
+            }
+
+            let resultText: String
+            switch source {
+            case .selection:
+                resultText = await outputPostProcessor.process(rewrittenText)
+                mutableRecord.selectionEditedText = resultText
+            case .transcript:
+                mutableRecord.personaResultText = rewrittenText
+                let optimizedText = DictationOutputOptimizer.optimize(rewrittenText)
+                if let config = settingsStore.effectiveOutputOpenCCConfig {
+                    let converted = await outputPostProcessor.process(optimizedText)
+                    mutableRecord.openCCResultText = converted
+                    mutableRecord.openCCConfig = config
+                    resultText = converted
+                } else {
+                    resultText = optimizedText
+                }
+            }
+
+            try ensureProcessingIsActive(sessionID)
+            mutableRecord.postProcessedText = resultText
+            mutableRecord.processingStatus = .succeeded
+            mutableRecord.applyStatus = .succeeded
+            mutableRecord.applyMessage = L("workflow.apply.presentedInDialog")
+            saveHistoryRecord(mutableRecord)
+            UsageStatsStore.shared.recordSession(record: mutableRecord)
+            enforceHistoryRetentionPolicy()
+
+            await MainActor.run {
+                guard self.processingSessionID == sessionID else { return }
+                self.lastRetryableFailureRecord = nil
+                self.lastDialogResultText = resultText
+                self.appState.setStatus(.idle)
+                self.overlayController.showResultDialog(
+                    title: L("workflow.result.copyTitle"),
+                    message: resultText
+                )
+            }
+        } catch is CancellationError {
+            if processingSessionID == sessionID {
+                markCancelled(&mutableRecord)
+                saveHistoryRecord(mutableRecord)
+            }
+        } catch {
+            let message = "Processing failed: \(error.localizedDescription)"
+            markFailure(&mutableRecord, message: message)
+            saveHistoryRecord(mutableRecord)
+            let retryableRecord = mutableRecord
+            await MainActor.run {
+                guard self.processingSessionID == sessionID else { return }
+                self.lastRetryableFailureRecord = retryableRecord
+                self.soundEffectPlayer.play(.error)
+                self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
+                self.overlayController.showRetryableFailure(message: message)
+            }
+        }
+    }
+
+    private func presentRetryResult(_ text: String, record: HistoryRecord, sessionID: UUID) async {
+        var mutableRecord = record
+        mutableRecord.errorMessage = nil
+        mutableRecord.applyStatus = .succeeded
+        mutableRecord.applyMessage = L("workflow.apply.presentedInDialog")
+        saveHistoryRecord(mutableRecord)
+
+        await MainActor.run {
+            guard self.processingSessionID == sessionID else { return }
+            self.lastRetryableFailureRecord = nil
+            self.lastDialogResultText = text
+            self.appState.setStatus(.idle)
+            self.overlayController.showResultDialog(
+                title: L("workflow.result.copyTitle"),
+                message: text
+            )
+        }
     }
 
     // swiftlint:disable:next cyclomatic_complexity

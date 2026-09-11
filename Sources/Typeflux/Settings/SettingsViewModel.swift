@@ -3087,7 +3087,7 @@ final class StudioViewModel: ObservableObject {
             errorMessage: record.errorMessage,
             applyMessage: record.applyMessage,
             hasTranscriptToCopy: !(record.finalText?.isEmpty ?? true),
-            canRetry: record.audioFilePath.map { FileManager.default.fileExists(atPath: $0) } == true,
+            canRetry: HistoryRetryPlanner.plan(for: record).isAvailable,
             hasFailure: record.hasFailure,
             failureMessage: record.errorMessage,
             accentName: iconData.0,
