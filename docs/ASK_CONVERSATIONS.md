@@ -16,6 +16,7 @@ does not remove context already sent in previous messages.
 Production views rendered with synthetic test data:
 
 ![Floating composer](images/ask-launcher.png)
+![Dark floating composer](images/ask-launcher-dark.png)
 ![Conversation workspace](images/ask-workspace.png)
 ![Tool approval](images/ask-tool-approval.png)
 ![Dark workspace](images/ask-workspace-dark.png)
@@ -182,3 +183,19 @@ for selected error messages; existing translated application strings are intact.
   approval and minimum-size windows were rendered and inspected.
 - Signed-app/staging acceptance remains manual: these tests do not access a
   production account, live microphone, screen recording or real desktop tools.
+
+## Opaque backplates (2026-09-29)
+
+The launcher, workspace, sidebar and follow-up composer now use opaque Ask-specific
+surfaces in both appearances. The titled workspace also has an explicit opaque
+native window background. The floating panel remains transparent only outside the
+rounded card so its corners and recording glow can composite correctly.
+
+`AskSurfaceOpacityTests` renders the production views over red and blue backgrounds
+in a clear native window. Interior samples must match across backgrounds, the card
+body must have alpha 1, and the outer corner must remain transparent. This test
+failed on the previous implementation (20 assertions) and passes with the fix.
+The existing window/visual suite also passes; screenshots above were regenerated.
+Full regression: all 133 Swift Testing tests passed; 2673 XCTest cases retain the
+same four previously documented workflow failures (8 assertions), with no new
+failing cases. The targeted opacity/native-render run passed all four tests.
