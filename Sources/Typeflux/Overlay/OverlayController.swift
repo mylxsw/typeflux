@@ -320,6 +320,9 @@ final class OverlayController {
         }
     }
 
+    static let recordingWindowBottomInset: CGFloat = 16
+    static let recordingContentBottomInset: CGFloat = 42
+    static var recordingVisibleBottomInset: CGFloat { recordingWindowBottomInset + recordingContentBottomInset }
     private let appState: AppStateStore
     private let settingsStore: SettingsStore
     private var window: NSPanel?
@@ -1188,7 +1191,7 @@ final class OverlayController {
         switch presentation {
         case .recordingHold:
             return OverlayMetrics(
-                size: recordingOverlaySize(baseWidth: 146, baseHeight: 112), anchor: .bottom, offset: 16,
+                size: recordingOverlaySize(baseWidth: 146, baseHeight: 112), anchor: .bottom, offset: Self.recordingWindowBottomInset,
                 interactive: false
             )
         case .recordingHoldPreview:
@@ -1197,12 +1200,12 @@ final class OverlayController {
                 size: recordingOverlaySize(
                     baseWidth: isExpanded ? 428 : 146,
                     baseHeight: isExpanded ? LiveTranscriptPreviewLayout.expandedOverlayHeight : 112
-                ), anchor: .bottom, offset: 16,
+                ), anchor: .bottom, offset: Self.recordingWindowBottomInset,
                 interactive: false
             )
         case .recordingLocked:
             return OverlayMetrics(
-                size: recordingOverlaySize(baseWidth: 196, baseHeight: 120), anchor: .bottom, offset: 16,
+                size: recordingOverlaySize(baseWidth: 196, baseHeight: 120), anchor: .bottom, offset: Self.recordingWindowBottomInset,
                 interactive: true
             )
         case .recordingLockedPreview:
@@ -1211,19 +1214,19 @@ final class OverlayController {
                 size: recordingOverlaySize(
                     baseWidth: isExpanded ? 428 : 196,
                     baseHeight: isExpanded ? LiveTranscriptPreviewLayout.expandedOverlayHeight : 120
-                ), anchor: .bottom, offset: 16,
+                ), anchor: .bottom, offset: Self.recordingWindowBottomInset,
                 interactive: true
             )
         case .processing:
             return OverlayMetrics(
                 size: NSSize(width: processingOverlayWidth() + Self.shadowGutter * 2, height: 112), anchor: .bottom,
-                offset: 16,
+                offset: Self.recordingWindowBottomInset,
                 interactive: false
             )
         case .processingPreview:
             return OverlayMetrics(
                 size: NSSize(width: 428, height: LiveTranscriptPreviewLayout.expandedOverlayHeight),
-                anchor: .bottom, offset: 16,
+                anchor: .bottom, offset: Self.recordingWindowBottomInset,
                 interactive: false
             )
         case .transcriptPreview, .notice, .failure, .personaPicker, .resultDialog:
@@ -1718,7 +1721,7 @@ private struct OverlayView: View {
             EdgeInsets(
                 top: model.presentation.isRecordingPreview || model.presentation == .processingPreview ? 30 : 28,
                 leading: RecordingHintLayout.containerInset,
-                bottom: 42,
+                bottom: OverlayController.recordingContentBottomInset,
                 trailing: RecordingHintLayout.containerInset
             )
         case .transcriptPreview, .notice, .failure:

@@ -7,13 +7,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private let settings: SettingsStore
     private let tools: AskLocalTools?
     private var launcher: AskFloatingPanel?
-    private var launcherHeight: CGFloat = 100
+    private var launcherHeight: CGFloat = 110
     private var conversationWindow: NSWindow?
     private var controlPanel: AskFloatingPanel?
     private var launchTask: Task<Void, Never>?
     private var clickMonitor: Any?
     private var localClickMonitor: Any?
-    var onVoice: () -> Void = {}
 
     init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry) throws {
         self.settings = settings
@@ -55,14 +54,14 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             await model.prepareLauncher()
             guard !Task.isCancelled else { return }
             if launcher == nil {
-                let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: 640, height: 100), styleMask: [.borderless], backing: .buffered, defer: false)
+                let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: 640, height: 110), styleMask: [.borderless], backing: .buffered, defer: false)
                 panel.level = .floating
                 panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
                 panel.isMovableByWindowBackground = false
                 panel.hidesOnDeactivate = false
                 panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
                 panel.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.ask-launcher")
-                panel.contentView = NSHostingView(rootView: AskLauncherView(model: model, onVoice: { [weak self] in self?.startVoiceInput() }, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }))
+                panel.contentView = NSHostingView(rootView: AskLauncherView(model: model, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }))
                 launcher = panel
             }
             applyAppearance(launcher)
@@ -70,7 +69,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             if let frame = screen?.visibleFrame {
                 let width = min(640, frame.width - 40)
                 let height = launcherHeight
-                launcher?.setFrame(NSRect(x: frame.midX - width / 2, y: frame.midY - height / 2, width: width, height: height), display: true)
+                launcher?.setFrame(NSRect(x: frame.midX - width / 2, y: frame.minY + OverlayController.recordingVisibleBottomInset - 6, width: width, height: height), display: true)
             }
             NSApp.activate(ignoringOtherApps: true)
             launcher?.makeKeyAndOrderFront(nil)
@@ -83,12 +82,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         launcherHeight = height
         guard let launcher, abs(launcher.frame.height - height) > 1 else { return }
         var frame = launcher.frame
-        frame.origin.y -= height - frame.height
         frame.size.height = height
         launcher.setFrame(frame, display: true)
     }
 
     func dismissLauncher() {
+        model.voiceInput.cancel()
         launchTask?.cancel()
         model.persistDrafts()
         launcher?.orderOut(nil)
@@ -107,7 +106,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             window.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.ask-conversations")
             window.setFrameAutosaveName("AskConversationWorkspace")
             window.delegate = self
-            window.contentView = NSHostingView(rootView: AskConversationView(model: model, onVoice: { [weak self] in self?.startVoiceInput() }))
+            window.contentView = NSHostingView(rootView: AskConversationView(model: model))
             window.center()
             conversationWindow = window
         }
@@ -135,6 +134,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             default: break
             }
         }
+        model.voiceInput.cancel()
         sender.orderOut(nil)
         return false
     }
@@ -171,11 +171,6 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                 return event
             }
         }
-    }
-
-    private func startVoiceInput() {
-        focusEditor(in: launcher?.isVisible == true ? launcher : conversationWindow)
-        onVoice()
     }
 
     private func applyAppearance(_ window: NSWindow?) {

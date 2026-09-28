@@ -3,6 +3,7 @@ import Combine
 
 @MainActor
 final class AskConversationModel: ObservableObject {
+    let voiceInput = AskVoiceInput()
     @Published var launcherDraft = AskDraft()
     @Published var draft = AskDraft.followUp
     @Published private(set) var conversations: [AskConversationSummary] = []
@@ -20,6 +21,10 @@ final class AskConversationModel: ObservableObject {
     @Published private(set) var capturing = false
     @Published var error: String?
     @Published var captureWarning: String?
+    @Published private(set) var isRefreshingHistory = false
+    @Published private(set) var historyRefreshError: String?
+    private var pullRefreshID: UUID?
+    private var historyErrorTask: Task<Void, Never>?
     @Published var historyHasMore = false
     @Published var controllingConversationId: String?
 
@@ -55,8 +60,8 @@ final class AskConversationModel: ObservableObject {
     }
 
     var isBusy: Bool { selected.map { busyIds.contains($0.id) || $0.run?.isActive == true } ?? false }
-    var canSend: Bool { !isLoadingSelection && (selectedId == nil || selected != nil) && draft.canSend && !isBusy && (selected.map { pendingSends[$0.id] == nil && !($0.run == nil && $0.messages.last?.role == "user") } ?? true) && !capturing && !recordingIsActive() }
-    var canSendLauncher: Bool { launcherDraft.canSend && !capturing && !recordingIsActive() }
+    var canSend: Bool { !isLoadingSelection && (selectedId == nil || selected != nil) && draft.canSend && !isBusy && (selected.map { pendingSends[$0.id] == nil && !($0.run == nil && $0.messages.last?.role == "user") } ?? true) && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
+    var canSendLauncher: Bool { launcherDraft.canSend && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
 
     private func credentials() -> (owner: String, token: String)? {
         guard let current = session() else { error = L("ask.loginRequired"); return nil }
@@ -65,6 +70,9 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        voiceInput.cancel()
+        historyErrorTask?.cancel(); historyRefreshError = nil
+        pullRefreshID = nil; isRefreshingHistory = false
         operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]
         approvals.values.forEach { $0.resume(returning: false) }; approvals = [:]
         pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
@@ -122,7 +130,23 @@ final class AskConversationModel: ObservableObject {
         }
     }
 
-    func refreshHistory(loadMore: Bool = false) async {
+    func pullToRefreshHistory() async {
+        guard !isRefreshingHistory else { return }
+        let refreshID = UUID(); pullRefreshID = refreshID
+        isRefreshingHistory = true; historyRefreshError = nil; historyErrorTask?.cancel()
+        defer { if pullRefreshID == refreshID { isRefreshingHistory = false; pullRefreshID = nil } }
+        await refreshHistory(inlineError: true)
+        guard pullRefreshID == refreshID else { return }
+        if historyRefreshError != nil {
+            historyErrorTask = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(5))
+                guard !Task.isCancelled else { return }
+                self?.historyRefreshError = nil
+            }
+        }
+    }
+
+    func refreshHistory(loadMore: Bool = false, inlineError: Bool = false) async {
         guard let current = credentials() else { return }
         let generation = UUID(); historyGeneration = generation
         if !loadMore, conversations.isEmpty {
@@ -147,7 +171,12 @@ final class AskConversationModel: ObservableObject {
             conversations = Self.unique(merged)
             historyOffset = offset + items.count
             historyHasMore = items.count == 50
-        } catch { if owner == current.owner, generation == historyGeneration { self.error = error.localizedDescription } }
+        } catch {
+            if owner == current.owner, generation == historyGeneration {
+                if inlineError { historyRefreshError = L("ask.history.refreshFailed") }
+                else { self.error = error.localizedDescription }
+            }
+        }
     }
 
     private static func unique(_ items: [AskConversationSummary]) -> [AskConversationSummary] {
@@ -164,6 +193,7 @@ final class AskConversationModel: ObservableObject {
         guard let current = credentials() else { return }
         let id = AskConversationID.canonical(rawId)
         if selectedId == id, isLoadingSelection || (!reload && selected != nil && !selectionLoadFailed) { return }
+        voiceInput.cancel()
         let generation = UUID(); selectionGeneration = generation
         let oldId = selectedId, oldDraft = draft
         if let oldId, !isLoadingSelection { drafts[oldId] = oldDraft }
@@ -201,6 +231,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func newConversation() {
+        voiceInput.cancel()
         persistDrafts()
         selectionGeneration = UUID(); selected = nil; selectedId = nil
         isLoadingSelection = false; selectionLoadFailed = false

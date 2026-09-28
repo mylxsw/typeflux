@@ -13,17 +13,16 @@ enum AskTheme {
 
 struct AskLauncherView: View {
     @ObservedObject var model: AskConversationModel
-    var onVoice: () -> Void
     var onDismiss: () -> Void
     var onHeightChange: (CGFloat) -> Void = { _ in }
 
     var body: some View {
-        AskComposer(model: model, launcher: true, onVoice: onVoice, onDismiss: onDismiss, onHeightChange: onHeightChange)
+        AskComposer(model: model, launcher: true, onDismiss: onDismiss, onHeightChange: onHeightChange)
         .padding(14)
         .background(StudioTheme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(StudioTheme.border, lineWidth: 1))
-        .padding(1)
+        .modifier(AskVoiceBorder(voice: model.voiceInput, context: "launcher", radius: 14))
+        .padding(6)
         .tint(AskTheme.accent)
         .onChange(of: model.launcherDraft) { _ in model.persistDrafts() }
     }
@@ -32,9 +31,16 @@ struct AskLauncherView: View {
 struct AskComposer: View {
     @ObservedObject var model: AskConversationModel
     var launcher: Bool
-    var onVoice: () -> Void
     var onDismiss: () -> Void = {}
     var onHeightChange: (CGFloat) -> Void = { _ in }
+    @ObservedObject private var voice: AskVoiceInput
+    init(model: AskConversationModel, launcher: Bool, onDismiss: @escaping () -> Void = {}, onHeightChange: @escaping (CGFloat) -> Void = { _ in }) {
+        self.model = model; self.launcher = launcher
+        self.onDismiss = onDismiss; self.onHeightChange = onHeightChange
+        self.voice = model.voiceInput
+    }
+    private var contextID: String { launcher ? "launcher" : "chat:" + (model.selectedId ?? "new") }
+    private var active: Bool { voice.context == contextID && voice.isActive }
     @State private var showingContext = false
     @State private var editorHeight: CGFloat = 32
 
@@ -49,7 +55,7 @@ struct AskComposer: View {
                     Text(L(launcher ? "ask.input.placeholder" : "ask.followup.placeholder"))
                         .foregroundStyle(.secondary).padding(.leading, 5).padding(.top, 4)
                 }
-                AskComposerTextView(text: draft.text, placeholder: L("ask.input.placeholder"), onSubmit: submit, onDismiss: onDismiss, onHeightChange: { editorHeight = $0 })
+                AskComposerTextView(text: draft.text, placeholder: L("ask.input.placeholder"), voice: voice, contextID: contextID, onSubmit: submit, onDismiss: onDismiss, onHeightChange: { editorHeight = $0 })
                     .frame(height: editorHeight)
                     .disabled(!launcher && model.isLoadingSelection)
             }
@@ -90,9 +96,15 @@ struct AskComposer: View {
                 }
                 if model.capturing { ProgressView().controlSize(.small) }
                 Spacer(minLength: 4)
-                Button(action: onVoice) { Image(systemName: "mic").font(.system(size: 16)).frame(width: 28, height: 30) }
-                    .buttonStyle(.plain).help(L("ask.voice"))
-                    .accessibilityLabel(L("ask.voice"))
+                if active {
+                    if voice.phase == .listening {
+                        Circle().fill(AskTheme.accent).frame(width: 5, height: 5)
+                        Text(L("ask.voice.listening")).foregroundStyle(AskTheme.accent)
+                    } else {
+                        ProgressView().controlSize(.mini)
+                        Text(L("ask.voice.transcribing")).foregroundStyle(AskTheme.accent.opacity(0.8))
+                    }
+                }
                 if !launcher, model.isBusy {
                     Button { model.stop() } label: { Image(systemName: "stop.fill").frame(width: 30, height: 30) }
                         .buttonStyle(.borderless).foregroundStyle(.red)
@@ -105,16 +117,18 @@ struct AskComposer: View {
                 }
             }
             .font(.system(size: 12))
+            if let error = voice.error { AskNotice(text: error).lineLimit(2) }
             if launcher, let error = model.error { AskNotice(text: error).lineLimit(2) }
         }
         .font(.system(size: 14))
         .onChange(of: editorHeight) { _ in reportHeight() }
         .onChange(of: model.error) { _ in reportHeight() }
+        .onChange(of: voice.error) { _ in reportHeight() }
         .onAppear { reportHeight() }
     }
 
     private func reportHeight() {
-        onHeightChange(editorHeight + 68 + (launcher && model.error != nil ? 32 : 0))
+        onHeightChange(editorHeight + 78 + (launcher && model.error != nil ? 32 : 0) + (voice.error != nil ? 32 : 0))
     }
 }
 
@@ -151,9 +165,8 @@ enum AskImage {
 
 struct AskConversationView: View {
     @ObservedObject var model: AskConversationModel
-    var onVoice: () -> Void
     @State private var deleteId: String?
-    @State private var showContext = false
+    @State private var pullDistance: CGFloat = 0
     @State private var restoredTranscript: String?
 
     var body: some View {
@@ -165,9 +178,6 @@ struct AskConversationView: View {
                     Text(model.selected?.title ?? model.conversations.first(where: { $0.id == model.selectedId })?.title ?? L("ask.new")).font(.system(size: 16, weight: .semibold)).lineLimit(1)
                     Spacer()
                     if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
-                    Button { showContext.toggle() } label: { Label(L("ask.context"), systemImage: "text.bubble") }
-                        .buttonStyle(.borderless)
-                        .popover(isPresented: $showContext) { contextDetails }
                 }.padding(.horizontal, 24).frame(height: 52)
                 Divider()
                 messages
@@ -195,10 +205,10 @@ struct AskConversationView: View {
                     }
                     Spacer()
                 }.padding(.horizontal, 24)
-                AskComposer(model: model, launcher: false, onVoice: onVoice)
+                AskComposer(model: model, launcher: false)
                     .disabled(model.isLoadingSelection)
                     .padding(12).background(StudioTheme.surface, in: RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(StudioTheme.border, lineWidth: 1))
+                    .modifier(AskVoiceBorder(voice: model.voiceInput, context: "chat:" + (model.selectedId ?? "new"), radius: 12))
                     .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 16)
             }.frame(minWidth: 480)
         }
@@ -216,8 +226,6 @@ struct AskConversationView: View {
             HStack {
                 Text(L("ask.history")).font(.system(size: 13, weight: .medium))
                 Spacer()
-                Button { Task { await model.refreshHistory() } } label: { Image(systemName: "arrow.clockwise") }
-                    .buttonStyle(.plain).foregroundStyle(.secondary).help(L("ask.refresh"))
                 Button { model.newConversation() } label: { Image(systemName: "square.and.pencil").font(.system(size: 15)) }
                     .buttonStyle(.plain).help(L("ask.new")).accessibilityLabel(L("ask.new"))
             }.padding(.horizontal, 16).frame(height: 52)
@@ -244,7 +252,23 @@ struct AskConversationView: View {
                     if model.historyHasMore { Button(L("ask.loadMore")) { Task { await model.refreshHistory(loadMore: true) } } }
                     if model.conversations.isEmpty { Text(L("ask.history.empty")).font(.caption).foregroundStyle(.secondary).padding() }
                 }.padding(.horizontal, 8)
+                    .background(AskHistoryPullRefresh(isRefreshing: model.isRefreshingHistory, onDistance: { pullDistance = $0 }, onRefresh: { Task { await model.pullToRefreshHistory() } }))
             }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if model.isRefreshingHistory || pullDistance > 0 || model.historyRefreshError != nil {
+                    HStack(spacing: 6) {
+                        if model.isRefreshingHistory { ProgressView().controlSize(.mini) }
+                        else { Image(systemName: model.historyRefreshError == nil ? "arrow.down" : "exclamationmark.circle") }
+                        Text(model.historyRefreshError ?? L(model.isRefreshingHistory ? "ask.history.refreshing" : pullDistance >= AskHistoryPullGesture.threshold ? "ask.history.release" : "ask.history.pull"))
+                            .lineLimit(2)
+                    }.font(.system(size: 11)).foregroundStyle(AskTheme.accent).padding(8)
+                        .frame(maxWidth: .infinity, minHeight: 36)
+                        .background(AskTheme.accent.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
+                        .padding(.horizontal, 8).padding(.bottom, 6)
+                        .allowsHitTesting(false)
+                }
+            }
+            .accessibilityAction(named: Text(L("ask.refresh"))) { Task { await model.pullToRefreshHistory() } }
         }.background(StudioTheme.surfaceMuted)
     }
 
@@ -311,18 +335,6 @@ struct AskConversationView: View {
             proxy.scrollTo(anchor, anchor: anchor == "bottom" ? .bottom : .top)
             restoredTranscript = id
         }
-    }
-
-    private var contextDetails: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(L("ask.context")).font(.headline)
-            Text(L("ask.context.history"))
-            if let summary = model.selected?.summary {
-                Text(L("ask.context.summary")).font(.subheadline.bold())
-                ScrollView { Text(summary).textSelection(.enabled) }.frame(maxHeight: 260)
-            }
-            Text(L("ask.context.newHint")).font(.caption).foregroundStyle(.secondary)
-        }.padding(20).frame(width: 400)
     }
 
     private func approval(_ call: AskToolCall, id: String) -> some View {
@@ -418,5 +430,19 @@ private struct AskTranscriptFrames: PreferenceKey {
     static let defaultValue: [String: CGRect] = [:]
     static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    }
+}
+
+/// Keep the focus and recording treatments on the complete card, including its footer.
+private struct AskVoiceBorder: ViewModifier {
+    @ObservedObject var voice: AskVoiceInput
+    var context: String
+    var radius: CGFloat
+    private var listening: Bool { voice.context == context && voice.phase == .listening }
+    private var active: Bool { voice.context == context && voice.isActive }
+    func body(content: Content) -> some View {
+        content.overlay(RoundedRectangle(cornerRadius: radius)
+            .stroke(listening ? AskTheme.accent : active || voice.focusedContext == context ? AskTheme.accent.opacity(0.4) : StudioTheme.border, lineWidth: listening ? 1.5 : 1))
+            .shadow(color: AskTheme.accent.opacity(listening ? 0.22 : 0), radius: 5)
     }
 }
