@@ -977,7 +977,7 @@
 "settings.advanced.autoVocabulary.title" = "修正された語彙を自動追加";
 "settings.advanced.autoVocabulary.subtitle" = "音声入力が挿入された後、現在のフィールドを 30 秒間監視します。用語を手動で修正すると、アプリはその用語を語彙に自動的に追加するかどうかをモデルに尋ねることができます。";
 "settings.advanced.recentInputMemory.title" = "最近の入力メモリ";
-"settings.advanced.recentInputMemory.subtitle" = "有効にするとすべてのアプリに適用します。短い最終入力を4時間保存し、次の表現を改善します。使用時は選択中のモデルサービスに送信します。";
+"settings.advanced.recentInputMemory.subtitle" = "有効にするとすべてのアプリに適用します。短い最終入力を24時間保存し、次の表現を改善します。使用時は選択中のモデルサービスに送信します。";
 "settings.advanced.recentInputMemory.clearApp" = "消去";
 "settings.advanced.recentInputMemory.clearAll" = "すべて消去";
 "settings.advanced.recentInputMemory.manage" = "メモリを管理";

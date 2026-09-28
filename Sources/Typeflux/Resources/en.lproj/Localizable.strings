@@ -988,7 +988,7 @@
 "settings.advanced.autoVocabulary.title" = "Auto-add corrected vocabulary";
 "settings.advanced.autoVocabulary.subtitle" = "After voice input is inserted, watch the current field for 30 seconds. If you manually correct a term, the app can ask the model whether it should be added to your vocabulary automatically.";
 "settings.advanced.recentInputMemory.title" = "Recent input memory";
-"settings.advanced.recentInputMemory.subtitle" = "Applies to all apps when enabled. Keeps short final inputs for 4 hours to improve later wording. Used excerpts are sent to the selected model service.";
+"settings.advanced.recentInputMemory.subtitle" = "Applies to all apps when enabled. Keeps short final inputs for 24 hours to improve later wording. Used excerpts are sent to the selected model service.";
 "settings.advanced.recentInputMemory.clearApp" = "Clear";
 "settings.advanced.recentInputMemory.clearAll" = "Clear all memory";
 "settings.advanced.recentInputMemory.manage" = "Manage memory";

@@ -988,7 +988,7 @@
 "settings.advanced.autoVocabulary.title" = "自动添加修正生词";
 "settings.advanced.autoVocabulary.subtitle" = "语音输入插入后，继续监听当前输入框 30 秒。如果你手动修正了某个词，应用会调用模型判断是否应自动加入生词本。";
 "settings.advanced.recentInputMemory.title" = "近期输入记忆";
-"settings.advanced.recentInputMemory.subtitle" = "开启后适用于所有应用。保存最近 4 小时内的简短最终输入，用于优化后续表达；使用时会发送给当前模型服务。";
+"settings.advanced.recentInputMemory.subtitle" = "开启后适用于所有应用。保存最近 24 小时内的简短最终输入，用于优化后续表达；使用时会发送给当前模型服务。";
 "settings.advanced.recentInputMemory.clearApp" = "清除";
 "settings.advanced.recentInputMemory.clearAll" = "清除全部记忆";
 "settings.advanced.recentInputMemory.manage" = "管理记忆";

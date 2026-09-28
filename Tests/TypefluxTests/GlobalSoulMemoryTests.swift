@@ -41,6 +41,7 @@ final class GlobalSoulMemoryTests: XCTestCase {
     }
 
     func testPreExpiryRequiresFiveAndNeverExtendsFourHourLifetime() throws {
+        XCTAssertEqual(GlobalSoulMemoryStore.pendingLifetime, 4 * 60 * 60)
         let (store, file) = makeStore()
         defer { try? FileManager.default.removeItem(at: file) }
         let start = Date(timeIntervalSince1970: 10_000)
@@ -50,13 +51,14 @@ final class GlobalSoulMemoryTests: XCTestCase {
                 text: "input \(index)", at: start
             )
         }
-        let preExpiry = start.addingTimeInterval(RecentInputMemoryStore.lifetime - 60)
+        let preExpiry = start.addingTimeInterval(GlobalSoulMemoryStore.pendingLifetime - 60)
         XCTAssertNil(store.readyBatch(ownerID: "user-a", at: preExpiry))
         store.recordFinalInput(id: UUID(), ownerID: "user-a", appIdentifier: "app-a", text: "fifth", at: start)
         let batch = try XCTUnwrap(store.readyBatch(ownerID: "user-a", at: preExpiry))
         XCTAssertEqual(batch.inputs.count, 5)
-        XCTAssertNil(store.readyBatch(ownerID: "user-a", at: start.addingTimeInterval(RecentInputMemoryStore.lifetime)))
-        XCTAssertFalse(store.complete(batch, with: "stale", at: start.addingTimeInterval(RecentInputMemoryStore.lifetime)))
+        let expiry = start.addingTimeInterval(GlobalSoulMemoryStore.pendingLifetime)
+        XCTAssertNil(store.readyBatch(ownerID: "user-a", at: expiry))
+        XCTAssertFalse(store.complete(batch, with: "stale", at: expiry))
     }
 
     func testDeletingSoulInvalidatesInFlightBatchAndClearsPending() throws {

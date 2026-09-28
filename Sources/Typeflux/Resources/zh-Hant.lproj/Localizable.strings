@@ -984,7 +984,7 @@
 "settings.advanced.autoVocabulary.title" = "自動加入修正生詞";
 "settings.advanced.autoVocabulary.subtitle" = "語音輸入插入後，繼續監聽目前輸入框 30 秒。如果你手動修正了某個詞，應用會呼叫模型判斷是否應自動加入生詞本。";
 "settings.advanced.recentInputMemory.title" = "近期輸入記憶";
-"settings.advanced.recentInputMemory.subtitle" = "開啟後適用於所有應用。保存最近 4 小時的簡短最終輸入，用於改善後續表達；使用時會傳送給目前的模型服務。";
+"settings.advanced.recentInputMemory.subtitle" = "開啟後適用於所有應用。保存最近 24 小時的簡短最終輸入，用於改善後續表達；使用時會傳送給目前的模型服務。";
 "settings.advanced.recentInputMemory.clearApp" = "清除";
 "settings.advanced.recentInputMemory.clearAll" = "清除全部記憶";
 "settings.advanced.recentInputMemory.manage" = "管理記憶";
