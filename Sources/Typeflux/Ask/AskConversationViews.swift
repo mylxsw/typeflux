@@ -444,7 +444,7 @@ private struct AskTranscriptFrames: PreferenceKey {
     }
 }
 
-/// Keep the focus and recording treatments on the complete card, including its footer.
+/// Apply voice feedback to the complete card; ordinary focus stays neutral.
 private struct AskVoiceBorder: ViewModifier {
     @ObservedObject var voice: AskVoiceInput
     var context: String
@@ -453,7 +453,7 @@ private struct AskVoiceBorder: ViewModifier {
     private var active: Bool { voice.context == context && voice.isActive }
     func body(content: Content) -> some View {
         content.overlay(RoundedRectangle(cornerRadius: radius)
-            .stroke(listening ? AskTheme.accent : active || voice.focusedContext == context ? AskTheme.accent.opacity(0.4) : StudioTheme.border, lineWidth: listening ? 1.5 : 1)
+            .stroke(listening ? AskTheme.accent : active ? AskTheme.accent.opacity(0.4) : StudioTheme.border, lineWidth: listening ? 1.5 : 1)
             .allowsHitTesting(false))
             .shadow(color: AskTheme.accent.opacity(listening ? 0.22 : 0), radius: 5)
     }

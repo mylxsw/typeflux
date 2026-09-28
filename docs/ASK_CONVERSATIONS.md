@@ -67,7 +67,8 @@ without submitting. Fn uses the same card feedback, including its short-tap lock
 behavior; it does not show a second recording capsule while a composer owns focus.
 
 The entire floating card or workspace input card has a static blue outline and
-soft halo while recording, with a textual listening status. Transcription dims the
+soft halo while recording, with a textual listening status. Idle and ordinary
+keyboard focus use the neutral border; focus alone never adds a blue outline. Transcription dims the
 outline and disables sending. Escape, loss of focus, screen locking or sleep cancels
 capture/delivery and preserves the draft. A late transcript cannot reach another
 conversation, changed draft, or another application. A cancelled startup retains
