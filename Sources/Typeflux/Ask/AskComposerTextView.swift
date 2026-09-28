@@ -47,7 +47,7 @@ struct AskComposerTextView: NSViewRepresentable {
         scroll.documentView = editor
         editor.string = text
         DispatchQueue.main.async { [weak editor] in
-            guard let editor, let window = editor.window else { return }
+            guard let editor, let window = editor.window, window.isKeyWindow else { return }
             window.makeFirstResponder(editor)
         }
         return scroll
@@ -58,14 +58,14 @@ struct AskComposerTextView: NSViewRepresentable {
         guard let editor = scroll.documentView as? Editor else { return }
         if editor.contextID != contextID { editor.voice?.cancel(ifOwnedBy: editor) }
         editor.contextID = contextID
-        if editor.window?.firstResponder === editor, voice?.focusedContext != contextID {
-            DispatchQueue.main.async { [weak editor] in
-                guard let editor, editor.window?.firstResponder === editor else { return }
-                editor.voice?.focusedContext = editor.contextID
-            }
-        }
         editor.voice = voice
-        editor.isEditable = isEnabled
+        // An inactive window retains its first responder. It must not compete
+        // with the key window for the shared composer's focus state.
+        if editor.window?.isKeyWindow == true, editor.window?.firstResponder === editor,
+           voice?.focusedContext != contextID {
+            DispatchQueue.main.async { [weak editor] in editor?.publishFocus() }
+        }
+        if editor.isEditable != isEnabled { editor.isEditable = isEnabled }
         editor.onSubmit = onSubmit; editor.onDismiss = onDismiss
         editor.onHeightChange = onHeightChange
         if editor.string != text, !editor.hasMarkedText() {
@@ -90,7 +90,7 @@ struct AskComposerTextView: NSViewRepresentable {
         var contextID = "launcher"
         private var holdGesture: NSPressGestureRecognizer?
         private var globalReleaseMonitor: Any?
-        private var windowObserver: NSObjectProtocol?
+        private var windowObservers: [NSObjectProtocol] = []
         private var mouseRecording = false
         var onSubmit: () -> Void = {}
         var onDismiss: () -> Void = {}
@@ -107,26 +107,42 @@ struct AskComposerTextView: NSViewRepresentable {
                 addGestureRecognizer(press)
                 holdGesture = press
             }
-            if let windowObserver { NotificationCenter.default.removeObserver(windowObserver) }
-            windowObserver = nil
+            windowObservers.forEach { NotificationCenter.default.removeObserver($0) }
+            windowObservers = []
             guard let window else { cancelInteraction(); return }
-            windowObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { [weak self] _ in
-                self?.cancelInteraction()
-            }
+            windowObservers = [
+                NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
+                    self?.publishFocus()
+                },
+                NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { [weak self] _ in
+                    self?.cancelInteraction()
+                    self?.clearFocus()
+                }
+            ]
         }
         override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
         override func becomeFirstResponder() -> Bool {
             let accepted = super.becomeFirstResponder()
-            if accepted { voice?.focusedContext = contextID }
+            if accepted, window?.isKeyWindow == true, voice?.focusedContext != contextID {
+                voice?.focusedContext = contextID
+            }
             return accepted
         }
         override func resignFirstResponder() -> Bool {
             let accepted = super.resignFirstResponder()
             if accepted {
                 cancelInteraction()
-                if voice?.focusedContext == contextID { voice?.focusedContext = nil }
+                clearFocus()
             }
             return accepted
+        }
+        fileprivate func publishFocus() {
+            guard window?.isKeyWindow == true, window?.firstResponder === self,
+                  voice?.focusedContext != contextID else { return }
+            voice?.focusedContext = contextID
+        }
+        private func clearFocus() {
+            if voice?.focusedContext == contextID { voice?.focusedContext = nil }
         }
         func cancelInteraction() {
             clearMouseTracking()
@@ -170,7 +186,7 @@ struct AskComposerTextView: NSViewRepresentable {
         }
         deinit {
             if let globalReleaseMonitor { NSEvent.removeMonitor(globalReleaseMonitor) }
-            if let windowObserver { NotificationCenter.default.removeObserver(windowObserver) }
+            windowObservers.forEach { NotificationCenter.default.removeObserver($0) }
         }
         override func layout() { super.layout(); reportHeight() }
         func reportHeight() {
