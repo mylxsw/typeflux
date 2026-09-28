@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Typeflux uses approved browser actions to read and interact with the current page.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Typeflux needs microphone access to record your speech.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
