@@ -72,6 +72,42 @@ final class WorkflowControllerProcessingTests: XCTestCase {
     }
 
     @MainActor
+    func testComposerMouseHoldRunsProductionRecordingAdapterAndFillsEditor() async throws {
+        let recorder = MockProcessingAudioRecorder()
+        let injector = MockProcessingTextInjector()
+        let controller = makeWorkflowController(textInjector: injector, audioRecorder: recorder,
+            sttTranscriber: MockProcessingTranscriber(transcript: " held speech "),
+            configureSettings: { $0.sttProvider = .appleSpeech }, hasPaidCloudSubscription: { true })
+        let voice = AskVoiceInput()
+        voice.recorder = WorkflowComposerRecording(controller, isAppBundle: { true })
+        let editor = AskComposerTextView.Editor(frame: NSRect(x: 0, y: 0, width: 300, height: 80))
+        editor.voice = voice
+        let window = AskTestVoiceWindow(contentRect: editor.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = editor
+        window.orderFront(nil)
+        window.makeFirstResponder(editor)
+        defer { window.close() }
+        func event(_ type: NSEvent.EventType) throws -> NSEvent {
+            try XCTUnwrap(NSEvent.mouseEvent(with: type, location: NSPoint(x: 20, y: 20), modifierFlags: [],
+                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
+                eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
+        }
+        NSApp.sendEvent(try event(.leftMouseDown))
+        for _ in 0..<200 where recorder.startCallCount == 0 { try await Task.sleep(for: .milliseconds(5)) }
+        XCTAssertEqual(recorder.startCallCount, 1, "Recording must start before the mouse is released")
+        XCTAssertTrue(controller.isRecording)
+        XCTAssertEqual(voice.phase, .listening)
+        NSApp.sendEvent(try event(.leftMouseUp))
+        for _ in 0..<400 where voice.isOccupied { try await Task.sleep(for: .milliseconds(5)) }
+        XCTAssertFalse(voice.isOccupied)
+        XCTAssertEqual(recorder.stopCallCount, 1)
+        XCTAssertEqual(editor.string, "held speech")
+        XCTAssertEqual(controller.appState.status, .idle)
+        XCTAssertTrue(injector.insertedTexts.isEmpty)
+    }
+
+    @MainActor
     func testComposerCancelCleansRecorderAndFailureCannotCancelAnotherRecording() async throws {
         let recorder = MockProcessingAudioRecorder()
         let controller = makeWorkflowController(audioRecorder: recorder)

@@ -11,19 +11,16 @@ struct AskComposerTests {
         let window = NSWindow(contentRect: editor.frame, styleMask: .borderless, backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false; window.contentView = editor
         defer { window.close() }
-        let hold = try #require(editor.gestureRecognizers.first as? NSPressGestureRecognizer)
         #expect(editor.acceptsFirstMouse(for: nil))
-        #expect(hold.minimumPressDuration == 0.35)
-        #expect(hold.allowableMovement == 6)
-        #expect(hold.buttonMask == 1)
+        #expect(AskComposerTextView.Editor.mouseHoldDelay == 0.35)
         func event(clicks: Int = 1, flags: NSEvent.ModifierFlags = []) throws -> NSEvent {
             try #require(NSEvent.mouseEvent(with: .leftMouseDown, location: NSPoint(x: 20, y: 20), modifierFlags: flags, timestamp: 0, windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: clicks, pressure: 1))
         }
-        #expect(editor.gestureRecognizer(hold, shouldAttemptToRecognizeWith: try event()))
-        #expect(!editor.gestureRecognizer(hold, shouldAttemptToRecognizeWith: try event(clicks: 2)))
-        #expect(!editor.gestureRecognizer(hold, shouldAttemptToRecognizeWith: try event(flags: .shift)))
+        #expect(editor.canStartMouseHold(with: try event()))
+        #expect(!editor.canStartMouseHold(with: try event(clicks: 2)))
+        #expect(!editor.canStartMouseHold(with: try event(flags: .shift)))
         editor.setMarkedText("候选", selectedRange: NSRange(location: 2, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
-        #expect(!editor.gestureRecognizer(hold, shouldAttemptToRecognizeWith: try event()))
+        #expect(!editor.canStartMouseHold(with: try event()))
     }
 
     @Test func returnEscapeAndIMECompositionHaveSeparateMeanings() throws {

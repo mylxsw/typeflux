@@ -85,31 +85,42 @@ struct AskComposerTextView: NSViewRepresentable {
         }
     }
 
-    final class Editor: NSTextView, NSGestureRecognizerDelegate {
+    final class Editor: NSTextView {
         weak var voice: AskVoiceInput?
         var contextID = "launcher"
-        private var holdGesture: NSPressGestureRecognizer?
+        static let mouseHoldDelay: TimeInterval = 0.35
+        private var holdTimer: Timer?
+        private var mouseDownEvent: NSEvent?
+        private var mouseInsertionIndex = 0
+        private var localReleaseMonitor: Any?
+        private var inputMonitor: Any?
         private var globalReleaseMonitor: Any?
         private var windowObservers: [NSObjectProtocol] = []
         private var mouseRecording = false
+        private var mouseSelecting = false
         var onSubmit: () -> Void = {}
         var onDismiss: () -> Void = {}
         var onHeightChange: (CGFloat) -> Void = { _ in }
         private var reportedHeight: CGFloat = 0
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
-            if holdGesture == nil {
-                let press = NSPressGestureRecognizer(target: self, action: #selector(handleHold(_:)))
-                press.minimumPressDuration = 0.35
-                press.allowableMovement = 6
-                press.buttonMask = 1
-                press.delegate = self
-                addGestureRecognizer(press)
-                holdGesture = press
-            }
             windowObservers.forEach { NotificationCenter.default.removeObserver($0) }
             windowObservers = []
+            if let inputMonitor { NSEvent.removeMonitor(inputMonitor); self.inputMonitor = nil }
             guard let window else { cancelInteraction(); return }
+            // Route eligible presses before AppKit/SwiftUI gesture arbitration or
+            // NSTextView's selection tracker can claim the stream.
+            inputMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseDragged]) { [weak self] event in
+                guard let self else { return event }
+                if event.type == .leftMouseDragged, self.mouseDownEvent != nil {
+                    self.mouseDragged(with: event)
+                    return nil
+                }
+                guard event.window === self.window, self.canStartMouseHold(with: event),
+                      self.visibleRect.contains(self.convert(event.locationInWindow, from: nil)) else { return event }
+                self.mouseDown(with: event)
+                return nil
+            }
             windowObservers = [
                 NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
                     self?.publishFocus()
@@ -149,42 +160,75 @@ struct AskComposerTextView: NSViewRepresentable {
             voice?.cancel(ifOwnedBy: self)
         }
         private func clearMouseTracking() {
+            holdTimer?.invalidate(); holdTimer = nil
+            mouseDownEvent = nil
+            if let localReleaseMonitor { NSEvent.removeMonitor(localReleaseMonitor); self.localReleaseMonitor = nil }
             if let globalReleaseMonitor { NSEvent.removeMonitor(globalReleaseMonitor); self.globalReleaseMonitor = nil }
             mouseRecording = false
+            mouseSelecting = false
         }
-        func gestureRecognizer(_ gestureRecognizer: NSGestureRecognizer, shouldAttemptToRecognizeWith event: NSEvent) -> Bool {
-            guard event.type == .leftMouseDown, event.clickCount == 1, isEditable,
-                  voice?.isOccupied == false, !hasMarkedText(),
-                  event.modifierFlags.intersection([.shift, .command, .option, .control]).isEmpty else { return false }
+        func canStartMouseHold(with event: NSEvent) -> Bool {
+            event.type == .leftMouseDown && event.clickCount == 1 && isEditable &&
+                voice?.isOccupied == false && !hasMarkedText() &&
+                event.modifierFlags.intersection([.shift, .command, .option, .control]).isEmpty
+        }
+        override func mouseDown(with event: NSEvent) {
+            guard voice?.isActive != true else { return }
+            guard canStartMouseHold(with: event) else { super.mouseDown(with: event); return }
+            window?.makeKey()
             window?.makeFirstResponder(self)
-            return true
-        }
-        @objc private func handleHold(_ gesture: NSPressGestureRecognizer) {
-            switch gesture.state {
-            case .began:
-                // NSPressGestureRecognizer defers native selection until the hold
-                // fails. A short click/drag still reaches NSTextView unchanged.
-                let index = characterIndexForInsertion(at: gesture.location(in: self))
-                let selected = selectedRange()
-                if selected.length == 0 || index < selected.location || index > NSMaxRange(selected) {
-                    setSelectedRange(NSRange(location: index, length: 0))
-                }
-                mouseRecording = voice?.begin(in: self) == true
-                if mouseRecording {
-                    globalReleaseMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { [weak self] _ in self?.finishMouseHold() }
-                }
-            case .ended: finishMouseHold()
-            case .cancelled:
-                if mouseRecording { voice?.cancel(ifOwnedBy: self) }
-                clearMouseTracking()
-            default: break
+            clearMouseTracking()
+            mouseDownEvent = event
+            mouseInsertionIndex = characterIndexForInsertion(at: convert(event.locationInWindow, from: nil))
+            let selected = selectedRange()
+            if selected.length == 0 || mouseInsertionIndex < selected.location || mouseInsertionIndex > NSMaxRange(selected) {
+                setSelectedRange(NSRange(location: mouseInsertionIndex, length: 0))
             }
+            // Do not enter NSTextView's synchronous selection tracking loop while
+            // waiting for a hold. The main actor must be free to start the recorder.
+            let timer = Timer(timeInterval: Self.mouseHoldDelay, repeats: false) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self, self.mouseDownEvent != nil else { return }
+                    self.holdTimer = nil
+                    self.mouseRecording = self.voice?.begin(in: self) == true
+                }
+            }
+            holdTimer = timer
+            RunLoop.main.add(timer, forMode: .common)
+            // A release can land outside this editor or even outside the app.
+            localReleaseMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseUp) { [weak self] event in
+                guard let self, self.mouseDownEvent != nil else { return event }
+                self.finishMouseHold()
+                return nil
+            }
+            globalReleaseMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { [weak self] _ in self?.finishMouseHold() }
+        }
+        override func mouseDragged(with event: NSEvent) {
+            guard let down = mouseDownEvent else { super.mouseDragged(with: event); return }
+            guard !mouseRecording else { return }
+            let delta = NSPoint(x: event.locationInWindow.x - down.locationInWindow.x,
+                                y: event.locationInWindow.y - down.locationInWindow.y)
+            guard mouseSelecting || hypot(delta.x, delta.y) > 6 else { return }
+            holdTimer?.invalidate(); holdTimer = nil
+            mouseSelecting = true
+            let index = characterIndexForInsertion(at: convert(event.locationInWindow, from: nil))
+            setSelectedRange(NSRange(location: min(mouseInsertionIndex, index), length: abs(index - mouseInsertionIndex)))
+            autoscroll(with: event)
+        }
+        override func mouseUp(with event: NSEvent) {
+            guard mouseDownEvent != nil else { super.mouseUp(with: event); return }
+            finishMouseHold()
         }
         private func finishMouseHold() {
+            guard mouseDownEvent != nil else { return }
             if mouseRecording { voice?.stop() }
+            else if !mouseSelecting { setSelectedRange(NSRange(location: mouseInsertionIndex, length: 0)) }
             clearMouseTracking()
         }
         deinit {
+            holdTimer?.invalidate()
+            if let inputMonitor { NSEvent.removeMonitor(inputMonitor) }
+            if let localReleaseMonitor { NSEvent.removeMonitor(localReleaseMonitor) }
             if let globalReleaseMonitor { NSEvent.removeMonitor(globalReleaseMonitor) }
             windowObservers.forEach { NotificationCenter.default.removeObserver($0) }
         }
@@ -198,6 +242,7 @@ struct AskComposerTextView: NSViewRepresentable {
             DispatchQueue.main.async { [weak self] in self?.onHeightChange(height) }
         }
         override func keyDown(with event: NSEvent) {
+            if event.keyCode == 53, mouseDownEvent != nil { cancelInteraction(); return }
             if voice?.isActive == true {
                 if event.keyCode == 53 { cancelInteraction() }
                 return
