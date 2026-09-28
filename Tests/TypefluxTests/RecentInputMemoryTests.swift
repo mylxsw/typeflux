@@ -34,6 +34,7 @@ final class RecentInputMemoryTests: XCTestCase {
     }
 
     func testStoreReplacesCorrectionAndSeparatesScopes() {
+        XCTAssertEqual(RecentInputMemoryStore.lifetime, 24 * 60 * 60)
         let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: file) }
         let store = RecentInputMemoryStore(fileURL: file)
@@ -46,7 +47,12 @@ final class RecentInputMemoryTests: XCTestCase {
 
         XCTAssertEqual(store.recent(scope: "app.one", at: now), ["corrected"])
         XCTAssertEqual(store.recent(scope: "app.two", at: now), ["other"])
-        XCTAssertTrue(store.recent(scope: "app.one", at: now.addingTimeInterval(4 * 60 * 60)).isEmpty)
+        XCTAssertEqual(store.recent(scope: "app.one", at: now.addingTimeInterval(4 * 60 * 60)), ["corrected"])
+        XCTAssertEqual(
+            store.recent(scope: "app.one", at: now.addingTimeInterval(RecentInputMemoryStore.lifetime - 1)),
+            ["corrected"]
+        )
+        XCTAssertTrue(store.recent(scope: "app.one", at: now.addingTimeInterval(RecentInputMemoryStore.lifetime)).isEmpty)
     }
 
     func testClearPreventsPendingObservationFromRestoringMemory() {

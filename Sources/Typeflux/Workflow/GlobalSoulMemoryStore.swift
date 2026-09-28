@@ -28,6 +28,7 @@ final class GlobalSoulMemoryStore: @unchecked Sendable {
     static let maximumSoulLength = 500
     static let batchSize = 20
     static let minimumExpiryBatchSize = 5
+    static let pendingLifetime: TimeInterval = 4 * 60 * 60
     static let preExpiryInterval: TimeInterval = 10 * 60
 
     private struct State: Codable {
@@ -98,7 +99,7 @@ final class GlobalSoulMemoryStore: @unchecked Sendable {
         let count = inputs.count
         guard count >= Self.batchSize || (
             count >= Self.minimumExpiryBatchSize
-                && date.timeIntervalSince(oldest.recordedAt) >= RecentInputMemoryStore.lifetime - Self.preExpiryInterval
+                && date.timeIntervalSince(oldest.recordedAt) >= Self.pendingLifetime - Self.preExpiryInterval
         ) else { return nil }
         return GlobalSoulBatch(
             inputs: Array(inputs.prefix(Self.batchSize)),
@@ -117,7 +118,7 @@ final class GlobalSoulMemoryStore: @unchecked Sendable {
         }.sorted { $0.recordedAt < $1.recordedAt }
         guard let oldest = inputs.first else { return nil }
         if inputs.count >= Self.batchSize { return date }
-        let expiry = oldest.recordedAt.addingTimeInterval(RecentInputMemoryStore.lifetime)
+        let expiry = oldest.recordedAt.addingTimeInterval(Self.pendingLifetime)
         if inputs.count >= Self.minimumExpiryBatchSize {
             let consolidation = expiry.addingTimeInterval(-Self.preExpiryInterval)
             if date < consolidation { return consolidation }
@@ -130,7 +131,7 @@ final class GlobalSoulMemoryStore: @unchecked Sendable {
         defer { lock.unlock() }
         purgeExpired(at: date)
         return state.pending.filter { $0.ownerID == ownerID }
-            .map { $0.recordedAt.addingTimeInterval(RecentInputMemoryStore.lifetime) }
+            .map { $0.recordedAt.addingTimeInterval(Self.pendingLifetime) }
             .min()
     }
 
@@ -195,7 +196,7 @@ final class GlobalSoulMemoryStore: @unchecked Sendable {
 
     private func purgeExpired(at date: Date) {
         let originalCount = state.pending.count
-        state.pending.removeAll { date.timeIntervalSince($0.recordedAt) >= RecentInputMemoryStore.lifetime }
+        state.pending.removeAll { date.timeIntervalSince($0.recordedAt) >= Self.pendingLifetime }
         if state.pending.count != originalCount {
             generation += 1
             persist()

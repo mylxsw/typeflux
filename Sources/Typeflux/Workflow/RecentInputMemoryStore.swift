@@ -13,7 +13,7 @@ struct RecentInputMemory: Codable, Identifiable, Equatable {
 /// Stores short, observed input excerpts locally. The store never persists a raw transcript.
 final class RecentInputMemoryStore: @unchecked Sendable {
     static let shared = RecentInputMemoryStore()
-    static let lifetime: TimeInterval = 4 * 60 * 60
+    static let lifetime: TimeInterval = 24 * 60 * 60
     static let maximumPerApp = 20
     static let maximumExcerptLength = 700
 
