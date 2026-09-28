@@ -1466,3 +1466,14 @@
 "ask.action.fill" = "Fill field";
 "ask.tool.busy" = "別の会話がコンピュータを操作しています。完了後に再試行してください。";
 "ask.input.tooLarge" = "質問または選択内容が長すぎます。短くしてから送信してください。";
+
+"ask.capture.settings" = "Screenshot unavailable · Settings";
+"ask.loading" = "Loading conversation…";
+"ask.details" = "View details";
+"ask.you" = "You";
+
+"ask.today" = "Today";
+"ask.yesterday" = "Yesterday";
+"ask.earlier" = "Earlier";
+
+"ask.capture.retry" = "Screenshot failed · Retry";

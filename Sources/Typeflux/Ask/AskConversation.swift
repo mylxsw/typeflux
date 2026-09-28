@@ -44,7 +44,7 @@ struct AskRun: Codable, Equatable, Sendable {
 }
 
 struct AskConversation: Codable, Identifiable, Equatable, Sendable {
-    var id: String
+    @AskConversationID var id: String
     var title: String
     var revision: Int64
     var updatedAt: Date
@@ -55,7 +55,7 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
 }
 
 struct AskConversationSummary: Codable, Identifiable, Equatable, Sendable {
-    var id: String
+    @AskConversationID var id: String
     var title: String
     var updatedAt: Date
 }
@@ -121,5 +121,30 @@ enum AskCoding {
             throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Invalid date"))
         }
         return decoder
+    }
+}
+
+/// PostgreSQL UUID columns return lowercase, while legacy JSON snapshots retain
+/// the client's uppercase spelling. Identity must be identical at both boundaries.
+@propertyWrapper
+struct AskConversationID: Codable, Equatable, Sendable {
+    private var value: String
+    var wrappedValue: String {
+        get { value }
+        set { value = Self.canonical(newValue) }
+    }
+    init(wrappedValue: String) { value = Self.canonical(wrappedValue) }
+    init(from decoder: Decoder) throws {
+        value = Self.canonical(try decoder.singleValueContainer().decode(String.self))
+    }
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(value)
+    }
+    static func canonical(_ id: String) -> String {
+        UUID(uuidString: id)?.uuidString.lowercased() ?? id
+    }
+    static func legacy(_ id: String) -> String {
+        UUID(uuidString: id)?.uuidString ?? id
     }
 }

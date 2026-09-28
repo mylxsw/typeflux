@@ -18,6 +18,32 @@ Production views rendered with synthetic test data:
 ![Floating composer](images/ask-launcher.png)
 ![Conversation workspace](images/ask-workspace.png)
 ![Tool approval](images/ask-tool-approval.png)
+![Dark workspace](images/ask-workspace-dark.png)
+![Minimum-size workspace](images/ask-workspace-small.png)
+
+## Approved continuous-conversation layout
+
+The revised launcher is 640 pt wide and starts at 100 pt high. Its native editor
+grows to 148 pt (216 pt panel) before scrolling, retaining that size when reopened.
+It has no title bar or close button. Screenshot permission and retry actions live
+beside the attachment controls, not in a separate oversized notice. The workspace
+uses the existing StudioTheme palette and a 210 pt history sidebar, compact 38 pt
+rows, regular body text, continuous left-aligned messages and collapsed tool details.
+Both appearances and the 760 x 560 minimum window are covered by render tests.
+
+Conversation selection has its own identity and loading/error states. Cached
+content remains visible during refresh; an uncached target cannot accidentally
+send as a new conversation. Late responses update their own cache without changing
+the user's selection or drafts. Streaming updates replace a row in place instead
+of moving it to the top. Pagination merges by conversation ID, never by title.
+Reading anchors and drafts are retained separately for each conversation.
+
+The released client generated uppercase UUID strings, while PostgreSQL returned
+lowercase IDs in history summaries and retained uppercase IDs in JSON snapshots.
+The revised wire models canonicalize conversation UUIDs to lowercase. Old SQLite
+snapshots and drafts remain readable under either spelling; higher revisions win,
+and deleting a conversation removes both local spellings and its tool journal.
+No server migration or deletion of existing cloud history is required.
 
 ## Components
 
@@ -85,24 +111,29 @@ English and Simplified Chinese strings are provided. The new Ask strings in
 Japanese, Korean, and Traditional Chinese currently use English fallbacks except
 for selected error messages; existing translated application strings are intact.
 
-## Implementation validation (2026-09-28)
+## Revision validation (2026-09-28)
 
-- Focused run: 24 Swift Testing tests and 65 matching XCTest tests passed,
-  including native window focus/transition, IME, replay, denial, cancellation,
-  interrupted tool recovery, SQLite isolation, and HTTP contracts.
-- LLVM source-line coverage for the new Ask directory: 80.33% (1609/2003);
-  conversation model 91.96%, cache 92.17%, HTTP client and wire models 100%.
-  Native screen capture and real desktop effects are not exercised by these tests.
-  The directory as a whole does not yet meet the repository's 90% target.
-- Full run: 2669 XCTest tests with the same 10 assertion failures observed in the
-  untouched baseline; all 109 Swift Testing tests passed. `make coverage` therefore
-  exits before its report step; the Ask numbers above were extracted directly
-  with `llvm-profdata`/`llvm-cov` from the focused instrumented run.
+- Focused instrumented run: 35 Swift Testing tests and 65 matching XCTest tests
+  passed, including actual native-window focus, growing/reopened composers,
+  IME behavior, uppercase legacy cache compatibility, ten consecutive follow-ups,
+  delayed navigation, overlapping pagination, background tool completion, and
+  reading-position restoration after history switching.
+- LLVM source-line coverage from that run: model 92.96%, cache 92.80%, native
+  composer 91.25%, wire models 96.77%. The six modified Swift production files
+  together reach 87.45% (1937/2215), below the repository's 90% target; views are
+  85.60% and the window controller is 79.01%. The entire Ask directory is 83.43%,
+  including unchanged screen-capture and desktop-action adapters.
+- Final full run through `make coverage`: 2669 XCTest tests, with 9 assertion
+  failures in the same four pre-existing workflow tests below; all 120 Swift
+  Testing tests passed. The coverage script exits at these failures, so the
+  focused report above was extracted directly with llvm-profdata/llvm-cov.
 - Existing failures are in `WorkflowControllerProcessingTests`:
   `testAudioPrefixSurvivesDelayedRealtimeSetupInOrder`,
   `testBeginRecordingStartsAudioBeforeRealtimeSessionSetupCompletes`,
   `testConnectivityFailureKeepsRecordingRetryableAndShowsPassiveNotice`, and
   `testLocalTranscriptIsAppliedWhenCloudASRIsCancelledAndRewriteFails`.
-- Plists/entitlements validate. The signed-app/staging acceptance steps above
-  remain manual; no production account, live microphone, or real desktop action
-  was used for this implementation's automated tests.
+- Images show the production SwiftUI components with synthetic fixtures, not
+  generated design mockups. Light/dark, permission notices, long text, tool
+  approval and minimum-size windows were rendered and inspected.
+- Signed-app/staging acceptance remains manual: these tests do not access a
+  production account, live microphone, screen recording or real desktop tools.

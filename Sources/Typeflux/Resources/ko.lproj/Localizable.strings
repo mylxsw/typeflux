@@ -1466,3 +1466,14 @@
 "ask.action.fill" = "Fill field";
 "ask.tool.busy" = "다른 대화가 컴퓨터를 사용 중입니다. 완료 후 다시 시도하세요.";
 "ask.input.tooLarge" = "질문 또는 선택한 내용이 너무 깁니다. 줄인 후 보내세요.";
+
+"ask.capture.settings" = "Screenshot unavailable · Settings";
+"ask.loading" = "Loading conversation…";
+"ask.details" = "View details";
+"ask.you" = "You";
+
+"ask.today" = "Today";
+"ask.yesterday" = "Yesterday";
+"ask.earlier" = "Earlier";
+
+"ask.capture.retry" = "Screenshot failed · Retry";
