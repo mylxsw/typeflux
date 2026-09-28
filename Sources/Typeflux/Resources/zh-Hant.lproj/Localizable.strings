@@ -1477,3 +1477,14 @@
 "ask.action.fill" = "Fill field";
 "ask.tool.busy" = "另一個會話正在操作電腦，請等待結束後重試。";
 "ask.input.tooLarge" = "問題或選取內容過長，請精簡後傳送。";
+
+"ask.capture.settings" = "Screenshot unavailable · Settings";
+"ask.loading" = "Loading conversation…";
+"ask.details" = "View details";
+"ask.you" = "You";
+
+"ask.today" = "Today";
+"ask.yesterday" = "Yesterday";
+"ask.earlier" = "Earlier";
+
+"ask.capture.retry" = "Screenshot failed · Retry";

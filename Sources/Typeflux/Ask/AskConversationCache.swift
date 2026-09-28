@@ -50,29 +50,32 @@ actor AskConversationCache: AskCaching {
         try write(table: "ask_cache", id: conversation.id, owner: owner, data: AskCoding.encoder().encode(conversation))
     }
     func load(id: String, owner: String) throws -> AskConversation? {
-        try read(table: "ask_cache", id: id, owner: owner).map { try AskCoding.decoder().decode(AskConversation.self, from: $0) }
+        try [AskConversationID.canonical(id), AskConversationID.legacy(id)]
+            .compactMap { try read(table: "ask_cache", id: $0, owner: owner) }
+            .map { try AskCoding.decoder().decode(AskConversation.self, from: $0) }
+            .max { $0.revision < $1.revision }
     }
     func list(owner: String) throws -> [AskConversationSummary] {
         let statement = try prepare("SELECT data FROM ask_cache WHERE owner=?", strings: [owner])
         defer { sqlite3_finalize(statement) }
-        var result: [AskConversationSummary] = []
+        var snapshots: [String: AskConversation] = [:]
         var status = sqlite3_step(statement)
         while status == SQLITE_ROW {
             if let data = blob(statement), let c = try? AskCoding.decoder().decode(AskConversation.self, from: data) {
-                result.append(.init(id: c.id, title: c.title, updatedAt: c.updatedAt))
+                if (snapshots[c.id]?.revision ?? -1) <= c.revision { snapshots[c.id] = c }
             }
             status = sqlite3_step(statement)
         }
         guard status == SQLITE_DONE else { throw CocoaError(.fileReadUnknown) }
-        return result.sorted { $0.updatedAt > $1.updatedAt }
+        return snapshots.values.map { AskConversationSummary(id: $0.id, title: $0.title, updatedAt: $0.updatedAt) }.sorted { $0.updatedAt > $1.updatedAt }
     }
     func delete(id: String, owner: String) throws {
         try execute("BEGIN IMMEDIATE", strings: [])
         do {
-            try execute("DELETE FROM ask_tools WHERE owner=? AND id IN (SELECT id FROM ask_tool_owners WHERE owner=? AND conversation_id=?)", strings: [owner, owner, id])
-            try execute("DELETE FROM ask_tool_owners WHERE owner=? AND conversation_id=?", strings: [owner, id])
+            try execute("DELETE FROM ask_tools WHERE owner=? AND id IN (SELECT id FROM ask_tool_owners WHERE owner=? AND conversation_id IN (?,?))", strings: [owner, owner, AskConversationID.canonical(id), AskConversationID.legacy(id)])
+            try execute("DELETE FROM ask_tool_owners WHERE owner=? AND conversation_id IN (?,?)", strings: [owner, AskConversationID.canonical(id), AskConversationID.legacy(id)])
             for table in ["ask_cache", "ask_drafts"] {
-                let statement = try prepare("DELETE FROM \(table) WHERE owner=? AND id=?", strings: [owner, id])
+                let statement = try prepare("DELETE FROM \(table) WHERE owner=? AND id IN (?,?)", strings: [owner, AskConversationID.canonical(id), AskConversationID.legacy(id)])
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_step(statement) == SQLITE_DONE else { throw CocoaError(.fileWriteUnknown) }
             }
@@ -80,7 +83,7 @@ actor AskConversationCache: AskCaching {
         } catch { try? execute("ROLLBACK", strings: []); throw error }
     }
     func associateTool(id: String, conversationId: String, owner: String) throws {
-        try execute("INSERT OR IGNORE INTO ask_tool_owners(owner,id,conversation_id) VALUES(?,?,?)", strings: [owner, id, conversationId])
+        try execute("INSERT OR IGNORE INTO ask_tool_owners(owner,id,conversation_id) VALUES(?,?,?)", strings: [owner, id, AskConversationID.canonical(conversationId)])
     }
     private func execute(_ sql: String, strings: [String]) throws {
         let statement = try prepare(sql, strings: strings)
@@ -88,10 +91,12 @@ actor AskConversationCache: AskCaching {
         guard sqlite3_step(statement) == SQLITE_DONE else { throw CocoaError(.fileWriteUnknown) }
     }
     func saveDraft(_ draft: AskDraft, key: String, owner: String) throws {
-        try write(table: "ask_drafts", id: key, owner: owner, data: AskCoding.encoder().encode(draft))
+        try write(table: "ask_drafts", id: AskConversationID.canonical(key), owner: owner, data: AskCoding.encoder().encode(draft))
     }
     func draft(key: String, owner: String) throws -> AskDraft? {
-        try read(table: "ask_drafts", id: key, owner: owner).map { try AskCoding.decoder().decode(AskDraft.self, from: $0) }
+        let data = try read(table: "ask_drafts", id: AskConversationID.canonical(key), owner: owner)
+            ?? read(table: "ask_drafts", id: AskConversationID.legacy(key), owner: owner)
+        return try data.map { try AskCoding.decoder().decode(AskDraft.self, from: $0) }
     }
     func claimTool(id: String, owner: String) throws -> Bool {
         let statement = try prepare("INSERT OR IGNORE INTO ask_tools(owner,id) VALUES(?,?)", strings: [owner, id])

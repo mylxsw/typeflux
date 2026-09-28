@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import SQLite3
 import Testing
 @testable import Typeflux
 
@@ -10,6 +11,17 @@ actor AskTestAPI: AskAPI {
     var nextTool: AskToolCall?
     var failSend = false
     var failList = false
+    var listed: [AskConversationSummary]?
+    var held: Set<String> = []
+    var waiting: [String: [CheckedContinuation<Void, Never>]] = [:]
+    var failGets: Set<String> = []
+    func hold(_ id: String) { held.insert(id) }
+    func release(_ id: String) {
+        held.remove(id)
+        waiting.removeValue(forKey: id)?.forEach { $0.resume() }
+    }
+    func setListed(_ items: [AskConversationSummary]?) { listed = items }
+    func failGet(_ id: String) { failGets.insert(id) }
 
     func setTool(_ call: AskToolCall?) { nextTool = call }
     func setFailSend(_ flag: Bool) { failSend = flag }
@@ -17,10 +29,13 @@ actor AskTestAPI: AskAPI {
     func seed(_ value: AskConversation) { values[value.id] = value }
     func list(token: String, offset: Int) async throws -> [AskConversationSummary] {
         if failList { throw AskLocalError.message("Network unavailable") }
+        if let listed { return Array(listed.dropFirst(offset).prefix(50)) }
         return values.values.sorted { $0.updatedAt > $1.updatedAt }.dropFirst(offset).map { .init(id: $0.id, title: $0.title, updatedAt: $0.updatedAt) }
     }
     func conversation(id: String, token: String) async throws -> AskConversation {
+        if failGets.contains(id) { throw AskLocalError.message("Offline") }
         guard let value = values[id] else { throw AskLocalError.message("Not found") }
+        if held.contains(id) { await withCheckedContinuation { waiting[id, default: []].append($0) } }
         return value
     }
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation {
@@ -336,5 +351,198 @@ struct AskConversationTests {
         #expect(!AskLocalTools.appleScriptLiteral(input).contains("\n"))
         #expect(AskImage.decode("invalid") == nil)
         #expect(AskImage.decode("data:image/jpeg;base64,invalid") == nil)
+    }
+}
+
+@Suite("Ask navigation regressions")
+@MainActor
+struct AskNavigationTests {
+    private func conversation(_ id: String) -> AskConversation {
+        .init(id: id, title: "Same title", revision: 1, updatedAt: Date(), messages: [
+            .init(id: id + "-answer", role: "assistant", text: "Answer " + id, createdAt: Date())
+        ])
+    }
+
+    @Test func uuidSpellingIsCanonicalInListSnapshotAndOldCache() async throws {
+        let f = try AskTestFixture()
+        let upper = "AABBCCDD-1122-3344-5566-778899AABBCC"
+        let lower = upper.lowercased()
+        let value = conversation(upper)
+        #expect(value.id == lower)
+        let bytes = try AskCoding.encoder().encode(value)
+        let legacy = String(decoding: bytes, as: UTF8.self).replacingOccurrences(of: lower, with: upper)
+        let decoded = try AskCoding.decoder().decode(AskConversation.self, from: Data(legacy.utf8))
+        #expect(decoded.id == lower)
+        // Simulate a cache written by the released uppercase-ID client.
+        var db: OpaquePointer?
+        #expect(sqlite3_open(f.root.appendingPathComponent("cache.sqlite").path, &db) == SQLITE_OK)
+        defer { sqlite3_close(db) }
+        let hex = Data(legacy.utf8).map { String(format: "%02x", $0) }.joined()
+        #expect(sqlite3_exec(db, "INSERT INTO ask_cache VALUES('owner','\(upper)',X'\(hex)')", nil, nil, nil) == SQLITE_OK)
+        let draftData = try AskCoding.encoder().encode(AskDraft(text: "Legacy draft"))
+        let draftHex = draftData.map { String(format: "%02x", $0) }.joined()
+        #expect(sqlite3_exec(db, "INSERT INTO ask_drafts VALUES('owner','\(upper)',X'\(draftHex)')", nil, nil, nil) == SQLITE_OK)
+        #expect(try await f.cache.load(id: lower, owner: "owner")?.id == lower)
+        #expect(try await f.cache.draft(key: lower, owner: "owner")?.text == "Legacy draft")
+        await f.api.seed(decoded)
+        await f.api.setListed([.init(id: lower, title: "Same title", updatedAt: Date()), .init(id: upper, title: "Same title", updatedAt: Date())])
+        await f.model.refreshHistory()
+        #expect(f.model.conversations.count == 1)
+        await f.model.select(lower)
+        #expect(f.model.selectedId == lower)
+        #expect(f.model.selected?.id == lower)
+        #expect(f.model.draft.text == "Legacy draft")
+        f.model.submitDraft()
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(f.model.selected?.id == lower)
+        #expect(f.model.conversations.count == 1)
+        #expect(try await f.cache.list(owner: "owner").count == 1)
+        try await f.cache.delete(id: lower, owner: "owner")
+        #expect(try await f.cache.load(id: upper, owner: "owner") == nil)
+        #expect(try await f.cache.draft(key: upper, owner: "owner") == nil)
+    }
+
+    @Test func tenFollowUpsNeverCreateNewHistoryOrChangeIdentity() async throws {
+        let f = try AskTestFixture()
+        f.model.launcherDraft.text = "Question"; f.model.submitLauncher()
+        try await f.wait { f.model.busyIds.isEmpty }
+        let id = try #require(f.model.selectedId)
+        for index in 1...10 {
+            await f.model.refreshHistory()
+            await f.model.select(id)
+            f.model.draft.text = "Follow up \(index)"; f.model.submitDraft()
+            try await f.wait { f.model.busyIds.isEmpty }
+            #expect(f.model.selectedId == id)
+            #expect(f.model.conversations.map(\.id) == [id])
+        }
+        #expect(f.model.selected?.messages.count == 22)
+        #expect(await f.api.sends.count == 11)
+        #expect(f.tools.bound == [id])
+    }
+
+    @Test func uncachedSelectionIsImmediateAndCannotSendAsNew() async throws {
+        let f = try AskTestFixture()
+        await f.api.seed(conversation("a")); await f.api.hold("a")
+        let load = Task { await f.model.select("a") }
+        try await f.wait { f.model.isLoadingSelection }
+        #expect(f.model.selectedId == "a")
+        #expect(f.model.selected == nil)
+        f.model.draft.text = "Do not send"; f.model.submitDraft()
+        #expect(!f.model.canSend)
+        #expect(await f.api.sends.isEmpty)
+        await f.api.release("a"); await load.value
+        #expect(f.model.selected?.id == "a")
+        #expect(!f.model.isLoadingSelection)
+    }
+
+    @Test func rapidSelectionLateResponsesDoNotStealFocusOrDrafts() async throws {
+        let f = try AskTestFixture()
+        for id in ["a", "b", "c"] { await f.api.seed(conversation(id)) }
+        await f.model.select("a"); f.model.draft.text = "Draft A"
+        await f.api.hold("b")
+        let b = Task { await f.model.select("b") }
+        try await f.wait { f.model.selectedId == "b" }
+        await f.model.select("c"); f.model.draft.text = "Draft C"
+        await f.api.release("b"); await b.value
+        #expect(f.model.selectedId == "c")
+        #expect(f.model.selected?.id == "c")
+        #expect(f.model.draft.text == "Draft C")
+        await f.model.select("a")
+        #expect(f.model.draft.text == "Draft A")
+        await f.model.select("c")
+        #expect(f.model.draft.text == "Draft C")
+    }
+
+    @Test func failedCacheMissKeepsTargetAndBlocksAccidentalNewConversation() async throws {
+        let f = try AskTestFixture()
+        await f.api.failGet("offline")
+        await f.model.select("offline")
+        #expect(f.model.selectedId == "offline")
+        #expect(f.model.error != nil)
+        #expect(!f.model.isLoadingSelection)
+        f.model.draft.text = "Question"; f.model.submitDraft()
+        #expect(await f.api.sends.isEmpty)
+        f.model.newConversation()
+        #expect(f.model.selectedId == nil)
+    }
+
+    @Test func backgroundToolCompletionKeepsOtherConversationAndListPosition() async throws {
+        let f = try AskTestFixture()
+        await f.api.setTool(.init(id: "read", function: .init(name: "browser", arguments: #"{"action":"read"}"#)))
+        f.model.launcherDraft.text = "A"; f.model.submitLauncher()
+        try await f.wait { !f.model.pendingApprovals.isEmpty }
+        let a = try #require(f.model.selectedId)
+        await f.api.seed(conversation("b")); await f.model.refreshHistory(); await f.model.select("b")
+        let order = f.model.conversations.map(\.id)
+        f.model.draft.text = "Draft B"
+        f.model.approve(conversationId: a, allowed: false)
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(f.model.selectedId == "b")
+        #expect(f.model.selected?.id == "b")
+        #expect(f.model.draft.text == "Draft B")
+        #expect(f.model.conversations.map(\.id) == order)
+        #expect(try await f.cache.load(id: a, owner: "owner")?.run?.status == "completed")
+    }
+
+    @Test func cachedSelectionKeepsContentWhileRefreshingAndRetryKeepsIdentity() async throws {
+        let f = try AskTestFixture()
+        for id in ["a", "b"] { await f.api.seed(conversation(id)) }
+        await f.model.select("a"); await f.model.select("b")
+        await f.api.hold("a")
+        let load = Task { await f.model.select("a") }
+        try await f.wait { f.model.selectedId == "a" }
+        #expect(f.model.selected?.id == "a")
+        #expect(f.model.isLoadingSelection)
+        await f.api.release("a"); await load.value
+        await f.api.failGet("a")
+        await f.model.select("a", reload: true)
+        #expect(f.model.selected?.id == "a")
+        #expect(f.model.selectionLoadFailed)
+        f.model.retrySelection()
+        try await f.wait { !f.model.isLoadingSelection && f.model.selectionLoadFailed }
+        #expect(f.model.selectedId == "a")
+        #expect(await f.api.sends.isEmpty)
+    }
+
+    @Test func lateSnapshotCannotReplaceNewerCachedRevision() async throws {
+        let f = try AskTestFixture()
+        var value = conversation("a")
+        await f.api.seed(value); await f.api.hold("a")
+        let load = Task { await f.model.select("a") }
+        for _ in 0..<1000 {
+            if await f.api.waiting["a"]?.isEmpty == false { break }
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        value.revision = 10; value.title = "Latest answer"
+        try await f.cache.save(value, owner: "owner")
+        await f.api.release("a"); await load.value
+        #expect(f.model.selected?.revision == 10)
+        #expect(f.model.selected?.title == "Latest answer")
+    }
+
+    @Test func loadingDoesNotOverwriteAnExistingPersistedDraft() async throws {
+        let f = try AskTestFixture()
+        await f.api.seed(conversation("a")); await f.api.hold("a")
+        try await f.cache.saveDraft(.init(text: "Saved draft", selection: "Context"), key: "a", owner: "owner")
+        let load = Task { await f.model.select("a") }
+        try await f.wait { f.model.isLoadingSelection }
+        f.model.persistDrafts()
+        try await Task.sleep(for: .milliseconds(350))
+        #expect(try await f.cache.draft(key: "a", owner: "owner")?.text == "Saved draft")
+        await f.api.release("a"); await load.value
+        #expect(f.model.draft.text == "Saved draft")
+        #expect(f.model.draft.selection == "Context")
+    }
+
+    @Test func sameTitlesRemainDistinctAndOverlappingPagesAreUnique() async throws {
+        let f = try AskTestFixture()
+        let rows = (0..<60).map { AskConversationSummary(id: "id-\($0)", title: "Same title", updatedAt: Date()) }
+        await f.api.setListed(Array(rows.prefix(50)) + Array(rows[40..<60]))
+        await f.model.refreshHistory()
+        #expect(f.model.conversations.count == 50)
+        #expect(f.model.historyHasMore)
+        await f.model.refreshHistory(loadMore: true)
+        #expect(f.model.conversations.count == 60)
+        #expect(!f.model.historyHasMore)
     }
 }

@@ -7,6 +7,14 @@ final class AskConversationModel: ObservableObject {
     @Published var draft = AskDraft.followUp
     @Published private(set) var conversations: [AskConversationSummary] = []
     @Published private(set) var selected: AskConversation?
+    @Published private(set) var selectedId: String?
+    @Published private(set) var isLoadingSelection = false
+    @Published private(set) var selectionLoadFailed = false
+    private var snapshots: [String: AskConversation] = [:]
+    var transcriptPositions: [String: String] = [:]
+    private var drafts: [String: AskDraft] = [:]
+    private var historyGeneration = UUID()
+    private var historyOffset = 0
     @Published private(set) var pendingApprovals: [String: AskToolCall] = [:]
     @Published private(set) var busyIds: Set<String> = []
     @Published private(set) var capturing = false
@@ -29,6 +37,7 @@ final class AskConversationModel: ObservableObject {
     private var operations: [String: Task<Void, Never>] = [:]
     private var operationIds: [String: UUID] = [:]
     private var approvals: [String: CheckedContinuation<Bool, Never>] = [:]
+    private var operationErrors: [String: String] = [:]
     private var pendingSends: [String: AskSendRequest] = [:]
     private var captureGeneration = UUID()
     private var selectionGeneration = UUID()
@@ -46,7 +55,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     var isBusy: Bool { selected.map { busyIds.contains($0.id) || $0.run?.isActive == true } ?? false }
-    var canSend: Bool { draft.canSend && !isBusy && (selected.map { pendingSends[$0.id] == nil && !($0.run == nil && $0.messages.last?.role == "user") } ?? true) && !capturing && !recordingIsActive() }
+    var canSend: Bool { !isLoadingSelection && (selectedId == nil || selected != nil) && draft.canSend && !isBusy && (selected.map { pendingSends[$0.id] == nil && !($0.run == nil && $0.messages.last?.role == "user") } ?? true) && !capturing && !recordingIsActive() }
     var canSendLauncher: Bool { launcherDraft.canSend && !capturing && !recordingIsActive() }
 
     private func credentials() -> (owner: String, token: String)? {
@@ -58,9 +67,12 @@ final class AskConversationModel: ObservableObject {
     func resetSession() {
         operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]
         approvals.values.forEach { $0.resume(returning: false) }; approvals = [:]
-        pendingApprovals = [:]; busyIds = []; pendingSends = [:]
+        pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
         draftSave?.cancel(); captureGeneration = UUID(); selectionGeneration = UUID()
-        selected = nil; conversations = []; launcherDraft = AskDraft(); draft = .followUp
+        selected = nil; selectedId = nil; isLoadingSelection = false; selectionLoadFailed = false
+        snapshots = [:]; drafts = [:]; transcriptPositions = [:]
+        historyGeneration = UUID(); historyOffset = 0; conversations = []
+        launcherDraft = AskDraft(); draft = .followUp
         capturing = false; controllingConversationId = nil; onControlChanged?(false); owner = ""
     }
 
@@ -99,7 +111,8 @@ final class AskConversationModel: ObservableObject {
 
     func persistDrafts() {
         draftSave?.cancel()
-        let launcher = launcherDraft, followUp = draft, id = selected?.id, owner = owner
+        let launcher = launcherDraft, followUp = draft, id = isLoadingSelection ? nil : selectedId, owner = owner
+        if let id, !isLoadingSelection { drafts[id] = followUp }
         draftSave = Task { [cache] in
             do {
                 try await Task.sleep(for: .milliseconds(300))
@@ -111,40 +124,88 @@ final class AskConversationModel: ObservableObject {
 
     func refreshHistory(loadMore: Bool = false) async {
         guard let current = credentials() else { return }
+        let generation = UUID(); historyGeneration = generation
         if !loadMore, conversations.isEmpty {
             let cached = (try? await cache.list(owner: current.owner)) ?? []
-            guard owner == current.owner else { return }
-            conversations = cached
+            guard owner == current.owner, generation == historyGeneration else { return }
+            conversations = Self.unique(cached)
         }
         do {
-            let items = try await api.list(token: current.token, offset: loadMore ? conversations.count : 0)
-            guard owner == current.owner else { return }
-            conversations = loadMore ? conversations + items.filter { item in !conversations.contains { $0.id == item.id } } : items
+            let offset = loadMore ? historyOffset : 0
+            let items = try await api.list(token: current.token, offset: offset)
+            guard owner == current.owner, generation == historyGeneration else { return }
+            // Retain row positions while reading. Polling must never remove and
+            // reinsert the selected row, and pagination uses server rows, not UI count.
+            let incoming = Self.unique(items)
+            let byId = Dictionary(uniqueKeysWithValues: incoming.map { ($0.id, $0) })
+            var merged = conversations.compactMap { item -> AskConversationSummary? in
+                if let updated = byId[item.id] { return updated.updatedAt >= item.updatedAt ? updated : item }
+                return loadMore || busyIds.contains(item.id) || pendingSends[item.id] != nil || selectedId == item.id ? item : nil
+            }
+            let existing = Set(merged.map(\.id))
+            merged.append(contentsOf: incoming.filter { !existing.contains($0.id) })
+            conversations = Self.unique(merged)
+            historyOffset = offset + items.count
             historyHasMore = items.count == 50
-        } catch { if owner == current.owner { self.error = error.localizedDescription } }
+        } catch { if owner == current.owner, generation == historyGeneration { self.error = error.localizedDescription } }
     }
 
-    func select(_ id: String) async {
+    private static func unique(_ items: [AskConversationSummary]) -> [AskConversationSummary] {
+        var result: [AskConversationSummary] = []
+        for item in items {
+            if let index = result.firstIndex(where: { $0.id == item.id }) {
+                if result[index].updatedAt < item.updatedAt { result[index] = item }
+            } else { result.append(item) }
+        }
+        return result
+    }
+
+    func select(_ rawId: String, reload: Bool = false) async {
         guard let current = credentials() else { return }
+        let id = AskConversationID.canonical(rawId)
+        if selectedId == id, isLoadingSelection || (!reload && selected != nil && !selectionLoadFailed) { return }
         let generation = UUID(); selectionGeneration = generation
-        if let old = selected { try? await cache.saveDraft(draft, key: old.id, owner: current.owner) }
+        let oldId = selectedId, oldDraft = draft
+        if let oldId, !isLoadingSelection { drafts[oldId] = oldDraft }
+        // Commit navigation synchronously, before the first cache/network await.
+        selectedId = id; selected = snapshots[id]; isLoadingSelection = true; selectionLoadFailed = false
+        draft = drafts[id] ?? .followUp; error = nil; captureWarning = nil
+        captureGeneration = UUID(); capturing = false
+        if let oldId, let saved = drafts[oldId] { try? await cache.saveDraft(saved, key: oldId, owner: current.owner) }
         let cached = try? await cache.load(id: id, owner: current.owner)
         let savedDraft = try? await cache.draft(key: id, owner: current.owner)
         guard generation == selectionGeneration, owner == current.owner else { return }
-        selected = cached
-        draft = savedDraft ?? .followUp
+        if let cached, (selected?.revision ?? -1) <= cached.revision { selected = cached; snapshots[id] = cached }
+        draft = drafts[id] ?? savedDraft ?? .followUp
         do {
             let value = try await api.conversation(id: id, token: current.token)
-            guard generation == selectionGeneration, owner == current.owner else { return }
-            selected = value
-            try await cache.save(value, owner: current.owner)
-            // Resuming requires a deliberate user action so reconnect never
-            // silently approves or replays a desktop operation.
-        } catch { if generation == selectionGeneration { self.error = error.localizedDescription } }
+            guard owner == current.owner else { return }
+            let hasUnconfirmedMessage = pendingSends[id].map { pending in !value.messages.contains { $0.id == pending.id } } ?? false
+            if !hasUnconfirmedMessage { try await cache.save(value, owner: current.owner) }
+            let latest = try await cache.load(id: id, owner: current.owner) ?? value
+            guard owner == current.owner else { return }
+            if (snapshots[id]?.revision ?? -1) <= latest.revision { snapshots[id] = latest }
+            guard generation == selectionGeneration else { return }
+            selected = latest; isLoadingSelection = false; error = operationErrors[id]
+            // Loading a conversation never resumes desktop tools automatically.
+        } catch {
+            if generation == selectionGeneration, owner == current.owner {
+                isLoadingSelection = false; selectionLoadFailed = true; self.error = error.localizedDescription
+            }
+        }
+    }
+
+    func retrySelection() {
+        guard let id = selectedId else { return }
+        Task { await select(id, reload: true) }
     }
 
     func newConversation() {
-        persistDrafts(); selectionGeneration = UUID(); selected = nil; draft = AskDraft(); error = nil; captureWarning = nil
+        persistDrafts()
+        selectionGeneration = UUID(); selected = nil; selectedId = nil
+        isLoadingSelection = false; selectionLoadFailed = false
+        captureGeneration = UUID(); capturing = false
+        draft = AskDraft(); error = nil; captureWarning = nil
     }
 
     func submitLauncher() {
@@ -153,7 +214,7 @@ final class AskConversationModel: ObservableObject {
     }
     func submitDraft() {
         guard canSend else { return }
-        submit(draft, newConversation: selected == nil)
+        submit(draft, newConversation: selectedId == nil)
     }
 
     private func submit(_ submitted: AskDraft, newConversation: Bool) {
@@ -163,16 +224,18 @@ final class AskConversationModel: ObservableObject {
         }
         guard let current = credentials() else { return }
         guard newConversation || selected != nil else { return }
-        let id = newConversation ? UUID().uuidString : selected!.id
+        let id = newConversation ? UUID().uuidString.lowercased() : selected!.id
         guard !busyIds.contains(id) else { return }
-        error = nil; busyIds.insert(id)
+        error = nil; operationErrors[id] = nil; busyIds.insert(id)
         if newConversation { tools.bindConversation(id) }
         var value = newConversation ? AskConversation(id: id, title: String(submitted.text.prefix(50)), revision: 0, updatedAt: Date(), messages: []) : selected!
         let messageId = UUID().uuidString
         let request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
         pendingSends[id] = request
         value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date()))
-        selected = value; selectionGeneration = UUID(); draft = .followUp
+        selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID(); draft = .followUp
+        snapshots[id] = value; selectionLoadFailed = false
+        updateSummary(value)
         if newConversation { launcherDraft = AskDraft() }
         onShowConversation?(); persistDrafts()
         let operationId = UUID(); operationIds[id] = operationId
@@ -190,14 +253,14 @@ final class AskConversationModel: ObservableObject {
                 let response = try await api.send(conversationId: id, request: request, token: current.token)
                 pendingSends[id] = nil
                 try await drive(response, current: current)
-            } catch is CancellationError {} catch { if owner == current.owner { self.error = error.localizedDescription } }
+            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.owner) }
         }
     }
 
     func resume() {
         guard let current = credentials(), let value = selected, !busyIds.contains(value.id) else { return }
         let id = value.id
-        busyIds.insert(id); error = nil
+        busyIds.insert(id); error = nil; operationErrors[id] = nil
         let operationId = UUID(); operationIds[id] = operationId
         operations[id] = Task { [weak self] in
             guard let self else { return }; defer { finishOperation(id, operationId: operationId) }
@@ -220,7 +283,7 @@ final class AskConversationModel: ObservableObject {
                     response = try await api.conversation(id: id, token: current.token)
                 }
                 try await drive(response, current: current)
-            } catch is CancellationError {} catch { if owner == current.owner { self.error = error.localizedDescription } }
+            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.owner) }
         }
     }
 
@@ -229,9 +292,18 @@ final class AskConversationModel: ObservableObject {
         guard owner == expectedOwner else { throw CancellationError() }
         try await cache.save(value, owner: expectedOwner)
         guard owner == expectedOwner else { throw CancellationError() }
+        if (snapshots[value.id]?.revision ?? -1) <= value.revision { snapshots[value.id] = value }
         if selected?.id == value.id, (selected?.revision ?? -1) <= value.revision { selected = value }
-        conversations.removeAll { $0.id == value.id }
-        conversations.insert(.init(id: value.id, title: value.title, updatedAt: value.updatedAt), at: 0)
+        updateSummary(value)
+    }
+
+    private func updateSummary(_ value: AskConversation) {
+        let summary = AskConversationSummary(id: value.id, title: value.title, updatedAt: value.updatedAt)
+        if let index = conversations.firstIndex(where: { $0.id == value.id }) {
+            if conversations[index] != summary, conversations[index].updatedAt <= summary.updatedAt {
+                conversations[index] = summary
+            }
+        } else { conversations.insert(summary, at: 0) }
     }
 
     private func drive(_ initial: AskConversation, current: (owner: String, token: String)) async throws {
@@ -301,7 +373,7 @@ final class AskConversationModel: ObservableObject {
                 let stopped = try await api.cancel(conversationId: id, runId: run.id, token: current.token)
                 if owner == current.owner { pendingSends[id] = nil }
                 try await accept(stopped, owner: current.owner)
-            } catch { if owner == current.owner { self.error = error.localizedDescription } }
+            } catch { reportOperationError(error, id: id, owner: current.owner) }
         }
     }
 
@@ -312,8 +384,15 @@ final class AskConversationModel: ObservableObject {
             try await cache.delete(id: id, owner: current.owner)
             guard owner == current.owner else { return }
             conversations.removeAll { $0.id == id }
-            if selected?.id == id { newConversation() }
+            drafts[id] = nil; snapshots[id] = nil; operationErrors[id] = nil; transcriptPositions[id] = nil
+            if selectedId == id { selectedId = nil; newConversation() }
         } catch { self.error = error.localizedDescription }
+    }
+
+    private func reportOperationError(_ error: Error, id: String, owner expectedOwner: String) {
+        guard owner == expectedOwner else { return }
+        operationErrors[id] = error.localizedDescription
+        if selectedId == id { self.error = error.localizedDescription }
     }
 
     private func finishOperation(_ id: String, operationId: UUID) {

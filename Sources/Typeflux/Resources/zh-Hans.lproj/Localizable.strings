@@ -1480,3 +1480,14 @@
 "ask.action.fill" = "填写内容";
 "ask.tool.busy" = "另一个会话正在操作电脑，请等待结束后重试。";
 "ask.input.tooLarge" = "问题或选中内容过长，请精简后发送。";
+
+"ask.capture.settings" = "截图未授权 · 去设置";
+"ask.loading" = "正在加载对话…";
+"ask.details" = "查看详情";
+"ask.you" = "你";
+
+"ask.today" = "今天";
+"ask.yesterday" = "昨天";
+"ask.earlier" = "更早";
+
+"ask.capture.retry" = "截图失败 · 重试";

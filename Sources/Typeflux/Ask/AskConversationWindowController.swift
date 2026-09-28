@@ -1,5 +1,4 @@
 import AppKit
-import Combine
 import SwiftUI
 
 @MainActor
@@ -8,12 +7,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private let settings: SettingsStore
     private let tools: AskLocalTools?
     private var launcher: AskFloatingPanel?
+    private var launcherHeight: CGFloat = 100
     private var conversationWindow: NSWindow?
     private var controlPanel: AskFloatingPanel?
     private var launchTask: Task<Void, Never>?
     private var clickMonitor: Any?
     private var localClickMonitor: Any?
-    private var noticeObservation: AnyCancellable?
     var onVoice: () -> Void = {}
 
     init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry) throws {
@@ -40,14 +39,6 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 
     private func bindCallbacks() {
-        noticeObservation = model.$error.combineLatest(model.$captureWarning).sink { [weak self] error, warning in
-            guard let panel = self?.launcher, panel.isVisible else { return }
-            var frame = panel.frame
-            let height: CGFloat = error == nil && warning == nil ? 192 : 230
-            frame.origin.y -= (height - frame.height) / 2
-            frame.size.height = height
-            panel.setFrame(frame, display: true)
-        }
         model.onShowConversation = { [weak self] in self?.dismissLauncher(); self?.showConversation() }
         model.onControlChanged = { [weak self] active in self?.showControl(active) }
     }
@@ -64,21 +55,21 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             await model.prepareLauncher()
             guard !Task.isCancelled else { return }
             if launcher == nil {
-                let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: 760, height: 192), styleMask: [.borderless], backing: .buffered, defer: false)
+                let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: 640, height: 100), styleMask: [.borderless], backing: .buffered, defer: false)
                 panel.level = .floating
                 panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
                 panel.isMovableByWindowBackground = false
                 panel.hidesOnDeactivate = false
                 panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
                 panel.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.ask-launcher")
-                panel.contentView = NSHostingView(rootView: AskLauncherView(model: model, onVoice: { [weak self] in self?.startVoiceInput() }, onDismiss: { [weak self] in self?.dismissLauncher() }))
+                panel.contentView = NSHostingView(rootView: AskLauncherView(model: model, onVoice: { [weak self] in self?.startVoiceInput() }, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }))
                 launcher = panel
             }
             applyAppearance(launcher)
             let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
             if let frame = screen?.visibleFrame {
-                let width = min(760, frame.width - 40)
-                let height: CGFloat = model.captureWarning == nil && model.error == nil ? 192 : 230
+                let width = min(640, frame.width - 40)
+                let height = launcherHeight
                 launcher?.setFrame(NSRect(x: frame.midX - width / 2, y: frame.midY - height / 2, width: width, height: height), display: true)
             }
             NSApp.activate(ignoringOtherApps: true)
@@ -86,6 +77,15 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             focusEditor(in: launcher)
             installClickMonitors()
         }
+    }
+
+    private func resizeLauncher(height: CGFloat) {
+        launcherHeight = height
+        guard let launcher, abs(launcher.frame.height - height) > 1 else { return }
+        var frame = launcher.frame
+        frame.origin.y -= height - frame.height
+        frame.size.height = height
+        launcher.setFrame(frame, display: true)
     }
 
     func dismissLauncher() {
@@ -98,9 +98,10 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     func showConversation() {
         if conversationWindow == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1040, height: 740), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 740), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
             window.title = L("workflow.ask.answerTitle")
             window.titlebarAppearsTransparent = true
+            window.titleVisibility = .hidden
             window.isReleasedWhenClosed = false
             window.minSize = NSSize(width: 760, height: 560)
             window.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.ask-conversations")

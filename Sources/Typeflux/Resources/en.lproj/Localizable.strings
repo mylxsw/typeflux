@@ -1480,3 +1480,14 @@
 "ask.action.fill" = "Fill field";
 "ask.tool.busy" = "Another conversation is using the desktop. Wait for it to finish before retrying.";
 "ask.input.tooLarge" = "The question or selected context is too long. Shorten it before sending.";
+
+"ask.capture.settings" = "Screenshot unavailable · Settings";
+"ask.loading" = "Loading conversation…";
+"ask.details" = "View details";
+"ask.you" = "You";
+
+"ask.today" = "Today";
+"ask.yesterday" = "Yesterday";
+"ask.earlier" = "Earlier";
+
+"ask.capture.retry" = "Screenshot failed · Retry";
