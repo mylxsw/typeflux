@@ -64,6 +64,7 @@ struct AskComposer: View {
                 if draft.wrappedValue.text.isEmpty {
                     Text(L(launcher ? "ask.input.placeholder" : "ask.followup.placeholder"))
                         .foregroundStyle(.secondary).padding(.leading, 5).padding(.top, 4)
+                        .allowsHitTesting(false)
                 }
                 AskComposerTextView(text: draft.text, placeholder: L("ask.input.placeholder"), voice: voice, contextID: contextID, onSubmit: submit, onDismiss: onDismiss, onHeightChange: { editorHeight = $0 })
                     .frame(height: editorHeight)
@@ -452,7 +453,8 @@ private struct AskVoiceBorder: ViewModifier {
     private var active: Bool { voice.context == context && voice.isActive }
     func body(content: Content) -> some View {
         content.overlay(RoundedRectangle(cornerRadius: radius)
-            .stroke(listening ? AskTheme.accent : active || voice.focusedContext == context ? AskTheme.accent.opacity(0.4) : StudioTheme.border, lineWidth: listening ? 1.5 : 1))
+            .stroke(listening ? AskTheme.accent : active || voice.focusedContext == context ? AskTheme.accent.opacity(0.4) : StudioTheme.border, lineWidth: listening ? 1.5 : 1)
+            .allowsHitTesting(false))
             .shadow(color: AskTheme.accent.opacity(listening ? 0.22 : 0), radius: 5)
     }
 }

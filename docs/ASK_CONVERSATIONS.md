@@ -199,3 +199,31 @@ The existing window/visual suite also passes; screenshots above were regenerated
 Full regression: all 133 Swift Testing tests passed; 2673 XCTest cases retain the
 same four previously documented workflow failures (8 assertions), with no new
 failing cases. The targeted opacity/native-render run passed all four tests.
+
+## Composer focus and mouse delivery (2026-09-29)
+
+A hidden launcher still retains its native first responder. Previously, both
+editors reconciled that responder into the shared `focusedContext` during every
+SwiftUI update, even when their window was inactive. This produced a feedback
+loop and a flashing focus outline. Only the key window now publishes focus;
+window activation/deactivation transfers or clears it, and queued publications
+recheck ownership before changing observable state. Decorative outlines and
+placeholder text explicitly pass mouse hits through to the native editor.
+
+`AskComposerInteractionTests` hosts the production launcher and workspace and
+sends mouse-down/up through `NSWindow.sendEvent`. It covers a hidden launcher's
+retained first responder, switching back to that launcher, stable idle layout,
+recording across SwiftUI updates, release-to-transcribe and draft insertion with
+no automatic submission. The regression failed against the previous source:
+254 focus publications in 300 ms and stale focus when returning to the launcher.
+The fixed version produces no idle publications and passes both editor flows.
+
+These event tests use a controlled key-window state and a fake recorder/STT
+service. They validate native gesture delivery and UI integration, not physical
+microphone capture, TCC permissions or a live transcription provider. Holding
+for 350 ms starts recording; release starts transcription and only fills the
+original draft. Actual signed-app microphone acceptance remains manual.
+
+Validation: all 136 Swift Testing tests passed, including native visual snapshots
+and the three new interaction regressions. The 2673 XCTest cases retain the same
+four previously documented workflow failures (8 assertions); no new cases failed.
