@@ -35,6 +35,10 @@ final class DIContainer {
     let cloudLoginSyncCoordinator: CloudLoginSyncCoordinator
     let cloudDataSyncCoordinator: CloudDataSyncCoordinator
     let outputPostProcessor: OutputPostProcessing
+    lazy var askConversationWindowController: AskConversationWindowController? = {
+        do { return try AskConversationWindowController(settings: settingsStore, injector: textInjector, registry: mcpRegistry) }
+        catch { ErrorLogStore.shared.log("Ask conversation storage could not be initialized: \(error.localizedDescription)"); return nil }
+    }()
 
     // swiftlint:disable:next function_body_length
     init() {

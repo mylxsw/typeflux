@@ -9,6 +9,7 @@ struct RecordingStartupContext: Sendable, Equatable {
 }
 
 final class WorkflowController {
+    var onAskRequested: (() -> Void)?
     let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "WorkflowController")
     static let recordingTimeoutNanoseconds: UInt64 = 600_000_000_000 // 10 minutes
     /// Last-resort protection while transcription finishes after recording.
@@ -393,6 +394,11 @@ final class WorkflowController {
             self?.cancelRecording()
         }
         hotkeyService.onAskPressBegan = { [weak self] context in
+            if let self, let onAskRequested = self.onAskRequested {
+                self.cancelRecording()
+                onAskRequested()
+                return
+            }
             self?.handlePressBegan(
                 intent: .askSelection,
                 startLocked: true,

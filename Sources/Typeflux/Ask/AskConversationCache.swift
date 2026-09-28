@@ -1,0 +1,136 @@
+import Foundation
+import SQLite3
+
+protocol AskCaching: Sendable {
+    func save(_ conversation: AskConversation, owner: String) async throws
+    func load(id: String, owner: String) async throws -> AskConversation?
+    func list(owner: String) async throws -> [AskConversationSummary]
+    func delete(id: String, owner: String) async throws
+    func saveDraft(_ draft: AskDraft, key: String, owner: String) async throws
+    func draft(key: String, owner: String) async throws -> AskDraft?
+    func associateTool(id: String, conversationId: String, owner: String) async throws
+    func claimTool(id: String, owner: String) async throws -> Bool
+    func saveToolResult(_ result: AskToolResultRequest, owner: String) async throws
+    func toolResult(id: String, owner: String) async throws -> AskToolResultRequest?
+}
+
+/// Actor isolation serializes access to this connection, including the local
+/// execution journal. A claimed tool is never automatically executed twice.
+actor AskConversationCache: AskCaching {
+    private var db: OpaquePointer?
+
+    init(url: URL) throws {
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        guard sqlite3_open(url.path, &db) == SQLITE_OK else {
+            if let db { sqlite3_close(db) }
+            throw CocoaError(.fileWriteUnknown)
+        }
+        let schema = """
+        PRAGMA journal_mode=WAL;
+        CREATE TABLE IF NOT EXISTS ask_cache(owner TEXT NOT NULL,id TEXT NOT NULL,data BLOB NOT NULL,PRIMARY KEY(owner,id));
+        CREATE TABLE IF NOT EXISTS ask_drafts(owner TEXT NOT NULL,id TEXT NOT NULL,data BLOB NOT NULL,PRIMARY KEY(owner,id));
+        CREATE TABLE IF NOT EXISTS ask_tool_owners(owner TEXT NOT NULL,id TEXT NOT NULL,conversation_id TEXT NOT NULL,PRIMARY KEY(owner,id));
+        CREATE TABLE IF NOT EXISTS ask_tools(owner TEXT NOT NULL,id TEXT NOT NULL,data BLOB,PRIMARY KEY(owner,id));
+        """
+        guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
+            sqlite3_close(db); db = nil
+            throw CocoaError(.fileWriteUnknown)
+        }
+    }
+
+    deinit { if let db { sqlite3_close(db) } }
+
+    static func defaultURL() -> URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Typeflux/ask_conversations.sqlite")
+    }
+
+    func save(_ conversation: AskConversation, owner: String) throws {
+        if let stored = try load(id: conversation.id, owner: owner), stored.revision > conversation.revision { return }
+        try write(table: "ask_cache", id: conversation.id, owner: owner, data: AskCoding.encoder().encode(conversation))
+    }
+    func load(id: String, owner: String) throws -> AskConversation? {
+        try read(table: "ask_cache", id: id, owner: owner).map { try AskCoding.decoder().decode(AskConversation.self, from: $0) }
+    }
+    func list(owner: String) throws -> [AskConversationSummary] {
+        let statement = try prepare("SELECT data FROM ask_cache WHERE owner=?", strings: [owner])
+        defer { sqlite3_finalize(statement) }
+        var result: [AskConversationSummary] = []
+        var status = sqlite3_step(statement)
+        while status == SQLITE_ROW {
+            if let data = blob(statement), let c = try? AskCoding.decoder().decode(AskConversation.self, from: data) {
+                result.append(.init(id: c.id, title: c.title, updatedAt: c.updatedAt))
+            }
+            status = sqlite3_step(statement)
+        }
+        guard status == SQLITE_DONE else { throw CocoaError(.fileReadUnknown) }
+        return result.sorted { $0.updatedAt > $1.updatedAt }
+    }
+    func delete(id: String, owner: String) throws {
+        try execute("BEGIN IMMEDIATE", strings: [])
+        do {
+            try execute("DELETE FROM ask_tools WHERE owner=? AND id IN (SELECT id FROM ask_tool_owners WHERE owner=? AND conversation_id=?)", strings: [owner, owner, id])
+            try execute("DELETE FROM ask_tool_owners WHERE owner=? AND conversation_id=?", strings: [owner, id])
+            for table in ["ask_cache", "ask_drafts"] {
+                let statement = try prepare("DELETE FROM \(table) WHERE owner=? AND id=?", strings: [owner, id])
+                defer { sqlite3_finalize(statement) }
+                guard sqlite3_step(statement) == SQLITE_DONE else { throw CocoaError(.fileWriteUnknown) }
+            }
+            try execute("COMMIT", strings: [])
+        } catch { try? execute("ROLLBACK", strings: []); throw error }
+    }
+    func associateTool(id: String, conversationId: String, owner: String) throws {
+        try execute("INSERT OR IGNORE INTO ask_tool_owners(owner,id,conversation_id) VALUES(?,?,?)", strings: [owner, id, conversationId])
+    }
+    private func execute(_ sql: String, strings: [String]) throws {
+        let statement = try prepare(sql, strings: strings)
+        defer { sqlite3_finalize(statement) }
+        guard sqlite3_step(statement) == SQLITE_DONE else { throw CocoaError(.fileWriteUnknown) }
+    }
+    func saveDraft(_ draft: AskDraft, key: String, owner: String) throws {
+        try write(table: "ask_drafts", id: key, owner: owner, data: AskCoding.encoder().encode(draft))
+    }
+    func draft(key: String, owner: String) throws -> AskDraft? {
+        try read(table: "ask_drafts", id: key, owner: owner).map { try AskCoding.decoder().decode(AskDraft.self, from: $0) }
+    }
+    func claimTool(id: String, owner: String) throws -> Bool {
+        let statement = try prepare("INSERT OR IGNORE INTO ask_tools(owner,id) VALUES(?,?)", strings: [owner, id])
+        defer { sqlite3_finalize(statement) }
+        guard sqlite3_step(statement) == SQLITE_DONE else { throw CocoaError(.fileWriteUnknown) }
+        return sqlite3_changes(db) == 1
+    }
+    func saveToolResult(_ result: AskToolResultRequest, owner: String) throws {
+        try write(table: "ask_tools", id: result.runId + "/" + result.toolCallId, owner: owner, data: AskCoding.encoder().encode(result))
+    }
+    func toolResult(id: String, owner: String) throws -> AskToolResultRequest? {
+        try read(table: "ask_tools", id: id, owner: owner).map { try AskCoding.decoder().decode(AskToolResultRequest.self, from: $0) }
+    }
+
+    private func prepare(_ sql: String, strings: [String]) throws -> OpaquePointer {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else { throw CocoaError(.fileReadUnknown) }
+        let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+        for (index, value) in strings.enumerated() { sqlite3_bind_text(statement, Int32(index + 1), value, -1, transient) }
+        return statement
+    }
+    private func write(table: String, id: String, owner: String, data: Data) throws {
+        let statement = try prepare("INSERT INTO \(table)(owner,id,data) VALUES(?,?,?) ON CONFLICT(owner,id) DO UPDATE SET data=excluded.data", strings: [owner, id])
+        defer { sqlite3_finalize(statement) }
+        let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+        _ = data.withUnsafeBytes { sqlite3_bind_blob(statement, 3, $0.baseAddress, Int32(data.count), transient) }
+        guard sqlite3_step(statement) == SQLITE_DONE else { throw CocoaError(.fileWriteUnknown) }
+    }
+    private func read(table: String, id: String, owner: String) throws -> Data? {
+        let statement = try prepare("SELECT data FROM \(table) WHERE owner=? AND id=?", strings: [owner, id])
+        defer { sqlite3_finalize(statement) }
+        switch sqlite3_step(statement) {
+        case SQLITE_ROW: return blob(statement)
+        case SQLITE_DONE: return nil
+        default: throw CocoaError(.fileReadUnknown)
+        }
+    }
+    private func blob(_ statement: OpaquePointer) -> Data? {
+        guard let pointer = sqlite3_column_blob(statement, 0) else { return nil }
+        return Data(bytes: pointer, count: Int(sqlite3_column_bytes(statement, 0)))
+    }
+}

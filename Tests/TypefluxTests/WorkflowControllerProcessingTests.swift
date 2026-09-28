@@ -16,6 +16,21 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         super.tearDown()
     }
 
+    func testAskShortcutOpensComposerWithoutStartingRecording() async {
+        let hotkeys = MockProcessingHotkeyService()
+        let recorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(hotkeyService: hotkeys, audioRecorder: recorder)
+        var opened = 0
+        controller.onAskRequested = { opened += 1 }
+        controller.start()
+        hotkeys.onAskPressBegan?(HotkeyEventContext())
+        hotkeys.onAskPressEnded?()
+        await waitForMainActorWork()
+        XCTAssertEqual(opened, 1)
+        XCTAssertFalse(controller.isRecording)
+        XCTAssertFalse(controller.isAudioRecorderStarted)
+    }
+
     func testDictationUsesCurrentInputEvenWhenOriginalTargetWasReadOnly() async {
         let injector = MockProcessingTextInjector()
         let history = MockProcessingHistoryStore()

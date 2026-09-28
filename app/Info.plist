@@ -29,7 +29,7 @@
     <key>NSMicrophoneUsageDescription</key>
     <string>Typeflux needs microphone access to record your speech.</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Typeflux uses browser automation to read the active web editor context for better text insertion.</string>
+    <string>Typeflux uses browser automation for text insertion and browser actions that you approve in Ask conversations.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>Typeflux uses speech recognition to transcribe audio when Apple Speech fallback is enabled.</string>
 

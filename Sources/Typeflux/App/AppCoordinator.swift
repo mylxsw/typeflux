@@ -116,6 +116,19 @@ final class AppCoordinator {
             analyticsReporter: di.analyticsReporter
         )
         self.workflowController = workflowController
+        if let ask = di.askConversationWindowController {
+            workflowController.onAskRequested = { [weak ask] in ask?.showLauncher() }
+            ask.onVoice = { [weak workflowController] in
+                workflowController?.handlePressBegan(intent: .dictation, startLocked: true)
+            }
+            ask.model.recordingIsActive = { [weak workflowController] in workflowController?.isRecording ?? false }
+        } else {
+            workflowController.onAskRequested = {
+                let alert = NSAlert()
+                alert.messageText = L("ask.cache.failed")
+                alert.runModal()
+            }
+        }
 
         let mouseVoiceInputController = MouseVoiceInputController(
             settingsStore: settingsStore,
@@ -155,6 +168,9 @@ final class AppCoordinator {
             },
             onOpenAgentJobs: { [weak self] in
                 self?.di.agentJobsWindowController.showJobsList()
+            },
+            onOpenAskConversations: { [weak self] in
+                self?.di.askConversationWindowController?.showConversation()
             },
             onOpenAgentJob: { [weak self] jobID in
                 self?.di.agentJobsWindowController.showJob(id: jobID)

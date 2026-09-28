@@ -211,7 +211,7 @@ struct PersonaCloudPayload: Codable {
     let prompt: String
 }
 
-struct JSONValue: Codable {
+struct JSONValue: Codable, Equatable, Sendable {
     let data: Data
 
     init(data: Data) { self.data = data }

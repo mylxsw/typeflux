@@ -35,6 +35,7 @@ final class StatusBarController: NSObject {
     private let onRetryHistory: (HistoryRecord) -> Void
     private let onOpenOnboarding: () -> Void
     private let onOpenAgentJobs: () -> Void
+    private let onOpenAskConversations: () -> Void
     private let onOpenAgentJob: (UUID) -> Void
 
     private var statusItem: NSStatusItem?
@@ -61,6 +62,7 @@ final class StatusBarController: NSObject {
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
         onOpenOnboarding: @escaping () -> Void = {},
         onOpenAgentJobs: @escaping () -> Void = {},
+        onOpenAskConversations: @escaping () -> Void = {},
         onOpenAgentJob: @escaping (UUID) -> Void = { _ in }
     ) {
         self.appState = appState
@@ -73,6 +75,7 @@ final class StatusBarController: NSObject {
         self.onRetryHistory = onRetryHistory
         self.onOpenOnboarding = onOpenOnboarding
         self.onOpenAgentJobs = onOpenAgentJobs
+        self.onOpenAskConversations = onOpenAskConversations
         self.onOpenAgentJob = onOpenAgentJob
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)
     }
@@ -232,6 +235,7 @@ final class StatusBarController: NSObject {
         historyItem.tag = MenuTag.transcriptionHistory
         historyItem.submenu = buildTranscriptionHistoryMenu()
         menu.addItem(historyItem)
+        menu.addItem(makeItem(title: L("workflow.ask.answerTitle"), action: #selector(openAskConversations)))
         if settingsStore.isTextTransformationAvailable {
             let textTransformationItem = NSMenuItem(title: L("menu.textTransformation"), action: nil, keyEquivalent: "")
             textTransformationItem.tag = MenuTag.textTransformation
@@ -605,6 +609,10 @@ final class StatusBarController: NSObject {
 
     @objc private func openAgentJobs() {
         onOpenAgentJobs()
+    }
+
+    @objc private func openAskConversations() {
+        onOpenAskConversations()
     }
 
     @objc private func openAgentJob(_ sender: NSMenuItem) {
