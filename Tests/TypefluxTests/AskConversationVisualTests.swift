@@ -24,15 +24,20 @@ struct AskConversationVisualTests {
         let launcher = try #require(window("launcher"))
         #expect(launcher.styleMask == .borderless)
         #expect(launcher.frame.width == 640)
-        #expect(launcher.frame.height <= 110)
+        #expect(launcher.frame.height <= 120)
+        let bottom = launcher.frame.minY
+        let visibleFrame = try #require(launcher.screen?.visibleFrame)
+        #expect(abs(bottom + 6 - visibleFrame.minY - OverlayController.recordingVisibleBottomInset) < 1)
+        #expect(abs(launcher.frame.midX - visibleFrame.midX) < 1)
         fixture.model.launcherDraft.text = String(repeating: "Line of text\n", count: 30)
         try await fixture.wait { launcher.frame.height >= 200 }
-        #expect(launcher.frame.height <= 220)
+        #expect(launcher.frame.height <= 230)
+        #expect(abs(launcher.frame.minY - bottom) < 1)
         controller.dismissLauncher(); controller.showLauncher()
         try await fixture.wait { launcher.isVisible }
         #expect(launcher.frame.height >= 200)
         fixture.model.launcherDraft.text = "Short"
-        try await fixture.wait { launcher.frame.height <= 110 }
+        try await fixture.wait { launcher.frame.height <= 120 }
         try await fixture.wait { launcher.firstResponder is NSTextView }
         #expect(launcher.firstResponder is NSTextView)
         #expect(window("conversations")?.isVisible != true)
@@ -70,14 +75,14 @@ struct AskConversationVisualTests {
         fixture.model.launcherDraft.screenshot = nil
         fixture.model.launcherDraft.text = "帮我总结这页内容，并查找相关资料"
         fixture.model.captureWarning = L("ask.capture.permission")
-        try await render(AskLauncherView(model: fixture.model, onVoice: {}, onDismiss: {}),
-                         size: NSSize(width: 640, height: 100), appearance: .darkAqua, file: root.appendingPathComponent("launcher.png"))
+        try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
+                         size: NSSize(width: 640, height: 110), appearance: .darkAqua, file: root.appendingPathComponent("launcher.png"))
 
-        try await render(AskLauncherView(model: fixture.model, onVoice: {}, onDismiss: {}),
-                         size: NSSize(width: 640, height: 100), appearance: .aqua, file: root.appendingPathComponent("launcher-light.png"))
+        try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
+                         size: NSSize(width: 640, height: 110), appearance: .aqua, file: root.appendingPathComponent("launcher-light.png"), voice: fixture.model.voiceInput)
         fixture.model.launcherDraft.text = String(repeating: "Long input wraps naturally and stays editable. ", count: 24)
-        try await render(AskLauncherView(model: fixture.model, onVoice: {}, onDismiss: {}),
-                         size: NSSize(width: 640, height: 216), appearance: .aqua, file: root.appendingPathComponent("launcher-long.png"))
+        try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
+                         size: NSSize(width: 640, height: 226), appearance: .aqua, file: root.appendingPathComponent("launcher-long.png"))
         let call = AskToolCall(id: "browser-read", type: "function", function: .init(name: "browser", arguments: #"{"action":"read"}"#))
         let now = Date()
         let conversation = AskConversation(id: "design-conversation", title: "页面内容总结", revision: 4, updatedAt: now, messages: [
@@ -86,20 +91,20 @@ struct AskConversationVisualTests {
             .init(id: "3", role: "user", text: "产品交互和使用成本", createdAt: now),
             .init(id: "4", role: "assistant", text: "", toolCalls: [call], createdAt: now),
             .init(id: "5", role: "tool", text: "已读取当前页面的正文与链接。", toolCallId: "browser-read", isError: false, createdAt: now),
-            .init(id: "6", role: "assistant", text: "## 交互要点\n\n- 先在屏幕中央输入，确认后再进入对话。\n- 键盘与现有语音输入共用同一个输入框。\n- 截图与选区可在发送前预览和移除。\n\n使用成本信息仍需进一步核对。你也可以继续追问具体的使用场景。", createdAt: now)
+            .init(id: "6", role: "assistant", text: "## 交互要点\n\n- 先在屏幕底部输入，确认后再进入对话。\n- 键盘与现有语音输入共用同一个输入框。\n- 截图与选区可在发送前预览和移除。\n\n使用成本信息仍需进一步核对。你也可以继续追问具体的使用场景。", createdAt: now)
         ], run: .init(id: "run", deviceId: "device", status: "completed", steps: 2, updatedAt: now, tools: [], pending: []))
         await fixture.api.seed(conversation)
         await fixture.api.seed(.init(id: "older", title: "整理会议要点", revision: 1, updatedAt: now.addingTimeInterval(-86400), messages: []))
         await fixture.model.refreshHistory()
         await fixture.model.select(conversation.id)
-        try await render(AskConversationView(model: fixture.model, onVoice: {}), size: NSSize(width: 1100, height: 740), appearance: .aqua, file: root.appendingPathComponent("conversation.png"))
-        try await render(AskConversationView(model: fixture.model, onVoice: {}), size: NSSize(width: 760, height: 560), appearance: .aqua, file: root.appendingPathComponent("conversation-small.png"))
-        try await render(AskConversationView(model: fixture.model, onVoice: {}), size: NSSize(width: 1100, height: 740), appearance: .darkAqua, file: root.appendingPathComponent("conversation-dark.png"))
+        try await render(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 740), appearance: .aqua, file: root.appendingPathComponent("conversation.png"), voice: fixture.model.voiceInput)
+        try await render(AskConversationView(model: fixture.model), size: NSSize(width: 760, height: 560), appearance: .aqua, file: root.appendingPathComponent("conversation-small.png"))
+        try await render(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 740), appearance: .darkAqua, file: root.appendingPathComponent("conversation-dark.png"), voice: fixture.model.voiceInput)
         await fixture.api.setTool(call)
         fixture.model.draft.text = "读取当前页面"
         fixture.model.submitDraft()
         try await fixture.wait { !fixture.model.pendingApprovals.isEmpty }
-        try await render(AskConversationView(model: fixture.model, onVoice: {}), size: NSSize(width: 1100, height: 740), appearance: .darkAqua, file: root.appendingPathComponent("tool-approval.png"))
+        try await render(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 740), appearance: .darkAqua, file: root.appendingPathComponent("tool-approval.png"))
         fixture.model.approve(conversationId: conversation.id, allowed: false)
         try await fixture.wait { fixture.model.busyIds.isEmpty }
         fixture.model.resetSession()
@@ -116,7 +121,7 @@ struct AskConversationVisualTests {
         await f.model.select("long-a")
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        let hosting = NSHostingView(rootView: AskConversationView(model: f.model, onVoice: {}))
+        let hosting = NSHostingView(rootView: AskConversationView(model: f.model))
         window.contentView = hosting; window.orderFront(nil)
         defer { window.orderOut(nil); window.close() }
         try await Task.sleep(for: .milliseconds(300))
@@ -137,8 +142,8 @@ struct AskConversationVisualTests {
         f.model.resetSession()
     }
 
-    private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL) async throws {
-        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+    private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL, voice: AskVoiceInput? = nil) async throws {
+        let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: appearance)
         let hosting = NSHostingView(rootView: view)
@@ -147,11 +152,54 @@ struct AskConversationVisualTests {
         window.orderFront(nil)
         defer { window.orderOut(nil); window.close() }
         try await Task.sleep(for: .milliseconds(400))
-        hosting.layoutSubtreeIfNeeded()
-        let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
-        hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
-        let png = try #require(bitmap.representation(using: .png, properties: [:]))
-        try png.write(to: file)
-        #expect(png.count > 10000)
+        func snapshot(_ url: URL) throws {
+            hosting.layoutSubtreeIfNeeded()
+            let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+            hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+            let png = try #require(bitmap.representation(using: .png, properties: [:]))
+            try png.write(to: url)
+            #expect(png.count > 10000)
+        }
+        try snapshot(file)
+        if file.lastPathComponent == "conversation.png" {
+            func probes(_ view: NSView) -> [AskHistoryPullRefresh.Probe] {
+                (view as? AskHistoryPullRefresh.Probe).map { [$0] } ?? view.subviews.flatMap(probes)
+            }
+            let probe = try #require(probes(hosting).first)
+            let scroll = try #require(probe.enclosingScrollView)
+            let point = scroll.convert(NSPoint(x: 50, y: 100), to: nil)
+            func mouse(_ type: NSEvent.EventType, dy: CGFloat) throws -> NSEvent {
+                try #require(NSEvent.mouseEvent(with: type, location: NSPoint(x: point.x, y: point.y + dy), modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+            }
+            probe.observe(try mouse(.leftMouseDown, dy: 0))
+            probe.observe(try mouse(.leftMouseDragged, dy: -60))
+            try await Task.sleep(for: .milliseconds(80))
+            try snapshot(file.deletingLastPathComponent().appendingPathComponent("history-pull.png"))
+            probe.observe(try mouse(.leftMouseUp, dy: -60))
+            try await Task.sleep(for: .milliseconds(80))
+        }
+        if let voice {
+            func editors(_ view: NSView) -> [AskComposerTextView.Editor] {
+                (view as? AskComposerTextView.Editor).map { [$0] } ?? view.subviews.flatMap(editors)
+            }
+            let editor = try #require(editors(hosting).first)
+            window.makeFirstResponder(editor)
+            let recorder = AskTestVoiceRecorder(); recorder.holdTranscript = true
+            recorder.transcript = "请进一步说明使用成本。"
+            voice.recorder = recorder
+            #expect(voice.begin(in: editor))
+            try await Task.sleep(for: .milliseconds(120))
+            let base = file.deletingPathExtension().path
+            try snapshot(URL(fileURLWithPath: base + "-listening.png"))
+            voice.stop()
+            try await Task.sleep(for: .milliseconds(120))
+            #expect(recorder.stops == 1)
+            try snapshot(URL(fileURLWithPath: base + "-transcribing.png"))
+            recorder.releaseTranscript()
+            for _ in 0..<100 where voice.isOccupied { try await Task.sleep(for: .milliseconds(2)) }
+            #expect(!voice.isOccupied)
+            try await Task.sleep(for: .milliseconds(60))
+            try snapshot(URL(fileURLWithPath: base + "-filled.png"))
+        }
     }
 }

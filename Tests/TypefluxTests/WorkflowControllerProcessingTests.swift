@@ -1,4 +1,5 @@
 import AVFoundation
+import AppKit
 import AudioToolbox
 @testable import Typeflux
 import XCTest
@@ -14,6 +15,99 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         KeychainTokenStore.clearAll()
         KeychainTokenStore.useInMemoryStoreForTesting = false
         super.tearDown()
+    }
+
+    @MainActor
+    func testComposerHotkeyRoutingKeepsFnLockAndCancelsOwnedSession() async throws {
+        let controller = makeWorkflowController()
+        XCTAssertFalse(controller.routeComposerVoice(.release))
+        let voice = AskVoiceInput(), recorder = AskTestVoiceRecorder()
+        voice.recorder = recorder; controller.composerVoiceInput = voice
+        XCTAssertFalse(controller.routeComposerVoice(.activationTap))
+        let editor = AskComposerTextView.Editor(frame: NSRect(x: 0, y: 0, width: 200, height: 80))
+        editor.voice = voice
+        let window = AskTestVoiceWindow(contentRect: editor.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false; window.contentView = editor; window.makeFirstResponder(editor)
+        defer { window.close() }
+        XCTAssertTrue(voice.begin(in: editor))
+        for _ in 0..<100 where recorder.starts == 0 { try await Task.sleep(for: .milliseconds(2)) }
+        controller.handlePressEnded()
+        XCTAssertEqual(voice.phase, .listening)
+        controller.handleActivationTap()
+        XCTAssertEqual(voice.phase, .listening)
+        controller.cancelRecording()
+        for _ in 0..<100 where voice.isOccupied { try await Task.sleep(for: .milliseconds(2)) }
+        XCTAssertFalse(voice.isOccupied)
+        XCTAssertEqual(recorder.cancels, 1)
+        XCTAssertTrue(voice.begin(in: editor))
+        controller.finishRecordingFromCurrentMode()
+        for _ in 0..<100 where voice.isOccupied { try await Task.sleep(for: .milliseconds(2)) }
+        XCTAssertEqual(recorder.stops, 1)
+        XCTAssertTrue(voice.begin(in: editor))
+        controller.handlePressBegan(intent: .dictation, startLocked: false)
+        for _ in 0..<100 where voice.isOccupied { try await Task.sleep(for: .milliseconds(2)) }
+        XCTAssertEqual(recorder.stops, 2)
+    }
+
+    @MainActor
+    func testComposerRecordingUsesConfiguredSTTAndNeverInjectsOrShowsOverlay() async throws {
+        let recorder = MockProcessingAudioRecorder()
+        let injector = MockProcessingTextInjector()
+        let controller = makeWorkflowController(textInjector: injector, audioRecorder: recorder,
+            sttTranscriber: MockProcessingTranscriber(transcript: " hello "), configureSettings: { $0.sttProvider = .appleSpeech }, hasPaidCloudSubscription: { true })
+        let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+        try await service.start()
+        XCTAssertTrue(controller.isRecording)
+        XCTAssertEqual(controller.appState.status, .recording)
+        let text = try await service.transcribe()
+        XCTAssertEqual(text, "hello")
+        XCTAssertFalse(controller.isRecording)
+        XCTAssertFalse(controller.isAudioRecorderStarted)
+        XCTAssertEqual(controller.appState.status, .idle)
+        XCTAssertEqual(recorder.startCallCount, 1)
+        XCTAssertEqual(recorder.stopCallCount, 1)
+        XCTAssertTrue(injector.insertedTexts.isEmpty)
+        await service.cancel()
+        XCTAssertEqual(recorder.stopCallCount, 1)
+    }
+
+    @MainActor
+    func testComposerCancelCleansRecorderAndFailureCannotCancelAnotherRecording() async throws {
+        let recorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: recorder)
+        let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+        try await service.start()
+        await service.cancel()
+        XCTAssertEqual(recorder.stopCallCount, 1)
+        XCTAssertFalse(controller.isRecording)
+        controller.isRecording = true
+        do { try await service.start(); XCTFail("An existing recording must keep ownership") } catch {}
+        await service.cancel()
+        XCTAssertTrue(controller.isRecording)
+        XCTAssertEqual(recorder.stopCallCount, 1)
+        controller.isRecording = false
+        let blocked = WorkflowComposerRecording(controller, isAppBundle: { false })
+        do { try await blocked.start(); XCTFail("Requires app bundle") } catch {}
+        await blocked.cancel()
+        XCTAssertFalse(controller.isRecording)
+        let failingController = makeWorkflowController(audioRecorder: ThrowingStartAudioRecorder(error: NSError(domain: "microphone", code: 1)))
+        let failing = WorkflowComposerRecording(failingController, isAppBundle: { true })
+        do { try await failing.start(); XCTFail("Startup failure must be reported") } catch {}
+        await failing.cancel()
+        XCTAssertFalse(failingController.isRecording)
+        XCTAssertFalse(failingController.isAudioRecorderStarting)
+        XCTAssertEqual(failingController.appState.status, .idle)
+    }
+
+    @MainActor
+    func testComposerTranscriptionFailureRestoresIdle() async throws {
+        let controller = makeWorkflowController(sttTranscriber: MockProcessingTranscriber(transcript: " "),
+            configureSettings: { $0.sttProvider = .appleSpeech }, hasPaidCloudSubscription: { true })
+        let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+        try await service.start()
+        do { _ = try await service.transcribe(); XCTFail("Empty transcript must be reported") } catch {}
+        XCTAssertEqual(controller.appState.status, .idle)
+        XCTAssertFalse(controller.isAudioRecorderStarted)
     }
 
     func testAskShortcutOpensComposerWithoutStartingRecording() async {

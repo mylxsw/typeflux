@@ -120,6 +120,29 @@ struct AskTestFixture {
 @Suite("Ask conversations")
 @MainActor
 struct AskConversationTests {
+    @Test func pullRefreshKeepsSelectionDraftAndReadingPositionOnFailure() async throws {
+        let f = try AskTestFixture()
+        await f.api.seed(.init(id: "a", title: "A", revision: 1, updatedAt: Date(), messages: []))
+        await f.model.refreshHistory()
+        await f.model.select("a")
+        f.model.draft.text = "unfinished"
+        f.model.transcriptPositions["a"] = "message-8"
+        await f.api.setFailList(true)
+        await f.model.pullToRefreshHistory()
+        #expect(f.model.historyRefreshError != nil)
+        #expect(f.model.error == nil)
+        #expect(f.model.selectedId == "a")
+        #expect(f.model.conversations.count == 1)
+        #expect(f.model.draft.text == "unfinished")
+        #expect(f.model.transcriptPositions["a"] == "message-8")
+        #expect(!f.model.isRefreshingHistory)
+        await f.api.setFailList(false)
+        await f.model.pullToRefreshHistory()
+        #expect(f.model.historyRefreshError == nil)
+        #expect(f.model.selectedId == "a")
+        f.model.resetSession()
+    }
+
     @Test func screenshotDefaultsAndRemovedAttachmentsAreRespected() {
         var draft = AskDraft(text: "  question  ", screenshot: "image", selection: "selection")
         #expect(draft.includeScreenshot)

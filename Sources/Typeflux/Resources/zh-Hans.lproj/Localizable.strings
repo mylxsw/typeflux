@@ -1491,3 +1491,11 @@
 "ask.earlier" = "更早";
 
 "ask.capture.retry" = "截图失败 · 重试";
+
+"ask.voice.listening" = "正在聆听 · 松开结束";
+"ask.voice.transcribing" = "正在转写…";
+"ask.history.pull" = "下拉刷新";
+"ask.history.release" = "松开刷新";
+"ask.history.refreshing" = "正在刷新…";
+"ask.history.refreshFailed" = "刷新失败，下拉重试。";
+"ask.voice.holdHint" = "按住输入区说话，松开转写；Esc 取消。";

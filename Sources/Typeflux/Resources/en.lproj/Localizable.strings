@@ -1491,3 +1491,11 @@
 "ask.earlier" = "Earlier";
 
 "ask.capture.retry" = "Screenshot failed · Retry";
+
+"ask.voice.listening" = "Listening · Release to finish";
+"ask.voice.transcribing" = "Transcribing…";
+"ask.history.pull" = "Pull to refresh";
+"ask.history.release" = "Release to refresh";
+"ask.history.refreshing" = "Refreshing…";
+"ask.history.refreshFailed" = "Refresh failed. Pull down to retry.";
+"ask.voice.holdHint" = "Hold in the editor to speak, release to transcribe; Escape cancels.";

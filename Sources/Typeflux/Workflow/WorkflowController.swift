@@ -9,6 +9,7 @@ struct RecordingStartupContext: Sendable, Equatable {
 }
 
 final class WorkflowController {
+    var composerVoiceInput: AskVoiceInput?
     var onAskRequested: (() -> Void)?
     let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "WorkflowController")
     static let recordingTimeoutNanoseconds: UInt64 = 600_000_000_000 // 10 minutes
@@ -527,6 +528,7 @@ final class WorkflowController {
 
     /// Force cancel any ongoing recording
     func cancelRecording() {
+        if routeComposerVoice(.cancel) { return }
         guard isRecording else { return }
         recordingAudioReadiness?.cancel()
         discardPendingDictationAnalytics()
@@ -636,6 +638,7 @@ final class WorkflowController {
     }
 
     func handleActivationTap(hotkeyDetectedAt: Date = Date(), hotkeyUptime: TimeInterval? = nil) {
+        if routeComposerVoice(.activationTap) { return }
         extendRecordingGestureDecision(releasedAt: hotkeyUptime ?? monotonicNow())
         if suppressNextActivationTapAfterLocalModelDownloadAlert {
             suppressNextActivationTapAfterLocalModelDownloadAlert = false
@@ -667,6 +670,7 @@ final class WorkflowController {
         auxiliary: Bool = false,
         allowsQuickInput: Bool = true
     ) {
+        if routeComposerVoice(.press(intent: intent, locked: startLocked)) { return }
         RecordingStartupLatencyTrace.shared.mark("workflow.press_began.\(intent.traceName)")
         if isPersonaPickerPresented {
             dismissPersonaPicker()
@@ -1366,6 +1370,7 @@ final class WorkflowController {
     }
 
     func handlePressEnded(hotkeyUptime: TimeInterval? = nil) {
+        if routeComposerVoice(.release) { return }
         // Prevent double-end or end without start
         guard isRecording else {
             NSLog("[Workflow] Not recording, ignoring release")
@@ -1418,6 +1423,7 @@ final class WorkflowController {
     }
 
     func finishRecordingFromCurrentMode() {
+        if routeComposerVoice(.stop) { return }
         guard isRecording else { return }
         recordingAudioReadiness?.cancel()
         hotkeyService.settleActivationGesture()
