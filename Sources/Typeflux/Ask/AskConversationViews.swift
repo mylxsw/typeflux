@@ -3,6 +3,16 @@ import SwiftUI
 
 enum AskTheme {
     static let accent = StudioTheme.accent
+    // Standalone windows need solid backplates. StudioTheme's translucent
+    // surfaces are intended for layering inside an already-backed container.
+    static let surface = StudioTheme.dynamic(
+        light: NSColor(calibratedWhite: 0.995, alpha: 1),
+        dark: NSColor(calibratedWhite: 0.128, alpha: 1)
+    )
+    static let sidebarSurface = StudioTheme.dynamic(
+        light: NSColor(calibratedRed: 0.955, green: 0.965, blue: 0.982, alpha: 1),
+        dark: NSColor(calibratedWhite: 0.180, alpha: 1)
+    )
     static func toolTitle(_ call: AskToolCall) -> String {
         let name = call.function.name
         guard name == "computer" || name == "browser" else { return name }
@@ -19,7 +29,7 @@ struct AskLauncherView: View {
     var body: some View {
         AskComposer(model: model, launcher: true, onDismiss: onDismiss, onHeightChange: onHeightChange)
         .padding(14)
-        .background(StudioTheme.surface)
+        .background(AskTheme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .modifier(AskVoiceBorder(voice: model.voiceInput, context: "launcher", radius: 14))
         .padding(6)
@@ -207,13 +217,13 @@ struct AskConversationView: View {
                 }.padding(.horizontal, 24)
                 AskComposer(model: model, launcher: false)
                     .disabled(model.isLoadingSelection)
-                    .padding(12).background(StudioTheme.surface, in: RoundedRectangle(cornerRadius: 12))
+                    .padding(12).background(AskTheme.surface, in: RoundedRectangle(cornerRadius: 12))
                     .modifier(AskVoiceBorder(voice: model.voiceInput, context: "chat:" + (model.selectedId ?? "new"), radius: 12))
                     .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 16)
             }.frame(minWidth: 480)
         }
         .frame(minWidth: 740, minHeight: 530)
-        .background(StudioTheme.surface)
+        .background(AskTheme.surface)
         .tint(AskTheme.accent)
         .onChange(of: model.draft) { _ in model.persistDrafts() }
         .confirmationDialog(L("ask.delete.confirm"), isPresented: Binding(get: { deleteId != nil }, set: { if !$0 { deleteId = nil } })) {
@@ -269,7 +279,7 @@ struct AskConversationView: View {
                 }
             }
             .accessibilityAction(named: Text(L("ask.refresh"))) { Task { await model.pullToRefreshHistory() } }
-        }.background(StudioTheme.surfaceMuted)
+        }.background(AskTheme.sidebarSurface)
     }
 
     private func historyGroup(_ date: Date) -> String {

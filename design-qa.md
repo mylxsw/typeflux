@@ -75,4 +75,21 @@ and actual provider audio must still be smoke-tested in a signed app.
 No actionable P0/P1/P2 visual findings remain. P3 follow-up: calibrate the 350 ms
 hold threshold with real-device usage, without changing native text selection.
 
+## Transparency follow-up (2026-09-29)
+
+The previous screenshots did not expose desktop bleed-through because the test
+window's ordinary background masked translucent surfaces. Opaque Ask-specific
+backplates now cover the launcher, workspace, sidebar and complete input card;
+the native workspace window is explicitly opaque too. The floating panel retains
+its transparent corner/glow gutter.
+
+The new pixel regression uses production views over red/blue backgrounds with a
+clear native window. It reproduced the old bug with 20 failing assertions and
+passes after the fix in Aqua and Dark Aqua, including alpha-1 interior and alpha-0
+outer-corner checks. All three existing native window/render tests also pass.
+Updated screenshots use the same viewports and fixtures; `ask-launcher-dark.png`
+adds the dark floating surface. The dark launcher and listening workspace were
+visually inspected after the fix. This resolves the transparency mismatch without
+changing the agreed edge glow.
+
 Final result: passed
