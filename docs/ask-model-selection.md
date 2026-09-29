@@ -35,6 +35,18 @@ is evaluated once per list entry, and custom endpoint availability does not read
 Keychain secrets. Provider detail navigation includes both the chevron and title
 in one return button.
 
+Selection menus contain only configured, currently available models. Image-bearing
+conversations also filter models without confirmed vision support. Empty provider
+groups are omitted, and an unavailable saved selection is not silently replaced.
+The configuration catalog still lists unconfigured providers so users can add
+credentials and models. Speech selection likewise omits unavailable providers and
+undownloaded local models.
+
+The model page owns its only vertical scroll view; the surrounding settings shell
+does not wrap it in another scroller. Provider rows use stable eager layout and
+preview at most three model IDs. Native wheel regression checks cover both
+appearances, document height stability, and actual list movement.
+
 ## Persistence and migration
 
 `models.registry.v2` stores provider/model metadata. Existing provider connection

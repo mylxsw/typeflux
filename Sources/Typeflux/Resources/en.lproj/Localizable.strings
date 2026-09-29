@@ -1596,3 +1596,5 @@
 "models.emptyCatalog" = "The provider returned no models";
 "models.loadFailed" = "Could not load models.";
 "models.subscription" = "The selected speech provider requires an active subscription. Renew or select a local model in Application scenarios.";
+
+"models.noAvailable" = "No models are available for this input. Check your sign-in and model settings.";

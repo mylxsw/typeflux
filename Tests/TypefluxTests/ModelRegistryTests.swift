@@ -126,6 +126,28 @@ final class ModelRegistryTests: XCTestCase {
         XCTAssertEqual(ModelAvailability.sorted([1, 2, 3, 4]) { $0.isMultiple(of: 2) }, [2, 4, 1, 3])
     }
 
+    func testPickerHidesUnconfiguredUnavailableAndIncompatibleModels() throws {
+        let settings = SettingsStore(defaults: defaults)
+        settings.setLLMAPIKey("fixture", for: .openAI)
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        let text = RegisteredModel(id: "text", name: "Text", vision: false)
+        let vision = RegisteredModel(id: "vision", name: "Vision", vision: true)
+        let embedding = RegisteredModel(id: "embedding", name: "Embedding", chat: false)
+        try library.addModels([text, vision, embedding], providerID: "openAI")
+        let choices = library.selectableProviders(loggedIn: false, hasImage: false)
+        XCTAssertFalse(choices.contains { $0.isCloud || $0.isOllama || $0.remote == .anthropic })
+        XCTAssertTrue(choices.flatMap(\.models).contains { $0.reference == text.reference })
+        XCTAssertFalse(choices.flatMap(\.models).contains { $0.reference == embedding.reference })
+        let imageChoices = library.selectableProviders(loggedIn: true, hasImage: true)
+        XCTAssertTrue(imageChoices.contains { $0.isCloud })
+        XCTAssertEqual(imageChoices.first { $0.remote == .openAI }?.models.map(\.reference), [vision.reference])
+        settings.setLLMAPIKey("", for: .openAI)
+        XCTAssertFalse(library.selectableProviders(loggedIn: false, hasImage: false).contains { $0.remote == .openAI })
+        // Configuration remains editable; filtering must not delete saved models.
+        XCTAssertTrue(library.providers.contains { $0.remote == .anthropic })
+        XCTAssertNotNil(library.registry.resolve(text.reference))
+    }
+
     func testProviderIconsReuseBundledBrandAssets() {
         for provider in StudioModelProviderID.allCases {
             XCTAssertFalse(ModelProviderIcon.symbol(for: provider).isEmpty)

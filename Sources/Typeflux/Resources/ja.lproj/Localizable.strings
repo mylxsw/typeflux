@@ -1582,3 +1582,5 @@
 "models.emptyCatalog" = "The provider returned no models";
 "models.loadFailed" = "Could not load models.";
 "models.subscription" = "The selected speech provider requires an active subscription. Renew or select a local model in Application scenarios.";
+
+"models.noAvailable" = "この入力に使用できるモデルがありません。ログイン状態とモデル設定を確認してください。";

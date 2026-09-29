@@ -112,10 +112,12 @@ final class AskModelLibrary: ObservableObject {
         let modelID = store.llmProvider == .ollama ? store.ollamaModel : store.llmModel
         guard let provider = providers.first(where: { $0.id == providerID }) else { return }
         do {
-            if !provider.isCloud && !modelID.isEmpty {
+            if !provider.isCloud, !modelID.isEmpty {
                 try addModels([.init(id: modelID, name: modelID)], providerID: providerID)
             }
-            if let reference = registry.legacyRewriteReference(settings: store) { rewriteReference = reference }
+            if let reference = registry.legacyRewriteReference(settings: store) {
+                rewriteReference = reference
+            }
         } catch { catalogError = error.localizedDescription }
     }
 
@@ -232,11 +234,10 @@ final class AskModelLibrary: ObservableObject {
         }
         // Availability never needs a custom endpoint's secret. Keep Keychain reads
         // in actual requests and the connection editor, outside SwiftUI rendering.
-        let baseURL: String
-        if let remote = provider.remote {
-            baseURL = settings.llmBaseURL(for: remote)
+        let baseURL: String = if let remote = provider.remote {
+            settings.llmBaseURL(for: remote)
         } else {
-            baseURL = provider.isOllama ? settings.ollamaBaseURL : provider.baseURL
+            provider.isOllama ? settings.ollamaBaseURL : provider.baseURL
         }
         if baseURL.isEmpty {
             return L("models.endpointMissing")
@@ -250,6 +251,18 @@ final class AskModelLibrary: ObservableObject {
 
     func sortedProviders(loggedIn: Bool) -> [RegisteredProvider] {
         ModelAvailability.sorted(providers) { unavailableReason($0, loggedIn: loggedIn) == nil }
+    }
+
+    /// Picker contents, not the editable configuration catalog. Preserve stable references.
+    func selectableProviders(loggedIn: Bool, hasImage: Bool) -> [RegisteredProvider] {
+        providers.compactMap { provider in
+            guard unavailableReason(provider, loggedIn: loggedIn) == nil else { return nil }
+            var available = provider
+            available.models = provider.models.filter {
+                $0.exclusionReason == nil && (!hasImage || $0.vision == true)
+            }
+            return available.models.isEmpty ? nil : available
+        }
     }
 
     func selectionReason(_ model: RegisteredModel, provider: RegisteredProvider, hasImage: Bool,
@@ -278,7 +291,6 @@ final class AskModelLibrary: ObservableObject {
     func unavailable() -> AskLocalError {
         .message(L("ask.models.unavailable"))
     }
-
 }
 
 extension AskModelLibrary {

@@ -85,18 +85,16 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                         ForEach(speechProviders, id: \.rawValue) { provider in
                             Section(provider.displayName) {
                                 if provider == .localModel {
-                                    ForEach(LocalSTTModel.displayOrder, id: \.rawValue) { model in
+                                    ForEach(
+                                        LocalSTTModel.displayOrder.filter { viewModel.isModelAvailable($0) },
+                                        id: \.rawValue
+                                    ) { model in
                                         Button(model.displayName) {
                                             viewModel.setLocalSTTModel(model); viewModel.setSTTProvider(provider)
                                         }
-                                        .disabled(!viewModel.isModelAvailable(model))
                                     }
                                 } else {
                                     Button(speechModelName(provider)) { viewModel.setSTTProvider(provider) }
-                                        .disabled(speechReason(provider) != nil)
-                                }
-                                if let reason = speechReason(provider) {
-                                    Text(reason)
                                 }
                             }
                         }
@@ -148,7 +146,9 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
             provider: $0,
             reason: library.unavailableReason($0, loggedIn: auth.isLoggedIn)
         ) }
-        return LazyVStack(alignment: .leading, spacing: 8) {
+        // The provider catalog is small. Fixed layout avoids lazy height corrections
+        // while the wheel moves across configured/unconfigured groups.
+        return VStack(alignment: .leading, spacing: 8) {
             ForEach([true, false], id: \.self) { configured in
                 Text(L(configured ? "models.configured" : "models.unconfigured"))
                     .font(.caption.weight(.semibold)).foregroundStyle(StudioTheme.textSecondary).padding(.top, 6)
@@ -161,7 +161,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                                 detail: entry.reason ??
                                     "\(provider.models.count) " +
                                     L("common.model") + " · " + provider
-                                    .models.map(\.id).joined(separator: " · "),
+                                    .models.prefix(3).map(\.id).joined(separator: " · "),
                                 available: configured, icon: provider.studioProviderID) {
                         selectedProvider = provider.id
                     }
@@ -175,7 +175,12 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     }
 
     private var speechProviders: [STTProvider] {
-        ModelAvailability.sorted(speechProviderOrder) { speechReason($0) == nil }
+        speechProviderOrder.filter {
+            if $0 == .localModel {
+                return LocalSTTModel.displayOrder.contains { viewModel.isModelAvailable($0) }
+            }
+            return speechReason($0) == nil
+        }
     }
 
     private var speechProviderOrder: [STTProvider] {
@@ -188,7 +193,9 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
 
     private var speechList: some View {
         let entries = speechProviderOrder.map { (provider: $0, reason: speechReason($0)) }
-        return LazyVStack(alignment: .leading, spacing: 8) {
+        // The provider catalog is small. Fixed layout avoids lazy height corrections
+        // while the wheel moves across configured/unconfigured groups.
+        return VStack(alignment: .leading, spacing: 8) {
             ForEach([true, false], id: \.self) { configured in
                 Text(L(configured ? "models.configured" : "models.unconfigured"))
                     .font(.caption.weight(.semibold)).foregroundStyle(StudioTheme.textSecondary).padding(.top, 6)

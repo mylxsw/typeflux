@@ -625,24 +625,16 @@ struct StudioShell<Content: View>: View {
                 }
 
                 GeometryReader { proxy in
-                    ScrollView {
-                        let contentWidth = min(
-                            StudioTheme.contentMaxWidth,
-                            max(proxy.size.width - StudioTheme.contentInset * 2, 0)
-                        )
-
-                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.section) {
-                            content(CGSize(width: contentWidth, height: proxy.size.height))
+                    Group {
+                        if currentSection == .models {
+                            // The model page owns its scroll view. A second vertical
+                            // scroller competes for wheel events at its boundaries.
+                            pageContent(size: proxy.size)
+                        } else {
+                            ScrollView { pageContent(size: proxy.size) }
                         }
-                        .frame(width: contentWidth, alignment: .topLeading)
-                        .padding(.horizontal, StudioTheme.contentInset)
-                        .padding(.top, currentSection == .models ? 32 : StudioTheme.Layout.shellContentTopInset)
-                        .padding(.bottom, StudioTheme.Layout.shellContentBottomInset)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
                     }
-                    .background(
-                        contentBackground
-                    )
+                    .background(contentBackground)
                 }
                 .padding(.vertical, StudioTheme.Layout.contentCardInset)
                 .padding(.trailing, StudioTheme.Layout.contentCardInset)
@@ -651,6 +643,19 @@ struct StudioShell<Content: View>: View {
             .padding(StudioTheme.Layout.shellInset)
             .ignoresSafeArea(.container, edges: .top)
         }
+    }
+
+    private func pageContent(size: CGSize) -> some View {
+        let contentWidth = min(StudioTheme.contentMaxWidth,
+                               max(size.width - StudioTheme.contentInset * 2, 0))
+        return VStack(alignment: .leading, spacing: StudioTheme.Spacing.section) {
+            content(CGSize(width: contentWidth, height: size.height))
+        }
+        .frame(width: contentWidth, alignment: .topLeading)
+        .padding(.horizontal, StudioTheme.contentInset)
+        .padding(.top, currentSection == .models ? 32 : StudioTheme.Layout.shellContentTopInset)
+        .padding(.bottom, StudioTheme.Layout.shellContentBottomInset)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     @ViewBuilder
