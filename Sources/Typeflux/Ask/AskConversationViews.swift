@@ -1,286 +1,186 @@
+// swiftlint:disable file_length type_body_length
 import AppKit
 import SwiftUI
-
-enum AskTheme {
-    static let accent = StudioTheme.accent
-    // Standalone windows need solid backplates. StudioTheme's translucent
-    // surfaces are intended for layering inside an already-backed container.
-    static let surface = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 0.995, alpha: 1),
-        dark: NSColor(calibratedWhite: 0.128, alpha: 1)
-    )
-    static let sidebarSurface = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.955, green: 0.965, blue: 0.982, alpha: 1),
-        dark: NSColor(calibratedWhite: 0.180, alpha: 1)
-    )
-    static func toolTitle(_ call: AskToolCall) -> String {
-        let name = call.function.name
-        guard name == "computer" || name == "browser" else { return name }
-        let action = (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) ?? ""
-        return L("ask.tool." + name) + " · " + L("ask.action." + action)
-    }
-}
-
-struct AskLauncherView: View {
-    @ObservedObject var model: AskConversationModel
-    var onDismiss: () -> Void
-    var onHeightChange: (CGFloat) -> Void = { _ in }
-
-    var body: some View {
-        AskComposer(model: model, launcher: true, onDismiss: onDismiss, onHeightChange: onHeightChange)
-        .padding(14)
-        .background(AskTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .modifier(AskVoiceBorder(voice: model.voiceInput, context: "launcher", radius: 14))
-        .padding(6)
-        .tint(AskTheme.accent)
-        .onChange(of: model.launcherDraft) { _ in model.persistDrafts() }
-    }
-}
-
-struct AskComposer: View {
-    @ObservedObject var model: AskConversationModel
-    var launcher: Bool
-    var onDismiss: () -> Void = {}
-    var onHeightChange: (CGFloat) -> Void = { _ in }
-    @ObservedObject private var voice: AskVoiceInput
-    init(model: AskConversationModel, launcher: Bool, onDismiss: @escaping () -> Void = {}, onHeightChange: @escaping (CGFloat) -> Void = { _ in }) {
-        self.model = model; self.launcher = launcher
-        self.onDismiss = onDismiss; self.onHeightChange = onHeightChange
-        self.voice = model.voiceInput
-    }
-    private var contextID: String { launcher ? "launcher" : "chat:" + (model.selectedId ?? "new") }
-    private var active: Bool { voice.context == contextID && voice.isActive }
-    @State private var showingContext = false
-    @State private var editorHeight: CGFloat = 32
-
-    private var draft: Binding<AskDraft> { launcher ? $model.launcherDraft : $model.draft }
-    private var canSend: Bool { launcher ? model.canSendLauncher : model.canSend }
-    private func submit() { if launcher { model.submitLauncher() } else { model.submitDraft() } }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ZStack(alignment: .topLeading) {
-                if draft.wrappedValue.text.isEmpty {
-                    Text(L(launcher ? "ask.input.placeholder" : "ask.followup.placeholder"))
-                        .foregroundStyle(.secondary).padding(.leading, 5).padding(.top, 4)
-                        .allowsHitTesting(false)
-                }
-                AskComposerTextView(text: draft.text, placeholder: L("ask.input.placeholder"), voice: voice, contextID: contextID, onSubmit: submit, onDismiss: onDismiss, onHeightChange: { editorHeight = $0 })
-                    .frame(height: editorHeight)
-                    .disabled(!launcher && model.isLoadingSelection)
-            }
-            HStack(spacing: 8) {
-                Toggle(isOn: draft.includeScreenshot) { Text(L("ask.screenshot")) }
-                    .toggleStyle(.checkbox)
-                    .onChange(of: draft.wrappedValue.includeScreenshot) { included in
-                        if included, draft.wrappedValue.screenshot == nil {
-                            Task { await model.refreshScreenshot(launcher: launcher) }
-                        }
-                    }
-                if draft.wrappedValue.includeScreenshot, draft.wrappedValue.screenshot == nil, let warning = model.captureWarning {
-                    HStack(spacing: 4) {
-                        Image(systemName: "exclamationmark.circle.fill").foregroundStyle(StudioTheme.warning)
-                        Button(L(warning == L("ask.capture.permission") ? "ask.capture.settings" : "ask.capture.retry")) {
-                            if warning == L("ask.capture.permission") {
-                                NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!)
-                            } else { Task { await model.refreshScreenshot(launcher: launcher) } }
-                        }.buttonStyle(.borderless)
-                    }.font(.system(size: 11)).lineLimit(1).help(warning)
-                }
-                if draft.wrappedValue.screenshot != nil || draft.wrappedValue.selection != nil {
-                    HStack(spacing: 6) {
-                        Button { showingContext.toggle() } label: {
-                            Label(draft.wrappedValue.selection == nil ? L("ask.preview") : L("ask.selection"), systemImage: "doc.text")
-                                .lineLimit(1)
-                        }
-                        .buttonStyle(.plain)
-                        .popover(isPresented: $showingContext) {
-                            AskContextPreview(draft: draft, recapture: { Task { await model.refreshScreenshot(launcher: launcher) } })
-                        }
-                        if draft.wrappedValue.selection != nil {
-                            Button { draft.wrappedValue.selection = nil } label: { Image(systemName: "xmark").font(.system(size: 9)) }
-                                .buttonStyle(.plain).help(L("ask.selection.remove")).accessibilityLabel(L("ask.selection.remove"))
-                        }
-                    }.foregroundStyle(.secondary).padding(.horizontal, 8).padding(.vertical, 5)
-                        .background(StudioTheme.surfaceMuted, in: RoundedRectangle(cornerRadius: 6))
-                }
-                if model.capturing { ProgressView().controlSize(.small) }
-                Spacer(minLength: 4)
-                if active {
-                    if voice.phase == .listening {
-                        Circle().fill(AskTheme.accent).frame(width: 5, height: 5)
-                        Text(L("ask.voice.listening")).foregroundStyle(AskTheme.accent)
-                    } else {
-                        ProgressView().controlSize(.mini)
-                        Text(L("ask.voice.transcribing")).foregroundStyle(AskTheme.accent.opacity(0.8))
-                    }
-                }
-                if !launcher, model.isBusy {
-                    Button { model.stop() } label: { Image(systemName: "stop.fill").frame(width: 30, height: 30) }
-                        .buttonStyle(.borderless).foregroundStyle(.red)
-                        .accessibilityLabel(L("ask.stop"))
-                } else {
-                    Button(action: submit) { Image(systemName: "arrow.up").font(.system(size: 16, weight: .medium)).frame(width: 30, height: 30) }
-                        .buttonStyle(.plain).foregroundStyle(canSend ? Color.white : Color.secondary)
-                        .background(canSend ? AskTheme.accent : Color.secondary.opacity(0.15), in: Circle())
-                        .disabled(!canSend).accessibilityLabel(L("ask.send"))
-                }
-            }
-            .font(.system(size: 12))
-            if let error = voice.error { AskNotice(text: error).lineLimit(2) }
-            if launcher, let error = model.error { AskNotice(text: error).lineLimit(2) }
-        }
-        .font(.system(size: 14))
-        .onChange(of: editorHeight) { _ in reportHeight() }
-        .onChange(of: model.error) { _ in reportHeight() }
-        .onChange(of: voice.error) { _ in reportHeight() }
-        .onAppear { reportHeight() }
-    }
-
-    private func reportHeight() {
-        onHeightChange(editorHeight + 78 + (launcher && model.error != nil ? 32 : 0) + (voice.error != nil ? 32 : 0))
-    }
-}
-
-private struct AskContextPreview: View {
-    @Binding var draft: AskDraft
-    var recapture: () -> Void
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(L("ask.context")).font(.headline)
-            if let source = draft.source { Text(source).foregroundStyle(.secondary).lineLimit(2) }
-            if let date = draft.capturedAt { Text(date, style: .time).font(.caption).foregroundStyle(.secondary) }
-            if let dataURL = draft.screenshot, let image = AskImage.decode(dataURL) {
-                Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 230)
-                HStack {
-                    Button(L("ask.capture.refresh"), action: recapture)
-                    Button(L("ask.remove")) { draft.screenshot = nil; draft.includeScreenshot = false }
-                }
-            }
-            if let text = draft.selection {
-                ScrollView { Text(text).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }.frame(maxHeight: 160)
-                Button(L("ask.selection.remove")) { draft.selection = nil }
-            }
-            Text(L("ask.context.notice")).font(.caption).foregroundStyle(.secondary)
-        }.padding(20).frame(width: 420)
-    }
-}
-
-enum AskImage {
-    static func decode(_ value: String) -> NSImage? {
-        guard let comma = value.firstIndex(of: ","), let data = Data(base64Encoded: String(value[value.index(after: comma)...])) else { return nil }
-        return NSImage(data: data)
-    }
-}
 
 struct AskConversationView: View {
     @ObservedObject var model: AskConversationModel
     @State private var deleteId: String?
     @State private var pullDistance: CGFloat = 0
     @State private var restoredTranscript: String?
+    @State private var query = ""
 
     var body: some View {
         HStack(spacing: 0) {
-            sidebar.frame(width: StudioTheme.sidebarWidth)
-            Divider()
-            VStack(spacing: 0) {
-                HStack {
-                    Text(model.selected?.title ?? model.conversations.first(where: { $0.id == model.selectedId })?.title ?? L("ask.new")).font(.system(size: 16, weight: .semibold)).lineLimit(1)
-                    Spacer()
-                    if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
-                }.padding(.horizontal, 24).frame(height: 52)
-                Divider()
-                messages
-                if let error = model.error {
-                    HStack {
-                        AskNotice(text: error)
-                        Button(L("ask.retry")) { if model.selectionLoadFailed { model.retrySelection() } else { model.resume() } }.disabled(model.isBusy || model.isLoadingSelection)
-                        Button { model.error = nil } label: { Image(systemName: "xmark") }.buttonStyle(.plain)
-                    }.padding(.horizontal, 20).padding(.bottom, 8)
-                }
-                if let id = model.selected?.id, let call = model.pendingApprovals[id] {
-                    approval(call, id: id)
-                }
-                HStack {
-                    if model.isBusy { ProgressView().controlSize(.small); Text(L("ask.working")).font(.caption).foregroundStyle(.secondary) }
-                    else if let run = model.selected?.run, run.status == "failed" || run.status == "cancelled" {
-                        Text(run.error ?? L("ask.cancelled")).font(.caption).foregroundStyle(.secondary)
-                        Button(L("ask.retry")) { model.resume() }
-                    }
-                    if model.selected?.run == nil, model.selected?.messages.last?.role == "user", !model.isBusy {
-                        Button(L("ask.resume")) { model.resume() }
-                    }
-                    if model.selected?.run?.isActive == true, let id = model.selected?.id, !model.busyIds.contains(id) {
-                        Button(L("ask.resume")) { model.resume() }
-                    }
-                    Spacer()
-                }.padding(.horizontal, 24)
-                AskComposer(model: model, launcher: false)
-                    .disabled(model.isLoadingSelection)
-                    .padding(12).background(AskTheme.surface, in: RoundedRectangle(cornerRadius: 12))
-                    .modifier(AskVoiceBorder(voice: model.voiceInput, context: "chat:" + (model.selectedId ?? "new"), radius: 12))
-                    .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 16)
-            }.frame(minWidth: 480)
+            sidebar.frame(width: AskMetrics.sidebarWidth)
+            Rectangle().fill(AskTheme.separator).frame(width: 1)
+            content
         }
         .frame(minWidth: 740, minHeight: 530)
         .background(AskTheme.surface)
         .tint(AskTheme.accent)
         .onChange(of: model.draft) { _ in model.persistDrafts() }
-        .confirmationDialog(L("ask.delete.confirm"), isPresented: Binding(get: { deleteId != nil }, set: { if !$0 { deleteId = nil } })) {
-            Button(L("ask.delete"), role: .destructive) { if let id = deleteId { Task { await model.delete(id) } }; deleteId = nil }
+        .confirmationDialog(
+            L("ask.delete.confirm"),
+            isPresented: Binding(get: { deleteId != nil }, set: { if !$0 { deleteId = nil } })
+        ) {
+            Button(L("ask.delete"), role: .destructive) {
+                if let id = deleteId { Task { await model.delete(id) } }
+                deleteId = nil
+            }
         }
     }
 
+    // MARK: - Sidebar
+
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(L("ask.history")).font(.system(size: 13, weight: .medium))
-                Spacer()
-                Button { model.newConversation() } label: { Image(systemName: "square.and.pencil").font(.system(size: 15)) }
-                    .buttonStyle(.plain).help(L("ask.new")).accessibilityLabel(L("ask.new"))
-            }.padding(.horizontal, 16).frame(height: 52)
-            ScrollView {
-                LazyVStack(spacing: 4) {
-                    ForEach(Array(model.conversations.enumerated()), id: \.element.id) { index, item in
-                        if index == 0 || historyGroup(model.conversations[index - 1].updatedAt) != historyGroup(item.updatedAt) {
-                            Text(historyGroup(item.updatedAt)).font(.system(size: 11)).foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.top, index == 0 ? 0 : 12).padding(.bottom, 4)
-                        }
-                        Button { Task { await model.select(item.id) } } label: {
-                            HStack(spacing: 8) {
-                                Text(item.title).lineLimit(1)
-                                Spacer(minLength: 0)
-                                if model.busyIds.contains(item.id) { ProgressView().controlSize(.mini) }
-                                else { Text(item.updatedAt, style: .time).font(.system(size: 10)).foregroundStyle(.tertiary) }
-                            }.font(.system(size: 13)).padding(.horizontal, 10).frame(height: 38)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(model.selectedId == item.id ? AskTheme.accent.opacity(0.14) : Color.clear, in: RoundedRectangle(cornerRadius: 9))
-                        }.buttonStyle(.plain)
-                            .accessibilityAddTraits(model.selectedId == item.id ? .isSelected : [])
-                            .contextMenu { Button(L("ask.delete"), role: .destructive) { deleteId = item.id }.disabled(model.busyIds.contains(item.id)) }
-                    }
-                    if model.historyHasMore { Button(L("ask.loadMore")) { Task { await model.refreshHistory(loadMore: true) } } }
-                    if model.conversations.isEmpty { Text(L("ask.history.empty")).font(.caption).foregroundStyle(.secondary).padding() }
-                }.padding(.horizontal, 8)
-                    .background(AskHistoryPullRefresh(isRefreshing: model.isRefreshingHistory, onDistance: { pullDistance = $0 }, onRefresh: { Task { await model.pullToRefreshHistory() } }))
+        VStack(alignment: .leading, spacing: 0) {
+            // The window uses a full-size content view; this reserves the
+            // traffic-light strip so nothing is drawn underneath it.
+            Color.clear.frame(height: AskMetrics.headerHeight)
+            searchField.padding(.horizontal, 12).padding(.bottom, 10)
+            newConversationButton.padding(.horizontal, 12).padding(.bottom, 12)
+            historyList
+        }
+        .background(AskTheme.sidebarSurface)
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 7) {
+            Image(systemName: "magnifyingglass").font(.system(size: 11, weight: .medium))
+                .foregroundStyle(StudioTheme.textTertiary)
+            TextField(L("ask.search"), text: $query)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12.5))
+                .foregroundStyle(StudioTheme.textPrimary)
+            if !query.isEmpty {
+                Button { query = "" } label: {
+                    Image(systemName: "xmark.circle.fill").font(.system(size: 11))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L("ask.remove"))
             }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                if model.isRefreshingHistory || pullDistance > 0 || model.historyRefreshError != nil {
-                    HStack(spacing: 6) {
-                        if model.isRefreshingHistory { ProgressView().controlSize(.mini) }
-                        else { Image(systemName: model.historyRefreshError == nil ? "arrow.down" : "exclamationmark.circle") }
-                        Text(model.historyRefreshError ?? L(model.isRefreshingHistory ? "ask.history.refreshing" : pullDistance >= AskHistoryPullGesture.threshold ? "ask.history.release" : "ask.history.pull"))
-                            .lineLimit(2)
-                    }.font(.system(size: 11)).foregroundStyle(AskTheme.accent).padding(8)
-                        .frame(maxWidth: .infinity, minHeight: 36)
-                        .background(AskTheme.accent.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
-                        .padding(.horizontal, 8).padding(.bottom, 6)
-                        .allowsHitTesting(false)
+        }
+        .padding(.horizontal, 9)
+        .frame(maxWidth: .infinity, minHeight: 30, maxHeight: 30)
+        .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private var newConversationButton: some View {
+        Button {
+            query = ""
+            model.newConversation()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "square.and.pencil").font(.system(size: 12, weight: .semibold))
+                Text(L("ask.new")).font(.system(size: 12.5, weight: .semibold))
+            }
+            .foregroundStyle(Color.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 32)
+            .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L("ask.new"))
+    }
+
+    private var visibleConversations: [AskConversationSummary] {
+        AskPresentation.filterHistory(model.conversations, query: query)
+    }
+
+    private var historyList: some View {
+        let items = visibleConversations
+        return ScrollView {
+            LazyVStack(spacing: 2) {
+                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                    if index == 0 || historyGroup(items[index - 1].updatedAt) != historyGroup(item.updatedAt) {
+                        Text(historyGroup(item.updatedAt))
+                            .font(.system(size: 10.5, weight: .bold))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 10)
+                            .padding(.top, index == 0 ? 2 : 12)
+                            .padding(.bottom, 4)
+                    }
+                    historyRow(item)
+                }
+                if model.historyHasMore, query.isEmpty {
+                    Button(L("ask.loadMore")) { Task { await model.refreshHistory(loadMore: true) } }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(AskTheme.accentText)
+                        .padding(.top, 8)
+                }
+                if items.isEmpty {
+                    Text(L(query.isEmpty ? "ask.history.empty" : "ask.history.searchEmpty"))
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 24)
                 }
             }
-            .accessibilityAction(named: Text(L("ask.refresh"))) { Task { await model.pullToRefreshHistory() } }
-        }.background(AskTheme.sidebarSurface)
+            .padding(.horizontal, 8)
+            .background(AskHistoryPullRefresh(
+                isRefreshing: model.isRefreshingHistory,
+                onDistance: { pullDistance = $0 },
+                onRefresh: { Task { await model.pullToRefreshHistory() } }
+            ))
+        }
+        .safeAreaInset(edge: .top, spacing: 0) { pullIndicator }
+        .accessibilityAction(named: Text(L("ask.refresh"))) { Task { await model.pullToRefreshHistory() } }
+    }
+
+    @ViewBuilder private var pullIndicator: some View {
+        if model.isRefreshingHistory || pullDistance > 0 || model.historyRefreshError != nil {
+            HStack(spacing: 6) {
+                if model.isRefreshingHistory { ProgressView().controlSize(.mini) }
+                else { Image(systemName: model.historyRefreshError == nil ? "arrow.down" : "exclamationmark.circle") }
+                Text(model.historyRefreshError ?? L(model.isRefreshingHistory ? "ask.history.refreshing"
+                    : pullDistance >= AskHistoryPullGesture.threshold ? "ask.history.release" : "ask.history.pull"))
+                    .lineLimit(2)
+            }
+            .font(.system(size: 11))
+            .foregroundStyle(model.historyRefreshError == nil ? StudioTheme.textSecondary : StudioTheme.warning)
+            .padding(.horizontal, 8)
+            .frame(maxWidth: .infinity, minHeight: 30)
+            .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .padding(.horizontal, 8)
+            .padding(.bottom, 6)
+            .allowsHitTesting(false)
+        }
+    }
+
+    private func historyRow(_ item: AskConversationSummary) -> some View {
+        let selected = model.selectedId == item.id
+        return Button {
+            Task { await model.select(item.id) }
+        } label: {
+            HStack(spacing: 8) {
+                Text(item.title)
+                    .font(.system(size: 12.8, weight: .medium))
+                    .foregroundStyle(selected ? AskTheme.accentText : StudioTheme.textPrimary)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                if model.busyIds.contains(item.id) { ProgressView().controlSize(.mini) }
+                else {
+                    Text(item.updatedAt, style: .time)
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                }
+            }
+            .padding(.horizontal, 10)
+            .frame(height: 34)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(selected ? AskTheme.accentSoft : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .contextMenu {
+            Button(L("ask.delete"), role: .destructive) { deleteId = item.id }
+                .disabled(model.busyIds.contains(item.id))
+        }
     }
 
     private func historyGroup(_ date: Date) -> String {
@@ -289,53 +189,229 @@ struct AskConversationView: View {
         return L("ask.earlier")
     }
 
-    private var messages: some View {
+    // MARK: - Content
+
+    private var content: some View {
+        VStack(spacing: 0) {
+            header
+            Rectangle().fill(AskTheme.separator).frame(height: 1)
+            if model.selectedId == nil { emptyState } else { transcript }
+            statusArea
+            composerArea
+        }
+        .frame(minWidth: 480)
+        .background(AskTheme.surface)
+    }
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            Text(model.selected?.title
+                 ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
+                 ?? L("ask.new"))
+                .font(.system(size: 14, weight: .semibold))
+                .lineLimit(1)
+            if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
+            Spacer(minLength: 8)
+            if let id = model.selectedId {
+                Button { deleteId = id } label: {
+                    Image(systemName: "trash").font(.system(size: 12))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .frame(width: 27, height: 27)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(L("ask.delete"))
+                .accessibilityLabel(L("ask.delete"))
+            }
+        }
+        .padding(.horizontal, 18)
+        .frame(height: AskMetrics.headerHeight)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            AskAvatar(size: 46, corner: 14)
+            Text(L("ask.empty")).font(.system(size: 16, weight: .semibold)).padding(.top, 6)
+            Text(L("ask.empty.hint")).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textTertiary)
+            VStack(spacing: 7) {
+                suggestion(title: L("ask.suggest.screen"), caption: L("ask.suggest.screen.caption"),
+                           systemImage: "display", screenshot: true)
+                suggestion(title: L("ask.suggest.selection"), caption: L("ask.suggest.selection.caption"),
+                           systemImage: "text.cursor", screenshot: false)
+                suggestion(title: L("ask.suggest.page"), caption: L("ask.suggest.page.caption"),
+                           systemImage: "globe", screenshot: false)
+            }
+            .frame(width: 340)
+            .padding(.top, 14)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 32)
+    }
+
+    private func suggestion(title: String, caption: String, systemImage: String, screenshot: Bool) -> some View {
+        Button {
+            model.draft.text = title
+            if screenshot { model.draft.includeScreenshot = true }
+        } label: {
+            HStack(spacing: 9) {
+                Image(systemName: systemImage).font(.system(size: 12))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                Text(title).font(.system(size: 12.5, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                Spacer(minLength: 8)
+                Text(caption).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 38)
+            .background(AskTheme.raisedSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AskTheme.border))
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder private var statusArea: some View {
+        if let error = model.error {
+            AskBanner(
+                text: error,
+                tone: .warning,
+                actionTitle: L("ask.retry"),
+                action: { if model.selectionLoadFailed { model.retrySelection() } else { model.resume() } },
+                onDismiss: { model.error = nil }
+            )
+            .padding(.horizontal, 22)
+            .padding(.bottom, 6)
+        }
+        if let id = model.selected?.id, let call = model.pendingApprovals[id] {
+            approval(call, id: id).padding(.horizontal, 22).padding(.bottom, 6)
+        }
+        if let run = model.selected?.run, run.status == "failed" || run.status == "cancelled", !model.isBusy {
+            AskBanner(text: run.error ?? L("ask.cancelled"), tone: .info,
+                      systemImage: "arrow.clockwise",
+                      actionTitle: L("ask.resume"), action: { model.resume() })
+                .padding(.horizontal, 22)
+                .padding(.bottom, 6)
+        } else if resumable {
+            AskBanner(text: L("ask.working"), tone: .info, systemImage: "arrow.clockwise",
+                      actionTitle: L("ask.resume"), action: { model.resume() })
+                .padding(.horizontal, 22)
+                .padding(.bottom, 6)
+        }
+    }
+
+    /// An interrupted run: either the request never started, or it is still
+    /// active on this conversation while no local operation is driving it.
+    private var resumable: Bool {
+        guard let selected = model.selected, !model.isBusy else { return false }
+        if selected.run == nil, selected.messages.last?.role == "user" { return true }
+        return selected.run?.isActive == true && !model.busyIds.contains(selected.id)
+    }
+
+    private var composerArea: some View {
+        VStack(spacing: 8) {
+            if model.isBusy {
+                Button { model.stop() } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "stop.fill").font(.system(size: 10))
+                        Text(L("ask.stop")).font(.system(size: 12, weight: .semibold))
+                    }
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .padding(.horizontal, 13)
+                    .frame(height: 28)
+                    .background(AskTheme.raisedSurface, in: Capsule())
+                    .overlay(Capsule().strokeBorder(AskTheme.border))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L("ask.stop"))
+            }
+            AskComposer(model: model, launcher: false)
+                .disabled(model.isLoadingSelection)
+        }
+        .padding(.horizontal, 22)
+        .padding(.top, 8)
+        .padding(.bottom, 18)
+    }
+
+    private func approval(_ call: AskToolCall, id: String) -> some View {
+        AskToolCard(
+            title: AskTheme.toolTitle(call),
+            subtitle: model.selected?.messages.first(where: { $0.role == "user" })?.source,
+            systemImage: AskPresentation.toolSymbol(call),
+            state: .attention,
+            statusText: L("ask.tool.pending"),
+            startsExpanded: true
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                AskMonoBlock(title: L("ask.tool.arguments"), text: call.function.arguments)
+                HStack(spacing: 8) {
+                    Text(L("ask.tool.approvalHint"))
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                    Spacer(minLength: 8)
+                    Button(L("ask.deny")) { model.approve(conversationId: id, allowed: false) }
+                    Button(L("ask.allowOnce")) { model.approve(conversationId: id, allowed: true) }
+                        .buttonStyle(.borderedProminent)
+                }
+            }
+        }
+    }
+
+    // MARK: - Transcript
+
+    private var transcript: some View {
         GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 20) {
-                        if model.isLoadingSelection && model.selected == nil { ProgressView(L("ask.loading")).controlSize(.small).frame(maxWidth: .infinity).padding(.top, 24) }
-                        if model.selectedId == nil { Text(L("ask.empty")).font(.system(size: 16)).foregroundStyle(.secondary).padding(.top, 90).frame(maxWidth: .infinity) }
+                    LazyVStack(alignment: .leading, spacing: 19) {
+                        if model.isLoadingSelection, model.selected == nil {
+                            ProgressView(L("ask.loading")).controlSize(.small)
+                                .frame(maxWidth: .infinity).padding(.top, 24)
+                        }
                         ForEach((model.selected?.messages ?? []).filter { $0.role != "tool" }) { message in
-                            AskMessageView(message: message, allMessages: model.selected?.messages ?? [])
+                            AskMessageView(message: message,
+                                           allMessages: model.selected?.messages ?? [],
+                                           onQuote: quote)
                                 .id(message.id)
                                 .background(GeometryReader { geometry in
-                                    Color.clear.preference(key: AskTranscriptFrames.self, value: [message.id: geometry.frame(in: .named("ask-transcript"))])
+                                    Color.clear.preference(key: AskTranscriptFrames.self,
+                                                           value: [message.id: geometry.frame(in: .named("ask-transcript"))])
                                 })
                         }
                         if let preview = model.selected?.run?.preview, !preview.isEmpty {
-                            MarkdownSwiftUIView(markdown: preview).textSelection(.enabled)
+                            AskStreamingMessage(text: preview)
                         }
                         Color.clear.frame(height: 1).id("bottom")
                             .background(GeometryReader { geometry in
-                                Color.clear.preference(key: AskTranscriptFrames.self, value: ["bottom": geometry.frame(in: .named("ask-transcript"))])
+                                Color.clear.preference(key: AskTranscriptFrames.self,
+                                                       value: ["bottom": geometry.frame(in: .named("ask-transcript"))])
                             })
-                    }.padding(24)
+                    }
+                    .padding(.horizontal, 26)
+                    .padding(.vertical, 20)
                 }
                 .coordinateSpace(name: "ask-transcript")
                 .onPreferenceChange(AskTranscriptFrames.self) { frames in
                     guard let id = model.selectedId, restoredTranscript == id else { return }
                     if let bottom = frames["bottom"], bottom.minY <= viewport.size.height + 24 {
                         model.transcriptPositions[id] = "bottom"
-                    } else if let first = frames.filter({ $0.key != "bottom" && $0.value.maxY > 0 }).min(by: { $0.value.minY < $1.value.minY }) {
+                    } else if let first = frames.filter({ $0.key != "bottom" && $0.value.maxY > 0 })
+                        .min(by: { $0.value.minY < $1.value.minY }) {
                         model.transcriptPositions[id] = first.key
                     }
                 }
                 .onChange(of: model.selectedId) { _ in restoredTranscript = nil }
                 .onChange(of: model.selected?.id) { _ in restoreTranscript(proxy) }
                 .onAppear { restoreTranscript(proxy) }
-                .onChange(of: model.selected?.run?.preview) { _ in
-                    if let id = model.selectedId, restoredTranscript == id, model.transcriptPositions[id] == "bottom" {
-                        proxy.scrollTo("bottom", anchor: .bottom)
-                    }
-                }
-                .onChange(of: model.selected?.messages.count) { _ in
-                    if let id = model.selectedId, restoredTranscript == id, model.transcriptPositions[id] == "bottom" {
-                        proxy.scrollTo("bottom", anchor: .bottom)
-                    }
-                }
+                .onChange(of: model.selected?.run?.preview) { _ in followBottom(proxy) }
+                .onChange(of: model.selected?.messages.count) { _ in followBottom(proxy) }
             }
         }
+    }
+
+    private func followBottom(_ proxy: ScrollViewProxy) {
+        guard let id = model.selectedId, restoredTranscript == id,
+              model.transcriptPositions[id] == "bottom" else { return }
+        proxy.scrollTo("bottom", anchor: .bottom)
     }
 
     private func restoreTranscript(_ proxy: ScrollViewProxy) {
@@ -348,92 +424,161 @@ struct AskConversationView: View {
         }
     }
 
-    private func approval(_ call: AskToolCall, id: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(L("ask.tool.approval"), systemImage: "hand.raised").font(.headline)
-            Text(AskTheme.toolTitle(call)).font(.subheadline.bold())
-            if let source = model.selected?.messages.first(where: { $0.role == "user" })?.source {
-                Label(source, systemImage: "macwindow").font(.caption).foregroundStyle(.secondary)
-            }
-            DisclosureGroup(L("ask.details")) {
-                ScrollView { Text(call.function.arguments).font(.system(size: 12, design: .monospaced)).textSelection(.enabled) }.frame(maxHeight: 100)
-            }.font(.caption)
-            HStack {
-                Text(L("ask.tool.approvalHint")).font(.caption).foregroundStyle(.secondary)
-                Spacer()
-                Button(L("ask.deny")) { model.approve(conversationId: id, allowed: false) }
-                Button(L("ask.allowOnce")) { model.approve(conversationId: id, allowed: true) }.buttonStyle(.borderedProminent)
-            }
-        }.padding(16).background(AskTheme.accent.opacity(0.07), in: RoundedRectangle(cornerRadius: 12)).padding(.horizontal, 20)
+    private func quote(_ text: String) {
+        model.draft.text = AskPresentation.quote(existing: model.draft.text, quoting: text)
     }
 }
 
+/// User turns are right-aligned bubbles, assistant turns are signed paragraphs.
+/// The role is carried by the layout, not by a grey "You" label.
 private struct AskMessageView: View {
     let message: AskMessage
     let allMessages: [AskMessage]
+    var onQuote: (String) -> Void
     @State private var showImage = false
+    @State private var showSelection = false
+    @State private var copied = false
+
     var body: some View {
-        if message.role != "tool" {
-            HStack(alignment: .top, spacing: 12) {
-                if message.role == "assistant", !message.text.isEmpty {
-                    RoundedRectangle(cornerRadius: 2).fill(AskTheme.accent).frame(width: 3)
+        if message.role == "user" { userMessage } else if message.role != "tool" { assistantMessage }
+    }
+
+    private var userMessage: some View {
+        HStack(alignment: .top, spacing: 0) {
+            Spacer(minLength: 64)
+            VStack(alignment: .trailing, spacing: 8) {
+                if !message.text.isEmpty {
+                    Text(message.text)
+                        .font(.system(size: 13.5))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .textSelection(.enabled)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 9)
+                        .background(AskTheme.bubbleSurface,
+                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
-                VStack(alignment: .leading, spacing: 10) {
-                    if !message.text.isEmpty {
-                        if message.role == "user" {
-                            HStack(alignment: .top, spacing: 12) {
-                                Text(L("ask.you")).foregroundStyle(.secondary)
-                                Text(message.text).textSelection(.enabled)
-                            }.font(.system(size: 13)).padding(.horizontal, 12).padding(.vertical, 9)
-                                .background(StudioTheme.surfaceMuted, in: RoundedRectangle(cornerRadius: 8))
-                        } else { MarkdownSwiftUIView(markdown: message.text).textSelection(.enabled) }
+                if message.image != nil || message.selection != nil { attachments }
+            }
+            .frame(maxWidth: AskMetrics.bubbleMaxWidth, alignment: .trailing)
+        }
+    }
+
+    private var attachments: some View {
+        HStack(spacing: 8) {
+            if let text = message.selection {
+                AskChip(title: L("ask.selection.lines", AskPresentation.lineCount(text)),
+                        systemImage: "text.cursor",
+                        action: { showSelection = true })
+                    .popover(isPresented: $showSelection) {
+                        ScrollView {
+                            Text(text).font(.system(size: 12)).textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .frame(width: 380, height: 220)
+                        .padding(14)
                     }
-                    if message.image != nil || message.selection != nil {
-                        DisclosureGroup(L("ask.context")) {
-                            if let text = message.selection { Text(text).font(.caption).textSelection(.enabled) }
-                            if let source = message.source { Text(source).font(.caption).foregroundStyle(.secondary) }
-                            if let url = message.image, let image = AskImage.decode(url) {
-                                Button { showImage.toggle() } label: { Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 100) }
-                                    .buttonStyle(.plain).popover(isPresented: $showImage) { Image(nsImage: image).resizable().scaledToFit().frame(width: 650).padding() }
-                            }
-                        }.font(.caption)
+            }
+            if let url = message.image, let image = AskImage.decode(url) {
+                Button { showImage.toggle() } label: {
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 88, height: 56)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(AskTheme.border))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L("ask.preview"))
+                .popover(isPresented: $showImage) {
+                    Image(nsImage: image).resizable().scaledToFit().frame(width: 650).padding()
+                }
+            }
+        }
+    }
+
+    private var assistantMessage: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(spacing: 8) {
+                AskAvatar()
+                Text(verbatim: "Typeflux").font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                Text(message.createdAt, style: .time).font(.system(size: 11))
+                    .foregroundStyle(StudioTheme.textTertiary)
+            }
+            if !message.text.isEmpty {
+                MarkdownSwiftUIView(markdown: message.text)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
+                    .padding(.leading, AskMetrics.assistantIndent)
+            }
+            ForEach(message.toolCalls ?? []) { call in
+                toolCard(call)
+                    .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
+                    .padding(.leading, AskMetrics.assistantIndent)
+            }
+            if !message.text.isEmpty {
+                HStack(spacing: 5) {
+                    AskGhostButton(title: copied ? L("ask.copied") : L("ask.copy"), systemImage: "doc.on.doc") {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(message.text, forType: .string)
+                        copied = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
                     }
-                    ForEach(message.toolCalls ?? []) { call in
-                        let result = allMessages.first { $0.toolCallId == call.id }
-                        DisclosureGroup {
-                            Text(call.function.arguments).font(.system(size: 12, design: .monospaced)).textSelection(.enabled)
-                            if let result {
-                                Text(result.text).font(.system(size: 12)).textSelection(.enabled)
-                                if let url = result.image, let image = AskImage.decode(url) {
-                                    Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 220)
-                                }
-                            }
-                        } label: {
-                            HStack(spacing: 8) {
-                                Label(AskTheme.toolTitle(call), systemImage: result == nil ? "clock" : (result?.isError == true ? "exclamationmark.circle" : "checkmark.circle"))
-                                Text(L("ask.details")).foregroundStyle(AskTheme.accent)
-                            }.font(.system(size: 12)).foregroundStyle(result?.isError == true ? Color.red : Color.secondary)
-                        }.padding(10).background(Color.secondary.opacity(0.055), in: RoundedRectangle(cornerRadius: 8))
+                    AskGhostButton(title: L("ask.quote"), systemImage: "text.quote") { onQuote(message.text) }
+                }
+                .padding(.leading, AskMetrics.assistantIndent - 2)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func toolCard(_ call: AskToolCall) -> some View {
+        let result = allMessages.first { $0.toolCallId == call.id }
+        return AskToolCard(
+            title: AskTheme.toolTitle(call),
+            subtitle: call.function.name,
+            systemImage: AskPresentation.toolSymbol(call),
+            state: AskPresentation.toolState(result: result),
+            statusText: AskPresentation.toolStatusText(result: result)
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                AskMonoBlock(title: L("ask.tool.arguments"), text: call.function.arguments)
+                if let result {
+                    if !result.text.isEmpty {
+                        AskMonoBlock(title: L("ask.tool.result"), text: result.text, isError: result.isError == true)
                     }
-                    if !message.text.isEmpty, message.role != "user" {
-                        Button { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(message.text, forType: .string) } label: { Image(systemName: "doc.on.doc") }
-                            .buttonStyle(.plain).foregroundStyle(.secondary).help(L("ask.copy"))
+                    if let url = result.image, let image = AskImage.decode(url) {
+                        Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 220)
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
                 }
-                Spacer(minLength: 8)
-                Text(message.createdAt, style: .time).font(.system(size: 11)).foregroundStyle(.tertiary)
-            }.fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }
 
-struct AskNotice: View {
-    var text: String
+/// The streaming answer keeps the assistant signature so the layout does not
+/// jump when the finished message replaces it.
+private struct AskStreamingMessage: View {
+    let text: String
+
     var body: some View {
-        HStack(alignment: .top, spacing: 6) {
-            Image(systemName: "exclamationmark.circle")
-            Text(text).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
-        }.font(.caption).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(spacing: 8) {
+                AskAvatar()
+                Text(verbatim: "Typeflux").font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                ProgressView().controlSize(.mini)
+            }
+            MarkdownSwiftUIView(markdown: text)
+                .textSelection(.enabled)
+                .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
+                .padding(.leading, AskMetrics.assistantIndent)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -441,20 +586,5 @@ private struct AskTranscriptFrames: PreferenceKey {
     static let defaultValue: [String: CGRect] = [:]
     static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { _, new in new })
-    }
-}
-
-/// Apply voice feedback to the complete card; ordinary focus stays neutral.
-private struct AskVoiceBorder: ViewModifier {
-    @ObservedObject var voice: AskVoiceInput
-    var context: String
-    var radius: CGFloat
-    private var listening: Bool { voice.context == context && voice.phase == .listening }
-    private var active: Bool { voice.context == context && voice.isActive }
-    func body(content: Content) -> some View {
-        content.overlay(RoundedRectangle(cornerRadius: radius)
-            .stroke(listening ? AskTheme.accent : active ? AskTheme.accent.opacity(0.4) : StudioTheme.border, lineWidth: listening ? 1.5 : 1)
-            .allowsHitTesting(false))
-            .shadow(color: AskTheme.accent.opacity(listening ? 0.22 : 0), radius: 5)
     }
 }

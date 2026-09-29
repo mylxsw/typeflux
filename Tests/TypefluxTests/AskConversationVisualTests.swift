@@ -23,7 +23,7 @@ struct AskConversationVisualTests {
         try await fixture.wait { window("launcher")?.isVisible == true }
         let launcher = try #require(window("launcher"))
         #expect(launcher.styleMask == .borderless)
-        #expect(launcher.frame.width == 640)
+        #expect(launcher.frame.width == AskMetrics.launcherWidth)
         #expect(launcher.frame.height <= 120)
         let bottom = launcher.frame.minY
         let visibleFrame = try #require(launcher.screen?.visibleFrame)
@@ -76,13 +76,13 @@ struct AskConversationVisualTests {
         fixture.model.launcherDraft.text = "帮我总结这页内容，并查找相关资料"
         fixture.model.captureWarning = L("ask.capture.permission")
         try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
-                         size: NSSize(width: 640, height: 110), appearance: .darkAqua, file: root.appendingPathComponent("launcher.png"))
+                         size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: .darkAqua, file: root.appendingPathComponent("launcher.png"))
 
         try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
-                         size: NSSize(width: 640, height: 110), appearance: .aqua, file: root.appendingPathComponent("launcher-light.png"), voice: fixture.model.voiceInput)
+                         size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: .aqua, file: root.appendingPathComponent("launcher-light.png"), voice: fixture.model.voiceInput)
         fixture.model.launcherDraft.text = String(repeating: "Long input wraps naturally and stays editable. ", count: 24)
         try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
-                         size: NSSize(width: 640, height: 226), appearance: .aqua, file: root.appendingPathComponent("launcher-long.png"))
+                         size: NSSize(width: AskMetrics.launcherWidth, height: 230), appearance: .aqua, file: root.appendingPathComponent("launcher-long.png"))
         let call = AskToolCall(id: "browser-read", type: "function", function: .init(name: "browser", arguments: #"{"action":"read"}"#))
         let now = Date()
         let conversation = AskConversation(id: "design-conversation", title: "页面内容总结", revision: 4, updatedAt: now, messages: [

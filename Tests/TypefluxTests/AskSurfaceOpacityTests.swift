@@ -10,9 +10,9 @@ struct AskSurfaceOpacityTests {
         let fixture = try AskTestFixture()
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             let launcher = AskLauncherView(model: fixture.model, onDismiss: {})
-            let red = try await render(launcher.background(Color.red), size: NSSize(width: 640, height: 110), appearance: appearance)
-            let blue = try await render(launcher.background(Color.blue), size: NSSize(width: 640, height: 110), appearance: appearance)
-            try expectSamePixel(red, blue, x: 320, y: 50)
+            let red = try await render(launcher.background(Color.red), size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: appearance)
+            let blue = try await render(launcher.background(Color.blue), size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: appearance)
+            try expectSamePixel(red, blue, x: 340, y: 50)
             // The native panel still needs a transparent exterior for its rounded
             // corners and glow. This also proves the backdrops reached the render.
             let outsideRed = try pixel(red, x: 0, y: 0)
@@ -25,8 +25,8 @@ struct AskSurfaceOpacityTests {
             for (x, y) in [(100, 350), (500, 350), (500, 690)] {
                 try expectSamePixel(workspaceRed, workspaceBlue, x: x, y: y)
             }
-            let bare = try await render(launcher, size: NSSize(width: 640, height: 110), appearance: appearance)
-            #expect(try pixel(bare, x: 320, y: 50).alphaComponent > 0.999)
+            let bare = try await render(launcher, size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: appearance)
+            #expect(try pixel(bare, x: 340, y: 50).alphaComponent > 0.999)
             #expect(try pixel(bare, x: 0, y: 0).alphaComponent < 0.01)
         }
         fixture.model.resetSession()

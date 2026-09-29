@@ -1499,3 +1499,23 @@
 "ask.history.refreshing" = "正在刷新…";
 "ask.history.refreshFailed" = "刷新失败，下拉重试。";
 "ask.voice.holdHint" = "按住输入区说话，松开转写；Esc 取消。";
+
+"ask.search" = "搜索对话";
+"ask.history.searchEmpty" = "没有匹配的对话";
+"ask.selection.lines" = "选区 · %d 行";
+"ask.voice.hold" = "按住说话";
+"ask.tool.running" = "运行中";
+"ask.tool.done" = "已完成";
+"ask.tool.failed" = "失败";
+"ask.tool.pending" = "待确认";
+"ask.tool.arguments" = "参数";
+"ask.tool.result" = "结果";
+"ask.copied" = "已复制";
+"ask.quote" = "引用追问";
+"ask.empty.hint" = "随时双击 Fn 唤起，按住输入框说话";
+"ask.suggest.screen" = "讲讲这一屏在做什么";
+"ask.suggest.screen.caption" = "带当前截图";
+"ask.suggest.selection" = "翻译我选中的文字";
+"ask.suggest.selection.caption" = "保留原格式";
+"ask.suggest.page" = "读一下这个网页并总结";
+"ask.suggest.page.caption" = "用当前浏览器";

@@ -1496,3 +1496,23 @@
 "ask.history.refreshing" = "Refreshing…";
 "ask.history.refreshFailed" = "Refresh failed. Pull down to retry.";
 "ask.voice.holdHint" = "Hold in the editor to speak, release to transcribe; Escape cancels.";
+
+"ask.search" = "搜尋對話";
+"ask.history.searchEmpty" = "沒有符合的對話";
+"ask.selection.lines" = "選取 · %d 行";
+"ask.voice.hold" = "按住說話";
+"ask.tool.running" = "執行中";
+"ask.tool.done" = "已完成";
+"ask.tool.failed" = "失敗";
+"ask.tool.pending" = "待確認";
+"ask.tool.arguments" = "參數";
+"ask.tool.result" = "結果";
+"ask.copied" = "已複製";
+"ask.quote" = "引用追問";
+"ask.empty.hint" = "隨時按兩下 Fn 喚起，按住輸入框說話";
+"ask.suggest.screen" = "說說這一頁畫面在做什麼";
+"ask.suggest.screen.caption" = "附上目前截圖";
+"ask.suggest.selection" = "翻譯我選取的文字";
+"ask.suggest.selection.caption" = "保留原格式";
+"ask.suggest.page" = "讀一下這個網頁並總結";
+"ask.suggest.page.caption" = "使用目前瀏覽器";

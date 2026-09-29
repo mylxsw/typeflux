@@ -1485,3 +1485,23 @@
 "ask.history.refreshing" = "Refreshing…";
 "ask.history.refreshFailed" = "Refresh failed. Pull down to retry.";
 "ask.voice.holdHint" = "Hold in the editor to speak, release to transcribe; Escape cancels.";
+
+"ask.search" = "会話を検索";
+"ask.history.searchEmpty" = "一致する会話がありません";
+"ask.selection.lines" = "選択範囲 · %d 行";
+"ask.voice.hold" = "長押しで話す";
+"ask.tool.running" = "実行中";
+"ask.tool.done" = "完了";
+"ask.tool.failed" = "失敗";
+"ask.tool.pending" = "承認待ち";
+"ask.tool.arguments" = "引数";
+"ask.tool.result" = "結果";
+"ask.copied" = "コピーしました";
+"ask.quote" = "引用して質問";
+"ask.empty.hint" = "Fn キーを 2 回押すといつでも開きます。入力欄を長押しで音声入力。";
+"ask.suggest.screen" = "この画面の内容を説明して";
+"ask.suggest.screen.caption" = "スクリーンショット付き";
+"ask.suggest.selection" = "選択したテキストを翻訳して";
+"ask.suggest.selection.caption" = "書式を保持";
+"ask.suggest.page" = "このページを読んで要約して";
+"ask.suggest.page.caption" = "現在のブラウザ";
