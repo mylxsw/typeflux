@@ -495,6 +495,11 @@ final class StatusBarController: NSObject {
         }
     }
 
+    /// Opens the settings window from outside the menu, e.g. the Ask sidebar footer.
+    func showSettings() {
+        openStudio(.settings)
+    }
+
     @objc private func openHome() {
         openStudio(.home)
     }

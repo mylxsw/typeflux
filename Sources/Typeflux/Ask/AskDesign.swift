@@ -88,6 +88,13 @@ enum AskMetrics {
     static let bannerSpacing: CGFloat = 6
     static let sidebarWidth: CGFloat = 248
     static let headerHeight: CGFloat = 52
+    /// Vertical strip reserved for the window's traffic-light buttons.
+    static let trafficLightStrip: CGFloat = 32
+    /// Leading space for the title bar tools, past the traffic lights.
+    static let trafficLightInset: CGFloat = 78
+    /// Header title inset when the sidebar is collapsed: clears the floating toggle.
+    static let collapsedTitleInset: CGFloat = 122
+    static let composerMaxWidth: CGFloat = 780
     static let transcriptMaxWidth: CGFloat = 680
     static let bubbleMaxWidth: CGFloat = 560
     static let assistantIndent: CGFloat = 30
@@ -501,6 +508,13 @@ struct AskVoiceBorder: ViewModifier {
 /// Pure helpers behind the redesigned surfaces, kept separate so they can be
 /// unit tested without rendering a window.
 enum AskPresentation {
+    /// Name shown in the sidebar footer: the profile name, else the email's local part.
+    static func accountName(name: String?, email: String?) -> String? {
+        if let name = name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty { return name }
+        guard let local = email?.split(separator: "@").first, !local.isEmpty else { return nil }
+        return String(local)
+    }
+
     static func filterHistory(_ items: [AskConversationSummary], query: String) -> [AskConversationSummary] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return items }

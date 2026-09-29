@@ -8,12 +8,20 @@ struct AskConversationView: View {
     @State private var pullDistance: CGFloat = 0
     @State private var restoredTranscript: String?
     @State private var query = ""
+    @State private var isSearching = false
+    @State private var collapsedGroups: Set<String> = []
+    @AppStorage("ask.sidebarCollapsed") private var sidebarCollapsed = false
+    @ObservedObject private var auth = AuthState.shared
 
     var body: some View {
-        HStack(spacing: 0) {
-            sidebar.frame(width: AskMetrics.sidebarWidth)
-            Rectangle().fill(AskTheme.separator).frame(width: 1)
-            content
+        ZStack(alignment: .topLeading) {
+            HStack(spacing: 0) {
+                if !sidebarCollapsed {
+                    sidebar.frame(width: AskMetrics.sidebarWidth)
+                }
+                content
+            }
+            titleBarTools
         }
         .frame(minWidth: 740, minHeight: 530)
         .background(AskTheme.surface)
@@ -34,14 +42,79 @@ struct AskConversationView: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // The window uses a full-size content view; this reserves the
-            // traffic-light strip so nothing is drawn underneath it.
+            // The window uses a full-size content view; this strip clears the
+            // traffic lights. The toggle and search buttons float above it.
             Color.clear.frame(height: AskMetrics.headerHeight)
-            searchField.padding(.horizontal, 12).padding(.bottom, 10)
-            newConversationButton.padding(.horizontal, 12).padding(.bottom, 12)
+            if isSearching {
+                searchField.padding(.horizontal, 12).padding(.bottom, 8)
+            }
+            newConversationButton.padding(.horizontal, 10).padding(.bottom, 8)
             historyList
+            accountFooter
         }
         .background(AskTheme.sidebarSurface)
+    }
+
+    /// Sidebar toggle and search sit in the title bar beside the traffic lights,
+    /// and stay put when the sidebar is collapsed.
+    private var titleBarTools: some View {
+        HStack(spacing: 4) {
+            titleBarButton("sidebar.left", label: L("ask.sidebar.toggle"), active: !sidebarCollapsed) {
+                withAnimation(.easeInOut(duration: 0.18)) { sidebarCollapsed.toggle() }
+            }
+            if !sidebarCollapsed {
+                titleBarButton("magnifyingglass", label: L("ask.search"), active: isSearching) {
+                    isSearching.toggle()
+                    if !isSearching { query = "" }
+                }
+            }
+        }
+        .padding(.leading, AskMetrics.trafficLightInset)
+        .frame(height: AskMetrics.headerHeight)
+    }
+
+    private func titleBarButton(_ symbol: String, label: String, active: Bool,
+                                action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 13, weight: .regular))
+                .foregroundStyle(active ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                .frame(width: 28, height: 26)
+                .background(active ? AskTheme.controlSurface : Color.clear,
+                            in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(label)
+        .accessibilityLabel(label)
+    }
+
+    private var accountFooter: some View {
+        HStack(spacing: 10) {
+            TypefluxLogoBadge(size: 28, symbolSize: 15, backgroundShape: .circle, showsBorder: false)
+                .accessibilityHidden(true)
+            Text(accountName)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            Button { model.onOpenSettings?() } label: {
+                Image(systemName: "gearshape").font(.system(size: 14))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(L("sidebar.settingsAccessibility"))
+            .accessibilityLabel(L("sidebar.settingsAccessibility"))
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 56)
+        .overlay(alignment: .top) { Rectangle().fill(AskTheme.separator).frame(height: 1) }
+    }
+
+    private var accountName: String {
+        AskPresentation.accountName(name: auth.userProfile?.name, email: auth.userProfile?.email)
+            ?? L("sidebar.appName")
     }
 
     private var searchField: some View {
@@ -71,14 +144,18 @@ struct AskConversationView: View {
             query = ""
             model.newConversation()
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "square.and.pencil").font(.system(size: 12, weight: .semibold))
-                Text(L("ask.new")).font(.system(size: 12.5, weight: .semibold))
+            HStack(spacing: 8) {
+                Image(systemName: "square.and.pencil").font(.system(size: 13))
+                    .frame(width: 18)
+                Text(L("ask.new")).font(.system(size: 13.5, weight: .medium))
+                Spacer(minLength: 0)
             }
-            .foregroundStyle(Color.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 32)
-            .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .foregroundStyle(StudioTheme.textPrimary)
+            .padding(.horizontal, 10)
+            .frame(height: 34)
+            .background(model.selectedId == nil ? AskTheme.accentSoft : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L("ask.new"))
@@ -94,15 +171,11 @@ struct AskConversationView: View {
             LazyVStack(spacing: 2) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     if index == 0 || historyGroup(items[index - 1].updatedAt) != historyGroup(item.updatedAt) {
-                        Text(historyGroup(item.updatedAt))
-                            .font(.system(size: 10.5, weight: .bold))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 10)
-                            .padding(.top, index == 0 ? 2 : 12)
-                            .padding(.bottom, 4)
+                        groupHeader(historyGroup(item.updatedAt), first: index == 0)
                     }
-                    historyRow(item)
+                    if !collapsedGroups.contains(historyGroup(item.updatedAt)) || !query.isEmpty {
+                        historyRow(item)
+                    }
                 }
                 if model.historyHasMore, query.isEmpty {
                     Button(L("ask.loadMore")) { Task { await model.refreshHistory(loadMore: true) } }
@@ -128,6 +201,28 @@ struct AskConversationView: View {
         }
         .safeAreaInset(edge: .top, spacing: 0) { pullIndicator }
         .accessibilityAction(named: Text(L("ask.refresh"))) { Task { await model.pullToRefreshHistory() } }
+    }
+
+    private func groupHeader(_ title: String, first: Bool) -> some View {
+        let collapsed = collapsedGroups.contains(title) && query.isEmpty
+        return Button {
+            if collapsed { collapsedGroups.remove(title) } else { collapsedGroups.insert(title) }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
+                    .rotationEffect(.degrees(collapsed ? -90 : 0))
+                Text(title).font(.system(size: 11.5, weight: .semibold))
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(StudioTheme.textTertiary)
+            .padding(.horizontal, 10)
+            .padding(.top, first ? 2 : 12)
+            .padding(.bottom, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
     }
 
     @ViewBuilder private var pullIndicator: some View {
@@ -224,14 +319,19 @@ struct AskConversationView: View {
                 .accessibilityLabel(L("ask.delete"))
             }
         }
-        .padding(.horizontal, 18)
+        .padding(.leading, sidebarCollapsed ? AskMetrics.collapsedTitleInset : 18)
+        .padding(.trailing, 18)
         .frame(height: AskMetrics.headerHeight)
     }
 
     private var emptyState: some View {
         VStack(spacing: 8) {
-            AskAvatar(size: 46, corner: 14)
-            Text(L("ask.empty")).font(.system(size: 16, weight: .semibold)).padding(.top, 6)
+            HStack(spacing: 12) {
+                TypefluxLogoBadge(size: 44, symbolSize: 24, backgroundShape: .circle, showsBorder: false)
+                Text(L("sidebar.appName")).font(.system(size: 32, weight: .semibold))
+            }
+            .accessibilityElement(children: .combine)
+            Text(L("ask.empty")).font(.system(size: 22, weight: .semibold)).padding(.top, 14)
             Text(L("ask.empty.hint")).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textTertiary)
             VStack(spacing: 7) {
                 suggestion(title: L("ask.suggest.screen"), caption: L("ask.suggest.screen.caption"),
@@ -327,6 +427,7 @@ struct AskConversationView: View {
             AskComposer(model: model, launcher: false)
                 .disabled(model.isLoadingSelection)
         }
+        .frame(maxWidth: AskMetrics.composerMaxWidth)
         .padding(.horizontal, 22)
         .padding(.top, 8)
         .padding(.bottom, 18)
