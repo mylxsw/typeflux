@@ -29,7 +29,7 @@ struct AskConversationView: View {
         // traffic lights' baseline instead of sitting below the title bar.
         .ignoresSafeArea(.container, edges: .top)
         .frame(minWidth: 740, minHeight: 530)
-        .background(AskTheme.surface)
+        .background(StudioGlassBackground(tintOpacity: StudioTheme.Opacity.glassBackgroundTint))
         .tint(AskTheme.accent)
         .onChange(of: model.draft) { _ in model.persistDrafts() }
         .confirmationDialog(
@@ -54,7 +54,7 @@ struct AskConversationView: View {
             historyList
             accountFooter
         }
-        .background(AskTheme.sidebarSurface)
+        .background(AskWindowBackdrop(role: .sidebar))
     }
 
     /// Toggle and search live in the title bar row. Expanded, they are right-aligned
@@ -246,7 +246,7 @@ struct AskConversationView: View {
             .foregroundStyle(StudioTheme.textPrimary)
             .padding(.horizontal, 10)
             .frame(height: 34)
-            .background(model.selectedId == nil ? AskTheme.accentSoft : Color.clear,
+            .background(model.selectedId == nil ? StudioTheme.sidebarSelection : Color.clear,
                         in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
@@ -359,7 +359,7 @@ struct AskConversationView: View {
             HStack(spacing: 8) {
                 Text(item.title)
                     .font(.system(size: 12.8, weight: .medium))
-                    .foregroundStyle(selected ? AskTheme.accentText : StudioTheme.textPrimary)
+                    .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 if model.busyIds.contains(item.id) { ProgressView().controlSize(.mini) }
@@ -372,7 +372,7 @@ struct AskConversationView: View {
             .padding(.horizontal, 10)
             .frame(height: 34)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(selected ? AskTheme.accentSoft : Color.clear,
+            .background(selected ? StudioTheme.sidebarSelection : Color.clear,
                         in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
@@ -401,7 +401,7 @@ struct AskConversationView: View {
             composerArea
         }
         .frame(minWidth: 480)
-        .background(AskTheme.surface)
+        .background(AskWindowBackdrop(role: .content))
     }
 
     private var header: some View {

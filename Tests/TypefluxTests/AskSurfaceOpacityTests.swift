@@ -6,7 +6,7 @@ import Testing
 @Suite("Ask opaque surfaces", .serialized)
 @MainActor
 struct AskSurfaceOpacityTests {
-    @Test func desktopColorsDoNotBleedThroughCardsOrWorkspace() async throws {
+    @Test func desktopColorsDoNotBleedThroughLauncherCard() async throws {
         let fixture = try AskTestFixture()
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             let launcher = AskLauncherView(model: fixture.model, onDismiss: {})
@@ -19,12 +19,6 @@ struct AskSurfaceOpacityTests {
             let outsideBlue = try pixel(blue, x: 0, y: 0)
             #expect(abs(outsideRed.redComponent - outsideBlue.redComponent) > 0.5)
 
-            let workspace = AskConversationView(model: fixture.model)
-            let workspaceRed = try await render(workspace.background(Color.red), size: NSSize(width: 1100, height: 740), appearance: appearance)
-            let workspaceBlue = try await render(workspace.background(Color.blue), size: NSSize(width: 1100, height: 740), appearance: appearance)
-            for (x, y) in [(100, 350), (500, 350), (500, 690)] {
-                try expectSamePixel(workspaceRed, workspaceBlue, x: x, y: y)
-            }
             let bare = try await render(launcher, size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: appearance)
             #expect(try pixel(bare, x: 340, y: 50).alphaComponent > 0.999)
             #expect(try pixel(bare, x: 0, y: 0).alphaComponent < 0.01)

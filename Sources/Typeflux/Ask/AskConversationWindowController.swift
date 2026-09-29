@@ -1,6 +1,10 @@
 import AppKit
 import SwiftUI
 
+private final class TransparentAskHostingView<Content: View>: NSHostingView<Content> {
+    override var isOpaque: Bool { false }
+}
+
 @MainActor
 final class AskConversationWindowController: NSObject, NSWindowDelegate {
     let model: AskConversationModel
@@ -104,8 +108,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         dismissLauncher()
         if conversationWindow == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 740), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
-            window.isOpaque = true
-            window.backgroundColor = NSColor(AskTheme.surface)
+            // Translucent like the settings window, so both share the same glass.
+            window.isOpaque = false
+            window.backgroundColor = .clear
             window.title = L("workflow.ask.answerTitle")
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
@@ -119,7 +124,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             window.toolbar = NSToolbar(identifier: "ai.gulu.app.typeflux.ask-conversations.toolbar")
             window.toolbarStyle = .unified
             window.titlebarSeparatorStyle = .none
-            let hosting = NSHostingView(rootView: AskConversationView(model: model))
+            let hosting = TransparentAskHostingView(rootView: AskConversationView(model: model))
             // The window owns its size: without this, resizing content (e.g. hiding
             // the sidebar) can make the hosting view resize or zoom the window.
             hosting.sizingOptions = []
