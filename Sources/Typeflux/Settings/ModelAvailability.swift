@@ -1,6 +1,12 @@
 import Foundation
 
 enum ModelAvailability {
+    static var configurationSpeechProviders: [STTProvider] {
+        STTProvider.settingsDisplayOrder.filter {
+            $0 != .freeModel || !FreeSTTModelRegistry.suggestedModelNames.isEmpty
+        }
+    }
+
     // The exhaustive provider switch deliberately mirrors STTProvider.
     // swiftlint:disable:next cyclomatic_complexity
     static func speechReason(_ provider: STTProvider, settings: SettingsStore, loggedIn: Bool,
