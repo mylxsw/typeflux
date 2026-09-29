@@ -177,6 +177,9 @@ final class AppCoordinator {
             }
         )
         statusBarController?.start()
+        di.askConversationWindowController?.model.onOpenSettings = { [weak self] in
+            self?.statusBarController?.showSettings()
+        }
         self.workflowController?.start()
         self.mouseVoiceInputController?.start()
         // Link the bundled SenseVoice copy before triggering the auto-model

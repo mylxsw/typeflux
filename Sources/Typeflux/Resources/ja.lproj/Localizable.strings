@@ -1487,6 +1487,7 @@
 "ask.voice.holdHint" = "Hold in the editor to speak, release to transcribe; Escape cancels.";
 
 "ask.search" = "会話を検索";
+"ask.sidebar.toggle" = "サイドバーを切り替え";
 "ask.history.searchEmpty" = "一致する会話がありません";
 "ask.selection.lines" = "選択範囲 · %d 行";
 "ask.voice.hold" = "長押しで話す";

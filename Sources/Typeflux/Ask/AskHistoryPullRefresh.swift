@@ -2,11 +2,15 @@ import AppKit
 import SwiftUI
 
 struct AskHistoryPullGesture {
-    static let threshold: CGFloat = 48
+    /// Resisted distance (in points) the user must reach before release refreshes.
+    static let threshold: CGFloat = 64
+    /// Fraction of finger travel that counts, so a light tug never gets close.
+    static let resistance: CGFloat = 0.5
+    static let maxDistance: CGFloat = 96
     private(set) var distance: CGFloat = 0
     mutating func pull(_ delta: CGFloat, atTop: Bool) {
         guard atTop || distance > 0 else { return }
-        distance = min(96, max(0, distance + delta))
+        distance = min(Self.maxDistance, max(0, distance + delta * Self.resistance))
     }
     mutating func end(cancelled: Bool = false) -> Bool {
         let refresh = !cancelled && distance >= Self.threshold
@@ -35,6 +39,9 @@ struct AskHistoryPullRefresh: NSViewRepresentable {
         private var gesture = AskHistoryPullGesture()
         private var wheelEnd: Timer?
         private var dragY: CGFloat?
+        /// A trackpad gesture only counts if it began while the list was already at
+        /// the top; scrolling up and reaching the top mid-gesture must not refresh.
+        private var gestureArmed = false
         override func hitTest(_ point: NSPoint) -> NSView? { nil }
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
@@ -81,8 +88,11 @@ struct AskHistoryPullRefresh: NSViewRepresentable {
         func observeWheel(delta: CGFloat, phase: NSEvent.Phase, momentum: NSEvent.Phase, atTop: Bool) {
             guard !isRefreshing, momentum.isEmpty else { return }
             wheelEnd?.invalidate()
-            if phase.contains(.cancelled) { finish(cancelled: true); return }
-            if phase.contains(.ended) { finish(); return }
+            if phase.contains(.began) || phase.contains(.mayBegin) { gestureArmed = atTop }
+            if phase.contains(.cancelled) { gestureArmed = false; finish(cancelled: true); return }
+            if phase.contains(.ended) { finish(cancelled: !gestureArmed); gestureArmed = false; return }
+            // Discrete mouse wheels have no phase; they are judged per event.
+            guard phase.isEmpty ? atTop : gestureArmed else { return }
             gesture.pull(delta, atTop: atTop)
             onDistance(gesture.distance)
             if phase.isEmpty {

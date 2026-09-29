@@ -6,6 +6,14 @@ import Testing
 @Suite("Ask redesign presentation")
 @MainActor
 struct AskPresentationTests {
+    @Test func accountNamePrefersProfileNameThenEmailLocalPart() {
+        #expect(AskPresentation.accountName(name: " Ada ", email: "ada@example.com") == "Ada")
+        #expect(AskPresentation.accountName(name: "  ", email: "ada@example.com") == "ada")
+        #expect(AskPresentation.accountName(name: nil, email: "ada@example.com") == "ada")
+        #expect(AskPresentation.accountName(name: nil, email: nil) == nil)
+        #expect(AskPresentation.accountName(name: nil, email: "@example.com") == nil)
+    }
+
     private func summary(_ title: String) -> AskConversationSummary {
         AskConversationSummary(id: UUID().uuidString, title: title, updatedAt: Date())
     }
