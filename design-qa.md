@@ -1,76 +1,57 @@
-# Ask surfaces — approved redesign (GUL-124, revision 6)
+# Model configuration visual QA
 
-Source visual truth: the five review boards attached to GUL-124
-(`ask-redesign-01-launcher`, `-02-workspace-light`, `-03-workspace-dark`,
-`-04-components`, `-05-tokens`) and their written spec. They replace the
-earlier "design 2" reference in `docs/images/ask-design2-reference.png`.
+Source truth: GUL-126 attachments `model-v2-01-settings.png`, `model-v2-02-provider-models.png`, and `model-v2-03-picking.png`.
 
-The boards are HTML/CSS review renders, not AppKit captures. Where a board and
-the interaction specification disagree, the specification wins.
+Implementation: production SwiftUI views, captured by `AskConversationVisualTests.renderModelSelectionSurfaces`. This is a native macOS application; browser and CSS checks do not apply.
 
-## What the redesign changes
+## Findings and fixes
 
-- **Launcher** — 680 × 102 pt card (58 pt editor row + 44 pt footer) inside a
-  6 pt transparent gutter, centred above the bottom of the screen with the same
-  58 pt visible offset as before. The footer uses a lighter backplate so the
-  panel reads as a command palette rather than a form.
-- **Capsules instead of controls** — the screenshot switch, the selection and the
-  source application are capsules: filled accent when on, amber when a
-  permission is missing, dashed when available but off. The native check box and
-  the inline orange warning text are gone; a missing permission never blocks
-  sending.
-- **Colour means state** — accent for running/sendable, green for a finished
-  tool, amber for "needs your decision", red for a failure. Ordinary focus keeps
-  a neutral border; only recording paints the card accent with a 5 pt glow.
-- **Workspace** — 248 pt sidebar with local search, a primary "new conversation"
-  button and date groups; user turns are right-aligned bubbles and assistant
-  turns are signed paragraphs capped at 680 pt for readability. The grey "You"
-  label is removed.
-- **Tool calls** — one 40 pt collapsed card per call with a status badge,
-  expanding to monospaced arguments and result. Approval happens inside the card.
-- **Message actions** — a persistent row with copy and quote-as-follow-up,
-  replacing the unlabelled floating icon.
-- **Empty state, banners** — a new conversation offers three starting prompts;
-  errors, retries and resume prompts share one rounded banner instead of red
-  body text.
+| Severity | Earlier evidence | Fix and final evidence |
+| --- | --- | --- |
+| P1 | Scene card had a stacked header, excess height and unbounded text-only selections. | One compact header, three separated 64-point rows, consistent 240×32 selectors. `docs/images/models-settings-dark.png`. |
+| P1 | Light provider cards showed multiple soft shadow bands; fields and actions looked like small default controls. | Flat bordered surfaces, 34-point fields, 32-point buttons, visible primary catalog action. `docs/images/models-provider-light.png`. |
+| P1 | Provider screenshot omitted the surrounding app; production detail retained the generic Models heading above its own heading. | Shared navigation state displays the provider heading and back action once, inside the real settings shell. Both full-window provider captures. |
+| P2 | Model rows had loose spacing, inset separators and unstyled purpose labels. | 44-point rows, full-width separators, muted capsule labels and a compact overflow action. `docs/images/comparison-provider.png`. |
+| P2 | Selection used a system menu without the reference's grouped rows and selected background. | Shared production popover with grouped models, explicit checkmark, blue selected background and separate default action. `docs/images/models-menu-dark.png`. |
+| P2 | Loaded models were difficult to distinguish; selected existing entries appeared disabled. | Dedicated catalog component, clear checked entries, separate non-chat reason, model search and accurate newly-selected count. `docs/images/models-catalog-dark.png`. |
+| P2 | Dark page was too light, tabs were oversized and page top spacing drifted. | Scoped model-page canvas, 36-point tabs, 32-point content top inset. Other settings sections retain their theme. Speech and language captures. |
 
-## Fidelity surfaces
+## Comparison history
 
-- Typography: system fonts with the Chinese system fallback. Launcher editor
-  15.5 pt, workspace editor 14 pt, message body 13.5 pt, sidebar row 12.8 pt,
-  footer and captions 11.5–12 pt, group labels 10.5 pt.
-- Spacing and shape: launcher radius 18, composer and panel cards 14, window and
-  tool cards 12/11, buttons 8, banners 10, capsules fully rounded. Borders are
-  1 pt; the recording border is 1.5 pt.
-- Colour: opaque backplates in both appearances (`AskTheme.surface`,
-  `raisedSurface`, `sidebarSurface`). Only the rounded exterior, the shadow and
-  the recording glow carry transparency.
-- Motion: the level meter is the only continuous animation and it is replaced by
-  a static meter when "Reduce Motion" is enabled. Every state is also
-  distinguishable from its label alone.
+1. Opened all three original design boards and the previous delivery screenshots. Recorded the P1/P2 differences above before editing.
+2. Rendered both appearances after the layout/surface changes. Fixed the remaining tab height, provider heading, catalog checked-state contrast and menu height.
+3. Re-rendered the final production components and compared the source and implementation together in the four comparison images. No unresolved P0/P1/P2 visual findings in these captured states.
 
-## Verification
+## Capture and normalization
 
-- `AskPresentationTests` covers history search, selection line counts, tool
-  state and symbol mapping, quoting, launcher panel geometry, the neutral-focus
-  border rule and the level-meter bounds.
-- `AskRedesignLayoutTests` renders the real views: the launcher reports the new
-  panel height at rest and while growing, and the workspace keeps an opaque,
-  visually distinct sidebar in both appearances.
-- `AskSurfaceOpacityTests` still proves no desktop colour bleeds through the
-  launcher card or the workspace, at the new panel size.
-- `AskComposerInteractionTests` and `AskVoiceInputTests` are unchanged and keep
-  covering hold-to-talk, focus hand-off between the two windows, IME and
-  selection behaviour.
+- Original boards: 3720×1980, 3480×1600, and 3120×1120 pixels. The boards contain several screens, captions and surrounding presentation canvas.
+- App captures: 1200×880 points/pixels, scale 1, light and dark, for both tabs and the full provider detail. Catalog: 580×470. Model chooser: 360×370.
+- Comparison images crop the app-owned content from the boards, excluding presentation titles and sidebar chrome, and scale both content regions to the same 800-pixel width. Board crop coordinates are converted from their 2048-pixel inspection width to original pixels before cropping.
+- Full-view evidence: `docs/images/comparison-speech.png` and `docs/images/comparison-provider.png`.
+- Focused evidence: `docs/images/comparison-catalog.png` and `docs/images/comparison-menu.png`.
+- State: Chinese locale, synthetic provider credentials/model metadata. The app is logged out, so cloud availability and the number of configured speech providers intentionally differ from the logged-in design board. The chooser uses the logged-in presentation input to display configured cloud choices. Layout comparisons do not treat these data differences as spacing defects.
 
-## Known gaps
+## Required fidelity surfaces
 
-- The PNGs in `docs/images/` still show the previous revision. They are produced
-  by the opt-in `TYPEFLUX_ASK_SNAPSHOTS` run on a real macOS host and have not
-  been regenerated for this revision.
-- Sidebar rows stay single-line: the history list API returns only a title and a
-  timestamp, so the two-line snippet in the board needs a server-side field
-  before it can be implemented.
-- The message action row shows copy and quote. Per-answer token usage is not
-  available to the client, so the board's "duration · tokens" caption is not
-  implemented rather than being faked.
+- Typography: system SF/PingFang with a 23-point page title, 13–15-point primary UI text, 11–12-point secondary text and monospaced model IDs. Checked for truncation in the captured settings/detail/catalog/chooser states.
+- Spacing: compact scene header, aligned control edges, 58-point provider rows, 44-point model rows, 12-point card corners; no heavy decorative shadows.
+- Colors: flat dark canvas, separated card/input surfaces, restrained borders, green availability dots, blue primary/selected states; light appearance uses the same hierarchy.
+- Assets: existing Typeflux branding and native SF Symbols remain sharp. The mock's generic letter badges are represented with native provider/category symbols; no new raster illustration is required.
+- Copy: Ask default remains explicit; current-conversation selection and setting the default remain separate actions. Availability reasons and non-chat explanations remain visible.
+
+## Intentional differences and remaining limits
+
+- Preserve the existing app sidebar, logo, account card and current provider order. These are shared application components, not new mock artwork.
+- Keep an explicit Save button for edited connection data and fully mask credentials. The design's partially visible key is not reproduced.
+- The catalog Add count measures new selections, so the initial count is zero when only existing models are checked; the mock's initial “3” would misleadingly suggest adding duplicates.
+- Retain supplied model names and unavailable states instead of inventing catalog names or credentials to match the mock.
+- Source boards provide dark designs; light appearance is an adaptation using the same geometry and hierarchy.
+- Native popover chrome, text antialiasing and the shared sidebar are not claimed to match every source pixel. Long catalogs scroll. Captures do not replace live-provider or full keyboard/VoiceOver end-to-end testing.
+
+## Validation
+
+- `swift build`.
+- `TYPEFLUX_ASK_SNAPSHOTS=<directory> swift test --filter 'AskConversationVisualTests.renderModelSelectionSurfaces|AskModelSelectionTests|ModelRegistryTests|StudioViewModel'`: model/scene regressions plus production render coverage.
+- Strict SwiftLint on the five changed visual component files; `git diff --check`.
+
+final result: passed

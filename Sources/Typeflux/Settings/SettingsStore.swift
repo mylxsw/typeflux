@@ -819,7 +819,11 @@ final class SettingsStore {
     var isLLMConfigured: Bool {
         if !rewriteModelReference.isEmpty {
             let configuration = textLLMConfiguration()
-            return configuration.provider == .typefluxCloud || (!configuration.baseURL.isEmpty && !configuration.model.isEmpty)
+            if configuration.provider == .typefluxCloud { return true }
+            guard !configuration.baseURL.isEmpty, !configuration.model.isEmpty else { return false }
+            if let provider = ModelRegistry.read(defaults)?.resolve(rewriteModelReference)?.0.remote,
+               provider != .custom, provider != .freeModel, configuration.apiKey.isEmpty { return false }
+            return true
         }
         switch llmProvider {
         case .ollama:
@@ -847,15 +851,40 @@ final class SettingsStore {
 
     var rewriteModelReference: String { defaults.string(forKey: "llm.profile.reference") ?? "" }
 
-    var effectiveLLMProvider: LLMProvider { rewriteModelReference.isEmpty ? llmProvider : .openAICompatible }
+    /// The merged speech protocol has no field for an explicit model reference.
+    var canUseIntegratedCloudRewrite: Bool {
+        rewriteModelReference.isEmpty && llmProvider == .openAICompatible && llmRemoteProvider == .typefluxCloud
+    }
+
+    var effectiveLLMProvider: LLMProvider {
+        if rewriteModelReference.isEmpty {
+            return llmProvider
+        }
+        return ModelRegistry.read(defaults)?.resolve(rewriteModelReference)?.0
+            .isOllama == true ? .ollama : .openAICompatible
+    }
+
+    var resolvedOllamaModel: String {
+        rewriteModelReference
+            .isEmpty ? ollamaModel : (ModelRegistry.read(defaults)?.resolve(rewriteModelReference)?.1.id ?? "")
+    }
 
     func textLLMConfiguration() -> TextLLMConfiguration {
-        if rewriteModelReference == "cloud:default" {
+        if let (provider, model) = ModelRegistry.read(defaults)?.resolve(rewriteModelReference) {
+            return provider.connection(settings: self, model: model)
+        }
+        if rewriteModelReference == "cloud:default", ModelRegistry.read(defaults) == nil {
             return TextLLMConfiguration(provider: .typefluxCloud, baseURL: "", model: "default", apiKey: "")
         }
         if !rewriteModelReference.isEmpty {
-            if let profile = AskModelLibrary.readProfiles(defaults).first(where: { $0.reference == rewriteModelReference }) {
-                return TextLLMConfiguration(provider: .custom, baseURL: profile.baseURL, model: profile.model, apiKey: AskModelLibrary.key(for: profile))
+            if let profile = AskModelLibrary.readProfiles(defaults)
+                .first(where: { $0.reference == rewriteModelReference }) {
+                return TextLLMConfiguration(
+                    provider: .custom,
+                    baseURL: profile.baseURL,
+                    model: profile.model,
+                    apiKey: AskModelLibrary.key(for: profile)
+                )
             }
             // A removed profile remains unavailable instead of silently changing provider.
             return TextLLMConfiguration(provider: .custom, baseURL: "", model: "", apiKey: "")

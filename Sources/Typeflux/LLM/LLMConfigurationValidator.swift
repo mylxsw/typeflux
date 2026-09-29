@@ -38,6 +38,7 @@ struct LLMConfigurationValidator {
     let isLoggedIn: Bool
 
     func validate() -> LLMConfigurationStatus {
+        if !settingsStore.rewriteModelReference.isEmpty { return validateSelectedModel() }
         switch settingsStore.llmProvider {
         case .ollama:
             let baseURL = settingsStore.ollamaBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -84,5 +85,21 @@ struct LLMConfigurationValidator {
                 return .ready
             }
         }
+    }
+
+    private func validateSelectedModel() -> LLMConfigurationStatus {
+        let configuration = settingsStore.textLLMConfiguration()
+        if configuration.provider == .typefluxCloud {
+            return isLoggedIn ? .ready : .notConfigured(reason: .cloudNotLoggedIn)
+        }
+        guard !configuration.baseURL.isEmpty, !configuration.model.isEmpty else {
+            return .notConfigured(reason: .incompleteConfig(
+                details: L("ask.models.unavailable")
+            ))
+        }
+        if configuration.provider != .custom, configuration.provider != .freeModel, configuration.apiKey.isEmpty {
+            return .notConfigured(reason: .missingAPIKey)
+        }
+        return .ready
     }
 }

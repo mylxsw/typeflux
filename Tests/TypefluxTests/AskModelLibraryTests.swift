@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 @MainActor
 final class AskModelLibraryTests: XCTestCase {
@@ -13,7 +13,7 @@ final class AskModelLibraryTests: XCTestCase {
         let profile = AskModelProfile(name: "My API", baseURL: "https://example.invalid/v1", model: "my-model")
         try library.save(profile, key: "fixture-secret")
         defer { KeychainTokenStore.deleteKeychainItem(account: "ask-model-" + profile.id) }
-        let encoded = try XCTUnwrap(defaults.data(forKey: "llm.model.profiles"))
+        let encoded = try XCTUnwrap(defaults.data(forKey: ModelRegistry.storageKey))
         XCTAssertFalse(String(decoding: encoded, as: UTF8.self).contains("fixture-secret"))
         XCTAssertEqual(AskModelLibrary.key(for: profile), "fixture-secret")
         XCTAssertEqual(AskModelLibrary.readProfiles(defaults), [profile])
@@ -28,7 +28,7 @@ final class AskModelLibraryTests: XCTestCase {
         XCTAssertTrue(store.isLLMConfigured)
         library.remove(profile)
         XCTAssertTrue(library.profiles.isEmpty)
-        XCTAssertEqual(AskModelLibrary.key(for: profile), "")
+        XCTAssertEqual(AskModelLibrary.key(for: profile), "fixture-secret")
         XCTAssertEqual(library.defaultReference, profile.reference)
         XCTAssertFalse(store.isLLMConfigured)
         XCTAssertTrue(store.textLLMConfiguration().model.isEmpty)

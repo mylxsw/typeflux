@@ -12,6 +12,12 @@ final class AskConversationModel: ObservableObject {
         if launcher { return launcherDraft.modelRef ?? modelLibrary.defaultReference }
         return draft.modelRef ?? selected.map { $0.modelRef ?? "cloud:default" } ?? modelLibrary.defaultReference
     }
+    func requiresVision(launcher: Bool) -> Bool {
+        let current = launcher ? launcherDraft : draft
+        return (current.includeScreenshot && current.screenshot != nil)
+            || (!launcher && selected?.messages.contains(where: { $0.image != nil }) == true)
+    }
+
     @Published var launcherDraft = AskDraft()
     @Published var draft = AskDraft.followUp
     @Published private(set) var conversations: [AskConversationSummary] = []
@@ -292,7 +298,10 @@ final class AskConversationModel: ObservableObject {
                 var request = request
                 request.tools = await tools.definitions()
                 do {
-                    try await validateModel(request.modelRef, token: current.token)
+                    try await validateModel(
+                        request.modelRef, token: current.token,
+                        hasImage: request.image != nil || value.messages.contains(where: { $0.image != nil })
+                    )
                 } catch {
                     // No message was sent. Restore the editable draft so another model can be selected.
                     guard owner == current.owner else { throw CancellationError() }
@@ -314,16 +323,23 @@ final class AskConversationModel: ObservableObject {
         }
     }
 
-    private func validateModel(_ reference: String?, token: String) async throws {
-        guard let reference, reference != "cloud:default" else { return }
-        // Old servers ignore unknown request fields: establish bridge support first.
-        let catalog = try await api.models(token: token)
-        if reference.hasPrefix("custom:") {
-            guard modelLibrary.profiles.contains(where: { $0.reference == reference }) else {
-                throw AskLocalError.message(L("ask.models.unavailable"))
+    private func validateModel(_ reference: String?, token: String, hasImage: Bool = false) async throws {
+        let reference = reference ?? "cloud:default"
+        if reference != "cloud:default" {
+            let catalog = try await api.models(token: token)
+            if reference.hasPrefix("cloud:"),
+               !catalog.contains(where: { $0.reference == reference }) {
+                throw modelLibrary.unavailable()
             }
-        } else if !catalog.contains(where: { $0.reference == reference }) {
-            throw AskLocalError.message(L("ask.models.unavailable"))
+        }
+        guard let (provider, model) = modelLibrary.registry.resolve(reference) else {
+            throw modelLibrary.unavailable()
+        }
+        if provider.isOllama {
+            await modelLibrary.probeOllama()
+        }
+        if let reason = modelLibrary.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: true) {
+            throw AskLocalError.message(reason)
         }
     }
 
@@ -340,14 +356,20 @@ final class AskConversationModel: ObservableObject {
                 _ = await tools.definitions()
                 let response: AskConversation
                 if let request = pendingSends[id] {
-                    try await validateModel(request.modelRef, token: current.token)
+                    try await validateModel(
+                        request.modelRef, token: current.token,
+                        hasImage: request.image != nil || value.messages.contains(where: { $0.image != nil })
+                    )
                     response = try await api.send(conversationId: id, request: request, token: current.token)
                     pendingSends[id] = nil
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
                     let request = AskSendRequest(id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
                                                  tools: await tools.definitions(), modelRef: value.modelRef)
-                    try await validateModel(request.modelRef, token: current.token)
+                    try await validateModel(
+                        request.modelRef, token: current.token,
+                        hasImage: request.image != nil || value.messages.contains(where: { $0.image != nil })
+                    )
                     response = try await api.send(conversationId: id, request: request, token: current.token)
                 } else if let run = value.run, ["failed", "cancelled"].contains(run.status) {
                     response = try await api.retry(conversationId: id, runId: run.id, deviceId: deviceId, token: current.token)
@@ -390,7 +412,8 @@ final class AskConversationModel: ObservableObject {
             }
             guard run.deviceId == deviceId else { throw AskLocalError.message(L("ask.tool.otherDevice")) }
             if run.status == "waiting_inference", let inference = run.inference {
-                guard let profile = modelLibrary.profiles.first(where: { $0.reference == run.modelRef }) else {
+                guard let reference = run.modelRef,
+                      let (provider, model) = modelLibrary.registry.resolve(reference) else {
                     value = try await api.inferenceResult(conversationId: value.id, request: AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: "", failed: true), token: current.token)
                     try await accept(value, owner: current.owner)
                     throw AskLocalError.message(L("ask.models.unavailable"))
@@ -398,7 +421,14 @@ final class AskConversationModel: ObservableObject {
                 var receipt = inferenceReceipts[inference.id]
                 if receipt == nil {
                     do {
-                        let (text, calls) = try await customInference.complete(profile: profile, key: AskModelLibrary.key(for: profile), payload: inference.payload)
+                        let hasImage = inference.payload.contains("image_url")
+                        if let reason = modelLibrary.selectionReason(
+                            model, provider: provider, hasImage: hasImage, loggedIn: true
+                        ) {
+                            throw AskLocalError.message(reason)
+                        }
+                        let (text, calls) = try await customInference.complete(provider: provider,
+                            connection: modelLibrary.connection(provider, model: model), payload: inference.payload)
                         receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: text, toolCalls: calls)
                     } catch is CancellationError { throw CancellationError() }
                     catch {

@@ -14,7 +14,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private var clickMonitor: Any?
     private var localClickMonitor: Any?
 
-    init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry) throws {
+    init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry, modelLibrary: AskModelLibrary) throws {
         self.settings = settings
         let tools = AskLocalTools(registry: registry)
         self.tools = tools
@@ -23,7 +23,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         let deviceId = settings.defaults.string(forKey: deviceKey) ?? UUID().uuidString
         settings.defaults.set(deviceId, forKey: deviceKey)
         model = AskConversationModel(api: AskAPIClient(), cache: cache, tools: tools,
-                                     capture: AskContextCapture(injector: injector), deviceId: deviceId) {
+                                     capture: AskContextCapture(injector: injector), deviceId: deviceId,
+                                     modelLibrary: modelLibrary) {
             guard let token = AuthState.shared.accessToken, let owner = AuthState.shared.userProfile?.id else { return nil }
             return (owner, token)
         }

@@ -1508,7 +1508,7 @@
 "ask.resume.hint" = "この会話にはまだ完了していない返信があります。";
 
 // Ask model selection
-"ask.models.byPurpose" = "Choose by purpose";
+"ask.models.byPurpose" = "利用シーン";
 "ask.models.speech" = "Speech recognition";
 "ask.models.rewrite" = "Rewrite and polish";
 "ask.models.ask" = "Ask Anything";
@@ -1542,3 +1542,43 @@
 "ask.models.testOK" = "Connected. The model returned a response.";
 "ask.models.save" = "Save";
 "ask.models.import" = "Import existing configuration";
+
+// Unified provider model settings
+"models.notChat" = "Not a chat model";
+"models.login" = "Sign in to use";
+"models.ollamaMissing" = "Ollama service has not been detected";
+"models.endpointMissing" = "Enter an API endpoint to use";
+"models.keyMissing" = "Enter an API key to use";
+"models.noModels" = "Add a model to use this provider";
+"models.noVision" = "This model does not support screenshots";
+"models.unknownVision" = "Vision capability unknown; confirm in provider details";
+"models.corrupt" = "The model catalog could not be read. Existing data has been preserved.";
+"models.invalidResponse" = "The provider returned an invalid model response";
+"models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
+"models.search" = "Search models or providers";
+"models.back" = "Model settings";
+"models.sceneHint" = "Choose a provider and model for each application scenario";
+"models.fixedSpeech" = "Speech to text · one fixed model";
+"models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
+"models.askDefault" = "Ask · Default model";
+"models.defaultHint" = "New chats start here. Switch models at any time in a conversation.";
+"models.configured" = "AVAILABLE · CONFIGURED";
+"models.unconfigured" = "NOT CONFIGURED · UNAVAILABLE";
+"models.addEndpoint" = "Add custom provider";
+"models.connected" = "Connected";
+"models.notConfigured" = "Not configured";
+"models.download" = "Download the selected local model to use";
+"models.googleCredentials" = "Google Cloud authorization is required";
+"models.cloudConnection" = "Uses your Typeflux account. Model availability is managed by the cloud service.";
+"models.manual" = "Add manually";
+"models.load" = "Load from provider";
+"models.add" = "Add selected";
+"models.visionHint" = "Confirm screenshot support from the model documentation";
+"models.visionYes" = "Supports screenshots";
+"models.visionNo" = "Does not support screenshots";
+"models.usageHint" = "Usage badges are read-only. Change assignments in Application scenarios.";
+"models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
+"models.alreadyAdded" = "Already added";
+"models.emptyCatalog" = "The provider returned no models";
+"models.loadFailed" = "Could not load models.";
+"models.subscription" = "The selected speech provider requires an active subscription. Renew or select a local model in Application scenarios.";

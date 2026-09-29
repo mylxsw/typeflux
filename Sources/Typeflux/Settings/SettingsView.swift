@@ -467,8 +467,10 @@ struct StudioView: View {
         ) { viewportSize in
             let viewportHeight = viewportContentHeight(from: viewportSize)
 
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.heroSection) {
-                pageHeader
+            VStack(alignment: .leading, spacing: viewModel.currentSection == .models ? 18 : StudioTheme.Spacing.heroSection) {
+                if viewModel.currentSection != .models || viewModel.selectedLanguageProviderID == nil {
+                    pageHeader
+                }
 
                 if viewModel.currentSection == .models {
                     GeometryReader { proxy in
@@ -1011,52 +1013,15 @@ struct StudioView: View {
     }
 
     private func modelsPage(viewportHeight: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            AskModelPurposeView(library: .shared, speechProviderName: viewModel.sttProvider.displayName)
-            StudioSegmentedPicker(
-                options: StudioModelDomain.allCases.map { (label: modelDomainTabTitle(for: $0), value: $0) },
-                selection: Binding(
-                    get: { viewModel.modelDomain },
-                    set: viewModel.setModelDomain
-                )
-            )
-
-            GeometryReader { proxy in
-                HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-                            ForEach(modelProviderCards) { card in
-                                modelProviderSelectionCard(card)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .studioAutoHidingScrollIndicators()
-                    }
-                    .scrollContentBackground(.hidden)
-                    .background(Color.clear)
-                    .frame(
-                        width: StudioTheme.Layout.modelProviderListWidth, height: proxy.size.height,
-                        alignment: .leading
-                    )
-                    .frame(maxHeight: .infinity, alignment: .top)
-
-                    ScrollView {
-                        focusedProviderConfigurationPanel
-                            .studioAutoHidingScrollIndicators()
-                    }
-                    .scrollContentBackground(.hidden)
-                    .background(Color.clear)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
-                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
-            }
+        ModelSettingsPage(viewModel: viewModel, library: viewModel.modelLibrary) {
+            focusedProviderConfigurationPanel
         }
         .frame(height: viewportHeight, alignment: .top)
     }
 
     private func viewportContentHeight(from viewportSize: CGSize) -> CGFloat {
         max(
-            viewportSize.height - StudioTheme.Layout.shellContentTopInset
+            viewportSize.height - (viewModel.currentSection == .models ? 32 : StudioTheme.Layout.shellContentTopInset)
                 - StudioTheme.Layout.shellContentBottomInset,
             0
         )
@@ -4948,20 +4913,7 @@ struct StudioView: View {
 
                         Spacer()
 
-                        if viewModel.focusedModelProvider == activeModelProviderID {
-                            StudioPill(
-                                title: L("settings.models.active"),
-                                tone: StudioTheme.success,
-                                fill: StudioTheme.success.opacity(0.12)
-                            )
-                        } else {
-                            StudioButton(
-                                title: L("settings.models.useAsDefault"),
-                                systemImage: "checkmark.circle.fill", variant: .secondary
-                            ) {
-                                applyFocusedProviderAsDefault()
-                            }
-                        }
+
                     }
                 }
 

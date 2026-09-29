@@ -81,7 +81,7 @@ final class OllamaLLMService: LLMService {
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         var body = Self.makeChatRequestBody(
-            model: settingsStore.ollamaModel,
+            model: settingsStore.resolvedOllamaModel,
             systemPrompt: systemPrompt,
             userPrompt: userPrompt,
             stream: false,
@@ -159,7 +159,7 @@ final class OllamaLLMService: LLMService {
             )
         )
         let body = Self.makeChatRequestBody(
-            model: settingsStore.ollamaModel,
+            model: settingsStore.resolvedOllamaModel,
             systemPrompt: effectiveSystemPrompt,
             userPrompt: effectiveUserPrompt,
             stream: true,

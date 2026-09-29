@@ -153,8 +153,8 @@ struct AskConversationVisualTests {
         let suite = "ask-model-visual-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
-        let profile = AskModelProfile(name: "我的模型", baseURL: "https://example.invalid/v1", model: "my-model")
-        defaults.set(try JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
+        let profile = AskModelProfile(name: "我的 vLLM", baseURL: "https://example.invalid/v1", model: "qwen3-32b")
+        try defaults.set(JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         library.cloud = [.init(id: "default", name: "Typeflux Cloud"), .init(id: "deep", name: "Cloud · 深度")]
         library.defaultReference = "cloud:deep"
@@ -164,18 +164,91 @@ struct AskConversationVisualTests {
         fixture.model.launcherDraft.includeScreenshot = false
         fixture.model.launcherDraft.selection = nil
         fixture.model.launcherDraft.source = nil
-        try await render(AskModelPurposeView(library: library, speechProviderName: SettingsStore(defaults: defaults).sttProvider.displayName).padding(24).background(StudioTheme.background), size: NSSize(width: 700, height: 280), appearance: .aqua, file: root.appendingPathComponent("model-defaults.png"))
-        try await render(AskModelLibraryView(library: library), size: NSSize(width: 638, height: 508), appearance: .aqua, file: root.appendingPathComponent("model-library.png"))
-        try await render(AskLauncherView(model: fixture.model, onDismiss: {}), size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: .aqua, file: root.appendingPathComponent("model-launcher.png"))
+        let settings = SettingsStore(defaults: defaults)
+        settings.appLanguage = .simplifiedChinese
+        settings.setLLMAPIKey("fixture-key", for: .openAI)
+        for model in library.providers.first(where: { $0.id == "openAI" })?.models ?? [] {
+            try library.removeModel(model.reference, providerID: "openAI")
+        }
+        try library.addModels([.init(id: "gpt-4o-mini", name: "gpt-4o-mini", vision: true),
+                               .init(id: "gpt-4o", name: "gpt-4o", vision: true),
+                               .init(id: "o4-mini", name: "o4-mini", vision: true)], providerID: "openAI")
+        let viewModel = StudioViewModel(
+            settingsStore: settings,
+            historyStore: FileHistoryStore(baseDir: root.appendingPathComponent("history")),
+            initialSection: .models,
+            modelLibrary: library
+        )
+        try library.addModels(
+            [.init(id: "deep", name: "Cloud · 深度", reference: "cloud:deep", vision: true)],
+            providerID: "typefluxCloud"
+        )
+        library.defaultReference = profile.reference
+        library
+            .rewriteReference = try #require(library.providers.first { $0.id == "openAI" }?.models
+                .first { $0.id == "gpt-4o-mini" }?.reference)
+        for model in library.providers.first(where: { $0.isOllama })?.models ?? [] {
+            try library.removeModel(model.reference, providerID: "ollama")
+        }
+        viewModel.setModelDomain(.llm)
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            try await render(
+                StudioView(viewModel: viewModel),
+                size: NSSize(width: 1200, height: 880),
+                appearance: appearance,
+                file: root.appendingPathComponent("models-settings-\(name).png")
+            )
+            viewModel.selectedLanguageProviderID = "openAI"
+            try await render(
+                StudioView(viewModel: viewModel),
+                size: NSSize(width: 1200, height: 880),
+                appearance: appearance,
+                file: root.appendingPathComponent("models-provider-\(name).png")
+            )
+            viewModel.selectedLanguageProviderID = nil
+            try await render(
+                AskModelChoices(library: library, reference: .constant(library.rewriteReference), loggedIn: true),
+                size: NSSize(width: 360, height: 370), appearance: appearance,
+                file: root.appendingPathComponent("models-menu-\(name).png")
+            )
+            let catalogIDs = ["gpt-4o-mini", "gpt-4o", "o4-mini", "gpt-4.1", "gpt-4.1-mini", "o3", "text-embedding-3-large"]
+            try await render(
+                ModelCatalogView(providerName: "OpenAI", models: catalogIDs.map { .init(id: $0, name: $0) },
+                                 existingIDs: Set(catalogIDs.prefix(3)), selected: .constant(Set(catalogIDs.prefix(3))),
+                                 onCancel: {}, onAdd: {}),
+                size: NSSize(width: 580, height: 470), appearance: appearance,
+                file: root.appendingPathComponent("models-catalog-\(name).png")
+            )
+            viewModel.setModelDomain(.stt)
+            try await render(StudioView(viewModel: viewModel), size: NSSize(width: 1200, height: 880),
+                             appearance: appearance, file: root.appendingPathComponent("models-speech-\(name).png"))
+            viewModel.setModelDomain(.llm)
+        }
+        try await render(
+            AskLauncherView(model: fixture.model, onDismiss: {}),
+            size: NSSize(width: AskMetrics.launcherWidth, height: 114),
+            appearance: .aqua,
+            file: root.appendingPathComponent("model-launcher.png")
+        )
         let now = Date()
         let value = AskConversation(id: "model-preview", title: "产品方案分析", revision: 2, updatedAt: now, messages: [
             .init(id: "u1", role: "user", text: "这份产品方案有哪些可以改进的地方？", createdAt: now),
-            .init(id: "a1", role: "assistant", text: "可以先从三个方面评估：\n\n- 用户是否能快速找到主要入口。\n- 默认选择是否适合最常见的任务。\n- 高级能力是否能在需要时方便地切换。\n\n你可以把具体方案发给我，我们逐项看。", createdAt: now)
+            .init(
+                id: "a1",
+                role: "assistant",
+                text: "可以先从三个方面评估：\n\n- 用户是否能快速找到主要入口。\n- 默认选择是否适合最常见的任务。\n- 高级能力是否能在需要时方便地切换。\n\n你可以把具体方案发给我，我们逐项看。",
+                createdAt: now
+            )
         ], modelRef: profile.reference)
         await fixture.api.seed(value)
         await fixture.model.refreshHistory()
         await fixture.model.select(value.id)
-        try await render(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 740), appearance: .aqua, file: root.appendingPathComponent("model-conversation.png"))
+        try await render(
+            AskConversationView(model: fixture.model),
+            size: NSSize(width: 1100, height: 740),
+            appearance: .aqua,
+            file: root.appendingPathComponent("model-conversation.png")
+        )
         fixture.model.resetSession()
     }
 
