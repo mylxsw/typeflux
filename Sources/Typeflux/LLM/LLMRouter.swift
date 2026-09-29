@@ -12,7 +12,7 @@ final class LLMRouter: LLMService {
     }
 
     func streamRewrite(request: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
-        switch settingsStore.llmProvider {
+        switch settingsStore.effectiveLLMProvider {
         case .openAICompatible:
             openAICompatible.streamRewrite(request: request)
         case .ollama:
@@ -21,7 +21,7 @@ final class LLMRouter: LLMService {
     }
 
     func complete(systemPrompt: String, userPrompt: String) async throws -> String {
-        switch settingsStore.llmProvider {
+        switch settingsStore.effectiveLLMProvider {
         case .openAICompatible:
             try await openAICompatible.complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
         case .ollama:
@@ -30,7 +30,7 @@ final class LLMRouter: LLMService {
     }
 
     func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
-        switch settingsStore.llmProvider {
+        switch settingsStore.effectiveLLMProvider {
         case .openAICompatible:
             try await openAICompatible.completeJSON(
                 systemPrompt: systemPrompt,

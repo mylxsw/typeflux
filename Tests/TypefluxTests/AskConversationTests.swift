@@ -8,9 +8,16 @@ actor AskTestAPI: AskAPI {
     var values: [String: AskConversation] = [:]
     var sends: [AskSendRequest] = []
     var results: [AskToolResultRequest] = []
+    var inferenceResults: [AskInferenceResult] = []
     var nextTool: AskToolCall?
     var failSend = false
     var failList = false
+    var failModels = false
+    func setFailModels(_ value: Bool) { failModels = value }
+    func models(token: String) async throws -> [AskCloudModel] {
+        if failModels { throw AskLocalError.message("Offline") }
+        return [.init(id: "default", name: "Typeflux Cloud")]
+    }
     var listed: [AskConversationSummary]?
     var held: Set<String> = []
     var waiting: [String: [CheckedContinuation<Void, Never>]] = [:]
@@ -46,6 +53,7 @@ actor AskTestAPI: AskAPI {
         value.messages.append(.init(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date()))
         value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: nextTool == nil ? "This is the answer." : "I can inspect the current page.", toolCalls: nextTool.map { [$0] }, createdAt: Date()))
         value.run = .init(id: UUID().uuidString, deviceId: request.deviceId, status: nextTool == nil ? "completed" : "waiting_tool", steps: 1, updatedAt: Date(), tools: request.tools, pending: nextTool.map { [$0] } ?? [])
+        value.modelRef = request.modelRef
         value.revision += 1; values[conversationId] = value
         return value
     }
@@ -55,6 +63,16 @@ actor AskTestAPI: AskAPI {
         value.messages.append(.init(id: UUID().uuidString, role: "tool", text: request.content, toolCallId: request.toolCallId, isError: request.isError, createdAt: Date()))
         value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: request.isError ? "I will continue without that tool." : "Here is the summary.", createdAt: Date()))
         value.run?.status = "completed"; value.run?.pending = []; value.revision += 1; values[conversationId] = value
+        return value
+    }
+    func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation {
+        inferenceResults.append(request)
+        var value = try await conversation(id: conversationId, token: token)
+        value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: request.content, toolCalls: request.toolCalls, createdAt: Date()))
+        value.run?.status = request.failed ? "failed" : "completed"
+        value.run?.inference = nil
+        value.revision += 1
+        values[conversationId] = value
         return value
     }
     func cancel(conversationId: String, runId: String, token: String) async throws -> AskConversation {
@@ -102,11 +120,11 @@ struct AskTestFixture {
     let tools = AskTestTools()
     let capture = AskTestCapture()
     let model: AskConversationModel
-    init(authenticated: Bool = true) throws {
+    init(authenticated: Bool = true, modelLibrary: AskModelLibrary? = nil) throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent("ask-tests-" + UUID().uuidString)
         cache = try AskConversationCache(url: root.appendingPathComponent("cache.sqlite"))
         model = AskConversationModel(api: api, cache: cache, tools: tools, capture: capture,
-                                     deviceId: "device", session: { authenticated ? ("owner", "token") : nil })
+                                     deviceId: "device", modelLibrary: modelLibrary ?? AskModelLibrary(defaults: UserDefaults(suiteName: "ask-library-test-" + UUID().uuidString)!, automaticallyLoadsCatalog: false), session: { authenticated ? ("owner", "token") : nil })
     }
     func wait(_ predicate: () -> Bool) async throws {
         for _ in 0 ..< 1000 {

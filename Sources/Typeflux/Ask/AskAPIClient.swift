@@ -1,6 +1,8 @@
 import Foundation
 
 protocol AskAPI: Sendable {
+    func models(token: String) async throws -> [AskCloudModel]
+    func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation
     func list(token: String, offset: Int) async throws -> [AskConversationSummary]
     func conversation(id: String, token: String) async throws -> AskConversation
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation
@@ -10,7 +12,16 @@ protocol AskAPI: Sendable {
     func delete(conversationId: String, token: String) async throws
 }
 
+extension AskAPI {
+    func models(token: String) async throws -> [AskCloudModel] { [.init(id: "default", name: "Typeflux Cloud")] }
+    func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation { throw AskLocalError.message(L("ask.models.requestError")) }
+}
+
 struct AskAPIClient: AskAPI {
+    func models(token: String) async throws -> [AskCloudModel] { try await execute(path: "/models", token: token) }
+    func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation {
+        try await execute(path: "/\(conversationId)/inference-results", method: "POST", body: AskCoding.encoder().encode(request), token: token)
+    }
     let executor: CloudRequestExecutor
 
     init(executor: CloudRequestExecutor = CloudRequestExecutor()) { self.executor = executor }
