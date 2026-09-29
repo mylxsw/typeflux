@@ -1586,3 +1586,8 @@
 "models.noAvailable" = "현재 입력에 사용할 수 있는 모델이 없습니다. 로그인 상태와 모델 설정을 확인하세요.";
 
 "menu.openAskConversations" = "무엇이든 물어보기 열기";
+
+"ask.tool.preparing" = "매개변수 준비 중";
+"ask.reasoning.active" = "생각 중";
+"ask.reasoning.complete" = "%d초 동안 생각함";
+"ask.answer.interrupted" = "생성 중단 · 부분 응답 저장됨";

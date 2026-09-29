@@ -1586,3 +1586,8 @@
 "models.noAvailable" = "この入力に使用できるモデルがありません。ログイン状態とモデル設定を確認してください。";
 
 "menu.openAskConversations" = "Ask Anything を開く";
+
+"ask.tool.preparing" = "引数を準備中";
+"ask.reasoning.active" = "考え中";
+"ask.reasoning.complete" = "思考時間：%d 秒";
+"ask.answer.interrupted" = "生成が中断されました · 途中までの回答を保存しました";

@@ -159,6 +159,33 @@ struct AskConversationVisualTests {
         f.model.resetSession()
     }
 
+    @Test func renderStreamingSurfaces() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let fixture = try AskTestFixture()
+        let now = Date()
+        var run = AskRun(id: "run", deviceId: "device", status: "running", steps: 0, updatedAt: now, tools: [], pending: [])
+        run.assistantId = "answer"
+        run.reasoning = "先核对数据来源，再比较两种方案的实现成本和维护成本。"
+        run.reasoningMilliseconds = 3200
+        run.preview = "## 建议优先采用方案 A\n\n它的边界更清晰，也方便逐步上线。\n\n1. 保留现有登录与权限机制。\n2. 将实时响应作为独立模块接入。\n\n下面继续对比性能与维护成本："
+        let call = AskToolCall(id: "tool", type: "function", function: .init(name: "browser", arguments: "{\"query\": \""))
+        run.previewTools = [call]
+        let value = AskConversation(id: "stream-preview", title: "比较两种产品方案", revision: 1, updatedAt: now,
+                                    messages: [.init(id: "question", role: "user", text: "请帮我比较两种方案，给出建议并核对资料。", createdAt: now)], run: run)
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            try await render(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 740), appearance: appearance, file: root.appendingPathComponent("stream-answer-\(name).png"))
+        }
+        fixture.model.resetSession()
+    }
+
     @Test func renderModelSelectionSurfaces() async throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
         let root = URL(fileURLWithPath: directory)

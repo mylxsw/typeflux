@@ -1600,3 +1600,8 @@
 "models.noAvailable" = "暂无适用于当前输入的可用模型，请检查登录状态和模型设置。";
 
 "menu.openAskConversations" = "打开随便问";
+
+"ask.tool.preparing" = "正在准备参数";
+"ask.reasoning.active" = "正在思考";
+"ask.reasoning.complete" = "思考了 %d 秒";
+"ask.answer.interrupted" = "生成已中断 · 已保留现有内容";

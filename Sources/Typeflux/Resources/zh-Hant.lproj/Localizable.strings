@@ -1597,3 +1597,8 @@
 "models.noAvailable" = "暫無適用於目前輸入的可用模型，請檢查登入狀態和模型設定。";
 
 "menu.openAskConversations" = "開啟隨便問";
+
+"ask.tool.preparing" = "正在準備參數";
+"ask.reasoning.active" = "正在思考";
+"ask.reasoning.complete" = "思考了 %d 秒";
+"ask.answer.interrupted" = "生成已中斷 · 已保留現有內容";

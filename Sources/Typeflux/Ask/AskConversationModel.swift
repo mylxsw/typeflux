@@ -7,6 +7,18 @@ final class AskConversationModel: ObservableObject {
     let modelLibrary: AskModelLibrary
     private var inferenceReceipts: [String: AskInferenceResult] = [:]
     var customInference = AskCustomInference()
+    @Published private(set) var inferenceProgress: [String: AskStreamProgress] = [:]
+    private var progressInferenceIDs: [String: String] = [:]
+
+    func liveProgress(_ value: AskConversation) -> AskStreamProgress? {
+        guard let run = value.run else { return nil }
+        if run.inference?.id == progressInferenceIDs[value.id], let progress = inferenceProgress[value.id] { return progress }
+        if !(run.preview ?? "").isEmpty || !(run.reasoning ?? "").isEmpty || !(run.previewTools ?? []).isEmpty {
+            return .init(text: run.preview ?? "", reasoning: run.reasoning ?? "", toolCalls: run.previewTools ?? [], reasoningMilliseconds: run.reasoningMilliseconds ?? 0)
+        }
+        return nil
+    }
+
 
     func modelReference(launcher: Bool) -> String {
         if launcher { return launcherDraft.modelRef ?? modelLibrary.defaultReference }
@@ -60,6 +72,7 @@ final class AskConversationModel: ObservableObject {
     private var pendingSends: [String: AskSendRequest] = [:]
     private var captureGeneration = UUID()
     private var selectionGeneration = UUID()
+    private var selectionObservation: Task<Void, Never>?
     private var draftSave: Task<Void, Never>?
     private var authObserver: AnyCancellable?
 
@@ -93,6 +106,8 @@ final class AskConversationModel: ObservableObject {
         inferenceReceipts = [:]
         pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
         draftSave?.cancel(); captureGeneration = UUID(); selectionGeneration = UUID()
+        selectionObservation?.cancel(); selectionObservation = nil
+        inferenceProgress = [:]; progressInferenceIDs = [:]
         selected = nil; selectedId = nil; isLoadingSelection = false; selectionLoadFailed = false
         snapshots = [:]; drafts = [:]; transcriptPositions = [:]
         historyGeneration = UUID(); historyOffset = 0; conversations = []
@@ -210,6 +225,7 @@ final class AskConversationModel: ObservableObject {
         let id = AskConversationID.canonical(rawId)
         if selectedId == id, isLoadingSelection || (!reload && selected != nil && !selectionLoadFailed) { return }
         voiceInput.cancel()
+        selectionObservation?.cancel(); selectionObservation = nil
         let generation = UUID(); selectionGeneration = generation
         let oldId = selectedId, oldDraft = draft
         if let oldId, !isLoadingSelection { drafts[oldId] = oldDraft }
@@ -233,6 +249,10 @@ final class AskConversationModel: ObservableObject {
             if (snapshots[id]?.revision ?? -1) <= latest.revision { snapshots[id] = latest }
             guard generation == selectionGeneration else { return }
             selected = latest; isLoadingSelection = false; error = operationErrors[id]
+            // Observe active runs without resuming desktop tools or inference.
+            if latest.run?.isActive == true, !busyIds.contains(id) {
+                selectionObservation = monitorConversation(id: id, current: current)
+            }
             // Loading a conversation never resumes desktop tools automatically.
         } catch {
             if generation == selectionGeneration, owner == current.owner {
@@ -247,6 +267,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func newConversation() {
+        selectionObservation?.cancel(); selectionObservation = nil
         voiceInput.cancel()
         persistDrafts()
         selectionGeneration = UUID(); selected = nil; selectedId = nil
@@ -344,6 +365,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resume() {
+        selectionObservation?.cancel(); selectionObservation = nil
         guard let current = credentials(), let value = selected, !busyIds.contains(value.id) else { return }
         let id = value.id
         busyIds.insert(id); error = nil; operationErrors[id] = nil
@@ -384,10 +406,17 @@ final class AskConversationModel: ObservableObject {
     private func accept(_ value: AskConversation, owner expectedOwner: String) async throws {
         try Task.checkCancellation()
         guard owner == expectedOwner else { throw CancellationError() }
-        try await cache.save(value, owner: expectedOwner)
+        if let previous = snapshots[value.id], previous.revision >= value.revision { return }
+        // Persist meaningful message/state changes, not every transient preview.
+        if snapshots[value.id]?.messages != value.messages || snapshots[value.id]?.run?.status != value.run?.status {
+            try await cache.save(value, owner: expectedOwner)
+        }
         guard owner == expectedOwner else { throw CancellationError() }
         if (snapshots[value.id]?.revision ?? -1) <= value.revision { snapshots[value.id] = value }
         if selected?.id == value.id, (selected?.revision ?? -1) <= value.revision { selected = value }
+        if let inferenceID = progressInferenceIDs[value.id], value.run?.inference?.id != inferenceID {
+            inferenceProgress[value.id] = nil; progressInferenceIDs[value.id] = nil
+        }
         updateSummary(value)
     }
 
@@ -427,12 +456,20 @@ final class AskConversationModel: ObservableObject {
                         ) {
                             throw AskLocalError.message(reason)
                         }
+                        progressInferenceIDs[value.id] = inference.id
+                        inferenceProgress[value.id] = AskStreamProgress()
+                        let conversationID = value.id
                         let (text, calls) = try await customInference.complete(provider: provider,
-                            connection: modelLibrary.connection(provider, model: model), payload: inference.payload)
-                        receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: text, toolCalls: calls)
+                            connection: modelLibrary.connection(provider, model: model), payload: inference.payload,
+                            onProgress: { [weak self] progress in
+                                await self?.updateInferenceProgress(progress, id: conversationID, inferenceID: inference.id, owner: current.owner, visible: inference.summaryThrough == nil || inference.summaryThrough == 0)
+                            })
+                        let progress = inferenceProgress[value.id]
+                        receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: text, toolCalls: calls, reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds)
                     } catch is CancellationError { throw CancellationError() }
                     catch {
-                        receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: "", failed: true)
+                        let progress = inferenceProgress[value.id]
+                        receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: progress?.text ?? "", failed: true, reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds)
                     }
                     try Task.checkCancellation()
                     guard owner == current.owner else { throw CancellationError() }
@@ -495,7 +532,14 @@ final class AskConversationModel: ObservableObject {
             do {
                 let value = try await api.conversation(id: id, token: current.token)
                 guard let run = value.run else { return }
-                let stopped = try await api.cancel(conversationId: id, runId: run.id, token: current.token)
+                var partial: AskInferenceResult?
+                if let inference = run.inference, inference.id == progressInferenceIDs[id],
+                   let progress = inferenceProgress[id], run.deviceId == deviceId {
+                    partial = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id,
+                                                 content: progress.text, reasoning: progress.reasoning,
+                                                 reasoningMilliseconds: progress.reasoningMilliseconds)
+                }
+                let stopped = try await api.cancel(conversationId: id, runId: run.id, partial: partial, token: current.token)
                 if owner == current.owner { pendingSends[id] = nil }
                 try await accept(stopped, owner: current.owner)
             } catch { reportOperationError(error, id: id, owner: current.owner) }
@@ -527,19 +571,39 @@ final class AskConversationModel: ObservableObject {
         if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
     }
 
+    private func updateInferenceProgress(_ progress: AskStreamProgress, id: String, inferenceID: String, owner expectedOwner: String, visible: Bool) {
+        guard owner == expectedOwner, progressInferenceIDs[id] == inferenceID, visible else { return }
+        inferenceProgress[id] = progress
+    }
+
     private func monitorConversation(id: String, current: (owner: String, token: String)) -> Task<Void, Never> {
         Task { [weak self] in
             while !Task.isCancelled {
                 do {
-                    try await Task.sleep(for: .seconds(1))
                     guard let self, owner == current.owner else { return }
-                    let value = try await api.conversation(id: id, token: current.token)
-                    if let pending = pendingSends[id], !value.messages.contains(where: { $0.id == pending.id }) { continue }
-                    try await accept(value, owner: current.owner)
-                    if value.run?.isActive == false { approve(conversationId: id, allowed: false) }
+                    try await api.observe(id: id, token: current.token) { [weak self] value in
+                        guard let self else { throw CancellationError() }
+                        try await self.acceptObserved(value, current: current)
+                    }
                 } catch is CancellationError { return }
-                catch { /* The sending operation presents terminal network errors. */ }
+                catch {
+                    // Compatibility with an older server, and recovery after transport loss.
+                    if let self, let value = try? await api.conversation(id: id, token: current.token) {
+                        try? await acceptObserved(value, current: current)
+                    }
+                }
+                do { try await Task.sleep(for: .seconds(1)) } catch { return }
             }
+        }
+    }
+
+    private func acceptObserved(_ value: AskConversation, current: (owner: String, token: String)) async throws {
+        guard owner == current.owner else { throw CancellationError() }
+        if let pending = pendingSends[value.id], !value.messages.contains(where: { $0.id == pending.id }) { return }
+        try await accept(value, owner: current.owner)
+        if value.run?.isActive == false {
+            approve(conversationId: value.id, allowed: false)
+            throw CancellationError()
         }
     }
 }
