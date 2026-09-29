@@ -16,6 +16,7 @@ protocol AskContextCapturing {
 
 @MainActor
 final class AskContextCapture: AskContextCapturing {
+    private static let screenCaptureRequestedKey = "ask.screenCaptureAccessRequested"
     private let injector: TextInjector
 
     init(injector: TextInjector) { self.injector = injector }
@@ -47,8 +48,24 @@ final class AskContextCapture: AskContextCapturing {
         var height: Int
     }
 
+    /// `CGPreflightScreenCaptureAccess` only reads the current state; it never adds
+    /// the app to System Settings → Screen & System Audio Recording. The app is
+    /// listed only after `CGRequestScreenCaptureAccess` (or a capture attempt), so
+    /// send the request before pointing the user at the settings pane.
+    /// - Returns: whether access is already granted.
+    @discardableResult
+    static func requestScreenCaptureAccess() -> Bool {
+        CGPreflightScreenCaptureAccess() || CGRequestScreenCaptureAccess()
+    }
+
     static func screenshot(displayId: CGDirectDisplayID? = nil) async throws -> Screenshot {
         guard CGPreflightScreenCaptureAccess() else {
+            // Registers Typeflux in the Screen Recording list the first time; the
+            // system only shows its prompt while the decision is still undetermined.
+            if !UserDefaults.standard.bool(forKey: screenCaptureRequestedKey) {
+                UserDefaults.standard.set(true, forKey: screenCaptureRequestedKey)
+                _ = CGRequestScreenCaptureAccess()
+            }
             throw AskLocalError.message(L("ask.capture.permission"))
         }
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
