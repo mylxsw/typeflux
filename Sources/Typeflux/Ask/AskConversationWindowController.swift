@@ -114,7 +114,16 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             window.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.ask-conversations")
             window.setFrameAutosaveName("AskConversationWorkspace")
             window.delegate = self
-            window.contentView = NSHostingView(rootView: AskConversationView(model: model))
+            // An empty unified toolbar gives the title bar its 52pt height and centres
+            // the traffic lights, so the in-window tools can share their centre line.
+            window.toolbar = NSToolbar(identifier: "ai.gulu.app.typeflux.ask-conversations.toolbar")
+            window.toolbarStyle = .unified
+            window.titlebarSeparatorStyle = .none
+            let hosting = NSHostingView(rootView: AskConversationView(model: model))
+            // The window owns its size: without this, resizing content (e.g. hiding
+            // the sidebar) can make the hosting view resize or zoom the window.
+            hosting.sizingOptions = []
+            window.contentView = hosting
             window.center()
             conversationWindow = window
         }
