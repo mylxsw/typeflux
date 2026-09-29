@@ -292,7 +292,8 @@ struct AskConversationView: View {
                 onRefresh: { Task { await model.pullToRefreshHistory() } }
             ))
         }
-        .safeAreaInset(edge: .top, spacing: 0) { pullIndicator }
+        .overlay(alignment: .top) { pullIndicator }
+        .clipped()
         .accessibilityAction(named: Text(L("ask.refresh"))) { Task { await model.pullToRefreshHistory() } }
     }
 
@@ -318,23 +319,35 @@ struct AskConversationView: View {
         .accessibilityLabel(title)
     }
 
+    /// Floats over the list (no layout shift). While pulling it sits in the gap the
+    /// native rubber band opens; while refreshing or failed it rests at the top.
     @ViewBuilder private var pullIndicator: some View {
-        if model.isRefreshingHistory || pullDistance > 0 || model.historyRefreshError != nil {
+        let refreshing = model.isRefreshingHistory
+        let failed = model.historyRefreshError != nil
+        let progress = min(1, pullDistance / AskHistoryPullGesture.threshold)
+        if refreshing || failed || pullDistance > 0 {
             HStack(spacing: 6) {
-                if model.isRefreshingHistory { ProgressView().controlSize(.mini) }
-                else { Image(systemName: model.historyRefreshError == nil ? "arrow.down" : "exclamationmark.circle") }
-                Text(model.historyRefreshError ?? L(model.isRefreshingHistory ? "ask.history.refreshing"
-                    : pullDistance >= AskHistoryPullGesture.threshold ? "ask.history.release" : "ask.history.pull"))
+                if refreshing { ProgressView().controlSize(.mini) }
+                else if failed { Image(systemName: "exclamationmark.circle") }
+                else {
+                    Image(systemName: "arrow.down")
+                        .rotationEffect(.degrees(progress >= 1 ? 180 : 0))
+                        .animation(.easeOut(duration: 0.15), value: progress >= 1)
+                }
+                Text(model.historyRefreshError ?? L(refreshing ? "ask.history.refreshing"
+                    : progress >= 1 ? "ask.history.release" : "ask.history.pull"))
                     .lineLimit(2)
             }
             .font(.system(size: 11))
-            .foregroundStyle(model.historyRefreshError == nil ? StudioTheme.textSecondary : StudioTheme.warning)
-            .padding(.horizontal, 8)
-            .frame(maxWidth: .infinity, minHeight: 30)
-            .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .padding(.horizontal, 8)
-            .padding(.bottom, 6)
+            .foregroundStyle(failed && !refreshing ? StudioTheme.warning : StudioTheme.textSecondary)
+            .padding(.horizontal, 12)
+            .frame(minHeight: 26)
+            .background(AskTheme.controlSurface, in: Capsule())
+            .opacity(refreshing || failed ? 1 : progress)
+            .offset(y: refreshing || failed ? 6 : max(0, pullDistance / 2 - 13))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .allowsHitTesting(false)
+            .transition(.opacity)
         }
     }
 
