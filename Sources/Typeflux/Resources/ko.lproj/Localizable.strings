@@ -1485,3 +1485,24 @@
 "ask.history.refreshing" = "Refreshing…";
 "ask.history.refreshFailed" = "Refresh failed. Pull down to retry.";
 "ask.voice.holdHint" = "Hold in the editor to speak, release to transcribe; Escape cancels.";
+
+"ask.search" = "대화 검색";
+"ask.history.searchEmpty" = "일치하는 대화가 없습니다";
+"ask.selection.lines" = "선택 영역 · %d줄";
+"ask.voice.hold" = "길게 눌러 말하기";
+"ask.tool.running" = "실행 중";
+"ask.tool.done" = "완료";
+"ask.tool.failed" = "실패";
+"ask.tool.pending" = "승인 필요";
+"ask.tool.arguments" = "인수";
+"ask.tool.result" = "결과";
+"ask.copied" = "복사됨";
+"ask.quote" = "인용해 질문";
+"ask.empty.hint" = "언제든지 Fn 키를 두 번 눌러 열고, 입력란을 길게 눌러 말하세요.";
+"ask.suggest.screen" = "이 화면에 무엇이 있는지 알려줘";
+"ask.suggest.screen.caption" = "스크린샷 포함";
+"ask.suggest.selection" = "선택한 텍스트를 번역해줘";
+"ask.suggest.selection.caption" = "서식 유지";
+"ask.suggest.page" = "이 페이지를 읽고 요약해줘";
+"ask.suggest.page.caption" = "현재 브라우저";
+"ask.resume.hint" = "이 대화에는 아직 완료되지 않은 답변이 있습니다.";

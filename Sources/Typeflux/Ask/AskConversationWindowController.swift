@@ -7,7 +7,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private let settings: SettingsStore
     private let tools: AskLocalTools?
     private var launcher: AskFloatingPanel?
-    private var launcherHeight: CGFloat = 110
+    private var launcherHeight: CGFloat = 114
     private var conversationWindow: NSWindow?
     private var controlPanel: AskFloatingPanel?
     private var launchTask: Task<Void, Never>?
@@ -54,7 +54,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             await model.prepareLauncher()
             guard !Task.isCancelled else { return }
             if launcher == nil {
-                let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: 640, height: 110), styleMask: [.borderless], backing: .buffered, defer: false)
+                let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: 114), styleMask: [.borderless], backing: .buffered, defer: false)
                 panel.level = .floating
                 panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
                 panel.isMovableByWindowBackground = false
@@ -67,9 +67,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             applyAppearance(launcher)
             let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
             if let frame = screen?.visibleFrame {
-                let width = min(640, frame.width - 40)
+                let width = min(AskMetrics.launcherWidth, frame.width - 40)
                 let height = launcherHeight
-                launcher?.setFrame(NSRect(x: frame.midX - width / 2, y: frame.minY + OverlayController.recordingVisibleBottomInset - 6, width: width, height: height), display: true)
+                launcher?.setFrame(NSRect(x: frame.midX - width / 2, y: frame.minY + OverlayController.recordingVisibleBottomInset - AskMetrics.launcherGutter, width: width, height: height), display: true)
             }
             NSApp.activate(ignoringOtherApps: true)
             launcher?.makeKeyAndOrderFront(nil)
@@ -201,11 +201,15 @@ private final class AskFloatingPanel: NSPanel {
 private struct AskControlView: View {
     @ObservedObject var model: AskConversationModel
     var body: some View {
-        HStack {
-            Image(systemName: "desktopcomputer")
-            Text(L("ask.controlling")).font(.system(size: 13))
-            Spacer()
-            Button(L("ask.stopControl")) { model.stop(id: model.controllingConversationId) }.foregroundStyle(.red)
-        }.padding(16).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        HStack(spacing: 10) {
+            Image(systemName: "desktopcomputer").foregroundStyle(StudioTheme.warning)
+            Text(L("ask.controlling")).font(.system(size: 13, weight: .medium))
+            Spacer(minLength: 8)
+            Button(L("ask.stopControl")) { model.stop(id: model.controllingConversationId) }
+                .foregroundStyle(StudioTheme.danger)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .background(AskTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(AskTheme.border))
     }
 }

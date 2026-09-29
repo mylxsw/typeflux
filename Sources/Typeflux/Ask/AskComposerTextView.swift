@@ -9,6 +9,7 @@ struct AskComposerTextView: NSViewRepresentable {
     var placeholder: String
     var voice: AskVoiceInput? = nil
     var contextID: String = "launcher"
+    var fontSize: CGFloat = StudioTheme.Typography.bodyLarge
     var onSubmit: () -> Void
     var onDismiss: () -> Void = {}
     var onHeightChange: (CGFloat) -> Void = { _ in }
@@ -28,7 +29,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.isAutomaticTextReplacementEnabled = false
         editor.allowsUndo = true
         editor.drawsBackground = false
-        editor.font = .systemFont(ofSize: StudioTheme.Typography.bodyLarge)
+        editor.font = .systemFont(ofSize: fontSize)
         editor.textColor = .labelColor
         editor.insertionPointColor = .labelColor
         editor.textContainerInset = NSSize(width: 0, height: 4)
@@ -68,6 +69,7 @@ struct AskComposerTextView: NSViewRepresentable {
         if editor.isEditable != isEnabled { editor.isEditable = isEnabled }
         editor.onSubmit = onSubmit; editor.onDismiss = onDismiss
         editor.onHeightChange = onHeightChange
+        if editor.font?.pointSize != fontSize { editor.font = .systemFont(ofSize: fontSize) }
         if editor.string != text, !editor.hasMarkedText() {
             editor.string = text
             editor.setSelectedRange(NSRange(location: (text as NSString).length, length: 0))
