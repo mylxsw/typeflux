@@ -58,6 +58,12 @@ final class AskModelLibrary: ObservableObject {
         registry.providers
     }
 
+    /// Empty bundled free catalogs have no configuration UI. Keep their saved
+    /// registry entries intact so existing references survive catalog updates.
+    var configurationProviders: [RegisteredProvider] {
+        providers.filter { $0.remote != .freeModel || !FreeLLMModelRegistry.suggestedModelNames.isEmpty }
+    }
+
     var profiles: [AskModelProfile] {
         Self.readProfiles(defaults)
     }

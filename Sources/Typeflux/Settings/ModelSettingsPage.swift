@@ -142,7 +142,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     }
 
     private var languageList: some View {
-        let entries = library.providers.map { (
+        let entries = library.configurationProviders.map { (
             provider: $0,
             reason: library.unavailableReason($0, loggedIn: auth.isLoggedIn)
         ) }
@@ -184,7 +184,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     }
 
     private var speechProviderOrder: [STTProvider] {
-        var values = STTProvider.settingsDisplayOrder
+        var values = ModelAvailability.configurationSpeechProviders
         if viewModel.sttProvider == .appleSpeech {
             values.append(.appleSpeech)
         }

@@ -207,6 +207,9 @@ struct AskConversationVisualTests {
         for model in library.providers.first(where: { $0.isOllama })?.models ?? [] {
             try library.removeModel(model.reference, providerID: "ollama")
         }
+        if ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_LARGE_CATALOG"] == "1" {
+            try library.addModels((0..<300).map { .init(id: "fixture-model-\($0)", name: "Fixture \($0)") }, providerID: "openAI")
+        }
         viewModel.setModelDomain(.llm)
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             try await render(
@@ -288,7 +291,8 @@ struct AskConversationVisualTests {
             #expect(png.count > 10000)
         }
         try snapshot(file)
-        if file.lastPathComponent.hasPrefix("models-settings-") {
+        if file.lastPathComponent.hasPrefix("models-settings-") ||
+            (ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_LARGE_CATALOG"] == "1" && file.lastPathComponent.hasPrefix("models-provider-")) {
             func scrollViews(_ view: NSView) -> [NSScrollView] {
                 let own = (view as? NSScrollView).map { [$0] } ?? []
                 return own + view.subviews.flatMap(scrollViews)
@@ -308,6 +312,32 @@ struct AskConversationVisualTests {
                         "Wheel scrolling must not resize the provider document")
             }
             #expect(scroll.contentView.bounds.minY > start, "Mouse wheel must move the model list")
+            if let profile = ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_PROFILE"],
+               file.lastPathComponent == (ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_SURFACE"] ?? "models-settings-dark.png") {
+                try Data(String(ProcessInfo.processInfo.processIdentifier).utf8)
+                    .write(to: URL(fileURLWithPath: profile + ".pid"))
+                var elapsed: [Double] = []
+                var details = ["index,wheel_ms,layout_ms,display_ms,total_ms"]
+                for index in 0..<600 {
+                    let began = ProcessInfo.processInfo.systemUptime
+                    let event = try #require(CGEvent(scrollWheelEvent2Source: nil, units: .line,
+                        wheelCount: 1, wheel1: (index / 60).isMultiple(of: 2) ? -3 : 3, wheel2: 0, wheel3: 0))
+                    scroll.scrollWheel(with: try #require(NSEvent(cgEvent: event)))
+                    let wheelEnd = ProcessInfo.processInfo.systemUptime
+                    hosting.layoutSubtreeIfNeeded()
+                    let layoutEnd = ProcessInfo.processInfo.systemUptime
+                    hosting.displayIfNeeded()
+                    let displayEnd = ProcessInfo.processInfo.systemUptime
+                    elapsed.append((displayEnd - began) * 1000)
+                    details.append("\(index),\((wheelEnd - began) * 1000),\((layoutEnd - wheelEnd) * 1000),\((displayEnd - layoutEnd) * 1000),\((displayEnd - began) * 1000)")
+                    try await Task.sleep(for: .milliseconds(16))
+                }
+                try Data(details.joined(separator: "\n").utf8).write(to: URL(fileURLWithPath: profile + ".csv"))
+                elapsed.sort()
+                let report = "wheel+layout+display ms: median=\(elapsed[300]) p95=\(elapsed[570]) max=\(elapsed.last!)"
+                try Data(report.utf8).write(to: URL(fileURLWithPath: profile + ".txt"))
+            }
+
         }
         if file.lastPathComponent == "conversation.png" {
             func probes(_ view: NSView) -> [AskHistoryPullRefresh.Probe] {

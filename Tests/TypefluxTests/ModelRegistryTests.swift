@@ -15,6 +15,20 @@ final class ModelRegistryTests: XCTestCase {
         defaults.removePersistentDomain(forName: suite)
     }
 
+    func testConfigurationHidesEmptyFreeCatalogsWithoutRemovingSavedProviders() throws {
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        let stored = library.providers
+        XCTAssertEqual(library.configurationProviders.contains { $0.remote == .freeModel },
+                       !FreeLLMModelRegistry.suggestedModelNames.isEmpty)
+        XCTAssertEqual(ModelAvailability.configurationSpeechProviders.contains(.freeModel),
+                       !FreeSTTModelRegistry.suggestedModelNames.isEmpty)
+        XCTAssertEqual(library.providers, stored)
+        XCTAssertTrue(library.providers.contains { $0.remote == .freeModel })
+        XCTAssertTrue(library.configurationProviders.contains { $0.isCloud })
+        XCTAssertTrue(ModelAvailability.configurationSpeechProviders.contains(.typefluxOfficial))
+        XCTAssertTrue(ModelAvailability.configurationSpeechProviders.contains(.localModel))
+    }
+
     func testMigrationPreservesSelectionsAndEveryConfiguredProvider() throws {
         let settings = SettingsStore(defaults: defaults)
         settings.sttProvider = .aliCloud
