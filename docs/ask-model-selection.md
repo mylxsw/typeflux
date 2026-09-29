@@ -24,8 +24,16 @@ conversation history. Unknown capability is distinct from unsupported capability
 provider metadata can supply it, or users can confirm it from model documentation
 in the model's menu. Obvious embedding/speech-only models remain visible in the
 loaded catalog with an exclusion reason. Inference validates the selection again.
-With explicit scenes, speech routing reports provider or subscription failures
-instead of silently choosing another provider. Existing subscription gates remain.
+Explicit third-party speech scenes use their own credentials and do not require a
+Typeflux subscription. Typeflux Cloud speech remains a hybrid selection: signed-in
+free users can select it, and free/logged-out requests use the existing local
+fallback. Cloud authentication/billing failures must preserve usable local or
+already-completed transcription, including when integrated rewriting fails.
+
+Provider rows reuse the original bundled logos. Images are cached, availability
+is evaluated once per list entry, and custom endpoint availability does not read
+Keychain secrets. Provider detail navigation includes both the chevron and title
+in one return button.
 
 ## Persistence and migration
 

@@ -126,6 +126,37 @@ final class ModelRegistryTests: XCTestCase {
         XCTAssertEqual(ModelAvailability.sorted([1, 2, 3, 4]) { $0.isMultiple(of: 2) }, [2, 4, 1, 3])
     }
 
+    func testProviderIconsReuseBundledBrandAssets() {
+        for provider in StudioModelProviderID.allCases {
+            XCTAssertFalse(ModelProviderIcon.symbol(for: provider).isEmpty)
+            guard ModelProviderIcon.resourceName(for: provider) != nil else { continue }
+            XCTAssertNotNil(ModelProviderIcon.image(for: provider), "Missing asset for \(provider)")
+            XCTAssertTrue(ModelProviderIcon.image(for: provider) === ModelProviderIcon.image(for: provider))
+        }
+        XCTAssertEqual(RegisteredProvider(id: "ollama", name: "Ollama").studioProviderID, .ollama)
+        XCTAssertEqual(RegisteredProvider(id: "endpoint:x", name: "Custom").studioProviderID, .customLLM)
+        XCTAssertEqual(RegisteredProvider(id: "openAI", name: "OpenAI", remote: .openAI).studioProviderID, .openAI)
+    }
+
+    func testAvailabilitySortingEvaluatesEachProviderOnceAndPreservesOrder() {
+        var visited: [Int] = []
+        let result = ModelAvailability.sorted(Array(0 ..< 100)) {
+            visited.append($0)
+            return $0.isMultiple(of: 2)
+        }
+        XCTAssertEqual(visited, Array(0 ..< 100))
+        XCTAssertEqual(result, Array(stride(from: 0, to: 100, by: 2)) + Array(stride(from: 1, to: 100, by: 2)))
+    }
+
+    func testCloudSpeechAvailableWithLoginOrLocalFallback() {
+        let settings = SettingsStore(defaults: defaults)
+        for (loggedIn, local) in [(true, false), (true, true), (false, true)] {
+            XCTAssertNil(ModelAvailability.speechReason(.typefluxOfficial, settings: settings,
+                                                        loggedIn: loggedIn, localModelAvailable: local,
+                                                        googleAuthorized: false))
+        }
+    }
+
     func testSpeechAvailabilityPreservesUnconfiguredEntries() {
         let settings = SettingsStore(defaults: defaults)
         for provider in [
@@ -239,7 +270,7 @@ final class ModelRegistryTests: XCTestCase {
         fixture.model.resetSession()
     }
 
-    func testFirstOnboardingChoiceAfterCatalogConstructionIsAdoptedOnce() throws {
+    func testFirstOnboardingChoiceAfterCatalogConstructionIsAdoptedOnce() {
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         let settings = library.settings
         settings.llmProvider = .ollama
@@ -285,8 +316,11 @@ final class ModelRegistryTests: XCTestCase {
 
 private final class RegistryCatalogStub: ProviderModelCatalog {
     var fails = false
-    func models(provider: RegisteredProvider, connection: SettingsStore.TextLLMConfiguration) async throws -> [RegisteredModel] {
-        if fails { throw AskLocalError.message("Fixture failure") }
+    func models(provider _: RegisteredProvider,
+                connection _: SettingsStore.TextLLMConfiguration) async throws -> [RegisteredModel] {
+        if fails {
+            throw AskLocalError.message("Fixture failure")
+        }
         return [.init(id: "loaded", name: "Loaded")]
     }
 }

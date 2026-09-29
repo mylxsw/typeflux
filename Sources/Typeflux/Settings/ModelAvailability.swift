@@ -6,7 +6,7 @@ enum ModelAvailability {
     static func speechReason(_ provider: STTProvider, settings: SettingsStore, loggedIn: Bool,
                              localModelAvailable: Bool, googleAuthorized: Bool) -> String? {
         switch provider {
-        case .typefluxOfficial: loggedIn ? nil : L("models.login")
+        case .typefluxOfficial: loggedIn || localModelAvailable ? nil : L("models.login")
         case .localModel: localModelAvailable ? nil : L("models.download")
         case .freeModel: FreeSTTModelRegistry.suggestedModelNames.isEmpty ? L("models.noModels") : nil
         case .whisperAPI: settings.whisperAPIKey.isEmpty || settings.whisperModel.isEmpty || settings.whisperBaseURL
@@ -25,10 +25,16 @@ enum ModelAvailability {
     }
 
     static func sorted<T>(_ values: [T], available: (T) -> Bool) -> [T] {
-        values.enumerated().sorted {
-            let left = available($0.element)
-            let right = available($1.element)
-            return left == right ? $0.offset < $1.offset : left
-        }.map(\.element)
+        // Evaluate availability once per entry; it may access settings or model files.
+        var configured: [T] = []
+        var unconfigured: [T] = []
+        for value in values {
+            if available(value) {
+                configured.append(value)
+            } else {
+                unconfigured.append(value)
+            }
+        }
+        return configured + unconfigured
     }
 }

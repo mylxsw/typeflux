@@ -5688,70 +5688,7 @@ struct StudioView: View {
     }
 
     private func providerLogoImage(for provider: StudioModelProviderID) -> NSImage? {
-        guard let resourceName = providerLogoResourceName(for: provider) else { return nil }
-
-        let url =
-            Bundle.appResources.url(
-                forResource: resourceName, withExtension: "png", subdirectory: "Resources/Providers"
-            )
-            ?? Bundle.appResources.url(
-                forResource: resourceName, withExtension: "png", subdirectory: "Providers"
-            )
-            ?? Bundle.appResources.url(forResource: resourceName, withExtension: "png")
-            ?? Bundle.appResources.url(forResource: resourceName, withExtension: "svg", subdirectory: "Resources")
-            ?? Bundle.appResources.url(forResource: resourceName, withExtension: "svg")
-
-        guard let url else { return nil }
-        return NSImage(contentsOf: url)
-    }
-
-    private func providerLogoResourceName(for provider: StudioModelProviderID) -> String? {
-        switch provider {
-        case .freeSTT:
-            nil
-        case .whisperAPI, .multimodalLLM:
-            "openai"
-        case .ollama:
-            "ollama"
-        case .freeModel:
-            nil
-        case .openRouter:
-            "openrouter"
-        case .openAI:
-            "openai"
-        case .anthropic:
-            "claude-color"
-        case .gemini:
-            "gemini-color"
-        case .deepSeek:
-            "deepseek-color"
-        case .kimi:
-            "moonshot"
-        case .qwen:
-            "qwen-color"
-        case .zhipu:
-            "zhipu-color"
-        case .minimax:
-            "minimax-color"
-        case .grok:
-            "xai"
-        case .groq:
-            "groq"
-        case .groqSTT:
-            "groq"
-        case .googleCloud:
-            "google"
-        case .xiaomi:
-            "xiaomimimo"
-        case .openCodeZen, .openCodeGo:
-            "opencode"
-        case .aliCloud:
-            "bailian-color"
-        case .doubaoRealtime:
-            "doubao-color"
-        default:
-            nil
-        }
+        ModelProviderIcon.image(for: provider)
     }
 
     private func localSTTModelOptionCard(_ model: LocalSTTModel) -> some View {
@@ -6033,66 +5970,7 @@ struct StudioView: View {
     }
 
     private func iconName(for provider: StudioModelProviderID) -> String {
-        switch provider {
-        case .appleSpeech:
-            "waveform"
-        case .localSTT:
-            "laptopcomputer.and.arrow.down"
-        case .freeSTT:
-            "giftcard"
-        case .whisperAPI:
-            "dot.radiowaves.left.and.right"
-        case .ollama:
-            "cpu"
-        case .freeModel:
-            "giftcard"
-        case .customLLM:
-            "xmark.triangle.circle.square.fill"
-        case .openRouter:
-            "arrow.triangle.branch"
-        case .openAI:
-            "circle.hexagongrid"
-        case .anthropic:
-            "sun.max"
-        case .gemini:
-            "diamond"
-        case .deepSeek:
-            "bird"
-        case .kimi:
-            "moon.stars"
-        case .qwen:
-            "cloud"
-        case .zhipu:
-            "dot.scope"
-        case .minimax:
-            "sparkles"
-        case .grok:
-            "x.circle"
-        case .groq:
-            "bolt.fill"
-        case .groqSTT:
-            "bolt.fill"
-        case .xiaomi:
-            "circle.grid.cross"
-        case .openCodeZen:
-            "sparkle.magnifyingglass"
-        case .openCodeGo:
-            "hare"
-        case .multimodalLLM:
-            "brain.filled.head.profile"
-        case .aliCloud:
-            "antenna.radiowaves.left.and.right"
-        case .doubaoRealtime:
-            "bolt.horizontal.circle"
-        case .googleCloud:
-            "cloud"
-        case .soniox:
-            "waveform.and.mic"
-        case .typefluxOfficial:
-            "infinity"
-        case .typefluxCloud:
-            "infinity"
-        }
+        ModelProviderIcon.symbol(for: provider)
     }
 
     private var modelProviderSectionTitle: String {

@@ -377,17 +377,13 @@ extension STTRouter {
         audioFile: AudioFile,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async -> String? {
-        guard billingError.reason == .quotaExceeded,
-              await hasPaidTypefluxCloudSubscription()
-        else {
-            return nil
-        }
+        // A stale entitlement or exhausted quota must not discard usable local speech.
         guard let fallback = typefluxCloudLoginFallbackLocalModel else {
             return nil
         }
         do {
             NetworkDebugLogger.logMessage(
-                "Falling back to default SenseVoice after Typeflux Cloud credits were exhausted"
+                "Falling back to default SenseVoice after Typeflux Cloud billing refusal"
             )
             return try await fallback.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
         } catch {

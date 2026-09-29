@@ -18,8 +18,8 @@ struct AskModelMenu: View {
     var body: some View {
         Button { expanded.toggle() } label: {
             HStack(spacing: 8) {
-                Image(systemName: reference.hasPrefix("cloud:") ? "cloud" : "server.rack")
-                    .foregroundStyle(StudioTheme.textSecondary)
+                ModelProviderIcon(provider: library.registry.resolve(reference)?.0.studioProviderID ?? .customLLM,
+                                  size: 18)
                 Text(library.name(for: reference)).lineLimit(1).truncationMode(.middle)
                 if fieldStyle {
                     Spacer(minLength: 4)

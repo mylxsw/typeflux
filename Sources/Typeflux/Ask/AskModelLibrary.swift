@@ -230,12 +230,19 @@ final class AskModelLibrary: ObservableObject {
         if provider.isOllama && !ollamaAvailable {
             return L("models.ollamaMissing")
         }
-        let value = connection(provider)
-        if value.baseURL.isEmpty {
+        // Availability never needs a custom endpoint's secret. Keep Keychain reads
+        // in actual requests and the connection editor, outside SwiftUI rendering.
+        let baseURL: String
+        if let remote = provider.remote {
+            baseURL = settings.llmBaseURL(for: remote)
+        } else {
+            baseURL = provider.isOllama ? settings.ollamaBaseURL : provider.baseURL
+        }
+        if baseURL.isEmpty {
             return L("models.endpointMissing")
         }
         if let remote = provider.remote, remote != .custom, remote != .freeModel,
-           value.apiKey.isEmpty {
+           settings.llmAPIKey(for: remote).isEmpty {
             return L("models.keyMissing")
         }
         return provider.models.isEmpty ? L("models.noModels") : nil

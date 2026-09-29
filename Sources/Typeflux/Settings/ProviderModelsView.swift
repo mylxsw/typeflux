@@ -25,17 +25,24 @@ struct ProviderModelsView: View {
             if let provider {
                 HStack(spacing: 12) {
                     if let onBack {
-                        Button(action: onBack) { Image(systemName: "chevron.left") }
-                            .buttonStyle(.plain).foregroundStyle(StudioTheme.textSecondary)
+                        Button(action: onBack) {
+                            Label(provider.name, systemImage: "chevron.left")
+                                .font(.system(size: 23, weight: .bold))
+                                .padding(.vertical, 6)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L("models.back"))
+                    } else {
+                        Text(provider.name).font(.system(size: 23, weight: .bold))
                     }
-                    Text(provider.name).font(.system(size: 23, weight: .bold))
                     Text(L("settings.models.domain.llm") + " › " + provider.name)
                         .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
                 }
                 ModelSurface {
                     VStack(alignment: .leading, spacing: 16) {
                         HStack(spacing: 12) {
-                            Image(systemName: provider.isCloud ? "cloud" : "server.rack")
+                            ModelProviderIcon(provider: provider.studioProviderID)
                                 .frame(width: 32, height: 32)
                                 .background(
                                     StudioTheme.textSecondary.opacity(0.08),

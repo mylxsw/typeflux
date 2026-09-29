@@ -144,21 +144,25 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     }
 
     private var languageList: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let entries = library.providers.map { (
+            provider: $0,
+            reason: library.unavailableReason($0, loggedIn: auth.isLoggedIn)
+        ) }
+        return LazyVStack(alignment: .leading, spacing: 8) {
             ForEach([true, false], id: \.self) { configured in
                 Text(L(configured ? "models.configured" : "models.unconfigured"))
                     .font(.caption.weight(.semibold)).foregroundStyle(StudioTheme.textSecondary).padding(.top, 6)
-                ForEach(library.sortedProviders(loggedIn: auth.isLoggedIn).filter {
-                    (library.unavailableReason($0, loggedIn: auth.isLoggedIn) == nil) == configured &&
-                        (search.isEmpty || $0.name.localizedCaseInsensitiveContains(search))
-                }) { provider in
+                ForEach(entries.filter {
+                    ($0.reason == nil) == configured &&
+                        (search.isEmpty || $0.provider.name.localizedCaseInsensitiveContains(search))
+                }, id: \.provider.id) { entry in
+                    let provider = entry.provider
                     providerRow(name: provider.name,
-                                detail: library
-                                    .unavailableReason(provider, loggedIn: auth.isLoggedIn) ??
+                                detail: entry.reason ??
                                     "\(provider.models.count) " +
                                     L("common.model") + " · " + provider
                                     .models.map(\.id).joined(separator: " · "),
-                                available: configured, icon: provider.isCloud ? "cloud" : "server.rack") {
+                                available: configured, icon: provider.studioProviderID) {
                         selectedProvider = provider.id
                     }
                 }
@@ -171,27 +175,33 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     }
 
     private var speechProviders: [STTProvider] {
+        ModelAvailability.sorted(speechProviderOrder) { speechReason($0) == nil }
+    }
+
+    private var speechProviderOrder: [STTProvider] {
         var values = STTProvider.settingsDisplayOrder
         if viewModel.sttProvider == .appleSpeech {
             values.append(.appleSpeech)
         }
-        return ModelAvailability.sorted(values) { speechReason($0) == nil }
+        return values
     }
 
     private var speechList: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let entries = speechProviderOrder.map { (provider: $0, reason: speechReason($0)) }
+        return LazyVStack(alignment: .leading, spacing: 8) {
             ForEach([true, false], id: \.self) { configured in
                 Text(L(configured ? "models.configured" : "models.unconfigured"))
                     .font(.caption.weight(.semibold)).foregroundStyle(StudioTheme.textSecondary).padding(.top, 6)
-                ForEach(speechProviders.filter {
-                    (speechReason($0) == nil) == configured &&
-                        (search.isEmpty || $0.displayName.localizedCaseInsensitiveContains(search))
-                }, id: \.rawValue) { provider in
+                ForEach(entries.filter {
+                    ($0.reason == nil) == configured &&
+                        (search.isEmpty || $0.provider.displayName.localizedCaseInsensitiveContains(search))
+                }, id: \.provider.rawValue) { entry in
+                    let provider = entry.provider
                     providerRow(
                         name: provider.displayName,
-                        detail: speechReason(provider) ?? speechModelName(provider),
+                        detail: entry.reason ?? speechModelName(provider),
                         available: configured,
-                        icon: "waveform"
+                        icon: provider.studioProviderID
                     ) {
                         viewModel.focusModelProvider(provider.studioProviderID)
                         speechDetailVisible = true
@@ -201,11 +211,11 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
         }
     }
 
-    private func providerRow(name: String, detail: String, available: Bool, icon: String,
+    private func providerRow(name: String, detail: String, available: Bool, icon: StudioModelProviderID,
                              action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                Image(systemName: icon).font(.system(size: 15)).frame(width: 32, height: 32)
+                ModelProviderIcon(provider: icon).frame(width: 32, height: 32)
                     .background(StudioTheme.textSecondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 9))
                 VStack(alignment: .leading, spacing: 4) {
                     Text(name).font(.system(size: 14, weight: .semibold))
@@ -233,11 +243,13 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     }
 
     private func speechReason(_ provider: STTProvider) -> String? {
-        if provider != .localModel, auth.isLoggedIn, !auth.canUseCloudASR {
-            return L("models.subscription")
-        }
+        // Only local/Cloud availability needs to inspect local model files.
+        let needsLocal = provider == .localModel || (provider == .typefluxOfficial && !auth.isLoggedIn)
         return ModelAvailability.speechReason(provider, settings: library.settings, loggedIn: auth.isLoggedIn,
-                                              localModelAvailable: viewModel.isModelAvailable(viewModel.localSTTModel),
+                                              localModelAvailable: needsLocal && viewModel.isModelAvailable(
+                                                  provider == .typefluxOfficial ? .senseVoiceSmall : viewModel
+                                                      .localSTTModel
+                                              ),
                                               googleAuthorized: viewModel.googleCloudOAuthAuthorized)
     }
 
