@@ -10,26 +10,28 @@ import SwiftUI
 enum AskTheme {
     static let accent = StudioTheme.accent
 
+    // Neutral greys chosen to match the settings window (`StudioTheme.shellSurface`
+    // and `sidebar` composited over their material); opaque on purpose.
     static let surface = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 1.0, alpha: 1),
-        dark: NSColor(calibratedRed: 0.102, green: 0.110, blue: 0.125, alpha: 1)
+        light: NSColor(calibratedWhite: 0.985, alpha: 1),
+        dark: NSColor(calibratedWhite: 0.122, alpha: 1)
     )
     /// One step above `surface`: composer footer, tool cards, inline banners.
     static let raisedSurface = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.969, green: 0.973, blue: 0.980, alpha: 1),
-        dark: NSColor(calibratedRed: 0.122, green: 0.129, blue: 0.149, alpha: 1)
+        light: NSColor(calibratedWhite: 0.965, alpha: 1),
+        dark: NSColor(calibratedWhite: 0.150, alpha: 1)
     )
     static let sidebarSurface = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.957, green: 0.961, blue: 0.973, alpha: 1),
-        dark: NSColor(calibratedRed: 0.067, green: 0.071, blue: 0.078, alpha: 1)
+        light: NSColor(calibratedWhite: 0.940, alpha: 1),
+        dark: NSColor(calibratedWhite: 0.075, alpha: 1)
     )
     static let controlSurface = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.929, green: 0.937, blue: 0.953, alpha: 1),
-        dark: NSColor(calibratedRed: 0.149, green: 0.161, blue: 0.184, alpha: 1)
+        light: NSColor(calibratedWhite: 0.925, alpha: 1),
+        dark: NSColor(calibratedWhite: 0.180, alpha: 1)
     )
     static let bubbleSurface = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.929, green: 0.941, blue: 0.961, alpha: 1),
-        dark: NSColor(calibratedRed: 0.137, green: 0.149, blue: 0.173, alpha: 1)
+        light: NSColor(calibratedWhite: 0.930, alpha: 1),
+        dark: NSColor(calibratedWhite: 0.165, alpha: 1)
     )
     static let border = StudioTheme.dynamic(
         light: NSColor(calibratedRed: 0.886, green: 0.898, blue: 0.918, alpha: 1),
@@ -87,17 +89,17 @@ enum AskMetrics {
     static let bannerHeight: CGFloat = 32
     static let bannerSpacing: CGFloat = 6
     static let sidebarWidth: CGFloat = 248
-    static let headerHeight: CGFloat = 44
-    /// Height of the row that shares the traffic lights' centre line.
-    static let titleBarRowHeight: CGFloat = 28
+    static let headerHeight: CGFloat = 52
+    /// Height of the title bar row; the unified toolbar centres the traffic lights in it.
+    static let titleBarRowHeight: CGFloat = 52
     /// Space above the sidebar's first row, clearing the title bar tools.
-    static let sidebarTopInset: CGFloat = 40
+    static let sidebarTopInset: CGFloat = 52
     /// Vertical strip reserved for the window's traffic-light buttons.
     static let trafficLightStrip: CGFloat = 32
     /// Leading space for the title bar tools, past the traffic lights.
     static let trafficLightInset: CGFloat = 78
     /// Header title inset when the sidebar is collapsed: clears the floating toggle.
-    static let collapsedTitleInset: CGFloat = 122
+    static let collapsedTitleInset: CGFloat = 156
     static let composerMaxWidth: CGFloat = 780
     static let transcriptMaxWidth: CGFloat = 680
     static let bubbleMaxWidth: CGFloat = 560

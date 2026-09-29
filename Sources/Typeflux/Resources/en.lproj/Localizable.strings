@@ -1502,6 +1502,8 @@
 
 "ask.search" = "Search conversations";
 "ask.sidebar.toggle" = "Toggle sidebar";
+"ask.search.actions" = "Actions";
+"ask.search.conversations" = "Conversations";
 "ask.history.searchEmpty" = "No matching conversations";
 "ask.selection.lines" = "Selection · %d lines";
 "ask.voice.hold" = "Hold to speak";
