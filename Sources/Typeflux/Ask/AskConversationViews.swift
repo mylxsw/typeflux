@@ -23,6 +23,9 @@ struct AskConversationView: View {
             }
             titleBarTools
         }
+        // Lay out from the very top of the window so the tools share the
+        // traffic lights' baseline instead of sitting below the title bar.
+        .ignoresSafeArea(.container, edges: .top)
         .frame(minWidth: 740, minHeight: 530)
         .background(AskTheme.surface)
         .tint(AskTheme.accent)
@@ -44,7 +47,7 @@ struct AskConversationView: View {
         VStack(alignment: .leading, spacing: 0) {
             // The window uses a full-size content view; this strip clears the
             // traffic lights. The toggle and search buttons float above it.
-            Color.clear.frame(height: AskMetrics.headerHeight)
+            Color.clear.frame(height: AskMetrics.sidebarTopInset)
             if isSearching {
                 searchField.padding(.horizontal, 12).padding(.bottom, 8)
             }
@@ -70,7 +73,7 @@ struct AskConversationView: View {
             }
         }
         .padding(.leading, AskMetrics.trafficLightInset)
-        .frame(height: AskMetrics.headerHeight)
+        .frame(height: AskMetrics.titleBarRowHeight)
     }
 
     private func titleBarButton(_ symbol: String, label: String, active: Bool,
@@ -90,8 +93,6 @@ struct AskConversationView: View {
 
     private var accountFooter: some View {
         HStack(spacing: 10) {
-            TypefluxLogoBadge(size: 28, symbolSize: 15, backgroundShape: .circle, showsBorder: false)
-                .accessibilityHidden(true)
             Text(accountName)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(StudioTheme.textPrimary)
@@ -321,17 +322,13 @@ struct AskConversationView: View {
         }
         .padding(.leading, sidebarCollapsed ? AskMetrics.collapsedTitleInset : 18)
         .padding(.trailing, 18)
-        .frame(height: AskMetrics.headerHeight)
+        .frame(height: AskMetrics.titleBarRowHeight)
+        .frame(height: AskMetrics.headerHeight, alignment: .top)
     }
 
     private var emptyState: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 12) {
-                TypefluxLogoBadge(size: 44, symbolSize: 24, backgroundShape: .circle, showsBorder: false)
-                Text(L("sidebar.appName")).font(.system(size: 32, weight: .semibold))
-            }
-            .accessibilityElement(children: .combine)
-            Text(L("ask.empty")).font(.system(size: 22, weight: .semibold)).padding(.top, 14)
+            Text(L("ask.empty")).font(.system(size: 22, weight: .semibold))
             Text(L("ask.empty.hint")).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textTertiary)
             VStack(spacing: 7) {
                 suggestion(title: L("ask.suggest.screen"), caption: L("ask.suggest.screen.caption"),
