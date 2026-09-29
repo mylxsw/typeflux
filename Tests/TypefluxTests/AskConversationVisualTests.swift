@@ -142,6 +142,43 @@ struct AskConversationVisualTests {
         f.model.resetSession()
     }
 
+    @Test func renderModelSelectionSurfaces() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let suite = "ask-model-visual-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let profile = AskModelProfile(name: "我的模型", baseURL: "https://example.invalid/v1", model: "my-model")
+        defaults.set(try JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        library.cloud = [.init(id: "default", name: "Typeflux Cloud"), .init(id: "deep", name: "Cloud · 深度")]
+        library.defaultReference = "cloud:deep"
+        let fixture = try AskTestFixture(modelLibrary: library)
+        await fixture.model.prepareLauncher()
+        fixture.model.launcherDraft.text = "帮我分析这份产品方案"
+        fixture.model.launcherDraft.includeScreenshot = false
+        fixture.model.launcherDraft.selection = nil
+        fixture.model.launcherDraft.source = nil
+        try await render(AskModelPurposeView(library: library, speechProviderName: SettingsStore(defaults: defaults).sttProvider.displayName).padding(24).background(StudioTheme.background), size: NSSize(width: 700, height: 280), appearance: .aqua, file: root.appendingPathComponent("model-defaults.png"))
+        try await render(AskModelLibraryView(library: library), size: NSSize(width: 638, height: 508), appearance: .aqua, file: root.appendingPathComponent("model-library.png"))
+        try await render(AskLauncherView(model: fixture.model, onDismiss: {}), size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: .aqua, file: root.appendingPathComponent("model-launcher.png"))
+        let now = Date()
+        let value = AskConversation(id: "model-preview", title: "产品方案分析", revision: 2, updatedAt: now, messages: [
+            .init(id: "u1", role: "user", text: "这份产品方案有哪些可以改进的地方？", createdAt: now),
+            .init(id: "a1", role: "assistant", text: "可以先从三个方面评估：\n\n- 用户是否能快速找到主要入口。\n- 默认选择是否适合最常见的任务。\n- 高级能力是否能在需要时方便地切换。\n\n你可以把具体方案发给我，我们逐项看。", createdAt: now)
+        ], modelRef: profile.reference)
+        await fixture.api.seed(value)
+        await fixture.model.refreshHistory()
+        await fixture.model.select(value.id)
+        try await render(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 740), appearance: .aqua, file: root.appendingPathComponent("model-conversation.png"))
+        fixture.model.resetSession()
+    }
+
     private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL, voice: AskVoiceInput? = nil) async throws {
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false

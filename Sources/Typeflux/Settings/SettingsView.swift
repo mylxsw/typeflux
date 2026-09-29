@@ -1012,6 +1012,7 @@ struct StudioView: View {
 
     private func modelsPage(viewportHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
+            AskModelPurposeView(library: .shared, speechProviderName: viewModel.sttProvider.displayName)
             StudioSegmentedPicker(
                 options: StudioModelDomain.allCases.map { (label: modelDomainTabTitle(for: $0), value: $0) },
                 selection: Binding(

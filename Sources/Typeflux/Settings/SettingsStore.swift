@@ -817,6 +817,10 @@ final class SettingsStore {
     /// `typefluxCloud` is treated as configured whenever selected (auth is carried by JWT,
     /// not by base URL / API key here); transient auth failures surface at request time.
     var isLLMConfigured: Bool {
+        if !rewriteModelReference.isEmpty {
+            let configuration = textLLMConfiguration()
+            return configuration.provider == .typefluxCloud || (!configuration.baseURL.isEmpty && !configuration.model.isEmpty)
+        }
         switch llmProvider {
         case .ollama:
             let baseURL = ollamaBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -841,7 +845,21 @@ final class SettingsStore {
         }
     }
 
+    var rewriteModelReference: String { defaults.string(forKey: "llm.profile.reference") ?? "" }
+
+    var effectiveLLMProvider: LLMProvider { rewriteModelReference.isEmpty ? llmProvider : .openAICompatible }
+
     func textLLMConfiguration() -> TextLLMConfiguration {
+        if rewriteModelReference == "cloud:default" {
+            return TextLLMConfiguration(provider: .typefluxCloud, baseURL: "", model: "default", apiKey: "")
+        }
+        if !rewriteModelReference.isEmpty {
+            if let profile = AskModelLibrary.readProfiles(defaults).first(where: { $0.reference == rewriteModelReference }) {
+                return TextLLMConfiguration(provider: .custom, baseURL: profile.baseURL, model: profile.model, apiKey: AskModelLibrary.key(for: profile))
+            }
+            // A removed profile remains unavailable instead of silently changing provider.
+            return TextLLMConfiguration(provider: .custom, baseURL: "", model: "", apiKey: "")
+        }
         if shouldUseMultimodalTextLLMFallback {
             let fallbackModel = multimodalLLMModel.trimmingCharacters(in: .whitespacesAndNewlines)
             return TextLLMConfiguration(

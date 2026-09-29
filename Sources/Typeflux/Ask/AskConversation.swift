@@ -39,8 +39,10 @@ struct AskRun: Codable, Equatable, Sendable {
     var tools: [AskToolDefinition]
     var pending: [AskToolCall]
     var preview: String? = nil
+    var modelRef: String? = nil
+    var inference: AskInference? = nil
 
-    var isActive: Bool { status == "running" || status == "waiting_tool" }
+    var isActive: Bool { status == "running" || status == "waiting_tool" || status == "waiting_inference" }
 }
 
 struct AskConversation: Codable, Identifiable, Equatable, Sendable {
@@ -52,6 +54,7 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
     var run: AskRun?
     var summary: String?
     var summaryThrough: Int?
+    var modelRef: String? = nil
 }
 
 struct AskConversationSummary: Codable, Identifiable, Equatable, Sendable {
@@ -68,6 +71,7 @@ struct AskSendRequest: Codable, Equatable, Sendable {
     var source: String?
     var image: String?
     var tools: [AskToolDefinition]
+    var modelRef: String? = nil
 }
 
 struct AskToolResultRequest: Codable, Equatable, Sendable {
@@ -86,6 +90,7 @@ struct AskDraft: Codable, Equatable, Sendable {
     var selection: String?
     var source: String?
     var capturedAt: Date?
+    var modelRef: String? = nil
 
     var canSend: Bool { !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
@@ -93,7 +98,7 @@ struct AskDraft: Codable, Equatable, Sendable {
         AskSendRequest(
             id: id, deviceId: deviceId, text: text.trimmingCharacters(in: .whitespacesAndNewlines),
             selection: selection, source: source,
-            image: includeScreenshot ? screenshot : nil, tools: tools
+            image: includeScreenshot ? screenshot : nil, tools: tools, modelRef: modelRef
         )
     }
 

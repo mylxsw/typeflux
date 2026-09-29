@@ -4,6 +4,14 @@ import Combine
 @MainActor
 final class AskConversationModel: ObservableObject {
     let voiceInput = AskVoiceInput()
+    let modelLibrary: AskModelLibrary
+    private var inferenceReceipts: [String: AskInferenceResult] = [:]
+    var customInference = AskCustomInference()
+
+    func modelReference(launcher: Bool) -> String {
+        if launcher { return launcherDraft.modelRef ?? modelLibrary.defaultReference }
+        return draft.modelRef ?? selected.map { $0.modelRef ?? "cloud:default" } ?? modelLibrary.defaultReference
+    }
     @Published var launcherDraft = AskDraft()
     @Published var draft = AskDraft.followUp
     @Published private(set) var conversations: [AskConversationSummary] = []
@@ -50,8 +58,9 @@ final class AskConversationModel: ObservableObject {
     private var authObserver: AnyCancellable?
 
     init(api: any AskAPI, cache: any AskCaching, tools: any AskToolExecuting,
-         capture: any AskContextCapturing, deviceId: String,
+         capture: any AskContextCapturing, deviceId: String, modelLibrary: AskModelLibrary? = nil,
          session: @escaping () -> (owner: String, token: String)?) {
+        self.modelLibrary = modelLibrary ?? .shared
         self.api = api; self.cache = cache; self.tools = tools; self.capture = capture
         self.deviceId = deviceId; self.session = session
         authObserver = NotificationCenter.default.publisher(for: .authDidLogout).sink { [weak self] _ in
@@ -75,6 +84,7 @@ final class AskConversationModel: ObservableObject {
         pullRefreshID = nil; isRefreshingHistory = false
         operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]
         approvals.values.forEach { $0.resume(returning: false) }; approvals = [:]
+        inferenceReceipts = [:]
         pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
         draftSave?.cancel(); captureGeneration = UUID(); selectionGeneration = UUID()
         selected = nil; selectedId = nil; isLoadingSelection = false; selectionLoadFailed = false
@@ -261,7 +271,9 @@ final class AskConversationModel: ObservableObject {
         if newConversation { tools.bindConversation(id) }
         var value = newConversation ? AskConversation(id: id, title: String(submitted.text.prefix(50)), revision: 0, updatedAt: Date(), messages: []) : selected!
         let messageId = UUID().uuidString
-        let request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
+        var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
+        request.modelRef = submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference : (value.modelRef ?? "cloud:default"))
+        value.modelRef = request.modelRef
         pendingSends[id] = request
         value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date()))
         selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID(); draft = .followUp
@@ -279,12 +291,39 @@ final class AskConversationModel: ObservableObject {
                 try await cache.save(value, owner: current.owner)
                 var request = request
                 request.tools = await tools.definitions()
+                do {
+                    try await validateModel(request.modelRef, token: current.token)
+                } catch {
+                    // No message was sent. Restore the editable draft so another model can be selected.
+                    guard owner == current.owner else { throw CancellationError() }
+                    pendingSends[id] = nil
+                    var unsent = value
+                    unsent.messages.removeAll { $0.id == messageId }
+                    snapshots[id] = unsent
+                    drafts[id] = submitted
+                    if selectedId == id { selected = unsent; draft = submitted }
+                    try await cache.save(unsent, owner: current.owner)
+                    throw error
+                }
                 try Task.checkCancellation()
                 pendingSends[id] = request
                 let response = try await api.send(conversationId: id, request: request, token: current.token)
                 pendingSends[id] = nil
                 try await drive(response, current: current)
             } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.owner) }
+        }
+    }
+
+    private func validateModel(_ reference: String?, token: String) async throws {
+        guard let reference, reference != "cloud:default" else { return }
+        // Old servers ignore unknown request fields: establish bridge support first.
+        let catalog = try await api.models(token: token)
+        if reference.hasPrefix("custom:") {
+            guard modelLibrary.profiles.contains(where: { $0.reference == reference }) else {
+                throw AskLocalError.message(L("ask.models.unavailable"))
+            }
+        } else if !catalog.contains(where: { $0.reference == reference }) {
+            throw AskLocalError.message(L("ask.models.unavailable"))
         }
     }
 
@@ -301,12 +340,14 @@ final class AskConversationModel: ObservableObject {
                 _ = await tools.definitions()
                 let response: AskConversation
                 if let request = pendingSends[id] {
+                    try await validateModel(request.modelRef, token: current.token)
                     response = try await api.send(conversationId: id, request: request, token: current.token)
                     pendingSends[id] = nil
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
                     let request = AskSendRequest(id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
-                                                 tools: await tools.definitions())
+                                                 tools: await tools.definitions(), modelRef: value.modelRef)
+                    try await validateModel(request.modelRef, token: current.token)
                     response = try await api.send(conversationId: id, request: request, token: current.token)
                 } else if let run = value.run, ["failed", "cancelled"].contains(run.status) {
                     response = try await api.retry(conversationId: id, runId: run.id, deviceId: deviceId, token: current.token)
@@ -348,6 +389,29 @@ final class AskConversationModel: ObservableObject {
                 continue
             }
             guard run.deviceId == deviceId else { throw AskLocalError.message(L("ask.tool.otherDevice")) }
+            if run.status == "waiting_inference", let inference = run.inference {
+                guard let profile = modelLibrary.profiles.first(where: { $0.reference == run.modelRef }) else {
+                    value = try await api.inferenceResult(conversationId: value.id, request: AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: "", failed: true), token: current.token)
+                    try await accept(value, owner: current.owner)
+                    throw AskLocalError.message(L("ask.models.unavailable"))
+                }
+                var receipt = inferenceReceipts[inference.id]
+                if receipt == nil {
+                    do {
+                        let (text, calls) = try await customInference.complete(profile: profile, key: AskModelLibrary.key(for: profile), payload: inference.payload)
+                        receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: text, toolCalls: calls)
+                    } catch is CancellationError { throw CancellationError() }
+                    catch {
+                        receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: "", failed: true)
+                    }
+                    try Task.checkCancellation()
+                    guard owner == current.owner else { throw CancellationError() }
+                    inferenceReceipts[inference.id] = receipt
+                }
+                value = try await api.inferenceResult(conversationId: value.id, request: receipt!, token: current.token)
+                inferenceReceipts[inference.id] = nil
+                continue
+            }
             guard let call = run.pending.first else { return }
             let journalKey = run.id + "/" + call.id
             try await cache.associateTool(id: journalKey, conversationId: value.id, owner: current.owner)

@@ -113,7 +113,13 @@ struct AskComposer: View {
 
     private var footer: some View {
         HStack(spacing: 7) {
-            if active { voiceStatus } else { contextChips }
+            if active { voiceStatus } else {
+                AskModelMenu(library: model.modelLibrary, reference: Binding(
+                    get: { model.modelReference(launcher: launcher) },
+                    set: { draft.wrappedValue.modelRef = $0 }
+                ), disabled: !launcher && (model.isBusy || model.isLoadingSelection))
+                contextChips
+            }
             Spacer(minLength: 6)
             if !active {
                 trailingHint
