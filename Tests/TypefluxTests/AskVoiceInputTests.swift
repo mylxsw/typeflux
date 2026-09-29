@@ -159,20 +159,32 @@ struct AskVoiceInputTests {
         #expect(recorder.stops == 1)
     }
 
-    @Test func historyPullRequiresTopEdgeThresholdAndRelease() {
+    @Test func historyPullRequiresTopStartThresholdAndRelease() {
         var gesture = AskHistoryPullGesture()
-        gesture.pull(80, atTop: false)
+        gesture.begin(atTop: false)
+        gesture.update(overscroll: 200)
         #expect({ gesture.end() }() == false)
-        gesture.pull(47, atTop: true)
+        gesture.begin(atTop: true)
+        gesture.update(overscroll: AskHistoryPullGesture.threshold - 1)
         #expect({ gesture.end() }() == false)
-        gesture.pull(25, atTop: true); gesture.pull(25, atTop: true)
+        gesture.begin(atTop: true)
+        gesture.update(overscroll: AskHistoryPullGesture.threshold)
+        gesture.update(overscroll: 10) // letting the band recede keeps the peak
         #expect({ gesture.end() }() == true)
         #expect({ gesture.end() }() == false)
-        gesture.pull(80, atTop: true)
+        gesture.begin(atTop: true)
+        gesture.update(overscroll: 200)
         #expect({ gesture.end(cancelled: true) }() == false)
-        gesture.pull(60, atTop: true); gesture.pull(-20, atTop: true)
+        gesture.update(overscroll: 200) // momentum bounce after release is ignored
         #expect({ gesture.end() }() == false)
-        gesture.pull(200, atTop: true)
-        #expect(gesture.distance == 96)
+    }
+
+    @Test func overscrollMeasuresDistancePastTheTopEdge() {
+        let document = NSRect(x: 0, y: 0, width: 200, height: 600)
+        #expect(AskHistoryPullGesture.overscroll(bounds: NSRect(x: 0, y: -30, width: 200, height: 200), documentBounds: document, flipped: true) == 30)
+        #expect(AskHistoryPullGesture.overscroll(bounds: NSRect(x: 0, y: 10, width: 200, height: 200), documentBounds: document, flipped: true) == 0)
+        #expect(AskHistoryPullGesture.overscroll(bounds: NSRect(x: 0, y: -10, width: 200, height: 200), documentBounds: document, flipped: true, topInset: 20) == 0)
+        #expect(AskHistoryPullGesture.overscroll(bounds: NSRect(x: 0, y: 440, width: 200, height: 200), documentBounds: document, flipped: false) == 40)
+        #expect(AskHistoryPullGesture.overscroll(bounds: NSRect(x: 0, y: 300, width: 200, height: 200), documentBounds: document, flipped: false) == 0)
     }
 }

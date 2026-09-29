@@ -371,16 +371,11 @@ struct AskConversationVisualTests {
                 (view as? AskHistoryPullRefresh.Probe).map { [$0] } ?? view.subviews.flatMap(probes)
             }
             let probe = try #require(probes(hosting).first)
-            let scroll = try #require(probe.enclosingScrollView)
-            let point = scroll.convert(NSPoint(x: 50, y: 100), to: nil)
-            func mouse(_ type: NSEvent.EventType, dy: CGFloat) throws -> NSEvent {
-                try #require(NSEvent.mouseEvent(with: type, location: NSPoint(x: point.x, y: point.y + dy), modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
-            }
-            probe.observe(try mouse(.leftMouseDown, dy: 0))
-            probe.observe(try mouse(.leftMouseDragged, dy: -60))
+            // Drive the indicator directly: native overscroll cannot be synthesised here.
+            probe.onDistance(40)
             try await Task.sleep(for: .milliseconds(80))
             try snapshot(file.deletingLastPathComponent().appendingPathComponent("history-pull.png"))
-            probe.observe(try mouse(.leftMouseUp, dy: -60))
+            probe.onDistance(0)
             try await Task.sleep(for: .milliseconds(80))
         }
         if let voice {
