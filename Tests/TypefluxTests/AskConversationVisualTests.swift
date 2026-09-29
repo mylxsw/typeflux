@@ -271,6 +271,27 @@ struct AskConversationVisualTests {
             #expect(png.count > 10000)
         }
         try snapshot(file)
+        if file.lastPathComponent.hasPrefix("models-settings-") {
+            func scrollViews(_ view: NSView) -> [NSScrollView] {
+                let own = (view as? NSScrollView).map { [$0] } ?? []
+                return own + view.subviews.flatMap(scrollViews)
+            }
+            let scrollers = scrollViews(hosting).filter { $0.bounds.width > 500 }
+            #expect(scrollers.count == 1, "Model settings must have one vertical scroll owner")
+            let scroll = try #require(scrollers.first)
+            let height = scroll.documentView?.bounds.height ?? 0
+            let start = scroll.contentView.bounds.minY
+            scroll.verticalScrollElasticity = .none
+            for _ in 0..<12 {
+                let cgEvent = try #require(CGEvent(scrollWheelEvent2Source: nil, units: .line,
+                    wheelCount: 1, wheel1: -3, wheel2: 0, wheel3: 0))
+                scroll.scrollWheel(with: try #require(NSEvent(cgEvent: cgEvent)))
+                try await Task.sleep(for: .milliseconds(16))
+                #expect(abs((scroll.documentView?.bounds.height ?? 0) - height) < 1,
+                        "Wheel scrolling must not resize the provider document")
+            }
+            #expect(scroll.contentView.bounds.minY > start, "Mouse wheel must move the model list")
+        }
         if file.lastPathComponent == "conversation.png" {
             func probes(_ view: NSView) -> [AskHistoryPullRefresh.Probe] {
                 (view as? AskHistoryPullRefresh.Probe).map { [$0] } ?? view.subviews.flatMap(probes)

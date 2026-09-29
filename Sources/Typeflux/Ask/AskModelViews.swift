@@ -61,18 +61,22 @@ struct AskModelChoices: View {
     var dismiss: () -> Void = {}
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let choices = library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage)
+        let selectionAvailable = choices.contains { $0.models.contains { $0.reference == reference } }
+        return VStack(alignment: .leading, spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 4) {
-                    if library.registry.resolve(reference) == nil {
+                    if choices.isEmpty {
+                        Text(L("models.noAvailable")).font(.caption).foregroundStyle(.secondary).padding(10)
+                    } else if !selectionAvailable {
                         Text(L("ask.models.unavailable")).font(.caption).foregroundStyle(.secondary).padding(10)
                     }
-                    ForEach(library.sortedProviders(loggedIn: loggedIn).filter { !$0.models.isEmpty }) { provider in
+                    ForEach(choices) { provider in
                         Text(provider.name).font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(StudioTheme.textSecondary)
                             .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 2)
                         ForEach(provider.models) { model in
-                            choice(model, provider: provider)
+                            choice(model)
                         }
                     }
                 }.padding(8)
@@ -86,13 +90,12 @@ struct AskModelChoices: View {
                     Label(L("ask.models.makeDefault"), systemImage: "gearshape")
                         .font(.system(size: 13)).frame(maxWidth: .infinity, alignment: .leading).padding(16)
                         .contentShape(Rectangle())
-                }.buttonStyle(.plain).disabled(library.registry.resolve(reference) == nil)
+                }.buttonStyle(.plain).disabled(!selectionAvailable)
             }
         }.frame(width: 360).background(ModelVisualStyle.input)
     }
 
-    private func choice(_ model: RegisteredModel, provider: RegisteredProvider) -> some View {
-        let reason = library.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: loggedIn)
+    private func choice(_ model: RegisteredModel) -> some View {
         let selected = reference == model.reference
         return Button { reference = model.reference; dismiss() } label: {
             HStack(spacing: 10) {
@@ -102,9 +105,6 @@ struct AskModelChoices: View {
                         weight: selected ? .semibold : .regular,
                         design: .monospaced
                     ))
-                    if let reason {
-                        Text(reason).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-                    }
                 }
                 Spacer(minLength: 8)
                 if selected {
@@ -117,7 +117,6 @@ struct AskModelChoices: View {
             .background(selected ? ModelVisualStyle.accent.opacity(0.15) : .clear,
                         in: RoundedRectangle(cornerRadius: 8))
             .contentShape(Rectangle())
-            .opacity(reason == nil ? 1 : 0.5)
-        }.buttonStyle(.plain).disabled(reason != nil)
+        }.buttonStyle(.plain)
     }
 }

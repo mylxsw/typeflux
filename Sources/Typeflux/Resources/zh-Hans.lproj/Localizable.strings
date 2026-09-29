@@ -1596,3 +1596,5 @@
 "models.emptyCatalog" = "服务商没有返回模型";
 "models.loadFailed" = "加载模型失败。";
 "models.subscription" = "所选语音服务需要有效订阅，请续订或在应用场景中选择本地模型。";
+
+"models.noAvailable" = "暂无适用于当前输入的可用模型，请检查登录状态和模型设置。";
