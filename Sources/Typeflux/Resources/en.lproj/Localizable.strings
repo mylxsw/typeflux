@@ -1519,3 +1519,4 @@
 "ask.suggest.selection.caption" = "Keep the formatting";
 "ask.suggest.page" = "Read this page and summarize it";
 "ask.suggest.page.caption" = "Current browser";
+"ask.resume.hint" = "This conversation has an unfinished reply.";

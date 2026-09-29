@@ -292,7 +292,7 @@ struct AskConversationView: View {
                 .padding(.horizontal, 22)
                 .padding(.bottom, 6)
         } else if resumable {
-            AskBanner(text: L("ask.working"), tone: .info, systemImage: "arrow.clockwise",
+            AskBanner(text: L("ask.resume.hint"), tone: .info, systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
                 .padding(.horizontal, 22)
                 .padding(.bottom, 6)

@@ -1519,3 +1519,4 @@
 "ask.suggest.selection.caption" = "保留原格式";
 "ask.suggest.page" = "读一下这个网页并总结";
 "ask.suggest.page.caption" = "用当前浏览器";
+"ask.resume.hint" = "这条对话还有未完成的回复。";

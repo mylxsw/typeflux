@@ -1505,3 +1505,4 @@
 "ask.suggest.selection.caption" = "書式を保持";
 "ask.suggest.page" = "このページを読んで要約して";
 "ask.suggest.page.caption" = "現在のブラウザ";
+"ask.resume.hint" = "この会話にはまだ完了していない返信があります。";

@@ -1516,3 +1516,4 @@
 "ask.suggest.selection.caption" = "保留原格式";
 "ask.suggest.page" = "讀一下這個網頁並總結";
 "ask.suggest.page.caption" = "使用目前瀏覽器";
+"ask.resume.hint" = "這則對話還有未完成的回覆。";

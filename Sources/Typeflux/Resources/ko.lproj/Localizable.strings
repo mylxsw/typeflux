@@ -1505,3 +1505,4 @@
 "ask.suggest.selection.caption" = "서식 유지";
 "ask.suggest.page" = "이 페이지를 읽고 요약해줘";
 "ask.suggest.page.caption" = "현재 브라우저";
+"ask.resume.hint" = "이 대화에는 아직 완료되지 않은 답변이 있습니다.";
