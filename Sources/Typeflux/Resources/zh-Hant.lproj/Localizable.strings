@@ -1595,3 +1595,5 @@
 "models.subscription" = "The selected speech provider requires an active subscription. Renew or select a local model in Application scenarios.";
 
 "models.noAvailable" = "暫無適用於目前輸入的可用模型，請檢查登入狀態和模型設定。";
+
+"menu.openAskConversations" = "開啟隨便問";

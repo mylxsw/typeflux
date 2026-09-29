@@ -3,6 +3,29 @@ import AppKit
 import XCTest
 
 final class StatusBarMenuSupportTests: XCTestCase {
+    @MainActor
+    func testAskMenuEntryOpensConversationDirectly() throws {
+        if ProcessInfo.processInfo.environment["CI"] == "true" {
+            throw XCTSkip("Requires a GUI WindowServer session")
+        }
+        let suite = "AskMenuEntryTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var opened = false
+        let controller = StatusBarController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults),
+            historyStore: EmptyHistoryStore(), agentJobStore: EmptyAgentJobStore(),
+            onOpenAskConversations: { opened = true })
+        controller.start()
+        defer { controller.stop() }
+        let menu = try XCTUnwrap(controller.menu)
+        let index = try XCTUnwrap(menu.items.firstIndex { $0.title == L("menu.openAskConversations") })
+        XCTAssertEqual(index, 1)
+        XCTAssertNil(menu.items[index].submenu)
+        XCTAssertTrue(menu.items[index].isEnabled)
+        menu.performActionForItem(at: index)
+        XCTAssertTrue(opened)
+    }
+
     func testStatusBarIconUsesBoundedMenuBarDimensions() {
         XCTAssertEqual(StatusBarController.IconLayout.imageSize, NSSize(width: 22, height: 22))
         XCTAssertEqual(StatusBarController.IconLayout.statusItemLength, NSStatusItem.squareLength)

@@ -15,7 +15,10 @@ struct AskConversationVisualTests {
         let suite = "ask-window-tests-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
-        let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: fixture.model)
+        let policy = AskWindowActivationPolicy()
+        let dock = DockVisibilityController(app: policy)
+        let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: fixture.model,
+                                                        dockVisibility: dock)
         func window(_ suffix: String) -> NSWindow? {
             NSApp.windows.first { $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.ask-" + suffix }
         }
@@ -41,6 +44,7 @@ struct AskConversationVisualTests {
         try await fixture.wait { launcher.firstResponder is NSTextView }
         #expect(launcher.firstResponder is NSTextView)
         #expect(window("conversations")?.isVisible != true)
+        #expect(policy.currentActivationPolicy == .accessory)
         controller.showLauncher()
         fixture.model.launcherDraft.text = "A real input, with a stubbed service"
         fixture.model.submitLauncher()
@@ -49,16 +53,29 @@ struct AskConversationVisualTests {
         let chat = try #require(window("conversations"))
         #expect(chat.isVisible)
         #expect(chat.styleMask.contains(.resizable))
+        #expect(policy.currentActivationPolicy == .regular)
+        chat.miniaturize(nil)
+        try await fixture.wait { chat.isMiniaturized }
+        #expect(policy.currentActivationPolicy == .regular)
+        controller.showConversation()
+        try await fixture.wait { !chat.isMiniaturized }
+        #expect(chat.isVisible)
         fixture.model.onControlChanged?(true)
         #expect(!chat.isVisible)
         fixture.model.onControlChanged?(false)
         #expect(chat.isVisible)
         #expect(!controller.windowShouldClose(chat))
         #expect(!chat.isVisible)
+        #expect(policy.currentActivationPolicy == .accessory)
         controller.showConversation()
         #expect(chat.isVisible)
         controller.dismissLauncher()
+        let otherWindow = NSObject()
+        dock.setPresented(true, for: otherWindow)
         _ = controller.windowShouldClose(chat)
+        #expect(policy.currentActivationPolicy == .regular)
+        dock.setPresented(false, for: otherWindow)
+        #expect(policy.currentActivationPolicy == .accessory)
         fixture.model.resetSession()
     }
 
@@ -332,5 +349,12 @@ struct AskConversationVisualTests {
             try await Task.sleep(for: .milliseconds(60))
             try snapshot(URL(fileURLWithPath: base + "-filled.png"))
         }
+    }
+}
+
+private final class AskWindowActivationPolicy: ActivationPolicyControlling {
+    var currentActivationPolicy: NSApplication.ActivationPolicy = .accessory
+    func applyActivationPolicy(_ policy: NSApplication.ActivationPolicy) {
+        currentActivationPolicy = policy
     }
 }
