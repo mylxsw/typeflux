@@ -124,7 +124,7 @@ final class STTRouter {
     }
 
     var usesTypefluxOfficialCloudLocalRace: Bool {
-        !hasExplicitModelSelection && typefluxCloudLoginFallbackLocalModel != nil
+        typefluxCloudLoginFallbackLocalModel != nil
     }
 
     init(

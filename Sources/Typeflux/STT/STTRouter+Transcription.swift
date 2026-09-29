@@ -17,9 +17,10 @@ extension STTRouter {
         diagnosticsRecorder: ASRRaceDiagnosticsRecorder? = nil,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
-        if hasExplicitModelSelection {
+        // Typeflux Cloud is a hybrid service: selecting it preserves its local fallback.
+        if hasExplicitModelSelection, settingsStore.sttProvider != .typefluxOfficial {
             return try await transcribeSelectedModel(audioFile: audioFile, scenario: scenario,
-                optimize: optimize, profile: profile, onUpdate: onUpdate)
+                                                     optimize: optimize, profile: profile, onUpdate: onUpdate)
         }
         if settingsStore.sttProvider != .localModel {
             let hasPaidSubscription = await hasPaidTypefluxCloudSubscription()
@@ -78,7 +79,6 @@ extension STTRouter {
         onLLMChunk: @escaping @Sendable (String) async -> Void
     ) async throws -> (transcript: String, rewritten: String?) {
         guard await hasPaidTypefluxCloudSubscription() else {
-            if hasExplicitModelSelection { throw AskLocalError.message(L("models.subscription")) }
             let transcript = try await transcribeWithTypefluxCloudLocalOnly(
                 audioFile: audioFile,
                 onUpdate: onASRUpdate
@@ -99,7 +99,6 @@ extension STTRouter {
                 onLLMChunk: onLLMChunk
             )
         } catch {
-            if hasExplicitModelSelection { throw error }
             return try await handleIntegratedTypefluxFailure(
                 error,
                 audioFile: audioFile,

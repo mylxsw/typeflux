@@ -5,7 +5,7 @@ extension STTRouter {
         ModelRegistry.read(settingsStore.defaults) != nil
     }
 
-    /// A configured scene never silently changes providers when a request fails.
+    /// Custom scenes use their own provider credentials, independently of the Cloud plan.
     func transcribeSelectedModel(
         audioFile: AudioFile,
         scenario: TypefluxCloudScenario,
@@ -13,9 +13,6 @@ extension STTRouter {
         profile: TranscriptionProfile,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
-        if settingsStore.sttProvider != .localModel, await !hasPaidTypefluxCloudSubscription() {
-            throw AskLocalError.message(L("models.subscription"))
-        }
         let provider = selectedTranscriber
         if let optimized = provider as? ASROptimizeAwareTranscriber {
             return try await optimized.transcribeStream(
