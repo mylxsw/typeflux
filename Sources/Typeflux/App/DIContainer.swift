@@ -5,6 +5,7 @@ import os
 final class DIContainer {
     let appState = AppStateStore()
     let settingsStore = SettingsStore()
+    let modelLibrary: AskModelLibrary
     let audioDeviceManager = AudioDeviceManager()
 
     // These must be initialized immediately, not lazily
@@ -36,12 +37,21 @@ final class DIContainer {
     let cloudDataSyncCoordinator: CloudDataSyncCoordinator
     let outputPostProcessor: OutputPostProcessing
     lazy var askConversationWindowController: AskConversationWindowController? = {
-        do { return try AskConversationWindowController(settings: settingsStore, injector: textInjector, registry: mcpRegistry) }
-        catch { ErrorLogStore.shared.log("Ask conversation storage could not be initialized: \(error.localizedDescription)"); return nil }
+        do { return try AskConversationWindowController(
+            settings: settingsStore,
+            injector: textInjector,
+            registry: mcpRegistry,
+            modelLibrary: modelLibrary
+        ) } catch {
+            ErrorLogStore.shared
+                .log("Ask conversation storage could not be initialized: \(error.localizedDescription)"); return nil
+        }
     }()
 
     // swiftlint:disable:next function_body_length
     init() {
+        modelLibrary = AskModelLibrary(defaults: settingsStore.defaults)
+        SettingsWindowController.shared.modelLibrary = modelLibrary
         hotkeyService = EventTapHotkeyService(settingsStore: settingsStore)
         audioRecorder = SwitchableAudioRecorder(
             settingsStore: settingsStore,

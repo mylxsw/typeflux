@@ -250,6 +250,7 @@ final class StudioViewModel: ObservableObject {
 
     let errorLogStore = ErrorLogStore.shared
 
+    let modelLibrary: AskModelLibrary
     private let settingsStore: SettingsStore
     private let historyStore: HistoryStore
     private let historyStoreBox: HistoryStoreSendableBox
@@ -290,8 +291,10 @@ final class StudioViewModel: ObservableObject {
         localModelManager: LocalSTTModelManaging = LocalModelManager(),
         audioDeviceManager: AudioDeviceManager = AudioDeviceManager(),
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
-        audioPreviewPlayer: HistoryAudioPreviewPlaying? = nil
+        audioPreviewPlayer: HistoryAudioPreviewPlaying? = nil,
+        modelLibrary: AskModelLibrary? = nil
     ) {
+        self.modelLibrary = modelLibrary ?? AskModelLibrary(defaults: settingsStore.defaults)
         self.settingsStore = settingsStore
         self.historyStore = historyStore
         historyStoreBox = HistoryStoreSendableBox(historyStore)

@@ -21,7 +21,7 @@ final class OllamaLocalModelManager: OllamaModelManaging {
     }
 
     func ensureModelReady(settingsStore: SettingsStore) async throws {
-        let model = settingsStore.ollamaModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        let model = settingsStore.resolvedOllamaModel.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !model.isEmpty else {
             throw NSError(
                 domain: "OllamaLocalModelManager",

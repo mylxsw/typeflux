@@ -261,6 +261,59 @@ final class STTRouterTests: XCTestCase {
         AudioFile(fileURL: URL(fileURLWithPath: "/dev/null"), duration: 1.0)
     }
 
+    func testExplicitSceneRoutesEveryProviderWithoutChangingSelection() async throws {
+        try ModelRegistry().write(defaults)
+        let router = makeRouter()
+        for provider in STTProvider.allCases {
+            settings.sttProvider = provider
+            let result = try await router.transcribeStream(audioFile: dummyAudioFile(), onUpdate: { _ in })
+            XCTAssertEqual(result, "transcribed")
+            XCTAssertEqual(settings.sttProvider, provider)
+        }
+        for provider in [freeSTT, whisper, appleSpeech, localModel, multimodal, aliCloud,
+                         doubaoRealtime, googleCloud, groq, soniox, typefluxOfficial] {
+            XCTAssertEqual(provider?.transcribeCallCount, 1)
+        }
+    }
+
+    func testExplicitScenePreservesScenarioAndOptimization() async throws {
+        try ModelRegistry().write(defaults)
+        settings.sttProvider = .typefluxOfficial
+        let optimized = MockOptimizeAwareTranscriber()
+        _ = try await makeRouter(typefluxOfficialOverride: optimized).transcribeStream(
+            audioFile: dummyAudioFile(), scenario: .askAnything, optimize: false, onUpdate: { _ in })
+        XCTAssertEqual(optimized.lastOptimize, false)
+        let scenarioAware = MockScenarioAwareTranscriber()
+        _ = try await makeRouter(typefluxOfficialOverride: scenarioAware).transcribeStream(
+            audioFile: dummyAudioFile(), scenario: .askAnything, onUpdate: { _ in })
+        XCTAssertEqual(scenarioAware.lastScenario, .askAnything)
+        settings.sttProvider = .localModel
+        let profileAware = SelectedProfileTranscriber()
+        _ = try await makeRouter(localModelOverride: profileAware).transcribeStream(
+            audioFile: dummyAudioFile(), profile: .lowEnergyRetry, onUpdate: { _ in })
+        XCTAssertEqual(profileAware.receivedProfile, .lowEnergyRetry)
+    }
+
+    func testExplicitSceneFailureAndSubscriptionExpiryNeverFallback() async throws {
+        try ModelRegistry().write(defaults)
+        settings.sttProvider = .whisperAPI
+        settings.useAppleSpeechFallback = true
+        whisper.errorToThrow = NSError(domain: "fixture", code: 1)
+        do {
+            _ = try await makeRouter().transcribeStream(audioFile: dummyAudioFile(), onUpdate: { _ in })
+            XCTFail("Expected selected provider failure")
+        } catch { XCTAssertEqual((error as NSError).domain, "fixture") }
+        XCTAssertEqual(appleSpeech.transcribeCallCount, 0)
+        XCTAssertEqual(localModel.transcribeCallCount, 0)
+        let router = makeRouter(hasPaidTypefluxCloudSubscription: { false })
+        do {
+            _ = try await router.transcribeStream(audioFile: dummyAudioFile(), onUpdate: { _ in })
+            XCTFail("Expected explicit subscription error")
+        } catch { XCTAssertEqual(error.localizedDescription, L("models.subscription")) }
+        XCTAssertFalse(router.usesTypefluxOfficialCloudLocalRace)
+        XCTAssertEqual(localModel.transcribeCallCount, 0)
+    }
+
     // MARK: - Routing
 
     func testFreePlanUsesDefaultLocalModelWithoutCallingCloud() async throws {
@@ -1023,5 +1076,15 @@ final class STTRouterTests: XCTestCase {
         XCTAssertNil(result.rewritten)
         XCTAssertEqual(integrated.integratedCallCount, 1)
         XCTAssertEqual(appleSpeech.transcribeCallCount, 0)
+    }
+}
+
+private final class SelectedProfileTranscriber: TranscriptionProfileAwareTranscriber {
+    var receivedProfile: TranscriptionProfile?
+    func transcribe(audioFile: AudioFile) async throws -> String { "selected" }
+    func transcribeStream(audioFile: AudioFile, profile: TranscriptionProfile,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void) async throws -> String {
+        receivedProfile = profile
+        return "selected"
     }
 }

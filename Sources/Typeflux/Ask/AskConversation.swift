@@ -14,6 +14,7 @@ struct AskToolCall: Codable, Identifiable, Equatable, Sendable {
     var id: String
     var type: String?
     var function: Function
+    var thoughtSignature: String?
 }
 
 struct AskMessage: Codable, Identifiable, Equatable, Sendable {

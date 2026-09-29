@@ -1025,7 +1025,7 @@ extension WorkflowController {
             // transcription and stream results back over the same WebSocket.
             let canMergeWithLLM = settingsStore.sttProvider == .typefluxOfficial
                 && !sttRouter.usesTypefluxOfficialCloudLocalRace
-                && settingsStore.llmRemoteProvider == .typefluxCloud
+                && settingsStore.canUseIntegratedCloudRewrite
                 && recordingIntent == .dictation
                 && !multimodalHandlesPersona
                 && inputContext == nil

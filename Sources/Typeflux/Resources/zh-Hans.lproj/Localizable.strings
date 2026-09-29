@@ -1522,7 +1522,7 @@
 "ask.resume.hint" = "这条对话还有未完成的回复。";
 
 // Ask model selection
-"ask.models.byPurpose" = "按用途选择";
+"ask.models.byPurpose" = "应用场景";
 "ask.models.speech" = "语音识别";
 "ask.models.rewrite" = "转译与润色";
 "ask.models.ask" = "随便问";
@@ -1556,3 +1556,43 @@
 "ask.models.testOK" = "连接成功，模型已返回响应。";
 "ask.models.save" = "保存";
 "ask.models.import" = "导入现有配置";
+
+// Unified provider model settings
+"models.notChat" = "不是对话模型";
+"models.login" = "登录后可用";
+"models.ollamaMissing" = "尚未检测到 Ollama 服务";
+"models.endpointMissing" = "填入 API 地址后可用";
+"models.keyMissing" = "填入 API Key 后可用";
+"models.noModels" = "添加模型后可用";
+"models.noVision" = "此模型不支持截图";
+"models.unknownVision" = "视觉能力未知，请在服务商详情中确认";
+"models.corrupt" = "模型目录无法读取，原始数据已保留。";
+"models.invalidResponse" = "服务商返回的模型数据格式无效";
+"models.httpError" = "服务商返回 HTTP %d，请检查地址和凭据。";
+"models.search" = "搜索模型或服务商";
+"models.back" = "模型配置";
+"models.sceneHint" = "在这里决定每件事使用哪个服务商的哪个模型";
+"models.fixedSpeech" = "把说话转成文字 · 固定使用一个模型";
+"models.fixedRewrite" = "改写、翻译与指令 · 固定使用一个模型";
+"models.askDefault" = "随便问 · 默认模型";
+"models.defaultHint" = "新对话从此模型开始，对话里可随时切换。";
+"models.configured" = "可用 · 已配置";
+"models.unconfigured" = "未配置 · 暂不可用";
+"models.addEndpoint" = "添加自定义服务商";
+"models.connected" = "已连接";
+"models.notConfigured" = "未配置";
+"models.download" = "下载所选本地模型后可用";
+"models.googleCredentials" = "需要 Google Cloud 授权凭据";
+"models.cloudConnection" = "使用当前 Typeflux 账户连接，模型目录由云端提供。";
+"models.manual" = "手动添加";
+"models.load" = "从服务商加载";
+"models.add" = "添加";
+"models.visionHint" = "请根据模型文档确认是否支持截图";
+"models.visionYes" = "支持截图";
+"models.visionNo" = "不支持截图";
+"models.usageHint" = "用途标签仅作提示，请在「应用场景」中更改选择。";
+"models.deleteHint" = "引用此模型的场景和对话将提示重新选择，不会自动替换。";
+"models.alreadyAdded" = "已在列表";
+"models.emptyCatalog" = "服务商没有返回模型";
+"models.loadFailed" = "加载模型失败。";
+"models.subscription" = "所选语音服务需要有效订阅，请续订或在应用场景中选择本地模型。";

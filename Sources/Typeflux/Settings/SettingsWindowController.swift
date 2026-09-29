@@ -11,6 +11,7 @@ private final class TransparentSettingsHostingView<Content: View>: NSHostingView
 final class SettingsWindowController: NSObject {
     static let shared = SettingsWindowController()
 
+    var modelLibrary: AskModelLibrary?
     private var settingsStore: SettingsStore?
     private var window: NSWindow?
     private var viewModel: StudioViewModel?
@@ -69,7 +70,8 @@ final class SettingsWindowController: NSObject {
             onRetryHistory: onRetryHistory,
             modelManager: modelManager,
             localModelManager: localModelManager,
-            notificationService: notificationService
+            notificationService: notificationService,
+            modelLibrary: modelLibrary
         )
         AppLocalization.shared.setLanguage(viewModel.appLanguage)
         let view = StudioView(viewModel: viewModel)
