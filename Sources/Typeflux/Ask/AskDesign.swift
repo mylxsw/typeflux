@@ -562,3 +562,27 @@ enum AskPresentation {
         return prefix + quoted + "\n\n"
     }
 }
+
+/// The conversation window's sidebar and content fills. They reuse the settings
+/// window's tokens and material stack, so both windows read as one app.
+struct AskWindowBackdrop: View {
+    enum Role { case sidebar, content }
+    @Environment(\.colorScheme) private var colorScheme
+    let role: Role
+
+    var body: some View {
+        ZStack {
+            Rectangle().fill(.ultraThinMaterial)
+            switch role {
+            case .sidebar:
+                StudioTheme.sidebar
+                if colorScheme == .light {
+                    LinearGradient(colors: [Color.white.opacity(0.22), Color.clear],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                }
+            case .content:
+                StudioTheme.shellSurface
+            }
+        }
+    }
+}
