@@ -2,21 +2,27 @@ import Foundation
 
 extension AskCustomInference {
     func complete(provider: RegisteredProvider, connection: SettingsStore.TextLLMConfiguration,
-                  payload: String) async throws -> (String, [AskToolCall]) {
+                  payload: String, onProgress: (@Sendable (AskStreamProgress) async -> Void)? = nil) async throws -> (String, [AskToolCall]) {
         if connection.provider.apiStyle == .openAICompatible {
             var endpoint = connection.baseURL
             if provider.isOllama, !endpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/")).hasSuffix("/v1") {
                 endpoint = endpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/v1"
             }
             return try await complete(profile: .init(name: provider.name, baseURL: endpoint, model: connection.model),
-                                      key: connection.apiKey, payload: payload)
+                                      key: connection.apiKey, payload: payload, onProgress: onProgress)
         }
         try AskModelProfile(name: provider.name, baseURL: connection.baseURL, model: connection.model).validate()
         guard let body = try JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any],
               let base = URL(string: connection.baseURL) else { throw AskLocalError.message(L("ask.models.invalid")) }
         let anthropic = connection.provider.apiStyle == .anthropic
-        let url = anthropic ? OpenAIEndpointResolver.resolve(from: base, path: "messages")
+        var url = anthropic ? OpenAIEndpointResolver.resolve(from: base, path: "messages")
             : base.appendingPathComponent("models/\(connection.model):generateContent")
+        if !anthropic, onProgress != nil {
+            url = base.appendingPathComponent("models/\(connection.model):streamGenerateContent")
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+            components.queryItems = [URLQueryItem(name: "alt", value: "sse")]
+            url = components.url!
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.timeoutInterval = 180
@@ -25,11 +31,10 @@ extension AskCustomInference {
         if anthropic {
             request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         }
-        request.httpBody = try JSONSerialization.data(withJSONObject: Self.nativeBody(
-            body,
-            model: connection.model,
-            anthropic: anthropic
-        ))
+        var native = try Self.nativeBody(body, model: connection.model, anthropic: anthropic)
+        if anthropic, onProgress != nil { native["stream"] = true }
+        request.httpBody = try JSONSerialization.data(withJSONObject: native)
+        if let onProgress { return try await stream(request, style: anthropic ? .anthropic : .gemini, onProgress: onProgress) }
         let (data, response) = try await session.data(for: request)
         try Task.checkCancellation()
         guard let response = response as? HTTPURLResponse, (200 ..< 300).contains(response.statusCode),

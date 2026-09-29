@@ -120,6 +120,21 @@ struct AskModelSelectionTests {
         #expect(library.name(for: "custom:missing") == L("ask.models.unavailable"))
     }
 
+    @Test func customTransportPublishesTextBeforeFinalToolResult() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [AskModelURLProtocol.self]
+        let recorder = AskStreamRecorder()
+        let adapter = AskCustomInference(session: URLSession(configuration: configuration))
+        let result = try await adapter.complete(profile: .init(name: "Fixture", baseURL: "https://example.invalid/v1", model: "fixture"), key: "fixture", payload: #"{"messages":[]}"#) { progress in
+            await recorder.append(progress)
+        }
+        let updates = await recorder.updates
+        #expect(updates.first?.text == "Ans")
+        #expect(updates.last?.text == "Answer")
+        #expect(updates.first?.toolCalls.isEmpty == true)
+        #expect(result.1.first?.function.arguments == #"{"page_size":5}"#)
+    }
+
     @Test func resumedDeviceInferencePostsResultAndKeepsConversationModel() async throws {
         let suite = "ask-bridge-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
@@ -206,8 +221,37 @@ private final class AskModelURLProtocol: URLProtocol, @unchecked Sendable {
         Self.request = request
         let response = HTTPURLResponse(url: request.url!, statusCode: Self.status, httpVersion: nil, headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        var requestData = request.httpBody
+        if requestData == nil, let stream = request.httpBodyStream {
+            stream.open(); defer { stream.close() }
+            var bytes = [UInt8](repeating: 0, count: 4096)
+            var collected = Data()
+            while stream.hasBytesAvailable {
+                let count = stream.read(&bytes, maxLength: bytes.count)
+                if count <= 0 { break }
+                collected.append(contentsOf: bytes.prefix(count))
+            }
+            requestData = collected
+        }
+        if let data = requestData,
+           let body = try? JSONSerialization.jsonObject(with: data) as? [String: Any], body["stream"] as? Bool == true,
+           Self.body == nil {
+            let chunks = [
+                #"data: {"choices":[{"delta":{"content":"Ans"}}]}"#,
+                #"data: {"choices":[{"delta":{"content":"wer","tool_calls":[{"index":0,"id":"call-1","type":"function","function":{"name":"browser","arguments":"{\"page_size\":5}"}}]},"finish_reason":"tool_calls"}]}"#,
+                "data: [DONE]"
+            ]
+            for chunk in chunks { client?.urlProtocol(self, didLoad: Data((chunk + "\n\n").utf8)) }
+            client?.urlProtocolDidFinishLoading(self)
+            return
+        }
         client?.urlProtocol(self, didLoad: Data((Self.body ?? #"{"choices":[{"message":{"content":"Answer","tool_calls":[{"id":"call-1","type":"function","function":{"name":"browser","arguments":"{\"page_size\":5}"}}]}}]}"#).utf8))
         client?.urlProtocolDidFinishLoading(self)
     }
     override func stopLoading() {}
+}
+
+private actor AskStreamRecorder {
+    var updates: [AskStreamProgress] = []
+    func append(_ value: AskStreamProgress) { updates.append(value) }
 }

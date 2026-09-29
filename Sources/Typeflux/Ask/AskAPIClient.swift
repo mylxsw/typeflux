@@ -1,6 +1,8 @@
 import Foundation
 
 protocol AskAPI: Sendable {
+    func cancel(conversationId: String, runId: String, partial: AskInferenceResult?, token: String) async throws -> AskConversation
+    func observe(id: String, token: String, onValue: @Sendable (AskConversation) async throws -> Void) async throws
     func models(token: String) async throws -> [AskCloudModel]
     func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation
     func list(token: String, offset: Int) async throws -> [AskConversationSummary]
@@ -13,6 +15,16 @@ protocol AskAPI: Sendable {
 }
 
 extension AskAPI {
+    func cancel(conversationId: String, runId: String, partial: AskInferenceResult?, token: String) async throws -> AskConversation {
+        try await cancel(conversationId: conversationId, runId: runId, token: token)
+    }
+    func observe(id: String, token: String, onValue: @Sendable (AskConversation) async throws -> Void) async throws {
+        while !Task.isCancelled {
+            try await onValue(conversation(id: id, token: token))
+            try await Task.sleep(for: .seconds(1))
+        }
+    }
+
     func models(token: String) async throws -> [AskCloudModel] { [.init(id: "default", name: "Typeflux Cloud")] }
     func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation { throw AskLocalError.message(L("ask.models.requestError")) }
 }
@@ -23,8 +35,11 @@ struct AskAPIClient: AskAPI {
         try await execute(path: "/\(conversationId)/inference-results", method: "POST", body: AskCoding.encoder().encode(request), token: token)
     }
     let executor: CloudRequestExecutor
+    let streamSession: URLSession
 
-    init(executor: CloudRequestExecutor = CloudRequestExecutor()) { self.executor = executor }
+    init(executor: CloudRequestExecutor = CloudRequestExecutor(), streamSession: URLSession = .shared) {
+        self.executor = executor; self.streamSession = streamSession
+    }
 
     func list(token: String, offset: Int = 0) async throws -> [AskConversationSummary] {
         try await execute(path: "?offset=\(max(0, offset))", token: token)
@@ -40,6 +55,10 @@ struct AskAPIClient: AskAPI {
     }
     func cancel(conversationId: String, runId: String, token: String) async throws -> AskConversation {
         try await execute(path: "/\(conversationId)/cancel", method: "POST", body: JSONSerialization.data(withJSONObject: ["run_id": runId]), token: token)
+    }
+    func cancel(conversationId: String, runId: String, partial: AskInferenceResult?, token: String) async throws -> AskConversation {
+        struct Request: Encodable { var runId: String; var partial: AskInferenceResult? }
+        return try await execute(path: "/\(conversationId)/cancel", method: "POST", body: AskCoding.encoder().encode(Request(runId: runId, partial: partial)), token: token)
     }
     func retry(conversationId: String, runId: String, deviceId: String, token: String) async throws -> AskConversation {
         try await execute(path: "/\(conversationId)/retry", method: "POST", body: JSONSerialization.data(withJSONObject: ["run_id": runId, "device_id": deviceId]), token: token)

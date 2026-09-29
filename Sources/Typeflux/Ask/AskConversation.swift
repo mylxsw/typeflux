@@ -28,6 +28,8 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     var toolCallId: String?
     var isError: Bool?
     var createdAt: Date
+    var reasoning: String? = nil
+    var reasoningMilliseconds: Int? = nil
 }
 
 struct AskRun: Codable, Equatable, Sendable {
@@ -39,6 +41,10 @@ struct AskRun: Codable, Equatable, Sendable {
     var updatedAt: Date
     var tools: [AskToolDefinition]
     var pending: [AskToolCall]
+    var assistantId: String? = nil
+    var reasoning: String? = nil
+    var reasoningMilliseconds: Int? = nil
+    var previewTools: [AskToolCall]? = nil
     var preview: String? = nil
     var modelRef: String? = nil
     var inference: AskInference? = nil

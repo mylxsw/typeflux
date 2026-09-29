@@ -367,18 +367,17 @@ struct AskConversationView: View {
                             ProgressView(L("ask.loading")).controlSize(.small)
                                 .frame(maxWidth: .infinity).padding(.top, 24)
                         }
-                        ForEach((model.selected?.messages ?? []).filter { $0.role != "tool" }) { message in
+                        ForEach(transcriptMessages) { message in
                             AskMessageView(message: message,
                                            allMessages: model.selected?.messages ?? [],
-                                           onQuote: quote)
+                                           onQuote: quote,
+                                           isStreaming: message.id == model.selected?.run?.assistantId && model.selected?.run?.isActive == true,
+                                           approvalToolId: model.selectedId.flatMap { model.pendingApprovals[$0]?.id })
                                 .id(message.id)
                                 .background(GeometryReader { geometry in
                                     Color.clear.preference(key: AskTranscriptFrames.self,
                                                            value: [message.id: geometry.frame(in: .named("ask-transcript"))])
                                 })
-                        }
-                        if let preview = model.selected?.run?.preview, !preview.isEmpty {
-                            AskStreamingMessage(text: preview)
                         }
                         Color.clear.frame(height: 1).id("bottom")
                             .background(GeometryReader { geometry in
@@ -403,12 +402,30 @@ struct AskConversationView: View {
                 .onChange(of: model.selected?.id) { _ in restoreTranscript(proxy) }
                 .onAppear { restoreTranscript(proxy) }
                 .onChange(of: model.selected?.run?.preview) { _ in followBottom(proxy) }
+                .onChange(of: model.inferenceProgress) { _ in followBottom(proxy) }
                 .onChange(of: model.selected?.messages.count) { _ in followBottom(proxy) }
             }
         }
     }
 
+    private var transcriptMessages: [AskMessage] {
+        guard let value = model.selected else { return [] }
+        var messages = value.messages.filter { $0.role != "tool" }
+        if let progress = model.liveProgress(value), let run = value.run {
+            let id = run.assistantId ?? "live-" + run.id
+            if !messages.contains(where: { $0.id == id }) {
+                messages.append(.init(id: id, role: "assistant", text: progress.text,
+                                      toolCalls: progress.toolCalls, createdAt: run.updatedAt,
+                                      reasoning: progress.reasoning, reasoningMilliseconds: progress.reasoningMilliseconds))
+            }
+        }
+        return messages
+    }
+
     private func followBottom(_ proxy: ScrollViewProxy) {
+        guard NSEvent.pressedMouseButtons & 1 == 0 else { return }
+        if let editor = NSApp.keyWindow?.firstResponder as? AskTranscriptText.Editor,
+           editor.selectedRange().length > 0 { return }
         guard let id = model.selectedId, restoredTranscript == id,
               model.transcriptPositions[id] == "bottom" else { return }
         proxy.scrollTo("bottom", anchor: .bottom)
@@ -435,6 +452,8 @@ private struct AskMessageView: View {
     let message: AskMessage
     let allMessages: [AskMessage]
     var onQuote: (String) -> Void
+    var isStreaming = false
+    var approvalToolId: String? = nil
     @State private var showImage = false
     @State private var showSelection = false
     @State private var copied = false
@@ -508,10 +527,18 @@ private struct AskMessageView: View {
                 Text(message.createdAt, style: .time).font(.system(size: 11))
                     .foregroundStyle(StudioTheme.textTertiary)
             }
+            if let reasoning = message.reasoning, !reasoning.isEmpty {
+                AskReasoningView(text: reasoning, milliseconds: message.reasoningMilliseconds ?? 0, active: isStreaming && message.text.isEmpty)
+                    .padding(.leading, AskMetrics.assistantIndent)
+            }
             if !message.text.isEmpty {
-                MarkdownSwiftUIView(markdown: message.text)
-                    .textSelection(.enabled)
+                AskTranscriptText(text: message.text)
                     .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
+                    .padding(.leading, AskMetrics.assistantIndent)
+            }
+            if message.isError == true {
+                Text(L("ask.answer.interrupted"))
+                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
                     .padding(.leading, AskMetrics.assistantIndent)
             }
             ForEach(message.toolCalls ?? []) { call in
@@ -541,8 +568,8 @@ private struct AskMessageView: View {
             title: AskTheme.toolTitle(call),
             subtitle: call.function.name,
             systemImage: AskPresentation.toolSymbol(call),
-            state: AskPresentation.toolState(result: result),
-            statusText: AskPresentation.toolStatusText(result: result)
+            state: isStreaming ? .running : (approvalToolId == call.id ? .attention : AskPresentation.toolState(result: result)),
+            statusText: isStreaming ? L("ask.tool.preparing") : (approvalToolId == call.id ? L("ask.tool.pending") : AskPresentation.toolStatusText(result: result))
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 AskMonoBlock(title: L("ask.tool.arguments"), text: call.function.arguments)
@@ -560,25 +587,25 @@ private struct AskMessageView: View {
     }
 }
 
-/// The streaming answer keeps the assistant signature so the layout does not
-/// jump when the finished message replaces it.
-private struct AskStreamingMessage: View {
+private struct AskReasoningView: View {
     let text: String
-
+    let milliseconds: Int
+    let active: Bool
+    @State private var expanded = false
     var body: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(spacing: 8) {
-                AskAvatar()
-                Text(verbatim: "Typeflux").font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                ProgressView().controlSize(.mini)
+        DisclosureGroup(isExpanded: $expanded) {
+            AskTranscriptText(text: text)
+                .padding(12)
+                .background(AskTheme.raisedSurface, in: RoundedRectangle(cornerRadius: 8))
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: "sparkle").foregroundStyle(StudioTheme.textSecondary)
+                Text(active ? L("ask.reasoning.active") : L("ask.reasoning.complete", max(1, milliseconds / 1000)))
+                    .font(.system(size: 12, weight: .medium)).foregroundStyle(StudioTheme.textSecondary)
+                if active { ProgressView().controlSize(.mini) }
             }
-            MarkdownSwiftUIView(markdown: text)
-                .textSelection(.enabled)
-                .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
-                .padding(.leading, AskMetrics.assistantIndent)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .onChange(of: active) { value in if !value { expanded = false } }
     }
 }
 

@@ -21,6 +21,21 @@ private struct AskHTTPProber: CloudEndpointProbing {
 
 @Suite("Ask HTTP contract")
 struct AskAPIClientTests {
+    @Test func streamingTransportDecodesSnapshotsAndCompactUpdates() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [AskEventsURLProtocol.self]
+        let selector = CloudEndpointSelector(baseURLs: [URL(string: "https://ask.example")!], prober: AskHTTPProber())
+        let api = AskAPIClient(executor: CloudRequestExecutor(selector: selector), streamSession: URLSession(configuration: configuration))
+        let collector = AskEventsCollector()
+        try await api.observe(id: "fixture", token: "fixture-token") { value in await collector.append(value) }
+        let values = await collector.values
+        #expect(values.map(\.revision) == [1, 2, 3])
+        #expect(values[1].messages.first?.text == "Question")
+        #expect(values.last?.messages.last?.text == "你好")
+        await #expect(throws: (any Error).self) {
+            try await api.observe(id: "fixture", token: "invalid") { _ in }
+        }
+    }
     private func client(_ stub: AskHTTPStub) -> AskAPIClient {
         let selector = CloudEndpointSelector(baseURLs: [URL(string: "https://ask.example")!], prober: AskHTTPProber())
         return AskAPIClient(executor: CloudRequestExecutor(selector: selector, session: stub))
@@ -67,4 +82,39 @@ struct AskAPIClientTests {
         let stub = AskHTTPStub(); await stub.configure(status: status, payload: Data(#"{"code":"ASK_CONFLICT","message":"Reload"}"#.utf8))
         await #expect(throws: (any Error).self) { try await client(stub).conversation(id: "c", token: "t") }
     }
+}
+
+private actor AskEventsCollector {
+    var values: [AskConversation] = []
+    func append(_ value: AskConversation) { values.append(value) }
+}
+
+private final class AskEventsURLProtocol: URLProtocol, @unchecked Sendable {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let authorized = request.value(forHTTPHeaderField: "Authorization") == "Bearer fixture-token" &&
+            request.url?.path == "/api/v1/ask/conversations/fixture/events" &&
+            request.value(forHTTPHeaderField: "Accept") == "text/event-stream"
+        let response = HTTPURLResponse(url: request.url!, statusCode: authorized ? 200 : 401, httpVersion: nil,
+                                       headerFields: ["Content-Type": "text/event-stream"])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        if authorized {
+            let date = Date(timeIntervalSince1970: 0)
+            var value = AskConversation(id: "fixture", title: "Fixture", revision: 1, updatedAt: date,
+                                        messages: [.init(id: "question", role: "user", text: "Question", createdAt: date)])
+            let first = String(decoding: try! AskCoding.encoder().encode(value), as: UTF8.self)
+            value.revision = 3
+            value.messages.append(.init(id: "answer", role: "assistant", text: "你好", createdAt: date))
+            let last = String(decoding: try! AskCoding.encoder().encode(value), as: UTF8.self)
+            let progress = #"{"id":"fixture","revision":2,"updated_at":"1970-01-01T00:00:00Z","run":null}"#
+            let wire = "event: snapshot\ndata: \(first)\n\n: heartbeat\n\nevent: progress\ndata: \(progress)\n\nevent: progress\ndata: \(progress)\n\nevent: snapshot\ndata: \(last)\n\n"
+            let data = Array(wire.utf8)
+            for offset in stride(from: 0, to: data.count, by: 7) {
+                client?.urlProtocol(self, didLoad: Data(data[offset..<min(data.count, offset + 7)]))
+            }
+        }
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
 }

@@ -68,7 +68,8 @@ enum AskTheme {
         let name = call.function.name
         guard name == "computer" || name == "browser" else { return name }
         let action = (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) ?? ""
-        return L("ask.tool." + name) + " · " + L("ask.action." + action)
+        let title = L("ask.tool." + name)
+        return action.isEmpty ? title : title + " · " + L("ask.action." + action)
     }
 }
 
