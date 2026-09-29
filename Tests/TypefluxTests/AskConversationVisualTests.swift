@@ -153,7 +153,7 @@ struct AskConversationVisualTests {
         let suite = "ask-model-visual-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
-        let profile = AskModelProfile(name: "我的模型", baseURL: "https://example.invalid/v1", model: "my-model")
+        let profile = AskModelProfile(name: "我的 vLLM", baseURL: "https://example.invalid/v1", model: "qwen3-32b")
         try defaults.set(JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         library.cloud = [.init(id: "default", name: "Typeflux Cloud"), .init(id: "deep", name: "Cloud · 深度")]
@@ -167,8 +167,12 @@ struct AskConversationVisualTests {
         let settings = SettingsStore(defaults: defaults)
         settings.appLanguage = .simplifiedChinese
         settings.setLLMAPIKey("fixture-key", for: .openAI)
+        for model in library.providers.first(where: { $0.id == "openAI" })?.models ?? [] {
+            try library.removeModel(model.reference, providerID: "openAI")
+        }
         try library.addModels([.init(id: "gpt-4o-mini", name: "gpt-4o-mini", vision: true),
-                               .init(id: "gpt-4o", name: "gpt-4o", vision: true)], providerID: "openAI")
+                               .init(id: "gpt-4o", name: "gpt-4o", vision: true),
+                               .init(id: "o4-mini", name: "o4-mini", vision: true)], providerID: "openAI")
         let viewModel = StudioViewModel(
             settingsStore: settings,
             historyStore: FileHistoryStore(baseDir: root.appendingPathComponent("history")),
@@ -183,21 +187,42 @@ struct AskConversationVisualTests {
         library
             .rewriteReference = try #require(library.providers.first { $0.id == "openAI" }?.models
                 .first { $0.id == "gpt-4o-mini" }?.reference)
+        for model in library.providers.first(where: { $0.isOllama })?.models ?? [] {
+            try library.removeModel(model.reference, providerID: "ollama")
+        }
         viewModel.setModelDomain(.llm)
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             try await render(
                 StudioView(viewModel: viewModel),
-                size: NSSize(width: 1200, height: 1000),
+                size: NSSize(width: 1200, height: 880),
                 appearance: appearance,
                 file: root.appendingPathComponent("models-settings-\(name).png")
             )
+            viewModel.selectedLanguageProviderID = "openAI"
             try await render(
-                ProviderModelsView(library: library, providerID: "openAI").padding(24)
-                    .background(StudioTheme.background),
-                size: NSSize(width: 850, height: 600),
+                StudioView(viewModel: viewModel),
+                size: NSSize(width: 1200, height: 880),
                 appearance: appearance,
                 file: root.appendingPathComponent("models-provider-\(name).png")
             )
+            viewModel.selectedLanguageProviderID = nil
+            try await render(
+                AskModelChoices(library: library, reference: .constant(library.rewriteReference), loggedIn: true),
+                size: NSSize(width: 360, height: 370), appearance: appearance,
+                file: root.appendingPathComponent("models-menu-\(name).png")
+            )
+            let catalogIDs = ["gpt-4o-mini", "gpt-4o", "o4-mini", "gpt-4.1", "gpt-4.1-mini", "o3", "text-embedding-3-large"]
+            try await render(
+                ModelCatalogView(providerName: "OpenAI", models: catalogIDs.map { .init(id: $0, name: $0) },
+                                 existingIDs: Set(catalogIDs.prefix(3)), selected: .constant(Set(catalogIDs.prefix(3))),
+                                 onCancel: {}, onAdd: {}),
+                size: NSSize(width: 580, height: 470), appearance: appearance,
+                file: root.appendingPathComponent("models-catalog-\(name).png")
+            )
+            viewModel.setModelDomain(.stt)
+            try await render(StudioView(viewModel: viewModel), size: NSSize(width: 1200, height: 880),
+                             appearance: appearance, file: root.appendingPathComponent("models-speech-\(name).png"))
+            viewModel.setModelDomain(.llm)
         }
         try await render(
             AskLauncherView(model: fixture.model, onDismiss: {}),

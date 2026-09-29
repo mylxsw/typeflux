@@ -71,3 +71,18 @@ Generate using `TYPEFLUX_ASK_SNAPSHOTS=<directory> swift test --filter AskConver
 ![Dark model settings](images/models-settings-dark.png)
 ![Light provider details](images/models-provider-light.png)
 ![Dark provider details](images/models-provider-dark.png)
+
+### Visual fidelity review
+
+The review and intentional differences are recorded in [design QA](../design-qa.md).
+The provider screen is captured inside the full production settings shell.
+
+![Speech settings, light](images/models-speech-light.png)
+![Speech settings, dark](images/models-speech-dark.png)
+![Model catalog, light](images/models-catalog-light.png)
+![Model catalog, dark](images/models-catalog-dark.png)
+![Model chooser, light](images/models-menu-light.png)
+![Model chooser, dark](images/models-menu-dark.png)
+
+![Provider comparison](images/comparison-provider.png)
+![Catalog comparison](images/comparison-catalog.png)

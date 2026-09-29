@@ -94,6 +94,7 @@ final class StudioViewModel: ObservableObject {
         }
     }
 
+    @Published var selectedLanguageProviderID: String?
     @Published var modelDomain: StudioModelDomain = .stt
     @Published var focusedModelProvider: StudioModelProviderID
 

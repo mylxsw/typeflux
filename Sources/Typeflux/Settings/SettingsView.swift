@@ -467,8 +467,10 @@ struct StudioView: View {
         ) { viewportSize in
             let viewportHeight = viewportContentHeight(from: viewportSize)
 
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.heroSection) {
-                pageHeader
+            VStack(alignment: .leading, spacing: viewModel.currentSection == .models ? 18 : StudioTheme.Spacing.heroSection) {
+                if viewModel.currentSection != .models || viewModel.selectedLanguageProviderID == nil {
+                    pageHeader
+                }
 
                 if viewModel.currentSection == .models {
                     GeometryReader { proxy in
@@ -1019,7 +1021,7 @@ struct StudioView: View {
 
     private func viewportContentHeight(from viewportSize: CGSize) -> CGFloat {
         max(
-            viewportSize.height - StudioTheme.Layout.shellContentTopInset
+            viewportSize.height - (viewModel.currentSection == .models ? 32 : StudioTheme.Layout.shellContentTopInset)
                 - StudioTheme.Layout.shellContentBottomInset,
             0
         )

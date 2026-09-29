@@ -4,7 +4,11 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     @ObservedObject var viewModel: StudioViewModel
     @ObservedObject var library: AskModelLibrary
     @ObservedObject private var auth = AuthState.shared
-    @State private var selectedProvider: String?
+    private var selectedProvider: String? {
+        get { viewModel.selectedLanguageProviderID }
+        nonmutating set { viewModel.selectedLanguageProviderID = newValue }
+    }
+
     @State private var speechDetailVisible = false
     @State private var search = ""
     @State private var addingEndpoint = false
@@ -12,24 +16,36 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 20) {
                 if speechDetailVisible {
                     backButton { speechDetailVisible = false }
                     speechDetail()
                 } else if let id = selectedProvider, let provider = library.providers.first(where: { $0.id == id }) {
-                    backButton { selectedProvider = nil }
-                    ProviderModelsView(library: library, providerID: provider.id)
+                    ProviderModelsView(library: library, providerID: provider.id) { selectedProvider = nil }
                 } else {
                     scenes
                     HStack {
-                        StudioSegmentedPicker(options: StudioModelDomain.allCases.map {
-                            (
-                                label: L($0 == .stt ? "settings.models.domain.stt" : "settings.models.domain.llm"),
-                                value: $0
-                            )
-                        }, selection: Binding(get: { viewModel.modelDomain }, set: viewModel.setModelDomain))
+                        HStack(spacing: 2) {
+                            ForEach(StudioModelDomain.allCases, id: \.self) { domain in
+                                Button { viewModel.setModelDomain(domain) } label: {
+                                    Text(L(domain == .stt ? "settings.models.domain.stt" :
+                                            "settings.models.domain.llm"))
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(viewModel.modelDomain == domain
+                                            ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                                        .padding(.horizontal, 14).frame(height: 30)
+                                        .background(viewModel.modelDomain == domain ? ModelVisualStyle.input : .clear,
+                                                    in: RoundedRectangle(cornerRadius: 7))
+                                }.buttonStyle(.plain)
+                            }
+                        }.padding(3).background(StudioTheme.textSecondary.opacity(0.12),
+                                                in: RoundedRectangle(cornerRadius: 10))
                         Spacer()
-                        TextField(L("models.search"), text: $search).textFieldStyle(.roundedBorder).frame(width: 210)
+                        HStack(spacing: 7) {
+                            Image(systemName: "magnifyingglass").foregroundStyle(StudioTheme.textSecondary)
+                            TextField(L("models.search"), text: $search).textFieldStyle(.plain)
+                        }.font(.system(size: 12)).padding(.horizontal, 10).frame(width: 190, height: 32)
+                            .background(ModelVisualStyle.input, in: RoundedRectangle(cornerRadius: 8))
                     }
                     if viewModel.modelDomain == .stt {
                         speechList
@@ -57,10 +73,12 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     }
 
     private var scenes: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: 15) {
-                Text(L("ask.models.byPurpose")).font(.headline)
-                Text(L("models.sceneHint")).font(.caption).foregroundStyle(StudioTheme.textSecondary)
+        ModelSurface {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 12) {
+                    Text(L("ask.models.byPurpose")).font(.system(size: 13, weight: .semibold))
+                    Text(L("models.sceneHint")).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                }.padding(.horizontal, 18).frame(height: 44)
                 Divider()
                 sceneRow("ask.models.speech", subtitle: "models.fixedSpeech", icon: "mic") {
                     Menu {
@@ -85,15 +103,27 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                     } label: { Text(viewModel.sttProvider.displayName + " · " + speechModelName(viewModel.sttProvider)
                             + (speechReason(viewModel.sttProvider).map { " — " + $0 } ?? ""))
                     }
-                    .menuStyle(.borderlessButton).frame(width: 280)
+                    .menuStyle(.borderlessButton).padding(.horizontal, 10).frame(width: 240, height: 32)
+                    .background(ModelVisualStyle.input, in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(ModelVisualStyle.border))
                 }
                 Divider()
                 sceneRow("ask.models.rewrite", subtitle: "models.fixedRewrite", icon: "pencil") {
-                    AskModelMenu(library: library, reference: $library.rewriteReference, showsDefaultAction: false)
+                    AskModelMenu(
+                        library: library,
+                        reference: $library.rewriteReference,
+                        showsDefaultAction: false,
+                        fieldStyle: true
+                    )
                 }
                 Divider()
                 sceneRow("models.askDefault", subtitle: "models.defaultHint", icon: "sparkles") {
-                    AskModelMenu(library: library, reference: $library.defaultReference, showsDefaultAction: false)
+                    AskModelMenu(
+                        library: library,
+                        reference: $library.defaultReference,
+                        showsDefaultAction: false,
+                        fieldStyle: true
+                    )
                 }
             }
         }
@@ -102,18 +132,19 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     private func sceneRow(_ title: String, subtitle: String, icon: String,
                           @ViewBuilder content: () -> some View) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).frame(width: 30).foregroundStyle(StudioTheme.textSecondary)
+            Image(systemName: icon).frame(width: 30, height: 32).foregroundStyle(StudioTheme.textSecondary)
+                .background(StudioTheme.textSecondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
             VStack(alignment: .leading, spacing: 4) {
                 Text(L(title)).font(.system(size: 13, weight: .semibold))
-                Text(L(subtitle)).font(.caption).foregroundStyle(StudioTheme.textSecondary)
+                Text(L(subtitle)).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
             }
             Spacer()
             content()
-        }
+        }.padding(.horizontal, 18).frame(minHeight: 64)
     }
 
     private var languageList: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             ForEach([true, false], id: \.self) { configured in
                 Text(L(configured ? "models.configured" : "models.unconfigured"))
                     .font(.caption.weight(.semibold)).foregroundStyle(StudioTheme.textSecondary).padding(.top, 6)
@@ -122,7 +153,10 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                         (search.isEmpty || $0.name.localizedCaseInsensitiveContains(search))
                 }) { provider in
                     providerRow(name: provider.name,
-                                detail: library.unavailableReason(provider, loggedIn: auth.isLoggedIn) ?? provider
+                                detail: library
+                                    .unavailableReason(provider, loggedIn: auth.isLoggedIn) ??
+                                    "\(provider.models.count) " +
+                                    L("common.model") + " · " + provider
                                     .models.map(\.id).joined(separator: " · "),
                                 available: configured, icon: provider.isCloud ? "cloud" : "server.rack") {
                         selectedProvider = provider.id
@@ -145,7 +179,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     }
 
     private var speechList: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             ForEach([true, false], id: \.self) { configured in
                 Text(L(configured ? "models.configured" : "models.unconfigured"))
                     .font(.caption.weight(.semibold)).foregroundStyle(StudioTheme.textSecondary).padding(.top, 6)
@@ -170,12 +204,12 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     private func providerRow(name: String, detail: String, available: Bool, icon: String,
                              action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 14) {
-                Image(systemName: icon).font(.system(size: 17)).frame(width: 36, height: 36)
+            HStack(spacing: 12) {
+                Image(systemName: icon).font(.system(size: 15)).frame(width: 32, height: 32)
                     .background(StudioTheme.textSecondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 9))
-                VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(name).font(.system(size: 14, weight: .semibold))
-                    Text(detail).font(.caption).foregroundStyle(StudioTheme.textSecondary).lineLimit(2)
+                    Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
                 }
                 Spacer()
                 if available {
@@ -185,10 +219,10 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                     .padding(.horizontal, 9).padding(.vertical, 4)
                     .background(StudioTheme.textSecondary.opacity(0.08), in: Capsule())
                 Image(systemName: "chevron.right").font(.caption)
-            }.padding(14)
+            }.padding(.horizontal, 14).frame(height: 58)
                 .foregroundStyle(available ? StudioTheme.textPrimary : StudioTheme.textSecondary)
                 .background(
-                    StudioTheme.textSecondary.opacity(available ? 0.08 : 0.025),
+                    available ? ModelVisualStyle.surface : Color.clear,
                     in: RoundedRectangle(cornerRadius: 12)
                 )
                 .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(
@@ -199,10 +233,12 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     }
 
     private func speechReason(_ provider: STTProvider) -> String? {
-        if provider != .localModel, auth.isLoggedIn && !auth.canUseCloudASR { return L("models.subscription") }
+        if provider != .localModel, auth.isLoggedIn, !auth.canUseCloudASR {
+            return L("models.subscription")
+        }
         return ModelAvailability.speechReason(provider, settings: library.settings, loggedIn: auth.isLoggedIn,
-                                       localModelAvailable: viewModel.isModelAvailable(viewModel.localSTTModel),
-                                       googleAuthorized: viewModel.googleCloudOAuthAuthorized)
+                                              localModelAvailable: viewModel.isModelAvailable(viewModel.localSTTModel),
+                                              googleAuthorized: viewModel.googleCloudOAuthAuthorized)
     }
 
     private func speechModelName(_ provider: STTProvider) -> String {
