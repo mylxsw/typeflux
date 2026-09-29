@@ -56,9 +56,10 @@ No server migration or deletion of existing cloud history is required.
 
 ## Hold-to-talk and edge refresh (approved design 2)
 
-A primary-button hold of 350 ms in either editor starts recording. AppKit's press
-recognizer allows 6 pt of movement before recognition; shorter clicks, double-clicks,
-modified clicks, IME composition and drag selection keep native editing behavior.
+A primary-button hold of 350 ms in either editor starts recording. Application-local
+mouse events arm a main-run-loop timer before gesture arbitration. Movement beyond
+6 pt before the threshold switches to character selection; a short click positions
+the caret. Double-clicks, modified clicks and IME composition use native editing.
 Only the text editor is a hold target, not the screenshot, preview or send controls.
 Release stops and transcribes through the application's existing AudioRecorder and
 configured STTRouter. Transcription replaces the captured selection/insertion range
@@ -66,7 +67,8 @@ without submitting. Fn uses the same card feedback, including its short-tap lock
 behavior; it does not show a second recording capsule while a composer owns focus.
 
 The entire floating card or workspace input card has a static blue outline and
-soft halo while recording, with a textual listening status. Transcription dims the
+soft halo while recording, with a textual listening status. Idle and ordinary
+keyboard focus use the neutral border; focus alone never adds a blue outline. Transcription dims the
 outline and disables sending. Escape, loss of focus, screen locking or sleep cancels
 capture/delivery and preserves the draft. A late transcript cannot reach another
 conversation, changed draft, or another application. A cancelled startup retains
@@ -227,3 +229,29 @@ original draft. Actual signed-app microphone acceptance remains manual.
 Validation: all 136 Swift Testing tests passed, including native visual snapshots
 and the three new interaction regressions. The 2673 XCTest cases retain the same
 four previously documented workflow failures (8 assertions); no new cases failed.
+
+## Direct mouse hold handling (2026-09-29)
+
+The focus fix did not resolve the reported failure to start recording in the
+running app. The composer now owns mouse-down, drag and release directly instead
+of relying on `NSPressGestureRecognizer`. A scoped application event monitor only
+intercepts eligible presses inside the editor's visible bounds. It focuses the
+window and starts a 350 ms timer without entering native selection tracking, so
+recording can start while the button is still held. A short click places the caret;
+movement before the threshold selects text and cancels the timer. Once recording
+starts, pointer movement does not cancel it. Local/global release monitors stop
+recording even if release is outside the input; focus loss and Escape cancel it.
+
+Interaction tests now send events through `NSApplication.sendEvent`, exercising
+the local monitors, small pointer movements, short clicks, drag selection, release
+in another window, cancellation and both production composers. A separate workflow
+integration test connects those events to the production `WorkflowComposerRecording`
+adapter and verifies audio starts before release, stops once, transcribes and fills
+the original editor without external text injection. Audio hardware and STT are
+still substituted; this does not claim a physical-mouse/live-microphone reproduction
+or prove which recognizer suppressed the original user's press.
+
+Validation: all 139 Swift Testing tests passed, including native renders and mouse
+interaction tests. The new production-adapter mouse integration test also passed.
+Full XCTest: 2674 cases, with the same four pre-existing workflow failures
+(8 assertions) documented above and no newly failing cases.
