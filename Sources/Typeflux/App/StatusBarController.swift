@@ -230,12 +230,12 @@ final class StatusBarController: NSObject {
         menu.delegate = self
 
         menu.addItem(makeItem(title: L("menu.openVoiceStudio"), action: #selector(openHome)))
+        menu.addItem(makeItem(title: L("menu.openAskConversations"), action: #selector(openAskConversations)))
         menu.addItem(makeItem(title: L("menu.addVocabulary"), action: #selector(addVocabularyTerm)))
         let historyItem = NSMenuItem(title: L("menu.transcriptionHistory"), action: nil, keyEquivalent: "")
         historyItem.tag = MenuTag.transcriptionHistory
         historyItem.submenu = buildTranscriptionHistoryMenu()
         menu.addItem(historyItem)
-        menu.addItem(makeItem(title: L("workflow.ask.answerTitle"), action: #selector(openAskConversations)))
         if settingsStore.isTextTransformationAvailable {
             let textTransformationItem = NSMenuItem(title: L("menu.textTransformation"), action: nil, keyEquivalent: "")
             textTransformationItem.tag = MenuTag.textTransformation

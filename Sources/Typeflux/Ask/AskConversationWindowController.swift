@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 final class AskConversationWindowController: NSObject, NSWindowDelegate {
     let model: AskConversationModel
+    private let dockVisibility: DockVisibilityController
     private let settings: SettingsStore
     private let tools: AskLocalTools?
     private var launcher: AskFloatingPanel?
@@ -14,7 +15,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private var clickMonitor: Any?
     private var localClickMonitor: Any?
 
-    init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry, modelLibrary: AskModelLibrary) throws {
+    init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry, modelLibrary: AskModelLibrary,
+         dockVisibility: DockVisibilityController = .shared) throws {
+        self.dockVisibility = dockVisibility
         self.settings = settings
         let tools = AskLocalTools(registry: registry)
         self.tools = tools
@@ -32,14 +35,15 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         bindCallbacks()
     }
 
-    init(settings: SettingsStore, model: AskConversationModel) {
+    init(settings: SettingsStore, model: AskConversationModel, dockVisibility: DockVisibilityController = .shared) {
+        self.dockVisibility = dockVisibility
         self.settings = settings; self.model = model; self.tools = nil
         super.init()
         bindCallbacks()
     }
 
     private func bindCallbacks() {
-        model.onShowConversation = { [weak self] in self?.dismissLauncher(); self?.showConversation() }
+        model.onShowConversation = { [weak self] in self?.showConversation() }
         model.onControlChanged = { [weak self] active in self?.showControl(active) }
     }
 
@@ -97,6 +101,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 
     func showConversation() {
+        dismissLauncher()
         if conversationWindow == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 740), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
             window.isOpaque = true
@@ -113,9 +118,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             window.center()
             conversationWindow = window
         }
+        guard let conversationWindow else { return }
         applyAppearance(conversationWindow)
+        dockVisibility.windowDidShow(conversationWindow)
+        if conversationWindow.isMiniaturized { conversationWindow.deminiaturize(nil) }
         NSApp.activate(ignoringOtherApps: true)
-        conversationWindow?.makeKeyAndOrderFront(nil)
+        conversationWindow.makeKeyAndOrderFront(nil)
         focusEditor(in: conversationWindow)
         Task { await model.refreshHistory() }
     }
@@ -139,7 +147,13 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         }
         model.voiceInput.cancel()
         sender.orderOut(nil)
+        dockVisibility.windowDidHide(sender)
         return false
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        dockVisibility.windowDidHide(window)
     }
 
     private func showControl(_ active: Bool) {
