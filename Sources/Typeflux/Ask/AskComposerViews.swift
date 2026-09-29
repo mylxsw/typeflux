@@ -83,7 +83,7 @@ struct AskComposer: View {
             }
             ZStack(alignment: .topLeading) {
                 if draft.wrappedValue.text.isEmpty {
-                    Text(L(launcher ? "ask.input.placeholder" : "ask.followup.placeholder"))
+                    Text(L(launcher || model.selectedId == nil ? "ask.input.placeholder" : "ask.followup.placeholder"))
                         .font(.system(size: editorFontSize))
                         .foregroundStyle(StudioTheme.textTertiary)
                         .padding(.leading, 2)
@@ -92,7 +92,7 @@ struct AskComposer: View {
                 }
                 AskComposerTextView(
                     text: draft.text,
-                    placeholder: L(launcher ? "ask.input.placeholder" : "ask.followup.placeholder"),
+                    placeholder: L(launcher || model.selectedId == nil ? "ask.input.placeholder" : "ask.followup.placeholder"),
                     voice: voice,
                     contextID: contextID,
                     fontSize: editorFontSize,

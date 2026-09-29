@@ -87,7 +87,11 @@ enum AskMetrics {
     static let bannerHeight: CGFloat = 32
     static let bannerSpacing: CGFloat = 6
     static let sidebarWidth: CGFloat = 248
-    static let headerHeight: CGFloat = 52
+    static let headerHeight: CGFloat = 44
+    /// Height of the row that shares the traffic lights' centre line.
+    static let titleBarRowHeight: CGFloat = 28
+    /// Space above the sidebar's first row, clearing the title bar tools.
+    static let sidebarTopInset: CGFloat = 40
     /// Vertical strip reserved for the window's traffic-light buttons.
     static let trafficLightStrip: CGFloat = 32
     /// Leading space for the title bar tools, past the traffic lights.
