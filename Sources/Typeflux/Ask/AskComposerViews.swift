@@ -43,7 +43,6 @@ struct AskComposer: View {
     private var listening: Bool { voice.context == contextID && voice.phase == .listening }
     @State private var showingScreenshot = false
     @State private var showingSelection = false
-    @State private var showingContext = false
     @State private var editorHeight: CGFloat = 32
     @State private var voiceShortcut: HotkeyBinding?
 
@@ -138,21 +137,11 @@ struct AskComposer: View {
                              effort: $model.reasoningEffort,
                              disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
                              compact: true)
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 7) { contextChips }.fixedSize()
-                Button { showingContext = true } label: {
-                    Image(systemName: "ellipsis").frame(width: 28, height: 28)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(StudioTheme.textSecondary)
-                .accessibilityLabel(L("ask.context"))
-                .help(L("ask.context"))
-                .popover(isPresented: $showingContext) {
-                    HStack(spacing: 8) { contextChips }.padding(12)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .disabled(active)
+            // "How to ask" and "what rides along" are separated by a rule.
+            Rectangle().fill(AskTheme.separator).frame(width: 1, height: 16)
+            contextChips
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .disabled(active)
             voiceStatus
             if !launcher, onToggleUsage != nil, let context = model.usageContext {
                 AskContextUsageButton(context: context) { onToggleUsage?() }
@@ -170,104 +159,100 @@ struct AskComposer: View {
         .background(chrome.fill)
     }
 
-    @ViewBuilder private var contextChips: some View {
-        screenshotChip
-            .popover(isPresented: $showingScreenshot) {
-                AskContextPreview(draft: draft, showsSelection: false,
-                                  recapture: { Task { await model.refreshScreenshot(launcher: launcher) } })
+    private var contextItems: [AskContextItem] {
+        let value = draft.wrappedValue
+        let newConversation = launcher || model.selectedId == nil
+        return AskContextChips.items(
+            screenshot: screenshotState,
+            source: launcher ? value.source : nil,
+            sourceBundleID: value.sourceBundleID,
+            selection: value.selection,
+            memory: newConversation ? value.memory : nil,
+            memoryPinned: !newConversation && model.selected?.memory?.isEmpty == false
+        )
+    }
+
+    private var screenshotState: AskScreenshotState {
+        let value = draft.wrappedValue
+        if let reason = model.screenshotCapability(launcher: launcher).hint { return .unavailable(reason: reason) }
+        if value.includeScreenshot, value.screenshot == nil, let warning = model.captureWarning {
+            return .failed(permission: warning == L("ask.capture.permission"), message: warning)
+        }
+        return value.includeScreenshot ? .attached : .off
+    }
+
+    /// Icon chips, widest layout that fits first. Screenshot and source stay
+    /// visible; selection and memory fold into "+N" from the right.
+    private var contextChips: some View {
+        let items = contextItems
+        return ViewThatFits(in: .horizontal) {
+            ForEach(Array(AskContextChips.layouts(items).enumerated()), id: \.offset) { _, layout in
+                HStack(spacing: AskContextChips.spacing) {
+                    ForEach(layout.shown) { chip($0) }
+                    if !layout.hidden.isEmpty {
+                        AskOverflowChip(hidden: layout.hidden, onRemove: remove)
+                    }
+                    if model.capturing { ProgressView().controlSize(.small) }
+                }
+                .fixedSize()
             }
-        if draft.wrappedValue.selection != nil {
-            selectionChip
+        }
+    }
+
+    @ViewBuilder private func chip(_ item: AskContextItem) -> some View {
+        switch item.kind {
+        case .screenshot:
+            AskIconChip(item: item, action: screenshotAction, onRemove: { remove(.screenshot) })
+                .popover(isPresented: $showingScreenshot) {
+                    AskContextPreview(draft: draft, showsSelection: false,
+                                      recapture: { Task { await model.refreshScreenshot(launcher: launcher) } })
+                }
+        case .selection:
+            AskIconChip(item: item, action: { showingSelection = true }, onRemove: { remove(.selection) })
                 .popover(isPresented: $showingSelection) {
                     AskContextPreview(draft: draft, showsSelection: true,
                                       recapture: { Task { await model.refreshScreenshot(launcher: launcher) } })
                 }
+        case .source:
+            AskIconChip(item: item)
+        case .memory:
+            AskIconChip(item: item, onRemove: { remove(.memory) })
         }
-        if launcher, draft.wrappedValue.selection == nil, let source = draft.wrappedValue.source, !source.isEmpty {
-            AskChip(title: source, systemImage: "macwindow")
-        }
-        if let memory = memoryChip { memory }
-        if model.capturing { ProgressView().controlSize(.small) }
     }
 
-    /// A new conversation shows the memory it will send; an existing one shows
-    /// that memory was pinned when it started.
-    private var memoryChip: AskChip? {
-        if launcher || model.selectedId == nil {
-            guard let memory = draft.wrappedValue.memory, !memory.isEmpty else { return nil }
-            return AskChip(
-                title: memory.chipTitle,
-                systemImage: "brain",
-                style: .active,
-                onRemove: { draft.wrappedValue.memory = AskMemory() },
-                help: L("ask.memory.help")
-            )
-        }
-        guard model.selected?.memory?.isEmpty == false else { return nil }
-        return AskChip(title: L("ask.memory"), systemImage: "brain", style: .neutral, help: L("ask.memory.pinned"))
-    }
-
-    private var screenshotChip: AskChip {
-        let value = draft.wrappedValue
-        if let hint = model.screenshotCapability(launcher: launcher).hint {
-            return AskChip(title: L("ask.screenshot.unavailable"), systemImage: "info.circle",
-                           style: .unavailable, help: hint, disabled: true)
-        }
-        if value.includeScreenshot, value.screenshot == nil, let warning = model.captureWarning {
-            let permission = warning == L("ask.capture.permission")
-            return AskChip(
-                title: permission ? L("ask.capture.settings") : L("ask.capture.retry"),
-                systemImage: "exclamationmark.triangle.fill",
-                style: .warning,
-                action: {
-                    if permission {
-                        // Registers the app in the list first, otherwise the pane shows no Typeflux entry.
-                        AskContextCapture.requestScreenCaptureAccess()
-                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
-                            NSWorkspace.shared.open(url)
-                        }
-                    } else {
-                        Task { await model.refreshScreenshot(launcher: launcher) }
-                    }
-                },
-                help: warning
-            )
-        }
-        if value.includeScreenshot {
-            return AskChip(
-                title: L("ask.screenshot"),
-                systemImage: "camera.viewfinder",
-                style: .active,
-                action: { showingScreenshot = true },
-                onRemove: { draft.wrappedValue.includeScreenshot = false },
-                help: L("ask.preview")
-            )
-        }
-        // Off, but available: a solid outline. The dashed style above is
-        // reserved for a screenshot this model or window genuinely cannot take,
-        // which previously made an ordinary toggle look disabled.
-        return AskChip(
-            title: L("ask.screenshot"),
-            systemImage: "camera.viewfinder",
-            style: .neutral,
-            action: {
+    private var screenshotAction: (() -> Void)? {
+        switch screenshotState {
+        case .unavailable: return nil
+        case .attached: return { showingScreenshot = true }
+        case .off:
+            return {
                 draft.wrappedValue.includeScreenshot = true
                 if draft.wrappedValue.screenshot == nil {
                     Task { await model.refreshScreenshot(launcher: launcher) }
                 }
             }
-        )
+        case let .failed(permission, _):
+            return {
+                if permission {
+                    // Registers the app in the list first, otherwise the pane shows no Typeflux entry.
+                    AskContextCapture.requestScreenCaptureAccess()
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+                        NSWorkspace.shared.open(url)
+                    }
+                } else {
+                    Task { await model.refreshScreenshot(launcher: launcher) }
+                }
+            }
+        }
     }
 
-    private var selectionChip: AskChip {
-        AskChip(
-            title: L("ask.selection.lines", AskPresentation.lineCount(draft.wrappedValue.selection ?? "")),
-            systemImage: "text.cursor",
-            style: .active,
-            action: { showingSelection = true },
-            onRemove: { draft.wrappedValue.selection = nil },
-            help: L("ask.selection")
-        )
+    private func remove(_ kind: AskContextItem.Kind) {
+        switch kind {
+        case .screenshot: draft.wrappedValue.includeScreenshot = false
+        case .selection: draft.wrappedValue.selection = nil
+        case .memory: draft.wrappedValue.memory = AskMemory()
+        case .source: break
+        }
     }
 
     private var voiceStatus: some View {

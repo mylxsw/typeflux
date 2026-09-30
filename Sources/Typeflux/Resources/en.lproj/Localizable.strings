@@ -1453,6 +1453,10 @@
 "ask.retry" = "Retry";
 "ask.screenshot" = "Attach screenshot";
 "ask.screenshot.unavailable" = "Screenshot unavailable";
+"ask.context.screenshot.attached" = "Screenshot attached";
+"ask.context.screenshot.offHint" = "Click to attach a screenshot of the current screen";
+"ask.context.previewHint" = "Click to preview";
+"ask.context.more" = "%d more context items";
 "ask.selection" = "Selected text";
 "ask.memory" = "Memory";
 "ask.memory.app" = "Memory · %@";

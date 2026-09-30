@@ -118,6 +118,8 @@ struct AskDraft: Codable, Equatable, Sendable {
     var screenshot: String?
     var selection: String?
     var source: String?
+    /// Bundle identifier of `source`'s app; nil for drafts saved before it existed.
+    var sourceBundleID: String? = nil
     var capturedAt: Date?
     var modelRef: String? = nil
 

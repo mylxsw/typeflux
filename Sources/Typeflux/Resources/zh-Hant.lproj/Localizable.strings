@@ -1450,6 +1450,10 @@
 "ask.retry" = "Retry";
 "ask.screenshot" = "Attach screenshot";
 "ask.screenshot.unavailable" = "截圖不可用";
+"ask.context.screenshot.attached" = "已附帶截圖";
+"ask.context.screenshot.offHint" = "點擊附帶目前螢幕截圖";
+"ask.context.previewHint" = "點擊預覽";
+"ask.context.more" = "另有 %d 項上下文";
 "ask.selection" = "Selected text";
 "ask.memory" = "記憶";
 "ask.memory.app" = "記憶 · %@";
