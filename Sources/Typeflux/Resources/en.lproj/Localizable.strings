@@ -1666,6 +1666,16 @@
 "ask.voice.shortcutHint" = "Hold %@ for voice input in the editor; release to transcribe.";
 "ask.voice.stopHint" = "Stop recording and insert text. Escape cancels.";
 
+// Selected reply references
+"ask.references.question" = "Follow-up question";
+"ask.references.optional" = "Question (optional)";
+"ask.references.explain" = "Explain this excerpt";
+"ask.references.save" = "Add to draft";
+"ask.references.manage" = "Manage (%d)";
+"ask.references.locate" = "Locate source";
+"ask.references.edit" = "Edit";
+"ask.references.close" = "Close";
+"ask.references.update" = "Save changes";
 // Ask conversation usage
 "ask.usage.title" = "Usage";
 "ask.usage.close" = "Close usage";

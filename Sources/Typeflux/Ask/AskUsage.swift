@@ -126,8 +126,9 @@ extension AskConversation {
         if (older.usage?.version ?? 0) > (usage?.version ?? 0) { result.usage = older.usage }
         return result
     }
-    func reconciling(_ incoming: Self) -> Self {
+    func reconciling(_ incoming: Self, preservingEqualRevisionContent: Bool = false) -> Self {
         guard incoming.id == id else { return incoming }
+        if preservingEqualRevisionContent, incoming.revision == revision { return mergingUsage(from: incoming) }
         return incoming.revision >= revision ? incoming.mergingUsage(from: self) : mergingUsage(from: incoming)
     }
     func isNewer(than older: Self) -> Bool {

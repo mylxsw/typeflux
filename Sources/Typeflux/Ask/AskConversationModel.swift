@@ -52,6 +52,7 @@ final class AskConversationModel: ObservableObject {
             || (!launcher && selected?.messages.contains(where: { $0.image != nil }) == true)
     }
 
+    @Published var referenceLocation: String?
     @Published var launcherDraft = AskDraft() {
         didSet {
             if launcherDraft.includeScreenshot, screenshotCapability(launcher: true) != .supported {
@@ -348,6 +349,13 @@ final class AskConversationModel: ObservableObject {
         guard canSendLauncher else { return }
         submit(launcherDraft, newConversation: true)
     }
+    func addReference(_ reference: AskReference) {
+        var updated = draft
+        updated.references = (updated.references ?? []) + [reference]
+        guard updated.referencesWithinLimit else { error = L("ask.input.tooLarge"); return }
+        draft = updated
+    }
+
     func submitDraft() {
         normalizeScreenshotChoices()
         guard canSend else { return }
@@ -355,7 +363,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     private func submit(_ submitted: AskDraft, newConversation: Bool) {
-        guard submitted.text.utf8.count <= 32000, (submitted.selection?.utf8.count ?? 0) <= 64000,
+        guard submitted.referencesWithinLimit, submitted.text.utf8.count <= 32000, (submitted.selection?.utf8.count ?? 0) <= 64000,
               (submitted.source?.utf8.count ?? 0) <= 1000 else {
             error = L("ask.input.tooLarge"); return
         }
@@ -373,7 +381,7 @@ final class AskConversationModel: ObservableObject {
         value.modelRef = request.modelRef
         pendingSends[id] = request
         screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
-        value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort))
+        value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references))
         selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID(); draft = .followUp
         snapshots[id] = value; selectionLoadFailed = false
         updateSummary(value)
@@ -472,7 +480,7 @@ final class AskConversationModel: ObservableObject {
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
                     let request = AskSendRequest(id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
-                                                 tools: await tools.definitions(), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort)
+                                                 tools: await tools.definitions(), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references)
                     try await validateModel(
                         request.modelRef, token: current.token,
                         hasImage: request.image != nil || value.messages.contains(where: { $0.image != nil })
@@ -496,15 +504,18 @@ final class AskConversationModel: ObservableObject {
         try Task.checkCancellation()
         guard owner == expectedOwner else { throw CancellationError() }
         if let previous = snapshots[value.id], !value.isNewer(than: previous) { return }
-        var value = snapshots[value.id]?.reconciling(value) ?? value
+        var value = snapshots[value.id]?.reconciling(value, preservingEqualRevisionContent: true) ?? value
         // Persist meaningful message/state changes, not every transient preview.
         if snapshots[value.id]?.messages != value.messages || snapshots[value.id]?.run?.status != value.run?.status || snapshots[value.id]?.usage != value.usage {
             try await cache.save(value, owner: expectedOwner)
         }
         guard owner == expectedOwner else { throw CancellationError() }
-        value = snapshots[value.id]?.reconciling(value) ?? value
+        // Recheck after the cache write: another delivery or optimistic send
+        // may have advanced the state while this task was suspended.
+        if let latest = snapshots[value.id], !value.isNewer(than: latest) { return }
+        value = snapshots[value.id]?.reconciling(value, preservingEqualRevisionContent: true) ?? value
         snapshots[value.id] = value
-        if selected?.id == value.id { selected = selected?.reconciling(value) ?? value }
+        if selected?.id == value.id { selected = selected?.reconciling(value, preservingEqualRevisionContent: true) ?? value }
         if let inferenceID = progressInferenceIDs[value.id], value.run?.inference?.id != inferenceID {
             inferenceProgress[value.id] = nil; progressInferenceIDs[value.id] = nil
         }

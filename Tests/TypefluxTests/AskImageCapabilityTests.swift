@@ -7,6 +7,28 @@ import Testing
 struct AskImageCapabilityTests {
     static let image = "data:image/jpeg;base64,YQ=="
 
+    @Test func screenshotNormalizationPreservesSelectedReferences() async throws {
+        let f = try await fixture()
+        defer { f.model.resetSession() }
+        f.model.selectModel("cloud:vision", launcher: false)
+        f.model.draft.includeScreenshot = true
+        f.model.draft.screenshot = Self.image
+        let reference = AskReference(messageId: "source", text: "Selected passage", question: "Why?")
+        f.model.addReference(reference)
+        f.model.referenceLocation = reference.messageId
+        #expect(f.model.draft.includeScreenshot)
+        #expect(f.model.draft.references == [reference])
+
+        f.model.selectModel("cloud:text", launcher: false)
+        #expect(!f.model.draft.includeScreenshot)
+        #expect(f.model.draft.references == [reference])
+        #expect(f.model.referenceLocation == reference.messageId)
+        #expect(f.model.canSend)
+        let request = f.model.draft.request(deviceId: "device", tools: [])
+        #expect(request.references == [reference])
+        #expect(request.image == nil)
+    }
+
     @Test func restoringDraftWaitsForTheConversationModel() async throws {
         let f = try await fixture()
         defer { f.model.resetSession() }
