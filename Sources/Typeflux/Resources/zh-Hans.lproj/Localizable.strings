@@ -1623,7 +1623,7 @@
 
 "models.cloud.parameters" = "上下文：%d · 输出：%d tokens";
 "models.cloud.priceUnknown" = "价格信息暂不可用";
-"models.cloud.priceExplanation" = "倍率同时作用于输入和输出费率，实际消耗取决于 token 用量。";
+"models.cloud.priceExplanation" = "倍率同时作用于输入和输出费率，命中缓存的输入按输入价格的 1/10 计费，实际消耗取决于 token 用量。";
 
 // Ask reasoning effort
 "ask.reasoning.title" = "推理强度";
@@ -1701,6 +1701,7 @@
 "ask.usage.contextHelp" = "按已保存对话估算，未含草稿。包含系统提示、历史、工具与附件，不等于累计消耗。";
 "ask.usage.output" = "输出 tokens";
 "ask.usage.input" = "输入 tokens";
+"ask.usage.cachedInput" = "缓存输入 tokens";
 "ask.usage.total" = "总 tokens";
 "ask.usage.pendingShort" = "待确认";
 "ask.usage.pending" = "部分费用待确认；当前金额仅含已确认部分。";
@@ -1727,6 +1728,7 @@
 "ask.usage.summarized" = "较早内容已摘要，原始记录仍可查看；摘要调用计入消耗。";
 "ask.usage.highHelp" = "输出预留空间不足，下次发送将尝试摘要；仍超限时需缩减输入或新建对话。";
 "ask.usage.estimated" = "包含估算用量，实际 token 可能不同。";
+"ask.usage.cachedHelp" = "命中缓存的输入 token 在 Typeflux Cloud 按输入价格的 1/10 计费。";
 "ask.usage.scopeHelp" = "包含回答、工具决策与摘要。每次重复发送的历史都会再次计入输入。";
 "ask.usage.clientSource" = "来源：自有 API 客户端上报";
 "ask.usage.providerSource" = "来源：供应商返回";

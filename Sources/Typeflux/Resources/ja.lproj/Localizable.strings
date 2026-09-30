@@ -1609,7 +1609,7 @@
 
 "models.cloud.parameters" = "コンテキスト：%d · 出力：%d tokens";
 "models.cloud.priceUnknown" = "料金情報を取得できません";
-"models.cloud.priceExplanation" = "倍率は入力と出力の料金に適用されます。合計はトークン使用量によって変わります。";
+"models.cloud.priceExplanation" = "倍率は入力と出力の料金に適用されます。キャッシュされた入力は入力料金の 1/10 で課金されます。合計はトークン使用量によって変わります。";
 
 // Ask reasoning effort
 "ask.reasoning.title" = "推論の強度";
@@ -1687,6 +1687,7 @@
 "ask.usage.contextHelp" = "保存済みの会話から推定。下書きは含みません。指示、履歴、ツール、添付を含み、累計使用量とは異なります。";
 "ask.usage.output" = "出力 tokens";
 "ask.usage.input" = "入力 tokens";
+"ask.usage.cachedInput" = "キャッシュ入力 tokens";
 "ask.usage.total" = "合計 tokens";
 "ask.usage.pendingShort" = "確認待ち";
 "ask.usage.pending" = "一部の料金は確認待ちです。表示額は確認済み分のみです。";
@@ -1713,6 +1714,7 @@
 "ask.usage.summarized" = "以前の内容は要約済みです。元の記録は引き続き閲覧でき、要約呼び出しも使用量に含まれます。";
 "ask.usage.highHelp" = "出力予約枠が不足しています。次回送信時に要約を試みます。上限を超える場合は入力を減らすか新しい会話を開始してください。";
 "ask.usage.estimated" = "推定使用量を含みます。実際の token 数は異なる場合があります。";
+"ask.usage.cachedHelp" = "キャッシュされた入力トークンは Typeflux Cloud で入力料金の 1/10 で課金されます。";
 "ask.usage.scopeHelp" = "回答、ツール判断、要約を含みます。再送した履歴は毎回入力に計上されます。";
 "ask.usage.clientSource" = "出典：独自 API クライアント報告";
 "ask.usage.providerSource" = "出典：プロバイダー報告";

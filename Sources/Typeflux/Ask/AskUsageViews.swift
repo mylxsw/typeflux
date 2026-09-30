@@ -169,6 +169,10 @@ struct AskUsagePanel: View {
             VStack(spacing: 0) {
                 detail("ask.usage.input", totals.tokenText(totals.inputTokens))
                 rule
+                if let cached = totals.cachedInputTokens, cached > 0 {
+                    detail("ask.usage.cachedInput", totals.tokenText(cached))
+                    rule
+                }
                 detail("ask.usage.output", totals.tokenText(totals.outputTokens))
                 rule
                 detail("ask.usage.total", totals.tokenText(totals.totalTokens))
@@ -177,6 +181,7 @@ struct AskUsagePanel: View {
             }
             .padding(.top, 2)
             if totals.estimated > 0 { help("ask.usage.estimated") }
+            if (totals.cachedInputTokens ?? 0) > 0 { help("ask.usage.cachedHelp") }
         }
     }
 
@@ -284,6 +289,9 @@ struct AskUsagePanel: View {
                         .padding(.bottom, 4)
                     if let tokens = item.tokens {
                         detail("ask.usage.input", String(tokens.promptTokens))
+                        if let cached = tokens.cachedTokens, cached > 0 {
+                            detail("ask.usage.cachedInput", String(cached))
+                        }
                         detail("ask.usage.output", String(tokens.completionTokens))
                         detail("ask.usage.total", String(tokens.totalTokens))
                     } else { help("ask.usage.unavailable") }
