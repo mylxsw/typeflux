@@ -77,6 +77,22 @@ struct AskAPIClientTests {
         #expect(try AskCoding.decoder().decode(AskToolResultRequest.self, from: requests[2].httpBody!) == result)
     }
 
+    @Test(arguments: [nil, "cloud:vision", "custom:fixture"] as [String?])
+    func retryEncodesOptionalModelReference(reference: String?) async throws {
+        let stub = AskHTTPStub()
+        let value = AskConversation(id: "c", title: "Screen", revision: 2, updatedAt: Date(), messages: [])
+        await stub.configure(payload: Data("{\"code\":\"OK\",\"data\":".utf8) + (try AskCoding.encoder().encode(value)) + Data("}".utf8))
+        let api: any AskAPI = client(stub)
+        _ = try await api.retry(conversationId: "c", runId: "run", deviceId: "device", modelRef: reference, token: "t")
+        let request = try #require(await stub.requests.first)
+        let data = try #require(request.httpBody)
+        let body = try #require(JSONSerialization.jsonObject(with: data) as? [String: String])
+        #expect(request.url?.path == "/api/v1/ask/conversations/c/retry")
+        #expect(body["run_id"] == "run")
+        #expect(body["device_id"] == "device")
+        #expect(body["model_ref"] == reference)
+    }
+
     @Test(arguments: [401, 409, 413])
     func httpErrorsAreNotAcceptedAsConversation(status: Int) async throws {
         let stub = AskHTTPStub(); await stub.configure(status: status, payload: Data(#"{"code":"ASK_CONFLICT","message":"Reload"}"#.utf8))

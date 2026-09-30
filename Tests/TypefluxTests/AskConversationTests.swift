@@ -7,6 +7,7 @@ import Testing
 actor AskTestAPI: AskAPI {
     var values: [String: AskConversation] = [:]
     var sends: [AskSendRequest] = []
+    var retryModels: [String?] = []
     var results: [AskToolResultRequest] = []
     var inferenceResults: [AskInferenceResult] = []
     var nextTool: AskToolCall?
@@ -82,8 +83,11 @@ actor AskTestAPI: AskAPI {
         value.run?.status = "cancelled"; value.run?.pending = []; value.revision += 1; values[conversationId] = value
         return value
     }
-    func retry(conversationId: String, runId: String, deviceId: String, token: String) async throws -> AskConversation {
+    func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, token: String) async throws -> AskConversation {
         var value = try await conversation(id: conversationId, token: token)
+        retryModels.append(modelRef)
+        value.modelRef = modelRef ?? value.modelRef
+        value.run?.modelRef = value.modelRef
         value.run?.status = "completed"; value.revision += 1; values[conversationId] = value
         return value
     }

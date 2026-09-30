@@ -11,7 +11,7 @@ protocol AskAPI: Sendable {
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation
     func result(conversationId: String, request: AskToolResultRequest, token: String) async throws -> AskConversation
     func cancel(conversationId: String, runId: String, token: String) async throws -> AskConversation
-    func retry(conversationId: String, runId: String, deviceId: String, token: String) async throws -> AskConversation
+    func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, token: String) async throws -> AskConversation
     func delete(conversationId: String, token: String) async throws
 }
 
@@ -65,8 +65,9 @@ struct AskAPIClient: AskAPI {
         struct Request: Encodable { var runId: String; var partial: AskInferenceResult? }
         return try await execute(path: "/\(conversationId)/cancel", method: "POST", body: AskCoding.encoder().encode(Request(runId: runId, partial: partial)), token: token)
     }
-    func retry(conversationId: String, runId: String, deviceId: String, token: String) async throws -> AskConversation {
-        try await execute(path: "/\(conversationId)/retry", method: "POST", body: JSONSerialization.data(withJSONObject: ["run_id": runId, "device_id": deviceId]), token: token)
+    func retry(conversationId: String, runId: String, deviceId: String, modelRef: String? = nil, token: String) async throws -> AskConversation {
+        struct Request: Encodable { var runId: String; var deviceId: String; var modelRef: String? }
+        return try await execute(path: "/\(conversationId)/retry", method: "POST", body: AskCoding.encoder().encode(Request(runId: runId, deviceId: deviceId, modelRef: modelRef)), token: token)
     }
     func delete(conversationId: String, token: String) async throws {
         struct Deleted: Decodable { let deleted: Bool }

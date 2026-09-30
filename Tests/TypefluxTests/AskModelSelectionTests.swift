@@ -5,6 +5,53 @@ import Testing
 @Suite("Ask independent model selection", .serialized)
 @MainActor
 struct AskModelSelectionTests {
+    @Test(arguments: ["failed", "cancelled"])
+    func retryUsesSelectedVisionModelAndKeepsScreenshot(status: String) async throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        let models: [AskCloudModel] = [
+            .init(id: "text", name: "Text", vision: false),
+            .init(id: "vision", name: "Vision", vision: true)
+        ]
+        await f.api.setCloudModels(models)
+        await f.model.modelLibrary.refresh(api: f.api, token: "token")
+        let screenshot = "data:image/jpeg;base64,YQ=="
+        let value = AskConversation(id: "retry", title: "Screen", revision: 1, updatedAt: Date(), messages: [
+            .init(id: "tool-result", role: "tool", text: "Screen", image: screenshot, toolCallId: "capture", createdAt: Date())
+        ], run: .init(id: "run", deviceId: "device", status: status, steps: 1, updatedAt: Date(), tools: [], pending: [], modelRef: "cloud:text"), modelRef: "cloud:text")
+        await f.api.seed(value)
+        await f.model.select(value.id)
+        f.model.resume()
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(f.model.error != nil)
+        #expect(await f.api.retryModels.isEmpty)
+        #expect(f.model.selected?.run?.status == status)
+
+        f.model.draft.modelRef = "cloud:vision"
+        f.model.resume()
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(await f.api.retryModels == ["cloud:vision"])
+        #expect(f.model.error == nil)
+        #expect(f.model.selected?.run?.status == "completed")
+        #expect(f.model.selected?.modelRef == "cloud:vision")
+        #expect(f.model.selected?.messages == value.messages)
+        #expect(f.tools.executions == 0)
+        #expect(f.capture.calls == 0)
+    }
+
+    @Test func retryWithoutSelectionKeepsConversationModel() async throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        let value = AskConversation(id: "retry", title: "Task", revision: 1, updatedAt: Date(), messages: [],
+            run: .init(id: "run", deviceId: "device", status: "failed", steps: 0, updatedAt: Date(), tools: [], pending: []), modelRef: "cloud:default")
+        await f.api.seed(value)
+        await f.model.select(value.id)
+        f.model.resume()
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(await f.api.retryModels == ["cloud:default"])
+        #expect(f.model.selected?.run?.status == "completed")
+    }
+
     @Test func defaultsStayIndependentAndExistingChatsKeepTheirModel() async throws {
         let suite = "ask-models-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))

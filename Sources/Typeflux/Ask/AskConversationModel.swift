@@ -378,6 +378,7 @@ final class AskConversationModel: ObservableObject {
         selectionObservation?.cancel(); selectionObservation = nil
         guard let current = credentials(), let value = selected, !busyIds.contains(value.id) else { return }
         let id = value.id
+        let retryModelRef = modelReference(launcher: false)
         busyIds.insert(id); error = nil; operationErrors[id] = nil
         let operationId = UUID(); operationIds[id] = operationId
         operations[id] = Task { [weak self] in
@@ -404,7 +405,11 @@ final class AskConversationModel: ObservableObject {
                     )
                     response = try await api.send(conversationId: id, request: request, token: current.token)
                 } else if let run = value.run, ["failed", "cancelled"].contains(run.status) {
-                    response = try await api.retry(conversationId: id, runId: run.id, deviceId: deviceId, token: current.token)
+                    try await validateModel(
+                        retryModelRef, token: current.token,
+                        hasImage: value.messages.contains(where: { $0.image != nil })
+                    )
+                    response = try await api.retry(conversationId: id, runId: run.id, deviceId: deviceId, modelRef: retryModelRef, token: current.token)
                 } else {
                     response = try await api.conversation(id: id, token: current.token)
                 }

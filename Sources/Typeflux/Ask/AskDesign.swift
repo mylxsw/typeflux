@@ -517,7 +517,7 @@ enum AskPresentation {
     /// Name shown in the sidebar footer: the profile name, else the email's local part.
     static func accountName(name: String?, email: String?) -> String? {
         if let name = name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty { return name }
-        guard let local = email?.split(separator: "@").first, !local.isEmpty else { return nil }
+        guard let local = email?.split(separator: "@", omittingEmptySubsequences: false).first, !local.isEmpty else { return nil }
         return String(local)
     }
 
