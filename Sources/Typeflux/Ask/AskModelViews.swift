@@ -32,6 +32,8 @@ struct AskModelMenu: View {
         Button { expanded.toggle() } label: {
             HStack(spacing: compact ? 6 : 8) {
                 Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
+                    // A long model name must not squeeze the context chips out of the footer.
+                    .frame(maxWidth: compact ? AskMetrics.modelMenuMaxWidth : nil)
                 if fieldStyle {
                     Spacer(minLength: 4)
                 }

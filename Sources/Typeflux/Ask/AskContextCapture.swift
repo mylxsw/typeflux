@@ -4,6 +4,8 @@ import ScreenCaptureKit
 struct AskCapturedContext: Sendable {
     var selection: String?
     var source: String?
+    /// The source app, so the composer can draw its icon.
+    var sourceBundleID: String?
     var screenshot: String?
     var warning: String?
     var capturedAt = Date()
@@ -48,6 +50,7 @@ final class AskContextCapture: AskContextCapturing {
         var result = AskCapturedContext(
             selection: selection.selectedText,
             source: [app?.localizedName, selection.windowTitle].compactMap { $0 }.joined(separator: " — "),
+            sourceBundleID: app?.bundleIdentifier,
             // Resolved before the launcher takes focus, while the source app is still frontmost.
             memory: memory?.memory(bundleIdentifier: app?.bundleIdentifier, appName: app?.localizedName)
         )

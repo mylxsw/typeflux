@@ -124,7 +124,7 @@
         <span class="menu"><svg width="14" height="14"><use href="#brain"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
         <span class="sep"></span>
         <span class="ic off-dim"><svg width="14" height="14"><use href="#cam"/></svg><span class="slash"></span></span>
-        <span class="lc"><span class="chrome"></span><span>Google Chrome</span></span>
+        <span class="ic"><span class="chrome"></span></span>
         <span class="ic on"><svg width="14" height="14"><use href="#text"/></svg><span class="cnt">3</span></span>
         <span class="ic on"><svg width="14" height="14"><use href="#brain"/></svg><span class="badge chrome" style="width:12px;height:12px"></span></span>
         <span class="spacer"></span>
@@ -137,7 +137,7 @@
     <h2>静止态：图标 + 颜色表示状态</h2>
     <ul>
       <li><b>截图</b>：28×28 方形 chip，只显示图标。未开启是描边灰色；已附带是蓝色软底；不可用是图标加斜杠的三级灰，不再写「截图不可用」四个字。</li>
-      <li><b>来源应用</b>：真实应用图标 + <b>应用名</b>，最大宽 132pt。窗口标题移到悬停卡里。这是唯一保留文字的 chip：浮窗从别的应用唤起，需要一眼看出是从哪来的。</li>
+      <li><b>来源应用</b>：只显示真实应用图标（已确认）。应用名和窗口标题都在悬停卡里。</li>
       <li><b>选中文本</b>：文本图标，右上角蓝色角标显示行数。</li>
       <li><b>记忆</b>：脑图标，右下角叠一个来源应用的小图标（记忆 · Google Chrome）。只有全局记忆时不显示角标。</li>
       <li>模型和推理强度与上下文 chip 之间加一条 1pt 竖线，区分「怎么问」和「带了什么」。模型名最大宽 150pt，超出时中间省略，悬停显示全名。</li>
@@ -149,13 +149,13 @@
     <div class="label">B · 悬停：上方弹出说明卡（chip 本身宽度不变）</div>
     <div class="row">
       <div class="cell">
-        <div class="tip"><b>截图不可用</b><i>DeepSeek Pro 不支持图片识别</i><em>换支持图片的模型 →</em></div>
+        <div class="tip"><b>截图不可用</b><i>DeepSeek Pro 不支持图片识别</i></div>
         <span class="ic off-dim hover"><svg width="14" height="14"><use href="#cam"/></svg><span class="slash"></span></span>
         <small>截图 · 不可用</small>
       </div>
       <div class="cell">
         <div class="tip"><b>Google Chrome</b><i>Multica — Project Management for Human + Agent…</i></div>
-        <span class="lc" style="background:var(--hover)"><span class="chrome"></span><span>Google Chrome</span></span>
+        <span class="ic hover"><span class="chrome"></span></span>
         <small>来源应用</small>
       </div>
       <div class="cell">
@@ -174,16 +174,16 @@
     <h2>悬停说明卡</h2>
     <ul>
       <li>悬停 150ms 后在 chip 上方弹出，移开立即消失。比系统 tooltip（约 1s 延迟）更快，也能放两行内容。</li>
-      <li>卡片内容：第一行是<b>名称</b>（加粗），第二行是<b>详情</b>（窗口标题、选中内容的前 60 个字、记忆说明、不可用原因），第三行是可做的<b>操作</b>（蓝色）。最大宽 280pt，最多显示 3 行。</li>
+      <li>卡片内容：第一行是<b>名称</b>（加粗），第二行是<b>详情</b>（窗口标题、选中内容的前 60 个字、记忆说明、不可用原因），第三行是可做的<b>操作</b>（蓝色）。宽 240pt，详情最多 3 行。</li>
       <li>可移除的 chip（已附带的截图、选中文本、记忆）在悬停时右上角出现 × 角标，点击移除。平时不显示 ×，省空间。</li>
-      <li>点击行为不变：截图和选中文本打开预览弹层，不可用截图打开模型选择器。</li>
+      <li>点击行为不变：截图和选中文本打开预览弹层；不可用的截图点击无反应，原因在说明卡里。</li>
       <li>无障碍：每个 chip 的 <code>accessibilityLabel</code> 是完整名称，详情放在 <code>accessibilityHint</code>，读屏不依赖悬停。</li>
     </ul>
   </div>
 
   <!-- C narrow -->
   <div class="stage">
-    <div class="label">C · 窄窗口（470pt）：先收来源文字，再收成「+N」</div>
+    <div class="label">C · 窄窗口：放不下时收成「+N」</div>
     <div class="composer narrow" style="margin-bottom:18px">
       <div class="foot">
         <span class="menu">DeepSeek Pro <svg width="10" height="10"><use href="#chev"/></svg></span>
@@ -215,10 +215,9 @@
   <div class="notes">
     <h2>空间不够时怎么收</h2>
     <ul>
-      <li><b>第一步</b>：来源 chip 去掉文字，只留应用图标（28×28）。</li>
-      <li><b>第二步</b>：放不下的 chip 从右往左收进「+N」。「+N」悬停时弹出同样的说明卡，列出被收起的项，每项可以移除。</li>
+      <li>放不下时，选中文本和记忆从右往左收进「+N」。「+N」悬停时弹出同样的说明卡，列出被收起的项，每项可以移除。</li>
       <li>不再把整组都藏进「…」。截图和来源应用始终可见，因为它们决定这次提问带不带屏幕内容。</li>
-      <li>由 <code>ViewThatFits</code> 按「完整 → 来源只留图标 → +N」三档依次尝试。</li>
+      <li>由 <code>ViewThatFits</code> 从「全部显示」开始，每次多收一项，直到放得下。</li>
     </ul>
   </div>
 
@@ -232,7 +231,7 @@
         <span class="menu"><svg width="14" height="14"><use href="#brain"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
         <span class="sep"></span>
         <span class="ic on"><svg width="14" height="14"><use href="#cam"/></svg></span>
-        <span class="lc"><span class="chrome"></span><span>Google Chrome</span></span>
+        <span class="ic"><span class="chrome"></span></span>
         <span class="ic on"><svg width="14" height="14"><use href="#text"/></svg><span class="cnt">12</span></span>
         <span class="spacer"></span>
         <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
@@ -244,10 +243,10 @@
     <h2>规格</h2>
     <table class="tokens">
       <tr><td>图标 chip</td><td>28×28，圆角 8，1pt <code>AskTheme.border</code>，图标 14pt。已附带：<code>accentSoft</code> 底 + <code>accentText</code> 图标</td></tr>
-      <tr><td>来源 chip</td><td>高 28，最大宽 132，应用图标 14 + 应用名 12pt/500。取 <code>NSRunningApplication.icon</code>，取不到时用 <code>macwindow</code> 图标</td></tr>
+      <tr><td>来源 chip</td><td>28×28，应用图标 16。按捕获时记录的 bundle id 取图标，取不到时用 <code>macwindow</code></td></tr>
       <tr><td>模型按钮</td><td>最大宽 150，中间省略，悬停显示全名</td></tr>
       <tr><td>角标</td><td>行数：蓝底白字 15pt；来源应用：12pt 圆形应用图标；移除 ×：14pt，仅悬停时出现</td></tr>
-      <tr><td>说明卡</td><td>悬停 150ms 出现，<code>popoverSurface</code>，圆角 9，最大宽 280，最多 3 行；移开即消失</td></tr>
+      <tr><td>说明卡</td><td>悬停 150ms 出现（已确认），宽 240，详情最多 3 行；移开即消失</td></tr>
       <tr><td>间距</td><td>chip 之间 6；模型、推理与 chip 之间的分隔线 1×16</td></tr>
       <tr><td>数据</td><td><code>AskDraft.source</code> 拆成应用名和窗口标题（现在是用「 — 」拼起来的）；记忆角标取 <code>AskMemory.app</code></td></tr>
       <tr><td>范围</td><td>聊天页输入框和快捷浮窗都用 <code>AskComposer</code>，一处改两处生效</td></tr>

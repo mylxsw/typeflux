@@ -155,6 +155,8 @@ enum AskMetrics {
     static let transcriptMaxWidth: CGFloat = columnWidth - columnInset * 2
     static let bubbleMaxWidth: CGFloat = 540
     static let composerCardCorner: CGFloat = 16
+    /// Widest the composer's model name may grow before it truncates in the middle.
+    static let modelMenuMaxWidth: CGFloat = 150
     /// The saved-screenshot card above the composer and its thumbnail.
     static let recoveryCardCorner: CGFloat = 12
     static let recoveryThumbnail = CGSize(width: 54, height: 36)

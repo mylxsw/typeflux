@@ -244,6 +244,7 @@ final class AskConversationModel: ObservableObject {
         guard !Task.isCancelled, generation == captureGeneration else { return }
         launcherDraft.selection = context.selection
         launcherDraft.source = context.source
+        launcherDraft.sourceBundleID = context.sourceBundleID
         launcherDraft.screenshot = context.screenshot
         launcherDraft.capturedAt = context.capturedAt
         launcherDraft.memory = context.memory ?? AskMemory()
