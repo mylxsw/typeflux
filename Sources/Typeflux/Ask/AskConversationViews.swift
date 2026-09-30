@@ -420,7 +420,7 @@ struct AskConversationView: View {
             header
             Rectangle().fill(AskTheme.separator).frame(height: 1)
             if model.selectedId == nil { emptyState } else { transcript }
-            statusArea
+            statusColumn
             composerArea
         }
         .frame(minWidth: 480)
@@ -552,6 +552,14 @@ struct AskConversationView: View {
         .help(screenshot ? (model.screenshotCapability(launcher: false).hint ?? caption) : caption)
     }
 
+    /// Banners and cards above the composer share its centred column, so they
+    /// line up with the input instead of spanning the whole window.
+    private var statusColumn: some View {
+        VStack(spacing: 6) { statusArea }
+            .frame(maxWidth: AskMetrics.composerMaxWidth)
+            .padding(.horizontal, 22)
+    }
+
     @ViewBuilder private var statusArea: some View {
         if model.imageRecoveryTarget == nil, let error = model.error {
             AskBanner(
@@ -561,27 +569,20 @@ struct AskConversationView: View {
                 action: { if model.selectionLoadFailed { model.retrySelection() } else { model.resume() } },
                 onDismiss: { model.error = nil }
             )
-            .padding(.horizontal, 22)
-            .padding(.bottom, 6)
         }
         if let id = model.selected?.id, let call = model.pendingApprovals[id] {
-            approval(call, id: id).padding(.horizontal, 22).padding(.bottom, 6)
+            approval(call, id: id)
         }
         if let target = model.imageRecoveryTarget {
             AskImageRecoveryCard(model: model, target: target)
                 .id(target.id)
-                .padding(.horizontal, 22).padding(.bottom, 6)
         } else if !model.hasPendingSubmission, let run = model.selected?.run, run.status == "failed" || run.status == "cancelled", !model.isBusy {
             AskBanner(text: run.error ?? L("ask.cancelled"), tone: .info,
                       systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
-                .padding(.horizontal, 22)
-                .padding(.bottom, 6)
         } else if resumable, model.error == nil {
             AskBanner(text: L("ask.resume.hint"), tone: .info, systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
-                .padding(.horizontal, 22)
-                .padding(.bottom, 6)
         }
     }
 

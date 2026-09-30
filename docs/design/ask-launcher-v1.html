@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Typeflux · 随便问 快捷输入浮窗 设计稿 v1</title>
+<style>
+  :root {
+    --canvas: #0c0c0d;
+    --desk: #1b1c1f;
+    --panel: #262626;
+    --panel-2: #2e2e2e;
+    --hair: rgba(255,255,255,.10);
+    --hair-strong: rgba(255,255,255,.16);
+    --text: #f2f2f2;
+    --text-2: #a8a8ab;
+    --text-3: #6e6e73;
+    --accent: #1d81dd;
+    --accent-soft: rgba(29,129,221,.16);
+    --accent-text: #8ebdff;
+    --warn: #f0a33a;
+    --warn-soft: rgba(240,163,58,.12);
+    --hover: rgba(255,255,255,.07);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 48px 56px; background: var(--canvas); color: var(--text);
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif;
+    width: 1560px;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; letter-spacing: .2px; }
+  .sub { color: var(--text-2); margin: 0 0 28px; font-size: 13px; }
+  h2 { font-size: 15px; margin: 0 0 14px; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 760px 1fr; gap: 28px 40px; align-items: start; }
+  .stage {
+    position: relative; border-radius: 14px; padding: 34px 40px;
+    background: radial-gradient(1200px 400px at 30% -40%, #2c3442 0%, transparent 60%), var(--desk);
+    border: 1px solid rgba(255,255,255,.05);
+  }
+  .stage.light { background: radial-gradient(1200px 400px at 30% -40%, #dfe7f3 0%, transparent 60%), #eceef1; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; color: var(--text-3); margin-bottom: 10px; }
+  .notes { color: var(--text-2); font-size: 12.5px; }
+  .notes b { color: var(--text); font-weight: 600; }
+  .notes ul { margin: 0; padding-left: 18px; }
+  .notes li { margin: 0 0 6px; }
+
+  /* ===== launcher ===== */
+  .launcher {
+    width: 680px; border-radius: 16px; background: var(--panel);
+    border: 1px solid var(--hair-strong);
+    box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 24px 60px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.35);
+    overflow: hidden; position: relative;
+  }
+  .launcher.listening { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(29,129,221,.28), 0 24px 60px rgba(0,0,0,.55); }
+  .ctx { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px 0 16px; color: var(--text-3); font-size: 12px; }
+  .ctx .src { display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .appicon { width: 14px; height: 14px; border-radius: 50%; flex: none;
+    background: conic-gradient(#ea4335 0 33%, #fbbc05 0 66%, #34a853 0); position: relative; }
+  .appicon::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: #4285f4; box-shadow: 0 0 0 1.5px #fff; }
+  .ctx .spacer { flex: 1; }
+  .toggle { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 7px;
+    color: var(--text-2); font-size: 12px; border: 1px solid transparent; }
+  .toggle:hover, .toggle.hover { background: var(--hover); }
+  .toggle.on { color: var(--accent-text); background: var(--accent-soft); }
+  .toggle.off-reason { color: var(--text-3); }
+  .toggle .x { opacity: .7; margin-left: 2px; }
+  .thumb { width: 26px; height: 17px; border-radius: 4px; border: 1px solid var(--hair-strong);
+    background: linear-gradient(135deg, #3a4a63, #1f2733 60%, #4a3a2a); }
+  .editor { padding: 2px 18px 8px; min-height: 44px; font-size: 16px; line-height: 24px; }
+  .ph { color: var(--text-3); }
+  .caret { display: inline-block; width: 1.5px; height: 19px; background: var(--accent); vertical-align: -3px; margin-right: 1px; }
+  .typed { color: var(--text); }
+  .foot { display: flex; align-items: center; gap: 4px; height: 44px; padding: 0 10px 0 10px; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 9px; border-radius: 8px;
+    color: var(--text); font-size: 12.5px; font-weight: 500; }
+  .pill .cap { color: var(--text-3); font-weight: 400; }
+  .pill:hover, .pill.hover { background: var(--hover); }
+  .chev { width: 8px; height: 8px; opacity: .55; }
+  .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-3); margin: 0 2px; }
+  .foot .spacer { flex: 1; }
+  .kbd-hint { display: inline-flex; align-items: center; gap: 5px; color: var(--text-3); font-size: 11.5px; margin-right: 6px; }
+  .kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 4px;
+    border-radius: 5px; background: rgba(255,255,255,.06); border: 1px solid var(--hair); font-size: 10.5px; color: var(--text-2); font-weight: 600; }
+  .icon-btn { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--text-2); }
+  .icon-btn:hover, .icon-btn.hover { background: var(--hover); }
+  .icon-btn.live { color: #fff; background: var(--accent); }
+  .send { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.08); color: var(--text-3); margin-left: 2px; }
+  .send.on { background: var(--accent); color: #fff; }
+  .wave { display: inline-flex; gap: 2px; align-items: center; height: 20px; vertical-align: -4px; margin-right: 8px; }
+  .wave i { display: block; width: 2.5px; border-radius: 2px; background: var(--accent); }
+  .banner { width: 680px; margin-top: 6px; display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px;
+    border-radius: 10px; font-size: 12px; color: var(--warn); background: #2a2016; border: 1px solid rgba(240,163,58,.18); }
+  .banner .act { margin-left: auto; color: var(--text); font-weight: 600; padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.08); }
+
+  /* light */
+  .light .launcher { --panel: #ffffff; --hair-strong: rgba(0,0,0,.10); --hair: rgba(0,0,0,.08); --text: #1d1d1f; --text-2: #5d5d63; --text-3: #9a9aa0;
+    --hover: rgba(0,0,0,.05); --accent-soft: #e7efff; --accent-text: #1b57d6;
+    box-shadow: 0 24px 60px rgba(20,30,50,.22), 0 2px 8px rgba(20,30,50,.10); color: var(--text); }
+  .light .launcher .kbd { background: rgba(0,0,0,.04); }
+  .light .launcher .send { background: rgba(0,0,0,.06); }
+
+  /* redlines */
+  .spec { position: relative; }
+  .rl { position: absolute; font-size: 10px; color: #ff5fa2; font-weight: 600; white-space: nowrap; }
+  .rl.h { border-top: 1px dashed #ff5fa2; height: 0; }
+  .rl.v { border-left: 1px dashed #ff5fa2; width: 0; }
+  .tokens { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .tokens td { padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,.06); color: var(--text-2); vertical-align: top; }
+  .tokens td:first-child { color: var(--text); white-space: nowrap; width: 150px; }
+  .sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; border: 1px solid rgba(255,255,255,.15); }
+  .before img { width: 680px; border-radius: 10px; display: block; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="mic" viewBox="0 0 16 16"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+    <symbol id="up" viewBox="0 0 16 16"><path d="M8 13V3.5M3.8 7.5 8 3.3l4.2 4.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="cam" viewBox="0 0 16 16"><path d="M2 5V3.2C2 2.5 2.5 2 3.2 2H5M11 2h1.8c.7 0 1.2.5 1.2 1.2V5M14 11v1.8c0 .7-.5 1.2-1.2 1.2H11M5 14H3.2C2.5 14 2 13.5 2 12.8V11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="brain" viewBox="0 0 16 16"><path d="M8 3.2v9.6M5.6 3a2.2 2.2 0 0 0-2.3 2.6A2.3 2.3 0 0 0 3 9.8a2.3 2.3 0 0 0 2.6 3.1M10.4 3a2.2 2.2 0 0 1 2.3 2.6 2.3 2.3 0 0 1 .3 4.2 2.3 2.3 0 0 1-2.6 3.1" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+    <symbol id="info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.3v3.6M8 5.2v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="warn" viewBox="0 0 16 16"><path d="M8 2.2 14.2 13H1.8Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6.5v3M8 11.2v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<h1>随便问 · 快捷输入浮窗 设计稿 v1</h1>
+<p class="sub">按快捷键呼出，悬浮在任意应用之上。目标：一眼看清「问什么 · 带了什么上下文 · 用哪个模型」，输入区是主角，其余降噪。尺寸单位为 pt（@1x），深色为主，浅色同构。</p>
+
+<div class="grid">
+  <!-- Before -->
+  <div class="before">
+    <div class="label">现状（Issue 图 2）</div>
+    <img src="before-launcher.png" alt="current launcher">
+  </div>
+  <div class="notes">
+    <h2>现状问题</h2>
+    <ul>
+      <li><b>浮窗与背后窗口融在一起</b>：边框 10% 白、阴影弱，叠在深色应用上几乎看不出边界。</li>
+      <li><b>上下两截</b>：输入区与底栏两种底色 + 分隔线，像两个拼起来的控件。</li>
+      <li><b>左侧 ✦ 徽标过重</b>：26pt 深蓝方块抢了输入框的焦点；占位符与光标起点差 2pt，光标压在「输」字上。</li>
+      <li><b>底栏 6 种控件样式</b>：纯文字模型名（字号更大）、带脑图标的推理档、虚线「附带截图」、描边「Google Chrome」、描边麦克风、灰色发送钮 —— 重量不一，信息层级不清。</li>
+      <li><b>虚线截图 chip 像坏掉的按钮</b>：不可用原因只在 tooltip 里。</li>
+      <li><b>「Google Chrome」看起来可点击</b>，实际只是上下文来源标签。</li>
+      <li>没有任何键盘提示，而这是一个纯键盘唤起的面板。</li>
+    </ul>
+  </div>
+
+  <!-- A default -->
+  <div class="stage">
+    <div class="label">A · 默认（空输入）</div>
+    <div class="launcher">
+      <div class="ctx">
+        <span class="src"><span class="appicon"></span>Google Chrome · Typeflux – 随便问 设计评审</span>
+        <span class="spacer"></span>
+        <span class="toggle"><svg width="13" height="13"><use href="#cam"/></svg>附带截图</span>
+      </div>
+      <div class="editor"><span class="caret"></span><span class="ph">问点什么…</span></div>
+      <div class="foot">
+        <span class="pill">DeepSeek Pro <svg class="chev"><use href="#chev"/></svg></span>
+        <span class="dot"></span>
+        <span class="pill"><svg width="13" height="13" style="color:var(--text-3)"><use href="#brain"/></svg>默认 <svg class="chev"><use href="#chev"/></svg></span>
+        <span class="spacer"></span>
+        <span class="kbd-hint">按住 <span class="kbd">Fn</span> 说话</span>
+        <span class="icon-btn"><svg width="15" height="15"><use href="#mic"/></svg></span>
+        <span class="send"><svg width="14" height="14"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>结构：上下文 → 输入 → 操作</h2>
+    <ul>
+      <li><b>单一底色</b>（#262626），圆角 16，1pt 16% 白描边 + 顶部 1pt 内高光 + 大阴影 <code>0 24 60 / 55%</code>，在任何窗口上都能「浮」起来。去掉底栏分隔线。</li>
+      <li><b>上下文行（34pt）</b>：左侧为来源应用图标 + 应用名 · 窗口标题（12pt、三级灰，只读标签，不做成按钮）；右侧为「附带截图」开关。上下文从底栏上移，底栏只留「模型 + 动作」。</li>
+      <li><b>输入区</b>：16pt，移除 ✦ 徽标；占位符与光标同一起点（左内边距 18）。1 行起，最多 6 行后内部滚动。</li>
+      <li><b>底栏（44pt）</b>：模型与推理档统一为 12.5pt 幽灵 pill（hover 才出底色），中间用 3pt 圆点分隔；右侧：语音提示「按住 Fn 说话」→ 麦克风 → 发送。三个圆形控件统一 30pt。</li>
+      <li>空输入时发送钮为 8% 白底 + 三级灰图标（不可用），只有可发送时才出蓝色。</li>
+    </ul>
+  </div>
+
+  <!-- B typing with screenshot -->
+  <div class="stage">
+    <div class="label">B · 已输入 + 附带截图</div>
+    <div class="launcher">
+      <div class="ctx">
+        <span class="src"><span class="appicon"></span>Google Chrome · Typeflux – 随便问 设计评审</span>
+        <span class="spacer"></span>
+        <span class="toggle on"><span class="thumb"></span>截图 <span class="x">✕</span></span>
+      </div>
+      <div class="editor"><span class="typed">这个页面的布局哪里不对劲？给我三条改进建议</span><span class="caret"></span></div>
+      <div class="foot">
+        <span class="pill hover">Claude Haiku <span class="cap">· 视觉</span> <svg class="chev"><use href="#chev"/></svg></span>
+        <span class="dot"></span>
+        <span class="pill"><svg width="13" height="13" style="color:var(--text-3)"><use href="#brain"/></svg>默认 <svg class="chev"><use href="#chev"/></svg></span>
+        <span class="spacer"></span>
+        <span class="kbd-hint"><span class="kbd">↵</span> 发送 <span class="kbd">⇧↵</span> 换行</span>
+        <span class="icon-btn"><svg width="15" height="15"><use href="#mic"/></svg></span>
+        <span class="send on"><svg width="14" height="14"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>附件与发送</h2>
+    <ul>
+      <li>开启截图后，开关变为 <b>蓝色软底 chip</b>：26×17 缩略图 + 「截图」+ ✕；点缩略图弹出预览（沿用现有 <code>AskContextPreview</code>）。</li>
+      <li>有选中文本时，在截图 chip 左侧出现「选中 3 行」chip，样式一致。</li>
+      <li>有输入后，右侧提示从「按住 Fn 说话」切换为 <b>↵ 发送 · ⇧↵ 换行</b>；发送钮变为主蓝 #1D81DD。</li>
+      <li>模型 pill 在支持图片的模型后追加「· 视觉」次级说明，与当前是否带图对应。</li>
+    </ul>
+  </div>
+
+  <!-- C listening -->
+  <div class="stage">
+    <div class="label">C · 语音输入中</div>
+    <div class="launcher listening">
+      <div class="ctx">
+        <span class="src"><span class="appicon"></span>Google Chrome · Typeflux – 随便问 设计评审</span>
+        <span class="spacer"></span>
+        <span class="toggle"><svg width="13" height="13"><use href="#cam"/></svg>附带截图</span>
+      </div>
+      <div class="editor"><span class="typed">帮我总结一下这篇文章的</span><span class="caret"></span></div>
+      <div class="foot">
+        <span class="pill" style="opacity:.45">DeepSeek Pro <svg class="chev"><use href="#chev"/></svg></span>
+        <span class="dot"></span>
+        <span class="pill" style="opacity:.45"><svg width="13" height="13"><use href="#brain"/></svg>默认 <svg class="chev"><use href="#chev"/></svg></span>
+        <span class="spacer"></span>
+        <span class="kbd-hint" style="color:var(--accent-text);font-weight:600">
+          <span class="wave"><i style="height:6px"></i><i style="height:12px"></i><i style="height:18px"></i><i style="height:10px"></i><i style="height:15px"></i><i style="height:7px"></i><i style="height:13px"></i><i style="height:5px"></i></span>正在聆听 · 松开 Fn 结束</span>
+        <span class="icon-btn live"><svg width="15" height="15"><use href="#mic"/></svg></span>
+        <span class="send"><svg width="14" height="14"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>录音态</h2>
+    <ul>
+      <li>整圈 1.5pt 主蓝描边 + 3pt 28% 光晕（沿用 GUL-138 录音边框规范）。</li>
+      <li>麦克风钮实心蓝；右侧提示换为波形 + 「正在聆听 · 松开 Fn 结束」，文字实时写入输入框。</li>
+      <li>模型/推理 pill 降为 45% 不可操作，避免录音中误切换。转写中文案为「正在转写…」，无波形。</li>
+    </ul>
+  </div>
+
+  <!-- D no vision + error -->
+  <div class="stage">
+    <div class="label">D · 模型不支持图片 + 错误提示</div>
+    <div class="launcher">
+      <div class="ctx">
+        <span class="src"><span class="appicon"></span>Google Chrome · Typeflux – 随便问 设计评审</span>
+        <span class="spacer"></span>
+        <span class="toggle off-reason"><svg width="13" height="13"><use href="#info"/></svg>DeepSeek Pro 不支持截图 · <span style="color:var(--accent-text)">换模型</span></span>
+      </div>
+      <div class="editor"><span class="typed">这张图表说明了什么趋势？</span><span class="caret"></span></div>
+      <div class="foot">
+        <span class="pill">DeepSeek Pro <svg class="chev"><use href="#chev"/></svg></span>
+        <span class="dot"></span>
+        <span class="pill"><svg width="13" height="13" style="color:var(--text-3)"><use href="#brain"/></svg>默认 <svg class="chev"><use href="#chev"/></svg></span>
+        <span class="spacer"></span>
+        <span class="kbd-hint"><span class="kbd">↵</span> 发送 <span class="kbd">⇧↵</span> 换行</span>
+        <span class="icon-btn"><svg width="15" height="15"><use href="#mic"/></svg></span>
+        <span class="send on"><svg width="14" height="14"><use href="#up"/></svg></span>
+      </div>
+    </div>
+    <div class="banner"><svg width="13" height="13"><use href="#warn"/></svg>网络连接中断，问题已保留<span class="act">重试</span></div>
+  </div>
+  <div class="notes">
+    <h2>不可用与错误</h2>
+    <ul>
+      <li><b>不再使用虚线 chip</b>。截图开关位置直接写出原因「DeepSeek Pro 不支持截图 · 换模型」，点「换模型」打开模型选择器并只列出支持图片的模型。</li>
+      <li>错误/通知沿用现有 <code>AskBanner</code>：面板下方 6pt，32pt 高，琥珀软底 + 1pt 同色 18% 描边，带单一动作。</li>
+      <li>浮窗高度仍由 <code>AskMetrics.launcherHeight</code> 计算，需把上下文行 34pt 计入。</li>
+    </ul>
+  </div>
+
+  <!-- E light -->
+  <div class="stage light">
+    <div class="label" style="color:#8a8a90">E · 浅色外观</div>
+    <div class="launcher">
+      <div class="ctx">
+        <span class="src"><span class="appicon"></span>Google Chrome · Typeflux – 随便问 设计评审</span>
+        <span class="spacer"></span>
+        <span class="toggle on"><span class="thumb"></span>截图 <span class="x">✕</span></span>
+      </div>
+      <div class="editor"><span class="typed">这个页面的布局哪里不对劲？</span><span class="caret"></span></div>
+      <div class="foot">
+        <span class="pill">Claude Haiku <span class="cap">· 视觉</span> <svg class="chev"><use href="#chev"/></svg></span>
+        <span class="dot"></span>
+        <span class="pill"><svg width="13" height="13" style="color:var(--text-3)"><use href="#brain"/></svg>默认 <svg class="chev"><use href="#chev"/></svg></span>
+        <span class="spacer"></span>
+        <span class="kbd-hint"><span class="kbd">↵</span> 发送 <span class="kbd">⇧↵</span> 换行</span>
+        <span class="icon-btn"><svg width="15" height="15"><use href="#mic"/></svg></span>
+        <span class="send on"><svg width="14" height="14"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>规格（Tokens）</h2>
+    <table class="tokens">
+      <tr><td>宽 / 圆角</td><td>680 / 16（原 18）；外侧透明留白 6 保留给阴影</td></tr>
+      <tr><td>高度</td><td>34 上下文 + 输入(24×行数 + 10) + 44 底栏；单行 = 112</td></tr>
+      <tr><td><span class="sw" style="background:#262626"></span>面板</td><td>深 #262626 / 浅 #FFFFFF，单一底色</td></tr>
+      <tr><td>描边</td><td>深 白 16% / 浅 黑 10%；录音 主蓝 1.5 + 3pt 光晕</td></tr>
+      <tr><td><span class="sw" style="background:#1d81dd"></span>主色</td><td>#1D81DD（深）/ #1670C8（浅）= <code>AskTheme.primaryAction</code></td></tr>
+      <tr><td>字号</td><td>输入 16 · 模型 pill 12.5/500 · 上下文 12 · 提示 11.5</td></tr>
+      <tr><td>控件</td><td>pill 高 28 圆角 8；圆钮 30；键帽 18</td></tr>
+      <tr><td>文字色</td><td>一级 #F2F2F2 · 二级 #A8A8AB · 三级 #6E6E73</td></tr>
+    </table>
+  </div>
+</div>
+</body>
+</html>

@@ -1633,6 +1633,7 @@
 "ask.image.captured" = "スクリーンショット取得済み";
 "ask.image.resuming" = "保存済みのスクリーンショットを分析中";
 "ask.image.saved" = "スクリーンショットは保存済みです。モデルを変更して続行できます";
+"ask.image.savedReady" = "スクリーンショットは保存済みです";
 "ask.image.processing" = "%@ で保存済みのスクリーンショットを分析中…";
 "ask.image.ready" = "選択したモデルは画像に対応しています。分析を続行できます。";
 "ask.image.recoveryHint" = "このモデルは画像を読み取れません。対応モデルを選んで保存済みのスクリーンショットの分析を続行してください。";

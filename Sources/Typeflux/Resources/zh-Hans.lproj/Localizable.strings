@@ -1647,6 +1647,7 @@
 "ask.image.captured" = "截图已获取";
 "ask.image.resuming" = "正在分析已保存的截图";
 "ask.image.saved" = "截图已保留，可换模型继续";
+"ask.image.savedReady" = "截图已保留";
 "ask.image.processing" = "正在使用 %@ 分析已保存的截图…";
 "ask.image.ready" = "所选模型支持图片识别，可以继续分析。";
 "ask.image.recoveryHint" = "当前模型不支持图片识别，选择支持图片识别的模型后可继续分析这张截图。";

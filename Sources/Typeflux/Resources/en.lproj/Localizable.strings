@@ -1647,6 +1647,7 @@
 "ask.image.captured" = "Screenshot captured";
 "ask.image.resuming" = "Analyzing saved screenshot";
 "ask.image.saved" = "Screenshot saved — choose a compatible model";
+"ask.image.savedReady" = "Screenshot saved";
 "ask.image.processing" = "Using %@ to analyze the saved screenshot…";
 "ask.image.ready" = "The selected model can read this image. Continue when ready.";
 "ask.image.recoveryHint" = "This model cannot read images. Choose a compatible model to continue with the saved screenshot.";
