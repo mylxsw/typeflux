@@ -1595,7 +1595,7 @@
 "models.visionHint" = "Confirm screenshot support from the model documentation";
 "models.visionYes" = "Supports screenshots";
 "models.visionNo" = "Does not support screenshots";
-"models.usageHint" = "Usage badges are read-only. Change assignments in Application scenarios.";
+"models.usageHint" = "ラベルはそのモデルを使用中のシナリオを示します。「利用シーン」または「···」メニューから変更できます。";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
 "models.emptyCatalog" = "The provider returned no models";
@@ -1631,6 +1631,12 @@
 "models.cloud.empty" = "現在利用できるモデルはありません。";
 
 "models.count" = "モデル数：%d";
+"models.searchEmpty" = "「%@」に一致するプロバイダーまたはモデルはありません";
+"models.connection" = "接続";
+"models.useForRewrite" = "書き換えと推敲に使用";
+"models.visionUnknownShort" = "スクリーンショット対応は不明";
+"models.showKey" = "API キーを表示";
+"models.hideKey" = "API キーを隠す";
 
 // Screenshot capability and recovery
 "ask.image.unsupported" = "このモデルは画像認識に対応していません。スクリーンショットを添付するには対応モデルに切り替えてください。";

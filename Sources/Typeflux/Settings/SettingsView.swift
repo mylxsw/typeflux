@@ -467,7 +467,7 @@ struct StudioView: View {
         ) { viewportSize in
             let viewportHeight = viewportContentHeight(from: viewportSize)
 
-            VStack(alignment: .leading, spacing: viewModel.currentSection == .models ? 18 : StudioTheme.Spacing.heroSection) {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.heroSection) {
                 if viewModel.currentSection != .models || viewModel.selectedLanguageProviderID == nil {
                     pageHeader
                 }
@@ -954,6 +954,16 @@ struct StudioView: View {
                         viewModel.beginCreatingPersona()
                     }
                 }
+            } else if viewModel.currentSection == .models {
+                Spacer()
+
+                StudioIconButton(
+                    systemImage: "plus",
+                    variant: .ghost
+                ) {
+                    viewModel.isAddingModelEndpoint = true
+                }
+                .studioTooltip(L("models.addEndpoint"), yOffset: 34)
             } else if viewModel.currentSection == .account {
                 Spacer()
             }
@@ -1021,7 +1031,7 @@ struct StudioView: View {
 
     private func viewportContentHeight(from viewportSize: CGSize) -> CGFloat {
         max(
-            viewportSize.height - (viewModel.currentSection == .models ? 32 : StudioTheme.Layout.shellContentTopInset)
+            viewportSize.height - StudioTheme.Layout.shellContentTopInset
                 - StudioTheme.Layout.shellContentBottomInset,
             0
         )

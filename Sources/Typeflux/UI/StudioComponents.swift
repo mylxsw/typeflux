@@ -653,7 +653,7 @@ struct StudioShell<Content: View>: View {
         }
         .frame(width: contentWidth, alignment: .topLeading)
         .padding(.horizontal, StudioTheme.contentInset)
-        .padding(.top, currentSection == .models ? 32 : StudioTheme.Layout.shellContentTopInset)
+        .padding(.top, StudioTheme.Layout.shellContentTopInset)
         .padding(.bottom, StudioTheme.Layout.shellContentBottomInset)
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
@@ -685,9 +685,7 @@ struct StudioShell<Content: View>: View {
 
     @ViewBuilder
     private var contentBackground: some View {
-        if currentSection == .models {
-            ModelVisualStyle.canvas
-        } else if colorScheme == .dark {
+        if colorScheme == .dark {
             ZStack {
                 Rectangle().fill(.ultraThinMaterial)
                 StudioTheme.shellSurface
