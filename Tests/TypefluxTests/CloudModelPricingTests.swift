@@ -45,11 +45,11 @@ final class CloudModelPricingTests: XCTestCase {
         let ask = library.selectableProviders(loggedIn: true, hasImage: false).first(where: \.isCloud)
         XCTAssertEqual(ask?.models.map(\.id), ["ask"])
         let rewrite = library.selectableProviders(loggedIn: true, hasImage: false, scenario: "rewrite").first(where: \.isCloud)
-        XCTAssertEqual(rewrite?.models.map(\.id), ["rewrite"])
+        XCTAssertEqual(rewrite?.models.map(\.id), ["default"])
+        XCTAssertNil(rewrite?.models.first?.pricing)
+        XCTAssertEqual(library.name(for: "cloud:default", scenario: "rewrite"), "Typeflux Cloud")
         library.defaultReference = "cloud:missing"
         XCTAssertEqual(library.name(for: library.defaultReference), L("ask.models.unavailable"))
         XCTAssertEqual(library.defaultReference, "cloud:missing")
-        library.rewriteCloud = []
-        XCTAssertNil(library.selectableProviders(loggedIn: true, hasImage: false, scenario: "rewrite").first(where: \.isCloud))
     }
 }

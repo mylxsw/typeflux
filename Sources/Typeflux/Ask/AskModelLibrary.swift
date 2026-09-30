@@ -42,7 +42,9 @@ final class AskModelLibrary: ObservableObject {
     static let shared = AskModelLibrary()
     @Published private(set) var registry: ModelRegistry
     @Published var cloud: [AskCloudModel] = [.init(id: "default", name: "Typeflux Cloud")]
-    @Published var rewriteCloud: [AskCloudModel]?
+    // Rewrite retains its existing default Cloud route; Ask catalog entries
+    // and price metadata must never become rewrite choices.
+    private let rewriteCloud: [AskCloudModel]? = [.init(id: "default", name: "Typeflux Cloud")]
     @Published var defaultReference: String {
         didSet { defaults.set(defaultReference, forKey: "ask.model.default") }
     }
@@ -78,9 +80,6 @@ final class AskModelLibrary: ObservableObject {
     init(defaults: UserDefaults = .standard, automaticallyLoadsCatalog: Bool = true,
          catalog: any ProviderModelCatalog = HTTPProviderModelCatalog()) {
         self.defaults = defaults
-        if let cached = defaults.data(forKey: "cloud.rewrite.catalog") {
-            rewriteCloud = try? JSONDecoder().decode([AskCloudModel].self, from: cached)
-        }
         self.catalog = catalog
         self.automaticallyLoadsCatalog = automaticallyLoadsCatalog
         let store = SettingsStore(defaults: defaults)
@@ -342,18 +341,11 @@ extension AskModelLibrary {
         defer { loading = false }
         do {
             let askModels = try await api.models(token: token, scenario: "ask")
-            let rewriteModels = try await api.models(token: token, scenario: "rewrite")
             var next = registry
             if let index = next.providers.firstIndex(where: \.isCloud) {
-                var models = askModels.map(\.registered)
-                for model in rewriteModels where !models.contains(where: { $0.reference == model.reference }) {
-                    models.append(model.registered)
-                }
-                next.providers[index].models = models
+                next.providers[index].models = askModels.map(\.registered)
             }
             cloud = askModels
-            rewriteCloud = rewriteModels
-            defaults.set(try JSONEncoder().encode(rewriteModels), forKey: "cloud.rewrite.catalog")
             try commit(next)
             catalogError = nil
         } catch { catalogError = L("ask.models.catalogError") }
