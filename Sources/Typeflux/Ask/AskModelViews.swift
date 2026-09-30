@@ -66,29 +66,22 @@ struct AskModelChoices: View {
     var dismiss: () -> Void = {}
     var preferredProviderID: String?
     var showsUnavailableSelection = true
+    var recoveryProviders: [RegisteredProvider]?
 
     var body: some View {
-        let available = library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage, scenario: scenario)
+        let available = recoveryProviders ?? library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage, scenario: scenario)
         let choices = available.filter { $0.id == preferredProviderID } + available.filter { $0.id != preferredProviderID }
         let selectionAvailable = choices.contains { $0.models.contains { $0.reference == reference } }
         return VStack(alignment: .leading, spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 4) {
-                    if choices.isEmpty {
-                        Text(L("models.noAvailable")).font(.caption).foregroundStyle(.secondary).padding(10)
-                    } else if showsUnavailableSelection && !selectionAvailable {
-                        Text(L("ask.models.unavailable")).font(.caption).foregroundStyle(.secondary).padding(10)
-                    }
-                    ForEach(choices) { provider in
-                        Text(provider.name).font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 2)
-                        ForEach(provider.models) { model in
-                            choice(model)
-                        }
-                    }
-                }.padding(8)
-            }.frame(maxHeight: 320)
+            Group {
+                if recoveryProviders != nil, choices.reduce(0, { $0 + $1.models.count }) <= 4 {
+                    modelList(choices, selectionAvailable: selectionAvailable)
+                } else {
+                    ScrollView { modelList(choices, selectionAvailable: selectionAvailable) }
+                        .frame(height: recoveryProviders == nil ? nil : 280)
+                        .frame(maxHeight: 320)
+                }
+            }
             if showsDefaultAction {
                 Divider()
                 Button {
@@ -103,22 +96,47 @@ struct AskModelChoices: View {
         }.frame(width: 360).background(ModelVisualStyle.input)
     }
 
+    private func modelList(_ choices: [RegisteredProvider], selectionAvailable: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if choices.isEmpty {
+                Text(L("models.noAvailable")).font(.caption).foregroundStyle(.secondary).padding(10)
+            } else if showsUnavailableSelection && !selectionAvailable {
+                Text(L("ask.models.unavailable")).font(.caption).foregroundStyle(.secondary).padding(10)
+            }
+            ForEach(choices) { provider in
+                Text(provider.name).font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 2)
+                ForEach(provider.models) { model in
+                    choice(model)
+                }
+            }
+        }.padding(8)
+    }
+
     private func choice(_ model: RegisteredModel) -> some View {
         let selected = reference == model.reference
         return Button { reference = model.reference; dismiss() } label: {
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(model.displayName).font(.system(
+                    Text(recoveryProviders == nil ? model.displayName : model.name).font(.system(
                         size: 13,
                         weight: selected ? .semibold : .regular,
                         design: .monospaced
                     ))
-                    if let context = model.contextWindowTokens, let output = model.maxOutputTokens {
+                    .lineLimit(recoveryProviders == nil ? nil : 2)
+                    .truncationMode(.middle)
+                    if recoveryProviders == nil, let context = model.contextWindowTokens, let output = model.maxOutputTokens {
                         Text(String(format: L("models.cloud.parameters"), context, output))
                             .font(.caption2).foregroundStyle(.secondary)
                     }
                 }
                 Spacer(minLength: 8)
+                if recoveryProviders != nil, let price = model.pricing?.label {
+                    Text(price).font(.system(size: 11, weight: .medium)).fixedSize()
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .help(L("models.cloud.priceExplanation"))
+                }
                 if selected {
                     Image(systemName: "checkmark").font(.system(size: 12, weight: .semibold))
                 }
@@ -130,6 +148,7 @@ struct AskModelChoices: View {
                         in: RoundedRectangle(cornerRadius: 8))
             .contentShape(Rectangle())
         }.buttonStyle(.plain)
-            .help(model.pricing == nil ? L("models.cloud.priceUnknown") : L("models.cloud.priceExplanation"))
+            .accessibilityAddTraits(selected ? .isSelected : [])
+            .help(model.displayName + " — " + (model.pricing == nil ? L("models.cloud.priceUnknown") : L("models.cloud.priceExplanation")))
     }
 }

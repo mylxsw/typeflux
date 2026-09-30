@@ -74,6 +74,27 @@ struct AskImageCapabilityTests {
         #expect(f.model.modelLibrary.imageCapability("cloud:new-vision") == .supported)
     }
 
+    @Test func failedCatalogOnlyHidesCloudChoicesInTheRecoveryPicker() async throws {
+        let f = try await fixture()
+        defer { f.model.resetSession() }
+        let library = f.model.modelLibrary
+        var registry = library.registry
+        registry.providers.append(.init(id: "fixture", name: "Local", baseURL: "https://example.invalid/v1",
+            models: [.init(id: "vision", name: "Vision", reference: "custom:fixture", vision: true),
+                     .init(id: "text", name: "Text", reference: "custom:text", vision: false)]))
+        try library.commit(registry)
+        let originalRegistry = library.registry
+        #expect(library.imageRecoveryProviders(loggedIn: true).contains(where: { $0.isCloud }))
+        library.catalogError = "Fetch failed"
+        let remaining = library.imageRecoveryProviders(loggedIn: true)
+        #expect(!remaining.contains(where: { $0.isCloud }))
+        #expect(remaining.flatMap(\.models).map(\.reference) == ["custom:fixture"])
+        #expect(library.registry == originalRegistry)
+        library.catalogError = nil
+        #expect(library.imageRecoveryProviders(loggedIn: true).contains(where: { $0.isCloud }))
+        #expect(!library.imageRecoveryProviders(loggedIn: false).contains(where: { $0.isCloud }))
+    }
+
     @Test func customModelsDoNotDependOnCloudCatalogAvailability() async throws {
         let f = try await fixture()
         defer { f.model.resetSession() }

@@ -71,7 +71,7 @@ final class AskConversationModel: ObservableObject {
     @Published var controllingConversationId: String?
 
     var onShowConversation: (() -> Void)?
-    var onOpenSettings: (() -> Void)?
+    var onOpenSettings: ((StudioSection) -> Void)?
     var onControlChanged: ((Bool) -> Void)?
     var recordingIsActive: () -> Bool = { false }
 

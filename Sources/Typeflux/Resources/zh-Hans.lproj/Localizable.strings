@@ -1631,21 +1631,30 @@
 "models.count" = "%d 个模型";
 
 // Screenshot capability and recovery
-"ask.image.unsupported" = "当前模型不支持图片识别，切换到支持图片的模型后可附带截图。";
-"ask.image.unknown" = "尚未确认当前模型是否支持图片，请检查模型配置。";
+"ask.image.unsupported" = "当前模型不支持图片识别，切换到支持图片识别的模型后可附带截图。";
+"ask.image.unknown" = "尚未确认当前模型是否支持图片识别，请检查模型配置。";
 "ask.image.detached" = "已取消附带截图，当前模型不支持图片识别。";
 "ask.image.disabled" = "不可用";
 "ask.image.captured" = "截图已获取";
 "ask.image.resuming" = "正在分析已保存的截图";
 "ask.image.saved" = "截图已保留，可换模型继续";
 "ask.image.processing" = "正在使用 %@ 分析已保存的截图…";
-"ask.image.ready" = "所选模型支持图片，可以继续分析。";
-"ask.image.recoveryHint" = "当前模型无法读取图片，选择支持图片的模型后可继续分析这张截图。";
+"ask.image.ready" = "所选模型支持图片识别，可以继续分析。";
+"ask.image.recoveryHint" = "当前模型不支持图片识别，选择支持图片识别的模型后可继续分析这张截图。";
 "ask.image.continue" = "使用 %@ 继续";
 "ask.image.choose" = "选择模型并继续…";
 "ask.image.previewUnavailable" = "暂时无法预览截图。";
-"ask.image.pickerHint" = "仅显示支持图片且当前可用的模型。";
-"ask.image.noModels" = "暂无可用的图片模型。";
-"ask.image.configure" = "配置模型";
+"ask.image.pickerHint" = "截图已保留，选择模型后可继续分析。";
+"ask.image.noModels" = "暂无支持图片识别的模型，可前往模型设置添加。";
+"ask.image.configure" = "模型设置";
 "ask.image.cancel" = "取消";
 "ask.image.refreshModels" = "刷新模型列表";
+"ask.image.pickerTitle" = "选择支持图片识别的模型";
+"ask.image.pickerHintWithoutScreenshot" = "选择支持图片识别的模型后可继续。";
+"ask.image.loading" = "正在获取模型列表…";
+"ask.image.loadFailed" = "暂时无法获取模型列表，请重试。";
+"ask.image.cloudUnavailable" = "暂时无法获取云端模型，你仍可选择已配置的模型。";
+"ask.image.retry" = "重试";
+"ask.image.switchAndContinue" = "切换并继续";
+"ask.image.resume" = "继续";
+"ask.image.signInHint" = "请登录后继续此对话。";

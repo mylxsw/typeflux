@@ -103,7 +103,7 @@ struct AskConversationView: View {
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
             Spacer(minLength: 4)
-            Button { model.onOpenSettings?() } label: {
+            Button { model.onOpenSettings?(.settings) } label: {
                 Image(systemName: "gearshape").font(.system(size: 14))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .frame(width: 28, height: 28)

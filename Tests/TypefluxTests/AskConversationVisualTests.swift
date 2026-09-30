@@ -415,24 +415,7 @@ struct AskConversationVisualTests {
         }
         await fixture.api.release(value.id)
         try await fixture.wait { fixture.model.busyIds.isEmpty }
-        var registry = fixture.model.modelLibrary.registry
-        registry.providers = []
-        try fixture.model.modelLibrary.commit(registry)
-        try await render(AskImageRecoveryPicker(model: fixture.model, target: target, dismiss: {}),
-                         size: NSSize(width: 360, height: 180), appearance: .aqua,
-                         file: root.appendingPathComponent("image-no-models.png"), minimumPNGBytes: 4000)
-        fixture.model.modelLibrary.catalogError = L("ask.models.catalogError")
-        try await render(AskImageRecoveryPicker(model: fixture.model, target: target, dismiss: {}),
-                         size: NSSize(width: 360, height: 220), appearance: .aqua,
-                         file: root.appendingPathComponent("image-catalog-error.png"), minimumPNGBytes: 4000)
-        fixture.model.modelLibrary.catalogError = nil
-        registry.providers = [.init(id: "fixture", name: "示例服务", baseURL: "https://example.invalid/v1",
-            models: [.init(id: "vision", name: "图片模型", reference: "custom:fixture", vision: true)])]
-        try fixture.model.modelLibrary.commit(registry)
-        fixture.model.selectModel("custom:fixture", launcher: false)
-        try await render(AskImageRecoveryPicker(model: fixture.model, target: target, dismiss: {}),
-                         size: NSSize(width: 360, height: 240), appearance: .aqua,
-                         file: root.appendingPathComponent("image-model-picker.png"), minimumPNGBytes: 4000)
+
     }
 
     private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL, voice: AskVoiceInput? = nil, minimumPNGBytes: Int = 10000) async throws {

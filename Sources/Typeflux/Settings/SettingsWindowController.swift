@@ -44,6 +44,7 @@ final class SettingsWindowController: NSObject {
         settingsStore: SettingsStore,
         historyStore: HistoryStore,
         initialSection: StudioSection = .settings,
+        initialModelDomain: StudioModelDomain? = nil,
         modelManager: OllamaModelManaging = OllamaLocalModelManager(),
         localModelManager: LocalSTTModelManaging = LocalModelManager(),
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
@@ -55,6 +56,7 @@ final class SettingsWindowController: NSObject {
 
         if let window {
             viewModel?.navigate(to: initialSection)
+            if let initialModelDomain { viewModel?.setModelDomain(initialModelDomain) }
             refreshAppearance()
             DockVisibilityController.shared.windowDidShow(window)
             window.makeKeyAndOrderFront(nil)
@@ -73,6 +75,7 @@ final class SettingsWindowController: NSObject {
             notificationService: notificationService,
             modelLibrary: modelLibrary
         )
+        if let initialModelDomain { viewModel.setModelDomain(initialModelDomain) }
         AppLocalization.shared.setLanguage(viewModel.appLanguage)
         let view = StudioView(viewModel: viewModel)
         let hosting = TransparentSettingsHostingView(rootView: view)

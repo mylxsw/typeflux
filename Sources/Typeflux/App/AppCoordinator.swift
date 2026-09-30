@@ -177,8 +177,8 @@ final class AppCoordinator {
             }
         )
         statusBarController?.start()
-        di.askConversationWindowController?.model.onOpenSettings = { [weak self] in
-            self?.statusBarController?.showSettings()
+        di.askConversationWindowController?.model.onOpenSettings = { [weak self] section in
+            self?.statusBarController?.showSettings(section: section)
         }
         self.workflowController?.start()
         self.mouseVoiceInputController?.start()
