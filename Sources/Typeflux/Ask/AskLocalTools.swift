@@ -12,8 +12,8 @@ protocol AskToolExecuting {
     func execute(_ call: AskToolCall, conversationId: String) async throws -> AskLocalToolOutput
 }
 
-/// All calls, including MCP calls, pass through the conversation's explicit
-/// approval and persistent execution journal before reaching this executor.
+/// Calls require conversation approval or screenshot consent from the submitted draft.
+/// All calls pass through the persistent execution journal before reaching this executor.
 @MainActor
 final class AskLocalTools: AskToolExecuting {
     private let registry: MCPRegistry

@@ -23,6 +23,17 @@ final class SettingsStoreTests: XCTestCase {
         super.tearDown()
     }
 
+    func testAskHotkeyDefaultsToCommandSpaceAndPreservesExplicitSettings() {
+        XCTAssertEqual(store.askHotkey?.signature, HotkeyBinding.defaultAsk.signature)
+        let custom = HotkeyBinding.rightOptionAsk
+        store.askHotkey = custom
+        XCTAssertEqual(SettingsStore(defaults: defaults).askHotkey, custom)
+        store.askHotkey = nil
+        XCTAssertNil(SettingsStore(defaults: defaults).askHotkey)
+        store.askHotkeyJSON = "invalid"
+        XCTAssertEqual(store.askHotkey?.signature, HotkeyBinding.defaultAsk.signature)
+    }
+
     // MARK: - STT Provider
 
     func testDefaultSTTProvider() {

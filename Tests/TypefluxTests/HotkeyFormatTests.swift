@@ -25,8 +25,17 @@ final class HotkeyFormatTests: XCTestCase {
         XCTAssertEqual(HotkeyFormat.display(binding), "Fn")
     }
 
+    func testDisplayDefaultAskShortcut() {
+        XCTAssertEqual(HotkeyFormat.components(.defaultAsk), ["⌘", "Space"])
+        XCTAssertNil(HotkeyFormat.pressCount(.defaultAsk))
+    }
+
     func testDisplayDoubleFnTrigger() {
-        let binding = HotkeyBinding.defaultAsk
+        let binding = HotkeyBinding(
+            keyCode: HotkeyBinding.functionKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.function.rawValue),
+            pressCount: 2
+        )
         XCTAssertEqual(HotkeyFormat.display(binding), "Fn×2")
     }
 

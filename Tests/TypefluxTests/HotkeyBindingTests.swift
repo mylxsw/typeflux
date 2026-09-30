@@ -85,7 +85,12 @@ final class HotkeyBindingTests: XCTestCase {
     }
 
     func testIsFunctionDoubleTapTrigger() {
-        XCTAssertTrue(HotkeyBinding.defaultAsk.isModifierDoubleTapTrigger)
+        let doubleFn = HotkeyBinding(
+            keyCode: HotkeyBinding.functionKeyCode,
+            modifierFlags: UInt(NSEvent.ModifierFlags.function.rawValue),
+            pressCount: 2
+        )
+        XCTAssertTrue(doubleFn.isModifierDoubleTapTrigger)
         XCTAssertFalse(HotkeyBinding.defaultActivation.isModifierDoubleTapTrigger)
         XCTAssertTrue(HotkeyBinding.rightCommandAsk.isModifierDoubleTapTrigger)
         XCTAssertTrue(HotkeyBinding.rightOptionAsk.isModifierDoubleTapTrigger)
@@ -153,10 +158,12 @@ final class HotkeyBindingTests: XCTestCase {
         XCTAssertTrue(HotkeyBinding.defaultActivation.isFunctionTrigger)
     }
 
-    func testDefaultAskIsDoubleFn() {
-        XCTAssertEqual(HotkeyBinding.defaultAsk.keyCode, HotkeyBinding.functionKeyCode)
-        XCTAssertEqual(HotkeyBinding.defaultAsk.pressCount, 2)
-        XCTAssertTrue(HotkeyBinding.defaultAsk.isModifierDoubleTapTrigger)
+    func testDefaultAskIsCommandSpace() {
+        XCTAssertEqual(HotkeyBinding.defaultAsk.keyCode, 49)
+        XCTAssertEqual(HotkeyBinding.defaultAsk.modifierFlags, UInt(NSEvent.ModifierFlags.command.rawValue))
+        XCTAssertEqual(HotkeyBinding.defaultAsk.pressCount ?? 1, 1)
+        XCTAssertFalse(HotkeyBinding.defaultAsk.isModifierOnlyTrigger)
+        XCTAssertFalse(HotkeyBinding.defaultAsk.isModifierDoubleTapTrigger)
     }
 
     func testDefaultPersonaIsPKey() {

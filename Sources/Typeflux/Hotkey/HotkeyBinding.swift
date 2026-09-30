@@ -107,9 +107,8 @@ struct HotkeyBinding: Codable, Equatable, Identifiable {
     }
 
     static let defaultAsk = HotkeyBinding(
-        keyCode: functionKeyCode,
-        modifierFlags: UInt(NSEvent.ModifierFlags.function.rawValue),
-        pressCount: 2
+        keyCode: 49,
+        modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue)
     )
     static let defaultPersona = HotkeyBinding(keyCode: 35, modifierFlags: 1_572_864)
     static let defaultHistory = HotkeyBinding(

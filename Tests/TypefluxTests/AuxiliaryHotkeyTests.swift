@@ -16,16 +16,22 @@ final class AuxiliaryHotkeyTests: XCTestCase {
         super.tearDown()
     }
 
+    private let doubleFnAsk = HotkeyBinding(
+        keyCode: HotkeyBinding.functionKeyCode,
+        modifierFlags: UInt(NSEvent.ModifierFlags.function.rawValue),
+        pressCount: 2
+    )
     private let fn = HotkeyBinding.modifierFlag(for: 63)
     private let shift = HotkeyBinding.modifierFlag(for: 56)
 
     private func flags(
         _ arbiter: inout HotkeyGestureArbiter, _ key: Int, _ value: UInt, _ time: Double,
-        auxiliary: HotkeyBinding = .defaultAuxiliary, activation: HotkeyBinding? = .defaultActivation
+        auxiliary: HotkeyBinding = .defaultAuxiliary, activation: HotkeyBinding? = .defaultActivation,
+        ask: HotkeyBinding = .defaultAsk
     ) -> [HotkeyGestureEvent] {
         arbiter.handleFlagsChanged(
             keyCode: key, modifierFlags: value, activationHotkey: activation,
-            askHotkey: .defaultAsk, auxiliaryHotkey: auxiliary, timestamp: time
+            askHotkey: ask, auxiliaryHotkey: auxiliary, timestamp: time
         )
     }
 
@@ -68,9 +74,9 @@ final class AuxiliaryHotkeyTests: XCTestCase {
 
     func testFnDoubleTapStillStartsAsk() {
         var arbiter = HotkeyGestureArbiter()
-        XCTAssertEqual(flags(&arbiter, 63, fn, 1), [.begin(.activation)])
-        XCTAssertEqual(flags(&arbiter, 63, 0, 1.1), [.activationTapped])
-        XCTAssertEqual(flags(&arbiter, 63, fn, 1.2), [.begin(.ask)])
+        XCTAssertEqual(flags(&arbiter, 63, fn, 1, ask: doubleFnAsk), [.begin(.activation)])
+        XCTAssertEqual(flags(&arbiter, 63, 0, 1.1, ask: doubleFnAsk), [.activationTapped])
+        XCTAssertEqual(flags(&arbiter, 63, fn, 1.2, ask: doubleFnAsk), [.begin(.ask)])
     }
 
     func testIndependentModifierDoubleTapAndRelease() {
@@ -201,9 +207,9 @@ extension AuxiliaryHotkeyTests {
         var arbiter = HotkeyGestureArbiter()
         let binding = HotkeyBinding.defaultActivation
         let fn = binding.modifierFlags
-        XCTAssertEqual(flags(&arbiter, 63, fn, 1, auxiliary: binding, activation: .rightOptionActivation), [.begin(.auxiliary)])
-        XCTAssertEqual(flags(&arbiter, 63, 0, 1.1, auxiliary: binding, activation: .rightOptionActivation), [.end(.auxiliary)])
-        XCTAssertEqual(flags(&arbiter, 63, fn, 1.2, auxiliary: binding, activation: .rightOptionActivation), [.begin(.ask)])
+        XCTAssertEqual(flags(&arbiter, 63, fn, 1, auxiliary: binding, activation: .rightOptionActivation, ask: doubleFnAsk), [.begin(.auxiliary)])
+        XCTAssertEqual(flags(&arbiter, 63, 0, 1.1, auxiliary: binding, activation: .rightOptionActivation, ask: doubleFnAsk), [.end(.auxiliary)])
+        XCTAssertEqual(flags(&arbiter, 63, fn, 1.2, auxiliary: binding, activation: .rightOptionActivation, ask: doubleFnAsk), [.begin(.ask)])
     }
 
     func testExternalKeyboardChordsDistinguishRightAndLeftModifiers() {
