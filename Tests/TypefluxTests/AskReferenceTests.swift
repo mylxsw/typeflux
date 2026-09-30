@@ -56,6 +56,20 @@ struct AskReferenceTests {
         #expect(AskDraft.followUp.referencesWithinLimit)
     }
 
+    @Test func usageOnlySnapshotKeepsOptimisticReferences() {
+        let ref = reference()
+        let message = AskMessage(id: UUID().uuidString, role: "user", text: "", createdAt: Date(), references: [ref])
+        let optimistic = AskConversation(id: UUID().uuidString, title: "Test", revision: 3, updatedAt: Date(), messages: [message])
+        var incoming = optimistic
+        incoming.messages = []
+        incoming.usage = AskConversationUsage(version: 2, since: Date(), historicalGap: false, total: AskUsageTotals(), runs: [:])
+        let reconciled = optimistic.reconciling(incoming, preservingEqualRevisionContent: true)
+        #expect(reconciled.messages == [message])
+        #expect(reconciled.usage == incoming.usage)
+        incoming.revision = 4
+        #expect(optimistic.reconciling(incoming, preservingEqualRevisionContent: true).messages.isEmpty)
+    }
+
     @Test func submissionAndRetryKeepReferences() async throws {
         let f = try AskTestFixture()
         f.model.draft.text = "Initial question"

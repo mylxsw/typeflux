@@ -172,12 +172,13 @@ struct AskModelSelectionTests {
         configuration.protocolClasses = [AskModelURLProtocol.self]
         let recorder = AskStreamRecorder()
         let adapter = AskCustomInference(session: URLSession(configuration: configuration))
-        let result = try await adapter.complete(profile: .init(name: "Fixture", baseURL: "https://example.invalid/v1", model: "fixture"), key: "fixture", payload: #"{"messages":[]}"#) { progress in
+        let result = try await adapter.complete(profile: .init(name: "Fixture", baseURL: "https://example.invalid/v1", model: "fixture"), key: "fixture", payload: #"{"messages":[]}"#, onProgress: { progress in
             await recorder.append(progress)
-        }
+        })
         let updates = await recorder.updates
         #expect(updates.first?.text == "Ans")
         #expect(updates.last?.text == "Answer")
+        #expect(updates.last?.usage?.totalTokens == 14)
         #expect(updates.first?.toolCalls.isEmpty == true)
         #expect(result.1.first?.function.arguments == #"{"page_size":5}"#)
     }
@@ -204,6 +205,7 @@ struct AskModelSelectionTests {
         #expect(receipts.count == 1)
         #expect(receipts.first?.inferenceId == inference.id)
         #expect(receipts.first?.content == "Answer")
+        #expect(receipts.first?.usage?.totalTokens == 14)
         #expect(fixture.model.modelReference(launcher: false) == profile.reference)
         #expect(await fixture.api.sends.isEmpty)
         fixture.model.resetSession()
@@ -286,6 +288,7 @@ private final class AskModelURLProtocol: URLProtocol, @unchecked Sendable {
             let chunks = [
                 #"data: {"choices":[{"delta":{"content":"Ans"}}]}"#,
                 #"data: {"choices":[{"delta":{"content":"wer","tool_calls":[{"index":0,"id":"call-1","type":"function","function":{"name":"browser","arguments":"{\"page_size\":5}"}}]},"finish_reason":"tool_calls"}]}"#,
+                #"data: {"choices":[],"usage":{"prompt_tokens":10,"completion_tokens":4,"total_tokens":14}}"#,
                 "data: [DONE]"
             ]
             for chunk in chunks { client?.urlProtocol(self, didLoad: Data((chunk + "\n\n").utf8)) }

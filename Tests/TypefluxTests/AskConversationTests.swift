@@ -5,6 +5,12 @@ import Testing
 @testable import Typeflux
 
 actor AskTestAPI: AskAPI {
+    var usageRecords: [AskUsageInvocation] = []
+    func setUsageRecords(_ value: [AskUsageInvocation]) { usageRecords = value }
+    func usage(id: String, runId: String?, cursor: Int64?, token: String) async throws -> AskUsagePage {
+        AskUsagePage(items: usageRecords.filter { runId == nil || $0.runId == runId }, nextCursor: nil)
+    }
+
     var values: [String: AskConversation] = [:]
     var sends: [AskSendRequest] = []
     var retryModels: [String?] = []

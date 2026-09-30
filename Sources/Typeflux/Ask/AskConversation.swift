@@ -32,6 +32,7 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     var reasoningMilliseconds: Int? = nil
     var reasoningEffort: String? = nil
     var references: [AskReference]? = nil
+    var runId: String? = nil
 }
 
 struct AskRun: Codable, Equatable, Sendable {
@@ -66,6 +67,8 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
     var summary: String?
     var summaryThrough: Int?
     var modelRef: String? = nil
+    var usage: AskConversationUsage? = nil
+    var contextUsage: AskContextUsage? = nil
 }
 
 struct AskConversationSummary: Codable, Identifiable, Equatable, Sendable {
