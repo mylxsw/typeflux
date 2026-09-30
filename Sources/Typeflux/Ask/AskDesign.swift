@@ -91,6 +91,12 @@ enum AskTheme {
         light: NSColor(srgbRed: 0.086, green: 0.439, blue: 0.784, alpha: 1),
         dark: NSColor(srgbRed: 0.114, green: 0.506, blue: 0.867, alpha: 1)
     )
+    /// The launcher's idle edge. It floats over arbitrary windows, so it needs a
+    /// firmer outline than the workspace composer's `border` to read as a panel.
+    static let floatingBorder = StudioTheme.dynamic(
+        light: NSColor(calibratedWhite: 0, alpha: 0.12),
+        dark: NSColor(calibratedWhite: 1, alpha: 0.18)
+    )
     /// Translucent hover wash, so borderless controls read the same on any surface.
     static let hoverFill = StudioTheme.dynamic(
         light: NSColor(calibratedWhite: 0, alpha: 0.06),
@@ -122,7 +128,6 @@ enum AskTheme {
 /// window geometry depends on them, so they live next to the views that use them.
 enum AskMetrics {
     static let launcherWidth: CGFloat = 680
-    static let launcherCorner: CGFloat = 18
     /// Breathing room around the launcher card.
     static let launcherGutter: CGFloat = 6
     static let editorTopInset: CGFloat = 15
@@ -161,6 +166,32 @@ enum AskMetrics {
     }
 }
 
+/// Surface of the shared composer. The launcher and the workspace are the same
+/// feature behind different triggers, so everything but the idle edge matches.
+struct AskComposerChrome: Equatable {
+    var fill: Color
+    var corner: CGFloat
+    var editorFontSize: CGFloat
+    var horizontalInset: CGFloat
+    var idleBorder: Color
+
+    static let workspace = AskComposerChrome(
+        fill: AskTheme.composerSurface,
+        corner: AskMetrics.composerCardCorner,
+        editorFontSize: 14,
+        horizontalInset: 15,
+        idleBorder: AskTheme.border
+    )
+
+    static let launcher: AskComposerChrome = {
+        var value = workspace
+        value.idleBorder = AskTheme.floatingBorder
+        return value
+    }()
+
+    static func of(launcher: Bool) -> AskComposerChrome { launcher ? .launcher : .workspace }
+}
+
 /// Colour is reserved for state: blue runs, green finished, amber needs a
 /// decision, red failed. Everything else stays neutral grey.
 enum AskActivityState {
@@ -190,7 +221,9 @@ enum AskActivityState {
 /// Every switch, attachment and source label in the composer is a capsule.
 /// Native check boxes and bare text links are intentionally not used here.
 struct AskChip: View {
-    enum Style { case neutral, active, warning, dashed }
+    /// `unavailable` is a solid, muted chip whose tooltip gives the reason. A
+    /// dashed outline used to read as a broken control.
+    enum Style { case neutral, active, warning, unavailable }
 
     var title: String
     var systemImage: String
@@ -217,11 +250,11 @@ struct AskChip: View {
         .padding(.horizontal, 10)
         .frame(height: 26)
         .background(fill, in: Capsule())
-        .overlay(Capsule().strokeBorder(stroke, style: strokeStyle))
+        .overlay(Capsule().strokeBorder(stroke))
         .contentShape(Capsule())
         .onTapGesture { if !disabled { action?() } }
         .accessibilityAddTraits(action == nil ? [] : .isButton)
-        .opacity(disabled ? 0.55 : 1)
+        .opacity(disabled && style != .unavailable ? 0.55 : 1)
         .accessibilityLabel(title)
         .accessibilityValue(disabled ? L("ask.image.disabled") : "")
         .accessibilityHint(help ?? title)
@@ -233,7 +266,7 @@ struct AskChip: View {
         case .neutral: return StudioTheme.textSecondary
         case .active: return AskTheme.accentText
         case .warning: return StudioTheme.warning
-        case .dashed: return StudioTheme.textTertiary
+        case .unavailable: return StudioTheme.textTertiary
         }
     }
 
@@ -250,10 +283,6 @@ struct AskChip: View {
         case .active, .warning: return .clear
         default: return AskTheme.border
         }
-    }
-
-    private var strokeStyle: StrokeStyle {
-        style == .dashed ? StrokeStyle(lineWidth: 1, dash: [3, 2]) : StrokeStyle(lineWidth: 1)
     }
 }
 
@@ -727,6 +756,7 @@ struct AskVoiceBorder: ViewModifier {
     @ObservedObject var voice: AskVoiceInput
     var context: String
     var radius: CGFloat
+    var idle: Color = AskTheme.border
 
     private var listening: Bool { voice.context == context && voice.phase == .listening }
 
@@ -734,7 +764,7 @@ struct AskVoiceBorder: ViewModifier {
         content
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(Self.borderColor(listening: listening),
+                    .strokeBorder(Self.borderColor(listening: listening, idle: idle),
                                   lineWidth: Self.borderWidth(listening: listening))
                     .allowsHitTesting(false)
             )
@@ -752,9 +782,9 @@ struct AskVoiceBorder: ViewModifier {
     static let haloWidth: CGFloat = 3
 
     /// Focus alone stays neutral: the accent colour has to keep meaning "recording".
-    static func borderColor(listening: Bool) -> Color {
+    static func borderColor(listening: Bool, idle: Color = AskTheme.border) -> Color {
         if listening { return AskTheme.accent }
-        return AskTheme.border
+        return idle
     }
 
     static func borderWidth(listening: Bool) -> CGFloat { listening ? 1.5 : 1 }
