@@ -1443,6 +1443,8 @@
 "ask.context.screenshot.offHint" = "クリックして現在の画面のスクリーンショットを添付";
 "ask.context.previewHint" = "クリックでプレビュー";
 "ask.context.more" = "ほか %d 件のコンテキスト";
+"ask.context.memory.offHint" = "クリックでオフ（この質問にメモリを含めない）";
+"ask.context.memory.onHint" = "クリックでオン（この質問にメモリを含める）";
 "ask.selection" = "Selected text";
 "ask.memory" = "メモリ";
 "ask.memory.app" = "メモリ · %@";

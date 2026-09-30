@@ -100,7 +100,7 @@ struct AskComposer: View {
                     Text(L(launcher || model.selectedId == nil ? "ask.input.placeholder" : "ask.followup.placeholder"))
                         .font(.system(size: chrome.editorFontSize))
                         .foregroundStyle(StudioTheme.textTertiary)
-                        .padding(.leading, 2)
+                        .padding(.leading, AskComposerTextView.lineFragmentPadding)
                         .padding(.top, 4)
                         .allowsHitTesting(false)
                 }
@@ -168,6 +168,7 @@ struct AskComposer: View {
             sourceBundleID: value.sourceBundleID,
             selection: value.selection,
             memory: newConversation ? value.memory : nil,
+            memoryOff: value.memoryOff == true,
             memoryPinned: !newConversation && model.selected?.memory?.isEmpty == false
         )
     }
@@ -216,7 +217,7 @@ struct AskComposer: View {
         case .source:
             AskIconChip(item: item)
         case .memory:
-            AskIconChip(item: item, onRemove: { remove(.memory) })
+            AskIconChip(item: item, action: memoryToggle)
         }
     }
 
@@ -246,11 +247,18 @@ struct AskComposer: View {
         }
     }
 
+    /// Memory pinned to an existing conversation is read-only; a new question's
+    /// memory switches off and on without being discarded.
+    private var memoryToggle: (() -> Void)? {
+        guard launcher || model.selectedId == nil else { return nil }
+        return { draft.wrappedValue.memoryOff = draft.wrappedValue.memoryOff == true ? nil : true }
+    }
+
     private func remove(_ kind: AskContextItem.Kind) {
         switch kind {
         case .screenshot: draft.wrappedValue.includeScreenshot = false
         case .selection: draft.wrappedValue.selection = nil
-        case .memory: draft.wrappedValue.memory = AskMemory()
+        case .memory: draft.wrappedValue.memoryOff = true
         case .source: break
         }
     }

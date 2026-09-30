@@ -1457,6 +1457,8 @@
 "ask.context.screenshot.offHint" = "点击附带当前屏幕截图";
 "ask.context.previewHint" = "点击预览";
 "ask.context.more" = "另有 %d 项上下文";
+"ask.context.memory.offHint" = "点击关闭，本次提问不带记忆";
+"ask.context.memory.onHint" = "点击开启，本次提问带上记忆";
 "ask.selection" = "选中文本";
 "ask.memory" = "记忆";
 "ask.memory.app" = "记忆 · %@";

@@ -4,6 +4,9 @@ import SwiftUI
 /// A native editor keeps IME composition, selection and the existing dictation
 /// insertion path intact. Return confirms only after marked text is committed.
 struct AskComposerTextView: NSViewRepresentable {
+    /// Horizontal inset of the text inside its container. The SwiftUI
+    /// placeholder uses the same value so it starts where the caret does.
+    static let lineFragmentPadding: CGFloat = 5
     @Binding var text: String
     @Environment(\.isEnabled) private var isEnabled
     var placeholder: String
@@ -33,6 +36,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.textColor = .labelColor
         editor.insertionPointColor = .labelColor
         editor.textContainerInset = NSSize(width: 0, height: 4)
+        editor.textContainer?.lineFragmentPadding = Self.lineFragmentPadding
         editor.isVerticallyResizable = true
         editor.isHorizontallyResizable = false
         editor.autoresizingMask = [.width]

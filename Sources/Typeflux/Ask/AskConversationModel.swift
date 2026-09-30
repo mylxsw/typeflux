@@ -248,6 +248,7 @@ final class AskConversationModel: ObservableObject {
         launcherDraft.screenshot = context.screenshot
         launcherDraft.capturedAt = context.capturedAt
         launcherDraft.memory = context.memory ?? AskMemory()
+        launcherDraft.memoryOff = nil
         captureWarning = context.warning
         persistDrafts()
     }
@@ -436,7 +437,8 @@ final class AskConversationModel: ObservableObject {
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
         request.modelRef = submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference : (value.modelRef ?? "cloud:default"))
         request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
-        request.memory = newConversation ? Self.openingMemory(submitted.memory ?? capture.globalMemory()) : nil
+        request.memory = newConversation && submitted.memoryOff != true
+            ? Self.openingMemory(submitted.memory ?? capture.globalMemory()) : nil
         value.modelRef = request.modelRef
         if newConversation { value.memory = request.memory }
         pendingSends[id] = request

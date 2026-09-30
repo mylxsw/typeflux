@@ -127,6 +127,9 @@ struct AskDraft: Codable, Equatable, Sendable {
     /// `nil` means memory has not been resolved for this draft; an empty value
     /// means it is unavailable or the user removed it.
     var memory: AskMemory? = nil
+    /// The user switched memory off for this question. The captured memory is
+    /// kept so the chip can switch it back on; nil in drafts saved before this.
+    var memoryOff: Bool? = nil
 
     var canSend: Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||

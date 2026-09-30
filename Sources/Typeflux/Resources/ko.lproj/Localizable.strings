@@ -1443,6 +1443,8 @@
 "ask.context.screenshot.offHint" = "클릭하여 현재 화면 스크린샷 첨부";
 "ask.context.previewHint" = "클릭하여 미리보기";
 "ask.context.more" = "컨텍스트 %d개 더 있음";
+"ask.context.memory.offHint" = "클릭하여 끄기 (이번 질문에 메모리 제외)";
+"ask.context.memory.onHint" = "클릭하여 켜기 (이번 질문에 메모리 포함)";
 "ask.selection" = "Selected text";
 "ask.memory" = "메모리";
 "ask.memory.app" = "메모리 · %@";

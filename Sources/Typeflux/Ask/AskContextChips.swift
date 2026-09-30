@@ -66,7 +66,8 @@ enum AskContextChips {
 
     /// Items in display order: screenshot, source, selection, memory.
     static func items(screenshot: AskScreenshotState, source: String?, sourceBundleID: String?,
-                      selection: String?, memory: AskMemory?, memoryPinned: Bool) -> [AskContextItem] {
+                      selection: String?, memory: AskMemory?, memoryOff: Bool = false,
+                      memoryPinned: Bool) -> [AskContextItem] {
         var items = [screenshotItem(screenshot)]
         if let source, !source.isEmpty {
             let parts = sourceParts(source)
@@ -85,10 +86,13 @@ enum AskContextChips {
             items.append(AskContextItem(kind: .memory, systemImage: "brain", style: .neutral,
                                         title: L("ask.memory"), detail: L("ask.memory.pinned")))
         } else if let memory, !memory.isEmpty {
+            // A toggle, not a removal: switched off it stays as a grey chip, so
+            // it can be switched back on.
             let app = memory.app.flatMap { $0.excerpts.isEmpty ? nil : $0.id }
-            items.append(AskContextItem(kind: .memory, systemImage: "brain", style: .active,
+            items.append(AskContextItem(kind: .memory, systemImage: "brain", style: memoryOff ? .neutral : .active,
                                         title: memory.chipTitle, detail: L("ask.memory.help"),
-                                        badge: app.map(AskContextItem.Badge.app), removable: true))
+                                        hint: L(memoryOff ? "ask.context.memory.onHint" : "ask.context.memory.offHint"),
+                                        badge: app.map(AskContextItem.Badge.app)))
         }
         return items
     }
@@ -268,7 +272,7 @@ struct AskIconChipFace: View {
                 .opacity(hovering ? 0.85 : 1)
         } else {
             ZStack {
-                Image(systemName: item.systemImage).font(.system(size: 12, weight: .medium))
+                Image(systemName: item.systemImage).font(.system(size: 13, weight: .medium))
                 if item.style == .unavailable {
                     Rectangle().frame(width: 17, height: 1.5).rotationEffect(.degrees(-45))
                 }
