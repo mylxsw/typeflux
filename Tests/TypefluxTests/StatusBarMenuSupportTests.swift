@@ -4,26 +4,37 @@ import XCTest
 
 final class StatusBarMenuSupportTests: XCTestCase {
     @MainActor
-    func testAskMenuEntryOpensConversationDirectly() throws {
+    func testOpenTypefluxMenuEntryOpensConversationDirectlyWithoutDuplicateAskEntry() throws {
         if ProcessInfo.processInfo.environment["CI"] == "true" {
             throw XCTSkip("Requires a GUI WindowServer session")
         }
         let suite = "AskMenuEntryTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
-        var opened = false
-        let controller = StatusBarController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults),
-            historyStore: EmptyHistoryStore(), agentJobStore: EmptyAgentJobStore(),
-            onOpenAskConversations: { opened = true })
+        var openCount = 0
+        let controller = StatusBarController(
+            appState: AppStateStore(),
+            settingsStore: SettingsStore(defaults: defaults),
+            historyStore: EmptyHistoryStore(),
+            agentJobStore: EmptyAgentJobStore(),
+            onOpenAskConversations: { openCount += 1 }
+        )
         controller.start()
         defer { controller.stop() }
         let menu = try XCTUnwrap(controller.menu)
-        let index = try XCTUnwrap(menu.items.firstIndex { $0.title == L("menu.openAskConversations") })
-        XCTAssertEqual(index, 1)
+        let index = try XCTUnwrap(menu.items.firstIndex { $0.title == L("menu.openVoiceStudio") })
+        XCTAssertEqual(index, 0)
+        XCTAssertEqual(menu.items.filter { $0.title == L("menu.openVoiceStudio") }.count, 1)
+        XCTAssertFalse(menu.items.contains { $0.title == L("menu.openAskConversations") })
+        XCTAssertEqual(menu.items[index + 1].title, L("menu.addVocabulary"))
         XCTAssertNil(menu.items[index].submenu)
         XCTAssertTrue(menu.items[index].isEnabled)
         menu.performActionForItem(at: index)
-        XCTAssertTrue(opened)
+        XCTAssertEqual(openCount, 1)
+        menu.performActionForItem(at: index)
+        XCTAssertEqual(openCount, 2)
+        let settingsItem = try XCTUnwrap(menu.items.first { $0.title == L("menu.settings") })
+        XCTAssertNotEqual(settingsItem.action, menu.items[index].action)
     }
 
     func testStatusBarIconUsesBoundedMenuBarDimensions() {

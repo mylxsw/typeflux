@@ -229,8 +229,7 @@ final class StatusBarController: NSObject {
         menu.showsStateColumn = false
         menu.delegate = self
 
-        menu.addItem(makeItem(title: L("menu.openVoiceStudio"), action: #selector(openHome)))
-        menu.addItem(makeItem(title: L("menu.openAskConversations"), action: #selector(openAskConversations)))
+        menu.addItem(makeItem(title: L("menu.openVoiceStudio"), action: #selector(openAskConversations)))
         menu.addItem(makeItem(title: L("menu.addVocabulary"), action: #selector(addVocabularyTerm)))
         let historyItem = NSMenuItem(title: L("menu.transcriptionHistory"), action: nil, keyEquivalent: "")
         historyItem.tag = MenuTag.transcriptionHistory
@@ -498,10 +497,6 @@ final class StatusBarController: NSObject {
     /// Opens the settings window from outside the menu, e.g. the Ask sidebar footer.
     func showSettings() {
         openStudio(.settings)
-    }
-
-    @objc private func openHome() {
-        openStudio(.home)
     }
 
     @objc private func showConfiguration() {
