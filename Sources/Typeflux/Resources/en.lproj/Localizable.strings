@@ -1670,6 +1670,11 @@
 "ask.references.question" = "Follow-up question";
 "ask.references.optional" = "Question (optional)";
 "ask.references.explain" = "Explain this excerpt";
+"ask.selection.explain" = "Explain";
+"ask.selection.translate" = "Translate";
+"ask.selection.ask" = "Ask";
+"ask.references.translate" = "Translate this excerpt";
+"ask.references.source" = "Selected excerpt";
 "ask.references.save" = "Add to draft";
 "ask.references.manage" = "Manage (%d)";
 "ask.references.locate" = "Locate source";

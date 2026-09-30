@@ -1,47 +1,46 @@
 import SwiftUI
 
+/// The context budget as a ring plus one percentage, sized to live inside the
+/// composer footer. It replaced a full-width row under the composer that spent
+/// a whole line restating what the panel already explains in detail.
 struct AskContextUsageButton: View {
     let context: AskContextUsage
     var action: () -> Void
+    @State private var hovering = false
+
+    private var fraction: Double { min(1, max(0, context.fraction ?? 0)) }
+    private var tint: Color { context.isHigh ? StudioTheme.warning : AskTheme.accent }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
                 ZStack {
-                    Circle().stroke(AskTheme.border, lineWidth: 2)
-                    Circle().trim(from: 0, to: min(1, context.fraction ?? 0))
-                        .stroke(context.isHigh ? Color.orange : AskTheme.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    Circle().stroke(AskTheme.border, lineWidth: 2.5)
+                    Circle().trim(from: 0, to: fraction)
+                        .stroke(tint, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                         .rotationEffect(.degrees(-90))
-                }.frame(width: 12, height: 12)
-                Text(L("ask.usage.context") + " ≈" + AccountUsageDisplayFormatter.count(Int64(context.inputTokens)))
-                if let fraction = context.fraction { Text("· \(Int(fraction * 100))%") }
-                Image(systemName: "chevron.up").font(.system(size: 8))
+                }
+                .frame(width: 15, height: 15)
+                Text(context.fraction.map { "\(Int($0 * 100))%" } ?? "—")
+                    .font(.system(size: 11, weight: .medium)).monospacedDigit()
             }
-            .font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary)
+            .foregroundStyle(hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+            .padding(.leading, 7)
+            .padding(.trailing, 9)
+            .frame(height: 28)
+            .background(hovering ? AskTheme.controlSurface : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
-        .help(L("ask.usage.contextHelp"))
-        .accessibilityLabel(L("ask.usage.contextHelp"))
+        .onHover { hovering = $0 }
+        .help(summary)
+        .accessibilityLabel(summary)
     }
-}
 
-struct AskUsageSummaryButton: View {
-    var totals: AskUsageTotals?
-    var action: () -> Void
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 5) {
-                Image(systemName: "chart.bar.xaxis")
-                if let totals {
-                    Text(L("ask.usage.output") + " " + totals.tokenText(totals.outputTokens))
-                    Text("· " + totals.creditsText + " credits")
-                    if totals.pending > 0 { Text(L("ask.usage.pendingShort")) }
-                } else { Text(L("ask.usage.unavailable")) }
-            }
-            .font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary)
-            .padding(.horizontal, 7).padding(.vertical, 4)
-            .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 6))
-        }.buttonStyle(.plain)
+    private var summary: String {
+        L("ask.usage.context") + " ≈" + AccountUsageDisplayFormatter.count(Int64(context.inputTokens))
+            + " · " + L("ask.usage.contextHelp")
     }
 }
 
@@ -69,23 +68,29 @@ struct AskUsagePanel: View {
             }.padding(.horizontal, 18).frame(height: AskMetrics.titleBarRowHeight)
             Divider()
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    if let context = model.usageContext { contextSection(context) }
-                    Divider()
+                // Two questions, two cards: "does the next message still fit?"
+                // and "what did this cost?". They used to share one column of
+                // twelve equally weighted number rows.
+                VStack(alignment: .leading, spacing: 12) {
+                    if let context = model.usageContext { contextCard(context) }
                     Picker(L("ask.usage.scope"), selection: $runId) {
                         if let current = runId ?? model.selected?.run?.id {
                             Text(L("ask.usage.round")).tag(Optional(current))
                         }
                         Text(L("ask.usage.conversation")).tag(String?.none)
-                    }.pickerStyle(.segmented)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
                     if let totals {
-                        totalsSection(totals)
+                        totalsCard(totals)
                     } else {
-                        Text(L("ask.usage.unavailable")).foregroundStyle(StudioTheme.textSecondary)
+                        Text(L("ask.usage.unavailable")).font(.system(size: 12))
+                            .foregroundStyle(StudioTheme.textSecondary)
                     }
                     if usage?.historicalGap == true { help("ask.usage.historicalGap") }
-                    Divider()
-                    Text(L("ask.usage.calls")).font(.system(size: 12, weight: .medium))
+                    Text(L("ask.usage.calls")).font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .padding(.top, 4)
                     ForEach(items) { item in invocation(item) }
                     if loading { ProgressView().controlSize(.small) }
                     if loadError {
@@ -94,7 +99,8 @@ struct AskUsagePanel: View {
                     } else if cursor != nil {
                         Button(L("ask.usage.more")) { Task { await load(reset: false) } }.buttonStyle(.plain)
                     }
-                }.padding(18)
+                    help("ask.usage.scopeHelp")
+                }.padding(16)
             }
             if let credits = auth.usageCredits {
                 Divider()
@@ -112,50 +118,87 @@ struct AskUsagePanel: View {
         .onExitCommand(perform: close)
     }
 
-    private func contextSection(_ context: AskContextUsage) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(L("ask.usage.context")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+    /// Leads with the answer to "will the next message still fit", not with a
+    /// percentage. The bar shows used input, reserved output and what is left.
+    private func contextCard(_ context: AskContextUsage) -> some View {
+        card {
             HStack(alignment: .firstTextBaseline) {
-                Text(context.fraction.map { "≈\(Int($0 * 100))%" } ?? "—").font(.system(size: 27, weight: .semibold)).monospacedDigit()
-                Spacer()
-                Text(L(context.capacity == nil ? "ask.usage.capacityUnknown" : context.isHigh ? "ask.usage.high" : "ask.usage.available"))
-                    .font(.system(size: 10)).foregroundStyle(context.isHigh ? Color.orange : StudioTheme.textSecondary)
+                Text(L("ask.usage.remaining")).font(.system(size: 11))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                Spacer(minLength: 8)
+                Text(L(context.capacity == nil ? "ask.usage.capacityUnknown"
+                       : context.isHigh ? "ask.usage.high" : "ask.usage.available"))
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(context.isHigh ? StudioTheme.warning : StudioTheme.success)
             }
-            if let fraction = context.fraction {
-                ProgressView(value: min(1, fraction)).tint(context.isHigh ? .orange : AskTheme.accent)
+            Text(context.remaining.map { "≈" + AccountUsageDisplayFormatter.count(Int64($0)) } ?? "—")
+                .font(.system(size: 26, weight: .semibold)).monospacedDigit()
+            budgetBar(context)
+            HStack(spacing: 12) {
+                legend(color: context.isHigh ? StudioTheme.warning : AskTheme.accent,
+                       title: L("ask.usage.inputEstimate"),
+                       value: AccountUsageDisplayFormatter.count(Int64(context.inputTokens)))
+                legend(color: AskTheme.border,
+                       title: L("ask.usage.reserve"),
+                       value: AccountUsageDisplayFormatter.count(Int64(context.outputReserve)))
+                Spacer(minLength: 0)
             }
-            detail("ask.usage.inputEstimate", AccountUsageDisplayFormatter.count(Int64(context.inputTokens)))
-            detail("ask.usage.reserve", AccountUsageDisplayFormatter.count(Int64(context.outputReserve)))
-            detail("ask.usage.capacity", context.capacity.map { AccountUsageDisplayFormatter.count(Int64($0)) } ?? "—")
-            detail("ask.usage.remaining", context.remaining.map { "≈" + AccountUsageDisplayFormatter.count(Int64($0)) } ?? "—")
-            Text(model.modelLibrary.name(for: context.modelRef)).font(.system(size: 11))
-            help("ask.usage.contextHelp")
+            Text(model.modelLibrary.name(for: context.modelRef) + " · " + L("ask.usage.capacity") + " "
+                 + (context.capacity.map { AccountUsageDisplayFormatter.count(Int64($0)) } ?? "—"))
+                .font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
             if context.summarized { help("ask.usage.summarized") }
             if context.isHigh { help("ask.usage.highHelp") }
         }
     }
 
-    private func totalsSection(_ totals: AskUsageTotals) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(totals.creditsText + " credits").font(.system(size: 25, weight: .semibold)).monospacedDigit()
-            help(totals.statusKey)
-            HStack {
-                metric("ask.usage.input", totals.tokenText(totals.inputTokens))
-                metric("ask.usage.output", totals.tokenText(totals.outputTokens))
+    private func totalsCard(_ totals: AskUsageTotals) -> some View {
+        card {
+            HStack(alignment: .firstTextBaseline) {
+                Text(L("ask.usage.title")).font(.system(size: 11))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                Spacer(minLength: 8)
+                Text(L(runId == nil ? "ask.usage.conversation" : "ask.usage.round"))
+                    .font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
             }
+            Text(totals.creditsText + " credits")
+                .font(.system(size: 26, weight: .semibold)).monospacedDigit()
+            help(totals.statusKey)
+            detail("ask.usage.input", totals.tokenText(totals.inputTokens))
+            detail("ask.usage.output", totals.tokenText(totals.outputTokens))
             detail("ask.usage.total", totals.tokenText(totals.totalTokens))
             detail("ask.usage.callCount", String(totals.calls))
             if totals.estimated > 0 { help("ask.usage.estimated") }
-            help("ask.usage.scopeHelp")
         }
     }
 
-    private func metric(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(L(title)).font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary)
-            Text(value).font(.system(size: 17, weight: .semibold)).monospacedDigit()
-        }.frame(maxWidth: .infinity, alignment: .leading).padding(12)
-            .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 9))
+    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8, content: content)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(13)
+            .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(AskTheme.border))
+    }
+
+    private func budgetBar(_ context: AskContextUsage) -> some View {
+        GeometryReader { geometry in
+            HStack(spacing: 0) {
+                Rectangle().fill(context.isHigh ? StudioTheme.warning : AskTheme.accent)
+                    .frame(width: geometry.size.width * min(1, max(0, context.fraction ?? 0)))
+                Rectangle().fill(AskTheme.border)
+            }
+        }
+        .frame(height: 5)
+        .clipShape(Capsule())
+        .accessibilityHidden(true)
+    }
+
+    private func legend(color: Color, title: String, value: String) -> some View {
+        HStack(spacing: 5) {
+            RoundedRectangle(cornerRadius: 2, style: .continuous).fill(color).frame(width: 7, height: 7)
+            Text(title + " " + value).font(.system(size: 10.5))
+                .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+        }
     }
 
     private func invocation(_ item: AskUsageInvocation) -> some View {

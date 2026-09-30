@@ -110,7 +110,7 @@ struct AskReferenceTests {
         #expect(editor.selectedExcerpt == nil)
     }
 
-    @Test func selectionPopoverOnlyAddsAfterConfirmationAndCanCancel() async throws {
+    @Test func selectionActionsResolveInOneClickWithoutAModal() async throws {
         _ = NSApplication.shared
         let editor = AskTranscriptText.Editor(frame: NSRect(x: 0, y: 0, width: 600, height: 200))
         editor.isEditable = false
@@ -119,27 +119,60 @@ struct AskReferenceTests {
         window.contentView = editor
         window.orderFront(nil)
         defer { editor.askPopover.close(); window.close() }
-        var added: [String] = []
-        editor.onAsk = { text, question in added.append(text + question) }
+        var added: [(String, String)] = []
+        editor.onAsk = { text, question in added.append((text, question)) }
         editor.setContent("First **sentence**. Second sentence.", markdown: true, dark: false)
         editor.setSelectedRange((editor.string as NSString).range(of: "sentence"))
+
+        // The bar appears on selection and, on its own, changes nothing.
         editor.showSelectionAction()
         #expect(editor.askPopover.isShown)
         #expect(added.isEmpty)
-        editor.showQuestion("sentence")
-        let content = try #require(editor.askPopover.contentViewController as? NSHostingController<AskReferenceEditor>)
-        content.rootView.cancel()
+
+        // Explain and translate carry a ready-made question; Ask leaves it open.
+        editor.perform(.explain, excerpt: "sentence")
         #expect(!editor.askPopover.isShown)
-        #expect(added.isEmpty)
+        #expect(added.count == 1)
+        #expect(added[0].0 == "sentence")
+        #expect(added[0].1 == L("ask.references.explain"))
+
         editor.showSelectionAction()
-        editor.showQuestion("sentence")
-        let next = try #require(editor.askPopover.contentViewController as? NSHostingController<AskReferenceEditor>)
-        next.rootView.save(AskReference(messageId: "", text: "sentence", question: "Why?"))
-        #expect(added == ["sentenceWhy?"])
+        editor.perform(.translate, excerpt: "sentence")
+        #expect(added[1].0 == "sentence")
+        #expect(added[1].1 == L("ask.references.translate"))
+
+        editor.showSelectionAction()
+        editor.perform(.ask, excerpt: "sentence")
+        #expect(added[2].0 == "sentence")
+        #expect(added[2].1.isEmpty)
+
+        // Copy never reaches the composer, it only fills the pasteboard.
+        NSPasteboard.general.clearContents()
+        editor.showSelectionAction()
+        editor.perform(.copy, excerpt: "sentence")
+        #expect(added.count == 3)
+        #expect(NSPasteboard.general.string(forType: .string) == "sentence")
         #expect(!editor.askPopover.isShown)
-        editor.showSelectionAction()
+
+        // Without a handler the bar never opens, so a streaming answer stays inert.
         editor.onAsk = nil
+        editor.showSelectionAction()
         #expect(!editor.askPopover.isShown)
+    }
+
+    @Test func selectionActionsCarryDistinctTitlesAndQuestions() {
+        #expect(AskSelectionAction.allCases.count == 4)
+        let titles = AskSelectionAction.allCases.map(\.title)
+        #expect(Set(titles).count == titles.count)
+        // A missing table entry makes L() echo the key, so guard against that.
+        #expect(AskSelectionAction.allCases.allSatisfy { !$0.title.isEmpty && !$0.title.hasPrefix("ask.") })
+        #expect(!AskSelectionAction.explain.question.hasPrefix("ask."))
+        #expect(!AskSelectionAction.translate.question.hasPrefix("ask."))
+        #expect(AskSelectionAction.explain.question == L("ask.references.explain"))
+        #expect(AskSelectionAction.translate.question == L("ask.references.translate"))
+        #expect(AskSelectionAction.ask.question.isEmpty)
+        #expect(AskSelectionAction.copy.question.isEmpty)
+        #expect(AskSelectionAction.allCases.allSatisfy { !$0.systemImage.isEmpty })
     }
 
     @Test func renderReferenceSurfaces() async throws {

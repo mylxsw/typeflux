@@ -21,14 +21,19 @@ struct AskComposer: View {
     var launcher: Bool
     var onDismiss: () -> Void = {}
     var onHeightChange: (CGFloat) -> Void = { _ in }
+    /// Set by the workspace only. The launcher has no usage panel to open, so it
+    /// also keeps its fixed footer height.
+    var onOpenUsage: (() -> Void)?
     @ObservedObject private var voice: AskVoiceInput
 
     init(model: AskConversationModel, launcher: Bool, onDismiss: @escaping () -> Void = {},
-         onHeightChange: @escaping (CGFloat) -> Void = { _ in }) {
+         onHeightChange: @escaping (CGFloat) -> Void = { _ in },
+         onOpenUsage: (() -> Void)? = nil) {
         self.model = model
         self.launcher = launcher
         self.onDismiss = onDismiss
         self.onHeightChange = onHeightChange
+        self.onOpenUsage = onOpenUsage
         self.voice = model.voiceInput
         self._voiceShortcut = State(initialValue: model.modelLibrary.settings.activationHotkey)
     }
@@ -133,11 +138,12 @@ struct AskComposer: View {
                 get: { model.modelReference(launcher: launcher) },
                 set: { model.selectModel($0, launcher: launcher) }
             ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
-               hasImage: !launcher && model.hasConversationImages)
+               hasImage: !launcher && model.hasConversationImages, compact: true)
             AskReasoningMenu(library: model.modelLibrary,
                              reference: model.modelReference(launcher: launcher),
                              effort: $model.reasoningEffort,
-                             disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)))
+                             disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
+                             compact: true)
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 7) { contextChips }.fixedSize()
                 Button { showingContext = true } label: {
@@ -154,6 +160,9 @@ struct AskComposer: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .disabled(active)
             voiceStatus
+            if !launcher, onOpenUsage != nil, let context = model.usageContext {
+                AskContextUsageButton(context: context) { onOpenUsage?() }
+            }
             AskVoiceButton(voice: voice, contextID: contextID,
                            enabled: launcher || !model.isLoadingSelection,
                            shortcut: voiceShortcut)
@@ -223,10 +232,13 @@ struct AskComposer: View {
                 help: L("ask.preview")
             )
         }
+        // Off, but available: a solid outline. The dashed style above is
+        // reserved for a screenshot this model or window genuinely cannot take,
+        // which previously made an ordinary toggle look disabled.
         return AskChip(
             title: L("ask.screenshot"),
             systemImage: "camera.viewfinder",
-            style: value.screenshot == nil ? .dashed : .neutral,
+            style: .neutral,
             action: {
                 draft.wrappedValue.includeScreenshot = true
                 if draft.wrappedValue.screenshot == nil {

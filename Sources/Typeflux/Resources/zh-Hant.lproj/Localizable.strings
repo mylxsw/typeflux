@@ -1667,6 +1667,11 @@
 "ask.references.question" = "針對這段追問";
 "ask.references.optional" = "輸入問題（可選）";
 "ask.references.explain" = "解釋這段";
+"ask.selection.explain" = "解釋";
+"ask.selection.translate" = "翻譯";
+"ask.selection.ask" = "追問";
+"ask.references.translate" = "翻譯這段";
+"ask.references.source" = "選取片段";
 "ask.references.save" = "加入草稿";
 "ask.references.manage" = "管理（%d）";
 "ask.references.locate" = "定位原文";

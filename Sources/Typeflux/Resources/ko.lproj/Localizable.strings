@@ -1656,6 +1656,11 @@
 "ask.references.question" = "이 부분에 대해 질문";
 "ask.references.optional" = "질문 (선택 사항)";
 "ask.references.explain" = "이 부분 설명하기";
+"ask.selection.explain" = "설명";
+"ask.selection.translate" = "번역";
+"ask.selection.ask" = "질문";
+"ask.references.translate" = "이 부분 번역하기";
+"ask.references.source" = "선택한 부분";
 "ask.references.save" = "초안에 추가";
 "ask.references.manage" = "관리 (%d)";
 "ask.references.locate" = "원문 보기";

@@ -72,22 +72,24 @@ struct AskTranscriptText: NSViewRepresentable {
             askPopover.behavior = .transient
             askPopover.animates = false
             askPopover.contentViewController = NSHostingController(rootView:
-                Button { [weak self] in self?.showQuestion(excerpt) } label: {
-                    Label("Ask", systemImage: "text.bubble").font(.system(size: 12, weight: .medium))
-                        .padding(.horizontal, 10).padding(.vertical, 6)
-                }.buttonStyle(.plain).tint(AskTheme.accent)
+                AskSelectionActionBar { [weak self] action in self?.perform(action, excerpt: excerpt) }
                     .onCopyCommand { [NSItemProvider(object: excerpt as NSString)] }
             )
             askPopover.show(relativeTo: anchor, of: self, preferredEdge: .maxY)
         }
 
-        func showQuestion(_ excerpt: String) {
-            askPopover.contentViewController = NSHostingController(rootView:
-                AskReferenceEditor(reference: AskReference(messageId: "", text: excerpt), save: { [weak self] reference in
-                    self?.onAsk?(reference.text, reference.question)
-                    self?.askPopover.close()
-                }, cancel: { [weak self] in self?.askPopover.close() })
-            )
+        /// Selecting text used to cost four steps: select, press Ask, fill in an
+        /// optional question in a modal, then find the excerpt back in the
+        /// composer. Each action here finishes in one click, and the modal is gone.
+        func perform(_ action: AskSelectionAction, excerpt: String) {
+            switch action {
+            case .copy:
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(excerpt, forType: .string)
+            default:
+                onAsk?(excerpt, action.question)
+            }
+            askPopover.close()
         }
 
         override func viewWillMove(toWindow newWindow: NSWindow?) {

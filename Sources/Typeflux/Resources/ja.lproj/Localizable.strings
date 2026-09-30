@@ -1656,6 +1656,11 @@
 "ask.references.question" = "この部分について質問";
 "ask.references.optional" = "質問（任意）";
 "ask.references.explain" = "この部分を説明して";
+"ask.selection.explain" = "説明";
+"ask.selection.translate" = "翻訳";
+"ask.selection.ask" = "質問";
+"ask.references.translate" = "この部分を翻訳して";
+"ask.references.source" = "選択した箇所";
 "ask.references.save" = "下書きに追加";
 "ask.references.manage" = "管理（%d）";
 "ask.references.locate" = "元の回答へ";
