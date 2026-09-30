@@ -1609,7 +1609,7 @@
 
 "models.cloud.parameters" = "컨텍스트: %d · 출력: %d tokens";
 "models.cloud.priceUnknown" = "가격 정보를 사용할 수 없습니다";
-"models.cloud.priceExplanation" = "배율은 입력 및 출력 요금에 적용됩니다. 총 비용은 토큰 사용량에 따라 달라집니다.";
+"models.cloud.priceExplanation" = "배율은 입력 및 출력 요금에 적용되며, 캐시된 입력은 입력 요금의 1/10로 청구됩니다. 총 비용은 토큰 사용량에 따라 달라집니다.";
 
 // Ask reasoning effort
 "ask.reasoning.title" = "추론 강도";
@@ -1687,6 +1687,7 @@
 "ask.usage.contextHelp" = "저장된 대화를 기준으로 추정하며 초안은 제외합니다. 지침, 기록, 도구, 첨부를 포함하며 누적 사용량과 다릅니다。";
 "ask.usage.output" = "출력 tokens";
 "ask.usage.input" = "입력 tokens";
+"ask.usage.cachedInput" = "캐시 입력 tokens";
 "ask.usage.total" = "총 tokens";
 "ask.usage.pendingShort" = "확인 대기";
 "ask.usage.pending" = "일부 요금은 확인 대기 중입니다. 확인된 금액만 표시합니다.";
@@ -1713,6 +1714,7 @@
 "ask.usage.summarized" = "이전 내용이 요약되었습니다. 원본 기록은 유지되며 요약 호출도 사용량에 포함됩니다.";
 "ask.usage.highHelp" = "출력 예약 공간이 부족합니다. 다음 전송 시 요약을 시도합니다. 여전히 한도를 초과하면 입력을 줄이거나 새 대화를 시작하세요.";
 "ask.usage.estimated" = "추정 사용량이 포함되어 실제 token 수와 다를 수 있습니다.";
+"ask.usage.cachedHelp" = "캐시된 입력 토큰은 Typeflux Cloud에서 입력 요금의 1/10로 청구됩니다.";
 "ask.usage.scopeHelp" = "답변, 도구 판단, 요약을 포함합니다. 기록을 다시 전송할 때마다 입력에 포함됩니다.";
 "ask.usage.clientSource" = "출처: 개인 API 클라이언트 보고";
 "ask.usage.providerSource" = "출처: 공급자 보고";

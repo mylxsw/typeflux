@@ -5,34 +5,43 @@ struct AskTokenUsage: Codable, Equatable, Sendable {
     var completionTokens: Int
     var totalTokens: Int
     var incomplete: Bool? = nil
+    /// Prompt tokens served from the provider's prompt cache; Cloud bills them
+    /// at one tenth of the input rate. Always a subset of `promptTokens`.
+    var cachedTokens: Int? = nil
 
     var isValid: Bool {
         (0 ... 10_000_000).contains(promptTokens) && (0 ... 10_000_000).contains(completionTokens)
             && (max(promptTokens, completionTokens) ... 10_000_000).contains(totalTokens)
+            && (0 ... promptTokens).contains(cachedTokens ?? 0)
     }
 
     static func parse(_ body: [String: Any], style: AskProviderStream.Style, previous: Self? = nil) -> Self? {
-        var input: Int?, output: Int?, total: Int?
+        var input: Int?, output: Int?, total: Int?, cached: Int?
         switch style {
         case .openAI:
             guard let usage = body["usage"] as? [String: Any] else { return previous }
             input = usage["prompt_tokens"] as? Int; output = usage["completion_tokens"] as? Int
             total = usage["total_tokens"] as? Int
+            cached = (usage["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
+                ?? usage["prompt_cache_hit_tokens"] as? Int ?? usage["cached_tokens"] as? Int
         case .anthropic:
             let message = body["message"] as? [String: Any]
             guard let usage = (body["usage"] ?? message?["usage"]) as? [String: Any] else { return previous }
             if let n = usage["input_tokens"] as? Int {
                 input = boundedSum([n, usage["cache_read_input_tokens"] as? Int ?? 0, usage["cache_creation_input_tokens"] as? Int ?? 0])
-            } else { input = previous?.promptTokens }
+                cached = usage["cache_read_input_tokens"] as? Int
+            } else { input = previous?.promptTokens; cached = previous?.cachedTokens }
             output = usage["output_tokens"] as? Int ?? previous?.completionTokens
         case .gemini:
             guard let usage = body["usageMetadata"] as? [String: Any] else { return previous }
             input = usage["promptTokenCount"] as? Int
+            cached = usage["cachedContentTokenCount"] as? Int
             if let n = usage["candidatesTokenCount"] as? Int { output = boundedSum([n, usage["thoughtsTokenCount"] as? Int ?? 0]) }
             total = usage["totalTokenCount"] as? Int
         }
         guard let input, let output, (0 ... 10_000_000).contains(input), (0 ... 10_000_000).contains(output) else { return previous }
         var value = Self(promptTokens: input, completionTokens: output, totalTokens: total ?? input + output)
+        if let cached, cached > 0 { value.cachedTokens = min(cached, input) }
         if style == .anthropic { value.incomplete = body["type"] as? String == "message_start" }
         if style == .gemini, let candidates = body["candidates"] as? [[String: Any]] {
             value.incomplete = candidates.first?["finishReason"] == nil
@@ -47,6 +56,9 @@ struct AskTokenUsage: Codable, Equatable, Sendable {
 
 struct AskUsageTotals: Codable, Equatable, Sendable {
     var inputTokens: Int64 = 0
+    /// Part of `inputTokens` billed at the cached rate. Optional so snapshots
+    /// from servers that predate cache pricing still decode.
+    var cachedInputTokens: Int64? = nil
     var outputTokens: Int64 = 0
     var totalTokens: Int64 = 0
     var microcredits: Int64 = 0

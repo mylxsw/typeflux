@@ -1623,7 +1623,7 @@
 
 "models.cloud.parameters" = "Context: %d · Output: %d tokens";
 "models.cloud.priceUnknown" = "Price information unavailable";
-"models.cloud.priceExplanation" = "Multiplier applies to input and output token rates; total cost depends on usage.";
+"models.cloud.priceExplanation" = "Multiplier applies to input and output token rates; cached input is billed at 1/10 of the input rate. Total cost depends on usage.";
 
 // Ask reasoning effort
 "ask.reasoning.title" = "Reasoning effort";
@@ -1701,6 +1701,7 @@
 "ask.usage.contextHelp" = "Estimated from the saved conversation, excluding the draft. Includes instructions, history, tools and attachments; not cumulative usage.";
 "ask.usage.output" = "Output tokens";
 "ask.usage.input" = "Input tokens";
+"ask.usage.cachedInput" = "Cached input tokens";
 "ask.usage.total" = "Total tokens";
 "ask.usage.pendingShort" = "Pending";
 "ask.usage.pending" = "Some charges are pending. The amount includes confirmed charges only.";
@@ -1727,6 +1728,7 @@
 "ask.usage.summarized" = "Earlier context was summarized. Original messages remain available; summary calls count toward usage.";
 "ask.usage.highHelp" = "Insufficient output reserve. The next request will attempt summarization; if still too large, reduce input or start a new conversation.";
 "ask.usage.estimated" = "Includes estimated usage; actual token counts may differ.";
+"ask.usage.cachedHelp" = "Cached input tokens are billed by Typeflux Cloud at 1/10 of the input rate.";
 "ask.usage.scopeHelp" = "Includes answers, tool decisions and summaries. Repeated history counts again on each request.";
 "ask.usage.clientSource" = "Source: own API client report";
 "ask.usage.providerSource" = "Source: provider usage";

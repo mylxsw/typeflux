@@ -28,6 +28,50 @@ struct AskUsageTests {
         #expect(huge == nil)
     }
 
+    @Test func cachedPromptTokensAreParsedPerProviderAndClamped() throws {
+        var parser = AskProviderStream(style: .openAI)
+        try parser.consume(#"{"choices":[],"usage":{"prompt_tokens":100,"completion_tokens":5,"total_tokens":105,"prompt_tokens_details":{"cached_tokens":64}}}"#)
+        #expect(parser.progress.usage?.cachedTokens == 64)
+        let deepSeek = AskTokenUsage.parse(["usage": ["prompt_tokens": 100, "completion_tokens": 5, "total_tokens": 105, "prompt_cache_hit_tokens": 40]], style: .openAI)
+        #expect(deepSeek?.cachedTokens == 40)
+        let moonshot = AskTokenUsage.parse(["usage": ["prompt_tokens": 100, "completion_tokens": 5, "total_tokens": 105, "cached_tokens": 30]], style: .openAI)
+        #expect(moonshot?.cachedTokens == 30)
+        let clamped = AskTokenUsage.parse(["usage": ["prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15, "cached_tokens": 30]], style: .openAI)
+        #expect(clamped?.cachedTokens == 10)
+        let negative = AskTokenUsage.parse(["usage": ["prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15, "cached_tokens": -3]], style: .openAI)
+        #expect(negative?.cachedTokens == nil)
+        #expect(negative?.isValid == true)
+        let gemini = AskTokenUsage.parse(["usageMetadata": ["promptTokenCount": 100, "cachedContentTokenCount": 70, "candidatesTokenCount": 30, "totalTokenCount": 130]], style: .gemini)
+        #expect(gemini?.cachedTokens == 70)
+
+        var anthropic = AskProviderStream(style: .anthropic)
+        try anthropic.consume(#"{"type":"message_start","message":{"usage":{"input_tokens":10,"output_tokens":0,"cache_read_input_tokens":80,"cache_creation_input_tokens":20}}}"#)
+        #expect(anthropic.progress.usage?.cachedTokens == 80)
+        try anthropic.consume(#"{"type":"message_delta","usage":{"output_tokens":25}}"#)
+        #expect(anthropic.progress.usage?.cachedTokens == 80)
+        #expect(anthropic.progress.usage?.promptTokens == 110)
+
+        #expect(!AskTokenUsage(promptTokens: 5, completionTokens: 0, totalTokens: 5, cachedTokens: 6).isValid)
+        #expect(!AskTokenUsage(promptTokens: 5, completionTokens: 0, totalTokens: 5, cachedTokens: -1).isValid)
+        #expect(AskTokenUsage(promptTokens: 5, completionTokens: 0, totalTokens: 5, cachedTokens: 5).isValid)
+    }
+
+    @Test func cachedTokensRoundTripWithServerKeysAndOlderSnapshotsDecode() throws {
+        let usage = AskTokenUsage(promptTokens: 60, completionTokens: 12, totalTokens: 72, cachedTokens: 30)
+        let json = String(decoding: try AskCoding.encoder().encode(usage), as: UTF8.self)
+        #expect(json.contains(#""cached_tokens":30"#))
+        let decoded = try AskCoding.decoder().decode(AskTokenUsage.self, from: Data(json.utf8))
+        #expect(decoded == usage)
+        let plain = String(decoding: try AskCoding.encoder().encode(AskTokenUsage(promptTokens: 1, completionTokens: 1, totalTokens: 2)), as: UTF8.self)
+        #expect(!plain.contains("cached"))
+
+        let totals = try AskCoding.decoder().decode(AskUsageTotals.self, from: Data(#"{"input_tokens":60,"cached_input_tokens":30,"output_tokens":12,"total_tokens":72,"microcredits":1550000,"calls":1,"pending":0,"missing":0,"estimated":0,"external":0}"#.utf8))
+        #expect(totals.cachedInputTokens == 30)
+        #expect(totals.creditsText == AskUsageTotals(microcredits: 1_550_000, calls: 1).creditsText)
+        let legacy = try AskCoding.decoder().decode(AskUsageTotals.self, from: Data(#"{"input_tokens":60,"output_tokens":12,"total_tokens":72,"microcredits":2000000,"calls":1,"pending":0,"missing":0,"estimated":0,"external":0}"#.utf8))
+        #expect(legacy.cachedInputTokens == nil)
+    }
+
     @Test func missingAndInvalidUsageIsNotZero() {
         #expect(AskTokenUsage.parse([:], style: .openAI) == nil)
         #expect(AskTokenUsage.parse(["usage": ["prompt_tokens": 1]], style: .openAI) == nil)
