@@ -21,19 +21,19 @@ struct AskComposer: View {
     var launcher: Bool
     var onDismiss: () -> Void = {}
     var onHeightChange: (CGFloat) -> Void = { _ in }
-    /// Set by the workspace only. The launcher has no usage panel to open, so it
-    /// also keeps its fixed footer height.
-    var onOpenUsage: (() -> Void)?
+    /// Set by the workspace only: the context ring opens and closes the usage
+    /// panel. The launcher has no panel, so it also keeps its fixed footer height.
+    var onToggleUsage: (() -> Void)?
     @ObservedObject private var voice: AskVoiceInput
 
     init(model: AskConversationModel, launcher: Bool, onDismiss: @escaping () -> Void = {},
          onHeightChange: @escaping (CGFloat) -> Void = { _ in },
-         onOpenUsage: (() -> Void)? = nil) {
+         onToggleUsage: (() -> Void)? = nil) {
         self.model = model
         self.launcher = launcher
         self.onDismiss = onDismiss
         self.onHeightChange = onHeightChange
-        self.onOpenUsage = onOpenUsage
+        self.onToggleUsage = onToggleUsage
         self.voice = model.voiceInput
         self._voiceShortcut = State(initialValue: model.modelLibrary.settings.activationHotkey)
     }
@@ -163,8 +163,8 @@ struct AskComposer: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .disabled(active)
             voiceStatus
-            if !launcher, onOpenUsage != nil, let context = model.usageContext {
-                AskContextUsageButton(context: context) { onOpenUsage?() }
+            if !launcher, onToggleUsage != nil, let context = model.usageContext {
+                AskContextUsageButton(context: context) { onToggleUsage?() }
             }
             AskVoiceButton(voice: voice, contextID: contextID,
                            enabled: launcher || !model.isLoadingSelection,

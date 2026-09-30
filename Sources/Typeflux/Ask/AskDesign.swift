@@ -61,11 +61,35 @@ enum AskTheme {
         light: NSColor(calibratedRed: 0.984, green: 0.918, blue: 0.918, alpha: 1),
         dark: NSColor(calibratedRed: 0.173, green: 0.094, blue: 0.094, alpha: 1)
     )
-    /// The workspace composer card: one step lighter than the transcript canvas
-    /// in dark, plain white in light, so the input reads as the primary surface.
+    // Design-board values are specified in sRGB. `calibratedWhite` uses the
+    // gamma 1.8 generic grey space, so 0.18 there renders as #3D3D3D, not #2E2E2E.
+
+    /// The workspace composer card and empty-state cards: one step lighter than
+    /// the transcript canvas in dark, plain white in light.
     static let composerSurface = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 1.0, alpha: 1),
-        dark: NSColor(calibratedWhite: 0.180, alpha: 1)
+        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
+        dark: NSColor(srgbRed: 0.180, green: 0.180, blue: 0.180, alpha: 1)
+    )
+    /// Popovers opened from the composer (model and reasoning choosers).
+    static let popoverSurface = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
+        dark: NSColor(srgbRed: 0.196, green: 0.196, blue: 0.196, alpha: 1)
+    )
+    /// Cards inside the usage panel, one step above the panel itself.
+    static let panelCard = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 0.949, green: 0.953, blue: 0.961, alpha: 1),
+        dark: NSColor(srgbRed: 0.239, green: 0.239, blue: 0.239, alpha: 1)
+    )
+    /// Recessed track behind the usage panel's segmented control.
+    static let segmentTrack = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 0.918, green: 0.922, blue: 0.933, alpha: 1),
+        dark: NSColor(srgbRed: 0.180, green: 0.180, blue: 0.180, alpha: 1)
+    )
+    /// The design board's primary blue (#1D81DD dark / #1670C8 light), used for
+    /// the sidebar's primary action. `accent` stays the app-wide control tint.
+    static let primaryAction = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 0.086, green: 0.439, blue: 0.784, alpha: 1),
+        dark: NSColor(srgbRed: 0.114, green: 0.506, blue: 0.867, alpha: 1)
     )
     /// Translucent hover wash, so borderless controls read the same on any surface.
     static let hoverFill = StudioTheme.dynamic(
@@ -660,16 +684,29 @@ struct AskVoiceBorder: ViewModifier {
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .strokeBorder(Self.borderColor(listening: listening),
-                                  lineWidth: 1)
+                                  lineWidth: Self.borderWidth(listening: listening))
                     .allowsHitTesting(false)
             )
+            // A soft halo outside the card while recording. Drawn behind the
+            // opaque card, so only the 3pt ring beyond its edge shows.
+            .background(
+                RoundedRectangle(cornerRadius: radius + Self.haloWidth, style: .continuous)
+                    .fill(AskTheme.accent.opacity(listening ? 0.22 : 0))
+                    .padding(-Self.haloWidth)
+                    .allowsHitTesting(false)
+            )
+            .animation(.easeOut(duration: 0.18), value: listening)
     }
+
+    static let haloWidth: CGFloat = 3
 
     /// Focus alone stays neutral: the accent colour has to keep meaning "recording".
     static func borderColor(listening: Bool) -> Color {
-        if listening { return AskTheme.accent.opacity(0.45) }
+        if listening { return AskTheme.accent }
         return AskTheme.border
     }
+
+    static func borderWidth(listening: Bool) -> CGFloat { listening ? 1.5 : 1 }
 }
 
 /// Pure helpers behind the redesigned surfaces, kept separate so they can be
@@ -745,5 +782,204 @@ struct AskWindowBackdrop: View {
                 StudioTheme.shellSurface
             }
         }
+    }
+}
+
+/// Thin line icons drawn from the design board's 24pt vector paths. The SF
+/// Symbols closest to them (`chart.bar.xaxis`, `trash`) are filled and heavier.
+struct AskLineGlyph: Shape {
+    enum Kind { case usage, trash }
+    var kind: Kind
+
+    /// Polylines in a 24x24 grid, exactly as drawn on the design board.
+    static func polylines(_ kind: Kind) -> [[CGPoint]] {
+        switch kind {
+        case .usage:
+            return [[CGPoint(x: 4, y: 20), CGPoint(x: 4, y: 10)],
+                    [CGPoint(x: 10, y: 20), CGPoint(x: 10, y: 4)],
+                    [CGPoint(x: 16, y: 20), CGPoint(x: 16, y: 13)],
+                    [CGPoint(x: 22, y: 20), CGPoint(x: 2, y: 20)]]
+        case .trash:
+            return [[CGPoint(x: 3, y: 6), CGPoint(x: 21, y: 6)],
+                    [CGPoint(x: 8, y: 6), CGPoint(x: 8, y: 4), CGPoint(x: 16, y: 4), CGPoint(x: 16, y: 6)],
+                    [CGPoint(x: 6, y: 6), CGPoint(x: 7, y: 20), CGPoint(x: 17, y: 20), CGPoint(x: 18, y: 6)]]
+        }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let scale = min(rect.width, rect.height) / 24
+        let origin = CGPoint(x: rect.midX - 12 * scale, y: rect.midY - 12 * scale)
+        var path = Path()
+        for line in Self.polylines(kind) {
+            path.addLines(line.map { CGPoint(x: origin.x + $0.x * scale, y: origin.y + $0.y * scale) })
+        }
+        return path
+    }
+}
+
+struct AskLineIcon: View {
+    var kind: AskLineGlyph.Kind
+    var size: CGFloat = 15
+
+    var body: some View {
+        AskLineGlyph(kind: kind)
+            .stroke(style: StrokeStyle(lineWidth: size * 2 / 24, lineCap: .round, lineJoin: .round))
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
+}
+
+/// Section title inside a composer popover.
+struct AskPopoverHeader: View {
+    var title: String
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 10.5, weight: .semibold))
+            .tracking(0.6)
+            .textCase(.uppercase)
+            .foregroundStyle(StudioTheme.textTertiary)
+            .padding(.horizontal, 13)
+            .padding(.top, 11)
+            .padding(.bottom, 7)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// A choice in a composer popover: title over caption, an optional trailing
+/// accessory, and a checkmark column that keeps every row aligned.
+struct AskPopoverRow<Accessory: View>: View {
+    var title: String
+    var caption: String?
+    var selected: Bool
+    var action: () -> Void
+    @ViewBuilder var accessory: () -> Accessory
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.system(size: 12.8, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .lineLimit(1).truncationMode(.middle)
+                    if let caption, !caption.isEmpty {
+                        Text(caption).font(.system(size: 11))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .lineLimit(1)
+                    }
+                }
+                Spacer(minLength: 8)
+                accessory()
+                Image(systemName: "checkmark").font(.system(size: 11.5, weight: .bold))
+                    .foregroundStyle(AskTheme.accent)
+                    .opacity(selected ? 1 : 0)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(selected ? AskTheme.accentSoft : (hovering ? AskTheme.hoverFill : Color.clear),
+                        in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .padding(.horizontal, 5)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+extension AskPopoverRow where Accessory == EmptyView {
+    init(title: String, caption: String?, selected: Bool, action: @escaping () -> Void) {
+        self.init(title: title, caption: caption, selected: selected, action: action, accessory: { EmptyView() })
+    }
+}
+
+/// The separated action at the bottom of a composer popover.
+struct AskPopoverFooterButton: View {
+    var title: String
+    var systemImage: String
+    var action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage).font(.system(size: 12))
+                Text(title).font(.system(size: 12, weight: .medium))
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+            .padding(.horizontal, 8)
+            .frame(height: 32)
+            .background(hovering ? AskTheme.hoverFill : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .padding(5)
+        .overlay(alignment: .top) { Rectangle().fill(AskTheme.separator).frame(height: 1) }
+    }
+}
+
+/// The price multiplier as a small badge: green at or below 1x, amber above.
+struct AskMultiplierBadge: View {
+    var multiplier: String
+
+    static func text(_ multiplier: String) -> String? {
+        CloudModelPricing(multiplier: multiplier).label.map { String($0.dropLast()) + "×" }
+    }
+
+    static func tone(_ multiplier: String) -> Color {
+        guard let value = Decimal(string: multiplier, locale: Locale(identifier: "en_US_POSIX")) else {
+            return StudioTheme.textSecondary
+        }
+        return value <= 1 ? StudioTheme.success : StudioTheme.warning
+    }
+
+    var body: some View {
+        if let text = Self.text(multiplier) {
+            Text(text)
+                .font(.system(size: 10.5, weight: .semibold))
+                .monospacedDigit()
+                .foregroundStyle(Self.tone(multiplier))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        }
+    }
+}
+
+/// A two-option segmented control in the design's neutral style: a recessed
+/// track and a raised thumb, instead of the system control's blue fill.
+struct AskSegmentedControl<Value: Hashable>: View {
+    var options: [(value: Value, title: String)]
+    @Binding var selection: Value
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
+                let selected = option.value == selection
+                Button { selection = option.value } label: {
+                    Text(option.title)
+                        .font(.system(size: 11.5, weight: .medium))
+                        .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 26)
+                        .background(selected ? AskTheme.panelCard : Color.clear,
+                                    in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        .shadow(color: Color.black.opacity(selected ? 0.18 : 0), radius: 1.5, y: 1)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .padding(3)
+        .background(AskTheme.segmentTrack, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .animation(.easeOut(duration: 0.15), value: selection)
     }
 }

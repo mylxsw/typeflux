@@ -1,3 +1,4 @@
+// swiftlint:disable type_body_length
 import SwiftUI
 
 /// The context budget as a ring plus one percentage, sized to live inside the
@@ -58,29 +59,33 @@ struct AskUsagePanel: View {
     private var totals: AskUsageTotals? { runId.flatMap { usage?.runs[$0] } ?? (runId == nil ? usage?.total : nil) }
     private var loadKey: String { "\(model.selectedId ?? "")/\(usage?.version ?? 0)/\(runId ?? "all")" }
 
+    @State private var expandedCall: String?
+
     var body: some View {
         VStack(spacing: 0) {
             HStack {
                 Text(L("ask.usage.title")).font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
-                Button(action: close) { Image(systemName: "xmark").frame(width: 28, height: 28) }
-                    .buttonStyle(.plain).accessibilityLabel(L("ask.usage.close"))
-            }.padding(.horizontal, 18).frame(height: AskMetrics.titleBarRowHeight)
-            Divider()
+                Button(action: close) {
+                    Image(systemName: "xmark").font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L("ask.usage.close"))
+            }
+            .padding(.leading, 16).padding(.trailing, 10)
+            .frame(height: AskMetrics.titleBarRowHeight)
+            Rectangle().fill(AskTheme.separator).frame(height: 1)
             ScrollView {
                 // Two questions, two cards: "does the next message still fit?"
-                // and "what did this cost?". They used to share one column of
-                // twelve equally weighted number rows.
+                // and "what did this cost?".
                 VStack(alignment: .leading, spacing: 12) {
                     if let context = model.usageContext { contextCard(context) }
-                    Picker(L("ask.usage.scope"), selection: $runId) {
-                        if let current = runId ?? model.selected?.run?.id {
-                            Text(L("ask.usage.round")).tag(Optional(current))
-                        }
-                        Text(L("ask.usage.conversation")).tag(String?.none)
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
+                    AskSegmentedControl(options: scopeOptions, selection: $runId)
+                        .padding(.top, 4)
                     if let totals {
                         totalsCard(totals)
                     } else {
@@ -88,27 +93,21 @@ struct AskUsagePanel: View {
                             .foregroundStyle(StudioTheme.textSecondary)
                     }
                     if usage?.historicalGap == true { help("ask.usage.historicalGap") }
-                    Text(L("ask.usage.calls")).font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .padding(.top, 4)
-                    ForEach(items) { item in invocation(item) }
-                    if loading { ProgressView().controlSize(.small) }
-                    if loadError {
-                        Text(L("ask.usage.loadError")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-                        Button(L("ask.retry")) { Task { await load(reset: false) } }.buttonStyle(.plain)
-                    } else if cursor != nil {
-                        Button(L("ask.usage.more")) { Task { await load(reset: false) } }.buttonStyle(.plain)
-                    }
+                    callsSection
                     help("ask.usage.scopeHelp")
-                }.padding(16)
+                }
+                .padding(16)
             }
             if let credits = auth.usageCredits {
-                Divider()
+                Rectangle().fill(AskTheme.separator).frame(height: 1)
                 HStack {
                     Text(L("ask.usage.balance"))
                     Spacer()
                     Text(credits.unlimited ? "∞" : AccountUsageDisplayFormatter.count(Int64(credits.remaining)))
-                }.font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary).padding(16)
+                        .monospacedDigit()
+                }
+                .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                .padding(.horizontal, 16).padding(.vertical, 12)
                 // Account-wide data is independently refreshed by AuthState.
             }
         }
@@ -118,21 +117,28 @@ struct AskUsagePanel: View {
         .onExitCommand(perform: close)
     }
 
+    /// "This turn" only exists once the conversation has a run to scope to.
+    private var scopeOptions: [(value: String?, title: String)] {
+        var options: [(value: String?, title: String)] = []
+        if let current = runId ?? model.selected?.run?.id {
+            options.append((value: current, title: L("ask.usage.round")))
+        }
+        options.append((value: nil, title: L("ask.usage.conversation")))
+        return options
+    }
+
     /// Leads with the answer to "will the next message still fit", not with a
-    /// percentage. The bar shows used input, reserved output and what is left.
+    /// percentage. The bar shows used input against what is left.
     private func contextCard(_ context: AskContextUsage) -> some View {
         card {
-            HStack(alignment: .firstTextBaseline) {
-                Text(L("ask.usage.remaining")).font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                Spacer(minLength: 8)
+            cardLabel(L("ask.usage.remaining")) {
                 Text(L(context.capacity == nil ? "ask.usage.capacityUnknown"
                        : context.isHigh ? "ask.usage.high" : "ask.usage.available"))
-                    .font(.system(size: 10.5))
+                    .font(.system(size: 10.5, weight: .medium))
                     .foregroundStyle(context.isHigh ? StudioTheme.warning : StudioTheme.success)
             }
-            Text(context.remaining.map { "≈" + AccountUsageDisplayFormatter.count(Int64($0)) } ?? "—")
-                .font(.system(size: 26, weight: .semibold)).monospacedDigit()
+            figure(context.remaining.map { "≈ " + AccountUsageDisplayFormatter.count(Int64($0)) } ?? "—",
+                   unit: "tokens")
             budgetBar(context)
             HStack(spacing: 12) {
                 legend(color: context.isHigh ? StudioTheme.warning : AskTheme.accent,
@@ -141,12 +147,12 @@ struct AskUsagePanel: View {
                 legend(color: AskTheme.border,
                        title: L("ask.usage.reserve"),
                        value: AccountUsageDisplayFormatter.count(Int64(context.outputReserve)))
+                if let capacity = context.capacity {
+                    Text(L("ask.usage.capacity") + " " + AccountUsageDisplayFormatter.count(Int64(capacity)))
+                        .font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                }
                 Spacer(minLength: 0)
             }
-            Text(model.modelLibrary.name(for: context.modelRef) + " · " + L("ask.usage.capacity") + " "
-                 + (context.capacity.map { AccountUsageDisplayFormatter.count(Int64($0)) } ?? "—"))
-                .font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true)
             if context.summarized { help("ask.usage.summarized") }
             if context.isHigh { help("ask.usage.highHelp") }
         }
@@ -154,42 +160,91 @@ struct AskUsagePanel: View {
 
     private func totalsCard(_ totals: AskUsageTotals) -> some View {
         card {
-            HStack(alignment: .firstTextBaseline) {
-                Text(L("ask.usage.title")).font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                Spacer(minLength: 8)
+            cardLabel(L("ask.usage.spent")) {
                 Text(L(runId == nil ? "ask.usage.conversation" : "ask.usage.round"))
                     .font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
             }
-            Text(totals.creditsText + " credits")
-                .font(.system(size: 26, weight: .semibold)).monospacedDigit()
+            figure(totals.creditsText, unit: "credits")
             help(totals.statusKey)
-            detail("ask.usage.input", totals.tokenText(totals.inputTokens))
-            detail("ask.usage.output", totals.tokenText(totals.outputTokens))
-            detail("ask.usage.total", totals.tokenText(totals.totalTokens))
-            detail("ask.usage.callCount", String(totals.calls))
+            VStack(spacing: 0) {
+                detail("ask.usage.input", totals.tokenText(totals.inputTokens))
+                rule
+                detail("ask.usage.output", totals.tokenText(totals.outputTokens))
+                rule
+                detail("ask.usage.total", totals.tokenText(totals.totalTokens))
+                rule
+                detail("ask.usage.callCount", String(totals.calls))
+            }
+            .padding(.top, 2)
             if totals.estimated > 0 { help("ask.usage.estimated") }
         }
     }
 
-    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8, content: content)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(13)
-            .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(AskTheme.border))
+    /// Individual model calls, each a row that expands in place.
+    @ViewBuilder private var callsSection: some View {
+        if !items.isEmpty || loading || loadError || cursor != nil {
+            Text(L("ask.usage.calls")).font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(StudioTheme.textTertiary)
+                .padding(.top, 4)
+            VStack(spacing: 0) {
+                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                    if index > 0 { rule }
+                    invocation(item)
+                }
+                if loading { ProgressView().controlSize(.small).padding(10) }
+            }
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.border))
+            if loadError {
+                Text(L("ask.usage.loadError")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                Button(L("ask.retry")) { Task { await load(reset: false) } }.buttonStyle(.plain)
+            } else if cursor != nil {
+                Button(L("ask.usage.more")) { Task { await load(reset: false) } }.buttonStyle(.plain)
+                    .font(.system(size: 11.5)).foregroundStyle(AskTheme.accentText)
+            }
+        }
     }
+
+    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 9, content: content)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14).padding(.vertical, 13)
+            .background(AskTheme.panelCard, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.border))
+    }
+
+    private func cardLabel<Trailing: View>(_ title: String, @ViewBuilder trailing: () -> Trailing) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title).font(.system(size: 11, weight: .medium)).foregroundStyle(StudioTheme.textTertiary)
+            Spacer(minLength: 8)
+            trailing()
+        }
+    }
+
+    /// The card's one large number, with its unit set small beside it.
+    private func figure(_ value: String, unit: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
+            Text(value).font(.system(size: 26, weight: .semibold)).monospacedDigit()
+                .foregroundStyle(StudioTheme.textPrimary)
+            Text(verbatim: unit).font(.system(size: 13, weight: .medium))
+                .foregroundStyle(StudioTheme.textTertiary)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+    }
+
+    private var rule: some View { Rectangle().fill(AskTheme.separator).frame(height: 1) }
 
     private func budgetBar(_ context: AskContextUsage) -> some View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
                 Rectangle().fill(context.isHigh ? StudioTheme.warning : AskTheme.accent)
                     .frame(width: geometry.size.width * min(1, max(0, context.fraction ?? 0)))
-                Rectangle().fill(AskTheme.border)
+                Rectangle().fill(AskTheme.segmentTrack)
             }
         }
         .frame(height: 5)
         .clipShape(Capsule())
+        .padding(.top, 2)
         .accessibilityHidden(true)
     }
 
@@ -202,33 +257,67 @@ struct AskUsagePanel: View {
     }
 
     private func invocation(_ item: AskUsageInvocation) -> some View {
-        DisclosureGroup {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(model.modelLibrary.name(for: item.modelRef))
-                if let tokens = item.tokens {
-                    detail("ask.usage.input", String(tokens.promptTokens))
-                    detail("ask.usage.output", String(tokens.completionTokens))
-                    detail("ask.usage.total", String(tokens.totalTokens))
-                } else { help("ask.usage.unavailable") }
-                if item.source != "unknown" {
-                    help(item.source == "estimated" ? "ask.usage.estimated" : item.source == "client" ? "ask.usage.clientSource" : "ask.usage.providerSource")
+        let expanded = expandedCall == item.id
+        return VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.easeOut(duration: 0.15)) { expandedCall = expanded ? nil : item.id }
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                    Text(L(item.purpose == "summary" ? "ask.usage.summary" : "ask.usage.inference"))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                    Spacer(minLength: 8)
+                    Text(invocationCost(item)).foregroundStyle(StudioTheme.textPrimary).monospacedDigit()
                 }
-                Text(item.createdAt, style: .time).foregroundStyle(StudioTheme.textSecondary)
-            }.padding(.vertical, 8).font(.system(size: 11))
-        } label: {
-            HStack {
-                Text(L(item.purpose == "summary" ? "ask.usage.summary" : "ask.usage.inference"))
-                Spacer()
-                if item.status == "confirmed", let amount = item.microcredits {
-                    Text(AskUsageTotals(microcredits: amount, calls: 1).creditsText + " credits")
-                } else { Text(L(item.status == "external" ? "ask.usage.externalShort" : item.status == "pending" ? "ask.usage.pendingShort" : "ask.usage.unavailable")) }
-            }.font(.system(size: 10))
+                .font(.system(size: 12, weight: .medium))
+                .padding(.horizontal, 12)
+                .frame(height: 36)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if expanded {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(model.modelLibrary.name(for: item.modelRef))
+                        .font(.system(size: 11, weight: .medium)).foregroundStyle(StudioTheme.textSecondary)
+                        .padding(.bottom, 4)
+                    if let tokens = item.tokens {
+                        detail("ask.usage.input", String(tokens.promptTokens))
+                        detail("ask.usage.output", String(tokens.completionTokens))
+                        detail("ask.usage.total", String(tokens.totalTokens))
+                    } else { help("ask.usage.unavailable") }
+                    if item.source != "unknown" {
+                        help(item.source == "estimated" ? "ask.usage.estimated"
+                             : item.source == "client" ? "ask.usage.clientSource" : "ask.usage.providerSource")
+                    }
+                    Text(item.createdAt, style: .time).font(.system(size: 10.5))
+                        .foregroundStyle(StudioTheme.textTertiary).padding(.top, 4)
+                }
+                .padding(.leading, 28).padding(.trailing, 12).padding(.bottom, 10)
+            }
         }
     }
 
-    private func detail(_ title: String, _ value: String) -> some View {
-        HStack { Text(L(title)).foregroundStyle(StudioTheme.textSecondary); Spacer(); Text(value).monospacedDigit() }.font(.system(size: 11))
+    private func invocationCost(_ item: AskUsageInvocation) -> String {
+        if item.status == "confirmed", let amount = item.microcredits {
+            return AskUsageTotals(microcredits: amount, calls: 1).creditsText + " credits"
+        }
+        return L(item.status == "external" ? "ask.usage.externalShort"
+                 : item.status == "pending" ? "ask.usage.pendingShort" : "ask.usage.unavailable")
     }
+
+    private func detail(_ title: String, _ value: String) -> some View {
+        HStack {
+            Text(L(title)).foregroundStyle(StudioTheme.textSecondary)
+            Spacer()
+            Text(value).font(.system(size: 12, weight: .semibold)).monospacedDigit()
+                .foregroundStyle(StudioTheme.textPrimary)
+        }
+        .font(.system(size: 12))
+        .padding(.vertical, 7)
+    }
+
     private func help(_ key: String) -> some View { Text(L(key)).font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true) }
 
     @MainActor private func load(reset: Bool) async {

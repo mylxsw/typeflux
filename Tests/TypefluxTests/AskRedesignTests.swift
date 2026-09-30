@@ -78,7 +78,11 @@ struct AskPresentationTests {
 
     @Test func focusAloneKeepsTheNeutralBorder() {
         #expect(AskVoiceBorder.borderColor(listening: false) == AskTheme.border)
-        #expect(AskVoiceBorder.borderColor(listening: true) == AskTheme.accent.opacity(0.45))
+        #expect(AskVoiceBorder.borderWidth(listening: false) == 1)
+        // Recording is unmistakable: a full-strength accent edge, thicker, plus a halo.
+        #expect(AskVoiceBorder.borderColor(listening: true) == AskTheme.accent)
+        #expect(AskVoiceBorder.borderWidth(listening: true) > AskVoiceBorder.borderWidth(listening: false))
+        #expect(AskVoiceBorder.haloWidth > 0)
     }
 
     @Test func waveformBarsStayInsideTheMeter() {
@@ -197,5 +201,64 @@ struct AskRedesignFidelityTests {
         // Radii never exceed half the shortest side.
         let tiny = AskBubbleShape(radius: 40, tail: 50).path(in: CGRect(x: 0, y: 0, width: 20, height: 10))
         #expect(!tiny.isEmpty)
+    }
+}
+
+@Suite("Ask design polish helpers")
+@MainActor
+struct AskDesignPolishTests {
+    @Test func multiplierBadgeUsesTheTimesSignAndATone() {
+        #expect(AskMultiplierBadge.text("5") == "5×")
+        #expect(AskMultiplierBadge.text("1") == "1×")
+        #expect(AskMultiplierBadge.text("0.5") == "0.5×")
+        // Anything the pricing label rejects shows no badge at all.
+        #expect(AskMultiplierBadge.text("abc") == nil)
+        #expect(AskMultiplierBadge.text("0") == nil)
+        #expect(AskMultiplierBadge.tone("1") == StudioTheme.success)
+        #expect(AskMultiplierBadge.tone("0.5") == StudioTheme.success)
+        #expect(AskMultiplierBadge.tone("5") == StudioTheme.warning)
+        #expect(AskMultiplierBadge.tone("abc") == StudioTheme.textSecondary)
+    }
+
+    @Test func lineGlyphsFollowTheDesignPathsAndScale() {
+        #expect(AskLineGlyph.polylines(.usage).count == 4)
+        #expect(AskLineGlyph.polylines(.trash).count == 3)
+        for kind in [AskLineGlyph.Kind.usage, .trash] {
+            let points = AskLineGlyph.polylines(kind).flatMap { $0 }
+            #expect(points.allSatisfy { (0...24).contains($0.x) && (0...24).contains($0.y) })
+            let path = AskLineGlyph(kind: kind).path(in: CGRect(x: 0, y: 0, width: 48, height: 48))
+            #expect(!path.isEmpty)
+            // Scaled by two and never outside the frame.
+            #expect(path.boundingRect.maxX <= 48 && path.boundingRect.maxY <= 48)
+            #expect(path.boundingRect.width >= 30)
+        }
+        // A non-square frame keeps the glyph square and centred.
+        let wide = AskLineGlyph(kind: .usage).path(in: CGRect(x: 0, y: 0, width: 100, height: 24))
+        #expect(abs(wide.boundingRect.midX - 50) < 1)
+    }
+
+    @Test func modelCaptionUsesCompactCounts() {
+        var model = RegisteredModel(id: "m", name: "Model")
+        #expect(AskModelChoices.caption(model) == nil)
+        model.contextWindowTokens = 204_800
+        #expect(AskModelChoices.caption(model) == nil)
+        model.maxOutputTokens = 16_384
+        let caption = AskModelChoices.caption(model) ?? ""
+        #expect(caption.contains(AccountUsageDisplayFormatter.count(204_800)))
+        #expect(caption.contains(AccountUsageDisplayFormatter.count(16_384)))
+        #expect(!caption.contains("204800"))
+    }
+
+    @Test func everyReasoningLevelHasItsOwnCaption() {
+        let captions = AskReasoningEffort.allCases.map(\.caption)
+        #expect(captions.allSatisfy { !$0.isEmpty && !$0.hasPrefix("ask.") })
+        #expect(Set(captions).count == captions.count)
+    }
+
+    @Test func designSurfacesAreDistinctFromEachOther() {
+        // The composer card must not blend into the popover or panel cards.
+        #expect(AskTheme.composerSurface != AskTheme.popoverSurface)
+        #expect(AskTheme.panelCard != AskTheme.segmentTrack)
+        #expect(AskTheme.primaryAction != AskTheme.accent)
     }
 }
