@@ -61,6 +61,25 @@ enum AskTheme {
         light: NSColor(calibratedRed: 0.984, green: 0.918, blue: 0.918, alpha: 1),
         dark: NSColor(calibratedRed: 0.173, green: 0.094, blue: 0.094, alpha: 1)
     )
+    /// The workspace composer card: one step lighter than the transcript canvas
+    /// in dark, plain white in light, so the input reads as the primary surface.
+    static let composerSurface = StudioTheme.dynamic(
+        light: NSColor(calibratedWhite: 1.0, alpha: 1),
+        dark: NSColor(calibratedWhite: 0.180, alpha: 1)
+    )
+    /// Translucent hover wash, so borderless controls read the same on any surface.
+    static let hoverFill = StudioTheme.dynamic(
+        light: NSColor(calibratedWhite: 0, alpha: 0.06),
+        dark: NSColor(calibratedWhite: 1, alpha: 0.08)
+    )
+    /// The product's indigo mark (the original assistant avatar), used only for
+    /// brand moments: the empty state and the account badge. Never for state.
+    static var brandGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color(red: 0.455, green: 0.467, blue: 0.984), Color(red: 0.608, green: 0.545, blue: 0.984)],
+            startPoint: .topLeading, endPoint: .bottomTrailing
+        )
+    }
     static let monoSurface = StudioTheme.dynamic(
         light: NSColor(calibratedRed: 0.957, green: 0.965, blue: 0.976, alpha: 1),
         dark: NSColor(calibratedRed: 0.063, green: 0.071, blue: 0.086, alpha: 1)
@@ -80,7 +99,6 @@ enum AskTheme {
 enum AskMetrics {
     static let launcherWidth: CGFloat = 680
     static let launcherCorner: CGFloat = 18
-    static let composerCorner: CGFloat = 14
     /// Breathing room around the launcher card.
     static let launcherGutter: CGFloat = 6
     static let editorTopInset: CGFloat = 15
@@ -100,9 +118,14 @@ enum AskMetrics {
     static let trafficLightInset: CGFloat = 78
     /// Header title inset when the sidebar is collapsed: clears the floating toggle.
     static let collapsedTitleInset: CGFloat = 156
-    static let composerMaxWidth: CGFloat = 780
-    static let transcriptMaxWidth: CGFloat = 680
-    static let bubbleMaxWidth: CGFloat = 560
+    /// One centred reading column shared by the transcript and the composer, so
+    /// questions, answers and the input line up instead of spanning the window.
+    static let columnWidth: CGFloat = 720
+    static let columnInset: CGFloat = 24
+    static let composerMaxWidth: CGFloat = columnWidth
+    static let transcriptMaxWidth: CGFloat = columnWidth - columnInset * 2
+    static let bubbleMaxWidth: CGFloat = 540
+    static let composerCardCorner: CGFloat = 16
 
     /// Height of the launcher panel, including its transparent gutter.
     static func launcherHeight(editor: CGFloat, banners: Int) -> CGFloat {
@@ -442,6 +465,72 @@ struct AskWaveform: View {
     }
 }
 
+/// A user bubble: rounded everywhere except the corner that points at its
+/// sender. `UnevenRoundedRectangle` needs macOS 14, the app supports 13.
+struct AskBubbleShape: InsettableShape {
+    var radius: CGFloat = 16
+    var tail: CGFloat = 5
+    var insetAmount: CGFloat = 0
+
+    func path(in rect: CGRect) -> Path {
+        let box = rect.insetBy(dx: insetAmount, dy: insetAmount)
+        let big = min(radius, box.width / 2, box.height / 2)
+        let small = min(tail, big)
+        var path = Path()
+        path.move(to: CGPoint(x: box.minX + big, y: box.minY))
+        path.addLine(to: CGPoint(x: box.maxX - big, y: box.minY))
+        path.addArc(center: CGPoint(x: box.maxX - big, y: box.minY + big), radius: big,
+                    startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+        path.addLine(to: CGPoint(x: box.maxX, y: box.maxY - small))
+        path.addArc(center: CGPoint(x: box.maxX - small, y: box.maxY - small), radius: small,
+                    startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+        path.addLine(to: CGPoint(x: box.minX + big, y: box.maxY))
+        path.addArc(center: CGPoint(x: box.minX + big, y: box.maxY - big), radius: big,
+                    startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+        path.addLine(to: CGPoint(x: box.minX, y: box.minY + big))
+        path.addArc(center: CGPoint(x: box.minX + big, y: box.minY + big), radius: big,
+                    startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        path.closeSubpath()
+        return path
+    }
+
+    func inset(by amount: CGFloat) -> AskBubbleShape {
+        var copy = self
+        copy.insetAmount += amount
+        return copy
+    }
+}
+
+/// The indigo sparkle tile shown above the empty state.
+struct AskBrandMark: View {
+    var size: CGFloat = 44
+
+    var body: some View {
+        Image(systemName: "sparkle")
+            .font(.system(size: size * 0.46, weight: .semibold))
+            .foregroundStyle(Color.white)
+            .frame(width: size, height: size)
+            .background(AskTheme.brandGradient,
+                        in: RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
+            .shadow(color: Color(red: 0.455, green: 0.467, blue: 0.984).opacity(0.28), radius: 12, y: 6)
+            .accessibilityHidden(true)
+    }
+}
+
+/// The account badge in the sidebar footer: the name's first letter on the mark.
+struct AskAccountBadge: View {
+    var name: String
+
+    var body: some View {
+        Text(verbatim: name.first.map { String($0).uppercased() } ?? "·")
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(Color.white)
+            .frame(width: 24, height: 24)
+            .background(AskTheme.brandGradient, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .accessibilityHidden(true)
+    }
+}
+
 /// Borderless action used by the transcript's per-turn toolbar. It only paints
 /// a background under the pointer, so a row of them reads as one quiet strip
 /// instead of three competing buttons.
@@ -461,7 +550,7 @@ struct AskGhostButton: View {
             .foregroundStyle(foreground)
             .padding(.horizontal, 8)
             .frame(height: 26)
-            .background(hovering ? AskTheme.controlSurface : Color.clear,
+            .background(hovering ? AskTheme.hoverFill : Color.clear,
                         in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         }
@@ -527,6 +616,8 @@ struct AskSelectionActionBar: View {
             }
         }
         .padding(4)
+        // Never let the popover compress a label into an ellipsis.
+        .fixedSize()
         .tint(AskTheme.accent)
     }
 }

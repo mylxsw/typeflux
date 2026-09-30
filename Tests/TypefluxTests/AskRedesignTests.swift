@@ -161,3 +161,41 @@ struct AskRedesignLayoutTests {
         return bitmap
     }
 }
+
+@Suite("Ask redesign fidelity helpers")
+@MainActor
+struct AskRedesignFidelityTests {
+    @Test func referenceStripShowsUpToThreeQuotesThenScrolls() {
+        let chip = AskReferenceStrip.chipHeight
+        let gap = AskReferenceStrip.chipSpacing
+        #expect(AskReferenceStrip.stripHeight(count: 0) == 0)
+        #expect(AskReferenceStrip.stripHeight(count: 1) == chip)
+        #expect(AskReferenceStrip.stripHeight(count: 2) == chip * 2 + gap)
+        #expect(AskReferenceStrip.stripHeight(count: 3) == chip * 3 + gap * 2)
+        // Past three the strip stops growing and scrolls instead.
+        #expect(AskReferenceStrip.stripHeight(count: 8) == AskReferenceStrip.stripHeight(count: 3))
+        #expect(AskReferenceStrip.stripHeight(count: -1) == 0)
+    }
+
+    @Test func transcriptAndComposerShareOneCentredColumn() {
+        #expect(AskMetrics.composerMaxWidth == AskMetrics.columnWidth)
+        #expect(AskMetrics.transcriptMaxWidth == AskMetrics.columnWidth - AskMetrics.columnInset * 2)
+        #expect(AskMetrics.bubbleMaxWidth < AskMetrics.transcriptMaxWidth)
+    }
+
+    @Test func bubbleShapeKeepsItsTailCornerTight() {
+        let rect = CGRect(x: 0, y: 0, width: 200, height: 60)
+        let path = AskBubbleShape().path(in: rect)
+        #expect(path.boundingRect.insetBy(dx: -0.5, dy: -0.5).contains(rect.insetBy(dx: 0.5, dy: 0.5)))
+        // A 16pt corner leaves the top-right point outside the shape; the 5pt
+        // tail corner keeps a point 3pt from the bottom-right corner inside.
+        #expect(!path.contains(CGPoint(x: 199, y: 1)))
+        #expect(path.contains(CGPoint(x: 197, y: 57)))
+        let inset = AskBubbleShape().inset(by: 4).path(in: rect)
+        #expect(inset.boundingRect.minX >= 3.5)
+        #expect(inset.boundingRect.maxX <= 196.5)
+        // Radii never exceed half the shortest side.
+        let tiny = AskBubbleShape(radius: 40, tail: 50).path(in: CGRect(x: 0, y: 0, width: 20, height: 10))
+        #expect(!tiny.isEmpty)
+    }
+}

@@ -28,7 +28,7 @@ struct AskReasoningMenu: View {
 
     private var fill: Color {
         guard compact else { return ModelVisualStyle.input }
-        return hovering || expanded ? AskTheme.controlSurface : .clear
+        return hovering || expanded ? AskTheme.hoverFill : .clear
     }
 
     var body: some View {

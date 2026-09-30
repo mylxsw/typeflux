@@ -71,11 +71,17 @@ struct AskTranscriptText: NSViewRepresentable {
             anchor.size.height = min(anchor.height, 18)
             askPopover.behavior = .transient
             askPopover.animates = false
-            askPopover.contentViewController = NSHostingController(rootView:
+            let host = NSHostingController(rootView:
                 AskSelectionActionBar { [weak self] action in self?.perform(action, excerpt: excerpt) }
                     .onCopyCommand { [NSItemProvider(object: excerpt as NSString)] }
             )
-            askPopover.show(relativeTo: anchor, of: self, preferredEdge: .maxY)
+            // The popover otherwise sizes itself before SwiftUI has measured the
+            // labels, and compresses two of the four into an ellipsis.
+            host.view.layoutSubtreeIfNeeded()
+            askPopover.contentViewController = host
+            askPopover.contentSize = host.view.fittingSize
+            // The text view is flipped, so minY is the visual top of the selection.
+            askPopover.show(relativeTo: anchor, of: self, preferredEdge: .minY)
         }
 
         /// Selecting text used to cost four steps: select, press Ask, fill in an
@@ -143,10 +149,10 @@ struct AskTranscriptText: NSViewRepresentable {
 enum AskMarkdownText {
     static func render(_ text: String, markdown: Bool = true) -> NSAttributedString {
         let paragraph = NSMutableParagraphStyle()
-        paragraph.lineSpacing = 3
-        paragraph.paragraphSpacing = 7
+        paragraph.lineSpacing = 6
+        paragraph.paragraphSpacing = 9
         let base: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 13.5), .foregroundColor: NSColor.labelColor,
+            .font: NSFont.systemFont(ofSize: 14), .foregroundColor: NSColor.labelColor,
             .paragraphStyle: paragraph
         ]
         guard markdown else { return NSAttributedString(string: text, attributes: base) }
@@ -186,7 +192,7 @@ enum AskMarkdownText {
             }
             if node is Markdown.Table.Row || node is Markdown.Table.Head {
                 if node is Markdown.Table.Head {
-                    attributes[.font] = NSFont.systemFont(ofSize: 13.5, weight: .semibold)
+                    attributes[.font] = NSFont.systemFont(ofSize: 14, weight: .semibold)
                 }
                 for (index, cell) in node.children.enumerated() {
                     if index > 0 {

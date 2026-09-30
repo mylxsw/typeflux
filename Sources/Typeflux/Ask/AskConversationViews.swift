@@ -13,6 +13,7 @@ struct AskConversationView: View {
     @State private var isSearching = false
     @FocusState private var searchFocused: Bool
     @State private var collapsedGroups: Set<String> = []
+    @State private var headerHovering = false
     @AppStorage("ask.sidebarCollapsed") private var sidebarCollapsed = false
     @ObservedObject private var auth = AuthState.shared
 
@@ -64,7 +65,7 @@ struct AskConversationView: View {
             // traffic lights. The toggle and search buttons float above it.
             Color.clear.frame(height: AskMetrics.sidebarTopInset)
             sidebarSearchField.padding(.horizontal, 10).padding(.bottom, 8)
-            newConversationButton.padding(.horizontal, 10).padding(.bottom, 8)
+            newConversationButton.padding(.horizontal, 10).padding(.bottom, 6)
             historyList
             accountFooter
         }
@@ -139,10 +140,11 @@ struct AskConversationView: View {
     }
 
     private var accountFooter: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 9) {
+            AskAccountBadge(name: accountName)
             Text(accountName)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(size: 12.5, weight: .medium))
+                .foregroundStyle(StudioTheme.textSecondary)
                 .lineLimit(1)
             Spacer(minLength: 4)
             Button { model.onOpenSettings?(.settings) } label: {
@@ -155,8 +157,8 @@ struct AskConversationView: View {
             .help(L("sidebar.settingsAccessibility"))
             .accessibilityLabel(L("sidebar.settingsAccessibility"))
         }
-        .padding(.horizontal, 16)
-        .frame(height: 56)
+        .padding(.horizontal, 12)
+        .frame(height: 50)
         .overlay(alignment: .top) { Rectangle().fill(AskTheme.separator).frame(height: 1) }
     }
 
@@ -280,19 +282,20 @@ struct AskConversationView: View {
             model.newConversation()
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: "square.and.pencil").font(.system(size: 13))
-                    .frame(width: 18)
-                Text(L("ask.new")).font(.system(size: 13.5, weight: .medium))
+                Image(systemName: "plus").font(.system(size: 12, weight: .semibold))
+                    .frame(width: 16)
+                Text(L("ask.new")).font(.system(size: 12.5, weight: .semibold))
                 Spacer(minLength: 0)
+                Text(verbatim: "⌘N").font(.system(size: 10.5, weight: .medium)).opacity(0.75)
             }
-            .foregroundStyle(StudioTheme.textPrimary)
+            .foregroundStyle(Color.white)
             .padding(.horizontal, 10)
             .frame(height: 34)
-            .background(model.selectedId == nil ? StudioTheme.sidebarSelection : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
         .buttonStyle(.plain)
+        .keyboardShortcut("n", modifiers: .command)
         .accessibilityLabel(L("ask.new"))
     }
 
@@ -394,39 +397,14 @@ struct AskConversationView: View {
     }
 
     private func historyRow(_ item: AskConversationSummary) -> some View {
-        let selected = model.selectedId == item.id
-        return Button {
-            Task { await model.select(item.id) }
-        } label: {
-            HStack(spacing: 8) {
-                Text(item.title)
-                    .font(.system(size: 12.8, weight: selected ? .semibold : .medium))
-                    .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                    .lineLimit(1)
-                Spacer(minLength: 4)
-                if model.busyIds.contains(item.id) { ProgressView().controlSize(.mini) }
-                else {
-                    Text(item.updatedAt, style: .time)
-                        .font(.system(size: 10.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
-            }
-            .padding(.horizontal, 10)
-            .frame(height: 34)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(selected ? StudioTheme.sidebarSelection : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .overlay(alignment: .leading) {
-                if selected { Capsule().fill(AskTheme.accent).frame(width: 3, height: 16) }
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .contextMenu {
-            Button(L("ask.delete"), role: .destructive) { deleteId = item.id }
-                .disabled(model.busyIds.contains(item.id))
-        }
+        AskHistoryRow(
+            title: item.title,
+            updatedAt: item.updatedAt,
+            selected: model.selectedId == item.id,
+            busy: model.busyIds.contains(item.id),
+            onSelect: { Task { await model.select(item.id) } },
+            onDelete: { deleteId = item.id }
+        )
     }
 
     private func historyGroup(_ date: Date) -> String {
@@ -449,40 +427,71 @@ struct AskConversationView: View {
         .background(AskWindowBackdrop(role: .content))
     }
 
+    /// Title, then the conversation's model and total cost in one quiet line.
+    /// The actions stay dimmed until the pointer is over the bar, so the delete
+    /// button no longer carries the same weight as the title.
     private var header: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Text(model.selected?.title
                  ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
                  ?? L("ask.new"))
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
             if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
             Spacer(minLength: 8)
+            if model.selectedId != nil {
+                Text(headerSubtitle)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
             if let id = model.selectedId {
-                Button { usageRunId = model.selected?.run?.id; showsUsage.toggle() } label: {
-                    Label(L("ask.usage.title"), systemImage: "chart.bar.xaxis").font(.system(size: 11))
-                }.buttonStyle(.plain).help(L("ask.usage.title"))
-                Button { deleteId = id } label: {
-                    Image(systemName: "trash").font(.system(size: 12))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .frame(width: 27, height: 27)
-                        .contentShape(Rectangle())
+                HStack(spacing: 2) {
+                    headerAction("chart.bar.xaxis", label: L("ask.usage.title")) {
+                        usageRunId = model.selected?.run?.id; showsUsage.toggle()
+                    }
+                    headerAction("trash", label: L("ask.delete")) { deleteId = id }
                 }
-                .buttonStyle(.plain)
-                .help(L("ask.delete"))
-                .accessibilityLabel(L("ask.delete"))
+                .opacity(headerHovering || showsUsage ? 1 : 0.35)
+                .animation(.easeOut(duration: 0.15), value: headerHovering)
             }
         }
         .padding(.leading, sidebarCollapsed ? AskMetrics.collapsedTitleInset : 18)
-        .padding(.trailing, 18)
+        .padding(.trailing, 12)
         .frame(height: AskMetrics.titleBarRowHeight)
         .frame(height: AskMetrics.headerHeight, alignment: .top)
+        .contentShape(Rectangle())
+        .onHover { headerHovering = $0 }
+    }
+
+    private var headerSubtitle: String {
+        let name = model.modelLibrary.name(for: model.modelReference(launcher: false))
+        guard let credits = model.selected?.usage?.total.creditsText else { return name }
+        return name + "  ·  " + credits + " credits"
+    }
+
+    private func headerAction(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 12.5))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(label)
+        .accessibilityLabel(label)
     }
 
     private var emptyState: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 0) {
+            AskBrandMark().padding(.bottom, 18)
             Text(L("ask.empty")).font(.system(size: 22, weight: .semibold))
-            Text(L("ask.empty.hint")).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textTertiary)
+                .foregroundStyle(StudioTheme.textPrimary)
+                .padding(.bottom, 7)
+            Text(L("ask.empty.hint")).font(.system(size: 13)).foregroundStyle(StudioTheme.textTertiary)
+                .multilineTextAlignment(.center)
             VStack(spacing: 8) {
                 suggestion(title: L("ask.suggest.screen"), caption: L("ask.suggest.screen.caption"),
                            systemImage: "display", shortcut: "1", screenshot: true)
@@ -491,11 +500,12 @@ struct AskConversationView: View {
                 suggestion(title: L("ask.suggest.page"), caption: L("ask.suggest.page.caption"),
                            systemImage: "globe", shortcut: "3", screenshot: false)
             }
-            .frame(width: 380)
-            .padding(.top, 16)
+            .frame(maxWidth: 520)
+            .padding(.top, 26)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 32)
+        .padding(.bottom, 40)
     }
 
     /// The caption used to sit at the trailing edge in the faintest grey in the
@@ -504,36 +514,13 @@ struct AskConversationView: View {
     /// Command-digit rather than Option-digit, which types a character.
     private func suggestion(title: String, caption: String, systemImage: String,
                             shortcut: String, screenshot: Bool) -> some View {
-        Button {
+        AskSuggestionCard(title: title, caption: caption, systemImage: systemImage, shortcut: shortcut) {
             model.draft.text = title
             if screenshot { model.draft.includeScreenshot = true }
-        } label: {
-            HStack(spacing: 11) {
-                Image(systemName: systemImage).font(.system(size: 13))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
-                    Text(caption).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
-                }
-                Spacer(minLength: 8)
-                AskKeyCap(text: "⌘" + shortcut)
-            }
-            .padding(.horizontal, 11)
-            .frame(height: 52)
-            .background(AskTheme.raisedSurface, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(AskTheme.border))
-            .contentShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
         }
-        .buttonStyle(.plain)
         .keyboardShortcut(KeyEquivalent(Character(shortcut)), modifiers: .command)
         .disabled(screenshot && model.screenshotCapability(launcher: false) != .supported)
         .help(screenshot ? (model.screenshotCapability(launcher: false).hint ?? caption) : caption)
-        .accessibilityLabel(title)
-        .accessibilityHint(caption)
     }
 
     @ViewBuilder private var statusArea: some View {
@@ -638,7 +625,7 @@ struct AskConversationView: View {
         return GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 19) {
+                    LazyVStack(alignment: .leading, spacing: 24) {
                         if model.isLoadingSelection, model.selected == nil {
                             ProgressView(L("ask.loading")).controlSize(.small)
                                 .frame(maxWidth: .infinity).padding(.top, 24)
@@ -665,8 +652,12 @@ struct AskConversationView: View {
                                                        value: ["bottom": geometry.frame(in: .named("ask-transcript"))])
                             })
                     }
-                    .padding(.horizontal, 26)
-                    .padding(.vertical, 20)
+                    // One centred column: the question, the answer and the
+                    // composer below share the same edges on any window width.
+                    .padding(.horizontal, AskMetrics.columnInset)
+                    .padding(.vertical, 22)
+                    .frame(maxWidth: AskMetrics.columnWidth)
+                    .frame(maxWidth: .infinity)
                 }
                 .coordinateSpace(name: "ask-transcript")
                 .onPreferenceChange(AskTranscriptFrames.self) { frames in
@@ -748,20 +739,21 @@ private struct AskMessageView: View {
 
     private var userMessage: some View {
         HStack(alignment: .top, spacing: 0) {
-            Spacer(minLength: 64)
-            VStack(alignment: .trailing, spacing: 8) {
+            Spacer(minLength: 48)
+            VStack(alignment: .trailing, spacing: 6) {
                 if let references = message.references, !references.isEmpty { AskSentReferences(references: references) }
                 if !message.text.isEmpty {
                     Text(message.text)
-                        .font(.system(size: 13.5))
+                        .font(.system(size: 14))
+                        .lineSpacing(3)
                         .foregroundStyle(StudioTheme.textPrimary)
                         .textSelection(.enabled)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 9)
-                        .background(AskTheme.bubbleSurface,
-                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .background(AskTheme.bubbleSurface, in: AskBubbleShape())
+                        .overlay(AskBubbleShape().strokeBorder(AskTheme.border))
                 }
                 if message.image != nil || message.selection != nil { attachments }
             }
@@ -929,5 +921,119 @@ private struct AskTranscriptFrames: PreferenceKey {
     static let defaultValue: [String: CGRect] = [:]
     static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    }
+}
+
+/// A history row. Hovering swaps the timestamp for an overflow menu, so the row
+/// actions are discoverable without a right click.
+private struct AskHistoryRow: View {
+    let title: String
+    let updatedAt: Date
+    let selected: Bool
+    let busy: Bool
+    var onSelect: () -> Void
+    var onDelete: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.system(size: 12.8, weight: selected ? .semibold : .regular))
+                    .foregroundStyle(selected || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                if busy {
+                    ProgressView().controlSize(.mini)
+                } else {
+                    Text(updatedAt, style: .time)
+                        .font(.system(size: 11))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .opacity(hovering ? 0 : 1)
+                }
+            }
+            .padding(.horizontal, 10)
+            .frame(height: 34)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(rowFill, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .overlay(alignment: .leading) {
+                if selected { Capsule().fill(AskTheme.accent).frame(width: 3, height: 16) }
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        // Always mounted and only faded: removing the menu on hover-out would
+        // tear it down while its popup is still tracking the pointer.
+        .overlay(alignment: .trailing) {
+            Menu {
+                Button(L("ask.delete"), role: .destructive, action: onDelete)
+            } label: {
+                Image(systemName: "ellipsis").font(.system(size: 12, weight: .semibold))
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .foregroundStyle(StudioTheme.textSecondary)
+            .padding(.trailing, 8)
+            .opacity(hovering && !busy ? 1 : 0)
+            .allowsHitTesting(hovering && !busy)
+            .accessibilityHidden(busy)
+            .help(L("ask.delete"))
+        }
+        .onHover { hovering = $0 }
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .contextMenu {
+            Button(L("ask.delete"), role: .destructive, action: onDelete).disabled(busy)
+        }
+    }
+
+    private var rowFill: Color {
+        if selected { return StudioTheme.sidebarSelection }
+        return hovering ? AskTheme.hoverFill : .clear
+    }
+}
+
+/// An empty-state suggestion. Hover lifts it onto the accent so the three
+/// starting points read as buttons, not as a list of labels.
+private struct AskSuggestionCard: View {
+    let title: String
+    let caption: String
+    let systemImage: String
+    let shortcut: String
+    var action: () -> Void
+    @State private var hovering = false
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 11) {
+                Image(systemName: systemImage).font(.system(size: 13))
+                    .foregroundStyle(hovering ? Color.white : StudioTheme.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .background(hovering ? AskTheme.accent : AskTheme.hoverFill,
+                                in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                    Text(caption).font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                }
+                Spacer(minLength: 8)
+                Text(verbatim: "⌘" + shortcut).font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(StudioTheme.textTertiary)
+            }
+            .padding(.horizontal, 13)
+            .padding(.vertical, 11)
+            .background(hovering ? AskTheme.accentSoft : AskTheme.composerSurface,
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(hovering ? AskTheme.accent.opacity(0.45) : AskTheme.border))
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .opacity(isEnabled ? 1 : 0.55)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = isEnabled && $0 }
+        .accessibilityLabel(title)
+        .accessibilityHint(caption)
     }
 }

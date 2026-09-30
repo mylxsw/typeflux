@@ -28,7 +28,7 @@ struct AskContextUsageButton: View {
             .padding(.leading, 7)
             .padding(.trailing, 9)
             .frame(height: 28)
-            .background(hovering ? AskTheme.controlSurface : Color.clear,
+            .background(hovering ? AskTheme.hoverFill : Color.clear,
                         in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }

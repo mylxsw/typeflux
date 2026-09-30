@@ -60,27 +60,38 @@ struct AskReferenceStrip: View {
         }
     }
 
+    /// Quotes stack full width above the editor, each one readable over two
+    /// lines. Up to three are visible at once; more scroll inside the strip, so
+    /// a long list never pushes the editor off screen.
+    static let chipHeight: CGFloat = 60
+    static let chipSpacing: CGFloat = 6
+    static func stripHeight(count: Int) -> CGFloat {
+        let visible = CGFloat(min(max(count, 0), 3))
+        return visible * chipHeight + max(0, visible - 1) * chipSpacing
+    }
+
     var body: some View {
-        HStack(spacing: 8) {
-            ScrollView(.horizontal) {
-                HStack(spacing: 7) { ForEach(references ?? []) { chip($0) } }.padding(.vertical, 2)
+        let items = references ?? []
+        HStack(alignment: .top, spacing: 6) {
+            ScrollView(.vertical) {
+                VStack(spacing: Self.chipSpacing) { ForEach(items) { chip($0) } }
             }
+            .frame(height: Self.stripHeight(count: items.count))
             // "Manage (1)" was developer wording for a list the user can already
             // see. Only offer the list once there is more than one excerpt.
-            if (references ?? []).count > 1 {
+            if items.count > 1 {
                 Button { sheet = .manage } label: {
                     Image(systemName: "ellipsis").font(.system(size: 12))
                         .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(width: 26, height: 26)
+                        .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help(L("ask.references.manage", (references ?? []).count))
-                .accessibilityLabel(L("ask.references.manage", (references ?? []).count))
+                .help(L("ask.references.manage", items.count))
+                .accessibilityLabel(L("ask.references.manage", items.count))
             }
         }
-        .frame(height: 52)
-        .padding(.horizontal, 12).padding(.top, 10)
+        .padding(.horizontal, 9).padding(.top, 9)
         .sheet(item: $sheet) { destination in
             switch destination {
             case .edit(let reference):
@@ -101,24 +112,31 @@ struct AskReferenceStrip: View {
     private func chip(_ reference: AskReference) -> some View {
         HStack(alignment: .top, spacing: 6) {
             Button { sheet = .edit(reference) } label: {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(reference.question.isEmpty ? L("ask.references.source") : reference.question)
                         .font(.system(size: 10.5, weight: .semibold))
                         .foregroundStyle(AskTheme.accentText).lineLimit(1)
-                    Text(reference.text).font(.system(size: 11))
+                    Text(reference.text).font(.system(size: 12))
                         .foregroundStyle(StudioTheme.textSecondary).lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .frame(width: 168, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .help(reference.text)
-            Button { remove(reference.id) } label: { Image(systemName: "xmark").font(.system(size: 9)) }
-                .buttonStyle(.plain).accessibilityLabel(L("ask.remove"))
+            Button { remove(reference.id) } label: {
+                Image(systemName: "xmark").font(.system(size: 9, weight: .semibold))
+                    .frame(width: 20, height: 20).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(StudioTheme.textTertiary)
+            .accessibilityLabel(L("ask.remove"))
         }
-        .padding(.leading, 9)
-        .padding(.trailing, 7)
-        .padding(.vertical, 6)
+        .padding(.leading, 11)
+        .padding(.trailing, 5)
+        .padding(.vertical, 7)
+        .frame(height: Self.chipHeight, alignment: .top)
         .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 8))
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(AskTheme.border))
         .overlay(alignment: .leading) {
