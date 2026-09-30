@@ -98,7 +98,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                                 }
                             }
                         }
-                    } label: { Text(viewModel.sttProvider.displayName + " · " + speechModelName(viewModel.sttProvider)
+                    } label: { Text(speechModelName(viewModel.sttProvider)
                             + (speechReason(viewModel.sttProvider).map { " — " + $0 } ?? ""))
                     }
                     .menuStyle(.borderlessButton).padding(.horizontal, 10).frame(width: 240, height: 32)
@@ -159,10 +159,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                 }, id: \.provider.id) { entry in
                     let provider = entry.provider
                     providerRow(name: provider.name,
-                                detail: entry.reason ??
-                                    "\(provider.models.count) " +
-                                    L("common.model") + " · " + provider
-                                    .models.prefix(3).map(\.id).joined(separator: " · "),
+                                detail: String(format: L("models.count"), provider.configurationModels.count),
                                 available: configured, icon: provider.studioProviderID) {
                         selectedProvider = provider.id
                     }

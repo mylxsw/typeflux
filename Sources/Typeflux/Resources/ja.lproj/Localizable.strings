@@ -1608,8 +1608,10 @@
 "ask.reasoning.help" = "次のメッセージの推論強度を選択します。強度を上げると時間とクレジットが増える場合があります。";
 
 // Server-managed Cloud model list
-"models.cloud.managed" = "利用可能な Ask モデルは Typeflux Cloud から自動同期されます。設定はサーバーで管理されます。以下から使用するモデルを選択できます。";
+"models.cloud.managed" = "利用可能な Ask モデルは Typeflux Cloud から自動同期されます。設定はサーバーで管理されます。";
 "models.cloud.available" = "利用可能なモデル";
 "models.cloud.refresh" = "モデル一覧を更新";
 "models.cloud.systemDefault" = "システムのデフォルト";
 "models.cloud.empty" = "現在利用できるモデルはありません。";
+
+"models.count" = "モデル数：%d";

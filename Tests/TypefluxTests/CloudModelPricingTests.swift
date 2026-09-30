@@ -32,6 +32,27 @@ final class CloudModelPricingTests: XCTestCase {
     }
 
     @MainActor
+    func testSelectedLocalAndCustomModelsUseOnlyTheirName() throws {
+        let suite = "selected-model-name-" + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let registry = ModelRegistry(providers: [
+            .init(id: "ollama", name: "Ollama", models: [
+                .init(id: "local", name: "Local model", reference: "ollama:local"),
+            ]),
+            .init(id: "endpoint:test", name: "Custom provider", models: [
+                .init(id: "custom", name: "Custom model", reference: "custom:test"),
+            ]),
+        ])
+        try registry.write(defaults)
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        for scenario in ["ask", "rewrite"] {
+            XCTAssertEqual(library.name(for: "ollama:local", scenario: scenario), "Local model")
+            XCTAssertEqual(library.name(for: "custom:test", scenario: scenario), "Custom model")
+        }
+    }
+
+    @MainActor
     func testScenarioFilteringAndUnavailableSelection() throws {
         let suite = "cloud-pricing-" + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -39,11 +60,13 @@ final class CloudModelPricingTests: XCTestCase {
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         try library.removeModel("cloud:default", providerID: "typefluxCloud")
         try library.addModels([
-            .init(id: "ask", name: "Ask", reference: "cloud:ask", vision: true, scenarios: ["ask"]),
+            .init(id: "ask", name: "Ask", reference: "cloud:ask", vision: true, scenarios: ["ask"], pricing: .init(multiplier: "5")),
             .init(id: "rewrite", name: "Rewrite", reference: "cloud:rewrite", scenarios: ["rewrite"]),
         ], providerID: "typefluxCloud")
         let ask = library.selectableProviders(loggedIn: true, hasImage: false).first(where: \.isCloud)
         XCTAssertEqual(ask?.models.map(\.id), ["ask"])
+        XCTAssertEqual(library.name(for: "cloud:ask"), "Ask")
+        XCTAssertEqual(ask?.models.first?.displayName, "Ask · 5X")
         let rewrite = library.selectableProviders(loggedIn: true, hasImage: false, scenario: "rewrite").first(where: \.isCloud)
         XCTAssertEqual(rewrite?.models.map(\.id), ["default"])
         XCTAssertNil(rewrite?.models.first?.pricing)

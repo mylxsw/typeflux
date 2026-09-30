@@ -1622,8 +1622,10 @@
 "ask.reasoning.help" = "选择下一条消息的推理强度。较高强度可能需要更长时间并消耗更多积分。";
 
 // Server-managed Cloud model list
-"models.cloud.managed" = "随便问的可用模型由 Typeflux Cloud 自动同步，模型配置由服务端统一管理。你可以在下方选择默认使用的模型。";
+"models.cloud.managed" = "随便问的可用模型由 Typeflux Cloud 自动同步，模型配置由服务端统一管理。";
 "models.cloud.available" = "可用模型";
 "models.cloud.refresh" = "刷新模型列表";
 "models.cloud.systemDefault" = "系统默认";
 "models.cloud.empty" = "当前暂无可用模型。";
+
+"models.count" = "%d 个模型";

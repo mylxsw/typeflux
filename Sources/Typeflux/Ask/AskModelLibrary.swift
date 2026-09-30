@@ -302,11 +302,10 @@ final class AskModelLibrary: ObservableObject {
 
     func name(for reference: String, scenario: String = "ask") -> String {
         if scenario == "rewrite", let model = rewriteCloud?.first(where: { $0.reference == reference }) {
-            return model.registered.displayName
+            return model.registered.name
         }
-        if let (provider, model) = registry
-            .resolve(reference) {
-            return provider.name == model.name ? model.displayName : provider.name + " · " + model.displayName
+        if let (_, model) = registry.resolve(reference) {
+            return model.name
         }
         return L("ask.models.unavailable")
     }

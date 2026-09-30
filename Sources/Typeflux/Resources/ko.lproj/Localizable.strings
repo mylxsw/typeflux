@@ -1608,8 +1608,10 @@
 "ask.reasoning.help" = "다음 메시지의 추론 강도를 선택합니다. 강도가 높으면 시간과 크레딧이 더 필요할 수 있습니다.";
 
 // Server-managed Cloud model list
-"models.cloud.managed" = "사용 가능한 Ask 모델은 Typeflux Cloud에서 자동으로 동기화됩니다. 모델 설정은 서버에서 관리하며 아래에서 기본 모델을 선택할 수 있습니다.";
+"models.cloud.managed" = "사용 가능한 Ask 모델은 Typeflux Cloud에서 자동으로 동기화됩니다. 모델 설정은 서버에서 관리합니다.";
 "models.cloud.available" = "사용 가능한 모델";
 "models.cloud.refresh" = "모델 목록 새로고침";
 "models.cloud.systemDefault" = "시스템 기본값";
 "models.cloud.empty" = "현재 사용 가능한 모델이 없습니다.";
+
+"models.count" = "모델 %d개";
