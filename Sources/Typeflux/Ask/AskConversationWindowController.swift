@@ -51,6 +51,14 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         model.onControlChanged = { [weak self] active in self?.showControl(active) }
     }
 
+    func toggleLauncher() {
+        if launchTask != nil || launcher?.isVisible == true {
+            dismissLauncher()
+        } else {
+            showLauncher()
+        }
+    }
+
     func showLauncher() {
         guard launchTask == nil else { return }
         if launcher?.isVisible == true { launcher?.makeKeyAndOrderFront(nil); focusEditor(in: launcher); return }
@@ -59,7 +67,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         }
         launchTask = Task { [weak self] in
             guard let self else { return }
-            defer { launchTask = nil }
+            // A cancelled launch must not clear a newer launch task.
+            defer { if !Task.isCancelled { launchTask = nil } }
+            guard !Task.isCancelled else { return }
             await model.prepareLauncher()
             guard !Task.isCancelled else { return }
             if launcher == nil {
@@ -98,6 +108,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     func dismissLauncher() {
         model.voiceInput.cancel()
         launchTask?.cancel()
+        launchTask = nil
         model.persistDrafts()
         launcher?.orderOut(nil)
         if let clickMonitor { NSEvent.removeMonitor(clickMonitor); self.clickMonitor = nil }

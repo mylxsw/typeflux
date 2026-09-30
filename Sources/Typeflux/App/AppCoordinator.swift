@@ -117,7 +117,7 @@ final class AppCoordinator {
         )
         self.workflowController = workflowController
         if let ask = di.askConversationWindowController {
-            workflowController.onAskRequested = { [weak ask] in ask?.showLauncher() }
+            workflowController.onAskRequested = { [weak ask] in ask?.toggleLauncher() }
             let voice = ask.model.voiceInput
             voice.recorder = WorkflowComposerRecording(workflowController)
             workflowController.composerVoiceInput = voice

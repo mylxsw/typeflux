@@ -118,24 +118,27 @@ final class AskConversationModel: ObservableObject {
     }
 
     func prepareLauncher() async {
+        guard !Task.isCancelled else { return }
         captureWarning = nil
         if let current = session(), owner != current.owner { resetSession(); owner = current.owner }
         let expectedOwner = owner
         if launcherDraft.text.isEmpty, let cached = try? await cache.draft(key: "launcher", owner: owner) {
-            guard owner == expectedOwner else { return }
+            guard !Task.isCancelled, owner == expectedOwner else { return }
             launcherDraft = cached
         }
+        guard !Task.isCancelled else { return }
         // Restore an unfinished question without silently replacing its context.
         if !launcherDraft.text.isEmpty { return }
         capturing = true
         let generation = UUID(); captureGeneration = generation
+        defer { if generation == captureGeneration { capturing = false } }
         let context = await capture.capture(includeScreenshot: launcherDraft.includeScreenshot)
-        guard generation == captureGeneration else { return }
+        guard !Task.isCancelled, generation == captureGeneration else { return }
         launcherDraft.selection = context.selection
         launcherDraft.source = context.source
         launcherDraft.screenshot = context.screenshot
         launcherDraft.capturedAt = context.capturedAt
-        captureWarning = context.warning; capturing = false
+        captureWarning = context.warning
         persistDrafts()
     }
 

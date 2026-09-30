@@ -8,6 +8,11 @@ final class HotkeyGestureArbiterTests: XCTestCase {
         keyCode: 49,
         modifierFlags: UInt(NSEvent.ModifierFlags.function.rawValue)
     )
+    private let doubleFnAsk = HotkeyBinding(
+        keyCode: HotkeyBinding.functionKeyCode,
+        modifierFlags: UInt(NSEvent.ModifierFlags.function.rawValue),
+        pressCount: 2
+    )
     private let persona = HotkeyBinding.defaultPersona
 
     func testHistoryHotkeyRequestsHistory() {
@@ -268,23 +273,22 @@ final class HotkeyGestureArbiterTests: XCTestCase {
         var arbiter = HotkeyGestureArbiter()
         _ = arbiter.handleFlagsChanged(
             keyCode: HotkeyBinding.functionKeyCode, modifierFlags: activation.modifierFlags,
-            activationHotkey: activation, askHotkey: .defaultAsk, timestamp: 1
+            activationHotkey: activation, askHotkey: doubleFnAsk, timestamp: 1
         )
         arbiter.settleActivationGesture()
         _ = arbiter.handleFlagsChanged(
             keyCode: HotkeyBinding.functionKeyCode, modifierFlags: 0,
-            activationHotkey: activation, askHotkey: .defaultAsk, timestamp: 2.1
+            activationHotkey: activation, askHotkey: doubleFnAsk, timestamp: 2.1
         )
         let events = arbiter.handleFlagsChanged(
             keyCode: HotkeyBinding.functionKeyCode, modifierFlags: activation.modifierFlags,
-            activationHotkey: activation, askHotkey: .defaultAsk, timestamp: 2.2
+            activationHotkey: activation, askHotkey: doubleFnAsk, timestamp: 2.2
         )
         XCTAssertEqual(events, [.begin(.activation)])
     }
 
-    func testSecondFnTapBeginsDefaultAskShortcut() {
+    func testSecondFnTapBeginsCustomDoubleFnAskShortcut() {
         var arbiter = HotkeyGestureArbiter()
-        let doubleFnAsk = HotkeyBinding.defaultAsk
 
         _ = arbiter.handleFlagsChanged(
             keyCode: HotkeyBinding.functionKeyCode,
@@ -313,9 +317,8 @@ final class HotkeyGestureArbiterTests: XCTestCase {
         XCTAssertEqual(arbiter.phase, .active(.ask))
     }
 
-    func testDefaultAskEndsWhenSecondFnTapIsReleased() {
+    func testCustomDoubleFnAskEndsWhenSecondFnTapIsReleased() {
         var arbiter = HotkeyGestureArbiter()
-        let doubleFnAsk = HotkeyBinding.defaultAsk
         _ = arbiter.handleFlagsChanged(
             keyCode: HotkeyBinding.functionKeyCode,
             modifierFlags: activation.modifierFlags,
@@ -350,9 +353,8 @@ final class HotkeyGestureArbiterTests: XCTestCase {
         XCTAssertEqual(arbiter.phase, .idle)
     }
 
-    func testSlowSecondFnTapDoesNotBeginDefaultAskShortcut() {
+    func testSlowSecondFnTapDoesNotBeginCustomDoubleFnAskShortcut() {
         var arbiter = HotkeyGestureArbiter()
-        let doubleFnAsk = HotkeyBinding.defaultAsk
 
         _ = arbiter.handleFlagsChanged(
             keyCode: HotkeyBinding.functionKeyCode,
@@ -704,6 +706,34 @@ extension HotkeyGestureArbiterTests {
                 personaHotkey: nil
             )
             XCTAssertFalse(shouldConsume, "Should not consume \(eventType) when all hotkeys are nil")
+        }
+    }
+}
+
+extension HotkeyGestureArbiterTests {
+    func testCommandSpaceTriggersOncePerPressAndConsumesBothEdges() {
+        var arbiter = HotkeyGestureArbiter()
+        let ask = HotkeyBinding.defaultAsk
+        for _ in 0..<3 {
+            XCTAssertTrue(arbiter.shouldConsume(
+                eventType: .keyDown, keyCode: 49, modifierFlags: ask.modifierFlags,
+                activationHotkey: .defaultActivation, askHotkey: ask, personaHotkey: nil
+            ))
+            XCTAssertEqual(arbiter.handleKeyDown(
+                keyCode: 49, modifierFlags: ask.modifierFlags, isRepeat: false,
+                activationHotkey: .defaultActivation, askHotkey: ask, personaHotkey: nil
+            ), [.begin(.ask)])
+            XCTAssertEqual(arbiter.handleKeyDown(
+                keyCode: 49, modifierFlags: ask.modifierFlags, isRepeat: true,
+                activationHotkey: .defaultActivation, askHotkey: ask, personaHotkey: nil
+            ), [])
+            XCTAssertTrue(arbiter.shouldConsume(
+                eventType: .keyUp, keyCode: 49, modifierFlags: ask.modifierFlags,
+                activationHotkey: .defaultActivation, askHotkey: ask, personaHotkey: nil
+            ))
+            XCTAssertEqual(arbiter.handleKeyUp(
+                keyCode: 49, activationHotkey: .defaultActivation, askHotkey: ask
+            ), [.end(.ask)])
         }
     }
 }
