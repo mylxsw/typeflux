@@ -652,18 +652,21 @@ enum PromptCatalog {
         selectedText: String?,
         spokenInstruction: String,
         personaPrompt _: String?,
-        editableTarget: Bool?
+        editableTarget: Bool?,
+        recentInputMemory: [String] = [],
+        globalSoul: String? = nil
     ) -> (system: String, user: String) {
         let context = buildAskPromptContext(
             selectedText: selectedText,
             spokenInstruction: spokenInstruction,
             targetContext: AskTargetContext(editableTarget: editableTarget)
         )
+        let memorySection = recentInputMemorySection(recentInputMemory) + globalSoulSection(globalSoul)
 
         return (
             system: sharedAskSystemPrompt(mode: .decision),
             user: """
-            \(context.userContextBlock)
+            \(context.userContextBlock)\(memorySection)
 
             Decision guidance:
             - Questions like "what does this mean", "explain this", "is this correct", "what's wrong here", or "summarize what this says" are usually "answer".

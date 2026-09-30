@@ -1440,6 +1440,10 @@
 "ask.screenshot" = "Attach screenshot";
 "ask.screenshot.unavailable" = "스크린샷 사용 불가";
 "ask.selection" = "Selected text";
+"ask.memory" = "메모리";
+"ask.memory.app" = "메모리 · %@";
+"ask.memory.help" = "대화를 시작할 때 한 번만 전송됩니다: 전역 메모리와 질문을 시작한 앱에서 최근 입력한 텍스트입니다. 제거하면 메모리 없이 질문합니다.";
+"ask.memory.pinned" = "이 대화는 시작할 때 가져온 메모리를 사용합니다.";
 "ask.selection.remove" = "Remove selected text";
 "ask.send" = "Send";
 "ask.stop" = "Stop";

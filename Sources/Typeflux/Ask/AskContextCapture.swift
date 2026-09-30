@@ -7,19 +7,34 @@ struct AskCapturedContext: Sendable {
     var screenshot: String?
     var warning: String?
     var capturedAt = Date()
+    var memory: AskMemory?
 }
 
 @MainActor
 protocol AskContextCapturing {
     func capture(includeScreenshot: Bool) async -> AskCapturedContext
+    /// Memory for a conversation started without a source application.
+    func globalMemory() -> AskMemory?
+}
+
+extension AskContextCapturing {
+    func globalMemory() -> AskMemory? { nil }
 }
 
 @MainActor
 final class AskContextCapture: AskContextCapturing {
     private static let screenCaptureRequestedKey = "ask.screenCaptureAccessRequested"
     private let injector: TextInjector
+    private let memory: (any AskMemoryProviding)?
 
-    init(injector: TextInjector) { self.injector = injector }
+    init(injector: TextInjector, memory: (any AskMemoryProviding)? = nil) {
+        self.injector = injector
+        self.memory = memory
+    }
+
+    func globalMemory() -> AskMemory? {
+        memory?.memory(bundleIdentifier: nil, appName: nil)
+    }
 
     func capture(includeScreenshot: Bool) async -> AskCapturedContext {
         let app = NSWorkspace.shared.frontmostApplication
@@ -32,7 +47,9 @@ final class AskContextCapture: AskContextCapturing {
         else { selection = TextSelectionSnapshot(source: "accessibility-unavailable") }
         var result = AskCapturedContext(
             selection: selection.selectedText,
-            source: [app?.localizedName, selection.windowTitle].compactMap { $0 }.joined(separator: " — ")
+            source: [app?.localizedName, selection.windowTitle].compactMap { $0 }.joined(separator: " — "),
+            // Resolved before the launcher takes focus, while the source app is still frontmost.
+            memory: memory?.memory(bundleIdentifier: app?.bundleIdentifier, appName: app?.localizedName)
         )
         if includeScreenshot {
             do { result.screenshot = try await Self.screenshot(displayId: displayId).dataURL }

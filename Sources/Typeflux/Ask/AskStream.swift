@@ -16,6 +16,10 @@ struct AskSSEFrame {
     var event = "message"
     var data = ""
     private var lineBytes = Data()
+
+    // Explicit, because a private stored property makes the memberwise initializer private.
+    init(limit: Int = 2_000_000) { self.limit = limit }
+
     /// AsyncBytes.lines omits empty lines, which are SSE frame delimiters.
     /// Decode bytes directly to preserve those boundaries and split UTF-8 safely.
     mutating func push(_ byte: UInt8) throws -> (String, String)? {
@@ -58,6 +62,8 @@ struct AskProviderStream {
     private(set) var progress = AskStreamProgress()
     private(set) var finished = false
     private var calls: [Int: AskToolCall] = [:]
+
+    init(style: Style) { self.style = style }
 
     mutating func consume(_ data: String) throws {
         if data == "[DONE]" {

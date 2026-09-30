@@ -63,21 +63,9 @@ extension WorkflowController {
             let diagnosticsRecorder = request.diagnosticsRecorder ?? LLMRequestDiagnosticsRecorder()
             let requestAppIdentifier = request.appSystemContext?.bundleIdentifier
                 ?? request.inputContext?.bundleIdentifier
-            let memoryScope = recentInputMemoryScope?.appIdentifier == requestAppIdentifier
-                ? recentInputMemoryScope
-                : RecentInputMemoryScope.resolve(bundleIdentifier: requestAppIdentifier)
-            let rememberedText: [String] = if let memoryScope,
-                                              settingsStore.recentInputMemoryAllowed(for: memoryScope.appIdentifier) {
-                RecentInputMemoryStore.shared.recent(scope: memoryScope.key)
-            } else {
-                []
-            }
-            let soulOwnerID = await MainActor.run { GlobalSoulOwner.currentID }
-            let globalSoul = settingsStore.globalSoulMemoryEnabled
-                ? GlobalSoulMemoryStore.shared.soul(ownerID: soulOwnerID)?.text
-                : nil
-            let instrumentedRequest = request.withRecentInputMemory(rememberedText)
-                .withGlobalSoul(globalSoul)
+            let memory = await promptMemory(for: requestAppIdentifier)
+            let instrumentedRequest = request.withRecentInputMemory(memory.recentInput)
+                .withGlobalSoul(memory.globalSoul)
                 .withDiagnosticsRecorder(diagnosticsRecorder)
             return try await RequestRetry.perform(
                 operationName: "LLM rewrite stream",
@@ -198,11 +186,14 @@ extension WorkflowController {
             spokenInstruction: \(spokenInstruction)
             """
         )
+        let memory = await promptMemory(for: appSystemContext?.bundleIdentifier)
         let prompts = PromptCatalog.askSelectionDecisionPrompts(
             selectedText: selectedText,
             spokenInstruction: spokenInstruction,
             personaPrompt: personaPrompt,
-            editableTarget: editableTarget
+            editableTarget: editableTarget,
+            recentInputMemory: memory.recentInput,
+            globalSoul: memory.globalSoul
         )
         let decision = try await RequestRetry.perform(operationName: "Ask selection decision") { [self] in
             try await llmAgentService.runTool(

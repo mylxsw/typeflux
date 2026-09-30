@@ -63,6 +63,7 @@ actor AskTestAPI: AskAPI {
         value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: nextTool == nil ? "This is the answer." : "I can inspect the current page.", toolCalls: nextTool.map { [$0] }, createdAt: Date()))
         value.run = .init(id: UUID().uuidString, deviceId: request.deviceId, status: nextTool == nil ? "completed" : "waiting_tool", steps: 1, updatedAt: Date(), tools: request.tools, pending: nextTool.map { [$0] } ?? [])
         value.modelRef = request.modelRef
+        if value.messages.count == 2 { value.memory = request.memory }
         value.revision += 1; values[conversationId] = value
         return value
     }
@@ -121,6 +122,17 @@ actor AskTestAPI: AskAPI {
         return value
     }
     func delete(conversationId: String, token: String) async throws { values[conversationId] = nil }
+    var purgeTokens: [String] = []
+    var failPurge = false
+    func setFailPurge(_ flag: Bool) { failPurge = flag }
+    func purgeMemory(token: String) async throws {
+        if failPurge { throw AskLocalError.message("Offline") }
+        purgeTokens.append(token)
+        for (id, value) in values where value.memory != nil {
+            values[id]?.memory = nil
+            values[id]?.revision += 1
+        }
+    }
 }
 
 @MainActor

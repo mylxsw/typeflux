@@ -102,7 +102,9 @@ final class AppLocalization: ObservableObject {
     static let shared = AppLocalization()
 
     @Published private(set) var language: AppLanguage
+    // L() runs on any thread, so the table cache is guarded by a lock.
     private var stringTableCache: [String: [String: String]] = [:]
+    private let cacheLock = NSLock()
 
     private init(settingsStore: SettingsStore = SettingsStore()) {
         language = settingsStore.appLanguage
@@ -127,7 +129,7 @@ final class AppLocalization: ObservableObject {
 
     private func localizedString(for key: String, language: AppLanguage) -> String {
         for localizationName in language.bundleLocalizationCandidates {
-            if let cached = stringTableCache[localizationName], let localized = cached[key] {
+            if let cached = cachedTable(localizationName), let localized = cached[key] {
                 return localized
             }
 
@@ -143,13 +145,21 @@ final class AppLocalization: ObservableObject {
                 continue
             }
 
+            cacheLock.lock()
             stringTableCache[localizationName] = dictionary
+            cacheLock.unlock()
             if let localized = dictionary[key] {
                 return localized
             }
         }
 
         return bundle(for: language).localizedString(forKey: key, value: key, table: nil)
+    }
+
+    private func cachedTable(_ localizationName: String) -> [String: String]? {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+        return stringTableCache[localizationName]
     }
 
     private func bundle(for language: AppLanguage) -> Bundle {

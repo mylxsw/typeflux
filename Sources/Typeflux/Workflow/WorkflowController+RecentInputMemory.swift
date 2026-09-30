@@ -51,6 +51,25 @@ enum RecentInputMemoryExcerpt {
 }
 
 extension WorkflowController {
+    /// Memory for an LLM prompt about `appIdentifier`: recent input from the
+    /// matching scope when allowed, plus the global SOUL when enabled.
+    func promptMemory(for appIdentifier: String?) async -> (recentInput: [String], globalSoul: String?) {
+        let memoryScope = recentInputMemoryScope?.appIdentifier == appIdentifier
+            ? recentInputMemoryScope
+            : RecentInputMemoryScope.resolve(bundleIdentifier: appIdentifier)
+        let recentInput: [String] = if let memoryScope,
+                                       settingsStore.recentInputMemoryAllowed(for: memoryScope.appIdentifier) {
+            RecentInputMemoryStore.shared.recent(scope: memoryScope.key)
+        } else {
+            []
+        }
+        let soulOwnerID = await MainActor.run { GlobalSoulOwner.currentID }
+        let globalSoul = settingsStore.globalSoulMemoryEnabled
+            ? GlobalSoulMemoryStore.shared.soul(ownerID: soulOwnerID)?.text
+            : nil
+        return (recentInput, globalSoul)
+    }
+
     @MainActor
     func scheduleRecentInputMemoryObservation(for insertedText: String, deliveryConfirmed: Bool) {
         recentInputMemoryObservationTask?.cancel()
