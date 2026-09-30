@@ -38,6 +38,7 @@ struct AskComposer: View {
     private var listening: Bool { voice.context == contextID && voice.phase == .listening }
     @State private var showingScreenshot = false
     @State private var showingSelection = false
+    @State private var showingContext = false
     @State private var editorHeight: CGFloat = 32
     @State private var voiceShortcut: HotkeyBinding?
 
@@ -117,25 +118,36 @@ struct AskComposer: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 7) {
-            if active { voiceStatus } else {
-                AskModelMenu(library: model.modelLibrary, reference: Binding(
-                    get: { model.modelReference(launcher: launcher) },
-                    set: { draft.wrappedValue.modelRef = $0 }
-                ), disabled: !launcher && (model.isBusy || model.isLoadingSelection),
-                   hasImage: model.requiresVision(launcher: launcher))
-                AskReasoningMenu(library: model.modelLibrary,
-                                 reference: model.modelReference(launcher: launcher),
-                                 effort: $model.reasoningEffort,
-                                 disabled: !launcher && (model.isBusy || model.isLoadingSelection))
-                contextChips
+        HStack(spacing: 8) {
+            AskModelMenu(library: model.modelLibrary, reference: Binding(
+                get: { model.modelReference(launcher: launcher) },
+                set: { draft.wrappedValue.modelRef = $0 }
+            ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
+               hasImage: model.requiresVision(launcher: launcher))
+            AskReasoningMenu(library: model.modelLibrary,
+                             reference: model.modelReference(launcher: launcher),
+                             effort: $model.reasoningEffort,
+                             disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)))
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 7) { contextChips }.fixedSize()
+                Button { showingContext = true } label: {
+                    Image(systemName: "ellipsis").frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(StudioTheme.textSecondary)
+                .accessibilityLabel(L("ask.context"))
+                .help(L("ask.context"))
+                .popover(isPresented: $showingContext) {
+                    HStack(spacing: 8) { contextChips }.padding(12)
+                }
             }
-            Spacer(minLength: 6)
-            AskVoiceButton(voice: voice, contextID: contextID, compact: launcher,
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .disabled(active)
+            voiceStatus
+            AskVoiceButton(voice: voice, contextID: contextID,
                            enabled: launcher || !model.isLoadingSelection,
                            shortcut: voiceShortcut)
-                .frame(width: launcher ? 32 : 106, height: 28)
-                .padding(.trailing, 3)
+                .frame(width: 32, height: 32)
             AskSendButton(enabled: canSend, action: submit)
         }
         .padding(.leading, 12)
@@ -222,18 +234,18 @@ struct AskComposer: View {
     }
 
     private var voiceStatus: some View {
-        HStack(spacing: 8) {
-            if listening {
-                AskWaveform()
-                Text(L("ask.voice.listening"))
-            } else {
-                ProgressView().controlSize(.mini)
-                Text(L("ask.voice.transcribing"))
-            }
+        // Reserve the largest localized label even while idle, so actions never move.
+        ZStack(alignment: .trailing) {
+            Text(L("ask.voice.listening")).hidden()
+            Text(L("ask.voice.transcribing")).hidden()
+            if active { Text(L(listening ? "ask.voice.listening" : "ask.voice.transcribing")) }
         }
-        .font(.system(size: 11.5, weight: .semibold))
-        .foregroundStyle(listening ? AskTheme.accent : AskTheme.accent.opacity(0.75))
-        .lineLimit(1)
+        .font(.system(size: 11, weight: .medium))
+        .foregroundStyle(listening ? AskTheme.accent : StudioTheme.textSecondary)
+        .fixedSize()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(active ? L(listening ? "ask.voice.listening" : "ask.voice.transcribing") : "")
+        .accessibilityHidden(!active)
     }
 
     private func reportHeight() {

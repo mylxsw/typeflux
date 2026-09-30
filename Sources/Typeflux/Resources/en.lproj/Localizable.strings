@@ -1492,8 +1492,8 @@
 
 "ask.capture.retry" = "Screenshot failed · Retry";
 
-"ask.voice.listening" = "Listening…";
-"ask.voice.transcribing" = "Transcribing…";
+"ask.voice.listening" = "Listening";
+"ask.voice.transcribing" = "Transcribing";
 "ask.history.pull" = "Pull to refresh";
 "ask.history.release" = "Release to refresh";
 "ask.history.refreshing" = "Refreshing…";

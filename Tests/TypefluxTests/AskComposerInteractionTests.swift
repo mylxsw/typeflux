@@ -137,14 +137,26 @@ struct AskComposerInteractionTests {
             recorder.holdTranscript = true
             fixture.model.voiceInput.recorder = recorder
             let view = launcher ? AnyView(AskLauncherView(model: fixture.model, onDismiss: {})) : AnyView(AskConversationView(model: fixture.model))
-            let (window, editor) = try await host(view)
+            let (window, editor) = try await host(view, size: NSSize(width: launcher ? 680 : 760, height: 600))
             defer { window.close() }
             func findButton(_ view: NSView) -> AskVoiceButton.Control? {
                 (view as? AskVoiceButton.Control) ?? view.subviews.lazy.compactMap(findButton).first
             }
             let button = try #require(findButton(window.contentView!))
-            #expect(button.title.isEmpty == launcher)
+            #expect(button.title.isEmpty)
+            #expect(button.frame.size == NSSize(width: 32, height: 32))
             #expect(button.accessibilityLabel() == L("ask.voice.input"))
+            let restingFrame = button.convert(button.bounds, to: nil)
+            let hover = try mouse(.mouseMoved, window: window, point: restingFrame.origin)
+            button.mouseEntered(with: hover)
+            #expect(button.hovered)
+            button.highlight(true)
+            #expect(button.isHighlighted)
+            button.highlight(false)
+            button.mouseExited(with: hover)
+            #expect(!button.hovered)
+            #expect(button.hitTest(NSPoint(x: button.frame.midX, y: button.frame.midY)) === button)
+
             let shortcut = HotkeyBinding(keyCode: 0, modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue))
             fixture.model.modelLibrary.settings.activationHotkey = shortcut
             try await fixture.wait { button.toolTip?.contains(HotkeyFormat.display(shortcut)) == true }
@@ -159,12 +171,16 @@ struct AskComposerInteractionTests {
                 if !hold {
                     #expect(fixture.model.voiceInput.phase == .listening)
                     try await fixture.wait { button.accessibilityLabel() == L("ask.voice.stop") }
+                    #expect(button.convert(button.bounds, to: nil) == restingFrame)
                     NSApp.sendEvent(try mouse(.leftMouseDown, window: window, point: point))
                     NSApp.sendEvent(try mouse(.leftMouseUp, window: window, point: point))
                 }
                 try await fixture.wait { recorder.stops == stops + 1 }
                 try await fixture.wait { !button.isEnabled }
                 #expect(button.accessibilityLabel() == L("ask.voice.transcribing"))
+                #expect(button.visualPhase == .transcribing)
+                #expect(button.convert(button.bounds, to: nil) == restingFrame)
+
                 #expect(!(launcher ? fixture.model.canSendLauncher : fixture.model.canSend))
                 recorder.releaseTranscript()
                 try await fixture.wait { !fixture.model.voiceInput.isOccupied }
@@ -207,8 +223,8 @@ struct AskComposerInteractionTests {
         #expect(await fixture.api.sends.isEmpty)
     }
 
-    private func host<V: View>(_ view: V) async throws -> (ComposerEventWindow, AskComposerTextView.Editor) {
-        let window = ComposerEventWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600), styleMask: .borderless, backing: .buffered, defer: false)
+    private func host<V: View>(_ view: V, size: NSSize = NSSize(width: 900, height: 600)) async throws -> (ComposerEventWindow, AskComposerTextView.Editor) {
+        let window = ComposerEventWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless, backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         let hosting = NSHostingView(rootView: view)
         window.contentView = hosting; window.orderFront(nil)

@@ -1478,8 +1478,8 @@
 
 "ask.capture.retry" = "Screenshot failed · Retry";
 
-"ask.voice.listening" = "聞き取り中…";
-"ask.voice.transcribing" = "Transcribing…";
+"ask.voice.listening" = "録音中";
+"ask.voice.transcribing" = "文字起こし中";
 "ask.history.pull" = "Pull to refresh";
 "ask.history.release" = "Release to refresh";
 "ask.history.refreshing" = "Refreshing…";

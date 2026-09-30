@@ -1489,8 +1489,8 @@
 
 "ask.capture.retry" = "Screenshot failed · Retry";
 
-"ask.voice.listening" = "正在聆聽…";
-"ask.voice.transcribing" = "Transcribing…";
+"ask.voice.listening" = "聆聽中";
+"ask.voice.transcribing" = "轉寫中";
 "ask.history.pull" = "Pull to refresh";
 "ask.history.release" = "Release to refresh";
 "ask.history.refreshing" = "Refreshing…";

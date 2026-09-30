@@ -37,6 +37,8 @@ This document describes the trigger conditions and corresponding system behavior
 | Recording or transcription in progress | Send is disabled; Escape cancels; the microphone becomes a stop button while listening |
 | Input focus or conversation changes | Cancels recording and discards late transcription results |
 
+The voice and send controls share a fixed 32pt circular footprint. Recording replaces the microphone with a stop icon; transcription shows a progress ring in the same position, with adjacent status text. Model and context controls keep their positions; narrow composers expose context chips through an overflow popover. Reduced motion uses a static progress indicator.
+
 ### General recording controls
 
 | Scenario | Behavior |

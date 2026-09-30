@@ -81,7 +81,7 @@ enum AskMetrics {
     static let launcherWidth: CGFloat = 680
     static let launcherCorner: CGFloat = 18
     static let composerCorner: CGFloat = 14
-    /// Transparent gutter around the launcher card so the recording glow is not clipped.
+    /// Breathing room around the launcher card.
     static let launcherGutter: CGFloat = 6
     static let editorTopInset: CGFloat = 15
     static let editorBottomInset: CGFloat = 11
@@ -380,8 +380,8 @@ struct AskSendButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "arrow.up")
-                .font(.system(size: 13, weight: .semibold))
-                .frame(width: 28, height: 28)
+                .font(.system(size: 15, weight: .semibold))
+                .frame(width: 32, height: 32)
         }
         .buttonStyle(.plain)
         .foregroundStyle(enabled ? Color.white : StudioTheme.textTertiary)
@@ -480,33 +480,28 @@ struct AskGhostButton: View {
     }
 }
 
-/// Voice feedback belongs to the whole card. Ordinary focus stays neutral so
-/// the accent colour keeps meaning "recording".
+/// A subtle recording outline complements the fixed voice control.
+/// Focus and transcription keep the neutral border.
 struct AskVoiceBorder: ViewModifier {
     @ObservedObject var voice: AskVoiceInput
     var context: String
     var radius: CGFloat
 
     private var listening: Bool { voice.context == context && voice.phase == .listening }
-    private var active: Bool { voice.context == context && voice.isActive }
 
     func body(content: Content) -> some View {
         content
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(Self.borderColor(listening: listening, active: active),
-                                  lineWidth: listening ? 1.5 : 1)
+                    .strokeBorder(Self.borderColor(listening: listening),
+                                  lineWidth: 1)
                     .allowsHitTesting(false)
             )
-            // The launcher panel only reserves a 6pt transparent gutter, so the
-            // glow radius has to stay inside it or AppKit clips it.
-            .shadow(color: AskTheme.accent.opacity(listening ? 0.3 : 0), radius: listening ? 5 : 0)
     }
 
     /// Focus alone stays neutral: the accent colour has to keep meaning "recording".
-    static func borderColor(listening: Bool, active: Bool) -> Color {
-        if listening { return AskTheme.accent }
-        if active { return AskTheme.accent.opacity(0.45) }
+    static func borderColor(listening: Bool) -> Color {
+        if listening { return AskTheme.accent.opacity(0.45) }
         return AskTheme.border
     }
 }

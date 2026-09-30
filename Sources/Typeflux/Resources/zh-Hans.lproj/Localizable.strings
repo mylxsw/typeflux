@@ -1492,8 +1492,8 @@
 
 "ask.capture.retry" = "截图失败 · 重试";
 
-"ask.voice.listening" = "正在聆听…";
-"ask.voice.transcribing" = "正在转写…";
+"ask.voice.listening" = "聆听中";
+"ask.voice.transcribing" = "转写中";
 "ask.history.pull" = "下拉刷新";
 "ask.history.release" = "松开刷新";
 "ask.history.refreshing" = "正在刷新…";

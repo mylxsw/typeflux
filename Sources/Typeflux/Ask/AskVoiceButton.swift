@@ -6,7 +6,7 @@ import SwiftUI
 struct AskVoiceButton: NSViewRepresentable {
     @ObservedObject var voice: AskVoiceInput
     var contextID: String
-    var compact: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var enabled: Bool
     var shortcut: HotkeyBinding?
 
@@ -19,10 +19,9 @@ struct AskVoiceButton: NSViewRepresentable {
     func makeNSView(context: Context) -> Control {
         let button = Control()
         button.identifier = NSUserInterfaceItemIdentifier("ask.voice.button")
-        button.bezelStyle = .rounded
+        button.isBordered = false
         button.setButtonType(.momentaryPushIn)
         button.refusesFirstResponder = true
-        button.font = .systemFont(ofSize: 11.5, weight: .medium)
         button.target = button
         button.action = #selector(Control.activate)
         return button
@@ -34,14 +33,58 @@ struct AskVoiceButton: NSViewRepresentable {
         let listening = voice.context == contextID && voice.phase == .listening
         let transcribing = voice.context == contextID && voice.phase == .transcribing
         let title = L(listening ? "ask.voice.stop" : transcribing ? "ask.voice.transcribing" : "ask.voice.input")
-        button.title = compact ? "" : title
-        button.image = NSImage(systemSymbolName: listening ? "stop.fill" : "mic.fill", accessibilityDescription: nil)
-        button.imagePosition = compact ? .imageOnly : .imageLeading
-        button.contentTintColor = listening ? .controlAccentColor : .labelColor
+        button.title = ""
+        button.visualPhase = voice.context == contextID ? voice.phase : .idle
+        button.reduceMotion = reduceMotion
         button.isEnabled = enabled && (!voice.isOccupied || listening)
         button.toolTip = listening ? L("ask.voice.stopHint") : transcribing ? title : Self.help(shortcut: shortcut)
         button.setAccessibilityLabel(title)
         button.setAccessibilityHelp(button.toolTip)
+        button.refreshAppearance()
+    }
+
+    struct Appearance: View {
+        var phase: AskVoiceInput.Phase = .idle
+        var enabled = true
+        var hovered = false
+        var pressed = false
+        var reduceMotion = false
+
+        private var accented: Bool { phase == .listening || (enabled && hovered) }
+
+        var body: some View {
+            ZStack {
+                if phase == .transcribing {
+                    Circle().stroke(AskTheme.border, lineWidth: 1.5).frame(width: 16, height: 16)
+                    TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { context in
+                        Circle().trim(from: 0, to: 0.7)
+                            .stroke(AskTheme.accent, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                            .frame(width: 16, height: 16)
+                            .rotationEffect(.degrees(reduceMotion ? -90 : context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 0.9) * 400))
+                    }
+                } else {
+                    Circle().fill(accented ? AskTheme.accentSoft : AskTheme.controlSurface)
+                    Circle().strokeBorder(accented ? AskTheme.accent.opacity(0.4) : AskTheme.border, lineWidth: 1)
+                    if phase == .listening {
+                        RoundedRectangle(cornerRadius: 2).fill(AskTheme.accent).frame(width: 9, height: 9)
+                    } else {
+                        Image(systemName: "mic").font(.system(size: 15, weight: .regular))
+                            .foregroundStyle(accented ? AskTheme.accent : StudioTheme.textSecondary)
+                    }
+                }
+            }
+            .frame(width: 32, height: 32)
+            .opacity(enabled || phase == .transcribing ? 1 : 0.45)
+            .scaleEffect(pressed && !reduceMotion ? 0.94 : 1)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: pressed)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: hovered)
+            .accessibilityHidden(true)
+        }
+    }
+
+    /// The native control owns events and accessibility; its SwiftUI child only draws.
+    final class Artwork: NSHostingView<Appearance> {
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
     }
 
     final class Control: NSButton {
@@ -49,6 +92,42 @@ struct AskVoiceButton: NSViewRepresentable {
         var contextID = ""
         private var localReleaseMonitor: Any?
         private var globalReleaseMonitor: Any?
+
+        var visualPhase: AskVoiceInput.Phase = .idle
+        var reduceMotion = false
+        private(set) var hovered = false
+        private var hoverTracking: NSTrackingArea?
+        private var artwork: Artwork?
+
+        override var intrinsicContentSize: NSSize { NSSize(width: 32, height: 32) }
+        override func draw(_ dirtyRect: NSRect) {} // The artwork replaces NSButton's bezel.
+
+        func refreshAppearance() {
+            let appearance = Appearance(phase: visualPhase, enabled: isEnabled, hovered: hovered,
+                                        pressed: isHighlighted, reduceMotion: reduceMotion)
+            if let artwork {
+                artwork.rootView = appearance
+            } else {
+                let view = Artwork(rootView: appearance)
+                view.frame = bounds
+                view.autoresizingMask = [.width, .height]
+                view.setAccessibilityElement(false)
+                addSubview(view)
+                artwork = view
+            }
+        }
+
+        override func updateTrackingAreas() {
+            super.updateTrackingAreas()
+            if let hoverTracking { removeTrackingArea(hoverTracking) }
+            let tracking = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self)
+            addTrackingArea(tracking)
+            hoverTracking = tracking
+        }
+
+        override func mouseEntered(with event: NSEvent) { hovered = true; refreshAppearance() }
+        override func mouseExited(with event: NSEvent) { hovered = false; refreshAppearance() }
+        override func highlight(_ flag: Bool) { super.highlight(flag); refreshAppearance() }
 
         private func destination(in view: NSView) -> AskComposerTextView.Editor? {
             if let editor = view as? AskComposerTextView.Editor,
