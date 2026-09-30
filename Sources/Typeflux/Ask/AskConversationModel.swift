@@ -500,6 +500,49 @@ final class AskConversationModel: ObservableObject {
         }
     }
 
+    /// Only the latest reply can be regenerated: the server rewinds the whole
+    /// turn that produced it, so an older answer could not be replaced without
+    /// silently discarding the turns that follow it.
+    var regenerableAnswerId: String? {
+        guard let value = selected, !isLoadingSelection, !isBusy else { return nil }
+        guard pendingSends[value.id] == nil, value.run?.isActive != true else { return nil }
+        guard value.messages.last?.role != "user" else { return nil }
+        guard let answer = value.messages.last(where: { $0.role == "assistant" }), !answer.text.isEmpty else { return nil }
+        return answer.id
+    }
+
+    func canRegenerate(_ message: AskMessage) -> Bool {
+        message.role == "assistant" && !message.text.isEmpty && regenerableAnswerId == message.id
+    }
+
+    /// Answer the same question again in place. Sending it as a new message
+    /// would duplicate the question in the transcript and pay for the extra turn.
+    func regenerate(_ messageId: String) {
+        selectionObservation?.cancel(); selectionObservation = nil
+        guard let current = credentials(), let value = selected, !busyIds.contains(value.id) else { return }
+        let id = value.id
+        let modelRef = modelReference(launcher: false)
+        busyIds.insert(id); error = nil; operationErrors[id] = nil
+        let operationId = UUID(); operationIds[id] = operationId
+        operations[id] = Task { [weak self] in
+            guard let self else { return }
+            defer { finishOperation(id, operationId: operationId) }
+            let monitor = monitorConversation(id: id, current: current)
+            defer { monitor.cancel() }
+            do {
+                let definitions = await tools.definitions()
+                try await validateModel(
+                    modelRef, token: current.token,
+                    hasImage: value.messages.contains(where: { $0.image != nil })
+                )
+                let request = AskRegenerateRequest(messageId: messageId, deviceId: deviceId,
+                                                   modelRef: modelRef, tools: definitions)
+                let response = try await api.regenerate(conversationId: id, request: request, token: current.token)
+                try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])
+            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.owner) }
+        }
+    }
+
     private func accept(_ value: AskConversation, owner expectedOwner: String) async throws {
         try Task.checkCancellation()
         guard owner == expectedOwner else { throw CancellationError() }

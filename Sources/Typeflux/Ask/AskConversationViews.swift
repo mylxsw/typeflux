@@ -633,7 +633,9 @@ struct AskConversationView: View {
     // MARK: - Transcript
 
     private var transcript: some View {
-        GeometryReader { viewport in
+        // Resolved once per render: asking each row would rescan the transcript.
+        let regenerable = model.regenerableAnswerId
+        return GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 19) {
@@ -648,6 +650,8 @@ struct AskConversationView: View {
                                            usage: message.runId.flatMap { model.selected?.usage?.runs[$0] },
                                            onUsage: { usageRunId = message.runId; showsUsage = true },
                                            isStreaming: message.id == model.selected?.run?.assistantId && model.selected?.run?.isActive == true,
+                                           canRegenerate: regenerable == message.id,
+                                           onRegenerate: { model.regenerate(message.id) },
                                            approvalToolId: model.selectedId.flatMap { model.pendingApprovals[$0]?.id })
                                 .id(message.id)
                                 .background(GeometryReader { geometry in
@@ -730,6 +734,8 @@ private struct AskMessageView: View {
     var usage: AskUsageTotals? = nil
     var onUsage: () -> Void = {}
     var isStreaming = false
+    var canRegenerate = false
+    var onRegenerate: () -> Void = {}
     var approvalToolId: String? = nil
     @State private var showImage = false
     @State private var showSelection = false
@@ -837,6 +843,9 @@ private struct AskMessageView: View {
                 NSPasteboard.general.setString(message.text, forType: .string)
                 copied = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
+            }
+            if canRegenerate {
+                AskGhostButton(title: L("ask.regenerate"), systemImage: "arrow.clockwise", action: onRegenerate)
             }
             AskGhostButton(title: L("ask.quote"), systemImage: "text.quote") {
                 onReference(AskReference(messageId: message.id, text: message.text, question: ""))

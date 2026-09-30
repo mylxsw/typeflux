@@ -97,6 +97,29 @@ actor AskTestAPI: AskAPI {
         value.run?.status = "completed"; value.revision += 1; values[conversationId] = value
         return value
     }
+    var regenerations: [AskRegenerateRequest] = []
+    var failRegenerate = false
+    func setFailRegenerate(_ flag: Bool) { failRegenerate = flag }
+    func regenerate(conversationId: String, request: AskRegenerateRequest, token: String) async throws -> AskConversation {
+        if failRegenerate { throw AskLocalError.message("Network unavailable") }
+        regenerations.append(request)
+        var value = try await conversation(id: conversationId, token: token)
+        // Mirror the server: rewind the whole turn that produced the target
+        // answer, then answer the same question again.
+        guard let index = value.messages.firstIndex(where: { $0.id == request.messageId }) else {
+            throw AskLocalError.message("Not found")
+        }
+        var cut = index
+        while cut > 0, value.messages[cut - 1].role != "user" { cut -= 1 }
+        value.messages = Array(value.messages.prefix(cut))
+        value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: "This is another answer.", createdAt: Date()))
+        value.modelRef = request.modelRef ?? value.modelRef
+        value.run = .init(id: UUID().uuidString, deviceId: request.deviceId, status: "completed", steps: 1,
+                          updatedAt: Date(), tools: request.tools ?? [], pending: [])
+        value.run?.modelRef = value.modelRef
+        value.revision += 1; values[conversationId] = value
+        return value
+    }
     func delete(conversationId: String, token: String) async throws { values[conversationId] = nil }
 }
 

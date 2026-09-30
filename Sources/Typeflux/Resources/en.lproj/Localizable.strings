@@ -1515,6 +1515,7 @@
 "ask.tool.result" = "Result";
 "ask.copied" = "Copied";
 "ask.quote" = "Quote";
+"ask.regenerate" = "Regenerate";
 "ask.empty.hint" = "Double-press Fn anytime. Hold the field to speak.";
 "ask.suggest.screen" = "Tell me what is on this screen";
 "ask.suggest.screen.caption" = "With a screenshot";

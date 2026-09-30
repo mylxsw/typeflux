@@ -90,6 +90,16 @@ struct AskSendRequest: Codable, Equatable, Sendable {
     var references: [AskReference]? = nil
 }
 
+/// Replaces the latest assistant reply with a fresh run on the same question.
+/// The model and tools are optional: the server falls back to the conversation's
+/// current model and the previous run's toolset.
+struct AskRegenerateRequest: Codable, Equatable, Sendable {
+    var messageId: String
+    var deviceId: String
+    var modelRef: String? = nil
+    var tools: [AskToolDefinition]? = nil
+}
+
 struct AskToolResultRequest: Codable, Equatable, Sendable {
     var runId: String
     var deviceId: String

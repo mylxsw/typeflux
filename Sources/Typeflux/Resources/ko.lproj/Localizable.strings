@@ -1501,6 +1501,7 @@
 "ask.tool.result" = "결과";
 "ask.copied" = "복사됨";
 "ask.quote" = "인용해 질문";
+"ask.regenerate" = "다시 생성";
 "ask.empty.hint" = "언제든지 Fn 키를 두 번 눌러 열고, 입력란을 길게 눌러 말하세요.";
 "ask.suggest.screen" = "이 화면에 무엇이 있는지 알려줘";
 "ask.suggest.screen.caption" = "스크린샷 포함";

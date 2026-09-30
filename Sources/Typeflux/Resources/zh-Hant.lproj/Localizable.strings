@@ -1512,6 +1512,7 @@
 "ask.tool.result" = "結果";
 "ask.copied" = "已複製";
 "ask.quote" = "引用追問";
+"ask.regenerate" = "重新產生";
 "ask.empty.hint" = "隨時按兩下 Fn 喚起，按住輸入框說話";
 "ask.suggest.screen" = "說說這一頁畫面在做什麼";
 "ask.suggest.screen.caption" = "附上目前截圖";

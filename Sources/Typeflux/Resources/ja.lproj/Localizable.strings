@@ -1501,6 +1501,7 @@
 "ask.tool.result" = "結果";
 "ask.copied" = "コピーしました";
 "ask.quote" = "引用して質問";
+"ask.regenerate" = "再生成";
 "ask.empty.hint" = "Fn キーを 2 回押すといつでも開きます。入力欄を長押しで音声入力。";
 "ask.suggest.screen" = "この画面の内容を説明して";
 "ask.suggest.screen.caption" = "スクリーンショット付き";
