@@ -44,7 +44,7 @@ extension AskConversationModel {
         if screenshotCapability(launcher: true) != .supported, launcherDraft.includeScreenshot {
             launcherDraft.includeScreenshot = false
         }
-        if screenshotCapability(launcher: false) != .supported, draft.includeScreenshot {
+        if !isLoadingSelection, screenshotCapability(launcher: false) != .supported, draft.includeScreenshot {
             draft.includeScreenshot = false
         }
     }
@@ -61,7 +61,7 @@ extension AskConversationModel {
 
     /// Only terminal runs can use the retry API. Pending tools keep their approval flow.
     var imageRecoveryTarget: AskImageRecoveryTarget? {
-        guard let value = selected, let run = value.run,
+        guard !hasPendingSubmission, let value = selected, let run = value.run,
               value.messages.contains(where: { $0.image != nil }) else { return nil }
         if let target = recoveringImage, target.conversationID == value.id { return target }
         guard ["failed", "cancelled"].contains(run.status),

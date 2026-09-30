@@ -1648,3 +1648,4 @@
 "ask.image.noModels" = "No models with image support are available.";
 "ask.image.configure" = "Configure models";
 "ask.image.cancel" = "Cancel";
+"ask.image.refreshModels" = "Refresh models";

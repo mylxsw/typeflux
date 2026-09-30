@@ -1634,3 +1634,4 @@
 "ask.image.noModels" = "利用可能な画像対応モデルがありません。";
 "ask.image.configure" = "モデルを設定";
 "ask.image.cancel" = "キャンセル";
+"ask.image.refreshModels" = "モデル一覧を更新";

@@ -40,7 +40,7 @@ final class AskConversationModel: ObservableObject {
     }
     @Published var draft = AskDraft.followUp {
         didSet {
-            if draft.includeScreenshot, screenshotCapability(launcher: false) != .supported {
+            if !isLoadingSelection, draft.includeScreenshot, screenshotCapability(launcher: false) != .supported {
                 draft.includeScreenshot = false
             }
         }
@@ -93,6 +93,8 @@ final class AskConversationModel: ObservableObject {
     private var selectionGeneration = UUID()
     private var selectionObservation: Task<Void, Never>?
     private var draftSave: Task<Void, Never>?
+    private var draftSaveConversationID: String?
+    private var deletedConversationIDs: Set<String> = []
     private var authObserver: AnyCancellable?
     private var modelObserver: AnyCancellable?
 
@@ -116,6 +118,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     var isBusy: Bool { selected.map { busyIds.contains($0.id) || $0.run?.isActive == true } ?? false }
+    var hasPendingSubmission: Bool { selectedId.map { pendingSends[$0] != nil } ?? false }
     var canSend: Bool { !isLoadingSelection && (selectedId == nil || selected != nil) && draft.canSend && !isBusy && (selected.map { pendingSends[$0.id] == nil && !($0.run == nil && $0.messages.last?.role == "user") } ?? true) && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
     var canSendLauncher: Bool { launcherDraft.canSend && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
 
@@ -134,7 +137,7 @@ final class AskConversationModel: ObservableObject {
         inferenceReceipts = [:]
         pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
         screenshotConsent = [:]
-        draftSave?.cancel(); captureGeneration = UUID(); selectionGeneration = UUID()
+        draftSave?.cancel(); draftSaveConversationID = nil; deletedConversationIDs = []; captureGeneration = UUID(); selectionGeneration = UUID()
         selectionObservation?.cancel(); selectionObservation = nil
         inferenceProgress = [:]; progressInferenceIDs = [:]
         selected = nil; selectedId = nil; isLoadingSelection = false; selectionLoadFailed = false
@@ -185,13 +188,18 @@ final class AskConversationModel: ObservableObject {
 
     func persistDrafts() {
         draftSave?.cancel()
-        let launcher = launcherDraft, followUp = draft, id = isLoadingSelection ? nil : selectedId, owner = owner
+        let launcher = launcherDraft, followUp = draft, owner = owner
+        let id = isLoadingSelection ? nil : selectedId.flatMap { deletedConversationIDs.contains($0) ? nil : $0 }
         if let id, !isLoadingSelection { drafts[id] = followUp }
+        draftSaveConversationID = id
         draftSave = Task { [cache] in
             do {
                 try await Task.sleep(for: .milliseconds(300))
                 try await cache.saveDraft(launcher, key: "launcher", owner: owner)
-                if let id { try await cache.saveDraft(followUp, key: id, owner: owner) }
+                try Task.checkCancellation()
+                if let id, self.owner == owner, !deletedConversationIDs.contains(id) {
+                    try await cache.saveDraft(followUp, key: id, owner: owner)
+                }
             } catch is CancellationError {} catch { self.error = L("ask.cache.failed") }
         }
     }
@@ -268,7 +276,7 @@ final class AskConversationModel: ObservableObject {
         selectedId = id; selected = snapshots[id]; isLoadingSelection = true; selectionLoadFailed = false
         draft = drafts[id] ?? .followUp; error = nil; captureWarning = nil; screenshotNotice = nil
         captureGeneration = UUID(); capturing = false
-        if let oldId, let saved = drafts[oldId] { try? await cache.saveDraft(saved, key: oldId, owner: current.owner) }
+        if let oldId, !deletedConversationIDs.contains(oldId), let saved = drafts[oldId] { try? await cache.saveDraft(saved, key: oldId, owner: current.owner) }
         let cached = try? await cache.load(id: id, owner: current.owner)
         let savedDraft = try? await cache.draft(key: id, owner: current.owner)
         guard generation == selectionGeneration, owner == current.owner else { return }
@@ -283,7 +291,7 @@ final class AskConversationModel: ObservableObject {
             guard owner == current.owner else { return }
             if (snapshots[id]?.revision ?? -1) <= latest.revision { snapshots[id] = latest }
             guard generation == selectionGeneration else { return }
-            selected = latest; normalizeScreenshotChoices(); isLoadingSelection = false; error = operationErrors[id]
+            selected = latest; isLoadingSelection = false; normalizeScreenshotChoices(); error = operationErrors[id]
             // Observe active runs without resuming desktop tools or inference.
             if latest.run?.isActive == true, !busyIds.contains(id) {
                 selectionObservation = monitorConversation(id: id, current: current)
@@ -385,12 +393,10 @@ final class AskConversationModel: ObservableObject {
 
     private func validateModel(_ reference: String?, token: String, hasImage: Bool = false) async throws {
         let reference = reference ?? "cloud:default"
-        if reference != "cloud:default" {
+        if reference.hasPrefix("cloud:"), reference != "cloud:default" {
             let catalog = try await api.models(token: token)
-            if reference.hasPrefix("cloud:"),
-               !catalog.contains(where: { $0.reference == reference }) {
-                throw modelLibrary.unavailable()
-            }
+            try Task.checkCancellation()
+            try modelLibrary.replaceCloudModels(catalog)
         }
         guard let (provider, model) = modelLibrary.registry.resolve(reference) else {
             throw modelLibrary.unavailable()
@@ -403,12 +409,19 @@ final class AskConversationModel: ObservableObject {
         }
     }
 
+    func refreshImageModels() async {
+        guard let current = session() else { return }
+        await modelLibrary.refresh(api: api, token: current.token)
+        guard !Task.isCancelled else { return }
+        await modelLibrary.probeOllama()
+    }
+
     func resume() {
         selectionObservation?.cancel(); selectionObservation = nil
         guard let current = credentials(), let value = selected, !busyIds.contains(value.id) else { return }
         let id = value.id
         let retryModelRef = modelReference(launcher: false)
-        if let run = value.run, ["failed", "cancelled"].contains(run.status),
+        if pendingSends[id] == nil, let run = value.run, ["failed", "cancelled"].contains(run.status),
            value.messages.contains(where: { $0.image != nil }) {
             guard canResumeImage else {
                 error = screenshotCapability(launcher: false).hint ?? L("ask.models.unavailable")
@@ -613,12 +626,22 @@ final class AskConversationModel: ObservableObject {
         guard let current = credentials(), !busyIds.contains(id) else { return }
         do {
             try await api.delete(conversationId: id, token: current.token)
+            guard owner == current.owner else { return }
+            deletedConversationIDs.insert(id)
+            // Drain a writer already inside the cache before deleting its draft.
+            // New writers check the tombstone immediately before saving.
+            if draftSaveConversationID == id {
+                let pendingSave = draftSave
+                pendingSave?.cancel()
+                await pendingSave?.value
+            }
             try await cache.delete(id: id, owner: current.owner)
             guard owner == current.owner else { return }
             conversations.removeAll { $0.id == id }
             drafts[id] = nil; snapshots[id] = nil; operationErrors[id] = nil; transcriptPositions[id] = nil
             screenshotConsent[id] = nil
             if selectedId == id { selectedId = nil; newConversation() }
+            else { persistDrafts() }
         } catch { self.error = error.localizedDescription }
     }
 

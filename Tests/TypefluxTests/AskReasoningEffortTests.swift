@@ -31,7 +31,10 @@ struct AskReasoningEffortTests {
                                     scenarios: ["ask"], reasoning: true)], providerID: "typefluxCloud")
         let fixture = try AskTestFixture(modelLibrary: library)
         defer { fixture.model.resetSession() }
-        await fixture.api.setCloudModels([.init(id: "deep", name: "Deep", capabilities: ["reasoning": true])])
+        await fixture.api.setCloudModels([
+            .init(id: "default", name: "Default", vision: true),
+            .init(id: "deep", name: "Deep", vision: true, capabilities: ["reasoning": true])
+        ])
         await fixture.api.setFailSend(true)
         await fixture.model.prepareLauncher()
         fixture.model.reasoningEffort = .high

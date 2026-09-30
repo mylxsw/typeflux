@@ -72,6 +72,9 @@ struct AskImageRecoveryPicker: View {
     let target: AskImageRecoveryTarget
     var dismiss: () -> Void
     @State private var candidate = ""
+    @State private var refreshGeneration = 0
+    @State private var refreshing = false
+    private var loading: Bool { refreshing || model.modelLibrary.loading }
 
     private var choices: [RegisteredProvider] {
         model.modelLibrary.selectableProviders(loggedIn: auth.isLoggedIn, hasImage: true)
@@ -81,8 +84,18 @@ struct AskImageRecoveryPicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(L("ask.image.pickerHint")).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 12)
+            HStack {
+                Button(L("ask.image.refreshModels")) { refreshGeneration += 1 }
+                    .disabled(loading)
+                if loading { ProgressView().controlSize(.small) }
+            }.padding(.horizontal, 12)
+            if let error = model.modelLibrary.catalogError {
+                Text(error).font(.caption).foregroundStyle(StudioTheme.warning).padding(.horizontal, 12)
+            }
             if choices.isEmpty {
-                Text(L("ask.image.noModels")).font(.callout).padding(.horizontal, 12)
+                if !loading, model.modelLibrary.catalogError == nil {
+                    Text(L("ask.image.noModels")).font(.callout).padding(.horizontal, 12)
+                }
                 Button(L("ask.image.configure")) { dismiss(); model.onOpenSettings?() }.padding(.horizontal, 12)
             } else {
                 AskModelChoices(library: model.modelLibrary, reference: $candidate,
@@ -98,12 +111,19 @@ struct AskImageRecoveryPicker: View {
                     dismiss()
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(!valid || model.isBusy || model.isLoadingSelection)
+                .keyboardShortcut(.defaultAction)
+                .disabled(!valid || loading || model.isBusy || model.isLoadingSelection)
             }.padding(.horizontal, 12)
         }
         .padding(.vertical, 12).frame(width: 360)
         .background(ModelVisualStyle.input)
         .onAppear { if model.canResumeImage { candidate = model.modelReference(launcher: false) } }
+        .task(id: refreshGeneration) {
+            guard model.modelLibrary.automaticallyLoadsCatalog || refreshGeneration > 0 else { return }
+            refreshing = true
+            await model.refreshImageModels()
+            refreshing = false
+        }
         .onChange(of: model.selectedId) { _ in dismiss() }
         .onChange(of: model.selected?.run?.id) { _ in dismiss() }
     }

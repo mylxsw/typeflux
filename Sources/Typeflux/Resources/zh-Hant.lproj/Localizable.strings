@@ -1645,3 +1645,4 @@
 "ask.image.noModels" = "暫無可用的圖片模型。";
 "ask.image.configure" = "設定模型";
 "ask.image.cancel" = "取消";
+"ask.image.refreshModels" = "重新整理模型清單";

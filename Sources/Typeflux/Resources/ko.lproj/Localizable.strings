@@ -1634,3 +1634,4 @@
 "ask.image.noModels" = "사용 가능한 이미지 지원 모델이 없습니다.";
 "ask.image.configure" = "모델 설정";
 "ask.image.cancel" = "취소";
+"ask.image.refreshModels" = "모델 목록 새로 고침";

@@ -493,13 +493,13 @@ struct AskConversationView: View {
             AskImageRecoveryCard(model: model, target: target)
                 .id(target.id)
                 .padding(.horizontal, 22).padding(.bottom, 6)
-        } else if let run = model.selected?.run, run.status == "failed" || run.status == "cancelled", !model.isBusy {
+        } else if !model.hasPendingSubmission, let run = model.selected?.run, run.status == "failed" || run.status == "cancelled", !model.isBusy {
             AskBanner(text: run.error ?? L("ask.cancelled"), tone: .info,
                       systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
                 .padding(.horizontal, 22)
                 .padding(.bottom, 6)
-        } else if resumable {
+        } else if resumable, model.error == nil {
             AskBanner(text: L("ask.resume.hint"), tone: .info, systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
                 .padding(.horizontal, 22)
@@ -511,6 +511,7 @@ struct AskConversationView: View {
     /// active on this conversation while no local operation is driving it.
     private var resumable: Bool {
         guard let selected = model.selected, !model.isBusy else { return false }
+        if model.hasPendingSubmission { return true }
         if selected.run == nil, selected.messages.last?.role == "user" { return true }
         return selected.run?.isActive == true && !model.busyIds.contains(selected.id)
     }

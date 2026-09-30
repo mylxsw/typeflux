@@ -7,6 +7,109 @@ import Testing
 struct AskImageCapabilityTests {
     static let image = "data:image/jpeg;base64,YQ=="
 
+    @Test func restoringDraftWaitsForTheConversationModel() async throws {
+        let f = try await fixture()
+        defer { f.model.resetSession() }
+        f.model.modelLibrary.defaultReference = "cloud:text"
+        let value = conversation(reference: "cloud:vision")
+        await f.api.seed(value)
+        try await f.cache.saveDraft(AskDraft(text: "Follow up", screenshot: Self.image), key: value.id, owner: "owner")
+        await f.model.select(value.id)
+        #expect(f.model.modelReference(launcher: false) == "cloud:vision")
+        #expect(f.model.draft.includeScreenshot)
+        #expect(f.model.draft.screenshot == Self.image)
+    }
+
+    @Test func retryChecksFreshCloudImageCapabilities() async throws {
+        let f = try await fixture()
+        defer { f.model.resetSession() }
+        let value = conversation()
+        await f.api.seed(value)
+        await f.model.select(value.id)
+        let target = try #require(f.model.imageRecoveryTarget)
+        await f.api.setCloudModels([.init(id: "vision", name: "Vision", vision: false)])
+        f.model.resumeImage(target, reference: "cloud:vision")
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(await f.api.retryModels.isEmpty)
+        #expect(f.model.selected?.run?.status == "failed")
+        #expect(f.model.screenshotCapability(launcher: false) == .unsupported)
+        #expect(f.model.error != nil)
+    }
+
+    @Test func deletingAnotherConversationCannotResurrectItsDraft() async throws {
+        let f = try await fixture()
+        defer { f.model.resetSession() }
+        for id in ["first", "second"] { await f.api.seed(conversation(id)) }
+        await f.model.select("first")
+        f.model.draft.text = "Unsaved changes"
+        f.model.persistDrafts()
+        await f.model.select("second")
+        f.model.draft.text = "Keep this other draft"
+        f.model.launcherDraft.text = "Keep the launcher draft"
+        await f.model.delete("first")
+        try await Task.sleep(for: .milliseconds(450))
+        #expect(try await f.cache.draft(key: "first", owner: "owner") == nil)
+        #expect(f.model.selectedId == "second")
+        #expect(try await f.cache.draft(key: "second", owner: "owner")?.text == "Keep this other draft")
+        #expect(try await f.cache.draft(key: "launcher", owner: "owner")?.text == "Keep the launcher draft")
+    }
+
+    @Test func refreshDiscoversImageModelsWithoutSelectingOrResuming() async throws {
+        let f = try await fixture()
+        defer { f.model.resetSession() }
+        var registry = f.model.modelLibrary.registry
+        registry.providers.removeAll(where: \.isOllama)
+        try f.model.modelLibrary.commit(registry)
+        let value = conversation()
+        await f.api.seed(value)
+        await f.model.select(value.id)
+        await f.api.setCloudModels([.init(id: "new-vision", name: "New Vision", vision: true)])
+        await f.model.refreshImageModels()
+        #expect(f.model.modelLibrary.imageCapability("cloud:new-vision") == .supported)
+        #expect(f.model.modelReference(launcher: false) == "cloud:text")
+        #expect(await f.api.retryModels.isEmpty)
+        await f.api.setFailModels(true)
+        await f.model.refreshImageModels()
+        #expect(f.model.modelLibrary.catalogError != nil)
+        #expect(f.model.modelLibrary.imageCapability("cloud:new-vision") == .supported)
+    }
+
+    @Test func customModelsDoNotDependOnCloudCatalogAvailability() async throws {
+        let f = try await fixture()
+        defer { f.model.resetSession() }
+        var registry = f.model.modelLibrary.registry
+        registry.providers.append(.init(id: "fixture", name: "Fixture", baseURL: "https://example.invalid/v1",
+            models: [.init(id: "vision", name: "Vision", reference: "custom:fixture", vision: true)]))
+        try f.model.modelLibrary.commit(registry)
+        await f.api.setFailModels(true)
+        f.model.launcherDraft = AskDraft(text: "Question", includeScreenshot: false, modelRef: "custom:fixture")
+        f.model.submitLauncher()
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(f.model.error == nil)
+        #expect(await f.api.sends.count == 1)
+    }
+
+    @Test func failedFollowUpDoesNotOfferRecoveryForThePreviousRun() async throws {
+        let f = try await fixture()
+        defer { f.model.resetSession() }
+        let value = conversation()
+        await f.api.seed(value)
+        await f.model.select(value.id)
+        f.model.selectModel("cloud:vision", launcher: false)
+        f.model.draft.text = "A new question"
+        await f.api.setFailSend(true)
+        f.model.submitDraft()
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(f.model.imageRecoveryTarget == nil)
+        await f.api.setFailSend(false)
+        f.model.selectModel("cloud:default", launcher: false)
+        f.model.resume()
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(await f.api.retryModels.isEmpty)
+        #expect(await f.api.sends.first?.modelRef == "cloud:vision")
+        #expect(await f.api.sends.first?.text == "A new question")
+    }
+
     func fixture() async throws -> AskTestFixture {
         let f = try AskTestFixture()
         await f.model.prepareLauncher()

@@ -421,6 +421,11 @@ struct AskConversationVisualTests {
         try await render(AskImageRecoveryPicker(model: fixture.model, target: target, dismiss: {}),
                          size: NSSize(width: 360, height: 180), appearance: .aqua,
                          file: root.appendingPathComponent("image-no-models.png"), minimumPNGBytes: 4000)
+        fixture.model.modelLibrary.catalogError = L("ask.models.catalogError")
+        try await render(AskImageRecoveryPicker(model: fixture.model, target: target, dismiss: {}),
+                         size: NSSize(width: 360, height: 220), appearance: .aqua,
+                         file: root.appendingPathComponent("image-catalog-error.png"), minimumPNGBytes: 4000)
+        fixture.model.modelLibrary.catalogError = nil
         registry.providers = [.init(id: "fixture", name: "示例服务", baseURL: "https://example.invalid/v1",
             models: [.init(id: "vision", name: "图片模型", reference: "custom:fixture", vision: true)])]
         try fixture.model.modelLibrary.commit(registry)
