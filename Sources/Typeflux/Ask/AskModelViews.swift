@@ -4,6 +4,7 @@ struct AskModelMenu: View {
     @ObservedObject var library: AskModelLibrary
     @Binding var reference: String
     var disabled = false
+    var scenario = "ask"
     var showsDefaultAction = true
     var hasImage = false
     var fieldStyle = false
@@ -12,7 +13,7 @@ struct AskModelMenu: View {
 
     private var currentReason: String? {
         guard let (provider, model) = library.registry.resolve(reference) else { return L("ask.models.unavailable") }
-        return library.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: auth.isLoggedIn)
+        return library.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: auth.isLoggedIn, scenario: scenario)
     }
 
     var body: some View {
@@ -20,7 +21,7 @@ struct AskModelMenu: View {
             HStack(spacing: 8) {
                 ModelProviderIcon(provider: library.registry.resolve(reference)?.0.studioProviderID ?? .customLLM,
                                   size: 18)
-                Text(library.name(for: reference)).lineLimit(1).truncationMode(.middle)
+                Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
                 if fieldStyle {
                     Spacer(minLength: 4)
                 }
@@ -39,8 +40,13 @@ struct AskModelMenu: View {
         .buttonStyle(.plain).disabled(disabled)
         .help(currentReason ?? L("ask.models.conversationOnly"))
         .popover(isPresented: $expanded, arrowEdge: .bottom) {
-            AskModelChoices(library: library, reference: $reference, showsDefaultAction: showsDefaultAction,
+            AskModelChoices(library: library, reference: $reference, scenario: scenario, showsDefaultAction: showsDefaultAction,
                             hasImage: hasImage, loggedIn: auth.isLoggedIn) { expanded = false }
+        }
+        .onChange(of: expanded) { isExpanded in
+            if isExpanded && library.automaticallyLoadsCatalog {
+                Task { await library.refresh(token: auth.accessToken) }
+            }
         }
         .task {
             library.adoptLegacySelectionIfNeeded()
@@ -55,13 +61,14 @@ struct AskModelMenu: View {
 struct AskModelChoices: View {
     @ObservedObject var library: AskModelLibrary
     @Binding var reference: String
+    var scenario = "ask"
     var showsDefaultAction = true
     var hasImage = false
     var loggedIn: Bool
     var dismiss: () -> Void = {}
 
     var body: some View {
-        let choices = library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage)
+        let choices = library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage, scenario: scenario)
         let selectionAvailable = choices.contains { $0.models.contains { $0.reference == reference } }
         return VStack(alignment: .leading, spacing: 0) {
             ScrollView {
@@ -100,11 +107,15 @@ struct AskModelChoices: View {
         return Button { reference = model.reference; dismiss() } label: {
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(model.name).font(.system(
+                    Text(model.displayName).font(.system(
                         size: 13,
                         weight: selected ? .semibold : .regular,
                         design: .monospaced
                     ))
+                    if let context = model.contextWindowTokens, let output = model.maxOutputTokens {
+                        Text(String(format: L("models.cloud.parameters"), context, output))
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
                 }
                 Spacer(minLength: 8)
                 if selected {
@@ -118,5 +129,6 @@ struct AskModelChoices: View {
                         in: RoundedRectangle(cornerRadius: 8))
             .contentShape(Rectangle())
         }.buttonStyle(.plain)
+            .help(model.pricing == nil ? L("models.cloud.priceUnknown") : L("models.cloud.priceExplanation"))
     }
 }

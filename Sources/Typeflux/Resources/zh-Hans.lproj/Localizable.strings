@@ -1608,3 +1608,7 @@
 "ask.reasoning.active" = "正在思考";
 "ask.reasoning.complete" = "思考了 %d 秒";
 "ask.answer.interrupted" = "生成已中断 · 已保留现有内容";
+
+"models.cloud.parameters" = "上下文：%d · 输出：%d tokens";
+"models.cloud.priceUnknown" = "价格信息暂不可用";
+"models.cloud.priceExplanation" = "倍率同时作用于输入和输出费率，实际消耗取决于 token 用量。";

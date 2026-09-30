@@ -270,12 +270,12 @@ final class ModelRegistryTests: XCTestCase {
         XCTAssertThrowsError(try library.updateConnection(empty, baseURL: empty.baseURL, key: ""))
     }
 
-    func testCloudRefreshDoesNotResurrectDeletedModelsOrChangeDefaults() async throws {
+    func testCloudRefreshAddsPublishedModelsWithoutChangingDefaults() async throws {
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         library.defaultReference = "cloud:default"
         try library.removeModel("cloud:default", providerID: "typefluxCloud")
         await library.refresh(api: AskTestAPI(), token: "fixture")
-        XCTAssertNil(library.registry.resolve("cloud:default"))
+        XCTAssertNotNil(library.registry.resolve("cloud:default"))
         XCTAssertEqual(library.defaultReference, "cloud:default")
         try library.addModels([.init(id: "deep", name: "Deep", reference: "cloud:deep")], providerID: "typefluxCloud")
         library.rewriteReference = "cloud:deep"

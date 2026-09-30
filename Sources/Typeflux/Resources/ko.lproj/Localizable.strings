@@ -1594,3 +1594,7 @@
 "ask.reasoning.active" = "생각 중";
 "ask.reasoning.complete" = "%d초 동안 생각함";
 "ask.answer.interrupted" = "생성 중단 · 부분 응답 저장됨";
+
+"models.cloud.parameters" = "컨텍스트: %d · 출력: %d tokens";
+"models.cloud.priceUnknown" = "가격 정보를 사용할 수 없습니다";
+"models.cloud.priceExplanation" = "배율은 입력 및 출력 요금에 적용됩니다. 총 비용은 토큰 사용량에 따라 달라집니다.";
