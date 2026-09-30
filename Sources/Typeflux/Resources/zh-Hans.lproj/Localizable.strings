@@ -1515,6 +1515,7 @@
 "ask.tool.result" = "结果";
 "ask.copied" = "已复制";
 "ask.quote" = "引用追问";
+"ask.regenerate" = "重新生成";
 "ask.empty.hint" = "随时双击 Fn 唤起，按住输入框说话";
 "ask.suggest.screen" = "讲讲这一屏在做什么";
 "ask.suggest.screen.caption" = "带当前截图";
@@ -1670,6 +1671,11 @@
 "ask.references.question" = "针对这段追问";
 "ask.references.optional" = "输入问题（可选）";
 "ask.references.explain" = "解释这段";
+"ask.selection.explain" = "解释";
+"ask.selection.translate" = "翻译";
+"ask.selection.ask" = "追问";
+"ask.references.translate" = "翻译这段";
+"ask.references.source" = "选中片段";
 "ask.references.save" = "添加到草稿";
 "ask.references.manage" = "管理（%d）";
 "ask.references.locate" = "定位原文";

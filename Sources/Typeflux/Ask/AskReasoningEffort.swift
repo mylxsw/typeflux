@@ -20,8 +20,16 @@ struct AskReasoningMenu: View {
     var reference: String
     @Binding var effort: AskReasoningEffort
     var disabled = false
+    /// Matches `AskModelMenu.compact`: borderless inside the composer footer.
+    var compact = false
 
     @State private var expanded = false
+    @State private var hovering = false
+
+    private var fill: Color {
+        guard compact else { return ModelVisualStyle.input }
+        return hovering || expanded ? AskTheme.controlSurface : .clear
+    }
 
     var body: some View {
         if reference.hasPrefix("cloud:"), library.registry.resolve(reference)?.1.reasoning == true {
@@ -33,13 +41,15 @@ struct AskReasoningMenu: View {
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(StudioTheme.textSecondary)
                 }
-                .font(.system(size: 13, weight: .medium))
-                .padding(.horizontal, 11).frame(height: 32)
-                .background(ModelVisualStyle.input, in: RoundedRectangle(cornerRadius: 16))
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(ModelVisualStyle.border))
+                .font(.system(size: compact ? 12.5 : 13, weight: .medium))
+                .padding(.horizontal, compact ? 9 : 11).frame(height: compact ? 28 : 32)
+                .background(fill, in: RoundedRectangle(cornerRadius: compact ? 8 : 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: compact ? 8 : 16, style: .continuous)
+                    .strokeBorder(compact ? Color.clear : ModelVisualStyle.border))
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .onHover { hovering = $0 }
             .fixedSize()
             .disabled(disabled)
             .help(L("ask.reasoning.help"))

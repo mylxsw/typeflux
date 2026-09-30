@@ -8,17 +8,29 @@ struct AskModelMenu: View {
     var showsDefaultAction = true
     var hasImage = false
     var fieldStyle = false
+    /// Composer footer styling: the model is the least frequent control down
+    /// there, so it loses its border and only fills under the pointer. Settings
+    /// keeps the bordered field it was designed with.
+    var compact = false
     @ObservedObject private var auth = AuthState.shared
     @State private var expanded = false
+    @State private var hovering = false
 
     private var currentReason: String? {
         guard let (provider, model) = library.registry.resolve(reference) else { return L("ask.models.unavailable") }
         return library.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: auth.isLoggedIn, scenario: scenario)
     }
 
+    private var corner: CGFloat { compact ? 8 : (fieldStyle ? 8 : 16) }
+    private var fill: Color {
+        guard compact else { return ModelVisualStyle.input }
+        return hovering || expanded ? AskTheme.controlSurface : .clear
+    }
+    private var stroke: Color { compact ? .clear : ModelVisualStyle.border }
+
     var body: some View {
         Button { expanded.toggle() } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: compact ? 6 : 8) {
                 Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
                 if fieldStyle {
                     Spacer(minLength: 4)
@@ -29,13 +41,15 @@ struct AskModelMenu: View {
                 Image(systemName: "chevron.down").font(.system(size: 10, weight: .medium))
                     .foregroundStyle(StudioTheme.textSecondary)
             }
-            .font(.system(size: 13, weight: .medium))
-            .padding(.horizontal, 11).frame(width: fieldStyle ? 240 : nil, height: 32)
-            .background(ModelVisualStyle.input, in: RoundedRectangle(cornerRadius: fieldStyle ? 8 : 16))
-            .overlay(RoundedRectangle(cornerRadius: fieldStyle ? 8 : 16).strokeBorder(ModelVisualStyle.border))
+            .font(.system(size: compact ? 12.5 : 13, weight: .medium))
+            .padding(.horizontal, compact ? 9 : 11)
+            .frame(width: fieldStyle ? 240 : nil, height: compact ? 28 : 32)
+            .background(fill, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: corner, style: .continuous).strokeBorder(stroke))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain).disabled(disabled)
+        .onHover { hovering = $0 }
         .help(currentReason ?? L("ask.models.conversationOnly"))
         .popover(isPresented: $expanded, arrowEdge: .bottom) {
             AskModelChoices(library: library, reference: $reference, scenario: scenario, showsDefaultAction: showsDefaultAction,

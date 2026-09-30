@@ -1512,6 +1512,7 @@
 "ask.tool.result" = "結果";
 "ask.copied" = "已複製";
 "ask.quote" = "引用追問";
+"ask.regenerate" = "重新產生";
 "ask.empty.hint" = "隨時按兩下 Fn 喚起，按住輸入框說話";
 "ask.suggest.screen" = "說說這一頁畫面在做什麼";
 "ask.suggest.screen.caption" = "附上目前截圖";
@@ -1667,6 +1668,11 @@
 "ask.references.question" = "針對這段追問";
 "ask.references.optional" = "輸入問題（可選）";
 "ask.references.explain" = "解釋這段";
+"ask.selection.explain" = "解釋";
+"ask.selection.translate" = "翻譯";
+"ask.selection.ask" = "追問";
+"ask.references.translate" = "翻譯這段";
+"ask.references.source" = "選取片段";
 "ask.references.save" = "加入草稿";
 "ask.references.manage" = "管理（%d）";
 "ask.references.locate" = "定位原文";

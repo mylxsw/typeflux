@@ -103,7 +103,6 @@ enum AskMetrics {
     static let composerMaxWidth: CGFloat = 780
     static let transcriptMaxWidth: CGFloat = 680
     static let bubbleMaxWidth: CGFloat = 560
-    static let assistantIndent: CGFloat = 30
 
     /// Height of the launcher panel, including its transparent gutter.
     static func launcherHeight(editor: CGFloat, banners: Int) -> CGFloat {
@@ -443,44 +442,116 @@ struct AskWaveform: View {
     }
 }
 
-struct AskAvatar: View {
-    var size: CGFloat = 22
-    var corner: CGFloat?
-
-    var body: some View {
-        Image(systemName: "sparkles")
-            .font(.system(size: size * 0.48, weight: .semibold))
-            .foregroundStyle(Color.white)
-            .frame(width: size, height: size)
-            .background(
-                LinearGradient(
-                    colors: [Color(red: 0.30, green: 0.55, blue: 1.0), Color(red: 0.55, green: 0.36, blue: 0.96)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                ),
-                in: RoundedRectangle(cornerRadius: corner ?? size / 2, style: .continuous)
-            )
-            .accessibilityHidden(true)
-    }
-}
-
+/// Borderless action used by the transcript's per-turn toolbar. It only paints
+/// a background under the pointer, so a row of them reads as one quiet strip
+/// instead of three competing buttons.
 struct AskGhostButton: View {
     var title: String
     var systemImage: String
+    var active = false
     var action: () -> Void
+    @State private var hovering = false
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Image(systemName: systemImage).font(.system(size: 10.5))
-                Text(title).font(.system(size: 11.5))
+                Text(title).font(.system(size: 11.5, weight: .medium)).lineLimit(1)
             }
-            .foregroundStyle(StudioTheme.textTertiary)
+            .foregroundStyle(foreground)
             .padding(.horizontal, 8)
-            .frame(height: 24)
-            .background(AskTheme.raisedSurface, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .frame(height: 26)
+            .background(hovering ? AskTheme.controlSurface : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         }
         .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .accessibilityLabel(title)
+    }
+
+    private var foreground: Color {
+        if active { return StudioTheme.success }
+        return hovering ? StudioTheme.textPrimary : StudioTheme.textTertiary
+    }
+}
+
+/// The four things a selected excerpt can become. Replaces a modal that asked
+/// for an optional question before anything could happen.
+enum AskSelectionAction: String, CaseIterable {
+    case explain, translate, ask, copy
+
+    var title: String {
+        switch self {
+        case .explain: return L("ask.selection.explain")
+        case .translate: return L("ask.selection.translate")
+        case .ask: return L("ask.selection.ask")
+        case .copy: return L("ask.copy")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .explain: return "info.circle"
+        case .translate: return "character.book.closed"
+        case .ask: return "text.bubble"
+        case .copy: return "doc.on.doc"
+        }
+    }
+
+    /// The question carried into the draft. `ask` leaves it to the user, and
+    /// `copy` never reaches the composer.
+    var question: String {
+        switch self {
+        case .explain: return L("ask.references.explain")
+        case .translate: return L("ask.references.translate")
+        case .ask, .copy: return ""
+        }
+    }
+}
+
+/// The bar that floats over a selection inside an answer. Copy is separated by
+/// a rule because it is the only action that does not reach the composer.
+struct AskSelectionActionBar: View {
+    var perform: (AskSelectionAction) -> Void
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(AskSelectionAction.allCases, id: \.rawValue) { action in
+                if action == .copy {
+                    Rectangle().fill(AskTheme.separator)
+                        .frame(width: 1, height: 16)
+                        .padding(.horizontal, 3)
+                }
+                AskSelectionActionButton(action: action) { perform(action) }
+            }
+        }
+        .padding(4)
+        .tint(AskTheme.accent)
+    }
+}
+
+private struct AskSelectionActionButton: View {
+    var action: AskSelectionAction
+    var perform: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: perform) {
+            HStack(spacing: 5) {
+                Image(systemName: action.systemImage).font(.system(size: 11))
+                Text(action.title).font(.system(size: 12, weight: .medium)).lineLimit(1)
+            }
+            .foregroundStyle(hovering ? AskTheme.accentText : StudioTheme.textSecondary)
+            .padding(.horizontal, 9)
+            .frame(height: 28)
+            .background(hovering ? AskTheme.accentSoft : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .accessibilityLabel(action.title)
     }
 }
 

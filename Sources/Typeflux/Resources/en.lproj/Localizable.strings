@@ -1515,6 +1515,7 @@
 "ask.tool.result" = "Result";
 "ask.copied" = "Copied";
 "ask.quote" = "Quote";
+"ask.regenerate" = "Regenerate";
 "ask.empty.hint" = "Double-press Fn anytime. Hold the field to speak.";
 "ask.suggest.screen" = "Tell me what is on this screen";
 "ask.suggest.screen.caption" = "With a screenshot";
@@ -1670,6 +1671,11 @@
 "ask.references.question" = "Follow-up question";
 "ask.references.optional" = "Question (optional)";
 "ask.references.explain" = "Explain this excerpt";
+"ask.selection.explain" = "Explain";
+"ask.selection.translate" = "Translate";
+"ask.selection.ask" = "Ask";
+"ask.references.translate" = "Translate this excerpt";
+"ask.references.source" = "Selected excerpt";
 "ask.references.save" = "Add to draft";
 "ask.references.manage" = "Manage (%d)";
 "ask.references.locate" = "Locate source";
