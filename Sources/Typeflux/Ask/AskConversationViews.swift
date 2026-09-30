@@ -65,7 +65,7 @@ struct AskConversationView: View {
             // traffic lights. The toggle and search buttons float above it.
             Color.clear.frame(height: AskMetrics.sidebarTopInset)
             sidebarSearchField.padding(.horizontal, 10).padding(.bottom, 8)
-            newConversationButton.padding(.horizontal, 10).padding(.bottom, 6)
+            newConversationButton.padding(.horizontal, 10).padding(.bottom, 14)
             historyList
             accountFooter
         }
@@ -291,7 +291,7 @@ struct AskConversationView: View {
             .foregroundStyle(Color.white)
             .padding(.horizontal, 10)
             .frame(height: 34)
-            .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .background(AskTheme.primaryAction, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -440,19 +440,18 @@ struct AskConversationView: View {
                 .lineLimit(1)
             if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
             Spacer(minLength: 8)
-            if model.selectedId != nil {
-                Text(headerSubtitle)
+            if let credits = headerCredits {
+                Text(credits)
                     .font(.system(size: 11.5))
                     .foregroundStyle(StudioTheme.textTertiary)
+                    .monospacedDigit()
                     .lineLimit(1)
                     .fixedSize()
             }
             if let id = model.selectedId {
                 HStack(spacing: 2) {
-                    headerAction("chart.bar.xaxis", label: L("ask.usage.title")) {
-                        usageRunId = model.selected?.run?.id; showsUsage.toggle()
-                    }
-                    headerAction("trash", label: L("ask.delete")) { deleteId = id }
+                    headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
+                    headerAction(.trash, label: L("ask.delete")) { deleteId = id }
                 }
                 .opacity(headerHovering || showsUsage ? 1 : 0.35)
                 .animation(.easeOut(duration: 0.15), value: headerHovering)
@@ -466,17 +465,26 @@ struct AskConversationView: View {
         .onHover { headerHovering = $0 }
     }
 
-    private var headerSubtitle: String {
-        let name = model.modelLibrary.name(for: model.modelReference(launcher: false))
-        guard let credits = model.selected?.usage?.total.creditsText else { return name }
-        return name + "  ·  " + credits + " credits"
+    private var headerCredits: String? {
+        guard model.selectedId != nil, let usage = model.selected?.usage else { return nil }
+        return usage.total.creditsText + " credits"
     }
 
-    private func headerAction(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+    /// The header icon and the composer's context ring both toggle the panel:
+    /// the same control that opened it closes it again.
+    private func toggleUsage() {
+        if !showsUsage { usageRunId = model.selected?.run?.id }
+        showsUsage.toggle()
+    }
+
+    private func headerAction(_ kind: AskLineGlyph.Kind, label: String, active: Bool = false,
+                              action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 12.5))
-                .foregroundStyle(StudioTheme.textSecondary)
+            AskLineIcon(kind: kind, size: 15)
+                .foregroundStyle(active ? AskTheme.accent : StudioTheme.textSecondary)
                 .frame(width: 28, height: 28)
+                .background(active ? AskTheme.hoverFill : Color.clear,
+                            in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -490,8 +498,7 @@ struct AskConversationView: View {
             Text(L("ask.empty")).font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .padding(.bottom, 7)
-            Text(L("ask.empty.hint")).font(.system(size: 13)).foregroundStyle(StudioTheme.textTertiary)
-                .multilineTextAlignment(.center)
+            emptyHint
             VStack(spacing: 8) {
                 suggestion(title: L("ask.suggest.screen"), caption: L("ask.suggest.screen.caption"),
                            systemImage: "display", shortcut: "1", screenshot: true)
@@ -506,6 +513,28 @@ struct AskConversationView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 32)
         .padding(.bottom, 40)
+    }
+
+    /// "Double-press [Fn] to summon · hold the input to talk", with the key drawn
+    /// as a key. The sentence is split around the key so every language can
+    /// place it where its grammar wants it.
+    private var emptyHint: some View {
+        HStack(spacing: 6) {
+            let before = L("ask.empty.hint.before")
+            if !before.isEmpty { Text(before) }
+            Text(verbatim: "Fn")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .padding(.horizontal, 6)
+                .frame(height: 20)
+                .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(AskTheme.border))
+            Text(L("ask.empty.hint.after"))
+        }
+        .font(.system(size: 13))
+        .foregroundStyle(StudioTheme.textTertiary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L("ask.empty.hint"))
     }
 
     /// The caption used to sit at the trailing edge in the faintest grey in the
@@ -584,7 +613,7 @@ struct AskConversationView: View {
             }
             // The context budget used to occupy a whole row of its own below the
             // composer; it now rides in the footer next to the send button.
-            AskComposer(model: model, launcher: false, onOpenUsage: { showsUsage = true })
+            AskComposer(model: model, launcher: false, onToggleUsage: { toggleUsage() })
                 .disabled(model.isLoadingSelection)
         }
         .frame(maxWidth: AskMetrics.composerMaxWidth)

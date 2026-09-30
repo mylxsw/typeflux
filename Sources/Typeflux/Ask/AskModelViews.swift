@@ -53,7 +53,8 @@ struct AskModelMenu: View {
         .help(currentReason ?? L("ask.models.conversationOnly"))
         .popover(isPresented: $expanded, arrowEdge: .bottom) {
             AskModelChoices(library: library, reference: $reference, scenario: scenario, showsDefaultAction: showsDefaultAction,
-                            hasImage: hasImage, loggedIn: auth.isLoggedIn) { expanded = false }
+                            hasImage: hasImage, loggedIn: auth.isLoggedIn, dismiss: { expanded = false },
+                            composerStyle: compact)
         }
         .onChange(of: expanded) { isExpanded in
             if isExpanded && library.automaticallyLoadsCatalog {
@@ -81,8 +82,15 @@ struct AskModelChoices: View {
     var preferredProviderID: String?
     var showsUnavailableSelection = true
     var recoveryProviders: [RegisteredProvider]?
+    /// The composer's chooser follows the Ask design board. Settings and the
+    /// image-recovery picker keep the field styling validated in design-qa.md.
+    var composerStyle = false
 
     var body: some View {
+        if composerStyle { composerBody } else { standardBody }
+    }
+
+    private var standardBody: some View {
         let available = recoveryProviders ?? library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage, scenario: scenario)
         let choices = available.filter { $0.id == preferredProviderID } + available.filter { $0.id != preferredProviderID }
         let selectionAvailable = choices.contains { $0.models.contains { $0.reference == reference } }
@@ -108,6 +116,60 @@ struct AskModelChoices: View {
                 }.buttonStyle(.plain).disabled(!selectionAvailable)
             }
         }.frame(width: 360).background(ModelVisualStyle.input)
+    }
+
+    private var composerBody: some View {
+        let choices = library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage, scenario: scenario)
+        let selectionAvailable = choices.contains { $0.models.contains { $0.reference == reference } }
+        return VStack(alignment: .leading, spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    if choices.isEmpty {
+                        Text(L("models.noAvailable")).font(.system(size: 12))
+                            .foregroundStyle(StudioTheme.textTertiary).padding(14)
+                    } else if showsUnavailableSelection && !selectionAvailable {
+                        Text(L("ask.models.unavailable")).font(.system(size: 12))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .padding(.horizontal, 14).padding(.top, 12)
+                    }
+                    ForEach(choices) { provider in
+                        AskPopoverHeader(title: provider.name)
+                        ForEach(provider.models) { model in
+                            AskPopoverRow(title: model.name, caption: Self.caption(model),
+                                          selected: reference == model.reference) {
+                                reference = model.reference; dismiss()
+                            } accessory: {
+                                if let multiplier = model.pricing?.multiplier {
+                                    AskMultiplierBadge(multiplier: multiplier)
+                                }
+                            }
+                            .help(model.displayName + " — " + (model.pricing == nil
+                                ? L("models.cloud.priceUnknown") : L("models.cloud.priceExplanation")))
+                        }
+                    }
+                    Color.clear.frame(height: 5)
+                }
+            }
+            .frame(maxHeight: 360)
+            .fixedSize(horizontal: false, vertical: true)
+            if showsDefaultAction {
+                AskPopoverFooterButton(title: L("ask.models.makeDefault"), systemImage: "gearshape") {
+                    library.defaultReference = reference
+                    dismiss()
+                }
+                .disabled(!selectionAvailable)
+            }
+        }
+        .frame(width: 292)
+        .background(AskTheme.popoverSurface)
+    }
+
+    /// "205K context · 16.4K output": compact numbers instead of raw token counts.
+    static func caption(_ model: RegisteredModel) -> String? {
+        guard let context = model.contextWindowTokens, let output = model.maxOutputTokens else { return nil }
+        return String(format: L("ask.models.capacity"),
+                      AccountUsageDisplayFormatter.count(Int64(context)),
+                      AccountUsageDisplayFormatter.count(Int64(output)))
     }
 
     private func modelList(_ choices: [RegisteredProvider], selectionAvailable: Bool) -> some View {

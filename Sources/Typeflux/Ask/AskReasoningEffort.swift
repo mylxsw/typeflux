@@ -8,6 +8,12 @@ enum AskReasoningEffort: String, CaseIterable {
         L("ask.reasoning." + (self == .providerDefault ? "default" : rawValue))
     }
 
+    /// One line under each level in the chooser, so the trade-off is visible
+    /// before picking rather than only in a tooltip.
+    var caption: String {
+        L("ask.reasoning." + (self == .providerDefault ? "default" : rawValue) + ".caption")
+    }
+
     func requestValue(for model: RegisteredModel?) -> String? {
         guard model?.reference.hasPrefix("cloud:") == true, model?.reasoning == true,
               self != .providerDefault else { return nil }
@@ -67,31 +73,16 @@ struct AskReasoningChoices: View {
     var dismiss: () -> Void = {}
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(L("ask.reasoning.title"))
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .padding(.horizontal, 12).padding(.vertical, 8)
+        VStack(alignment: .leading, spacing: 0) {
+            AskPopoverHeader(title: L("ask.reasoning.title"))
             ForEach(AskReasoningEffort.allCases, id: \.self) { choice in
-                Button { effort = choice; dismiss() } label: {
-                    HStack {
-                        Text(choice.label)
-                        Spacer()
-                        if effort == choice {
-                            Image(systemName: "checkmark").font(.system(size: 12, weight: .semibold))
-                        }
-                    }
-                    .font(.system(size: 13, weight: effort == choice ? .semibold : .regular))
-                    .foregroundStyle(effort == choice ? ModelVisualStyle.accent : StudioTheme.textPrimary)
-                    .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(effort == choice ? ModelVisualStyle.accent.opacity(0.15) : .clear,
-                                in: RoundedRectangle(cornerRadius: 8))
-                    .contentShape(Rectangle())
+                AskPopoverRow(title: choice.label, caption: choice.caption, selected: effort == choice) {
+                    effort = choice; dismiss()
                 }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(effort == choice ? [.isSelected] : [])
             }
+            Color.clear.frame(height: 5)
         }
-        .padding(8).frame(width: 200).background(ModelVisualStyle.input)
+        .frame(width: 248)
+        .background(AskTheme.popoverSurface)
     }
 }

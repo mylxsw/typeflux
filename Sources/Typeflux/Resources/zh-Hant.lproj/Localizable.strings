@@ -1514,6 +1514,14 @@
 "ask.quote" = "引用追問";
 "ask.regenerate" = "重新產生";
 "ask.empty.hint" = "隨時按兩下 Fn 喚起，按住輸入框說話";
+"ask.empty.hint.before" = "隨時按兩下";
+"ask.empty.hint.after" = "喚起 · 按住輸入框說話";
+"ask.models.capacity" = "%@ 上下文 · %@ 輸出";
+"ask.usage.spent" = "消耗";
+"ask.reasoning.default.caption" = "由模型決定思考深度";
+"ask.reasoning.low.caption" = "最快，適合簡單問題";
+"ask.reasoning.medium.caption" = "速度與深度均衡";
+"ask.reasoning.high.caption" = "思考最充分，較慢且消耗更多點數";
 "ask.suggest.screen" = "說說這一頁畫面在做什麼";
 "ask.suggest.screen.caption" = "附上目前截圖";
 "ask.suggest.selection" = "翻譯我選取的文字";
