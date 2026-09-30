@@ -58,7 +58,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                 }
             }.padding(2)
         }
-        .task {
+        .task(id: auth.accessToken) {
             library.adoptLegacySelectionIfNeeded()
             if library.automaticallyLoadsCatalog {
                 await library.refresh(token: auth.accessToken)

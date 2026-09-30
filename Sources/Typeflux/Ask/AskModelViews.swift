@@ -48,7 +48,7 @@ struct AskModelMenu: View {
                 Task { await library.refresh(token: auth.accessToken) }
             }
         }
-        .task {
+        .task(id: auth.accessToken) {
             library.adoptLegacySelectionIfNeeded()
             if library.automaticallyLoadsCatalog {
                 await library.refresh(token: auth.accessToken)

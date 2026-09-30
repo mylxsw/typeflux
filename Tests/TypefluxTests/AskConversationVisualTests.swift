@@ -324,6 +324,34 @@ struct AskConversationVisualTests {
                          file: root.appendingPathComponent("ask-reasoning-client.png"))
     }
 
+    @Test func renderManagedCloudModels() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_CLOUD_CAPTURE_DIR"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let suite = "cloud-managed-visual-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        let api = AskTestAPI()
+        await api.setCloudModels([
+            .init(id: "daily", name: "日常助手", vision: true, scenarios: ["ask"], contextWindowTokens: 204800,
+                  maxOutputTokens: 16384, pricing: .init(multiplier: "1"), modelVersion: 1),
+            .init(id: "deep", name: "深度思考", vision: true, scenarios: ["ask"], contextWindowTokens: 204800,
+                  maxOutputTokens: 16384, pricing: .init(multiplier: "2"), modelVersion: 1),
+        ])
+        await library.refresh(api: api, token: "fixture")
+        library.defaultReference = "cloud:daily"
+        try await render(ProviderModelsView(library: library, providerID: "typefluxCloud") {}.padding(24)
+                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                         .background(StudioTheme.background),
+                         size: NSSize(width: 850, height: 500), appearance: .darkAqua,
+                         file: root.appendingPathComponent("cloud-managed-models.png"))
+    }
+
     private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL, voice: AskVoiceInput? = nil) async throws {
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
