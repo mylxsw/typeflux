@@ -24,7 +24,7 @@ struct AskModelMenu: View {
     private var corner: CGFloat { compact ? 8 : (fieldStyle ? 8 : 16) }
     private var fill: Color {
         guard compact else { return ModelVisualStyle.input }
-        return hovering || expanded ? AskTheme.controlSurface : .clear
+        return hovering || expanded ? AskTheme.hoverFill : .clear
     }
     private var stroke: Color { compact ? .clear : ModelVisualStyle.border }
 

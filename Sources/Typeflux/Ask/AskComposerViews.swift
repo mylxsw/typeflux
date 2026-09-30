@@ -49,7 +49,10 @@ struct AskComposer: View {
 
     private var draft: Binding<AskDraft> { launcher ? $model.launcherDraft : $model.draft }
     private var canSend: Bool { launcher ? model.canSendLauncher : model.canSend }
-    private var corner: CGFloat { launcher ? AskMetrics.launcherCorner : AskMetrics.composerCorner }
+    private var corner: CGFloat { launcher ? AskMetrics.launcherCorner : AskMetrics.composerCardCorner }
+    /// The workspace composer is one lighter card, editor and footer alike. The
+    /// launcher keeps its two-tone panel, which sits straight on the desktop.
+    private var cardFill: Color { launcher ? AskTheme.surface : AskTheme.composerSurface }
     private var editorFontSize: CGFloat { launcher ? 15.5 : 14 }
     private func submit() { if launcher { model.submitLauncher() } else { model.submitDraft() } }
 
@@ -87,7 +90,7 @@ struct AskComposer: View {
             editorRow
             footer
         }
-        .background(AskTheme.surface)
+        .background(cardFill)
         .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
         .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: corner))
     }
@@ -129,7 +132,7 @@ struct AskComposer: View {
         .padding(.top, AskMetrics.editorTopInset)
         .padding(.bottom, AskMetrics.editorBottomInset)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AskTheme.surface)
+        .background(cardFill)
     }
 
     private var footer: some View {
@@ -173,8 +176,10 @@ struct AskComposer: View {
         .padding(.trailing, 10)
         .frame(height: AskMetrics.footerHeight)
         .frame(maxWidth: .infinity)
-        .background(AskTheme.raisedSurface)
-        .overlay(alignment: .top) { Rectangle().fill(AskTheme.separator).frame(height: 1) }
+        .background(launcher ? AskTheme.raisedSurface : cardFill)
+        .overlay(alignment: .top) {
+            if launcher { Rectangle().fill(AskTheme.separator).frame(height: 1) }
+        }
     }
 
     @ViewBuilder private var contextChips: some View {
@@ -261,12 +266,15 @@ struct AskComposer: View {
 
     private var voiceStatus: some View {
         // Reserve the largest localized label even while idle, so actions never move.
-        ZStack(alignment: .trailing) {
-            Text(L("ask.voice.listening")).hidden()
-            Text(L("ask.voice.transcribing")).hidden()
-            if active { Text(L(listening ? "ask.voice.listening" : "ask.voice.transcribing")) }
+        HStack(spacing: 7) {
+            if listening { AskWaveform() }
+            ZStack(alignment: .trailing) {
+                Text(L("ask.voice.listening")).hidden()
+                Text(L("ask.voice.transcribing")).hidden()
+                if active { Text(L(listening ? "ask.voice.listening" : "ask.voice.transcribing")) }
+            }
         }
-        .font(.system(size: 11, weight: .medium))
+        .font(.system(size: 11.5, weight: .semibold))
         .foregroundStyle(listening ? AskTheme.accent : StudioTheme.textSecondary)
         .fixedSize()
         .accessibilityElement(children: .ignore)
