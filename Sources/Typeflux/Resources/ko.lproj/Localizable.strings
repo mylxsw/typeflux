@@ -400,7 +400,7 @@
 "workflow.audioStart.microphoneNotReady" = "마이크가 아직 준비되지 않았습니다. 마이크를 다시 연결하거나 시스템 설정 > 사운드 > 입력에서 다른 입력 기기를 선택한 후 다시 시도하세요.";
 "workflow.audioStart.genericFailure" = "녹음을 시작할 수 없습니다. 마이크가 연결되어 있고 사용 가능한지 확인한 후 다시 시도하세요.";
 "workflow.processing.failed" = "처리 실패";
-"workflow.recording.tooShort" = "말이 너무 짧았습니다. 스크립트 작성이 취소되었습니다.";
+"workflow.recording.tooShort" = "녹음이 너무 짧습니다. 다시 시도해 주세요.";
 "workflow.transcription.emptySkipped" = "텍스트 변환이 비어 있으므로 건너뛰었습니다.";
 "workflow.transcription.noSpeech" = "명확한 음성이 감지되지 않았습니다. 스크립트 작성이 취소되었습니다.";
 "workflow.transcription.serverUnavailableNotice" = "서버에 연결할 수 없습니다. 녹음은 기록에 저장되어 나중에 다시 시도할 수 있습니다.";
@@ -1478,7 +1478,7 @@
 
 "ask.capture.retry" = "Screenshot failed · Retry";
 
-"ask.voice.listening" = "Listening · Release to finish";
+"ask.voice.listening" = "듣는 중…";
 "ask.voice.transcribing" = "Transcribing…";
 "ask.history.pull" = "Pull to refresh";
 "ask.history.release" = "Release to refresh";
@@ -1615,3 +1615,10 @@
 "models.cloud.empty" = "현재 사용 가능한 모델이 없습니다.";
 
 "models.count" = "모델 %d개";
+
+// Ask voice button
+"ask.voice.input" = "음성 입력";
+"ask.voice.stop" = "녹음 중지";
+"ask.voice.buttonHint" = "클릭하여 시작하고 다시 클릭하여 중지하세요. 길게 눌러 녹음하고 놓으면 텍스트로 변환됩니다. 편집 후 전송하세요.";
+"ask.voice.shortcutHint" = "입력란에서 %@을(를) 길게 눌러 음성을 입력하고 놓으면 텍스트로 변환됩니다.";
+"ask.voice.stopHint" = "녹음을 중지하고 텍스트를 삽입합니다. Esc로 취소합니다.";

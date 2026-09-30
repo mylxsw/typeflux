@@ -30,6 +30,7 @@ struct AskComposer: View {
         self.onDismiss = onDismiss
         self.onHeightChange = onHeightChange
         self.voice = model.voiceInput
+        self._voiceShortcut = State(initialValue: model.modelLibrary.settings.activationHotkey)
     }
 
     private var contextID: String { launcher ? "launcher" : "chat:" + (model.selectedId ?? "new") }
@@ -38,6 +39,7 @@ struct AskComposer: View {
     @State private var showingScreenshot = false
     @State private var showingSelection = false
     @State private var editorHeight: CGFloat = 32
+    @State private var voiceShortcut: HotkeyBinding?
 
     private var draft: Binding<AskDraft> { launcher ? $model.launcherDraft : $model.draft }
     private var canSend: Bool { launcher ? model.canSendLauncher : model.canSend }
@@ -59,6 +61,9 @@ struct AskComposer: View {
         .onChange(of: model.error) { _ in reportHeight() }
         .onChange(of: voice.error) { _ in reportHeight() }
         .onAppear { reportHeight() }
+        .onReceive(NotificationCenter.default.publisher(for: .hotkeySettingsDidChange)) { _ in
+            voiceShortcut = model.modelLibrary.settings.activationHotkey
+        }
     }
 
     private var card: some View {
@@ -126,11 +131,11 @@ struct AskComposer: View {
                 contextChips
             }
             Spacer(minLength: 6)
-            if !active {
-                trailingHint
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
+            AskVoiceButton(voice: voice, contextID: contextID, compact: launcher,
+                           enabled: launcher || !model.isLoadingSelection,
+                           shortcut: voiceShortcut)
+                .frame(width: launcher ? 32 : 106, height: 28)
+                .padding(.trailing, 3)
             AskSendButton(enabled: canSend, action: submit)
         }
         .padding(.leading, 12)
@@ -229,20 +234,6 @@ struct AskComposer: View {
         .font(.system(size: 11.5, weight: .semibold))
         .foregroundStyle(listening ? AskTheme.accent : AskTheme.accent.opacity(0.75))
         .lineLimit(1)
-    }
-
-    @ViewBuilder private var trailingHint: some View {
-        if draft.wrappedValue.canSend {
-            HStack(spacing: 5) {
-                AskKeyCap(symbol: "return")
-                Text(L("ask.send"))
-            }
-        } else {
-            HStack(spacing: 5) {
-                Image(systemName: "mic").font(.system(size: 11))
-                Text(L("ask.voice.hold"))
-            }
-        }
     }
 
     private func reportHeight() {

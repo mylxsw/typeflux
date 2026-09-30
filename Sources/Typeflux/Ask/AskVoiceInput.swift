@@ -25,6 +25,7 @@ final class AskVoiceInput: ObservableObject {
     private var released = false
     private var cancelled = false
     private var hotkeyLocked = false
+    private var buttonPressedAt: TimeInterval?
     private var beganAt = Date()
     private var interruptionObservers: [NSObjectProtocol] = []
     var isOccupied: Bool { task != nil }
@@ -35,6 +36,7 @@ final class AskVoiceInput: ObservableObject {
         guard !isOccupied, let recorder, editor.isEditable, !editor.hasMarkedText(),
               editor.window?.firstResponder === editor else { return false }
         self.editor = editor
+        buttonPressedAt = nil
         context = editor.contextID
         let context = editor.contextID, original = editor.string, range = editor.selectedRange()
         released = false; cancelled = false; hotkeyLocked = locked; beganAt = Date()
@@ -47,6 +49,7 @@ final class AskVoiceInput: ObservableObject {
         task = Task { [weak self, weak editor] in
             guard let self else { return }
             defer {
+                buttonPressedAt = nil
                 timeout?.cancel(); timeout = nil; release = nil
                 interruptionObservers.forEach { NSWorkspace.shared.notificationCenter.removeObserver($0) }
                 interruptionObservers = []
@@ -87,12 +90,13 @@ final class AskVoiceInput: ObservableObject {
     }
 
     func stop() {
+        buttonPressedAt = nil
         guard phase == .listening else { return }
         released = true; phase = .transcribing
         release?.resume(); release = nil
     }
 
-    /// Keep Fn's short-tap-to-lock behavior; mouse releases always call stop().
+    /// Keep the configured shortcut's short-tap-to-lock behavior.
     func releaseHotkey() {
         guard !hotkeyLocked else { return }
         if Date().timeIntervalSince(beganAt) < WorkflowController.tapToLockThreshold { hotkeyLocked = true }
@@ -100,6 +104,7 @@ final class AskVoiceInput: ObservableObject {
     }
 
     func cancel() {
+        buttonPressedAt = nil
         guard isOccupied else { return }
         cancelled = true; released = true
         task?.cancel(); timeout?.cancel()
@@ -109,5 +114,30 @@ final class AskVoiceInput: ObservableObject {
 
     func cancel(ifOwnedBy editor: AskComposerTextView.Editor) {
         if self.editor === editor { cancel() }
+    }
+
+    /// A short button press locks recording; a hold transcribes on release.
+    /// The editor's existing hold gesture continues to call stop() directly.
+    @discardableResult
+    func pressButton(in editor: AskComposerTextView.Editor,
+                     at timestamp: TimeInterval = ProcessInfo.processInfo.systemUptime) -> Bool {
+        if phase == .listening, self.editor === editor {
+            stop()
+            return false
+        }
+        guard begin(in: editor, locked: true) else { return false }
+        buttonPressedAt = timestamp
+        return true
+    }
+
+    func releaseButton(inside: Bool,
+                       at timestamp: TimeInterval = ProcessInfo.processInfo.systemUptime) {
+        guard let pressedAt = buttonPressedAt else { return }
+        buttonPressedAt = nil
+        if timestamp - pressedAt >= AskComposerTextView.Editor.mouseHoldDelay {
+            stop()
+        } else if !inside {
+            cancel()
+        }
     }
 }
