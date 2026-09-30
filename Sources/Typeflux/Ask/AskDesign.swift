@@ -455,6 +455,38 @@ struct AskBanner: View {
     }
 }
 
+/// Capsule buttons for Ask's own cards and sheets, in place of the stock
+/// bordered buttons: `primary` fills with the design blue, `secondary` is a
+/// quiet outline. Both dim when disabled.
+struct AskCapsuleButtonStyle: ButtonStyle {
+    enum Kind { case primary, secondary }
+    var kind: Kind = .primary
+
+    func makeBody(configuration: Configuration) -> some View {
+        Body(configuration: configuration, kind: kind)
+    }
+
+    private struct Body: View {
+        let configuration: Configuration
+        let kind: Kind
+        @Environment(\.isEnabled) private var isEnabled
+
+        var body: some View {
+            configuration.label
+                .font(.system(size: 12.5, weight: .semibold))
+                .lineLimit(1)
+                .foregroundStyle(kind == .primary ? Color.white : StudioTheme.textPrimary)
+                .padding(.horizontal, 14)
+                .frame(height: 30)
+                .background(kind == .primary ? AskTheme.primaryAction : AskTheme.hoverFill, in: Capsule())
+                .overlay(Capsule().strokeBorder(kind == .primary ? Color.clear : AskTheme.border))
+                .contentShape(Capsule())
+                .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.45)
+                .fixedSize()
+        }
+    }
+}
+
 struct AskSendButton: View {
     var enabled: Bool
     var action: () -> Void
