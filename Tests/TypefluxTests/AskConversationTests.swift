@@ -450,7 +450,7 @@ struct AskNavigationTests {
         #expect(f.model.selected?.id == lower)
         #expect(f.model.conversations.count == 1)
         #expect(try await f.cache.list(owner: "owner").count == 1)
-        try await f.cache.delete(id: lower, owner: "owner")
+        await f.model.delete(lower)
         #expect(try await f.cache.load(id: upper, owner: "owner") == nil)
         #expect(try await f.cache.draft(key: upper, owner: "owner") == nil)
     }

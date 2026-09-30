@@ -116,7 +116,7 @@ struct AskConversationView: View {
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
             Spacer(minLength: 4)
-            Button { model.onOpenSettings?() } label: {
+            Button { model.onOpenSettings?(.settings) } label: {
                 Image(systemName: "gearshape").font(.system(size: 14))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .frame(width: 28, height: 28)
@@ -486,10 +486,12 @@ struct AskConversationView: View {
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
+        .disabled(screenshot && model.screenshotCapability(launcher: false) != .supported)
+        .help(screenshot ? (model.screenshotCapability(launcher: false).hint ?? caption) : caption)
     }
 
     @ViewBuilder private var statusArea: some View {
-        if let error = model.error {
+        if model.imageRecoveryTarget == nil, let error = model.error {
             AskBanner(
                 text: error,
                 tone: .warning,
@@ -503,13 +505,17 @@ struct AskConversationView: View {
         if let id = model.selected?.id, let call = model.pendingApprovals[id] {
             approval(call, id: id).padding(.horizontal, 22).padding(.bottom, 6)
         }
-        if let run = model.selected?.run, run.status == "failed" || run.status == "cancelled", !model.isBusy {
+        if let target = model.imageRecoveryTarget {
+            AskImageRecoveryCard(model: model, target: target)
+                .id(target.id)
+                .padding(.horizontal, 22).padding(.bottom, 6)
+        } else if !model.hasPendingSubmission, let run = model.selected?.run, run.status == "failed" || run.status == "cancelled", !model.isBusy {
             AskBanner(text: run.error ?? L("ask.cancelled"), tone: .info,
                       systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
                 .padding(.horizontal, 22)
                 .padding(.bottom, 6)
-        } else if resumable {
+        } else if resumable, model.error == nil {
             AskBanner(text: L("ask.resume.hint"), tone: .info, systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
                 .padding(.horizontal, 22)
@@ -521,6 +527,7 @@ struct AskConversationView: View {
     /// active on this conversation while no local operation is driving it.
     private var resumable: Bool {
         guard let selected = model.selected, !model.isBusy else { return false }
+        if model.hasPendingSubmission { return true }
         if selected.run == nil, selected.messages.last?.role == "user" { return true }
         return selected.run?.isActive == true && !model.busyIds.contains(selected.id)
     }

@@ -384,6 +384,53 @@ struct AskConversationVisualTests {
                          file: root.appendingPathComponent("provider-model-counts.png"))
     }
 
+    @Test func renderImageCapabilitySurfaces() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let fixture = try await AskImageCapabilityTests().fixture()
+        defer { fixture.model.resetSession() }
+        fixture.model.selectModel("cloud:text", launcher: true)
+        fixture.model.launcherScreenshotNotice = nil
+        fixture.model.launcherDraft.text = "帮我整理这段文字"
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
+                             size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: appearance,
+                             file: root.appendingPathComponent("image-disabled-\(name).png"))
+        }
+        var value = AskImageCapabilityTests().conversation()
+        value.title = "讲讲这一屏在做什么"
+        let call = AskToolCall(id: "capture", type: "function", function: .init(name: "computer", arguments: #"{"action":"screenshot"}"#))
+        value.messages.insert(.init(id: "question", role: "user", text: value.title, createdAt: value.updatedAt), at: 0)
+        value.messages.insert(.init(id: "assistant", role: "assistant", text: "我先看一下当前屏幕的内容。", toolCalls: [call], createdAt: value.updatedAt), at: 1)
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        let target = try #require(fixture.model.imageRecoveryTarget)
+        try await render(AskConversationView(model: fixture.model), size: NSSize(width: 900, height: 620),
+                         appearance: .darkAqua, file: root.appendingPathComponent("image-recovery.png"))
+        fixture.model.selectModel("cloud:vision", launcher: false)
+        try await render(AskImageRecoveryCard(model: fixture.model, target: target),
+                         size: NSSize(width: 650, height: 140), appearance: .aqua,
+                         file: root.appendingPathComponent("image-ready.png"), minimumPNGBytes: 4000)
+        await fixture.api.hold(value.id)
+        fixture.model.resumeImage(target, reference: "cloud:vision")
+        do {
+            try await render(AskImageRecoveryCard(model: fixture.model, target: target),
+                             size: NSSize(width: 650, height: 140), appearance: .aqua,
+                             file: root.appendingPathComponent("image-resuming.png"), minimumPNGBytes: 4000)
+        } catch {
+            await fixture.api.release(value.id)
+            throw error
+        }
+        await fixture.api.release(value.id)
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+
+    }
+
     @Test func renderUsageSurfaces() async throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_USAGE_SNAPSHOTS"] else { return }
         let root = URL(fileURLWithPath: directory)

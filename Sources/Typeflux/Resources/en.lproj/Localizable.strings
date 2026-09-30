@@ -1630,6 +1630,35 @@
 
 "models.count" = "Models: %d";
 
+// Screenshot capability and recovery
+"ask.image.unsupported" = "This model cannot read images. Switch to a model with image support to attach a screenshot.";
+"ask.image.unknown" = "Image support is not confirmed for this model. Check its model settings.";
+"ask.image.detached" = "Screenshot detached because this model cannot read images.";
+"ask.image.disabled" = "Unavailable";
+"ask.image.captured" = "Screenshot captured";
+"ask.image.resuming" = "Analyzing saved screenshot";
+"ask.image.saved" = "Screenshot saved — choose a compatible model";
+"ask.image.processing" = "Using %@ to analyze the saved screenshot…";
+"ask.image.ready" = "The selected model can read this image. Continue when ready.";
+"ask.image.recoveryHint" = "This model cannot read images. Choose a compatible model to continue with the saved screenshot.";
+"ask.image.continue" = "Continue with %@";
+"ask.image.choose" = "Choose model and continue…";
+"ask.image.previewUnavailable" = "Screenshot preview is unavailable.";
+"ask.image.pickerHint" = "Your screenshot is saved. Choose a model to continue.";
+"ask.image.noModels" = "No models with image support are available. Add one in model settings.";
+"ask.image.configure" = "Model settings";
+"ask.image.cancel" = "Cancel";
+"ask.image.refreshModels" = "Refresh models";
+"ask.image.pickerTitle" = "Choose a model with image support";
+"ask.image.pickerHintWithoutScreenshot" = "Choose a model with image support to continue.";
+"ask.image.loading" = "Loading models…";
+"ask.image.loadFailed" = "Unable to load models right now. Please try again.";
+"ask.image.cloudUnavailable" = "Cloud models could not be loaded. You can still use your configured models.";
+"ask.image.retry" = "Try again";
+"ask.image.switchAndContinue" = "Switch and continue";
+"ask.image.resume" = "Continue";
+"ask.image.signInHint" = "Sign in to continue this conversation.";
+
 // Ask voice button
 "ask.voice.input" = "Voice input";
 "ask.voice.stop" = "Stop recording";

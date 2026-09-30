@@ -334,23 +334,28 @@ extension AskModelLibrary {
         } catch { ollamaAvailable = false }
     }
 
+    /// Apply the same authoritative capabilities to both the picker and request validation.
+    func replaceCloudModels(_ askModels: [AskCloudModel]) throws {
+        var next = registry
+        if let index = next.providers.firstIndex(where: \.isCloud) {
+            next.providers[index].models = askModels.map(\.registered)
+        } else {
+            next.providers.append(.init(id: LLMRemoteProvider.typefluxCloud.rawValue, name: "Typeflux Cloud",
+                                        remote: .typefluxCloud, models: askModels.map(\.registered)))
+        }
+        try commit(next)
+        cloud = askModels
+        catalogError = nil
+    }
+
     func refresh(api: any AskAPI = AskAPIClient(), token: String?) async {
         guard !loading, let token else { return }
         loading = true
         defer { loading = false }
         do {
             let askModels = try await api.models(token: token, scenario: "ask")
-            var next = registry
-            if let index = next.providers.firstIndex(where: \.isCloud) {
-                next.providers[index].models = askModels.map(\.registered)
-            } else {
-                next.providers.append(.init(id: LLMRemoteProvider.typefluxCloud.rawValue, name: "Typeflux Cloud",
-                                            remote: .typefluxCloud, models: askModels.map(\.registered)))
-            }
             try Task.checkCancellation()
-            try commit(next)
-            cloud = askModels
-            catalogError = nil
+            try replaceCloudModels(askModels)
         } catch is CancellationError {
             return
         } catch { catalogError = L("ask.models.catalogError") }
