@@ -470,10 +470,12 @@ struct AskConversationView: View {
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
+        .disabled(screenshot && model.screenshotCapability(launcher: false) != .supported)
+        .help(screenshot ? (model.screenshotCapability(launcher: false).hint ?? caption) : caption)
     }
 
     @ViewBuilder private var statusArea: some View {
-        if let error = model.error {
+        if model.imageRecoveryTarget == nil, let error = model.error {
             AskBanner(
                 text: error,
                 tone: .warning,
@@ -487,7 +489,11 @@ struct AskConversationView: View {
         if let id = model.selected?.id, let call = model.pendingApprovals[id] {
             approval(call, id: id).padding(.horizontal, 22).padding(.bottom, 6)
         }
-        if let run = model.selected?.run, run.status == "failed" || run.status == "cancelled", !model.isBusy {
+        if let target = model.imageRecoveryTarget {
+            AskImageRecoveryCard(model: model, target: target)
+                .id(target.id)
+                .padding(.horizontal, 22).padding(.bottom, 6)
+        } else if let run = model.selected?.run, run.status == "failed" || run.status == "cancelled", !model.isBusy {
             AskBanner(text: run.error ?? L("ask.cancelled"), tone: .info,
                       systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })

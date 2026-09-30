@@ -1626,3 +1626,22 @@
 "models.cloud.empty" = "目前沒有可用模型。";
 
 "models.count" = "%d 個模型";
+
+// Screenshot capability and recovery
+"ask.image.unsupported" = "目前模型不支援圖片辨識，切換到支援圖片的模型後可附加截圖。";
+"ask.image.unknown" = "尚未確認目前模型是否支援圖片，請檢查模型設定。";
+"ask.image.detached" = "已取消附加截圖，目前模型不支援圖片辨識。";
+"ask.image.disabled" = "無法使用";
+"ask.image.captured" = "截圖已取得";
+"ask.image.resuming" = "正在分析已儲存的截圖";
+"ask.image.saved" = "截圖已保留，可換模型繼續";
+"ask.image.processing" = "正在使用 %@ 分析已儲存的截圖…";
+"ask.image.ready" = "所選模型支援圖片，可以繼續分析。";
+"ask.image.recoveryHint" = "目前模型無法讀取圖片，選擇支援圖片的模型後可繼續分析這張截圖。";
+"ask.image.continue" = "使用 %@ 繼續";
+"ask.image.choose" = "選擇模型並繼續…";
+"ask.image.previewUnavailable" = "暫時無法預覽截圖。";
+"ask.image.pickerHint" = "僅顯示支援圖片且目前可用的模型。";
+"ask.image.noModels" = "暫無可用的圖片模型。";
+"ask.image.configure" = "設定模型";
+"ask.image.cancel" = "取消";

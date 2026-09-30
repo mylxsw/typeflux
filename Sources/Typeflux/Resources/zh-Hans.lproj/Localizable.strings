@@ -1629,3 +1629,22 @@
 "models.cloud.empty" = "当前暂无可用模型。";
 
 "models.count" = "%d 个模型";
+
+// Screenshot capability and recovery
+"ask.image.unsupported" = "当前模型不支持图片识别，切换到支持图片的模型后可附带截图。";
+"ask.image.unknown" = "尚未确认当前模型是否支持图片，请检查模型配置。";
+"ask.image.detached" = "已取消附带截图，当前模型不支持图片识别。";
+"ask.image.disabled" = "不可用";
+"ask.image.captured" = "截图已获取";
+"ask.image.resuming" = "正在分析已保存的截图";
+"ask.image.saved" = "截图已保留，可换模型继续";
+"ask.image.processing" = "正在使用 %@ 分析已保存的截图…";
+"ask.image.ready" = "所选模型支持图片，可以继续分析。";
+"ask.image.recoveryHint" = "当前模型无法读取图片，选择支持图片的模型后可继续分析这张截图。";
+"ask.image.continue" = "使用 %@ 继续";
+"ask.image.choose" = "选择模型并继续…";
+"ask.image.previewUnavailable" = "暂时无法预览截图。";
+"ask.image.pickerHint" = "仅显示支持图片且当前可用的模型。";
+"ask.image.noModels" = "暂无可用的图片模型。";
+"ask.image.configure" = "配置模型";
+"ask.image.cancel" = "取消";

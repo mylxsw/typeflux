@@ -31,8 +31,23 @@ final class AskConversationModel: ObservableObject {
             || (!launcher && selected?.messages.contains(where: { $0.image != nil }) == true)
     }
 
-    @Published var launcherDraft = AskDraft()
-    @Published var draft = AskDraft.followUp
+    @Published var launcherDraft = AskDraft() {
+        didSet {
+            if launcherDraft.includeScreenshot, screenshotCapability(launcher: true) != .supported {
+                launcherDraft.includeScreenshot = false
+            }
+        }
+    }
+    @Published var draft = AskDraft.followUp {
+        didSet {
+            if draft.includeScreenshot, screenshotCapability(launcher: false) != .supported {
+                draft.includeScreenshot = false
+            }
+        }
+    }
+    @Published var launcherScreenshotNotice: String?
+    @Published var screenshotNotice: String?
+    @Published private(set) var recoveringImages: [String: AskImageRecoveryTarget] = [:]
     @Published private(set) var conversations: [AskConversationSummary] = []
     @Published private(set) var selected: AskConversation?
     @Published private(set) var selectedId: String?
@@ -79,6 +94,7 @@ final class AskConversationModel: ObservableObject {
     private var selectionObservation: Task<Void, Never>?
     private var draftSave: Task<Void, Never>?
     private var authObserver: AnyCancellable?
+    private var modelObserver: AnyCancellable?
 
     init(api: any AskAPI, cache: any AskCaching, tools: any AskToolExecuting,
          capture: any AskContextCapturing, deviceId: String, modelLibrary: AskModelLibrary? = nil,
@@ -86,6 +102,14 @@ final class AskConversationModel: ObservableObject {
         self.modelLibrary = modelLibrary ?? .shared
         self.api = api; self.cache = cache; self.tools = tools; self.capture = capture
         self.deviceId = deviceId; self.session = session
+        normalizeScreenshotChoices()
+        modelObserver = self.modelLibrary.objectWillChange.sink { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                normalizeScreenshotChoices()
+                objectWillChange.send()
+            }
+        }
         authObserver = NotificationCenter.default.publisher(for: .authDidLogout).sink { [weak self] _ in
             Task { @MainActor in self?.resetSession() }
         }
@@ -116,6 +140,7 @@ final class AskConversationModel: ObservableObject {
         selected = nil; selectedId = nil; isLoadingSelection = false; selectionLoadFailed = false
         snapshots = [:]; drafts = [:]; transcriptPositions = [:]
         historyGeneration = UUID(); historyOffset = 0; conversations = []
+        launcherScreenshotNotice = nil; screenshotNotice = nil; recoveringImages = [:]
         launcherDraft = AskDraft(); draft = .followUp
         capturing = false; controllingConversationId = nil; onControlChanged?(false); owner = ""
     }
@@ -123,6 +148,7 @@ final class AskConversationModel: ObservableObject {
     func prepareLauncher() async {
         guard !Task.isCancelled else { return }
         captureWarning = nil
+        normalizeScreenshotChoices()
         if let current = session(), owner != current.owner { resetSession(); owner = current.owner }
         let expectedOwner = owner
         if launcherDraft.text.isEmpty, let cached = try? await cache.draft(key: "launcher", owner: owner) {
@@ -146,6 +172,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func refreshScreenshot(launcher: Bool) async {
+        guard screenshotCapability(launcher: launcher) == .supported else { return }
         let generation = UUID(); captureGeneration = generation; capturing = true
         let selectedId = selected?.id
         let context = await capture.capture(includeScreenshot: true)
@@ -239,7 +266,7 @@ final class AskConversationModel: ObservableObject {
         if let oldId, !isLoadingSelection { drafts[oldId] = oldDraft }
         // Commit navigation synchronously, before the first cache/network await.
         selectedId = id; selected = snapshots[id]; isLoadingSelection = true; selectionLoadFailed = false
-        draft = drafts[id] ?? .followUp; error = nil; captureWarning = nil
+        draft = drafts[id] ?? .followUp; error = nil; captureWarning = nil; screenshotNotice = nil
         captureGeneration = UUID(); capturing = false
         if let oldId, let saved = drafts[oldId] { try? await cache.saveDraft(saved, key: oldId, owner: current.owner) }
         let cached = try? await cache.load(id: id, owner: current.owner)
@@ -256,7 +283,7 @@ final class AskConversationModel: ObservableObject {
             guard owner == current.owner else { return }
             if (snapshots[id]?.revision ?? -1) <= latest.revision { snapshots[id] = latest }
             guard generation == selectionGeneration else { return }
-            selected = latest; isLoadingSelection = false; error = operationErrors[id]
+            selected = latest; normalizeScreenshotChoices(); isLoadingSelection = false; error = operationErrors[id]
             // Observe active runs without resuming desktop tools or inference.
             if latest.run?.isActive == true, !busyIds.contains(id) {
                 selectionObservation = monitorConversation(id: id, current: current)
@@ -281,14 +308,16 @@ final class AskConversationModel: ObservableObject {
         selectionGeneration = UUID(); selected = nil; selectedId = nil
         isLoadingSelection = false; selectionLoadFailed = false
         captureGeneration = UUID(); capturing = false
-        draft = AskDraft(); error = nil; captureWarning = nil
+        draft = AskDraft(); error = nil; captureWarning = nil; screenshotNotice = nil
     }
 
     func submitLauncher() {
+        normalizeScreenshotChoices()
         guard canSendLauncher else { return }
         submit(launcherDraft, newConversation: true)
     }
     func submitDraft() {
+        normalizeScreenshotChoices()
         guard canSend else { return }
         submit(draft, newConversation: selectedId == nil)
     }
@@ -379,6 +408,14 @@ final class AskConversationModel: ObservableObject {
         guard let current = credentials(), let value = selected, !busyIds.contains(value.id) else { return }
         let id = value.id
         let retryModelRef = modelReference(launcher: false)
+        if let run = value.run, ["failed", "cancelled"].contains(run.status),
+           value.messages.contains(where: { $0.image != nil }) {
+            guard canResumeImage else {
+                error = screenshotCapability(launcher: false).hint ?? L("ask.models.unavailable")
+                return
+            }
+            if let target = imageRecoveryTarget { recoveringImages[id] = target }
+        }
         busyIds.insert(id); error = nil; operationErrors[id] = nil
         let operationId = UUID(); operationIds[id] = operationId
         operations[id] = Task { [weak self] in
@@ -595,6 +632,7 @@ final class AskConversationModel: ObservableObject {
         guard operationIds[id] == operationId else { return }
         operationIds[id] = nil
         busyIds.remove(id); operations[id] = nil; pendingApprovals[id] = nil
+        recoveringImages[id] = nil
         if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
     }
 

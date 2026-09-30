@@ -64,16 +64,19 @@ struct AskModelChoices: View {
     var hasImage = false
     var loggedIn: Bool
     var dismiss: () -> Void = {}
+    var preferredProviderID: String?
+    var showsUnavailableSelection = true
 
     var body: some View {
-        let choices = library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage, scenario: scenario)
+        let available = library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage, scenario: scenario)
+        let choices = available.filter { $0.id == preferredProviderID } + available.filter { $0.id != preferredProviderID }
         let selectionAvailable = choices.contains { $0.models.contains { $0.reference == reference } }
         return VStack(alignment: .leading, spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 4) {
                     if choices.isEmpty {
                         Text(L("models.noAvailable")).font(.caption).foregroundStyle(.secondary).padding(10)
-                    } else if !selectionAvailable {
+                    } else if showsUnavailableSelection && !selectionAvailable {
                         Text(L("ask.models.unavailable")).font(.caption).foregroundStyle(.secondary).padding(10)
                     }
                     ForEach(choices) { provider in

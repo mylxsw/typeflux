@@ -48,6 +48,11 @@ struct AskComposer: View {
     var body: some View {
         VStack(spacing: AskMetrics.bannerSpacing) {
             card
+            if let notice = launcher ? model.launcherScreenshotNotice : model.screenshotNotice {
+                AskBanner(text: notice, onDismiss: {
+                    if launcher { model.launcherScreenshotNotice = nil } else { model.screenshotNotice = nil }
+                })
+            }
             if let error = voice.error {
                 AskBanner(text: error, tone: .warning, systemImage: "mic.slash")
             }
@@ -57,6 +62,8 @@ struct AskComposer: View {
         }
         .onChange(of: editorHeight) { _ in reportHeight() }
         .onChange(of: model.error) { _ in reportHeight() }
+        .onChange(of: model.launcherScreenshotNotice) { _ in reportHeight() }
+        .onChange(of: model.screenshotNotice) { _ in reportHeight() }
         .onChange(of: voice.error) { _ in reportHeight() }
         .onAppear { reportHeight() }
     }
@@ -116,9 +123,9 @@ struct AskComposer: View {
             if active { voiceStatus } else {
                 AskModelMenu(library: model.modelLibrary, reference: Binding(
                     get: { model.modelReference(launcher: launcher) },
-                    set: { draft.wrappedValue.modelRef = $0 }
+                    set: { model.selectModel($0, launcher: launcher) }
                 ), disabled: !launcher && (model.isBusy || model.isLoadingSelection),
-                   hasImage: model.requiresVision(launcher: launcher))
+                   hasImage: !launcher && model.hasConversationImages)
                 AskReasoningMenu(library: model.modelLibrary,
                                  reference: model.modelReference(launcher: launcher),
                                  effort: $model.reasoningEffort,
@@ -162,6 +169,10 @@ struct AskComposer: View {
 
     private var screenshotChip: AskChip {
         let value = draft.wrappedValue
+        if let hint = model.screenshotCapability(launcher: launcher).hint {
+            return AskChip(title: L("ask.screenshot"), systemImage: "camera.viewfinder",
+                           style: .dashed, help: hint, disabled: true)
+        }
         if value.includeScreenshot, value.screenshot == nil, let warning = model.captureWarning {
             let permission = warning == L("ask.capture.permission")
             return AskChip(
@@ -247,6 +258,7 @@ struct AskComposer: View {
 
     private func reportHeight() {
         var banners = voice.error == nil ? 0 : 1
+        if (launcher ? model.launcherScreenshotNotice : model.screenshotNotice) != nil { banners += 1 }
         if launcher, model.error != nil { banners += 1 }
         onHeightChange(AskMetrics.launcherHeight(editor: editorHeight, banners: banners))
     }

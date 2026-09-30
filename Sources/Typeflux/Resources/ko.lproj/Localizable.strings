@@ -1615,3 +1615,22 @@
 "models.cloud.empty" = "현재 사용 가능한 모델이 없습니다.";
 
 "models.count" = "모델 %d개";
+
+// Screenshot capability and recovery
+"ask.image.unsupported" = "이 모델은 이미지 인식을 지원하지 않습니다. 스크린샷을 첨부하려면 지원하는 모델로 전환하세요.";
+"ask.image.unknown" = "이 모델의 이미지 지원 여부가 확인되지 않았습니다. 모델 설정을 확인하세요.";
+"ask.image.detached" = "현재 모델이 이미지를 지원하지 않아 스크린샷 첨부를 해제했습니다.";
+"ask.image.disabled" = "사용 불가";
+"ask.image.captured" = "스크린샷 캡처 완료";
+"ask.image.resuming" = "저장된 스크린샷 분석 중";
+"ask.image.saved" = "스크린샷이 저장되었습니다. 모델을 변경하여 계속할 수 있습니다";
+"ask.image.processing" = "%@ 모델로 저장된 스크린샷 분석 중…";
+"ask.image.ready" = "선택한 모델은 이미지를 지원합니다. 분석을 계속할 수 있습니다.";
+"ask.image.recoveryHint" = "현재 모델은 이미지를 읽을 수 없습니다. 지원하는 모델을 선택하여 저장된 스크린샷 분석을 계속하세요.";
+"ask.image.continue" = "%@ 모델로 계속";
+"ask.image.choose" = "모델을 선택하여 계속…";
+"ask.image.previewUnavailable" = "스크린샷을 미리 볼 수 없습니다.";
+"ask.image.pickerHint" = "이미지를 지원하며 사용 가능한 모델만 표시합니다.";
+"ask.image.noModels" = "사용 가능한 이미지 지원 모델이 없습니다.";
+"ask.image.configure" = "모델 설정";
+"ask.image.cancel" = "취소";

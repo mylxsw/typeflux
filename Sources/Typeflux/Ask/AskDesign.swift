@@ -149,6 +149,7 @@ struct AskChip: View {
     var action: (() -> Void)?
     var onRemove: (() -> Void)?
     var help: String?
+    var disabled = false
 
     var body: some View {
         HStack(spacing: 5) {
@@ -169,9 +170,12 @@ struct AskChip: View {
         .background(fill, in: Capsule())
         .overlay(Capsule().strokeBorder(stroke, style: strokeStyle))
         .contentShape(Capsule())
-        .onTapGesture { action?() }
+        .onTapGesture { if !disabled { action?() } }
         .accessibilityAddTraits(action == nil ? [] : .isButton)
+        .opacity(disabled ? 0.55 : 1)
         .accessibilityLabel(title)
+        .accessibilityValue(disabled ? L("ask.image.disabled") : "")
+        .accessibilityHint(help ?? title)
         .help(help ?? title)
     }
 
@@ -540,7 +544,7 @@ enum AskPresentation {
         switch toolState(result: result) {
         case .running: return L("ask.tool.running")
         case .failed: return L("ask.tool.failed")
-        default: return L("ask.tool.done")
+        default: return L(result?.image == nil ? "ask.tool.done" : "ask.image.captured")
         }
     }
 
