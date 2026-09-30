@@ -7,6 +7,16 @@ struct RegisteredModel: Codable, Equatable, Identifiable, Sendable {
     var reference: String = "custom:" + UUID().uuidString.lowercased()
     var vision: Bool?
     var chat: Bool?
+    var scenarios: [String]?
+    var pricing: CloudModelPricing?
+    var contextWindowTokens: Int?
+    var maxOutputTokens: Int?
+
+    var displayName: String {
+        if let label = pricing?.label { return name + " · " + label }
+        return name
+    }
+
 
     var exclusionReason: String? {
         let value = id.lowercased()

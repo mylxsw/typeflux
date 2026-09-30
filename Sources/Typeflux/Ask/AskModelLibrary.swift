@@ -5,6 +5,12 @@ struct AskCloudModel: Codable, Equatable, Identifiable, Sendable {
     var id: String
     var name: String
     var vision: Bool?
+    var scenarios: [String]?
+    var contextWindowTokens: Int?
+    var maxOutputTokens: Int?
+    var pricing: CloudModelPricing?
+    var modelVersion: Int?
+    var capabilities: [String: Bool]?
     var reference: String {
         "cloud:" + id
     }
@@ -36,6 +42,7 @@ final class AskModelLibrary: ObservableObject {
     static let shared = AskModelLibrary()
     @Published private(set) var registry: ModelRegistry
     @Published var cloud: [AskCloudModel] = [.init(id: "default", name: "Typeflux Cloud")]
+    @Published var rewriteCloud: [AskCloudModel]?
     @Published var defaultReference: String {
         didSet { defaults.set(defaultReference, forKey: "ask.model.default") }
     }
@@ -71,6 +78,9 @@ final class AskModelLibrary: ObservableObject {
     init(defaults: UserDefaults = .standard, automaticallyLoadsCatalog: Bool = true,
          catalog: any ProviderModelCatalog = HTTPProviderModelCatalog()) {
         self.defaults = defaults
+        if let cached = defaults.data(forKey: "cloud.rewrite.catalog") {
+            rewriteCloud = try? JSONDecoder().decode([AskCloudModel].self, from: cached)
+        }
         self.catalog = catalog
         self.automaticallyLoadsCatalog = automaticallyLoadsCatalog
         let store = SettingsStore(defaults: defaults)
@@ -260,19 +270,24 @@ final class AskModelLibrary: ObservableObject {
     }
 
     /// Picker contents, not the editable configuration catalog. Preserve stable references.
-    func selectableProviders(loggedIn: Bool, hasImage: Bool) -> [RegisteredProvider] {
+    func selectableProviders(loggedIn: Bool, hasImage: Bool, scenario: String = "ask") -> [RegisteredProvider] {
         providers.compactMap { provider in
             guard unavailableReason(provider, loggedIn: loggedIn) == nil else { return nil }
             var available = provider
-            available.models = provider.models.filter {
-                $0.exclusionReason == nil && (!hasImage || $0.vision == true)
+            available.models = (provider.isCloud && scenario == "rewrite" ? (rewriteCloud?.map(\.registered) ?? provider.models) : provider.models).filter {
+                $0.exclusionReason == nil && ($0.scenarios?.contains(scenario) ?? true) && (!hasImage || $0.vision == true)
             }
             return available.models.isEmpty ? nil : available
         }
     }
 
     func selectionReason(_ model: RegisteredModel, provider: RegisteredProvider, hasImage: Bool,
-                         loggedIn: Bool) -> String? {
+                         loggedIn: Bool, scenario: String = "ask") -> String? {
+        if provider.isCloud, scenario == "rewrite", let rewriteCloud,
+           !rewriteCloud.contains(where: { $0.reference == model.reference }) { return L("ask.models.unavailable") }
+        let model = provider.isCloud && scenario == "rewrite"
+            ? (rewriteCloud?.first(where: { $0.reference == model.reference })?.registered ?? model) : model
+        if model.scenarios?.contains(scenario) == false { return L("ask.models.unavailable") }
         if let reason = unavailableReason(provider, loggedIn: loggedIn) {
             return reason
         }
@@ -286,10 +301,13 @@ final class AskModelLibrary: ObservableObject {
         return nil
     }
 
-    func name(for reference: String) -> String {
+    func name(for reference: String, scenario: String = "ask") -> String {
+        if scenario == "rewrite", let model = rewriteCloud?.first(where: { $0.reference == reference }) {
+            return model.registered.displayName
+        }
         if let (provider, model) = registry
             .resolve(reference) {
-            return provider.name == model.name ? model.name : provider.name + " · " + model.name
+            return provider.name == model.name ? model.displayName : provider.name + " · " + model.displayName
         }
         return L("ask.models.unavailable")
     }
@@ -303,12 +321,7 @@ extension AskModelLibrary {
     func loadModels(provider: RegisteredProvider) async throws -> [RegisteredModel] {
         if provider.isCloud {
             guard let token = AuthState.shared.accessToken else { throw AskLocalError.message(L("models.login")) }
-            return try await AskAPIClient().models(token: token).map { .init(
-                id: $0.id,
-                name: $0.name,
-                reference: $0.reference,
-                vision: $0.vision ?? ($0.id == "default" ? true : nil)
-            ) }
+            return try await AskAPIClient().models(token: token).map(\.registered)
         }
         if provider
             .remote == .freeModel {
@@ -328,20 +341,19 @@ extension AskModelLibrary {
         loading = true
         defer { loading = false }
         do {
-            cloud = try await api.models(token: token)
+            let askModels = try await api.models(token: token, scenario: "ask")
+            let rewriteModels = try await api.models(token: token, scenario: "rewrite")
             var next = registry
             if let index = next.providers.firstIndex(where: \.isCloud) {
-                next.providers[index].models = next.providers[index].models.compactMap { existing in
-                    guard let cloudModel = cloud.first(where: { $0.reference == existing.reference })
-                    else { return nil }
-                    var model = existing
-                    model.name = cloudModel.name
-                    if let vision = cloudModel.vision {
-                        model.vision = vision
-                    }
-                    return model
+                var models = askModels.map(\.registered)
+                for model in rewriteModels where !models.contains(where: { $0.reference == model.reference }) {
+                    models.append(model.registered)
                 }
+                next.providers[index].models = models
             }
+            cloud = askModels
+            rewriteCloud = rewriteModels
+            defaults.set(try JSONEncoder().encode(rewriteModels), forKey: "cloud.rewrite.catalog")
             try commit(next)
             catalogError = nil
         } catch { catalogError = L("ask.models.catalogError") }

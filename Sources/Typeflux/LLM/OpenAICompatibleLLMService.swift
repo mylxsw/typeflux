@@ -477,6 +477,9 @@ enum RemoteLLMClient {
         urlRequest.httpMethod = "POST"
         if !apiKey.isEmpty {
             urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            if provider == .typefluxCloud {
+                urlRequest.setValue("1", forHTTPHeaderField: "X-Typeflux-Model-Catalog")
+            }
         }
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         applyAdditionalHeaders(additionalHeaders, to: &urlRequest)
@@ -597,6 +600,9 @@ enum RemoteLLMClient {
         urlRequest.httpMethod = "POST"
         if !apiKey.isEmpty {
             urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            if provider == .typefluxCloud {
+                urlRequest.setValue("1", forHTTPHeaderField: "X-Typeflux-Model-Catalog")
+            }
         }
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         applyAdditionalHeaders(additionalHeaders, to: &urlRequest)
@@ -698,6 +704,9 @@ enum RemoteLLMClient {
         urlRequest.httpMethod = "POST"
         if !apiKey.isEmpty {
             urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            if provider == .typefluxCloud {
+                urlRequest.setValue("1", forHTTPHeaderField: "X-Typeflux-Model-Catalog")
+            }
         }
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         applyAdditionalHeaders(additionalHeaders, to: &urlRequest)

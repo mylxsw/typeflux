@@ -1608,3 +1608,7 @@
 "ask.reasoning.active" = "Thinking";
 "ask.reasoning.complete" = "Thought for %d s";
 "ask.answer.interrupted" = "Generation interrupted · partial response saved";
+
+"models.cloud.parameters" = "Context: %d · Output: %d tokens";
+"models.cloud.priceUnknown" = "Price information unavailable";
+"models.cloud.priceExplanation" = "Multiplier applies to input and output token rates; total cost depends on usage.";

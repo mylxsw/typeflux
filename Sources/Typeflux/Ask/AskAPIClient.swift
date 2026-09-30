@@ -4,6 +4,7 @@ protocol AskAPI: Sendable {
     func cancel(conversationId: String, runId: String, partial: AskInferenceResult?, token: String) async throws -> AskConversation
     func observe(id: String, token: String, onValue: @Sendable (AskConversation) async throws -> Void) async throws
     func models(token: String) async throws -> [AskCloudModel]
+    func models(token: String, scenario: String) async throws -> [AskCloudModel]
     func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation
     func list(token: String, offset: Int) async throws -> [AskConversationSummary]
     func conversation(id: String, token: String) async throws -> AskConversation
@@ -25,11 +26,15 @@ extension AskAPI {
         }
     }
 
+    func models(token: String, scenario: String) async throws -> [AskCloudModel] { try await models(token: token) }
     func models(token: String) async throws -> [AskCloudModel] { [.init(id: "default", name: "Typeflux Cloud")] }
     func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation { throw AskLocalError.message(L("ask.models.requestError")) }
 }
 
 struct AskAPIClient: AskAPI {
+    func models(token: String, scenario: String) async throws -> [AskCloudModel] {
+        try await execute(path: "/models?scenario=" + (scenario == "rewrite" ? "rewrite" : "ask"), token: token)
+    }
     func models(token: String) async throws -> [AskCloudModel] { try await execute(path: "/models", token: token) }
     func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation {
         try await execute(path: "/\(conversationId)/inference-results", method: "POST", body: AskCoding.encoder().encode(request), token: token)
@@ -79,6 +84,7 @@ struct AskAPIClient: AskAPI {
             request.httpBody = body
             request.timeoutInterval = 200
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("1", forHTTPHeaderField: "X-Typeflux-Model-Catalog")
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.setValue("ask-anything", forHTTPHeaderField: "X-Scenario")
             return request

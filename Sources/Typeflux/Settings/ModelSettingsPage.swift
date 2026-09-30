@@ -110,6 +110,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                     AskModelMenu(
                         library: library,
                         reference: $library.rewriteReference,
+                        scenario: "rewrite",
                         showsDefaultAction: false,
                         fieldStyle: true
                     )
