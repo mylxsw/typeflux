@@ -49,11 +49,10 @@ struct AskComposer: View {
 
     private var draft: Binding<AskDraft> { launcher ? $model.launcherDraft : $model.draft }
     private var canSend: Bool { launcher ? model.canSendLauncher : model.canSend }
-    private var corner: CGFloat { launcher ? AskMetrics.launcherCorner : AskMetrics.composerCardCorner }
-    /// The workspace composer is one lighter card, editor and footer alike. The
-    /// launcher keeps its two-tone panel, which sits straight on the desktop.
-    private var cardFill: Color { launcher ? AskTheme.surface : AskTheme.composerSurface }
-    private var editorFontSize: CGFloat { launcher ? 15.5 : 14 }
+    /// The launcher is the workspace composer summoned by a hotkey: the same
+    /// card, controls and states. Only its idle edge is stronger, so it stands
+    /// off whatever window it floats over.
+    private var chrome: AskComposerChrome { .of(launcher: launcher) }
     private func submit() { if launcher { model.submitLauncher() } else { model.submitDraft() } }
 
     var body: some View {
@@ -90,25 +89,17 @@ struct AskComposer: View {
             editorRow
             footer
         }
-        .background(cardFill)
-        .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
-        .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: corner))
+        .background(chrome.fill)
+        .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
+        .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner, idle: chrome.idleBorder))
     }
 
     private var editorRow: some View {
         HStack(alignment: .top, spacing: 11) {
-            if launcher {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(AskTheme.accent)
-                    .frame(width: 26, height: 26)
-                    .background(AskTheme.accentSoft, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    .accessibilityHidden(true)
-            }
             ZStack(alignment: .topLeading) {
                 if draft.wrappedValue.text.isEmpty {
                     Text(L(launcher || model.selectedId == nil ? "ask.input.placeholder" : "ask.followup.placeholder"))
-                        .font(.system(size: editorFontSize))
+                        .font(.system(size: chrome.editorFontSize))
                         .foregroundStyle(StudioTheme.textTertiary)
                         .padding(.leading, 2)
                         .padding(.top, 4)
@@ -119,7 +110,7 @@ struct AskComposer: View {
                     placeholder: L(launcher || model.selectedId == nil ? "ask.input.placeholder" : "ask.followup.placeholder"),
                     voice: voice,
                     contextID: contextID,
-                    fontSize: editorFontSize,
+                    fontSize: chrome.editorFontSize,
                     onSubmit: submit,
                     onDismiss: onDismiss,
                     onHeightChange: { editorHeight = $0 }
@@ -128,11 +119,11 @@ struct AskComposer: View {
                 .disabled(!launcher && model.isLoadingSelection)
             }
         }
-        .padding(.horizontal, launcher ? 17 : 15)
+        .padding(.horizontal, chrome.horizontalInset)
         .padding(.top, AskMetrics.editorTopInset)
         .padding(.bottom, AskMetrics.editorBottomInset)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(cardFill)
+        .background(chrome.fill)
     }
 
     private var footer: some View {
@@ -176,10 +167,7 @@ struct AskComposer: View {
         .padding(.trailing, 10)
         .frame(height: AskMetrics.footerHeight)
         .frame(maxWidth: .infinity)
-        .background(launcher ? AskTheme.raisedSurface : cardFill)
-        .overlay(alignment: .top) {
-            if launcher { Rectangle().fill(AskTheme.separator).frame(height: 1) }
-        }
+        .background(chrome.fill)
     }
 
     @ViewBuilder private var contextChips: some View {
@@ -204,8 +192,8 @@ struct AskComposer: View {
     private var screenshotChip: AskChip {
         let value = draft.wrappedValue
         if let hint = model.screenshotCapability(launcher: launcher).hint {
-            return AskChip(title: L("ask.screenshot"), systemImage: "camera.viewfinder",
-                           style: .dashed, help: hint, disabled: true)
+            return AskChip(title: L("ask.screenshot.unavailable"), systemImage: "info.circle",
+                           style: .unavailable, help: hint, disabled: true)
         }
         if value.includeScreenshot, value.screenshot == nil, let warning = model.captureWarning {
             let permission = warning == L("ask.capture.permission")

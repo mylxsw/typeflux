@@ -68,7 +68,7 @@ struct AskPresentationTests {
         #expect(clipped == "> 1\n> 2\n> 3\n> …\n\n")
     }
 
-    @Test func launcherHeightIsTheTwoLayerCardPlusItsGutter() {
+    @Test func launcherHeightIsTheComposerCardPlusItsGutter() {
         let resting = AskMetrics.launcherHeight(editor: 32, banners: 0)
         #expect(resting == 114)
         #expect(AskMetrics.launcherHeight(editor: 148, banners: 0) == 230)
