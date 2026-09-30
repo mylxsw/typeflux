@@ -13,10 +13,12 @@ actor AskTestAPI: AskAPI {
     var failSend = false
     var failList = false
     var failModels = false
+    var cloudModels: [AskCloudModel] = [.init(id: "default", name: "Typeflux Cloud")]
+    func setCloudModels(_ values: [AskCloudModel]) { cloudModels = values }
     func setFailModels(_ value: Bool) { failModels = value }
     func models(token: String) async throws -> [AskCloudModel] {
         if failModels { throw AskLocalError.message("Offline") }
-        return [.init(id: "default", name: "Typeflux Cloud")]
+        return cloudModels
     }
     var listed: [AskConversationSummary]?
     var held: Set<String> = []

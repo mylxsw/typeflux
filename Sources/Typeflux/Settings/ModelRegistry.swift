@@ -11,6 +11,7 @@ struct RegisteredModel: Codable, Equatable, Identifiable, Sendable {
     var pricing: CloudModelPricing?
     var contextWindowTokens: Int?
     var maxOutputTokens: Int?
+    var reasoning: Bool?
 
     var displayName: String {
         if let label = pricing?.label { return name + " · " + label }
