@@ -53,7 +53,7 @@ actor AskTestAPI: AskAPI {
         sends.append(request)
         var value = values[conversationId] ?? AskConversation(id: conversationId, title: request.text, revision: 0, updatedAt: Date(), messages: [])
         if value.messages.contains(where: { $0.id == request.id }) { return value }
-        value.messages.append(.init(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date()))
+        value.messages.append(.init(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), references: request.references))
         value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: nextTool == nil ? "This is the answer." : "I can inspect the current page.", toolCalls: nextTool.map { [$0] }, createdAt: Date()))
         value.run = .init(id: UUID().uuidString, deviceId: request.deviceId, status: nextTool == nil ? "completed" : "waiting_tool", steps: 1, updatedAt: Date(), tools: request.tools, pending: nextTool.map { [$0] } ?? [])
         value.modelRef = request.modelRef

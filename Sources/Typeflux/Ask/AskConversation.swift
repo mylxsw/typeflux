@@ -31,6 +31,7 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     var reasoning: String? = nil
     var reasoningMilliseconds: Int? = nil
     var reasoningEffort: String? = nil
+    var references: [AskReference]? = nil
 }
 
 struct AskRun: Codable, Equatable, Sendable {
@@ -83,6 +84,7 @@ struct AskSendRequest: Codable, Equatable, Sendable {
     var tools: [AskToolDefinition]
     var modelRef: String? = nil
     var reasoningEffort: String? = nil
+    var references: [AskReference]? = nil
 }
 
 struct AskToolResultRequest: Codable, Equatable, Sendable {
@@ -103,13 +105,23 @@ struct AskDraft: Codable, Equatable, Sendable {
     var capturedAt: Date?
     var modelRef: String? = nil
 
-    var canSend: Bool { !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    var references: [AskReference]? = nil
+
+    var canSend: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+            (references ?? []).contains { !$0.question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
+
+    var referencesWithinLimit: Bool {
+        let items = references ?? []
+        return items.count <= 32 && items.reduce(0) { $0 + $1.text.utf8.count + $1.question.utf8.count } <= 64000
+    }
 
     func request(deviceId: String, tools: [AskToolDefinition], id: String = UUID().uuidString) -> AskSendRequest {
         AskSendRequest(
             id: id, deviceId: deviceId, text: text.trimmingCharacters(in: .whitespacesAndNewlines),
             selection: selection, source: source,
-            image: includeScreenshot ? screenshot : nil, tools: tools, modelRef: modelRef
+            image: includeScreenshot ? screenshot : nil, tools: tools, modelRef: modelRef, references: references
         )
     }
 

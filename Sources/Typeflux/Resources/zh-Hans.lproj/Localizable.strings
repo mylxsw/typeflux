@@ -1636,3 +1636,14 @@
 "ask.voice.buttonHint" = "点击开始，再次点击停止；也可按住录音，松开转为文字。编辑后再发送。";
 "ask.voice.shortcutHint" = "在输入框中按住 %@ 语音输入，松开转为文字。";
 "ask.voice.stopHint" = "停止录音并填入文字，按 Esc 取消。";
+
+// Selected reply references
+"ask.references.question" = "针对这段追问";
+"ask.references.optional" = "输入问题（可选）";
+"ask.references.explain" = "解释这段";
+"ask.references.save" = "添加到草稿";
+"ask.references.manage" = "管理（%d）";
+"ask.references.locate" = "定位原文";
+"ask.references.edit" = "编辑";
+"ask.references.close" = "关闭";
+"ask.references.update" = "保存修改";

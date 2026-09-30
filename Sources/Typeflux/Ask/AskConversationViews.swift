@@ -573,7 +573,7 @@ struct AskConversationView: View {
                         ForEach(transcriptMessages) { message in
                             AskMessageView(message: message,
                                            allMessages: model.selected?.messages ?? [],
-                                           onQuote: quote,
+                                           onReference: { model.addReference($0) },
                                            isStreaming: message.id == model.selected?.run?.assistantId && model.selected?.run?.isActive == true,
                                            approvalToolId: model.selectedId.flatMap { model.pendingApprovals[$0]?.id })
                                 .id(message.id)
@@ -600,6 +600,9 @@ struct AskConversationView: View {
                         .min(by: { $0.value.minY < $1.value.minY }) {
                         model.transcriptPositions[id] = first.key
                     }
+                }
+                .onChange(of: model.referenceLocation) { id in
+                    if let id { proxy.scrollTo(id, anchor: .center); model.referenceLocation = nil }
                 }
                 .onChange(of: model.selectedId) { _ in restoredTranscript = nil }
                 .onChange(of: model.selected?.id) { _ in restoreTranscript(proxy) }
@@ -643,10 +646,6 @@ struct AskConversationView: View {
             restoredTranscript = id
         }
     }
-
-    private func quote(_ text: String) {
-        model.draft.text = AskPresentation.quote(existing: model.draft.text, quoting: text)
-    }
 }
 
 /// User turns are right-aligned bubbles, assistant turns are signed paragraphs.
@@ -654,7 +653,7 @@ struct AskConversationView: View {
 private struct AskMessageView: View {
     let message: AskMessage
     let allMessages: [AskMessage]
-    var onQuote: (String) -> Void
+    var onReference: (AskReference) -> Void
     var isStreaming = false
     var approvalToolId: String? = nil
     @State private var showImage = false
@@ -669,6 +668,7 @@ private struct AskMessageView: View {
         HStack(alignment: .top, spacing: 0) {
             Spacer(minLength: 64)
             VStack(alignment: .trailing, spacing: 8) {
+                if let references = message.references, !references.isEmpty { AskSentReferences(references: references) }
                 if !message.text.isEmpty {
                     Text(message.text)
                         .font(.system(size: 13.5))
@@ -735,7 +735,9 @@ private struct AskMessageView: View {
                     .padding(.leading, AskMetrics.assistantIndent)
             }
             if !message.text.isEmpty {
-                AskTranscriptText(text: message.text)
+                AskTranscriptText(text: message.text, onAsk: isStreaming ? nil : { text, question in
+                    onReference(AskReference(messageId: message.id, text: text, question: question))
+                })
                     .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
                     .padding(.leading, AskMetrics.assistantIndent)
             }
@@ -757,7 +759,6 @@ private struct AskMessageView: View {
                         copied = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
                     }
-                    AskGhostButton(title: L("ask.quote"), systemImage: "text.quote") { onQuote(message.text) }
                 }
                 .padding(.leading, AskMetrics.assistantIndent - 2)
             }

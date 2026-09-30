@@ -1622,3 +1622,14 @@
 "ask.voice.buttonHint" = "클릭하여 시작하고 다시 클릭하여 중지하세요. 길게 눌러 녹음하고 놓으면 텍스트로 변환됩니다. 편집 후 전송하세요.";
 "ask.voice.shortcutHint" = "입력란에서 %@을(를) 길게 눌러 음성을 입력하고 놓으면 텍스트로 변환됩니다.";
 "ask.voice.stopHint" = "녹음을 중지하고 텍스트를 삽입합니다. Esc로 취소합니다.";
+
+// Selected reply references
+"ask.references.question" = "이 부분에 대해 질문";
+"ask.references.optional" = "질문 (선택 사항)";
+"ask.references.explain" = "이 부분 설명하기";
+"ask.references.save" = "초안에 추가";
+"ask.references.manage" = "관리 (%d)";
+"ask.references.locate" = "원문 보기";
+"ask.references.edit" = "편집";
+"ask.references.close" = "닫기";
+"ask.references.update" = "변경 사항 저장";

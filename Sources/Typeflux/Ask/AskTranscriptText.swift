@@ -7,6 +7,7 @@ import SwiftUI
 struct AskTranscriptText: NSViewRepresentable {
     var text: String
     var markdown = true
+    var onAsk: ((String, String) -> Void)? = nil
     @Environment(\.colorScheme) private var colorScheme
 
     func makeNSView(context _: Context) -> Editor {
@@ -25,6 +26,7 @@ struct AskTranscriptText: NSViewRepresentable {
     }
 
     func updateNSView(_ editor: Editor, context _: Context) {
+        editor.onAsk = onAsk
         editor.setContent(text, markdown: markdown, dark: colorScheme == .dark)
     }
 
@@ -42,14 +44,71 @@ struct AskTranscriptText: NSViewRepresentable {
         private var usesMarkdown = true
         private var dragging = false
         private var pending: (String, Bool, Bool)?
+        var onAsk: ((String, String) -> Void)? {
+            didSet { if onAsk == nil { askPopover.close() } }
+        }
+        let askPopover = NSPopover()
+
+        var selectedExcerpt: String? {
+            let range = selectedRange()
+            guard range.length > 0, range.location != NSNotFound, NSMaxRange(range) <= (string as NSString).length else { return nil }
+            let excerpt = (string as NSString).substring(with: range)
+            return excerpt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : excerpt
+        }
+
+        func showSelectionAction() {
+            askPopover.close()
+            guard onAsk != nil, let excerpt = selectedExcerpt, window != nil,
+                  let layout = layoutManager, let container = textContainer else { return }
+            let glyphs = layout.glyphRange(forCharacterRange: selectedRange(), actualCharacterRange: nil)
+            var anchor = layout.boundingRect(forGlyphRange: glyphs, in: container)
+            anchor.origin.x += textContainerOrigin.x
+            anchor.origin.y += textContainerOrigin.y
+            // A long drag may scroll the start of the selection out of view.
+            // Anchor to the visible part instead of silently losing the action.
+            anchor = anchor.intersection(visibleRect)
+            guard !anchor.isNull, !anchor.isEmpty else { return }
+            anchor.size.height = min(anchor.height, 18)
+            askPopover.behavior = .transient
+            askPopover.animates = false
+            askPopover.contentViewController = NSHostingController(rootView:
+                Button { [weak self] in self?.showQuestion(excerpt) } label: {
+                    Label("Ask", systemImage: "text.bubble").font(.system(size: 12, weight: .medium))
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                }.buttonStyle(.plain).tint(AskTheme.accent)
+                    .onCopyCommand { [NSItemProvider(object: excerpt as NSString)] }
+            )
+            askPopover.show(relativeTo: anchor, of: self, preferredEdge: .maxY)
+        }
+
+        func showQuestion(_ excerpt: String) {
+            askPopover.contentViewController = NSHostingController(rootView:
+                AskReferenceEditor(reference: AskReference(messageId: "", text: excerpt), save: { [weak self] reference in
+                    self?.onAsk?(reference.text, reference.question)
+                    self?.askPopover.close()
+                }, cancel: { [weak self] in self?.askPopover.close() })
+            )
+        }
+
+        override func viewWillMove(toWindow newWindow: NSWindow?) {
+            if newWindow == nil { askPopover.close() }
+            super.viewWillMove(toWindow: newWindow)
+        }
+
+        override func keyUp(with event: NSEvent) {
+            super.keyUp(with: event)
+            if event.modifierFlags.contains(.shift) { showSelectionAction() }
+        }
 
         override func mouseDown(with event: NSEvent) {
+            askPopover.close()
             dragging = true
             defer {
                 dragging = false
                 if let pending {
                     self.pending = nil; setContent(pending.0, markdown: pending.1, dark: pending.2)
                 }
+                showSelectionAction()
             }
             super.mouseDown(with: event)
         }

@@ -32,6 +32,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     @Published var launcherDraft = AskDraft()
+    @Published var referenceLocation: String?
     @Published var draft = AskDraft.followUp
     @Published private(set) var conversations: [AskConversationSummary] = []
     @Published private(set) var selected: AskConversation?
@@ -288,13 +289,20 @@ final class AskConversationModel: ObservableObject {
         guard canSendLauncher else { return }
         submit(launcherDraft, newConversation: true)
     }
+    func addReference(_ reference: AskReference) {
+        var updated = draft
+        updated.references = (updated.references ?? []) + [reference]
+        guard updated.referencesWithinLimit else { error = L("ask.input.tooLarge"); return }
+        draft = updated
+    }
+
     func submitDraft() {
         guard canSend else { return }
         submit(draft, newConversation: selectedId == nil)
     }
 
     private func submit(_ submitted: AskDraft, newConversation: Bool) {
-        guard submitted.text.utf8.count <= 32000, (submitted.selection?.utf8.count ?? 0) <= 64000,
+        guard submitted.referencesWithinLimit, submitted.text.utf8.count <= 32000, (submitted.selection?.utf8.count ?? 0) <= 64000,
               (submitted.source?.utf8.count ?? 0) <= 1000 else {
             error = L("ask.input.tooLarge"); return
         }
@@ -312,7 +320,7 @@ final class AskConversationModel: ObservableObject {
         value.modelRef = request.modelRef
         pendingSends[id] = request
         screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
-        value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort))
+        value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references))
         selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID(); draft = .followUp
         snapshots[id] = value; selectionLoadFailed = false
         updateSummary(value)
@@ -398,7 +406,7 @@ final class AskConversationModel: ObservableObject {
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
                     let request = AskSendRequest(id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
-                                                 tools: await tools.definitions(), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort)
+                                                 tools: await tools.definitions(), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references)
                     try await validateModel(
                         request.modelRef, token: current.token,
                         hasImage: request.image != nil || value.messages.contains(where: { $0.image != nil })
@@ -427,6 +435,9 @@ final class AskConversationModel: ObservableObject {
             try await cache.save(value, owner: expectedOwner)
         }
         guard owner == expectedOwner else { throw CancellationError() }
+        // A second snapshot delivery or a new optimistic send can arrive while
+        // the cache write suspends. Do not overwrite that same-revision draft.
+        if let latest = snapshots[value.id], latest.revision >= value.revision { return }
         if (snapshots[value.id]?.revision ?? -1) <= value.revision { snapshots[value.id] = value }
         if selected?.id == value.id, (selected?.revision ?? -1) <= value.revision { selected = value }
         if let inferenceID = progressInferenceIDs[value.id], value.run?.inference?.id != inferenceID {

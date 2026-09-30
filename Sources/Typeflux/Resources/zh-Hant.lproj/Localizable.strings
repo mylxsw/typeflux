@@ -1633,3 +1633,14 @@
 "ask.voice.buttonHint" = "點擊開始，再次點擊停止；也可按住錄音，放開轉為文字。編輯後再傳送。";
 "ask.voice.shortcutHint" = "在輸入框中按住 %@ 語音輸入，放開轉為文字。";
 "ask.voice.stopHint" = "停止錄音並填入文字，按 Esc 取消。";
+
+// Selected reply references
+"ask.references.question" = "針對這段追問";
+"ask.references.optional" = "輸入問題（可選）";
+"ask.references.explain" = "解釋這段";
+"ask.references.save" = "加入草稿";
+"ask.references.manage" = "管理（%d）";
+"ask.references.locate" = "定位原文";
+"ask.references.edit" = "編輯";
+"ask.references.close" = "關閉";
+"ask.references.update" = "儲存修改";

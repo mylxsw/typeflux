@@ -69,6 +69,9 @@ struct AskComposer: View {
 
     private var card: some View {
         VStack(spacing: 0) {
+            if !(draft.wrappedValue.references ?? []).isEmpty {
+                AskReferenceStrip(references: draft.references, locate: { model.referenceLocation = $0 })
+            }
             editorRow
             footer
         }
