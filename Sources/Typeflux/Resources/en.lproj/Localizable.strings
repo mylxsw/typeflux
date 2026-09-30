@@ -1452,6 +1452,7 @@
 "ask.resume" = "Resume";
 "ask.retry" = "Retry";
 "ask.screenshot" = "Attach screenshot";
+"ask.screenshot.unavailable" = "Screenshot unavailable";
 "ask.selection" = "Selected text";
 "ask.selection.remove" = "Remove selected text";
 "ask.send" = "Send";

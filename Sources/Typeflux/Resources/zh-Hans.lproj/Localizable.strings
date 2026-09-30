@@ -1452,6 +1452,7 @@
 "ask.resume" = "继续处理";
 "ask.retry" = "重试";
 "ask.screenshot" = "附带截图";
+"ask.screenshot.unavailable" = "截图不可用";
 "ask.selection" = "选中文本";
 "ask.selection.remove" = "移除选中文本";
 "ask.send" = "发送";

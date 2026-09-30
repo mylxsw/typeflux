@@ -1449,6 +1449,7 @@
 "ask.resume" = "Resume";
 "ask.retry" = "Retry";
 "ask.screenshot" = "Attach screenshot";
+"ask.screenshot.unavailable" = "截圖不可用";
 "ask.selection" = "Selected text";
 "ask.selection.remove" = "Remove selected text";
 "ask.send" = "Send";
