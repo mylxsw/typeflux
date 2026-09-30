@@ -463,10 +463,12 @@ struct AskCapsuleButtonStyle: ButtonStyle {
     var kind: Kind = .primary
 
     func makeBody(configuration: Configuration) -> some View {
-        Body(configuration: configuration, kind: kind)
+        CapsuleLabel(configuration: configuration, kind: kind)
     }
 
-    private struct Body: View {
+    /// Not named `Body`: that would shadow the protocol's associated type.
+    /// A separate view is needed to read `isEnabled` from the environment.
+    struct CapsuleLabel: View {
         let configuration: Configuration
         let kind: Kind
         @Environment(\.isEnabled) private var isEnabled
