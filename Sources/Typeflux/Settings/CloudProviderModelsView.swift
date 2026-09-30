@@ -7,7 +7,7 @@ struct CloudProviderModelsView: View {
     @ObservedObject private var auth = AuthState.shared
 
     private var models: [RegisteredModel] {
-        library.providers.first(where: \.isCloud)?.models ?? []
+        library.providers.first(where: \.isCloud)?.configurationModels ?? []
     }
 
     var body: some View {
@@ -39,8 +39,7 @@ struct CloudProviderModelsView: View {
                         Divider()
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 5) {
-                                Text(model.id == "default" && model.pricing != nil
-                                     ? L("models.cloud.systemDefault") + " · " + model.displayName : model.displayName)
+                                Text(model.displayName)
                                     .font(.system(size: 14, weight: .medium))
                                 if let context = model.contextWindowTokens, let output = model.maxOutputTokens {
                                     Text(String(format: L("models.cloud.parameters"), context, output))
@@ -51,12 +50,6 @@ struct CloudProviderModelsView: View {
                                 }
                             }
                             Spacer()
-                            if library.defaultReference == model.reference {
-                                ModelUsageBadge(text: L("models.askDefault"))
-                            } else {
-                                Button(L("ask.models.makeDefault")) { library.defaultReference = model.reference }
-                                    .disabled(model.exclusionReason != nil || model.scenarios?.contains("ask") == false)
-                            }
                         }.padding(18)
                     }
                     if models.isEmpty && !library.loading {

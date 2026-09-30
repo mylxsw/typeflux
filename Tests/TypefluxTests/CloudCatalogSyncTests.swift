@@ -5,6 +5,20 @@ import Testing
 @Suite("Cloud catalog synchronization", .serialized)
 @MainActor
 struct CloudCatalogSyncTests {
+    @Test func settingsHideOnlyTheCloudRoutingAliasWithoutChangingRegistry() throws {
+        let models: [RegisteredModel] = [
+            .init(id: "default", name: "System default", reference: "cloud:default"),
+            .init(id: "123e4567-e89b-12d3-a456-426614174000", name: "Published", reference: "cloud:published"),
+        ]
+        let cloud = RegisteredProvider(id: "typefluxCloud", name: "Cloud", remote: .typefluxCloud, models: models)
+        #expect(cloud.configurationModels.map(\.name) == ["Published"])
+        #expect(cloud.models.count == 2)
+        let registry = ModelRegistry(providers: [cloud])
+        #expect(registry.resolve("cloud:default") != nil)
+        let custom = RegisteredProvider(id: "custom", name: "Custom", models: models)
+        #expect(custom.configurationModels.count == 2)
+    }
+
     @Test func publishedModelsReplaceCachePreserveSelectionAndReflectRemoval() async throws {
         let suite = "cloud-sync-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))

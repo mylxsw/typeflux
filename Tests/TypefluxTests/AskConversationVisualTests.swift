@@ -338,6 +338,8 @@ struct AskConversationVisualTests {
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         let api = AskTestAPI()
         await api.setCloudModels([
+            .init(id: "default", name: "日常助手", vision: true, scenarios: ["ask"], contextWindowTokens: 204800,
+                  maxOutputTokens: 16384, pricing: .init(multiplier: "1"), modelVersion: 1),
             .init(id: "daily", name: "日常助手", vision: true, scenarios: ["ask"], contextWindowTokens: 204800,
                   maxOutputTokens: 16384, pricing: .init(multiplier: "1"), modelVersion: 1),
             .init(id: "deep", name: "深度思考", vision: true, scenarios: ["ask"], contextWindowTokens: 204800,
@@ -350,6 +352,14 @@ struct AskConversationVisualTests {
                          .background(StudioTheme.background),
                          size: NSSize(width: 850, height: 500), appearance: .darkAqua,
                          file: root.appendingPathComponent("cloud-managed-models.png"))
+        let viewModel = StudioViewModel(settingsStore: SettingsStore(defaults: defaults),
+                                        historyStore: FileHistoryStore(baseDir: root.appendingPathComponent("list-history")),
+                                        initialSection: .models, modelLibrary: library)
+        viewModel.setModelDomain(.llm)
+        try await render(ModelSettingsPage(viewModel: viewModel, library: library) { EmptyView() }
+                         .padding(24).background(StudioTheme.background),
+                         size: NSSize(width: 1000, height: 900), appearance: .darkAqua,
+                         file: root.appendingPathComponent("provider-model-counts.png"))
     }
 
     private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL, voice: AskVoiceInput? = nil) async throws {

@@ -159,10 +159,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                 }, id: \.provider.id) { entry in
                     let provider = entry.provider
                     providerRow(name: provider.name,
-                                detail: entry.reason ??
-                                    "\(provider.models.count) " +
-                                    L("common.model") + " · " + provider
-                                    .models.prefix(3).map(\.id).joined(separator: " · "),
+                                detail: String(format: L("models.count"), provider.configurationModels.count),
                                 available: configured, icon: provider.studioProviderID) {
                         selectedProvider = provider.id
                     }

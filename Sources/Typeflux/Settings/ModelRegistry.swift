@@ -38,6 +38,11 @@ struct RegisteredProvider: Codable, Equatable, Identifiable, Sendable {
         id == "ollama"
     }
 
+    /// Settings show configured models, excluding the Cloud compatibility routing alias.
+    var configurationModels: [RegisteredModel] {
+        isCloud ? models.filter { $0.id != "default" } : models
+    }
+
     var isCloud: Bool {
         remote == .typefluxCloud
     }
