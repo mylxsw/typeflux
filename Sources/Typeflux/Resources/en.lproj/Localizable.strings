@@ -404,7 +404,7 @@
 "workflow.audioStart.microphoneNotReady" = "The microphone isn't ready yet. Reconnect it or choose another input device in System Settings > Sound > Input, then try again.";
 "workflow.audioStart.genericFailure" = "Recording couldn't start. Check that your microphone is connected and available, then try again.";
 "workflow.processing.failed" = "Processing failed";
-"workflow.recording.tooShort" = "Speech was too short. Transcription cancelled.";
+"workflow.recording.tooShort" = "Recording too short. Please try again.";
 "workflow.transcription.emptySkipped" = "Skipped because transcription was empty.";
 "workflow.transcription.noSpeech" = "No clear speech detected. Transcription cancelled.";
 "workflow.transcription.serverUnavailableNotice" = "Unable to connect to the server. Your recording was saved in History for retry.";
@@ -1492,8 +1492,8 @@
 
 "ask.capture.retry" = "Screenshot failed · Retry";
 
-"ask.voice.listening" = "Listening · Release to finish";
-"ask.voice.transcribing" = "Transcribing…";
+"ask.voice.listening" = "Listening";
+"ask.voice.transcribing" = "Transcribing";
 "ask.history.pull" = "Pull to refresh";
 "ask.history.release" = "Release to refresh";
 "ask.history.refreshing" = "Refreshing…";
@@ -1658,3 +1658,50 @@
 "ask.image.switchAndContinue" = "Switch and continue";
 "ask.image.resume" = "Continue";
 "ask.image.signInHint" = "Sign in to continue this conversation.";
+
+// Ask voice button
+"ask.voice.input" = "Voice input";
+"ask.voice.stop" = "Stop recording";
+"ask.voice.buttonHint" = "Click to start, click again to stop. Or hold to record and release to transcribe. Edit the text before sending.";
+"ask.voice.shortcutHint" = "Hold %@ for voice input in the editor; release to transcribe.";
+"ask.voice.stopHint" = "Stop recording and insert text. Escape cancels.";
+
+// Ask conversation usage
+"ask.usage.title" = "Usage";
+"ask.usage.close" = "Close usage";
+"ask.usage.context" = "Context";
+"ask.usage.contextHelp" = "Estimated from the saved conversation, excluding the draft. Includes instructions, history, tools and attachments; not cumulative usage.";
+"ask.usage.output" = "Output tokens";
+"ask.usage.input" = "Input tokens";
+"ask.usage.total" = "Total tokens";
+"ask.usage.pendingShort" = "Pending";
+"ask.usage.pending" = "Some charges are pending. The amount includes confirmed charges only.";
+"ask.usage.incomplete" = "Some usage or charges are unavailable. Showing known usage only.";
+"ask.usage.external" = "Your own API uses no Typeflux credits. Provider charges are separate.";
+"ask.usage.confirmed" = "Confirmed · Metered at the price of each invocation";
+"ask.usage.unavailable" = "Usage unavailable";
+"ask.usage.scope" = "Usage scope";
+"ask.usage.round" = "This turn";
+"ask.usage.conversation" = "Conversation";
+"ask.usage.historicalGap" = "Earlier usage was not recorded. Totals cover calls since usage tracking began.";
+"ask.usage.calls" = "Model invocations";
+"ask.usage.callCount" = "Invocation count";
+"ask.usage.loadError" = "Unable to load details. Please retry.";
+"ask.usage.more" = "Load more";
+"ask.usage.balance" = "Account credits (last synced)";
+"ask.usage.capacityUnknown" = "Capacity unknown";
+"ask.usage.high" = "Near limit";
+"ask.usage.available" = "Space available";
+"ask.usage.inputEstimate" = "Estimated input";
+"ask.usage.reserve" = "Output reserve";
+"ask.usage.capacity" = "Model capacity";
+"ask.usage.remaining" = "Remaining input space";
+"ask.usage.summarized" = "Earlier context was summarized. Original messages remain available; summary calls count toward usage.";
+"ask.usage.highHelp" = "Insufficient output reserve. The next request will attempt summarization; if still too large, reduce input or start a new conversation.";
+"ask.usage.estimated" = "Includes estimated usage; actual token counts may differ.";
+"ask.usage.scopeHelp" = "Includes answers, tool decisions and summaries. Repeated history counts again on each request.";
+"ask.usage.clientSource" = "Source: own API client report";
+"ask.usage.providerSource" = "Source: provider usage";
+"ask.usage.summary" = "Summarization";
+"ask.usage.inference" = "Answer / tool decision";
+"ask.usage.externalShort" = "Own API";

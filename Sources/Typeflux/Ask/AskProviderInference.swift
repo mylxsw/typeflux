@@ -2,14 +2,14 @@ import Foundation
 
 extension AskCustomInference {
     func complete(provider: RegisteredProvider, connection: SettingsStore.TextLLMConfiguration,
-                  payload: String, onProgress: (@Sendable (AskStreamProgress) async -> Void)? = nil) async throws -> (String, [AskToolCall]) {
+                  payload: String, onUsage: (@Sendable (AskTokenUsage) async -> Void)? = nil, onProgress: (@Sendable (AskStreamProgress) async -> Void)? = nil) async throws -> (String, [AskToolCall]) {
         if connection.provider.apiStyle == .openAICompatible {
             var endpoint = connection.baseURL
             if provider.isOllama, !endpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/")).hasSuffix("/v1") {
                 endpoint = endpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/v1"
             }
             return try await complete(profile: .init(name: provider.name, baseURL: endpoint, model: connection.model),
-                                      key: connection.apiKey, payload: payload, onProgress: onProgress)
+                                      key: connection.apiKey, payload: payload, onUsage: onUsage, onProgress: onProgress)
         }
         try AskModelProfile(name: provider.name, baseURL: connection.baseURL, model: connection.model).validate()
         guard let body = try JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any],
@@ -34,13 +34,15 @@ extension AskCustomInference {
         var native = try Self.nativeBody(body, model: connection.model, anthropic: anthropic)
         if anthropic, onProgress != nil { native["stream"] = true }
         request.httpBody = try JSONSerialization.data(withJSONObject: native)
-        if let onProgress { return try await stream(request, style: anthropic ? .anthropic : .gemini, onProgress: onProgress) }
+        if let onProgress { return try await stream(request, style: anthropic ? .anthropic : .gemini, onUsage: onUsage, onProgress: onProgress) }
         let (data, response) = try await session.data(for: request)
         try Task.checkCancellation()
         guard let response = response as? HTTPURLResponse, (200 ..< 300).contains(response.statusCode),
               data.count <= 2_000_000 else {
             throw AskLocalError.message(L("ask.models.requestError"))
         }
+        if let body = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let usage = AskTokenUsage.parse(body, style: anthropic ? .anthropic : .gemini) { await onUsage?(usage) }
         return try Self.nativeReply(data, anthropic: anthropic)
     }
 

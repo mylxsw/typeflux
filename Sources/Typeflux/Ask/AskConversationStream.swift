@@ -7,22 +7,29 @@ struct AskConversationStreamState {
         var revision: Int64
         var updatedAt: Date
         var run: AskRun?
+        var usage: AskConversationUsage?
+        var contextUsage: AskContextUsage?
     }
 
     mutating func consume(event: String, data: String) throws -> AskConversation? {
         let bytes = Data(data.utf8)
         if event == "snapshot" {
             let next = try AskCoding.decoder().decode(AskConversation.self, from: bytes)
-            if let value, value.id == next.id, value.revision >= next.revision {
+            if let value, value.id == next.id, !next.isNewer(than: value) {
                 return nil
             }
-            value = next
-            return next
+            let merged = value?.reconciling(next) ?? next
+            value = merged
+            return merged
         }
         if event == "progress", var next = value {
             let progress = try AskCoding.decoder().decode(Progress.self, from: bytes)
-            guard progress.id == next.id, progress.revision > next.revision else { return nil }
-            next.revision = progress.revision; next.updatedAt = progress.updatedAt; next.run = progress.run
+            guard progress.id == next.id, (progress.revision > next.revision || (progress.usage?.version ?? 0) > (next.usage?.version ?? 0)) else { return nil }
+            if progress.revision >= next.revision {
+                next.revision = progress.revision; next.updatedAt = progress.updatedAt; next.run = progress.run
+                next.contextUsage = progress.contextUsage ?? next.contextUsage
+            }
+            if let usage = progress.usage, usage.version >= (next.usage?.version ?? 0) { next.usage = usage }
             value = next
             return next
         }

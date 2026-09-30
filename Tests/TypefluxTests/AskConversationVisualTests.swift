@@ -97,6 +97,19 @@ struct AskConversationVisualTests {
 
         try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
                          size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: .aqua, file: root.appendingPathComponent("launcher-light.png"), voice: fixture.model.voiceInput)
+        let launcherDraft = fixture.model.launcherDraft
+        fixture.model.launcherDraft.selection = nil
+        fixture.model.launcherDraft.source = String(repeating: "Finder ", count: 12)
+        try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
+                         size: NSSize(width: 430, height: 114), appearance: .aqua,
+                         file: root.appendingPathComponent("launcher-context-overflow.png"))
+        fixture.model.launcherDraft = launcherDraft
+        try await render(HStack(spacing: 16) {
+            AskVoiceButton.Appearance(hovered: true, reduceMotion: true)
+            AskVoiceButton.Appearance(phase: .listening, pressed: true, reduceMotion: true)
+            AskVoiceButton.Appearance(phase: .transcribing, enabled: false, reduceMotion: true)
+        }.padding(16), size: NSSize(width: 160, height: 64), appearance: .aqua,
+                         file: root.appendingPathComponent("voice-reduced-motion.png"), minimumPNGBytes: 100)
         fixture.model.launcherDraft.text = String(repeating: "Long input wraps naturally and stays editable. ", count: 24)
         try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
                          size: NSSize(width: AskMetrics.launcherWidth, height: 230), appearance: .aqua, file: root.appendingPathComponent("launcher-long.png"))
@@ -416,6 +429,36 @@ struct AskConversationVisualTests {
         await fixture.api.release(value.id)
         try await fixture.wait { fixture.model.busyIds.isEmpty }
 
+    }
+
+    @Test func renderUsageSurfaces() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_USAGE_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let language = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(language) }
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        let now = Date(), runID = UUID().uuidString
+        var reply = AskMessage(id: "answer", role: "assistant", text: "建议先锁定发布范围，再走通真实使用流程，最后准备验收检查表。", createdAt: now)
+        reply.runId = runID
+        var value = AskConversation(id: UUID().uuidString, title: "梳理产品发布计划", revision: 1, updatedAt: now,
+            messages: [.init(id: "question", role: "user", text: "帮我梳理这周最值得先做的三件事。", createdAt: now), reply],
+            run: .init(id: runID, deviceId: "device", status: "completed", steps: 3, updatedAt: now, tools: [], pending: []))
+        let totals = AskUsageTotals(inputTokens: 17400, outputTokens: 842, totalTokens: 18242, microcredits: 360000, calls: 3)
+        value.usage = .init(version: 1, since: now, historicalGap: false, total: totals, runs: [runID: totals])
+        value.contextUsage = .init(modelRef: "cloud:default", inputTokens: 31200, outputReserve: 4096, capacity: 128000, summarized: true)
+        await fixture.api.setUsageRecords([.init(id: "call", runId: runID, modelRef: "cloud:default", purpose: "answer", createdAt: now,
+            tokens: .init(promptTokens: 9200, completionTokens: 552, totalTokens: 9752), source: "provider", microcredits: 240000, status: "confirmed", version: 1)])
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            try await render(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 740),
+                appearance: appearance, file: root.appendingPathComponent("usage-chat-\(name).png"))
+            try await render(AskConversationView(model: fixture.model, showsUsage: true), size: NSSize(width: 1100, height: 740), appearance: appearance, file: root.appendingPathComponent("usage-panel-\(name).png"))
+        }
     }
 
     private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL, voice: AskVoiceInput? = nil, minimumPNGBytes: Int = 10000) async throws {

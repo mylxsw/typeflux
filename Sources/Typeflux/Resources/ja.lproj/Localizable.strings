@@ -400,7 +400,7 @@
 "workflow.audioStart.microphoneNotReady" = "マイクの準備がまだできていません。マイクを再接続するか、「システム設定 > サウンド > 入力」で別の入力デバイスを選択してから、もう一度お試しください。";
 "workflow.audioStart.genericFailure" = "録音を開始できませんでした。マイクが接続され、使用可能であることを確認してから、もう一度お試しください。";
 "workflow.processing.failed" = "処理に失敗しました";
-"workflow.recording.tooShort" = "スピーチが短すぎました。転写はキャンセルされました。";
+"workflow.recording.tooShort" = "録音が短すぎます。もう一度お試しください。";
 "workflow.transcription.emptySkipped" = "転写が空だったのでスキップされました。";
 "workflow.transcription.noSpeech" = "明瞭な音声が検出されませんでした。転写はキャンセルされました。";
 "workflow.transcription.serverUnavailableNotice" = "サーバーに接続できません。録音は履歴に保存され、後で再試行できます。";
@@ -1478,8 +1478,8 @@
 
 "ask.capture.retry" = "Screenshot failed · Retry";
 
-"ask.voice.listening" = "Listening · Release to finish";
-"ask.voice.transcribing" = "Transcribing…";
+"ask.voice.listening" = "録音中";
+"ask.voice.transcribing" = "文字起こし中";
 "ask.history.pull" = "Pull to refresh";
 "ask.history.release" = "Release to refresh";
 "ask.history.refreshing" = "Refreshing…";
@@ -1644,3 +1644,50 @@
 "ask.image.switchAndContinue" = "切り替えて続ける";
 "ask.image.resume" = "続ける";
 "ask.image.signInHint" = "ログインしてこの会話を続けてください。";
+
+// Ask voice button
+"ask.voice.input" = "音声入力";
+"ask.voice.stop" = "録音を停止";
+"ask.voice.buttonHint" = "クリックで開始、もう一度クリックで停止。長押しで録音し、離すと文字に変換します。編集してから送信できます。";
+"ask.voice.shortcutHint" = "入力欄で %@ を長押しして音声入力し、離すと文字に変換します。";
+"ask.voice.stopHint" = "録音を停止して文字を挿入します。Esc でキャンセル。";
+
+// Ask conversation usage
+"ask.usage.title" = "使用量";
+"ask.usage.close" = "使用量を閉じる";
+"ask.usage.context" = "コンテキスト";
+"ask.usage.contextHelp" = "保存済みの会話から推定。下書きは含みません。指示、履歴、ツール、添付を含み、累計使用量とは異なります。";
+"ask.usage.output" = "出力 tokens";
+"ask.usage.input" = "入力 tokens";
+"ask.usage.total" = "合計 tokens";
+"ask.usage.pendingShort" = "確認待ち";
+"ask.usage.pending" = "一部の料金は確認待ちです。表示額は確認済み分のみです。";
+"ask.usage.incomplete" = "一部の使用量または料金を取得できません。既知の分のみ表示します。";
+"ask.usage.external" = "独自 API は Typeflux credits を消費しません。プロバイダー料金は別途発生します。";
+"ask.usage.confirmed" = "確認済み · 呼び出し時の課金結果";
+"ask.usage.unavailable" = "使用量を取得できません";
+"ask.usage.scope" = "集計範囲";
+"ask.usage.round" = "このターン";
+"ask.usage.conversation" = "会話全体";
+"ask.usage.historicalGap" = "以前の使用量は未記録です。合計は記録開始後の呼び出しのみです。";
+"ask.usage.calls" = "モデル呼び出しの詳細";
+"ask.usage.callCount" = "呼び出し回数";
+"ask.usage.loadError" = "詳細を読み込めません。再試行してください。";
+"ask.usage.more" = "さらに読み込む";
+"ask.usage.balance" = "アカウント残高（最終同期）";
+"ask.usage.capacityUnknown" = "容量不明";
+"ask.usage.high" = "上限に近づいています";
+"ask.usage.available" = "空き容量あり";
+"ask.usage.inputEstimate" = "推定入力";
+"ask.usage.reserve" = "出力予約枠";
+"ask.usage.capacity" = "モデル容量";
+"ask.usage.remaining" = "残りの入力容量";
+"ask.usage.summarized" = "以前の内容は要約済みです。元の記録は引き続き閲覧でき、要約呼び出しも使用量に含まれます。";
+"ask.usage.highHelp" = "出力予約枠が不足しています。次回送信時に要約を試みます。上限を超える場合は入力を減らすか新しい会話を開始してください。";
+"ask.usage.estimated" = "推定使用量を含みます。実際の token 数は異なる場合があります。";
+"ask.usage.scopeHelp" = "回答、ツール判断、要約を含みます。再送した履歴は毎回入力に計上されます。";
+"ask.usage.clientSource" = "出典：独自 API クライアント報告";
+"ask.usage.providerSource" = "出典：プロバイダー報告";
+"ask.usage.summary" = "自動要約";
+"ask.usage.inference" = "回答 / ツール判断";
+"ask.usage.externalShort" = "独自 API";

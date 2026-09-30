@@ -1,6 +1,7 @@
 import Foundation
 
 protocol AskAPI: Sendable {
+    func usage(id: String, runId: String?, cursor: Int64?, token: String) async throws -> AskUsagePage
     func cancel(conversationId: String, runId: String, partial: AskInferenceResult?, token: String) async throws -> AskConversation
     func observe(id: String, token: String, onValue: @Sendable (AskConversation) async throws -> Void) async throws
     func models(token: String) async throws -> [AskCloudModel]
@@ -16,6 +17,9 @@ protocol AskAPI: Sendable {
 }
 
 extension AskAPI {
+    func usage(id: String, runId: String?, cursor: Int64?, token: String) async throws -> AskUsagePage {
+        throw AskLocalError.message(L("ask.usage.unavailable"))
+    }
     func cancel(conversationId: String, runId: String, partial: AskInferenceResult?, token: String) async throws -> AskConversation {
         try await cancel(conversationId: conversationId, runId: runId, token: token)
     }
@@ -32,6 +36,11 @@ extension AskAPI {
 }
 
 struct AskAPIClient: AskAPI {
+    func usage(id: String, runId: String?, cursor: Int64?, token: String) async throws -> AskUsagePage {
+        var path = "/\(id)/usage?cursor=\(cursor ?? 0)"
+        if let runId { path += "&run_id=" + (runId.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? "") }
+        return try await execute(path: path, token: token)
+    }
     func models(token: String, scenario: String) async throws -> [AskCloudModel] {
         try await execute(path: "/models?scenario=" + (scenario == "rewrite" ? "rewrite" : "ask"), token: token)
     }

@@ -400,7 +400,7 @@
 "workflow.audioStart.microphoneNotReady" = "마이크가 아직 준비되지 않았습니다. 마이크를 다시 연결하거나 시스템 설정 > 사운드 > 입력에서 다른 입력 기기를 선택한 후 다시 시도하세요.";
 "workflow.audioStart.genericFailure" = "녹음을 시작할 수 없습니다. 마이크가 연결되어 있고 사용 가능한지 확인한 후 다시 시도하세요.";
 "workflow.processing.failed" = "처리 실패";
-"workflow.recording.tooShort" = "말이 너무 짧았습니다. 스크립트 작성이 취소되었습니다.";
+"workflow.recording.tooShort" = "녹음이 너무 짧습니다. 다시 시도해 주세요.";
 "workflow.transcription.emptySkipped" = "텍스트 변환이 비어 있으므로 건너뛰었습니다.";
 "workflow.transcription.noSpeech" = "명확한 음성이 감지되지 않았습니다. 스크립트 작성이 취소되었습니다.";
 "workflow.transcription.serverUnavailableNotice" = "서버에 연결할 수 없습니다. 녹음은 기록에 저장되어 나중에 다시 시도할 수 있습니다.";
@@ -1478,8 +1478,8 @@
 
 "ask.capture.retry" = "Screenshot failed · Retry";
 
-"ask.voice.listening" = "Listening · Release to finish";
-"ask.voice.transcribing" = "Transcribing…";
+"ask.voice.listening" = "듣는 중";
+"ask.voice.transcribing" = "변환 중";
 "ask.history.pull" = "Pull to refresh";
 "ask.history.release" = "Release to refresh";
 "ask.history.refreshing" = "Refreshing…";
@@ -1644,3 +1644,50 @@
 "ask.image.switchAndContinue" = "전환하고 계속";
 "ask.image.resume" = "계속";
 "ask.image.signInHint" = "이 대화를 계속하려면 로그인하세요.";
+
+// Ask voice button
+"ask.voice.input" = "음성 입력";
+"ask.voice.stop" = "녹음 중지";
+"ask.voice.buttonHint" = "클릭하여 시작하고 다시 클릭하여 중지하세요. 길게 눌러 녹음하고 놓으면 텍스트로 변환됩니다. 편집 후 전송하세요.";
+"ask.voice.shortcutHint" = "입력란에서 %@을(를) 길게 눌러 음성을 입력하고 놓으면 텍스트로 변환됩니다.";
+"ask.voice.stopHint" = "녹음을 중지하고 텍스트를 삽입합니다. Esc로 취소합니다.";
+
+// Ask conversation usage
+"ask.usage.title" = "사용량";
+"ask.usage.close" = "사용량 닫기";
+"ask.usage.context" = "컨텍스트";
+"ask.usage.contextHelp" = "저장된 대화를 기준으로 추정하며 초안은 제외합니다. 지침, 기록, 도구, 첨부를 포함하며 누적 사용량과 다릅니다。";
+"ask.usage.output" = "출력 tokens";
+"ask.usage.input" = "입력 tokens";
+"ask.usage.total" = "총 tokens";
+"ask.usage.pendingShort" = "확인 대기";
+"ask.usage.pending" = "일부 요금은 확인 대기 중입니다. 확인된 금액만 표시합니다.";
+"ask.usage.incomplete" = "일부 사용량 또는 요금을 확인할 수 없습니다. 확인된 사용량만 표시합니다.";
+"ask.usage.external" = "개인 API는 Typeflux credits를 사용하지 않습니다. 공급자 요금은 별도입니다.";
+"ask.usage.confirmed" = "확인됨 · 호출 시점의 과금 결과";
+"ask.usage.unavailable" = "사용량 확인 불가";
+"ask.usage.scope" = "집계 범위";
+"ask.usage.round" = "이번 질문";
+"ask.usage.conversation" = "전체 대화";
+"ask.usage.historicalGap" = "이전 사용량은 기록되지 않았습니다. 합계에는 기록 시작 이후의 호출만 포함됩니다.";
+"ask.usage.calls" = "모델 호출 상세";
+"ask.usage.callCount" = "호출 횟수";
+"ask.usage.loadError" = "상세 정보를 불러올 수 없습니다. 다시 시도하세요.";
+"ask.usage.more" = "더 불러오기";
+"ask.usage.balance" = "계정 잔액 (최근 동기화)";
+"ask.usage.capacityUnknown" = "용량 알 수 없음";
+"ask.usage.high" = "한도에 가까움";
+"ask.usage.available" = "공간 충분";
+"ask.usage.inputEstimate" = "예상 입력";
+"ask.usage.reserve" = "출력 예약량";
+"ask.usage.capacity" = "모델 용량";
+"ask.usage.remaining" = "남은 입력 공간";
+"ask.usage.summarized" = "이전 내용이 요약되었습니다. 원본 기록은 유지되며 요약 호출도 사용량에 포함됩니다.";
+"ask.usage.highHelp" = "출력 예약 공간이 부족합니다. 다음 전송 시 요약을 시도합니다. 여전히 한도를 초과하면 입력을 줄이거나 새 대화를 시작하세요.";
+"ask.usage.estimated" = "추정 사용량이 포함되어 실제 token 수와 다를 수 있습니다.";
+"ask.usage.scopeHelp" = "답변, 도구 판단, 요약을 포함합니다. 기록을 다시 전송할 때마다 입력에 포함됩니다.";
+"ask.usage.clientSource" = "출처: 개인 API 클라이언트 보고";
+"ask.usage.providerSource" = "출처: 공급자 보고";
+"ask.usage.summary" = "자동 요약";
+"ask.usage.inference" = "답변 / 도구 판단";
+"ask.usage.externalShort" = "개인 API";

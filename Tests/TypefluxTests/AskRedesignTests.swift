@@ -68,7 +68,7 @@ struct AskPresentationTests {
         #expect(clipped == "> 1\n> 2\n> 3\n> …\n\n")
     }
 
-    @Test func launcherHeightIsTheTwoLayerCardPlusItsGlowGutter() {
+    @Test func launcherHeightIsTheTwoLayerCardPlusItsGutter() {
         let resting = AskMetrics.launcherHeight(editor: 32, banners: 0)
         #expect(resting == 114)
         #expect(AskMetrics.launcherHeight(editor: 148, banners: 0) == 230)
@@ -77,10 +77,8 @@ struct AskPresentationTests {
     }
 
     @Test func focusAloneKeepsTheNeutralBorder() {
-        #expect(AskVoiceBorder.borderColor(listening: false, active: false) == AskTheme.border)
-        #expect(AskVoiceBorder.borderColor(listening: true, active: true) == AskTheme.accent)
-        #expect(AskVoiceBorder.borderColor(listening: false, active: true) != AskTheme.border)
-        #expect(AskVoiceBorder.borderColor(listening: false, active: true) != AskTheme.accent)
+        #expect(AskVoiceBorder.borderColor(listening: false) == AskTheme.border)
+        #expect(AskVoiceBorder.borderColor(listening: true) == AskTheme.accent.opacity(0.45))
     }
 
     @Test func waveformBarsStayInsideTheMeter() {

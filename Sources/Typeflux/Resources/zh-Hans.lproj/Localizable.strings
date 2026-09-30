@@ -404,7 +404,7 @@
 "workflow.audioStart.microphoneNotReady" = "麦克风暂时没有准备好。请重新连接麦克风，或前往“系统设置 > 声音 > 输入”选择其他输入设备，然后重试。";
 "workflow.audioStart.genericFailure" = "无法开始录音。请确认麦克风已连接且可用，然后重试。";
 "workflow.processing.failed" = "处理失败";
-"workflow.recording.tooShort" = "说话时间太短，本次转写已取消。";
+"workflow.recording.tooShort" = "录音太短，请再试一次。";
 "workflow.transcription.emptySkipped" = "由于转写结果为空，已跳过后续处理。";
 "workflow.transcription.noSpeech" = "未检测到清晰语音，本次转写已取消。";
 "workflow.transcription.serverUnavailableNotice" = "暂时无法连接服务器，录音已保存在历史记录中，可稍后重试。";
@@ -1492,8 +1492,8 @@
 
 "ask.capture.retry" = "截图失败 · 重试";
 
-"ask.voice.listening" = "正在聆听 · 松开结束";
-"ask.voice.transcribing" = "正在转写…";
+"ask.voice.listening" = "聆听中";
+"ask.voice.transcribing" = "转写中";
 "ask.history.pull" = "下拉刷新";
 "ask.history.release" = "松开刷新";
 "ask.history.refreshing" = "正在刷新…";
@@ -1658,3 +1658,50 @@
 "ask.image.switchAndContinue" = "切换并继续";
 "ask.image.resume" = "继续";
 "ask.image.signInHint" = "请登录后继续此对话。";
+
+// Ask voice button
+"ask.voice.input" = "语音输入";
+"ask.voice.stop" = "停止录音";
+"ask.voice.buttonHint" = "点击开始，再次点击停止；也可按住录音，松开转为文字。编辑后再发送。";
+"ask.voice.shortcutHint" = "在输入框中按住 %@ 语音输入，松开转为文字。";
+"ask.voice.stopHint" = "停止录音并填入文字，按 Esc 取消。";
+
+// Ask conversation usage
+"ask.usage.title" = "用量";
+"ask.usage.close" = "关闭用量";
+"ask.usage.context" = "上下文";
+"ask.usage.contextHelp" = "按已保存对话估算，未含草稿。包含系统提示、历史、工具与附件，不等于累计消耗。";
+"ask.usage.output" = "输出 tokens";
+"ask.usage.input" = "输入 tokens";
+"ask.usage.total" = "总 tokens";
+"ask.usage.pendingShort" = "待确认";
+"ask.usage.pending" = "部分费用待确认；当前金额仅含已确认部分。";
+"ask.usage.incomplete" = "部分用量或费用不可用；仅展示已知消耗。";
+"ask.usage.external" = "自有 API，不消耗 Typeflux credits。供应商费用另计。";
+"ask.usage.confirmed" = "已确认 · 使用调用时的计费结果";
+"ask.usage.unavailable" = "用量不可用";
+"ask.usage.scope" = "统计范围";
+"ask.usage.round" = "本轮提问";
+"ask.usage.conversation" = "整个对话";
+"ask.usage.historicalGap" = "历史部分未记录；累计仅包含用量记录启用后的调用。";
+"ask.usage.calls" = "模型调用明细";
+"ask.usage.callCount" = "调用次数";
+"ask.usage.loadError" = "暂时无法读取明细，请重试。";
+"ask.usage.more" = "加载更多";
+"ask.usage.balance" = "账户剩余额度（最近同步）";
+"ask.usage.capacityUnknown" = "容量未知";
+"ask.usage.high" = "接近上限";
+"ask.usage.available" = "空间充足";
+"ask.usage.inputEstimate" = "预计输入";
+"ask.usage.reserve" = "输出预留";
+"ask.usage.capacity" = "模型容量";
+"ask.usage.remaining" = "剩余输入空间";
+"ask.usage.summarized" = "较早内容已摘要，原始记录仍可查看；摘要调用计入消耗。";
+"ask.usage.highHelp" = "输出预留空间不足，下次发送将尝试摘要；仍超限时需缩减输入或新建对话。";
+"ask.usage.estimated" = "包含估算用量，实际 token 可能不同。";
+"ask.usage.scopeHelp" = "包含回答、工具决策与摘要。每次重复发送的历史都会再次计入输入。";
+"ask.usage.clientSource" = "来源：自有 API 客户端上报";
+"ask.usage.providerSource" = "来源：供应商返回";
+"ask.usage.summary" = "自动摘要";
+"ask.usage.inference" = "回答 / 工具决策";
+"ask.usage.externalShort" = "自有 API";

@@ -7,6 +7,7 @@ struct AskStreamProgress: Equatable, Sendable {
     var reasoning = ""
     var toolCalls: [AskToolCall] = []
     var reasoningMilliseconds = 0
+    var usage: AskTokenUsage? = nil
 }
 
 /// One bounded SSE decoder shared by provider and conversation streams.
@@ -64,6 +65,7 @@ struct AskProviderStream {
         }
         guard let body = try JSONSerialization.jsonObject(with: Data(data.utf8)) as? [String: Any],
               body["error"] == nil else { throw AskStreamError.invalidResponse }
+        progress.usage = AskTokenUsage.parse(body, style: style, previous: progress.usage)
         switch style {
         case .openAI:
             guard let choice = (body["choices"] as? [[String: Any]])?.first else { return }
@@ -175,6 +177,7 @@ struct AskProviderStream {
 
 extension AskCustomInference {
     func stream(_ request: URLRequest, style: AskProviderStream.Style,
+                onUsage: (@Sendable (AskTokenUsage) async -> Void)? = nil,
                 onProgress: @Sendable (AskStreamProgress) async -> Void) async throws -> (String, [AskToolCall]) {
         let (bytes, response) = try await session.bytes(for: request)
         guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
@@ -189,6 +192,7 @@ extension AskCustomInference {
             try Task.checkCancellation()
             if let (_, data) = try frame.push(byte) {
                 try parser.consume(data)
+                if let usage = parser.progress.usage { await onUsage?(usage) }
                 let now = ContinuousClock.now
                 if !parser.progress.reasoning.isEmpty && parser.progress.text.isEmpty {
                     let elapsed = started.duration(to: now).components

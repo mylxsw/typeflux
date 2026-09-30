@@ -4,6 +4,8 @@ import SwiftUI
 
 struct AskConversationView: View {
     @ObservedObject var model: AskConversationModel
+    @State private var showsUsage = false
+    @State private var usageRunId: String?
     @State private var deleteId: String?
     @State private var pullDistance: CGFloat = 0
     @State private var restoredTranscript: String?
@@ -14,6 +16,12 @@ struct AskConversationView: View {
     @AppStorage("ask.sidebarCollapsed") private var sidebarCollapsed = false
     @ObservedObject private var auth = AuthState.shared
 
+    init(model: AskConversationModel, showsUsage: Bool = false) {
+        self.model = model
+        _showsUsage = State(initialValue: showsUsage)
+        _usageRunId = State(initialValue: model.selected?.run?.id)
+    }
+
     var body: some View {
         ZStack(alignment: .topLeading) {
             HStack(spacing: 0) {
@@ -21,14 +29,19 @@ struct AskConversationView: View {
                     sidebar.frame(width: AskMetrics.sidebarWidth)
                 }
                 content
+                if showsUsage {
+                    AskUsagePanel(model: model, runId: $usageRunId, close: { showsUsage = false })
+                        .id(model.selectedId)
+                }
             }
             titleBarTools
             if isSearching { searchPalette }
         }
         // Lay out from the very top of the window so the tools share the
         // traffic lights' baseline instead of sitting below the title bar.
+        .onChange(of: model.selectedId) { _ in usageRunId = nil }
         .ignoresSafeArea(.container, edges: .top)
-        .frame(minWidth: 740, minHeight: 530)
+        .frame(minWidth: showsUsage ? 1070 : 740, minHeight: 530)
         .background(StudioGlassBackground(tintOpacity: StudioTheme.Opacity.glassBackgroundTint))
         .tint(AskTheme.accent)
         .onChange(of: model.draft) { _ in model.persistDrafts() }
@@ -414,6 +427,9 @@ struct AskConversationView: View {
             if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
             Spacer(minLength: 8)
             if let id = model.selectedId {
+                Button { usageRunId = model.selected?.run?.id; showsUsage.toggle() } label: {
+                    Label(L("ask.usage.title"), systemImage: "chart.bar.xaxis").font(.system(size: 11))
+                }.buttonStyle(.plain).help(L("ask.usage.title"))
                 Button { deleteId = id } label: {
                     Image(systemName: "trash").font(.system(size: 12))
                         .foregroundStyle(StudioTheme.textTertiary)
@@ -535,6 +551,10 @@ struct AskConversationView: View {
             }
             AskComposer(model: model, launcher: false)
                 .disabled(model.isLoadingSelection)
+            if let context = model.usageContext {
+                AskContextUsageButton(context: context) { showsUsage = true }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
         .frame(maxWidth: AskMetrics.composerMaxWidth)
         .padding(.horizontal, 22)
@@ -581,6 +601,8 @@ struct AskConversationView: View {
                             AskMessageView(message: message,
                                            allMessages: model.selected?.messages ?? [],
                                            onQuote: quote,
+                                           usage: message.runId.flatMap { model.selected?.usage?.runs[$0] },
+                                           onUsage: { usageRunId = message.runId; showsUsage = true },
                                            isStreaming: message.id == model.selected?.run?.assistantId && model.selected?.run?.isActive == true,
                                            approvalToolId: model.selectedId.flatMap { model.pendingApprovals[$0]?.id })
                                 .id(message.id)
@@ -662,6 +684,8 @@ private struct AskMessageView: View {
     let message: AskMessage
     let allMessages: [AskMessage]
     var onQuote: (String) -> Void
+    var usage: AskUsageTotals? = nil
+    var onUsage: () -> Void = {}
     var isStreaming = false
     var approvalToolId: String? = nil
     @State private var showImage = false
@@ -767,6 +791,10 @@ private struct AskMessageView: View {
                     AskGhostButton(title: L("ask.quote"), systemImage: "text.quote") { onQuote(message.text) }
                 }
                 .padding(.leading, AskMetrics.assistantIndent - 2)
+                if !isStreaming {
+                    AskUsageSummaryButton(totals: usage, action: onUsage)
+                        .padding(.leading, AskMetrics.assistantIndent)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

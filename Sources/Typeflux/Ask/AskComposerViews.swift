@@ -30,6 +30,7 @@ struct AskComposer: View {
         self.onDismiss = onDismiss
         self.onHeightChange = onHeightChange
         self.voice = model.voiceInput
+        self._voiceShortcut = State(initialValue: model.modelLibrary.settings.activationHotkey)
     }
 
     private var contextID: String { launcher ? "launcher" : "chat:" + (model.selectedId ?? "new") }
@@ -37,7 +38,9 @@ struct AskComposer: View {
     private var listening: Bool { voice.context == contextID && voice.phase == .listening }
     @State private var showingScreenshot = false
     @State private var showingSelection = false
+    @State private var showingContext = false
     @State private var editorHeight: CGFloat = 32
+    @State private var voiceShortcut: HotkeyBinding?
 
     private var draft: Binding<AskDraft> { launcher ? $model.launcherDraft : $model.draft }
     private var canSend: Bool { launcher ? model.canSendLauncher : model.canSend }
@@ -66,6 +69,9 @@ struct AskComposer: View {
         .onChange(of: model.screenshotNotice) { _ in reportHeight() }
         .onChange(of: voice.error) { _ in reportHeight() }
         .onAppear { reportHeight() }
+        .onReceive(NotificationCenter.default.publisher(for: .hotkeySettingsDidChange)) { _ in
+            voiceShortcut = model.modelLibrary.settings.activationHotkey
+        }
     }
 
     private var card: some View {
@@ -119,25 +125,36 @@ struct AskComposer: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 7) {
-            if active { voiceStatus } else {
-                AskModelMenu(library: model.modelLibrary, reference: Binding(
-                    get: { model.modelReference(launcher: launcher) },
-                    set: { model.selectModel($0, launcher: launcher) }
-                ), disabled: !launcher && (model.isBusy || model.isLoadingSelection),
-                   hasImage: !launcher && model.hasConversationImages)
-                AskReasoningMenu(library: model.modelLibrary,
-                                 reference: model.modelReference(launcher: launcher),
-                                 effort: $model.reasoningEffort,
-                                 disabled: !launcher && (model.isBusy || model.isLoadingSelection))
-                contextChips
+        HStack(spacing: 8) {
+            AskModelMenu(library: model.modelLibrary, reference: Binding(
+                get: { model.modelReference(launcher: launcher) },
+                set: { model.selectModel($0, launcher: launcher) }
+            ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
+               hasImage: !launcher && model.hasConversationImages)
+            AskReasoningMenu(library: model.modelLibrary,
+                             reference: model.modelReference(launcher: launcher),
+                             effort: $model.reasoningEffort,
+                             disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)))
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 7) { contextChips }.fixedSize()
+                Button { showingContext = true } label: {
+                    Image(systemName: "ellipsis").frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(StudioTheme.textSecondary)
+                .accessibilityLabel(L("ask.context"))
+                .help(L("ask.context"))
+                .popover(isPresented: $showingContext) {
+                    HStack(spacing: 8) { contextChips }.padding(12)
+                }
             }
-            Spacer(minLength: 6)
-            if !active {
-                trailingHint
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .disabled(active)
+            voiceStatus
+            AskVoiceButton(voice: voice, contextID: contextID,
+                           enabled: launcher || !model.isLoadingSelection,
+                           shortcut: voiceShortcut)
+                .frame(width: 32, height: 32)
             AskSendButton(enabled: canSend, action: submit)
         }
         .padding(.leading, 12)
@@ -228,32 +245,18 @@ struct AskComposer: View {
     }
 
     private var voiceStatus: some View {
-        HStack(spacing: 8) {
-            if listening {
-                AskWaveform()
-                Text(L("ask.voice.listening"))
-            } else {
-                ProgressView().controlSize(.mini)
-                Text(L("ask.voice.transcribing"))
-            }
+        // Reserve the largest localized label even while idle, so actions never move.
+        ZStack(alignment: .trailing) {
+            Text(L("ask.voice.listening")).hidden()
+            Text(L("ask.voice.transcribing")).hidden()
+            if active { Text(L(listening ? "ask.voice.listening" : "ask.voice.transcribing")) }
         }
-        .font(.system(size: 11.5, weight: .semibold))
-        .foregroundStyle(listening ? AskTheme.accent : AskTheme.accent.opacity(0.75))
-        .lineLimit(1)
-    }
-
-    @ViewBuilder private var trailingHint: some View {
-        if draft.wrappedValue.canSend {
-            HStack(spacing: 5) {
-                AskKeyCap(symbol: "return")
-                Text(L("ask.send"))
-            }
-        } else {
-            HStack(spacing: 5) {
-                Image(systemName: "mic").font(.system(size: 11))
-                Text(L("ask.voice.hold"))
-            }
-        }
+        .font(.system(size: 11, weight: .medium))
+        .foregroundStyle(listening ? AskTheme.accent : StudioTheme.textSecondary)
+        .fixedSize()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(active ? L(listening ? "ask.voice.listening" : "ask.voice.transcribing") : "")
+        .accessibilityHidden(!active)
     }
 
     private func reportHeight() {

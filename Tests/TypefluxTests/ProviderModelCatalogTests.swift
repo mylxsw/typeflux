@@ -178,28 +178,32 @@ final class ProviderModelCatalogTests: XCTestCase {
                 if remote == .anthropic {
                     XCTAssertEqual(body?["model"] as? String, "selected")
                     XCTAssertEqual(request.url?.path, "/v1/messages")
-                    return (200, #"{"content":[{"type":"text","text":"OK"}]}"#)
+                    return (200, #"{"content":[{"type":"text","text":"OK"}],"usage":{"input_tokens":10,"output_tokens":4}}"#)
                 }
                 if remote == .gemini {
                     XCTAssertEqual(request.url?.path, "/v1/models/selected:generateContent")
-                    return (200, #"{"candidates":[{"content":{"parts":[{"text":"OK"}]}}]}"#)
+                    return (200, #"{"candidates":[{"content":{"parts":[{"text":"OK"}]}}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":4,"totalTokenCount":14}}"#)
                 }
                 XCTAssertEqual(body?["model"] as? String, "selected")
                 XCTAssertEqual(request.url?.path, "/v1/chat/completions")
-                return (200, #"{"choices":[{"message":{"content":"OK"}}]}"#)
+                return (200, #"{"choices":[{"message":{"content":"OK"}}],"usage":{"prompt_tokens":10,"completion_tokens":4,"total_tokens":14}}"#)
             }
             let provider = RegisteredProvider(
                 id: remote == .custom ? "ollama" : remote.rawValue,
                 name: "Test",
                 remote: remote == .custom ? nil : remote
             )
+            let recorder = CatalogUsageRecorder()
             let result = try await inference.complete(
                 provider: provider,
                 connection: .init(provider: remote, baseURL: "https://example.invalid/v1", model: "selected",
                                   apiKey: "fixture"),
-                payload: #"{"messages":[{"role":"user","content":"Hello"}]}"#
+                payload: #"{"messages":[{"role":"user","content":"Hello"}]}"#,
+                onUsage: { await recorder.append($0) }
             )
             XCTAssertEqual(result.0, "OK")
+            let usage = await recorder.value
+            XCTAssertEqual(usage?.totalTokens, 14)
         }
     }
 
@@ -249,4 +253,9 @@ private final class CatalogURLProtocol: URLProtocol, @unchecked Sendable {
     }
 
     override func stopLoading() {}
+}
+
+private actor CatalogUsageRecorder {
+    var value: AskTokenUsage?
+    func append(_ value: AskTokenUsage) { self.value = value }
 }

@@ -11,13 +11,21 @@ struct AskImageCapabilityTests {
         let f = try await fixture()
         defer { f.model.resetSession() }
         f.model.modelLibrary.defaultReference = "cloud:text"
-        let value = conversation(reference: "cloud:vision")
+        var value = conversation(reference: "cloud:vision")
+        value.usage = .init(version: 1, since: value.updatedAt, historicalGap: false,
+                            total: .init(calls: 1, pending: 1), runs: [:])
         await f.api.seed(value)
+        var cached = value
+        cached.usage?.version = 2
+        cached.usage?.total = .init(microcredits: 200_000, calls: 1)
+        try await f.cache.save(cached, owner: "owner")
         try await f.cache.saveDraft(AskDraft(text: "Follow up", screenshot: Self.image), key: value.id, owner: "owner")
         await f.model.select(value.id)
         #expect(f.model.modelReference(launcher: false) == "cloud:vision")
         #expect(f.model.draft.includeScreenshot)
         #expect(f.model.draft.screenshot == Self.image)
+        #expect(f.model.selected?.usage?.version == 2)
+        #expect(f.model.selected?.usage?.total.microcredits == 200_000)
     }
 
     @Test func retryChecksFreshCloudImageCapabilities() async throws {
