@@ -21,22 +21,67 @@ struct AskReasoningMenu: View {
     @Binding var effort: AskReasoningEffort
     var disabled = false
 
+    @State private var expanded = false
+
     var body: some View {
         if reference.hasPrefix("cloud:"), library.registry.resolve(reference)?.1.reasoning == true {
-            Menu {
-                Picker(L("ask.reasoning.title"), selection: $effort) {
-                    ForEach(AskReasoningEffort.allCases, id: \.self) { choice in
-                        Text(choice.label).tag(choice)
-                    }
+            Button { expanded.toggle() } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "brain").foregroundStyle(StudioTheme.textSecondary)
+                    Text(effort.label)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(StudioTheme.textSecondary)
                 }
-            } label: {
-                Label(effort.label, systemImage: "brain")
-                    .font(.system(size: 12))
+                .font(.system(size: 13, weight: .medium))
+                .padding(.horizontal, 11).frame(height: 32)
+                .background(ModelVisualStyle.input, in: RoundedRectangle(cornerRadius: 16))
+                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(ModelVisualStyle.border))
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
             .fixedSize()
             .disabled(disabled)
             .help(L("ask.reasoning.help"))
             .accessibilityLabel(L("ask.reasoning.title"))
+            .accessibilityValue(effort.label)
+            .popover(isPresented: $expanded, arrowEdge: .bottom) {
+                AskReasoningChoices(effort: $effort) { expanded = false }
+            }
         }
+    }
+}
+
+struct AskReasoningChoices: View {
+    @Binding var effort: AskReasoningEffort
+    var dismiss: () -> Void = {}
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(L("ask.reasoning.title"))
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .padding(.horizontal, 12).padding(.vertical, 8)
+            ForEach(AskReasoningEffort.allCases, id: \.self) { choice in
+                Button { effort = choice; dismiss() } label: {
+                    HStack {
+                        Text(choice.label)
+                        Spacer()
+                        if effort == choice {
+                            Image(systemName: "checkmark").font(.system(size: 12, weight: .semibold))
+                        }
+                    }
+                    .font(.system(size: 13, weight: effort == choice ? .semibold : .regular))
+                    .foregroundStyle(effort == choice ? ModelVisualStyle.accent : StudioTheme.textPrimary)
+                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .background(effort == choice ? ModelVisualStyle.accent.opacity(0.15) : .clear,
+                                in: RoundedRectangle(cornerRadius: 8))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(effort == choice ? [.isSelected] : [])
+            }
+        }
+        .padding(8).frame(width: 200).background(ModelVisualStyle.input)
     }
 }

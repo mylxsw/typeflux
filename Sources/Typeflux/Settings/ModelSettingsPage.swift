@@ -98,7 +98,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                                 }
                             }
                         }
-                    } label: { Text(viewModel.sttProvider.displayName + " · " + speechModelName(viewModel.sttProvider)
+                    } label: { Text(speechModelName(viewModel.sttProvider)
                             + (speechReason(viewModel.sttProvider).map { " — " + $0 } ?? ""))
                     }
                     .menuStyle(.borderlessButton).padding(.horizontal, 10).frame(width: 240, height: 32)

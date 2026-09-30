@@ -322,6 +322,15 @@ struct AskConversationVisualTests {
         try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
                          size: NSSize(width: 600, height: 160), appearance: .aqua,
                          file: root.appendingPathComponent("ask-reasoning-client.png"))
+        try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
+                         size: NSSize(width: 600, height: 160), appearance: .darkAqua,
+                         file: root.appendingPathComponent("ask-reasoning-client-dark.png"))
+        try await render(AskReasoningChoices(effort: .constant(.high)),
+                         size: NSSize(width: 200, height: 200), appearance: .darkAqua,
+                         file: root.appendingPathComponent("ask-reasoning-choices.png"), minimumPNGBytes: 2000)
+        try await render(AskModelChoices(library: library, reference: .constant("cloud:deep"), loggedIn: true),
+                         size: NSSize(width: 360, height: 200), appearance: .darkAqua,
+                         file: root.appendingPathComponent("ask-model-choices.png"))
     }
 
     @Test func renderManagedCloudModels() async throws {
@@ -362,7 +371,7 @@ struct AskConversationVisualTests {
                          file: root.appendingPathComponent("provider-model-counts.png"))
     }
 
-    private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL, voice: AskVoiceInput? = nil) async throws {
+    private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL, voice: AskVoiceInput? = nil, minimumPNGBytes: Int = 10000) async throws {
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: appearance)
@@ -378,7 +387,7 @@ struct AskConversationVisualTests {
             hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
             let png = try #require(bitmap.representation(using: .png, properties: [:]))
             try png.write(to: url)
-            #expect(png.count > 10000)
+            #expect(png.count > minimumPNGBytes)
         }
         try snapshot(file)
         if file.lastPathComponent.hasPrefix("models-settings-") ||
