@@ -1612,3 +1612,11 @@
 "models.cloud.parameters" = "Context: %d · Output: %d tokens";
 "models.cloud.priceUnknown" = "Price information unavailable";
 "models.cloud.priceExplanation" = "Multiplier applies to input and output token rates; total cost depends on usage.";
+
+// Ask reasoning effort
+"ask.reasoning.title" = "Reasoning effort";
+"ask.reasoning.default" = "Default";
+"ask.reasoning.low" = "Low";
+"ask.reasoning.medium" = "Medium";
+"ask.reasoning.high" = "High";
+"ask.reasoning.help" = "Choose the reasoning effort for your next message. Higher effort may take longer and use more credits.";

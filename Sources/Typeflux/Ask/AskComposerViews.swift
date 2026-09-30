@@ -119,6 +119,10 @@ struct AskComposer: View {
                     set: { draft.wrappedValue.modelRef = $0 }
                 ), disabled: !launcher && (model.isBusy || model.isLoadingSelection),
                    hasImage: model.requiresVision(launcher: launcher))
+                AskReasoningMenu(library: model.modelLibrary,
+                                 reference: model.modelReference(launcher: launcher),
+                                 effort: $model.reasoningEffort,
+                                 disabled: !launcher && (model.isBusy || model.isLoadingSelection))
                 contextChips
             }
             Spacer(minLength: 6)

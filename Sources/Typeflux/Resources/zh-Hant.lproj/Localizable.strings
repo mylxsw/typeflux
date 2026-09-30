@@ -1609,3 +1609,11 @@
 "models.cloud.parameters" = "上下文：%d · 輸出：%d tokens";
 "models.cloud.priceUnknown" = "價格資訊暫不可用";
 "models.cloud.priceExplanation" = "倍率同時適用於輸入和輸出費率，實際消耗取決於 token 用量。";
+
+// Ask reasoning effort
+"ask.reasoning.title" = "推理強度";
+"ask.reasoning.default" = "預設";
+"ask.reasoning.low" = "低";
+"ask.reasoning.medium" = "中";
+"ask.reasoning.high" = "高";
+"ask.reasoning.help" = "選擇下一則訊息的推理強度。較高強度可能需要更長時間並消耗更多點數。";

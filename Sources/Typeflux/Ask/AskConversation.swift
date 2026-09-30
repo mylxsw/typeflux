@@ -30,6 +30,7 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     var createdAt: Date
     var reasoning: String? = nil
     var reasoningMilliseconds: Int? = nil
+    var reasoningEffort: String? = nil
 }
 
 struct AskRun: Codable, Equatable, Sendable {
@@ -48,6 +49,8 @@ struct AskRun: Codable, Equatable, Sendable {
     var preview: String? = nil
     var modelRef: String? = nil
     var inference: AskInference? = nil
+
+    var reasoningEffort: String? = nil
 
     var isActive: Bool { status == "running" || status == "waiting_tool" || status == "waiting_inference" }
 }
@@ -79,6 +82,7 @@ struct AskSendRequest: Codable, Equatable, Sendable {
     var image: String?
     var tools: [AskToolDefinition]
     var modelRef: String? = nil
+    var reasoningEffort: String? = nil
 }
 
 struct AskToolResultRequest: Codable, Equatable, Sendable {

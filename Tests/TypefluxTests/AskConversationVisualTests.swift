@@ -299,6 +299,31 @@ struct AskConversationVisualTests {
         fixture.model.resetSession()
     }
 
+    @Test func renderReasoningComposer() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_REASONING_CAPTURE_DIR"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let suite = "ask-reasoning-visual-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        try library.addModels([.init(id: "deep", name: "深度思考", reference: "cloud:deep", vision: true,
+                                    scenarios: ["ask"], pricing: .init(multiplier: "1"), reasoning: true)], providerID: "typefluxCloud")
+        library.defaultReference = "cloud:deep"
+        let fixture = try AskTestFixture(modelLibrary: library)
+        defer { fixture.model.resetSession() }
+        await fixture.model.prepareLauncher()
+        fixture.model.launcherDraft = AskDraft(text: "帮我分析这份产品方案", includeScreenshot: false)
+        fixture.model.reasoningEffort = .high
+        try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
+                         size: NSSize(width: 600, height: 160), appearance: .aqua,
+                         file: root.appendingPathComponent("ask-reasoning-client.png"))
+    }
+
     private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL, voice: AskVoiceInput? = nil) async throws {
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false

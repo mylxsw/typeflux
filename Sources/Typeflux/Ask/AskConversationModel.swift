@@ -4,6 +4,7 @@ import Combine
 @MainActor
 final class AskConversationModel: ObservableObject {
     let voiceInput = AskVoiceInput()
+    @Published var reasoningEffort: AskReasoningEffort = .providerDefault
     let modelLibrary: AskModelLibrary
     private var inferenceReceipts: [String: AskInferenceResult] = [:]
     var customInference = AskCustomInference()
@@ -301,9 +302,10 @@ final class AskConversationModel: ObservableObject {
         let messageId = UUID().uuidString
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
         request.modelRef = submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference : (value.modelRef ?? "cloud:default"))
+        request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
         value.modelRef = request.modelRef
         pendingSends[id] = request
-        value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date()))
+        value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort))
         selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID(); draft = .followUp
         snapshots[id] = value; selectionLoadFailed = false
         updateSummary(value)
@@ -388,7 +390,7 @@ final class AskConversationModel: ObservableObject {
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
                     let request = AskSendRequest(id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
-                                                 tools: await tools.definitions(), modelRef: value.modelRef)
+                                                 tools: await tools.definitions(), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort)
                     try await validateModel(
                         request.modelRef, token: current.token,
                         hasImage: request.image != nil || value.messages.contains(where: { $0.image != nil })
