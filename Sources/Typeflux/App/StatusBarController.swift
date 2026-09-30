@@ -477,7 +477,7 @@ final class StatusBarController: NSObject {
         }
     }
 
-    private func openStudio(_ section: StudioSection) {
+    private func openStudio(_ section: StudioSection, modelDomain: StudioModelDomain? = nil) {
         switch section {
         case .history:
             openHistory()
@@ -486,6 +486,7 @@ final class StatusBarController: NSObject {
                 settingsStore: settingsStore,
                 historyStore: historyStore,
                 initialSection: section,
+                initialModelDomain: modelDomain,
                 modelManager: modelManager,
                 localModelManager: localModelManager,
                 notificationService: notificationService,
@@ -495,8 +496,8 @@ final class StatusBarController: NSObject {
     }
 
     /// Opens the settings window from outside the menu, e.g. the Ask sidebar footer.
-    func showSettings() {
-        openStudio(.settings)
+    func showSettings(section: StudioSection = .settings) {
+        openStudio(section, modelDomain: section == .models ? .llm : nil)
     }
 
     @objc private func showConfiguration() {

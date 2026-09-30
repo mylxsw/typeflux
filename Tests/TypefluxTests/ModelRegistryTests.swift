@@ -283,7 +283,7 @@ final class ModelRegistryTests: XCTestCase {
         XCTAssertEqual(library.settings.textLLMConfiguration().provider, .typefluxCloud)
     }
 
-    func testNonVisionSelectionIsRejectedBeforeSendingAndDoesNotChangeDefault() async throws {
+    func testNonVisionSelectionDetachesScreenshotAndDoesNotChangeDefault() async throws {
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         try library.addModels([.init(id: "text-only", name: "Text only", vision: false)], providerID: "openAI")
         let provider = try XCTUnwrap(library.providers.first { $0.remote == .openAI })
@@ -295,14 +295,18 @@ final class ModelRegistryTests: XCTestCase {
         fixture.model.launcherDraft.modelRef = selected.reference
         fixture.model.launcherDraft.screenshot = "data:image/png;base64,AAAA"
         fixture.model.launcherDraft.includeScreenshot = true
-        XCTAssertTrue(fixture.model.requiresVision(launcher: true))
+        XCTAssertFalse(fixture.model.requiresVision(launcher: true))
+        XCTAssertFalse(fixture.model.launcherDraft.includeScreenshot)
+        XCTAssertNotNil(fixture.model.launcherDraft.screenshot)
         fixture.model.submitLauncher()
         try await fixture.wait { fixture.model.busyIds.isEmpty }
         let sends = await fixture.api.sends
-        XCTAssertTrue(sends.isEmpty)
+        XCTAssertEqual(sends.count, 1)
+        XCTAssertNil(sends.first?.image)
+        XCTAssertEqual(sends.first?.modelRef, selected.reference)
         XCTAssertEqual(library.defaultReference, "cloud:default")
-        XCTAssertEqual(fixture.model.draft.modelRef, selected.reference)
-        XCTAssertNotNil(fixture.model.error)
+        XCTAssertEqual(fixture.model.selected?.modelRef, selected.reference)
+        XCTAssertNil(fixture.model.error)
         fixture.model.resetSession()
     }
 

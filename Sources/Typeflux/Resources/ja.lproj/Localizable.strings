@@ -1616,6 +1616,35 @@
 
 "models.count" = "モデル数：%d";
 
+// Screenshot capability and recovery
+"ask.image.unsupported" = "このモデルは画像認識に対応していません。スクリーンショットを添付するには対応モデルに切り替えてください。";
+"ask.image.unknown" = "このモデルの画像対応は未確認です。モデル設定を確認してください。";
+"ask.image.detached" = "このモデルは画像に対応していないため、スクリーンショットの添付を解除しました。";
+"ask.image.disabled" = "利用不可";
+"ask.image.captured" = "スクリーンショット取得済み";
+"ask.image.resuming" = "保存済みのスクリーンショットを分析中";
+"ask.image.saved" = "スクリーンショットは保存済みです。モデルを変更して続行できます";
+"ask.image.processing" = "%@ で保存済みのスクリーンショットを分析中…";
+"ask.image.ready" = "選択したモデルは画像に対応しています。分析を続行できます。";
+"ask.image.recoveryHint" = "このモデルは画像を読み取れません。対応モデルを選んで保存済みのスクリーンショットの分析を続行してください。";
+"ask.image.continue" = "%@ で続行";
+"ask.image.choose" = "モデルを選んで続行…";
+"ask.image.previewUnavailable" = "スクリーンショットをプレビューできません。";
+"ask.image.pickerHint" = "スクリーンショットは保存されています。モデルを選んで続けられます。";
+"ask.image.noModels" = "画像認識に対応したモデルがありません。モデル設定で追加できます。";
+"ask.image.configure" = "モデル設定";
+"ask.image.cancel" = "キャンセル";
+"ask.image.refreshModels" = "モデル一覧を更新";
+"ask.image.pickerTitle" = "画像認識に対応したモデルを選択";
+"ask.image.pickerHintWithoutScreenshot" = "画像認識に対応したモデルを選んで続けてください。";
+"ask.image.loading" = "モデルを読み込み中…";
+"ask.image.loadFailed" = "モデルを読み込めませんでした。もう一度お試しください。";
+"ask.image.cloudUnavailable" = "クラウドモデルを読み込めませんでした。設定済みのモデルは引き続き選択できます。";
+"ask.image.retry" = "再試行";
+"ask.image.switchAndContinue" = "切り替えて続ける";
+"ask.image.resume" = "続ける";
+"ask.image.signInHint" = "ログインしてこの会話を続けてください。";
+
 // Ask voice button
 "ask.voice.input" = "音声入力";
 "ask.voice.stop" = "録音を停止";

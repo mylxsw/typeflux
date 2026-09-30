@@ -1454,7 +1454,8 @@ final class WorkflowControllerProcessingTests: XCTestCase {
                 configureSettings: {
                     self.configureReadyLLM(settingsStore: $0)
                     $0.sttProvider = .typefluxOfficial
-                }
+                },
+                hasPaidCloudSubscription: { true }
             )
             let snapshot = TextSelectionSnapshot(
                 selectedRange: CFRange(location: 0, length: replaceSelection ? 5 : 0),
@@ -1601,7 +1602,8 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         let controller = makeWorkflowController(
             sttTranscriber: MockProcessingTranscriber(error: URLError(.cannotConnectToHost)),
             historyStore: historyStore,
-            configureSettings: { $0.sttProvider = .whisperAPI }
+            configureSettings: { $0.sttProvider = .whisperAPI },
+            hasPaidCloudSubscription: { true }
         )
 
         await controller.process(
@@ -1752,7 +1754,8 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         let controller = makeWorkflowController(
             audioRecorder: audioRecorder,
             sttTranscriber: realtimeTranscriber,
-            configureSettings: { $0.sttProvider = .aliCloud }
+            configureSettings: { $0.sttProvider = .aliCloud },
+            hasPaidCloudSubscription: { true }
         )
 
         let recordingTask = Task {
@@ -1780,7 +1783,8 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         let controller = makeWorkflowController(
             audioRecorder: recorder,
             sttTranscriber: factory,
-            configureSettings: { $0.sttProvider = .aliCloud }
+            configureSettings: { $0.sttProvider = .aliCloud },
+            hasPaidCloudSubscription: { true }
         )
         let startup = Task { await controller.beginRecording(intent: .dictation, startLocked: false) }
         await waitUntil { events.snapshot().contains("realtime-setup") }
