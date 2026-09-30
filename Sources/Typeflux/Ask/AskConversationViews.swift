@@ -420,7 +420,7 @@ struct AskConversationView: View {
             header
             Rectangle().fill(AskTheme.separator).frame(height: 1)
             if model.selectedId == nil { emptyState } else { transcript }
-            statusArea
+            statusColumn
             composerArea
         }
         .frame(minWidth: 480)
@@ -515,26 +515,9 @@ struct AskConversationView: View {
         .padding(.bottom, 40)
     }
 
-    /// "Double-press [Fn] to summon · hold the input to talk", with the key drawn
-    /// as a key. The sentence is split around the key so every language can
-    /// place it where its grammar wants it.
+    /// Summon and voice shortcuts, read from the configured hotkeys.
     private var emptyHint: some View {
-        HStack(spacing: 6) {
-            let before = L("ask.empty.hint.before")
-            if !before.isEmpty { Text(before) }
-            Text(verbatim: "Fn")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .padding(.horizontal, 6)
-                .frame(height: 20)
-                .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(AskTheme.border))
-            Text(L("ask.empty.hint.after"))
-        }
-        .font(.system(size: 13))
-        .foregroundStyle(StudioTheme.textTertiary)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(L("ask.empty.hint"))
+        AskShortcutHint(settings: model.modelLibrary.settings)
     }
 
     /// The caption used to sit at the trailing edge in the faintest grey in the
@@ -552,6 +535,14 @@ struct AskConversationView: View {
         .help(screenshot ? (model.screenshotCapability(launcher: false).hint ?? caption) : caption)
     }
 
+    /// Banners and cards above the composer share its centred column, so they
+    /// line up with the input instead of spanning the whole window.
+    private var statusColumn: some View {
+        VStack(spacing: 6) { statusArea }
+            .frame(maxWidth: AskMetrics.composerMaxWidth)
+            .padding(.horizontal, 22)
+    }
+
     @ViewBuilder private var statusArea: some View {
         if model.imageRecoveryTarget == nil, let error = model.error {
             AskBanner(
@@ -561,27 +552,20 @@ struct AskConversationView: View {
                 action: { if model.selectionLoadFailed { model.retrySelection() } else { model.resume() } },
                 onDismiss: { model.error = nil }
             )
-            .padding(.horizontal, 22)
-            .padding(.bottom, 6)
         }
         if let id = model.selected?.id, let call = model.pendingApprovals[id] {
-            approval(call, id: id).padding(.horizontal, 22).padding(.bottom, 6)
+            approval(call, id: id)
         }
         if let target = model.imageRecoveryTarget {
             AskImageRecoveryCard(model: model, target: target)
                 .id(target.id)
-                .padding(.horizontal, 22).padding(.bottom, 6)
         } else if !model.hasPendingSubmission, let run = model.selected?.run, run.status == "failed" || run.status == "cancelled", !model.isBusy {
             AskBanner(text: run.error ?? L("ask.cancelled"), tone: .info,
                       systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
-                .padding(.horizontal, 22)
-                .padding(.bottom, 6)
         } else if resumable, model.error == nil {
             AskBanner(text: L("ask.resume.hint"), tone: .info, systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
-                .padding(.horizontal, 22)
-                .padding(.bottom, 6)
         }
     }
 

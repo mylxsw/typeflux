@@ -1502,9 +1502,11 @@
 "ask.copied" = "복사됨";
 "ask.quote" = "인용해 질문";
 "ask.regenerate" = "다시 생성";
-"ask.empty.hint" = "언제든지 Fn 키를 두 번 눌러 열고, 입력란을 길게 눌러 말하세요.";
-"ask.empty.hint.before" = "언제든지";
-"ask.empty.hint.after" = "키를 두 번 눌러 열기 · 입력란을 길게 눌러 말하기";
+"ask.empty.summon.before" = "언제든지";
+"ask.empty.summon.after" = "키로 열기";
+"ask.empty.voice.before" = "";
+"ask.empty.voice.after" = "키를 길게 눌러 음성 입력";
+"ask.empty.voice.button" = "마이크를 길게 눌러 말하기";
 "ask.models.capacity" = "컨텍스트 %@ · 출력 %@";
 "ask.usage.spent" = "사용량";
 "ask.reasoning.default.caption" = "생각의 깊이를 모델이 결정";
@@ -1633,6 +1635,7 @@
 "ask.image.captured" = "스크린샷 캡처 완료";
 "ask.image.resuming" = "저장된 스크린샷 분석 중";
 "ask.image.saved" = "스크린샷이 저장되었습니다. 모델을 변경하여 계속할 수 있습니다";
+"ask.image.savedReady" = "스크린샷이 저장되었습니다";
 "ask.image.processing" = "%@ 모델로 저장된 스크린샷 분석 중…";
 "ask.image.ready" = "선택한 모델은 이미지를 지원합니다. 분석을 계속할 수 있습니다.";
 "ask.image.recoveryHint" = "현재 모델은 이미지를 읽을 수 없습니다. 지원하는 모델을 선택하여 저장된 스크린샷 분석을 계속하세요.";

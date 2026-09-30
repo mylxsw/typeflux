@@ -1516,9 +1516,11 @@
 "ask.copied" = "已复制";
 "ask.quote" = "引用追问";
 "ask.regenerate" = "重新生成";
-"ask.empty.hint" = "随时双击 Fn 唤起，按住输入框说话";
-"ask.empty.hint.before" = "随时双击";
-"ask.empty.hint.after" = "唤起 · 按住输入框说话";
+"ask.empty.summon.before" = "随时按";
+"ask.empty.summon.after" = "唤起";
+"ask.empty.voice.before" = "按住";
+"ask.empty.voice.after" = "语音输入";
+"ask.empty.voice.button" = "按住麦克风说话";
 "ask.models.capacity" = "%@ 上下文 · %@ 输出";
 "ask.usage.spent" = "消耗";
 "ask.reasoning.default.caption" = "由模型决定思考深度";
@@ -1647,6 +1649,7 @@
 "ask.image.captured" = "截图已获取";
 "ask.image.resuming" = "正在分析已保存的截图";
 "ask.image.saved" = "截图已保留，可换模型继续";
+"ask.image.savedReady" = "截图已保留";
 "ask.image.processing" = "正在使用 %@ 分析已保存的截图…";
 "ask.image.ready" = "所选模型支持图片识别，可以继续分析。";
 "ask.image.recoveryHint" = "当前模型不支持图片识别，选择支持图片识别的模型后可继续分析这张截图。";
