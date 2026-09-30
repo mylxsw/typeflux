@@ -1620,3 +1620,10 @@
 "ask.reasoning.medium" = "Medium";
 "ask.reasoning.high" = "High";
 "ask.reasoning.help" = "Choose the reasoning effort for your next message. Higher effort may take longer and use more credits.";
+
+// Server-managed Cloud model list
+"models.cloud.managed" = "All available Ask models are synced from Typeflux Cloud. Model settings are managed by the server; choose which model to use below.";
+"models.cloud.available" = "Available models";
+"models.cloud.refresh" = "Refresh model list";
+"models.cloud.systemDefault" = "System default";
+"models.cloud.empty" = "No models are currently available.";

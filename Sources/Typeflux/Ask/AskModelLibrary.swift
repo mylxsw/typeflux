@@ -58,7 +58,7 @@ final class AskModelLibrary: ObservableObject {
     let automaticallyLoadsCatalog: Bool
     let defaults: UserDefaults
     let catalog: any ProviderModelCatalog
-    private var loading = false
+    @Published private(set) var loading = false
     var settings: SettingsStore {
         SettingsStore(defaults: defaults)
     }
@@ -344,10 +344,16 @@ extension AskModelLibrary {
             var next = registry
             if let index = next.providers.firstIndex(where: \.isCloud) {
                 next.providers[index].models = askModels.map(\.registered)
+            } else {
+                next.providers.append(.init(id: LLMRemoteProvider.typefluxCloud.rawValue, name: "Typeflux Cloud",
+                                            remote: .typefluxCloud, models: askModels.map(\.registered)))
             }
-            cloud = askModels
+            try Task.checkCancellation()
             try commit(next)
+            cloud = askModels
             catalogError = nil
+        } catch is CancellationError {
+            return
         } catch { catalogError = L("ask.models.catalogError") }
     }
 }

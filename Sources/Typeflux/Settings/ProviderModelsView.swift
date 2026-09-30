@@ -21,6 +21,14 @@ struct ProviderModelsView: View {
     }
 
     var body: some View {
+        if provider?.isCloud == true {
+            CloudProviderModelsView(library: library, onBack: onBack)
+        } else {
+            editableBody
+        }
+    }
+
+    private var editableBody: some View {
         VStack(alignment: .leading, spacing: 24) {
             if let provider {
                 HStack(spacing: 12) {
