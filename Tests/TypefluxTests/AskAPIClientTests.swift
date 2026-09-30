@@ -77,6 +77,17 @@ struct AskAPIClientTests {
         #expect(try AskCoding.decoder().decode(AskToolResultRequest.self, from: requests[2].httpBody!) == result)
     }
 
+    @Test func memoryPurgeDeletesPinnedMemoryForTheSignedInUser() async throws {
+        let stub = AskHTTPStub(); await stub.configure(payload: Data(#"{"code":"OK","data":{"purged":3}}"#.utf8))
+        try await client(stub).purgeMemory(token: "secret")
+        let request = try #require(await stub.requests.first)
+        #expect(request.url?.path == "/api/v1/ask/conversations/memory")
+        #expect(request.httpMethod == "DELETE")
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer secret")
+        await stub.configure(status: 409, payload: Data(#"{"code":"ASK_CONFLICT","message":"Failed"}"#.utf8))
+        await #expect(throws: (any Error).self) { try await client(stub).purgeMemory(token: "secret") }
+    }
+
     @Test(arguments: [nil, "cloud:vision", "custom:fixture"] as [String?])
     func retryEncodesOptionalModelReference(reference: String?) async throws {
         let stub = AskHTTPStub()

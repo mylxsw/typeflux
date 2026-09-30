@@ -1541,6 +1541,7 @@ final class StudioViewModel: ObservableObject {
             globalSoulMemoryEnabled = false
             settingsStore.globalSoulMemoryEnabled = false
             GlobalSoulMemoryStore.shared.clearPending()
+            NotificationCenter.default.post(name: .askMemoryDidClear, object: nil)
         }
         GlobalSoulConsolidator.shared.schedule()
     }
@@ -1552,13 +1553,17 @@ final class StudioViewModel: ObservableObject {
         }
         globalSoulMemoryEnabled = value
         settingsStore.globalSoulMemoryEnabled = value
-        if !value { GlobalSoulMemoryStore.shared.clearPending() }
+        if !value {
+            GlobalSoulMemoryStore.shared.clearPending()
+            NotificationCenter.default.post(name: .askMemoryDidClear, object: nil)
+        }
         GlobalSoulConsolidator.shared.schedule()
     }
 
     func deleteGlobalSoulMemory() {
         GlobalSoulMemoryStore.shared.deleteSoul(ownerID: GlobalSoulOwner.currentID)
         refreshRecentInputMemoryApplications()
+        NotificationCenter.default.post(name: .askMemoryDidClear, object: nil)
     }
 
     func setRecentInputMemoryAllowed(_ allowed: Bool, appIdentifier: String) {
@@ -1566,19 +1571,24 @@ final class StudioViewModel: ObservableObject {
         if allowed { excluded.remove(appIdentifier) } else { excluded.insert(appIdentifier) }
         recentInputMemoryExcludedApps = excluded.sorted()
         settingsStore.recentInputMemoryExcludedApps = recentInputMemoryExcludedApps
-        if !allowed { GlobalSoulMemoryStore.shared.clearPending(appIdentifier: appIdentifier) }
+        if !allowed {
+            GlobalSoulMemoryStore.shared.clearPending(appIdentifier: appIdentifier)
+            NotificationCenter.default.post(name: .askMemoryDidClear, object: nil)
+        }
         GlobalSoulConsolidator.shared.schedule()
     }
 
     func clearRecentInputMemory(appIdentifier: String? = nil) {
         RecentInputMemoryStore.shared.clear(appIdentifier: appIdentifier)
         refreshRecentInputMemoryApplications()
+        NotificationCenter.default.post(name: .askMemoryDidClear, object: nil)
         GlobalSoulConsolidator.shared.schedule()
     }
 
     func deleteRecentInputMemory(id: UUID) {
         RecentInputMemoryStore.shared.delete(id: id)
         refreshRecentInputMemoryApplications()
+        NotificationCenter.default.post(name: .askMemoryDidClear, object: nil)
         GlobalSoulConsolidator.shared.schedule()
     }
 

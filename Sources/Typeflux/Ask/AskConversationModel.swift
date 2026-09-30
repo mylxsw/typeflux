@@ -119,13 +119,19 @@ final class AskConversationModel: ObservableObject {
     private var deletedConversationIDs: Set<String> = []
     private var authObserver: AnyCancellable?
     private var modelObserver: AnyCancellable?
+    private var memoryObserver: AnyCancellable?
+    private let defaults: UserDefaults
+    private var memoryPurgeTask: Task<Void, Never>?
+    private var memoryPurgeGeneration = 0
+    static let memoryPurgePendingKey = "ask.memory.purgePending"
 
     init(api: any AskAPI, cache: any AskCaching, tools: any AskToolExecuting,
          capture: any AskContextCapturing, deviceId: String, modelLibrary: AskModelLibrary? = nil,
+         defaults: UserDefaults = .standard,
          session: @escaping () -> (owner: String, token: String)?) {
         self.modelLibrary = modelLibrary ?? .shared
         self.api = api; self.cache = cache; self.tools = tools; self.capture = capture
-        self.deviceId = deviceId; self.session = session
+        self.deviceId = deviceId; self.session = session; self.defaults = defaults
         normalizeScreenshotChoices()
         modelObserver = self.modelLibrary.objectWillChange.sink { [weak self] _ in
             Task { @MainActor [weak self] in
@@ -137,6 +143,53 @@ final class AskConversationModel: ObservableObject {
         authObserver = NotificationCenter.default.publisher(for: .authDidLogout).sink { [weak self] _ in
             Task { @MainActor in self?.resetSession() }
         }
+        memoryObserver = NotificationCenter.default.publisher(for: .askMemoryDidClear).sink { [weak self] _ in
+            Task { @MainActor in self?.clearMemory() }
+        }
+    }
+
+    /// Drops captured memory and removes the copies pinned to server conversations.
+    /// The purge stays pending across launches until the server confirms it.
+    func clearMemory() {
+        if launcherDraft.memory != nil { launcherDraft.memory = AskMemory() }
+        if draft.memory != nil { draft.memory = AskMemory() }
+        for (id, value) in drafts where value.memory != nil { drafts[id]?.memory = AskMemory() }
+        for (id, value) in snapshots where value.memory != nil { snapshots[id]?.memory = nil }
+        selected?.memory = nil
+        memoryPurgeGeneration += 1
+        defaults.set(true, forKey: Self.memoryPurgePendingKey)
+        persistDrafts()
+        flushMemoryPurge()
+    }
+
+    /// Retries a pending purge; it runs whenever the user is signed in. A clear
+    /// that happens while a purge is in flight triggers one more purge afterwards.
+    func flushMemoryPurge() {
+        guard memoryPurgeTask == nil, defaults.bool(forKey: Self.memoryPurgePendingKey),
+              let current = session() else { return }
+        let generation = memoryPurgeGeneration
+        memoryPurgeTask = Task { [weak self, api] in
+            var purged = false
+            do {
+                try await api.purgeMemory(token: current.token)
+                purged = true
+            } catch {
+                NetworkDebugLogger.logMessage("[Ask Memory] purge failed: \(error.localizedDescription)")
+            }
+            guard let self else { return }
+            memoryPurgeTask = nil
+            guard purged else { return }
+            if memoryPurgeGeneration == generation {
+                defaults.set(false, forKey: Self.memoryPurgePendingKey)
+            } else {
+                flushMemoryPurge()
+            }
+        }
+    }
+
+    /// Waits for an in-flight purge. Used by tests and before sensitive transitions.
+    func waitForMemoryPurge() async {
+        await memoryPurgeTask?.value
     }
 
     var isBusy: Bool { selected.map { busyIds.contains($0.id) || $0.run?.isActive == true } ?? false }
@@ -172,6 +225,7 @@ final class AskConversationModel: ObservableObject {
 
     func prepareLauncher() async {
         guard !Task.isCancelled else { return }
+        flushMemoryPurge()
         captureWarning = nil
         normalizeScreenshotChoices()
         if let current = session(), owner != current.owner { resetSession(); owner = current.owner }
@@ -192,6 +246,7 @@ final class AskConversationModel: ObservableObject {
         launcherDraft.source = context.source
         launcherDraft.screenshot = context.screenshot
         launcherDraft.capturedAt = context.capturedAt
+        launcherDraft.memory = context.memory ?? AskMemory()
         captureWarning = context.warning
         persistDrafts()
     }
@@ -342,6 +397,8 @@ final class AskConversationModel: ObservableObject {
         isLoadingSelection = false; selectionLoadFailed = false
         captureGeneration = UUID(); capturing = false
         draft = AskDraft(); error = nil; captureWarning = nil; screenshotNotice = nil
+        // No source app is trustworthy here, so only global memory applies.
+        draft.memory = capture.globalMemory() ?? AskMemory()
     }
 
     func submitLauncher() {
@@ -378,7 +435,9 @@ final class AskConversationModel: ObservableObject {
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
         request.modelRef = submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference : (value.modelRef ?? "cloud:default"))
         request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
+        request.memory = newConversation ? Self.openingMemory(submitted.memory ?? capture.globalMemory()) : nil
         value.modelRef = request.modelRef
+        if newConversation { value.memory = request.memory }
         pendingSends[id] = request
         screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
         value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references))
@@ -421,6 +480,12 @@ final class AskConversationModel: ObservableObject {
                 try await drive(response, current: current, screenshotConsentMessageID: submitted.includeScreenshot ? messageId : nil)
             } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.owner) }
         }
+    }
+
+    /// The server pins memory from the opening message only; empty memory is not sent.
+    static func openingMemory(_ memory: AskMemory?) -> AskMemory? {
+        guard let memory, !memory.isEmpty else { return nil }
+        return memory
     }
 
     private func validateModel(_ reference: String?, token: String, hasImage: Bool = false) async throws {

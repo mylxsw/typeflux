@@ -1454,6 +1454,10 @@
 "ask.screenshot" = "附带截图";
 "ask.screenshot.unavailable" = "截图不可用";
 "ask.selection" = "选中文本";
+"ask.memory" = "记忆";
+"ask.memory.app" = "记忆 · %@";
+"ask.memory.help" = "仅在会话开始时发送一次：你的全局记忆，以及发起提问的应用中最近输入的内容。移除后本次提问不使用记忆。";
+"ask.memory.pinned" = "本会话使用开始时附带的记忆。";
 "ask.selection.remove" = "移除选中文本";
 "ask.send" = "发送";
 "ask.stop" = "停止";

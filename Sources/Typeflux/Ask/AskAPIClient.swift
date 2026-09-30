@@ -15,6 +15,8 @@ protocol AskAPI: Sendable {
     func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, token: String) async throws -> AskConversation
     func regenerate(conversationId: String, request: AskRegenerateRequest, token: String) async throws -> AskConversation
     func delete(conversationId: String, token: String) async throws
+    /// Removes device memory pinned to every conversation of the signed-in user.
+    func purgeMemory(token: String) async throws
 }
 
 extension AskAPI {
@@ -34,6 +36,7 @@ extension AskAPI {
     func models(token: String, scenario: String) async throws -> [AskCloudModel] { try await models(token: token) }
     func models(token: String) async throws -> [AskCloudModel] { [.init(id: "default", name: "Typeflux Cloud")] }
     func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation { throw AskLocalError.message(L("ask.models.requestError")) }
+    func purgeMemory(token: String) async throws {}
 }
 
 struct AskAPIClient: AskAPI {
@@ -85,6 +88,10 @@ struct AskAPIClient: AskAPI {
     func delete(conversationId: String, token: String) async throws {
         struct Deleted: Decodable { let deleted: Bool }
         let _: Deleted = try await execute(path: "/\(conversationId)", method: "DELETE", token: token)
+    }
+    func purgeMemory(token: String) async throws {
+        struct Purged: Decodable { let purged: Int }
+        let _: Purged = try await execute(path: "/memory", method: "DELETE", token: token)
     }
 
     private func execute<T: Decodable>(path: String, method: String = "GET", body: Data? = nil, token: String) async throws -> T {

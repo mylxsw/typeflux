@@ -186,7 +186,25 @@ struct AskComposer: View {
         if launcher, draft.wrappedValue.selection == nil, let source = draft.wrappedValue.source, !source.isEmpty {
             AskChip(title: source, systemImage: "macwindow")
         }
+        if let memory = memoryChip { memory }
         if model.capturing { ProgressView().controlSize(.small) }
+    }
+
+    /// A new conversation shows the memory it will send; an existing one shows
+    /// that memory was pinned when it started.
+    private var memoryChip: AskChip? {
+        if launcher || model.selectedId == nil {
+            guard let memory = draft.wrappedValue.memory, !memory.isEmpty else { return nil }
+            return AskChip(
+                title: memory.chipTitle,
+                systemImage: "brain",
+                style: .active,
+                onRemove: { draft.wrappedValue.memory = AskMemory() },
+                help: L("ask.memory.help")
+            )
+        }
+        guard model.selected?.memory?.isEmpty == false else { return nil }
+        return AskChip(title: L("ask.memory"), systemImage: "brain", style: .neutral, help: L("ask.memory.pinned"))
     }
 
     private var screenshotChip: AskChip {

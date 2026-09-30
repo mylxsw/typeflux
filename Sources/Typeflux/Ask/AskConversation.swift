@@ -69,6 +69,8 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
     var modelRef: String? = nil
     var usage: AskConversationUsage? = nil
     var contextUsage: AskContextUsage? = nil
+    /// Memory pinned by the server when the conversation started.
+    var memory: AskMemory? = nil
 }
 
 struct AskConversationSummary: Codable, Identifiable, Equatable, Sendable {
@@ -88,6 +90,7 @@ struct AskSendRequest: Codable, Equatable, Sendable {
     var modelRef: String? = nil
     var reasoningEffort: String? = nil
     var references: [AskReference]? = nil
+    var memory: AskMemory? = nil
 }
 
 /// Replaces the latest assistant reply with a fresh run on the same question.
@@ -119,6 +122,9 @@ struct AskDraft: Codable, Equatable, Sendable {
     var modelRef: String? = nil
 
     var references: [AskReference]? = nil
+    /// `nil` means memory has not been resolved for this draft; an empty value
+    /// means it is unavailable or the user removed it.
+    var memory: AskMemory? = nil
 
     var canSend: Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
