@@ -101,26 +101,17 @@ struct AskImageRecoveryCard: View {
 
     private var primaryAction: some View {
         let resumable = model.canResumeImage
-        let disabled = model.isBusy || model.isLoadingSelection
         return Button {
             if resumable { model.resumeImage(target, reference: reference) } else { choosingModel = true }
         } label: {
             HStack(spacing: 6) {
                 Text(resumable ? L("ask.image.continue", modelName) : L("ask.image.choose"))
-                    .lineLimit(1)
                 Image(systemName: resumable ? "arrow.right" : "chevron.down")
                     .font(.system(size: 10, weight: .bold))
             }
-            .font(.system(size: 12.5, weight: .semibold))
-            .foregroundStyle(Color.white)
-            .padding(.horizontal, 14)
-            .frame(height: 30)
-            .background(AskTheme.primaryAction, in: Capsule())
-            .opacity(disabled ? 0.45 : 1)
         }
-        .buttonStyle(.plain)
-        .fixedSize()
-        .disabled(disabled)
+        .buttonStyle(AskCapsuleButtonStyle())
+        .disabled(model.isBusy || model.isLoadingSelection)
         .popover(isPresented: $choosingModel) {
             AskImageRecoveryPicker(model: model, target: target) { choosingModel = false }
         }

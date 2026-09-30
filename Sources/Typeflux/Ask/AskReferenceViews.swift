@@ -1,5 +1,9 @@
 import SwiftUI
 
+/// The sheet for a quoted excerpt's question. The excerpt is drawn as the same
+/// accent-ruled quote the composer strip uses, the question sits in a framed
+/// field whose placeholder lines up with the caret, suggested questions are
+/// chips, and the actions are Ask capsules rather than stock bordered buttons.
 struct AskReferenceEditor: View {
     @State var reference: AskReference
     var save: (AskReference) -> Void
@@ -8,39 +12,100 @@ struct AskReferenceEditor: View {
     var byteBudget = 64000
     @FocusState private var focused: Bool
 
+    /// One-tap questions, in the order of the selection bar.
+    static let suggestions: [AskSelectionAction] = [.explain, .translate]
+
+    static func exceedsBudget(_ reference: AskReference, budget: Int) -> Bool {
+        reference.text.utf8.count + reference.question.utf8.count > budget
+    }
+
+    private var tooLarge: Bool { Self.exceedsBudget(reference, budget: byteBudget) }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label(L("ask.references.question"), systemImage: "text.bubble")
-                .font(.system(size: 13, weight: .semibold))
-            ScrollView {
-                Text(reference.text).font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textSecondary).textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }.frame(maxHeight: 120)
-            TextEditor(text: $reference.question)
-                .font(.system(size: 13)).frame(height: 70).focused($focused)
-                .accessibilityLabel(L("ask.references.optional"))
-                .overlay(alignment: .topLeading) {
-                    if reference.question.isEmpty {
-                        Text(L("ask.references.optional")).font(.system(size: 12))
-                            .foregroundStyle(StudioTheme.textTertiary).padding(5).allowsHitTesting(false)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 7) {
+                Image(systemName: "text.bubble").foregroundStyle(AskTheme.accentText)
+                Text(L("ask.references.question"))
+            }
+            .font(.system(size: 14, weight: .semibold))
+            quote
+            VStack(alignment: .leading, spacing: 8) {
+                questionField
+                HStack(spacing: 6) {
+                    ForEach(Self.suggestions, id: \.rawValue) { action in
+                        AskChip(
+                            title: action.question,
+                            systemImage: action.systemImage,
+                            style: reference.question == action.question ? .active : .neutral,
+                            action: { reference.question = action.question; focused = true }
+                        )
                     }
                 }
-            if reference.text.utf8.count + reference.question.utf8.count > byteBudget {
-                Text(L("ask.input.tooLarge")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
             }
-            HStack {
-                Button(L("ask.references.explain")) { reference.question = L("ask.references.explain") }
-                Spacer()
-                Button(L("common.cancel"), action: cancel).keyboardShortcut(.cancelAction)
+            HStack(spacing: 8) {
+                if tooLarge {
+                    Label(L("ask.input.tooLarge"), systemImage: "exclamationmark.triangle")
+                        .font(.system(size: 11)).foregroundStyle(StudioTheme.warning)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 0)
+                Button(L("common.cancel"), action: cancel)
+                    .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+                    .keyboardShortcut(.cancelAction)
                 Button(L(editing ? "ask.references.update" : "ask.references.save")) { save(reference) }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(reference.text.utf8.count + reference.question.utf8.count > byteBudget)
-            }.font(.system(size: 12))
+                    .buttonStyle(AskCapsuleButtonStyle())
+                    .keyboardShortcut(.return, modifiers: .command)
+                    .help("⌘↩")
+                    .disabled(tooLarge)
+            }
         }
-        .padding(16).frame(width: 360)
-        .background(AskTheme.raisedSurface).tint(AskTheme.accent)
+        .padding(20).frame(width: 440)
+        .background(AskTheme.popoverSurface).tint(AskTheme.accent)
         .onAppear { focused = true }
+    }
+
+    private var quote: some View {
+        ScrollView {
+            Text(reference.text)
+                .font(.system(size: 12.5))
+                .lineSpacing(2)
+                .foregroundStyle(StudioTheme.textSecondary)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 12).padding(.trailing, 10).padding(.vertical, 9)
+        }
+        .frame(maxHeight: 112)
+        .fixedSize(horizontal: false, vertical: true)
+        .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(alignment: .leading) {
+            Rectangle().fill(AskTheme.accent).frame(width: 2)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(AskTheme.border))
+    }
+
+    /// NSTextView pads its text by 5pt, so the placeholder takes the same inset
+    /// and never sits under the caret.
+    private var questionField: some View {
+        ZStack(alignment: .topLeading) {
+            if reference.question.isEmpty {
+                Text(L("ask.references.optional"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .padding(.leading, 5)
+                    .allowsHitTesting(false)
+            }
+            TextEditor(text: $reference.question)
+                .font(.system(size: 13))
+                .scrollContentBackground(.hidden)
+                .focused($focused)
+                .accessibilityLabel(L("ask.references.optional"))
+        }
+        .padding(.horizontal, 7).padding(.vertical, 8)
+        .frame(height: 84)
+        .background(AskTheme.composerSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .strokeBorder(focused ? AskTheme.accent.opacity(0.6) : AskTheme.border))
     }
 }
 

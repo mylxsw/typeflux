@@ -2,7 +2,9 @@
 
 Select text in a completed assistant reply and choose **Ask**. The native popover
 accepts an optional question; confirming only adds a reference to the draft.
-Use **Explain this excerpt** to fill a visible question without sending it.
+The editing sheet shows the excerpt as an accent-ruled quote, a framed question
+field, and **Explain this excerpt** / **Translate this excerpt** chips that fill a
+visible question without sending it. ⌘↩ saves; Esc cancels.
 Send is enabled once the main input or at least one reference has a question.
 
 Draft references use a fixed-height horizontal strip, with per-item editing and
