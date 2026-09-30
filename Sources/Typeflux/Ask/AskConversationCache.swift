@@ -46,8 +46,8 @@ actor AskConversationCache: AskCaching {
     }
 
     func save(_ conversation: AskConversation, owner: String) throws {
-        if let stored = try load(id: conversation.id, owner: owner), stored.revision > conversation.revision { return }
-        try write(table: "ask_cache", id: conversation.id, owner: owner, data: AskCoding.encoder().encode(conversation))
+        let merged = try load(id: conversation.id, owner: owner)?.reconciling(conversation) ?? conversation
+        try write(table: "ask_cache", id: conversation.id, owner: owner, data: AskCoding.encoder().encode(merged))
     }
     func load(id: String, owner: String) throws -> AskConversation? {
         try [AskConversationID.canonical(id), AskConversationID.legacy(id)]

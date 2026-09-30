@@ -3,9 +3,30 @@ import Combine
 
 @MainActor
 final class AskConversationModel: ObservableObject {
+    func usagePage(id: String, runId: String?, cursor: Int64?) async throws -> AskUsagePage {
+        guard let current = credentials() else { throw AuthError.unauthorized }
+        let page = try await api.usage(id: id, runId: runId, cursor: cursor, token: current.token)
+        try Task.checkCancellation()
+        guard owner == current.owner else { throw CancellationError() }
+        return page
+    }
+
+    var usageContext: AskContextUsage? {
+        guard var context = selected?.contextUsage else { return nil }
+        let ref = modelReference(launcher: false)
+        if ref != context.modelRef {
+            context.modelRef = ref
+            let entry = modelLibrary.registry.resolve(ref)?.1
+            context.capacity = entry?.contextWindowTokens
+            context.outputReserve = min(4096, entry?.maxOutputTokens ?? 4096)
+        }
+        return context
+    }
+
     let voiceInput = AskVoiceInput()
     @Published var reasoningEffort: AskReasoningEffort = .providerDefault
     let modelLibrary: AskModelLibrary
+    private var inferenceUsage: [String: AskTokenUsage] = [:]
     private var inferenceReceipts: [String: AskInferenceResult] = [:]
     var customInference = AskCustomInference()
     @Published private(set) var inferenceProgress: [String: AskStreamProgress] = [:]
@@ -107,7 +128,7 @@ final class AskConversationModel: ObservableObject {
         pullRefreshID = nil; isRefreshingHistory = false
         operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]
         approvals.values.forEach { $0.resume(returning: false) }; approvals = [:]
-        inferenceReceipts = [:]
+        inferenceReceipts = [:]; inferenceUsage = [:]
         pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
         screenshotConsent = [:]
         draftSave?.cancel(); captureGeneration = UUID(); selectionGeneration = UUID()
@@ -245,7 +266,10 @@ final class AskConversationModel: ObservableObject {
         let cached = try? await cache.load(id: id, owner: current.owner)
         let savedDraft = try? await cache.draft(key: id, owner: current.owner)
         guard generation == selectionGeneration, owner == current.owner else { return }
-        if let cached, (selected?.revision ?? -1) <= cached.revision { selected = cached; snapshots[id] = cached }
+        if let cached {
+            let merged = snapshots[id]?.reconciling(cached) ?? cached
+            selected = merged; snapshots[id] = merged
+        }
         draft = drafts[id] ?? savedDraft ?? .followUp
         do {
             let value = try await api.conversation(id: id, token: current.token)
@@ -254,9 +278,9 @@ final class AskConversationModel: ObservableObject {
             if !hasUnconfirmedMessage { try await cache.save(value, owner: current.owner) }
             let latest = try await cache.load(id: id, owner: current.owner) ?? value
             guard owner == current.owner else { return }
-            if (snapshots[id]?.revision ?? -1) <= latest.revision { snapshots[id] = latest }
+            snapshots[id] = snapshots[id]?.reconciling(latest) ?? latest
             guard generation == selectionGeneration else { return }
-            selected = latest; isLoadingSelection = false; error = operationErrors[id]
+            selected = snapshots[id] ?? latest; isLoadingSelection = false; error = operationErrors[id]
             // Observe active runs without resuming desktop tools or inference.
             if latest.run?.isActive == true, !busyIds.contains(id) {
                 selectionObservation = monitorConversation(id: id, current: current)
@@ -421,14 +445,16 @@ final class AskConversationModel: ObservableObject {
     private func accept(_ value: AskConversation, owner expectedOwner: String) async throws {
         try Task.checkCancellation()
         guard owner == expectedOwner else { throw CancellationError() }
-        if let previous = snapshots[value.id], previous.revision >= value.revision { return }
+        if let previous = snapshots[value.id], !value.isNewer(than: previous) { return }
+        var value = snapshots[value.id]?.reconciling(value) ?? value
         // Persist meaningful message/state changes, not every transient preview.
-        if snapshots[value.id]?.messages != value.messages || snapshots[value.id]?.run?.status != value.run?.status {
+        if snapshots[value.id]?.messages != value.messages || snapshots[value.id]?.run?.status != value.run?.status || snapshots[value.id]?.usage != value.usage {
             try await cache.save(value, owner: expectedOwner)
         }
         guard owner == expectedOwner else { throw CancellationError() }
-        if (snapshots[value.id]?.revision ?? -1) <= value.revision { snapshots[value.id] = value }
-        if selected?.id == value.id, (selected?.revision ?? -1) <= value.revision { selected = value }
+        value = snapshots[value.id]?.reconciling(value) ?? value
+        snapshots[value.id] = value
+        if selected?.id == value.id { selected = selected?.reconciling(value) ?? value }
         if let inferenceID = progressInferenceIDs[value.id], value.run?.inference?.id != inferenceID {
             inferenceProgress[value.id] = nil; progressInferenceIDs[value.id] = nil
         }
@@ -477,22 +503,23 @@ final class AskConversationModel: ObservableObject {
                         let conversationID = value.id
                         let (text, calls) = try await customInference.complete(provider: provider,
                             connection: modelLibrary.connection(provider, model: model), payload: inference.payload,
+                            onUsage: { [weak self] usage in await self?.recordInferenceUsage(usage, id: inference.id, owner: current.owner) },
                             onProgress: { [weak self] progress in
                                 await self?.updateInferenceProgress(progress, id: conversationID, inferenceID: inference.id, owner: current.owner, visible: inference.summaryThrough == nil || inference.summaryThrough == 0)
                             })
                         let progress = inferenceProgress[value.id]
-                        receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: text, toolCalls: calls, reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds)
+                        receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: text, toolCalls: calls, usage: inferenceUsage[inference.id], reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds)
                     } catch is CancellationError { throw CancellationError() }
                     catch {
                         let progress = inferenceProgress[value.id]
-                        receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: progress?.text ?? "", failed: true, reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds)
+                        receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: progress?.text ?? "", usage: inferenceUsage[inference.id], failed: true, reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds)
                     }
                     try Task.checkCancellation()
                     guard owner == current.owner else { throw CancellationError() }
                     inferenceReceipts[inference.id] = receipt
                 }
                 value = try await api.inferenceResult(conversationId: value.id, request: receipt!, token: current.token)
-                inferenceReceipts[inference.id] = nil
+                inferenceReceipts[inference.id] = nil; inferenceUsage[inference.id] = nil
                 continue
             }
             guard let call = run.pending.first else { return }
@@ -562,7 +589,7 @@ final class AskConversationModel: ObservableObject {
                 if let inference = run.inference, inference.id == progressInferenceIDs[id],
                    let progress = inferenceProgress[id], run.deviceId == deviceId {
                     partial = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id,
-                                                 content: progress.text, reasoning: progress.reasoning,
+                                                 content: progress.text, usage: inferenceUsage[inference.id], reasoning: progress.reasoning,
                                                  reasoningMilliseconds: progress.reasoningMilliseconds)
                 }
                 let stopped = try await api.cancel(conversationId: id, runId: run.id, partial: partial, token: current.token)
@@ -596,6 +623,11 @@ final class AskConversationModel: ObservableObject {
         operationIds[id] = nil
         busyIds.remove(id); operations[id] = nil; pendingApprovals[id] = nil
         if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
+    }
+
+    private func recordInferenceUsage(_ usage: AskTokenUsage, id: String, owner expectedOwner: String) {
+        guard owner == expectedOwner else { return }
+        inferenceUsage[id] = usage
     }
 
     private func updateInferenceProgress(_ progress: AskStreamProgress, id: String, inferenceID: String, owner expectedOwner: String, visible: Bool) {
