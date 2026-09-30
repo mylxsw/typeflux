@@ -72,6 +72,8 @@ final class AskConversationModel: ObservableObject {
     private var approvals: [String: CheckedContinuation<Bool, Never>] = [:]
     private var operationErrors: [String: String] = [:]
     private var pendingSends: [String: AskSendRequest] = [:]
+    // Local consent for the latest submission, retained for retries but never restored from history.
+    private var screenshotConsent: [String: String] = [:]
     private var captureGeneration = UUID()
     private var selectionGeneration = UUID()
     private var selectionObservation: Task<Void, Never>?
@@ -107,6 +109,7 @@ final class AskConversationModel: ObservableObject {
         approvals.values.forEach { $0.resume(returning: false) }; approvals = [:]
         inferenceReceipts = [:]
         pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
+        screenshotConsent = [:]
         draftSave?.cancel(); captureGeneration = UUID(); selectionGeneration = UUID()
         selectionObservation?.cancel(); selectionObservation = nil
         inferenceProgress = [:]; progressInferenceIDs = [:]
@@ -308,6 +311,7 @@ final class AskConversationModel: ObservableObject {
         request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
         value.modelRef = request.modelRef
         pendingSends[id] = request
+        screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
         value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort))
         selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID(); draft = .followUp
         snapshots[id] = value; selectionLoadFailed = false
@@ -345,7 +349,7 @@ final class AskConversationModel: ObservableObject {
                 pendingSends[id] = request
                 let response = try await api.send(conversationId: id, request: request, token: current.token)
                 pendingSends[id] = nil
-                try await drive(response, current: current)
+                try await drive(response, current: current, screenshotConsentMessageID: submitted.includeScreenshot ? messageId : nil)
             } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.owner) }
         }
     }
@@ -404,7 +408,7 @@ final class AskConversationModel: ObservableObject {
                 } else {
                     response = try await api.conversation(id: id, token: current.token)
                 }
-                try await drive(response, current: current)
+                try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])
             } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.owner) }
         }
     }
@@ -435,7 +439,8 @@ final class AskConversationModel: ObservableObject {
         } else { conversations.insert(summary, at: 0) }
     }
 
-    private func drive(_ initial: AskConversation, current: (owner: String, token: String)) async throws {
+    private func drive(_ initial: AskConversation, current: (owner: String, token: String),
+                       screenshotConsentMessageID: String?) async throws {
         var value = initial
         while true {
             try await accept(value, owner: current.owner)
@@ -490,9 +495,19 @@ final class AskConversationModel: ObservableObject {
             try await cache.associateTool(id: journalKey, conversationId: value.id, owner: current.owner)
             var result = try await cache.toolResult(id: journalKey, owner: current.owner)
             if result == nil {
-                pendingApprovals[value.id] = call
-                let approved = await withCheckedContinuation { approvals[value.id] = $0 }
-                pendingApprovals[value.id] = nil
+                // Consent comes from the submitted draft, never from historical images or live UI state.
+                let isScreenshot = call.function.name == "computer"
+                    && (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) == "screenshot"
+                let approved: Bool
+                let screenshotApproved = screenshotConsentMessageID != nil
+                    && value.messages.last(where: { $0.role == "user" })?.id == screenshotConsentMessageID
+                if screenshotApproved && isScreenshot {
+                    approved = true
+                } else {
+                    pendingApprovals[value.id] = call
+                    approved = await withCheckedContinuation { approvals[value.id] = $0 }
+                    pendingApprovals[value.id] = nil
+                }
                 try Task.checkCancellation()
                 result = AskToolResultRequest(runId: run.id, deviceId: deviceId, toolCallId: call.id, content: "User denied this tool call. Do not repeat it.", isError: true)
                 let latest = try await api.conversation(id: value.id, token: current.token)
@@ -560,6 +575,7 @@ final class AskConversationModel: ObservableObject {
             guard owner == current.owner else { return }
             conversations.removeAll { $0.id == id }
             drafts[id] = nil; snapshots[id] = nil; operationErrors[id] = nil; transcriptPositions[id] = nil
+            screenshotConsent[id] = nil
             if selectedId == id { selectedId = nil; newConversation() }
         } catch { self.error = error.localizedDescription }
     }
