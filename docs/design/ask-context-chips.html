@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Typeflux · 随便问 输入框上下文 chip 设计稿</title>
+<style>
+  :root {
+    --card: #2e2e2e; --hair: rgba(255,255,255,.10); --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
+    --accent: #0a84ff; --accent-soft: #15263e; --accent-text: #8ebdff; --hover: rgba(255,255,255,.08); --ctl: #3d3d3d;
+    --pop: #323232;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 48px 48px; background: #0c0c0d; color: var(--text); width: 1600px;
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--text-2); margin: 0 0 26px; max-width: 1400px; }
+  h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 780px 1fr; gap: 26px 40px; align-items: start; }
+  .stage { border-radius: 14px; padding: 30px 40px; border: 1px solid rgba(255,255,255,.05); background: #1f2023; position: relative; }
+  .stage.light { background: #eceef1; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); margin-bottom: 10px; }
+  .notes { color: var(--text-2); font-size: 12.5px; }
+  .notes b { color: var(--text); font-weight: 600; }
+  .notes ul { margin: 0; padding-left: 18px; } .notes li { margin: 0 0 6px; }
+  code { font-size: 11.5px; color: #c9c9cc; }
+  .before img { width: 700px; border-radius: 10px; display: block; }
+
+  .composer { width: 680px; border-radius: 16px; background: var(--card); border: 1px solid rgba(255,255,255,.16); position: relative;
+    box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+  .composer.narrow { width: 470px; }
+  .editor { padding: 15px 15px 11px; min-height: 58px; font-size: 14px; line-height: 22px; }
+  .foot { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 10px 0 12px; }
+  .menu { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px; border-radius: 8px;
+    font-size: 12.5px; font-weight: 500; white-space: nowrap; max-width: 150px; overflow: hidden; }
+  .menu svg { color: var(--text-2); flex: none; }
+  .sep { width: 1px; height: 16px; background: rgba(255,255,255,.10); margin: 0 2px; }
+  .spacer { flex: 1; }
+
+  /* icon chip */
+  .ic { position: relative; width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--hair); color: var(--text-2); flex: none; }
+  .ic.on { background: var(--accent-soft); border-color: transparent; color: var(--accent-text); }
+  .ic.off-dim { color: var(--text-3); border-style: solid; }
+  .ic.hover { background: var(--hover); }
+  .ic.on.hover { background: #1b3050; }
+  .ic .slash { position: absolute; width: 18px; height: 1.5px; background: var(--text-3); transform: rotate(-45deg); border-radius: 1px; }
+  .ic .badge { position: absolute; right: -3px; bottom: -3px; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--card); }
+  .ic .x { position: absolute; right: -5px; top: -5px; width: 14px; height: 14px; border-radius: 50%; background: #5a5a5e; color: #fff;
+    font-size: 8px; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--card); }
+  .ic .cnt { position: absolute; right: -5px; top: -6px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: var(--accent);
+    color: #fff; font-size: 9.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--card); }
+  /* labelled chip with a width cap (source app) */
+  .lc { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px 0 7px; border-radius: 8px; border: 1px solid var(--hair);
+    color: var(--text-2); font-size: 12px; font-weight: 500; max-width: 132px; white-space: nowrap; overflow: hidden; flex: none; }
+  .lc span { overflow: hidden; text-overflow: ellipsis; }
+  .more { height: 28px; padding: 0 8px; border-radius: 8px; border: 1px dashed transparent; background: var(--hover); color: var(--text-2);
+    font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; }
+  .chrome { width: 14px; height: 14px; border-radius: 50%; flex: none; position: relative;
+    background: conic-gradient(#ea4335 0 33%, #fbbc05 0 66%, #34a853 0); }
+  .chrome::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: #4285f4; box-shadow: 0 0 0 1.5px #fff; }
+  .mic, .send { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .mic { background: var(--ctl); border: 1px solid var(--hair); color: var(--text-2); }
+  .send { background: var(--ctl); color: var(--text-3); } .send.on { background: var(--accent); color: #fff; }
+
+  /* hover card */
+  .tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--pop); border: 1px solid rgba(255,255,255,.14);
+    border-radius: 9px; padding: 8px 10px; width: max-content; max-width: 280px; box-shadow: 0 10px 28px rgba(0,0,0,.45); z-index: 3; text-align: left; }
+  .tip b { display: block; font-size: 12px; color: var(--text); font-weight: 600; }
+  .tip i { display: block; font-style: normal; font-size: 11.5px; color: var(--text-2); margin-top: 2px; line-height: 1.4; }
+  .tip em { display: block; font-style: normal; font-size: 11px; color: var(--accent-text); margin-top: 5px; font-weight: 600; }
+  .tip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border: 5px solid transparent; border-top-color: var(--pop); }
+  .cursor { position: absolute; width: 11px; height: 16px; left: 16px; top: 16px; z-index: 4;
+    background: #fff; clip-path: polygon(0 0, 0 100%, 30% 75%, 50% 100%, 65% 93%, 45% 70%, 100% 70%); filter: drop-shadow(0 1px 1px rgba(0,0,0,.6)); }
+
+  .row { display: grid; grid-template-columns: repeat(4, 170px); gap: 0; align-items: end; padding-top: 118px; }
+  .row .tip { max-width: 164px; width: 164px; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; }
+  .cell small { font-size: 11px; color: var(--text-3); }
+
+  .light .composer { --card: #fff; --hair: rgba(0,0,0,.10); --text: #1d1d1f; --text-2: #5d5d63; --text-3: #9a9aa0; --hover: rgba(0,0,0,.05);
+    --accent-soft: #e7efff; --accent-text: #1b57d6; --ctl: #ececec; color: var(--text); box-shadow: 0 24px 60px rgba(20,30,50,.2); border-color: rgba(0,0,0,.12); }
+  .light .sep { background: rgba(0,0,0,.1); }
+  .tokens { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .tokens td { padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,.06); color: var(--text-2); vertical-align: top; }
+  .tokens td:first-child { color: var(--text); white-space: nowrap; width: 150px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="mic" viewBox="0 0 16 16"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+  <symbol id="up" viewBox="0 0 16 16"><path d="M8 13V3.5M3.8 7.5 8 3.3l4.2 4.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="cam" viewBox="0 0 16 16"><path d="M2 5V3.2C2 2.5 2.5 2 3.2 2H5M11 2h1.8c.7 0 1.2.5 1.2 1.2V5M14 11v1.8c0 .7-.5 1.2-1.2 1.2H11M5 14H3.2C2.5 14 2 13.5 2 12.8V11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="brain" viewBox="0 0 16 16"><path d="M8 3v10M6 2.8C4.4 2.8 3.3 4 3.6 5.6 2.4 6.3 2.3 8.4 3.5 9.3 3 11 4.4 12.9 6 12.6M10 2.8c1.6 0 2.7 1.2 2.4 2.8 1.2.7 1.3 2.8.1 3.7.5 1.7-.9 3.6-2.5 3.3" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></symbol>
+  <symbol id="text" viewBox="0 0 16 16"><path d="M3 4h10M3 7h10M3 10h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12 9.5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+</defs></svg>
+
+<h1>随便问 · 输入框上下文 chip 设计稿</h1>
+<p class="sub">问题：上下文 chip（截图、来源应用、选中文本、记忆）直接显示完整文字，来源应用还带着整条窗口标题。空间不够时整组收进「…」，点开的弹层比输入框还宽。<br>
+方案：<b style="color:#f2f2f2">图标优先，每个 chip 有最大宽度，文字悬停时再看</b>。平时只显示图标，用颜色表示状态；鼠标悬停 150ms 后，在上方弹出说明卡，显示完整名称、详情和可做的操作。chip 本身宽度不变，底栏不会跳动。聊天页输入框和快捷浮窗共用同一套规则。</p>
+
+<div class="grid">
+  <div class="before">
+    <div class="label">现状（评论截图）</div>
+    <img src="before-context-chips.png" alt="current">
+  </div>
+  <div class="notes">
+    <h2>现状问题</h2>
+    <ul>
+      <li>来源 chip 显示「应用 — 窗口标题」全文，一个就占 500pt 以上。</li>
+      <li>放不下时整组收成「…」，要点开才知道带了什么上下文。弹层比输入框还宽，还压住了对话内容。</li>
+      <li>文字 chip 高度 26、带圆角胶囊，和旁边 28pt 的模型/推理按钮对不齐。</li>
+      <li>模型名没有宽度上限，名字长的模型会把其他控件挤走。</li>
+    </ul>
+  </div>
+
+  <!-- A resting -->
+  <div class="stage">
+    <div class="label">A · 默认：四类上下文全部带上，也能在 680pt 内放下</div>
+    <div class="composer">
+      <div class="editor"><span style="color:var(--text-3)">输入问题…</span></div>
+      <div class="foot">
+        <span class="menu">DeepSeek Pro <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="menu"><svg width="14" height="14"><use href="#brain"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="sep"></span>
+        <span class="ic off-dim"><svg width="14" height="14"><use href="#cam"/></svg><span class="slash"></span></span>
+        <span class="lc"><span class="chrome"></span><span>Google Chrome</span></span>
+        <span class="ic on"><svg width="14" height="14"><use href="#text"/></svg><span class="cnt">3</span></span>
+        <span class="ic on"><svg width="14" height="14"><use href="#brain"/></svg><span class="badge chrome" style="width:12px;height:12px"></span></span>
+        <span class="spacer"></span>
+        <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+        <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>静止态：图标 + 颜色表示状态</h2>
+    <ul>
+      <li><b>截图</b>：28×28 方形 chip，只显示图标。未开启是描边灰色；已附带是蓝色软底；不可用是图标加斜杠的三级灰，不再写「截图不可用」四个字。</li>
+      <li><b>来源应用</b>：真实应用图标 + <b>应用名</b>，最大宽 132pt。窗口标题移到悬停卡里。这是唯一保留文字的 chip：浮窗从别的应用唤起，需要一眼看出是从哪来的。</li>
+      <li><b>选中文本</b>：文本图标，右上角蓝色角标显示行数。</li>
+      <li><b>记忆</b>：脑图标，右下角叠一个来源应用的小图标（记忆 · Google Chrome）。只有全局记忆时不显示角标。</li>
+      <li>模型和推理强度与上下文 chip 之间加一条 1pt 竖线，区分「怎么问」和「带了什么」。模型名最大宽 150pt，超出时中间省略，悬停显示全名。</li>
+    </ul>
+  </div>
+
+  <!-- B hover states -->
+  <div class="stage">
+    <div class="label">B · 悬停：上方弹出说明卡（chip 本身宽度不变）</div>
+    <div class="row">
+      <div class="cell">
+        <div class="tip"><b>截图不可用</b><i>DeepSeek Pro 不支持图片识别</i><em>换支持图片的模型 →</em></div>
+        <span class="ic off-dim hover"><svg width="14" height="14"><use href="#cam"/></svg><span class="slash"></span></span>
+        <small>截图 · 不可用</small>
+      </div>
+      <div class="cell">
+        <div class="tip"><b>Google Chrome</b><i>Multica — Project Management for Human + Agent…</i></div>
+        <span class="lc" style="background:var(--hover)"><span class="chrome"></span><span>Google Chrome</span></span>
+        <small>来源应用</small>
+      </div>
+      <div class="cell">
+        <div class="tip"><b>选中 3 行</b><i>“上面 3 个失败的测试，是否需要单独开…”</i><em>点击预览 · × 移除</em></div>
+        <span class="ic on hover"><svg width="14" height="14"><use href="#text"/></svg><span class="x">✕</span></span>
+        <small>选中文本</small>
+      </div>
+      <div class="cell">
+        <div class="tip"><b>记忆 · Google Chrome</b><i>开始时发送一次：全局记忆 + 该应用最近输入</i></div>
+        <span class="ic on hover"><svg width="14" height="14"><use href="#brain"/></svg><span class="badge chrome" style="width:12px;height:12px"></span><span class="x">✕</span></span>
+        <small>记忆</small>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>悬停说明卡</h2>
+    <ul>
+      <li>悬停 150ms 后在 chip 上方弹出，移开立即消失。比系统 tooltip（约 1s 延迟）更快，也能放两行内容。</li>
+      <li>卡片内容：第一行是<b>名称</b>（加粗），第二行是<b>详情</b>（窗口标题、选中内容的前 60 个字、记忆说明、不可用原因），第三行是可做的<b>操作</b>（蓝色）。最大宽 280pt，最多显示 3 行。</li>
+      <li>可移除的 chip（已附带的截图、选中文本、记忆）在悬停时右上角出现 × 角标，点击移除。平时不显示 ×，省空间。</li>
+      <li>点击行为不变：截图和选中文本打开预览弹层，不可用截图打开模型选择器。</li>
+      <li>无障碍：每个 chip 的 <code>accessibilityLabel</code> 是完整名称，详情放在 <code>accessibilityHint</code>，读屏不依赖悬停。</li>
+    </ul>
+  </div>
+
+  <!-- C narrow -->
+  <div class="stage">
+    <div class="label">C · 窄窗口（470pt）：先收来源文字，再收成「+N」</div>
+    <div class="composer narrow" style="margin-bottom:18px">
+      <div class="foot">
+        <span class="menu">DeepSeek Pro <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="menu"><svg width="14" height="14"><use href="#brain"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="sep"></span>
+        <span class="ic off-dim"><svg width="14" height="14"><use href="#cam"/></svg><span class="slash"></span></span>
+        <span class="ic"><span class="chrome"></span></span>
+        <span class="ic on"><svg width="14" height="14"><use href="#text"/></svg><span class="cnt">3</span></span>
+        <span class="ic on"><svg width="14" height="14"><use href="#brain"/></svg><span class="badge chrome" style="width:12px;height:12px"></span></span>
+        <span class="spacer"></span>
+        <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+        <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
+      </div>
+    </div>
+    <div class="composer narrow" style="width:400px">
+      <div class="foot">
+        <span class="menu">DeepSeek Pro <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="menu"><svg width="14" height="14"><use href="#brain"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="sep"></span>
+        <span class="ic off-dim"><svg width="14" height="14"><use href="#cam"/></svg><span class="slash"></span></span>
+        <span class="ic"><span class="chrome"></span></span>
+        <span class="more">+2</span>
+        <span class="spacer"></span>
+        <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+        <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>空间不够时怎么收</h2>
+    <ul>
+      <li><b>第一步</b>：来源 chip 去掉文字，只留应用图标（28×28）。</li>
+      <li><b>第二步</b>：放不下的 chip 从右往左收进「+N」。「+N」悬停时弹出同样的说明卡，列出被收起的项，每项可以移除。</li>
+      <li>不再把整组都藏进「…」。截图和来源应用始终可见，因为它们决定这次提问带不带屏幕内容。</li>
+      <li>由 <code>ViewThatFits</code> 按「完整 → 来源只留图标 → +N」三档依次尝试。</li>
+    </ul>
+  </div>
+
+  <!-- D light + with screenshot on -->
+  <div class="stage light">
+    <div class="label" style="color:#8a8a90">D · 浅色：截图已附带、有选中文本</div>
+    <div class="composer">
+      <div class="editor"><span>这段报错是什么意思？</span></div>
+      <div class="foot">
+        <span class="menu">Claude Haiku <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="menu"><svg width="14" height="14"><use href="#brain"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="sep"></span>
+        <span class="ic on"><svg width="14" height="14"><use href="#cam"/></svg></span>
+        <span class="lc"><span class="chrome"></span><span>Google Chrome</span></span>
+        <span class="ic on"><svg width="14" height="14"><use href="#text"/></svg><span class="cnt">12</span></span>
+        <span class="spacer"></span>
+        <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+        <span class="send on"><svg width="15" height="15"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>规格</h2>
+    <table class="tokens">
+      <tr><td>图标 chip</td><td>28×28，圆角 8，1pt <code>AskTheme.border</code>，图标 14pt。已附带：<code>accentSoft</code> 底 + <code>accentText</code> 图标</td></tr>
+      <tr><td>来源 chip</td><td>高 28，最大宽 132，应用图标 14 + 应用名 12pt/500。取 <code>NSRunningApplication.icon</code>，取不到时用 <code>macwindow</code> 图标</td></tr>
+      <tr><td>模型按钮</td><td>最大宽 150，中间省略，悬停显示全名</td></tr>
+      <tr><td>角标</td><td>行数：蓝底白字 15pt；来源应用：12pt 圆形应用图标；移除 ×：14pt，仅悬停时出现</td></tr>
+      <tr><td>说明卡</td><td>悬停 150ms 出现，<code>popoverSurface</code>，圆角 9，最大宽 280，最多 3 行；移开即消失</td></tr>
+      <tr><td>间距</td><td>chip 之间 6；模型、推理与 chip 之间的分隔线 1×16</td></tr>
+      <tr><td>数据</td><td><code>AskDraft.source</code> 拆成应用名和窗口标题（现在是用「 — 」拼起来的）；记忆角标取 <code>AskMemory.app</code></td></tr>
+      <tr><td>范围</td><td>聊天页输入框和快捷浮窗都用 <code>AskComposer</code>，一处改两处生效</td></tr>
+    </table>
+  </div>
+</div>
+</body>
+</html>
