@@ -1516,9 +1516,11 @@
 "ask.copied" = "已复制";
 "ask.quote" = "引用追问";
 "ask.regenerate" = "重新生成";
-"ask.empty.hint" = "随时双击 Fn 唤起，按住输入框说话";
-"ask.empty.hint.before" = "随时双击";
-"ask.empty.hint.after" = "唤起 · 按住输入框说话";
+"ask.empty.summon.before" = "随时按";
+"ask.empty.summon.after" = "唤起";
+"ask.empty.voice.before" = "按住";
+"ask.empty.voice.after" = "语音输入";
+"ask.empty.voice.button" = "按住麦克风说话";
 "ask.models.capacity" = "%@ 上下文 · %@ 输出";
 "ask.usage.spent" = "消耗";
 "ask.reasoning.default.caption" = "由模型决定思考深度";

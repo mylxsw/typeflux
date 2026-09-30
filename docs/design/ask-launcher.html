@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Typeflux · 随便问 快捷输入浮窗 设计稿 v2</title>
+<style>
+  :root {
+    --canvas: #0c0c0d; --desk: #1b1c1f;
+    --card: #2e2e2e;            /* AskTheme.composerSurface (dark) */
+    --control: #2e2e2e;
+    --hair: rgba(255,255,255,.10); /* AskTheme.border */
+    --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
+    --accent: #0a84ff;          /* AskTheme.accent (system blue) */
+    --accent-soft: #15263e;     /* AskTheme.accentSoft */
+    --accent-text: #8ebdff;     /* AskTheme.accentText */
+    --hover: rgba(255,255,255,.08);
+    --ctl: #3d3d3d;             /* AskTheme.controlSurface */
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 48px 48px; background: var(--canvas); color: var(--text); width: 1600px;
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--text-2); margin: 0 0 26px; }
+  h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 780px 1fr; gap: 26px 40px; align-items: start; }
+  .stage { border-radius: 14px; padding: 30px 40px; border: 1px solid rgba(255,255,255,.05);
+    background: radial-gradient(1200px 400px at 30% -40%, #2c3442 0%, transparent 60%), var(--desk); }
+  .stage.plain { background: #232323; }
+  .stage.light { background: radial-gradient(1200px 400px at 30% -40%, #dfe7f3 0%, transparent 60%), #eceef1; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); margin-bottom: 10px; }
+  .notes { color: var(--text-2); font-size: 12.5px; }
+  .notes b { color: var(--text); font-weight: 600; }
+  .notes ul { margin: 0; padding-left: 18px; } .notes li { margin: 0 0 6px; }
+  code { font-size: 11.5px; color: #c9c9cc; }
+  .before img { width: 680px; border-radius: 10px; display: block; }
+
+  /* ===== the shared composer card (AskComposer) ===== */
+  .composer { width: 680px; border-radius: 16px; background: var(--card); border: 1px solid var(--hair); position: relative; }
+  .composer.floating { box-shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 24px 60px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.35);
+    border-color: rgba(255,255,255,.16); }
+  .composer.listening { border: 1.5px solid var(--accent); box-shadow: 0 0 0 3px rgba(10,132,255,.22), 0 24px 60px rgba(0,0,0,.55); }
+  .editor { padding: 15px 15px 11px; min-height: 58px; font-size: 14px; line-height: 22px; }
+  .ph { color: var(--text-3); }
+  .caret { display: inline-block; width: 1.5px; height: 17px; background: var(--accent); vertical-align: -3px; }
+  .foot { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 10px 0 12px; }
+  .menu { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px; border-radius: 8px;
+    font-size: 12.5px; font-weight: 500; color: var(--text); white-space: nowrap; }
+  .menu.hover { background: var(--hover); }
+  .menu svg { color: var(--text-2); }
+  .chip { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 500; color: var(--text-2); border: 1px solid var(--hair); white-space: nowrap; }
+  .chip.active { color: var(--accent-text); background: var(--accent-soft); border-color: transparent; }
+  .chip.unavail { color: var(--text-3); }
+  .chip .x { font-size: 9px; opacity: .6; margin-left: 1px; }
+  .spacer { flex: 1; }
+  .vstat { display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 600; color: var(--accent); }
+  .wave { display: inline-flex; gap: 2px; align-items: center; height: 16px; }
+  .wave i { display: block; width: 2.5px; border-radius: 2px; background: var(--accent); }
+  .mic { width: 32px; height: 32px; border-radius: 50%; background: var(--ctl); border: 1px solid var(--hair);
+    display: inline-flex; align-items: center; justify-content: center; color: var(--text-2); flex: none; }
+  .mic.live { background: var(--accent-soft); border-color: rgba(10,132,255,.4); }
+  .mic.live b { width: 9px; height: 9px; border-radius: 2px; background: var(--accent); display: block; }
+  .send { width: 32px; height: 32px; border-radius: 50%; background: var(--ctl); color: var(--text-3);
+    display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .send.on { background: var(--accent); color: #fff; }
+  .ring { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text-2); }
+  .ring i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #444; border-top-color: var(--accent); display: block; }
+  .tip { position: absolute; right: 22px; top: 100%; margin-top: 8px; background: #3a3a3c; color: #eee; font-size: 11.5px;
+    padding: 6px 9px; border-radius: 6px; border: 1px solid rgba(255,255,255,.12); width: 250px; line-height: 1.45;
+    box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+  .kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 5px; background: rgba(255,255,255,.08); border: 1px solid var(--hair); font-size: 10.5px; font-weight: 600; color: var(--text); }
+  .hint { display: flex; align-items: center; gap: 6px; color: var(--text-3); font-size: 13px; justify-content: center; margin-top: 14px; }
+  .hint .kbd { height: 20px; font-size: 11px; color: var(--text-2); }
+  .src-tag { font-size: 10.5px; color: #ffb35c; margin-left: 6px; font-weight: 600; }
+
+  .light .composer { --card: #ffffff; --hair: rgba(0,0,0,.09); --text: #1d1d1f; --text-2: #5d5d63; --text-3: #9a9aa0;
+    --hover: rgba(0,0,0,.06); --accent-soft: #e7efff; --accent-text: #1b57d6; --ctl: #ececec; color: var(--text);
+    box-shadow: 0 24px 60px rgba(20,30,50,.22), 0 2px 8px rgba(20,30,50,.10); }
+  .tokens { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .tokens td { padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,.06); color: var(--text-2); vertical-align: top; }
+  .tokens td:first-child { color: var(--text); white-space: nowrap; width: 150px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="mic" viewBox="0 0 16 16"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+  <symbol id="up" viewBox="0 0 16 16"><path d="M8 13V3.5M3.8 7.5 8 3.3l4.2 4.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="cam" viewBox="0 0 16 16"><path d="M2 5V3.2C2 2.5 2.5 2 3.2 2H5M11 2h1.8c.7 0 1.2.5 1.2 1.2V5M14 11v1.8c0 .7-.5 1.2-1.2 1.2H11M5 14H3.2C2.5 14 2 13.5 2 12.8V11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="brain" viewBox="0 0 16 16"><path d="M8 3v10M6 2.8C4.4 2.8 3.3 4 3.6 5.6 2.4 6.3 2.3 8.4 3.5 9.3 3 11 4.4 12.9 6 12.6M10 2.8c1.6 0 2.7 1.2 2.4 2.8 1.2.7 1.3 2.8.1 3.7.5 1.7-.9 3.6-2.5 3.3" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></symbol>
+  <symbol id="win" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M2 6h12" stroke="currentColor" stroke-width="1.3"/></symbol>
+  <symbol id="info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.3v3.6M8 5.2v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+</defs></svg>
+
+<h1>随便问 · 快捷输入浮窗 设计稿 v2</h1>
+<p class="sub">原则：快捷浮窗和聊天页输入框是<b style="color:#f2f2f2">同一个组件（<code>AskComposer</code>）</b>，只是触发方式不同。模型选择、推理强度、语音按钮的交互与状态、上下文 chip、发送钮的样式和行为完全一致；浮窗只多「悬浮外壳」和「来源应用」这两处必要差异。<br>所有提示中的按键都读取用户配置的快捷键，不写死 Fn。示意图用「⌥(R)」作为语音键、「⌘ Space」作为唤起键，以说明按键跟随设置变化。</p>
+
+<div class="grid">
+  <div class="before">
+    <div class="label">现状（Issue 图 2）</div>
+    <img src="before-launcher.png" alt="current launcher">
+  </div>
+  <div class="notes">
+    <h2>现状与聊天页输入框的差异（都要去掉）</h2>
+    <ul>
+      <li>左侧 26pt 深蓝 ✦ 徽标：聊天页没有，且抢焦点、光标压住占位符。</li>
+      <li>编辑区 15.5pt、左右内边距 17：聊天页是 14pt / 15。</li>
+      <li>两种底色 + 分隔线（编辑区 <code>surface</code>、底栏 <code>raisedSurface</code>）：聊天页整张卡片同一底色 <code>composerSurface</code>。</li>
+      <li>浮窗边框/阴影弱，叠在深色窗口上几乎看不出边界。</li>
+    </ul>
+    <p style="margin-top:10px">模型、推理强度、截图 chip、语音、发送<b>在代码里已经是同一组件</b>（<code>AskModelMenu</code> / <code>AskReasoningMenu</code> / <code>AskChip</code> / <code>AskVoiceButton</code> / <code>AskSendButton</code>），视觉不统一只来自上面几处外壳差异。v1 设计稿画了一套浮窗专用的 pill 和「按住 Fn 说话」提示，已按你的意见撤回。</p>
+  </div>
+
+  <!-- Reference: chat composer -->
+  <div class="stage plain">
+    <div class="label">参照 · 聊天页输入框（现有，不改）</div>
+    <div class="composer">
+      <div class="editor"><span class="ph">继续追问…</span></div>
+      <div class="foot">
+        <span class="menu">Claude Haiku <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="menu"><svg width="14" height="14"><use href="#brain"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="chip active"><svg width="12" height="12"><use href="#cam"/></svg>附带截图 <span class="x">✕</span></span>
+        <span class="spacer"></span>
+        <span class="ring"><i></i>0%</span>
+        <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+        <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>浮窗 = 这张卡片 + 悬浮外壳</h2>
+    <ul>
+      <li>浮窗直接复用这张卡片：同样的底色、16pt 圆角、编辑区 14pt 和 15/15/11 内边距，底栏 44pt。</li>
+      <li>底栏控件从左到右的顺序相同：模型 → 推理强度 → 上下文 chip → 语音状态 → 麦克风 → 发送。</li>
+      <li>浮窗没有用量面板，所以不显示 <code>0%</code> 上下文环。这是现有逻辑，保持不变。</li>
+    </ul>
+  </div>
+
+  <!-- A default -->
+  <div class="stage">
+    <div class="label">A · 快捷浮窗 默认（空输入，悬停麦克风）</div>
+    <div class="composer floating">
+      <div class="editor"><span class="caret"></span><span class="ph">输入问题…</span></div>
+      <div class="foot">
+        <span class="menu">DeepSeek Pro <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="menu"><svg width="14" height="14"><use href="#brain"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="chip"><svg width="12" height="12"><use href="#cam"/></svg>附带截图</span>
+        <span class="chip"><svg width="12" height="12"><use href="#win"/></svg>Google Chrome</span>
+        <span class="spacer"></span>
+        <span class="mic" style="background:var(--accent-soft);border-color:rgba(10,132,255,.4);color:var(--accent)"><svg width="16" height="16"><use href="#mic"/></svg></span>
+        <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
+      </div>
+      <div class="tip">点击开始，再次点击停止；也可按住录音，松开转为文字。<br>在输入框中按住 <span class="kbd">⌥(R)</span> 语音输入，松开转为文字。</div>
+    </div>
+    <div style="height:64px"></div>
+  </div>
+  <div class="notes">
+    <h2>唯一的差异：外壳 + 来源应用</h2>
+    <ul>
+      <li><b>悬浮外壳</b>：描边提到白 16%，外加顶部 1pt 内高光和 <code>0 24 60 / 55%</code> 阴影，让浮窗从任何窗口上浮起来。卡片内部与聊天页完全相同。</li>
+      <li><b>去掉 ✦ 徽标</b>，占位符和光标从同一位置开始。</li>
+      <li><b>来源应用 chip</b>（Google Chrome）：浮窗是从别的应用唤起的，所以保留。它用和截图 chip 同一个 <code>AskChip</code> 中性样式，排在截图 chip 后面。有选中文本时换成「选中 N 行」chip，这是现有逻辑。</li>
+      <li><b>语音按键提示</b>：沿用麦克风按钮的悬停提示，和聊天页同一条文案。按键读取 <code>设置 › 快捷键 › 语音输入</code>（<code>activationHotkey</code>），图中为 ⌥(R)。浮窗不另外加「按住 Fn 说话」这类提示。</li>
+    </ul>
+  </div>
+
+  <!-- B typing -->
+  <div class="stage">
+    <div class="label">B · 已输入 + 附带截图</div>
+    <div class="composer floating">
+      <div class="editor"><span>这个页面的布局哪里不对劲？给我三条改进建议</span><span class="caret"></span></div>
+      <div class="foot">
+        <span class="menu hover">Claude Haiku <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="menu"><svg width="14" height="14"><use href="#brain"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="chip active"><svg width="12" height="12"><use href="#cam"/></svg>附带截图 <span class="x">✕</span></span>
+        <span class="chip"><svg width="12" height="12"><use href="#win"/></svg>Google Chrome</span>
+        <span class="spacer"></span>
+        <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+        <span class="send on"><svg width="15" height="15"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>模型 / 推理强度：与聊天页同一选择器</h2>
+    <ul>
+      <li>点模型打开和聊天页相同的 <code>AskModelChoices</code> 弹层，包括分组、价格徽标、勾选列和「设为默认」。推理强度弹层同样共用。</li>
+      <li>浮窗与聊天页的草稿各自记住上次的模型（<code>launcherDraft</code> / <code>draft</code>），这是现有行为。两者的默认值都来自同一个「随便问默认模型」。</li>
+      <li>截图 chip 的开关、预览和移除都与聊天页相同。发送钮只有在可以发送时才显示为蓝色。</li>
+    </ul>
+  </div>
+
+  <!-- C listening -->
+  <div class="stage">
+    <div class="label">C · 语音输入中</div>
+    <div class="composer floating listening">
+      <div class="editor"><span>帮我总结一下这篇文章的</span><span class="caret"></span></div>
+      <div class="foot">
+        <span class="menu" style="opacity:.45">DeepSeek Pro <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="menu" style="opacity:.45"><svg width="14" height="14"><use href="#brain"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="chip" style="opacity:.45"><svg width="12" height="12"><use href="#cam"/></svg>附带截图</span>
+        <span class="chip" style="opacity:.45"><svg width="12" height="12"><use href="#win"/></svg>Google Chrome</span>
+        <span class="spacer"></span>
+        <span class="vstat"><span class="wave"><i style="height:5px"></i><i style="height:10px"></i><i style="height:15px"></i><i style="height:8px"></i><i style="height:13px"></i><i style="height:6px"></i><i style="height:11px"></i></span>聆听中</span>
+        <span class="mic live"><b></b></span>
+        <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>语音：同一个按钮、同一套状态</h2>
+    <ul>
+      <li>交互与聊天页一致：点击开始、再点停止；或按住录音、松开转写。按住配置的语音快捷键也一样。</li>
+      <li>状态一致：聆听中显示 1.5pt 主色描边、3pt 光晕、波形和「聆听中」，麦克风变为停止方块；转写中显示环形进度和「转写中」。录音时模型、推理强度和 chip 降为 45% 且不可操作。</li>
+      <li>浮窗和聊天页共用一个 <code>AskVoiceInput</code>，同一时间只有一处能录音。</li>
+    </ul>
+  </div>
+
+  <!-- D empty state hint + unsupported -->
+  <div class="stage plain">
+    <div class="label">D · 聊天页空状态提示：按键读取配置 <span class="src-tag">本次已修复</span></div>
+    <div class="hint">随时按 <span class="kbd">⌘ Space</span> 唤起 · 按住 <span class="kbd">⌥(R)</span> 语音输入</div>
+    <div class="hint" style="margin-top:10px;opacity:.7">（修复前固定显示：随时双击 <span class="kbd">Fn</span> 唤起 · 按住输入框说话）</div>
+    <div style="height:18px"></div>
+    <div class="label">模型不支持图片（两处共用同一 chip）</div>
+    <div class="composer floating">
+      <div class="editor"><span>这张图表说明了什么趋势？</span><span class="caret"></span></div>
+      <div class="foot">
+        <span class="menu">DeepSeek Pro <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="menu"><svg width="14" height="14"><use href="#brain"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="chip unavail"><svg width="12" height="12"><use href="#info"/></svg>不支持截图</span>
+        <span class="chip"><svg width="12" height="12"><use href="#win"/></svg>Google Chrome</span>
+        <span class="spacer"></span>
+        <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+        <span class="send on"><svg width="15" height="15"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>按键一律从设置读取</h2>
+    <ul>
+      <li>聊天页空状态原来写死「双击 Fn 唤起」。但「随便问」的默认唤起键是 <b>⌘ Space</b>，所以默认配置下这句提示就是错的。现在唤起键读取 <code>askHotkey</code>，语音键读取 <code>activationHotkey</code>，统一用 <code>HotkeyFormat.display</code> 格式化（和设置页显示一致，双击会显示为 ×2），修改快捷键后立即刷新。</li>
+      <li>未设置唤起键时不显示唤起那半句；未设置语音键时显示「按住麦克风说话」。</li>
+      <li>麦克风悬停提示原本就从 <code>activationHotkey</code> 读取，两处一致。</li>
+      <li><b>不支持截图</b>：把共用的 <code>AskChip</code> 由虚线改为实线灰字加 ⓘ，文案为「不支持截图」，悬停说明原因。这是共用组件，聊天页和浮窗会一起改。</li>
+    </ul>
+  </div>
+
+  <!-- E light -->
+  <div class="stage light">
+    <div class="label" style="color:#8a8a90">E · 浅色外观</div>
+    <div class="composer floating">
+      <div class="editor"><span>这个页面的布局哪里不对劲？</span><span class="caret"></span></div>
+      <div class="foot">
+        <span class="menu">Claude Haiku <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="menu"><svg width="14" height="14"><use href="#brain"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+        <span class="chip active"><svg width="12" height="12"><use href="#cam"/></svg>附带截图 <span class="x">✕</span></span>
+        <span class="chip"><svg width="12" height="12"><use href="#win"/></svg>Google Chrome</span>
+        <span class="spacer"></span>
+        <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+        <span class="send on"><svg width="15" height="15"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>实现要点</h2>
+    <table class="tokens">
+      <tr><td>组件</td><td><code>AskComposer(launcher: true)</code> 继续共用。删掉 launcher 专有分支：✦ 图标、<code>editorFontSize 15.5</code>、<code>padding 17</code>、两色底栏与分隔线、<code>launcherCorner 18</code></td></tr>
+      <tr><td>外壳</td><td>只在 <code>AskLauncherView</code> 上加描边和阴影；外侧透明留白 6 保留给阴影</td></tr>
+      <tr><td>尺寸</td><td>宽 680；单行高 = 22 + 15 + 11 + 44 = 92（加留白 104）；最多 6 行后内部滚动</td></tr>
+      <tr><td>按键文案</td><td>只用 <code>HotkeyFormat.display(askHotkey / activationHotkey)</code>，并监听 <code>.hotkeySettingsDidChange</code></td></tr>
+      <tr><td>回归</td><td>更新 <code>AskMetrics.launcherHeight</code> 及 <code>renderImageCapabilitySurfaces</code> 等快照测试</td></tr>
+    </table>
+  </div>
+</div>
+</body>
+</html>

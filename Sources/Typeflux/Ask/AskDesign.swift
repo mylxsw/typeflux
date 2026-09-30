@@ -459,6 +459,54 @@ struct AskKeyCap: View {
     }
 }
 
+/// One piece of a shortcut sentence: plain words, or a key drawn as a key.
+enum AskHintSegment: Equatable {
+    case text(String)
+    case key(String)
+}
+
+/// "Press [⌘ Space] anytime to summon · Hold [Fn] to dictate" under the empty
+/// state. Both keys come from the configured shortcuts and follow changes to
+/// them; the sentence used to say "double-press Fn" whatever was configured.
+struct AskShortcutHint: View {
+    let settings: SettingsStore
+    @State private var clauses: [[AskHintSegment]] = []
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(Array(clauses.enumerated()), id: \.offset) { index, clause in
+                if index > 0 { Text(verbatim: "·") }
+                ForEach(Array(clause.enumerated()), id: \.offset) { _, segment in
+                    switch segment {
+                    case let .text(value): Text(value)
+                    case let .key(value): keyCap(value)
+                    }
+                }
+            }
+        }
+        .font(.system(size: 13))
+        .foregroundStyle(StudioTheme.textTertiary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(AskPresentation.spokenHint(clauses))
+        .onAppear(perform: refresh)
+        .onReceive(NotificationCenter.default.publisher(for: .hotkeySettingsDidChange)) { _ in refresh() }
+    }
+
+    private func refresh() {
+        clauses = AskPresentation.shortcutHint(summon: settings.askHotkey, voice: settings.activationHotkey)
+    }
+
+    private func keyCap(_ value: String) -> some View {
+        Text(verbatim: value)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(StudioTheme.textSecondary)
+            .padding(.horizontal, 6)
+            .frame(height: 20)
+            .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(AskTheme.border))
+    }
+}
+
 /// Level meter shown only while the recorder is listening.
 struct AskWaveform: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -751,6 +799,41 @@ enum AskPresentation {
         case "browser": return "globe"
         default: return "wrench.and.screwdriver"
         }
+    }
+
+    /// Clauses for the empty-state shortcut hint. Each sentence is split around
+    /// its key so every language can place the key where its grammar wants it.
+    /// An unset summon shortcut drops that clause; an unset voice shortcut falls
+    /// back to the microphone button, which works without one.
+    static func shortcutHint(summon: HotkeyBinding?, voice: HotkeyBinding?) -> [[AskHintSegment]] {
+        func clause(_ prefix: String, _ binding: HotkeyBinding) -> [AskHintSegment] {
+            var segments: [AskHintSegment] = []
+            let before = L(prefix + ".before")
+            if !before.isEmpty { segments.append(.text(before)) }
+            segments.append(.key(HotkeyFormat.display(binding)))
+            let after = L(prefix + ".after")
+            if !after.isEmpty { segments.append(.text(after)) }
+            return segments
+        }
+        var clauses: [[AskHintSegment]] = []
+        if let summon { clauses.append(clause("ask.empty.summon", summon)) }
+        if let voice {
+            clauses.append(clause("ask.empty.voice", voice))
+        } else {
+            clauses.append([.text(L("ask.empty.voice.button"))])
+        }
+        return clauses
+    }
+
+    /// The same hint as one sentence for VoiceOver.
+    static func spokenHint(_ clauses: [[AskHintSegment]]) -> String {
+        clauses.map { clause in
+            clause.map { segment -> String in
+                switch segment {
+                case let .text(value), let .key(value): return value
+                }
+            }.joined(separator: " ")
+        }.joined(separator: " · ")
     }
 
     /// Quoting appends to the current draft instead of replacing it, so an

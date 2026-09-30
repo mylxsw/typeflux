@@ -1502,9 +1502,11 @@
 "ask.copied" = "コピーしました";
 "ask.quote" = "引用して質問";
 "ask.regenerate" = "再生成";
-"ask.empty.hint" = "Fn キーを 2 回押すといつでも開きます。入力欄を長押しで音声入力。";
-"ask.empty.hint.before" = "";
-"ask.empty.hint.after" = "キーを 2 回押していつでも起動 · 入力欄を長押しで音声入力";
+"ask.empty.summon.before" = "";
+"ask.empty.summon.after" = "でいつでも起動";
+"ask.empty.voice.before" = "";
+"ask.empty.voice.after" = "を長押しで音声入力";
+"ask.empty.voice.button" = "マイクを長押しで音声入力";
 "ask.models.capacity" = "コンテキスト %@ · 出力 %@";
 "ask.usage.spent" = "消費";
 "ask.reasoning.default.caption" = "思考の深さをモデルに任せる";

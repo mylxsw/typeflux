@@ -1516,9 +1516,11 @@
 "ask.copied" = "Copied";
 "ask.quote" = "Quote";
 "ask.regenerate" = "Regenerate";
-"ask.empty.hint" = "Double-press Fn anytime. Hold the field to speak.";
-"ask.empty.hint.before" = "Double-press";
-"ask.empty.hint.after" = "anytime · hold the field to speak";
+"ask.empty.summon.before" = "Press";
+"ask.empty.summon.after" = "anytime to summon";
+"ask.empty.voice.before" = "Hold";
+"ask.empty.voice.after" = "to dictate";
+"ask.empty.voice.button" = "Hold the microphone to speak";
 "ask.models.capacity" = "%@ context · %@ output";
 "ask.usage.spent" = "Spent";
 "ask.reasoning.default.caption" = "Let the model decide how much to think";

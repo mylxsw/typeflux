@@ -515,26 +515,9 @@ struct AskConversationView: View {
         .padding(.bottom, 40)
     }
 
-    /// "Double-press [Fn] to summon · hold the input to talk", with the key drawn
-    /// as a key. The sentence is split around the key so every language can
-    /// place it where its grammar wants it.
+    /// Summon and voice shortcuts, read from the configured hotkeys.
     private var emptyHint: some View {
-        HStack(spacing: 6) {
-            let before = L("ask.empty.hint.before")
-            if !before.isEmpty { Text(before) }
-            Text(verbatim: "Fn")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .padding(.horizontal, 6)
-                .frame(height: 20)
-                .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(AskTheme.border))
-            Text(L("ask.empty.hint.after"))
-        }
-        .font(.system(size: 13))
-        .foregroundStyle(StudioTheme.textTertiary)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(L("ask.empty.hint"))
+        AskShortcutHint(settings: model.modelLibrary.settings)
     }
 
     /// The caption used to sit at the trailing edge in the faintest grey in the
