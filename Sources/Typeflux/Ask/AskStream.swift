@@ -19,6 +19,7 @@ struct AskSSEFrame {
 
     // Explicit, because a private stored property makes the memberwise initializer private.
     init(limit: Int = 2_000_000) { self.limit = limit }
+
     /// AsyncBytes.lines omits empty lines, which are SSE frame delimiters.
     /// Decode bytes directly to preserve those boundaries and split UTF-8 safely.
     mutating func push(_ byte: UInt8) throws -> (String, String)? {
