@@ -402,7 +402,7 @@
 "workflow.audioStart.microphoneNotReady" = "麥克風尚未準備好。請重新連接麥克風，或前往「系統設定 > 聲音 > 輸入」選擇其他輸入裝置，然後再試一次。";
 "workflow.audioStart.genericFailure" = "無法開始錄音。請確認麥克風已連接且可用，然後再試一次。";
 "workflow.processing.failed" = "處理失敗";
-"workflow.recording.tooShort" = "說話時間太短，本次轉寫已取消。";
+"workflow.recording.tooShort" = "錄音太短，請再試一次。";
 "workflow.transcription.emptySkipped" = "因轉寫結果為空，已略過後續處理。";
 "workflow.transcription.noSpeech" = "未偵測到清晰語音，本次轉寫已取消。";
 "workflow.transcription.serverUnavailableNotice" = "暫時無法連線至伺服器，錄音已儲存在歷史記錄中，可稍後重試。";
@@ -1489,8 +1489,8 @@
 
 "ask.capture.retry" = "Screenshot failed · Retry";
 
-"ask.voice.listening" = "Listening · Release to finish";
-"ask.voice.transcribing" = "Transcribing…";
+"ask.voice.listening" = "聆聽中";
+"ask.voice.transcribing" = "轉寫中";
 "ask.history.pull" = "Pull to refresh";
 "ask.history.release" = "Release to refresh";
 "ask.history.refreshing" = "Refreshing…";
@@ -1626,3 +1626,10 @@
 "models.cloud.empty" = "目前沒有可用模型。";
 
 "models.count" = "%d 個模型";
+
+// Ask voice button
+"ask.voice.input" = "語音輸入";
+"ask.voice.stop" = "停止錄音";
+"ask.voice.buttonHint" = "點擊開始，再次點擊停止；也可按住錄音，放開轉為文字。編輯後再傳送。";
+"ask.voice.shortcutHint" = "在輸入框中按住 %@ 語音輸入，放開轉為文字。";
+"ask.voice.stopHint" = "停止錄音並填入文字，按 Esc 取消。";

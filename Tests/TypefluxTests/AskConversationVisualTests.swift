@@ -97,6 +97,19 @@ struct AskConversationVisualTests {
 
         try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
                          size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: .aqua, file: root.appendingPathComponent("launcher-light.png"), voice: fixture.model.voiceInput)
+        let launcherDraft = fixture.model.launcherDraft
+        fixture.model.launcherDraft.selection = nil
+        fixture.model.launcherDraft.source = String(repeating: "Finder ", count: 12)
+        try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
+                         size: NSSize(width: 430, height: 114), appearance: .aqua,
+                         file: root.appendingPathComponent("launcher-context-overflow.png"))
+        fixture.model.launcherDraft = launcherDraft
+        try await render(HStack(spacing: 16) {
+            AskVoiceButton.Appearance(hovered: true, reduceMotion: true)
+            AskVoiceButton.Appearance(phase: .listening, pressed: true, reduceMotion: true)
+            AskVoiceButton.Appearance(phase: .transcribing, enabled: false, reduceMotion: true)
+        }.padding(16), size: NSSize(width: 160, height: 64), appearance: .aqua,
+                         file: root.appendingPathComponent("voice-reduced-motion.png"), minimumPNGBytes: 100)
         fixture.model.launcherDraft.text = String(repeating: "Long input wraps naturally and stays editable. ", count: 24)
         try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
                          size: NSSize(width: AskMetrics.launcherWidth, height: 230), appearance: .aqua, file: root.appendingPathComponent("launcher-long.png"))

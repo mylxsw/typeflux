@@ -159,6 +159,75 @@ struct AskVoiceInputTests {
         #expect(recorder.stops == 1)
     }
 
+    @Test func buttonClickLocksAndSecondClickTranscribesWithoutSending() async throws {
+        let (voice, recorder, editor, window) = try await setup()
+        defer { window.close() }
+        var sends = 0
+        editor.onSubmit = { sends += 1 }
+        #expect(voice.pressButton(in: editor, at: 10))
+        voice.releaseButton(inside: true, at: 10.1)
+        try await wait { recorder.starts == 1 }
+        voice.releaseHotkey() // An unrelated key release must not stop button recording.
+        #expect(voice.phase == .listening)
+        #expect(!voice.pressButton(in: editor, at: 11))
+        voice.releaseButton(inside: true, at: 11.1)
+        try await wait { !voice.isOccupied }
+        #expect(recorder.stops == 1)
+        #expect(editor.string == "before spoken words after")
+        #expect(sends == 0)
+    }
+
+    @Test func buttonHoldReleaseDuringStartupTranscribesOnceEvenOutside() async throws {
+        let (voice, recorder, editor, window) = try await setup()
+        defer { window.close() }
+        recorder.holdStart = true
+        #expect(voice.pressButton(in: editor, at: 10))
+        try await wait { recorder.starts == 1 }
+        voice.releaseButton(inside: false, at: 10.5)
+        #expect(voice.phase == .transcribing)
+        #expect(!voice.pressButton(in: editor, at: 11))
+        voice.releaseButton(inside: true, at: 12)
+        recorder.releaseStart()
+        try await wait { !voice.isOccupied }
+        #expect(recorder.stops == 1)
+        #expect(editor.string == "before spoken words after")
+    }
+
+    @Test func shortOutsideReleaseCancelsAndLateReleaseCannotStopNewRecording() async throws {
+        let (voice, recorder, editor, window) = try await setup()
+        defer { window.close() }
+        #expect(voice.pressButton(in: editor, at: 10))
+        try await wait { recorder.starts == 1 }
+        voice.releaseButton(inside: false, at: 10.1)
+        try await wait { !voice.isOccupied }
+        #expect(recorder.cancels == 1 && recorder.stops == 0)
+        #expect(voice.begin(in: editor))
+        voice.releaseButton(inside: true, at: 12)
+        #expect(voice.phase == .listening)
+        voice.cancel()
+        try await wait { !voice.isOccupied }
+    }
+
+    @Test func longShortcutReleaseTranscribesAndOtherEditorCannotStopRecording() async throws {
+        let (voice, recorder, editor, window) = try await setup()
+        defer { window.close() }
+        #expect(voice.begin(in: editor))
+        let otherEditor = AskComposerTextView.Editor()
+        #expect(!voice.pressButton(in: otherEditor))
+        #expect(voice.phase == .listening)
+        try await Task.sleep(for: .seconds(WorkflowController.tapToLockThreshold + 0.05))
+        voice.releaseHotkey()
+        try await wait { !voice.isOccupied }
+        #expect(recorder.stops == 1)
+        #expect(editor.string == "before spoken words after")
+    }
+
+    @Test func buttonHelpUsesConfiguredShortcutAndOmitsUnassignedShortcut() {
+        let binding = HotkeyBinding(keyCode: 0, modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue))
+        #expect(AskVoiceButton.help(shortcut: binding).contains(HotkeyFormat.display(binding)))
+        #expect(AskVoiceButton.help(shortcut: nil) == L("ask.voice.buttonHint"))
+    }
+
     @Test func historyPullRequiresTopStartThresholdAndRelease() {
         var gesture = AskHistoryPullGesture()
         gesture.begin(atTop: false)

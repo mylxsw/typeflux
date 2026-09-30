@@ -400,7 +400,7 @@
 "workflow.audioStart.microphoneNotReady" = "マイクの準備がまだできていません。マイクを再接続するか、「システム設定 > サウンド > 入力」で別の入力デバイスを選択してから、もう一度お試しください。";
 "workflow.audioStart.genericFailure" = "録音を開始できませんでした。マイクが接続され、使用可能であることを確認してから、もう一度お試しください。";
 "workflow.processing.failed" = "処理に失敗しました";
-"workflow.recording.tooShort" = "スピーチが短すぎました。転写はキャンセルされました。";
+"workflow.recording.tooShort" = "録音が短すぎます。もう一度お試しください。";
 "workflow.transcription.emptySkipped" = "転写が空だったのでスキップされました。";
 "workflow.transcription.noSpeech" = "明瞭な音声が検出されませんでした。転写はキャンセルされました。";
 "workflow.transcription.serverUnavailableNotice" = "サーバーに接続できません。録音は履歴に保存され、後で再試行できます。";
@@ -1478,8 +1478,8 @@
 
 "ask.capture.retry" = "Screenshot failed · Retry";
 
-"ask.voice.listening" = "Listening · Release to finish";
-"ask.voice.transcribing" = "Transcribing…";
+"ask.voice.listening" = "録音中";
+"ask.voice.transcribing" = "文字起こし中";
 "ask.history.pull" = "Pull to refresh";
 "ask.history.release" = "Release to refresh";
 "ask.history.refreshing" = "Refreshing…";
@@ -1615,3 +1615,10 @@
 "models.cloud.empty" = "現在利用できるモデルはありません。";
 
 "models.count" = "モデル数：%d";
+
+// Ask voice button
+"ask.voice.input" = "音声入力";
+"ask.voice.stop" = "録音を停止";
+"ask.voice.buttonHint" = "クリックで開始、もう一度クリックで停止。長押しで録音し、離すと文字に変換します。編集してから送信できます。";
+"ask.voice.shortcutHint" = "入力欄で %@ を長押しして音声入力し、離すと文字に変換します。";
+"ask.voice.stopHint" = "録音を停止して文字を挿入します。Esc でキャンセル。";

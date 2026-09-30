@@ -404,7 +404,7 @@
 "workflow.audioStart.microphoneNotReady" = "The microphone isn't ready yet. Reconnect it or choose another input device in System Settings > Sound > Input, then try again.";
 "workflow.audioStart.genericFailure" = "Recording couldn't start. Check that your microphone is connected and available, then try again.";
 "workflow.processing.failed" = "Processing failed";
-"workflow.recording.tooShort" = "Speech was too short. Transcription cancelled.";
+"workflow.recording.tooShort" = "Recording too short. Please try again.";
 "workflow.transcription.emptySkipped" = "Skipped because transcription was empty.";
 "workflow.transcription.noSpeech" = "No clear speech detected. Transcription cancelled.";
 "workflow.transcription.serverUnavailableNotice" = "Unable to connect to the server. Your recording was saved in History for retry.";
@@ -1492,8 +1492,8 @@
 
 "ask.capture.retry" = "Screenshot failed · Retry";
 
-"ask.voice.listening" = "Listening · Release to finish";
-"ask.voice.transcribing" = "Transcribing…";
+"ask.voice.listening" = "Listening";
+"ask.voice.transcribing" = "Transcribing";
 "ask.history.pull" = "Pull to refresh";
 "ask.history.release" = "Release to refresh";
 "ask.history.refreshing" = "Refreshing…";
@@ -1629,3 +1629,10 @@
 "models.cloud.empty" = "No models are currently available.";
 
 "models.count" = "Models: %d";
+
+// Ask voice button
+"ask.voice.input" = "Voice input";
+"ask.voice.stop" = "Stop recording";
+"ask.voice.buttonHint" = "Click to start, click again to stop. Or hold to record and release to transcribe. Edit the text before sending.";
+"ask.voice.shortcutHint" = "Hold %@ for voice input in the editor; release to transcribe.";
+"ask.voice.stopHint" = "Stop recording and insert text. Escape cancels.";

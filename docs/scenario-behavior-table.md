@@ -24,6 +24,23 @@ This document describes the trigger conditions and corresponding system behavior
 
 ## Recording Control Scenarios
 
+### Ask composer (launcher and conversation window)
+
+| Scenario | Behavior |
+|----------|----------|
+| Click the microphone | Starts locked recording; click the stop button to transcribe |
+| Hold the microphone for at least 350ms | Starts recording immediately; release, including outside the button, to transcribe |
+| Short press released outside the microphone | Cancels recording without changing the draft |
+| Hold inside the editor | Preserves the existing hold-to-record and release-to-transcribe interaction |
+| Activation shortcut while editing | Uses the configured shortcut; hold and release to transcribe, or tap to lock |
+| Transcription completes | Inserts text at the original selection for editing; never automatically sends |
+| Recording or transcription in progress | Send is disabled; Escape cancels; the microphone becomes a stop button while listening |
+| Input focus or conversation changes | Cancels recording and discards late transcription results |
+
+The voice and send controls share a fixed 32pt circular footprint. Recording replaces the microphone with a stop icon; transcription shows a progress ring in the same position, with adjacent status text. Model and context controls keep their positions; narrow composers expose context chips through an overflow popover. Reduced motion uses a static progress indicator.
+
+### General recording controls
+
 | Scenario | Behavior |
 |----------|----------|
 | Recording timeout (10 min) | Recording reaches the 10-minute limit → automatically stops and processes the audio |
