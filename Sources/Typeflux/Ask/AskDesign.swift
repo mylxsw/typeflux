@@ -159,10 +159,14 @@ enum AskMetrics {
     static let sidebarTopInset: CGFloat = 52
     /// Vertical strip reserved for the window's traffic-light buttons.
     static let trafficLightStrip: CGFloat = 32
-    /// Leading space for the title bar tools, past the traffic lights.
-    static let trafficLightInset: CGFloat = 78
-    /// Header title inset when the sidebar is collapsed: clears the floating toggle.
-    static let collapsedTitleInset: CGFloat = 156
+    /// Leading space for the title bar tools, past the traffic lights with an
+    /// 8pt gap so the collapsed pill never touches the zoom button.
+    static let trafficLightInset: CGFloat = 86
+    /// Width of an icon button in the title bar row (compose, sidebar, search).
+    static let titleBarButtonWidth: CGFloat = 30
+    /// Header title inset when the sidebar is collapsed: past the pill holding
+    /// the toggle, search and compose buttons, plus the gap between pills.
+    static let collapsedTitleInset: CGFloat = trafficLightInset + titleBarButtonWidth * 3 + 6 + 12
     /// One centred reading column shared by the transcript and the composer, so
     /// questions, answers and the input line up instead of spanning the window.
     static let columnWidth: CGFloat = 720
@@ -1317,35 +1321,32 @@ struct AskEdgeFade: View {
     }
 }
 
-/// "New chat" in the sidebar: a row led by an accent drop, with its shortcut.
-struct AskNewConversationRow: View {
+/// An icon button in the title bar row: borderless like the toolbar items of
+/// native apps, with a hover wash and the shortcut in its tooltip.
+struct AskTitleBarButton: View {
+    var symbol: String
+    var label: String
+    var shortcut: String?
     var action: () -> Void
     @State private var hovering = false
 
-    static var dropSize: CGFloat { 22 }
+    static var size: CGSize { CGSize(width: AskMetrics.titleBarButtonWidth, height: 28) }
+
+    static func help(label: String, shortcut: String?) -> String {
+        shortcut.map { label + " " + $0 } ?? label
+    }
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 9) {
-                Image(systemName: "plus").font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Color.white)
-                    .frame(width: Self.dropSize, height: Self.dropSize)
-                    .background(AskTheme.accent, in: Circle())
-                    .shadow(color: AskTheme.accent.opacity(0.35), radius: 4, y: 1)
-                Text(L("ask.new")).font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Spacer(minLength: 0)
-                Text(verbatim: "⌘N").font(.system(size: 10.5, weight: .medium))
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
-            .padding(.leading, 6)
-            .padding(.trailing, 12)
-            .frame(height: 34)
-            .background(hovering ? AskTheme.hoverFill : .clear, in: Capsule())
-            .contentShape(Capsule())
+            Image(systemName: symbol).font(.system(size: 14, weight: .regular))
+                .foregroundStyle(hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                .frame(width: Self.size.width, height: Self.size.height)
+                .background(hovering ? AskTheme.hoverFill : .clear, in: Capsule())
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .accessibilityLabel(L("ask.new"))
+        .help(Self.help(label: label, shortcut: shortcut))
+        .accessibilityLabel(label)
     }
 }

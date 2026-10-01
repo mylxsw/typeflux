@@ -93,10 +93,9 @@ struct AskConversationView: View {
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
             // The window uses a full-size content view; this strip clears the
-            // traffic lights. The toggle and search buttons float above it.
+            // traffic lights. The compose and toggle buttons float above it.
             Color.clear.frame(height: AskMetrics.sidebarTopInset - AskMetrics.sidebarPanelInset)
-            sidebarSearchField.padding(.horizontal, 8).padding(.bottom, 6)
-            newConversationButton.padding(.horizontal, 8).padding(.bottom, 10)
+            sidebarSearchField.padding(.horizontal, 8).padding(.bottom, 10)
             historyList
             accountFooter
         }
@@ -104,8 +103,10 @@ struct AskConversationView: View {
         .padding([.leading, .top, .bottom], AskMetrics.sidebarPanelInset)
     }
 
-    /// Toggle and search live in the title bar row. Expanded, they are right-aligned
-    /// inside the sidebar; collapsed, they follow the traffic lights.
+    /// New chat and the sidebar toggle live in the title bar row, like Notes and
+    /// Mail. Expanded, they are right-aligned inside the sidebar; collapsed, they
+    /// follow the traffic lights in one pill with search, so "new chat" never moves
+    /// out of reach.
     private var titleBarTools: some View {
         HStack(spacing: 2) {
             if !sidebarHidden { Spacer(minLength: 0) }
@@ -116,6 +117,7 @@ struct AskConversationView: View {
                     .frame(height: AskMetrics.headerCapsuleHeight)
                     .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             } else {
+                composeButton
                 sidebarToggle
             }
         }
@@ -145,19 +147,20 @@ struct AskConversationView: View {
             sidebarToggle
             titleBarButton("magnifyingglass", label: L("ask.search")) { openSearch() }
                 .keyboardShortcut("k", modifiers: .command)
+            composeButton
         }
     }
 
-    private func titleBarButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 14, weight: .regular))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .frame(width: 30, height: 28)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help(label)
-        .accessibilityLabel(label)
+    /// The window's one "new chat" entry: a compose icon instead of a coloured
+    /// row competing with the history list.
+    private var composeButton: some View {
+        titleBarButton("square.and.pencil", label: L("ask.new"), shortcut: "⌘N") { model.newConversation() }
+            .keyboardShortcut("n", modifiers: .command)
+    }
+
+    private func titleBarButton(_ symbol: String, label: String, shortcut: String? = nil,
+                                action: @escaping () -> Void) -> some View {
+        AskTitleBarButton(symbol: symbol, label: label, shortcut: shortcut, action: action)
     }
 
     /// One search entry point for the whole window: the field and ⌘K open the
@@ -328,13 +331,6 @@ struct AskConversationView: View {
         guard let first = AskPresentation.filterHistory(model.conversations, query: query).first else { return }
         closeSearch()
         Task { await model.select(first.id) }
-    }
-
-    /// A quiet row led by an accent drop: the panel's one coloured control,
-    /// without a full-width filled button competing with the history.
-    private var newConversationButton: some View {
-        AskNewConversationRow { model.newConversation() }
-            .keyboardShortcut("n", modifiers: .command)
     }
 
     private var visibleConversations: [AskConversationSummary] {
