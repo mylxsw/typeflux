@@ -82,7 +82,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             await model.prepareLauncher()
             guard !Task.isCancelled else { return }
             if launcher == nil {
-                let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: launcherHeight), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+                let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: launcherHeight),
+                                             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
                 panel.level = .floating
                 panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
                 panel.isMovableByWindowBackground = false

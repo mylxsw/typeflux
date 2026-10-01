@@ -6,7 +6,8 @@ import Testing
 @Suite("Ask launcher surfaces", .serialized)
 @MainActor
 struct AskSurfaceOpacityTests {
-    private let size = NSSize(width: AskMetrics.launcherWidth, height: AskMetrics.launcherHeight(editor: 32, banners: 0))
+    private let size = NSSize(width: AskMetrics.launcherWidth,
+                              height: AskMetrics.launcherHeight(editor: 32, banners: 0))
 
     @Test func desktopColorsShowThroughTheGlassLauncher() async throws {
         let fixture = try AskTestFixture()

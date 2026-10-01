@@ -33,7 +33,7 @@ struct AskGlassTests {
         #expect(AskIconChipFace.fillColor(.unavailable, hovering: false) == .clear)
         #expect(AskIconChipFace.fillColor(.neutral, hovering: true) == AskTheme.hoverFill)
         #expect(AskIconChipFace.fillColor(.active, hovering: false) == AskTheme.accent.opacity(0.20))
-        #expect(AskIconChipFace.fillColor(.active, hovering: true) != AskIconChipFace.fillColor(.active, hovering: false))
+        #expect(AskIconChipFace.fillColor(.active, hovering: true) == AskTheme.accent.opacity(0.30))
         #expect(AskIconChipFace.fillColor(.warning, hovering: false) == StudioTheme.warning.opacity(0.18))
         #expect(AskIconChipFace.fillColor(.warning, hovering: true) == StudioTheme.warning.opacity(0.26))
     }

@@ -55,7 +55,8 @@ struct AskReasoningMenu: View {
                 .font(.system(size: 13, weight: .medium))
                 // A secondary setting stays grey until it costs more: "high" is tinted.
                 .foregroundStyle(Self.labelColor(effort))
-                .padding(.horizontal, compact ? AskMetrics.composerControlPadding : 11).frame(height: compact ? AskMetrics.composerControlHeight : 32)
+                .padding(.horizontal, compact ? AskMetrics.composerControlPadding : 11)
+                .frame(height: compact ? AskMetrics.composerControlHeight : 32)
                 .background(fill, in: Capsule())
                 .overlay(Capsule().strokeBorder(compact ? Color.clear : ModelVisualStyle.border))
                 .contentShape(Rectangle())

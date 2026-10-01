@@ -842,10 +842,10 @@ struct AskVoiceBorder: ViewModifier {
                     // A highlight travels around the accent edge while the microphone is open.
                     if listening, !reduceMotion {
                         TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
+                            let angle = Self.sheenAngle(at: context.date.timeIntervalSinceReferenceDate)
                             shape.strokeBorder(
                                 AngularGradient(colors: [.clear, Color.white.opacity(0.75), .clear, .clear],
-                                                center: .center,
-                                                angle: .degrees(Self.sheenAngle(at: context.date.timeIntervalSinceReferenceDate))),
+                                                center: .center, angle: .degrees(angle)),
                                 lineWidth: Self.borderWidth(listening: true)
                             )
                         }
