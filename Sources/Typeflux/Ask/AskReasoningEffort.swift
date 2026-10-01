@@ -89,7 +89,7 @@ struct AskReasoningChoices: View {
             }
         }
         .padding(.vertical, 6)
-        .frame(width: 260)
+        .frame(width: 300)
         .modifier(AskPopoverSurface())
     }
 }
