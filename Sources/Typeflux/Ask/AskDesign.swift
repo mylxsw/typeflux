@@ -124,6 +124,14 @@ enum AskTheme {
 
     static func toolTitle(_ call: AskToolCall) -> String {
         let name = call.function.name
+        if name == "web_search" || name == "web_fetch" {
+            let args = (try? JSONSerialization.jsonObject(with: Data(call.function.arguments.utf8))) as? [String: Any]
+            let detail = name == "web_search"
+                ? args?["query"] as? String
+                : (args?["url"] as? String).flatMap { URL(string: $0)?.host }
+            let title = L(name == "web_search" ? "ask.tool.webSearch" : "ask.tool.webFetch")
+            return detail.map { title + " · " + $0 } ?? title
+        }
         guard name == "computer" || name == "browser" else { return name }
         let action = (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) ?? ""
         let title = L("ask.tool." + name)
@@ -977,6 +985,8 @@ enum AskPresentation {
         switch call.function.name {
         case "computer": return "desktopcomputer"
         case "browser": return "globe"
+        case "web_search": return "magnifyingglass"
+        case "web_fetch": return "network"
         default: return "wrench.and.screwdriver"
         }
     }

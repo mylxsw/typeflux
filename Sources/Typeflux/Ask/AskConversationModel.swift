@@ -107,6 +107,9 @@ final class AskConversationModel: ObservableObject {
     private var operations: [String: Task<Void, Never>] = [:]
     private var operationIds: [String: UUID] = [:]
     private var approvals: [String: CheckedContinuation<Bool, Never>] = [:]
+    /// Approvals the user extended to a whole conversation: tool name to the highest
+    /// risk allowed. Memory only, so grants end with the app session or account.
+    private var toolGrants: [String: [String: AskToolRisk]] = [:]
     private var operationErrors: [String: String] = [:]
     private var pendingSends: [String: AskSendRequest] = [:]
     // Local consent for the latest submission, retained for retries but never restored from history.
@@ -208,7 +211,7 @@ final class AskConversationModel: ObservableObject {
         historyErrorTask?.cancel(); historyRefreshError = nil
         pullRefreshID = nil; isRefreshingHistory = false
         operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]
-        approvals.values.forEach { $0.resume(returning: false) }; approvals = [:]
+        approvals.values.forEach { $0.resume(returning: false) }; approvals = [:]; toolGrants = [:]
         inferenceReceipts = [:]; inferenceUsage = [:]
         pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
         screenshotConsent = [:]
@@ -710,6 +713,8 @@ final class AskConversationModel: ObservableObject {
                     && value.messages.last(where: { $0.role == "user" })?.id == screenshotConsentMessageID
                 if screenshotApproved && isScreenshot {
                     approved = true
+                } else if isGranted(call, conversationId: value.id) {
+                    approved = true
                 } else {
                     pendingApprovals[value.id] = call
                     approved = await withCheckedContinuation { approvals[value.id] = $0 }
@@ -745,6 +750,27 @@ final class AskConversationModel: ObservableObject {
             try Task.checkCancellation()
             value = try await api.result(conversationId: value.id, request: result!, token: current.token)
         }
+    }
+
+    func isGranted(_ call: AskToolCall, conversationId: String) -> Bool {
+        let risk = tools.risk(of: call)
+        guard risk < .destructive, let granted = toolGrants[conversationId]?[call.function.name] else { return false }
+        return risk <= granted
+    }
+
+    /// Destructive calls can only be allowed once.
+    func canAllowForConversation(_ conversationId: String) -> Bool {
+        pendingApprovals[conversationId].map { tools.risk(of: $0) < .destructive } ?? false
+    }
+
+    /// Allows the pending call and later calls of the same tool at the same or lower risk.
+    func approveForConversation(_ conversationId: String) {
+        guard let call = pendingApprovals[conversationId] else { return }
+        let risk = tools.risk(of: call)
+        guard risk < .destructive else { return }
+        let name = call.function.name
+        toolGrants[conversationId, default: [:]][name] = max(risk, toolGrants[conversationId]?[name] ?? .read)
+        approve(conversationId: conversationId, allowed: true)
     }
 
     func approve(conversationId: String, allowed: Bool) {
@@ -791,7 +817,7 @@ final class AskConversationModel: ObservableObject {
             guard owner == current.owner else { return }
             conversations.removeAll { $0.id == id }
             drafts[id] = nil; snapshots[id] = nil; operationErrors[id] = nil; transcriptPositions[id] = nil
-            screenshotConsent[id] = nil
+            screenshotConsent[id] = nil; toolGrants[id] = nil
             if selectedId == id { selectedId = nil; newConversation() }
             else { persistDrafts() }
         } catch { self.error = error.localizedDescription }

@@ -1419,6 +1419,10 @@
 "settings.personaAuxiliary.subtitle" = "选择辅助快捷键使用的写作身份。";
 // Ask conversations
 "ask.allowOnce" = "允许本次";
+"ask.allowConversation" = "本次对话中允许";
+"ask.allowConversation.help" = "在本次对话中，之后同等或更低风险的该工具调用也自动允许，直到退出应用。破坏性操作始终需要确认。";
+"ask.tool.webSearch" = "网页搜索";
+"ask.tool.webFetch" = "读取网页";
 "ask.cache.failed" = "无法保存本地会话缓存。";
 "ask.cancelled" = "已停止，可继续此对话。";
 "ask.capture.permission" = "请在系统设置中允许屏幕录制后附带截图，也可不附图继续。";

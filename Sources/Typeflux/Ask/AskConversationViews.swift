@@ -692,6 +692,10 @@ struct AskConversationView: View {
                         .foregroundStyle(StudioTheme.textSecondary)
                     Spacer(minLength: 8)
                     Button(L("ask.deny")) { model.approve(conversationId: id, allowed: false) }
+                    if model.canAllowForConversation(id) {
+                        Button(L("ask.allowConversation")) { model.approveForConversation(id) }
+                            .help(L("ask.allowConversation.help"))
+                    }
                     Button(L("ask.allowOnce")) { model.approve(conversationId: id, allowed: true) }
                         .buttonStyle(.borderedProminent)
                 }

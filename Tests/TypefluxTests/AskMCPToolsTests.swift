@@ -174,6 +174,59 @@ final class AskMCPToolsTests: XCTestCase {
         XCTAssertEqual(MCPJsonRPCMessage.toolsListRequest(id: .string("3"), cursor: "abc").params?["cursor"]?.value as? String, "abc")
     }
 
+    func testRiskFollowsActionsAndMCPAnnotations() async throws {
+        func call(_ name: String, _ action: String? = nil) -> AskToolCall {
+            .init(id: "1", function: .init(name: name, arguments: action.map { "{\"action\":\"\($0)\"}" } ?? "{}"))
+        }
+        XCTAssertEqual(AskLocalTools.builtinRisk(call("computer", "screenshot")), .read)
+        XCTAssertEqual(AskLocalTools.builtinRisk(call("computer", "click")), .write)
+        XCTAssertEqual(AskLocalTools.builtinRisk(call("browser", "read")), .read)
+        XCTAssertEqual(AskLocalTools.builtinRisk(call("browser", "open")), .write)
+        XCTAssertEqual(AskLocalTools.builtinRisk(call("unknown")), .destructive)
+        XCTAssertTrue(AskToolRisk.read < .write && AskToolRisk.write < .destructive)
+
+        let server = config("Files")
+        let client = MockMCPClient()
+        var reader = tool("read_file"); reader.annotations = MCPToolAnnotations(readOnlyHint: true)
+        var writer = tool("write_file"); writer.annotations = MCPToolAnnotations(readOnlyHint: false, destructiveHint: false)
+        await client.setMockTools([reader, writer, tool("delete_file")])
+        let registry = registry([server.id: client])
+        try await registry.addServer(server)
+        let tools = AskLocalTools(registry: registry)
+        _ = await tools.definitions(conversationId: nil)
+        XCTAssertEqual(tools.risk(of: call("mcp_read_file")), .read)
+        XCTAssertEqual(tools.risk(of: call("mcp_write_file")), .write)
+        // Unannotated MCP tools may be destructive (MCP specification default).
+        XCTAssertEqual(tools.risk(of: call("mcp_delete_file")), .destructive)
+        XCTAssertEqual(tools.risk(of: call("browser", "read")), .read)
+    }
+
+    func testAnnotationsDecodeAndRequestCarriesEnvironment() throws {
+        let json = #"{"name":"t","inputSchema":{"type":"object"},"annotations":{"readOnlyHint":true,"title":"T"}}"#
+        let decoded = try JSONDecoder().decode(MCPToolDefinition.self, from: Data(json.utf8))
+        XCTAssertEqual(decoded.annotations, MCPToolAnnotations(readOnlyHint: true, destructiveHint: nil))
+        let plain = try JSONDecoder().decode(MCPToolDefinition.self, from: Data(#"{"name":"t","inputSchema":{"type":"object"}}"#.utf8))
+        XCTAssertNil(plain.annotations)
+
+        let request = AskSendRequest(id: "m", deviceId: "d", text: "q", tools: [])
+        XCTAssertEqual(request.timeZone, TimeZone.current.identifier)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: AskCoding.encoder().encode(request)) as? [String: Any])
+        XCTAssertEqual(body["time_zone"] as? String, TimeZone.current.identifier)
+        XCTAssertEqual(body["locale"] as? String, Locale.current.identifier(.bcp47))
+    }
+
+    func testWebToolPresentation() {
+        let search = AskToolCall(id: "s", function: .init(name: "web_search", arguments: #"{"query":"swift 6"}"#))
+        XCTAssertEqual(AskTheme.toolTitle(search), L("ask.tool.webSearch") + " · swift 6")
+        XCTAssertEqual(AskPresentation.toolSymbol(search), "magnifyingglass")
+        let fetch = AskToolCall(id: "f", function: .init(name: "web_fetch", arguments: #"{"url":"https://example.com/a"}"#))
+        XCTAssertEqual(AskTheme.toolTitle(fetch), L("ask.tool.webFetch") + " · example.com")
+        XCTAssertEqual(AskPresentation.toolSymbol(fetch), "network")
+        let broken = AskToolCall(id: "b", function: .init(name: "web_fetch", arguments: "partial"))
+        XCTAssertEqual(AskTheme.toolTitle(broken), L("ask.tool.webFetch"))
+        XCTAssertNotEqual(L("ask.allowConversation"), "ask.allowConversation")
+    }
+
     private static func pngBase64(width: Int, height: Int) throws -> String {
         let rep = try XCTUnwrap(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height, bitsPerSample: 8,
                                                  samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,

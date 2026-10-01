@@ -1405,6 +1405,10 @@
 
 // Ask conversations
 "ask.allowOnce" = "Allow once";
+"ask.allowConversation" = "이 대화에서 허용";
+"ask.allowConversation.help" = "앱을 종료할 때까지 이 대화에서 같은 수준 이하 위험의 이 도구 호출도 허용합니다. 파괴적인 작업은 항상 확인합니다.";
+"ask.tool.webSearch" = "웹 검색";
+"ask.tool.webFetch" = "웹 페이지 읽기";
 "ask.cache.failed" = "Could not save the local conversation cache.";
 "ask.cancelled" = "Stopped. You can continue this conversation.";
 "ask.capture.permission" = "Allow Screen Recording in System Settings to attach screenshots. You can continue without one.";

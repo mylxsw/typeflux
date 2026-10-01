@@ -1419,6 +1419,10 @@
 "settings.personaAuxiliary.subtitle" = "Choose the writing persona for auxiliary dictation.";
 // Ask conversations
 "ask.allowOnce" = "Allow once";
+"ask.allowConversation" = "Allow in this conversation";
+"ask.allowConversation.help" = "Also allow later calls of this tool at the same or lower risk until the app quits. Destructive actions always ask.";
+"ask.tool.webSearch" = "Web search";
+"ask.tool.webFetch" = "Read web page";
 "ask.cache.failed" = "Could not save the local conversation cache.";
 "ask.cancelled" = "Stopped. You can continue this conversation.";
 "ask.capture.permission" = "Allow Screen Recording in System Settings to attach screenshots. You can continue without one.";
