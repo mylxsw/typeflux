@@ -1,11 +1,23 @@
 import AppKit
 import Combine
 
+enum AskVoiceHotkeyEvent {
+    case prepare(auxiliary: Bool, locked: Bool)
+    case release(TimeInterval), lock, promote, finish, cancel
+}
+
 @MainActor
 protocol AskVoiceRecording: AnyObject {
+    var audioStartedAt: TimeInterval? { get }
+    func handleHotkey(_ event: AskVoiceHotkeyEvent)
     func start() async throws
     func transcribe() async throws -> String
     func cancel() async
+}
+
+extension AskVoiceRecording {
+    var audioStartedAt: TimeInterval? { nil }
+    func handleHotkey(_ event: AskVoiceHotkeyEvent) {}
 }
 
 /// Owns one editor and its insertion range for the entire recording transaction.
@@ -26,26 +38,27 @@ final class AskVoiceInput: ObservableObject {
     private var cancelled = false
     private var hotkeyLocked = false
     private var buttonPressedAt: TimeInterval?
-    private var beganAt = Date()
+    private var beganAt: TimeInterval = 0
+    private var startedAt: TimeInterval?
+    var monotonicNow: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
     private var interruptionObservers: [NSObjectProtocol] = []
     var isOccupied: Bool { task != nil }
     var isActive: Bool { phase != .idle }
 
     @discardableResult
-    func begin(in editor: AskComposerTextView.Editor, locked: Bool = false) -> Bool {
+    func begin(in editor: AskComposerTextView.Editor, locked: Bool = false,
+               auxiliary: Bool = false, hotkeyUptime: TimeInterval? = nil) -> Bool {
         guard !isOccupied, let recorder, editor.isEditable, !editor.hasMarkedText(),
               editor.window?.firstResponder === editor else { return false }
         self.editor = editor
         buttonPressedAt = nil
         context = editor.contextID
         let context = editor.contextID, original = editor.string, range = editor.selectedRange()
-        released = false; cancelled = false; hotkeyLocked = locked; beganAt = Date()
+        released = false; cancelled = false; hotkeyLocked = locked
+        beganAt = hotkeyUptime ?? monotonicNow(); startedAt = nil
+        recorder.handleHotkey(.prepare(auxiliary: auxiliary, locked: locked))
         error = nil; phase = .listening
-        interruptionObservers = [NSWorkspace.willSleepNotification, NSWorkspace.sessionDidResignActiveNotification].map { name in
-            NSWorkspace.shared.notificationCenter.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                Task { @MainActor in self?.cancel() }
-            }
-        }
+        observeInterruptions()
         task = Task { [weak self, weak editor] in
             guard let self else { return }
             defer {
@@ -58,6 +71,7 @@ final class AskVoiceInput: ObservableObject {
             do {
                 try Task.checkCancellation()
                 try await recorder.start()
+                startedAt = recorder.audioStartedAt ?? monotonicNow()
                 try Task.checkCancellation()
                 if !released {
                     await withCheckedContinuation { self.release = $0 }
@@ -81,32 +95,64 @@ final class AskVoiceInput: ObservableObject {
                 if !cancelled { self.error = error.localizedDescription }
             }
         }
+        scheduleTimeout()
+        return true
+    }
+
+    private func scheduleTimeout() {
         timeout = Task { [weak self] in
             try? await Task.sleep(for: .seconds(600))
             guard !Task.isCancelled else { return }
             self?.stop()
         }
-        return true
+    }
+
+    private func observeInterruptions() {
+        interruptionObservers = [
+            NSWorkspace.willSleepNotification, NSWorkspace.sessionDidResignActiveNotification
+        ].map { name in
+            NSWorkspace.shared.notificationCenter.addObserver(
+                forName: name, object: nil, queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in self?.cancel() }
+            }
+        }
     }
 
     func stop() {
         buttonPressedAt = nil
         guard phase == .listening else { return }
+        recorder?.handleHotkey(.finish)
         released = true; phase = .transcribing
         release?.resume(); release = nil
     }
 
     /// Keep the configured shortcut's short-tap-to-lock behavior.
-    func releaseHotkey() {
+    func releaseHotkey(at uptime: TimeInterval? = nil) {
+        guard phase == .listening else { return }
+        let releasedAt = uptime ?? monotonicNow()
+        recorder?.handleHotkey(.release(releasedAt))
         guard !hotkeyLocked else { return }
-        if Date().timeIntervalSince(beganAt) < WorkflowController.tapToLockThreshold { hotkeyLocked = true }
-        else { stop() }
+        let audioStart = recorder?.audioStartedAt ?? startedAt
+        if releasedAt - beganAt <= WorkflowController.tapToLockThreshold
+            || audioStart == nil
+            || releasedAt - (audioStart ?? releasedAt) < WorkflowController.minimumRecordingDuration {
+            hotkeyLocked = true
+            recorder?.handleHotkey(.lock)
+        } else { stop() }
+    }
+
+    func promoteHotkey(at uptime: TimeInterval, locked: Bool) {
+        guard phase == .listening else { return }
+        beganAt = uptime; hotkeyLocked = hotkeyLocked || locked
+        recorder?.handleHotkey(.promote)
     }
 
     func cancel() {
         buttonPressedAt = nil
         guard isOccupied else { return }
         cancelled = true; released = true
+        recorder?.handleHotkey(.cancel)
         task?.cancel(); timeout?.cancel()
         release?.resume(); release = nil
         phase = .idle

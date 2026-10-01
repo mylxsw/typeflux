@@ -152,7 +152,8 @@ struct AskVoiceInputTests {
         try await wait { recorder.starts == 1 }
         voice.releaseHotkey()
         #expect(voice.phase == .listening)
-        voice.releaseHotkey()
+        voice.promoteHotkey(at: 10, locked: false)
+        voice.releaseHotkey(at: 20)
         #expect(voice.phase == .listening)
         voice.stop()
         try await wait { !voice.isOccupied }
@@ -220,6 +221,47 @@ struct AskVoiceInputTests {
         try await wait { !voice.isOccupied }
         #expect(recorder.stops == 1)
         #expect(editor.string == "before spoken words after")
+    }
+
+    @Test func physicalReleaseDuringSlowStartupLocksUntilExplicitStop() async throws {
+        let (voice, recorder, editor, window) = try await setup()
+        defer { window.close() }
+        var now = 10.0
+        voice.monotonicNow = { now }
+        recorder.holdStart = true
+        #expect(voice.begin(in: editor, hotkeyUptime: now))
+        try await wait { recorder.starts == 1 }
+        now = 12
+        voice.releaseHotkey(at: now)
+        #expect(voice.phase == .listening)
+        recorder.releaseStart()
+        try await Task.sleep(for: .milliseconds(10))
+        voice.releaseHotkey(at: 15)
+        #expect(voice.phase == .listening)
+        voice.stop()
+        try await wait { !voice.isOccupied }
+        #expect(recorder.stops == 1)
+    }
+
+    @Test func delayedDispatchUsesPhysicalPressTimeAndMinimumAudioDuration() async throws {
+        let (voice, recorder, editor, window) = try await setup()
+        defer { window.close() }
+        var now = 12.0
+        voice.monotonicNow = { now }
+        #expect(voice.begin(in: editor, hotkeyUptime: 10))
+        try await wait { recorder.starts == 1 }
+        now = 12.1
+        voice.releaseHotkey(at: now)
+        #expect(voice.phase == .listening)
+        voice.stop()
+        try await wait { !voice.isOccupied }
+        now = 20
+        #expect(voice.begin(in: editor, hotkeyUptime: 18))
+        try await wait { recorder.starts == 2 }
+        now = 20.5
+        voice.releaseHotkey(at: now)
+        try await wait { !voice.isOccupied }
+        #expect(recorder.stops == 2)
     }
 
     @Test func buttonHelpUsesConfiguredShortcutAndOmitsUnassignedShortcut() {

@@ -2,6 +2,28 @@
 import XCTest
 
 final class MultimodalLLMTranscriberTests: XCTestCase {
+    func testFrozenPersonaOverridesLiveSettingsIncludingExplicitNoPersona() throws {
+        let suite = "MultimodalPersonaTests.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        settings.applyPersonaSelection(SettingsStore.defaultPersonaID)
+        let transcriber = MultimodalLLMTranscriber(settingsStore: settings)
+        let original = settings.effectivePersonaPrompt(appName: nil, bundleIdentifier: nil)
+        XCTAssertEqual(transcriber.resolvedPersonaPrompt(bundleIdentifier: nil), original)
+        for prompt in ["Frozen auxiliary prompt", nil] as [String?] {
+            let context = TranscriptionPersonaContext(prompt: prompt)
+            TranscriptionPersonaContext.$current.withValue(context) {
+                XCTAssertEqual(transcriber.resolvedPersonaPrompt(bundleIdentifier: nil), prompt)
+                XCTAssertFalse(context.wasApplied)
+                context.markApplied()
+                XCTAssertTrue(context.wasApplied)
+            }
+            XCTAssertNil(TranscriptionPersonaContext.current)
+        }
+        XCTAssertEqual(transcriber.resolvedPersonaPrompt(bundleIdentifier: nil), original)
+    }
+
     func testMakeUserMessageContentIncludesAudioAndInstructionText() {
         let content = MultimodalLLMTranscriber.makeUserMessageContent(
             base64Audio: "base64-audio",

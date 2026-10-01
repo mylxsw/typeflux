@@ -638,7 +638,7 @@ final class WorkflowController {
     }
 
     func handleActivationTap(hotkeyDetectedAt: Date = Date(), hotkeyUptime: TimeInterval? = nil) {
-        if routeComposerVoice(.activationTap) { return }
+        if routeComposerVoice(.activationTap(hotkeyUptime ?? monotonicNow())) { return }
         extendRecordingGestureDecision(releasedAt: hotkeyUptime ?? monotonicNow())
         if suppressNextActivationTapAfterLocalModelDownloadAlert {
             suppressNextActivationTapAfterLocalModelDownloadAlert = false
@@ -670,7 +670,7 @@ final class WorkflowController {
         auxiliary: Bool = false,
         allowsQuickInput: Bool = true
     ) {
-        if routeComposerVoice(.press(intent: intent, locked: startLocked)) { return }
+        if routeComposerVoice(.press(intent: intent, locked: startLocked, auxiliary: auxiliary, uptime: hotkeyUptime)) { return }
         RecordingStartupLatencyTrace.shared.mark("workflow.press_began.\(intent.traceName)")
         if isPersonaPickerPresented {
             dismissPersonaPicker()
@@ -726,20 +726,7 @@ final class WorkflowController {
         recordingUsesAuxiliary = auxiliary
         recordingAllowsQuickInput = allowsQuickInput
         recordingPersonaSnapshot = nil
-        let activation = auxiliary ? settingsStore.auxiliaryHotkey : settingsStore.activationHotkey
-        let auxiliaryBinding = settingsStore.auxiliaryHotkey
-        let ask = settingsStore.askHotkey
-        if !startLocked, intent == .dictation,
-           let activation, activation.isModifierOnlyTrigger,
-           (ask.map { $0.isModifierDoubleTapTrigger && activation.keyCode == $0.keyCode
-               && activation.modifierFlags == $0.modifierFlags } == true
-               || (!auxiliary && auxiliaryBinding.map {
-                   $0.modifierFlags & activation.modifierFlags == activation.modifierFlags
-               } == true)) {
-            let decision = RecordingGestureDecision()
-            recordingGestureDecision = decision
-            decision.schedule(after: Self.tapToLockThreshold)
-        }
+        prepareRecordingGesture(intent: intent, startLocked: startLocked, auxiliary: auxiliary)
         hotkeyPressedAt = startLocked ? nil : (hotkeyUptime ?? monotonicNow())
         recordingStartupContext = RecordingStartupContext(
             hotkeyDetectedAt: hotkeyDetectedAt,
@@ -1370,7 +1357,7 @@ final class WorkflowController {
     }
 
     func handlePressEnded(hotkeyUptime: TimeInterval? = nil) {
-        if routeComposerVoice(.release) { return }
+        if routeComposerVoice(.release(hotkeyUptime ?? monotonicNow())) { return }
         // Prevent double-end or end without start
         guard isRecording else {
             NSLog("[Workflow] Not recording, ignoring release")

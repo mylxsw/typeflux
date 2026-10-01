@@ -72,6 +72,11 @@ final class MultimodalLLMTranscriber: Transcriber {
         return buffer.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    func resolvedPersonaPrompt(bundleIdentifier: String?) -> String? {
+        if let context = TranscriptionPersonaContext.current { return context.prompt }
+        return settingsStore.effectivePersonaPrompt(appName: nil, bundleIdentifier: bundleIdentifier)
+    }
+
     func transcribe(audioFile: AudioFile) async throws -> String {
         try await transcribeStream(audioFile: audioFile) { _ in }
     }
@@ -101,10 +106,8 @@ final class MultimodalLLMTranscriber: Transcriber {
         // Build system prompt: persona + vocabulary in one shot
         let vocabularyTerms = VocabularyStore.activeTerms()
         let frontmostBundleIdentifier = frontmostBundleIdentifierProvider()
-        let personaPrompt = settingsStore.effectivePersonaPrompt(
-            appName: nil,
-            bundleIdentifier: frontmostBundleIdentifier
-        )
+        let personaContext = TranscriptionPersonaContext.current
+        let personaPrompt = resolvedPersonaPrompt(bundleIdentifier: frontmostBundleIdentifier)
         let systemPrompt = PromptCatalog.multimodalTranscriptionSystemPrompt(
             personaPrompt: personaPrompt,
             vocabularyTerms: vocabularyTerms,
@@ -157,7 +160,9 @@ final class MultimodalLLMTranscriber: Transcriber {
         }
         """)
 
-        return try await streamResponse(for: request, onUpdate: onUpdate)
+        let text = try await streamResponse(for: request, onUpdate: onUpdate)
+        personaContext?.markApplied()
+        return text
     }
 
     // MARK: - Private

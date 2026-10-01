@@ -46,11 +46,12 @@ extension WorkflowController {
         request: LLMRewriteRequest,
         sessionID: UUID,
         showsStreamingPreview: Bool = true,
+        presentsConfigurationFailure: Bool = true,
         timeoutBudget: LLMRewriteTimeoutBudget? = nil
     ) async throws -> RewriteGenerationResult {
         let configStatus = await validateLLMConfiguration()
         guard case .ready = configStatus else {
-            await presentLLMNotConfigured(configStatus)
+            if presentsConfigurationFailure { await presentLLMNotConfigured(configStatus) }
             if case let .notConfigured(reason) = configStatus {
                 throw LLMConfigurationError.notConfigured(reason: reason)
             }
