@@ -27,6 +27,40 @@ struct AskLauncherToggleTests {
         }
     }
 
+    @Test func launcherAcceptsTextWithoutBecomingAnActivatingOrMainWindow() async throws {
+        _ = NSApplication.shared
+        let f = try AskTestFixture(authenticated: false)
+        let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
+        let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: f.model)
+        defer { controller.dismissLauncher(); f.model.resetSession() }
+        f.model.launcherDraft.text = "Unfinished question"
+
+        controller.toggleLauncher()
+        try await f.wait { panel() != nil }
+        let launcher = try #require(panel())
+
+        // Check both initial presentation and reuse of the same panel.
+        for _ in 0..<2 {
+            #expect(launcher.styleMask.contains(.nonactivatingPanel))
+            #expect(launcher.canBecomeKey)
+            #expect(!launcher.canBecomeMain)
+            let editor = try #require(launcher.firstResponder as? NSTextView)
+            #expect(editor.isEditable)
+            #expect(editor.string == "Unfinished question")
+
+            // An already-visible launcher must also restore editor focus.
+            launcher.makeFirstResponder(nil)
+            controller.showLauncher()
+            #expect(launcher.firstResponder === editor)
+
+            controller.toggleLauncher()
+            #expect(!launcher.isVisible)
+            controller.toggleLauncher()
+            try await f.wait { launcher.isVisible }
+            #expect(panel() === launcher)
+        }
+    }
+
     @Test func repeatedToggleOpensClosesAndPreservesDraft() async throws {
         _ = NSApplication.shared
         let f = try AskTestFixture(authenticated: false)

@@ -75,7 +75,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             await model.prepareLauncher()
             guard !Task.isCancelled else { return }
             if launcher == nil {
-                let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: 114), styleMask: [.borderless], backing: .buffered, defer: false)
+                let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: 114), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
                 panel.level = .floating
                 panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
                 panel.isMovableByWindowBackground = false
@@ -92,7 +92,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                 let height = launcherHeight
                 launcher?.setFrame(NSRect(x: frame.midX - width / 2, y: frame.minY + OverlayController.recordingVisibleBottomInset - AskMetrics.launcherGutter, width: width, height: height), display: true)
             }
-            NSApp.activate(ignoringOtherApps: true)
+            // Take keyboard focus without activating the app and raising its other windows.
             launcher?.makeKeyAndOrderFront(nil)
             focusEditor(in: launcher)
             installClickMonitors()
