@@ -4,7 +4,18 @@ Source truth: GUL-126 attachments `model-v2-01-settings.png`, `model-v2-02-provi
 
 Implementation: production SwiftUI views, captured by `AskConversationVisualTests.renderModelSelectionSurfaces`. This is a native macOS application; browser and CSS checks do not apply.
 
-## Findings and fixes
+## GUL-142 visual alignment (supersedes the scoped canvas below)
+
+The model page no longer uses its own palette. `ModelVisualStyle` now maps to `StudioTheme` tokens, and the page sits on the same shell surface, top inset and header spacing as History and the other settings pages.
+
+- Cards match `StudioCard`: 14-point continuous corners, thin `StudioTheme.border` stroke, `cardSurface` fill.
+- Providers form grouped lists ("Connected" / "Not configured") with inset separators. Status is a dot plus label; unconfigured rows are dimmed instead of dashed.
+- Scene selectors look like native pop-up buttons (provider logo, up/down indicator). The domain switch is a native segmented control.
+- Provider details use label/field form rows. Test and Save sit in the card footer, and Save is enabled only after an edit. The API key can be revealed on demand.
+- Model rows show accent scene badges. The `···` menu can assign a model to Rewrite or the Ask default, restricted to models the scene pickers would offer.
+- Presentation rules (search, grouping, endpoint labels, dirty state, usage badges) live in `ModelSettingsPresentation` and are covered by `ModelSettingsPresentationTests`.
+
+## Findings and fixes (GUL-126)
 
 | Severity | Earlier evidence | Fix and final evidence |
 | --- | --- | --- |

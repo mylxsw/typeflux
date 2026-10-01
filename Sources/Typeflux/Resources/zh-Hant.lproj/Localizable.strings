@@ -1610,7 +1610,7 @@
 "models.visionHint" = "Confirm screenshot support from the model documentation";
 "models.visionYes" = "Supports screenshots";
 "models.visionNo" = "Does not support screenshots";
-"models.usageHint" = "Usage badges are read-only. Change assignments in Application scenarios.";
+"models.usageHint" = "標籤表示該模型目前被哪個場景使用；可在「應用場景」或「···」選單中變更。";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
 "models.emptyCatalog" = "The provider returned no models";
@@ -1646,6 +1646,12 @@
 "models.cloud.empty" = "目前沒有可用模型。";
 
 "models.count" = "%d 個模型";
+"models.searchEmpty" = "沒有與「%@」相符的服務商或模型";
+"models.connection" = "連線";
+"models.useForRewrite" = "用於轉譯與潤色";
+"models.visionUnknownShort" = "截圖能力未知";
+"models.showKey" = "顯示 API Key";
+"models.hideKey" = "隱藏 API Key";
 
 // Screenshot capability and recovery
 "ask.image.unsupported" = "目前模型不支援圖片辨識，切換到支援圖片的模型後可附加截圖。";

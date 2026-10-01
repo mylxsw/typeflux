@@ -1613,7 +1613,7 @@
 "models.visionHint" = "请根据模型文档确认是否支持截图";
 "models.visionYes" = "支持截图";
 "models.visionNo" = "不支持截图";
-"models.usageHint" = "用途标签仅作提示，请在「应用场景」中更改选择。";
+"models.usageHint" = "标签表示该模型当前被哪个场景使用；可在「应用场景」或「···」菜单中更改。";
 "models.deleteHint" = "引用此模型的场景和对话将提示重新选择，不会自动替换。";
 "models.alreadyAdded" = "已在列表";
 "models.emptyCatalog" = "服务商没有返回模型";
@@ -1649,6 +1649,12 @@
 "models.cloud.empty" = "当前暂无可用模型。";
 
 "models.count" = "%d 个模型";
+"models.searchEmpty" = "没有与“%@”匹配的服务商或模型";
+"models.connection" = "连接";
+"models.useForRewrite" = "用于转译与润色";
+"models.visionUnknownShort" = "截图能力未知";
+"models.showKey" = "显示 API Key";
+"models.hideKey" = "隐藏 API Key";
 
 // Screenshot capability and recovery
 "ask.image.unsupported" = "当前模型不支持图片识别，切换到支持图片识别的模型后可附带截图。";

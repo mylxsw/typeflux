@@ -21,9 +21,9 @@ struct AskModelMenu: View {
         return library.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: auth.isLoggedIn, scenario: scenario)
     }
 
-    private var corner: CGFloat { compact ? 8 : (fieldStyle ? 8 : 16) }
+    private var corner: CGFloat { compact ? 8 : (fieldStyle ? ModelVisualStyle.controlCornerRadius : 16) }
     private var fill: Color {
-        guard compact else { return ModelVisualStyle.input }
+        guard compact else { return fieldStyle ? ModelVisualStyle.control : ModelVisualStyle.input }
         return hovering || expanded ? AskTheme.hoverFill : .clear
     }
     private var stroke: Color { compact ? .clear : ModelVisualStyle.border }
@@ -31,6 +31,10 @@ struct AskModelMenu: View {
     var body: some View {
         Button { expanded.toggle() } label: {
             HStack(spacing: compact ? 6 : 8) {
+                // Settings shows the provider logo so same-named models stay distinguishable.
+                if fieldStyle, let provider = library.registry.resolve(reference)?.0 {
+                    ModelProviderIcon(provider: provider.studioProviderID, size: 16)
+                }
                 Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
                     // A long model name must not squeeze the context chips out of the footer.
                     .frame(maxWidth: compact ? AskMetrics.modelMenuMaxWidth : nil)
@@ -40,12 +44,13 @@ struct AskModelMenu: View {
                 if currentReason != nil {
                     Image(systemName: "exclamationmark.circle")
                 }
-                Image(systemName: "chevron.down").font(.system(size: 10, weight: .medium))
+                Image(systemName: fieldStyle ? "chevron.up.chevron.down" : "chevron.down")
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(StudioTheme.textSecondary)
             }
-            .font(.system(size: compact ? 12.5 : 13, weight: .medium))
-            .padding(.horizontal, compact ? 9 : 11)
-            .frame(width: fieldStyle ? 240 : nil, height: compact ? 28 : 32)
+            .font(.system(size: compact ? 12.5 : 13, weight: fieldStyle ? .regular : .medium))
+            .padding(.horizontal, compact ? 9 : (fieldStyle ? 10 : 11))
+            .frame(width: fieldStyle ? 240 : nil, height: compact ? 28 : (fieldStyle ? 30 : 32))
             .background(fill, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: corner, style: .continuous).strokeBorder(stroke))
             .contentShape(Rectangle())

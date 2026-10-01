@@ -1613,7 +1613,7 @@
 "models.visionHint" = "Confirm screenshot support from the model documentation";
 "models.visionYes" = "Supports screenshots";
 "models.visionNo" = "Does not support screenshots";
-"models.usageHint" = "Usage badges are read-only. Change assignments in Application scenarios.";
+"models.usageHint" = "Badges show which scenario uses each model. Change them in Application scenarios or from the ··· menu.";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
 "models.emptyCatalog" = "The provider returned no models";
@@ -1649,6 +1649,12 @@
 "models.cloud.empty" = "No models are currently available.";
 
 "models.count" = "Models: %d";
+"models.searchEmpty" = "No providers or models match “%@”";
+"models.connection" = "Connection";
+"models.useForRewrite" = "Use for Rewrite and polish";
+"models.visionUnknownShort" = "Screenshot support unknown";
+"models.showKey" = "Show API key";
+"models.hideKey" = "Hide API key";
 
 // Screenshot capability and recovery
 "ask.image.unsupported" = "This model cannot read images. Switch to a model with image support to attach a screenshot.";

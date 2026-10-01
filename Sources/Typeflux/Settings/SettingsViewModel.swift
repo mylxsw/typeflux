@@ -95,6 +95,8 @@ final class StudioViewModel: ObservableObject {
     }
 
     @Published var selectedLanguageProviderID: String?
+    /// Presents the custom provider sheet from the model page header or its provider list.
+    @Published var isAddingModelEndpoint = false
     @Published var modelDomain: StudioModelDomain = .stt
     @Published var focusedModelProvider: StudioModelProviderID
 

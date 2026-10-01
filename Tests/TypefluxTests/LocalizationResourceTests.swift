@@ -331,6 +331,29 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testModelSettingsCopyExistsInEveryLanguage() throws {
+        let plainKeys = [
+            "models.connection",
+            "models.useForRewrite",
+            "models.visionUnknownShort",
+            "models.showKey",
+            "models.hideKey",
+            "models.usageHint"
+        ]
+
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            for key in plainKeys {
+                let localized = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(localized, key, "Missing localized value for \(key) in \(language.rawValue)")
+                XCTAssertFalse(localized.isEmpty)
+            }
+            let searchEmpty = bundle.localizedString(forKey: "models.searchEmpty", value: nil, table: nil)
+            XCTAssertNotEqual(searchEmpty, "models.searchEmpty", "Missing models.searchEmpty in \(language.rawValue)")
+            XCTAssertEqual(searchEmpty.components(separatedBy: "%@").count - 1, 1, language.rawValue)
+        }
+    }
+
     private func localizationBundle(for language: AppLanguage) throws -> Bundle {
         let path = try XCTUnwrap(
             language.bundleLocalizationCandidates.compactMap {

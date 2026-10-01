@@ -1599,7 +1599,7 @@
 "models.visionHint" = "Confirm screenshot support from the model documentation";
 "models.visionYes" = "Supports screenshots";
 "models.visionNo" = "Does not support screenshots";
-"models.usageHint" = "Usage badges are read-only. Change assignments in Application scenarios.";
+"models.usageHint" = "배지는 각 모델을 사용 중인 시나리오를 나타냅니다. 사용 시나리오 또는 ··· 메뉴에서 변경할 수 있습니다.";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
 "models.emptyCatalog" = "The provider returned no models";
@@ -1635,6 +1635,12 @@
 "models.cloud.empty" = "현재 사용 가능한 모델이 없습니다.";
 
 "models.count" = "모델 %d개";
+"models.searchEmpty" = "“%@”와(과) 일치하는 제공자나 모델이 없습니다";
+"models.connection" = "연결";
+"models.useForRewrite" = "다시 쓰기 및 다듬기에 사용";
+"models.visionUnknownShort" = "스크린샷 지원 여부 알 수 없음";
+"models.showKey" = "API 키 표시";
+"models.hideKey" = "API 키 숨기기";
 
 // Screenshot capability and recovery
 "ask.image.unsupported" = "이 모델은 이미지 인식을 지원하지 않습니다. 스크린샷을 첨부하려면 지원하는 모델로 전환하세요.";
