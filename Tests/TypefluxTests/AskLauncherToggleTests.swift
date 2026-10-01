@@ -7,7 +7,7 @@ private final class HeldLauncherCapture: AskContextCapturing {
     var pending: [Int: CheckedContinuation<AskCapturedContext, Never>] = [:]
     private(set) var calls = 0
 
-    func capture(includeScreenshot: Bool) async -> AskCapturedContext {
+    func capture(includeScreenshot: Bool, includeSelection: Bool) async -> AskCapturedContext {
         calls += 1
         let id = calls
         return await withCheckedContinuation { pending[id] = $0 }

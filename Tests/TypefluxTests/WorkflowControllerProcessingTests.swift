@@ -3315,6 +3315,8 @@ private final class SlowSelectionTextInjector: TextInjector {
             eventRecorder.append("selection-intent-automatic")
         case .explicitSelectionAction:
             eventRecorder.append("selection-intent-explicit")
+        case .readOnlyContext:
+            eventRecorder.append("selection-intent-read-only")
         }
         eventRecorder.append("selection-start")
         try? await Task.sleep(for: .seconds(30))

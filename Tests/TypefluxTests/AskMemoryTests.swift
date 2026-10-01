@@ -6,7 +6,7 @@ import Testing
 private final class AskMemoryCapture: AskContextCapturing {
     var captured: AskMemory?
     var global: AskMemory?
-    func capture(includeScreenshot: Bool) async -> AskCapturedContext {
+    func capture(includeScreenshot: Bool, includeSelection: Bool) async -> AskCapturedContext {
         .init(selection: nil, source: "Xcode", memory: captured)
     }
     func globalMemory() -> AskMemory? { global }

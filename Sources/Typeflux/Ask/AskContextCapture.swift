@@ -14,13 +14,17 @@ struct AskCapturedContext: Sendable {
 
 @MainActor
 protocol AskContextCapturing {
-    func capture(includeScreenshot: Bool) async -> AskCapturedContext
+    func capture(includeScreenshot: Bool, includeSelection: Bool) async -> AskCapturedContext
     /// Memory for a conversation started without a source application.
     func globalMemory() -> AskMemory?
 }
 
 extension AskContextCapturing {
     func globalMemory() -> AskMemory? { nil }
+
+    func capture(includeScreenshot: Bool) async -> AskCapturedContext {
+        await capture(includeScreenshot: includeScreenshot, includeSelection: true)
+    }
 }
 
 @MainActor
@@ -28,25 +32,38 @@ final class AskContextCapture: AskContextCapturing {
     private static let screenCaptureRequestedKey = "ask.screenCaptureAccessRequested"
     private let injector: TextInjector
     private let memory: (any AskMemoryProviding)?
+    private let accessibilityTrusted: () -> Bool
+    private let captureScreenshot: (CGDirectDisplayID?) async throws -> String
 
-    init(injector: TextInjector, memory: (any AskMemoryProviding)? = nil) {
+    init(
+        injector: TextInjector, memory: (any AskMemoryProviding)? = nil,
+        accessibilityTrusted: @escaping () -> Bool = { AXIsProcessTrusted() },
+        captureScreenshot: @escaping (CGDirectDisplayID?) async throws -> String = {
+            try await AskContextCapture.screenshot(displayId: $0).dataURL
+        }
+    ) {
         self.injector = injector
         self.memory = memory
+        self.accessibilityTrusted = accessibilityTrusted
+        self.captureScreenshot = captureScreenshot
     }
 
     func globalMemory() -> AskMemory? {
         memory?.memory(bundleIdentifier: nil, appName: nil)
     }
 
-    func capture(includeScreenshot: Bool) async -> AskCapturedContext {
+    func capture(includeScreenshot: Bool, includeSelection: Bool) async -> AskCapturedContext {
         let app = NSWorkspace.shared.frontmostApplication
         let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
         let displayId = (screen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
         // Capture before the launcher takes focus. The injector fixes the source
         // target before its first asynchronous accessibility read.
         let selection: TextSelectionSnapshot
-        if AXIsProcessTrusted() { selection = await injector.selectionSnapshot(for: .automaticInsertion) }
-        else { selection = TextSelectionSnapshot(source: "accessibility-unavailable") }
+        if includeSelection, accessibilityTrusted() {
+            selection = await injector.selectionSnapshot(for: .readOnlyContext)
+        } else {
+            selection = TextSelectionSnapshot(source: "selection-not-requested-or-unavailable")
+        }
         var result = AskCapturedContext(
             selection: selection.selectedText,
             source: [app?.localizedName, selection.windowTitle].compactMap { $0 }.joined(separator: " — "),
@@ -55,7 +72,7 @@ final class AskContextCapture: AskContextCapturing {
             memory: memory?.memory(bundleIdentifier: app?.bundleIdentifier, appName: app?.localizedName)
         )
         if includeScreenshot {
-            do { result.screenshot = try await Self.screenshot(displayId: displayId).dataURL }
+            do { result.screenshot = try await captureScreenshot(displayId) }
             catch { result.warning = error.localizedDescription }
         }
         return result
