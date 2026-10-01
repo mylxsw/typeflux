@@ -126,12 +126,17 @@ enum AskContextChips {
     }
 
     /// macOS draws an app's tile on 824 of its 1024pt canvas; the rest is margin
-    /// for the shadow. Scaling by the inverse lets the tile fill a chip.
+    /// for the shadow. Scaling by the inverse makes the tile fill a given side.
     static let appIconTileFraction: CGFloat = 824.0 / 1024.0
+    /// An app tile is usually bright and fully opaque, so at the full chip size
+    /// it reads larger than the tinted chips beside it. It is drawn a little
+    /// smaller to match them optically, still without a margin inside its edge.
+    static let appTileSize: CGFloat = 24
+    static let appTileCorner: CGFloat = 6
 
-    /// Side of the app icon image drawn in a chip, so its tile covers the chip.
-    static func appIconSide(chip: CGFloat) -> CGFloat {
-        (chip / appIconTileFraction).rounded(.up)
+    /// Side of the app icon image whose tile exactly covers `tile`.
+    static func appIconSide(tile: CGFloat) -> CGFloat {
+        (tile / appIconTileFraction).rounded(.up)
     }
 
     /// App icons by bundle identifier; nil when the app cannot be found.
@@ -230,7 +235,7 @@ struct AskIconChipFace: View {
             .frame(width: AskContextChips.chipSize, height: AskContextChips.chipSize)
             .background(appImage == nil ? fill : .clear, in: shape)
             .overlay(shape.strokeBorder(appImage == nil ? stroke : .clear))
-            // An app icon fills the chip edge to edge instead of sitting inside a ring.
+            // An app icon is its own tile, so it needs no ring or fill around it.
             .clipShape(shape)
             .overlay(alignment: .topTrailing) {
                 if case let .count(value) = item.badge {
@@ -256,8 +261,10 @@ struct AskIconChipFace: View {
     @ViewBuilder private var icon: some View {
         if let image = appImage {
             Image(nsImage: image).resizable().interpolation(.high)
-                .frame(width: AskContextChips.appIconSide(chip: AskContextChips.chipSize),
-                       height: AskContextChips.appIconSide(chip: AskContextChips.chipSize))
+                .frame(width: AskContextChips.appIconSide(tile: AskContextChips.appTileSize),
+                       height: AskContextChips.appIconSide(tile: AskContextChips.appTileSize))
+                .frame(width: AskContextChips.appTileSize, height: AskContextChips.appTileSize)
+                .clipShape(RoundedRectangle(cornerRadius: AskContextChips.appTileCorner, style: .continuous))
                 .opacity(hovering ? 0.85 : 1)
         } else {
             ZStack {
