@@ -80,6 +80,24 @@ final class ModelSettingsPresentationTests: XCTestCase {
         )
     }
 
+    func testCanAddEndpointRequiresNameHostAndModel() {
+        XCTAssertTrue(ModelSettingsPresentation.canAddEndpoint(
+            name: "Gateway", baseURL: "https://api.example.com/v1", model: "gpt-4.1-mini"
+        ))
+        XCTAssertTrue(ModelSettingsPresentation.canAddEndpoint(
+            name: "Local", baseURL: " HTTP://localhost:11434 ", model: "llama3"
+        ))
+        XCTAssertFalse(ModelSettingsPresentation.canAddEndpoint(
+            name: " ", baseURL: "https://api.example.com", model: "m"
+        ))
+        XCTAssertFalse(ModelSettingsPresentation.canAddEndpoint(name: "G", baseURL: "https://", model: "m"))
+        XCTAssertFalse(ModelSettingsPresentation.canAddEndpoint(name: "G", baseURL: "ftp://host", model: "m"))
+        XCTAssertFalse(ModelSettingsPresentation.canAddEndpoint(name: "G", baseURL: "api.example.com", model: "m"))
+        XCTAssertFalse(ModelSettingsPresentation.canAddEndpoint(
+            name: "G", baseURL: "https://api.example.com", model: "\n"
+        ))
+    }
+
     func testConnectionChangedOnlyWhenDraftDiffers() {
         XCTAssertFalse(ModelSettingsPresentation.connectionChanged(
             savedBaseURL: "https://a", savedKey: "k", baseURL: "https://a", key: "k"

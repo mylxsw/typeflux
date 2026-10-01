@@ -202,12 +202,14 @@ struct ModelActionStyle: ButtonStyle {
 struct ModelFieldStyle: TextFieldStyle {
     /// Extra trailing room for an accessory drawn over the field, such as a reveal button.
     var trailingAccessoryWidth: CGFloat = 0
+    /// Endpoints, keys and model IDs read best monospaced; free-form names do not.
+    var monospaced = true
 
     // TextFieldStyle requires this underscored protocol method.
     // swiftlint:disable:next identifier_name
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration.textFieldStyle(.plain)
-            .font(.system(size: 13, design: .monospaced))
+            .font(.system(size: 13, design: monospaced ? .monospaced : .default))
             .padding(.leading, 10).padding(.trailing, 10 + trailingAccessoryWidth).frame(height: 30)
             .background(
                 ModelVisualStyle.control,
