@@ -52,6 +52,11 @@ struct AskVoiceButton: NSViewRepresentable {
 
         private var accented: Bool { phase == .listening || (enabled && hovered) }
 
+        static func fill(phase: AskVoiceInput.Phase, hovered: Bool) -> Color {
+            if phase == .listening { return AskTheme.accent.opacity(0.22) }
+            return hovered ? AskTheme.hoverFill : .clear
+        }
+
         var body: some View {
             ZStack {
                 if phase == .transcribing {
@@ -63,13 +68,13 @@ struct AskVoiceButton: NSViewRepresentable {
                             .rotationEffect(.degrees(reduceMotion ? -90 : context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 0.9) * 400))
                     }
                 } else {
-                    Circle().fill(accented ? AskTheme.accentSoft : AskTheme.controlSurface)
-                    Circle().strokeBorder(accented ? AskTheme.accent.opacity(0.4) : AskTheme.border, lineWidth: 1)
+                    // Borderless like the other footer controls; colour only for hover and recording.
+                    Circle().fill(Self.fill(phase: phase, hovered: enabled && hovered))
                     if phase == .listening {
                         RoundedRectangle(cornerRadius: 2).fill(AskTheme.accent).frame(width: 9, height: 9)
                     } else {
                         Image(systemName: "mic").font(.system(size: 15, weight: .regular))
-                            .foregroundStyle(accented ? AskTheme.accent : StudioTheme.textSecondary)
+                            .foregroundStyle(accented ? StudioTheme.textPrimary : StudioTheme.textSecondary)
                     }
                 }
             }

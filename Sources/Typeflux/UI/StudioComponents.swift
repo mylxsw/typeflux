@@ -272,7 +272,7 @@ extension View {
     }
 }
 
-private final class StudioRoundedVisualEffectView: NSVisualEffectView {
+final class StudioRoundedVisualEffectView: NSVisualEffectView {
     var preferredCornerRadius: CGFloat?
 
     override func layout() {
@@ -281,7 +281,7 @@ private final class StudioRoundedVisualEffectView: NSVisualEffectView {
     }
 }
 
-private struct StudioVisualEffectBlur: NSViewRepresentable {
+struct StudioVisualEffectBlur: NSViewRepresentable {
     let material: NSVisualEffectView.Material
     let blendingMode: NSVisualEffectView.BlendingMode
     let cornerRadius: CGFloat?

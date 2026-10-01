@@ -4,9 +4,10 @@ import SwiftUI
 
 /// Design tokens for the Ask surfaces.
 ///
-/// The launcher and the workspace are standalone windows placed directly over
-/// the desktop, so every backplate has to be opaque. Only the rounded exterior,
-/// the drop shadow and the recording glow are allowed to be translucent.
+/// The workspace is a standalone window placed directly over the desktop, so its
+/// backplates are opaque. The launcher card is the one exception: it is glass
+/// (`AskGlassBackground`), and falls back to `composerSurface` when the user
+/// turns on Reduce Transparency.
 enum AskTheme {
     static let accent = StudioTheme.accent
 
@@ -130,9 +131,13 @@ enum AskMetrics {
     static let launcherWidth: CGFloat = 680
     /// Breathing room around the launcher card.
     static let launcherGutter: CGFloat = 6
-    static let editorTopInset: CGFloat = 15
-    static let editorBottomInset: CGFloat = 11
-    static let footerHeight: CGFloat = 44
+    /// The launcher's glass card: 26 = footer inset 10 + the 32pt send button's radius 16,
+    /// so the corner stays concentric with the controls in it.
+    static let launcherCardCorner: CGFloat = 26
+    /// Height of every footer control: menus, context chips, microphone and send.
+    static let composerControlHeight: CGFloat = 32
+    /// Horizontal padding inside the footer's text menus (model, reasoning).
+    static let composerControlPadding: CGFloat = 10
     static let bannerHeight: CGFloat = 32
     static let bannerSpacing: CGFloat = 6
     static let sidebarWidth: CGFloat = 248
@@ -163,19 +168,28 @@ enum AskMetrics {
 
     /// Height of the launcher panel, including its transparent gutter.
     static func launcherHeight(editor: CGFloat, banners: Int) -> CGFloat {
-        editor + editorTopInset + editorBottomInset + footerHeight + launcherGutter * 2
+        let chrome = AskComposerChrome.launcher
+        return editor + chrome.editorTopInset + chrome.editorBottomInset + chrome.footerHeight + launcherGutter * 2
             + CGFloat(banners) * (bannerHeight + bannerSpacing)
     }
 }
 
 /// Surface of the shared composer. The launcher and the workspace are the same
-/// feature behind different triggers, so everything but the idle edge matches.
+/// feature behind different triggers: they share every control and state. The
+/// launcher floats over other apps, so it is a larger glass card with roomier
+/// insets; the workspace keeps its opaque card inside the conversation window.
 struct AskComposerChrome: Equatable {
     var fill: Color
     var corner: CGFloat
     var editorFontSize: CGFloat
     var horizontalInset: CGFloat
     var idleBorder: Color
+    /// Draws the card with `AskGlassBackground` instead of `fill`.
+    var glass = false
+    var editorTopInset: CGFloat = 15
+    var editorBottomInset: CGFloat = 11
+    var footerHeight: CGFloat = 44
+    var footerLeadingInset: CGFloat = 12
 
     static let workspace = AskComposerChrome(
         fill: AskTheme.composerSurface,
@@ -185,11 +199,20 @@ struct AskComposerChrome: Equatable {
         idleBorder: AskTheme.border
     )
 
-    static let launcher: AskComposerChrome = {
-        var value = workspace
-        value.idleBorder = AskTheme.floatingBorder
-        return value
-    }()
+    /// The editor text starts where the model name does: footer inset 10 plus the
+    /// menu's own 10pt padding, less the text view's 5pt line fragment padding.
+    static let launcher = AskComposerChrome(
+        fill: AskTheme.composerSurface,
+        corner: AskMetrics.launcherCardCorner,
+        editorFontSize: 15,
+        horizontalInset: 15,
+        idleBorder: AskTheme.floatingBorder,
+        glass: true,
+        editorTopInset: 14,
+        editorBottomInset: 2,
+        footerHeight: 52,
+        footerLeadingInset: 10
+    )
 
     static func of(launcher: Bool) -> AskComposerChrome { launcher ? .launcher : .workspace }
 }
@@ -500,11 +523,23 @@ struct AskSendButton: View {
             Image(systemName: "arrow.up")
                 .font(.system(size: 15, weight: .semibold))
                 .frame(width: 32, height: 32)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .foregroundStyle(enabled ? Color.white : StudioTheme.textTertiary)
-        .background(enabled ? AskTheme.accent : AskTheme.controlSurface, in: Circle())
+        // The only solid control in the composer: a lit accent drop when it can send,
+        // a faint translucent well otherwise, so it sits on glass and opaque cards alike.
+        .background(Circle().fill(enabled ? AskTheme.accent : AskTheme.hoverFill))
+        .overlay {
+            if enabled {
+                Circle().fill(RadialGradient(colors: [Color.white.opacity(0.32), .clear],
+                                             center: UnitPoint(x: 0.3, y: 0), startRadius: 0, endRadius: 22))
+                    .allowsHitTesting(false)
+            }
+        }
+        .shadow(color: enabled ? AskTheme.accent.opacity(0.35) : .clear, radius: 5, y: 2)
         .disabled(!enabled)
+        .animation(.easeOut(duration: 0.15), value: enabled)
         .accessibilityLabel(L("ask.send"))
     }
 }
@@ -793,22 +828,36 @@ struct AskVoiceBorder: ViewModifier {
     var context: String
     var radius: CGFloat
     var idle: Color = AskTheme.border
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var listening: Bool { voice.context == context && voice.phase == .listening }
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: radius, style: .continuous) }
 
     func body(content: Content) -> some View {
         content
             .overlay(
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(Self.borderColor(listening: listening, idle: idle),
-                                  lineWidth: Self.borderWidth(listening: listening))
-                    .allowsHitTesting(false)
+                ZStack {
+                    shape.strokeBorder(Self.borderColor(listening: listening, idle: idle),
+                                       lineWidth: Self.borderWidth(listening: listening))
+                    // A highlight travels around the accent edge while the microphone is open.
+                    if listening, !reduceMotion {
+                        TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
+                            shape.strokeBorder(
+                                AngularGradient(colors: [.clear, Color.white.opacity(0.75), .clear, .clear],
+                                                center: .center,
+                                                angle: .degrees(Self.sheenAngle(at: context.date.timeIntervalSinceReferenceDate))),
+                                lineWidth: Self.borderWidth(listening: true)
+                            )
+                        }
+                    }
+                }
+                .allowsHitTesting(false)
             )
-            // A soft halo outside the card while recording. Drawn behind the
-            // opaque card, so only the 3pt ring beyond its edge shows.
+            // A soft halo outside the card while recording. Only a ring is drawn,
+            // so a translucent glass card is not tinted by it.
             .background(
                 RoundedRectangle(cornerRadius: radius + Self.haloWidth, style: .continuous)
-                    .fill(AskTheme.accent.opacity(listening ? 0.22 : 0))
+                    .strokeBorder(AskTheme.accent.opacity(listening ? 0.22 : 0), lineWidth: Self.haloWidth)
                     .padding(-Self.haloWidth)
                     .allowsHitTesting(false)
             )
@@ -816,6 +865,12 @@ struct AskVoiceBorder: ViewModifier {
     }
 
     static let haloWidth: CGFloat = 3
+    /// One lap of the recording highlight.
+    static let sheenPeriod: Double = 3
+
+    static func sheenAngle(at time: TimeInterval) -> Double {
+        time.truncatingRemainder(dividingBy: sheenPeriod) / sheenPeriod * 360
+    }
 
     /// Focus alone stays neutral: the accent colour has to keep meaning "recording".
     static func borderColor(listening: Bool, idle: Color = AskTheme.border) -> Color {
