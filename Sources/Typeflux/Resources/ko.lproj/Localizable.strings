@@ -1445,6 +1445,8 @@
 "ask.context.more" = "컨텍스트 %d개 더 있음";
 "ask.context.memory.offHint" = "클릭하여 끄기 (이번 질문에 메모리 제외)";
 "ask.context.memory.onHint" = "클릭하여 켜기 (이번 질문에 메모리 포함)";
+"ask.context.selection.offHint" = "클릭하여 끄기 (이번 질문에 선택한 텍스트 제외)";
+"ask.context.selection.onHint" = "클릭하여 켜기 (이번 질문에 선택한 텍스트 포함)";
 "ask.selection" = "Selected text";
 "ask.memory" = "메모리";
 "ask.memory.app" = "메모리 · %@";
@@ -1559,6 +1561,9 @@
 "ask.models.cancel" = "Cancel";
 "ask.models.askDefault" = "Ask default";
 "ask.models.makeDefault" = "Set as Ask default";
+"ask.models.isDefault" = "기본";
+"ask.models.supportsImages" = "이미지와 스크린샷 지원";
+"ask.models.supportsReasoning" = "추론 강도 조절 지원";
 "ask.models.compatible" = "Supports OpenAI-compatible APIs. Screenshots require vision support; tools require tool-calling support.";
 "ask.models.name" = "Name";
 "ask.models.url" = "API URL";

@@ -243,6 +243,7 @@ final class AskConversationModel: ObservableObject {
         let context = await capture.capture(includeScreenshot: launcherDraft.includeScreenshot)
         guard !Task.isCancelled, generation == captureGeneration else { return }
         launcherDraft.selection = context.selection
+        launcherDraft.selectionOff = nil
         launcherDraft.source = context.source
         launcherDraft.sourceBundleID = context.sourceBundleID
         launcherDraft.screenshot = context.screenshot
@@ -422,7 +423,8 @@ final class AskConversationModel: ObservableObject {
     }
 
     private func submit(_ submitted: AskDraft, newConversation: Bool) {
-        guard submitted.referencesWithinLimit, submitted.text.utf8.count <= 32000, (submitted.selection?.utf8.count ?? 0) <= 64000,
+        guard submitted.referencesWithinLimit, submitted.text.utf8.count <= 32000,
+              (submitted.sentSelection?.utf8.count ?? 0) <= 64000,
               (submitted.source?.utf8.count ?? 0) <= 1000 else {
             error = L("ask.input.tooLarge"); return
         }

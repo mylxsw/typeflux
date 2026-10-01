@@ -1445,6 +1445,8 @@
 "ask.context.more" = "ほか %d 件のコンテキスト";
 "ask.context.memory.offHint" = "クリックでオフ（この質問にメモリを含めない）";
 "ask.context.memory.onHint" = "クリックでオン（この質問にメモリを含める）";
+"ask.context.selection.offHint" = "クリックでオフ（この質問に選択テキストを含めない）";
+"ask.context.selection.onHint" = "クリックでオン（この質問に選択テキストを含める）";
 "ask.selection" = "Selected text";
 "ask.memory" = "メモリ";
 "ask.memory.app" = "メモリ · %@";
@@ -1559,6 +1561,9 @@
 "ask.models.cancel" = "Cancel";
 "ask.models.askDefault" = "Ask default";
 "ask.models.makeDefault" = "Set as Ask default";
+"ask.models.isDefault" = "デフォルト";
+"ask.models.supportsImages" = "画像とスクリーンショットに対応";
+"ask.models.supportsReasoning" = "推論の強さを調整可能";
 "ask.models.compatible" = "Supports OpenAI-compatible APIs. Screenshots require vision support; tools require tool-calling support.";
 "ask.models.name" = "Name";
 "ask.models.url" = "API URL";

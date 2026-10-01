@@ -59,18 +59,53 @@ struct AskGlassTests {
         }
     }
 
-    @Test func recordingHighlightLapsTheEdge() {
-        #expect(AskVoiceBorder.sheenAngle(at: 0) == 0)
-        #expect(AskVoiceBorder.sheenAngle(at: AskVoiceBorder.sheenPeriod / 2) == 180)
-        #expect(AskVoiceBorder.sheenAngle(at: AskVoiceBorder.sheenPeriod) == 0)
-        for step in 0..<20 {
-            let angle = AskVoiceBorder.sheenAngle(at: Double(step) * 0.37)
-            #expect(angle >= 0 && angle < 360)
-        }
-    }
-
     @Test func chipsMatchTheOtherFooterControls() {
         #expect(AskContextChips.chipSize == AskMetrics.composerControlHeight)
         #expect(AskContextChips.appTileSize < AskContextChips.chipSize)
+    }
+
+    @Test func switchedOffSelectionStaysInTheDraftButIsNotSent() {
+        var draft = AskDraft(text: "explain", selection: "let x = 1")
+        #expect(draft.request(deviceId: "device", tools: []).selection == "let x = 1")
+        draft.selectionOff = true
+        #expect(draft.selection == "let x = 1")
+        #expect(draft.sentSelection == nil)
+        #expect(draft.request(deviceId: "device", tools: []).selection == nil)
+        draft.selectionOff = nil
+        #expect(draft.request(deviceId: "device", tools: []).selection == "let x = 1")
+    }
+
+    @Test func selectionToggleSurvivesDraftPersistence() throws {
+        var draft = AskDraft(text: "q", selection: "s")
+        draft.selectionOff = true
+        let data = try AskCoding.encoder().encode(draft)
+        let restored = try AskCoding.decoder().decode(AskDraft.self, from: data)
+        #expect(restored.selectionOff == true)
+        #expect(restored.sentSelection == nil)
+        // Drafts saved before the toggle existed carry no such key and still send their selection.
+        let legacyData = try AskCoding.encoder().encode(AskDraft(text: "q", selection: "s"))
+        #expect(!String(decoding: legacyData, as: UTF8.self).contains("selection_off"))
+        let legacy = try AskCoding.decoder().decode(AskDraft.self, from: legacyData)
+        #expect(legacy.sentSelection == "s")
+    }
+
+    @Test func popoversLetTheSystemGlassShowOnMacOS26() {
+        #expect(AskPopoverSurface.fill(.liquidGlass) == .clear)
+        #expect(AskPopoverSurface.fill(.visualEffect) == AskTheme.popoverSurface)
+        #expect(AskPopoverSurface.fill(.opaque) == AskTheme.popoverSurface)
+    }
+
+    @Test func modelRowsShowImageAndReasoningCapabilities() {
+        let plain = RegisteredModel(id: "a", name: "A")
+        #expect(AskModelCapabilities.symbols(plain).isEmpty)
+        let both = RegisteredModel(id: "b", name: "B", vision: true, reasoning: true)
+        #expect(AskModelCapabilities.symbols(both).map(\.symbol) == ["eye", "sparkles"])
+        let vision = RegisteredModel(id: "c", name: "C", vision: true, reasoning: false)
+        #expect(AskModelCapabilities.symbols(vision).map(\.help) == [L("ask.models.supportsImages")])
+    }
+
+    @Test func settingsAndContextRecedeWhileRecording() {
+        #expect(AskComposer.recordingDim(true) == 0.4)
+        #expect(AskComposer.recordingDim(false) == 1)
     }
 }

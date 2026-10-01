@@ -55,11 +55,7 @@ final class AskHoverCardPresenter {
         guard let window = anchor.window, window.isVisible else { return }
         let panel = self.panel ?? Self.makePanel()
         self.panel = panel
-        let hosting = NSHostingView(rootView: AnyView(
-            content
-                .background(AskTheme.popoverSurface, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(AskTheme.border))
-        ))
+        let hosting = NSHostingView(rootView: AnyView(AskHoverCardSurface(content: content)))
         panel.contentView = hosting
         panel.appearance = window.effectiveAppearance
         let anchorRect = window.convertToScreen(anchor.convert(anchor.bounds, to: nil))
