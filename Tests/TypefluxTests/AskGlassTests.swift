@@ -82,8 +82,10 @@ struct AskGlassTests {
         let restored = try AskCoding.decoder().decode(AskDraft.self, from: data)
         #expect(restored.selectionOff == true)
         #expect(restored.sentSelection == nil)
-        // Drafts saved before the toggle existed still send their selection.
-        let legacy = try AskCoding.decoder().decode(AskDraft.self, from: Data(#"{"text":"q","selection":"s"}"#.utf8))
+        // Drafts saved before the toggle existed carry no such key and still send their selection.
+        let legacyData = try AskCoding.encoder().encode(AskDraft(text: "q", selection: "s"))
+        #expect(!String(decoding: legacyData, as: UTF8.self).contains("selection_off"))
+        let legacy = try AskCoding.decoder().decode(AskDraft.self, from: legacyData)
         #expect(legacy.sentSelection == "s")
     }
 
