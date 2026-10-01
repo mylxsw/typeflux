@@ -41,6 +41,17 @@ final class StdioMCPClientTests: XCTestCase {
         XCTAssertFalse(connected)
     }
 
+    func testToolListChangesReachTheHandler() async throws {
+        let client = makeClient()
+        try await client.connect()
+        let changed = expectation(description: "tools changed")
+        await client.setToolsChangedHandler { changed.fulfill() }
+        let result = try await client.callTool(name: "notify", arguments: [:])
+        XCTAssertEqual(result.textContent, "notified")
+        await fulfillment(of: [changed], timeout: 5)
+        await client.disconnect()
+    }
+
     func testJSONRPCErrorsCarryTheServerMessage() async throws {
         let client = makeClient()
         try await client.connect()
@@ -164,6 +175,9 @@ final class StdioMCPClientTests: XCTestCase {
             sleep 5
           elif printf '%s' "$line" | grep -q '"name":"exit"'; then
             exit 0
+          elif printf '%s' "$line" | grep -q '"name":"notify"'; then
+            respond '{"jsonrpc":"2.0","method":"notifications/tools/list_changed"}'
+            respond '{"jsonrpc":"2.0","id":"'"$id"'","result":{"content":[{"type":"text","text":"notified"}]}}'
           elif printf '%s' "$line" | grep -q '"name":"fail"'; then
             respond '{"jsonrpc":"2.0","id":"'"$id"'","error":{"code":-32000,"message":"tool exploded"}}'
           else

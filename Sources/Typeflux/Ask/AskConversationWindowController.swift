@@ -30,7 +30,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
          dockVisibility: DockVisibilityController = .shared) throws {
         self.dockVisibility = dockVisibility
         self.settings = settings
-        let tools = AskLocalTools(registry: registry)
+        let tools = AskLocalTools(registry: registry, settings: settings)
+        let sandbox = tools.sandbox
+        Task.detached(priority: .utility) { sandbox.pruneWorkspaces() }
         self.tools = tools
         let cache = try AskConversationCache(url: AskConversationCache.defaultURL())
         let deviceKey = "ask.deviceId"

@@ -233,7 +233,7 @@ extension WorkflowController {
     ) async throws -> AskAgentResult {
         // Connect MCP servers (only in Phase 2)
         await mcpRegistry.connectEnabledServers(settingsStore.mcpServers)
-        let mcpTools = await mcpRegistry.allMCPTools()
+        let mcpTools = await mcpRegistry.uniqueAgentTools()
 
         let registry = AgentToolRegistry()
         await registry.register(AnswerTextTool())

@@ -4,11 +4,14 @@ struct MCPHTTPConfig {
     let url: URL
     let headers: [String: String]
     let urlSession: URLSession?
+    /// Answers 401 challenges with OAuth; nil keeps static headers only.
+    let authorizer: MCPOAuthAuthorizer?
 
-    init(url: URL, headers: [String: String] = [:], urlSession: URLSession? = nil) {
+    init(url: URL, headers: [String: String] = [:], urlSession: URLSession? = nil, authorizer: MCPOAuthAuthorizer? = nil) {
         self.url = url
         self.headers = headers
         self.urlSession = urlSession
+        self.authorizer = authorizer
     }
 }
 
@@ -19,7 +22,7 @@ actor HTTPMCPClient: MCPClient {
     private var connectionInfo: MCPConnectionInfo?
     private var messageIdCounter: Int = 0
     private var sessionId: String?
-    private var negotiatedProtocolVersion: String = "2024-11-05"
+    private var negotiatedProtocolVersion: String = MCPProtocol.latestVersion
 
     var serverInfo: MCPConnectionInfo? {
         connectionInfo
@@ -59,7 +62,7 @@ actor HTTPMCPClient: MCPClient {
         session = nil
         connectionInfo = nil
         sessionId = nil
-        negotiatedProtocolVersion = "2024-11-05"
+        negotiatedProtocolVersion = MCPProtocol.latestVersion
     }
 
     func listTools() async throws -> [MCPToolDefinition] {
@@ -96,6 +99,26 @@ actor HTTPMCPClient: MCPClient {
     }
 
     private func post(message: MCPJsonRPCMessage) async throws -> (MCPJsonRPCMessage, HTTPURLResponse) {
+        let token = await config.authorizer?.accessToken()
+        do {
+            return try await post(message: message, bearer: token)
+        } catch let HTTPMCPUnauthorized.challenge(header) {
+            guard let authorizer = config.authorizer else {
+                throw MCPClientError.serverError(code: 401, message: "HTTP 401")
+            }
+            // One retry with a refreshed or newly signed-in token.
+            let fresh = try await authorizer.authorize(challenge: header)
+            do {
+                return try await post(message: message, bearer: fresh)
+            } catch HTTPMCPUnauthorized.challenge {
+                throw MCPClientError.serverError(code: 401, message: "HTTP 401")
+            }
+        }
+    }
+
+    private enum HTTPMCPUnauthorized: Error { case challenge(String?) }
+
+    private func post(message: MCPJsonRPCMessage, bearer: String?) async throws -> (MCPJsonRPCMessage, HTTPURLResponse) {
         guard let session else { throw MCPClientError.notConnected }
 
         var request = URLRequest(url: config.url)
@@ -110,6 +133,9 @@ actor HTTPMCPClient: MCPClient {
         }
         for (key, value) in config.headers {
             request.setValue(value, forHTTPHeaderField: key)
+        }
+        if let bearer {
+            request.setValue("Bearer " + bearer, forHTTPHeaderField: "Authorization")
         }
         request.httpBody = try JSONEncoder().encode(message)
         NetworkDebugLogger.logMessage("""
@@ -133,6 +159,9 @@ actor HTTPMCPClient: MCPClient {
         BodyPreview: \(Self.debugPreview(for: data))
         """)
 
+        if httpResponse.statusCode == 401 {
+            throw HTTPMCPUnauthorized.challenge(httpResponse.value(forHTTPHeaderField: "WWW-Authenticate"))
+        }
         if !(200 ..< 300).contains(httpResponse.statusCode) {
             throw MCPClientError.serverError(
                 code: httpResponse.statusCode,

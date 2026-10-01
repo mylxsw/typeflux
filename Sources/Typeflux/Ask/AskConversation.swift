@@ -53,8 +53,15 @@ struct AskRun: Codable, Equatable, Sendable {
     var inference: AskInference? = nil
 
     var reasoningEffort: String? = nil
+    /// The model's latest update_plan list.
+    var plan: [AskPlanItem]? = nil
 
     var isActive: Bool { status == "running" || status == "waiting_tool" || status == "waiting_inference" }
+}
+
+struct AskPlanItem: Codable, Equatable, Sendable, Hashable {
+    var step: String
+    var status: String
 }
 
 struct AskConversation: Codable, Identifiable, Equatable, Sendable {

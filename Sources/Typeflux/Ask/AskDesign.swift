@@ -132,6 +132,14 @@ enum AskTheme {
             let title = L(name == "web_search" ? "ask.tool.webSearch" : "ask.tool.webFetch")
             return detail.map { title + " · " + $0 } ?? title
         }
+        if ["files", "memory", "run_code", "skill"].contains(name) {
+            let args = (try? AskLocalTools.jsonArguments(call.function.arguments)) ?? [:]
+            let title = L("ask.tool." + name)
+            if name == "skill", let skill = args["name"] as? String { return title + " · " + skill }
+            if name == "run_code", let language = args["language"] as? String { return title + " · " + language }
+            if let action = args["action"] as? String, !action.isEmpty { return title + " · " + L("ask.action." + action) }
+            return title
+        }
         guard name == "computer" || name == "browser" else { return name }
         let action = (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) ?? ""
         let title = L("ask.tool." + name)
@@ -987,6 +995,12 @@ enum AskPresentation {
         case "browser": return "globe"
         case "web_search": return "magnifyingglass"
         case "web_fetch": return "network"
+        case "files": return "folder"
+        case "run_code": return "terminal"
+        case "skill": return "book"
+        case "memory": return "brain"
+        case "update_plan": return "list.bullet.clipboard"
+        case "research": return "doc.text.magnifyingglass"
         default: return "wrench.and.screwdriver"
         }
     }

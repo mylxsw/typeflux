@@ -27,6 +27,8 @@ actor MCPRegistry {
         try await client.connect()
         servers[config.id] = client
         serverConfigs[config.id] = config
+        let serverId = config.id
+        await client.setToolsChangedHandler { [weak self] in try? await self?.refreshTools(for: serverId) }
         do {
             try await refreshTools(for: config.id)
         } catch {
@@ -55,6 +57,15 @@ actor MCPRegistry {
             MCPRegisteredTool(serverId: key.serverId, serverName: serverConfigs[key.serverId]?.name ?? "", tool: tool)
         }.sorted {
             ($0.serverName, $0.serverId.uuidString, $0.tool.toolDef.name) < ($1.serverName, $1.serverId.uuidString, $1.tool.toolDef.name)
+        }
+    }
+
+    /// Tools for the voice agent, which calls them by bare name: a name shared by
+    /// several servers is qualified as `<server>_<tool>` instead of shadowing another tool.
+    func uniqueAgentTools() -> [any AgentTool] {
+        AskLocalTools.mcpToolNames(registeredTools()).map { name, entry in
+            let bare = String(name.dropFirst("mcp_".count))
+            return bare == entry.tool.toolDef.name ? entry.tool as any AgentTool : MCPRenamedTool(base: entry.tool, name: bare)
         }
     }
 
@@ -97,11 +108,13 @@ actor MCPRegistry {
             ))
         case let .http(httpConfig):
             let url = URL(string: httpConfig.url) ?? URL(string: "http://localhost")!
-            return HTTPMCPClient(config: MCPHTTPConfig(url: url, headers: httpConfig.headers))
+            // Background connections reuse or refresh a sign-in but never open a browser.
+            return HTTPMCPClient(config: MCPHTTPConfig(url: url, headers: httpConfig.headers,
+                                                       authorizer: MCPOAuthAuthorizer(resource: url, interactive: false)))
         }
     }
 
-    private func refreshTools(for serverId: UUID) async throws {
+    func refreshTools(for serverId: UUID) async throws {
         guard let client = servers[serverId] else { return }
         let tools = try await client.listTools()
         cachedTools = cachedTools.filter { $0.key.serverId != serverId }
@@ -115,4 +128,19 @@ struct MCPRegisteredTool {
     let serverId: UUID
     let serverName: String
     let tool: MCPToolAdapter
+}
+
+/// An MCP tool exposed under a server-qualified name.
+struct MCPRenamedTool: AgentTool {
+    let base: MCPToolAdapter
+    let name: String
+
+    var definition: LLMAgentTool {
+        let original = base.definition
+        return LLMAgentTool(name: name, description: original.description, inputSchema: original.inputSchema)
+    }
+
+    func execute(arguments: String) async throws -> String {
+        try await base.execute(arguments: arguments)
+    }
 }

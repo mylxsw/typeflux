@@ -101,7 +101,7 @@ final class StudioModelsTests: XCTestCase {
     // MARK: - AgentConfigurationTab
 
     func testAgentConfigurationTabCount() {
-        XCTAssertEqual(AgentConfigurationTab.allCases.count, 2)
+        XCTAssertEqual(AgentConfigurationTab.allCases.count, 3)
     }
 
     func testAgentConfigurationTabId() {

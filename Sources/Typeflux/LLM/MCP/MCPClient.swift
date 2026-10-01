@@ -26,6 +26,9 @@ protocol MCPClient: Actor {
 
     /// Tests connectivity (sends ping).
     func ping() async throws
+
+    /// Registers a callback for `notifications/tools/list_changed`.
+    func setToolsChangedHandler(_ handler: @escaping @Sendable () async -> Void) async
 }
 
 /// Follows `nextCursor` so servers that paginate `tools/list` do not silently lose tools.
@@ -44,4 +47,15 @@ func collectMCPToolPages(
         cursor = next
     }
     return tools
+}
+
+enum MCPProtocol {
+    /// Requested in initialize; servers answer with the version they support.
+    static let latestVersion = "2025-06-18"
+}
+
+extension MCPClient {
+    /// Called when the server announces `notifications/tools/list_changed`. Only
+    /// transports with a server-to-client channel (stdio) deliver it.
+    func setToolsChangedHandler(_ handler: @escaping @Sendable () async -> Void) async {}
 }

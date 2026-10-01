@@ -288,3 +288,29 @@ Full XCTest: 2674 cases, with the same four pre-existing workflow failures
 
 Tests: `StdioMCPClientTests` run a shell MCP server through real pipes;
 `AskMCPToolsTests` cover naming, registry ownership and result mapping.
+
+## Agent tools (GUL-151 P2/P3)
+
+The server runs model steps in the background (`ASK_ASYNC`), so a send returns
+with the run `running` and the desktop follows progress as before. Device tools:
+
+| Tool | What it does | Approval |
+| --- | --- | --- |
+| `files` | `list`, `read` (numbered lines, paging), `search`, `write`, `edit` (one unique snippet) inside folders authorized in Settings → Agent → Ask tools. Paths resolve through symlinks first; new files are checked through their nearest existing folder. Text only, 1 MB writes. | reads: read tier; writes: write tier |
+| `run_code` | Python, JavaScript (Node) or zsh under `sandbox-exec`: no network, no reads from the home folder, writes only in a per-conversation workspace in the temporary directory (pruned after seven days). 30 s default, 120 s max; output capped; the first new PNG/JPEG is attached. Interpreters under the home folder (pyenv, nvm) stay readable. Toggle in Settings. | write tier |
+| `skill` | Loads a built-in skill (`email-reply`, `meeting-notes`, `translate-polish`, `data-analysis`) or a user skill from `~/Library/Application Support/Typeflux/Skills/<name>/SKILL.md` (optional `name`/`description` front matter; a user skill replaces a built-in one). Only names and descriptions are in the tool definition. | none (app-provided instructions) |
+| `memory` | `list`, `remember`, `forget` explicit notes per account. Notes join the global memory of new conversations after the soul summary, within the 1,000-character budget, and can be removed in Settings. | list: read; changes: write |
+| `computer` | Adds `inspect` (accessibility tree of the target window with click coordinates), `double_click`, `right_click`, `drag`, `hotkey` (e.g. `cmd+shift+t`), more keys and `wait`. | read: screenshot/inspect/wait |
+| `browser` | Adds `snapshot` (numbered interactive elements; `click`/`fill` accept `ref`), `back` and `scroll`. Works with a running Safari/Chrome when the question did not start in a browser. | read: read/snapshot |
+
+The server's `update_plan` list appears as a plan card above the composer;
+`research`, `web_search` and `web_fetch` run on the server without approval.
+
+MCP: clients request protocol `2025-06-18` and use the server's answer; stdio
+servers can announce `notifications/tools/list_changed`, which refreshes the
+registry. Remote servers that answer 401 use OAuth 2.1 (protected-resource and
+authorization-server discovery, dynamic client registration, PKCE S256 with a
+127.0.0.1 redirect, refresh). Only Test Connection in Settings opens the browser
+to sign in; Ask reuses or refreshes the token stored in the keychain and asks the
+user to sign in from Settings otherwise. The voice agent registers MCP tools with
+the same collision rule as Ask (`<server>_<tool>` when names clash).
