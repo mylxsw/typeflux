@@ -5,10 +5,11 @@ import Testing
 @Suite("Ask context chips")
 struct AskContextChipsTests {
     private func items(screenshot: AskScreenshotState = .off, source: String? = nil, bundle: String? = nil,
-                       selection: String? = nil, memory: AskMemory? = nil, memoryOff: Bool = false,
-                       pinned: Bool = false) -> [AskContextItem] {
+                       selection: String? = nil, selectionOff: Bool = false, memory: AskMemory? = nil,
+                       memoryOff: Bool = false, pinned: Bool = false) -> [AskContextItem] {
         AskContextChips.items(screenshot: screenshot, source: source, sourceBundleID: bundle,
-                              selection: selection, memory: memory, memoryOff: memoryOff, memoryPinned: pinned)
+                              selection: selection, selectionOff: selectionOff, memory: memory,
+                              memoryOff: memoryOff, memoryPinned: pinned)
     }
 
     @Test func sourceSplitsAppFromWindowTitle() {
@@ -59,11 +60,23 @@ struct AskContextChipsTests {
         let text = "line one\nline two\n" + String(repeating: "x", count: 100)
         let selection = try #require(items(selection: text).first { $0.kind == .selection })
         #expect(selection.badge == .count(3))
-        #expect(selection.removable)
+        #expect(selection.style == .active)
         #expect(selection.detail?.contains("line one line two") == true)
         #expect(selection.detail?.hasSuffix("…”") == true)
         #expect(AskContextChips.selectionPreview("short") == "short")
         #expect(AskContextChips.selectionPreview(String(repeating: "a", count: 61)).count == 61)
+    }
+
+    @Test func selectionIsAToggleThatStaysVisibleWhenOff() throws {
+        let on = try #require(items(selection: "a\nb").first { $0.kind == .selection })
+        #expect(!on.removable)
+        #expect(on.hint == L("ask.context.selection.offHint"))
+        let off = try #require(items(selection: "a\nb", selectionOff: true).first { $0.kind == .selection })
+        #expect(!off.removable)
+        #expect(off.style == .neutral)
+        #expect(off.badge == nil)
+        #expect(off.hint == L("ask.context.selection.onHint"))
+        #expect(off.title == on.title)
     }
 
     @Test func memoryBadgesItsSourceAppAndPinnedMemoryIsReadOnly() throws {
@@ -116,7 +129,9 @@ struct AskContextChipsTests {
             let bundle = try #require(Bundle(path: path))
             for key in ["ask.context.screenshot.attached", "ask.context.screenshot.offHint",
                         "ask.context.previewHint", "ask.context.more",
-                        "ask.context.memory.offHint", "ask.context.memory.onHint"] {
+                        "ask.context.memory.offHint", "ask.context.memory.onHint",
+                        "ask.context.selection.offHint", "ask.context.selection.onHint",
+                        "ask.models.isDefault", "ask.models.supportsImages", "ask.models.supportsReasoning"] {
                 let value = bundle.localizedString(forKey: key, value: nil, table: nil)
                 #expect(value != key, "Missing \(key) for \(language.rawValue)")
             }

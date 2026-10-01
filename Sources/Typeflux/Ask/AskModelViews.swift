@@ -171,10 +171,13 @@ struct AskModelChoices: View {
                     ForEach(choices) { provider in
                         AskPopoverHeader(title: provider.name)
                         ForEach(provider.models) { model in
-                            AskPopoverRow(title: model.name, caption: Self.caption(model),
+                            AskPopoverRow(title: model.name,
+                                          note: model.reference == library.defaultReference ? L("ask.models.isDefault") : nil,
+                                          caption: Self.caption(model),
                                           selected: reference == model.reference) {
                                 reference = model.reference; dismiss()
                             } accessory: {
+                                AskModelCapabilities(model: model)
                                 if let multiplier = model.pricing?.multiplier {
                                     AskMultiplierBadge(multiplier: multiplier)
                                 }
@@ -183,21 +186,21 @@ struct AskModelChoices: View {
                                 ? L("models.cloud.priceUnknown") : L("models.cloud.priceExplanation")))
                         }
                     }
-                    Color.clear.frame(height: 5)
                 }
+                .padding(.vertical, 6)
             }
             .frame(maxHeight: 360)
             .fixedSize(horizontal: false, vertical: true)
             if showsDefaultAction {
-                AskPopoverFooterButton(title: L("ask.models.makeDefault"), systemImage: "gearshape") {
+                AskPopoverFooterButton(title: L("ask.models.makeDefault")) {
                     library.defaultReference = reference
                     dismiss()
                 }
-                .disabled(!selectionAvailable)
+                .disabled(!selectionAvailable || reference == library.defaultReference)
             }
         }
-        .frame(width: 292)
-        .background(AskTheme.popoverSurface)
+        .frame(width: 320)
+        .modifier(AskPopoverSurface())
     }
 
     /// "205K context · 16.4K output": compact numbers instead of raw token counts.
@@ -262,5 +265,30 @@ struct AskModelChoices: View {
         }.buttonStyle(.plain)
             .accessibilityAddTraits(selected ? .isSelected : [])
             .help(model.displayName + " — " + (model.pricing == nil ? L("models.cloud.priceUnknown") : L("models.cloud.priceExplanation")))
+    }
+}
+
+/// Small capability glyphs in a model row: images (eye) and adjustable reasoning
+/// (sparkles, the same symbol as the composer's reasoning menu).
+struct AskModelCapabilities: View {
+    let model: RegisteredModel
+
+    static func symbols(_ model: RegisteredModel) -> [(symbol: String, help: String)] {
+        var result: [(symbol: String, help: String)] = []
+        if model.vision == true { result.append(("eye", L("ask.models.supportsImages"))) }
+        if model.reasoning == true { result.append(("sparkles", L("ask.models.supportsReasoning"))) }
+        return result
+    }
+
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(Self.symbols(model), id: \.symbol) { item in
+                Image(systemName: item.symbol)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .help(item.help)
+                    .accessibilityLabel(item.help)
+            }
+        }
     }
 }

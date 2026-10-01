@@ -828,30 +828,18 @@ struct AskVoiceBorder: ViewModifier {
     var context: String
     var radius: CGFloat
     var idle: Color = AskTheme.border
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var listening: Bool { voice.context == context && voice.phase == .listening }
-    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: radius, style: .continuous) }
 
     func body(content: Content) -> some View {
+        // Static on purpose: a per-frame edge animation made the glass panel
+        // re-composite continuously, which flickered while recording.
         content
             .overlay(
-                ZStack {
-                    shape.strokeBorder(Self.borderColor(listening: listening, idle: idle),
-                                       lineWidth: Self.borderWidth(listening: listening))
-                    // A highlight travels around the accent edge while the microphone is open.
-                    if listening, !reduceMotion {
-                        TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
-                            let angle = Self.sheenAngle(at: context.date.timeIntervalSinceReferenceDate)
-                            shape.strokeBorder(
-                                AngularGradient(colors: [.clear, Color.white.opacity(0.75), .clear, .clear],
-                                                center: .center, angle: .degrees(angle)),
-                                lineWidth: Self.borderWidth(listening: true)
-                            )
-                        }
-                    }
-                }
-                .allowsHitTesting(false)
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .strokeBorder(Self.borderColor(listening: listening, idle: idle),
+                                  lineWidth: Self.borderWidth(listening: listening))
+                    .allowsHitTesting(false)
             )
             // A soft halo outside the card while recording. Only a ring is drawn,
             // so a translucent glass card is not tinted by it.
@@ -865,12 +853,6 @@ struct AskVoiceBorder: ViewModifier {
     }
 
     static let haloWidth: CGFloat = 3
-    /// One lap of the recording highlight.
-    static let sheenPeriod: Double = 3
-
-    static func sheenAngle(at time: TimeInterval) -> Double {
-        time.truncatingRemainder(dividingBy: sheenPeriod) / sheenPeriod * 360
-    }
 
     /// Focus alone stays neutral: the accent colour has to keep meaning "recording".
     static func borderColor(listening: Bool, idle: Color = AskTheme.border) -> Color {
@@ -1042,22 +1024,25 @@ struct AskPopoverHeader: View {
 
     var body: some View {
         Text(title)
-            .font(.system(size: 10.5, weight: .semibold))
-            .tracking(0.6)
-            .textCase(.uppercase)
+            .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(StudioTheme.textTertiary)
-            .padding(.horizontal, 13)
-            .padding(.top, 11)
-            .padding(.bottom, 7)
+            .padding(.horizontal, 10)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityAddTraits(.isHeader)
     }
 }
 
-/// A choice in a composer popover: title over caption, an optional trailing
-/// accessory, and a checkmark column that keeps every row aligned.
+/// A choice in a composer popover: a leading checkmark column that keeps every
+/// row aligned, title over caption, then an optional trailing accessory. The
+/// selection is the checkmark alone; only the pointer fills a row.
 struct AskPopoverRow<Accessory: View>: View {
+    static var corner: CGFloat { 12 }
+
     var title: String
+    /// Quiet text after the title, such as "Default".
+    var note: String?
     var caption: String?
     var selected: Bool
     var action: () -> Void
@@ -1067,67 +1052,77 @@ struct AskPopoverRow<Accessory: View>: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
+                Image(systemName: "checkmark").font(.system(size: 11.5, weight: .bold))
+                    .foregroundStyle(AskTheme.accent)
+                    .frame(width: 14)
+                    .opacity(selected ? 1 : 0)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.system(size: 12.8, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .lineLimit(1).truncationMode(.middle)
+                    HStack(spacing: 4) {
+                        Text(title).font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                            .lineLimit(1).truncationMode(.middle)
+                        if let note {
+                            Text(verbatim: "· " + note).font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(StudioTheme.textTertiary)
+                                .lineLimit(1).fixedSize()
+                        }
+                    }
                     if let caption, !caption.isEmpty {
-                        Text(caption).font(.system(size: 11))
+                        Text(caption).font(.system(size: 11.5))
                             .foregroundStyle(StudioTheme.textTertiary)
                             .lineLimit(1)
                     }
                 }
                 Spacer(minLength: 8)
                 accessory()
-                Image(systemName: "checkmark").font(.system(size: 11.5, weight: .bold))
-                    .foregroundStyle(AskTheme.accent)
-                    .opacity(selected ? 1 : 0)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(selected ? AskTheme.accentSoft : (hovering ? AskTheme.hoverFill : Color.clear),
-                        in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .background(hovering ? AskTheme.hoverFill : Color.clear,
+                        in: RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .padding(.horizontal, 5)
+        .padding(.horizontal, 6)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
 extension AskPopoverRow where Accessory == EmptyView {
-    init(title: String, caption: String?, selected: Bool, action: @escaping () -> Void) {
-        self.init(title: title, caption: caption, selected: selected, action: action, accessory: { EmptyView() })
+    init(title: String, note: String? = nil, caption: String?, selected: Bool, action: @escaping () -> Void) {
+        self.init(title: title, note: note, caption: caption, selected: selected, action: action, accessory: { EmptyView() })
     }
 }
 
-/// The separated action at the bottom of a composer popover.
+/// The separated action at the bottom of a composer popover: a quiet accent
+/// link on the trailing side, under a hairline.
 struct AskPopoverFooterButton: View {
     var title: String
-    var systemImage: String
     var action: () -> Void
+    @Environment(\.isEnabled) private var isEnabled
     @State private var hovering = false
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: systemImage).font(.system(size: 12))
-                Text(title).font(.system(size: 12, weight: .medium))
-                Spacer(minLength: 0)
+        HStack {
+            Spacer(minLength: 0)
+            Button(action: action) {
+                Text(title).font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(isEnabled ? AskTheme.accentText : StudioTheme.textTertiary)
+                    .underline(hovering && isEnabled)
+                    .padding(.horizontal, 6)
+                    .frame(height: 26)
+                    .contentShape(Rectangle())
             }
-            .foregroundStyle(hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-            .padding(.horizontal, 8)
-            .frame(height: 32)
-            .background(hovering ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .buttonStyle(.plain)
+            .onHover { hovering = $0 }
         }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
-        .padding(5)
-        .overlay(alignment: .top) { Rectangle().fill(AskTheme.separator).frame(height: 1) }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .overlay(alignment: .top) {
+            Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 10)
+        }
     }
 }
 

@@ -87,9 +87,9 @@ struct AskReasoningChoices: View {
                     effort = choice; dismiss()
                 }
             }
-            Color.clear.frame(height: 5)
         }
-        .frame(width: 248)
-        .background(AskTheme.popoverSurface)
+        .padding(.vertical, 6)
+        .frame(width: 260)
+        .modifier(AskPopoverSurface())
     }
 }
