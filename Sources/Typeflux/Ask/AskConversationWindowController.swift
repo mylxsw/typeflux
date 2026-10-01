@@ -5,6 +5,13 @@ private final class TransparentAskHostingView<Content: View>: NSHostingView<Cont
     override var isOpaque: Bool { false }
 }
 
+/// The launcher is a non-activating panel, so it is often not key when the
+/// pointer reaches it. Without this the first click on a chip or button only
+/// made the panel key and was otherwise dropped.
+private final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+}
+
 @MainActor
 final class AskConversationWindowController: NSObject, NSWindowDelegate {
     let model: AskConversationModel
@@ -82,7 +89,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                 panel.hidesOnDeactivate = false
                 panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
                 panel.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.ask-launcher")
-                panel.contentView = NSHostingView(rootView: AskLauncherView(model: model, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }))
+                panel.contentView = FirstMouseHostingView(rootView: AskLauncherView(model: model, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }))
                 launcher = panel
             }
             applyAppearance(launcher)

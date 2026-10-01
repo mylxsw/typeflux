@@ -163,8 +163,9 @@ struct AskIconChip: View {
     var action: (() -> Void)?
     var onRemove: (() -> Void)?
     @State private var hovering = false
-    @State private var showingCard = false
     @State private var hoverTask: Task<Void, Never>?
+    @State private var anchor = AskHoverAnchor.Holder()
+    @State private var cardID = UUID()
 
     var body: some View {
         Button {
@@ -194,12 +195,10 @@ struct AskIconChip: View {
             }
         }
         .onHover(perform: hover)
-        .onDisappear { hoverTask?.cancel() }
-        // On a background, so the composer can attach its own preview popover
-        // to the chip without two popovers sharing one view.
-        .background(Color.clear.popover(isPresented: $showingCard, arrowEdge: .top) {
-            AskContextCard(items: [item])
-        })
+        .onDisappear(perform: dismissCard)
+        // The card is a click-through panel, not a popover: a popover swallowed
+        // the click meant for the chip. See AskHoverCardPresenter.
+        .background(AskHoverAnchor(holder: anchor))
         .accessibilityElement(children: .ignore)
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel(item.title)
@@ -211,16 +210,17 @@ struct AskIconChip: View {
     private func hover(_ inside: Bool) {
         hovering = inside
         hoverTask?.cancel()
-        guard inside else { showingCard = false; return }
+        guard inside else { AskHoverCardPresenter.shared.hide(owner: cardID); return }
         hoverTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: AskContextChips.hoverDelay)
-            if !Task.isCancelled, hovering { showingCard = true }
+            guard !Task.isCancelled, hovering, let view = anchor.view else { return }
+            AskHoverCardPresenter.shared.show(AskContextCard(items: [item]), owner: cardID, anchor: view)
         }
     }
 
     private func dismissCard() {
         hoverTask?.cancel()
-        showingCard = false
+        AskHoverCardPresenter.shared.hide(owner: cardID)
     }
 }
 
@@ -311,13 +311,15 @@ struct AskOverflowChip: View {
     let hidden: [AskContextItem]
     var onRemove: (AskContextItem.Kind) -> Void
     @State private var hovering = false
-    @State private var showingCard = false
     @State private var showingList = false
     @State private var hoverTask: Task<Void, Never>?
+    @State private var anchor = AskHoverAnchor.Holder()
+    @State private var cardID = UUID()
 
     var body: some View {
         Button {
-            hoverTask?.cancel(); showingCard = false; showingList = true
+            dismissCard()
+            showingList = true
         } label: {
             Text(verbatim: "+\(hidden.count)")
                 .font(.system(size: 12, weight: .semibold))
@@ -332,16 +334,15 @@ struct AskOverflowChip: View {
         .onHover { inside in
             hovering = inside
             hoverTask?.cancel()
-            guard inside else { showingCard = false; return }
+            guard inside else { AskHoverCardPresenter.shared.hide(owner: cardID); return }
             hoverTask = Task { @MainActor in
                 try? await Task.sleep(nanoseconds: AskContextChips.hoverDelay)
-                if !Task.isCancelled, hovering, !showingList { showingCard = true }
+                guard !Task.isCancelled, hovering, !showingList, let view = anchor.view else { return }
+                AskHoverCardPresenter.shared.show(AskContextCard(items: hidden), owner: cardID, anchor: view)
             }
         }
-        .onDisappear { hoverTask?.cancel() }
-        .background(Color.clear.popover(isPresented: $showingCard, arrowEdge: .top) {
-            AskContextCard(items: hidden)
-        })
+        .onDisappear(perform: dismissCard)
+        .background(AskHoverAnchor(holder: anchor))
         .popover(isPresented: $showingList, arrowEdge: .top) {
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(hidden) { item in
@@ -367,6 +368,11 @@ struct AskOverflowChip: View {
         }
         .accessibilityLabel(L("ask.context.more", hidden.count))
         .accessibilityHint(hidden.map(\.title).joined(separator: ", "))
+    }
+
+    private func dismissCard() {
+        hoverTask?.cancel()
+        AskHoverCardPresenter.shared.hide(owner: cardID)
     }
 }
 
