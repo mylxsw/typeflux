@@ -131,7 +131,7 @@ struct ProviderModelsView: View {
                 SecureField("API Key", text: $key)
             }
         }
-        .textFieldStyle(ModelFieldStyle())
+        .textFieldStyle(ModelFieldStyle(trailingAccessoryWidth: 24))
         .overlay(alignment: .trailing) {
             Button { showsKey.toggle() } label: {
                 Image(systemName: showsKey ? "eye.slash" : "eye")

@@ -1651,6 +1651,7 @@
 "models.visionUnknownShort" = "截图能力未知";
 "models.showKey" = "显示 API Key";
 "models.hideKey" = "隐藏 API Key";
+"models.cloud.managedShort" = "由 Typeflux 管理";
 
 // Screenshot capability and recovery
 "ask.image.unsupported" = "当前模型不支持图片识别，切换到支持图片识别的模型后可附带截图。";

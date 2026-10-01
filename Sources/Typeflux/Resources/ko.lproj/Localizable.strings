@@ -1637,6 +1637,7 @@
 "models.visionUnknownShort" = "스크린샷 지원 여부 알 수 없음";
 "models.showKey" = "API 키 표시";
 "models.hideKey" = "API 키 숨기기";
+"models.cloud.managedShort" = "Typeflux에서 관리";
 
 // Screenshot capability and recovery
 "ask.image.unsupported" = "이 모델은 이미지 인식을 지원하지 않습니다. 스크린샷을 첨부하려면 지원하는 모델로 전환하세요.";

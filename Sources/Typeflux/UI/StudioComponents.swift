@@ -654,7 +654,8 @@ struct StudioShell<Content: View>: View {
         .frame(width: contentWidth, alignment: .topLeading)
         .padding(.horizontal, StudioTheme.contentInset)
         .padding(.top, StudioTheme.Layout.shellContentTopInset)
-        .padding(.bottom, StudioTheme.Layout.shellContentBottomInset)
+        // The model page scrolls itself, so its content runs to the window edge like other pages.
+        .padding(.bottom, currentSection == .models ? 0 : StudioTheme.Layout.shellContentBottomInset)
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 

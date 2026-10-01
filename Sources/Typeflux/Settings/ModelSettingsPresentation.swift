@@ -31,11 +31,17 @@ enum ModelSettingsPresentation {
         return rest
     }
 
-    /// Secondary line for a configured language-model provider row.
-    static func languageProviderDetail(modelCount: Int, baseURL: String, countFormat: String) -> String {
+    /// Secondary line for a configured language-model provider row. Managed providers show who
+    /// owns their catalog instead of an endpoint.
+    static func languageProviderDetail(
+        modelCount: Int,
+        baseURL: String,
+        countFormat: String,
+        managedLabel: String? = nil
+    ) -> String {
         let count = String(format: countFormat, modelCount)
-        let endpoint = endpointLabel(baseURL)
-        return endpoint.isEmpty ? count : count + " · " + endpoint
+        let suffix = managedLabel ?? endpointLabel(baseURL)
+        return suffix.isEmpty ? count : count + " · " + suffix
     }
 
     /// Save is offered only once the draft differs from what was last stored.
