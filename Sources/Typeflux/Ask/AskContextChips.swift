@@ -125,6 +125,15 @@ enum AskContextChips {
         return result
     }
 
+    /// macOS draws an app's tile on 824 of its 1024pt canvas; the rest is margin
+    /// for the shadow. Scaling by the inverse lets the tile fill a chip.
+    static let appIconTileFraction: CGFloat = 824.0 / 1024.0
+
+    /// Side of the app icon image drawn in a chip, so its tile covers the chip.
+    static func appIconSide(chip: CGFloat) -> CGFloat {
+        (chip / appIconTileFraction).rounded(.up)
+    }
+
     /// App icons by bundle identifier; nil when the app cannot be found.
     @MainActor static func appIcon(_ bundleID: String) -> NSImage? {
         if let cached = iconCache[bundleID] { return cached }
@@ -210,11 +219,19 @@ struct AskIconChipFace: View {
     let item: AskContextItem
     var hovering = false
 
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 8, style: .continuous) }
+    private var appImage: NSImage? {
+        guard let bundleID = item.appBundleID else { return nil }
+        return AskContextChips.appIcon(bundleID)
+    }
+
     var body: some View {
         icon
             .frame(width: AskContextChips.chipSize, height: AskContextChips.chipSize)
-            .background(fill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(stroke))
+            .background(appImage == nil ? fill : .clear, in: shape)
+            .overlay(shape.strokeBorder(appImage == nil ? stroke : .clear))
+            // An app icon fills the chip edge to edge instead of sitting inside a ring.
+            .clipShape(shape)
             .overlay(alignment: .topTrailing) {
                 if case let .count(value) = item.badge {
                     Text(verbatim: value > 99 ? "99+" : String(value))
@@ -237,8 +254,11 @@ struct AskIconChipFace: View {
     }
 
     @ViewBuilder private var icon: some View {
-        if let bundleID = item.appBundleID, let image = AskContextChips.appIcon(bundleID) {
-            Image(nsImage: image).resizable().frame(width: 16, height: 16)
+        if let image = appImage {
+            Image(nsImage: image).resizable().interpolation(.high)
+                .frame(width: AskContextChips.appIconSide(chip: AskContextChips.chipSize),
+                       height: AskContextChips.appIconSide(chip: AskContextChips.chipSize))
+                .opacity(hovering ? 0.85 : 1)
         } else {
             ZStack {
                 Image(systemName: item.systemImage).font(.system(size: 12, weight: .medium))
