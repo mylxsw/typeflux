@@ -32,6 +32,12 @@ enum AskGlassMaterial: Equatable {
     var drawsOwnEdge: Bool { self != .opaque }
 }
 
+extension EnvironmentValues {
+    /// Pins the launcher material, e.g. to check the Reduce Transparency fallback
+    /// in tests; nil follows the system.
+    @Entry var askGlassMaterialOverride: AskGlassMaterial?
+}
+
 /// The launcher's floating card. It replaces the opaque `composerSurface`
 /// with glass so the panel reads as part of whatever window it floats over.
 struct AskGlassBackground: View {

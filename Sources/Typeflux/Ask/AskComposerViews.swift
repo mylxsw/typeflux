@@ -26,6 +26,7 @@ struct AskComposer: View {
     var onToggleUsage: (() -> Void)?
     @ObservedObject private var voice: AskVoiceInput
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.askGlassMaterialOverride) private var glassOverride
 
     init(model: AskConversationModel, launcher: Bool, onDismiss: @escaping () -> Void = {},
          onHeightChange: @escaping (CGFloat) -> Void = { _ in },
@@ -54,7 +55,7 @@ struct AskComposer: View {
     private var chrome: AskComposerChrome { .of(launcher: launcher) }
     /// Nil for the opaque workspace card.
     private var glass: AskGlassMaterial? {
-        chrome.glass ? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency) : nil
+        chrome.glass ? glassOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency) : nil
     }
     private func submit() { if launcher { model.submitLauncher() } else { model.submitDraft() } }
 
