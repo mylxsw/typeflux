@@ -1452,6 +1452,7 @@
 "ask.memory.app" = "メモリ · %@";
 "ask.memory.help" = "会話の開始時に一度だけ送信されます：グローバルメモリと、質問を始めたアプリで最近入力したテキストです。削除するとメモリなしで質問します。";
 "ask.memory.pinned" = "この会話は開始時に取り込んだメモリを使用しています。";
+"ask.memory.pinnedHint" = "メモリは会話の開始時に添付され、以降の質問でも使われ続けるため、ここではオフにできません。メモリなしで質問するには新しい会話を始めてください。";
 "ask.selection.remove" = "Remove selected text";
 "ask.send" = "Send";
 "ask.stop" = "Stop";

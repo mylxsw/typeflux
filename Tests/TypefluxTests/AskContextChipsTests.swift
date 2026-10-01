@@ -93,6 +93,9 @@ struct AskContextChipsTests {
         #expect(items(memory: AskMemory()).allSatisfy { $0.kind != .memory })
         let pinned = try #require(items(memory: appMemory, pinned: true).first { $0.kind == .memory })
         #expect(!pinned.removable && pinned.detail == L("ask.memory.pinned"))
+        // In effect for the conversation, so it reads as on, and it says why it can't be switched off.
+        #expect(pinned.style == .active && pinned.hint == L("ask.memory.pinnedHint"))
+        #expect(L("ask.memory.pinnedHint") != "ask.memory.pinnedHint")
     }
 
     @Test func overflowFoldsSelectionAndMemoryFromTheRight() {

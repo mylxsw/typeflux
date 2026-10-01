@@ -16,7 +16,13 @@ struct AskConversationView: View {
     @State private var headerHovering = false
     /// Height of the banners and composer floating over the transcript's bottom edge.
     @State private var bottomChromeHeight: CGFloat = 0
-    @AppStorage("ask.sidebarCollapsed") private var sidebarCollapsed = false
+    /// Set by the toggle inside its animation. Driving the layout from the
+    /// `@AppStorage` value alone re-rendered outside the animation, so the
+    /// sidebar popped in and out instead of sliding.
+    @State private var sidebarChoice: Bool?
+    @AppStorage("ask.sidebarCollapsed") private var storedSidebarCollapsed = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var windowWidth: CGFloat = 0
     @ObservedObject private var auth = AuthState.shared
 
     init(model: AskConversationModel, showsUsage: Bool = false) {
@@ -28,26 +34,34 @@ struct AskConversationView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             HStack(spacing: 0) {
-                if !sidebarCollapsed {
+                if !sidebarHidden {
                     sidebar.frame(width: AskMetrics.sidebarWidth)
+                        .transition(AskMotion.panel(edge: .leading, reduceMotion: reduceMotion))
                 }
                 content
                 if showsUsage {
-                    AskUsagePanel(model: model, runId: $usageRunId, close: { showsUsage = false })
+                    AskUsagePanel(model: model, runId: $usageRunId, close: { setUsage(false) })
                         .id(model.selectedId)
+                        .transition(AskMotion.panel(edge: .trailing, reduceMotion: reduceMotion))
                 }
             }
             // One surface for the whole window: the sidebar floats on it as a
             // glass panel instead of being a differently tinted column.
             .background(AskWindowBackdrop())
+            .background(GeometryReader { geometry in
+                Color.clear.preference(key: AskWindowWidth.self, value: geometry.size.width)
+            })
             titleBarTools
             if isSearching { searchPalette }
         }
         // Lay out from the very top of the window so the tools share the
         // traffic lights' baseline instead of sitting below the title bar.
         .onChange(of: model.selectedId) { _ in usageRunId = nil }
+        .onPreferenceChange(AskWindowWidth.self) { width in
+            withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) { windowWidth = width }
+        }
         .ignoresSafeArea(.container, edges: .top)
-        .frame(minWidth: showsUsage ? 1070 : 740, minHeight: 530)
+        .frame(minWidth: 740, minHeight: 530)
         .background(StudioGlassBackground(tintOpacity: StudioTheme.Opacity.glassBackgroundTint))
         .tint(AskTheme.accent)
         .onChange(of: model.draft) { _ in model.persistDrafts() }
@@ -63,6 +77,16 @@ struct AskConversationView: View {
     }
 
     // MARK: - Sidebar
+
+    /// The user's choice: this window's latest toggle, else the stored preference.
+    private var sidebarCollapsed: Bool { sidebarChoice ?? storedSidebarCollapsed }
+
+    /// Hidden by the user, or stepping aside while the usage panel needs the
+    /// room: three columns overflowed a narrow window and pushed the sidebar
+    /// against its edge.
+    private var sidebarHidden: Bool {
+        sidebarCollapsed || AskPresentation.sidebarYields(windowWidth: windowWidth, usageShown: showsUsage)
+    }
 
     /// A glass panel floating inset from the window edges, with the traffic
     /// lights inside its top strip, instead of a full-height column split off by a rule.
@@ -84,8 +108,8 @@ struct AskConversationView: View {
     /// inside the sidebar; collapsed, they follow the traffic lights.
     private var titleBarTools: some View {
         HStack(spacing: 2) {
-            if !sidebarCollapsed { Spacer(minLength: 0) }
-            if sidebarCollapsed {
+            if !sidebarHidden { Spacer(minLength: 0) }
+            if sidebarHidden {
                 // Without the panel behind them the tools float like the header's pills.
                 collapsedTools
                     .padding(.horizontal, 3)
@@ -95,15 +119,23 @@ struct AskConversationView: View {
                 sidebarToggle
             }
         }
-        .padding(.leading, sidebarCollapsed ? AskMetrics.trafficLightInset : 0)
-        .padding(.trailing, sidebarCollapsed ? 0 : 6 + AskMetrics.sidebarPanelInset)
-        .frame(width: sidebarCollapsed ? nil : AskMetrics.sidebarWidth, alignment: .leading)
+        .padding(.leading, sidebarHidden ? AskMetrics.trafficLightInset : 0)
+        .padding(.trailing, sidebarHidden ? 0 : 6 + AskMetrics.sidebarPanelInset)
+        .frame(width: sidebarHidden ? nil : AskMetrics.sidebarWidth, alignment: .leading)
         .frame(height: AskMetrics.titleBarRowHeight)
     }
 
     private var sidebarToggle: some View {
         titleBarButton("sidebar.left", label: L("ask.sidebar.toggle")) {
-            withAnimation(.easeInOut(duration: 0.18)) { sidebarCollapsed.toggle() }
+            withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
+                // A sidebar that stepped aside for the usage panel comes back by closing the panel.
+                if !sidebarCollapsed, sidebarHidden {
+                    showsUsage = false
+                } else {
+                    sidebarChoice = !sidebarCollapsed
+                    storedSidebarCollapsed = sidebarChoice ?? false
+                }
+            }
         }
     }
 
@@ -427,8 +459,13 @@ struct AskConversationView: View {
     private var content: some View {
         ZStack(alignment: .top) {
             Group {
-                if model.selectedId == nil { emptyState } else { transcript }
+                if model.selectedId == nil {
+                    emptyState.transition(.opacity)
+                } else {
+                    transcript.transition(.opacity)
+                }
             }
+            .animation(AskMotion.revealAnimation(reduceMotion: reduceMotion), value: model.selectedId == nil)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .mask(AskEdgeFade(topClear: AskMetrics.headerCapsuleTop, bottomClear: AskMetrics.composerBottomInset,
                               fade: AskMetrics.transcriptEdgeFade))
@@ -443,7 +480,7 @@ struct AskConversationView: View {
             header
         }
         .onPreferenceChange(AskBottomChromeHeight.self) { bottomChromeHeight = $0 }
-        .frame(minWidth: 480)
+        .frame(minWidth: AskMetrics.contentMinWidth)
     }
 
     /// The title and the conversation's actions as two glass capsules over the
@@ -490,7 +527,7 @@ struct AskConversationView: View {
                 .onHover { headerHovering = $0 }
             }
         }
-        .padding(.leading, sidebarCollapsed ? AskMetrics.collapsedTitleInset : 14)
+        .padding(.leading, sidebarHidden ? AskMetrics.collapsedTitleInset : 14)
         .padding(.trailing, 14)
         .frame(height: AskMetrics.titleBarRowHeight)
     }
@@ -504,7 +541,13 @@ struct AskConversationView: View {
     /// the same control that opened it closes it again.
     private func toggleUsage() {
         if !showsUsage { usageRunId = model.selected?.run?.id }
-        showsUsage.toggle()
+        setUsage(!showsUsage)
+    }
+
+    /// The usage panel slides in from the trailing edge like the sidebar.
+    private func setUsage(_ shown: Bool) {
+        guard shown != showsUsage else { return }
+        withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) { showsUsage = shown }
     }
 
     private func headerAction(_ kind: AskLineGlyph.Kind, label: String, active: Bool = false,
@@ -669,16 +712,12 @@ struct AskConversationView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 24) {
-                        if model.isLoadingSelection, model.selected == nil {
-                            ProgressView(L("ask.loading")).controlSize(.small)
-                                .frame(maxWidth: .infinity).padding(.top, 24)
-                        }
                         ForEach(transcriptMessages) { message in
                             AskMessageView(message: message,
                                            allMessages: model.selected?.messages ?? [],
                                            onReference: { model.addReference($0) },
                                            usage: message.runId.flatMap { model.selected?.usage?.runs[$0] },
-                                           onUsage: { usageRunId = message.runId; showsUsage = true },
+                                           onUsage: { usageRunId = message.runId; setUsage(true) },
                                            isStreaming: message.id == model.selected?.run?.assistantId && model.selected?.run?.isActive == true,
                                            canRegenerate: regenerable == message.id,
                                            onRegenerate: { model.regenerate(message.id) },
@@ -706,6 +745,16 @@ struct AskConversationView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .coordinateSpace(name: "ask-transcript")
+                // Hidden until it sits at its reading position, then faded in:
+                // drawing first and scrolling a frame later made every load
+                // flash the top of the conversation before jumping to the end.
+                .opacity(restoredTranscript != nil && restoredTranscript == model.selectedId ? 1 : 0)
+                .overlay(alignment: .top) {
+                    if model.isLoadingSelection, model.selected == nil {
+                        AskDelayedProgress(title: L("ask.loading"))
+                            .padding(.top, AskMetrics.titleBarRowHeight + 24)
+                    }
+                }
                 .onPreferenceChange(AskTranscriptFrames.self) { frames in
                     guard let id = model.selectedId, restoredTranscript == id else { return }
                     if let bottom = frames["bottom"], AskPresentation.isFollowingBottom(
@@ -758,7 +807,11 @@ struct AskConversationView: View {
         DispatchQueue.main.async {
             guard model.selectedId == id else { return }
             proxy.scrollTo(anchor, anchor: anchor == "bottom" ? .bottom : .top)
-            restoredTranscript = id
+            // One more pass lets the lazy rows settle at the new offset before revealing.
+            DispatchQueue.main.async {
+                guard model.selectedId == id else { return }
+                withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) { restoredTranscript = id }
+            }
         }
     }
 }

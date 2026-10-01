@@ -34,6 +34,27 @@ struct AskWorkspaceGlassTests {
         #expect(launcher.idleBorder(on: nil, increasedContrast: false) == AskTheme.floatingBorder)
     }
 
+    @Test func sidebarStepsAsideOnlyWhenTheUsagePanelLacksRoom() {
+        let needed = AskMetrics.sidebarWidth + AskMetrics.contentComfortWidth
+            + AskMetrics.usagePanelWidth + AskMetrics.sidebarPanelInset
+        #expect(!AskPresentation.sidebarYields(windowWidth: 1100, usageShown: true))
+        #expect(!AskPresentation.sidebarYields(windowWidth: needed, usageShown: true))
+        #expect(AskPresentation.sidebarYields(windowWidth: needed - 1, usageShown: true))
+        #expect(AskPresentation.sidebarYields(windowWidth: 800, usageShown: true))
+        #expect(!AskPresentation.sidebarYields(windowWidth: 800, usageShown: false))
+        // Before the window is measured nothing moves.
+        #expect(!AskPresentation.sidebarYields(windowWidth: 0, usageShown: true))
+        // The narrowest window still fits the column beside the panel.
+        #expect(AskMetrics.contentMinWidth + AskMetrics.usagePanelWidth + AskMetrics.sidebarPanelInset <= 760)
+    }
+
+    @Test func windowWidthKeepsTheWidestReport() {
+        var value: CGFloat = 300
+        AskWindowWidth.reduce(value: &value) { 900 }
+        #expect(value == 900)
+        #expect(AskWindowWidth.defaultValue == 0)
+    }
+
     @Test func composerAndSidebarBottomsLineUp() {
         #expect(AskMetrics.composerBottomInset == AskMetrics.sidebarPanelInset)
     }

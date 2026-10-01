@@ -147,6 +147,12 @@ enum AskMetrics {
     static let bannerHeight: CGFloat = 32
     static let bannerSpacing: CGFloat = 6
     static let sidebarWidth: CGFloat = 248
+    /// The usage panel's glass card; it floats inset like the sidebar.
+    static let usagePanelWidth: CGFloat = 330
+    /// The transcript column's narrowest width; below sidebar + a comfortable
+    /// column + usage panel, the sidebar steps aside while the panel is open.
+    static let contentMinWidth: CGFloat = 420
+    static let contentComfortWidth: CGFloat = 480
     /// Height of the title bar row; the unified toolbar centres the traffic lights in it.
     static let titleBarRowHeight: CGFloat = 52
     /// Space above the sidebar's first row, clearing the title bar tools.
@@ -916,6 +922,15 @@ struct AskVoiceBorder: ViewModifier {
 /// Pure helpers behind the redesigned surfaces, kept separate so they can be
 /// unit tested without rendering a window.
 enum AskPresentation {
+    /// Whether the sidebar should step aside so the usage panel fits beside a
+    /// comfortable transcript column. An unmeasured (zero) width never hides it.
+    static func sidebarYields(windowWidth: CGFloat, usageShown: Bool) -> Bool {
+        guard usageShown, windowWidth > 0 else { return false }
+        let needed = AskMetrics.sidebarWidth + AskMetrics.contentComfortWidth
+            + AskMetrics.usagePanelWidth + AskMetrics.sidebarPanelInset
+        return windowWidth < needed
+    }
+
     /// Whether the transcript is scrolled to its end. The end marker starts
     /// right after the last message; the composer floats over the bottom
     /// `coveredBottom` points, so "at the end" means the marker begins above the card.
@@ -1231,6 +1246,48 @@ struct AskSegmentedControl<Value: Hashable>: View {
         .background(AskTheme.segmentTrack, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         .animation(.easeOut(duration: 0.15), value: selection)
     }
+}
+
+/// Motion shared by the conversation window's panels and transcript, so the
+/// sidebar, the usage panel and loaded conversations move the same way.
+/// Reduce Motion keeps the state change but drops the travel.
+enum AskMotion {
+    static func panel(edge: Edge, reduceMotion: Bool) -> AnyTransition {
+        reduceMotion ? .opacity : .move(edge: edge).combined(with: .opacity)
+    }
+
+    static func panelAnimation(reduceMotion: Bool) -> Animation {
+        reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.36, dampingFraction: 0.88)
+    }
+
+    /// A loaded transcript fades in once it sits at its reading position.
+    static func revealAnimation(reduceMotion: Bool) -> Animation {
+        .easeOut(duration: reduceMotion ? 0.1 : 0.22)
+    }
+
+    /// Loads that finish sooner (a cached conversation) never flash a spinner.
+    static let progressDelay: Duration = .milliseconds(300)
+}
+
+/// A spinner that only appears when loading takes longer than `AskMotion.progressDelay`.
+struct AskDelayedProgress: View {
+    var title: String
+    @State private var visible = false
+
+    var body: some View {
+        ProgressView(title).controlSize(.small)
+            .opacity(visible ? 1 : 0)
+            .task {
+                try? await Task.sleep(for: AskMotion.progressDelay)
+                withAnimation(.easeOut(duration: 0.18)) { visible = true }
+            }
+    }
+}
+
+/// Reports the conversation window's width, so its columns can make room.
+struct AskWindowWidth: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
 /// Reports the height of the banners and composer floating over the transcript.
