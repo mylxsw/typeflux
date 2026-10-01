@@ -1457,6 +1457,8 @@
 "ask.context.screenshot.offHint" = "Click to attach a screenshot of the current screen";
 "ask.context.previewHint" = "Click to preview";
 "ask.context.more" = "%d more context items";
+"ask.context.memory.offHint" = "Click to leave memory out of this question";
+"ask.context.memory.onHint" = "Click to include memory";
 "ask.selection" = "Selected text";
 "ask.memory" = "Memory";
 "ask.memory.app" = "Memory · %@";

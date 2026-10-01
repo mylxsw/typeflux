@@ -5,10 +5,10 @@ import Testing
 @Suite("Ask context chips")
 struct AskContextChipsTests {
     private func items(screenshot: AskScreenshotState = .off, source: String? = nil, bundle: String? = nil,
-                       selection: String? = nil, memory: AskMemory? = nil,
+                       selection: String? = nil, memory: AskMemory? = nil, memoryOff: Bool = false,
                        pinned: Bool = false) -> [AskContextItem] {
         AskContextChips.items(screenshot: screenshot, source: source, sourceBundleID: bundle,
-                              selection: selection, memory: memory, memoryPinned: pinned)
+                              selection: selection, memory: memory, memoryOff: memoryOff, memoryPinned: pinned)
     }
 
     @Test func sourceSplitsAppFromWindowTitle() {
@@ -70,7 +70,11 @@ struct AskContextChipsTests {
         let appMemory = AskMemory(app: .init(id: "com.google.Chrome", name: "Google Chrome", excerpts: ["x"]))
         let draft = try #require(items(memory: appMemory).first { $0.kind == .memory })
         #expect(draft.badge == .app("com.google.Chrome"))
-        #expect(draft.removable && draft.style == .active)
+        // A toggle, not a removal: switched off it greys out and stays.
+        #expect(!draft.removable && draft.style == .active && draft.hint == L("ask.context.memory.offHint"))
+        let off = try #require(items(memory: appMemory, memoryOff: true).first { $0.kind == .memory })
+        #expect(off.style == .neutral && off.hint == L("ask.context.memory.onHint"))
+        #expect(off.badge == draft.badge && off.title == draft.title)
         let global = try #require(items(memory: AskMemory(global: "soul")).first { $0.kind == .memory })
         #expect(global.badge == nil)
         #expect(items(memory: AskMemory()).allSatisfy { $0.kind != .memory })
@@ -92,11 +96,16 @@ struct AskContextChipsTests {
         #expect(AskContextChips.layouts(items()).count == 1)
     }
 
+    @Test func placeholderUsesTheEditorTextInset() {
+        #expect(AskComposerTextView.lineFragmentPadding == 5)
+    }
+
     @Test func draftsWithoutASourceBundleStillDecode() throws {
         let json = #"{"text":"hi","includeScreenshot":true,"source":"Finder"}"#
         let draft = try JSONDecoder().decode(AskDraft.self, from: Data(json.utf8))
         #expect(draft.source == "Finder")
         #expect(draft.sourceBundleID == nil)
+        #expect(draft.memoryOff == nil)
     }
 
     @Test func everyLocalizationDefinesTheChipCopy() throws {
@@ -106,7 +115,8 @@ struct AskContextChipsTests {
             }.first)
             let bundle = try #require(Bundle(path: path))
             for key in ["ask.context.screenshot.attached", "ask.context.screenshot.offHint",
-                        "ask.context.previewHint", "ask.context.more"] {
+                        "ask.context.previewHint", "ask.context.more",
+                        "ask.context.memory.offHint", "ask.context.memory.onHint"] {
                 let value = bundle.localizedString(forKey: key, value: nil, table: nil)
                 #expect(value != key, "Missing \(key) for \(language.rawValue)")
             }

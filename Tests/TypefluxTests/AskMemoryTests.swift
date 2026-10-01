@@ -228,6 +228,31 @@ struct AskMemoryTests {
         #expect(f.model.selected?.memory == captured)
     }
 
+    @Test func memorySwitchedOffIsNotSentAndCanBeSwitchedBackOn() async throws {
+        let f = try AskMemoryFixture()
+        let captured = AskMemory(global: "soul", app: .init(id: "com.apple.dt.Xcode", name: "Xcode", excerpts: ["draft"]))
+        f.capture.captured = captured
+        f.capture.global = AskMemory(global: "fallback")
+        await f.model.prepareLauncher()
+        f.model.launcherDraft.memoryOff = true
+        // Switching off keeps the captured memory, so switching back on restores it.
+        #expect(f.model.launcherDraft.memory == captured)
+        f.model.launcherDraft.text = "Question"
+        f.model.submitLauncher()
+        try await f.wait { f.model.busyIds.isEmpty && f.model.selected != nil }
+        #expect(await f.api.sends.first?.memory == nil)
+
+        let again = try AskMemoryFixture()
+        again.capture.captured = captured
+        await again.model.prepareLauncher()
+        again.model.launcherDraft.memoryOff = true
+        again.model.launcherDraft.memoryOff = nil
+        again.model.launcherDraft.text = "Question"
+        again.model.submitLauncher()
+        try await again.wait { again.model.busyIds.isEmpty && again.model.selected != nil }
+        #expect(await again.api.sends.first?.memory == captured)
+    }
+
     @Test func removedOrUnavailableMemoryIsNotReplacedByGlobalMemory() async throws {
         let f = try AskMemoryFixture()
         f.capture.global = AskMemory(global: "fallback")
