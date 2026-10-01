@@ -23,7 +23,7 @@ extension AskComposerInteractionTests {
         fixture.model.resetSession()
     }
 
-    @Test func pinnedMemoryExplainsItselfOnClick() async throws {
+    @Test func pinnedMemoryTogglesOnClick() async throws {
         let fixture = try AskTestFixture()
         var value = AskConversation(id: "pinned", title: "Pinned", revision: 1, updatedAt: Date(), messages: [
             .init(id: "q", role: "user", text: "Hi", createdAt: Date())
@@ -32,14 +32,37 @@ extension AskComposerInteractionTests {
         await fixture.api.seed(value)
         await fixture.model.select("pinned")
         let (window, hosting) = try await hostChipView(AskConversationView(model: fixture.model), size: NSSize(width: 1000, height: 640))
-        defer { window.close(); NSApp.windows.filter { $0 is AskHoverCardPresenter.Panel }.forEach { $0.orderOut(nil) } }
-        func cardShown() -> Bool { NSApp.windows.contains { $0 is AskHoverCardPresenter.Panel && $0.isVisible } }
-        #expect(!cardShown())
+        defer { window.close() }
+        #expect(!fixture.model.memorySwitchedOff(launcher: false))
         try clickChip(memoryChipAnchors(hosting).last, in: window)
         try await Task.sleep(for: .milliseconds(150))
-        // Read-only: the click shows the explanation and changes nothing.
+        #expect(fixture.model.draft.memoryOff == true)
+        #expect(fixture.model.memorySwitchedOff(launcher: false))
+        try clickChip(memoryChipAnchors(hosting).last, in: window)
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(fixture.model.draft.memoryOff == false)
+        #expect(!fixture.model.memorySwitchedOff(launcher: false))
+        fixture.model.resetSession()
+    }
+
+    @Test func readOnlyChipExplainsItselfOnClick() async throws {
+        let fixture = try AskTestFixture()
+        await fixture.model.prepareLauncher()
+        fixture.model.launcherDraft.source = "Safari — Example"
+        fixture.model.launcherDraft.selection = nil
+        fixture.model.launcherDraft.memory = nil
+        let (window, hosting) = try await hostChipView(AskLauncherView(model: fixture.model, onDismiss: {}),
+                                                       size: NSSize(width: AskMetrics.launcherWidth, height: 120))
+        defer { window.close(); NSApp.windows.filter { $0 is AskHoverCardPresenter.Panel }.forEach { $0.orderOut(nil) } }
+        func cardShown() -> Bool { NSApp.windows.contains { $0 is AskHoverCardPresenter.Panel && $0.isVisible } }
+        let anchors = memoryChipAnchors(hosting)
+        // Other hover anchors (the menus) sit left of the chips; the source chip is the rightmost.
+        #expect(anchors.count >= 2)
+        #expect(!cardShown())
+        // The source app has no action, so a click explains it.
+        try clickChip(anchors.last, in: window)
+        try await Task.sleep(for: .milliseconds(150))
         #expect(cardShown())
-        #expect(fixture.model.draft.memoryOff == nil)
         // Opened without the pointer on the chip, it closes by itself.
         try await Task.sleep(nanoseconds: AskContextChips.explainDuration + 300_000_000)
         #expect(!cardShown())

@@ -442,7 +442,7 @@ final class AskConversationModel: ObservableObject {
         request.memory = newConversation && submitted.memoryOff != true
             ? Self.openingMemory(submitted.memory ?? capture.globalMemory()) : nil
         value.modelRef = request.modelRef
-        if newConversation { value.memory = request.memory }
+        Self.applyMemoryChoice(submitted, newConversation: newConversation, request: &request, conversation: &value)
         pendingSends[id] = request
         screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
         value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references))

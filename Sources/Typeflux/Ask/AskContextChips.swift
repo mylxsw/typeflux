@@ -89,11 +89,10 @@ enum AskContextChips {
             ))
         }
         if memoryPinned {
-            // In effect for the whole conversation, so it reads as on. It is
-            // read-only: a click explains that instead of silently doing nothing.
-            items.append(AskContextItem(kind: .memory, systemImage: "brain", style: .active,
-                                        title: L("ask.memory"), detail: L("ask.memory.pinned"),
-                                        hint: L("ask.memory.pinnedHint")))
+            // Pinned when the conversation started; each follow-up can leave it out.
+            let hint = memoryOff ? "ask.context.memory.onHint" : "ask.context.memory.offHint"
+            items.append(AskContextItem(kind: .memory, systemImage: "brain", style: memoryOff ? .neutral : .active,
+                                        title: L("ask.memory"), detail: L("ask.memory.pinned"), hint: L(hint)))
         } else if let memory, !memory.isEmpty {
             // A toggle, not a removal: switched off it stays as a grey chip, so
             // it can be switched back on.
