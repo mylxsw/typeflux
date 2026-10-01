@@ -64,10 +64,11 @@ actor HTTPMCPClient: MCPClient {
 
     func listTools() async throws -> [MCPToolDefinition] {
         guard isConnected else { throw MCPClientError.notConnected }
-        let id = nextId()
-        let msg = MCPJsonRPCMessage.toolsListRequest(id: .string(id))
-        let (response, _) = try await post(message: msg)
-        return try response.decodeToolsListResult().tools
+        return try await collectMCPToolPages { cursor in
+            let msg = MCPJsonRPCMessage.toolsListRequest(id: .string(nextId()), cursor: cursor)
+            let (response, _) = try await post(message: msg)
+            return try response.decodeToolsListResult()
+        }
     }
 
     func callTool(name: String, arguments: [String: Any]) async throws -> MCPToolsCallResult {

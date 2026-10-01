@@ -41,6 +41,13 @@ actor MockMCPClient: MCPClient {
         mockCallResult = result
     }
 
+    var shouldFailListTools = false
+
+    func setMockTools(_ tools: [MCPToolDefinition], failing: Bool = false) {
+        mockTools = tools
+        shouldFailListTools = failing
+    }
+
     func disconnect() async {
         disconnectCallCount += 1
         connected = false
@@ -49,6 +56,7 @@ actor MockMCPClient: MCPClient {
     func listTools() async throws -> [MCPToolDefinition] {
         guard connected else { throw MCPClientError.notConnected }
         listToolsCallCount += 1
+        if shouldFailListTools { throw MCPClientError.invalidResponse("tools/list failed") }
         return mockTools
     }
 

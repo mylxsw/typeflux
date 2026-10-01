@@ -16,6 +16,8 @@ struct AskInferenceResult: Codable, Equatable, Sendable {
     var failed = false
     var reasoning: String? = nil
     var reasoningMilliseconds: Int? = nil
+    /// "length" when the provider stopped at its output limit.
+    var finishReason: String? = nil
 }
 
 /// Refuse redirects so a configured endpoint cannot forward credentials to another host.

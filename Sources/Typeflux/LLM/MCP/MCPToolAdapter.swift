@@ -13,16 +13,20 @@ struct MCPToolAdapter: AgentTool {
         )
     }
 
-    func execute(arguments: String) async throws -> String {
+    /// Calls the tool and keeps the MCP error flag and non-text content.
+    func call(arguments: String) async throws -> MCPToolsCallResult {
         let args: [String: Any] = if let data = arguments.data(using: .utf8),
                                      let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             dict
         } else {
             [:]
         }
+        return try await client.callTool(name: toolDef.name, arguments: args)
+    }
 
-        let result = try await client.callTool(name: toolDef.name, arguments: args)
-        let content = result.content.map { $0.text ?? "" }.joined(separator: "\n")
+    func execute(arguments: String) async throws -> String {
+        let result = try await call(arguments: arguments)
+        let content = result.textContent
 
         let dict: [String: Any] = if result.isError == true {
             ["error": content]

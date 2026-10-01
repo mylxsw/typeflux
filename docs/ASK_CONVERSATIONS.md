@@ -107,13 +107,19 @@ intact. An accessibility refresh action provides an alternative to the gesture.
   tools. Every invocation requires explicit approval. Computer/browser actions
   are bound to the application from which the question was opened. After an app
   restart that target is unavailable: start a new question from the target app.
+  The browser tool is only offered when that application is Safari or Chrome.
+  MCP tools are named `mcp_<tool>`; when two servers expose the same tool name,
+  both are kept as `mcp_<server>_<tool>`. An MCP result flagged `isError` is sent
+  as a failed tool result, and its first image is attached as a JPEG observation.
 
 ## Recovery and execution
 
 Stable message IDs make retries after a lost response idempotent. Unconfirmed
 messages can be resumed after restart. Tool results are journaled before posting;
 an interrupted execution with an unknown outcome is reported instead of replayed.
-Approval rechecks the server run before any effect. Only one conversation can
+Approval rechecks the server run before any effect. A run waiting for tool
+approval expires after 24 hours instead of five minutes; stop or resume it from
+the workspace. Only one conversation can
 control the desktop at a time. Cancellation blocks late answers and later local
 actions; it cannot reverse actions already performed.
 
@@ -255,3 +261,21 @@ Validation: all 139 Swift Testing tests passed, including native renders and mou
 interaction tests. The new production-adapter mouse integration test also passed.
 Full XCTest: 2674 cases, with the same four pre-existing workflow failures
 (8 assertions) documented above and no newly failing cases.
+
+## Harness reliability fixes (2026-10-01)
+
+- Stdio MCP: the client previously ran a blocking read on its actor, so `connect()`
+  never returned. A standalone build of the old client against a minimal
+  server timed out; the new client reads via `readabilityHandler`, discards stderr
+  (a full stderr pipe blocked chatty servers), bounds every request (120 s),
+  forwards cancellation as `notifications/cancelled`, fails pending requests
+  when the server exits, and never raises SIGPIPE. Bare commands such as `npx`
+  resolve through PATH plus common Homebrew/user directories.
+- MCP `tools/list` follows `nextCursor` (stdio and HTTP). JSON-RPC errors report
+  the server's message.
+- A custom-model answer that stops at its output limit is reported to the server
+  as `finish_reason: "length"` (OpenAI `length`, Anthropic `max_tokens`, Gemini
+  `MAX_TOKENS`), which keeps the visible text as an interrupted reply.
+
+Tests: `StdioMCPClientTests` run a shell MCP server through real pipes;
+`AskMCPToolsTests` cover naming, registry ownership and result mapping.

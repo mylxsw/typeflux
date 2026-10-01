@@ -27,3 +27,21 @@ protocol MCPClient: Actor {
     /// Tests connectivity (sends ping).
     func ping() async throws
 }
+
+/// Follows `nextCursor` so servers that paginate `tools/list` do not silently lose tools.
+/// A repeated cursor or an excessive page count ends the listing instead of looping forever.
+func collectMCPToolPages(
+    maxPages: Int = 50,
+    _ fetchPage: (String?) async throws -> MCPToolsListResult
+) async throws -> [MCPToolDefinition] {
+    var tools: [MCPToolDefinition] = []
+    var cursor: String?
+    var seen = Set<String>()
+    for _ in 0 ..< maxPages {
+        let page = try await fetchPage(cursor)
+        tools.append(contentsOf: page.tools)
+        guard let next = page.nextCursor, !next.isEmpty, seen.insert(next).inserted else { break }
+        cursor = next
+    }
+    return tools
+}

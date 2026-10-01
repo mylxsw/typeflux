@@ -1,14 +1,18 @@
 import AppKit
+import ImageIO
 
 struct AskLocalToolOutput: Sendable {
     var content: String
     var image: String?
+    /// The tool ran but reported failure, so the model must not treat its output as success.
+    var isError = false
 }
 
 @MainActor
 protocol AskToolExecuting {
     func bindConversation(_ id: String)
-    func definitions() async -> [AskToolDefinition]
+    /// Tools usable from this conversation; tools that need an unavailable target are omitted.
+    func definitions(conversationId: String?) async -> [AskToolDefinition]
     func execute(_ call: AskToolCall, conversationId: String) async throws -> AskLocalToolOutput
 }
 
@@ -17,7 +21,7 @@ protocol AskToolExecuting {
 @MainActor
 final class AskLocalTools: AskToolExecuting {
     private let registry: MCPRegistry
-    private var mcpTools: [String: any AgentTool] = [:]
+    private var mcpTools: [String: MCPToolAdapter] = [:]
     var targetApplication: NSRunningApplication?
     private var capturedDisplays: [String: CGDirectDisplayID] = [:]
     private var targets: [String: NSRunningApplication] = [:]
@@ -29,15 +33,16 @@ final class AskLocalTools: AskToolExecuting {
 
     func bindConversation(_ id: String) { targets[id] = targetApplication }
 
-    func definitions() async -> [AskToolDefinition] {
+    func definitions(conversationId: String?) async -> [AskToolDefinition] {
         await registry.connectAutoConnectServers()
-        var result = Self.builtins
+        // An existing conversation only controls the app it was bound to, which is gone after a restart.
+        let target = conversationId.map { targets[$0] } ?? targetApplication
+        var result = Self.builtins.filter { $0.name != "browser" || Self.isSupportedBrowser(target?.bundleIdentifier) }
         mcpTools = [:]
         var schemaBytes = 0
-        for tool in await registry.allMCPTools() {
-            let name = "mcp_" + tool.definition.name
-            guard name.count <= 64, mcpTools[name] == nil,
-                  name.range(of: "^[A-Za-z0-9_-]+$", options: .regularExpression) != nil,
+        for (name, entry) in Self.mcpToolNames(await registry.registeredTools()) {
+            let tool = entry.tool
+            guard mcpTools[name] == nil,
                   let schema = try? JSONSerialization.data(withJSONObject: tool.definition.inputSchema.jsonObject, options: .sortedKeys),
                   schema.count <= 32000, schemaBytes + schema.count <= 500000 else { continue }
             schemaBytes += schema.count
@@ -46,6 +51,36 @@ final class AskLocalTools: AskToolExecuting {
             if result.count == 64 { break }
         }
         return result
+    }
+
+    nonisolated static func isSupportedBrowser(_ bundleIdentifier: String?) -> Bool {
+        ["com.apple.Safari", "com.google.Chrome"].contains(bundleIdentifier ?? "")
+    }
+
+    /// `mcp_<tool>` when the tool name is unique; otherwise the server name qualifies it.
+    /// Names that are invalid or still collide are skipped rather than shadowing another tool.
+    nonisolated static func mcpToolNames(_ tools: [MCPRegisteredTool]) -> [(String, MCPRegisteredTool)] {
+        var counts: [String: Int] = [:]
+        for entry in tools { counts[entry.tool.toolDef.name, default: 0] += 1 }
+        var used = Set<String>()
+        var result: [(String, MCPRegisteredTool)] = []
+        for entry in tools {
+            let toolName = entry.tool.toolDef.name
+            let name = counts[toolName] == 1
+                ? "mcp_" + toolName
+                : "mcp_" + serverSlug(entry.serverName, id: entry.serverId) + "_" + toolName
+            guard name.count <= 64, name.range(of: "^[A-Za-z0-9_-]+$", options: .regularExpression) != nil,
+                  used.insert(name).inserted else { continue }
+            result.append((name, entry))
+        }
+        return result
+    }
+
+    nonisolated static func serverSlug(_ name: String, id: UUID) -> String {
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-")
+        let mapped = String(name.unicodeScalars.map { allowed.contains($0) ? Character($0) : "_" })
+        let slug = mapped.split(separator: "_").joined(separator: "_").prefix(20)
+        return slug.isEmpty ? String(id.uuidString.prefix(8)).lowercased() : String(slug)
     }
 
     static let builtins: [AskToolDefinition] = [
@@ -68,9 +103,10 @@ final class AskLocalTools: AskToolExecuting {
     func execute(_ call: AskToolCall, conversationId: String) async throws -> AskLocalToolOutput {
         try Task.checkCancellation()
         if let tool = mcpTools[call.function.name] {
-            let output = try await tool.execute(arguments: call.function.arguments)
+            let output = try await tool.call(arguments: call.function.arguments)
             try Task.checkCancellation()
-            return .init(content: String(output.prefix(60000)))
+            // Decoding and re-encoding a tool image must not block the main actor.
+            return await Task.detached(priority: .userInitiated) { Self.output(from: output) }.value
         }
         let args = try Self.arguments(call.function.arguments)
         switch call.function.name {
@@ -78,6 +114,37 @@ final class AskLocalTools: AskToolExecuting {
         case "browser": return try await browser(args, target: targets[conversationId])
         default: throw AskLocalError.message(L("ask.tool.unavailable"))
         }
+    }
+
+    /// Keeps the MCP error flag and the first image; Ask results carry at most one JPEG.
+    nonisolated static func output(from result: MCPToolsCallResult) -> AskLocalToolOutput {
+        var notes: [String] = []
+        var image: String?
+        let images = result.content.filter { $0.type == "image" }
+        for block in images where image == nil {
+            image = block.data.flatMap(jpegDataURL(base64:))
+        }
+        if images.count > (image == nil ? 0 : 1) {
+            notes.append("[\(images.count - (image == nil ? 0 : 1)) image(s) from the tool could not be attached]")
+        }
+        var content = result.textContent
+        if !notes.isEmpty { content += (content.isEmpty ? "" : "\n") + notes.joined(separator: "\n") }
+        if content.isEmpty { content = image == nil ? "The tool returned no content." : "The tool returned an image." }
+        return .init(content: String(content.prefix(60000)), image: image, isError: result.isError == true)
+    }
+
+    /// Re-encodes a tool image as a JPEG within the limits the Ask server accepts.
+    nonisolated static func jpegDataURL(base64: String) -> String? {
+        guard let data = Data(base64Encoded: base64, options: .ignoreUnknownCharacters),
+              let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                  kCGImageSourceCreateThumbnailFromImageAlways: true,
+                  kCGImageSourceCreateThumbnailWithTransform: true,
+                  kCGImageSourceThumbnailMaxPixelSize: 1600
+              ] as CFDictionary),
+              let jpeg = NSBitmapImageRep(cgImage: image).representation(using: .jpeg, properties: [.compressionFactor: 0.7]),
+              jpeg.count <= 2_000_000 else { return nil }
+        return "data:image/jpeg;base64," + jpeg.base64EncodedString()
     }
 
     nonisolated static func arguments(_ value: String) throws -> [String: Any] {
@@ -161,8 +228,7 @@ final class AskLocalTools: AskToolExecuting {
     }
 
     private func browser(_ args: [String: Any], target: NSRunningApplication?) async throws -> AskLocalToolOutput {
-        guard let bundle = target?.bundleIdentifier,
-              ["com.apple.Safari", "com.google.Chrome"].contains(bundle) else {
+        guard let bundle = target?.bundleIdentifier, Self.isSupportedBrowser(bundle) else {
             throw AskLocalError.message(L("ask.tool.browserUnsupported"))
         }
         return try await executeBrowser(args, bundle: bundle)
