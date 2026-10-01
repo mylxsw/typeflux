@@ -63,7 +63,7 @@ struct AskModelMenu: View {
         .buttonStyle(.plain).disabled(disabled)
         .onHover { hovering = $0 }
         .help(currentReason ?? L("ask.models.conversationOnly"))
-        .popover(isPresented: $expanded, arrowEdge: .bottom) {
+        .askMenu(isPresented: $expanded, glass: compact) {
             AskModelChoices(library: library, reference: $reference, scenario: scenario, showsDefaultAction: showsDefaultAction,
                             hasImage: hasImage, loggedIn: auth.isLoggedIn, dismiss: { expanded = false },
                             composerStyle: compact)
@@ -189,18 +189,27 @@ struct AskModelChoices: View {
                 }
                 .padding(.vertical, 6)
             }
-            .frame(maxHeight: 360)
+            // Tall enough for a typical catalog without scrolling; longer lists scroll.
+            .frame(maxHeight: Self.composerListMaxHeight)
             .fixedSize(horizontal: false, vertical: true)
-            if showsDefaultAction {
+            if Self.offersMakeDefault(showsDefaultAction: showsDefaultAction, selectionAvailable: selectionAvailable,
+                                      reference: reference, defaultReference: library.defaultReference) {
                 AskPopoverFooterButton(title: L("ask.models.makeDefault")) {
                     library.defaultReference = reference
                     dismiss()
                 }
-                .disabled(!selectionAvailable || reference == library.defaultReference)
             }
         }
         .frame(width: 320)
-        .modifier(AskPopoverSurface())
+    }
+
+    static let composerListMaxHeight: CGFloat = 460
+
+    /// The footer only offers what it can do: nothing when the selection already
+    /// is the default, instead of a greyed-out link.
+    static func offersMakeDefault(showsDefaultAction: Bool, selectionAvailable: Bool,
+                                  reference: String, defaultReference: String) -> Bool {
+        showsDefaultAction && selectionAvailable && reference != defaultReference
     }
 
     /// "205K context · 16.4K output": compact numbers instead of raw token counts.

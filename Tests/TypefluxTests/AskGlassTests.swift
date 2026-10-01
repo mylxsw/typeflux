@@ -89,10 +89,10 @@ struct AskGlassTests {
         #expect(legacy.sentSelection == "s")
     }
 
-    @Test func popoversLetTheSystemGlassShowOnMacOS26() {
-        #expect(AskPopoverSurface.fill(.liquidGlass) == .clear)
-        #expect(AskPopoverSurface.fill(.visualEffect) == AskTheme.popoverSurface)
-        #expect(AskPopoverSurface.fill(.opaque) == AskTheme.popoverSurface)
+    @Test func menuCornerIsConcentricWithItsRows() {
+        // Rows are inset 6pt from the card edge, so 12 + 6.
+        #expect(AskGlassCardSurface<EmptyView>.menuCorner == AskPopoverRow<EmptyView>.corner + 6)
+        #expect(AskGlassCardSurface<EmptyView>.hoverCardCorner < AskGlassCardSurface<EmptyView>.menuCorner)
     }
 
     @Test func modelRowsShowImageAndReasoningCapabilities() {
