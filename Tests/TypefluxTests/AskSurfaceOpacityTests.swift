@@ -9,22 +9,24 @@ struct AskSurfaceOpacityTests {
     private let size = NSSize(width: AskMetrics.launcherWidth,
                               height: AskMetrics.launcherHeight(editor: 32, banners: 0))
 
-    @Test func desktopColorsShowThroughTheGlassLauncher() async throws {
+    /// The glass itself is composited by the window server against what lies
+    /// behind the panel, so an in-process snapshot cannot show the backdrop
+    /// through it. What can be checked here is that every material keeps the
+    /// panel's exterior transparent for its rounded corners and recording halo.
+    @Test func everyLauncherMaterialKeepsATransparentExterior() async throws {
         let fixture = try AskTestFixture()
-        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-            let launcher = AskLauncherView(model: fixture.model, onDismiss: {})
-            let red = try await render(launcher.background(Color.red), size: size, appearance: appearance)
-            let blue = try await render(launcher.background(Color.blue), size: size, appearance: appearance)
-            // The card is glass: what lies behind it tints it.
-            let a = try pixel(red, x: 340, y: 50), b = try pixel(blue, x: 340, y: 50)
-            #expect(abs(a.redComponent - b.redComponent) + abs(a.blueComponent - b.blueComponent) > 0.02)
-            // The native panel keeps a transparent exterior for its rounded corners and glow.
-            let outsideRed = try pixel(red, x: 0, y: 0)
-            let outsideBlue = try pixel(blue, x: 0, y: 0)
-            #expect(abs(outsideRed.redComponent - outsideBlue.redComponent) > 0.5)
-
-            let bare = try await render(launcher, size: size, appearance: appearance)
-            #expect(try pixel(bare, x: 0, y: 0).alphaComponent < 0.01)
+        for material in [AskGlassMaterial.liquidGlass, .visualEffect, .opaque] {
+            for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+                let launcher = AskLauncherView(model: fixture.model, onDismiss: {})
+                    .environment(\.askGlassMaterialOverride, material)
+                let red = try await render(launcher.background(Color.red), size: size, appearance: appearance)
+                let blue = try await render(launcher.background(Color.blue), size: size, appearance: appearance)
+                let outsideRed = try pixel(red, x: 0, y: 0)
+                let outsideBlue = try pixel(blue, x: 0, y: 0)
+                #expect(abs(outsideRed.redComponent - outsideBlue.redComponent) > 0.5)
+                let bare = try await render(launcher, size: size, appearance: appearance)
+                #expect(try pixel(bare, x: 0, y: 0).alphaComponent < 0.01)
+            }
         }
         fixture.model.resetSession()
     }
