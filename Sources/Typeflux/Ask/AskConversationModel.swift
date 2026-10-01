@@ -257,7 +257,7 @@ final class AskConversationModel: ObservableObject {
         guard screenshotCapability(launcher: launcher) == .supported else { return }
         let generation = UUID(); captureGeneration = generation; capturing = true
         let selectedId = selected?.id
-        let context = await capture.capture(includeScreenshot: true)
+        let context = await capture.capture(includeScreenshot: true, includeSelection: false)
         guard captureGeneration == generation else { return }
         defer { capturing = false }
         if launcher { launcherDraft.screenshot = context.screenshot; launcherDraft.capturedAt = context.capturedAt }

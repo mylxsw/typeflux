@@ -521,7 +521,7 @@ final class AXTextInjector: TextInjector {
         let preflight = selectionCapturePreflight()
         switch preflight {
         case let .completed(snapshot):
-            return snapshot
+            return intent == .readOnlyContext ? snapshot.readOnlyContext() : snapshot
         case let .external(target):
             let cancellation = SelectionReplacementCancellationToken()
             do {
@@ -618,6 +618,11 @@ final class AXTextInjector: TextInjector {
             .debug(
                 "getSelectionSnapshot — app: \(processName ?? "?", privacy: .public) (pid: \(processID.map(String.init) ?? "?", privacy: .public))"
             )
+
+        if intent == .readOnlyContext {
+            latestSelectionContext = nil
+            return try readOnlySelectionSnapshot(target: target, cancellation: cancellation)
+        }
 
         if let result = readSelectedText(processID: processID, processName: processName) {
             try cancellation.checkCancellation()
@@ -750,7 +755,9 @@ final class AXTextInjector: TextInjector {
                 replacementSafety: safety
             )
         }
-        logger.debug("clipboard-copy returned nil — no selection detected")
+        if shouldProbeClipboardSelection {
+            logger.debug("clipboard-copy attempted but returned no text")
+        }
 
         let focused = focusedElement()
         let editability = focused.map(isLikelyEditable(element:)) ?? false
@@ -781,7 +788,7 @@ final class AXTextInjector: TextInjector {
         switch intent {
         case .automaticInsertion:
             selectedRange?.length ?? 0 > 0
-        case .explicitSelectionAction:
+        case .explicitSelectionAction, .readOnlyContext:
             true
         }
     }
@@ -795,7 +802,7 @@ final class AXTextInjector: TextInjector {
         intent: SelectionCaptureIntent = .automaticInsertion,
         capability: TextTargetCapability? = nil
     ) -> SelectionReplacementSafety {
-        guard isFocusedTarget, capability != .notWritable else { return .resultOnly }
+        guard intent != .readOnlyContext, isFocusedTarget, capability != .notWritable else { return .resultOnly }
         // Explicit selection intent plus captured AX/copied text can authorize an
         // opaque editor without an AX range. The one-shot context must revalidate
         // the exact source text through the capture mechanism in the same target

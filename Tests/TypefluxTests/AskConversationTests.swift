@@ -152,10 +152,12 @@ final class AskTestTools: AskToolExecuting {
 @MainActor
 final class AskTestCapture: AskContextCapturing {
     var calls = 0
+    var selectionRequests: [Bool] = []
     var warning: String?
-    func capture(includeScreenshot: Bool) async -> AskCapturedContext {
+    func capture(includeScreenshot: Bool, includeSelection: Bool) async -> AskCapturedContext {
         calls += 1
-        return .init(selection: "Selected words", source: "Safari", screenshot: includeScreenshot ? "data:image/jpeg;base64,YQ==" : nil, warning: warning)
+        selectionRequests.append(includeSelection)
+        return .init(selection: includeSelection ? "Selected words" : nil, source: "Safari", screenshot: includeScreenshot ? "data:image/jpeg;base64,YQ==" : nil, warning: warning)
     }
 }
 

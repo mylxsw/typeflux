@@ -14,6 +14,9 @@ enum SelectionCaptureIntent: Equatable {
     /// The user explicitly invoked an action that operates on selected text. Apps
     /// with opaque accessibility trees may use the transactional clipboard fallback.
     case explicitSelectionAction
+
+    /// Capture context, including non-focused selections, without authorizing replacement.
+    case readOnlyContext
 }
 
 enum SelectionReplacementSafety: Equatable {
