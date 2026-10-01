@@ -8,9 +8,18 @@ struct AskLocalToolOutput: Sendable {
     var isError = false
 }
 
+/// How much a tool call can change. Grants for a conversation cover a tool up to the
+/// granted level; destructive calls always ask.
+enum AskToolRisk: Int, Comparable, Sendable {
+    case read, write, destructive
+
+    static func < (lhs: AskToolRisk, rhs: AskToolRisk) -> Bool { lhs.rawValue < rhs.rawValue }
+}
+
 @MainActor
 protocol AskToolExecuting {
     func bindConversation(_ id: String)
+    func risk(of call: AskToolCall) -> AskToolRisk
     /// Tools usable from this conversation; tools that need an unavailable target are omitted.
     func definitions(conversationId: String?) async -> [AskToolDefinition]
     func execute(_ call: AskToolCall, conversationId: String) async throws -> AskLocalToolOutput
@@ -51,6 +60,26 @@ final class AskLocalTools: AskToolExecuting {
             if result.count == 64 { break }
         }
         return result
+    }
+
+    /// MCP tools follow their annotations; per the MCP specification an unannotated
+    /// tool may be destructive, so it keeps asking every time.
+    func risk(of call: AskToolCall) -> AskToolRisk {
+        if let tool = mcpTools[call.function.name] {
+            let hints = tool.toolDef.annotations
+            if hints?.readOnlyHint == true { return .read }
+            return hints?.destructiveHint == false ? .write : .destructive
+        }
+        return Self.builtinRisk(call)
+    }
+
+    nonisolated static func builtinRisk(_ call: AskToolCall) -> AskToolRisk {
+        let action = (try? arguments(call.function.arguments)["action"] as? String) ?? ""
+        switch (call.function.name, action) {
+        case ("computer", "screenshot"), ("browser", "read"): return .read
+        case ("computer", _), ("browser", _): return .write
+        default: return .destructive
+        }
     }
 
     nonisolated static func isSupportedBrowser(_ bundleIdentifier: String?) -> Bool {

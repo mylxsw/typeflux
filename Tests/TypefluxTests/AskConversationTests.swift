@@ -40,6 +40,9 @@ actor AskTestAPI: AskAPI {
     func failGet(_ id: String) { failGets.insert(id) }
 
     func setTool(_ call: AskToolCall?) { nextTool = call }
+    /// Calls the model makes after each tool result, in order.
+    var followUpTools: [AskToolCall] = []
+    func queueFollowUpTools(_ calls: [AskToolCall]) { followUpTools = calls }
     func setFailSend(_ flag: Bool) { failSend = flag }
     func setFailList(_ flag: Bool) { failList = flag }
     func seed(_ value: AskConversation) { values[value.id] = value }
@@ -73,6 +76,12 @@ actor AskTestAPI: AskAPI {
         results.append(request)
         var value = try await conversation(id: conversationId, token: token)
         value.messages.append(.init(id: UUID().uuidString, role: "tool", text: request.content, toolCallId: request.toolCallId, isError: request.isError, createdAt: Date()))
+        if !followUpTools.isEmpty {
+            let next = followUpTools.removeFirst()
+            value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: "", toolCalls: [next], createdAt: Date()))
+            value.run?.pending = [next]; value.revision += 1; values[conversationId] = value
+            return value
+        }
         value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: request.isError ? "I will continue without that tool." : "Here is the summary.", createdAt: Date()))
         value.run?.status = "completed"; value.run?.pending = []; value.revision += 1; values[conversationId] = value
         return value
@@ -145,6 +154,9 @@ final class AskTestTools: AskToolExecuting {
     var bound: [String] = []
     func bindConversation(_ id: String) { bound.append(id) }
     var definitionRequests: [String?] = []
+    func risk(of call: AskToolCall) -> AskToolRisk {
+        call.function.name.hasPrefix("danger") ? .destructive : AskLocalTools.builtinRisk(call)
+    }
     func definitions(conversationId: String?) async -> [AskToolDefinition] {
         definitionRequests.append(conversationId)
         return AskLocalTools.builtins
@@ -300,6 +312,45 @@ struct AskConversationTests {
         #expect(await f.api.results.first?.content == "Tool unavailable")
         #expect(await f.api.results.first?.isError == true)
         #expect(f.model.controllingConversationId == nil)
+    }
+
+    @Test func conversationGrantsCoverSameToolUpToGrantedRisk() async throws {
+        let f = try AskTestFixture()
+        func browser(_ id: String, _ action: String) -> AskToolCall {
+            .init(id: id, type: "function", function: .init(name: "browser", arguments: "{\"action\":\"\(action)\"}"))
+        }
+        await f.api.setTool(browser("read-1", "read"))
+        await f.api.queueFollowUpTools([browser("read-2", "read"), browser("fill-1", "fill"), browser("fill-2", "fill"),
+                                        .init(id: "danger-1", type: "function", function: .init(name: "danger_delete", arguments: "{}"))])
+        f.model.launcherDraft.text = "Fill the form"; f.model.submitLauncher()
+        try await f.wait { !f.model.pendingApprovals.isEmpty }
+        let id = try #require(f.model.selected?.id)
+        #expect(f.model.canAllowForConversation(id))
+        f.model.approveForConversation(id)
+
+        // The second read runs without asking; the first write asks again.
+        try await f.wait { f.model.pendingApprovals[id]?.id == "fill-1" }
+        #expect(f.tools.executions == 2)
+        #expect(f.model.isGranted(browser("x", "read"), conversationId: id))
+        #expect(!f.model.isGranted(browser("x", "fill"), conversationId: id))
+        f.model.approveForConversation(id)
+
+        // The write grant covers the next write; destructive calls always ask and cannot be granted.
+        try await f.wait { f.model.pendingApprovals[id]?.id == "danger-1" }
+        #expect(f.tools.executions == 4)
+        #expect(!f.model.canAllowForConversation(id))
+        f.model.approveForConversation(id)
+        #expect(f.model.pendingApprovals[id]?.id == "danger-1")
+        f.model.approve(conversationId: id, allowed: false)
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(f.tools.executions == 4)
+        #expect(await f.api.results.map(\.isError) == [false, false, false, false, true])
+
+        // Grants are scoped to the conversation and dropped on sign-out.
+        #expect(!f.model.isGranted(browser("x", "read"), conversationId: "other"))
+        f.model.resetSession()
+        #expect(!f.model.isGranted(browser("x", "read"), conversationId: id))
+        f.model.approveForConversation("missing")
     }
 
     @Test func toolReportedErrorIsNotSentAsSuccess() async throws {

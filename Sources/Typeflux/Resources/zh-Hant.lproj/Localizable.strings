@@ -1416,6 +1416,10 @@
 
 // Ask conversations
 "ask.allowOnce" = "Allow once";
+"ask.allowConversation" = "在此對話中允許";
+"ask.allowConversation.help" = "在此對話中，之後同等或更低風險的該工具呼叫也自動允許，直到結束應用程式。破壞性操作一律需要確認。";
+"ask.tool.webSearch" = "網頁搜尋";
+"ask.tool.webFetch" = "讀取網頁";
 "ask.cache.failed" = "Could not save the local conversation cache.";
 "ask.cancelled" = "Stopped. You can continue this conversation.";
 "ask.capture.permission" = "Allow Screen Recording in System Settings to attach screenshots. You can continue without one.";

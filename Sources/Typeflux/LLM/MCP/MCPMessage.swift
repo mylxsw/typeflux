@@ -145,13 +145,20 @@ struct MCPObjectSchema: Codable {
     }
 }
 
+/// Behavior hints from the server (MCP 2025-03-26). Untrusted: they only tune approval prompts.
+struct MCPToolAnnotations: Codable, Equatable {
+    var readOnlyHint: Bool?
+    var destructiveHint: Bool?
+}
+
 struct MCPToolDefinition: Codable {
     let name: String
     let description: String?
     let inputSchema: MCPObjectSchema
+    var annotations: MCPToolAnnotations? = nil
 
     enum CodingKeys: String, CodingKey {
-        case name, description, inputSchema
+        case name, description, inputSchema, annotations
     }
 }
 

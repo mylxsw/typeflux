@@ -111,6 +111,15 @@ intact. An accessibility refresh action provides an alternative to the gesture.
   MCP tools are named `mcp_<tool>`; when two servers expose the same tool name,
   both are kept as `mcp_<server>_<tool>`. An MCP result flagged `isError` is sent
   as a failed tool result, and its first image is attached as a JPEG observation.
+- Approvals are tiered. Screenshots and browser reads are read-only; other
+  computer/browser actions are writes. MCP tools follow their annotations
+  (`readOnlyHint`, `destructiveHint: false`); an unannotated MCP tool counts as
+  destructive, per the MCP specification. "Allow in this conversation" lets later
+  calls of the same tool at the same or lower risk run without asking until the app
+  quits or the account changes. Destructive calls always ask and only allow once.
+- The server's `web_search` and `web_fetch` tools run without desktop approval and
+  appear in the transcript with their query or host. Each message sends the
+  device time zone and locale for the server's date and environment context.
 
 ## Recovery and execution
 

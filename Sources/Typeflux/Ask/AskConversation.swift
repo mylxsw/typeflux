@@ -95,6 +95,9 @@ struct AskSendRequest: Codable, Equatable, Sendable {
     var memory: AskMemory? = nil
     /// A follow-up asked without the conversation's pinned memory; omitted otherwise.
     var memoryOff: Bool?
+    /// Device context for the server's environment prompt (IANA zone, BCP 47 locale).
+    var timeZone: String? = TimeZone.current.identifier
+    var locale: String? = Locale.current.identifier(.bcp47)
 }
 
 /// Replaces the latest assistant reply with a fresh run on the same question.

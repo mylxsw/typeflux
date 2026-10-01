@@ -63,7 +63,8 @@ final class StdioMCPClientTests: XCTestCase {
     }
 
     func testStalledRequestTimesOut() async throws {
-        let client = makeClient(timeout: .milliseconds(500))
+        // Generous enough for a slow process start; the fake server stalls for five seconds.
+        let client = makeClient(timeout: .seconds(2))
         try await client.connect()
         do {
             _ = try await client.callTool(name: "hang", arguments: [:])
