@@ -25,7 +25,7 @@ struct AskConversationVisualTests {
         controller.showLauncher()
         try await fixture.wait { window("launcher")?.isVisible == true }
         let launcher = try #require(window("launcher"))
-        #expect(launcher.styleMask == .borderless)
+        #expect(launcher.styleMask == [.borderless, .nonactivatingPanel])
         #expect(launcher.frame.width == AskMetrics.launcherWidth)
         #expect(launcher.frame.height <= 120)
         let bottom = launcher.frame.minY
