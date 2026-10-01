@@ -20,10 +20,10 @@ final class WorkflowControllerProcessingTests: XCTestCase {
     @MainActor
     func testComposerHotkeyRoutingKeepsFnLockAndCancelsOwnedSession() async throws {
         let controller = makeWorkflowController()
-        XCTAssertFalse(controller.routeComposerVoice(.release))
+        XCTAssertFalse(controller.routeComposerVoice(.release(ProcessInfo.processInfo.systemUptime)))
         let voice = AskVoiceInput(), recorder = AskTestVoiceRecorder()
         voice.recorder = recorder; controller.composerVoiceInput = voice
-        XCTAssertFalse(controller.routeComposerVoice(.activationTap))
+        XCTAssertFalse(controller.routeComposerVoice(.activationTap(ProcessInfo.processInfo.systemUptime)))
         let editor = AskComposerTextView.Editor(frame: NSRect(x: 0, y: 0, width: 200, height: 80))
         editor.voice = voice
         let window = AskTestVoiceWindow(contentRect: editor.frame, styleMask: .borderless, backing: .buffered, defer: false)
@@ -3360,6 +3360,8 @@ private final class CountingProcessingLLMService: LLMService {
     private let error: Error?
     private let lock = NSLock()
     private var rewriteCalls = 0
+    private var recordedRequests: [LLMRewriteRequest] = []
+    var requests: [LLMRewriteRequest] { lock.withLock { recordedRequests } }
 
     init(rewriteText: String, error: Error? = nil) {
         self.rewriteText = rewriteText
@@ -3372,9 +3374,10 @@ private final class CountingProcessingLLMService: LLMService {
         return rewriteCalls
     }
 
-    func streamRewrite(request _: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
+    func streamRewrite(request: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
         lock.lock()
         rewriteCalls += 1
+        recordedRequests.append(request)
         lock.unlock()
         let rewriteText = rewriteText
         return AsyncThrowingStream { continuation in
@@ -3470,6 +3473,9 @@ private final class MockProcessingLLMAgentService: LLMAgentService {
 private final class MockProcessingHotkeyService: HotkeyService {
     var recordingStopEnabled: (() -> Bool)?
     var onRecordingStop: (() -> Void)?
+    var onAuxiliaryPressBegan: ((HotkeyEventContext) -> Void)?
+    var onAuxiliaryPressEnded: ((HotkeyEventContext) -> Void)?
+    var onAuxiliaryPromoted: ((HotkeyEventContext) -> Void)?
     var onActivationTap: ((HotkeyEventContext) -> Void)?
     var onActivationPressBegan: ((HotkeyEventContext) -> Void)?
     var onActivationPressEnded: ((HotkeyEventContext) -> Void)?
@@ -4171,5 +4177,226 @@ extension WorkflowControllerProcessingTests {
         XCTAssertEqual(controller.recordingPersonaSnapshot?.persona?.id, SettingsStore.englishPersonaID)
         controller.cancelRecording()
         await waitForMainActorWork()
+    }
+}
+
+extension WorkflowControllerProcessingTests {
+    @MainActor
+    func testComposerCancellationDuringMicrophoneStartupReleasesGestureAndRecorder() async throws {
+        let recorder = BlockingStartAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: recorder)
+        let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+        service.handleHotkey(.prepare(auxiliary: false, locked: false))
+        let startup = Task { try await service.start() }
+        for _ in 0..<100 where recorder.startCallCount == 0 { try await Task.sleep(for: .milliseconds(2)) }
+        XCTAssertNotNil(controller.recordingGestureDecision)
+        service.handleHotkey(.cancel)
+        startup.cancel()
+        recorder.releasePendingStart()
+        do { try await startup.value; XCTFail("Cancelled startup must not continue") } catch is CancellationError {}
+        await service.cancel()
+        XCTAssertNil(controller.recordingGestureDecision)
+        XCTAssertFalse(controller.isRecording)
+        XCTAssertFalse(controller.isAudioRecorderStarted)
+        XCTAssertFalse(controller.isAudioRecorderStarting)
+        XCTAssertEqual(recorder.stopCallCount, 1)
+    }
+
+    @MainActor
+    func testComposerMissingLLMConfigurationReturnsInlineErrorAndCleansUp() async throws {
+        let recorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: recorder,
+            sttTranscriber: MockProcessingTranscriber(transcript: "raw speech"), configureSettings: {
+                $0.sttProvider = .appleSpeech
+                $0.applyPersonaSelection(SettingsStore.defaultPersonaID)
+                $0.llmProvider = .openAICompatible
+                $0.llmRemoteProvider = .custom
+                $0.setLLMBaseURL("", for: .custom)
+                $0.setLLMModel("", for: .custom)
+            }, hasPaidCloudSubscription: { true })
+        let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+        try await service.start()
+        do { _ = try await service.transcribe(); XCTFail("Missing configuration must be reported") }
+        catch { XCTAssertFalse(error is CancellationError) }
+        await service.cancel()
+        XCTAssertEqual(recorder.stopCallCount, 1)
+        XCTAssertFalse(controller.shouldPreserveLLMConfigurationNotice)
+        XCTAssertEqual(controller.appState.status, .idle)
+    }
+
+    @MainActor
+    func testComposerRewritesWithFrozenMainOrAuxiliaryPersonaAndQuickInputPolicy() async throws {
+        for (auxiliary, locked, quickInput, expectsRewrite) in [
+            (false, true, false, true), (true, false, true, true),
+            (false, false, true, false), (false, true, true, true)
+        ] {
+            let llm = CountingProcessingLLMService(rewriteText: "rewritten speech")
+            let main = PersonaProfile(name: "Main", prompt: "Main prompt")
+            let aux = PersonaProfile(name: "Auxiliary", prompt: "Auxiliary prompt")
+            let controller = makeWorkflowController(
+                sttTranscriber: MockProcessingTranscriber(transcript: "raw speech"), llmService: llm,
+                configureSettings: {
+                    $0.sttProvider = .appleSpeech
+                    $0.personas += [main, aux]
+                    $0.applyPersonaSelection(main.id)
+                    $0.auxiliaryPersonaID = aux.id.uuidString
+                    $0.quickInputEnabled = quickInput
+                    $0.activationHotkey = nil
+                    $0.auxiliaryHotkey = nil
+                    self.configureReadyLLM(settingsStore: $0)
+                }, hasPaidCloudSubscription: { true }
+            )
+            let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+            service.handleHotkey(.prepare(auxiliary: auxiliary, locked: locked))
+            try await service.start()
+            let expected = auxiliary ? aux : main
+            XCTAssertEqual(controller.recordingPersonaSnapshot?.persona?.id, expected.id)
+            let frozenPrompt = controller.recordingPersonaSnapshot?.prompt
+            controller.settingsStore.personaRewriteEnabled = false
+            controller.settingsStore.auxiliaryPersonaID = SettingsStore.defaultPersonaID.uuidString
+            let result = try await service.transcribe()
+            XCTAssertEqual(result, expectsRewrite ? "rewritten speech" : "raw speech")
+            XCTAssertEqual(llm.streamRewriteCallCount, expectsRewrite ? 1 : 0)
+            XCTAssertEqual(llm.requests.first?.personaPrompt, expectsRewrite ? frozenPrompt : nil)
+            XCTAssertEqual(llm.requests.first?.personaID, expectsRewrite ? expected.id : nil)
+            XCTAssertEqual(controller.appState.status, .idle)
+        }
+    }
+
+    @MainActor
+    func testComposerMultimodalUsesFrozenPersonaAndOnlySkipsRewriteWhenApplied() async throws {
+        for applied in [true, false] {
+            let transcriber = PersonaAwareComposerTranscriber(appliesPersona: applied)
+            let llm = CountingProcessingLLMService(rewriteText: "rewritten speech")
+            let controller = makeWorkflowController(sttTranscriber: transcriber, llmService: llm,
+                configureSettings: {
+                    $0.sttProvider = .multimodalLLM
+                    $0.applyPersonaSelection(SettingsStore.defaultPersonaID)
+                    self.configureReadyLLM(settingsStore: $0)
+                }, hasPaidCloudSubscription: { true })
+            let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+            service.handleHotkey(.prepare(auxiliary: true, locked: true))
+            try await service.start()
+            let prompt = controller.recordingPersonaSnapshot?.prompt
+            controller.settingsStore.auxiliaryPersonaID = SettingsStore.defaultPersonaID.uuidString
+            let result = try await service.transcribe()
+            XCTAssertEqual(transcriber.prompt, prompt)
+            XCTAssertEqual(result, applied ? "integrated rewrite" : "rewritten speech")
+            XCTAssertEqual(llm.streamRewriteCallCount, applied ? 0 : 1)
+            XCTAssertNil(TranscriptionPersonaContext.current)
+        }
+    }
+
+    @MainActor
+    func testComposerQuickInputExplicitlyDisablesMultimodalPersona() async throws {
+        let transcriber = PersonaAwareComposerTranscriber(appliesPersona: true)
+        let llm = CountingProcessingLLMService(rewriteText: "unexpected")
+        let controller = makeWorkflowController(sttTranscriber: transcriber, llmService: llm,
+            configureSettings: {
+                $0.sttProvider = .multimodalLLM
+                $0.applyPersonaSelection(SettingsStore.defaultPersonaID)
+                $0.quickInputEnabled = true
+                $0.activationHotkey = nil
+            }, hasPaidCloudSubscription: { true })
+        let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+        service.handleHotkey(.prepare(auxiliary: false, locked: false))
+        try await service.start()
+        _ = try await service.transcribe()
+        XCTAssertTrue(transcriber.sawContext)
+        XCTAssertNil(transcriber.prompt)
+        XCTAssertEqual(llm.streamRewriteCallCount, 0)
+    }
+
+    @MainActor
+    func testComposerAuxiliaryChordBothOrdersAndDoubleTapDoNotStopOnStartup() async throws {
+        for keys in [[63, 56], [56, 63], [61, 61]] {
+            var now = 100.0
+            let doubleTap = keys == [61, 61]
+            let activation: HotkeyBinding = doubleTap ? .rightOptionActivation : .defaultActivation
+            let auxiliary: HotkeyBinding = doubleTap ? .rightOptionAsk : .defaultAuxiliary
+            let hotkeys = MockProcessingHotkeyService()
+            let recorder = MockProcessingAudioRecorder()
+            let controller = makeWorkflowController(hotkeyService: hotkeys, audioRecorder: recorder,
+                monotonicNow: { now }, configureSettings: {
+                    $0.activationHotkey = activation; $0.auxiliaryHotkey = auxiliary
+                })
+            let voice = AskVoiceInput()
+            voice.monotonicNow = { now }
+            voice.recorder = WorkflowComposerRecording(controller, isAppBundle: { true })
+            controller.composerVoiceInput = voice
+            controller.start()
+            let editor = AskComposerTextView.Editor(frame: NSRect(x: 0, y: 0, width: 300, height: 80))
+            editor.voice = voice
+            let window = AskTestVoiceWindow(contentRect: editor.frame, styleMask: .borderless, backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false; window.contentView = editor; window.makeFirstResponder(editor)
+            defer { window.close() }
+            var arbiter = HotkeyGestureArbiter()
+            var stop = RecordingStopGesture()
+            func event(_ key: Int, _ flags: UInt) async throws {
+                XCTAssertFalse(stop.handle(type: .flagsChanged, keyCode: key, flags: flags, isRepeat: false,
+                    bindings: [activation, auxiliary], enabled: hotkeys.recordingStopEnabled?() == true, timestamp: now))
+                let events = arbiter.handleFlagsChanged(keyCode: key, modifierFlags: flags,
+                    activationHotkey: activation, askHotkey: nil, auxiliaryHotkey: auxiliary, timestamp: now)
+                for event in events {
+                    switch event {
+                    case .begin(.activation):
+                        XCTAssertTrue(voice.begin(in: editor, hotkeyUptime: now))
+                    case .begin(.auxiliary):
+                        XCTAssertTrue(voice.begin(in: editor, locked: doubleTap, auxiliary: true, hotkeyUptime: now))
+                    case .auxiliaryPromoted: hotkeys.onAuxiliaryPromoted?(HotkeyEventContext(uptime: now))
+                    case .activationTapped: hotkeys.onActivationTap?(HotkeyEventContext(uptime: now))
+                    case .end(.auxiliary): hotkeys.onAuxiliaryPressEnded?(HotkeyEventContext(uptime: now))
+                    default: break
+                    }
+                }
+                for _ in 0..<100 where voice.isOccupied && !controller.isAudioRecorderStarted {
+                    try await Task.sleep(for: .milliseconds(2))
+                }
+            }
+            let firstFlags = HotkeyBinding.modifierFlag(for: keys[0])
+            try await event(keys[0], firstFlags)
+            if doubleTap {
+                now += 0.1; try await event(keys[0], 0)
+            }
+            now += 0.1
+            try await event(keys[1], auxiliary.modifierFlags)
+            for _ in 0..<100 where controller.recordingPersonaSnapshot == nil {
+                try await Task.sleep(for: .milliseconds(2))
+            }
+            XCTAssertEqual(voice.phase, .listening)
+            XCTAssertTrue(controller.recordingUsesAuxiliary)
+            XCTAssertEqual(controller.recordingPersonaSnapshot?.persona?.id, SettingsStore.englishPersonaID)
+            XCTAssertEqual(recorder.startCallCount, 1)
+            XCTAssertEqual(recorder.stopCallCount, 0)
+            XCTAssertTrue(hotkeys.recordingStopEnabled?() == true)
+            if doubleTap {
+                now += 0.1; try await event(keys[1], 0)
+                XCTAssertEqual(voice.phase, .listening)
+                controller.finishRecordingFromCurrentMode()
+            } else {
+                now += 2
+                try await event(keys[1], HotkeyBinding.modifierFlag(for: keys[0]))
+                XCTAssertEqual(voice.phase, .transcribing)
+            }
+            voice.cancel()
+            for _ in 0..<100 where voice.isOccupied { try await Task.sleep(for: .milliseconds(2)) }
+            XCTAssertFalse(voice.isOccupied)
+            XCTAssertEqual(recorder.stopCallCount, 1)
+            XCTAssertNil(controller.recordingGestureDecision)
+        }
+    }
+}
+
+private final class PersonaAwareComposerTranscriber: Transcriber {
+    let appliesPersona: Bool
+    var prompt: String?
+    var sawContext = false
+    init(appliesPersona: Bool) { self.appliesPersona = appliesPersona }
+    func transcribe(audioFile: AudioFile) async throws -> String {
+        let context = TranscriptionPersonaContext.current
+        sawContext = context != nil
+        prompt = context?.prompt
+        if appliesPersona { context?.markApplied() }
+        return appliesPersona ? "integrated rewrite" : "raw speech"
     }
 }

@@ -7,6 +7,7 @@ extension WorkflowController {
     }
 
     func promoteRecordingToAuxiliary(context: HotkeyEventContext) {
+        if routeComposerVoice(.promote(context.uptime)) { return }
         guard isRecording, recordingIntent == .dictation,
               let decision = recordingGestureDecision else { return }
         recordingUsesAuxiliary = true
@@ -18,6 +19,23 @@ extension WorkflowController {
             hotkeyPressedAt = context.uptime
         }
         decision.resolve()
+    }
+
+    func prepareRecordingGesture(intent: RecordingIntent, startLocked: Bool, auxiliary: Bool) {
+        let activation = auxiliary ? settingsStore.auxiliaryHotkey : settingsStore.activationHotkey
+        let auxiliaryBinding = settingsStore.auxiliaryHotkey
+        let ask = settingsStore.askHotkey
+        if !startLocked, intent == .dictation,
+           let activation, activation.isModifierOnlyTrigger,
+           (ask.map { $0.isModifierDoubleTapTrigger && activation.keyCode == $0.keyCode
+               && activation.modifierFlags == $0.modifierFlags } == true
+               || (!auxiliary && auxiliaryBinding.map {
+                   $0.modifierFlags & activation.modifierFlags == activation.modifierFlags
+               } == true)) {
+            let decision = RecordingGestureDecision()
+            recordingGestureDecision = decision
+            decision.schedule(after: Self.tapToLockThreshold)
+        }
     }
 
     func snapshotRecordingPersona(appName: String?, bundleIdentifier: String?) {
