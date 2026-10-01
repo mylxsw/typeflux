@@ -14,6 +14,8 @@ struct AskConversationView: View {
     @FocusState private var searchFocused: Bool
     @State private var collapsedGroups: Set<String> = []
     @State private var headerHovering = false
+    /// Height of the banners and composer floating over the transcript's bottom edge.
+    @State private var bottomChromeHeight: CGFloat = 0
     @AppStorage("ask.sidebarCollapsed") private var sidebarCollapsed = false
     @ObservedObject private var auth = AuthState.shared
 
@@ -35,6 +37,9 @@ struct AskConversationView: View {
                         .id(model.selectedId)
                 }
             }
+            // One surface for the whole window: the sidebar floats on it as a
+            // glass panel instead of being a differently tinted column.
+            .background(AskWindowBackdrop())
             titleBarTools
             if isSearching { searchPalette }
         }
@@ -59,17 +64,20 @@ struct AskConversationView: View {
 
     // MARK: - Sidebar
 
+    /// A glass panel floating inset from the window edges, with the traffic
+    /// lights inside its top strip, instead of a full-height column split off by a rule.
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
             // The window uses a full-size content view; this strip clears the
             // traffic lights. The toggle and search buttons float above it.
-            Color.clear.frame(height: AskMetrics.sidebarTopInset)
-            sidebarSearchField.padding(.horizontal, 10).padding(.bottom, 8)
-            newConversationButton.padding(.horizontal, 10).padding(.bottom, 14)
+            Color.clear.frame(height: AskMetrics.sidebarTopInset - AskMetrics.sidebarPanelInset)
+            sidebarSearchField.padding(.horizontal, 8).padding(.bottom, 6)
+            newConversationButton.padding(.horizontal, 8).padding(.bottom, 10)
             historyList
             accountFooter
         }
-        .background(AskWindowBackdrop(role: .sidebar))
+        .askInWindowGlass(corner: AskMetrics.sidebarPanelCorner, opaqueFill: AskTheme.sidebarSurface)
+        .padding([.leading, .top, .bottom], AskMetrics.sidebarPanelInset)
     }
 
     /// Toggle and search live in the title bar row. Expanded, they are right-aligned
@@ -87,7 +95,7 @@ struct AskConversationView: View {
             }
         }
         .padding(.leading, sidebarCollapsed ? AskMetrics.trafficLightInset : 0)
-        .padding(.trailing, sidebarCollapsed ? 0 : 10)
+        .padding(.trailing, sidebarCollapsed ? 0 : 6 + AskMetrics.sidebarPanelInset)
         .frame(width: sidebarCollapsed ? nil : AskMetrics.sidebarWidth, alignment: .leading)
         .frame(height: AskMetrics.titleBarRowHeight)
     }
@@ -116,11 +124,10 @@ struct AskConversationView: View {
                 Text(verbatim: "⌘K").font(.system(size: 10.5, weight: .medium))
             }
             .foregroundStyle(StudioTheme.textTertiary)
-            .padding(.horizontal, 9)
+            .padding(.horizontal, 12)
             .frame(height: 32)
-            .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(AskTheme.border))
-            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .background(AskTheme.hoverFill, in: Capsule())
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .keyboardShortcut("k", modifiers: .command)
@@ -159,7 +166,6 @@ struct AskConversationView: View {
         }
         .padding(.horizontal, 12)
         .frame(height: 50)
-        .overlay(alignment: .top) { Rectangle().fill(AskTheme.separator).frame(height: 1) }
     }
 
     private var accountName: String {
@@ -173,7 +179,7 @@ struct AskConversationView: View {
     /// an action row and the matching conversations. Esc or a click outside closes it.
     private var searchPalette: some View {
         ZStack {
-            Color.black.opacity(0.32)
+            Color.black.opacity(0.22)
                 .contentShape(Rectangle())
                 .onTapGesture { closeSearch() }
             VStack(spacing: 0) {
@@ -226,8 +232,7 @@ struct AskConversationView: View {
                 }
             }
             .frame(width: 560, height: 420)
-            .background(AskTheme.raisedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(AskTheme.border))
+            .askInWindowGlass(corner: AskMetrics.paletteCorner)
             .shadow(color: Color.black.opacity(0.35), radius: 24, y: 10)
         }
         .onExitCommand { closeSearch() }
@@ -277,26 +282,11 @@ struct AskConversationView: View {
         Task { await model.select(first.id) }
     }
 
+    /// A quiet row led by an accent drop: the panel's one coloured control,
+    /// without a full-width filled button competing with the history.
     private var newConversationButton: some View {
-        Button {
-            model.newConversation()
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "plus").font(.system(size: 12, weight: .semibold))
-                    .frame(width: 16)
-                Text(L("ask.new")).font(.system(size: 12.5, weight: .semibold))
-                Spacer(minLength: 0)
-                Text(verbatim: "⌘N").font(.system(size: 10.5, weight: .medium)).opacity(0.75)
-            }
-            .foregroundStyle(Color.white)
-            .padding(.horizontal, 10)
-            .frame(height: 34)
-            .background(AskTheme.primaryAction, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .keyboardShortcut("n", modifiers: .command)
-        .accessibilityLabel(L("ask.new"))
+        AskNewConversationRow { model.newConversation() }
+            .keyboardShortcut("n", modifiers: .command)
     }
 
     private var visibleConversations: [AskConversationSummary] {
@@ -415,54 +405,76 @@ struct AskConversationView: View {
 
     // MARK: - Content
 
+    /// The transcript fills the column and scrolls under the floating header
+    /// and composer, so their glass has the conversation to refract. Its edges
+    /// fade out where it meets the window instead of being cut by a rule.
     private var content: some View {
-        VStack(spacing: 0) {
+        ZStack(alignment: .top) {
+            Group {
+                if model.selectedId == nil { emptyState } else { transcript }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .mask(AskEdgeFade(fade: AskMetrics.transcriptEdgeFade))
+            VStack(spacing: 0) {
+                statusColumn
+                composerArea
+            }
+            .background(GeometryReader { geometry in
+                Color.clear.preference(key: AskBottomChromeHeight.self, value: geometry.size.height)
+            })
+            .frame(maxHeight: .infinity, alignment: .bottom)
             header
-            Rectangle().fill(AskTheme.separator).frame(height: 1)
-            if model.selectedId == nil { emptyState } else { transcript }
-            statusColumn
-            composerArea
         }
+        .onPreferenceChange(AskBottomChromeHeight.self) { bottomChromeHeight = $0 }
         .frame(minWidth: 480)
-        .background(AskWindowBackdrop(role: .content))
     }
 
-    /// Title, then the conversation's model and total cost in one quiet line.
-    /// The actions stay dimmed until the pointer is over the bar, so the delete
-    /// button no longer carries the same weight as the title.
+    /// The title and the conversation's actions as two glass capsules over the
+    /// transcript. The actions stay dimmed until the pointer is over them, so
+    /// the delete button never carries the same weight as the title.
     private var header: some View {
         HStack(spacing: 8) {
-            Text(model.selected?.title
-                 ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
-                 ?? L("ask.new"))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .lineLimit(1)
-            if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
-            Spacer(minLength: 8)
-            if let credits = headerCredits {
-                Text(credits)
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .fixedSize()
+            if model.selectedId != nil {
+                HStack(spacing: 8) {
+                    Text(model.selected?.title
+                         ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
+                         ?? L("ask.new"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .lineLimit(1)
+                    if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
+                }
+                .padding(.horizontal, 14)
+                .frame(height: AskMetrics.headerCapsuleHeight)
+                .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
+            Spacer(minLength: 8)
             if let id = model.selectedId {
                 HStack(spacing: 2) {
+                    if let credits = headerCredits {
+                        Text(credits)
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                            .fixedSize()
+                            .padding(.leading, 10)
+                            .padding(.trailing, 4)
+                    }
                     headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
                     headerAction(.trash, label: L("ask.delete")) { deleteId = id }
                 }
-                .opacity(headerHovering || showsUsage ? 1 : 0.35)
+                .padding(.horizontal, 3)
+                .frame(height: AskMetrics.headerCapsuleHeight)
+                .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
+                .opacity(headerHovering || showsUsage ? 1 : 0.55)
                 .animation(.easeOut(duration: 0.15), value: headerHovering)
+                .onHover { headerHovering = $0 }
             }
         }
-        .padding(.leading, sidebarCollapsed ? AskMetrics.collapsedTitleInset : 18)
-        .padding(.trailing, 12)
+        .padding(.leading, sidebarCollapsed ? AskMetrics.collapsedTitleInset : 14)
+        .padding(.trailing, 14)
         .frame(height: AskMetrics.titleBarRowHeight)
-        .frame(height: AskMetrics.headerHeight, alignment: .top)
-        .contentShape(Rectangle())
-        .onHover { headerHovering = $0 }
     }
 
     private var headerCredits: String? {
@@ -483,8 +495,7 @@ struct AskConversationView: View {
             AskLineIcon(kind: kind, size: 15)
                 .foregroundStyle(active ? AskTheme.accent : StudioTheme.textSecondary)
                 .frame(width: 28, height: 28)
-                .background(active ? AskTheme.hoverFill : Color.clear,
-                            in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .background(active ? AskTheme.hoverFill : Color.clear, in: Circle())
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -499,20 +510,19 @@ struct AskConversationView: View {
                 .foregroundStyle(StudioTheme.textPrimary)
                 .padding(.bottom, 7)
             emptyHint
-            VStack(spacing: 8) {
-                suggestion(title: L("ask.suggest.screen"), caption: L("ask.suggest.screen.caption"),
-                           systemImage: "display", shortcut: "1", screenshot: true)
-                suggestion(title: L("ask.suggest.selection"), caption: L("ask.suggest.selection.caption"),
-                           systemImage: "text.cursor", shortcut: "2", screenshot: false)
-                suggestion(title: L("ask.suggest.page"), caption: L("ask.suggest.page.caption"),
-                           systemImage: "globe", shortcut: "3", screenshot: false)
+            HStack(alignment: .top, spacing: 12) {
+                suggestion("ask.suggest.screen", systemImage: "display", tint: .blue, shortcut: "1", screenshot: true)
+                suggestion("ask.suggest.selection", systemImage: "text.cursor", tint: .purple, shortcut: "2",
+                           screenshot: false)
+                suggestion("ask.suggest.page", systemImage: "globe", tint: .green, shortcut: "3", screenshot: false)
             }
-            .frame(maxWidth: 520)
+            .frame(maxWidth: AskMetrics.composerMaxWidth)
             .padding(.top, 26)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 32)
-        .padding(.bottom, 40)
+        .padding(.top, AskMetrics.titleBarRowHeight)
+        .padding(.bottom, bottomChromeHeight)
     }
 
     /// Summon and voice shortcuts, read from the configured hotkeys.
@@ -524,9 +534,12 @@ struct AskConversationView: View {
     /// window, where it read as a disabled tag. It belongs under its own title.
     /// This is a hotkey-summoned tool, so each row carries a real shortcut;
     /// Command-digit rather than Option-digit, which types a character.
-    private func suggestion(title: String, caption: String, systemImage: String,
+    /// `key` names the title; its caption lives under `key + ".caption"`.
+    private func suggestion(_ key: String, systemImage: String, tint: Color,
                             shortcut: String, screenshot: Bool) -> some View {
-        AskSuggestionCard(title: title, caption: caption, systemImage: systemImage, shortcut: shortcut) {
+        let title = L(key), caption = L(key + ".caption")
+        return AskSuggestionCard(title: title, caption: caption, systemImage: systemImage, tint: tint,
+                                 shortcut: shortcut) {
             model.draft.text = title
             if screenshot { model.draft.includeScreenshot = true }
         }
@@ -589,8 +602,7 @@ struct AskConversationView: View {
                     .foregroundStyle(StudioTheme.textSecondary)
                     .padding(.horizontal, 13)
                     .frame(height: 28)
-                    .background(AskTheme.raisedSurface, in: Capsule())
-                    .overlay(Capsule().strokeBorder(AskTheme.border))
+                    .askInWindowGlassPill(height: 28)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(L("ask.stop"))
@@ -603,7 +615,7 @@ struct AskConversationView: View {
         .frame(maxWidth: AskMetrics.composerMaxWidth)
         .padding(.horizontal, 22)
         .padding(.top, 8)
-        .padding(.bottom, 18)
+        .padding(.bottom, 14)
     }
 
     private func approval(_ call: AskToolCall, id: String) -> some View {
@@ -659,7 +671,9 @@ struct AskConversationView: View {
                                                            value: [message.id: geometry.frame(in: .named("ask-transcript"))])
                                 })
                         }
-                        Color.clear.frame(height: 1).id("bottom")
+                        // The end marker spans the space under the composer, so
+                        // scrolling to it leaves the last answer above the card.
+                        Color.clear.frame(height: bottomChromeHeight + 1).id("bottom")
                             .background(GeometryReader { geometry in
                                 Color.clear.preference(key: AskTranscriptFrames.self,
                                                        value: ["bottom": geometry.frame(in: .named("ask-transcript"))])
@@ -668,14 +682,16 @@ struct AskConversationView: View {
                     // One centred column: the question, the answer and the
                     // composer below share the same edges on any window width.
                     .padding(.horizontal, AskMetrics.columnInset)
-                    .padding(.vertical, 22)
+                    .padding(.top, AskMetrics.titleBarRowHeight + 14)
+                    .padding(.bottom, 8)
                     .frame(maxWidth: AskMetrics.columnWidth)
                     .frame(maxWidth: .infinity)
                 }
                 .coordinateSpace(name: "ask-transcript")
                 .onPreferenceChange(AskTranscriptFrames.self) { frames in
                     guard let id = model.selectedId, restoredTranscript == id else { return }
-                    if let bottom = frames["bottom"], bottom.minY <= viewport.size.height + 24 {
+                    if let bottom = frames["bottom"], AskPresentation.isFollowingBottom(
+                        markerTop: bottom.minY, viewport: viewport.size.height, coveredBottom: bottomChromeHeight) {
                         model.transcriptPositions[id] = "bottom"
                     } else if let first = frames.filter({ $0.key != "bottom" && $0.value.maxY > 0 })
                         .min(by: { $0.value.minY < $1.value.minY }) {
@@ -823,10 +839,7 @@ private struct AskMessageView: View {
                 })
                     .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
             }
-            if message.isError == true {
-                Text(L("ask.answer.interrupted"))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-            }
+            if message.isError == true { interruptedTag }
             ForEach(message.toolCalls ?? []) { call in
                 toolCard(call)
                     .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
@@ -835,6 +848,34 @@ private struct AskMessageView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onHover { hovering = $0 }
+    }
+
+    /// A small tag instead of a loose grey line. When the answer can be
+    /// produced again, the tag carries that action itself.
+    private var interruptedTag: some View {
+        HStack(spacing: 6) {
+            Circle().fill(StudioTheme.warning).frame(width: 6, height: 6)
+            Text(L("ask.answer.interrupted"))
+                .font(.system(size: 11.5))
+                .foregroundStyle(StudioTheme.textSecondary)
+            if canRegenerate, !isStreaming {
+                Button(action: onRegenerate) {
+                    Text(L("ask.regenerate"))
+                        .font(.system(size: 11.5, weight: .medium))
+                        .foregroundStyle(AskTheme.accentText)
+                        .padding(.horizontal, 8)
+                        .frame(height: 20)
+                        .background(AskTheme.accent.opacity(0.12), in: Capsule())
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.leading, 10)
+        .padding(.trailing, canRegenerate && !isStreaming ? 3 : 10)
+        .frame(height: 26)
+        .background(AskTheme.hoverFill, in: Capsule())
+        .accessibilityElement(children: .contain)
     }
 
     /// The row keeps its height while hidden, so hovering never reflows the
@@ -849,7 +890,8 @@ private struct AskMessageView: View {
                 copied = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
             }
-            if canRegenerate {
+            // An interrupted answer already offers this on its tag.
+            if canRegenerate, message.isError != true {
                 AskGhostButton(title: L("ask.regenerate"), systemImage: "arrow.clockwise", action: onRegenerate)
             }
             AskGhostButton(title: L("ask.quote"), systemImage: "text.quote") {
@@ -968,11 +1010,9 @@ private struct AskHistoryRow: View {
             .padding(.horizontal, 10)
             .frame(height: 34)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(rowFill, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .overlay(alignment: .leading) {
-                if selected { Capsule().fill(AskTheme.accent).frame(width: 3, height: 16) }
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            // Selection is a raised fill, concentric with the panel; no accent bar.
+            .background(rowFill, in: RoundedRectangle(cornerRadius: AskMetrics.sidebarRowCorner, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: AskMetrics.sidebarRowCorner, style: .continuous))
         }
         .buttonStyle(.plain)
         // Always mounted and only faded: removing the menu on hover-out would
@@ -1001,48 +1041,53 @@ private struct AskHistoryRow: View {
     }
 
     private var rowFill: Color {
-        if selected { return StudioTheme.sidebarSelection }
+        if selected { return AskTheme.selectionFill }
         return hovering ? AskTheme.hoverFill : .clear
     }
 }
 
-/// An empty-state suggestion. Hover lifts it onto the accent so the three
-/// starting points read as buttons, not as a list of labels.
+/// An empty-state suggestion: one of three glass cards in a row. Hover lifts
+/// it and fills its icon tile, so the starting points read as buttons.
 private struct AskSuggestionCard: View {
     let title: String
     let caption: String
     let systemImage: String
+    let tint: Color
     let shortcut: String
     var action: () -> Void
     @State private var hovering = false
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    static var corner: CGFloat { 18 }
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 11) {
-                Image(systemName: systemImage).font(.system(size: 13))
-                    .foregroundStyle(hovering ? Color.white : StudioTheme.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .background(hovering ? AskTheme.accent : AskTheme.hoverFill,
-                                in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
-                    Text(caption).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top) {
+                    Image(systemName: systemImage).font(.system(size: 14))
+                        .foregroundStyle(hovering ? Color.white : tint)
+                        .frame(width: 30, height: 30)
+                        .background(hovering ? tint : tint.opacity(0.16),
+                                    in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    Spacer(minLength: 8)
+                    Text(verbatim: "⌘" + shortcut).font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(StudioTheme.textTertiary)
                 }
-                Spacer(minLength: 8)
-                Text(verbatim: "⌘" + shortcut).font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Text(title).font(.system(size: 13.5, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(caption).font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
             }
-            .padding(.horizontal, 13)
-            .padding(.vertical, 11)
-            .background(hovering ? AskTheme.accentSoft : AskTheme.composerSurface,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(hovering ? AskTheme.accent.opacity(0.45) : AskTheme.border))
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(14)
+            .frame(maxWidth: .infinity, minHeight: 108, alignment: .topLeading)
+            .askInWindowGlass(corner: Self.corner, opaqueFill: AskTheme.composerSurface)
+            .contentShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
+            .offset(y: hovering && !reduceMotion ? -2 : 0)
             .opacity(isEnabled ? 1 : 0.55)
+            .animation(.easeOut(duration: 0.18), value: hovering)
         }
         .buttonStyle(.plain)
         .onHover { hovering = isEnabled && $0 }

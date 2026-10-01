@@ -38,6 +38,22 @@ enum AskGlassMaterial: Equatable {
     }
 }
 
+/// Where a glass surface sits, which decides what the pre-macOS 26 blur samples.
+/// Liquid Glass picks this up on its own; `NSVisualEffectView` has to be told.
+enum AskGlassPlacement: Equatable {
+    /// A panel of its own over other apps (the launcher, menus, hover cards):
+    /// it blurs the desktop and windows behind it.
+    case floating
+    /// Chrome floating over the conversation window's own content (the
+    /// workspace composer, sidebar, header and palette): it blurs the transcript.
+    case inWindow
+
+    var blending: NSVisualEffectView.BlendingMode { self == .floating ? .behindWindow : .withinWindow }
+    /// The HUD material reads as a dark sheet over the light window, so in-window
+    /// chrome uses the adaptive popover material instead.
+    var fallbackMaterial: NSVisualEffectView.Material { self == .floating ? .hudWindow : .popover }
+}
+
 extension EnvironmentValues {
     /// Pins the launcher material, e.g. to check the Reduce Transparency fallback
     /// in tests; nil follows the system.
@@ -51,8 +67,12 @@ struct AskGlassBackground: View {
     var corner: CGFloat
     /// Used when transparency is reduced.
     var opaqueFill: Color
+    var placement: AskGlassPlacement = .floating
+    /// `.circular` for pills: a continuous corner near half the height draws a
+    /// stray sliver at each end of the outline.
+    var cornerStyle: RoundedCornerStyle = .continuous
 
-    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: corner, style: .continuous) }
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: corner, style: cornerStyle) }
 
     var body: some View {
         ZStack {
@@ -60,7 +80,7 @@ struct AskGlassBackground: View {
             case .liquidGlass:
                 liquidGlass
             case .visualEffect:
-                StudioVisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow, cornerRadius: corner)
+                fallback
             case .opaque:
                 shape.fill(opaqueFill)
             }
@@ -78,11 +98,16 @@ struct AskGlassBackground: View {
             if #available(macOS 26.0, *) {
                 AskLiquidGlassView(cornerRadius: corner)
             } else {
-                StudioVisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow, cornerRadius: corner)
+                fallback
             }
         #else
-            StudioVisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow, cornerRadius: corner)
+            fallback
         #endif
+    }
+
+    private var fallback: some View {
+        StudioVisualEffectBlur(material: placement.fallbackMaterial, blendingMode: placement.blending,
+                               cornerRadius: corner)
     }
 
     /// Bright on the light-facing corner, fading along the edge.
@@ -151,5 +176,43 @@ struct AskGlassCardSurface<Content: View>: View {
                     RoundedRectangle(cornerRadius: corner, style: .continuous).strokeBorder(AskTheme.border)
                 }
             }
+    }
+}
+
+/// Glass for chrome that floats over the conversation window's own content.
+/// With Reduce Transparency (or a pinned `.opaque` material) it falls back to
+/// `opaqueFill` with a hairline border, like the launcher card.
+struct AskInWindowGlass: ViewModifier {
+    var corner: CGFloat
+    var opaqueFill: Color
+    var cornerStyle: RoundedCornerStyle = .continuous
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.askGlassMaterialOverride) private var materialOverride
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    func body(content: Content) -> some View {
+        let material = materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency)
+        content
+            .background(AskGlassBackground(material: material, corner: corner, opaqueFill: opaqueFill,
+                                           placement: .inWindow, cornerStyle: cornerStyle))
+            .overlay {
+                let border = material.idleBorder(AskTheme.border, increasedContrast: contrast == .increased)
+                if border != .clear {
+                    RoundedRectangle(cornerRadius: corner, style: cornerStyle)
+                        .strokeBorder(border)
+                        .allowsHitTesting(false)
+                }
+            }
+    }
+}
+
+extension View {
+    func askInWindowGlass(corner: CGFloat, opaqueFill: Color = AskTheme.raisedSurface) -> some View {
+        modifier(AskInWindowGlass(corner: corner, opaqueFill: opaqueFill))
+    }
+
+    /// A pill of the given height: header capsules and the stop button.
+    func askInWindowGlassPill(height: CGFloat) -> some View {
+        modifier(AskInWindowGlass(corner: height / 2, opaqueFill: AskTheme.raisedSurface, cornerStyle: .circular))
     }
 }

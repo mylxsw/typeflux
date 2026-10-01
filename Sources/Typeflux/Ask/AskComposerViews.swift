@@ -95,7 +95,7 @@ struct AskComposer: View {
         }
         .background {
             if let glass {
-                AskGlassBackground(material: glass, corner: chrome.corner, opaqueFill: chrome.fill)
+                chrome.glassBackground(glass)
             } else {
                 chrome.fill
             }

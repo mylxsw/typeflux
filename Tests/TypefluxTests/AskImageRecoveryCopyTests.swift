@@ -47,7 +47,7 @@ struct AskImageRecoveryCopyTests {
     }
 
     @Test func recoveryCardIsASubordinateSurface() {
-        #expect(AskMetrics.recoveryCardCorner < AskMetrics.composerCardCorner)
+        #expect(AskMetrics.recoveryCardCorner < AskComposerChrome.workspace.corner)
         #expect(AskMetrics.recoveryThumbnail.width > AskMetrics.recoveryThumbnail.height)
     }
 }

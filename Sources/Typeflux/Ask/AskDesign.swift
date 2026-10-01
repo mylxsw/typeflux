@@ -98,6 +98,12 @@ enum AskTheme {
         light: NSColor(calibratedWhite: 0, alpha: 0.12),
         dark: NSColor(calibratedWhite: 1, alpha: 0.18)
     )
+    /// The selected history row: a translucent wash one step above `hoverFill`,
+    /// so it reads on the sidebar's glass in both appearances.
+    static let selectionFill = StudioTheme.dynamic(
+        light: NSColor(calibratedWhite: 0, alpha: 0.075),
+        dark: NSColor(calibratedWhite: 1, alpha: 0.12)
+    )
     /// Translucent hover wash, so borderless controls read the same on any surface.
     static let hoverFill = StudioTheme.dynamic(
         light: NSColor(calibratedWhite: 0, alpha: 0.06),
@@ -141,7 +147,6 @@ enum AskMetrics {
     static let bannerHeight: CGFloat = 32
     static let bannerSpacing: CGFloat = 6
     static let sidebarWidth: CGFloat = 248
-    static let headerHeight: CGFloat = 52
     /// Height of the title bar row; the unified toolbar centres the traffic lights in it.
     static let titleBarRowHeight: CGFloat = 52
     /// Space above the sidebar's first row, clearing the title bar tools.
@@ -159,7 +164,17 @@ enum AskMetrics {
     static let composerMaxWidth: CGFloat = columnWidth
     static let transcriptMaxWidth: CGFloat = columnWidth - columnInset * 2
     static let bubbleMaxWidth: CGFloat = 540
-    static let composerCardCorner: CGFloat = 16
+    /// The sidebar floats as a glass panel inset from the window edges; its
+    /// corner is concentric with the 12pt rows inset 8pt inside it.
+    static let sidebarPanelInset: CGFloat = 8
+    static let sidebarPanelCorner: CGFloat = 20
+    static let sidebarRowCorner: CGFloat = 12
+    /// Title and action capsules floating in the header over the transcript.
+    static let headerCapsuleHeight: CGFloat = 34
+    /// How far the transcript fades out where it meets the window's top and bottom edges.
+    static let transcriptEdgeFade: CGFloat = 28
+    /// The ⌘K search card, a glass card over the dimmed window.
+    static let paletteCorner: CGFloat = 22
     /// Widest the composer's model name may grow before it truncates in the middle.
     static let modelMenuMaxWidth: CGFloat = 132
     /// The saved-screenshot card above the composer and its thumbnail.
@@ -175,9 +190,10 @@ enum AskMetrics {
 }
 
 /// Surface of the shared composer. The launcher and the workspace are the same
-/// feature behind different triggers: they share every control and state. The
-/// launcher floats over other apps, so it is a larger glass card with roomier
-/// insets; the workspace keeps its opaque card inside the conversation window.
+/// feature behind different triggers, so they share every control, state and
+/// metric: one glass card floating over whatever is behind it. The launcher's
+/// glass samples the windows under its panel; the workspace's samples the
+/// transcript scrolling beneath it.
 struct AskComposerChrome: Equatable {
     var fill: Color
     var corner: CGFloat
@@ -186,18 +202,11 @@ struct AskComposerChrome: Equatable {
     var idleBorder: Color
     /// Draws the card with `AskGlassBackground` instead of `fill`.
     var glass = false
+    var placement: AskGlassPlacement = .floating
     var editorTopInset: CGFloat = 15
     var editorBottomInset: CGFloat = 11
     var footerHeight: CGFloat = 44
     var footerLeadingInset: CGFloat = 12
-
-    static let workspace = AskComposerChrome(
-        fill: AskTheme.composerSurface,
-        corner: AskMetrics.composerCardCorner,
-        editorFontSize: 14,
-        horizontalInset: 15,
-        idleBorder: AskTheme.border
-    )
 
     /// The editor text starts where the model name does: footer inset 10 plus the
     /// menu's own 10pt padding, less the text view's 5pt line fragment padding.
@@ -214,7 +223,21 @@ struct AskComposerChrome: Equatable {
         footerLeadingInset: 10
     )
 
+    /// The launcher's card inside the conversation window. It sits on the
+    /// window's own surface, so the opaque fallback needs only the regular border.
+    static let workspace: AskComposerChrome = {
+        var chrome = launcher
+        chrome.idleBorder = AskTheme.border
+        chrome.placement = .inWindow
+        return chrome
+    }()
+
     static func of(launcher: Bool) -> AskComposerChrome { launcher ? .launcher : .workspace }
+
+    /// The card's glass, falling back to `fill` when transparency is reduced.
+    func glassBackground(_ material: AskGlassMaterial) -> AskGlassBackground {
+        AskGlassBackground(material: material, corner: corner, opaqueFill: fill, placement: placement)
+    }
 }
 
 /// Colour is reserved for state: blue runs, green finished, amber needs a
@@ -326,9 +349,12 @@ struct AskStatusBadge: View {
     }
 }
 
-/// A tool call is one collapsed 40pt row. It only expands when the user asks
+/// A tool call is one collapsed 44pt row. It only expands when the user asks
 /// for it, or when the run is waiting for a decision.
 struct AskToolCard<Detail: View>: View {
+    /// Concentric with the 28pt icon tile inset 8pt.
+    static var corner: CGFloat { 16 }
+
     var title: String
     var subtitle: String?
     var systemImage: String
@@ -354,12 +380,12 @@ struct AskToolCard<Detail: View>: View {
             Button {
                 expanded.toggle()
             } label: {
-                HStack(spacing: 9) {
+                HStack(spacing: 10) {
                     Image(systemName: systemImage)
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(width: 22, height: 22)
-                        .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        .frame(width: 28, height: 28)
+                        .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                     Text(title).font(.system(size: 12.5, weight: .semibold)).lineLimit(1)
                         .foregroundStyle(StudioTheme.textPrimary)
                     if let subtitle {
@@ -371,25 +397,27 @@ struct AskToolCard<Detail: View>: View {
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
-                .padding(.horizontal, 11)
-                .frame(height: 40)
+                .padding(.leading, 8)
+                .padding(.trailing, 12)
+                .frame(height: 44)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             if expanded {
-                Rectangle().fill(AskTheme.separator).frame(height: 1)
+                // Indented under the title, past the icon tile: no rule, no second fill.
                 detail()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(AskTheme.surface)
+                    .padding(.leading, 46)
+                    .padding(.trailing, 14)
+                    .padding(.bottom, 12)
             }
         }
-        .background(AskTheme.raisedSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+        // A translucent wash, not an opaque card, so it sits on any window surface.
+        .background(AskTheme.hoverFill.opacity(0.75))
+        .clipShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .strokeBorder(state.needsAttention ? state.tint.opacity(0.45) : AskTheme.border)
+            RoundedRectangle(cornerRadius: Self.corner, style: .continuous)
+                .strokeBorder(state.needsAttention ? state.tint.opacity(0.45) : AskTheme.border.opacity(0.6))
         )
     }
 }
@@ -875,6 +903,14 @@ struct AskVoiceBorder: ViewModifier {
 /// Pure helpers behind the redesigned surfaces, kept separate so they can be
 /// unit tested without rendering a window.
 enum AskPresentation {
+    /// Whether the transcript is scrolled to its end. The end marker starts
+    /// right after the last message; the composer floats over the bottom
+    /// `coveredBottom` points, so "at the end" means the marker begins above the card.
+    static func isFollowingBottom(markerTop: CGFloat, viewport: CGFloat, coveredBottom: CGFloat,
+                                  tolerance: CGFloat = 24) -> Bool {
+        markerTop <= viewport - max(0, coveredBottom) + tolerance
+    }
+
     /// Name shown in the sidebar footer: the profile name, else the email's local part.
     static func accountName(name: String?, email: String?) -> String? {
         if let name = name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty { return name }
@@ -959,26 +995,14 @@ enum AskPresentation {
     }
 }
 
-/// The conversation window's sidebar and content fills. They reuse the settings
-/// window's tokens and material stack, so both windows read as one app.
+/// The conversation window's surface under both the floating sidebar and the
+/// transcript. It reuses the settings window's tokens and material stack, so
+/// both windows read as one app.
 struct AskWindowBackdrop: View {
-    enum Role { case sidebar, content }
-    @Environment(\.colorScheme) private var colorScheme
-    let role: Role
-
     var body: some View {
         ZStack {
             Rectangle().fill(.ultraThinMaterial)
-            switch role {
-            case .sidebar:
-                StudioTheme.sidebar
-                if colorScheme == .light {
-                    LinearGradient(colors: [Color.white.opacity(0.22), Color.clear],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing)
-                }
-            case .content:
-                StudioTheme.shellSurface
-            }
+            StudioTheme.shellSurface
         }
     }
 }
@@ -1193,5 +1217,59 @@ struct AskSegmentedControl<Value: Hashable>: View {
         .padding(3)
         .background(AskTheme.segmentTrack, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         .animation(.easeOut(duration: 0.15), value: selection)
+    }
+}
+
+/// Reports the height of the banners and composer floating over the transcript.
+struct AskBottomChromeHeight: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
+/// A mask that fades content out over `fade` points at its top and bottom
+/// edges, where the transcript meets the window under the floating chrome.
+struct AskEdgeFade: View {
+    var fade: CGFloat
+
+    var body: some View {
+        VStack(spacing: 0) {
+            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: fade)
+            Rectangle().fill(Color.black)
+            LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: fade)
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+/// "New chat" in the sidebar: a row led by an accent drop, with its shortcut.
+struct AskNewConversationRow: View {
+    var action: () -> Void
+    @State private var hovering = false
+
+    static var dropSize: CGFloat { 22 }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 9) {
+                Image(systemName: "plus").font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color.white)
+                    .frame(width: Self.dropSize, height: Self.dropSize)
+                    .background(AskTheme.accent, in: Circle())
+                    .shadow(color: AskTheme.accent.opacity(0.35), radius: 4, y: 1)
+                Text(L("ask.new")).font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Spacer(minLength: 0)
+                Text(verbatim: "⌘N").font(.system(size: 10.5, weight: .medium))
+                    .foregroundStyle(StudioTheme.textTertiary)
+            }
+            .padding(.leading, 6)
+            .padding(.trailing, 12)
+            .frame(height: 34)
+            .background(hovering ? AskTheme.hoverFill : .clear, in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .accessibilityLabel(L("ask.new"))
     }
 }
