@@ -1459,6 +1459,8 @@
 "ask.context.more" = "另有 %d 项上下文";
 "ask.context.memory.offHint" = "点击关闭，本次提问不带记忆";
 "ask.context.memory.onHint" = "点击开启，本次提问带上记忆";
+"ask.context.selection.offHint" = "点击关闭，本次提问不带选中文本";
+"ask.context.selection.onHint" = "点击开启，本次提问带上选中文本";
 "ask.selection" = "选中文本";
 "ask.memory" = "记忆";
 "ask.memory.app" = "记忆 · %@";
@@ -1573,6 +1575,9 @@
 "ask.models.cancel" = "取消";
 "ask.models.askDefault" = "随便问默认";
 "ask.models.makeDefault" = "设为随便问默认";
+"ask.models.isDefault" = "默认";
+"ask.models.supportsImages" = "支持图片与截图";
+"ask.models.supportsReasoning" = "支持调节推理强度";
 "ask.models.compatible" = "支持 OpenAI 兼容 API。截图需要模型支持视觉，工具调用需要对应能力。";
 "ask.models.name" = "名称";
 "ask.models.url" = "API 地址";

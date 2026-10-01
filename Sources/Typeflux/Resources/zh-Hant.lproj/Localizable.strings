@@ -1456,6 +1456,8 @@
 "ask.context.more" = "另有 %d 項上下文";
 "ask.context.memory.offHint" = "點擊關閉，本次提問不帶記憶";
 "ask.context.memory.onHint" = "點擊開啟，本次提問帶上記憶";
+"ask.context.selection.offHint" = "點擊關閉，本次提問不帶選取文字";
+"ask.context.selection.onHint" = "點擊開啟，本次提問帶上選取文字";
 "ask.selection" = "Selected text";
 "ask.memory" = "記憶";
 "ask.memory.app" = "記憶 · %@";
@@ -1570,6 +1572,9 @@
 "ask.models.cancel" = "Cancel";
 "ask.models.askDefault" = "Ask default";
 "ask.models.makeDefault" = "Set as Ask default";
+"ask.models.isDefault" = "預設";
+"ask.models.supportsImages" = "支援圖片與截圖";
+"ask.models.supportsReasoning" = "支援調整推理強度";
 "ask.models.compatible" = "Supports OpenAI-compatible APIs. Screenshots require vision support; tools require tool-calling support.";
 "ask.models.name" = "Name";
 "ask.models.url" = "API URL";

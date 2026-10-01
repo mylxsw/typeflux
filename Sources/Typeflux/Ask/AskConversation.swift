@@ -130,6 +130,12 @@ struct AskDraft: Codable, Equatable, Sendable {
     /// The user switched memory off for this question. The captured memory is
     /// kept so the chip can switch it back on; nil in drafts saved before this.
     var memoryOff: Bool? = nil
+    /// The user switched the selected text off for this question. Like memory it
+    /// is kept, so the chip can switch it back on; nil in drafts saved before this.
+    var selectionOff: Bool? = nil
+
+    /// The selection that rides with the question: nil once switched off.
+    var sentSelection: String? { selectionOff == true ? nil : selection }
 
     var canSend: Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
@@ -144,7 +150,7 @@ struct AskDraft: Codable, Equatable, Sendable {
     func request(deviceId: String, tools: [AskToolDefinition], id: String = UUID().uuidString) -> AskSendRequest {
         AskSendRequest(
             id: id, deviceId: deviceId, text: text.trimmingCharacters(in: .whitespacesAndNewlines),
-            selection: selection, source: source,
+            selection: sentSelection, source: source,
             image: includeScreenshot ? screenshot : nil, tools: tools, modelRef: modelRef, references: references
         )
     }

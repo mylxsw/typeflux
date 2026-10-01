@@ -76,7 +76,7 @@ struct AskGlassBackground: View {
     @ViewBuilder private var liquidGlass: some View {
         #if compiler(>=6.2)
             if #available(macOS 26.0, *) {
-                shape.fill(Color.clear).glassEffect(.regular, in: shape)
+                AskLiquidGlassView(cornerRadius: corner)
             } else {
                 StudioVisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow, cornerRadius: corner)
             }
@@ -100,5 +100,58 @@ struct AskGlassBackground: View {
             ),
             lineWidth: 1
         )
+    }
+}
+
+#if compiler(>=6.2)
+    /// System Liquid Glass as its own AppKit layer. SwiftUI's `glassEffect` sat in
+    /// the same render tree as the composer, so every frame of the recording
+    /// waveform re-composited the glass and the panel flickered.
+    @available(macOS 26.0, *)
+    private struct AskLiquidGlassView: NSViewRepresentable {
+        var cornerRadius: CGFloat
+
+        func makeNSView(context _: Context) -> NSGlassEffectView {
+            let view = NSGlassEffectView()
+            view.cornerRadius = cornerRadius
+            return view
+        }
+
+        func updateNSView(_ view: NSGlassEffectView, context _: Context) {
+            if view.cornerRadius != cornerRadius { view.cornerRadius = cornerRadius }
+        }
+    }
+#endif
+
+/// Background for the composer's popovers (model, reasoning). On macOS 26 the
+/// system popover is already glass, so an opaque fill would hide it; earlier
+/// systems and Reduce Transparency keep the opaque popover surface.
+struct AskPopoverSurface: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    static func fill(_ material: AskGlassMaterial) -> Color {
+        material == .liquidGlass ? .clear : AskTheme.popoverSurface
+    }
+
+    func body(content: Content) -> some View {
+        content.background(Self.fill(AskGlassMaterial.resolve(reduceTransparency: reduceTransparency)))
+    }
+}
+
+/// The chips' hover card: a small glass card matching the launcher.
+struct AskHoverCardSurface<Content: View>: View {
+    static var corner: CGFloat { 14 }
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    let content: Content
+
+    var body: some View {
+        let material = AskGlassMaterial.resolve(reduceTransparency: reduceTransparency)
+        content
+            .background(AskGlassBackground(material: material, corner: Self.corner, opaqueFill: AskTheme.popoverSurface))
+            .overlay {
+                if !material.drawsOwnEdge {
+                    RoundedRectangle(cornerRadius: Self.corner, style: .continuous).strokeBorder(AskTheme.border)
+                }
+            }
     }
 }

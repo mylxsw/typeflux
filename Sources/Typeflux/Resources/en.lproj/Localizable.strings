@@ -1459,6 +1459,8 @@
 "ask.context.more" = "%d more context items";
 "ask.context.memory.offHint" = "Click to leave memory out of this question";
 "ask.context.memory.onHint" = "Click to include memory";
+"ask.context.selection.offHint" = "Click to leave the selected text out of this question";
+"ask.context.selection.onHint" = "Click to include the selected text";
 "ask.selection" = "Selected text";
 "ask.memory" = "Memory";
 "ask.memory.app" = "Memory · %@";
@@ -1573,6 +1575,9 @@
 "ask.models.cancel" = "Cancel";
 "ask.models.askDefault" = "Ask default";
 "ask.models.makeDefault" = "Set as Ask default";
+"ask.models.isDefault" = "Default";
+"ask.models.supportsImages" = "Understands images and screenshots";
+"ask.models.supportsReasoning" = "Supports adjustable reasoning";
 "ask.models.compatible" = "Supports OpenAI-compatible APIs. Screenshots require vision support; tools require tool-calling support.";
 "ask.models.name" = "Name";
 "ask.models.url" = "API URL";

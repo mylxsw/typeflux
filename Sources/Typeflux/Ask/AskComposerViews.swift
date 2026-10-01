@@ -45,7 +45,6 @@ struct AskComposer: View {
     private var active: Bool { voice.context == contextID && voice.isActive }
     private var listening: Bool { voice.context == contextID && voice.phase == .listening }
     @State private var showingScreenshot = false
-    @State private var showingSelection = false
     @State private var editorHeight: CGFloat = 32
     @State private var voiceShortcut: HotkeyBinding?
 
@@ -179,6 +178,7 @@ struct AskComposer: View {
             source: launcher ? value.source : nil,
             sourceBundleID: value.sourceBundleID,
             selection: value.selection,
+            selectionOff: value.selectionOff == true,
             memory: newConversation ? value.memory : nil,
             memoryOff: value.memoryOff == true,
             memoryPinned: !newConversation && model.selected?.memory?.isEmpty == false
@@ -217,15 +217,12 @@ struct AskComposer: View {
         case .screenshot:
             AskIconChip(item: item, action: screenshotAction, onRemove: { remove(.screenshot) })
                 .popover(isPresented: $showingScreenshot) {
-                    AskContextPreview(draft: draft, showsSelection: false,
+                    AskContextPreview(draft: draft,
                                       recapture: { Task { await model.refreshScreenshot(launcher: launcher) } })
                 }
         case .selection:
-            AskIconChip(item: item, action: { showingSelection = true }, onRemove: { remove(.selection) })
-                .popover(isPresented: $showingSelection) {
-                    AskContextPreview(draft: draft, showsSelection: true,
-                                      recapture: { Task { await model.refreshScreenshot(launcher: launcher) } })
-                }
+            // The hover card previews the text; a click switches it on or off.
+            AskIconChip(item: item, action: selectionToggle)
         case .source:
             AskIconChip(item: item)
         case .memory:
@@ -266,10 +263,14 @@ struct AskComposer: View {
         return { draft.wrappedValue.memoryOff = draft.wrappedValue.memoryOff == true ? nil : true }
     }
 
+    private func selectionToggle() {
+        draft.wrappedValue.selectionOff = draft.wrappedValue.selectionOff == true ? nil : true
+    }
+
     private func remove(_ kind: AskContextItem.Kind) {
         switch kind {
         case .screenshot: draft.wrappedValue.includeScreenshot = false
-        case .selection: draft.wrappedValue.selection = nil
+        case .selection: draft.wrappedValue.selectionOff = true
         case .memory: draft.wrappedValue.memoryOff = true
         case .source: break
         }
@@ -303,7 +304,6 @@ struct AskComposer: View {
 
 private struct AskContextPreview: View {
     @Binding var draft: AskDraft
-    var showsSelection: Bool
     var recapture: () -> Void
 
     var body: some View {
@@ -311,15 +311,7 @@ private struct AskContextPreview: View {
             Text(L("ask.context")).font(.system(size: 13, weight: .semibold))
             if let source = draft.source { Text(source).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).lineLimit(2) }
             if let date = draft.capturedAt { Text(date, style: .time).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary) }
-            if showsSelection, let text = draft.selection {
-                ScrollView {
-                    Text(text).font(.system(size: 12)).textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(maxHeight: 180)
-                Button(L("ask.selection.remove")) { draft.selection = nil }
-            }
-            if !showsSelection, let dataURL = draft.screenshot, let image = AskImage.decode(dataURL) {
+            if let dataURL = draft.screenshot, let image = AskImage.decode(dataURL) {
                 Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 230)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 HStack(spacing: 8) {

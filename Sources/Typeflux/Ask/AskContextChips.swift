@@ -66,7 +66,7 @@ enum AskContextChips {
 
     /// Items in display order: screenshot, source, selection, memory.
     static func items(screenshot: AskScreenshotState, source: String?, sourceBundleID: String?,
-                      selection: String?, memory: AskMemory?, memoryOff: Bool = false,
+                      selection: String?, selectionOff: Bool = false, memory: AskMemory?, memoryOff: Bool = false,
                       memoryPinned: Bool) -> [AskContextItem] {
         var items = [screenshotItem(screenshot)]
         if let source, !source.isEmpty {
@@ -75,11 +75,15 @@ enum AskContextChips {
                                         style: .neutral, title: parts.app, detail: parts.window))
         }
         if let selection, !selection.isEmpty {
+            // A toggle like memory: switched off it stays as a grey chip, so the
+            // selected text can be switched back on for this question.
+            let lines = AskPresentation.lineCount(selection)
             items.append(AskContextItem(
-                kind: .selection, systemImage: "text.alignleft", style: .active,
-                title: L("ask.selection.lines", AskPresentation.lineCount(selection)),
-                detail: "“" + selectionPreview(selection) + "”", hint: L("ask.context.previewHint"),
-                badge: .count(AskPresentation.lineCount(selection)), removable: true
+                kind: .selection, systemImage: "text.alignleft", style: selectionOff ? .neutral : .active,
+                title: L("ask.selection.lines", lines),
+                detail: "“" + selectionPreview(selection) + "”",
+                hint: L(selectionOff ? "ask.context.selection.onHint" : "ask.context.selection.offHint"),
+                badge: selectionOff ? nil : .count(lines)
             ))
         }
         if memoryPinned {
@@ -394,7 +398,7 @@ struct AskContextCard: View {
         }
         .frame(width: AskContextChips.cardWidth, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 13)
+        .padding(.vertical, 11)
     }
 }
