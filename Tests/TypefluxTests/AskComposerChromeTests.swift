@@ -4,16 +4,23 @@ import Testing
 
 @Suite("Ask composer chrome")
 struct AskComposerChromeTests {
-    @Test func launcherIsAGlassCardAndTheWorkspaceStaysOpaque() {
+    @Test func workspaceSharesTheLaunchersGlassCard() {
         let launcher = AskComposerChrome.of(launcher: true)
         let workspace = AskComposerChrome.of(launcher: false)
         #expect(launcher.glass)
-        #expect(!workspace.glass)
-        // Reduce Transparency falls back to the same opaque surface as the workspace.
-        #expect(launcher.fill == workspace.fill)
-        #expect(launcher.corner > workspace.corner)
-        #expect(launcher.editorFontSize > workspace.editorFontSize)
-        #expect(launcher.footerHeight > workspace.footerHeight)
+        #expect(workspace.glass)
+        // Same card everywhere: geometry, type size and Reduce Transparency fill.
+        #expect(workspace.corner == launcher.corner)
+        #expect(workspace.editorFontSize == launcher.editorFontSize)
+        #expect(workspace.footerHeight == launcher.footerHeight)
+        #expect(workspace.horizontalInset == launcher.horizontalInset)
+        #expect(workspace.editorTopInset == launcher.editorTopInset)
+        #expect(workspace.editorBottomInset == launcher.editorBottomInset)
+        #expect(workspace.footerLeadingInset == launcher.footerLeadingInset)
+        #expect(workspace.fill == launcher.fill)
+        // Only what the glass samples differs: other windows vs. the transcript.
+        #expect(launcher.placement == .floating)
+        #expect(workspace.placement == .inWindow)
     }
 
     @Test func launcherCornerIsConcentricWithTheFooterControls() {
@@ -32,11 +39,9 @@ struct AskComposerChromeTests {
         #expect(editorText == modelText)
     }
 
-    @Test func workspaceChromeUsesTheComposerTokens() {
-        let workspace = AskComposerChrome.workspace
-        #expect(workspace.fill == AskTheme.composerSurface)
-        #expect(workspace.corner == AskMetrics.composerCardCorner)
-        #expect(workspace.idleBorder == AskTheme.border)
+    @Test func opaqueFallbackBordersMatchTheirSurface() {
+        #expect(AskComposerChrome.workspace.fill == AskTheme.composerSurface)
+        #expect(AskComposerChrome.workspace.idleBorder == AskTheme.border)
         #expect(AskComposerChrome.launcher.idleBorder == AskTheme.floatingBorder)
     }
 

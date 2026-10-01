@@ -461,6 +461,43 @@ struct AskConversationVisualTests {
         }
     }
 
+    /// The workspace's floating chrome. System glass is composited by the window
+    /// server and cannot be cached offscreen, so the layout is captured with the
+    /// opaque Reduce Transparency material, which shares every frame with the glass.
+    @Test func renderWorkspaceGlassLayout() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let fixture = try AskTestFixture()
+        let now = Date()
+        let call = AskToolCall(id: "screen", type: "function", function: .init(name: "computer", arguments: #"{"action":"screenshot"}"#))
+        let conversation = AskConversation(id: "glass", title: "优化帖子：口语化表达", revision: 3, updatedAt: now, messages: [
+            .init(id: "q1", role: "user", text: "帮我优化一下这个帖子的内容，加入比较口语化的表达。", createdAt: now),
+            .init(id: "a1", role: "assistant", text: "我帮你把口语化的核心观点整合进去。先截个图看一下需要编辑的文本范围。", isError: true, createdAt: now),
+            .init(id: "a2", role: "assistant", text: "", toolCalls: [call], createdAt: now),
+            .init(id: "t1", role: "tool", text: "截图已获取", toolCallId: "screen", isError: false, createdAt: now),
+            .init(id: "a3", role: "assistant", text: String(repeating: "看了一圈，我觉得这个工具特别适合我的场景。本地和远程的 agent 都能统一管理。\n\n", count: 6), createdAt: now)
+        ], run: .init(id: "run", deviceId: "device", status: "completed", steps: 2, updatedAt: now, tools: [], pending: []))
+        await fixture.api.seed(conversation)
+        await fixture.model.refreshHistory()
+        await fixture.model.select(conversation.id)
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            try await render(AskConversationView(model: fixture.model).environment(\.askGlassMaterialOverride, .opaque),
+                             size: NSSize(width: 1100, height: 740), appearance: appearance,
+                             file: root.appendingPathComponent("workspace-layout-\(name).png"),
+                             voice: name == "dark" ? fixture.model.voiceInput : nil)
+        }
+        fixture.model.newConversation()
+        try await render(AskConversationView(model: fixture.model).environment(\.askGlassMaterialOverride, .opaque),
+                         size: NSSize(width: 1100, height: 740), appearance: .darkAqua,
+                         file: root.appendingPathComponent("workspace-empty-dark.png"))
+        fixture.model.resetSession()
+    }
+
     private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL, voice: AskVoiceInput? = nil, minimumPNGBytes: Int = 10000) async throws {
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
