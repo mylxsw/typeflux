@@ -30,6 +30,15 @@ struct AskContextChipsTests {
         #expect(items(source: "").allSatisfy { $0.kind != .source })
     }
 
+    @Test func appIconTileCoversTheWholeChip() {
+        let side = AskContextChips.appIconSide(chip: AskContextChips.chipSize)
+        #expect(side == 35)
+        // The visible tile (824 of 1024) reaches the chip's edges, so no ring of margin remains.
+        #expect(side * AskContextChips.appIconTileFraction >= AskContextChips.chipSize)
+        #expect(side * AskContextChips.appIconTileFraction < AskContextChips.chipSize + 1)
+        #expect(AskContextChips.appIconSide(chip: 0) == 0)
+    }
+
     @Test func screenshotStatesMapToStylesAndActions() {
         let off = items(screenshot: .off)[0]
         #expect(off.style == .neutral && !off.removable && off.hint == L("ask.context.screenshot.offHint"))

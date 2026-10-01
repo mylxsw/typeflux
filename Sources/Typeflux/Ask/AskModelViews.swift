@@ -35,9 +35,11 @@ struct AskModelMenu: View {
                 if fieldStyle, let provider = library.registry.resolve(reference)?.0 {
                     ModelProviderIcon(provider: provider.studioProviderID, size: 16)
                 }
-                Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
-                    // A long model name must not squeeze the context chips out of the footer.
-                    .frame(maxWidth: compact ? AskMetrics.modelMenuMaxWidth : nil)
+                // A long model name must not squeeze the context chips out of the
+                // footer, and a short one hugs its text instead of padding out to the cap.
+                AskCappedWidth(maxWidth: compact ? AskMetrics.modelMenuMaxWidth : .infinity) {
+                    Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
+                }
                 if fieldStyle {
                     Spacer(minLength: 4)
                 }
@@ -75,6 +77,30 @@ struct AskModelMenu: View {
                 await library.probeOllama()
             }
         }
+    }
+}
+
+/// Proposes at most `maxWidth` to its content and takes the content's own size,
+/// so text shorter than the cap stays tight. `.frame(maxWidth:)` would instead
+/// grow to the cap whenever the parent offers more room.
+struct AskCappedWidth: Layout {
+    var maxWidth: CGFloat
+
+    init(maxWidth: CGFloat) { self.maxWidth = maxWidth }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
+        guard let content = subviews.first else { return .zero }
+        return content.sizeThatFits(capped(proposal))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) {
+        subviews.first?.place(at: bounds.origin, proposal: ProposedViewSize(width: bounds.width, height: bounds.height))
+    }
+
+    func capped(_ proposal: ProposedViewSize) -> ProposedViewSize {
+        // An unspecified width asks for the ideal size; keep it unless a cap applies.
+        let width = proposal.width.map { min($0, maxWidth) } ?? (maxWidth.isFinite ? maxWidth : nil)
+        return ProposedViewSize(width: width, height: proposal.height)
     }
 }
 
