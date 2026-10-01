@@ -11,6 +11,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
 
     @State private var speechDetailVisible = false
     @State private var search = ""
+    @FocusState private var searchFocused: Bool
     let speechDetail: () -> SpeechDetail
 
     var body: some View {
@@ -35,7 +36,11 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                         Text(error).font(.caption).foregroundStyle(StudioTheme.danger).padding(.top, 10)
                     }
                 }
-            }.padding(2).padding(.bottom, 24)
+            }.padding(2).padding(.bottom, StudioTheme.Layout.shellContentBottomInset)
+        }
+        .onAppear {
+            // macOS makes the first text field key on appear; keep the search field idle until clicked.
+            DispatchQueue.main.async { searchFocused = false }
         }
         .task(id: auth.accessToken) {
             library.adoptLegacySelectionIfNeeded()
@@ -58,19 +63,18 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
 
     private var toolbar: some View {
         HStack(spacing: 10) {
-            Picker(selection: Binding(get: { viewModel.modelDomain }, set: { viewModel.setModelDomain($0) })) {
-                Text(L("settings.models.domain.stt")).tag(StudioModelDomain.stt)
-                Text(L("settings.models.domain.llm")).tag(StudioModelDomain.llm)
-            } label: {
-                EmptyView()
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
+            ModelSegmentedControl(
+                options: [
+                    (label: L("settings.models.domain.stt"), value: StudioModelDomain.stt),
+                    (label: L("settings.models.domain.llm"), value: StudioModelDomain.llm)
+                ],
+                selection: Binding(get: { viewModel.modelDomain }, set: { viewModel.setModelDomain($0) })
+            )
             Spacer()
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass").foregroundStyle(StudioTheme.textTertiary)
                 TextField(L("models.search"), text: $search).textFieldStyle(.plain)
+                    .focused($searchFocused)
                 if !search.isEmpty {
                     Button { search = "" } label: {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(StudioTheme.textTertiary)
@@ -143,6 +147,15 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                     + (speechReason(viewModel.sttProvider).map { " — " + $0 } ?? ""))
             }
             .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // Same up/down indicator as the other scene selectors; clicks fall through to the menu.
+            .overlay(alignment: .trailing) {
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .allowsHitTesting(false)
+            }
         }
         .font(.system(size: 13))
         .padding(.horizontal, 10).frame(width: 240, height: 30, alignment: .leading)
@@ -190,7 +203,8 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                     detail: reason ?? ModelSettingsPresentation.languageProviderDetail(
                         modelCount: provider.configurationModels.count,
                         baseURL: endpoint(of: provider),
-                        countFormat: L("models.count")
+                        countFormat: L("models.count"),
+                        managedLabel: provider.isCloud ? L("models.cloud.managedShort") : nil
                     ),
                     icon: provider.studioProviderID,
                     available: reason == nil

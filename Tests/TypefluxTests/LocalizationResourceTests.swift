@@ -338,6 +338,7 @@ final class LocalizationResourceTests: XCTestCase {
             "models.visionUnknownShort",
             "models.showKey",
             "models.hideKey",
+            "models.cloud.managedShort",
             "models.usageHint"
         ]
 

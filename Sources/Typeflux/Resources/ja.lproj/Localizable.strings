@@ -1641,6 +1641,7 @@
 "models.visionUnknownShort" = "スクリーンショット対応は不明";
 "models.showKey" = "API キーを表示";
 "models.hideKey" = "API キーを隠す";
+"models.cloud.managedShort" = "Typeflux が管理";
 
 // Screenshot capability and recovery
 "ask.image.unsupported" = "このモデルは画像認識に対応していません。スクリーンショットを添付するには対応モデルに切り替えてください。";

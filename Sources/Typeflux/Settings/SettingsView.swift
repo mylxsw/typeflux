@@ -1032,7 +1032,7 @@ struct StudioView: View {
     private func viewportContentHeight(from viewportSize: CGSize) -> CGFloat {
         max(
             viewportSize.height - StudioTheme.Layout.shellContentTopInset
-                - StudioTheme.Layout.shellContentBottomInset,
+                - (viewModel.currentSection == .models ? 0 : StudioTheme.Layout.shellContentBottomInset),
             0
         )
     }
