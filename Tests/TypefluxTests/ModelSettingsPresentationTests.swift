@@ -71,6 +71,15 @@ final class ModelSettingsPresentationTests: XCTestCase {
         )
     }
 
+    func testLanguageProviderDetailPrefersManagedLabel() {
+        XCTAssertEqual(
+            ModelSettingsPresentation.languageProviderDetail(
+                modelCount: 3, baseURL: "", countFormat: "%d models", managedLabel: "Managed by Typeflux"
+            ),
+            "3 models · Managed by Typeflux"
+        )
+    }
+
     func testConnectionChangedOnlyWhenDraftDiffers() {
         XCTAssertFalse(ModelSettingsPresentation.connectionChanged(
             savedBaseURL: "https://a", savedKey: "k", baseURL: "https://a", key: "k"

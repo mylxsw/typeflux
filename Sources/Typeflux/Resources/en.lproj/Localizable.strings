@@ -1655,6 +1655,7 @@
 "models.visionUnknownShort" = "Screenshot support unknown";
 "models.showKey" = "Show API key";
 "models.hideKey" = "Hide API key";
+"models.cloud.managedShort" = "Managed by Typeflux";
 
 // Screenshot capability and recovery
 "ask.image.unsupported" = "This model cannot read images. Switch to a model with image support to attach a screenshot.";
