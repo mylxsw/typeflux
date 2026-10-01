@@ -49,6 +49,11 @@ enum AskGlassPlacement: Equatable {
     case inWindow
 
     var blending: NSVisualEffectView.BlendingMode { self == .floating ? .behindWindow : .withinWindow }
+    /// How much of the surface's own fill frosts the glass. Clear glass over the
+    /// transcript let black text show through the composer and made the header
+    /// pills vanish on a white window; a floating panel samples a busy desktop
+    /// and keeps the system's clear look.
+    var frost: Double { self == .floating ? 0 : 0.8 }
     /// The HUD material reads as a dark sheet over the light window, so in-window
     /// chrome uses the adaptive popover material instead.
     var fallbackMaterial: NSVisualEffectView.Material { self == .floating ? .hudWindow : .popover }
@@ -79,8 +84,10 @@ struct AskGlassBackground: View {
             switch material {
             case .liquidGlass:
                 liquidGlass
+                frosting
             case .visualEffect:
                 fallback
+                frosting
             case .opaque:
                 shape.fill(opaqueFill)
             }
@@ -103,6 +110,10 @@ struct AskGlassBackground: View {
         #else
             fallback
         #endif
+    }
+
+    @ViewBuilder private var frosting: some View {
+        if placement.frost > 0 { shape.fill(opaqueFill.opacity(placement.frost)) }
     }
 
     private var fallback: some View {
@@ -179,30 +190,28 @@ struct AskGlassCardSurface<Content: View>: View {
     }
 }
 
-/// Glass for chrome that floats over the conversation window's own content.
-/// With Reduce Transparency (or a pinned `.opaque` material) it falls back to
-/// `opaqueFill` with a hairline border, like the launcher card.
+/// Glass for chrome that floats over the conversation window's own content,
+/// frosted with `opaqueFill` and outlined with a hairline. With Reduce
+/// Transparency (or a pinned `.opaque` material) it is `opaqueFill` alone.
 struct AskInWindowGlass: ViewModifier {
     var corner: CGFloat
     var opaqueFill: Color
     var cornerStyle: RoundedCornerStyle = .continuous
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.askGlassMaterialOverride) private var materialOverride
-    @Environment(\.colorSchemeContrast) private var contrast
 
     func body(content: Content) -> some View {
         let material = materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency)
         content
             .background(AskGlassBackground(material: material, corner: corner, opaqueFill: opaqueFill,
                                            placement: .inWindow, cornerStyle: cornerStyle))
-            .overlay {
-                let border = material.idleBorder(AskTheme.border, increasedContrast: contrast == .increased)
-                if border != .clear {
-                    RoundedRectangle(cornerRadius: corner, style: cornerStyle)
-                        .strokeBorder(border)
-                        .allowsHitTesting(false)
-                }
-            }
+            // Always outlined, unlike the launcher: frosted with the window's own
+            // colours, the pills and cards would otherwise vanish on a white window.
+            .overlay(
+                RoundedRectangle(cornerRadius: corner, style: cornerStyle)
+                    .strokeBorder(AskTheme.border)
+                    .allowsHitTesting(false)
+            )
     }
 }
 

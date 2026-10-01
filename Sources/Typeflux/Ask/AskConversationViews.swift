@@ -85,19 +85,35 @@ struct AskConversationView: View {
     private var titleBarTools: some View {
         HStack(spacing: 2) {
             if !sidebarCollapsed { Spacer(minLength: 0) }
-            titleBarButton("sidebar.left", label: L("ask.sidebar.toggle")) {
-                withAnimation(.easeInOut(duration: 0.18)) { sidebarCollapsed.toggle() }
-            }
-            // Expanded, the sidebar owns the search entry; collapsed, it moves here.
             if sidebarCollapsed {
-                titleBarButton("magnifyingglass", label: L("ask.search")) { openSearch() }
-                    .keyboardShortcut("k", modifiers: .command)
+                // Without the panel behind them the tools float like the header's pills.
+                collapsedTools
+                    .padding(.horizontal, 3)
+                    .frame(height: AskMetrics.headerCapsuleHeight)
+                    .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
+            } else {
+                sidebarToggle
             }
         }
         .padding(.leading, sidebarCollapsed ? AskMetrics.trafficLightInset : 0)
         .padding(.trailing, sidebarCollapsed ? 0 : 6 + AskMetrics.sidebarPanelInset)
         .frame(width: sidebarCollapsed ? nil : AskMetrics.sidebarWidth, alignment: .leading)
         .frame(height: AskMetrics.titleBarRowHeight)
+    }
+
+    private var sidebarToggle: some View {
+        titleBarButton("sidebar.left", label: L("ask.sidebar.toggle")) {
+            withAnimation(.easeInOut(duration: 0.18)) { sidebarCollapsed.toggle() }
+        }
+    }
+
+    /// Expanded, the sidebar owns the search entry; collapsed, it moves here.
+    private var collapsedTools: some View {
+        HStack(spacing: 0) {
+            sidebarToggle
+            titleBarButton("magnifyingglass", label: L("ask.search")) { openSearch() }
+                .keyboardShortcut("k", modifiers: .command)
+        }
     }
 
     private func titleBarButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
@@ -414,7 +430,8 @@ struct AskConversationView: View {
                 if model.selectedId == nil { emptyState } else { transcript }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .mask(AskEdgeFade(fade: AskMetrics.transcriptEdgeFade))
+            .mask(AskEdgeFade(topClear: AskMetrics.headerCapsuleTop, bottomClear: AskMetrics.composerBottomInset,
+                              fade: AskMetrics.transcriptEdgeFade))
             VStack(spacing: 0) {
                 statusColumn
                 composerArea
@@ -464,11 +481,12 @@ struct AskConversationView: View {
                     headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
                     headerAction(.trash, label: L("ask.delete")) { deleteId = id }
                 }
+                // Only the actions recede; the pill itself stays as solid as the title's.
+                .opacity(headerHovering || showsUsage ? 1 : 0.55)
+                .animation(.easeOut(duration: 0.15), value: headerHovering)
                 .padding(.horizontal, 3)
                 .frame(height: AskMetrics.headerCapsuleHeight)
                 .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
-                .opacity(headerHovering || showsUsage ? 1 : 0.55)
-                .animation(.easeOut(duration: 0.15), value: headerHovering)
                 .onHover { headerHovering = $0 }
             }
         }
@@ -615,7 +633,7 @@ struct AskConversationView: View {
         .frame(maxWidth: AskMetrics.composerMaxWidth)
         .padding(.horizontal, 22)
         .padding(.top, 8)
-        .padding(.bottom, 14)
+        .padding(.bottom, AskMetrics.composerBottomInset)
     }
 
     private func approval(_ call: AskToolCall, id: String) -> some View {

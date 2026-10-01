@@ -102,8 +102,7 @@ struct AskComposer: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
         .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner,
-                                 idle: glass?.idleBorder(chrome.idleBorder, increasedContrast: contrast == .increased)
-                                     ?? chrome.idleBorder))
+                                 idle: chrome.idleBorder(on: glass, increasedContrast: contrast == .increased)))
     }
 
     private var editorRow: some View {

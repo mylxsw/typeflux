@@ -15,6 +15,38 @@ struct AskWorkspaceGlassTests {
         #expect(AskGlassPlacement.inWindow.fallbackMaterial == .popover)
     }
 
+    @Test func onlyInWindowGlassIsFrostedForLegibility() {
+        #expect(AskGlassPlacement.floating.frost == 0)
+        #expect(AskGlassPlacement.inWindow.frost > 0.5)
+        #expect(AskGlassPlacement.inWindow.frost < 1)
+    }
+
+    @Test func inWindowComposerKeepsItsHairlineOnGlass() {
+        let workspace = AskComposerChrome.workspace, launcher = AskComposerChrome.launcher
+        for material in [AskGlassMaterial.liquidGlass, .visualEffect, .opaque] {
+            #expect(workspace.idleBorder(on: material, increasedContrast: false) == AskTheme.border)
+        }
+        #expect(workspace.idleBorder(on: nil, increasedContrast: false) == AskTheme.border)
+        // The launcher keeps the glass's own edge.
+        #expect(launcher.idleBorder(on: .liquidGlass, increasedContrast: false) == .clear)
+        #expect(launcher.idleBorder(on: .liquidGlass, increasedContrast: true) == AskTheme.floatingBorder)
+        #expect(launcher.idleBorder(on: .opaque, increasedContrast: false) == AskTheme.floatingBorder)
+        #expect(launcher.idleBorder(on: nil, increasedContrast: false) == AskTheme.floatingBorder)
+    }
+
+    @Test func composerAndSidebarBottomsLineUp() {
+        #expect(AskMetrics.composerBottomInset == AskMetrics.sidebarPanelInset)
+    }
+
+    @Test func transcriptIsHiddenOutsideTheHeaderPills() {
+        #expect(AskMetrics.headerCapsuleTop == (AskMetrics.titleBarRowHeight - AskMetrics.headerCapsuleHeight) / 2)
+        let fade = AskEdgeFade(topClear: AskMetrics.headerCapsuleTop, bottomClear: AskMetrics.composerBottomInset,
+                               fade: AskMetrics.transcriptEdgeFade)
+        #expect(fade.topClear == AskMetrics.headerCapsuleTop)
+        #expect(fade.bottomClear == AskMetrics.composerBottomInset)
+        #expect(AskEdgeFade(fade: 10).topClear == 0)
+    }
+
     @Test func glassBackgroundDefaultsToTheLaunchersPlacementAndCorner() {
         let background = AskGlassBackground(material: .visualEffect, corner: 26, opaqueFill: .clear)
         #expect(background.placement == .floating)

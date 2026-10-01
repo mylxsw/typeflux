@@ -173,6 +173,11 @@ enum AskMetrics {
     static let headerCapsuleHeight: CGFloat = 34
     /// How far the transcript fades out where it meets the window's top and bottom edges.
     static let transcriptEdgeFade: CGFloat = 28
+    /// Space between the window's bottom edge and the composer card, the same
+    /// inset as the sidebar panel so both bottoms line up.
+    static let composerBottomInset: CGFloat = sidebarPanelInset
+    /// Top of the header pills: centred in the title bar row.
+    static var headerCapsuleTop: CGFloat { (titleBarRowHeight - headerCapsuleHeight) / 2 }
     /// The ⌘K search card, a glass card over the dimmed window.
     static let paletteCorner: CGFloat = 22
     /// Widest the composer's model name may grow before it truncates in the middle.
@@ -233,6 +238,14 @@ struct AskComposerChrome: Equatable {
     }()
 
     static func of(launcher: Bool) -> AskComposerChrome { launcher ? .launcher : .workspace }
+
+    /// The card's outline at rest. A floating panel's glass lights its own edge;
+    /// in-window glass is frosted with the window's own colours and would
+    /// dissolve into a white window without its hairline.
+    func idleBorder(on material: AskGlassMaterial?, increasedContrast: Bool) -> Color {
+        guard let material, placement == .floating else { return idleBorder }
+        return material.idleBorder(idleBorder, increasedContrast: increasedContrast)
+    }
 
     /// The card's glass, falling back to `fill` when transparency is reduced.
     func glassBackground(_ material: AskGlassMaterial) -> AskGlassBackground {
@@ -1226,16 +1239,22 @@ struct AskBottomChromeHeight: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
-/// A mask that fades content out over `fade` points at its top and bottom
-/// edges, where the transcript meets the window under the floating chrome.
+/// A mask over the transcript where it meets the floating chrome: hidden in
+/// the strips outside the header pills and under the composer (`topClear`,
+/// `bottomClear`), then fading in over `fade` points. Without the clear strips
+/// unblurred text showed above the title pill and below the composer card.
 struct AskEdgeFade: View {
+    var topClear: CGFloat = 0
+    var bottomClear: CGFloat = 0
     var fade: CGFloat
 
     var body: some View {
         VStack(spacing: 0) {
+            Color.clear.frame(height: topClear)
             LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: fade)
             Rectangle().fill(Color.black)
             LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: fade)
+            Color.clear.frame(height: bottomClear)
         }
         .allowsHitTesting(false)
     }
