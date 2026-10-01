@@ -30,13 +30,17 @@ struct AskContextChipsTests {
         #expect(items(source: "").allSatisfy { $0.kind != .source })
     }
 
-    @Test func appIconTileCoversTheWholeChip() {
-        let side = AskContextChips.appIconSide(chip: AskContextChips.chipSize)
-        #expect(side == 35)
-        // The visible tile (824 of 1024) reaches the chip's edges, so no ring of margin remains.
-        #expect(side * AskContextChips.appIconTileFraction >= AskContextChips.chipSize)
-        #expect(side * AskContextChips.appIconTileFraction < AskContextChips.chipSize + 1)
-        #expect(AskContextChips.appIconSide(chip: 0) == 0)
+    @Test func appIconTileIsOpticallySmallerThanTheChipWithoutInnerMargin() {
+        // Bright, opaque app tiles read larger than tinted chips, so they sit inset.
+        #expect(AskContextChips.appTileSize < AskContextChips.chipSize)
+        #expect(AskContextChips.appTileSize == 24)
+        let side = AskContextChips.appIconSide(tile: AskContextChips.appTileSize)
+        #expect(side == 30)
+        // The visible tile (824 of 1024) still reaches the clip edge, so no inner gap remains.
+        #expect(side * AskContextChips.appIconTileFraction >= AskContextChips.appTileSize)
+        #expect(side * AskContextChips.appIconTileFraction < AskContextChips.appTileSize + 1)
+        #expect(AskContextChips.appTileCorner < AskContextChips.appTileSize / 2)
+        #expect(AskContextChips.appIconSide(tile: 0) == 0)
     }
 
     @Test func screenshotStatesMapToStylesAndActions() {
