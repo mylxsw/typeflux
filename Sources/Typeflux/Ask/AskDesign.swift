@@ -828,12 +828,11 @@ struct AskVoiceBorder: ViewModifier {
     var context: String
     var radius: CGFloat
     var idle: Color = AskTheme.border
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var listening: Bool { voice.context == context && voice.phase == .listening }
 
     func body(content: Content) -> some View {
-        // Static on purpose: a per-frame edge animation made the glass panel
-        // re-composite continuously, which flickered while recording.
         content
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
@@ -841,6 +840,14 @@ struct AskVoiceBorder: ViewModifier {
                                   lineWidth: Self.borderWidth(listening: listening))
                     .allowsHitTesting(false)
             )
+            // The travelling highlight is a Core Animation layer, so it never
+            // makes SwiftUI redraw the glass card per frame.
+            .overlay {
+                if Self.showsSheen(listening: listening, reduceMotion: reduceMotion) {
+                    AskRecordingSheen(cornerRadius: radius, lineWidth: Self.borderWidth(listening: true), animated: true)
+                        .allowsHitTesting(false)
+                }
+            }
             // A soft halo outside the card while recording. Only a ring is drawn,
             // so a translucent glass card is not tinted by it.
             .background(
@@ -853,6 +860,8 @@ struct AskVoiceBorder: ViewModifier {
     }
 
     static let haloWidth: CGFloat = 3
+
+    static func showsSheen(listening: Bool, reduceMotion: Bool) -> Bool { listening && !reduceMotion }
 
     /// Focus alone stays neutral: the accent colour has to keep meaning "recording".
     static func borderColor(listening: Bool, idle: Color = AskTheme.border) -> Color {
