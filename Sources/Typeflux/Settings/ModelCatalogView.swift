@@ -18,7 +18,7 @@ struct ModelCatalogView: View {
             HStack {
                 Text(providerName + " · " + L("models.load")).font(.system(size: 16, weight: .semibold))
                 Spacer()
-                Button(L("ask.models.cancel"), action: onCancel)
+                Button(L("ask.models.cancel"), action: onCancel).keyboardShortcut(.cancelAction)
                 Button(L("models.add") + " \(addedCount)", action: onAdd)
                     .buttonStyle(ModelActionStyle(primary: true))
                     .disabled(addedCount == 0).keyboardShortcut(.defaultAction)
@@ -26,18 +26,26 @@ struct ModelCatalogView: View {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundStyle(StudioTheme.textSecondary)
                 TextField(L("models.search"), text: $search).textFieldStyle(.plain)
-            }.font(.system(size: 13)).padding(.horizontal, 12).frame(height: 34)
-                .background(StudioTheme.textSecondary.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
+            }.font(.system(size: 13)).padding(.horizontal, 10).frame(height: 30)
+                .background(
+                    ModelVisualStyle.control,
+                    in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
+                        .strokeBorder(ModelVisualStyle.border)
+                )
             ModelSurface {
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(models
                             .filter { search.isEmpty || $0.id.localizedCaseInsensitiveContains(search) }) { model in
                                 row(model)
-                                Divider()
+                                ModelRowDivider(leading: 14)
                             }
                         if models.isEmpty {
-                            Text(L("models.emptyCatalog")).font(.callout).foregroundStyle(.secondary).padding(20)
+                            Text(L("models.emptyCatalog")).font(.system(size: 13))
+                                .foregroundStyle(StudioTheme.textTertiary).padding(20)
                         }
                     }
                 }

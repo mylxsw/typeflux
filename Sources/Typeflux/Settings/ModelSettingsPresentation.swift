@@ -49,6 +49,16 @@ enum ModelSettingsPresentation {
         savedBaseURL != baseURL || savedKey != key
     }
 
+    /// The add-endpoint form needs a name, an http(s) endpoint with a host and a model ID.
+    /// `AskModelProfile.validate()` stays the authority when saving; this only gates the button.
+    static func canAddEndpoint(name: String, baseURL: String, model: String) -> Bool {
+        let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let hasScheme = trimmedURL.hasPrefix("https://") || trimmedURL.hasPrefix("http://")
+        return !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && hasScheme && !endpointLabel(trimmedURL).isEmpty
+            && !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     /// Localization keys for the scenes a model is currently assigned to.
     static func usageKeys(reference: String, rewriteReference: String, defaultReference: String) -> [String] {
         var keys: [String] = []
