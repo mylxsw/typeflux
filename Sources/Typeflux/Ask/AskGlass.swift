@@ -123,34 +123,32 @@ struct AskGlassBackground: View {
     }
 #endif
 
-/// Background for the composer's popovers (model, reasoning). On macOS 26 the
-/// system popover is already glass, so an opaque fill would hide it; earlier
-/// systems and Reduce Transparency keep the opaque popover surface.
-struct AskPopoverSurface: ViewModifier {
+/// A floating glass card: the chips' hover cards and the composer's menus.
+/// Glass on macOS 26 and the HUD blur before it; with Reduce Transparency an
+/// opaque popover surface with a hairline border.
+struct AskGlassCardSurface<Content: View>: View {
+    static var hoverCardCorner: CGFloat { 14 }
+    /// Concentric with the 12pt menu rows inset by 6.
+    static var menuCorner: CGFloat { 18 }
+
+    var corner: CGFloat
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
-    static func fill(_ material: AskGlassMaterial) -> Color {
-        material == .liquidGlass ? .clear : AskTheme.popoverSurface
-    }
-
-    func body(content: Content) -> some View {
-        content.background(Self.fill(AskGlassMaterial.resolve(reduceTransparency: reduceTransparency)))
-    }
-}
-
-/// The chips' hover card: a small glass card matching the launcher.
-struct AskHoverCardSurface<Content: View>: View {
-    static var corner: CGFloat { 14 }
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.askGlassMaterialOverride) private var materialOverride
     let content: Content
 
+    init(corner: CGFloat = Self.hoverCardCorner, @ViewBuilder content: () -> Content) {
+        self.corner = corner
+        self.content = content()
+    }
+
     var body: some View {
-        let material = AskGlassMaterial.resolve(reduceTransparency: reduceTransparency)
+        let material = materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency)
         content
-            .background(AskGlassBackground(material: material, corner: Self.corner, opaqueFill: AskTheme.popoverSurface))
+            .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
+            .background(AskGlassBackground(material: material, corner: corner, opaqueFill: AskTheme.popoverSurface))
             .overlay {
                 if !material.drawsOwnEdge {
-                    RoundedRectangle(cornerRadius: Self.corner, style: .continuous).strokeBorder(AskTheme.border)
+                    RoundedRectangle(cornerRadius: corner, style: .continuous).strokeBorder(AskTheme.border)
                 }
             }
     }

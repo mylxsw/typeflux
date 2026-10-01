@@ -116,6 +116,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 
     func dismissLauncher() {
+        // Menus and hover cards are child panels; close them with the launcher so
+        // their buttons do not reopen into a stale state next time.
+        AskGlassMenuPresenter.shared.hide()
         model.voiceInput.cancel()
         launchTask?.cancel()
         launchTask = nil

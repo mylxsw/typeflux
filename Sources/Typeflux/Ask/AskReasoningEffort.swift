@@ -68,7 +68,7 @@ struct AskReasoningMenu: View {
             .help(L("ask.reasoning.help"))
             .accessibilityLabel(L("ask.reasoning.title"))
             .accessibilityValue(effort.label)
-            .popover(isPresented: $expanded, arrowEdge: .bottom) {
+            .askMenu(isPresented: $expanded, glass: compact) {
                 AskReasoningChoices(effort: $effort) { expanded = false }
             }
         }
@@ -90,6 +90,5 @@ struct AskReasoningChoices: View {
         }
         .padding(.vertical, 6)
         .frame(width: 300)
-        .modifier(AskPopoverSurface())
     }
 }
