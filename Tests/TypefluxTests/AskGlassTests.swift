@@ -101,4 +101,9 @@ struct AskGlassTests {
         let vision = RegisteredModel(id: "c", name: "C", vision: true, reasoning: false)
         #expect(AskModelCapabilities.symbols(vision).map(\.help) == [L("ask.models.supportsImages")])
     }
+
+    @Test func settingsAndContextRecedeWhileRecording() {
+        #expect(AskComposer.recordingDim(true) == 0.4)
+        #expect(AskComposer.recordingDim(false) == 1)
+    }
 }
