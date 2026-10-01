@@ -1070,7 +1070,8 @@ struct AskPopoverRow<Accessory: View>: View {
                     if let caption, !caption.isEmpty {
                         Text(caption).font(.system(size: 11.5))
                             .foregroundStyle(StudioTheme.textTertiary)
-                            .lineLimit(1)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 Spacer(minLength: 8)
