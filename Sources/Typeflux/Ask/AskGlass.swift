@@ -30,6 +30,12 @@ enum AskGlassMaterial: Equatable {
     /// Translucent materials draw their own rim; only the opaque fill needs the
     /// card's border to separate it from the window behind.
     var drawsOwnEdge: Bool { self != .opaque }
+
+    /// The card's idle outline: none on glass, except with Increase Contrast,
+    /// where a firm edge matters more than the material's soft rim.
+    func idleBorder(_ border: Color, increasedContrast: Bool) -> Color {
+        drawsOwnEdge && !increasedContrast ? .clear : border
+    }
 }
 
 extension EnvironmentValues {

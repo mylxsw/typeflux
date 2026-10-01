@@ -28,6 +28,14 @@ struct AskGlassTests {
         #expect(!AskGlassMaterial.opaque.drawsOwnEdge)
     }
 
+    @Test func glassDropsTheIdleBorderUnlessContrastIsIncreased() {
+        let border = AskTheme.floatingBorder
+        #expect(AskGlassMaterial.liquidGlass.idleBorder(border, increasedContrast: false) == .clear)
+        #expect(AskGlassMaterial.visualEffect.idleBorder(border, increasedContrast: false) == .clear)
+        #expect(AskGlassMaterial.liquidGlass.idleBorder(border, increasedContrast: true) == border)
+        #expect(AskGlassMaterial.opaque.idleBorder(border, increasedContrast: false) == border)
+    }
+
     @Test func chipsUseTranslucentWashesSoTheyWorkOnGlass() {
         #expect(AskIconChipFace.fillColor(.neutral, hovering: false) == .clear)
         #expect(AskIconChipFace.fillColor(.unavailable, hovering: false) == .clear)

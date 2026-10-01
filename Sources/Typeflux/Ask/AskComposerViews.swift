@@ -27,6 +27,7 @@ struct AskComposer: View {
     @ObservedObject private var voice: AskVoiceInput
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.askGlassMaterialOverride) private var glassOverride
+    @Environment(\.colorSchemeContrast) private var contrast
 
     init(model: AskConversationModel, launcher: Bool, onDismiss: @escaping () -> Void = {},
          onHeightChange: @escaping (CGFloat) -> Void = { _ in },
@@ -102,7 +103,8 @@ struct AskComposer: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
         .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner,
-                                 idle: glass?.drawsOwnEdge == true ? .clear : chrome.idleBorder))
+                                 idle: glass?.idleBorder(chrome.idleBorder, increasedContrast: contrast == .increased)
+                                     ?? chrome.idleBorder))
     }
 
     private var editorRow: some View {
