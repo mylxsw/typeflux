@@ -35,7 +35,7 @@ enum AskGlassMaterial: Equatable {
 extension EnvironmentValues {
     /// Pins the launcher material, e.g. to check the Reduce Transparency fallback
     /// in tests; nil follows the system.
-    @Entry var askGlassMaterialOverride: AskGlassMaterial?
+    @Entry var askGlassMaterialOverride: AskGlassMaterial? = nil
 }
 
 /// The launcher's floating card. It replaces the opaque `composerSurface`
