@@ -1463,6 +1463,7 @@
 "ask.memory.app" = "記憶 · %@";
 "ask.memory.help" = "僅在對話開始時傳送一次：你的全域記憶，以及發起提問的應用程式中最近輸入的內容。移除後本次提問不使用記憶。";
 "ask.memory.pinned" = "本對話使用開始時附帶的記憶。";
+"ask.memory.pinnedHint" = "記憶在對話開始時附帶，之後的追問會一直沿用，無法單獨關閉。新建對話時可以關閉。";
 "ask.selection.remove" = "Remove selected text";
 "ask.send" = "Send";
 "ask.stop" = "Stop";

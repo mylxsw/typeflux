@@ -1466,6 +1466,7 @@
 "ask.memory.app" = "Memory · %@";
 "ask.memory.help" = "Sent once when this conversation starts: your global memory and recent text from the app you asked from. Remove it to ask without memory.";
 "ask.memory.pinned" = "This conversation uses the memory captured when it started.";
+"ask.memory.pinnedHint" = "Memory is attached when a conversation starts and stays for its follow-ups; it can’t be switched off here. Start a new conversation to ask without it.";
 "ask.selection.remove" = "Remove selected text";
 "ask.send" = "Send";
 "ask.stop" = "Stop";

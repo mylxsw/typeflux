@@ -77,7 +77,8 @@ struct AskUsagePanel: View {
                 .accessibilityLabel(L("ask.usage.close"))
             }
             .padding(.leading, 16).padding(.trailing, 10)
-            .frame(height: AskMetrics.titleBarRowHeight)
+            // Centred on the header pills' row, below the panel's own inset.
+            .frame(height: AskMetrics.titleBarRowHeight - AskMetrics.sidebarPanelInset * 2)
             Rectangle().fill(AskTheme.separator).frame(height: 1)
             ScrollView {
                 // Two questions, two cards: "does the next message still fit?"
@@ -111,8 +112,12 @@ struct AskUsagePanel: View {
                 // Account-wide data is independently refreshed by AuthState.
             }
         }
-        .frame(width: 330).background(AskTheme.raisedSurface)
-        .overlay(alignment: .leading) { Rectangle().fill(AskTheme.border).frame(width: 1) }
+        // A glass panel floating inset from the window edges, the sidebar's twin
+        // on the trailing side, instead of a full-height column split off by a rule.
+        .clipShape(RoundedRectangle(cornerRadius: AskMetrics.sidebarPanelCorner, style: .continuous))
+        .askInWindowGlass(corner: AskMetrics.sidebarPanelCorner, opaqueFill: AskTheme.raisedSurface)
+        .frame(width: AskMetrics.usagePanelWidth)
+        .padding([.trailing, .top, .bottom], AskMetrics.sidebarPanelInset)
         .task(id: loadKey) { await load(reset: true) }
         .onExitCommand(perform: close)
     }

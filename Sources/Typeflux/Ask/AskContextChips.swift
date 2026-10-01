@@ -47,6 +47,8 @@ enum AskContextChips {
     static let chipSize: CGFloat = AskMetrics.composerControlHeight
     static let spacing: CGFloat = 4
     static let hoverDelay: UInt64 = 150_000_000
+    /// How long a card opened by a click stays when the pointer is not on the chip.
+    static let explainDuration: UInt64 = 4_000_000_000
     static let cardWidth: CGFloat = 240
     static let selectionPreviewLength = 60
 
@@ -87,8 +89,11 @@ enum AskContextChips {
             ))
         }
         if memoryPinned {
-            items.append(AskContextItem(kind: .memory, systemImage: "brain", style: .neutral,
-                                        title: L("ask.memory"), detail: L("ask.memory.pinned")))
+            // In effect for the whole conversation, so it reads as on. It is
+            // read-only: a click explains that instead of silently doing nothing.
+            items.append(AskContextItem(kind: .memory, systemImage: "brain", style: .active,
+                                        title: L("ask.memory"), detail: L("ask.memory.pinned"),
+                                        hint: L("ask.memory.pinnedHint")))
         } else if let memory, !memory.isEmpty {
             // A toggle, not a removal: switched off it stays as a grey chip, so
             // it can be switched back on.
@@ -174,7 +179,8 @@ struct AskIconChip: View {
     var body: some View {
         Button {
             dismissCard()
-            action?()
+            // A read-only chip answers a click with its explanation, so it never feels dead.
+            if let action { action() } else { explain() }
         } label: {
             AskIconChipFace(item: item, hovering: hovering)
         }
@@ -217,9 +223,25 @@ struct AskIconChip: View {
         guard inside else { AskHoverCardPresenter.shared.hide(owner: cardID); return }
         hoverTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: AskContextChips.hoverDelay)
-            guard !Task.isCancelled, hovering, let view = anchor.view else { return }
-            AskHoverCardPresenter.shared.show(AskContextCard(items: [item]), owner: cardID, anchor: view)
+            guard !Task.isCancelled, hovering else { return }
+            showCard()
         }
+    }
+
+    /// Shows the card for a click. Leaving the chip hides it as usual; opened
+    /// without the pointer on the chip (keyboard, VoiceOver) it closes by itself.
+    private func explain() {
+        showCard()
+        hoverTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: AskContextChips.explainDuration)
+            guard !Task.isCancelled, !hovering else { return }
+            dismissCard()
+        }
+    }
+
+    private func showCard() {
+        guard let view = anchor.view else { return }
+        AskHoverCardPresenter.shared.show(AskContextCard(items: [item]), owner: cardID, anchor: view)
     }
 
     private func dismissCard() {
