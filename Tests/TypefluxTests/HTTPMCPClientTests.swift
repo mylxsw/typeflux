@@ -153,6 +153,30 @@ final class HTTPMCPClientTests: XCTestCase {
         XCTAssertEqual(String(result.prefix(16)), String(repeating: "a", count: 16))
     }
 
+    func testListToolsFollowsPaginationCursor() async throws {
+        MockMCPURLProtocol.requestHandler = { request in
+            let response = try HTTPURLResponse(url: XCTUnwrap(request.url), statusCode: 200, httpVersion: nil,
+                                               headerFields: ["Content-Type": "application/json"])!
+            let body: String = switch MockMCPURLProtocol.requestCount {
+            case 1:
+                #"{"jsonrpc":"2.0","id":"1","result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{}},"serverInfo":{"name":"Paged","version":"1.0"}}}"#
+            case 2:
+                #"{"jsonrpc":"2.0","id":"2","result":{"tools":[{"name":"first","inputSchema":{"type":"object"}}],"nextCursor":"next"}}"#
+            default:
+                #"{"jsonrpc":"2.0","id":"3","result":{"tools":[{"name":"second","inputSchema":{"type":"object"}}]}}"#
+            }
+            return (response, Data(body.utf8))
+        }
+        let client = try HTTPMCPClient(config: MCPHTTPConfig(
+            url: XCTUnwrap(URL(string: "https://example.com/mcp")),
+            urlSession: makeMockSession()
+        ))
+        try await client.connect()
+        let tools = try await client.listTools()
+        XCTAssertEqual(tools.map(\.name), ["first", "second"])
+        XCTAssertEqual(MockMCPURLProtocol.requestCount, 3)
+    }
+
     private func makeMockSession() -> URLSession {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockMCPURLProtocol.self]

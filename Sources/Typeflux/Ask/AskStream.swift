@@ -8,6 +8,8 @@ struct AskStreamProgress: Equatable, Sendable {
     var toolCalls: [AskToolCall] = []
     var reasoningMilliseconds = 0
     var usage: AskTokenUsage? = nil
+    /// The provider stopped at its output limit; the answer is incomplete.
+    var truncated = false
 }
 
 /// One bounded SSE decoder shared by provider and conversation streams.
@@ -77,6 +79,7 @@ struct AskProviderStream {
             guard let choice = (body["choices"] as? [[String: Any]])?.first else { return }
             if let finish = choice["finish_reason"] as? String, !finish.isEmpty {
                 finished = true
+                progress.truncated = finish == "length"
             }
             let delta = choice["delta"] as? [String: Any] ?? [:]
             progress.text += delta["content"] as? String ?? ""
@@ -99,6 +102,10 @@ struct AskProviderStream {
             }
             if type == "message_stop" {
                 finished = true
+            }
+            if type == "message_delta", let delta = body["delta"] as? [String: Any],
+               let reason = delta["stop_reason"] as? String {
+                progress.truncated = reason == "max_tokens"
             }
             if type == "content_block_start", let block = body["content_block"] as? [String: Any] {
                 if block["type"] as? String == "tool_use" {
@@ -132,6 +139,7 @@ struct AskProviderStream {
             guard let candidate = (body["candidates"] as? [[String: Any]])?.first else { return }
             if let finish = candidate["finishReason"] as? String, !finish.isEmpty {
                 finished = true
+                progress.truncated = finish == "MAX_TOKENS"
             }
             let content = candidate["content"] as? [String: Any] ?? [:]
             for part in content["parts"] as? [[String: Any]] ?? [] {

@@ -139,13 +139,18 @@ actor AskTestAPI: AskAPI {
 final class AskTestTools: AskToolExecuting {
     var executions = 0
     var fail = false
+    var reportsError = false
     var bound: [String] = []
     func bindConversation(_ id: String) { bound.append(id) }
-    func definitions() async -> [AskToolDefinition] { AskLocalTools.builtins }
+    var definitionRequests: [String?] = []
+    func definitions(conversationId: String?) async -> [AskToolDefinition] {
+        definitionRequests.append(conversationId)
+        return AskLocalTools.builtins
+    }
     func execute(_ call: AskToolCall, conversationId: String) async throws -> AskLocalToolOutput {
         executions += 1
         if fail { throw AskLocalError.message("Tool unavailable") }
-        return .init(content: "Observed source")
+        return .init(content: "Observed source", isError: reportsError)
     }
 }
 
@@ -293,6 +298,20 @@ struct AskConversationTests {
         #expect(await f.api.results.first?.content == "Tool unavailable")
         #expect(await f.api.results.first?.isError == true)
         #expect(f.model.controllingConversationId == nil)
+    }
+
+    @Test func toolReportedErrorIsNotSentAsSuccess() async throws {
+        let f = try AskTestFixture(); f.tools.reportsError = true
+        await f.api.setTool(.init(id: "tool", type: "function", function: .init(name: "mcp_search", arguments: "{}")))
+        f.model.launcherDraft.text = "Search"; f.model.submitLauncher()
+        try await f.wait { !f.model.pendingApprovals.isEmpty }
+        f.model.approve(conversationId: f.model.selected!.id, allowed: true)
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(f.tools.executions == 1)
+        #expect(await f.api.results.first?.content == "Observed source")
+        #expect(await f.api.results.first?.isError == true)
+        // Tool definitions are requested for the conversation being sent.
+        #expect(f.tools.definitionRequests.contains(f.model.selected?.id))
     }
 
     @Test func networkRetryReusesMessageIdentifier() async throws {

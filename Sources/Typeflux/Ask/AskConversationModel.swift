@@ -460,7 +460,7 @@ final class AskConversationModel: ObservableObject {
             do {
                 try await cache.save(value, owner: current.owner)
                 var request = request
-                request.tools = await tools.definitions()
+                request.tools = await tools.definitions(conversationId: id)
                 do {
                     try await validateModel(
                         request.modelRef, token: current.token,
@@ -538,7 +538,7 @@ final class AskConversationModel: ObservableObject {
             let monitor = monitorConversation(id: id, current: current)
             defer { monitor.cancel() }
             do {
-                _ = await tools.definitions()
+                _ = await tools.definitions(conversationId: id)
                 let response: AskConversation
                 if let request = pendingSends[id] {
                     try await validateModel(
@@ -550,7 +550,7 @@ final class AskConversationModel: ObservableObject {
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
                     let request = AskSendRequest(id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
-                                                 tools: await tools.definitions(), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references)
+                                                 tools: await tools.definitions(conversationId: id), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references)
                     try await validateModel(
                         request.modelRef, token: current.token,
                         hasImage: request.image != nil || value.messages.contains(where: { $0.image != nil })
@@ -600,7 +600,7 @@ final class AskConversationModel: ObservableObject {
             let monitor = monitorConversation(id: id, current: current)
             defer { monitor.cancel() }
             do {
-                let definitions = await tools.definitions()
+                let definitions = await tools.definitions(conversationId: id)
                 try await validateModel(
                     modelRef, token: current.token,
                     hasImage: value.messages.contains(where: { $0.image != nil })
@@ -682,7 +682,8 @@ final class AskConversationModel: ObservableObject {
                                 await self?.updateInferenceProgress(progress, id: conversationID, inferenceID: inference.id, owner: current.owner, visible: inference.summaryThrough == nil || inference.summaryThrough == 0)
                             })
                         let progress = inferenceProgress[value.id]
-                        receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: text, toolCalls: calls, usage: inferenceUsage[inference.id], reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds)
+                        receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: text, toolCalls: calls, usage: inferenceUsage[inference.id], reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds,
+                                                     finishReason: progress?.truncated == true ? "length" : nil)
                     } catch is CancellationError { throw CancellationError() }
                     catch {
                         let progress = inferenceProgress[value.id]
@@ -734,7 +735,7 @@ final class AskConversationModel: ObservableObject {
                         }
                         let output = try await tools.execute(call, conversationId: value.id)
                         try Task.checkCancellation()
-                        result?.content = output.content; result?.image = output.image; result?.isError = false
+                        result?.content = output.content; result?.image = output.image; result?.isError = output.isError
                     } catch is CancellationError { throw CancellationError() }
                     catch { result?.content = error.localizedDescription }
                     if controllingConversationId == value.id { controllingConversationId = nil; onControlChanged?(false) }

@@ -22,6 +22,37 @@ struct AskStreamTests {
         #expect(throws: (any Error).self) { try state.consume(event: "unavailable", data: "{}") }
     }
 
+    @Test func outputLimitStopsAreReportedForEveryProvider() throws {
+        var openAI = AskProviderStream(style: .openAI)
+        try openAI.consume(#"{"choices":[{"delta":{"content":"Cut"},"finish_reason":"length"}]}"#)
+        #expect(openAI.progress.truncated)
+        #expect(try openAI.result().0 == "Cut")
+        var complete = AskProviderStream(style: .openAI)
+        try complete.consume(#"{"choices":[{"delta":{"content":"Done"},"finish_reason":"stop"}]}"#)
+        #expect(!complete.progress.truncated)
+
+        var anthropic = AskProviderStream(style: .anthropic)
+        try anthropic.consume(#"{"type":"content_block_start","index":0,"content_block":{"type":"text","text":"Cut"}}"#)
+        try anthropic.consume(#"{"type":"message_delta","delta":{"stop_reason":"max_tokens"}}"#)
+        try anthropic.consume(#"{"type":"message_stop"}"#)
+        #expect(anthropic.progress.truncated)
+        var endTurn = AskProviderStream(style: .anthropic)
+        try endTurn.consume(#"{"type":"message_delta","delta":{"stop_reason":"end_turn"}}"#)
+        #expect(!endTurn.progress.truncated)
+
+        var gemini = AskProviderStream(style: .gemini)
+        try gemini.consume(#"{"candidates":[{"content":{"parts":[{"text":"Cut"}]},"finishReason":"MAX_TOKENS"}]}"#)
+        #expect(gemini.progress.truncated)
+        var geminiDone = AskProviderStream(style: .gemini)
+        try geminiDone.consume(#"{"candidates":[{"content":{"parts":[{"text":"Done"}]},"finishReason":"STOP"}]}"#)
+        #expect(!geminiDone.progress.truncated)
+
+        let receipt = AskInferenceResult(runId: "r", deviceId: "d", inferenceId: "i", content: "Cut", finishReason: "length")
+        let encoder = JSONEncoder(); encoder.keyEncodingStrategy = .convertToSnakeCase
+        let json = String(decoding: try encoder.encode(receipt), as: UTF8.self)
+        #expect(json.contains(#""finish_reason":"length""#))
+    }
+
     @Test func nativeBlockStartsAndEmptyToolInputAreHandled() throws {
         var stream = AskProviderStream(style: .anthropic)
         try stream.consume(#"{"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":"Plan"}}"#)

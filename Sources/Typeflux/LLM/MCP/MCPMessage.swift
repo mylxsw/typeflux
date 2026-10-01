@@ -170,11 +170,35 @@ struct MCPToolsCallParams: Codable {
 struct MCPContentBlock: Codable {
     let type: String
     let text: String?
+    /// Base64 payload of an `image` block.
+    let data: String?
+    let mimeType: String?
+    /// Embedded content of a `resource` block.
+    let resource: MCPEmbeddedResource?
+
+    init(type: String, text: String? = nil, data: String? = nil, mimeType: String? = nil, resource: MCPEmbeddedResource? = nil) {
+        self.type = type
+        self.text = text
+        self.data = data
+        self.mimeType = mimeType
+        self.resource = resource
+    }
+}
+
+struct MCPEmbeddedResource: Codable {
+    let uri: String?
+    let mimeType: String?
+    let text: String?
 }
 
 struct MCPToolsCallResult: Codable {
     let content: [MCPContentBlock]
     let isError: Bool?
+
+    /// Text blocks and embedded text resources, in order.
+    var textContent: String {
+        content.compactMap { $0.text ?? $0.resource?.text }.joined(separator: "\n")
+    }
 }
 
 // MARK: - Error
@@ -231,8 +255,14 @@ extension MCPJsonRPCMessage {
     }
 
     /// Create a tools/list request
-    static func toolsListRequest(id: MCPMessageId) -> MCPJsonRPCMessage {
-        MCPJsonRPCMessage(jsonrpc: "2.0", id: id, method: "tools/list", params: [:])
+    static func toolsListRequest(id: MCPMessageId, cursor: String? = nil) -> MCPJsonRPCMessage {
+        MCPJsonRPCMessage(jsonrpc: "2.0", id: id, method: "tools/list", params: cursor.map { ["cursor": AnyCodable($0)] } ?? [:])
+    }
+
+    /// Create a cancellation notification for an abandoned request
+    static func cancelledNotification(requestId: MCPMessageId, reason: String) -> MCPJsonRPCMessage {
+        MCPJsonRPCMessage(jsonrpc: "2.0", id: nil, method: "notifications/cancelled",
+                          params: ["requestId": AnyCodable(requestId.stringValue), "reason": AnyCodable(reason)])
     }
 
     /// Create a tools/call request
@@ -246,6 +276,7 @@ extension MCPJsonRPCMessage {
     /// Parse result as MCPInitializeResult
     func decodeInitializeResult() throws -> MCPInitializeResult {
         guard let result else {
+            if let error { throw MCPClientError.serverError(code: error.code, message: error.message) }
             throw MCPClientError.invalidResponse("No result in message")
         }
         let data = try JSONEncoder().encode(result)
@@ -255,6 +286,7 @@ extension MCPJsonRPCMessage {
     /// Parse result as MCPToolsListResult
     func decodeToolsListResult() throws -> MCPToolsListResult {
         guard let result else {
+            if let error { throw MCPClientError.serverError(code: error.code, message: error.message) }
             throw MCPClientError.invalidResponse("No result in message")
         }
         let data = try JSONEncoder().encode(result)
@@ -264,6 +296,7 @@ extension MCPJsonRPCMessage {
     /// Parse result as MCPToolsCallResult
     func decodeToolsCallResult() throws -> MCPToolsCallResult {
         guard let result else {
+            if let error { throw MCPClientError.serverError(code: error.code, message: error.message) }
             throw MCPClientError.invalidResponse("No result in message")
         }
         let data = try JSONEncoder().encode(result)
@@ -278,6 +311,8 @@ enum MCPClientError: LocalizedError {
     case invalidResponse(String)
     case serverError(code: Int, message: String)
     case encodingError(String)
+    case timedOut
+    case launchFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -289,6 +324,10 @@ enum MCPClientError: LocalizedError {
             "MCP server error \(code): \(message)"
         case let .encodingError(msg):
             "MCP encoding error: \(msg)"
+        case .timedOut:
+            "The MCP server did not respond in time."
+        case let .launchFailed(command):
+            "Could not start the MCP server command: \(command)"
         }
     }
 }
