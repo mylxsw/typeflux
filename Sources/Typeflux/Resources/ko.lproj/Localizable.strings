@@ -1452,7 +1452,6 @@
 "ask.memory.app" = "메모리 · %@";
 "ask.memory.help" = "대화를 시작할 때 한 번만 전송됩니다: 전역 메모리와 질문을 시작한 앱에서 최근 입력한 텍스트입니다. 제거하면 메모리 없이 질문합니다.";
 "ask.memory.pinned" = "이 대화는 시작할 때 가져온 메모리를 사용합니다.";
-"ask.memory.pinnedHint" = "메모리는 대화를 시작할 때 첨부되어 이후 질문에도 계속 사용되므로 여기서는 끌 수 없습니다. 메모리 없이 질문하려면 새 대화를 시작하세요.";
 "ask.selection.remove" = "Remove selected text";
 "ask.send" = "Send";
 "ask.stop" = "Stop";

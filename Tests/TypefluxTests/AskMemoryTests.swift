@@ -253,6 +253,63 @@ struct AskMemoryTests {
         #expect(await again.api.sends.first?.memory == captured)
     }
 
+    @Test func followUpsSwitchPinnedMemoryOffAndBackOn() async throws {
+        let f = try AskMemoryFixture()
+        f.capture.captured = AskMemory(global: "soul")
+        await f.model.prepareLauncher()
+        f.model.launcherDraft.text = "Question"
+        f.model.submitLauncher()
+        try await f.wait { f.model.busyIds.isEmpty && f.model.selected?.messages.count == 2 }
+        #expect(!f.model.memorySwitchedOff(launcher: false))
+
+        f.model.toggleMemory(launcher: false)
+        #expect(f.model.memorySwitchedOff(launcher: false))
+        f.model.draft.text = "Without memory"
+        f.model.submitDraft()
+        try await f.wait { f.model.busyIds.isEmpty && f.model.selected?.messages.count == 4 }
+        // The next follow-up inherits the conversation's latest choice.
+        #expect(f.model.selected?.memoryOff == true)
+        #expect(f.model.memorySwitchedOff(launcher: false))
+
+        // Switching back on is explicit, since nil means "as the conversation was".
+        f.model.toggleMemory(launcher: false)
+        #expect(f.model.draft.memoryOff == false)
+        #expect(!f.model.memorySwitchedOff(launcher: false))
+        f.model.draft.text = "With memory"
+        f.model.submitDraft()
+        try await f.wait { f.model.busyIds.isEmpty && f.model.selected?.messages.count == 6 }
+        let sends = await f.api.sends
+        #expect(sends.map(\.memoryOff) == [nil, true, nil])
+        #expect(sends.dropFirst().allSatisfy { $0.memory == nil })
+        #expect(f.model.selected?.memoryOff == nil)
+        #expect(f.model.selected?.memory == AskMemory(global: "soul"))
+    }
+
+    @Test func followUpsWithoutPinnedMemoryNeverSendTheSwitch() async throws {
+        let f = try AskMemoryFixture()
+        await f.api.seed(.init(id: "plain", title: "Plain", revision: 1, updatedAt: Date(), messages: [
+            .init(id: "q", role: "user", text: "Hi", createdAt: Date()),
+            .init(id: "a", role: "assistant", text: "Hello", createdAt: Date())
+        ]))
+        await f.model.select("plain")
+        f.model.draft.memoryOff = true
+        f.model.draft.text = "Follow up"
+        f.model.submitDraft()
+        try await f.wait { f.model.busyIds.isEmpty && f.model.selected?.messages.count == 4 }
+        #expect(await f.api.sends.first?.memoryOff == nil)
+        #expect(f.model.selected?.memoryOff == nil)
+    }
+
+    @Test func memorySwitchEncodesInServerShapeOnlyWhenSet() throws {
+        var request = AskDraft(text: "q").request(deviceId: "device", tools: [])
+        #expect(!String(decoding: try AskCoding.encoder().encode(request), as: UTF8.self).contains("memory_off"))
+        request.memoryOff = true
+        #expect(String(decoding: try AskCoding.encoder().encode(request), as: UTF8.self).contains("\"memory_off\":true"))
+        let json = #"{"id":"c","title":"t","revision":1,"updated_at":"2026-01-01T00:00:00.000Z","messages":[],"memory_off":true}"#
+        let decoded = try AskCoding.decoder().decode(AskConversation.self, from: Data(json.utf8))
+        #expect(decoded.memoryOff == true)
+    }
+
     @Test func removedOrUnavailableMemoryIsNotReplacedByGlobalMemory() async throws {
         let f = try AskMemoryFixture()
         f.capture.global = AskMemory(global: "fallback")

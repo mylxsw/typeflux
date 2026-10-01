@@ -71,6 +71,8 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
     var contextUsage: AskContextUsage? = nil
     /// Memory pinned by the server when the conversation started.
     var memory: AskMemory? = nil
+    /// The latest question asked without the pinned memory; the snapshot stays.
+    var memoryOff: Bool?
 }
 
 struct AskConversationSummary: Codable, Identifiable, Equatable, Sendable {
@@ -91,6 +93,8 @@ struct AskSendRequest: Codable, Equatable, Sendable {
     var reasoningEffort: String? = nil
     var references: [AskReference]? = nil
     var memory: AskMemory? = nil
+    /// A follow-up asked without the conversation's pinned memory; omitted otherwise.
+    var memoryOff: Bool?
 }
 
 /// Replaces the latest assistant reply with a fresh run on the same question.
@@ -129,6 +133,8 @@ struct AskDraft: Codable, Equatable, Sendable {
     var memory: AskMemory? = nil
     /// The user switched memory off for this question. The captured memory is
     /// kept so the chip can switch it back on; nil in drafts saved before this.
+    /// In a follow-up nil inherits the conversation's latest choice, and false
+    /// switches pinned memory back on.
     var memoryOff: Bool? = nil
     /// The user switched the selected text off for this question. Like memory it
     /// is kept, so the chip can switch it back on; nil in drafts saved before this.

@@ -186,7 +186,7 @@ struct AskComposer: View {
             selection: value.selection,
             selectionOff: value.selectionOff == true,
             memory: newConversation ? value.memory : nil,
-            memoryOff: value.memoryOff == true,
+            memoryOff: model.memorySwitchedOff(launcher: launcher),
             memoryPinned: !newConversation && model.selected?.memory?.isEmpty == false
         )
     }
@@ -262,12 +262,9 @@ struct AskComposer: View {
         }
     }
 
-    /// Memory pinned to an existing conversation is read-only; a new question's
-    /// memory switches off and on without being discarded.
-    private var memoryToggle: (() -> Void)? {
-        guard launcher || model.selectedId == nil else { return nil }
-        return { draft.wrappedValue.memoryOff = draft.wrappedValue.memoryOff == true ? nil : true }
-    }
+    /// Memory switches off and on without being discarded, for a new question
+    /// and for a follow-up on the memory pinned to the conversation.
+    private func memoryToggle() { model.toggleMemory(launcher: launcher) }
 
     private func selectionToggle() {
         draft.wrappedValue.selectionOff = draft.wrappedValue.selectionOff == true ? nil : true

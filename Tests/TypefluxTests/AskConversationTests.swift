@@ -64,6 +64,8 @@ actor AskTestAPI: AskAPI {
         value.run = .init(id: UUID().uuidString, deviceId: request.deviceId, status: nextTool == nil ? "completed" : "waiting_tool", steps: 1, updatedAt: Date(), tools: request.tools, pending: nextTool.map { [$0] } ?? [])
         value.modelRef = request.modelRef
         if value.messages.count == 2 { value.memory = request.memory }
+        // Mirrors the server: the latest question decides, and only pinned memory can be off.
+        value.memoryOff = value.memory != nil && request.memoryOff == true ? true : nil
         value.revision += 1; values[conversationId] = value
         return value
     }
