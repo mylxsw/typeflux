@@ -227,7 +227,7 @@ struct AskStreamTests {
     @Test func `table columns and quotes remain separate`() {
         let value = AskMarkdownText
             .render("| Option | Cost |\n| --- | --- |\n| A | Low |\n\n> Quoted text\n\n~~Removed~~")
-        #expect(value.string.contains("Option  |  Cost\nA  |  Low"))
+        #expect(value.string.contains("Option\nCost\nA\nLow"))
         #expect(value.string.contains("Quoted text"))
         let range = (value.string as NSString).range(of: "Removed")
         #expect(value.attribute(.strikethroughStyle, at: range.location, effectiveRange: nil) != nil)

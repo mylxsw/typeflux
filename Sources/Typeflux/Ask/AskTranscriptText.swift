@@ -190,17 +190,20 @@ enum AskMarkdownText {
             if node is Strikethrough {
                 attributes[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
             }
-            if node is Markdown.Table.Row || node is Markdown.Table.Head {
-                if node is Markdown.Table.Head {
-                    attributes[.font] = NSFont.systemFont(ofSize: 14, weight: .semibold)
-                }
-                for (index, cell) in node.children.enumerated() {
-                    if index > 0 {
-                        append("  |  ", attributes)
+            if let table = node as? Markdown.Table {
+                let layout = AskMarkdownTable(columnCount: table.head.childCount)
+                let rows: [any Markup] = [table.head] + table.body.children.map { $0 }
+                for (rowIndex, row) in rows.enumerated() {
+                    for (columnIndex, cell) in row.children.enumerated() {
+                        let cellAttributes = layout.attributes(
+                            row: rowIndex, column: columnIndex,
+                            alignment: table.columnAlignments[columnIndex], inherited: attributes
+                        )
+                        visit(cell, cellAttributes)
+                        // Each cell needs its own paragraph, including empty cells.
+                        append("\n", cellAttributes)
                     }
-                    visit(cell, attributes)
                 }
-                append("\n", attributes)
                 return
             }
             if node is Strong {
@@ -251,8 +254,10 @@ enum AskMarkdownText {
             }
         }
         visit(Document(parsing: text), base)
-        if result.string
-            .hasSuffix("\n") {
+        // TextKit requires the final cell's paragraph terminator to lay out a table.
+        if result.string.hasSuffix("\n"),
+           (result.attribute(.paragraphStyle, at: result.length - 1, effectiveRange: nil) as? NSParagraphStyle)?
+           .textBlocks.isEmpty != false {
             result.deleteCharacters(in: NSRange(location: result.length - 1, length: 1))
         }
         return result
