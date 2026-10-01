@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 随便问 浮窗 · Liquid Glass 交互设计稿 v3</title>
+<style>
+/* ============================================================
+   Page chrome (the review board around the desktop mock)
+   ============================================================ */
+:root {
+  --board: #0d0d0f;
+  --board-2: #17171a;
+  --board-line: rgba(255,255,255,.07);
+  --board-text: #ececf0;
+  --board-text-2: #9b9ba3;
+  --board-text-3: #66666e;
+  --accent: #0a84ff;
+  --accent-rgb: 10,132,255;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  --mono: "SF Mono", ui-monospace, Menlo, "JetBrains Mono", Consolas, monospace;
+  --spring: cubic-bezier(.32,1.28,.48,1);
+  --ease: cubic-bezier(.25,.8,.25,1);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--board); color: var(--board-text); font: 13px/1.5 var(--font);
+  -webkit-font-smoothing: antialiased; }
+body { min-width: 1240px; }
+button { font: inherit; color: inherit; }
+.page { max-width: 1320px; margin: 0 auto; padding: 32px 40px 80px; }
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 18px; }
+.head h1 { font-size: 22px; font-weight: 650; margin: 0 0 4px; letter-spacing: -.2px; }
+.head p { margin: 0; color: var(--board-text-2); max-width: 760px; }
+.tag { display: inline-block; font-size: 10.5px; font-weight: 650; letter-spacing: .5px; color: #b9d8ff;
+  background: rgba(10,132,255,.16); border-radius: 6px; padding: 2px 7px; margin-left: 8px; vertical-align: 3px; }
+
+/* Toolbar */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding: 12px 14px;
+  background: var(--board-2); border: 1px solid var(--board-line); border-radius: 14px; margin-bottom: 14px; }
+.tgroup { display: flex; align-items: center; gap: 8px; }
+.tgroup > label { font-size: 11px; font-weight: 600; color: var(--board-text-3); letter-spacing: .4px; }
+.seg { display: inline-flex; background: rgba(255,255,255,.05); border-radius: 9px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 4px 10px; border-radius: 7px; font-size: 12px;
+  color: var(--board-text-2); cursor: pointer; white-space: nowrap; }
+.seg button:hover { color: var(--board-text); }
+.seg button.on { background: rgba(255,255,255,.13); color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.swatches { display: inline-flex; gap: 6px; }
+.swatches button { width: 30px; height: 20px; border-radius: 6px; border: 0; cursor: pointer; padding: 0;
+  outline: 1.5px solid transparent; outline-offset: 2px; }
+.swatches button.on { outline-color: var(--accent); }
+.sw-purple { background: linear-gradient(135deg, #8a2596, #5d1468); }
+.sw-tahoe { background: linear-gradient(135deg, #1b3f8f, #3fa0c8 55%, #f39a4a); }
+.sw-doc { background: linear-gradient(#f6f6f6, #e3e3e3); }
+.sw-code { background: linear-gradient(135deg, #1e1f24, #2b2d36); }
+.sw-photo { background: linear-gradient(135deg, #f7c46a, #e2566b 50%, #3b2a75); }
+
+/* ============================================================
+   Desktop mock
+   ============================================================ */
+.desktop { position: relative; height: 640px; border-radius: 16px; overflow: hidden; isolation: isolate;
+  border: 1px solid var(--board-line); background: #222; user-select: none; }
+.wall { position: absolute; inset: 0; opacity: 0; transition: opacity .45s var(--ease); pointer-events: none; }
+.wall.on { opacity: 1; pointer-events: auto; }
+
+.wall-purple { background: #84238f; }
+.wall-purple svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.wall-tahoe { background:
+  radial-gradient(60% 70% at 18% 20%, #2d6fd6 0%, transparent 60%),
+  radial-gradient(55% 60% at 80% 30%, #18a0b8 0%, transparent 62%),
+  radial-gradient(70% 60% at 70% 95%, #ff9a4d 0%, transparent 60%),
+  radial-gradient(50% 50% at 15% 95%, #8a3fd1 0%, transparent 65%),
+  linear-gradient(160deg, #0f2b6b, #0b1f45); }
+.wall-tahoe .blob { position: absolute; border-radius: 50%; filter: blur(30px); opacity: .75; }
+
+.wall-doc { background: #dfe2e7; }
+.wall-code { background: #121317; }
+.wall-photo { background:
+  radial-gradient(40% 50% at 70% 40%, #ffe3a0 0%, transparent 60%),
+  linear-gradient(180deg, #f6b65f 0%, #e85d64 42%, #6d2f80 70%, #1d1846 100%); }
+.wall-photo .sun { position: absolute; left: 60%; top: 26%; width: 160px; height: 160px; border-radius: 50%;
+  background: radial-gradient(circle, #fff6d8 0%, #ffd27a 45%, rgba(255,190,90,0) 70%); }
+.wall-photo .hill { position: absolute; left: -10%; right: -10%; border-radius: 50% 50% 0 0; }
+
+/* Fake app windows used as backdrops */
+.win { position: absolute; border-radius: 12px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.35), 0 0 0 .5px rgba(0,0,0,.25); }
+.win .tl { position: absolute; left: 14px; top: 13px; display: flex; gap: 8px; }
+.win .tl i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.win .tl i:nth-child(1) { background: #ff5f57; } .win .tl i:nth-child(2) { background: #febc2e; } .win .tl i:nth-child(3) { background: #28c840; }
+.doc-win { left: 70px; right: 70px; top: 46px; bottom: -20px; background: #fff; color: #1d1d1f; }
+.doc-win .bar { height: 40px; border-bottom: 1px solid #ececec; }
+.doc-win article { padding: 34px 120px; font-size: 15px; line-height: 1.75; }
+.doc-win h2 { font-size: 28px; margin: 0 0 6px; letter-spacing: -.3px; }
+.doc-win .meta { color: #86868b; font-size: 13px; margin-bottom: 22px; }
+.doc-win p { margin: 0 0 14px; }
+.doc-win .hl { background: #fff1a8; }
+.doc-win figure { margin: 18px 0; height: 120px; border-radius: 10px;
+  background: linear-gradient(120deg, #4f8df7, #7a5af8 40%, #f472b6 75%, #fbbf24); }
+.code-win { left: 50px; right: 50px; top: 46px; bottom: -20px; background: #1e1f24; color: #c9d1d9; }
+.code-win .bar { height: 40px; background: #24262c; border-bottom: 1px solid #2f3139; }
+.code-win pre { margin: 0; padding: 18px 26px; font: 13.5px/1.75 var(--mono); }
+.code-win .ln { color: #4a4e59; display: inline-block; width: 30px; }
+.k { color: #ff7b72; } .s { color: #a5d6ff; } .f { color: #d2a8ff; } .c { color: #6e7681; } .t { color: #79c0ff; } .n { color: #ffa657; }
+
+/* macOS 26 menu bar (transparent) */
+.menubar { position: absolute; left: 0; right: 0; top: 0; height: 28px; display: flex; align-items: center;
+  padding: 0 14px; gap: 18px; font-size: 13px; font-weight: 500; z-index: 2; color: rgba(255,255,255,.95);
+  text-shadow: 0 0 8px rgba(0,0,0,.25); }
+.desktop.light-wall .menubar { color: rgba(0,0,0,.85); text-shadow: none; }
+.menubar b { font-weight: 700; }
+.menubar .r { margin-left: auto; display: flex; gap: 16px; align-items: center; }
+.menubar svg { display: block; }
+
+/* Hint under the launcher */
+.summon { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 3; display: flex; gap: 8px;
+  align-items: center; opacity: 0; pointer-events: none; transition: opacity .3s; }
+.desktop.dismissed .summon { opacity: 1; pointer-events: auto; }
+.summon button { border: 0; cursor: pointer; padding: 8px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  color: #fff; background: rgba(0,0,0,.35); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 5px; font-size: 10.5px; font-weight: 600; background: rgba(255,255,255,.18); margin: 0 1px; }
+
+.toast { position: absolute; left: 50%; top: 52px; z-index: 6; transform: translate(-50%, -12px); opacity: 0;
+  padding: 9px 16px 9px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 550; display: flex; gap: 8px; align-items: center;
+  transition: opacity .3s, transform .45s var(--spring); pointer-events: none; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast .dot { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; }
+
+/* ============================================================
+   LIQUID GLASS material
+   ============================================================ */
+.lg {
+  /* tint / rim / shadow tokens are set per appearance below */
+  position: relative;
+  background: var(--lg-tint);
+  -webkit-backdrop-filter: var(--lg-backdrop);
+  backdrop-filter: var(--lg-backdrop);
+  box-shadow:
+    inset 0 1px 0 var(--lg-inner-top),
+    inset 0 -1px 0 var(--lg-inner-bottom),
+    inset 0 0 0 .5px var(--lg-inner-ring),
+    0 0 0 .5px var(--lg-outer-ring),
+    0 18px 50px var(--lg-shadow-far),
+    0 3px 10px var(--lg-shadow-near);
+}
+/* specular rim: bright on the light-facing corner, fades along the edge */
+.lg::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background:
+    radial-gradient(160px 90px at var(--mx, 18%) var(--my, 0%), var(--lg-spec-hot), transparent 70%),
+    linear-gradient(155deg, var(--lg-spec) 0%, transparent 28%, transparent 68%, var(--lg-spec-low) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+/* soft inner sheen: the "thickness" of the glass */
+.lg::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(180deg, var(--lg-sheen) 0%, transparent 38%);
+  mix-blend-mode: var(--lg-sheen-blend);
+}
+
+.desktop {
+  --lg-tint: rgba(30,30,34,.38);
+  --lg-blur: 22px;
+  --lg-sat: 1.9;
+  --lg-bright: .92;
+  --lg-backdrop: blur(var(--lg-blur)) saturate(var(--lg-sat)) brightness(var(--lg-bright));
+  --lg-inner-top: rgba(255,255,255,.22);
+  --lg-inner-bottom: rgba(255,255,255,.05);
+  --lg-inner-ring: rgba(255,255,255,.10);
+  --lg-outer-ring: rgba(0,0,0,.35);
+  --lg-shadow-far: rgba(0,0,0,.30);
+  --lg-shadow-near: rgba(0,0,0,.18);
+  --lg-spec: rgba(255,255,255,.55);
+  --lg-spec-low: rgba(255,255,255,.18);
+  --lg-spec-hot: rgba(255,255,255,.65);
+  --lg-sheen: rgba(255,255,255,.06);
+  --lg-sheen-blend: screen;
+
+  --fg: rgba(255,255,255,.94);
+  --fg-2: rgba(255,255,255,.62);
+  --fg-3: rgba(255,255,255,.40);
+  --wash: rgba(255,255,255,.10);
+  --wash-2: rgba(255,255,255,.16);
+  --hair: rgba(255,255,255,.14);
+  --accent-fg: #8fc2ff;
+  --accent-wash: rgba(var(--accent-rgb), .26);
+  --pop-tint: rgba(36,36,40,.55);
+  --text-glow: 0 0 0 transparent;
+}
+.desktop.appearance-light {
+  --lg-tint: rgba(255,255,255,.42);
+  --lg-sat: 1.8;
+  --lg-bright: 1.08;
+  --lg-inner-top: rgba(255,255,255,.85);
+  --lg-inner-bottom: rgba(255,255,255,.35);
+  --lg-inner-ring: rgba(255,255,255,.45);
+  --lg-outer-ring: rgba(0,0,0,.10);
+  --lg-shadow-far: rgba(20,24,40,.20);
+  --lg-shadow-near: rgba(20,24,40,.10);
+  --lg-spec: rgba(255,255,255,.95);
+  --lg-spec-low: rgba(255,255,255,.55);
+  --lg-spec-hot: rgba(255,255,255,1);
+  --lg-sheen: rgba(255,255,255,.35);
+  --lg-sheen-blend: normal;
+
+  --fg: rgba(0,0,0,.86);
+  --fg-2: rgba(0,0,0,.56);
+  --fg-3: rgba(0,0,0,.34);
+  --wash: rgba(0,0,0,.06);
+  --wash-2: rgba(0,0,0,.10);
+  --hair: rgba(0,0,0,.10);
+  --accent-fg: #0a66d6;
+  --accent-wash: rgba(var(--accent-rgb), .16);
+  --pop-tint: rgba(255,255,255,.62);
+}
+/* "Clear" variant: more see-through, legibility comes from a dimming layer */
+.desktop.glass-clear { --lg-tint: rgba(20,20,24,.14); --lg-blur: 6px; --lg-sat: 1.5; --lg-bright: .72; --text-glow: 0 1px 2px rgba(0,0,0,.35); }
+.desktop.glass-clear.appearance-light { --lg-tint: rgba(255,255,255,.16); --lg-bright: 1.12; --text-glow: 0 0 6px rgba(255,255,255,.6); }
+
+/* macOS 13–15: NSVisualEffectView(.hudWindow, .behindWindow). Blur + vibrancy only:
+   no refraction, no pointer-tracked specular, no morph; a denser tint like the system HUD. */
+.desktop.os-legacy { --lg-tint: rgba(34,34,38,.66); --lg-blur: 30px; --lg-sat: 1.8; --lg-bright: 1;
+  --lg-spec: rgba(255,255,255,.22); --lg-spec-low: rgba(255,255,255,.06); --lg-spec-hot: transparent; --lg-sheen: transparent;
+  --lg-inner-top: rgba(255,255,255,.10); --lg-inner-bottom: transparent; --pop-tint: rgba(40,40,44,.78); --text-glow: none; }
+.desktop.os-legacy.appearance-light { --lg-tint: rgba(246,246,248,.74); --lg-spec: rgba(255,255,255,.7); --lg-spec-low: rgba(255,255,255,.3);
+  --lg-inner-top: rgba(255,255,255,.6); --pop-tint: rgba(250,250,252,.82); }
+.desktop.os-legacy .send.on { background: var(--accent); box-shadow: none; }
+/* Reduce Transparency (any version): the current opaque surface. */
+.desktop.os-opaque { --lg-backdrop: none; --lg-tint: #2e2e2e; --pop-tint: #323232; --lg-spec: rgba(255,255,255,.16); --lg-spec-low: rgba(255,255,255,.16);
+  --lg-spec-hot: transparent; --lg-sheen: transparent; --lg-inner-top: transparent; --lg-inner-bottom: transparent; --text-glow: none; }
+.desktop.os-opaque.appearance-light { --lg-tint: #ffffff; --pop-tint: #ffffff; --lg-spec: rgba(0,0,0,.12); --lg-spec-low: rgba(0,0,0,.12); }
+.desktop.os-opaque .lg { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.desktop.os-opaque .send.on { background: var(--accent); box-shadow: none; }
+.seg button:disabled { opacity: .35; cursor: not-allowed; }
+.os-badge { position: absolute; right: 14px; bottom: 12px; z-index: 5; font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 999px;
+  color: #fff; background: rgba(0,0,0,.45); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+
+/* ============================================================
+   Launcher
+   ============================================================ */
+.launcher-wrap { position: absolute; left: 50%; top: 340px; width: 680px; transform: translateX(-50%); z-index: 4; }
+.panel {
+  border-radius: 26px; color: var(--fg); text-shadow: var(--text-glow);
+  transform-origin: 50% 40%;
+  transition: transform .5s var(--spring), opacity .28s var(--ease), filter .28s var(--ease), box-shadow .3s;
+}
+.desktop.dismissed .panel { transform: scale(.94) translateY(8px); opacity: 0; filter: blur(8px); pointer-events: none; }
+.panel.appear { animation: appear .55s var(--spring); }
+@keyframes appear { from { transform: scale(.9) translateY(14px); opacity: 0; filter: blur(10px); } }
+.panel.sent { animation: sent .5s var(--ease); }
+@keyframes sent { 40% { transform: translateY(-6px) scale(1.01); } 100% { transform: none; } }
+
+/* -- layout A: two-row card ---------------------------------- */
+.editor-wrap { position: relative; z-index: 1; padding: 16px 20px 4px 20px; }
+.editor { display: block; width: 100%; border: 0; outline: 0; resize: none; background: transparent; color: var(--fg);
+  font: 15px/23px var(--font); padding: 0; margin: 0; min-height: 23px; max-height: 138px; overflow-y: auto;
+  caret-color: var(--accent); text-shadow: var(--text-glow); user-select: text; }
+.editor::placeholder { color: var(--fg-3); }
+.bar { position: relative; z-index: 1; display: flex; align-items: center; gap: 4px; height: 52px; padding: 0 10px 2px 10px; }
+.spacer { flex: 1; }
+
+/* -- layout B: Spotlight capsule ----------------------------- */
+.layout-b .panel { border-radius: 30px; }
+.layout-b .panel:not(.expanded) { display: flex; align-items: center; height: 60px; padding: 0 10px 0 6px; }
+.layout-b .panel:not(.expanded) .editor-wrap { flex: 1; padding: 0 6px 0 2px; min-width: 0; order: 2; }
+.layout-b .panel:not(.expanded) .editor { white-space: nowrap; overflow: hidden; max-height: 23px; font-size: 16px; }
+.layout-b .panel:not(.expanded) .bar { display: contents; }
+.layout-b .panel:not(.expanded) .brand { display: grid; order: 1; }
+.layout-b .panel:not(.expanded) .ctl.model, .layout-b .panel:not(.expanded) .ctl.reason, .layout-b .panel:not(.expanded) .vsep { display: none; }
+.layout-b .panel:not(.expanded) .ctx { order: 3; }
+.layout-b .panel:not(.expanded) .spacer { display: none; }
+.layout-b .panel:not(.expanded) .vstat { order: 4; }
+.layout-b .panel:not(.expanded) .mic { order: 5; }
+.layout-b .panel:not(.expanded) .send { order: 6; margin-left: 4px; }
+.layout-b .panel:not(.expanded) .model-mini { display: inline-flex; order: 3; }
+.brand { display: none; width: 44px; height: 44px; place-items: center; flex: none; }
+.model-mini { display: none; }
+
+/* -- controls (borderless, vibrant; no glass-on-glass) ------- */
+.ctl { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 0; border-radius: 999px;
+  background: transparent; color: var(--fg); font-size: 13px; font-weight: 550; cursor: pointer; white-space: nowrap;
+  transition: background .18s, color .18s, transform .25s var(--spring); }
+.ctl:hover, .ctl.open { background: var(--wash); }
+.ctl:active { transform: scale(.96); }
+.ctl .chev { color: var(--fg-3); transition: transform .3s var(--spring); }
+.ctl.open .chev { transform: rotate(180deg); }
+.ctl.model .name { max-width: 132px; overflow: hidden; text-overflow: ellipsis; }
+.ctl.reason { color: var(--fg-2); }
+.ctl.reason.lvl-high { color: var(--accent-fg); }
+.vsep { width: 1px; height: 16px; background: var(--hair); margin: 0 6px; flex: none; }
+.model-mini { align-items: center; gap: 5px; height: 28px; padding: 0 10px; margin-right: 2px; border-radius: 999px; font-size: 12px;
+  font-weight: 600; color: var(--fg-2); background: var(--wash); border: 0; cursor: pointer; white-space: nowrap; }
+.model-mini:hover { color: var(--fg); background: var(--wash-2); }
+
+/* context chips: 30pt round icon buttons */
+.ctx { display: inline-flex; gap: 4px; align-items: center; }
+.chip { position: relative; width: 32px; height: 32px; border-radius: 50%; border: 0; display: grid; place-items: center;
+  background: transparent; color: var(--fg-2); cursor: pointer; transition: background .18s, color .18s, transform .25s var(--spring), opacity .2s; }
+.chip:hover { background: var(--wash); color: var(--fg); }
+.chip:active { transform: scale(.92); }
+.chip.active { color: var(--accent-fg); background: var(--accent-wash); }
+.chip.active:hover { background: rgba(var(--accent-rgb), .34); }
+.chip.unavail { color: var(--fg-3); }
+.chip.unavail::after { content: ""; position: absolute; width: 20px; height: 1.6px; background: currentColor; transform: rotate(-45deg); border-radius: 2px; }
+.chip .app { width: 22px; height: 22px; border-radius: 6px; display: block; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.chip.off .app { filter: grayscale(1); opacity: .45; }
+.chip .badge { position: absolute; right: 1px; bottom: 1px; width: 13px; height: 13px; border-radius: 4px;
+  box-shadow: 0 0 0 1.5px var(--badge-ring, rgba(40,40,44,.9)); }
+.appearance-light .chip .badge { --badge-ring: rgba(255,255,255,.95); }
+.chip .count { position: absolute; right: -1px; top: -1px; min-width: 15px; height: 15px; border-radius: 8px; padding: 0 4px;
+  font-size: 9.5px; font-weight: 700; line-height: 15px; color: #fff; background: var(--accent); }
+.chip .pip { position: absolute; right: 5px; top: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 0 1.5px var(--badge-ring, rgba(40,40,44,.9)); opacity: 0; transform: scale(.4); transition: all .3s var(--spring); }
+.chip.active .pip { opacity: 1; transform: none; }
+.ctx-thumb { position: absolute; inset: 6px; border-radius: 5px; overflow: hidden; opacity: 0; transition: opacity .2s; }
+
+/* voice + send */
+.round { width: 36px; height: 36px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; flex: none;
+  background: transparent; color: var(--fg-2); transition: background .2s, color .2s, transform .3s var(--spring), box-shadow .3s; }
+.round:hover { background: var(--wash); color: var(--fg); }
+.round:active { transform: scale(.9); }
+.mic.live { background: rgba(var(--accent-rgb), .22); color: var(--accent-fg); }
+.mic .stop { width: 11px; height: 11px; border-radius: 3px; background: var(--accent); display: none; }
+.mic.live svg { display: none; } .mic.live .stop { display: block; }
+.send { background: var(--wash); color: var(--fg-3); cursor: default; }
+.send:hover { background: var(--wash); color: var(--fg-3); }
+.send.on { cursor: pointer; color: #fff;
+  background: radial-gradient(120% 90% at 30% 0%, rgba(255,255,255,.45), transparent 55%), var(--accent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -1px 2px rgba(0,0,0,.18), 0 4px 14px rgba(var(--accent-rgb), .45); }
+.send.on:hover { filter: brightness(1.08); }
+.send.busy { color: #fff; background: var(--accent); }
+
+.vstat { display: none; align-items: center; gap: 8px; margin-right: 4px; font-size: 12px; font-weight: 600; color: var(--accent-fg); white-space: nowrap; }
+.panel.listening .vstat, .panel.transcribing .vstat { display: inline-flex; }
+.wave { display: inline-flex; align-items: center; gap: 2.5px; height: 18px; }
+.wave i { display: block; width: 3px; height: 4px; border-radius: 2px; background: var(--accent-fg); transition: height .09s linear; }
+.spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--wash-2); border-top-color: var(--accent-fg); animation: rot .8s linear infinite; display: none; }
+.panel.transcribing .spin { display: block; } .panel.transcribing .wave { display: none; }
+@keyframes rot { to { transform: rotate(360deg); } }
+
+/* listening: a living accent edge instead of a hard 1.5pt border */
+.glow { position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .35s; padding: 1.5px;
+  background: conic-gradient(from var(--ang, 0deg), rgba(var(--accent-rgb), .0), rgba(var(--accent-rgb), .95), #64d2ff, rgba(var(--accent-rgb), .0) 45%, rgba(var(--accent-rgb), .0) 55%, #5e5ce6, rgba(var(--accent-rgb), .9), rgba(var(--accent-rgb), .0));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.halo { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .35s;
+  box-shadow: 0 0 0 calc(2px + var(--lvl, 0) * 5px) rgba(var(--accent-rgb), .16), 0 0 calc(18px + var(--lvl, 0) * 26px) rgba(var(--accent-rgb), .38); }
+.panel.listening .glow, .panel.listening .halo, .panel.transcribing .glow { opacity: 1; }
+.panel.listening .ctl, .panel.listening .chip, .panel.listening .model-mini,
+.panel.transcribing .ctl, .panel.transcribing .chip, .panel.transcribing .model-mini { opacity: .4; pointer-events: none; }
+
+/* ============================================================
+   Popovers (glass, concentric radii, spring in)
+   ============================================================ */
+.pop { position: absolute; z-index: 10; border-radius: 18px; padding: 6px; color: var(--fg); min-width: 240px;
+  --lg-tint: var(--pop-tint); opacity: 0; transform: translateY(6px) scale(.97); transform-origin: 20% 100%;
+  pointer-events: none; transition: opacity .18s var(--ease), transform .35s var(--spring); }
+.pop.show { opacity: 1; transform: none; pointer-events: auto; }
+.pop .sec { font-size: 11px; font-weight: 600; color: var(--fg-3); padding: 8px 10px 4px; letter-spacing: .2px; }
+.pop .row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 12px; cursor: pointer; position: relative; z-index: 1; }
+.pop .row:hover, .pop .row.kb { background: var(--wash); }
+.pop .row .check { width: 14px; color: var(--accent-fg); flex: none; }
+.pop .row .lbl { flex: 1; min-width: 0; }
+.pop .row .lbl b { font-weight: 550; font-size: 13px; display: block; }
+.pop .row .lbl small { color: var(--fg-3); font-size: 11.5px; display: block; }
+.pop .caps { display: inline-flex; gap: 4px; color: var(--fg-3); }
+.pop .price { font-size: 10.5px; font-weight: 650; color: var(--fg-2); background: var(--wash); border-radius: 6px; padding: 1px 6px; }
+.pop .foot { border-top: 1px solid var(--hair); margin: 6px 4px 0; padding: 8px 6px 2px; display: flex; justify-content: space-between;
+  font-size: 11.5px; color: var(--fg-3); position: relative; z-index: 1; }
+.pop .foot a { color: var(--accent-fg); text-decoration: none; cursor: pointer; font-weight: 600; }
+.pop.pop-reason { min-width: 260px; }
+
+/* Hover card for chips */
+.card { position: absolute; z-index: 11; width: 248px; border-radius: 16px; padding: 11px 13px 12px; color: var(--fg);
+  --lg-tint: var(--pop-tint); opacity: 0; transform: translateY(4px) scale(.98); pointer-events: none;
+  transition: opacity .16s var(--ease), transform .3s var(--spring); font-size: 12px; }
+.card.show { opacity: 1; transform: none; }
+.card > * { position: relative; z-index: 1; }
+.card .t { font-weight: 650; font-size: 12.5px; }
+.card .d { color: var(--fg-2); margin-top: 3px; line-height: 1.45; }
+.card .h { color: var(--accent-fg); margin-top: 7px; font-weight: 600; font-size: 11.5px; }
+.card .shot { margin-top: 8px; height: 96px; border-radius: 9px; overflow: hidden; position: relative; box-shadow: inset 0 0 0 .5px var(--hair); }
+
+/* ============================================================
+   Notes / spec
+   ============================================================ */
+.cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 18px; }
+.note { background: var(--board-2); border: 1px solid var(--board-line); border-radius: 14px; padding: 16px 18px; color: var(--board-text-2); }
+.note h3 { margin: 0 0 8px; color: var(--board-text); font-size: 14px; font-weight: 650; }
+.note ul { margin: 0; padding-left: 18px; } .note li { margin: 0 0 6px; }
+.note b { color: var(--board-text); font-weight: 600; }
+code { font: 11.5px var(--mono); color: #d5d5dc; background: rgba(255,255,255,.06); padding: 1px 5px; border-radius: 5px; }
+.wide { grid-column: 1 / -1; }
+table.spec { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.spec th { text-align: left; color: var(--board-text-3); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--board-line); }
+table.spec td { padding: 7px 10px; border-bottom: 1px solid var(--board-line); vertical-align: top; }
+table.spec td:first-child { color: var(--board-text); white-space: nowrap; }
+.shortcuts { display: flex; gap: 16px; flex-wrap: wrap; color: var(--board-text-3); font-size: 12px; margin-top: 10px; }
+.shortcuts .kbd { background: rgba(255,255,255,.08); color: var(--board-text-2); }
+</style>
+</head>
+<body>
+
+<!-- Icons -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-chev" viewBox="0 0 10 10"><path d="M2.2 3.8 5 6.6l2.8-2.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 18 18"><rect x="6.2" y="2" width="5.6" height="9" rx="2.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3.6 8.6a5.4 5.4 0 0 0 10.8 0M9 14v2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-up" viewBox="0 0 16 16"><path d="M8 13.2V3.4M3.6 7.6 8 3.2l4.4 4.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-shot" viewBox="0 0 18 18"><path d="M2.5 6V4.2c0-1 .7-1.7 1.7-1.7H6M12 2.5h1.8c1 0 1.7.7 1.7 1.7V6M15.5 12v1.8c0 1-.7 1.7-1.7 1.7H12M6 15.5H4.2c-1 0-1.7-.7-1.7-1.7V12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="9" r="2.6" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+  <symbol id="i-brain" viewBox="0 0 18 18"><g fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 3.4a2.3 2.3 0 0 0-4.1 1.2 2.4 2.4 0 0 0-1.3 3.6 2.5 2.5 0 0 0 .6 3.9 2.4 2.4 0 0 0 4.8.9V3.4Z"/><path d="M9.7 3.4a2.3 2.3 0 0 1 4.1 1.2 2.4 2.4 0 0 1 1.3 3.6 2.5 2.5 0 0 1-.6 3.9 2.4 2.4 0 0 1-4.8.9V3.4Z"/><path d="M5.6 7.4c.9 0 1.6.5 1.9 1.2M12.4 7.4c-.9 0-1.6.5-1.9 1.2"/></g></symbol>
+  <symbol id="i-think" viewBox="0 0 18 18"><path d="M9 2.2 10.4 6.6 14.8 8 10.4 9.4 9 13.8 7.6 9.4 3.2 8 7.6 6.6Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M14 12.6l.6 1.8 1.8.6-1.8.6-.6 1.8-.6-1.8-1.8-.6 1.8-.6Z" fill="currentColor"/></symbol>
+  <symbol id="i-text" viewBox="0 0 18 18"><path d="M3 4.5h12M3 8h12M3 11.5h7.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 14 14"><path d="M2.8 7.4 5.6 10.2 11.2 3.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 14 14"><path d="M1.2 7S3.4 3 7 3s5.8 4 5.8 4-2.2 4-5.8 4S1.2 7 1.2 7Z" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="7" cy="7" r="1.7" fill="currentColor"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 14 14"><path d="M7.8 1.5 3 8h3.6l-.8 4.5L10.6 6H7Z" fill="currentColor"/></symbol>
+  <symbol id="i-tool" viewBox="0 0 14 14"><path d="M8.8 2.2a3 3 0 0 0-3.5 3.9L2 9.4 4.6 12l3.3-3.3a3 3 0 0 0 3.9-3.5L10 7 7 4z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-tf" viewBox="0 0 24 24"><defs><linearGradient id="tfg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7477fb"/><stop offset="1" stop-color="#9b8bfb"/></linearGradient></defs><rect width="24" height="24" rx="7" fill="url(#tfg)"/><path d="M7 9.5h10M12 9.5v8" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><path d="M15.5 14.5c1 .6 1.8 1.6 2 2.8" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none" opacity=".75"/></symbol>
+  <symbol id="app-tg" viewBox="0 0 24 24"><defs><linearGradient id="tgg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fd36b"/><stop offset="1" stop-color="#1e9a4a"/></linearGradient></defs><rect width="24" height="24" rx="5.5" fill="#fff"/><circle cx="12" cy="12" r="9.2" fill="url(#tgg)"/><path d="M6.3 11.8 16.8 7.6c.5-.2.9.1.8.7l-1.8 8.4c-.1.6-.5.7-1 .4l-2.7-2-1.3 1.3c-.2.2-.3.2-.5.2l.2-2.8 5-4.6c.2-.2 0-.3-.3-.1l-6.2 3.9-2.6-.8c-.6-.2-.6-.6.1-.9Z" fill="#fff"/></symbol>
+  <symbol id="app-chrome" viewBox="0 0 24 24"><rect width="24" height="24" rx="5.5" fill="#fff"/><circle cx="12" cy="12" r="8.6" fill="#db4437"/><path d="M12 12 4.6 16.3A8.6 8.6 0 0 0 12 20.6Z" fill="#0f9d58"/><path d="M12 12 4.6 16.3A8.6 8.6 0 0 1 4.2 8Z" fill="#0f9d58"/><path d="M12 12h8.6a8.6 8.6 0 0 1-8.6 8.6l-4.3-7.4Z" fill="#f4b400"/><circle cx="12" cy="12" r="4" fill="#fff"/><circle cx="12" cy="12" r="3.1" fill="#4285f4"/></symbol>
+  <symbol id="app-code" viewBox="0 0 24 24"><rect width="24" height="24" rx="5.5" fill="#1f6feb"/><path d="M9.2 8 5.4 12l3.8 4M14.8 8l3.8 4-3.8 4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="app-notes" viewBox="0 0 24 24"><rect width="24" height="24" rx="5.5" fill="#fff"/><rect x="0" y="0" width="24" height="7" rx="5.5" fill="#fcd34d"/><rect x="0" y="4" width="24" height="3" fill="#fcd34d"/><path d="M5 11h14M5 14.5h14M5 18h9" stroke="#d4d4d8" stroke-width="1.2"/></symbol>
+</defs></svg>
+
+<!-- Refraction filter (Chromium only; rebuilt on resize) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="lg-refract" x="0" y="0" width="100%" height="100%" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+    <feImage id="lg-map" x="0" y="0" width="680" height="120" preserveAspectRatio="none" result="map"/>
+    <feDisplacementMap in="SourceGraphic" in2="map" scale="46" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<div class="page">
+  <div class="head">
+    <div>
+      <h1>随便问 · 快捷浮窗 · Liquid Glass <span class="tag">交互设计稿 v3</span></h1>
+      <p>直接在下面的桌面里操作：输入、切模型、点上下文、点麦克风说话、回车发送、Esc 收起。顶部工具栏切换壁纸、深浅色、玻璃强度和两种布局，用来检查不同背景下的效果和可读性。</p>
+    </div>
+  </div>
+
+  <div class="toolbar" id="toolbar">
+    <div class="tgroup"><label>壁纸</label>
+      <div class="swatches" id="walls">
+        <button class="sw-purple on" data-wall="purple" title="现状截图同款"></button>
+        <button class="sw-tahoe" data-wall="tahoe" title="macOS 26 风格渐变"></button>
+        <button class="sw-photo" data-wall="photo" title="高饱和照片"></button>
+        <button class="sw-doc" data-wall="doc" title="浅色文档窗口（文字密集）"></button>
+        <button class="sw-code" data-wall="code" title="深色编辑器"></button>
+      </div>
+    </div>
+    <div class="tgroup"><label>系统</label>
+      <div class="seg" data-group="os"><button data-v="26" class="on">macOS 26+</button><button data-v="legacy">macOS 13–15 回退</button><button data-v="opaque">降低透明度</button></div>
+    </div>
+    <div class="tgroup"><label>外观</label>
+      <div class="seg" data-group="appearance"><button data-v="dark" class="on">深色</button><button data-v="light">浅色</button></div>
+    </div>
+    <div class="tgroup"><label>布局</label>
+      <div class="seg" data-group="layout"><button data-v="a" class="on">A · 双层卡片</button><button data-v="b">B · Spotlight 胶囊</button></div>
+    </div>
+    <div class="tgroup"><label>玻璃</label>
+      <div class="seg" data-group="glass"><button data-v="regular" class="on">Regular</button><button data-v="clear">Clear</button></div>
+    </div>
+    <div class="tgroup"><label>边缘折射</label>
+      <div class="seg" data-group="refract"><button data-v="on" class="on">开</button><button data-v="off">关</button></div>
+    </div>
+    <div class="tgroup"><label>演示</label>
+      <div class="seg" data-group="demo"><button data-v="typed">填入问题</button><button data-v="voice">语音</button><button data-v="noimg">不支持图片的模型</button><button data-v="reset">重置</button></div>
+    </div>
+  </div>
+
+  <!-- ===================== DESKTOP ===================== -->
+  <div class="desktop" id="desktop">
+    <div class="wall wall-purple on" data-wall="purple"><svg id="pixelArt" preserveAspectRatio="xMidYMid slice"></svg></div>
+    <div class="wall wall-tahoe" data-wall="tahoe">
+      <div class="blob" style="left:8%;top:52%;width:320px;height:220px;background:#ff7a59"></div>
+      <div class="blob" style="left:58%;top:8%;width:360px;height:260px;background:#3fd0ff"></div>
+      <div class="blob" style="left:36%;top:62%;width:280px;height:200px;background:#7b5cff"></div>
+    </div>
+    <div class="wall wall-photo" data-wall="photo">
+      <div class="sun"></div>
+      <div class="hill" style="top:58%;height:70%;background:linear-gradient(#5b2d7a,#2a1a4f)"></div>
+      <div class="hill" style="top:68%;height:70%;left:30%;background:linear-gradient(#3c2367,#191337)"></div>
+    </div>
+    <div class="wall wall-doc" data-wall="doc">
+      <div class="win doc-win"><div class="bar"></div><div class="tl"><i></i><i></i><i></i></div>
+        <article>
+          <h2>为什么 Liquid Glass 不是"毛玻璃 2.0"</h2>
+          <div class="meta">设计笔记 · 6 分钟阅读</div>
+          <p>传统的毛玻璃只做一件事：<span class="hl">把背后的内容模糊掉</span>，再盖一层半透明底色。Liquid Glass 则把材质当成一块真实存在的透镜——它的边缘会弯折光线，表面会反射环境，交互时会像液体一样流动和变形。</p>
+          <figure></figure>
+          <p>这意味着控件不再需要用边框和阴影划定边界：形状由折射本身勾勒出来。内容第一，界面让位。工具栏、侧栏和浮层退到内容之上的一层"功能层"里，只在需要时出现。</p>
+          <p>对一个随时被唤起、叠在任意窗口之上的输入浮窗来说，这正是我们想要的：它应该足够轻，让人感觉没有离开当前工作；又足够清楚，让输入的每个字都读得清。</p>
+        </article>
+      </div>
+    </div>
+    <div class="wall wall-code" data-wall="code">
+      <div class="win code-win"><div class="bar"></div><div class="tl"><i></i><i></i><i></i></div>
+<pre><span class="ln">1</span><span class="k">import</span> SwiftUI
+<span class="ln">2</span>
+<span class="ln">3</span><span class="c">/// The launcher floats over arbitrary windows, so the material</span>
+<span class="ln">4</span><span class="c">/// has to stay legible on any backdrop.</span>
+<span class="ln">5</span><span class="k">struct</span> <span class="t">AskLauncherView</span>: <span class="t">View</span> {
+<span class="ln">6</span>    <span class="k">@Bindable var</span> model: <span class="t">AskConversationModel</span>
+<span class="ln">7</span>
+<span class="ln">8</span>    <span class="k">var</span> body: <span class="k">some</span> <span class="t">View</span> {
+<span class="ln">9</span>        <span class="t">GlassEffectContainer</span>(spacing: <span class="n">8</span>) {
+<span class="ln">10</span>            <span class="t">AskComposer</span>(model: model, launcher: <span class="k">true</span>)
+<span class="ln">11</span>                .<span class="f">glassEffect</span>(.regular, in: .<span class="f">rect</span>(cornerRadius: <span class="n">26</span>))
+<span class="ln">12</span>        }
+<span class="ln">13</span>        .<span class="f">frame</span>(width: <span class="t">AskMetrics</span>.launcherWidth)
+<span class="ln">14</span>        .<span class="f">onKeyPress</span>(.escape) { model.<span class="f">dismiss</span>(); <span class="k">return</span> .handled }
+<span class="ln">15</span>    }
+<span class="ln">16</span>}
+<span class="ln">17</span>
+<span class="ln">18</span><span class="c">// TODO: keep the 1.5pt focus ring for "listening" in the accent colour</span>
+<span class="ln">19</span><span class="k">let</span> fallback = <span class="s">"NSVisualEffectView(.hudWindow) on macOS 13–15"</span></pre>
+      </div>
+    </div>
+
+    <div class="menubar" id="menubar">
+      <svg width="14" height="16" viewBox="0 0 14 16"><path fill="currentColor" d="M11.6 8.5c0-2 1.6-2.9 1.7-3-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7-.6 0-1.6-.7-2.6-.7C3.4 4 2.1 4.8 1.4 6 0 8.5 1 12.2 2.4 14.1c.7 1 1.4 2 2.4 2 1 0 1.3-.6 2.5-.6 1.2 0 1.5.6 2.5.6 1 0 1.7-1 2.3-1.9.7-1.1 1-2.1 1-2.2 0 0-2-.8-2-3.5ZM9.6 2.6c.5-.7.9-1.6.8-2.6-.8 0-1.8.5-2.4 1.2-.5.6-1 1.6-.8 2.5.9.1 1.8-.4 2.4-1.1Z"/></svg>
+      <b id="appName">Telegram</b><span>文件</span><span>编辑</span><span>显示</span><span>窗口</span><span>帮助</span>
+      <div class="r">
+        <svg width="18" height="18" viewBox="0 0 24 24"><use href="#i-tf"/></svg>
+        <span>10月1日 周四 18:31</span>
+      </div>
+    </div>
+
+    <div class="launcher-wrap" id="wrap">
+      <div class="panel lg" id="panel">
+        <div class="glow" id="glow"></div>
+        <div class="halo" id="halo"></div>
+
+        <div class="brand"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#i-tf"/></svg></div>
+
+        <div class="editor-wrap">
+          <textarea class="editor" id="editor" rows="1" placeholder="输入问题…" spellcheck="false"></textarea>
+        </div>
+
+        <div class="bar">
+          <button class="ctl model" id="modelBtn" data-pop="popModel"><span class="name" id="modelName">MiniMax M3</span><svg class="chev" width="10" height="10"><use href="#i-chev"/></svg></button>
+          <button class="ctl reason" id="reasonBtn" data-pop="popReason"><svg width="16" height="16"><use href="#i-think"/></svg><span id="reasonName">默认</span><svg class="chev" width="10" height="10"><use href="#i-chev"/></svg></button>
+          <span class="vsep"></span>
+          <button class="model-mini" id="modelMini" data-pop="popModel"><span id="modelMiniName">MiniMax M3</span><svg width="9" height="9"><use href="#i-chev"/></svg></button>
+          <div class="ctx" id="ctx">
+            <button class="chip" id="chipShot" data-card="shot" aria-label="截图"><svg width="18" height="18"><use href="#i-shot"/></svg><span class="pip"></span></button>
+            <button class="chip active" id="chipApp" data-card="app" aria-label="来源应用"><svg class="app" viewBox="0 0 24 24"><use id="appIconUse" href="#app-tg"/></svg></button>
+            <button class="chip active" id="chipMem" data-card="mem" aria-label="记忆"><svg width="18" height="18"><use href="#i-brain"/></svg><svg class="badge" viewBox="0 0 24 24"><use id="memBadgeUse" href="#app-tg"/></svg></button>
+          </div>
+          <span class="spacer"></span>
+          <span class="vstat" id="vstat"><span class="wave" id="wave"></span><span class="spin"></span><span id="vtext">聆听中</span></span>
+          <button class="round mic" id="mic" aria-label="语音输入"><svg width="18" height="18"><use href="#i-mic"/></svg><span class="stop"></span></button>
+          <button class="round send" id="send" aria-label="发送"><svg width="16" height="16"><use href="#i-up"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Model popover -->
+    <div class="pop lg" id="popModel" role="menu">
+      <div class="sec">Typeflux 云端</div>
+      <div id="modelRows"></div>
+      <div class="foot"><span>⏎ 选择 · ↑↓ 移动</span><a id="setDefault">设为默认</a></div>
+    </div>
+    <!-- Reasoning popover -->
+    <div class="pop lg pop-reason" id="popReason" role="menu">
+      <div class="sec">推理强度</div>
+      <div id="reasonRows"></div>
+    </div>
+    <!-- Hover card -->
+    <div class="card lg" id="card"></div>
+
+    <div class="toast lg" id="toast"><span class="dot"><svg width="11" height="11" style="color:#fff"><use href="#i-check"/></svg></span><span id="toastText">已发送</span></div>
+    <div class="os-badge" id="osBadge">macOS 26 · Liquid Glass</div>
+    <div class="summon"><button id="summonBtn">按 <span class="kbd">⌘</span><span class="kbd">K</span> 或点击这里重新唤起（演示替代 ⌘ Space）</button></div>
+  </div>
+
+  <div class="shortcuts">
+    <span><span class="kbd">⏎</span> 发送</span><span><span class="kbd">⇧</span><span class="kbd">⏎</span> 换行</span>
+    <span><span class="kbd">Esc</span> 收起 / 取消录音 / 关闭菜单</span><span><span class="kbd">⌘</span><span class="kbd">K</span> 重新唤起</span>
+    <span>麦克风：点击开始 / 再点停止；按住超过 0.3 秒为"按住说话"，松开转写</span>
+    <span>移动鼠标可看到边缘高光跟随光标</span>
+  </div>
+
+  <!-- ===================== NOTES ===================== -->
+  <div class="cols">
+    <div class="note">
+      <h3>1 · 一块玻璃，没有"盒中盒"</h3>
+      <ul>
+        <li>现状是不透明 <code>#2E2E2E</code> 底 + 白 18% 描边，叠在任何窗口上都像一块"贴上去的黑板"。v3 把整张卡片换成一块 <b>Liquid Glass</b>：背后内容经模糊、提饱和后透出来，边界由<b>边缘折射 + 高光描边</b>表达，不再画硬边框。</li>
+        <li><b>只有外壳是玻璃</b>。按钮、菜单项、chip 全部是无底色的"vibrant"控件，悬停才出现 8–10% 的洗色。这是 Apple 对 Liquid Glass 的明确要求：不要玻璃叠玻璃。</li>
+        <li>唯一的实色按钮是<b>发送</b>（可发送时变为强调色胶囊，对应 <code>.glassProminent</code>）。全卡片只有一个视觉焦点。</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3>2 · 更扁平、更安静</h3>
+      <ul>
+        <li>圆角从 16 → <b>26</b>（B 布局为 30 胶囊），内部控件全部胶囊/正圆，且与外壳<b>同心</b>：26 = 外边距 10 + 控件半径 16。</li>
+        <li>上下文 chip 从"深蓝方块 + 图标"改为 32pt 正圆：关闭时只有线性图标；开启时浅强调色洗底，截图开启多一个小蓝点。来源应用直接显示 App 图标，关掉后变灰。</li>
+        <li>推理强度换成"✦"思考图标并降为二级灰，选到「高」时才着强调色；模型名保持一级文字。两者之间用一条 16pt 发丝线和 chip 区分组。</li>
+        <li>编辑区 15pt / 行高 23，左内边距 20，与模型名左对齐（控件 10pt 内边距 + 外边距 10）。</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3>3 · 状态用"光"表达</h3>
+      <ul>
+        <li><b>聆听中</b>：不再是 1.5pt 实线描边，而是一圈缓慢流动的强调色光边，外圈光晕随音量呼吸；右侧显示波形与「聆听中」。其它控件降到 40% 且不可点。</li>
+        <li><b>转写中</b>：光边保留、光晕收起，波形换成转圈；完成后文字直接落在输入框里，可以编辑后再发。</li>
+        <li><b>唤起 / 收起</b>：弹簧缩放 + 模糊淡入，0.5s；<b>发送</b>：卡片轻微上浮回弹，顶部出现玻璃 toast。</li>
+        <li>模型、推理强度、chip 悬停卡片都是同一种玻璃浮层，圆角 18 / 16，内部行圆角 12（同心）。</li>
+      </ul>
+    </div>
+
+    <div class="note wide">
+      <h3>不同系统版本的表现（工具栏「系统」可切换预览）</h3>
+      <ul>
+        <li><b>不会自动兼容</b>：<code>glassEffect</code> / <code>NSGlassEffectView</code> 只有 macOS 26 才有，而 Package 最低是 macOS 13，必须写版本分支。项目里已有现成模式：<code>StudioLiquidGlassBackground</code> 和录音浮层都用 <code>#if compiler(&gt;=6.2)</code> + <code>#available(macOS 26.0, *)</code>，否则走 <code>NSVisualEffectView</code>。浮窗直接复用这套。</li>
+        <li><b>macOS 26+</b>：完整 Liquid Glass（折射、高光、Clear 变体、布局 B 液态展开）。</li>
+        <li><b>macOS 13–15</b>：<code>NSVisualEffectView(.hudWindow, .behindWindow)</code> 的系统毛玻璃，底色更实；保留布局、圆角、控件、手绘高光描边、聆听光边；去掉折射、跟随光标的高光、Clear 变体和形变动画（布局 B 直接切换）。整体是"同一设计，材质降一级"。</li>
+        <li><b>任意版本开启「降低透明度」</b>：退回现在的不透明底色 <code>composerSurface</code>，其余不变。</li>
+      </ul>
+    </div>
+
+    <div class="note wide">
+      <h3>两种布局</h3>
+      <ul>
+        <li><b>A · 双层卡片（推荐）</b>：与现状信息结构一致（上编辑区、下工具栏），聊天页输入框可以直接共用同一组件，只把外壳换成玻璃。改动小、风险低。</li>
+        <li><b>B · Spotlight 胶囊</b>：空闲时是一条 60pt 高的玻璃胶囊，左侧品牌图标、中间输入、右侧 chip/麦克风/发送，模型缩成一个小标签——观感最接近 macOS 26 的 Spotlight。一旦输入换行或超过一行宽度，胶囊会<b>液态展开</b>为 A 布局（View Transition 演示；SwiftUI 中对应 <code>glassEffectID</code> + <code>@Namespace</code> 的 morph）。代价是模型/推理强度入口更深、与聊天页输入框不再同形。</li>
+      </ul>
+    </div>
+
+    <div class="note wide">
+      <h3>实现映射（不在本次改代码，仅供评估）</h3>
+      <table class="spec">
+        <tr><th>项</th><th>macOS 26+</th><th>macOS 13–15 回退（Package 最低 13）</th></tr>
+        <tr><td>浮窗外壳</td><td>无边框透明 <code>NSPanel</code> 内放 <code>NSGlassEffectView</code>（cornerRadius 26），或 SwiftUI <code>.glassEffect(.regular, in: .rect(cornerRadius: 26))</code></td><td><code>NSVisualEffectView</code>：<code>material = .hudWindow</code>，<code>blendingMode = .behindWindow</code>，<code>state = .active</code>；手绘 0.5pt 白 22% 上高光描边</td></tr>
+        <tr><td>Clear 变体</td><td><code>.glassEffect(.clear)</code>，背景亮度过高时叠 20–30% 暗化层保证对比度</td><td>不提供，统一 Regular</td></tr>
+        <tr><td>控件</td><td>普通 <code>Button</code> + <code>.buttonStyle(.plain)</code> 自绘悬停洗色；<b>不要</b>给每个控件单独加 <code>glassEffect</code></td><td>同左</td></tr>
+        <tr><td>发送</td><td><code>.buttonStyle(.glassProminent)</code> + <code>.tint(AskTheme.accent)</code>，<code>.buttonBorderShape(.circle)</code></td><td>强调色实心圆 + 顶部 45% 白色径向高光</td></tr>
+        <tr><td>浮层</td><td>系统 <code>Menu</code>/<code>popover</code> 在 26 上自动是玻璃；自定义浮层用同一 <code>glassEffect</code></td><td><code>NSVisualEffectView(.popover)</code></td></tr>
+        <tr><td>聆听光边</td><td>覆盖层 <code>AngularGradient</code> stroke 1.5pt，<code>rotationEffect</code> 6s 一圈；光晕半径 = 18 + 26 × 音量</td><td>同左</td></tr>
+        <tr><td>布局 B morph</td><td><code>GlassEffectContainer</code> + <code>glassEffectID(_:in:)</code></td><td>直接切换，不做形变</td></tr>
+        <tr><td>可访问性</td><td colspan="2">跟随「降低透明度」：<code>accessibilityReduceTransparency</code> 为真时退回现有不透明 <code>composerSurface</code>；「增强对比度」时描边提到 1pt 白 35% / 黑 25%；「减少动态效果」时关闭光边流动和弹簧，仅保留淡入淡出。</td></tr>
+        <tr><td>需要同步改的约定</td><td colspan="2"><code>AskTheme</code> 头部注释写着"every backplate has to be opaque"——采用本方案需要更新这条约定，并更新 <code>AskMetrics</code>（圆角 26、编辑区内边距 16/20、底栏 52）与浮窗快照测试。</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const desktop = $('#desktop'), panel = $('#panel'), wrap = $('#wrap'), editor = $('#editor');
+  const sendBtn = $('#send'), micBtn = $('#mic'), card = $('#card');
+  const isChromium = !!window.chrome && /Chrome|Chromium|Edg/.test(navigator.userAgent);
+  const LIGHT_WALLS = new Set(['doc', 'photo']);
+
+  /* ---------------- state ---------------- */
+  const MODELS = [
+    { id: 'minimax-m3', name: 'MiniMax M3', note: '均衡 · 长上下文', vision: true, tools: true, price: '1×' },
+    { id: 'deepseek-v4', name: 'DeepSeek V4', note: '推理强 · 不支持图片', vision: false, tools: true, price: '1×' },
+    { id: 'claude-haiku', name: 'Claude Haiku 4.5', note: '快速 · 支持截图', vision: true, tools: true, price: '2×' },
+    { id: 'gpt-mini', name: 'GPT-5 mini', note: '通用', vision: true, tools: true, price: '1×' },
+    { id: 'qwen-local', name: 'Qwen3 · Ollama', note: '本机模型 · 自定义', vision: false, tools: false, price: '本地', custom: true },
+  ];
+  const REASONS = [
+    { id: 'default', name: '默认', note: '由模型决定思考深度' },
+    { id: 'low', name: '低', note: '最快，适合简单问题' },
+    { id: 'medium', name: '中', note: '速度与深度均衡' },
+    { id: 'high', name: '高', note: '思考最充分，更慢且消耗更多积分' },
+  ];
+  const APPS = {
+    purple: { name: 'Telegram', icon: 'app-tg', window: 'Telegram — 产品讨论组' },
+    tahoe: { name: 'Telegram', icon: 'app-tg', window: 'Telegram — 产品讨论组' },
+    photo: { name: 'Google Chrome', icon: 'app-chrome', window: 'Google Chrome — Unsplash' },
+    doc: { name: '备忘录', icon: 'app-notes', window: '备忘录 — 设计笔记' },
+    code: { name: 'Visual Studio Code', icon: 'app-code', window: 'Visual Studio Code — AskLauncherView.swift' },
+  };
+  const S = { model: MODELS[0], defaultModel: MODELS[0].id, reason: REASONS[0], shot: false, app: true, mem: true,
+    voice: 'idle', wall: 'purple', layout: 'a', expanded: false, os: '26', openPop: null };
+
+  /* ---------------- wallpaper: pixel art like the current screenshot ---------------- */
+  (function pixelArt() {
+    const svg = $('#pixelArt'); const W = 1320, H = 640, u = 22; svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const cells = new Set();
+    const line = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) cells.add(`${Math.round(x0 + (x1 - x0) * i / n)},${Math.round(y0 + (y1 - y0) * i / n)}`); };
+    line(10, -1, 26, 29); line(11, -1, 27, 29);           // diagonal bar
+    line(20, 18, 56, 4); line(20, 19, 56, 5);             // long rising bar
+    line(52, -1, 56, 4);
+    // blocky letters "Code" bottom right
+    const glyph = (ox, oy, rows) => rows.forEach((r, y) => [...r].forEach((c, x) => c === '#' && cells.add(`${ox + x - Math.round(y * .45)},${oy + y}`)));
+    glyph(44, 12, [' ###', '#   ', '#   ', '#   ', ' ###']);
+    glyph(50, 12, [' ## ', '#  #', '#  #', '#  #', ' ## ']);
+    glyph(55, 10, ['   #', '   #', ' ###', '#  #', '#  #', ' ###']);
+    glyph(60, 12, [' ## ', '#  #', '####', '#   ', ' ###']);
+    line(4, 26, 14, 30); line(40, 28, 60, 23);
+    let html = '';
+    cells.forEach(k => { const [x, y] = k.split(',').map(Number); html += `<rect x="${x * u + 1}" y="${y * u + 1}" width="${u - 2}" height="${u - 2}" rx="2" fill="#5e1269" opacity=".55"/>`; });
+    svg.innerHTML = html;
+  })();
+
+  /* ---------------- refraction map (edge lens) ---------------- */
+  const mapCache = new Map();
+  function displacementMap(w, h, r, bezel) {
+    const key = `${w}x${h}x${r}`; if (mapCache.has(key)) return mapCache.get(key);
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const ctx = c.getContext('2d'); const img = ctx.createImageData(w, h); const d = img.data;
+    const cx = w / 2, cy = h / 2, hx = w / 2 - r, hy = h / 2 - r;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const px = x + .5 - cx, py = y + .5 - cy;
+      const qx = Math.abs(px) - hx, qy = Math.abs(py) - hy;
+      const ox = Math.max(qx, 0), oy = Math.max(qy, 0);
+      const sd = Math.hypot(ox, oy) + Math.min(Math.max(qx, qy), 0) - r; // <0 inside
+      const dist = -sd; let nx = 0, ny = 0, m = 0;
+      if (dist < bezel && dist > -1) {
+        if (qx > 0 && qy > 0) { const l = Math.hypot(qx, qy) || 1; nx = qx / l * Math.sign(px); ny = qy / l * Math.sign(py); }
+        else if (qx > qy) nx = Math.sign(px); else ny = Math.sign(py);
+        const t = 1 - Math.max(dist, 0) / bezel; m = t * t * (3 - 2 * t);
+      }
+      const i = (y * w + x) * 4;
+      d[i] = 128 + nx * m * 127; d[i + 1] = 128 + ny * m * 127; d[i + 2] = 128; d[i + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0); const url = c.toDataURL(); mapCache.set(key, url); return url;
+  }
+  let refractOn = true;
+  function applyRefraction() {
+    const base = 'blur(var(--lg-blur)) saturate(var(--lg-sat)) brightness(var(--lg-bright))';
+    if (!(isChromium && refractOn && S.os === '26')) { panel.style.removeProperty('--lg-backdrop'); return; }
+    const w = Math.round(panel.offsetWidth), h = Math.round(panel.offsetHeight);
+    if (!w || !h) return;
+    const r = parseFloat(getComputedStyle(panel).borderTopLeftRadius) || 26;
+    const fe = $('#lg-map');
+    fe.setAttribute('href', displacementMap(w, h, Math.min(r, h / 2), Math.min(22, h / 2)));
+    fe.setAttribute('width', w); fe.setAttribute('height', h);
+    const f = $('#lg-refract'); f.setAttribute('width', w); f.setAttribute('height', h);
+    panel.style.setProperty('--lg-backdrop', `url(#lg-refract) ${base}`);
+  }
+  new ResizeObserver(() => applyRefraction()).observe(panel);
+
+  /* specular highlight follows the pointer */
+  desktop.addEventListener('pointermove', e => {
+    for (const el of [panel, ...$$('.pop.show, .card.show')]) {
+      const b = el.getBoundingClientRect();
+      el.style.setProperty('--mx', `${Math.max(-20, Math.min(120, (e.clientX - b.left) / b.width * 100))}%`);
+      el.style.setProperty('--my', `${Math.max(-60, Math.min(160, (e.clientY - b.top) / b.height * 100))}%`);
+    }
+  });
+
+  /* ---------------- toolbar ---------------- */
+  function setSeg(group, v) { $$(`.seg[data-group="${group}"] button`).forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+  $$('.seg').forEach(seg => seg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; const g = seg.dataset.group, v = b.dataset.v;
+    if (g === 'demo') return demo(v);
+    setSeg(g, v);
+    if (g === 'appearance') desktop.classList.toggle('appearance-light', v === 'light');
+    if (g === 'glass') desktop.classList.toggle('glass-clear', v === 'clear');
+    if (g === 'refract') { refractOn = v === 'on'; applyRefraction(); }
+    if (g === 'os') setOS(v);
+    if (g === 'layout') morph(() => { S.layout = v; desktop.classList.toggle('layout-b', v === 'b'); autosize(); });
+  }));
+  const OS_LABEL = { '26': 'macOS 26 · Liquid Glass', legacy: 'macOS 13–15 · NSVisualEffectView 回退', opaque: '辅助功能 · 降低透明度（任意版本）' };
+  function setOS(v) {
+    S.os = v; setSeg('os', v);
+    desktop.classList.toggle('os-legacy', v === 'legacy'); desktop.classList.toggle('os-opaque', v === 'opaque');
+    // Clear glass and refraction exist only on macOS 26
+    $$('.seg[data-group="glass"] button, .seg[data-group="refract"] button').forEach(b => { b.disabled = v !== '26'; });
+    if (v !== '26') { setSeg('glass', 'regular'); desktop.classList.remove('glass-clear'); }
+    $('#osBadge').textContent = OS_LABEL[v];
+    applyRefraction();
+  }
+  $$('#walls button').forEach(b => b.addEventListener('click', () => setWall(b.dataset.wall)));
+  function setWall(w) {
+    S.wall = w;
+    $$('#walls button').forEach(x => x.classList.toggle('on', x.dataset.wall === w));
+    $$('.wall').forEach(x => x.classList.toggle('on', x.dataset.wall === w));
+    desktop.classList.toggle('light-wall', LIGHT_WALLS.has(w) && w === 'doc');
+    const app = APPS[w]; $('#appName').textContent = app.name;
+    $('#appIconUse').setAttribute('href', '#' + app.icon); $('#memBadgeUse').setAttribute('href', '#' + app.icon);
+    // a light, text-heavy backdrop reads better with the light appearance
+    const want = w === 'doc' ? 'light' : 'dark'; setSeg('appearance', want); desktop.classList.toggle('appearance-light', want === 'light');
+  }
+
+  /* ---------------- composer ---------------- */
+  function canSend() { return editor.value.trim().length > 0 && S.voice === 'idle'; }
+  function refresh() {
+    sendBtn.classList.toggle('on', canSend());
+    $('#modelName').textContent = S.model.name; $('#modelMiniName').textContent = S.model.name.split(' ·')[0];
+    const rb = $('#reasonBtn'); $('#reasonName').textContent = S.reason.name;
+    rb.classList.toggle('lvl-high', S.reason.id === 'high');
+    const shot = $('#chipShot');
+    shot.classList.toggle('unavail', !S.model.vision);
+    shot.classList.toggle('active', S.model.vision && S.shot);
+    $('#chipApp').classList.toggle('active', S.app); $('#chipApp').classList.toggle('off', !S.app);
+    $('#chipMem').classList.toggle('active', S.mem);
+  }
+  let capsuleWidth = 0;
+  function autosize() {
+    editor.style.height = 'auto';
+    editor.style.height = Math.min(editor.scrollHeight, 138) + 'px';
+    if (S.layout === 'b') {
+      // compare against the capsule's line width even while expanded, so it collapses only when the text fits again
+      if (!panel.classList.contains('expanded')) capsuleWidth = editor.clientWidth;
+      const needs = editor.value.includes('\n') || measure(editor.value) > capsuleWidth - 4;
+      // track the target synchronously: the view transition applies it a frame later
+      if (needs !== S.expanded) { S.expanded = needs; morph(() => { panel.classList.toggle('expanded', needs); editor.style.height = 'auto'; editor.style.height = Math.min(editor.scrollHeight, 138) + 'px'; }); }
+    } else { S.expanded = false; panel.classList.remove('expanded'); }
+  }
+  const mctx = document.createElement('canvas').getContext('2d');
+  function measure(t) { mctx.font = getComputedStyle(editor).font; return mctx.measureText(t).width; }
+  function morph(fn) {
+    if (S.os === '26' && document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      panel.style.viewTransitionName = 'launcher';
+      const tr = document.startViewTransition(() => { fn(); });
+      tr.ready.catch(() => {});
+      tr.finished.catch(() => {}).finally(() => { panel.style.viewTransitionName = ''; editor.focus(); });
+    } else fn();
+  }
+  editor.addEventListener('input', () => { autosize(); refresh(); });
+  editor.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
+  });
+  sendBtn.addEventListener('click', send);
+
+  function send() {
+    if (!canSend()) return;
+    closePop();
+    panel.classList.remove('sent'); void panel.offsetWidth; panel.classList.add('sent');
+    const parts = [S.model.name];
+    if (S.model.vision && S.shot) parts.push('附截图'); if (S.app) parts.push(APPS[S.wall].name); if (S.mem) parts.push('记忆');
+    toast(`已发送到随便问 · ${parts.join(' · ')}`);
+    setTimeout(() => { editor.value = ''; autosize(); refresh(); }, 180);
+  }
+  let toastTimer;
+  function toast(t) { $('#toastText').textContent = t; const el = $('#toast'); el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2200); }
+
+  /* ---------------- popovers ---------------- */
+  function renderModelRows() {
+    const box = $('#modelRows'); box.innerHTML = '';
+    MODELS.forEach((m, i) => {
+      if (m.custom) { const s = document.createElement('div'); s.className = 'sec'; s.textContent = '自定义'; box.appendChild(s); }
+      const row = document.createElement('div'); row.className = 'row'; row.dataset.i = i; row.setAttribute('role', 'menuitemradio');
+      row.innerHTML = `<span class="check">${m.id === S.model.id ? '<svg width="14" height="14"><use href="#i-check"/></svg>' : ''}</span>
+        <span class="lbl"><b>${m.name}${m.id === S.defaultModel ? ' <span style="font-weight:500;color:var(--fg-3);font-size:11px">· 默认</span>' : ''}</b><small>${m.note}</small></span>
+        <span class="caps">${m.vision ? '<svg width="14" height="14"><title>支持图片</title><use href="#i-eye"/></svg>' : ''}${m.tools ? '<svg width="14" height="14"><title>工具调用</title><use href="#i-tool"/></svg>' : ''}</span>
+        <span class="price">${m.price}</span>`;
+      row.addEventListener('click', () => { S.model = m; renderModelRows(); refresh(); closePop(); editor.focus(); });
+      box.appendChild(row);
+    });
+  }
+  function renderReasonRows() {
+    const box = $('#reasonRows'); box.innerHTML = '';
+    REASONS.forEach(r => {
+      const row = document.createElement('div'); row.className = 'row'; row.setAttribute('role', 'menuitemradio');
+      row.innerHTML = `<span class="check">${r.id === S.reason.id ? '<svg width="14" height="14"><use href="#i-check"/></svg>' : ''}</span><span class="lbl"><b>${r.name}</b><small>${r.note}</small></span>`;
+      row.addEventListener('click', () => { S.reason = r; renderReasonRows(); refresh(); closePop(); editor.focus(); });
+      box.appendChild(row);
+    });
+  }
+  $('#setDefault').addEventListener('click', () => { S.defaultModel = S.model.id; renderModelRows(); toast(`已将 ${S.model.name} 设为随便问默认模型`); });
+
+  function openPop(id, anchor) {
+    if (S.openPop === id) return closePop();
+    closePop(); hideCard();
+    const pop = $('#' + id), d = desktop.getBoundingClientRect(), a = anchor.getBoundingClientRect();
+    pop.style.left = `${Math.min(a.left - d.left - 6, d.width - 300)}px`;
+    pop.classList.add('show');
+    const ph = pop.offsetHeight; const top = a.top - d.top - ph - 10;
+    pop.style.top = `${top < 36 ? a.bottom - d.top + 10 : top}px`;
+    pop.style.transformOrigin = top < 36 ? '20% 0%' : '20% 100%';
+    S.openPop = id; anchor.classList.add('open'); kbIndex = -1;
+  }
+  function closePop() {
+    if (!S.openPop) return; $('#' + S.openPop).classList.remove('show');
+    $$('.ctl.open, .model-mini.open').forEach(x => x.classList.remove('open')); S.openPop = null;
+  }
+  let kbIndex = -1;
+  $$('[data-pop]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); openPop(b.dataset.pop, b); }));
+  document.addEventListener('click', e => { if (!e.target.closest('.pop')) closePop(); });
+
+  /* ---------------- hover cards ---------------- */
+  let cardTimer;
+  function cardHTML(kind) {
+    if (kind === 'shot') {
+      if (!S.model.vision) return `<div class="t">截图不可用</div><div class="d">${S.model.name} 不支持图片输入。换一个带 <svg width="11" height="11" style="vertical-align:-1px"><use href="#i-eye"/></svg> 的模型即可附带截图。</div>`;
+      return S.shot
+        ? `<div class="t">已附带截图</div><div class="d">当前屏幕（不含本浮窗）会随问题一起发送。</div><div class="shot" style="background:${getComputedStyle($('.wall.on')).background}"></div><div class="h">点击移除</div>`
+        : `<div class="t">附带截图</div><div class="d">截取浮窗唤起前的屏幕，让模型看到你正在看的内容。</div><div class="h">点击附带当前屏幕截图</div>`;
+    }
+    if (kind === 'app') {
+      const a = APPS[S.wall];
+      return `<div class="t">${a.name}</div><div class="d">${a.window.split(' — ')[1] || ''}<br>${S.app ? '问题会带上来源应用和窗口标题。' : '本次提问不带来源应用。'}</div><div class="h">${S.app ? '点击关闭' : '点击开启'}</div>`;
+    }
+    const a = APPS[S.wall];
+    return `<div class="t">记忆 · ${a.name}</div><div class="d">仅在会话开始时发送一次：你的全局记忆，以及发起提问的应用中最近输入的内容。</div><div class="h">${S.mem ? '点击关闭，本次提问不带记忆' : '点击开启，本次提问带上记忆'}</div>`;
+  }
+  function showCard(chip) {
+    clearTimeout(cardTimer);
+    cardTimer = setTimeout(() => {
+      if (S.openPop || S.voice !== 'idle') return;
+      card.innerHTML = cardHTML(chip.dataset.card);
+      const d = desktop.getBoundingClientRect(), a = chip.getBoundingClientRect();
+      card.classList.add('show');
+      card.style.left = `${a.left - d.left + a.width / 2 - card.offsetWidth / 2}px`;
+      const top = a.top - d.top - card.offsetHeight - 12;
+      card.style.top = `${top < 36 ? a.bottom - d.top + 12 : top}px`;
+    }, 150);
+  }
+  function hideCard() { clearTimeout(cardTimer); card.classList.remove('show'); }
+  $$('.chip').forEach(c => {
+    c.addEventListener('pointerenter', () => showCard(c));
+    c.addEventListener('pointerleave', hideCard);
+    c.addEventListener('click', e => {
+      e.stopPropagation(); closePop();
+      const k = c.dataset.card;
+      if (k === 'shot') { if (!S.model.vision) return; S.shot = !S.shot; }
+      if (k === 'app') S.app = !S.app;
+      if (k === 'mem') S.mem = !S.mem;
+      refresh(); if (card.classList.contains('show')) card.innerHTML = cardHTML(k); editor.focus();
+    });
+  });
+
+  /* ---------------- voice ---------------- */
+  const wave = $('#wave'); for (let i = 0; i < 9; i++) wave.appendChild(document.createElement('i'));
+  const PHRASES = ['帮我把', '这段聊天记录', '整理成', '三条', '待办事项，', '按优先级', '排序'];
+  let raf, phraseTimer, pressAt = 0, pressedToStart = false, ang = 0, base = '';
+  function setVoice(v) {
+    S.voice = v;
+    panel.classList.toggle('listening', v === 'listening'); panel.classList.toggle('transcribing', v === 'transcribing');
+    micBtn.classList.toggle('live', v === 'listening');
+    micBtn.setAttribute('aria-label', v === 'listening' ? '停止录音' : '语音输入');
+    $('#vtext').textContent = v === 'transcribing' ? '转写中' : '聆听中';
+    editor.readOnly = v !== 'idle';
+    refresh();
+  }
+  function startVoice() {
+    if (S.voice !== 'idle') return; closePop(); hideCard();
+    base = editor.value; setVoice('listening');
+    let n = 0;
+    phraseTimer = setInterval(() => { if (n < PHRASES.length) { editor.value = base + PHRASES.slice(0, ++n).join(''); autosize(); } }, 520);
+    const bars = $$('i', wave); let t = 0;
+    const tick = () => {
+      t += 1; ang = (ang + 1.2) % 360; $('#glow').style.setProperty('--ang', ang + 'deg');
+      const lvl = Math.max(0, Math.sin(t / 7) * .5 + Math.random() * .5);
+      panel.style.setProperty('--lvl', lvl.toFixed(2));
+      bars.forEach((b, i) => b.style.height = `${4 + Math.abs(Math.sin(t / 5 + i * .8)) * 12 * (.4 + lvl)}px`);
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+  function stopVoice(cancel) {
+    if (S.voice !== 'listening') return;
+    clearInterval(phraseTimer);
+    if (cancel) { cancelAnimationFrame(raf); editor.value = base; setVoice('idle'); autosize(); editor.focus(); return; }
+    setVoice('transcribing');
+    setTimeout(() => {
+      cancelAnimationFrame(raf);
+      editor.value = base + PHRASES.join(''); setVoice('idle'); autosize(); refresh();
+      editor.focus(); editor.setSelectionRange(editor.value.length, editor.value.length);
+    }, 900);
+  }
+  micBtn.addEventListener('pointerdown', () => { pressAt = performance.now(); pressedToStart = S.voice === 'idle'; if (pressedToStart) startVoice(); });
+  micBtn.addEventListener('pointerup', () => {
+    const held = performance.now() - pressAt > 300;
+    if (pressedToStart) { if (held) stopVoice(false); } else if (S.voice === 'listening') stopVoice(false);
+    pressedToStart = false;
+  });
+
+  /* ---------------- summon / dismiss ---------------- */
+  function dismiss() { closePop(); hideCard(); desktop.classList.add('dismissed'); }
+  function summon() {
+    if (!desktop.classList.contains('dismissed')) return;
+    desktop.classList.remove('dismissed'); panel.classList.remove('appear'); void panel.offsetWidth; panel.classList.add('appear');
+    setTimeout(() => editor.focus(), 60);
+  }
+  $('#summonBtn').addEventListener('click', summon);
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); summon(); return; }
+    if (e.key === 'Escape') {
+      if (S.openPop) return closePop();
+      if (S.voice === 'listening') return stopVoice(true);
+      if (S.voice === 'idle') dismiss();
+    }
+    if (S.openPop && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter')) {
+      const rows = $$('.row', $('#' + S.openPop)); if (!rows.length) return;
+      e.preventDefault(); e.stopPropagation();
+      if (e.key === 'Enter') { if (kbIndex >= 0) rows[kbIndex].click(); return; }
+      kbIndex = (kbIndex + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length;
+      rows.forEach((r, i) => r.classList.toggle('kb', i === kbIndex));
+    }
+  }, true);
+
+  /* ---------------- demos ---------------- */
+  function demo(v) {
+    summon(); closePop();
+    if (v === 'typed') { if (S.voice !== 'idle') return; editor.value = '这个对话里大家对上线时间有分歧，帮我总结各方观点，并给一个折中方案'; S.shot = S.model.vision; autosize(); refresh(); editor.focus(); }
+    if (v === 'voice') { if (S.voice === 'idle') { editor.value = ''; autosize(); startVoice(); setTimeout(() => stopVoice(false), 4200); } }
+    if (v === 'noimg') { S.model = MODELS[1]; renderModelRows(); refresh(); showCard($('#chipShot')); }
+    if (v === 'reset') {
+      if (S.voice === 'listening') stopVoice(true);
+      Object.assign(S, { model: MODELS[0], reason: REASONS[0], shot: false, app: true, mem: true });
+      editor.value = ''; renderModelRows(); renderReasonRows(); autosize(); refresh(); hideCard();
+    }
+  }
+
+  renderModelRows(); renderReasonRows(); refresh(); autosize(); applyRefraction();
+  panel.classList.add('appear'); editor.focus();
+  // review hooks for screenshots: ?wall=doc&appearance=light&layout=b&state=typed|voice|model|reason|noimg
+  const q = new URLSearchParams(location.search);
+  if (q.get('wall')) setWall(q.get('wall'));
+  if (q.get('appearance')) { setSeg('appearance', q.get('appearance')); desktop.classList.toggle('appearance-light', q.get('appearance') === 'light'); }
+  if (q.get('os')) setOS(q.get('os'));
+  if (q.get('refract') === 'off') { refractOn = false; setSeg('refract', 'off'); applyRefraction(); }
+  if (q.get('glass') === 'clear') { setSeg('glass', 'clear'); desktop.classList.add('glass-clear'); }
+  if (q.get('layout') === 'b') { S.layout = 'b'; setSeg('layout', 'b'); desktop.classList.add('layout-b'); autosize(); }
+  const st = q.get('state');
+  if (st === 'typed' || st === 'noimg') demo(st);
+  if (st === 'voice') { startVoice(); }
+  if (st === 'model') setTimeout(() => openPop('popModel', $('#modelBtn')), 50);
+  if (st === 'reason') setTimeout(() => openPop('popReason', $('#reasonBtn')), 50);
+})();
+</script>
+</body>
+</html>

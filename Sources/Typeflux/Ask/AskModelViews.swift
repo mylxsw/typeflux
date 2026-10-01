@@ -21,7 +21,9 @@ struct AskModelMenu: View {
         return library.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: auth.isLoggedIn, scenario: scenario)
     }
 
-    private var corner: CGFloat { compact ? 8 : (fieldStyle ? ModelVisualStyle.controlCornerRadius : 16) }
+    private var corner: CGFloat {
+        compact ? AskMetrics.composerControlHeight / 2 : (fieldStyle ? ModelVisualStyle.controlCornerRadius : 16)
+    }
     private var fill: Color {
         guard compact else { return fieldStyle ? ModelVisualStyle.control : ModelVisualStyle.input }
         return hovering || expanded ? AskTheme.hoverFill : .clear
@@ -50,9 +52,10 @@ struct AskModelMenu: View {
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(StudioTheme.textSecondary)
             }
-            .font(.system(size: compact ? 12.5 : 13, weight: fieldStyle ? .regular : .medium))
-            .padding(.horizontal, compact ? 9 : (fieldStyle ? 10 : 11))
-            .frame(width: fieldStyle ? 240 : nil, height: compact ? 28 : (fieldStyle ? 30 : 32))
+            .font(.system(size: 13, weight: fieldStyle ? .regular : (compact ? .semibold : .medium)))
+            .padding(.horizontal, compact ? AskMetrics.composerControlPadding : (fieldStyle ? 10 : 11))
+            .frame(width: fieldStyle ? 240 : nil,
+                   height: compact ? AskMetrics.composerControlHeight : (fieldStyle ? 30 : 32))
             .background(fill, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: corner, style: .continuous).strokeBorder(stroke))
             .contentShape(Rectangle())

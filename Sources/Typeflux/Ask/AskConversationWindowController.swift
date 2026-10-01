@@ -19,7 +19,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private let settings: SettingsStore
     private let tools: AskLocalTools?
     private var launcher: AskFloatingPanel?
-    private var launcherHeight: CGFloat = 114
+    private var launcherHeight = AskMetrics.launcherHeight(editor: 32, banners: 0)
     private var conversationWindow: NSWindow?
     private var controlPanel: AskFloatingPanel?
     private var launchTask: Task<Void, Never>?
@@ -82,7 +82,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             await model.prepareLauncher()
             guard !Task.isCancelled else { return }
             if launcher == nil {
-                let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: 114), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+                let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: launcherHeight),
+                                             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
                 panel.level = .floating
                 panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
                 panel.isMovableByWindowBackground = false

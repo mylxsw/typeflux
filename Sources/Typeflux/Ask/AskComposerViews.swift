@@ -25,6 +25,9 @@ struct AskComposer: View {
     /// panel. The launcher has no panel, so it also keeps its fixed footer height.
     var onToggleUsage: (() -> Void)?
     @ObservedObject private var voice: AskVoiceInput
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.askGlassMaterialOverride) private var glassOverride
+    @Environment(\.colorSchemeContrast) private var contrast
 
     init(model: AskConversationModel, launcher: Bool, onDismiss: @escaping () -> Void = {},
          onHeightChange: @escaping (CGFloat) -> Void = { _ in },
@@ -49,9 +52,12 @@ struct AskComposer: View {
     private var draft: Binding<AskDraft> { launcher ? $model.launcherDraft : $model.draft }
     private var canSend: Bool { launcher ? model.canSendLauncher : model.canSend }
     /// The launcher is the workspace composer summoned by a hotkey: the same
-    /// card, controls and states. Only its idle edge is stronger, so it stands
-    /// off whatever window it floats over.
+    /// controls and states on a glass card, so it sits on whatever window it floats over.
     private var chrome: AskComposerChrome { .of(launcher: launcher) }
+    /// Nil for the opaque workspace card.
+    private var glass: AskGlassMaterial? {
+        chrome.glass ? glassOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency) : nil
+    }
     private func submit() { if launcher { model.submitLauncher() } else { model.submitDraft() } }
 
     var body: some View {
@@ -88,9 +94,17 @@ struct AskComposer: View {
             editorRow
             footer
         }
-        .background(chrome.fill)
+        .background {
+            if let glass {
+                AskGlassBackground(material: glass, corner: chrome.corner, opaqueFill: chrome.fill)
+            } else {
+                chrome.fill
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
-        .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner, idle: chrome.idleBorder))
+        .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner,
+                                 idle: glass?.idleBorder(chrome.idleBorder, increasedContrast: contrast == .increased)
+                                     ?? chrome.idleBorder))
     }
 
     private var editorRow: some View {
@@ -119,10 +133,9 @@ struct AskComposer: View {
             }
         }
         .padding(.horizontal, chrome.horizontalInset)
-        .padding(.top, AskMetrics.editorTopInset)
-        .padding(.bottom, AskMetrics.editorBottomInset)
+        .padding(.top, chrome.editorTopInset)
+        .padding(.bottom, chrome.editorBottomInset)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(chrome.fill)
     }
 
     private var footer: some View {
@@ -152,11 +165,10 @@ struct AskComposer: View {
                 .frame(width: 32, height: 32)
             AskSendButton(enabled: canSend, action: submit)
         }
-        .padding(.leading, 12)
+        .padding(.leading, chrome.footerLeadingInset)
         .padding(.trailing, 10)
-        .frame(height: AskMetrics.footerHeight)
+        .frame(height: chrome.footerHeight)
         .frame(maxWidth: .infinity)
-        .background(chrome.fill)
     }
 
     private var contextItems: [AskContextItem] {

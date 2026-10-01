@@ -37,21 +37,28 @@ struct AskReasoningMenu: View {
         return hovering || expanded ? AskTheme.hoverFill : .clear
     }
 
+    static func labelColor(_ effort: AskReasoningEffort) -> Color {
+        effort == .high ? AskTheme.accentText : StudioTheme.textSecondary
+    }
+
     var body: some View {
         if reference.hasPrefix("cloud:"), library.registry.resolve(reference)?.1.reasoning == true {
             Button { expanded.toggle() } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "brain").foregroundStyle(StudioTheme.textSecondary)
+                HStack(spacing: 6) {
+                    // Sparkles, not a brain: the brain is the memory chip's symbol.
+                    Image(systemName: "sparkles")
                     Text(effort.label)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(StudioTheme.textTertiary)
                 }
-                .font(.system(size: compact ? 12.5 : 13, weight: .medium))
-                .padding(.horizontal, compact ? 9 : 11).frame(height: compact ? 28 : 32)
-                .background(fill, in: RoundedRectangle(cornerRadius: compact ? 8 : 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: compact ? 8 : 16, style: .continuous)
-                    .strokeBorder(compact ? Color.clear : ModelVisualStyle.border))
+                .font(.system(size: 13, weight: .medium))
+                // A secondary setting stays grey until it costs more: "high" is tinted.
+                .foregroundStyle(Self.labelColor(effort))
+                .padding(.horizontal, compact ? AskMetrics.composerControlPadding : 11)
+                .frame(height: compact ? AskMetrics.composerControlHeight : 32)
+                .background(fill, in: Capsule())
+                .overlay(Capsule().strokeBorder(compact ? Color.clear : ModelVisualStyle.border))
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

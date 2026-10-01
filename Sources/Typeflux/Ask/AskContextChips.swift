@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// One piece of context riding with a question: the screenshot, the source
-/// app, a text selection or memory. The composer draws each as a 28pt icon
+/// app, a text selection or memory. The composer draws each as a round icon
 /// chip; the words live in a hover card, so a long window title can no longer
 /// push the whole group into an overflow menu.
 struct AskContextItem: Identifiable, Equatable {
@@ -44,8 +44,8 @@ enum AskScreenshotState: Equatable {
 }
 
 enum AskContextChips {
-    static let chipSize: CGFloat = 28
-    static let spacing: CGFloat = 6
+    static let chipSize: CGFloat = AskMetrics.composerControlHeight
+    static let spacing: CGFloat = 4
     static let hoverDelay: UInt64 = 150_000_000
     static let cardWidth: CGFloat = 240
     static let selectionPreviewLength = 60
@@ -155,7 +155,7 @@ enum AskContextChips {
     @MainActor private static var iconCache: [String: NSImage] = [:]
 }
 
-/// A 28pt context chip. Colour carries the state; after a short hover a card
+/// A round context chip. Colour carries the state; after a short hover a card
 /// above it gives the name, the details and what a click does. Removal is a
 /// corner badge that appears on hover.
 struct AskIconChip: View {
@@ -190,7 +190,7 @@ struct AskIconChip: View {
                 }
                 .buttonStyle(.plain)
                 // Mostly inside the chip, so reaching for it never ends the hover.
-                .offset(x: 3, y: -3)
+                .offset(x: 1, y: -1)
                 .accessibilityHidden(true)
             }
         }
@@ -228,7 +228,7 @@ struct AskIconChipFace: View {
     let item: AskContextItem
     var hovering = false
 
-    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 8, style: .continuous) }
+    private var shape: Circle { Circle() }
     private var appImage: NSImage? {
         guard let bundleID = item.appBundleID else { return nil }
         return AskContextChips.appIcon(bundleID)
@@ -237,10 +237,9 @@ struct AskIconChipFace: View {
     var body: some View {
         icon
             .frame(width: AskContextChips.chipSize, height: AskContextChips.chipSize)
-            .background(appImage == nil ? fill : .clear, in: shape)
-            .overlay(shape.strokeBorder(appImage == nil ? stroke : .clear))
-            // An app icon is its own tile, so it needs no ring or fill around it.
-            .clipShape(shape)
+            // Borderless like the other footer controls: only state and hover fill the circle.
+            // An app icon is its own tile, so it only takes the hover wash.
+            .background(appImage == nil ? fill : (hovering ? AskTheme.hoverFill : .clear), in: shape)
             .overlay(alignment: .topTrailing) {
                 if case let .count(value) = item.badge {
                     Text(verbatim: value > 99 ? "99+" : String(value))
@@ -250,13 +249,13 @@ struct AskIconChipFace: View {
                         .frame(minWidth: 15, minHeight: 15)
                         .background(AskTheme.accent, in: Capsule())
                         .overlay(Capsule().strokeBorder(AskTheme.composerSurface, lineWidth: 1.5))
-                        .offset(x: 5, y: -6)
+                        .offset(x: 2, y: -3)
                         .opacity(hovering && item.removable ? 0 : 1)
                 }
             }
             .overlay(alignment: .bottomTrailing) {
                 if case let .app(bundleID) = item.badge, let image = AskContextChips.appIcon(bundleID) {
-                    Image(nsImage: image).resizable().frame(width: 12, height: 12).offset(x: 3, y: 3)
+                    Image(nsImage: image).resizable().frame(width: 13, height: 13).offset(x: 1, y: 1)
                 }
             }
             .contentShape(Rectangle())
@@ -272,9 +271,9 @@ struct AskIconChipFace: View {
                 .opacity(hovering ? 0.85 : 1)
         } else {
             ZStack {
-                Image(systemName: item.systemImage).font(.system(size: 13, weight: .medium))
+                Image(systemName: item.systemImage).font(.system(size: 15, weight: .regular))
                 if item.style == .unavailable {
-                    Rectangle().frame(width: 17, height: 1.5).rotationEffect(.degrees(-45))
+                    Rectangle().frame(width: 20, height: 1.5).rotationEffect(.degrees(-45))
                 }
             }
             .foregroundStyle(foreground)
@@ -290,18 +289,15 @@ struct AskIconChipFace: View {
         }
     }
 
-    private var fill: Color {
-        switch item.style {
-        case .active: return AskTheme.accentSoft
-        case .warning: return AskTheme.warningSoft
-        default: return hovering ? AskTheme.hoverFill : .clear
-        }
-    }
+    private var fill: Color { Self.fillColor(item.style, hovering: hovering) }
 
-    private var stroke: Color {
-        switch item.style {
-        case .active, .warning: return .clear
-        default: return AskTheme.border
+    /// Translucent washes rather than the opaque soft tokens, so the chips sit on the
+    /// launcher's glass as well as on the workspace card.
+    static func fillColor(_ style: AskChip.Style, hovering: Bool) -> Color {
+        switch style {
+        case .active: return AskTheme.accent.opacity(hovering ? 0.30 : 0.20)
+        case .warning: return StudioTheme.warning.opacity(hovering ? 0.26 : 0.18)
+        case .neutral, .unavailable: return hovering ? AskTheme.hoverFill : .clear
         }
     }
 }
@@ -324,10 +320,9 @@ struct AskOverflowChip: View {
             Text(verbatim: "+\(hidden.count)")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(StudioTheme.textSecondary)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 10)
                 .frame(height: AskContextChips.chipSize)
-                .background(hovering ? AskTheme.hoverFill : AskTheme.controlSurface.opacity(0.6),
-                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(hovering ? AskTheme.hoverFill : AskTheme.hoverFill.opacity(0.6), in: Capsule())
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
