@@ -138,22 +138,25 @@ struct AskComposer: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 4) {
             AskModelMenu(library: model.modelLibrary, reference: Binding(
                 get: { model.modelReference(launcher: launcher) },
                 set: { model.selectModel($0, launcher: launcher) }
             ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
                hasImage: !launcher && model.hasConversationImages, compact: true)
+            .opacity(Self.recordingDim(active))
             AskReasoningMenu(library: model.modelLibrary,
                              reference: model.modelReference(launcher: launcher),
                              effort: $model.reasoningEffort,
                              disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
                              compact: true)
+                .opacity(Self.recordingDim(active))
             // "How to ask" and "what rides along" are separated by a rule.
-            Rectangle().fill(AskTheme.separator).frame(width: 1, height: 16)
+            Rectangle().fill(AskTheme.separator).frame(width: 1, height: 16).padding(.horizontal, 4)
             contextChips
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .disabled(active)
+                .opacity(Self.recordingDim(active))
             voiceStatus
             if !launcher, onToggleUsage != nil, let context = model.usageContext {
                 AskContextUsageButton(context: context) { onToggleUsage?() }
@@ -169,6 +172,10 @@ struct AskComposer: View {
         .frame(height: chrome.footerHeight)
         .frame(maxWidth: .infinity)
     }
+
+    /// While the microphone is busy the settings and context recede, so the
+    /// recording state is the one thing that reads.
+    static func recordingDim(_ active: Bool) -> Double { active ? 0.4 : 1 }
 
     private var contextItems: [AskContextItem] {
         let value = draft.wrappedValue
