@@ -45,6 +45,9 @@ struct AskComposer: View {
     private var active: Bool { voice.context == contextID && voice.isActive }
     private var listening: Bool { voice.context == contextID && voice.phase == .listening }
     @State private var showingScreenshot = false
+    @State private var showingStripPreview = false
+    /// The workspace spells out what is attached above the editor.
+    private var attachedItems: [AskContextItem] { AskAttachmentStrip.attached(contextItems) }
     @State private var editorHeight: CGFloat = 32
     @State private var voiceShortcut: HotkeyBinding?
     /// Conversations whose queue list is expanded.
@@ -61,6 +64,11 @@ struct AskComposer: View {
         chrome.glass ? glassOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency) : nil
     }
     private func submit() { if launcher { model.submitLauncher() } else { model.submitDraft() } }
+    private var sendControl: AskSendControl {
+        guard !launcher else { return .send(enabled: canSend) }
+        return AskSendControl.resolve(busy: model.isBusy, hasDraft: model.draft.canSend,
+                                      canSend: canSend, editingQueued: editingQueued)
+    }
 
     var body: some View {
         VStack(spacing: AskMetrics.bannerSpacing) {
@@ -104,6 +112,22 @@ struct AskComposer: View {
             }
             if !(draft.wrappedValue.references ?? []).isEmpty {
                 AskReferenceStrip(references: draft.references, locate: { model.referenceLocation = $0 })
+            }
+            if !launcher, !attachedItems.isEmpty {
+                AskAttachmentStripView(
+                    items: attachedItems,
+                    screenshot: AskAttachmentStrip.thumbnail(dataURL: draft.wrappedValue.screenshot,
+                                                             capturedAt: draft.wrappedValue.capturedAt),
+                    onPreview: { showingStripPreview = true },
+                    onRemove: remove
+                )
+                .padding(.horizontal, chrome.horizontalInset - 4)
+                .padding(.top, 10)
+                .popover(isPresented: $showingStripPreview) {
+                    AskContextPreview(draft: draft,
+                                      recapture: { Task { await model.refreshScreenshot(launcher: launcher) } })
+                }
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: attachedItems.map(\.id))
             }
             editorRow
             footer
@@ -192,7 +216,10 @@ struct AskComposer: View {
                 AskQueueEditActions(canSave: model.draft.canSend, onCancel: { model.cancelQueuedEdit() },
                                     onSave: { model.saveQueuedEdit() })
             } else {
-                AskSendButton(enabled: canSend, action: submit)
+                switch sendControl {
+                case .stop: AskStopButton { model.stop() }
+                case let .send(enabled): AskSendButton(enabled: enabled, action: submit)
+                }
             }
         }
         .padding(.leading, chrome.footerLeadingInset)

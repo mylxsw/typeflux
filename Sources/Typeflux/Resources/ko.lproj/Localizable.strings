@@ -1470,6 +1470,7 @@
 "ask.sidebar.toggle" = "사이드바 전환";
 "ask.search.actions" = "작업";
 "ask.search.conversations" = "대화";
+"ask.search.placeholder" = "Search conversations or actions";
 "ask.history.searchEmpty" = "일치하는 대화가 없습니다";
 "ask.selection.lines" = "선택 영역 · %d줄";
 "ask.voice.hold" = "길게 눌러 말하기";

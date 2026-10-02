@@ -30,10 +30,6 @@ enum AskTheme {
         light: NSColor(calibratedWhite: 0.925, alpha: 1),
         dark: NSColor(calibratedWhite: 0.180, alpha: 1)
     )
-    static let bubbleSurface = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 0.930, alpha: 1),
-        dark: NSColor(calibratedWhite: 0.165, alpha: 1)
-    )
     static let border = StudioTheme.dynamic(
         light: NSColor(calibratedRed: 0.886, green: 0.898, blue: 0.918, alpha: 1),
         dark: NSColor(calibratedWhite: 1.0, alpha: 0.10)
@@ -98,25 +94,11 @@ enum AskTheme {
         light: NSColor(calibratedWhite: 0, alpha: 0.12),
         dark: NSColor(calibratedWhite: 1, alpha: 0.18)
     )
-    /// The selected history row: a translucent wash one step above `hoverFill`,
-    /// so it reads on the sidebar's glass in both appearances.
-    static let selectionFill = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 0, alpha: 0.075),
-        dark: NSColor(calibratedWhite: 1, alpha: 0.12)
-    )
     /// Translucent hover wash, so borderless controls read the same on any surface.
     static let hoverFill = StudioTheme.dynamic(
         light: NSColor(calibratedWhite: 0, alpha: 0.06),
         dark: NSColor(calibratedWhite: 1, alpha: 0.08)
     )
-    /// The product's indigo mark (the original assistant avatar), used only for
-    /// brand moments such as the empty state. Never for state.
-    static var brandGradient: LinearGradient {
-        LinearGradient(
-            colors: [Color(red: 0.455, green: 0.467, blue: 0.984), Color(red: 0.608, green: 0.545, blue: 0.984)],
-            startPoint: .topLeading, endPoint: .bottomTrailing
-        )
-    }
     static let monoSurface = StudioTheme.dynamic(
         light: NSColor(calibratedRed: 0.957, green: 0.965, blue: 0.976, alpha: 1),
         dark: NSColor(calibratedRed: 0.063, green: 0.071, blue: 0.086, alpha: 1)
@@ -548,7 +530,7 @@ struct AskSendButton: View {
                 .frame(width: 32, height: 32)
                 .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(AskPressableStyle())
         .foregroundStyle(enabled ? Color.white : StudioTheme.textTertiary)
         // The only solid control in the composer: a lit accent drop when it can send,
         // a faint translucent well otherwise, so it sits on glass and opaque cards alike.
@@ -560,10 +542,32 @@ struct AskSendButton: View {
                     .allowsHitTesting(false)
             }
         }
-        .shadow(color: enabled ? AskTheme.accent.opacity(0.35) : .clear, radius: 5, y: 2)
+        .shadow(color: enabled ? AskTheme.accent.opacity(0.45) : .clear, radius: 7, y: 3)
         .disabled(!enabled)
         .animation(.easeOut(duration: 0.15), value: enabled)
         .accessibilityLabel(L("ask.send"))
+    }
+}
+
+/// The send button's place while a run works and nothing is typed: a filled
+/// stop square, so stopping never needs a separate control above the composer.
+struct AskStopButton: View {
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(StudioTheme.textPrimary)
+                .frame(width: 11, height: 11)
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(AskTheme.hoverFill))
+                .overlay(Circle().strokeBorder(AskTheme.border))
+                .contentShape(Circle())
+        }
+        .buttonStyle(AskPressableStyle())
+        .keyboardShortcut(".", modifiers: .command)
+        .help(L("ask.stop") + " ⌘.")
+        .accessibilityLabel(L("ask.stop"))
     }
 }
 
@@ -696,22 +700,6 @@ struct AskBubbleShape: InsettableShape {
         var copy = self
         copy.insetAmount += amount
         return copy
-    }
-}
-
-/// The indigo sparkle tile shown above the empty state.
-struct AskBrandMark: View {
-    var size: CGFloat = 44
-
-    var body: some View {
-        Image(systemName: "sparkle")
-            .font(.system(size: size * 0.46, weight: .semibold))
-            .foregroundStyle(Color.white)
-            .frame(width: size, height: size)
-            .background(AskTheme.brandGradient,
-                        in: RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
-            .shadow(color: Color(red: 0.455, green: 0.467, blue: 0.984).opacity(0.28), radius: 12, y: 6)
-            .accessibilityHidden(true)
     }
 }
 

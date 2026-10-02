@@ -340,3 +340,46 @@ tools → "Run Ask on this Mac" switched on, Ask runs entirely on the device:
 - Not available locally: the Cloud `research` sub-agent, server-side background
   runs (a local run pauses while the app is closed and resumes from the workspace),
   run traces and Cloud usage metering.
+
+## Liquid Glass workspace refresh (GUL-159, 2026-10-02)
+
+The workspace follows the interactive design board in
+`docs/design/ask-workspace-liquid-glass.html` (open it in a browser; the dock at
+the bottom switches scenes, appearance and glass style).
+
+- Header: the title capsule carries the run state as a dot (green done, pulsing
+  accent while running, amber waiting for approval, red failed/cancelled) next to
+  the step summary. The actions capsule is always fully opaque and holds the
+  credits spent (opens usage), usage, new chat and delete.
+- Sidebar: the selected conversation is an accent-tinted pill with a hairline;
+  a working conversation shows a breathing accent dot. Rows show the time for
+  today and yesterday and the date for older conversations. Rows press with a
+  short spring. ⌃⌘S toggles the sidebar.
+- ⌘K palette: hangs from the top of the window over a dimmed transcript. Actions
+  (new chat, attach screenshot, toggle sidebar, usage) and conversations are
+  listed together; ↑/↓ move an accent highlight, Return runs it, hover follows
+  the pointer and Esc or a click outside closes it. Typing highlights the first
+  matching conversation. Arrow keys are taken by a window-local key monitor
+  because `onKeyPress` needs macOS 14.
+- Composer: what rides with the next message is spelled out above the editor as
+  labelled capsules (screenshot thumbnail, selection, memory), each removable;
+  the footer's round toggles still switch them. While a run works and nothing
+  is typed, the send button becomes Stop (⌘.); typing turns it back into Send,
+  which queues the follow-up. The separate Stop pill above the composer is gone.
+- Transcript: user bubbles are accent-tinted; reasoning is a "✦ thought for N s ›"
+  capsule; per-answer actions are icon-only with the answer's credits as a
+  caption; tool blocks are 18 pt cards with filled status discs and a rotating
+  chevron. Tool cards scroll with the transcript, so they use the glass card's
+  shape on an opaque surface rather than live glass.
+- Empty state: a slowly turning glass orb (still with Reduce Motion) above the
+  title, shortcut hint and three accent suggestion cards.
+
+Accent still means "recording" on the composer outline, so keyboard focus keeps
+the neutral border; the board's focus glow is intentionally not adopted.
+The ⌥Space launcher keeps its existing compact layout.
+
+Pure logic lives in `AskPaletteState`, `AskRunTone`, `AskSendControl`,
+`AskPresentation.historyTimeLabel` and `AskAttachmentStrip` and is covered by
+`AskLiquidGlassRedesignTests`; `renderSearchPalette` captures the palette.
+Snapshots: `docs/images/ask-liquid-glass-*.png` (captured with the opaque
+fallback material, since system glass cannot be cached offscreen).
