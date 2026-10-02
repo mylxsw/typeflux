@@ -33,6 +33,8 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     var reasoningEffort: String? = nil
     var references: [AskReference]? = nil
     var runId: String? = nil
+    /// Sent into a run that was already working ("jumped the queue").
+    var steered: Bool? = nil
 }
 
 struct AskRun: Codable, Equatable, Sendable {
@@ -55,6 +57,8 @@ struct AskRun: Codable, Equatable, Sendable {
     var reasoningEffort: String? = nil
     /// The model's latest update_plan list.
     var plan: [AskPlanItem]? = nil
+    /// Extra steps granted after messages were sent into the running run.
+    var extraSteps: Int? = nil
 
     var isActive: Bool { status == "running" || status == "waiting_tool" || status == "waiting_inference" }
 }
@@ -115,6 +119,23 @@ struct AskRegenerateRequest: Codable, Equatable, Sendable {
     var deviceId: String
     var modelRef: String? = nil
     var tools: [AskToolDefinition]? = nil
+}
+
+/// Hands a message to the active run; the model reads it at its next step boundary.
+struct AskSteerRequest: Codable, Equatable, Sendable {
+    var runId: String
+    var deviceId: String
+    var id: String
+    var text: String
+    var selection: String?
+    var source: String?
+    var image: String?
+    var references: [AskReference]? = nil
+
+    init(runId: String, message: AskSendRequest) {
+        self.runId = runId; deviceId = message.deviceId; id = message.id; text = message.text
+        selection = message.selection; source = message.source; image = message.image; references = message.references
+    }
 }
 
 struct AskToolResultRequest: Codable, Equatable, Sendable {

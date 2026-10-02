@@ -1949,3 +1949,23 @@
 "account.status.paymentFailed" = "续费失败";
 "account.status.renews" = "%@ 续费";
 "account.status.resets" = "%@ 重置";
+
+/* GUL-151 Ask send queue */
+"ask.queue.count" = "排队中 %d 条";
+"ask.queue.paused" = "已暂停";
+"ask.queue.resume" = "继续发送";
+"ask.queue.clear" = "清空";
+"ask.queue.expand" = "展开";
+"ask.queue.collapse" = "收起";
+"ask.queue.jump" = "插队";
+"ask.queue.jump.help" = "交给正在运行的任务，下一步生效。";
+"ask.queue.edit" = "编辑";
+"ask.queue.remove" = "删除";
+"ask.queue.editing" = "编辑中";
+"ask.queue.editingTitle" = "正在编辑排队的第 %d 条";
+"ask.queue.stashed" = "你刚才没写完的内容已暂存，编辑结束后会恢复";
+"ask.queue.save" = "保存";
+"ask.queue.cancel" = "取消";
+"ask.queue.full" = "最多可以排队 %d 条消息。";
+"ask.steered" = "已插队";
+"ask.steered.pending" = "已插队 · 下一步生效";

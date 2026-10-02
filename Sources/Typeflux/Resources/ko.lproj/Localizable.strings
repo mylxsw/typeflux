@@ -1939,3 +1939,23 @@
 "account.status.paymentFailed" = "갱신 실패";
 "account.status.renews" = "%@ 갱신";
 "account.status.resets" = "%@ 초기화";
+
+/* GUL-151 Ask send queue */
+"ask.queue.count" = "대기 중 %d개";
+"ask.queue.paused" = "일시 정지됨";
+"ask.queue.resume" = "계속 보내기";
+"ask.queue.clear" = "비우기";
+"ask.queue.expand" = "모두 보기";
+"ask.queue.collapse" = "접기";
+"ask.queue.jump" = "끼어들기";
+"ask.queue.jump.help" = "실행 중인 작업에 전달하며 다음 단계에서 반영됩니다.";
+"ask.queue.edit" = "편집";
+"ask.queue.remove" = "삭제";
+"ask.queue.editing" = "편집 중";
+"ask.queue.editingTitle" = "대기 중인 %d번째 메시지 편집 중";
+"ask.queue.stashed" = "작성 중이던 내용은 보관되며 편집 후 복원됩니다";
+"ask.queue.save" = "저장";
+"ask.queue.cancel" = "취소";
+"ask.queue.full" = "최대 %d개의 메시지만 대기할 수 있습니다.";
+"ask.steered" = "끼어들기됨";
+"ask.steered.pending" = "끼어들기됨 · 다음 단계에서 반영";

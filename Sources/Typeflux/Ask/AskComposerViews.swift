@@ -47,6 +47,9 @@ struct AskComposer: View {
     @State private var showingScreenshot = false
     @State private var editorHeight: CGFloat = 32
     @State private var voiceShortcut: HotkeyBinding?
+    /// Conversations whose queue list is expanded.
+    @State private var expandedQueues: Set<String> = []
+    private var editingQueued: Bool { !launcher && model.isEditingQueued }
 
     private var draft: Binding<AskDraft> { launcher ? $model.launcherDraft : $model.draft }
     private var canSend: Bool { launcher ? model.canSendLauncher : model.canSend }
@@ -87,6 +90,18 @@ struct AskComposer: View {
 
     private var card: some View {
         VStack(spacing: 0) {
+            if !launcher, let id = model.selectedId {
+                AskQueueBar(model: model, expanded: Binding(
+                    get: { expandedQueues.contains(id) },
+                    set: { if $0 { expandedQueues.insert(id) } else { expandedQueues.remove(id) } }
+                ))
+            }
+            if editingQueued, let editing = model.sendQueue.editing {
+                AskQueueEditingHeader(index: (model.queuedMessages.firstIndex { $0.id == editing.itemId } ?? 0) + 1,
+                                      keepsDraft: editing.stash.canSend)
+                    .padding(.horizontal, chrome.horizontalInset)
+                    .padding(.top, 10)
+            }
             if !(draft.wrappedValue.references ?? []).isEmpty {
                 AskReferenceStrip(references: draft.references, locate: { model.referenceLocation = $0 })
             }
@@ -103,6 +118,13 @@ struct AskComposer: View {
         .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
         .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner,
                                  idle: chrome.idleBorder(on: glass, increasedContrast: contrast == .increased)))
+        .overlay {
+            if editingQueued {
+                RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
+                    .strokeBorder(AskTheme.accent, lineWidth: 1.5)
+                    .allowsHitTesting(false)
+            }
+        }
     }
 
     private var editorRow: some View {
@@ -123,7 +145,7 @@ struct AskComposer: View {
                     contextID: contextID,
                     fontSize: chrome.editorFontSize,
                     onSubmit: submit,
-                    onDismiss: onDismiss,
+                    onDismiss: { if editingQueued { model.cancelQueuedEdit() } else { onDismiss() } },
                     onHeightChange: { editorHeight = $0 }
                 )
                 .frame(height: editorHeight)
@@ -167,7 +189,12 @@ struct AskComposer: View {
                            enabled: launcher || !model.isLoadingSelection,
                            shortcut: voiceShortcut)
                 .frame(width: 32, height: 32)
-            AskSendButton(enabled: canSend, action: submit)
+            if editingQueued {
+                AskQueueEditActions(canSave: model.draft.canSend, onCancel: { model.cancelQueuedEdit() },
+                                    onSave: { model.saveQueuedEdit() })
+            } else {
+                AskSendButton(enabled: canSend, action: submit)
+            }
         }
         .padding(.leading, chrome.footerLeadingInset)
         .padding(.trailing, 10)

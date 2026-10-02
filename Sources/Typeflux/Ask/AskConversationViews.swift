@@ -717,6 +717,10 @@ struct AskConversationView: View {
                         if let id = model.selected?.id, let call = model.pendingApprovals[id] {
                             approval(call, id: id).id("approval-" + call.id)
                         }
+                        // Jumped messages wait after everything the run still has to finish.
+                        ForEach(steeredMessages) { message in
+                            AskMessageView(message: message, steeredPending: true, onReference: { _ in }).id(message.id)
+                        }
                         // The end marker spans the space under the composer, so
                         // scrolling to it leaves the last answer above the card.
                         Color.clear.frame(height: bottomChromeHeight + 1).id("bottom")
@@ -771,6 +775,7 @@ struct AskConversationView: View {
                 .onChange(of: model.inferenceProgress) { _ in followBottom(proxy) }
                 .onChange(of: model.selected?.messages.count) { _ in followBottom(proxy) }
                 .onChange(of: model.selectedId.flatMap { model.pendingApprovals[$0]?.id }) { _ in followBottom(proxy) }
+                .onChange(of: model.steeredMessages.count) { _ in followBottom(proxy) }
             }
         }
     }
@@ -802,6 +807,15 @@ struct AskConversationView: View {
                              status: status, streamingId: streamingId, approvalToolId: approvalToolId,
                              outputs: item.outputs)
                 .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
+        }
+    }
+
+    /// Jumped messages the run has not read yet, as user turns.
+    private var steeredMessages: [AskMessage] {
+        model.steeredMessages.map { item in
+            let request = item.draft.request(deviceId: model.deviceId, tools: [], id: item.id)
+            return AskMessage(id: item.id, role: "user", text: request.text, selection: request.selection, source: request.source,
+                              image: request.image, createdAt: Date(), references: request.references, steered: true)
         }
     }
 
@@ -847,6 +861,8 @@ struct AskConversationView: View {
 /// The role is carried by the layout, not by a grey "You" label.
 private struct AskMessageView: View {
     let message: AskMessage
+    /// A jumped message the running run has not read yet.
+    var steeredPending = false
     var onReference: (AskReference) -> Void
     var usage: AskUsageTotals? = nil
     var onUsage: () -> Void = {}
@@ -883,6 +899,11 @@ private struct AskMessageView: View {
                         .overlay(AskBubbleShape().strokeBorder(AskTheme.border))
                 }
                 if message.image != nil || message.selection != nil { attachments }
+                if message.steered == true {
+                    Label(L(steeredPending ? "ask.steered.pending" : "ask.steered"), systemImage: "arrow.turn.down.right")
+                        .font(.system(size: 11))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                }
             }
             .frame(maxWidth: AskMetrics.bubbleMaxWidth, alignment: .trailing)
         }

@@ -106,6 +106,38 @@ struct AskHarnessVisualTests {
         try await fixture.wait { fixture.model.busyIds.isEmpty }
         fixture.model.resetSession()
 
+        // 2b. Follow-ups queued while the run waits: collapsed, expanded, editing, and a jump.
+        let queued = try AskTestFixture()
+        await queued.api.setTool(call("q", "browser", #"{"action":"read"}"#))
+        queued.model.draft.text = "整理本周的发布说明"
+        queued.model.submitDraft()
+        try await queued.wait { !queued.model.pendingApprovals.isEmpty }
+        await queued.api.setTool(nil)
+        for text in ["顺便把结论翻译成英文", "再按模块给一个改动表格", "最后帮我写一段发布公告"] {
+            queued.model.draft.text = text
+            queued.model.submitDraft()
+        }
+        try await render(AskConversationView(model: queued.model), size: NSSize(width: 1100, height: 900), appearance: .aqua,
+                         file: root.appendingPathComponent("queue-collapsed.png"))
+        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+            try await render(AskQueueBar(model: queued.model, expanded: .constant(true)).frame(width: 720).padding(20)
+                .background(StudioTheme.surface), size: NSSize(width: 760, height: 170), appearance: appearance,
+                             file: root.appendingPathComponent("queue-expanded-\(appearance == .aqua ? "light" : "dark").png"))
+        }
+        queued.model.draft.text = "我刚才写到一半的另一个问题"
+        queued.model.editQueued(queued.model.queuedMessages[0].id)
+        queued.model.draft.text = "顺便把结论翻译成英文，并保留原有的格式：\n1. 标题和列表层级不变\n2. 专有名词不翻译"
+        try await render(AskConversationView(model: queued.model), size: NSSize(width: 1100, height: 900), appearance: .aqua,
+                         file: root.appendingPathComponent("queue-editing.png"))
+        queued.model.saveQueuedEdit()
+        queued.model.steerQueued(queued.model.queuedMessages[0].id)
+        try await queued.wait { !queued.model.steeredMessages.isEmpty }
+        try await render(AskConversationView(model: queued.model), size: NSSize(width: 1100, height: 900), appearance: .darkAqua,
+                         file: root.appendingPathComponent("queue-jumped-dark.png"))
+        queued.model.approve(conversationId: try #require(queued.model.selectedId), allowed: false)
+        try await queued.wait { queued.model.busyIds.isEmpty && queued.model.queuedMessages.isEmpty }
+        queued.model.resetSession()
+
         // 3. Ask tools settings with folders, skills and notes.
         let temp = FileManager.default.temporaryDirectory.appendingPathComponent("ask-harness-visual-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: temp) }

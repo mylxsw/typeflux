@@ -1949,3 +1949,23 @@
 "account.status.paymentFailed" = "Renewal failed";
 "account.status.renews" = "Renews %@";
 "account.status.resets" = "Resets %@";
+
+/* GUL-151 Ask send queue */
+"ask.queue.count" = "%d queued";
+"ask.queue.paused" = "Paused";
+"ask.queue.resume" = "Send now";
+"ask.queue.clear" = "Clear";
+"ask.queue.expand" = "Show all";
+"ask.queue.collapse" = "Show less";
+"ask.queue.jump" = "Jump in";
+"ask.queue.jump.help" = "Hand this to the running task; it reads it at its next step.";
+"ask.queue.edit" = "Edit";
+"ask.queue.remove" = "Remove";
+"ask.queue.editing" = "Editing";
+"ask.queue.editingTitle" = "Editing queued message %d";
+"ask.queue.stashed" = "Your unfinished text is set aside and comes back afterwards";
+"ask.queue.save" = "Save";
+"ask.queue.cancel" = "Cancel";
+"ask.queue.full" = "Up to %d messages can wait.";
+"ask.steered" = "Jumped in";
+"ask.steered.pending" = "Jumped in · read at the next step";

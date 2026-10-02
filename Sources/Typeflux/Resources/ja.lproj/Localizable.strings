@@ -1939,3 +1939,23 @@
 "account.status.paymentFailed" = "更新に失敗";
 "account.status.renews" = "%@ に更新";
 "account.status.resets" = "%@ にリセット";
+
+/* GUL-151 Ask send queue */
+"ask.queue.count" = "%d 件待機中";
+"ask.queue.paused" = "一時停止中";
+"ask.queue.resume" = "送信を再開";
+"ask.queue.clear" = "クリア";
+"ask.queue.expand" = "すべて表示";
+"ask.queue.collapse" = "折りたたむ";
+"ask.queue.jump" = "割り込み";
+"ask.queue.jump.help" = "実行中のタスクに渡し、次のステップで反映します。";
+"ask.queue.edit" = "編集";
+"ask.queue.remove" = "削除";
+"ask.queue.editing" = "編集中";
+"ask.queue.editingTitle" = "待機中のメッセージ %d を編集中";
+"ask.queue.stashed" = "書きかけの内容は保存され、編集後に戻ります";
+"ask.queue.save" = "保存";
+"ask.queue.cancel" = "キャンセル";
+"ask.queue.full" = "待機できるメッセージは %d 件までです。";
+"ask.steered" = "割り込み済み";
+"ask.steered.pending" = "割り込み済み · 次のステップで反映";

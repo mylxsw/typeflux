@@ -1946,3 +1946,23 @@
 "account.status.paymentFailed" = "續費失敗";
 "account.status.renews" = "%@ 續費";
 "account.status.resets" = "%@ 重置";
+
+/* GUL-151 Ask send queue */
+"ask.queue.count" = "排隊中 %d 則";
+"ask.queue.paused" = "已暫停";
+"ask.queue.resume" = "繼續傳送";
+"ask.queue.clear" = "清除";
+"ask.queue.expand" = "展開";
+"ask.queue.collapse" = "收合";
+"ask.queue.jump" = "插隊";
+"ask.queue.jump.help" = "交給正在執行的任務，下一步生效。";
+"ask.queue.edit" = "編輯";
+"ask.queue.remove" = "刪除";
+"ask.queue.editing" = "編輯中";
+"ask.queue.editingTitle" = "正在編輯排隊的第 %d 則";
+"ask.queue.stashed" = "你剛才沒寫完的內容已暫存，編輯結束後會恢復";
+"ask.queue.save" = "儲存";
+"ask.queue.cancel" = "取消";
+"ask.queue.full" = "最多可以排隊 %d 則訊息。";
+"ask.steered" = "已插隊";
+"ask.steered.pending" = "已插隊 · 下一步生效";
