@@ -186,10 +186,6 @@
 "menu.personas" = "Personas";
 "menu.personas.empty" = "No personas";
 "menu.personas.edit" = "Edit Personas";
-"menu.agentTasks" = "Agent Tasks";
-"menu.agentTasks.empty" = "No running tasks";
-"menu.agentTasks.viewAll" = "View All Tasks";
-"menu.agentTasks.runningCount" = "%d running";
 "menu.appearance" = "Appearance";
 "menu.settings" = "Typeflux Settings";
 "menu.setupGuide" = "Setup Guide";
@@ -1106,7 +1102,6 @@
 "studio.heading.agent" = "Agent";
 "studio.subheading.agent" = "Tools, MCP servers, skills and memory that Ask Anything can use.";
 "studio.search.agent" = "Search agent settings...";
-"agent.beta.notice" = "Agent features are currently in Beta. Stability and behavior may continue to change, so please keep this in mind when using them.";
 
 "settings.advanced.localOptimization.title" = "Local Optimization";
 "settings.advanced.localOptimization.subtitle" = "Download a local speech recognition model in the background. When enabled, voice recognition starts faster and works even without internet.";
@@ -1127,8 +1122,6 @@
 "agent.settings.web" = "Web";
 "agent.settings.code" = "Code";
 "agent.settings.mcp" = "MCP servers";
-"agent.general.stepLogging.title" = "Agent step logging";
-"agent.general.stepLogging.subtitle" = "Log each Agent reasoning step and tool call for debugging.";
 
 "agent.section.mcpServers" = "MCP Servers";
 "agent.mcp.empty" = "No MCP servers configured. Add a server to extend Agent capabilities with external tools.";
@@ -1158,38 +1151,8 @@
 "agent.mcp.deleteDialog.title" = "Delete MCP Server";
 "agent.mcp.deleteDialog.message" = "Delete \"%@\"? This action cannot be undone.";
 
-"agent.section.skills" = "Skills";
-"agent.skills.empty" = "No skills configured. Skills provide the Agent with specialized abilities like command execution or web access.";
-"agent.skills.builtinBadge" = "Built-in";
 
 // Agent Jobs
-"agent.jobs.title" = "Jobs";
-"agent.jobs.subtitle" = "History of Agent task executions.";
-"agent.jobs.empty" = "No jobs yet. Jobs are created when you use Ask Anything with Agent enabled.";
-"agent.jobs.clearAll" = "Clear All";
-"agent.jobs.toolCalls" = "%d tools";
-"agent.jobs.steps" = "%d steps";
-"agent.jobs.detail.prompt" = "PROMPT";
-"agent.jobs.detail.context" = "CONTEXT";
-"agent.jobs.detail.steps" = "EXECUTION STEPS";
-"agent.jobs.detail.result" = "RESULT";
-"agent.jobs.detail.result.view.plainText" = "Plain Text";
-"agent.jobs.detail.result.view.markdown" = "Markdown";
-"agent.jobs.detail.error" = "ERROR";
-"agent.jobs.detail.stepNumber" = "Step %d";
-"agent.jobs.detail.toolCall.arguments" = "Arguments";
-"agent.jobs.detail.reasoning" = "REASONING";
-"agent.jobs.detail.stepTokens" = "%d tokens";
-"agent.jobs.detail.context.showMore" = "Show More";
-"agent.jobs.detail.context.showLess" = "Show Less";
-"agent.jobs.cancel" = "Cancel Task";
-"agent.jobs.status.running" = "Running";
-"agent.jobs.status.completed" = "Completed";
-"agent.jobs.status.failed" = "Failed";
-"agent.jobs.clearAllDialog.title" = "Clear All Jobs";
-"agent.jobs.clearAllDialog.message" = "Clear all job records? This action cannot be undone.";
-"agent.jobs.deleteDialog.title" = "Delete Job";
-"agent.jobs.deleteDialog.message" = "Delete \"%@\"? This action cannot be undone.";
 
 // MARK: - Auth & Account
 
@@ -1347,11 +1310,6 @@
 "auth.account.usageHours" = "%.1f hr";
 "auth.account.usageDays" = "%.1f days";
 
-"agent.clarification.windowTitle" = "Agent Clarification";
-"agent.clarification.assistantSectionTitle" = "Assistant";
-"agent.clarification.hotkeyHint" = "Press and hold your hotkey to record a reply";
-"agent.clarification.recordingHint" = "Recording... release hotkey when done";
-"agent.clarification.transcribingHint" = "Thinking...";
 "cloudDataSync.title" = "Cloud sync for vocabulary and personas";
 "cloudDataSync.subtitle" = "Off by default. When enabled, only custom vocabulary and custom personas are synced across your signed-in devices.";
 "cloudDataSync.consent.title" = "Enable cloud sync?";

@@ -137,8 +137,8 @@ final class AppLocalizationInstanceTests: XCTestCase {
         defer { localization.setLanguage(original) }
 
         XCTAssertEqual(localization.string("agent.section.general"), "通用")
-        XCTAssertEqual(localization.string("studio.heading.agent"), "Agent 配置")
-        XCTAssertEqual(localization.string("agent.jobs.title"), "任务记录")
+        XCTAssertEqual(localization.string("studio.eyebrow.agent"), "随便问")
+        XCTAssertEqual(localization.string("agent.section.skillsMemory"), "技能与记忆")
     }
 
     func testStringLoadsTraditionalChineseLocalizationFromBundle() {
@@ -148,7 +148,7 @@ final class AppLocalizationInstanceTests: XCTestCase {
         defer { localization.setLanguage(original) }
 
         XCTAssertEqual(localization.string("agent.section.general"), "一般")
-        XCTAssertEqual(localization.string("studio.heading.agent"), "Agent 配置")
+        XCTAssertEqual(localization.string("studio.eyebrow.agent"), "隨便問")
     }
 
     // MARK: - setLanguage notification

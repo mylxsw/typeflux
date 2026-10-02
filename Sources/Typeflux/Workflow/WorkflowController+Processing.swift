@@ -7,11 +7,6 @@ extension WorkflowController {
         String(format: "%.1fms", Date().timeIntervalSince(startDate) * 1000)
     }
 
-    enum AskWithoutSelectionAgentDisposition: Equatable {
-        case answer(String)
-        case insert(String)
-    }
-
     struct RewriteGenerationResult {
         let text: String
         let firstOutputAt: Date?
@@ -1203,9 +1198,8 @@ extension WorkflowController {
                 return
             }
 
-            let detachedAgentExecution: Bool
             if isAskSelectionFlow, let askContextText, !askContextText.isEmpty {
-                detachedAgentExecution = try await processAskFlowWithSelection(
+                try await processAskFlowWithSelection(
                     transcribedText: transcribedText,
                     askContextText: askContextText,
                     personaPrompt: personaPrompt,
@@ -1215,7 +1209,7 @@ extension WorkflowController {
                     pipelineTiming: &pipelineTiming
                 )
             } else if recordingIntent == .askSelection {
-                detachedAgentExecution = try await processAskFlowWithoutSelection(
+                try await processAskFlowWithoutSelection(
                     transcribedText: transcribedText,
                     askContextText: askContextText,
                     personaPrompt: personaPrompt,
@@ -1225,7 +1219,6 @@ extension WorkflowController {
                     pipelineTiming: &pipelineTiming
                 )
             } else if shouldRewriteTranscript {
-                detachedAgentExecution = false
                 try await processPersonaRewriteFlow(
                     transcribedText: transcribedText,
                     personaPrompt: personaPrompt ?? "",
@@ -1240,7 +1233,6 @@ extension WorkflowController {
                     pipelineTiming: &pipelineTiming
                 )
             } else {
-                detachedAgentExecution = false
                 try await processDictationFlow(
                     transcribedText: transcribedText,
                     selectionSnapshot: selectionSnapshot,
@@ -1248,10 +1240,6 @@ extension WorkflowController {
                     record: &record,
                     pipelineTiming: &pipelineTiming
                 )
-            }
-
-            if detachedAgentExecution {
-                return
             }
 
             try ensureProcessingIsActive(sessionID)
@@ -1481,7 +1469,7 @@ extension WorkflowController {
         sessionID: UUID,
         record: inout HistoryRecord,
         pipelineTiming: inout HistoryPipelineTiming
-    ) async throws -> Bool {
+    ) async throws {
         NetworkDebugLogger.logMessage(
             """
             [Ask Flow] selected-text context
@@ -1499,19 +1487,6 @@ extension WorkflowController {
         saveHistoryRecord(record)
         logPipelineEvent("llm-processing-started", for: record)
 
-        if settingsStore.agentEnabled {
-            try await processAgentAskFlowWithSelection(
-                transcribedText: transcribedText,
-                askContextText: askContextText,
-                personaPrompt: personaPrompt,
-                selectionSnapshot: selectionSnapshot,
-                sessionID: sessionID,
-                record: &record,
-                pipelineTiming: &pipelineTiming
-            )
-            return true
-        }
-
         let askDecisionResult: AskSelectionDecisionResult
         do {
             askDecisionResult = try await decideAskSelection(
@@ -1528,7 +1503,7 @@ extension WorkflowController {
                 record: &record,
                 pipelineTiming: &pipelineTiming
             )
-            return false
+            return
         }
         try await applyLegacyAskDecision(
             askDecisionResult,
@@ -1539,55 +1514,6 @@ extension WorkflowController {
             pipelineTiming: &pipelineTiming,
             sessionID: sessionID
         )
-        return false
-    }
-
-    private func processAgentAskFlowWithSelection(
-        transcribedText: String,
-        askContextText: String,
-        personaPrompt: String?,
-        selectionSnapshot: TextSelectionSnapshot,
-        sessionID: UUID,
-        record: inout HistoryRecord,
-        pipelineTiming _: inout HistoryPipelineTiming
-    ) async throws {
-        try ensureProcessingIsActive(sessionID)
-        let jobID = UUID()
-        launchDetachedAgentAskTask(
-            jobID: jobID,
-            recordID: record.id,
-            transcribedText: transcribedText,
-            selectedText: askContextText,
-            personaPrompt: personaPrompt,
-            sessionID: sessionID,
-            selectionSnapshot: selectionSnapshot,
-            selectedTextForAnswerPresentation: askContextText
-        )
-        handleDetachedAgentLaunch()
-    }
-
-    private func processAgentAskFlowWithoutSelection(
-        transcribedText: String,
-        askContextText: String?,
-        personaPrompt: String?,
-        selectionSnapshot: TextSelectionSnapshot,
-        sessionID: UUID,
-        record: inout HistoryRecord,
-        pipelineTiming _: inout HistoryPipelineTiming
-    ) async throws {
-        try ensureProcessingIsActive(sessionID)
-        let jobID = UUID()
-        launchDetachedAgentAskTask(
-            jobID: jobID,
-            recordID: record.id,
-            transcribedText: transcribedText,
-            selectedText: nil,
-            personaPrompt: personaPrompt,
-            sessionID: sessionID,
-            selectionSnapshot: selectionSnapshot,
-            selectedTextForAnswerPresentation: askContextText
-        )
-        handleDetachedAgentLaunch()
     }
 
     private func processAskFlowWithoutSelection(
@@ -1598,7 +1524,7 @@ extension WorkflowController {
         sessionID: UUID,
         record: inout HistoryRecord,
         pipelineTiming: inout HistoryPipelineTiming
-    ) async throws -> Bool {
+    ) async throws {
         NetworkDebugLogger.logMessage(
             """
             [Ask Flow] no selected-text context
@@ -1614,23 +1540,6 @@ extension WorkflowController {
         record.pipelineTiming = pipelineTiming
         saveHistoryRecord(record)
         logPipelineEvent("llm-processing-started", for: record)
-
-        if settingsStore.agentEnabled {
-            let agentLaunchStartedAt = Date()
-            try await processAgentAskFlowWithoutSelection(
-                transcribedText: transcribedText,
-                askContextText: askContextText,
-                personaPrompt: personaPrompt,
-                selectionSnapshot: selectionSnapshot,
-                sessionID: sessionID,
-                record: &record,
-                pipelineTiming: &pipelineTiming
-            )
-            NetworkDebugLogger.logMessage(
-                "[Ask Timing] detached agent ask launched in \(Self.formatDurationSince(agentLaunchStartedAt))"
-            )
-            return true
-        }
 
         let askDecisionResult: AskSelectionDecisionResult
         let askDecisionStartedAt = Date()
@@ -1649,7 +1558,7 @@ extension WorkflowController {
                 record: &record,
                 pipelineTiming: &pipelineTiming
             )
-            return false
+            return
         }
         NetworkDebugLogger.logMessage(
             "[Ask Timing] ask decision completed in \(Self.formatDurationSince(askDecisionStartedAt))"
@@ -1663,7 +1572,6 @@ extension WorkflowController {
             pipelineTiming: &pipelineTiming,
             sessionID: sessionID
         )
-        return false
     }
 
     private func completeAskFlowAfterLLMConfigurationFallback(
@@ -1679,233 +1587,6 @@ extension WorkflowController {
         record.processingStatus = .skipped
         record.applyStatus = .skipped
         record.applyMessage = L("workflow.llmNotConfigured.askSkipped")
-    }
-
-    private func launchDetachedAgentAskTask(
-        jobID: UUID,
-        recordID: UUID,
-        transcribedText: String,
-        selectedText: String?,
-        personaPrompt: String?,
-        sessionID: UUID,
-        selectionSnapshot: TextSelectionSnapshot,
-        selectedTextForAnswerPresentation: String?
-    ) {
-        let task = Task { [weak self] in
-            guard let self else { return }
-            defer {
-                Task { [weak self] in
-                    guard let self else { return }
-                    await self.agentExecutionRegistry.finish(jobID: jobID)
-                    await MainActor.run {
-                        self.finishDetachedAskOverlayIfStillProcessing(sessionID: sessionID)
-                    }
-                }
-            }
-
-            do {
-                let execution = try await runAskAgent(
-                    selectedText: selectedText,
-                    spokenInstruction: transcribedText,
-                    personaPrompt: personaPrompt,
-                    jobID: jobID,
-                    appSystemContext: AppSystemContext(snapshot: selectionSnapshot)
-                )
-                await completeDetachedAgentAskTask(
-                    execution: execution,
-                    recordID: recordID,
-                    sessionID: sessionID,
-                    transcribedText: transcribedText,
-                    selectionSnapshot: selectionSnapshot,
-                    selectedTextForAnswerPresentation: selectedTextForAnswerPresentation
-                )
-            } catch let error as LLMConfigurationError {
-                guard var record = historyStore.record(id: recordID) else { return }
-                var pipelineTiming = record.pipelineTiming ?? HistoryPipelineTiming()
-                completeAskFlowAfterLLMConfigurationFallback(
-                    error: error,
-                    record: &record,
-                    pipelineTiming: &pipelineTiming
-                )
-                saveHistoryRecord(record)
-                logPipelineEvent("pipeline-completed", for: record)
-                UsageStatsStore.shared.recordSession(record: record)
-                reportDictationTerminal(record: record)
-                enforceHistoryRetentionPolicy()
-                await MainActor.run {
-                    guard self.processingSessionID == sessionID else { return }
-                    self.finishDetachedAskOverlay(dismiss: true)
-                }
-            } catch is CancellationError {
-                await failDetachedAgentAskTask(
-                    recordID: recordID,
-                    sessionID: sessionID,
-                    errorMessage: L("workflow.cancel.userCancelled"),
-                    treatAsCancellation: true
-                )
-            } catch {
-                let message = "Processing failed: \(error.localizedDescription)"
-                ErrorLogStore.shared.log(message)
-                await failDetachedAgentAskTask(
-                    recordID: recordID,
-                    sessionID: sessionID,
-                    errorMessage: message,
-                    treatAsCancellation: false
-                )
-            }
-        }
-
-        Task {
-            await agentExecutionRegistry.register(task, for: jobID)
-        }
-    }
-
-    private func completeDetachedAgentAskTask(
-        execution: AskAgentExecutionResult,
-        recordID: UUID,
-        sessionID: UUID,
-        transcribedText: String,
-        selectionSnapshot: TextSelectionSnapshot,
-        selectedTextForAnswerPresentation: String?
-    ) async {
-        guard var record = historyStore.record(id: recordID) else { return }
-
-        var pipelineTiming = record.pipelineTiming ?? HistoryPipelineTiming()
-        pipelineTiming.llmProcessingCompletedAt = Date()
-        record.pipelineTiming = pipelineTiming
-        logPipelineEvent("llm-processing-completed", for: record)
-
-        switch Self.askWithoutSelectionAgentDisposition(for: execution.result) {
-        case let .answer(text):
-            record.mode = .askAnswer
-
-            var openCCResult: String?
-            let finalAnswer: String
-            if let config = settingsStore.effectiveOutputOpenCCConfig {
-                let converted = await outputPostProcessor.process(text)
-                if converted != text {
-                    openCCResult = converted
-                }
-                finalAnswer = converted
-                record.openCCConfig = config
-            } else {
-                finalAnswer = text
-            }
-
-            record.personaResultText = text
-            record.openCCResultText = openCCResult
-            record.postProcessedText = finalAnswer
-            record.processingStatus = .succeeded
-            record.applyStatus = .running
-            saveHistoryRecord(record)
-
-            pipelineTiming.applyStartedAt = Date()
-            record.pipelineTiming = pipelineTiming
-            await MainActor.run {
-                if self.processingSessionID == sessionID {
-                    self.finishDetachedAskOverlay(dismiss: false)
-                }
-                self.presentAskAnswer(
-                    question: transcribedText,
-                    selectedText: selectedTextForAnswerPresentation,
-                    answerMarkdown: finalAnswer
-                )
-            }
-            pipelineTiming.applyCompletedAt = Date()
-            record.pipelineTiming = pipelineTiming
-            record.applyStatus = .succeeded
-            record.applyMessage = L("workflow.ask.answerPresented")
-            recordDictationApplyAnalytics(recordID: record.id, outcome: .presentedInDialog)
-
-        case let .insert(text):
-            record.mode = .editSelection
-            record.processingStatus = .succeeded
-            record.applyStatus = .running
-            saveHistoryRecord(record)
-
-            pipelineTiming.applyStartedAt = Date()
-            record.pipelineTiming = pipelineTiming
-            let (outcome, processedText) = await applyDetachedAgentEditResult(
-                text,
-                selectionSnapshot: selectionSnapshot
-            )
-            record.selectionEditedText = text
-            record.postProcessedText = processedText
-            pipelineTiming.applyCompletedAt = Date()
-            record.pipelineTiming = pipelineTiming
-            record.applyStatus = outcome.historyStatus
-            record.applyMessage = outcome.message
-            recordDictationApplyAnalytics(recordID: record.id, outcome: outcome)
-
-            await MainActor.run {
-                guard self.processingSessionID == sessionID else { return }
-                self.finishDetachedAskOverlay(dismiss: outcome.wasInserted || outcome == .unconfirmed)
-            }
-        }
-
-        saveHistoryRecord(record)
-        logPipelineEvent("pipeline-completed", for: record)
-        UsageStatsStore.shared.recordSession(record: record)
-        reportDictationTerminal(record: record)
-        enforceHistoryRetentionPolicy()
-        _ = execution.jobID
-    }
-
-    private func failDetachedAgentAskTask(
-        recordID: UUID,
-        sessionID: UUID,
-        errorMessage: String,
-        treatAsCancellation: Bool
-    ) async {
-        guard var record = historyStore.record(id: recordID) else { return }
-
-        if treatAsCancellation {
-            markCancelled(&record)
-            record.errorMessage = errorMessage
-            saveHistoryRecord(record)
-            logPipelineEvent("pipeline-cancelled", for: record)
-            enforceHistoryRetentionPolicy()
-            await MainActor.run {
-                guard self.processingSessionID == sessionID else { return }
-                self.finishDetachedAskOverlay(dismiss: true)
-            }
-            return
-        }
-
-        markFailure(&record, message: errorMessage)
-        saveHistoryRecord(record)
-        logPipelineEvent("pipeline-failed", for: record)
-        UsageStatsStore.shared.recordSession(record: record)
-        reportDictationTerminal(record: record)
-        enforceHistoryRetentionPolicy()
-
-        await MainActor.run {
-            guard self.processingSessionID == sessionID else { return }
-            self.lastRetryableFailureRecord = nil
-            self.soundEffectPlayer.play(.error)
-            self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
-            self.overlayController.showFailure(message: errorMessage)
-            self.overlayController.dismiss(after: 3.0)
-        }
-    }
-
-    @MainActor
-    private func finishDetachedAskOverlay(dismiss: Bool) {
-        lastRetryableFailureRecord = nil
-        appState.setStatus(.idle)
-        if dismiss {
-            overlayController.dismissSoon()
-        }
-    }
-
-    @MainActor
-    private func finishDetachedAskOverlayIfStillProcessing(sessionID: UUID) {
-        guard processingSessionID == sessionID else { return }
-        if appState.status == .processing {
-            lastRetryableFailureRecord = nil
-            appState.setStatus(.idle)
-        }
-        overlayController.dismissProcessingIfVisible()
     }
 
     /// Thread-safe accumulator for LLM streaming chunks captured in @Sendable closures.
@@ -2457,9 +2138,6 @@ extension WorkflowController {
     }
 
     func cancelCurrentProcessing(resetUI: Bool, reason: String) {
-        // If the agent is waiting for a clarification reply, cancel it too.
-        dismissClarification()
-
         processingSessionID = UUID()
         processingTask?.cancel()
         processingTask = nil
@@ -2643,59 +2321,12 @@ extension WorkflowController {
         return false
     }
 
-    static func askWithoutSelectionAgentDisposition(for result: AskAgentResult) -> AskWithoutSelectionAgentDisposition {
-        switch result {
-        case let .answer(text):
-            .answer(text)
-        case let .edit(text):
-            .insert(text)
-        }
-    }
-
     func hasAskSelectionContext(_ snapshot: TextSelectionSnapshot) -> Bool {
         snapshot.hasAskSelectionContext
     }
 
     func canReplaceActiveSelection(for snapshot: TextSelectionSnapshot) -> Bool {
         snapshot.canReplaceSelection
-    }
-
-    func handleDetachedAgentLaunch() {
-        activeProcessingRecordID = nil
-        lastRetryableFailureRecord = nil
-    }
-
-    func shouldShowDialogForDetachedAgentEdit(using snapshot: TextSelectionSnapshot) -> Bool {
-        hasAskSelectionContext(snapshot) && !shouldReplaceActiveSelection(for: snapshot)
-    }
-
-    func applyDetachedAgentEditResult(
-        _ text: String,
-        selectionSnapshot: TextSelectionSnapshot
-    ) async -> (ApplyOutcome, String) {
-        let applySessionID = processingSessionID
-        let replaceSelection = shouldReplaceActiveSelection(for: selectionSnapshot)
-        let shouldShowResultDialog = shouldShowDialogForDetachedAgentEdit(using: selectionSnapshot)
-        NetworkDebugLogger.logMessage(
-            "[Apply Detached Agent Edit] hasSelection=\(selectionSnapshot.hasSelection) " +
-                "isEditable=\(selectionSnapshot.isEditable) hasRange=\(selectionSnapshot.selectedRange != nil) " +
-                "replaceSelection=\(replaceSelection) showResultDialog=\(shouldShowResultDialog)"
-        )
-
-        let processedText = await outputPostProcessor.process(text)
-        guard !Task.isCancelled, processingSessionID == applySessionID else { return (.cancelled, processedText) }
-        if shouldShowResultDialog {
-            presentResultDialog(title: L("workflow.result.copyTitle"), text: processedText)
-            return (.presentedInDialog, processedText)
-        }
-
-        return await applyText(
-            processedText,
-            replace: replaceSelection,
-            fallbackTitle: L("workflow.result.copyTitle"),
-            targetSnapshot: selectionSnapshot,
-            expectedSessionID: applySessionID
-        )
     }
 
     func copyLastResultFromDialog() {

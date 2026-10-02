@@ -361,17 +361,12 @@ final class WorkflowControllerAutomaticVocabularyTests: XCTestCase {
             textInjector: textInjector,
             clipboard: MockClipboardService(),
             historyStore: MockWorkflowHistoryStore(),
-            agentJobStore: MockWorkflowAgentJobStore(),
-            agentExecutionRegistry: AgentExecutionRegistry(),
             mcpRegistry: MCPRegistry(),
             overlayController: overlayController,
             askAnswerWindowController: AskAnswerWindowController(
                 clipboard: MockClipboardService(),
                 settingsStore: settingsStore,
                 outputPostProcessor: NoopOutputPostProcessor()
-            ),
-            agentClarificationWindowController: AgentClarificationWindowController(
-                settingsStore: settingsStore
             ),
             soundEffectPlayer: SoundEffectPlayer(settingsStore: settingsStore),
             outputPostProcessor: NoopOutputPostProcessor()
@@ -512,19 +507,3 @@ private final class MockWorkflowHistoryStore: HistoryStore {
     }
 }
 
-private final class MockWorkflowAgentJobStore: AgentJobStore, @unchecked Sendable {
-    func save(_: AgentJob) async throws {}
-    func list(limit _: Int, offset _: Int) async throws -> [AgentJob] {
-        []
-    }
-
-    func job(id _: UUID) async throws -> AgentJob? {
-        nil
-    }
-
-    func delete(id _: UUID) async throws {}
-    func clear() async throws {}
-    func count() async throws -> Int {
-        0
-    }
-}

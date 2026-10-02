@@ -138,12 +138,9 @@ final class WorkflowController {
     let textInjector: TextInjector
     let clipboard: ClipboardService
     let historyStore: HistoryStore
-    let agentJobStore: AgentJobStore
-    let agentExecutionRegistry: AgentExecutionRegistry
     let mcpRegistry: MCPRegistry
     let overlayController: OverlayController
     let askAnswerWindowController: AskAnswerWindowController
-    let agentClarificationWindowController: AgentClarificationWindowController
     let soundEffectPlayer: SoundEffectPlayer
     let liveTranscriptionPreviewer: (any LiveTranscriptionPreviewing)?
     let localModelManager: (any LocalSTTModelManaging)?
@@ -210,10 +207,6 @@ final class WorkflowController {
     var pendingDictationAnalyticsContext: DictationAnalyticsContext?
     var dictationAnalyticsContexts: [UUID: DictationAnalyticsContext] = [:]
 
-    // Clarification mode: set when the agent workflow is paused waiting for a user voice reply.
-    var pendingClarificationContinuation: CheckedContinuation<String, Error>?
-    var isClarificationRecording = false
-
     struct PersonaPickerEntry {
         let id: UUID?
         let title: String
@@ -250,12 +243,9 @@ final class WorkflowController {
         textInjector: TextInjector,
         clipboard: ClipboardService,
         historyStore: HistoryStore,
-        agentJobStore: AgentJobStore,
-        agentExecutionRegistry: AgentExecutionRegistry,
         mcpRegistry: MCPRegistry,
         overlayController: OverlayController,
         askAnswerWindowController: AskAnswerWindowController,
-        agentClarificationWindowController: AgentClarificationWindowController,
         soundEffectPlayer: SoundEffectPlayer,
         liveTranscriptionPreviewer: (any LiveTranscriptionPreviewing)? = nil,
         localModelManager: (any LocalSTTModelManaging)? = nil,
@@ -279,12 +269,9 @@ final class WorkflowController {
         self.textInjector = textInjector
         self.clipboard = clipboard
         self.historyStore = historyStore
-        self.agentJobStore = agentJobStore
-        self.agentExecutionRegistry = agentExecutionRegistry
         self.mcpRegistry = mcpRegistry
         self.overlayController = overlayController
         self.askAnswerWindowController = askAnswerWindowController
-        self.agentClarificationWindowController = agentClarificationWindowController
         self.soundEffectPlayer = soundEffectPlayer
         self.liveTranscriptionPreviewer = liveTranscriptionPreviewer
         self.localModelManager = localModelManager
@@ -326,9 +313,6 @@ final class WorkflowController {
             onInsert: { [weak self] index in self?.insertHistorySelection(at: index) },
             onRetry: { [weak self] index in self?.retryHistorySelection(at: index) }
         )
-        self.agentClarificationWindowController.onDismiss = { [weak self] in
-            self?.dismissClarification()
-        }
     }
 
     func presentAskAnswer(question: String, selectedText: String?, answerMarkdown: String) {
@@ -482,7 +466,6 @@ final class WorkflowController {
         dismissPersonaPicker()
         dismissHistoryPicker()
         askAnswerWindowController.dismiss()
-        agentClarificationWindowController.dismiss()
         cancelRecording()
         cancelCurrentProcessing(resetUI: true, reason: L("workflow.cancel.stopping"))
         automaticVocabularyObservationTask?.cancel()
@@ -714,13 +697,6 @@ final class WorkflowController {
                 ErrorLogStore.shared.log(msg)
             }
             return
-        }
-
-        // Clarification follow-up is intentionally disabled for now. A hotkey press
-        // should always start a fresh recording, independent of any existing Ask
-        // Anything or clarification window.
-        if pendingClarificationContinuation != nil {
-            dismissClarification()
         }
 
         recordingUsesAuxiliary = auxiliary
@@ -1364,12 +1340,6 @@ final class WorkflowController {
             return
         }
 
-        // If in clarification recording mode, finish the clarification recording.
-        if isClarificationRecording {
-            finishClarificationRecording()
-            return
-        }
-
         guard recordingMode == .holdToTalk else { return }
 
         let handledAt = monotonicNow()
@@ -1473,82 +1443,6 @@ final class WorkflowController {
                 personaSnapshot: personaSnapshot
             )
         }
-    }
-
-    // MARK: - Clarification recording
-
-    func beginClarificationRecording() async {
-        isRecording = true
-        isAudioRecorderStarted = false
-        agentClarificationWindowController.updateRecordingState(.recording)
-        NSLog("[Workflow] Clarification recording started")
-
-        do {
-            try audioRecorder.start(
-                levelHandler: { _ in },
-                audioBufferHandler: nil
-            )
-            isAudioRecorderStarted = true
-        } catch {
-            recordingGestureDecision?.resolve()
-            recordingGestureDecision = nil
-            isRecording = false
-            isAudioRecorderStarted = false
-            isClarificationRecording = false
-            agentClarificationWindowController.updateRecordingState(.waitingForReply)
-            let userMessage = Self.audioStartFailureMessage(for: error)
-            NetworkDebugLogger.logError(context: "Clarification recording failed to start", error: error)
-            Task { @MainActor in
-                self.soundEffectPlayer.play(.error)
-                self.appState.setStatus(.failed(message: userMessage))
-                self.overlayController.showFailure(message: userMessage)
-                self.overlayController.dismiss(after: 6.0)
-            }
-        }
-    }
-
-    func finishClarificationRecording() {
-        guard isRecording, isClarificationRecording else { return }
-        isRecording = false
-        isAudioRecorderStarted = false
-        isClarificationRecording = false
-        agentClarificationWindowController.updateRecordingState(.transcribing)
-        NSLog("[Workflow] Clarification recording stopped, transcribing")
-
-        Task { [weak self] in
-            guard let self else { return }
-            guard let audioFile = try? audioRecorder.stop() else {
-                agentClarificationWindowController.updateRecordingState(.waitingForReply)
-                return
-            }
-
-            do {
-                let transcript = try await sttRouter.transcribe(audioFile: audioFile)
-                let trimmed = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty else {
-                    agentClarificationWindowController.updateRecordingState(.waitingForReply)
-                    return
-                }
-                resumeClarificationWithReply(trimmed)
-            } catch {
-                NSLog("[Workflow] Clarification transcription failed: \(error)")
-                agentClarificationWindowController.updateRecordingState(.waitingForReply)
-            }
-        }
-    }
-
-    func resumeClarificationWithReply(_ reply: String) {
-        guard let continuation = pendingClarificationContinuation else { return }
-        pendingClarificationContinuation = nil
-        agentClarificationWindowController.dismiss()
-        continuation.resume(returning: reply)
-    }
-
-    func dismissClarification() {
-        guard let continuation = pendingClarificationContinuation else { return }
-        pendingClarificationContinuation = nil
-        agentClarificationWindowController.dismiss()
-        continuation.resume(throwing: CancellationError())
     }
 
     // MARK: - LLM Configuration Validation

@@ -1,5 +1,10 @@
 # Agent Framework Refactoring Development Document
 
+> **Superseded.** The voice "Ask Anything" agent described here (AgentLoop, job records,
+> clarification dialog, `WorkflowController+Agent`) was removed once the 随便问 conversation
+> window (`Sources/Typeflux/Ask/`, see `ASK_CONVERSATIONS.md`) replaced it. Only the
+> `AgentTool` protocol and MCP support remain, reused by Ask. Kept for historical context.
+
 ## Goal
 
 Refactor the "Ask Anything" feature from the current fixed two-step flow (intent classification → execution) into a fully functional Agent framework with support for:

@@ -184,10 +184,6 @@
 "menu.personas" = "페르소나";
 "menu.personas.empty" = "페르소나가 없습니다";
 "menu.personas.edit" = "페르소나 편집";
-"menu.agentTasks" = "Agent 작업";
-"menu.agentTasks.empty" = "실행 중인 작업 없음";
-"menu.agentTasks.viewAll" = "모든 작업 보기";
-"menu.agentTasks.runningCount" = "%d개 실행 중";
 "menu.appearance" = "외관";
 "menu.settings" = "Typeflux 설정";
 "menu.setupGuide" = "설정 가이드";
@@ -1095,7 +1091,6 @@
 "studio.heading.agent" = "에이전트";
 "studio.subheading.agent" = "Ask가 사용할 수 있는 도구, MCP 서버, 스킬, 메모리를 관리합니다.";
 "studio.search.agent" = "검색 에이전트 설정...";
-"agent.beta.notice" = "에이전트 기능은 현재 베타 버전입니다. 안정성과 동작은 계속 변할 수 있으므로 사용 시 이 점을 염두에 두시기 바랍니다.";
 
 "settings.advanced.localOptimization.title" = "로컬 최적화";
 "settings.advanced.localOptimization.subtitle" = "백그라운드에서 로컬 음성 인식 모델을 다운로드합니다. 활성화하면 음성 인식 속도가 빨라지고 오프라인에서도 사용할 수 있습니다.";
@@ -1116,8 +1111,6 @@
 "agent.settings.web" = "웹";
 "agent.settings.code" = "코드 실행";
 "agent.settings.mcp" = "MCP 서버";
-"agent.general.stepLogging.title" = "에이전트 단계 로깅";
-"agent.general.stepLogging.subtitle" = "디버깅을 위한 각 에이전트 추론 단계 및 도구 호출을 기록합니다.";
 
 "agent.section.mcpServers" = "MCP 서버";
 "agent.mcp.empty" = "구성된 MCP 서버가 없습니다. 외부 도구로 에이전트 기능을 확장하려면 서버를 추가하세요.";
@@ -1147,34 +1140,8 @@
 "agent.mcp.deleteDialog.title" = "MCP 서버 삭제";
 "agent.mcp.deleteDialog.message" = "\"%@\"을(를) 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.";
 
-"agent.section.skills" = "스킬";
-"agent.skills.empty" = "설정된 스킬이 없습니다. 스킬을 통해 Agent에 명령 실행, 웹 접근 등 전문 기능을 제공할 수 있습니다.";
-"agent.skills.builtinBadge" = "기본 제공";
 
 // Agent Jobs
-"agent.jobs.title" = "작업";
-"agent.jobs.subtitle" = "에이전트 작업 실행 기록.";
-"agent.jobs.empty" = "아직 작업이 없습니다. Agent를 활성화하고 '아무거나 물어보기'를 사용하면 자동으로 생성됩니다.";
-"agent.jobs.clearAll" = "모두 삭제";
-"agent.jobs.toolCalls" = "%d 도구";
-"agent.jobs.steps" = "%d 단계";
-"agent.jobs.detail.prompt" = "프롬프트";
-"agent.jobs.detail.context" = "컨텍스트";
-"agent.jobs.detail.steps" = "실행 단계";
-"agent.jobs.detail.result" = "결과";
-"agent.jobs.detail.result.view.plainText" = "일반 텍스트";
-"agent.jobs.detail.result.view.markdown" = "Markdown";
-"agent.jobs.detail.error" = "오류";
-"agent.jobs.detail.stepNumber" = "단계 %d";
-"agent.jobs.detail.toolCall.arguments" = "인수";
-"agent.jobs.detail.reasoning" = "추론 과정";
-"agent.jobs.detail.stepTokens" = "%d 토큰";
-"agent.jobs.detail.context.showMore" = "더 보기";
-"agent.jobs.detail.context.showLess" = "접기";
-"agent.jobs.clearAllDialog.title" = "모든 작업 삭제";
-"agent.jobs.clearAllDialog.message" = "모든 작업 기록을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.";
-"agent.jobs.deleteDialog.title" = "작업 삭제";
-"agent.jobs.deleteDialog.message" = "\"%@\"을(를) 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.";
 
 // MARK: - Auth & Account
 
@@ -1332,11 +1299,6 @@
 "auth.account.usageHours" = "%.1f시간";
 "auth.account.usageDays" = "%.1f일";
 
-"agent.clarification.windowTitle" = "어시스턴트 확인 필요";
-"agent.clarification.assistantSectionTitle" = "어시스턴트";
-"agent.clarification.hotkeyHint" = "핫키를 누르고 있으면 답변을 녹음합니다";
-"agent.clarification.recordingHint" = "녹음 중... 완료되면 핫키를 놓으세요";
-"agent.clarification.transcribingHint" = "생각 중...";
 "cloudDataSync.title" = "단어장 및 페르소나 클라우드 동기화";
 "cloudDataSync.subtitle" = "기본값은 꺼짐입니다. 활성화하면 사용자 단어장과 사용자 페르소나만 같은 계정의 기기 간에 동기화됩니다.";
 "cloudDataSync.consent.title" = "클라우드 동기화를 켤까요?";

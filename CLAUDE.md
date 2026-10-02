@@ -50,11 +50,11 @@ make format
 1. Listens for hotkey events from `HotkeyService`
 2. Triggers audio recording via `AudioRecorder`
 3. Routes transcription through `STTRouter` → appropriate `Transcriber`
-4. Optionally rewrites via `LLMService` or runs `AgentWorkflowRunner`
+4. Optionally rewrites via `LLMService`
 5. Injects text via `TextInjector` (AX accessibility API) with clipboard fallback
 6. Saves results to `HistoryStore`
 
-`WorkflowController` is split into focused extension files to manage complexity: `+Agent.swift` for the ask/answer mode, `+Processing.swift` for LLM rewrite/generation logic, `+Persona.swift` for persona handling, and `+AutomaticVocabulary.swift` for vocabulary monitoring. Add new concerns as similarly named extensions rather than expanding the core file.
+`WorkflowController` is split into focused extension files to manage complexity: `+Processing.swift` for LLM rewrite/generation logic, `+Persona.swift` for persona handling, and `+AutomaticVocabulary.swift` for vocabulary monitoring. Add new concerns as similarly named extensions rather than expanding the core file.
 
 ### STT Layer (`Sources/Typeflux/STT/`)
 
@@ -73,18 +73,13 @@ make format
 
 `LLMRouter` dispatches to `OpenAICompatibleLLMService` or `OllamaLLMService` based on settings.
 
-**Agent Framework** (`LLM/Agent/`): A multi-turn agentic loop used for the "ask answer" voice Q&A feature:
-- `AgentLoop.swift` — core execution engine, iterates up to `maxSteps` (default 10)
-- `AgentToolRegistry.swift` — actor-based tool registry
-- `AgentSkillRegistry.swift` — higher-level skill registry
-- `BuiltinAgentTools.swift` / `BuiltinTools.swift` — built-in tool implementations
-- `AgentToolCallMonitor.swift` — records intermediate steps for UI display
+**Ask Anything** (`Ask/`): the 随便问 conversation window. Requests run on Typeflux Cloud or, in local mode, on the user's own models (`Ask/Local/`). Local tools implement `AgentTool` (`LLM/Agent/AgentTool.swift`); `AskReasoningEffort` and `AskReasoningRequest` carry the user's reasoning choice, and Ask never sends "thinking off" parameters (only rewrite and transcription do).
 
 **MCP Support** (`LLM/MCP/`): Model Context Protocol integration:
 - `StdioMCPClient.swift` — local process transport
 - `HTTPMCPClient.swift` — HTTP/SSE transport
 - `MCPRegistry.swift` — manages configured MCP servers
-- `MCPToolAdapter.swift` — adapts MCP tools to the `AgentTool` protocol
+- `MCPToolAdapter.swift` — adapts MCP tools to the `AgentTool` protocol used by Ask
 
 ### Data Storage
 

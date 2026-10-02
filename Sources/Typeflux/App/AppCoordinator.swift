@@ -81,12 +81,9 @@ final class AppCoordinator {
             textInjector: di.textInjector,
             clipboard: di.clipboard,
             historyStore: di.historyStore,
-            agentJobStore: di.agentJobStore,
-            agentExecutionRegistry: di.agentExecutionRegistry,
             mcpRegistry: di.mcpRegistry,
             overlayController: di.overlayController,
             askAnswerWindowController: di.askAnswerWindowController,
-            agentClarificationWindowController: di.agentClarificationWindowController,
             soundEffectPlayer: di.soundEffectPlayer,
             liveTranscriptionPreviewer: LiveTranscriptionPreviewer(
                 settingsStore: settingsStore,
@@ -156,7 +153,6 @@ final class AppCoordinator {
             appState: di.appState,
             settingsStore: di.settingsStore,
             historyStore: di.historyStore,
-            agentJobStore: di.agentJobStore,
             modelManager: di.ollamaModelManager,
             localModelManager: di.localModelManager,
             notificationService: di.notificationService,
@@ -166,14 +162,8 @@ final class AppCoordinator {
             onOpenOnboarding: { [weak self] in
                 self?.showOnboarding()
             },
-            onOpenAgentJobs: { [weak self] in
-                self?.di.agentJobsWindowController.showJobsList()
-            },
             onOpenAskConversations: { [weak self] in
                 self?.di.askConversationWindowController?.showConversation()
-            },
-            onOpenAgentJob: { [weak self] jobID in
-                self?.di.agentJobsWindowController.showJob(id: jobID)
             }
         )
         statusBarController?.start()

@@ -21,49 +21,6 @@ final class SettingsStoreAgentTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - agentEnabled
-
-    func testAgentEnabledDefaultsToTrue() {
-        XCTAssertTrue(store.agentEnabled)
-    }
-
-    func testAgentEnabledSetAndGet() {
-        store.agentEnabled = false
-        XCTAssertFalse(store.agentEnabled)
-
-        store.agentEnabled = true
-        XCTAssertTrue(store.agentEnabled)
-    }
-
-    func testAgentEnabledPostsConfigurationChangeNotification() {
-        let expectation = expectation(forNotification: .agentConfigurationDidChange, object: store)
-
-        store.agentEnabled = false
-
-        wait(for: [expectation], timeout: 1.0)
-    }
-
-    /// The Agent framework is no longer a beta opt-in: a value left by the removed
-    /// switch must not hide or disable anything.
-    func testLegacyFrameworkSwitchValueIsIgnored() {
-        defaults.set(false, forKey: "agent.frameworkEnabled")
-        XCTAssertTrue(store.agentEnabled)
-    }
-
-    // MARK: - agentStepLoggingEnabled
-
-    func testAgentStepLoggingEnabledDefaultsToFalse() {
-        XCTAssertFalse(store.agentStepLoggingEnabled)
-    }
-
-    func testAgentStepLoggingEnabledSetAndGet() {
-        store.agentStepLoggingEnabled = true
-        XCTAssertTrue(store.agentStepLoggingEnabled)
-
-        store.agentStepLoggingEnabled = false
-        XCTAssertFalse(store.agentStepLoggingEnabled)
-    }
-
     // MARK: - mcpServers
 
     func testMCPServersDefaultsToEmptyArray() {

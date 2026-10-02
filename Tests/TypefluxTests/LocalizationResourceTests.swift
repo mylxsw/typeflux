@@ -271,31 +271,6 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
-    func testAgentClarificationTranscribingHintUsesThinkingCopyForAllSupportedLanguages() throws {
-        let expectedValues: [AppLanguage: String] = [
-            .english: "Thinking...",
-            .simplifiedChinese: "思考中...",
-            .traditionalChinese: "思考中...",
-            .japanese: "思考中...",
-            .korean: "생각 중..."
-        ]
-
-        for language in AppLanguage.allCases {
-            let bundle = try localizationBundle(for: language)
-            let localized = bundle.localizedString(
-                forKey: "agent.clarification.transcribingHint",
-                value: nil,
-                table: nil
-            )
-
-            XCTAssertEqual(
-                localized,
-                expectedValues[language],
-                "Unexpected clarification hint in \(language.rawValue)"
-            )
-        }
-    }
-
     func testAccountOverviewCopyAndFormatArgumentsExistInEveryLanguage() throws {
         let keysAndArgumentCounts = [
             "auth.account.logoutConfirmTitle": 0,

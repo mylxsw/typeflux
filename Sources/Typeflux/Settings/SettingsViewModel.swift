@@ -191,7 +191,6 @@ final class StudioViewModel: ObservableObject {
         appLanguage == .traditionalChinese
     }
 
-    @Published var agentStepLoggingEnabled: Bool
     @Published var mcpServers: [MCPServerConfig]
     @Published var mcpDraftName: String = ""
     @Published var mcpDraftTransportType: MCPTransportType = .stdio
@@ -395,7 +394,6 @@ final class StudioViewModel: ObservableObject {
         textTransformationRule = settingsStore.outputOpenCCConfig
         autoUpdateEnabled = settingsStore.autoUpdateEnabled
         analyticsSharingEnabled = settingsStore.analyticsSharingEnabled
-        agentStepLoggingEnabled = settingsStore.agentStepLoggingEnabled
         mcpServers = settingsStore.mcpServers
         personaRewriteEnabled = settingsStore.personaRewriteEnabled
         personaHotkeyAppliesToSelection = settingsStore.personaHotkeyAppliesToSelection
@@ -1612,12 +1610,7 @@ final class StudioViewModel: ObservableObject {
         settingsStore.outputOpenCCConfig = value
     }
 
-    // MARK: - Agent Framework
-
-    func setAgentStepLoggingEnabled(_ value: Bool) {
-        agentStepLoggingEnabled = value
-        settingsStore.agentStepLoggingEnabled = value
-    }
+    // MARK: - MCP Servers
 
     func removeMCPServer(id: UUID) {
         mcpServers.removeAll { $0.id == id }

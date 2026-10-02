@@ -325,51 +325,6 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(injector.deliveryCallCount, 1)
     }
 
-    func testApplyDetachedAgentEditResultInsertsIntoEditableInputWithoutSelection() async {
-        let textInjector = MockProcessingTextInjector()
-        let controller = makeWorkflowController(textInjector: textInjector)
-        let snapshot = TextSelectionSnapshot(
-            processID: 1,
-            processName: "Notes",
-            selectedRange: nil,
-            selectedText: nil,
-            source: "accessibility",
-            isEditable: true,
-            role: "AXTextArea",
-            windowTitle: "Draft",
-            isFocusedTarget: true
-        )
-
-        let (outcome, _) = await controller.applyDetachedAgentEditResult("Draft reply", selectionSnapshot: snapshot)
-
-        XCTAssertEqual(outcome, .inserted)
-        XCTAssertEqual(textInjector.insertedTexts, ["Draft reply"])
-        XCTAssertTrue(textInjector.replacedTexts.isEmpty)
-    }
-
-    func testApplyDetachedAgentEditResultReplacesSelectionWhenSelectionIsReplaceable() async {
-        let textInjector = MockProcessingTextInjector()
-        let controller = makeWorkflowController(textInjector: textInjector)
-        let snapshot = TextSelectionSnapshot(
-            processID: 1,
-            processName: "Notes",
-            selectedRange: CFRange(location: 0, length: 5),
-            selectedText: "hello",
-            source: "accessibility",
-            isEditable: true,
-            role: "AXTextArea",
-            windowTitle: "Draft",
-            isFocusedTarget: true
-        )
-
-        let (outcome, _) = await controller.applyDetachedAgentEditResult("updated", selectionSnapshot: snapshot)
-
-        XCTAssertEqual(outcome, .inserted)
-        XCTAssertEqual(textInjector.replacedTexts, ["updated"])
-        XCTAssertEqual(textInjector.replacementTargets.first.flatMap { $0 }?.processID, snapshot.processID)
-        XCTAssertTrue(textInjector.insertedTexts.isEmpty)
-    }
-
     func testApplyPersonaToSelectionPreservesCapturedReplacementTarget() async {
         let contextID = UUID()
         let snapshot = TextSelectionSnapshot(
@@ -499,33 +454,6 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertNil(controller.clipboard.getString())
         XCTAssertFalse(controller.overlayController.isShowingResultDialogForTesting)
         XCTAssertTrue(injector.replacedTexts.isEmpty)
-    }
-
-    func testHandleDetachedAgentLaunchKeepsProcessingStatusVisible() {
-        let controller = makeWorkflowController()
-        controller.activeProcessingRecordID = UUID()
-        controller.appState.setStatus(.processing)
-
-        controller.handleDetachedAgentLaunch()
-
-        XCTAssertEqual(controller.appState.status, .processing)
-        XCTAssertNil(controller.activeProcessingRecordID)
-    }
-
-    func testAskWithoutSelectionAgentDispositionMapsAnswerToAnswer() {
-        let result = WorkflowController.askWithoutSelectionAgentDisposition(
-            for: .answer("Here is the answer")
-        )
-
-        XCTAssertEqual(result, .answer("Here is the answer"))
-    }
-
-    func testAskWithoutSelectionAgentDispositionMapsEditToInsert() {
-        let result = WorkflowController.askWithoutSelectionAgentDisposition(
-            for: .edit("Draft to insert")
-        )
-
-        XCTAssertEqual(result, .insert("Draft to insert"))
     }
 
     func testIsServiceOverloadedErrorReturnsTrueFor529() {
@@ -1574,7 +1502,6 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             historyStore: historyStore,
             configureSettings: {
                 self.configureReadyLLM(settingsStore: $0)
-                $0.agentEnabled = false
             }
         )
         await controller.process(
@@ -3048,17 +2975,12 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             textInjector: textInjector,
             clipboard: clipboard,
             historyStore: historyStore,
-            agentJobStore: MockProcessingAgentJobStore(),
-            agentExecutionRegistry: AgentExecutionRegistry(),
             mcpRegistry: MCPRegistry(),
             overlayController: overlayController,
             askAnswerWindowController: AskAnswerWindowController(
                 clipboard: MockClipboardService(),
                 settingsStore: settingsStore,
                 outputPostProcessor: NoopOutputPostProcessor()
-            ),
-            agentClarificationWindowController: AgentClarificationWindowController(
-                settingsStore: settingsStore
             ),
             soundEffectPlayer: soundEffectPlayer ?? SoundEffectPlayer(settingsStore: settingsStore),
             localModelManager: localModelManager,
@@ -4081,23 +4003,6 @@ private final class MockProcessingHistoryStore: HistoryStore {
 
     func exportMarkdown() throws -> URL {
         URL(fileURLWithPath: "/tmp/history.md")
-    }
-}
-
-private final class MockProcessingAgentJobStore: AgentJobStore, @unchecked Sendable {
-    func save(_: AgentJob) async throws {}
-    func list(limit _: Int, offset _: Int) async throws -> [AgentJob] {
-        []
-    }
-
-    func job(id _: UUID) async throws -> AgentJob? {
-        nil
-    }
-
-    func delete(id _: UUID) async throws {}
-    func clear() async throws {}
-    func count() async throws -> Int {
-        0
     }
 }
 

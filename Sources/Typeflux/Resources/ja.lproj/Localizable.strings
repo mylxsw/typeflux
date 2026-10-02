@@ -184,10 +184,6 @@
 "menu.personas" = "ペルソナ";
 "menu.personas.empty" = "ペルソナはありません";
 "menu.personas.edit" = "ペルソナを編集";
-"menu.agentTasks" = "Agent タスク";
-"menu.agentTasks.empty" = "実行中のタスクなし";
-"menu.agentTasks.viewAll" = "すべてのタスクを表示";
-"menu.agentTasks.runningCount" = "%d個実行中";
 "menu.appearance" = "外観";
 "menu.settings" = "Typeflux 設定";
 "menu.setupGuide" = "セットアップガイド";
@@ -1095,7 +1091,6 @@
 "studio.heading.agent" = "エージェント";
 "studio.subheading.agent" = "Ask が使えるツール、MCP サーバー、スキル、メモリを管理します。";
 "studio.search.agent" = "エージェント設定を検索...";
-"agent.beta.notice" = "エージェント機能は現在ベータ版です。安定性や動作は今後も変化していく可能性がありますので、ご使用の際はご留意ください。";
 
 "settings.advanced.localOptimization.title" = "ローカル最適化";
 "settings.advanced.localOptimization.subtitle" = "バックグラウンドでローカル音声認識モデルをダウンロードします。有効にすると音声認識が速くなり、オフラインでも使用できます。";
@@ -1116,8 +1111,6 @@
 "agent.settings.web" = "ウェブ";
 "agent.settings.code" = "コード実行";
 "agent.settings.mcp" = "MCP サーバー";
-"agent.general.stepLogging.title" = "エージェントステップのログ記録";
-"agent.general.stepLogging.subtitle" = "デバッグのためにエージェントの各推論ステップとツール呼び出しをログに記録します。";
 
 "agent.section.mcpServers" = "MCPサーバー";
 "agent.mcp.empty" = "MCP サーバーが構成されていません。サーバーを追加して、外部ツールを使用してエージェントの機能を拡張します。";
@@ -1147,34 +1140,8 @@
 "agent.mcp.deleteDialog.title" = "MCPサーバーの削除";
 "agent.mcp.deleteDialog.message" = "「%@」を削除しますか?この操作は元に戻すことができません。";
 
-"agent.section.skills" = "スキル";
-"agent.skills.empty" = "スキルが設定されていません。スキルにより、Agent にコマンド実行やウェブアクセスなどの機能を提供できます。";
-"agent.skills.builtinBadge" = "組み込み";
 
 // Agent Jobs
-"agent.jobs.title" = "ジョブ";
-"agent.jobs.subtitle" = "エージェントタスクの実行履歴。";
-"agent.jobs.empty" = "ジョブはまだありません。Agentを有効にして「何でも聞いて」を使用すると自動的に作成されます。";
-"agent.jobs.clearAll" = "すべて削除";
-"agent.jobs.toolCalls" = "%d ツール";
-"agent.jobs.steps" = "%d ステップ";
-"agent.jobs.detail.prompt" = "プロンプト";
-"agent.jobs.detail.context" = "コンテキスト";
-"agent.jobs.detail.steps" = "実行ステップ";
-"agent.jobs.detail.result" = "結果";
-"agent.jobs.detail.result.view.plainText" = "プレーンテキスト";
-"agent.jobs.detail.result.view.markdown" = "Markdown";
-"agent.jobs.detail.error" = "エラー";
-"agent.jobs.detail.stepNumber" = "ステップ %d";
-"agent.jobs.detail.toolCall.arguments" = "引数";
-"agent.jobs.detail.reasoning" = "推論過程";
-"agent.jobs.detail.stepTokens" = "%d トークン";
-"agent.jobs.detail.context.showMore" = "すべて表示";
-"agent.jobs.detail.context.showLess" = "折りたたむ";
-"agent.jobs.clearAllDialog.title" = "すべてのジョブを削除";
-"agent.jobs.clearAllDialog.message" = "すべてのジョブ記録を削除しますか?この操作は元に戻すことができません。";
-"agent.jobs.deleteDialog.title" = "ジョブの削除";
-"agent.jobs.deleteDialog.message" = "「%@」を削除しますか?この操作は元に戻すことができません。";
 
 // MARK: - Auth & Account
 
@@ -1332,11 +1299,6 @@
 "auth.account.usageHours" = "%.1f 時間";
 "auth.account.usageDays" = "%.1f 日";
 
-"agent.clarification.windowTitle" = "アシスタントの確認";
-"agent.clarification.assistantSectionTitle" = "アシスタント";
-"agent.clarification.hotkeyHint" = "ホットキーを押し続けて返答を録音";
-"agent.clarification.recordingHint" = "録音中... 完了したらホットキーを離してください";
-"agent.clarification.transcribingHint" = "思考中...";
 "cloudDataSync.title" = "単語帳とペルソナのクラウド同期";
 "cloudDataSync.subtitle" = "初期設定ではオフです。有効にすると、カスタム単語帳とカスタムペルソナのみを同じアカウントの端末間で同期します。";
 "cloudDataSync.consent.title" = "クラウド同期を有効にしますか？";

@@ -13,7 +13,6 @@ final class DIContainer {
     let audioRecorder: AudioRecorder
     let overlayController: OverlayController
     let askAnswerWindowController: AskAnswerWindowController
-    let agentClarificationWindowController: AgentClarificationWindowController
     let soundEffectPlayer: SoundEffectPlayer
     let clipboard: ClipboardService
     let textInjector: AXTextInjector
@@ -29,9 +28,6 @@ final class DIContainer {
     let analyticsReporter: AnalyticsEventReporting
     let permissionStatusAnalyticsMonitor: PermissionStatusAnalyticsMonitor
     let usageDailySummaryReporter: UsageDailySummaryReporter
-    let agentJobStore: AgentJobStore
-    let agentExecutionRegistry: AgentExecutionRegistry
-    let agentJobsWindowController: AgentJobsWindowController
     let mcpRegistry: MCPRegistry
     let cloudLoginSyncCoordinator: CloudLoginSyncCoordinator
     let cloudDataSyncCoordinator: CloudDataSyncCoordinator
@@ -65,19 +61,11 @@ final class DIContainer {
             settingsStore: settingsStore,
             outputPostProcessor: outputPostProcessor
         )
-        agentClarificationWindowController = AgentClarificationWindowController(settingsStore: settingsStore)
         soundEffectPlayer = SoundEffectPlayer(settingsStore: settingsStore)
         textInjector = AXTextInjector()
         Logger(subsystem: "ai.gulu.app.typeflux", category: "DIContainer")
             .debug("DIContainer initialized — Logger test message")
         historyStore = SQLiteHistoryStore()
-        agentJobStore = SQLiteAgentJobStore()
-        agentExecutionRegistry = AgentExecutionRegistry()
-        agentJobsWindowController = AgentJobsWindowController(
-            settingsStore: settingsStore,
-            jobStore: agentJobStore,
-            executionRegistry: agentExecutionRegistry
-        )
         mcpRegistry = MCPRegistry()
         analyticsReporter = SettingsAwareAnalyticsEventReporter(settingsStore: settingsStore)
         permissionStatusAnalyticsMonitor = PermissionStatusAnalyticsMonitor(

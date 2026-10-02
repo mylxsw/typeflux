@@ -186,10 +186,6 @@
 "menu.personas" = "人设";
 "menu.personas.empty" = "暂无人设";
 "menu.personas.edit" = "编辑人设";
-"menu.agentTasks" = "Agent 任务";
-"menu.agentTasks.empty" = "暂无运行中的任务";
-"menu.agentTasks.viewAll" = "查看所有任务";
-"menu.agentTasks.runningCount" = "%d 个运行中";
 "menu.appearance" = "外观";
 "menu.settings" = "系统设置";
 "menu.setupGuide" = "新手引导";
@@ -1106,7 +1102,6 @@
 "studio.heading.agent" = "Agent";
 "studio.subheading.agent" = "管理“随便问”可以使用的工具、MCP 服务器、技能与记忆。";
 "studio.search.agent" = "搜索 Agent 设置...";
-"agent.beta.notice" = "当前 Agent 功能仍处于 Beta 阶段，稳定性和行为表现可能会持续调整，请知悉后使用。";
 
 "settings.advanced.localOptimization.title" = "本地优化";
 "settings.advanced.localOptimization.subtitle" = "在后台下载本地语音识别模型，启用后可加速语音识别速度，并支持离线使用。";
@@ -1127,8 +1122,6 @@
 "agent.settings.web" = "联网";
 "agent.settings.code" = "代码执行";
 "agent.settings.mcp" = "MCP 服务器";
-"agent.general.stepLogging.title" = "Agent 步骤日志";
-"agent.general.stepLogging.subtitle" = "记录 Agent 的每一步推理和工具调用，便于调试。";
 
 "agent.section.mcpServers" = "MCP";
 "agent.mcp.empty" = "尚未配置 MCP 服务器。添加服务器以通过外部工具扩展 Agent 能力。";
@@ -1158,38 +1151,8 @@
 "agent.mcp.deleteDialog.title" = "删除 MCP 服务器";
 "agent.mcp.deleteDialog.message" = "确定删除「%@」吗？此操作无法撤销。";
 
-"agent.section.skills" = "技能";
-"agent.skills.empty" = "暂无技能配置。技能可以为 Agent 提供命令执行、网络访问等专门能力。";
-"agent.skills.builtinBadge" = "内置";
 
 // Agent Jobs
-"agent.jobs.title" = "任务记录";
-"agent.jobs.subtitle" = "Agent 任务执行历史。";
-"agent.jobs.empty" = "暂无任务记录。启用 Agent 后使用“随便问”时会自动创建任务。";
-"agent.jobs.clearAll" = "清除全部";
-"agent.jobs.toolCalls" = "%d 个工具";
-"agent.jobs.steps" = "%d 个步骤";
-"agent.jobs.detail.prompt" = "提示词";
-"agent.jobs.detail.context" = "上下文";
-"agent.jobs.detail.steps" = "执行步骤";
-"agent.jobs.detail.result" = "结果";
-"agent.jobs.detail.result.view.plainText" = "纯文本";
-"agent.jobs.detail.result.view.markdown" = "Markdown";
-"agent.jobs.detail.error" = "错误";
-"agent.jobs.detail.stepNumber" = "步骤 %d";
-"agent.jobs.detail.toolCall.arguments" = "调用参数";
-"agent.jobs.detail.reasoning" = "推理过程";
-"agent.jobs.detail.stepTokens" = "%d tokens";
-"agent.jobs.detail.context.showMore" = "展开全部";
-"agent.jobs.detail.context.showLess" = "收起";
-"agent.jobs.cancel" = "取消任务";
-"agent.jobs.status.running" = "运行中";
-"agent.jobs.status.completed" = "已完成";
-"agent.jobs.status.failed" = "失败";
-"agent.jobs.clearAllDialog.title" = "清除全部任务";
-"agent.jobs.clearAllDialog.message" = "确定清除所有任务记录吗？此操作无法撤销。";
-"agent.jobs.deleteDialog.title" = "删除任务";
-"agent.jobs.deleteDialog.message" = "确定删除「%@」吗？此操作无法撤销。";
 
 // MARK: - Auth & Account
 
@@ -1347,11 +1310,6 @@
 "auth.account.usageHours" = "%.1f 小时";
 "auth.account.usageDays" = "%.1f 天";
 
-"agent.clarification.windowTitle" = "助手需要确认";
-"agent.clarification.assistantSectionTitle" = "助手";
-"agent.clarification.hotkeyHint" = "按住快捷键录制回复";
-"agent.clarification.recordingHint" = "录音中... 说完后松开快捷键";
-"agent.clarification.transcribingHint" = "思考中...";
 "cloudDataSync.title" = "词库与人设云同步";
 "cloudDataSync.subtitle" = "默认关闭。开启后，仅同步自定义词库和自定义人设到当前账号的其他设备。";
 "cloudDataSync.consent.title" = "开启云同步？";
