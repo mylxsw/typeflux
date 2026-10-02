@@ -60,12 +60,22 @@ struct AskCustomInference: Sendable {
         if !key.isEmpty {
             request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         }
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        return try await AskReasoningRequest.send(body) { body in
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            return try await send(request, onUsage: onUsage, onProgress: onProgress)
+        }
+    }
+
+    private func send(_ request: URLRequest, onUsage: (@Sendable (AskTokenUsage) async -> Void)?,
+                      onProgress: (@Sendable (AskStreamProgress) async -> Void)?) async throws -> (String, [AskToolCall]) {
         if let onProgress { return try await stream(request, style: .openAI, onUsage: onUsage, onProgress: onProgress) }
         let (data, response) = try await session.data(for: request)
         try Task.checkCancellation()
         guard let response = response as? HTTPURLResponse, (200 ..< 300).contains(response.statusCode),
               data.count <= 2_000_000 else {
+            if let status = (response as? HTTPURLResponse)?.statusCode, AskReasoningRequest.isRejection(status: status) {
+                throw AskStreamError.rejected
+            }
             throw AskLocalError.message(L("ask.models.requestError"))
         }
         if let body = try JSONSerialization.jsonObject(with: data) as? [String: Any],
