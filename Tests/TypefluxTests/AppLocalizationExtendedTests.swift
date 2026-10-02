@@ -138,7 +138,7 @@ final class AppLocalizationInstanceTests: XCTestCase {
 
         XCTAssertEqual(localization.string("agent.section.general"), "通用")
         XCTAssertEqual(localization.string("studio.eyebrow.agent"), "随便问")
-        XCTAssertEqual(localization.string("agent.section.skillsMemory"), "技能与记忆")
+        XCTAssertEqual(localization.string("agent.section.memory"), "记忆")
     }
 
     func testStringLoadsTraditionalChineseLocalizationFromBundle() {

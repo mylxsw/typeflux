@@ -1117,7 +1117,8 @@
 
 "agent.section.general" = "General";
 "agent.section.tools" = "Tools";
-"agent.section.skillsMemory" = "Skills & memory";
+"agent.section.skills" = "Skills";
+"agent.section.memory" = "Memory";
 "agent.settings.runMode" = "Where Ask runs";
 "agent.settings.web" = "Web";
 "agent.settings.code" = "Code";
@@ -1742,6 +1743,23 @@
 "ask.settings.skills.subtitle" = "Instructions Ask loads when a task needs them. Add your own as Skills/<name>/SKILL.md.";
 "ask.settings.skills.builtin" = "Built-in";
 "ask.settings.skills.open" = "Open Skills Folder";
+"ask.settings.skills.install" = "Install from GitHub…";
+"ask.settings.skills.installTitle" = "Install a skill from GitHub";
+"ask.settings.skills.installHint" = "Paste a repository, folder or SKILL.md link. Every folder with a SKILL.md becomes a skill; an installed skill with the same name is updated.";
+"ask.settings.skills.installWarning" = "Skills are instructions Ask follows and files it can read in the code sandbox. Install only from sources you trust.";
+"ask.settings.skills.installAction" = "Install";
+"ask.settings.skills.installing" = "Installing…";
+"ask.settings.skills.local" = "Local";
+"ask.settings.skills.removeTitle" = "Remove skill";
+"ask.settings.skills.removeMessage" = "Remove “%@” and its files? This cannot be undone.";
+"ask.skills.install.invalidURL" = "Enter a GitHub link to a repository, folder or SKILL.md file.";
+"ask.skills.install.notFound" = "No SKILL.md was found at that link, or the repository is private.";
+"ask.skills.install.tooLarge" = "This skill is too large (at most 50 files, 1 MB per file and 5 MB in total).";
+"ask.skills.install.tooMany" = "Too many skills. Install a single skill folder, or remove skills you no longer use.";
+"ask.skills.install.invalidSkill" = "The SKILL.md could not be read. It needs a name and instructions.";
+"ask.skills.install.network" = "Could not reach GitHub. Check your connection and try again.";
+"ask.skills.install.rateLimited" = "GitHub is limiting requests right now. Try again in a few minutes.";
+"ask.skills.install.cannotRemove" = "Built-in skills cannot be removed.";
 "ask.settings.notes.title" = "Saved notes";
 "ask.settings.notes.subtitle" = "Facts you asked Ask to remember. They join the memory of new conversations.";
 "ask.settings.notes.empty" = "No saved notes.";

@@ -26,6 +26,12 @@ struct AskToolsSettingsView: View {
     @State private var skillList: [AskSkill] = []
     @State private var disabledSkills: Set<String> = []
     @State private var noteList: [AskMemoryNote] = []
+    @State private var showingInstall = false
+    @State private var installURL = ""
+    @State private var installing = false
+    @State private var installError: String?
+    @State private var installTask: Task<Void, Never>?
+    @State private var pendingRemoval: AskSkill?
 
     /// Which Agent settings tab to render; MCP servers are owned by the settings view model.
     var tab: AgentConfigurationTab = .general
@@ -37,8 +43,10 @@ struct AskToolsSettingsView: View {
                 generalSections
             case .tools:
                 toolSections
-            case .skillsMemory:
-                skillAndMemorySections
+            case .skills:
+                skillSections
+            case .memory:
+                memorySections
             case .mcpServers:
                 EmptyView()
             }
@@ -163,22 +171,98 @@ struct AskToolsSettingsView: View {
         }
     }
 
-    @ViewBuilder private var skillAndMemorySections: some View {
+    @ViewBuilder private var skillSections: some View {
         AgentSettingsSection(title: L("ask.settings.skills.title"), detail: "\(skillList.count)",
                              footnote: L("ask.settings.skills.subtitle")) {
             ForEach(skillList, id: \.name) { skill in
-                AgentSettingsRow(icon: "wand.and.stars", title: skill.name, subtitle: skill.displayDescription,
-                                 badge: skill.directory == nil ? L("ask.settings.skills.builtin") : nil) {
-                    // A turned-off skill is neither offered to the model nor loaded.
-                    Toggle("", isOn: Binding(get: { !disabledSkills.contains(skill.name) },
-                                             set: { setSkill(skill.name, enabled: $0) }))
-                        .labelsHidden().toggleStyle(.switch)
-                        .accessibilityLabel(skill.name)
-                }
+                skillRow(skill)
                 ModelRowDivider(leading: 66)
             }
+            AgentSettingsActionRow(icon: "arrow.down.circle", title: L("ask.settings.skills.install")) {
+                installError = nil
+                installURL = ""
+                showingInstall = true
+            }
+            ModelRowDivider(leading: 66)
             AgentSettingsActionRow(icon: "folder", title: L("ask.settings.skills.open")) { openSkillsFolder() }
         }
+        .sheet(isPresented: $showingInstall) { installSheet }
+        .alert(L("ask.settings.skills.removeTitle"), isPresented: Binding(
+            get: { pendingRemoval != nil }, set: { if !$0 { pendingRemoval = nil } }
+        )) {
+            Button(L("ask.remove"), role: .destructive) {
+                if let skill = pendingRemoval { removeSkill(skill) }
+                pendingRemoval = nil
+            }
+            Button(L("common.cancel"), role: .cancel) { pendingRemoval = nil }
+        } message: {
+            Text(String(format: L("ask.settings.skills.removeMessage"), pendingRemoval?.name ?? ""))
+        }
+    }
+
+    private func skillRow(_ skill: AskSkill) -> some View {
+        let source = skills.source(of: skill)
+        let badge = skill.directory == nil ? L("ask.settings.skills.builtin")
+            : source == nil ? L("ask.settings.skills.local") : "GitHub"
+        return AgentSettingsRow(icon: "wand.and.stars", title: skill.name, subtitle: skill.displayDescription, badge: badge) {
+            HStack(spacing: 10) {
+                if skill.directory != nil {
+                    AgentSettingsIconButton(systemImage: "trash", help: L("ask.remove"), role: .destructive) {
+                        pendingRemoval = skill
+                    }
+                }
+                // A turned-off skill is neither offered to the model nor loaded.
+                Toggle("", isOn: Binding(get: { !disabledSkills.contains(skill.name) },
+                                         set: { setSkill(skill.name, enabled: $0) }))
+                    .labelsHidden().toggleStyle(.switch)
+                    .accessibilityLabel(skill.name)
+            }
+        }
+        .help(source.map { "\($0.repository)@\($0.ref)" + ($0.path.isEmpty ? "" : "/\($0.path)") } ?? "")
+    }
+
+    private var installSheet: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(L("ask.settings.skills.installTitle"))
+                .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
+            Text(L("ask.settings.skills.installHint"))
+                .font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            TextField("https://github.com/owner/repo/tree/main/skills/name", text: $installURL)
+                .textFieldStyle(ModelFieldStyle())
+                .disabled(installing)
+                .onSubmit { startInstall() }
+            Text(L("ask.settings.skills.installWarning"))
+                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+            if let installError {
+                Text(installError).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack {
+                Spacer()
+                Button(L("common.cancel")) { installTask?.cancel(); showingInstall = false }
+                    .buttonStyle(ModelActionStyle())
+                Button {
+                    startInstall()
+                } label: {
+                    HStack(spacing: 6) {
+                        if installing { ProgressView().controlSize(.small) }
+                        Text(L(installing ? "ask.settings.skills.installing" : "ask.settings.skills.installAction"))
+                    }
+                }
+                .buttonStyle(ModelActionStyle(primary: true))
+                .disabled(installing || installURL.trimmingCharacters(in: .whitespaces).isEmpty)
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(22)
+        .frame(width: 480)
+        .background(ModelVisualStyle.canvas)
+    }
+
+    @ViewBuilder private var memorySections: some View {
         AgentSettingsSection(title: L("ask.settings.notes.title"), detail: "\(noteList.count)",
                              footnote: L("ask.settings.notes.subtitle")) {
             if noteList.isEmpty {
@@ -244,6 +328,32 @@ struct AskToolsSettingsView: View {
         if enabled { disabled.remove(name) } else { disabled.insert(name) }
         settings.askDisabledSkills = disabled
         disabledSkills = disabled
+    }
+
+    private func startInstall() {
+        let url = installURL
+        guard !installing, !url.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        installing = true
+        installError = nil
+        installTask = Task { @MainActor in
+            defer { installing = false; installTask = nil }
+            do {
+                _ = try await AskSkillInstaller(library: skills).install(from: url)
+                guard !Task.isCancelled else { return }
+                reload()
+                showingInstall = false
+            } catch is CancellationError {
+            } catch {
+                installError = error.localizedDescription
+            }
+        }
+    }
+
+    func removeSkill(_ skill: AskSkill) {
+        try? skills.remove(skill)
+        // A reinstalled skill with the same name starts enabled.
+        if disabledSkills.contains(skill.name) { setSkill(skill.name, enabled: true) }
+        reload()
     }
 
     var search: AskSearchSettings { AskSearchSettings(defaults: settings.defaults) }
