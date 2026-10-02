@@ -12,13 +12,17 @@ struct AskModelMenu: View {
     /// there, so it loses its border and only fills under the pointer. Settings
     /// keeps the bordered field it was designed with.
     var compact = false
+    /// Whether Cloud models can run here; Ask passes false in local mode. Defaults to the sign-in state.
+    var cloudAvailable: Bool? = nil
     @ObservedObject private var auth = AuthState.shared
     @State private var expanded = false
     @State private var hovering = false
 
+    private var loggedIn: Bool { cloudAvailable ?? auth.isLoggedIn }
+
     private var currentReason: String? {
         guard let (provider, model) = library.registry.resolve(reference) else { return L("ask.models.unavailable") }
-        return library.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: auth.isLoggedIn, scenario: scenario)
+        return library.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: loggedIn, scenario: scenario)
     }
 
     private var corner: CGFloat {
@@ -65,7 +69,7 @@ struct AskModelMenu: View {
         .help(currentReason ?? L("ask.models.conversationOnly"))
         .askMenu(isPresented: $expanded, glass: compact) {
             AskModelChoices(library: library, reference: $reference, scenario: scenario, showsDefaultAction: showsDefaultAction,
-                            hasImage: hasImage, loggedIn: auth.isLoggedIn, dismiss: { expanded = false },
+                            hasImage: hasImage, loggedIn: loggedIn, dismiss: { expanded = false },
                             composerStyle: compact)
         }
         .onChange(of: expanded) { isExpanded in
