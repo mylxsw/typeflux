@@ -100,6 +100,16 @@ struct AskSkillLibrary: Sendable {
     }
 }
 
+extension AskSkill {
+    /// Built-in skills describe themselves in the interface language; the model keeps the English text.
+    var displayDescription: String {
+        guard directory == nil, AskBuiltinSkills.all.contains(where: { $0.name == name }) else { return description }
+        let key = "ask.skill." + name + ".description"
+        let localized = L(key)
+        return localized == key ? description : localized
+    }
+}
+
 enum AskBuiltinSkills {
     static let all: [AskSkill] = [
         AskSkill(name: "email-reply", description: "Draft a clear, polite email reply that matches the thread's tone and language.", body: """

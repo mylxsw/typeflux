@@ -101,10 +101,9 @@ struct AskWorkspaceGlassTests {
         #expect(AskMetrics.headerCapsuleHeight >= AskMetrics.composerControlHeight)
     }
 
-    @Test func toolCardIsConcentricWithItsIconTile() {
-        // 28pt tile, 9pt corner, inset 8pt from the card edge (rounded to the card's 16pt).
-        #expect(AskToolCard<EmptyView>.corner >= 9 + 8 - 1)
-        #expect(AskToolCard<EmptyView>.corner < AskComposerChrome.workspace.corner)
+    @Test func activityBlockStaysSofterThanTheComposer() {
+        #expect(AskActivityBlock.corner > 0)
+        #expect(AskActivityBlock.corner < AskComposerChrome.workspace.corner)
     }
 
     @Test func transcriptFollowsTheEndOnlyWhenItIsAboveTheComposer() {

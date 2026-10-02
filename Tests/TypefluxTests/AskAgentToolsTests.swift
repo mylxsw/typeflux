@@ -300,7 +300,9 @@ final class AskAgentToolsTests: XCTestCase {
     func testToolTitlesPlanAndRunDecoding() throws {
         XCTAssertEqual(AskTheme.toolTitle(call("skill", ["name": "email-reply"])), L("ask.tool.skill") + " · email-reply")
         XCTAssertEqual(AskTheme.toolTitle(call("run_code", ["language": "python", "code": "1"])), L("ask.tool.run_code") + " · python")
-        XCTAssertEqual(AskTheme.toolTitle(call("files", ["action": "edit"])), L("ask.tool.files") + " · " + L("ask.action.edit"))
+        XCTAssertEqual(AskTheme.toolTitle(call("files", ["action": "edit"])), L("ask.files.action.edit"))
+        XCTAssertEqual(AskTheme.toolTitle(call("files", ["action": "read", "path": "~/Documents/release.md"])),
+                       L("ask.files.action.read") + " · release.md")
         XCTAssertEqual(AskTheme.toolTitle(call("memory", [:])), L("ask.tool.memory"))
         XCTAssertEqual(AskTheme.toolTitle(call("computer", ["action": "hotkey"])), L("ask.tool.computer") + " · " + L("ask.action.hotkey"))
         XCTAssertEqual(AskPresentation.toolSymbol(call("run_code", [:])), "terminal")
@@ -312,11 +314,10 @@ final class AskAgentToolsTests: XCTestCase {
         decoder.dateDecodingStrategy = .iso8601
         let run = try decoder.decode(AskRun.self, from: Data(json.utf8))
         XCTAssertEqual(run.plan?.count, 2)
-        XCTAssertEqual(AskPlanCard.summary(run.plan ?? []), L("ask.plan.progress", 1, 2))
-        XCTAssertEqual(AskPlanCard.symbol("completed"), "checkmark.circle.fill")
-        XCTAssertEqual(AskPlanCard.symbol("in_progress"), "circle.dotted.circle")
-        XCTAssertEqual(AskPlanCard.symbol("pending"), "circle")
-        let hosting = NSHostingView(rootView: AskPlanCard(items: run.plan ?? []).frame(width: 400))
+        XCTAssertEqual(AskPlanList.symbol("completed"), "checkmark.circle.fill")
+        XCTAssertEqual(AskPlanList.symbol("in_progress"), "circle.dotted.circle")
+        XCTAssertEqual(AskPlanList.symbol("pending"), "circle")
+        let hosting = NSHostingView(rootView: AskPlanList(items: run.plan ?? []).frame(width: 400))
         hosting.layoutSubtreeIfNeeded()
         XCTAssertGreaterThan(hosting.fittingSize.height, 20)
 
@@ -343,11 +344,11 @@ final class AskAgentToolsTests: XCTestCase {
         for language in AppLanguage.allCases {
             let bundle = try XCTUnwrap(language.bundleLocalizationCandidates.lazy
                 .compactMap { Bundle.appResources.path(forResource: $0, ofType: "lproj") }.first.flatMap(Bundle.init(path:)))
-            for key in ["ask.files.denied", "ask.code.unavailable", "ask.settings.folders.title", "ask.plan.title", "ask.action.inspect", "agent.section.tools",
+            for key in ["ask.files.denied", "ask.code.unavailable", "ask.settings.folders.title", "ask.tool.update_plan", "ask.action.inspect", "agent.section.tools",
                         "agent.section.skillsMemory", "agent.settings.runMode", "agent.settings.web", "agent.settings.code", "agent.settings.mcp"] {
                 XCTAssertNotEqual(bundle.localizedString(forKey: key, value: nil, table: nil), key, "\(key) in \(language.rawValue)")
             }
-            XCTAssertEqual(bundle.localizedString(forKey: "ask.plan.progress", value: nil, table: nil).components(separatedBy: "%d").count - 1, 2)
+            XCTAssertEqual(bundle.localizedString(forKey: "ask.activity.plan", value: nil, table: nil).components(separatedBy: "%d").count - 1, 2)
             XCTAssertEqual(bundle.localizedString(forKey: "ask.files.editAmbiguous", value: nil, table: nil).components(separatedBy: "%d").count - 1, 1)
         }
     }

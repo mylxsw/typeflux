@@ -57,6 +57,11 @@ final class AskConversationModel: ObservableObject {
 
     /// False when Ask runs on this Mac: not signed in, or local mode is on.
     var cloudAvailable: Bool { session().map { !$0.token.isEmpty } ?? false }
+    /// A capability the user's own setup lacks, surfaced before sending rather than after a run fails.
+    var localCapabilityNotice: String? {
+        guard !cloudAvailable, AskSearchSettings(defaults: modelLibrary.settings.defaults).provider == .none else { return nil }
+        return L("ask.location.noSearch")
+    }
     func requiresVision(launcher: Bool) -> Bool {
         let current = launcher ? launcherDraft : draft
         return (current.includeScreenshot && current.screenshot != nil)
@@ -773,6 +778,13 @@ final class AskConversationModel: ObservableObject {
         guard risk < .destructive, let granted = toolGrants[conversationId]?[call.function.name] else { return false }
         return risk <= granted
     }
+
+    /// The risk tier of the call waiting for approval.
+    func approvalRisk(_ conversationId: String) -> AskToolRisk? {
+        pendingApprovals[conversationId].map { tools.risk(of: $0) }
+    }
+
+    func mcpServerName(of call: AskToolCall) -> String? { tools.mcpServerName(of: call) }
 
     /// Destructive calls can only be allowed once.
     func canAllowForConversation(_ conversationId: String) -> Bool {
