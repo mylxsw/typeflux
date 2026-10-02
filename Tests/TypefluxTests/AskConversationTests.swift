@@ -353,6 +353,15 @@ struct AskConversationTests {
         f.model.approveForConversation("missing")
     }
 
+    @Test func loadingASkillNeedsNoApproval() async throws {
+        let f = try AskTestFixture()
+        await f.api.setTool(.init(id: "skill-1", type: "function", function: .init(name: "skill", arguments: #"{"name":"email-reply"}"#)))
+        f.model.launcherDraft.text = "Reply to this email"; f.model.submitLauncher()
+        try await f.wait { f.tools.executions == 1 && f.model.busyIds.isEmpty }
+        #expect(f.model.pendingApprovals.isEmpty)
+        #expect(await f.api.results.first?.isError == false)
+    }
+
     @Test func toolReportedErrorIsNotSentAsSuccess() async throws {
         let f = try AskTestFixture(); f.tools.reportsError = true
         await f.api.setTool(.init(id: "tool", type: "function", function: .init(name: "mcp_search", arguments: "{}")))

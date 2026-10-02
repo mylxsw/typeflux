@@ -26,6 +26,11 @@ actor StdioMCPClient: MCPClient {
     private var messageIdCounter: Int = 0
     private var connectionInfo: MCPConnectionInfo?
     private var readingTask: Task<Void, Never>?
+    private var toolsChanged: (@Sendable () async -> Void)?
+
+    func setToolsChangedHandler(_ handler: @escaping @Sendable () async -> Void) async {
+        toolsChanged = handler
+    }
 
     var serverInfo: MCPConnectionInfo? {
         connectionInfo
@@ -73,7 +78,7 @@ actor StdioMCPClient: MCPClient {
         do {
             let id = nextId()
             let initParams = MCPInitializeParams(
-                protocolVersion: "2024-11-05",
+                protocolVersion: MCPProtocol.latestVersion,
                 capabilities: MCPServerCapabilities(tools: MCPToolsCapability(listChanged: nil)),
                 clientInfo: MCPClientInfo(name: "Typeflux", version: "1.0.0")
             )
@@ -243,8 +248,12 @@ actor StdioMCPClient: MCPClient {
 
     private func receive(_ line: Data) {
         // Requests and notifications from the server carry a method; only responses resolve our requests.
-        guard let msg = try? JSONDecoder().decode(MCPJsonRPCMessage.self, from: line),
-              msg.method == nil, let msgId = msg.id else { return }
+        guard let msg = try? JSONDecoder().decode(MCPJsonRPCMessage.self, from: line) else { return }
+        if msg.method == "notifications/tools/list_changed", let handler = toolsChanged {
+            Task { await handler() }
+            return
+        }
+        guard msg.method == nil, let msgId = msg.id else { return }
         finish(msgId.stringValue, with: .success(msg))
     }
 

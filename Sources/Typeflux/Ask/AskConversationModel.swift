@@ -754,6 +754,7 @@ final class AskConversationModel: ObservableObject {
 
     func isGranted(_ call: AskToolCall, conversationId: String) -> Bool {
         let risk = tools.risk(of: call)
+        if risk == .none { return true }
         guard risk < .destructive, let granted = toolGrants[conversationId]?[call.function.name] else { return false }
         return risk <= granted
     }

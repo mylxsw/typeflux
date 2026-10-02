@@ -2879,6 +2879,8 @@ struct StudioView: View {
                 agentGeneralTabContent
             case .mcpServers:
                 agentMCPServersTabContent
+            case .askTools:
+                AskToolsSettingsView(settings: viewModel.askToolSettings)
             }
         }
     }

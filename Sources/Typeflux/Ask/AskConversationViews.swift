@@ -623,6 +623,9 @@ struct AskConversationView: View {
                 onDismiss: { model.error = nil }
             )
         }
+        if let plan = model.selected?.run?.plan, !plan.isEmpty {
+            AskPlanCard(items: plan)
+        }
         if let id = model.selected?.id, let call = model.pendingApprovals[id] {
             approval(call, id: id)
         }

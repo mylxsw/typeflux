@@ -52,6 +52,28 @@ final class AskMCPToolsTests: XCTestCase {
         XCTAssertEqual(AskLocalTools.mcpToolNames(remaining).map(\.0), ["mcp_search"])
     }
 
+    func testVoiceAgentGetsUniqueToolNames() async throws {
+        let github = config("GitHub"), local = config("Local")
+        let first = MockMCPClient(), second = MockMCPClient()
+        await first.setMockTools([tool("search"), tool("issues")])
+        await second.setMockTools([tool("search")])
+        let registry = registry([github.id: first, local.id: second])
+        try await registry.addServer(github)
+        try await registry.addServer(local)
+        let tools = await registry.uniqueAgentTools()
+        XCTAssertEqual(Set(tools.map(\.definition.name)), ["issues", "GitHub_search", "Local_search"])
+        let renamed = try XCTUnwrap(tools.first { $0.definition.name == "Local_search" })
+        XCTAssertTrue(renamed is MCPRenamedTool)
+        let output = try await renamed.execute(arguments: "{}")
+        XCTAssertTrue(output.contains("mock result"))
+        XCTAssertEqual(renamed.definition.description, "search tool")
+        // A server may announce tool changes; refreshing replaces its cached tools.
+        await second.setMockTools([tool("lookup")])
+        try await registry.refreshTools(for: local.id)
+        let refreshed = await registry.uniqueAgentTools().map(\.definition.name)
+        XCTAssertEqual(Set(refreshed), ["issues", "search", "lookup"])
+    }
+
     func testServerWhoseToolsCannotBeListedIsNotKept() async throws {
         let server = config("Broken")
         let client = MockMCPClient()
@@ -85,9 +107,10 @@ final class AskMCPToolsTests: XCTestCase {
         let registry = registry([server.id: client])
         try await registry.addServer(server)
         let tools = AskLocalTools(registry: registry)
+        tools.runningBundleIdentifiers = { [] }
 
         let names = await tools.definitions(conversationId: nil).map(\.name)
-        XCTAssertEqual(names, ["computer", "mcp_lookup"])
+        XCTAssertEqual(names, ["computer", "skill", "memory", "mcp_lookup"])
         let output = try await tools.execute(.init(id: "1", function: .init(name: "mcp_lookup", arguments: "{}")), conversationId: "c")
         XCTAssertTrue(output.isError)
         XCTAssertEqual(output.content, "quota exceeded")

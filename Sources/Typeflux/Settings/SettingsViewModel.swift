@@ -255,6 +255,8 @@ final class StudioViewModel: ObservableObject {
 
     let modelLibrary: AskModelLibrary
     private let settingsStore: SettingsStore
+    /// Backs the Ask tools tab, which edits its own settings directly.
+    var askToolSettings: SettingsStore { settingsStore }
     private let historyStore: HistoryStore
     private let historyStoreBox: HistoryStoreSendableBox
     let agentJobStore: AgentJobStore
@@ -1816,7 +1818,9 @@ final class StudioViewModel: ObservableObject {
                         }
                         return
                     }
-                    client = HTTPMCPClient(config: MCPHTTPConfig(url: url, headers: config.headers))
+                    // Testing from Settings may open the browser to sign in; the token is reused afterwards.
+                    client = HTTPMCPClient(config: MCPHTTPConfig(url: url, headers: config.headers,
+                                                                 authorizer: MCPOAuthAuthorizer(resource: url, interactive: true)))
                 }
                 try await client.connect()
                 let tools = try await client.listTools()

@@ -57,6 +57,7 @@ struct AskMemoryProvider: AskMemoryProviding {
     private let settings: SettingsStore
     private let soulStore: GlobalSoulMemoryStore
     private let recentStore: RecentInputMemoryStore
+    private let noteStore: AskMemoryNoteStore
     private let ownerID: @MainActor () -> String
     private let ownBundleIdentifier: String?
     private let resolveScope: (String) -> RecentInputMemoryScope?
@@ -65,6 +66,7 @@ struct AskMemoryProvider: AskMemoryProviding {
         settings: SettingsStore,
         soulStore: GlobalSoulMemoryStore = .shared,
         recentStore: RecentInputMemoryStore = .shared,
+        noteStore: AskMemoryNoteStore = .shared,
         ownerID: @escaping @MainActor () -> String = { GlobalSoulOwner.currentID },
         ownBundleIdentifier: String? = Bundle.main.bundleIdentifier,
         resolveScope: @escaping (String) -> RecentInputMemoryScope? = {
@@ -74,6 +76,7 @@ struct AskMemoryProvider: AskMemoryProviding {
         self.settings = settings
         self.soulStore = soulStore
         self.recentStore = recentStore
+        self.noteStore = noteStore
         self.ownerID = ownerID
         self.ownBundleIdentifier = ownBundleIdentifier
         self.resolveScope = resolveScope
@@ -81,10 +84,17 @@ struct AskMemoryProvider: AskMemoryProviding {
 
     func memory(bundleIdentifier: String?, appName: String?) -> AskMemory? {
         var result = AskMemory()
+        var global = ""
         if settings.globalSoulMemoryEnabled, let soul = soulStore.soul(ownerID: ownerID())?.text {
-            let text = AskMemory.clipped(soul, to: AskMemory.maximumGlobalLength)
-            if !text.isEmpty { result.global = text }
+            global = AskMemory.clipped(soul, to: AskMemory.maximumGlobalLength)
         }
+        // Notes the user explicitly saved share the global budget after the soul summary.
+        let room = AskMemory.maximumGlobalLength - global.unicodeScalars.count - 2
+        if let notes = AskMemoryNoteStore.memoryText(noteStore.list(owner: ownerID()), limit: room) {
+            global = global.isEmpty ? notes : global + "\n\n" + notes
+        }
+        global = AskMemory.clipped(global, to: AskMemory.maximumGlobalLength)
+        if !global.isEmpty { result.global = global }
         result.app = appMemory(bundleIdentifier: bundleIdentifier, appName: appName)
         return result.isEmpty ? nil : result
     }

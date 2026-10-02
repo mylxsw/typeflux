@@ -11,6 +11,8 @@ struct AskLocalToolOutput: Sendable {
 /// How much a tool call can change. Grants for a conversation cover a tool up to the
 /// granted level; destructive calls always ask.
 enum AskToolRisk: Int, Comparable, Sendable {
+    /// Loads app-provided instructions only; runs without approval.
+    case none
     case read, write, destructive
 
     static func < (lhs: AskToolRisk, rhs: AskToolRisk) -> Bool { lhs.rawValue < rhs.rawValue }
@@ -35,18 +37,42 @@ final class AskLocalTools: AskToolExecuting {
     private var capturedDisplays: [String: CGDirectDisplayID] = [:]
     private var targets: [String: NSRunningApplication] = [:]
     private let runner: any ProcessCommandRunning
+    private let settings: SettingsStore?
+    let sandbox: AskCodeSandbox
+    let skills: AskSkillLibrary
+    private let notes: AskMemoryNoteStore
+    private let owner: @MainActor () -> String
+    /// Running apps, injectable for tests.
+    var runningBundleIdentifiers: () -> [String] = { NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier) }
 
-    init(registry: MCPRegistry, runner: any ProcessCommandRunning = ProcessCommandRunner()) {
-        self.registry = registry; self.runner = runner
+    init(registry: MCPRegistry, runner: any ProcessCommandRunning = ProcessCommandRunner(), settings: SettingsStore? = nil,
+         sandbox: AskCodeSandbox? = nil, skills: AskSkillLibrary = AskSkillLibrary(), notes: AskMemoryNoteStore = .shared,
+         owner: @escaping @MainActor () -> String = { GlobalSoulOwner.currentID }) {
+        self.registry = registry; self.runner = runner; self.settings = settings
+        self.skills = skills; self.notes = notes; self.owner = owner
+        self.sandbox = sandbox ?? AskCodeSandbox(readableDirectories: [skills.userDirectory])
     }
 
     func bindConversation(_ id: String) { targets[id] = targetApplication }
 
-    func definitions(conversationId: String?) async -> [AskToolDefinition] {
-        await registry.connectAutoConnectServers()
+    var fileTools: AskFileTools { AskFileTools(roots: settings?.askFileAccessFolders ?? []) }
+
+    /// The bound browser, or a running Safari/Chrome when the question started elsewhere.
+    func browserBundle(conversationId: String?) -> String? {
         // An existing conversation only controls the app it was bound to, which is gone after a restart.
         let target = conversationId.map { targets[$0] } ?? targetApplication
-        var result = Self.builtins.filter { $0.name != "browser" || Self.isSupportedBrowser(target?.bundleIdentifier) }
+        if let bundle = target?.bundleIdentifier, Self.isSupportedBrowser(bundle) { return bundle }
+        let running = runningBundleIdentifiers()
+        return ["com.apple.Safari", "com.google.Chrome"].first(where: running.contains)
+    }
+
+    func definitions(conversationId: String?) async -> [AskToolDefinition] {
+        await registry.connectAutoConnectServers()
+        var result = Self.builtins.filter { $0.name != "browser" || browserBundle(conversationId: conversationId) != nil }
+        if let files = AskFileTools.definition(roots: fileTools.roots) { result.append(files) }
+        if settings?.askCodeExecutionEnabled == true, let code = sandbox.definition() { result.append(code) }
+        if let skill = skills.definition(skills.skills()) { result.append(skill) }
+        result.append(AskMemoryNoteStore.definition)
         mcpTools = [:]
         var schemaBytes = 0
         for (name, entry) in Self.mcpToolNames(await registry.registeredTools()) {
@@ -74,10 +100,14 @@ final class AskLocalTools: AskToolExecuting {
     }
 
     nonisolated static func builtinRisk(_ call: AskToolCall) -> AskToolRisk {
-        let action = (try? arguments(call.function.arguments)["action"] as? String) ?? ""
+        let args = (try? jsonArguments(call.function.arguments)) ?? [:]
+        let action = args["action"] as? String ?? ""
         switch (call.function.name, action) {
-        case ("computer", "screenshot"), ("browser", "read"): return .read
-        case ("computer", _), ("browser", _): return .write
+        case ("skill", _): return .none
+        case ("computer", "screenshot"), ("computer", "inspect"), ("computer", "wait"),
+             ("browser", "read"), ("browser", "snapshot"), ("memory", "list"): return .read
+        case ("files", _): return AskFileTools.risk(action: action)
+        case ("computer", _), ("browser", _), ("run_code", _), ("memory", _): return .write
         default: return .destructive
         }
     }
@@ -113,14 +143,28 @@ final class AskLocalTools: AskToolExecuting {
     }
 
     static let builtins: [AskToolDefinition] = [
-        definition("computer", description: "Observe or control the user's desktop after approval. Screenshot first; click coordinates are fractions (0...1) of that display. Inspect again after acting. Keys: return, tab, escape, backspace, up, down, left, right. One action per call.", properties: [
-            "action": ["type": "string", "enum": ["screenshot", "click", "type", "key", "scroll"]],
+        definition("computer", description: """
+        Observe or control the user's desktop after approval, one action per call. Start with screenshot or inspect \
+        (inspect lists the target app's accessibility elements with click coordinates). Coordinates are fractions \
+        (0...1) of the last captured display. Actions: click, double_click, right_click, drag (x,y to to_x,to_y), type, \
+        key (return, tab, escape, backspace, delete, arrows, home, end, pageup, pagedown, space, f1-f12), hotkey \
+        (e.g. "cmd+c", "cmd+shift+t"), scroll, wait (seconds up to 5). Verify with screenshot or inspect after acting.
+        """, properties: [
+            "action": ["type": "string", "enum": ["screenshot", "inspect", "click", "double_click", "right_click", "drag", "type", "key", "hotkey", "scroll", "wait"]],
             "x": ["type": "number", "minimum": 0, "maximum": 1], "y": ["type": "number", "minimum": 0, "maximum": 1],
-            "text": ["type": "string"], "key": ["type": "string"], "amount": ["type": "integer", "minimum": -10, "maximum": 10]
+            "to_x": ["type": "number", "minimum": 0, "maximum": 1], "to_y": ["type": "number", "minimum": 0, "maximum": 1],
+            "text": ["type": "string"], "key": ["type": "string"], "keys": ["type": "string"],
+            "amount": ["type": "integer", "minimum": -10, "maximum": 10], "seconds": ["type": "number", "minimum": 0, "maximum": 5]
         ]),
-        definition("browser", description: "Read or interact with the original Safari or Chrome tab after approval. Actions: read returns URL, visible text and links; open navigates to an HTTP(S) URL; click/fill use a CSS selector. One action per call. Never claim unavailable browser access succeeded.", properties: [
-            "action": ["type": "string", "enum": ["read", "open", "click", "fill"]], "url": ["type": "string"],
-            "selector": ["type": "string"], "text": ["type": "string"]
+        definition("browser", description: """
+        Read or interact with the front Safari or Chrome tab after approval, one action per call. read returns URL, \
+        visible text and links; snapshot lists interactive elements with numeric refs; click/fill take a ref from the \
+        latest snapshot (or a CSS selector); open navigates to an http(s) URL; back goes back; scroll moves by screens. \
+        Read or snapshot again to verify. Never claim unavailable browser access succeeded.
+        """, properties: [
+            "action": ["type": "string", "enum": ["read", "snapshot", "open", "click", "fill", "back", "scroll"]], "url": ["type": "string"],
+            "selector": ["type": "string"], "ref": ["type": "integer", "minimum": 1], "text": ["type": "string"],
+            "amount": ["type": "integer", "minimum": -10, "maximum": 10]
         ])
     ]
 
@@ -137,10 +181,33 @@ final class AskLocalTools: AskToolExecuting {
             // Decoding and re-encoding a tool image must not block the main actor.
             return await Task.detached(priority: .userInitiated) { Self.output(from: output) }.value
         }
-        let args = try Self.arguments(call.function.arguments)
+        let args = try Self.jsonArguments(call.function.arguments)
         switch call.function.name {
-        case "computer": return try await computer(args, target: targets[conversationId], conversationId: conversationId)
-        case "browser": return try await browser(args, target: targets[conversationId])
+        case "computer":
+            return try await computer(try Self.arguments(call.function.arguments), target: targets[conversationId], conversationId: conversationId)
+        case "browser":
+            let args = try Self.arguments(call.function.arguments)
+            guard let bundle = browserBundle(conversationId: conversationId) else { throw AskLocalError.message(L("ask.tool.browserUnsupported")) }
+            return try await executeBrowser(args, bundle: bundle)
+        case "files":
+            let files = fileTools
+            let output = try await Task.detached(priority: .userInitiated) { try files.execute(args) }.value
+            return .init(content: output)
+        case "run_code":
+            guard settings?.askCodeExecutionEnabled == true,
+                  let language = (args["language"] as? String).flatMap(AskCodeSandbox.Language.init(rawValue:)),
+                  let code = args["code"] as? String, !code.isEmpty else { throw AskLocalError.message(L("ask.tool.invalid")) }
+            let sandbox = sandbox
+            let timeout = args["timeout_seconds"] as? Int ?? AskCodeSandbox.defaultTimeout
+            let execution = try await sandbox.run(language, code: code, conversationId: conversationId, timeout: timeout)
+            let workspace = try sandbox.workspace(for: conversationId).path
+            return .init(content: AskCodeSandbox.report(execution, workspace: workspace), image: execution.image,
+                         isError: execution.timedOut || execution.exitCode != 0)
+        case "skill":
+            guard let name = args["name"] as? String else { throw AskLocalError.message(L("ask.tool.invalid")) }
+            return .init(content: try skills.load(name))
+        case "memory":
+            return .init(content: try notes.execute(args, owner: owner()))
         default: throw AskLocalError.message(L("ask.tool.unavailable"))
         }
     }
@@ -176,6 +243,13 @@ final class AskLocalTools: AskToolExecuting {
         return "data:image/jpeg;base64," + jpeg.base64EncodedString()
     }
 
+    nonisolated static func jsonArguments(_ value: String) throws -> [String: Any] {
+        guard let data = value.data(using: .utf8), let args = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw AskLocalError.message(L("ask.tool.invalid"))
+        }
+        return args
+    }
+
     nonisolated static func arguments(_ value: String) throws -> [String: Any] {
         guard let data = value.data(using: .utf8),
               let args = try JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -193,13 +267,40 @@ final class AskLocalTools: AskToolExecuting {
         app.activate(options: [.activateIgnoringOtherApps])
     }
 
+    private func displayBounds(_ conversationId: String) -> CGRect? {
+        capturedDisplays[conversationId].map { CGDisplayBounds($0) }
+    }
+
     private func computer(_ args: [String: Any], target: NSRunningApplication?, conversationId: String) async throws -> AskLocalToolOutput {
-        if args["action"] as? String == "screenshot" {
+        let action = args["action"] as? String ?? ""
+        switch action {
+        case "screenshot":
             let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
             let id = (screen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
             let shot = try await AskContextCapture.screenshot(displayId: id)
             capturedDisplays[conversationId] = shot.displayId
             return .init(content: "Current screen: \(shot.width) × \(shot.height). Click coordinates are normalized from the top-left (0,0) to bottom-right (1,1).", image: shot.dataURL)
+        case "wait":
+            let seconds = min(5, max(0, (args["seconds"] as? Double) ?? Double(args["seconds"] as? Int ?? 1)))
+            try await Task.sleep(for: .milliseconds(Int(seconds * 1000)))
+            return .init(content: "Waited \(seconds) s.")
+        case "inspect":
+            guard AXIsProcessTrusted() else { throw AskLocalError.message(L("ask.tool.accessibility")) }
+            guard let app = target, !app.isTerminated, let root = AskDesktopActions.snapshot(pid: app.processIdentifier) else {
+                throw AskLocalError.message(L("ask.tool.targetMissing"))
+            }
+            // Clicks after inspect use the display that shows the window.
+            if let frame = root.frame {
+                var display: CGDirectDisplayID = 0, count: UInt32 = 0
+                if CGGetDisplaysWithPoint(CGPoint(x: frame.midX, y: frame.midY), 1, &display, &count) == .success, count > 0 {
+                    capturedDisplays[conversationId] = display
+                }
+            }
+            let bounds = displayBounds(conversationId) ?? CGDisplayBounds(CGMainDisplayID())
+            return .init(content: "Accessibility elements of \(app.localizedName ?? "the app") (click coordinates as @(x, y)):\n" +
+                         String(AskDesktopActions.describe(root, display: bounds).prefix(60000)))
+        default:
+            break
         }
         guard AXIsProcessTrusted() else { throw AskLocalError.message(L("ask.tool.accessibility")) }
         try activateTarget(target)
@@ -209,15 +310,44 @@ final class AskLocalTools: AskToolExecuting {
         guard NSWorkspace.shared.frontmostApplication?.processIdentifier == target?.processIdentifier else {
             throw AskLocalError.message(L("ask.tool.targetMissing"))
         }
-        switch args["action"] as? String {
-        case "click":
-            guard let display = capturedDisplays[conversationId], let x = args["x"] as? Double, let y = args["y"] as? Double,
-                  x.isFinite, y.isFinite, (0 ... 1).contains(x), (0 ... 1).contains(y) else { throw AskLocalError.message(L("ask.tool.invalid")) }
-            let bounds = CGDisplayBounds(display)
-            let point = CGPoint(x: bounds.minX + x * (bounds.width - 1), y: bounds.minY + y * (bounds.height - 1))
-            for type in [CGEventType.leftMouseDown, .leftMouseUp] {
-                CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: point, mouseButton: .left)?.post(tap: .cghidEventTap)
+        func point(_ xKey: String, _ yKey: String) throws -> CGPoint {
+            guard let bounds = displayBounds(conversationId), let x = args[xKey] as? Double ?? (args[xKey] as? Int).map(Double.init),
+                  let y = args[yKey] as? Double ?? (args[yKey] as? Int).map(Double.init),
+                  let point = AskDesktopActions.point(x: x, y: y, in: bounds) else { throw AskLocalError.message(L("ask.tool.invalid")) }
+            return point
+        }
+        func post(_ type: CGEventType, at point: CGPoint, button: CGMouseButton = .left, clicks: Int64 = 1) {
+            let event = CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: point, mouseButton: button)
+            event?.setIntegerValueField(.mouseEventClickState, value: clicks)
+            event?.post(tap: .cghidEventTap)
+        }
+        func press(_ key: CGKeyCode, flags: CGEventFlags = []) {
+            for down in [true, false] {
+                let event = CGEvent(keyboardEventSource: nil, virtualKey: key, keyDown: down)
+                event?.flags = flags
+                event?.post(tap: .cghidEventTap)
             }
+        }
+        switch action {
+        case "click":
+            let target = try point("x", "y")
+            post(.leftMouseDown, at: target); post(.leftMouseUp, at: target)
+        case "double_click":
+            let target = try point("x", "y")
+            for clicks in [Int64(1), 2] { post(.leftMouseDown, at: target, clicks: clicks); post(.leftMouseUp, at: target, clicks: clicks) }
+        case "right_click":
+            let target = try point("x", "y")
+            post(.rightMouseDown, at: target, button: .right); post(.rightMouseUp, at: target, button: .right)
+        case "drag":
+            let from = try point("x", "y"), to = try point("to_x", "to_y")
+            post(.leftMouseDown, at: from)
+            for step in 1 ... 12 {
+                try Task.checkCancellation()
+                let t = CGFloat(step) / 12
+                post(.leftMouseDragged, at: CGPoint(x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t))
+                try await Task.sleep(for: .milliseconds(15))
+            }
+            post(.leftMouseUp, at: to)
         case "type":
             guard let text = args["text"] as? String, text.utf16.count <= 10000 else { throw AskLocalError.message(L("ask.tool.invalid")) }
             let chars = Array(text.utf16)
@@ -236,9 +366,13 @@ final class AskLocalTools: AskToolExecuting {
                 await Task.yield()
             }
         case "key":
-            let keys: [String: CGKeyCode] = ["return": 36, "tab": 48, "escape": 53, "backspace": 51, "up": 126, "down": 125, "left": 123, "right": 124]
-            guard let name = args["key"] as? String, let key = keys[name] else { throw AskLocalError.message(L("ask.tool.invalid")) }
-            for down in [true, false] { CGEvent(keyboardEventSource: nil, virtualKey: key, keyDown: down)?.post(tap: .cghidEventTap) }
+            guard let name = (args["key"] as? String)?.lowercased(), let key = AskDesktopActions.keyCodes[name] else { throw AskLocalError.message(L("ask.tool.invalid")) }
+            press(key)
+        case "hotkey":
+            guard let shortcut = AskDesktopActions.parseHotkey(args["keys"] as? String ?? args["key"] as? String ?? "") else {
+                throw AskLocalError.message(L("ask.tool.invalid"))
+            }
+            press(shortcut.key, flags: shortcut.flags)
         case "scroll":
             guard let amount = args["amount"] as? Int, (-10 ... 10).contains(amount) else { throw AskLocalError.message(L("ask.tool.invalid")) }
             CGEvent(scrollWheelEvent2Source: nil, units: .line, wheelCount: 1, wheel1: Int32(amount), wheel2: 0, wheel3: 0)?.post(tap: .cghidEventTap)
@@ -256,13 +390,6 @@ final class AskLocalTools: AskToolExecuting {
             .replacingOccurrences(of: "\n", with: "\\n").replacingOccurrences(of: "\r", with: "\\r") + "\""
     }
 
-    private func browser(_ args: [String: Any], target: NSRunningApplication?) async throws -> AskLocalToolOutput {
-        guard let bundle = target?.bundleIdentifier, Self.isSupportedBrowser(bundle) else {
-            throw AskLocalError.message(L("ask.tool.browserUnsupported"))
-        }
-        return try await executeBrowser(args, bundle: bundle)
-    }
-
     func executeBrowser(_ args: [String: Any], bundle: String) async throws -> AskLocalToolOutput {
         let source = try Self.browserScript(args, bundle: bundle)
         do {
@@ -274,6 +401,16 @@ final class AskLocalTools: AskToolExecuting {
             throw AskLocalError.message(L("ask.tool.browserPermission"))
         }
     }
+    /// Numbers visible interactive elements so later calls can address them by ref.
+    nonisolated static let snapshotScript = """
+    (()=>{document.querySelectorAll('[data-typeflux-ref]').forEach(e=>e.removeAttribute('data-typeflux-ref'));\
+    const all=[...document.querySelectorAll('a[href],button,input,select,textarea,summary,[role=button],[role=link],[role=tab],[role=menuitem],[role=checkbox],[contenteditable=true]')];\
+    const visible=all.filter(e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.visibility!=='hidden'&&s.display!=='none'}).slice(0,200);\
+    return JSON.stringify({url:location.href,title:document.title,elements:visible.map((e,i)=>{e.setAttribute('data-typeflux-ref',String(i+1));\
+    const name=(e.getAttribute('aria-label')||e.innerText||e.value||e.getAttribute('placeholder')||e.title||e.getAttribute('href')||'').trim().replace(/\\s+/g,' ').slice(0,100);\
+    return {ref:i+1,tag:e.tagName.toLowerCase(),role:e.getAttribute('role')||e.type||'',name}})})})()
+    """
+
     nonisolated static func browserScript(_ args: [String: Any], bundle: String) throws -> String {
         guard ["com.apple.Safari", "com.google.Chrome"].contains(bundle) else {
             throw AskLocalError.message(L("ask.tool.browserUnsupported"))
@@ -286,8 +423,21 @@ final class AskLocalTools: AskToolExecuting {
             guard let raw = args["url"] as? String, raw.count <= 4000, let url = URL(string: raw),
                   ["http", "https"].contains(url.scheme?.lowercased() ?? ""), url.host != nil else { throw AskLocalError.message(L("ask.tool.invalid")) }
             script = "location.href=\(Self.javascriptLiteral(raw));'Navigation requested'"
+        case "snapshot":
+            script = snapshotScript
+        case "back":
+            script = "history.back();'Went back; read or snapshot to verify'"
+        case "scroll":
+            guard let amount = args["amount"] as? Int, (-10 ... 10).contains(amount) else { throw AskLocalError.message(L("ask.tool.invalid")) }
+            script = "window.scrollBy(0,\(amount)*Math.round(innerHeight*0.8));'Scrolled'"
         case "click", "fill":
-            guard let selector = args["selector"] as? String, selector.count <= 2000 else { throw AskLocalError.message(L("ask.tool.invalid")) }
+            // A ref from the latest snapshot, or a CSS selector.
+            let selector: String
+            if let ref = args["ref"] as? Int, ref > 0 {
+                selector = "[data-typeflux-ref=\"\(ref)\"]"
+            } else if let css = args["selector"] as? String, !css.isEmpty, css.count <= 2000 {
+                selector = css
+            } else { throw AskLocalError.message(L("ask.tool.invalid")) }
             let action: String
             if args["action"] as? String == "fill" {
                 guard let text = args["text"] as? String, text.count <= 10000 else { throw AskLocalError.message(L("ask.tool.invalid")) }

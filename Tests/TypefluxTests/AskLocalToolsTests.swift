@@ -43,9 +43,10 @@ struct AskLocalToolsTests {
         let registry = MCPRegistry(settingsStore: MCPSettingsStore(defaults: defaults))
         let runner = AskScriptRunner()
         let tools = AskLocalTools(registry: registry, runner: runner)
-        // Without a Safari/Chrome target the browser tool would always fail, so it is not offered.
-        #expect(await tools.definitions(conversationId: nil).map(\.name) == ["computer"])
-        #expect(await tools.definitions(conversationId: "unbound").map(\.name) == ["computer"])
+        tools.runningBundleIdentifiers = { [] }
+        // Without Safari or Chrome the browser tool would always fail, so it is not offered.
+        #expect(await !tools.definitions(conversationId: nil).map(\.name).contains("browser"))
+        #expect(await tools.definitions(conversationId: "unbound").map(\.name).first == "computer")
         #expect(AskLocalTools.isSupportedBrowser("com.apple.Safari"))
         #expect(AskLocalTools.isSupportedBrowser("com.google.Chrome"))
         #expect(!AskLocalTools.isSupportedBrowser("com.apple.TextEdit"))
