@@ -14,12 +14,17 @@ protocol AskAPI: Sendable {
     func cancel(conversationId: String, runId: String, token: String) async throws -> AskConversation
     func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, token: String) async throws -> AskConversation
     func regenerate(conversationId: String, request: AskRegenerateRequest, token: String) async throws -> AskConversation
+    func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation
     func delete(conversationId: String, token: String) async throws
     /// Removes device memory pinned to every conversation of the signed-in user.
     func purgeMemory(token: String) async throws
 }
 
 extension AskAPI {
+    /// Services without steering reject it; the device then sends the message as a new turn.
+    func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation {
+        throw AskLocalError.message(L("ask.local.conflict"))
+    }
     func usage(id: String, runId: String?, cursor: Int64?, token: String) async throws -> AskUsagePage {
         throw AskLocalError.message(L("ask.usage.unavailable"))
     }
@@ -84,6 +89,9 @@ struct AskAPIClient: AskAPI {
     }
     func regenerate(conversationId: String, request: AskRegenerateRequest, token: String) async throws -> AskConversation {
         try await execute(path: "/\(conversationId)/regenerate", method: "POST", body: AskCoding.encoder().encode(request), token: token)
+    }
+    func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation {
+        try await execute(path: "/\(conversationId)/steer", method: "POST", body: AskCoding.encoder().encode(request), token: token)
     }
     func delete(conversationId: String, token: String) async throws {
         struct Deleted: Decodable { let deleted: Bool }

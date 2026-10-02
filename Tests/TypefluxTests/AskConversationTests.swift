@@ -132,6 +132,21 @@ actor AskTestAPI: AskAPI {
         value.revision += 1; values[conversationId] = value
         return value
     }
+    var steers: [AskSteerRequest] = []
+    var deliverSteers = false
+    var failSteer = false
+    func setDeliverSteers(_ flag: Bool) { deliverSteers = flag }
+    func setFailSteer(_ flag: Bool) { failSteer = flag }
+    func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation {
+        if failSteer { throw AskLocalError.message("Conflict") }
+        steers.append(request)
+        var value = try await conversation(id: conversationId, token: token)
+        if deliverSteers {
+            value.messages.append(.init(id: request.id, role: "user", text: request.text, createdAt: Date(), runId: request.runId, steered: true))
+            value.revision += 1; values[conversationId] = value
+        }
+        return value
+    }
     func delete(conversationId: String, token: String) async throws { values[conversationId] = nil }
     var purgeTokens: [String] = []
     var failPurge = false

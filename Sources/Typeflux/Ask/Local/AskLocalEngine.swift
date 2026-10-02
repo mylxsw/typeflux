@@ -12,6 +12,8 @@ struct AskLocalRecord: Codable, Equatable, Sendable {
     var builtinTools: [AskToolDefinition] = []
     var lastInferenceId: String?
     var cloudCalls = 0
+    /// Messages sent into the running run that the model has not read yet.
+    var steering: [AskMessage]?
 }
 
 /// Runs Ask conversations entirely on this Mac with the user's own models, for
@@ -25,6 +27,9 @@ actor AskLocalEngine: AskAPI {
     static let maxMessages = 500
     static let maxToolCalls = 8
     static let maxBuiltinCalls = 16
+    static let maxSteering = 5
+    static let steeringStepBonus = 4
+    static let maxExtraSteps = 12
     static let summarizeAfter = 28
     static let keepRecent = 12
     static let staleAfter: TimeInterval = 10 * 60
@@ -212,6 +217,25 @@ actor AskLocalEngine: AskAPI {
         return record.conversation
     }
 
+    /// Queues a message for the active run; the model reads it at the next step boundary.
+    func steer(conversationId: String, request: AskSteerRequest, token _: String) async throws -> AskConversation {
+        var record = try record(conversationId)
+        if record.conversation.messages.contains(where: { $0.id == request.id }) { return record.conversation }
+        guard let run = record.conversation.run, run.isActive, run.id == request.runId else { throw conflict() }
+        let hasQuestion = !request.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || (request.references ?? []).contains { !$0.question.trimmingCharacters(in: .whitespaces).isEmpty }
+        guard hasQuestion else { throw AskLocalError.message(L("ask.local.emptyQuestion")) }
+        var waiting = record.steering ?? []
+        if waiting.contains(where: { $0.id == request.id }) { return record.conversation }
+        guard waiting.count < Self.maxSteering else { throw AskLocalError.message(L("ask.queue.full", Self.maxSteering)) }
+        waiting.append(AskMessage(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source,
+                                  image: request.image, createdAt: now(), reasoningEffort: run.reasoningEffort,
+                                  references: request.references, runId: run.id, steered: true))
+        record.steering = waiting
+        try save(&record)
+        return record.conversation
+    }
+
     func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, token _: String) async throws -> AskConversation {
         var record = try record(conversationId)
         guard let run = record.conversation.run, run.id == runId, run.deviceId == deviceId else { throw conflict() }
@@ -259,6 +283,8 @@ actor AskLocalEngine: AskAPI {
     private func conflict() -> AskLocalError { .message(L("ask.local.conflict")) }
 
     private func prepareRun(_ record: inout AskLocalRecord) {
+        // Messages left from an earlier run were taken back by the device.
+        record.steering = nil
         record.builtinTools = [Self.planTool] + webTools.definitions()
         record.cloudCalls = 0
         let zone = record.timeZone.flatMap(TimeZone.init(identifier:)) ?? TimeZone(identifier: "UTC")!
@@ -282,8 +308,9 @@ actor AskLocalEngine: AskAPI {
 
     /// Queues the next on-device inference: a summary when the history is long, otherwise the answer.
     private func step(_ record: inout AskLocalRecord) async throws -> AskConversation {
+        if record.conversation.run?.status == "running" { deliverSteering(&record) }
         guard let run = record.conversation.run else { return record.conversation }
-        guard run.steps < Self.maxSteps else { return try fail(&record, L("ask.local.stepLimit")) }
+        guard run.steps < Self.maxSteps + (run.extraSteps ?? 0) else { return try fail(&record, L("ask.local.stepLimit")) }
         let c = record.conversation
         let through = c.summaryThrough ?? 0
         if c.messages.count - through > Self.summarizeAfter {
@@ -333,6 +360,11 @@ actor AskLocalEngine: AskAPI {
         record.conversation.run?.assistantId = nil
         record.conversation.run?.steps += 1
         record.conversation.run?.pending = calls
+        if calls.isEmpty, deliverSteering(&record) {
+            // Messages sent while the model was answering get a reply in the same run.
+            record.conversation.run?.status = "running"
+            return try await step(&record)
+        }
         if calls.isEmpty {
             record.conversation.run?.status = "completed"
             try save(&record)
@@ -354,6 +386,7 @@ actor AskLocalEngine: AskAPI {
                 return records[record.conversation.id]?.conversation ?? record.conversation
             }
             record.conversation.revision = latest.conversation.revision
+            record.steering = latest.steering
             record.conversation.messages.append(AskMessage(id: UUID().uuidString, role: "tool", text: text, toolCallId: call.id, isError: failed, createdAt: now()))
             record.conversation.run?.pending.removeFirst()
             record.cloudCalls += 1
@@ -378,6 +411,21 @@ actor AskLocalEngine: AskAPI {
             } catch { return (error.localizedDescription, true) }
         }
         return await webTools.execute(name: call.function.name, arguments: call.function.arguments)
+    }
+
+    /// Appends the messages waiting for this run. Only at a step boundary, so a user
+    /// message never lands between a tool call and its result.
+    @discardableResult
+    private func deliverSteering(_ record: inout AskLocalRecord) -> Bool {
+        guard let run = record.conversation.run, run.pending.isEmpty, let waiting = record.steering, !waiting.isEmpty else { return false }
+        for var message in waiting where !record.conversation.messages.contains(where: { $0.id == message.id }) {
+            message.createdAt = now()
+            message.runId = run.id
+            record.conversation.messages.append(message)
+        }
+        record.steering = nil
+        record.conversation.run?.extraSteps = min((run.extraSteps ?? 0) + Self.steeringStepBonus * waiting.count, Self.maxExtraSteps)
+        return true
     }
 
     private func fail(_ record: inout AskLocalRecord, _ reason: String) throws -> AskConversation {

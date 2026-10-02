@@ -98,6 +98,10 @@ final class AskConversationModel: ObservableObject {
     private var historyOffset = 0
     @Published private(set) var pendingApprovals: [String: AskToolCall] = [:]
     @Published private(set) var busyIds: Set<String> = []
+    /// Follow-ups typed while a conversation was working, sent in order afterwards.
+    @Published private(set) var sendQueue = AskSendQueue()
+    /// Queued messages being handed to a running run.
+    @Published private(set) var steeringIds: Set<String> = []
     @Published private(set) var capturing = false
     @Published var error: String?
     @Published var captureWarning: String?
@@ -214,7 +218,13 @@ final class AskConversationModel: ObservableObject {
 
     var isBusy: Bool { selected.map { busyIds.contains($0.id) || $0.run?.isActive == true } ?? false }
     var hasPendingSubmission: Bool { selectedId.map { pendingSends[$0] != nil } ?? false }
-    var canSend: Bool { !isLoadingSelection && (selectedId == nil || selected != nil) && draft.canSend && !isBusy && (selected.map { pendingSends[$0.id] == nil && !($0.run == nil && $0.messages.last?.role == "user") } ?? true) && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
+    var canSend: Bool { canSendNow || canQueue || (isEditingQueued && draft.canSend) }
+    private var canSendNow: Bool { !isLoadingSelection && (selectedId == nil || selected != nil) && draft.canSend && !isBusy && (selected.map { pendingSends[$0.id] == nil && !($0.run == nil && $0.messages.last?.role == "user") } ?? true) && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
+    /// A busy conversation takes the follow-up into its queue instead.
+    var canQueue: Bool {
+        guard let value = selected, !isLoadingSelection, isBusy, !isEditingQueued else { return false }
+        return draft.canSend && sendQueue.canEnqueue(value.id) && !capturing && !recordingIsActive() && !voiceInput.isOccupied
+    }
     var canSendLauncher: Bool { launcherDraft.canSend && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
 
     private func credentials() -> (owner: String, token: String)? {
@@ -231,6 +241,7 @@ final class AskConversationModel: ObservableObject {
         approvals.values.forEach { $0.resume(returning: false) }; approvals = [:]; toolGrants = [:]
         inferenceReceipts = [:]; inferenceUsage = [:]
         pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
+        sendQueue = AskSendQueue(); steeringIds = []
         screenshotConsent = [:]
         draftSave?.cancel(); draftSaveConversationID = nil; deletedConversationIDs = []; captureGeneration = UUID(); selectionGeneration = UUID()
         selectionObservation?.cancel(); selectionObservation = nil
@@ -288,7 +299,9 @@ final class AskConversationModel: ObservableObject {
 
     func persistDrafts() {
         draftSave?.cancel()
-        let launcher = launcherDraft, followUp = draft, owner = owner
+        // While a queued message is open in the composer, the conversation's own draft is the stash.
+        let editing = sendQueue.editing.flatMap { $0.conversationId == selectedId ? $0.stash : nil }
+        let launcher = launcherDraft, followUp = editing ?? draft, owner = owner
         let id = isLoadingSelection ? nil : selectedId.flatMap { deletedConversationIDs.contains($0) ? nil : $0 }
         if let id, !isLoadingSelection { drafts[id] = followUp }
         draftSaveConversationID = id
@@ -368,6 +381,7 @@ final class AskConversationModel: ObservableObject {
         let id = AskConversationID.canonical(rawId)
         if selectedId == id, isLoadingSelection || (!reload && selected != nil && !selectionLoadFailed) { return }
         voiceInput.cancel()
+        cancelQueuedEdit(advancing: false)
         selectionObservation?.cancel(); selectionObservation = nil
         let generation = UUID(); selectionGeneration = generation
         let oldId = selectedId, oldDraft = draft
@@ -395,6 +409,7 @@ final class AskConversationModel: ObservableObject {
             snapshots[id] = snapshots[id]?.reconciling(latest) ?? latest
             guard generation == selectionGeneration else { return }
             selected = snapshots[id] ?? latest; isLoadingSelection = false; normalizeScreenshotChoices(); error = operationErrors[id]
+            queueDidSettle(id)
             // Observe active runs without resuming desktop tools or inference.
             if latest.run?.isActive == true, !busyIds.contains(id) {
                 selectionObservation = monitorConversation(id: id, current: current)
@@ -415,6 +430,7 @@ final class AskConversationModel: ObservableObject {
     func newConversation() {
         selectionObservation?.cancel(); selectionObservation = nil
         voiceInput.cancel()
+        cancelQueuedEdit(advancing: false)
         persistDrafts()
         selectionGeneration = UUID(); selected = nil; selectedId = nil
         isLoadingSelection = false; selectionLoadFailed = false
@@ -438,11 +454,19 @@ final class AskConversationModel: ObservableObject {
 
     func submitDraft() {
         normalizeScreenshotChoices()
-        guard canSend else { return }
+        if isEditingQueued { saveQueuedEdit(); return }
+        if canQueue, let id = selected?.id {
+            sendQueue.enqueue(draft, to: id)
+            draft = .followUp; persistDrafts()
+            return
+        }
+        guard canSendNow else { return }
         submit(draft, newConversation: selectedId == nil)
     }
 
-    private func submit(_ submitted: AskDraft, newConversation: Bool) {
+    /// `messageId` keeps a queued message's ID; `clearsDraft` is false when the queue
+    /// sends on its own, so whatever the user is typing stays in the composer.
+    private func submit(_ submitted: AskDraft, newConversation: Bool, messageId queuedId: String? = nil, clearsDraft: Bool = true) {
         guard submitted.referencesWithinLimit, submitted.text.utf8.count <= 32000,
               (submitted.sentSelection?.utf8.count ?? 0) <= 64000,
               (submitted.source?.utf8.count ?? 0) <= 1000 else {
@@ -455,7 +479,7 @@ final class AskConversationModel: ObservableObject {
         error = nil; operationErrors[id] = nil; busyIds.insert(id)
         if newConversation { tools.bindConversation(id) }
         var value = newConversation ? AskConversation(id: id, title: String(submitted.text.prefix(50)), revision: 0, updatedAt: Date(), messages: []) : selected!
-        let messageId = UUID().uuidString
+        let messageId = queuedId ?? UUID().uuidString
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
         request.modelRef = localFallback(submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference : (value.modelRef ?? "cloud:default")),
                                          hasImage: request.image != nil || value.messages.contains { $0.image != nil })
@@ -467,11 +491,14 @@ final class AskConversationModel: ObservableObject {
         pendingSends[id] = request
         screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
         value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references))
-        selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID(); draft = .followUp
+        selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID()
+        if clearsDraft { draft = .followUp }
         snapshots[id] = value; selectionLoadFailed = false
         updateSummary(value)
         if newConversation { launcherDraft = AskDraft() }
-        onShowConversation?(); persistDrafts()
+        // A queued message sending on its own must not bring the window forward.
+        if clearsDraft { onShowConversation?() }
+        persistDrafts()
         let operationId = UUID(); operationIds[id] = operationId
         operations[id] = Task { [weak self] in
             guard let self else { return }
@@ -494,8 +521,15 @@ final class AskConversationModel: ObservableObject {
                     var unsent = value
                     unsent.messages.removeAll { $0.id == messageId }
                     snapshots[id] = unsent
-                    drafts[id] = submitted
-                    if selectedId == id { selected = unsent; draft = submitted }
+                    if let queuedId {
+                        // The queued message goes back first and waits for the user.
+                        sendQueue.putFirst(AskQueuedMessage(id: queuedId, draft: submitted), in: id)
+                        sendQueue.pause(id)
+                        if selectedId == id { selected = unsent }
+                    } else {
+                        drafts[id] = submitted
+                        if selectedId == id { selected = unsent; draft = submitted }
+                    }
                     try await cache.save(unsent, owner: current.owner)
                     throw error
                 }
@@ -656,6 +690,11 @@ final class AskConversationModel: ObservableObject {
             inferenceProgress[value.id] = nil; progressInferenceIDs[value.id] = nil
         }
         updateSummary(value)
+        if value.run?.isActive == false, sendQueue.messages(value.id).isEmpty == false || sendQueue.steeredMessages(value.id).isEmpty == false {
+            queueDidSettle(value.id)
+        } else {
+            sendQueue.noteSettled(value.id, run: value.run)
+        }
     }
 
     private func updateSummary(_ value: AskConversation) {
@@ -845,6 +884,7 @@ final class AskConversationModel: ObservableObject {
             guard owner == current.owner else { return }
             conversations.removeAll { $0.id == id }
             drafts[id] = nil; snapshots[id] = nil; operationErrors[id] = nil; transcriptPositions[id] = nil
+            sendQueue.clear(id)
             screenshotConsent[id] = nil; toolGrants[id] = nil
             if selectedId == id { selectedId = nil; newConversation() }
             else { persistDrafts() }
@@ -863,6 +903,7 @@ final class AskConversationModel: ObservableObject {
         busyIds.remove(id); operations[id] = nil; pendingApprovals[id] = nil
         recoveringImages[id] = nil
         if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
+        queueDidSettle(id)
     }
 
     private func recordInferenceUsage(_ usage: AskTokenUsage, id: String, owner expectedOwner: String) {
@@ -906,3 +947,113 @@ final class AskConversationModel: ObservableObject {
         }
     }
 }
+
+// MARK: - Send queue
+
+extension AskConversationModel {
+    var isEditingQueued: Bool { sendQueue.editing != nil && sendQueue.editing?.conversationId == selectedId }
+
+    /// Messages the selected conversation has queued.
+    var queuedMessages: [AskQueuedMessage] { selectedId.map { sendQueue.messages($0) } ?? [] }
+
+    /// Messages sent into the running run that it has not read yet.
+    var steeredMessages: [AskQueuedMessage] {
+        guard let value = selected else { return [] }
+        return sendQueue.steeredMessages(value.id).filter { item in !value.messages.contains { $0.id == item.id } }
+    }
+
+    var isQueuePaused: Bool { selectedId.map { sendQueue.isPaused($0) } ?? false }
+
+    /// "Jump the queue" needs a run that is still working.
+    var canSteer: Bool { selected?.run?.isActive == true && !isLoadingSelection }
+
+    func removeQueued(_ itemId: String) {
+        guard let id = selectedId else { return }
+        if sendQueue.isEditing(id, itemId: itemId) { cancelQueuedEdit() }
+        sendQueue.remove(itemId, from: id)
+    }
+
+    func clearQueue() {
+        guard let id = selectedId else { return }
+        cancelQueuedEdit(advancing: false)
+        sendQueue.clear(id)
+    }
+
+    func resumeQueue() {
+        guard let id = selectedId else { return }
+        sendQueue.resume(id)
+        queueDidSettle(id)
+    }
+
+    /// Opens a queued message in the composer; what the user was typing is set aside.
+    func editQueued(_ itemId: String) {
+        guard let id = selectedId, let item = sendQueue.messages(id).first(where: { $0.id == itemId }) else { return }
+        if isEditingQueued { saveQueuedEdit(advancing: false) }
+        sendQueue.editing = .init(conversationId: id, itemId: itemId, stash: draft)
+        draft = item.draft
+    }
+
+    func saveQueuedEdit(advancing: Bool = true) {
+        guard let editing = sendQueue.editing else { return }
+        normalizeScreenshotChoices()
+        sendQueue.update(editing.itemId, in: editing.conversationId, draft: draft)
+        sendQueue.editing = nil
+        if selectedId == editing.conversationId { draft = editing.stash }
+        persistDrafts()
+        if advancing { queueDidSettle(editing.conversationId) }
+    }
+
+    func cancelQueuedEdit(advancing: Bool = true) {
+        guard let editing = sendQueue.editing else { return }
+        sendQueue.editing = nil
+        if selectedId == editing.conversationId { draft = editing.stash }
+        if advancing { queueDidSettle(editing.conversationId) }
+    }
+
+    /// Hands a queued message to the running run, which reads it at its next step.
+    /// A run that already ended gets it as the next turn instead.
+    func steerQueued(_ itemId: String) {
+        guard let current = credentials(), let value = selected, let run = value.run, run.isActive,
+              !steeringIds.contains(itemId), sendQueue.messages(value.id).contains(where: { $0.id == itemId }) else { return }
+        if sendQueue.isEditing(value.id, itemId: itemId) { saveQueuedEdit(advancing: false) }
+        guard let latest = sendQueue.messages(value.id).first(where: { $0.id == itemId }) else { return }
+        let id = value.id
+        steeringIds.insert(itemId)
+        let request = AskSteerRequest(runId: run.id, message: latest.draft.request(deviceId: deviceId, tools: [], id: latest.id))
+        Task { [weak self] in
+            guard let self else { return }
+            defer { steeringIds.remove(itemId) }
+            do {
+                let response = try await api.steer(conversationId: id, request: request, token: current.token)
+                guard owner == current.owner else { return }
+                sendQueue.markSteered(latest, in: id)
+                try await accept(response, owner: current.owner)
+            } catch {
+                guard owner == current.owner else { return }
+                // The run ended first: send it ahead of the rest of the queue.
+                let refreshed = try? await api.conversation(id: id, token: current.token)
+                guard owner == current.owner else { return }
+                if let refreshed, refreshed.run?.isActive != true {
+                    sendQueue.putFirst(latest, in: id)
+                    sendQueue.resume(id)
+                    try? await accept(refreshed, owner: current.owner)
+                    queueDidSettle(id)
+                } else {
+                    reportOperationError(error, id: id, owner: current.owner)
+                }
+            }
+        }
+    }
+
+    /// Called whenever a conversation may have gone idle: settles jumped messages,
+    /// pauses after a failed or stopped run, and otherwise sends the next queued message.
+    func queueDidSettle(_ id: String) {
+        guard let value = snapshots[id] ?? (selected?.id == id ? selected : nil) else { return }
+        sendQueue.reconcile(id, transcript: value.messages, run: value.run)
+        guard selectedId == id, selected != nil, !isLoadingSelection, !busyIds.contains(id), pendingSends[id] == nil,
+              value.run?.isActive != true, let next = sendQueue.next(for: id), !steeringIds.contains(next.id),
+              let item = sendQueue.take(next.id, from: id) else { return }
+        submit(item.draft, newConversation: false, messageId: item.id, clearsDraft: false)
+    }
+}
+
