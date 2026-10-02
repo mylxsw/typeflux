@@ -110,7 +110,7 @@ enum AskTheme {
         dark: NSColor(calibratedWhite: 1, alpha: 0.08)
     )
     /// The product's indigo mark (the original assistant avatar), used only for
-    /// brand moments: the empty state and the account badge. Never for state.
+    /// brand moments such as the empty state. Never for state.
     static var brandGradient: LinearGradient {
         LinearGradient(
             colors: [Color(red: 0.455, green: 0.467, blue: 0.984), Color(red: 0.608, green: 0.545, blue: 0.984)],
@@ -195,6 +195,9 @@ enum AskMetrics {
     static let sidebarPanelInset: CGFloat = 8
     static let sidebarPanelCorner: CGFloat = 20
     static let sidebarRowCorner: CGFloat = 12
+    /// Where text starts in the sidebar: the list's 8pt inset plus a row's 10pt
+    /// padding, so the account name lines up with the history titles.
+    static let sidebarTextLeading: CGFloat = sidebarPanelInset + 10
     /// Title and action capsules floating in the header over the transcript.
     static let headerCapsuleHeight: CGFloat = 34
     /// How far the transcript fades out where it meets the window's top and bottom edges.
@@ -755,20 +758,6 @@ struct AskBrandMark: View {
             .background(AskTheme.brandGradient,
                         in: RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
             .shadow(color: Color(red: 0.455, green: 0.467, blue: 0.984).opacity(0.28), radius: 12, y: 6)
-            .accessibilityHidden(true)
-    }
-}
-
-/// The account badge in the sidebar footer: the name's first letter on the mark.
-struct AskAccountBadge: View {
-    var name: String
-
-    var body: some View {
-        Text(verbatim: name.first.map { String($0).uppercased() } ?? "·")
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(Color.white)
-            .frame(width: 24, height: 24)
-            .background(AskTheme.brandGradient, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             .accessibilityHidden(true)
     }
 }

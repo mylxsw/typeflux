@@ -84,6 +84,11 @@ struct AskWorkspaceGlassTests {
         }
     }
 
+    @Test func accountNameLinesUpWithTheHistoryTitles() {
+        // History rows: 8pt list inset + 10pt row padding.
+        #expect(AskMetrics.sidebarTextLeading == 18)
+    }
+
     @Test func sidebarPanelIsConcentricWithItsRows() {
         // History rows, search and "new chat" are inset 8pt from the panel edge,
         // so the panel corner wraps them at the same centre.
