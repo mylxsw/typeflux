@@ -1113,7 +1113,8 @@
 
 "agent.section.general" = "一般";
 "agent.section.tools" = "工具";
-"agent.section.skillsMemory" = "技能與記憶";
+"agent.section.skills" = "技能";
+"agent.section.memory" = "記憶";
 "agent.settings.runMode" = "執行方式";
 "agent.settings.web" = "連網";
 "agent.settings.code" = "程式碼執行";
@@ -1739,6 +1740,23 @@
 "ask.settings.skills.subtitle" = "「隨便問」在任務需要時載入的指示。可在 Skills/<名稱>/SKILL.md 中加入自己的技能。";
 "ask.settings.skills.builtin" = "內建";
 "ask.settings.skills.open" = "開啟技能資料夾";
+"ask.settings.skills.install" = "從 GitHub 安裝…";
+"ask.settings.skills.installTitle" = "從 GitHub 安裝技能";
+"ask.settings.skills.installHint" = "貼上儲存庫、資料夾或 SKILL.md 的連結。每個包含 SKILL.md 的資料夾會安裝為一個技能；同名的已安裝技能會被更新。";
+"ask.settings.skills.installWarning" = "技能是「隨便問」會遵循的指示，以及程式碼沙箱中可讀取的檔案。請只從可信來源安裝。";
+"ask.settings.skills.installAction" = "安裝";
+"ask.settings.skills.installing" = "正在安裝…";
+"ask.settings.skills.local" = "本機";
+"ask.settings.skills.removeTitle" = "移除技能";
+"ask.settings.skills.removeMessage" = "確定移除「%@」及其檔案嗎？此操作無法復原。";
+"ask.skills.install.invalidURL" = "請輸入指向儲存庫、資料夾或 SKILL.md 檔案的 GitHub 連結。";
+"ask.skills.install.notFound" = "該連結下找不到 SKILL.md，或儲存庫為私人。";
+"ask.skills.install.tooLarge" = "技能過大（最多 50 個檔案，單一檔案 1 MB，總計 5 MB）。";
+"ask.skills.install.tooMany" = "技能數量過多。請只安裝單一技能資料夾，或移除不再使用的技能。";
+"ask.skills.install.invalidSkill" = "無法讀取 SKILL.md，它需要包含名稱與指示。";
+"ask.skills.install.network" = "無法連線至 GitHub，請檢查網路後再試。";
+"ask.skills.install.rateLimited" = "GitHub 目前限制了請求頻率，請幾分鐘後再試。";
+"ask.skills.install.cannotRemove" = "內建技能無法移除。";
 "ask.settings.notes.title" = "已儲存的筆記";
 "ask.settings.notes.subtitle" = "你要求「隨便問」記住的內容，會加入新對話的記憶。";
 "ask.settings.notes.empty" = "尚無筆記。";

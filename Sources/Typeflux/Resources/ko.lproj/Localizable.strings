@@ -1106,7 +1106,8 @@
 
 "agent.section.general" = "일반";
 "agent.section.tools" = "도구";
-"agent.section.skillsMemory" = "스킬 및 메모리";
+"agent.section.skills" = "스킬";
+"agent.section.memory" = "메모리";
 "agent.settings.runMode" = "실행 위치";
 "agent.settings.web" = "웹";
 "agent.settings.code" = "코드 실행";
@@ -1732,6 +1733,23 @@
 "ask.settings.skills.subtitle" = "작업에 필요할 때 Ask가 불러오는 지침입니다. Skills/<이름>/SKILL.md로 직접 추가할 수 있습니다.";
 "ask.settings.skills.builtin" = "기본 제공";
 "ask.settings.skills.open" = "스킬 폴더 열기";
+"ask.settings.skills.install" = "GitHub에서 설치…";
+"ask.settings.skills.installTitle" = "GitHub에서 스킬 설치";
+"ask.settings.skills.installHint" = "저장소, 폴더 또는 SKILL.md 링크를 붙여 넣으세요. SKILL.md가 있는 각 폴더가 하나의 스킬이 되며, 같은 이름의 스킬은 업데이트됩니다.";
+"ask.settings.skills.installWarning" = "스킬은 Ask가 따르는 지침과 코드 샌드박스에서 읽을 수 있는 파일입니다. 신뢰할 수 있는 출처에서만 설치하세요.";
+"ask.settings.skills.installAction" = "설치";
+"ask.settings.skills.installing" = "설치 중…";
+"ask.settings.skills.local" = "로컬";
+"ask.settings.skills.removeTitle" = "스킬 제거";
+"ask.settings.skills.removeMessage" = "“%@”와 해당 파일을 제거할까요? 되돌릴 수 없습니다.";
+"ask.skills.install.invalidURL" = "저장소, 폴더 또는 SKILL.md 파일의 GitHub 링크를 입력하세요.";
+"ask.skills.install.notFound" = "해당 링크에서 SKILL.md를 찾을 수 없거나 비공개 저장소입니다.";
+"ask.skills.install.tooLarge" = "스킬이 너무 큽니다(최대 50개 파일, 파일당 1 MB, 총 5 MB).";
+"ask.skills.install.tooMany" = "스킬이 너무 많습니다. 단일 스킬 폴더를 설치하거나 사용하지 않는 스킬을 제거하세요.";
+"ask.skills.install.invalidSkill" = "SKILL.md를 읽을 수 없습니다. 이름과 지침이 필요합니다.";
+"ask.skills.install.network" = "GitHub에 연결할 수 없습니다. 연결을 확인하고 다시 시도하세요.";
+"ask.skills.install.rateLimited" = "GitHub가 요청을 제한하고 있습니다. 몇 분 후 다시 시도하세요.";
+"ask.skills.install.cannotRemove" = "기본 제공 스킬은 제거할 수 없습니다.";
 "ask.settings.notes.title" = "저장된 메모";
 "ask.settings.notes.subtitle" = "Ask에게 기억하라고 한 내용입니다. 새 대화의 메모리에 포함됩니다.";
 "ask.settings.notes.empty" = "저장된 메모가 없습니다.";

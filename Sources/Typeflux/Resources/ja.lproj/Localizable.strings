@@ -1106,7 +1106,8 @@
 
 "agent.section.general" = "一般";
 "agent.section.tools" = "ツール";
-"agent.section.skillsMemory" = "スキルとメモリ";
+"agent.section.skills" = "スキル";
+"agent.section.memory" = "メモリ";
 "agent.settings.runMode" = "実行場所";
 "agent.settings.web" = "ウェブ";
 "agent.settings.code" = "コード実行";
@@ -1732,6 +1733,23 @@
 "ask.settings.skills.subtitle" = "タスクに応じて Ask が読み込む手順です。Skills/<名前>/SKILL.md として独自のスキルを追加できます。";
 "ask.settings.skills.builtin" = "組み込み";
 "ask.settings.skills.open" = "スキルフォルダを開く";
+"ask.settings.skills.install" = "GitHub からインストール…";
+"ask.settings.skills.installTitle" = "GitHub からスキルをインストール";
+"ask.settings.skills.installHint" = "リポジトリ、フォルダ、または SKILL.md のリンクを貼り付けてください。SKILL.md を含む各フォルダが 1 つのスキルになり、同名のスキルは更新されます。";
+"ask.settings.skills.installWarning" = "スキルは Ask が従う指示と、コードサンドボックスで読めるファイルです。信頼できる提供元からのみインストールしてください。";
+"ask.settings.skills.installAction" = "インストール";
+"ask.settings.skills.installing" = "インストール中…";
+"ask.settings.skills.local" = "ローカル";
+"ask.settings.skills.removeTitle" = "スキルを削除";
+"ask.settings.skills.removeMessage" = "「%@」とそのファイルを削除しますか？元に戻せません。";
+"ask.skills.install.invalidURL" = "リポジトリ、フォルダ、または SKILL.md ファイルの GitHub リンクを入力してください。";
+"ask.skills.install.notFound" = "リンク先に SKILL.md が見つからないか、リポジトリが非公開です。";
+"ask.skills.install.tooLarge" = "スキルが大きすぎます（最大 50 ファイル、1 ファイル 1 MB、合計 5 MB）。";
+"ask.skills.install.tooMany" = "スキルが多すぎます。単一のスキルフォルダをインストールするか、不要なスキルを削除してください。";
+"ask.skills.install.invalidSkill" = "SKILL.md を読み取れません。名前と指示が必要です。";
+"ask.skills.install.network" = "GitHub に接続できません。接続を確認して再試行してください。";
+"ask.skills.install.rateLimited" = "GitHub がリクエストを制限しています。数分後に再試行してください。";
+"ask.skills.install.cannotRemove" = "組み込みスキルは削除できません。";
 "ask.settings.notes.title" = "保存したメモ";
 "ask.settings.notes.subtitle" = "Ask に覚えるよう頼んだ内容です。新しい会話のメモリに含まれます。";
 "ask.settings.notes.empty" = "保存したメモはありません。";

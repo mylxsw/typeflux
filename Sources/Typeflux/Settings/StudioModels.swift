@@ -146,7 +146,8 @@ enum AgentConfigurationTab: String, CaseIterable, Identifiable {
     case general
     case tools
     case mcpServers
-    case skillsMemory
+    case skills
+    case memory
 
     var id: String {
         rawValue
@@ -160,8 +161,10 @@ enum AgentConfigurationTab: String, CaseIterable, Identifiable {
             L("agent.section.tools")
         case .mcpServers:
             L("agent.section.mcpServers")
-        case .skillsMemory:
-            L("agent.section.skillsMemory")
+        case .skills:
+            L("agent.section.skills")
+        case .memory:
+            L("agent.section.memory")
         }
     }
 }

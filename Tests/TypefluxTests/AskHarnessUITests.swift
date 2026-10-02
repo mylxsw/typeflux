@@ -295,7 +295,7 @@ struct AskHarnessUITests {
         defer { try? FileManager.default.removeItem(at: root) }
         let notes = AskMemoryNoteStore(fileURL: root.appendingPathComponent("notes.json"))
         _ = try notes.add("Prefers short answers", owner: "o")
-        for tab in [AgentConfigurationTab.general, .tools, .skillsMemory] {
+        for tab in [AgentConfigurationTab.general, .tools, .skills, .memory] {
             for signedIn in [true, false] {
                 let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes,
                                                 owner: { "o" }, isSignedIn: { signedIn }, tab: tab)

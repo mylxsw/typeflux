@@ -283,7 +283,7 @@ final class AskAgentToolsTests: XCTestCase {
         let notes = AskMemoryNoteStore(fileURL: root.appendingPathComponent("view-notes.json"))
         let note = try notes.add("Prefers dark mode", owner: "o")
         let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes, owner: { "o" },
-                                        tab: .skillsMemory)
+                                        tab: .memory)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 900), styleMask: [.titled], backing: .buffered, defer: false)
         // ARC owns the window; closing must not release it a second time.
         window.isReleasedWhenClosed = false
@@ -327,12 +327,12 @@ final class AskAgentToolsTests: XCTestCase {
                                         notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("s.json")), owner: { "o" })
         view.removeFolder("/a")
         XCTAssertEqual(settings.askFileAccessFolders, ["/b"])
-        for tab in [AgentConfigurationTab.general, .tools, .skillsMemory] {
+        for tab in [AgentConfigurationTab.general, .tools, .skills, .memory] {
             var tabView = view
             tabView.tab = tab
             let settingsHost = NSHostingView(rootView: tabView.frame(width: 600))
             settingsHost.layoutSubtreeIfNeeded()
-            XCTAssertGreaterThan(settingsHost.fittingSize.height, 100, "\(tab)")
+            XCTAssertGreaterThan(settingsHost.fittingSize.height, 60, "\(tab)")
         }
         XCTAssertEqual(AgentConfigurationTab.tools.title, L("agent.section.tools"))
         XCTAssertEqual(AskToolsSettingsView.searchProviderName(.none), L("ask.settings.search.none"))
@@ -345,7 +345,8 @@ final class AskAgentToolsTests: XCTestCase {
             let bundle = try XCTUnwrap(language.bundleLocalizationCandidates.lazy
                 .compactMap { Bundle.appResources.path(forResource: $0, ofType: "lproj") }.first.flatMap(Bundle.init(path:)))
             for key in ["ask.files.denied", "ask.code.unavailable", "ask.settings.folders.title", "ask.tool.update_plan", "ask.action.inspect", "agent.section.tools",
-                        "agent.section.skillsMemory", "agent.settings.runMode", "agent.settings.web", "agent.settings.code", "agent.settings.mcp"] {
+                        "agent.section.skills", "agent.section.memory", "ask.settings.skills.install", "ask.skills.install.notFound",
+                        "agent.settings.runMode", "agent.settings.web", "agent.settings.code", "agent.settings.mcp"] {
                 XCTAssertNotEqual(bundle.localizedString(forKey: key, value: nil, table: nil), key, "\(key) in \(language.rawValue)")
             }
             XCTAssertEqual(bundle.localizedString(forKey: "ask.activity.plan", value: nil, table: nil).components(separatedBy: "%d").count - 1, 2)
