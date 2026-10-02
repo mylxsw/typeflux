@@ -1253,17 +1253,20 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         let controller = makeWorkflowController(
             llmService: ProgressingProcessingLLMService(
                 chunks: ["one", " two", " three", " four"],
-                delay: .milliseconds(40)
+                delay: .milliseconds(200)
             ),
             configureSettings: configureReadyLLM
         )
+        // The stream outlives the first-output deadline (4 chunks x 200ms > 0.5s) while every gap
+        // stays an order of magnitude below the stall limit, so scheduling delays on a loaded
+        // machine cannot trip a timeout.
         let budget = LLMRewriteTimeoutBudget(
             estimatedInputUnits: 200,
-            baseSeconds: 0.05,
-            firstOutputSeconds: 0.05,
-            stallSeconds: 0.1,
-            totalSeconds: 0.3,
-            watchdogSeconds: 0.4
+            baseSeconds: 0.5,
+            firstOutputSeconds: 0.5,
+            stallSeconds: 2,
+            totalSeconds: 5,
+            watchdogSeconds: 6
         )
 
         let result = try await controller.generateRewrite(

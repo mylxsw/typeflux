@@ -525,7 +525,7 @@ final class LocalModelTranscriberTests: XCTestCase {
 
     private func waitForAutoModel(
         _ service: AutoModelDownloadService,
-        timeout: TimeInterval = 2
+        timeout: TimeInterval = 30
     ) async throws {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {

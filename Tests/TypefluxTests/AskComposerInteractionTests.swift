@@ -98,7 +98,7 @@ struct AskComposerInteractionTests {
         defer { window.close(); other.close() }
         let point = editor.convert(NSPoint(x: 20, y: 8), to: nil)
         NSApp.sendEvent(try mouse(.leftMouseDown, window: window, point: point))
-        try await Task.sleep(for: .milliseconds(450))
+        try await fixture.wait { recorder.starts == 1 }
         #expect(recorder.starts == 1)
         NSApp.sendEvent(try mouse(.leftMouseUp, window: other, point: .zero))
         try await fixture.wait { !fixture.model.voiceInput.isOccupied }
@@ -121,7 +121,7 @@ struct AskComposerInteractionTests {
         try await Task.sleep(for: .milliseconds(450))
         #expect(recorder.starts == 0)
         NSApp.sendEvent(try mouse(.leftMouseDown, window: window, point: point))
-        try await Task.sleep(for: .milliseconds(450))
+        try await fixture.wait { recorder.starts == 1 }
         #expect(recorder.starts == 1)
         NotificationCenter.default.post(name: NSWindow.didResignKeyNotification, object: window)
         try await fixture.wait { !fixture.model.voiceInput.isOccupied }
@@ -206,7 +206,7 @@ struct AskComposerInteractionTests {
         NSApp.sendEvent(try mouse(.leftMouseDown, window: window, point: point))
         try await Task.sleep(for: .milliseconds(100))
         NSApp.sendEvent(try mouse(.leftMouseDragged, window: window, point: NSPoint(x: point.x + 1, y: point.y)))
-        try await Task.sleep(for: .milliseconds(350))
+        try await fixture.wait { recorder.starts == starts + 1 && fixture.model.voiceInput.phase == .listening }
         #expect(recorder.starts == starts + 1)
         #expect(fixture.model.voiceInput.phase == .listening)
         // SwiftUI updates while recording must neither steal focus nor cancel it.
@@ -228,14 +228,32 @@ struct AskComposerInteractionTests {
         window.isReleasedWhenClosed = false
         let hosting = NSHostingView(rootView: view)
         window.contentView = hosting; window.orderFront(nil)
-        try await Task.sleep(for: .milliseconds(200))
-        hosting.layoutSubtreeIfNeeded()
         func editors(_ view: NSView) -> [AskComposerTextView.Editor] {
             (view as? AskComposerTextView.Editor).map { [$0] } ?? view.subviews.flatMap(editors)
         }
-        let editor = try #require(editors(hosting).first)
-        window.makeFirstResponder(editor)
-        try await Task.sleep(for: .milliseconds(100))
+        var found: AskComposerTextView.Editor?
+        for _ in 0 ..< 1000 {
+            hosting.layoutSubtreeIfNeeded()
+            found = editors(hosting).first
+            if found != nil { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        let editor = try #require(found)
+        // SwiftUI keeps relaying out after the editor appears; wait until its frame stops moving.
+        var stableFrames = 0
+        var lastFrame = NSRect.null
+        for _ in 0 ..< 1000 where stableFrames < 3 {
+            hosting.layoutSubtreeIfNeeded()
+            let frame = editor.convert(editor.bounds, to: nil)
+            stableFrames = frame == lastFrame ? stableFrames + 1 : 0
+            lastFrame = frame
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        for _ in 0 ..< 1000 {
+            window.makeFirstResponder(editor)
+            if window.firstResponder === editor { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
         return (window, editor)
     }
 

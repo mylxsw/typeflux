@@ -201,7 +201,7 @@ struct CoreAudioRecorderTests {
             outputDirectory: fixture.directory, prepareImmediately: false, observeChanges: false,
             startupTimeout: 0.01,
             makeInput: { _ in
-                Thread.sleep(forTimeInterval: 0.05)
+                Thread.sleep(forTimeInterval: 0.5)
                 return input
             })
         #expect(throws: AVFoundationAudioRecorder.RecorderError.self) { try recorder.start(levelHandler: { _ in }) }
