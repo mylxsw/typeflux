@@ -27,7 +27,8 @@ struct AskConversationVisualTests {
         let launcher = try #require(window("launcher"))
         #expect(launcher.styleMask == [.borderless, .nonactivatingPanel])
         #expect(launcher.frame.width == AskMetrics.launcherWidth)
-        #expect(launcher.frame.height <= 120)
+        // Empty, it lists the suggestions under the controls.
+        #expect(launcher.frame.height <= AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: true) + 4)
         let bottom = launcher.frame.minY
         let visibleFrame = try #require(launcher.screen?.visibleFrame)
         #expect(abs(bottom + 6 - visibleFrame.minY - OverlayController.recordingVisibleBottomInset) < 1)

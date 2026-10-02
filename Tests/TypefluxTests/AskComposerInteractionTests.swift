@@ -144,9 +144,10 @@ struct AskComposerInteractionTests {
             }
             let button = try #require(findButton(window.contentView!))
             #expect(button.title.isEmpty)
-            #expect(button.frame.size == NSSize(width: 32, height: 32))
+            #expect(button.frame.size == NSSize(width: AskMetrics.composerControlHeight,
+                                                height: AskMetrics.composerControlHeight))
             #expect(button.accessibilityLabel() == L("ask.voice.input"))
-            let restingFrame = button.convert(button.bounds, to: nil)
+            var restingFrame = button.convert(button.bounds, to: nil)
             let hover = try mouse(.mouseMoved, window: window, point: restingFrame.origin)
             button.mouseEntered(with: hover)
             #expect(button.hovered)
@@ -161,6 +162,8 @@ struct AskComposerInteractionTests {
             fixture.model.modelLibrary.settings.activationHotkey = shortcut
             try await fixture.wait { button.toolTip?.contains(HotkeyFormat.display(shortcut)) == true }
             for hold in [false, true] {
+                // A filled launcher drops its suggestions, so each round measures its own resting place.
+                restingFrame = button.convert(button.bounds, to: nil)
                 let starts = recorder.starts, stops = recorder.stops
                 let point = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: nil)
                 NSApp.sendEvent(try mouse(.leftMouseDown, window: window, point: point))

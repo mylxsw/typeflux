@@ -78,7 +78,7 @@ struct AskVoiceButton: NSViewRepresentable {
                     }
                 }
             }
-            .frame(width: 32, height: 32)
+            .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
             .opacity(enabled || phase == .transcribing ? 1 : 0.45)
             .scaleEffect(pressed && !reduceMotion ? 0.94 : 1)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: pressed)
@@ -104,7 +104,9 @@ struct AskVoiceButton: NSViewRepresentable {
         private var hoverTracking: NSTrackingArea?
         private var artwork: Artwork?
 
-        override var intrinsicContentSize: NSSize { NSSize(width: 32, height: 32) }
+        override var intrinsicContentSize: NSSize {
+            NSSize(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+        }
         override func draw(_ dirtyRect: NSRect) {} // The artwork replaces NSButton's bezel.
 
         func refreshAppearance() {

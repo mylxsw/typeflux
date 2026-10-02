@@ -14,6 +14,8 @@ struct AskModelMenu: View {
     var compact = false
     /// Whether Cloud models can run here; Ask passes false in local mode. Defaults to the sign-in state.
     var cloudAvailable: Bool? = nil
+    /// Composer only: a "Manage models…" row that opens settings.
+    var onManage: (() -> Void)?
     @ObservedObject private var auth = AuthState.shared
     @State private var expanded = false
     @State private var hovering = false
@@ -56,8 +58,10 @@ struct AskModelMenu: View {
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(StudioTheme.textSecondary)
             }
-            .font(.system(size: 13, weight: fieldStyle ? .regular : (compact ? .semibold : .medium)))
-            .padding(.horizontal, compact ? AskMetrics.composerControlPadding : (fieldStyle ? 10 : 11))
+            .font(.system(size: compact ? 13.5 : 13,
+                          weight: fieldStyle ? .regular : (compact ? .semibold : .medium)))
+            .padding(.leading, compact ? 12 : (fieldStyle ? 10 : 11))
+            .padding(.trailing, compact ? 10 : (fieldStyle ? 10 : 11))
             .frame(width: fieldStyle ? 240 : nil,
                    height: compact ? AskMetrics.composerControlHeight : (fieldStyle ? 30 : 32))
             .background(fill, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
@@ -70,7 +74,7 @@ struct AskModelMenu: View {
         .askMenu(isPresented: $expanded, glass: compact) {
             AskModelChoices(library: library, reference: $reference, scenario: scenario, showsDefaultAction: showsDefaultAction,
                             hasImage: hasImage, loggedIn: loggedIn, dismiss: { expanded = false },
-                            composerStyle: compact)
+                            composerStyle: compact, onManage: onManage)
         }
         .onChange(of: expanded) { isExpanded in
             if isExpanded && library.automaticallyLoadsCatalog {
@@ -125,6 +129,8 @@ struct AskModelChoices: View {
     /// The composer's chooser follows the Ask design board. Settings and the
     /// image-recovery picker keep the field styling validated in design-qa.md.
     var composerStyle = false
+    /// Opens model settings from the chooser's footer.
+    var onManage: (() -> Void)?
 
     var body: some View {
         if composerStyle { composerBody } else { standardBody }
@@ -172,8 +178,11 @@ struct AskModelChoices: View {
                             .foregroundStyle(StudioTheme.textTertiary)
                             .padding(.horizontal, 14).padding(.top, 12)
                     }
-                    ForEach(choices) { provider in
-                        AskPopoverHeader(title: provider.name)
+                    ForEach(Array(choices.enumerated()), id: \.element.id) { index, provider in
+                        if index > 0 { AskPopoverDivider() }
+                        AskPopoverHeader(title: provider.isCloud ? provider.name : L("ask.models.custom"),
+                                         trailing: index == 0 && provider.isCloud
+                                             ? L("ask.models.multiplierColumn") : nil)
                         ForEach(provider.models) { model in
                             AskPopoverRow(title: model.name,
                                           note: model.reference == library.defaultReference ? L("ask.models.isDefault") : nil,
@@ -182,8 +191,11 @@ struct AskModelChoices: View {
                                 reference = model.reference; dismiss()
                             } accessory: {
                                 AskModelCapabilities(model: model)
-                                if let multiplier = model.pricing?.multiplier {
-                                    AskMultiplierBadge(multiplier: multiplier)
+                                if let multiplier = model.pricing?.multiplier,
+                                   let text = AskMultiplierBadge.text(multiplier) {
+                                    Text(text).font(.system(size: 11)).monospacedDigit()
+                                } else if !provider.isCloud {
+                                    Text(L("ask.models.ownAPI")).font(.system(size: 11))
                                 }
                             }
                             .help(model.displayName + " — " + (model.pricing == nil
@@ -196,15 +208,26 @@ struct AskModelChoices: View {
             // Tall enough for a typical catalog without scrolling; longer lists scroll.
             .frame(maxHeight: Self.composerListMaxHeight)
             .fixedSize(horizontal: false, vertical: true)
-            if Self.offersMakeDefault(showsDefaultAction: showsDefaultAction, selectionAvailable: selectionAvailable,
-                                      reference: reference, defaultReference: library.defaultReference) {
-                AskPopoverFooterButton(title: L("ask.models.makeDefault")) {
-                    library.defaultReference = reference
-                    dismiss()
+            AskPopoverDivider()
+            VStack(spacing: 0) {
+                if Self.offersMakeDefault(showsDefaultAction: showsDefaultAction, selectionAvailable: selectionAvailable,
+                                          reference: reference, defaultReference: library.defaultReference) {
+                    AskPopoverRow(title: L("ask.models.makeDefault"), caption: nil, selected: false) {
+                        library.defaultReference = reference
+                        dismiss()
+                    }
+                }
+                if let onManage {
+                    AskPopoverRow(title: L("ask.models.manage") + "…", caption: nil, selected: false) {
+                        dismiss(); onManage()
+                    } accessory: {
+                        Text(verbatim: "⌘,").font(.system(size: 11))
+                    }
                 }
             }
+            .padding(.bottom, 6)
         }
-        .frame(width: 320)
+        .frame(width: 330)
     }
 
     static let composerListMaxHeight: CGFloat = 460
@@ -286,19 +309,23 @@ struct AskModelChoices: View {
 struct AskModelCapabilities: View {
     let model: RegisteredModel
 
-    static func symbols(_ model: RegisteredModel) -> [(symbol: String, help: String)] {
-        var result: [(symbol: String, help: String)] = []
-        if model.vision == true { result.append(("eye", L("ask.models.supportsImages"))) }
-        if model.reasoning == true { result.append(("sparkles", L("ask.models.supportsReasoning"))) }
+    /// Short words for the outlined capability badges on the design board.
+    static func badges(_ model: RegisteredModel) -> [(text: String, help: String)] {
+        var result: [(text: String, help: String)] = []
+        if model.vision == true { result.append((L("ask.models.badge.vision"), L("ask.models.supportsImages"))) }
+        if model.reasoning == true { result.append((L("ask.models.badge.reasoning"), L("ask.models.supportsReasoning"))) }
         return result
     }
 
     var body: some View {
-        HStack(spacing: 5) {
-            ForEach(Self.symbols(model), id: \.symbol) { item in
-                Image(systemName: item.symbol)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(StudioTheme.textTertiary)
+        HStack(spacing: 4) {
+            ForEach(Self.badges(model), id: \.text) { item in
+                Text(item.text)
+                    .font(.system(size: 10))
+                    .padding(.horizontal, 6)
+                    .frame(height: 16)
+                    .overlay(Capsule().strokeBorder(lineWidth: 0.5))
+                    .opacity(0.85)
                     .help(item.help)
                     .accessibilityLabel(item.help)
             }

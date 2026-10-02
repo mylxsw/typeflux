@@ -69,7 +69,7 @@ enum AskContextChips {
     /// Items in display order: screenshot, source, selection, memory.
     static func items(screenshot: AskScreenshotState, source: String?, sourceBundleID: String?,
                       selection: String?, selectionOff: Bool = false, memory: AskMemory?, memoryOff: Bool = false,
-                      memoryPinned: Bool) -> [AskContextItem] {
+                      memoryPinned: Bool, pinnedMemory: AskMemory? = nil) -> [AskContextItem] {
         var items = [screenshotItem(screenshot)]
         if let source, !source.isEmpty {
             let parts = sourceParts(source)
@@ -91,8 +91,11 @@ enum AskContextChips {
         if memoryPinned {
             // Pinned when the conversation started; each follow-up can leave it out.
             let hint = memoryOff ? "ask.context.memory.onHint" : "ask.context.memory.offHint"
+            let app = pinnedMemory?.app.flatMap { $0.excerpts.isEmpty ? nil : $0.id }
             items.append(AskContextItem(kind: .memory, systemImage: "brain", style: memoryOff ? .neutral : .active,
-                                        title: L("ask.memory"), detail: L("ask.memory.pinned"), hint: L(hint)))
+                                        title: pinnedMemory?.chipTitle ?? L("ask.memory"),
+                                        detail: L("ask.memory.pinned"),
+                                        hint: L(hint), badge: app.map(AskContextItem.Badge.app)))
         } else if let memory, !memory.isEmpty {
             // A toggle, not a removal: switched off it stays as a grey chip, so
             // it can be switched back on.
@@ -265,6 +268,13 @@ struct AskIconChipFace: View {
             // Borderless like the other footer controls: only state and hover fill the circle.
             // An app icon is its own tile, so it only takes the hover wash.
             .background(appImage == nil ? fill : (hovering ? AskTheme.hoverFill : .clear), in: shape)
+            // A switched-on toggle glows like the design board's lit glass buttons.
+            .overlay {
+                if item.style == .active, appImage == nil {
+                    shape.strokeBorder(AskTheme.accent.opacity(0.45), lineWidth: 0.5)
+                }
+            }
+            .shadow(color: item.style == .active && appImage == nil ? AskTheme.accent.opacity(0.22) : .clear, radius: 9)
             .overlay(alignment: .topTrailing) {
                 if case let .count(value) = item.badge {
                     Text(verbatim: value > 99 ? "99+" : String(value))
@@ -320,7 +330,7 @@ struct AskIconChipFace: View {
     /// launcher's glass as well as on the workspace card.
     static func fillColor(_ style: AskChip.Style, hovering: Bool) -> Color {
         switch style {
-        case .active: return AskTheme.accent.opacity(hovering ? 0.30 : 0.20)
+        case .active: return AskTheme.accent.opacity(hovering ? 0.24 : 0.16)
         case .warning: return StudioTheme.warning.opacity(hovering ? 0.26 : 0.18)
         case .neutral, .unavailable: return hovering ? AskTheme.hoverFill : .clear
         }

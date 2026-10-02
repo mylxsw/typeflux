@@ -1471,6 +1471,12 @@
 "ask.search.actions" = "작업";
 "ask.search.conversations" = "대화";
 "ask.search.placeholder" = "Search conversations or actions";
+"ask.composer.hint" = "↩ Send · ⇧↩ New line · Hold %@ to dictate";
+"ask.launcher.hint" = "↩ Send · esc Close";
+"ask.models.multiplierColumn" = "Credits ×";
+"ask.models.ownAPI" = "Own API";
+"ask.models.badge.vision" = "Vision";
+"ask.models.badge.reasoning" = "Reasoning";
 "ask.history.searchEmpty" = "일치하는 대화가 없습니다";
 "ask.selection.lines" = "선택 영역 · %d줄";
 "ask.voice.hold" = "길게 눌러 말하기";

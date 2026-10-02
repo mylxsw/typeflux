@@ -266,8 +266,8 @@ struct AskStreamTests {
 
     @Test func `lists emphasis and unsafe links remain readable`() {
         let value = AskMarkdownText.render("# Title\n\n1. **One**\n2. *Two*\n\n[Link](javascript:alert)\n\n`code`")
-        #expect(value.string.contains("1. One"))
-        #expect(value.string.contains("2. Two"))
+        #expect(value.string.contains("1.\tOne"))
+        #expect(value.string.contains("2.\tTwo"))
         let range = (value.string as NSString).range(of: "Link")
         #expect(value.attribute(.link, at: range.location, effectiveRange: nil) == nil)
     }
