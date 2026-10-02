@@ -217,13 +217,22 @@ struct AskHarnessUITests {
         #expect(fits(AskRunOutputsView(outputs: outputs)) > 40)
     }
 
-    @Test func locationLabelExplainsWhereAskRuns() {
-        #expect(AskRunLocationLabel.title(local: true) == L("ask.location.local"))
-        #expect(AskRunLocationLabel.title(local: false) == L("ask.location.cloud"))
-        #expect(AskRunLocationLabel.help(local: false, notice: nil) == L("ask.location.cloud.help"))
-        #expect(AskRunLocationLabel.help(local: true, notice: "n") == L("ask.location.local.help") + "\nn")
-        #expect(fits(AskRunLocationLabel(local: true, notice: "n"), width: 120) > 10)
-        #expect(fits(AskRunLocationLabel(local: false, compact: true), width: 40) > 10)
+    @Test func cloudLocationLabelOccupiesNoSpace() {
+        for compact in [false, true] {
+            let hosting = NSHostingView(rootView: AskRunLocationLabel(local: false, compact: compact))
+            hosting.layoutSubtreeIfNeeded()
+            #expect(hosting.fittingSize == .zero)
+        }
+    }
+
+    @Test func localLocationLabelKeepsItsExplanationAndCapabilityWarning() {
+        #expect(AskRunLocationLabel.help(notice: nil) == L("ask.location.local.help"))
+        #expect(AskRunLocationLabel.help(notice: "n") == L("ask.location.local.help") + "\nn")
+        for compact in [false, true] {
+            for notice in [nil, "n"] as [String?] {
+                #expect(fits(AskRunLocationLabel(local: true, compact: compact, notice: notice), width: 120) == 22)
+            }
+        }
     }
 
     @Test func artifactsCopyAsImagesAndEncodeAsPNG() throws {
@@ -272,23 +281,6 @@ struct AskHarnessUITests {
         SettingsStore(defaults: UserDefaults(suiteName: "ask-harness-ui-\(UUID().uuidString)")!)
     }
 
-    @Test func settingsCapabilitiesAndLocationReflectTheSetup() {
-        let bare = AskToolsSettingsView.capabilities(searchProvider: .none, folders: 0, codeEnabled: false)
-        #expect(bare.map(\.key) == ["web", "files", "code", "computer", "mcp", "memory"])
-        #expect(bare[0].local == L("ask.settings.capabilities.readOnlyWeb"))
-        #expect(bare[1].local == L("ask.settings.capabilities.noFolders"))
-        #expect(bare[2].cloud == L("ask.settings.off"))
-        let ready = AskToolsSettingsView.capabilities(searchProvider: .tavily, folders: 2, codeEnabled: true)
-        #expect(ready.allSatisfy { $0.local == L("ask.settings.capabilities.available") })
-        #expect(AskToolsSettingsView.runsLocally(localMode: false, signedIn: true) == false)
-        #expect(AskToolsSettingsView.runsLocally(localMode: true, signedIn: true))
-        #expect(AskToolsSettingsView.runsLocally(localMode: false, signedIn: false))
-        #expect(AskToolsSettingsView.locationDetail(local: false, signedIn: true) == L("ask.settings.location.cloud.detail"))
-        #expect(AskToolsSettingsView.locationDetail(local: true, signedIn: true) == L("ask.settings.location.local.detail"))
-        #expect(AskToolsSettingsView.locationDetail(local: true, signedIn: false)
-            == L("ask.settings.location.local.detail") + " " + L("ask.settings.location.cloud.signIn"))
-    }
-
     @Test func settingsTabsRenderAndPersistSkillChoices() throws {
         let settings = store()
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("ask-harness-ui-\(UUID().uuidString)")
@@ -296,9 +288,10 @@ struct AskHarnessUITests {
         let notes = AskMemoryNoteStore(fileURL: root.appendingPathComponent("notes.json"))
         _ = try notes.add("Prefers short answers", owner: "o")
         for tab in [AgentConfigurationTab.general, .tools, .skills, .memory] {
-            for signedIn in [true, false] {
+            for localMode in [true, false] {
+                settings.askLocalModeEnabled = localMode
                 let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes,
-                                                owner: { "o" }, isSignedIn: { signedIn }, tab: tab)
+                                                owner: { "o" }, tab: tab)
                 let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 900), styleMask: [.titled], backing: .buffered, defer: false)
                 window.isReleasedWhenClosed = false
                 let hosting = NSHostingView(rootView: view)
