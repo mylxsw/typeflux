@@ -348,6 +348,12 @@ final class OverlayController {
 
     private var reduceMotion: Bool { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
 
+    /// Stretches capsule motion durations so tests can sample intermediate frames deterministically.
+    var motionScale: Double {
+        get { model.motionScale }
+        set { model.motionScale = newValue }
+    }
+
     init(appState: AppStateStore, settingsStore: SettingsStore) {
         self.appState = appState
         self.settingsStore = settingsStore
@@ -937,13 +943,13 @@ final class OverlayController {
             hideWindowAndResetState()
             return
         }
-        withAnimation(OverlayMotion.dismissal) { model.isPresented = false }
+        withAnimation(OverlayMotion.dismissal(scale: model.motionScale)) { model.isPresented = false }
         let workItem = DispatchWorkItem { [weak self] in
             guard let self, visibilityTransitionID == transitionID else { return }
             hideWindowAndResetState()
         }
         dismissWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + OverlayMotion.dismissalDuration, execute: workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + OverlayMotion.dismissalDuration * model.motionScale, execute: workItem)
     }
 
     private func hideWindowAndResetState() {
@@ -1065,12 +1071,12 @@ final class OverlayController {
             window.orderFrontRegardless()
             DispatchQueue.main.async { [weak self] in
                 guard let self, visibilityTransitionID == transitionID else { return }
-                withAnimation(OverlayMotion.appearance) { self.model.isPresented = true }
+                withAnimation(OverlayMotion.appearance(scale: self.model.motionScale)) { self.model.isPresented = true }
             }
         } else {
             window.orderFrontRegardless()
             if !model.isPresented {
-                withAnimation(reduceMotion ? nil : OverlayMotion.appearance) { model.isPresented = true }
+                withAnimation(reduceMotion ? nil : OverlayMotion.appearance(scale: model.motionScale)) { model.isPresented = true }
             }
         }
         updateKeyMonitoring()
@@ -1169,7 +1175,7 @@ final class OverlayController {
                 pendingFrameAnimationWorkItem = nil
             }
             pendingFrameAnimationWorkItem = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + OverlayMotion.geometrySettleDelay, execute: workItem)
+            DispatchQueue.main.asyncAfter(deadline: .now() + OverlayMotion.geometrySettleDelay(scale: model.motionScale), execute: workItem)
         } else if shouldAnimate {
             animateWindow(window, to: targetFrame, duration: 0.28)
         } else {
@@ -1577,6 +1583,8 @@ final class OverlayViewModel: ObservableObject {
     @Published var failureTone: OverlayFailureTone = .error
     @Published var noticeDismissible = true
     @Published var overlayStyle: OverlayStyle = .liquidGlass
+    /// Stretches capsule motion durations; only rendering tests set it above 1.
+    var motionScale: Double = 1
     var onDismissRequested: (() -> Void)?
     var onCancelRequested: (() -> Void)?
     var onConfirmRequested: (() -> Void)?
@@ -1745,9 +1753,9 @@ private struct OverlayView: View {
             onConfirm: model.requestConfirm
         )
         .fixedSize(horizontal: true, vertical: true)
-        .animation(reduceMotion ? nil : OverlayMotion.morph, value: expanded)
-        .animation(reduceMotion ? nil : OverlayMotion.morph, value: showControls)
-        .animation(reduceMotion ? nil : OverlayMotion.morph, value: model.presentation.isProcessing)
+        .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: expanded)
+        .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: showControls)
+        .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: model.presentation.isProcessing)
     }
 
     private var previewCard: some View {

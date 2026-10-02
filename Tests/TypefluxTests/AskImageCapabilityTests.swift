@@ -77,7 +77,12 @@ struct AskImageCapabilityTests {
         f.model.draft.text = "Keep this other draft"
         f.model.launcherDraft.text = "Keep the launcher draft"
         await f.model.delete("first")
-        try await Task.sleep(for: .milliseconds(450))
+        // The debounced save writes the launcher draft, then the selected draft last. Waiting for
+        // that final write means any stale write for the deleted conversation has already landed.
+        for _ in 0 ..< 1000 {
+            if try await f.cache.draft(key: "second", owner: "owner")?.text == "Keep this other draft" { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
         #expect(try await f.cache.draft(key: "first", owner: "owner") == nil)
         #expect(f.model.selectedId == "second")
         #expect(try await f.cache.draft(key: "second", owner: "owner")?.text == "Keep this other draft")

@@ -17,34 +17,40 @@ struct OverlayTransitionRenderingTests {
         let window = try #require(NSApplication.shared.windows.first {
             !previousWindows.contains($0.windowNumber) && $0.isVisible
         })
+        try await settle(1)
+        let recordingFrame = window.frame
         controller.showNotice(message: "Copied to clipboard")
-        try await Task.sleep(for: .milliseconds(400))
-        let shortHeight = window.frame.height
+        let shortHeight = try await settledFrame(of: window, changingFrom: recordingFrame).height
         #expect(window.frame.width == 344)
         #expect(shortHeight >= 55 && shortHeight < 90)
         _ = try capture(window, name: "notice-short-\(style.rawValue)")
+        let before1 = window.frame
         controller.showNotice(message: String(repeating: "A notice can contain several lines of text. ", count: 20))
-        try await Task.sleep(for: .milliseconds(400))
+        _ = try await settledFrame(of: window, changingFrom: before1)
         #expect(window.frame.height > shortHeight)
         #expect(window.frame.height < 125)
         _ = try capture(window, name: "notice-long-\(style.rawValue)")
+        let before2 = window.frame
         controller.showPassiveNotice(message: "Copied")
-        try await Task.sleep(for: .milliseconds(400))
+        _ = try await settledFrame(of: window, changingFrom: before2)
         #expect(window.frame.height <= shortHeight)
         #expect(window.ignoresMouseEvents)
+        let before3 = window.frame
         controller.showFailure(message: "Please try again.")
-        try await Task.sleep(for: .milliseconds(400))
+        _ = try await settledFrame(of: window, changingFrom: before3)
         let failureHeight = window.frame.height
         #expect(window.frame.width == 372)
         #expect(failureHeight < 180)
         _ = try capture(window, name: "failure-short-\(style.rawValue)")
+        let before4 = window.frame
         controller.showRetryableFailure(message: String(repeating: "A detailed failure remains scrollable.\n", count: 30))
-        try await Task.sleep(for: .milliseconds(400))
+        _ = try await settledFrame(of: window, changingFrom: before4)
         #expect(window.frame.height > failureHeight)
         #expect(window.frame.height < 320)
         _ = try capture(window, name: "failure-long-\(style.rawValue)")
+        let before5 = window.frame
         controller.showNotice(message: "Copied to clipboard")
-        try await Task.sleep(for: .milliseconds(400))
+        _ = try await settledFrame(of: window, changingFrom: before5)
         #expect(window.frame.height == shortHeight)
     }
 
@@ -63,9 +69,10 @@ struct OverlayTransitionRenderingTests {
             !previousWindows.contains($0.windowNumber) && $0.isVisible
         })
         controller.updateRecordingPreviewText("A recording caption before the result dialog.")
-        try await Task.sleep(for: .milliseconds(400))
+        try await settle(1)
+        let captionFrame = window.frame
         controller.showResultDialog(title: "Copy result", message: "Explain how these topics were chosen and describe the complete process.")
-        try await Task.sleep(for: .milliseconds(400))
+        _ = try await settledFrame(of: window, changingFrom: captionFrame)
         let shortHeight = window.frame.height
         #expect(window.frame.width == 446)
         #expect(shortHeight > 100)
@@ -84,13 +91,15 @@ struct OverlayTransitionRenderingTests {
         #expect(CGFloat(firstTextRow) / scale >= 10)
         #expect(CGFloat(firstTextRow) / scale < 25)
 
+        let before6 = window.frame
         controller.showResultDialog(title: "Copy result", message: String(repeating: "A long result remains available for scrolling and copying.\n", count: 30))
-        try await Task.sleep(for: .milliseconds(400))
+        _ = try await settledFrame(of: window, changingFrom: before6)
         #expect(window.frame.height > shortHeight + 40)
         #expect(window.frame.height <= 240)
         _ = try capture(window, name: "result-long-\(style.rawValue)")
+        let before7 = window.frame
         controller.showResultDialog(title: "Copy result", message: "A short result again.")
-        try await Task.sleep(for: .milliseconds(400))
+        _ = try await settledFrame(of: window, changingFrom: before7)
         #expect(window.frame.height <= shortHeight)
     }
 
@@ -196,25 +205,29 @@ struct OverlayTransitionRenderingTests {
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(style.rawValue, forKey: "ui.overlayStyle")
         let controller = OverlayController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults))
+        // Motion runs several times slower than in production and every intermediate frame is
+        // found by polling for it, so the assertions do not depend on wall-clock timing.
+        let motionScale = 4.0
+        controller.motionScale = motionScale
         defer { controller.dismissImmediately() }
         controller.show()
         controller.updateLevel(0.5)
         let window = try #require(application.windows.first {
             !previousWindows.contains($0.windowNumber) && $0.isVisible
         })
-        try await Task.sleep(for: .milliseconds(60))
-        let appearing = try capture(window, name: "00-appearing")
-        try await Task.sleep(for: .milliseconds(340))
+        let appearing = try await captureFirst(window, name: "00-appearing") { $0.peakAlpha > 0.02 }
+        try await settle(motionScale)
         let compact = try capture(window, name: "01-compact")
         #expect(appearing.peakAlpha > 0.02)
         #expect(appearing.peakAlpha < compact.peakAlpha - 0.02)
 
         controller.updateRecordingPreviewText("The caption keeps its line breaks while the capsule opens and closes.")
-        try await Task.sleep(for: .milliseconds(80))
-        let expanding = try capture(window, name: "02-expanding")
-        try await Task.sleep(for: .milliseconds(350))
+        let expanding = style == .classic
+            ? try await captureFirst(window, name: "02-expanding") { $0.opaqueWidth > compact.opaqueWidth + 12 }
+            : nil
+        try await settle(motionScale)
         let expanded = try capture(window, name: "03-expanded")
-        if style == .classic {
+        if let expanding {
             #expect(expanding.opaqueWidth > compact.opaqueWidth + 12)
             #expect(expanding.opaqueWidth < expanded.opaqueWidth - 12)
             let scale = CGFloat(expanding.pixelsWide) / window.frame.width
@@ -224,11 +237,12 @@ struct OverlayTransitionRenderingTests {
         }
 
         controller.updateRecordingPreviewText("")
-        try await Task.sleep(for: .milliseconds(80))
-        let collapsing = try capture(window, name: "04-collapsing")
-        try await Task.sleep(for: .milliseconds(350))
+        let collapsing = style == .classic
+            ? try await captureFirst(window, name: "04-collapsing") { $0.opaqueWidth < expanded.opaqueWidth - 12 }
+            : nil
+        try await settle(motionScale)
         let collapsed = try capture(window, name: "05-collapsed")
-        if style == .classic {
+        if let collapsing {
             #expect(collapsing.opaqueWidth > collapsed.opaqueWidth + 12)
             #expect(collapsing.opaqueWidth < expanded.opaqueWidth - 12)
             #expect(abs(collapsed.opaqueWidth - compact.opaqueWidth) <= 2)
@@ -240,55 +254,102 @@ struct OverlayTransitionRenderingTests {
 
         let compactCenter = try #require(compact.waveformCenter)
         let bottomOffset = CGFloat(compact.pixelsHigh) - compactCenter.y
-        for bitmap in [expanding, expanded, collapsing, collapsed] {
+        for bitmap in [expanding, expanded, collapsing, collapsed].compactMap({ $0 }) {
             let center = try #require(bitmap.waveformCenter)
             #expect(abs(center.x - CGFloat(bitmap.pixelsWide) / 2) <= 2)
             #expect(abs(CGFloat(bitmap.pixelsHigh) - center.y - bottomOffset) <= 2)
         }
 
         controller.updateRecordingPreviewText("Caption before processing")
-        try await Task.sleep(for: .milliseconds(400))
+        try await settle(motionScale)
+        let captioned = try capture(window, name: "05b-captioned")
         controller.showProcessing()
-        try await Task.sleep(for: .milliseconds(80))
-        let processingTransition = try capture(window, name: "06-processing-transition")
-        try await Task.sleep(for: .milliseconds(350))
+        let processingTransition = style == .classic
+            ? try await captureFirst(window, name: "06-processing-transition") { $0.opaqueWidth < captioned.opaqueWidth - 12 }
+            : nil
+        try await settle(motionScale)
         let processing = try capture(window, name: "07-processing")
-        if style == .classic {
+        if let processingTransition {
             #expect(processingTransition.opaqueWidth > processing.opaqueWidth + 12)
             #expect(processingTransition.opaqueWidth < expanded.opaqueWidth - 12)
         }
         controller.transitionToLLMPhase()
-        try await Task.sleep(for: .milliseconds(150))
-        let thinking = try capture(window, name: "08-thinking")
-        #expect(thinking.totalBrightness > processing.totalBrightness)
+        // Recognition progress has nearly reached the LLM phase's starting point by now, so the
+        // fill only becomes visibly brighter once the content phase has advanced past it.
+        _ = try await captureFirst(window, name: "08-thinking") { $0.totalBrightness > processing.totalBrightness }
 
         let processingFrame = window.frame
         controller.updateStreamingText("A streaming processing caption uses the same capsule.")
-        try await Task.sleep(for: .milliseconds(80))
-        let streamingExpansion = try capture(window, name: "09-streaming-expansion")
-        try await Task.sleep(for: .milliseconds(350))
+        let streamingExpansion = style == .classic
+            ? try await captureFirst(window, name: "09-streaming-expansion") { $0.opaqueWidth > processing.opaqueWidth + 12 }
+            : nil
+        try await settle(motionScale)
         let streaming = try capture(window, name: "10-streaming")
-        if style == .classic {
+        if let streamingExpansion {
             #expect(streamingExpansion.opaqueWidth > processing.opaqueWidth + 12)
             #expect(streamingExpansion.opaqueWidth < streaming.opaqueWidth - 12)
         }
         controller.updateStreamingText("")
-        try await Task.sleep(for: .milliseconds(80))
-        let streamingCollapse = try capture(window, name: "11-streaming-collapse")
-        try await Task.sleep(for: .milliseconds(350))
-        if style == .classic {
+        let streamingCollapse = style == .classic
+            ? try await captureFirst(window, name: "11-streaming-collapse") { $0.opaqueWidth < streaming.opaqueWidth - 12 }
+            : nil
+        try await settle(motionScale)
+        if let streamingCollapse {
             #expect(streamingCollapse.opaqueWidth > processing.opaqueWidth + 12)
             #expect(streamingCollapse.opaqueWidth < streaming.opaqueWidth - 12)
         }
         #expect(window.frame == processingFrame)
 
         controller.dismiss(after: 0)
-        try await Task.sleep(for: .milliseconds(70))
-        let disappearing = try capture(window, name: "12-disappearing")
+        let disappearing = try await captureFirst(window, name: "12-disappearing") {
+            $0.peakAlpha < collapsed.peakAlpha - 0.02
+        }
         #expect(disappearing.peakAlpha > 0.02)
         #expect(disappearing.peakAlpha < collapsed.peakAlpha - 0.02)
-        try await Task.sleep(for: .milliseconds(250))
+        try await settle(motionScale)
         #expect(!window.isVisible)
+    }
+
+    /// Waits past a motion's morph and its follow-up window geometry cleanup. The cleanup is
+    /// scheduled before this sleep starts and fires on the same queue, so it always runs first.
+    @MainActor
+    private func settle(_ motionScale: Double) async throws {
+        let delay = OverlayMotion.geometrySettleDelay(scale: motionScale) + 0.15
+        try await Task.sleep(for: .seconds(delay))
+    }
+
+    /// Waits for a window animation to start moving away from `previous` and come to rest.
+    @MainActor
+    private func settledFrame(of window: NSWindow, changingFrom previous: NSRect, timeout: TimeInterval = 5) async throws -> NSRect {
+        let deadline = Date().addingTimeInterval(timeout)
+        var last = window.frame
+        var stableSamples = 0
+        while stableSamples < 4 {
+            try #require(Date() < deadline, "The window frame never settled")
+            try await Task.sleep(for: .milliseconds(25))
+            let frame = window.frame
+            stableSamples = frame == last && frame != previous ? stableSamples + 1 : 0
+            last = frame
+        }
+        return last
+    }
+
+    /// Polls until a frame satisfies `isReached` and returns it, failing if it never does.
+    @MainActor
+    private func captureFirst(
+        _ window: NSWindow,
+        name: String,
+        timeout: TimeInterval = 5,
+        until isReached: (NSBitmapImageRep) -> Bool
+    ) async throws -> NSBitmapImageRep {
+        let deadline = Date().addingTimeInterval(timeout)
+        var bitmap = try capture(window, name: name)
+        while !isReached(bitmap) {
+            try #require(Date() < deadline, "No frame matching \(name) was rendered")
+            try await Task.sleep(for: .milliseconds(5))
+            bitmap = try capture(window, name: name)
+        }
+        return bitmap
     }
 
     @MainActor
