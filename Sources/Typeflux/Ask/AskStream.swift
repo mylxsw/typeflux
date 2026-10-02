@@ -68,6 +68,7 @@ struct AskProviderStream {
     private(set) var progress = AskStreamProgress()
     private(set) var finished = false
     private var calls: [Int: AskToolCall] = [:]
+    private var emptyArgumentPrefixes: [Int: Int] = [:]
 
     init(style: Style) { self.style = style }
 
@@ -91,12 +92,23 @@ struct AskProviderStream {
             for part in delta["tool_calls"] as? [[String: Any]] ?? [] {
                 guard let index = part["index"] as? Int else { throw invalid() }
                 var call = try tool(index)
+                let id = part["id"] as? String ?? ""
+                let repeatedID = !id.isEmpty && id == call.id
                 if let id = part["id"] as? String {
                     call.id = id
                 }
                 let function = part["function"] as? [String: Any] ?? [:]
-                call.function.name += function["name"] as? String ?? ""
-                call.function.arguments += function["arguments"] as? String ?? ""
+                let name = function["name"] as? String ?? ""
+                // Some providers repeat the full name and ID on every argument delta.
+                if !repeatedID || name != call.function.name {
+                    call.function.name += name
+                }
+                let arguments = function["arguments"] as? String ?? ""
+                if call.function.arguments.isEmpty,
+                   arguments.trimmingCharacters(in: .whitespacesAndNewlines) == "{}" {
+                    emptyArgumentPrefixes[index] = arguments.count
+                }
+                call.function.arguments += arguments
                 calls[index] = call
             }
         case .anthropic:
@@ -175,12 +187,23 @@ struct AskProviderStream {
 
     func result() throws -> (String, [AskToolCall]) {
         guard finished, !progress.text.isEmpty || !progress.toolCalls.isEmpty else { throw invalid() }
-        for call in progress.toolCalls {
+        var resultCalls: [AskToolCall] = []
+        for index in calls.keys.sorted() {
+            guard var call = calls[index] else { continue }
+            if let prefix = emptyArgumentPrefixes[index] {
+                // Only replace a standalone initial placeholder with a complete object.
+                // Leave malformed suffixes intact so the validation below rejects them.
+                let candidate = String(call.function.arguments.dropFirst(prefix))
+                if (try? JSONSerialization.jsonObject(with: Data(candidate.utf8))) is [String: Any] {
+                    call.function.arguments = candidate
+                }
+            }
             guard !call.id.hasPrefix("pending-"), !call.function.name.isEmpty,
                   let data = call.function.arguments.data(using: .utf8),
                   (try? JSONSerialization.jsonObject(with: data)) is [String: Any] else { throw invalid() }
+            resultCalls.append(call)
         }
-        return (progress.text, progress.toolCalls)
+        return (progress.text, resultCalls)
     }
 
     private func tool(_ index: Int) throws -> AskToolCall {
