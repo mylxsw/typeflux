@@ -210,7 +210,8 @@ struct AskModelChoices: View {
             .fixedSize(horizontal: false, vertical: true)
             AskPopoverDivider()
             VStack(spacing: 0) {
-                if Self.offersMakeDefault(showsDefaultAction: showsDefaultAction, selectionAvailable: selectionAvailable,
+                if Self.offersMakeDefault(showsDefaultAction: showsDefaultAction,
+                                          selectionAvailable: selectionAvailable,
                                           reference: reference, defaultReference: library.defaultReference) {
                     AskPopoverRow(title: L("ask.models.makeDefault"), caption: nil, selected: false) {
                         library.defaultReference = reference
@@ -313,7 +314,9 @@ struct AskModelCapabilities: View {
     static func badges(_ model: RegisteredModel) -> [(text: String, help: String)] {
         var result: [(text: String, help: String)] = []
         if model.vision == true { result.append((L("ask.models.badge.vision"), L("ask.models.supportsImages"))) }
-        if model.reasoning == true { result.append((L("ask.models.badge.reasoning"), L("ask.models.supportsReasoning"))) }
+        if model.reasoning == true {
+            result.append((L("ask.models.badge.reasoning"), L("ask.models.supportsReasoning")))
+        }
         return result
     }
 
