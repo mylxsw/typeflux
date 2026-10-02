@@ -33,6 +33,12 @@ extension SettingsStore {
         set { defaults.set(newValue, forKey: "ask.codeExecutionEnabled") }
     }
 
+    /// Skills the user turned off; they are not offered to the model.
+    var askDisabledSkills: Set<String> {
+        get { Set(defaults.stringArray(forKey: "ask.disabledSkills") ?? []) }
+        set { defaults.set(newValue.sorted(), forKey: "ask.disabledSkills") }
+    }
+
     /// Runs Ask on this Mac with the user's own models even when signed in.
     var askLocalModeEnabled: Bool {
         get { defaults.bool(forKey: "ask.localMode") }

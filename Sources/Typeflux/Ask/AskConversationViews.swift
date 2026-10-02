@@ -486,7 +486,7 @@ struct AskConversationView: View {
     /// the delete button never carries the same weight as the title.
     private var header: some View {
         HStack(spacing: 8) {
-            if model.selectedId != nil {
+            if let id = model.selectedId {
                 HStack(spacing: 8) {
                     Text(model.selected?.title
                          ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
@@ -495,6 +495,16 @@ struct AskConversationView: View {
                         .foregroundStyle(StudioTheme.textPrimary)
                         .lineLimit(1)
                     if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
+                    if let summary = AskActivity.runSummary(model.selected?.run,
+                                                            pendingApproval: model.pendingApprovals[id] != nil) {
+                        AskRunLocationLabel(local: !model.cloudAvailable)
+                        Text(summary)
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                            .fixedSize()
+                    }
                 }
                 .padding(.horizontal, 14)
                 .frame(height: AskMetrics.headerCapsuleHeight)
@@ -625,12 +635,6 @@ struct AskConversationView: View {
                 onDismiss: { model.error = nil }
             )
         }
-        if let plan = model.selected?.run?.plan, !plan.isEmpty {
-            AskPlanCard(items: plan)
-        }
-        if let id = model.selected?.id, let call = model.pendingApprovals[id] {
-            approval(call, id: id)
-        }
         if let target = model.imageRecoveryTarget {
             AskImageRecoveryCard(model: model, target: target)
                 .id(target.id)
@@ -680,32 +684,15 @@ struct AskConversationView: View {
         .padding(.bottom, AskMetrics.composerBottomInset)
     }
 
+    /// The decision sits at the end of the conversation it belongs to.
     private func approval(_ call: AskToolCall, id: String) -> some View {
-        AskToolCard(
-            title: AskTheme.toolTitle(call),
-            subtitle: model.selected?.messages.first(where: { $0.role == "user" })?.source,
-            systemImage: AskPresentation.toolSymbol(call),
-            state: .attention,
-            statusText: L("ask.tool.pending"),
-            startsExpanded: true
-        ) {
-            VStack(alignment: .leading, spacing: 10) {
-                AskMonoBlock(title: L("ask.tool.arguments"), text: call.function.arguments)
-                HStack(spacing: 8) {
-                    Text(L("ask.tool.approvalHint"))
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                    Spacer(minLength: 8)
-                    Button(L("ask.deny")) { model.approve(conversationId: id, allowed: false) }
-                    if model.canAllowForConversation(id) {
-                        Button(L("ask.allowConversation")) { model.approveForConversation(id) }
-                            .help(L("ask.allowConversation.help"))
-                    }
-                    Button(L("ask.allowOnce")) { model.approve(conversationId: id, allowed: true) }
-                        .buttonStyle(.borderedProminent)
-                }
-            }
-        }
+        AskApprovalCard(call: call, risk: model.approvalRisk(id) ?? .destructive,
+                        mcpServer: model.mcpServerName(of: call),
+                        canAllowForConversation: model.canAllowForConversation(id),
+                        onDeny: { model.approve(conversationId: id, allowed: false) },
+                        onAllowForConversation: { model.approveForConversation(id) },
+                        onAllow: { model.approve(conversationId: id, allowed: true) })
+            .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
     }
 
     // MARK: - Transcript
@@ -713,25 +700,21 @@ struct AskConversationView: View {
     private var transcript: some View {
         // Resolved once per render: asking each row would rescan the transcript.
         let regenerable = model.regenerableAnswerId
+        let items = AskActivity.items(transcriptMessages, results: model.selected?.messages.filter { $0.role == "tool" } ?? [])
         return GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 24) {
-                        ForEach(transcriptMessages) { message in
-                            AskMessageView(message: message,
-                                           allMessages: model.selected?.messages ?? [],
-                                           onReference: { model.addReference($0) },
-                                           usage: message.runId.flatMap { model.selected?.usage?.runs[$0] },
-                                           onUsage: { usageRunId = message.runId; setUsage(true) },
-                                           isStreaming: message.id == model.selected?.run?.assistantId && model.selected?.run?.isActive == true,
-                                           canRegenerate: regenerable == message.id,
-                                           onRegenerate: { model.regenerate(message.id) },
-                                           approvalToolId: model.selectedId.flatMap { model.pendingApprovals[$0]?.id })
-                                .id(message.id)
+                        ForEach(items) { item in
+                            transcriptRow(item, items: items, regenerable: regenerable)
+                                .id(item.id)
                                 .background(GeometryReader { geometry in
                                     Color.clear.preference(key: AskTranscriptFrames.self,
-                                                           value: [message.id: geometry.frame(in: .named("ask-transcript"))])
+                                                           value: [item.id: geometry.frame(in: .named("ask-transcript"))])
                                 })
+                        }
+                        if let id = model.selected?.id, let call = model.pendingApprovals[id] {
+                            approval(call, id: id).id("approval-" + call.id)
                         }
                         // The end marker spans the space under the composer, so
                         // scrolling to it leaves the last answer above the card.
@@ -771,7 +754,14 @@ struct AskConversationView: View {
                     }
                 }
                 .onChange(of: model.referenceLocation) { id in
-                    if let id { proxy.scrollTo(id, anchor: .center); model.referenceLocation = nil }
+                    // A step folded into an activity block scrolls to its block.
+                    if let id {
+                        let target = items.first { item in
+                            if case let .activity(group) = item.kind { return group.messageIds.contains(id) }
+                            return false
+                        }?.id ?? id
+                        proxy.scrollTo(target, anchor: .center); model.referenceLocation = nil
+                    }
                 }
                 .onChange(of: model.selectedId) { _ in restoredTranscript = nil }
                 .onChange(of: model.selected?.id) { _ in restoreTranscript(proxy) }
@@ -779,7 +769,38 @@ struct AskConversationView: View {
                 .onChange(of: model.selected?.run?.preview) { _ in followBottom(proxy) }
                 .onChange(of: model.inferenceProgress) { _ in followBottom(proxy) }
                 .onChange(of: model.selected?.messages.count) { _ in followBottom(proxy) }
+                .onChange(of: model.selectedId.flatMap { model.pendingApprovals[$0]?.id }) { _ in followBottom(proxy) }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func transcriptRow(_ item: AskTranscriptItem, items: [AskTranscriptItem], regenerable: String?) -> some View {
+        let run = model.selected?.run
+        let streamingId = run?.isActive == true ? run?.assistantId : nil
+        let approvalToolId = model.selectedId.flatMap { model.pendingApprovals[$0]?.id }
+        switch item.kind {
+        case let .message(message):
+            AskMessageView(message: message,
+                           onReference: { model.addReference($0) },
+                           usage: message.runId.flatMap { model.selected?.usage?.runs[$0] },
+                           onUsage: { usageRunId = message.runId; setUsage(true) },
+                           isStreaming: message.id == streamingId,
+                           canRegenerate: regenerable == message.id,
+                           onRegenerate: { model.regenerate(message.id) },
+                           outputs: item.outputs)
+        case let .activity(group):
+            let results = model.selected?.messages.filter { $0.role == "tool" } ?? []
+            let isLatest = items.last(where: { if case .activity = $0.kind { return true }; return false })?.id == group.id
+            // The run's latest block stays live between steps, while no answer follows it yet.
+            let live = run?.isActive == true && items.last?.id == group.id
+            let status = AskActivity.status(group, results: results, streamingId: streamingId,
+                                            approvalToolId: approvalToolId, live: live)
+            AskActivityBlock(group: group, results: results,
+                             plan: AskActivity.plan(for: group, run: run, isLatest: isLatest),
+                             status: status, streamingId: streamingId, approvalToolId: approvalToolId,
+                             outputs: item.outputs)
+                .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
         }
     }
 
@@ -825,14 +846,14 @@ struct AskConversationView: View {
 /// The role is carried by the layout, not by a grey "You" label.
 private struct AskMessageView: View {
     let message: AskMessage
-    let allMessages: [AskMessage]
     var onReference: (AskReference) -> Void
     var usage: AskUsageTotals? = nil
     var onUsage: () -> Void = {}
     var isStreaming = false
     var canRegenerate = false
     var onRegenerate: () -> Void = {}
-    var approvalToolId: String? = nil
+    /// Images and pages from the tool steps before this answer.
+    var outputs = AskRunOutputs()
     @State private var showImage = false
     @State private var showSelection = false
     @State private var copied = false
@@ -915,11 +936,11 @@ private struct AskMessageView: View {
                 })
                     .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
             }
-            if message.isError == true { interruptedTag }
-            ForEach(message.toolCalls ?? []) { call in
-                toolCard(call)
+            if !outputs.isEmpty, !isStreaming {
+                AskRunOutputsView(outputs: outputs)
                     .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
             }
+            if message.isError == true { interruptedTag }
             if !message.text.isEmpty, !isStreaming { turnActions }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -982,30 +1003,6 @@ private struct AskMessageView: View {
     private var usageLabel: String {
         guard let usage else { return L("ask.usage.title") }
         return usage.creditsText + " credits"
-    }
-
-    private func toolCard(_ call: AskToolCall) -> some View {
-        let result = allMessages.first { $0.toolCallId == call.id }
-        return AskToolCard(
-            title: AskTheme.toolTitle(call),
-            subtitle: call.function.name,
-            systemImage: AskPresentation.toolSymbol(call),
-            state: isStreaming ? .running : (approvalToolId == call.id ? .attention : AskPresentation.toolState(result: result)),
-            statusText: isStreaming ? L("ask.tool.preparing") : (approvalToolId == call.id ? L("ask.tool.pending") : AskPresentation.toolStatusText(result: result))
-        ) {
-            VStack(alignment: .leading, spacing: 10) {
-                AskMonoBlock(title: L("ask.tool.arguments"), text: call.function.arguments)
-                if let result {
-                    if !result.text.isEmpty {
-                        AskMonoBlock(title: L("ask.tool.result"), text: result.text, isError: result.isError == true)
-                    }
-                    if let url = result.image, let image = AskImage.decode(url) {
-                        Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 220)
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    }
-                }
-            }
-        }
     }
 }
 

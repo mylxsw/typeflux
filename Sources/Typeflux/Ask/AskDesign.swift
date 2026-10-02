@@ -122,7 +122,9 @@ enum AskTheme {
         dark: NSColor(calibratedRed: 0.063, green: 0.071, blue: 0.086, alpha: 1)
     )
 
-    static func toolTitle(_ call: AskToolCall) -> String {
+    /// A readable title for a tool call; raw tool names never reach the transcript.
+    /// `mcpServer` names the server of an MCP tool when the caller knows it.
+    static func toolTitle(_ call: AskToolCall, mcpServer: String? = nil) -> String {
         let name = call.function.name
         if name == "web_search" || name == "web_fetch" {
             let args = (try? JSONSerialization.jsonObject(with: Data(call.function.arguments.utf8))) as? [String: Any]
@@ -132,8 +134,24 @@ enum AskTheme {
             let title = L(name == "web_search" ? "ask.tool.webSearch" : "ask.tool.webFetch")
             return detail.map { title + " · " + $0 } ?? title
         }
-        if ["files", "memory", "run_code", "skill"].contains(name) {
-            let args = (try? AskLocalTools.jsonArguments(call.function.arguments)) ?? [:]
+        let args = (try? AskLocalTools.jsonArguments(call.function.arguments)) ?? [:]
+        switch name {
+        case "update_plan": return L("ask.tool.update_plan")
+        case "research":
+            let question = (args["question"] as? String).map { String($0.prefix(60)) }
+            return question.map { L("ask.tool.research") + " · " + $0 } ?? L("ask.tool.research")
+        case "files":
+            // Files actions carry their own verbs: "read" is shared with the browser's "read page".
+            let action = args["action"] as? String ?? ""
+            let title = ["list", "read", "search", "write", "edit"].contains(action) ? L("ask.files.action." + action) : L("ask.tool.files")
+            let target = action == "search" ? args["query"] as? String : (args["path"] as? String).map { ($0 as NSString).lastPathComponent }
+            return target.flatMap { $0.isEmpty ? nil : title + " · " + $0 } ?? title
+        default: break
+        }
+        if name.hasPrefix("mcp_") {
+            return (mcpServer ?? "MCP") + " · " + String(name.dropFirst(4))
+        }
+        if ["memory", "run_code", "skill"].contains(name) {
             let title = L("ask.tool." + name)
             if name == "skill", let skill = args["name"] as? String { return title + " · " + skill }
             if name == "run_code", let language = args["language"] as? String { return title + " · " + language }
@@ -391,79 +409,6 @@ struct AskStatusBadge: View {
     }
 }
 
-/// A tool call is one collapsed 44pt row. It only expands when the user asks
-/// for it, or when the run is waiting for a decision.
-struct AskToolCard<Detail: View>: View {
-    /// Concentric with the 28pt icon tile inset 8pt.
-    static var corner: CGFloat { 16 }
-
-    var title: String
-    var subtitle: String?
-    var systemImage: String
-    var state: AskActivityState
-    var statusText: String
-    var detail: () -> Detail
-    @State private var expanded: Bool
-
-    init(title: String, subtitle: String? = nil, systemImage: String, state: AskActivityState,
-         statusText: String, startsExpanded: Bool = false,
-         @ViewBuilder detail: @escaping () -> Detail) {
-        self.title = title
-        self.subtitle = subtitle
-        self.systemImage = systemImage
-        self.state = state
-        self.statusText = statusText
-        self.detail = detail
-        _expanded = State(initialValue: startsExpanded)
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Button {
-                expanded.toggle()
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: systemImage)
-                        .font(.system(size: 13))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(width: 28, height: 28)
-                        .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    Text(title).font(.system(size: 12.5, weight: .semibold)).lineLimit(1)
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    if let subtitle {
-                        Text(subtitle).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
-                    }
-                    Spacer(minLength: 6)
-                    AskStatusBadge(text: statusText, state: state)
-                    Image(systemName: expanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
-                .padding(.leading, 8)
-                .padding(.trailing, 12)
-                .frame(height: 44)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            if expanded {
-                // Indented under the title, past the icon tile: no rule, no second fill.
-                detail()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, 46)
-                    .padding(.trailing, 14)
-                    .padding(.bottom, 12)
-            }
-        }
-        // A translucent wash, not an opaque card, so it sits on any window surface.
-        .background(AskTheme.hoverFill.opacity(0.75))
-        .clipShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Self.corner, style: .continuous)
-                .strokeBorder(state.needsAttention ? state.tint.opacity(0.45) : AskTheme.border.opacity(0.6))
-        )
-    }
-}
-
 /// Monospaced block used for tool arguments and results.
 struct AskMonoBlock: View {
     var title: String
@@ -552,9 +497,9 @@ struct AskBanner: View {
 
 /// Capsule buttons for Ask's own cards and sheets, in place of the stock
 /// bordered buttons: `primary` fills with the design blue, `secondary` is a
-/// quiet outline. Both dim when disabled.
+/// quiet outline, `destructive` fills red for actions that cannot be undone. All dim when disabled.
 struct AskCapsuleButtonStyle: ButtonStyle {
-    enum Kind { case primary, secondary }
+    enum Kind { case primary, secondary, destructive }
     var kind: Kind = .primary
 
     func makeBody(configuration: Configuration) -> some View {
@@ -572,14 +517,22 @@ struct AskCapsuleButtonStyle: ButtonStyle {
             configuration.label
                 .font(.system(size: 12.5, weight: .semibold))
                 .lineLimit(1)
-                .foregroundStyle(kind == .primary ? Color.white : StudioTheme.textPrimary)
+                .foregroundStyle(kind == .secondary ? StudioTheme.textPrimary : Color.white)
                 .padding(.horizontal, 14)
                 .frame(height: 30)
-                .background(kind == .primary ? AskTheme.primaryAction : AskTheme.hoverFill, in: Capsule())
-                .overlay(Capsule().strokeBorder(kind == .primary ? Color.clear : AskTheme.border))
+                .background(fill, in: Capsule())
+                .overlay(Capsule().strokeBorder(kind == .secondary ? AskTheme.border : Color.clear))
                 .contentShape(Capsule())
                 .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.45)
                 .fixedSize()
+        }
+
+        private var fill: Color {
+            switch kind {
+            case .primary: AskTheme.primaryAction
+            case .secondary: AskTheme.hoverFill
+            case .destructive: StudioTheme.danger
+            }
         }
     }
 }
@@ -970,11 +923,15 @@ enum AskPresentation {
         return result.isError == true ? .failed : .done
     }
 
-    static func toolStatusText(result: AskMessage?) -> String {
+    /// An image from the screen or a page is a capture; any other tool produced its image.
+    static func toolStatusText(result: AskMessage?, call: AskToolCall? = nil) -> String {
         switch toolState(result: result) {
         case .running: return L("ask.tool.running")
         case .failed: return L("ask.tool.failed")
-        default: return L(result?.image == nil ? "ask.tool.done" : "ask.image.captured")
+        default:
+            guard result?.image != nil else { return L("ask.tool.done") }
+            let captures = call.map { ["computer", "browser"].contains($0.function.name) } ?? true
+            return L(captures ? "ask.image.captured" : "ask.image.generated")
         }
     }
 
@@ -990,6 +947,7 @@ enum AskPresentation {
         case "memory": return "brain"
         case "update_plan": return "list.bullet.clipboard"
         case "research": return "doc.text.magnifyingglass"
+        case let name where name.hasPrefix("mcp_"): return "point.3.connected.trianglepath.dotted"
         default: return "wrench.and.screwdriver"
         }
     }

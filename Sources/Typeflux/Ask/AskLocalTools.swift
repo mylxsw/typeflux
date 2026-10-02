@@ -25,6 +25,12 @@ protocol AskToolExecuting {
     /// Tools usable from this conversation; tools that need an unavailable target are omitted.
     func definitions(conversationId: String?) async -> [AskToolDefinition]
     func execute(_ call: AskToolCall, conversationId: String) async throws -> AskLocalToolOutput
+    /// The MCP server behind a tool call, for approvals; nil for built-in tools.
+    func mcpServerName(of call: AskToolCall) -> String?
+}
+
+extension AskToolExecuting {
+    func mcpServerName(of _: AskToolCall) -> String? { nil }
 }
 
 /// Calls require conversation approval or screenshot consent from the submitted draft.
@@ -33,6 +39,7 @@ protocol AskToolExecuting {
 final class AskLocalTools: AskToolExecuting {
     private let registry: MCPRegistry
     private var mcpTools: [String: MCPToolAdapter] = [:]
+    private var mcpServers: [String: String] = [:]
     var targetApplication: NSRunningApplication?
     private var capturedDisplays: [String: CGDirectDisplayID] = [:]
     private var targets: [String: NSRunningApplication] = [:]
@@ -55,6 +62,12 @@ final class AskLocalTools: AskToolExecuting {
 
     func bindConversation(_ id: String) { targets[id] = targetApplication }
 
+    /// Skills the user has not turned off in settings.
+    var enabledSkills: [AskSkill] {
+        let disabled = settings?.askDisabledSkills ?? []
+        return skills.skills().filter { !disabled.contains($0.name) }
+    }
+
     var fileTools: AskFileTools { AskFileTools(roots: settings?.askFileAccessFolders ?? []) }
 
     /// The bound browser, or a running Safari/Chrome when the question started elsewhere.
@@ -71,9 +84,10 @@ final class AskLocalTools: AskToolExecuting {
         var result = Self.builtins.filter { $0.name != "browser" || browserBundle(conversationId: conversationId) != nil }
         if let files = AskFileTools.definition(roots: fileTools.roots) { result.append(files) }
         if settings?.askCodeExecutionEnabled == true, let code = sandbox.definition() { result.append(code) }
-        if let skill = skills.definition(skills.skills()) { result.append(skill) }
+        if let skill = skills.definition(enabledSkills) { result.append(skill) }
         result.append(AskMemoryNoteStore.definition)
         mcpTools = [:]
+        mcpServers = [:]
         var schemaBytes = 0
         for (name, entry) in Self.mcpToolNames(await registry.registeredTools()) {
             let tool = entry.tool
@@ -82,11 +96,14 @@ final class AskLocalTools: AskToolExecuting {
                   schema.count <= 32000, schemaBytes + schema.count <= 500000 else { continue }
             schemaBytes += schema.count
             mcpTools[name] = tool
+            mcpServers[name] = entry.serverName
             result.append(.init(name: name, description: String(tool.definition.description.prefix(2000)), parameters: JSONValue(data: schema)))
             if result.count == 64 { break }
         }
         return result
     }
+
+    func mcpServerName(of call: AskToolCall) -> String? { mcpServers[call.function.name] }
 
     /// MCP tools follow their annotations; per the MCP specification an unannotated
     /// tool may be destructive, so it keeps asking every time.
@@ -205,6 +222,7 @@ final class AskLocalTools: AskToolExecuting {
                          isError: execution.timedOut || execution.exitCode != 0)
         case "skill":
             guard let name = args["name"] as? String else { throw AskLocalError.message(L("ask.tool.invalid")) }
+            guard !(settings?.askDisabledSkills.contains(name) ?? false) else { throw AskLocalError.message(L("ask.skills.missing")) }
             return .init(content: try skills.load(name))
         case "memory":
             return .init(content: try notes.execute(args, owner: owner()))
