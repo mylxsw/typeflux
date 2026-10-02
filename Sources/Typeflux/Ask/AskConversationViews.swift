@@ -12,6 +12,8 @@ struct AskConversationView: View {
     @State private var isSearching = false
     @State private var collapsedGroups: Set<String> = []
     @State private var searchHover = false
+    /// The selected row's pill slides between rows instead of jumping.
+    @Namespace private var selectionSpace
     /// Height of the banners and composer floating over the transcript's bottom edge.
     @State private var bottomChromeHeight: CGFloat = 0
     /// Set by the toggle inside its animation. Driving the layout from the
@@ -310,6 +312,7 @@ struct AskConversationView: View {
                 }
             }
             .padding(.horizontal, 8)
+            .animation(AskMotion.panelAnimation(reduceMotion: reduceMotion), value: model.selectedId)
             .background(AskHistoryPullRefresh(
                 isRefreshing: model.isRefreshingHistory,
                 onDistance: { pullDistance = $0 },
@@ -381,6 +384,7 @@ struct AskConversationView: View {
             updatedAt: item.updatedAt,
             selected: model.selectedId == item.id,
             busy: model.busyIds.contains(item.id),
+            selectionSpace: selectionSpace,
             onSelect: { Task { await model.select(item.id) } },
             onDelete: { deleteId = item.id }
         )
@@ -653,6 +657,14 @@ struct AskConversationView: View {
                         onAllow: { model.approve(conversationId: id, allowed: true) })
     }
 
+    /// When a transcript row first appeared: its message's time, or its first step's.
+    static func createdAt(_ item: AskTranscriptItem) -> Date? {
+        switch item.kind {
+        case let .message(message): return message.createdAt
+        case let .activity(group): return group.messages.first?.createdAt
+        }
+    }
+
     /// Whether a tool card in the transcript holds the call awaiting approval.
     static func groupContains(_ items: [AskTranscriptItem], callId: String) -> Bool {
         items.contains { item in
@@ -673,6 +685,7 @@ struct AskConversationView: View {
                     LazyVStack(alignment: .leading, spacing: 24) {
                         ForEach(items) { item in
                             transcriptRow(item, items: items, regenerable: regenerable)
+                                .askRiseIn(createdAt: Self.createdAt(item))
                                 .id(item.id)
                                 .background(GeometryReader { geometry in
                                     Color.clear.preference(key: AskTranscriptFrames.self,
@@ -1033,9 +1046,8 @@ struct AskReasoningView: View {
                     Image(systemName: "sparkles").font(.system(size: 11))
                     Text(label)
                         .font(.system(size: 12.5, weight: .medium))
-                    if active {
-                        ProgressView().controlSize(.mini)
-                    } else {
+                        .modifier(AskShimmer(active: active))
+                    if !active {
                         Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
                             .rotationEffect(.degrees(expanded ? 90 : 0))
                     }
@@ -1076,6 +1088,7 @@ private struct AskHistoryRow: View {
     let updatedAt: Date
     let selected: Bool
     let busy: Bool
+    let selectionSpace: Namespace.ID
     var onSelect: () -> Void
     var onDelete: () -> Void
     @State private var hovering = false
@@ -1102,13 +1115,20 @@ private struct AskHistoryRow: View {
             .padding(.trailing, 10)
             .frame(height: 38)
             .frame(maxWidth: .infinity, alignment: .leading)
-            // Selection is an accent-tinted glass pill, concentric with the panel.
-            .background(rowFill, in: RoundedRectangle(cornerRadius: AskMetrics.sidebarRowCorner, style: .continuous))
-            .overlay {
-                if selected {
-                    RoundedRectangle(cornerRadius: AskMetrics.sidebarRowCorner, style: .continuous)
-                        .strokeBorder(AskTheme.accent.opacity(0.4), lineWidth: 0.5)
+            // Selection is an accent-tinted glass pill, concentric with the panel,
+            // that slides from the previous row to the new one.
+            .background {
+                let shape = RoundedRectangle(cornerRadius: AskMetrics.sidebarRowCorner, style: .continuous)
+                ZStack {
+                    if hovering, !selected { shape.fill(AskTheme.hoverFill).transition(.opacity) }
+                    if selected {
+                        shape.fill(AskTheme.accent.opacity(0.18))
+                            .overlay(shape.strokeBorder(AskTheme.accent.opacity(0.4), lineWidth: 0.5))
+                            .shadow(color: AskTheme.accent.opacity(0.18), radius: 6, y: 2)
+                            .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
+                    }
                 }
+                .animation(.easeOut(duration: 0.15), value: hovering)
             }
             .contentShape(RoundedRectangle(cornerRadius: AskMetrics.sidebarRowCorner, style: .continuous))
         }
@@ -1138,10 +1158,6 @@ private struct AskHistoryRow: View {
         }
     }
 
-    private var rowFill: Color {
-        if selected { return AskTheme.accent.opacity(0.18) }
-        return hovering ? AskTheme.hoverFill : .clear
-    }
 }
 
 /// An empty-state suggestion: one of three glass cards in a row. Hover lifts
@@ -1155,7 +1171,6 @@ private struct AskSuggestionCard: View {
     var action: () -> Void
     @State private var hovering = false
     @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     static var corner: CGFloat { 18 }
 
@@ -1183,11 +1198,10 @@ private struct AskSuggestionCard: View {
             .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
             .askInWindowGlass(corner: Self.corner, opaqueFill: AskTheme.composerSurface)
             .contentShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
-            .offset(y: hovering && !reduceMotion ? -2 : 0)
             .opacity(isEnabled ? 1 : 0.55)
             .animation(.easeOut(duration: 0.18), value: hovering)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(AskLiftingCardStyle())
         .onHover { hovering = isEnabled && $0 }
         .accessibilityLabel(title)
         .accessibilityHint(caption)

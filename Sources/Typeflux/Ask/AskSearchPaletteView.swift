@@ -24,8 +24,8 @@ struct AskSearchPaletteView: View {
                 .contentShape(Rectangle())
                 .onTapGesture { onClose() }
             card
+                .askPopIn(anchor: .top)
                 .padding(.top, AskMetrics.titleBarRowHeight + 18)
-                .transition(.scale(scale: 0.96, anchor: .top).combined(with: .opacity))
         }
         .onExitCommand { onClose() }
         .onAppear {
@@ -64,8 +64,8 @@ struct AskSearchPaletteView: View {
             list
         }
         .frame(width: Self.width)
-        .askInWindowGlass(corner: AskMetrics.paletteCorner, opaqueFill: AskTheme.popoverSurface)
-        .shadow(color: Color.black.opacity(0.3), radius: 28, y: 12)
+        .askInWindowGlass(corner: AskMetrics.paletteCorner, opaqueFill: AskTheme.popoverSurface,
+                          elevation: .popover)
     }
 
     private var list: some View {

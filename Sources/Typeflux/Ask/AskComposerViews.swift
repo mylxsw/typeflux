@@ -166,6 +166,7 @@ struct AskComposer: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
+        .modifier(AskWorkspaceCardDepth(enabled: !launcher, corner: chrome.corner))
         .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner,
                                  idle: chrome.idleBorder(on: glass, increasedContrast: contrast == .increased)))
         .overlay {

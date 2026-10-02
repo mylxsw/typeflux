@@ -411,3 +411,22 @@ sheets: `docs/images/ask-liquid-glass-compare-*.png`.
 - Model menu: text capability badges, a credit-multiplier column, "My models"
   group, "Manage models…" row; rows highlight with the accent like system menus.
 - The ⌥Space launcher lists the three suggestions while empty (↑/↓, Return).
+
+### Shadows and motion (GUL-159, round 3)
+
+`AskMotionEffects.swift` holds the board's depth and motion, all Reduce Motion /
+Reduce Transparency aware:
+
+- Elevation (`AskElevation`): control, panel and popover levels, each a soft
+  ambient shadow plus a 1pt contact shadow (dark 38% · 34pt blur · 12pt drop for
+  panels; light uses a fainter navy tint). `AskOuterShadow` draws it outside the
+  shape only, so glass never darkens and labels never get shadows.
+- Glass edges: a gradient rim light (`AskRimLight`) and a pointer-following
+  highlight (`askSpecular`) on the sidebar, header capsules, composer, cards and palette.
+- Menus, hover cards and the ⌘K palette pop in from their anchor (scale 0.9,
+  4pt blur, spring 0.32s); new messages and tool cards rise 10pt into place
+  (only items under 3 s old, so loading a conversation never animates).
+- The sidebar's selection pill slides between rows (matched geometry); toggles
+  light up on a spring; suggestion cards lift 3pt and press to 0.97; the send
+  button springs when it becomes available; "正在思考" shimmers.
+- Menus close instantly, like system menus.

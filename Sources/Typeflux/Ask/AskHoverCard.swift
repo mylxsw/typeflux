@@ -55,7 +55,7 @@ final class AskHoverCardPresenter {
         guard let window = anchor.window, window.isVisible else { return }
         let panel = self.panel ?? Self.makePanel()
         self.panel = panel
-        let hosting = NSHostingView(rootView: AnyView(AskGlassCardSurface { content }))
+        let hosting = NSHostingView(rootView: AnyView(AskGlassCardSurface { content }.askPopIn(anchor: .bottom)))
         panel.contentView = hosting
         panel.appearance = window.effectiveAppearance
         let anchorRect = window.convertToScreen(anchor.convert(anchor.bounds, to: nil))

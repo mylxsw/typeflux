@@ -38,7 +38,7 @@ struct AskLivePreviewHarness {
         try library.addModels(Self.cloudModels(), providerID: "typefluxCloud")
         library.defaultReference = "cloud:minimax-m3"
         // The approval flow runs a stubbed tool call; the default library keeps it model-agnostic.
-        let fixture = try scene == "approval" ? AskTestFixture() : AskTestFixture(modelLibrary: library)
+        let fixture = try scene == "approval" || scene == "motion" ? AskTestFixture() : AskTestFixture(modelLibrary: library)
         for conversation in Self.history() { await fixture.api.seed(conversation) }
         await fixture.model.refreshHistory()
         switch scene {
@@ -119,10 +119,47 @@ struct AskLivePreviewHarness {
         // The capture tool lists only normal-level windows; the panel floats.
         if captured !== window { captured.level = .normal; captured.orderFront(nil) }
         if let marker { try Data(String(captured.windowNumber).utf8).write(to: marker) }
+        if scene == "motion" {
+            try await playMotionScript(fixture: fixture, library: library, window: window)
+        }
         try await Task.sleep(for: .seconds(seconds))
         if let marker { try? FileManager.default.removeItem(at: marker) }
         window.orderOut(nil)
         fixture.model.resetSession()
+    }
+
+    /// A scripted walk through the window's motion for a screen recording:
+    /// the selection slides, a sent message and its answer rise in, the model
+    /// menu and the ⌘K palette pop in.
+    private func playMotionScript(fixture: AskTestFixture, library: AskModelLibrary, window: NSWindow) async throws {
+        try await Task.sleep(for: .seconds(3))
+        await fixture.model.select("c3")
+        try await Task.sleep(for: .milliseconds(1200))
+        await fixture.model.select("c1")
+        try await Task.sleep(for: .milliseconds(1200))
+        await fixture.model.select("c4")
+        try await Task.sleep(for: .milliseconds(900))
+        fixture.model.draft.text = "帮我总结一下这个网页的重点"
+        try await Task.sleep(for: .milliseconds(600))
+        fixture.model.submitDraft()
+        try await Task.sleep(for: .milliseconds(2200))
+        if let content = window.contentView {
+            let anchor = NSView(frame: NSRect(x: 356, y: 45, width: 100, height: 34))
+            content.addSubview(anchor)
+            AskGlassMenuPresenter.shared.show(
+                AskModelChoices(library: library, reference: .constant("cloud:minimax-m3"), loggedIn: true,
+                                composerStyle: true, onManage: {}),
+                owner: UUID(), anchor: anchor, onClose: {})
+            try await Task.sleep(for: .milliseconds(1600))
+            AskGlassMenuPresenter.shared.hide()
+            anchor.removeFromSuperview()
+        }
+        try await Task.sleep(for: .milliseconds(600))
+        let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .command,
+                                                  timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                                                  characters: "k", charactersIgnoringModifiers: "k",
+                                                  isARepeat: false, keyCode: 40))
+        window.performKeyEquivalent(with: event)
     }
 
     /// The design board's cloud catalog.
