@@ -19,7 +19,11 @@ struct AskReasoningEffortTests {
         #expect(old.reasoningEffort == nil)
         #expect(AskReasoningEffort.high.requestValue(for: nil) == nil)
         #expect(AskReasoningEffort.high.requestValue(for: .init(id: "plain", name: "Plain", reference: "cloud:plain", reasoning: false)) == nil)
-        #expect(AskReasoningEffort.high.requestValue(for: .init(id: "custom", name: "Custom", reasoning: true)) == nil)
+        // The user's own models get the choice unless known not to reason.
+        #expect(AskReasoningEffort.high.requestValue(for: .init(id: "custom", name: "Custom", reasoning: true)) == "high")
+        #expect(AskReasoningEffort.high.requestValue(for: .init(id: "unknown", name: "Unknown")) == "high")
+        #expect(AskReasoningEffort.high.requestValue(for: .init(id: "plain", name: "Plain", reasoning: false)) == nil)
+        #expect(AskReasoningEffort.providerDefault.requestValue(for: .init(id: "custom", name: "Custom")) == nil)
     }
 
     @Test func chosenEffortIsSentAndUnsupportedModelsOmitIt() async throws {

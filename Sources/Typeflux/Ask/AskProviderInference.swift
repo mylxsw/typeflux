@@ -33,12 +33,28 @@ extension AskCustomInference {
         }
         var native = try Self.nativeBody(body, model: connection.model, anthropic: anthropic)
         if anthropic, onProgress != nil { native["stream"] = true }
-        request.httpBody = try JSONSerialization.data(withJSONObject: native)
+        let effort = AskReasoningRequest.effort(in: body)
+        if anthropic {
+            AskReasoningRequest.applyAnthropic(effort: effort, to: &native)
+        } else {
+            AskReasoningRequest.applyGemini(effort: effort, to: &native)
+        }
+        return try await AskReasoningRequest.send(native) { native in
+            request.httpBody = try JSONSerialization.data(withJSONObject: native)
+            return try await sendNative(request, anthropic: anthropic, onUsage: onUsage, onProgress: onProgress)
+        }
+    }
+
+    private func sendNative(_ request: URLRequest, anthropic: Bool, onUsage: (@Sendable (AskTokenUsage) async -> Void)?,
+                            onProgress: (@Sendable (AskStreamProgress) async -> Void)?) async throws -> (String, [AskToolCall]) {
         if let onProgress { return try await stream(request, style: anthropic ? .anthropic : .gemini, onUsage: onUsage, onProgress: onProgress) }
         let (data, response) = try await session.data(for: request)
         try Task.checkCancellation()
         guard let response = response as? HTTPURLResponse, (200 ..< 300).contains(response.statusCode),
               data.count <= 2_000_000 else {
+            if let status = (response as? HTTPURLResponse)?.statusCode, AskReasoningRequest.isRejection(status: status) {
+                throw AskStreamError.rejected
+            }
             throw AskLocalError.message(L("ask.models.requestError"))
         }
         if let body = try JSONSerialization.jsonObject(with: data) as? [String: Any],

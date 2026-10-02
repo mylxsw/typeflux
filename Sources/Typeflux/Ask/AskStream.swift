@@ -1,6 +1,10 @@
 import Foundation
 
-enum AskStreamError: Error { case invalidResponse, requestFailed }
+enum AskStreamError: Error {
+    case invalidResponse, requestFailed
+    /// The provider refused the request itself (HTTP 400/422), e.g. an unsupported parameter.
+    case rejected
+}
 
 struct AskStreamProgress: Equatable, Sendable {
     var text = ""
@@ -195,7 +199,8 @@ extension AskCustomInference {
                 onProgress: @Sendable (AskStreamProgress) async -> Void) async throws -> (String, [AskToolCall]) {
         let (bytes, response) = try await session.bytes(for: request)
         guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
-            throw AskStreamError.requestFailed
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            throw AskReasoningRequest.isRejection(status: status) ? AskStreamError.rejected : AskStreamError.requestFailed
         }
         var frame = AskSSEFrame()
         var parser = AskProviderStream(style: style)

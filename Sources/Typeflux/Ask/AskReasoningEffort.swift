@@ -14,9 +14,16 @@ enum AskReasoningEffort: String, CaseIterable {
         L("ask.reasoning." + (self == .providerDefault ? "default" : rawValue) + ".caption")
     }
 
+    /// Cloud models declare reasoning support in the catalog. The user's own models are
+    /// offered the choice unless known not to reason; a provider that rejects it is
+    /// retried without it (see `AskReasoningRequest`).
+    static func isAvailable(for model: RegisteredModel?) -> Bool {
+        guard let model else { return false }
+        return model.reference.hasPrefix("cloud:") ? model.reasoning == true : model.reasoning != false
+    }
+
     func requestValue(for model: RegisteredModel?) -> String? {
-        guard model?.reference.hasPrefix("cloud:") == true, model?.reasoning == true,
-              self != .providerDefault else { return nil }
+        guard Self.isAvailable(for: model), self != .providerDefault else { return nil }
         return rawValue
     }
 }
@@ -42,7 +49,7 @@ struct AskReasoningMenu: View {
     }
 
     var body: some View {
-        if reference.hasPrefix("cloud:"), library.registry.resolve(reference)?.1.reasoning == true {
+        if AskReasoningEffort.isAvailable(for: library.registry.resolve(reference)?.1) {
             Button { expanded.toggle() } label: {
                 HStack(spacing: 6) {
                     // Sparkles, not a brain: the brain is the memory chip's symbol.
