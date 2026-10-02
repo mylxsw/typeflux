@@ -4,7 +4,6 @@ import Combine
 @MainActor
 final class StatusBarController: NSObject {
     private enum MenuTag {
-        static let agentTasks = 9001
         static let transcriptionHistory = 9002
         static let personas = 9003
         static let textTransformation = 9004
@@ -15,7 +14,6 @@ final class StatusBarController: NSObject {
     }
 
     private enum MenuLayout {
-        static let runningJobTitleLimit = 44
         static let recentHistoryLimit = 10
     }
 
@@ -28,55 +26,42 @@ final class StatusBarController: NSObject {
     private let appState: AppStateStore
     private let settingsStore: SettingsStore
     private let historyStore: HistoryStore
-    private let agentJobStore: AgentJobStore
     private let modelManager: OllamaModelManaging
     private let localModelManager: LocalSTTModelManaging
     private let notificationService: LocalNotificationSending
     private let onRetryHistory: (HistoryRecord) -> Void
     private let onOpenOnboarding: () -> Void
-    private let onOpenAgentJobs: () -> Void
     private let onOpenAskConversations: () -> Void
-    private let onOpenAgentJob: (UUID) -> Void
 
     private var statusItem: NSStatusItem?
     private(set) var menu: NSMenu?
     private var cancellables = Set<AnyCancellable>()
     private var languageObserver: NSObjectProtocol?
-    private var agentJobObserver: NSObjectProtocol?
-    private var agentSettingsObserver: NSObjectProtocol?
     private var historyObserver: NSObjectProtocol?
     private var personaSelectionObserver: NSObjectProtocol?
     private var autoUpdateStateObserver: NSObjectProtocol?
     private var localModelDownloadProgressObserver: NSObjectProtocol?
-    private var runningJobDurationTimer: Timer?
-    private var runningAgentJobs: [AgentJob] = []
 
     init(
         appState: AppStateStore,
         settingsStore: SettingsStore,
         historyStore: HistoryStore,
-        agentJobStore: AgentJobStore,
         modelManager: OllamaModelManaging = OllamaLocalModelManager(),
         localModelManager: LocalSTTModelManaging = LocalModelManager(),
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
         onOpenOnboarding: @escaping () -> Void = {},
-        onOpenAgentJobs: @escaping () -> Void = {},
-        onOpenAskConversations: @escaping () -> Void = {},
-        onOpenAgentJob: @escaping (UUID) -> Void = { _ in }
+        onOpenAskConversations: @escaping () -> Void = {}
     ) {
         self.appState = appState
         self.settingsStore = settingsStore
         self.historyStore = historyStore
-        self.agentJobStore = agentJobStore
         self.modelManager = modelManager
         self.localModelManager = localModelManager
         self.notificationService = notificationService
         self.onRetryHistory = onRetryHistory
         self.onOpenOnboarding = onOpenOnboarding
-        self.onOpenAgentJobs = onOpenAgentJobs
         self.onOpenAskConversations = onOpenAskConversations
-        self.onOpenAgentJob = onOpenAgentJob
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)
     }
 
@@ -90,25 +75,6 @@ final class StatusBarController: NSObject {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.rebuildMenu()
-            }
-        }
-        agentJobObserver = NotificationCenter.default.addObserver(
-            forName: .agentJobStoreDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.refreshRunningAgentJobs()
-            }
-        }
-        agentSettingsObserver = NotificationCenter.default.addObserver(
-            forName: .agentConfigurationDidChange,
-            object: settingsStore,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.refreshRunningAgentJobs()
                 self?.rebuildMenu()
             }
         }
@@ -148,7 +114,6 @@ final class StatusBarController: NSObject {
                 self?.rebuildMenu()
             }
         }
-        refreshRunningAgentJobs()
 
         appState.$status
             .receive(on: DispatchQueue.main)
@@ -169,14 +134,6 @@ final class StatusBarController: NSObject {
             NotificationCenter.default.removeObserver(languageObserver)
         }
         languageObserver = nil
-        if let agentJobObserver {
-            NotificationCenter.default.removeObserver(agentJobObserver)
-        }
-        agentJobObserver = nil
-        if let agentSettingsObserver {
-            NotificationCenter.default.removeObserver(agentSettingsObserver)
-        }
-        agentSettingsObserver = nil
         if let historyObserver {
             NotificationCenter.default.removeObserver(historyObserver)
         }
@@ -193,7 +150,6 @@ final class StatusBarController: NSObject {
             NotificationCenter.default.removeObserver(localModelDownloadProgressObserver)
         }
         localModelDownloadProgressObserver = nil
-        stopRunningJobDurationTimer()
         cancellables.removeAll()
     }
 
@@ -245,12 +201,6 @@ final class StatusBarController: NSObject {
         personasItem.tag = MenuTag.personas
         personasItem.submenu = buildPersonasMenu()
         menu.addItem(personasItem)
-        if settingsStore.agentEnabled {
-            let agentTasksItem = NSMenuItem(title: L("menu.agentTasks"), action: nil, keyEquivalent: "")
-            agentTasksItem.tag = MenuTag.agentTasks
-            agentTasksItem.submenu = buildAgentTasksMenu()
-            menu.addItem(agentTasksItem)
-        }
         menu.addItem(NSMenuItem.separator())
 
         let appearanceItem = NSMenuItem(title: L("menu.appearance"), action: nil, keyEquivalent: "")
@@ -400,32 +350,6 @@ final class StatusBarController: NSObject {
 
         menu.addItem(NSMenuItem.separator())
         menu.addItem(makeItem(title: L("menu.personas.edit"), action: #selector(openPersonas)))
-    }
-
-    private func buildAgentTasksMenu() -> NSMenu {
-        let menu = NSMenu(title: L("menu.agentTasks"))
-        menu.delegate = self
-
-        if runningAgentJobs.isEmpty {
-            let emptyItem = NSMenuItem(title: L("menu.agentTasks.empty"), action: nil, keyEquivalent: "")
-            emptyItem.isEnabled = false
-            menu.addItem(emptyItem)
-        } else {
-            for job in runningAgentJobs.prefix(8) {
-                let item = NSMenuItem(
-                    title: agentTaskMenuTitle(for: job),
-                    action: #selector(openAgentJob(_:)),
-                    keyEquivalent: ""
-                )
-                item.target = self
-                item.representedObject = job.id.uuidString
-                menu.addItem(item)
-            }
-        }
-
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(makeItem(title: L("menu.agentTasks.viewAll"), action: #selector(openAgentJobs)))
-        return menu
     }
 
     private func makeAppearanceItem(mode: AppearanceMode) -> NSMenuItem {
@@ -608,22 +532,8 @@ final class StatusBarController: NSObject {
         onOpenOnboarding()
     }
 
-    @objc private func openAgentJobs() {
-        onOpenAgentJobs()
-    }
-
     @objc private func openAskConversations() {
         onOpenAskConversations()
-    }
-
-    @objc private func openAgentJob(_ sender: NSMenuItem) {
-        guard
-            let rawValue = sender.representedObject as? String,
-            let jobID = UUID(uuidString: rawValue)
-        else {
-            return
-        }
-        onOpenAgentJob(jobID)
     }
 
     @objc private func openAbout() {
@@ -634,63 +544,10 @@ final class StatusBarController: NSObject {
         NSApp.terminate(nil)
     }
 
-    private func refreshRunningAgentJobs() {
-        Task {
-            let jobs = await (try? agentJobStore.list(limit: 100, offset: 0)) ?? []
-            let runningJobs = jobs.filter { $0.status == .running }
-            await MainActor.run {
-                self.runningAgentJobs = runningJobs
-                self.rebuildMenu()
-                self.refreshVisibleAgentTaskMenuTitles()
-            }
-        }
-    }
-
-    private func agentTaskMenuTitle(for job: AgentJob, relativeTo now: Date = Date()) -> String {
-        "\(job.truncatedTitle(limit: MenuLayout.runningJobTitleLimit)) · \(job.runningElapsedText(relativeTo: now))"
-    }
-
-    private func refreshVisibleAgentTaskMenuTitles(relativeTo now: Date = Date()) {
-        guard let agentTasksMenu = menu?.item(withTag: MenuTag.agentTasks)?.submenu else { return }
-
-        for item in agentTasksMenu.items {
-            guard
-                let rawValue = item.representedObject as? String,
-                let jobID = UUID(uuidString: rawValue),
-                let job = runningAgentJobs.first(where: { $0.id == jobID })
-            else {
-                continue
-            }
-
-            item.title = agentTaskMenuTitle(for: job, relativeTo: now)
-        }
-    }
-
-    private func startRunningJobDurationTimer() {
-        guard runningJobDurationTimer == nil, !runningAgentJobs.isEmpty else { return }
-
-        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.refreshVisibleAgentTaskMenuTitles()
-            }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        runningJobDurationTimer = timer
-    }
-
-    private func stopRunningJobDurationTimer() {
-        runningJobDurationTimer?.invalidate()
-        runningJobDurationTimer = nil
-    }
 }
 
 extension StatusBarController: NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
-        if menu == self.menu || menu.title == L("menu.agentTasks") {
-            refreshVisibleAgentTaskMenuTitles()
-            startRunningJobDurationTimer()
-        }
-
         if menu.title == L("menu.transcriptionHistory") {
             menu.removeAllItems()
             populateTranscriptionHistoryMenu(menu)
@@ -707,10 +564,6 @@ extension StatusBarController: NSMenuDelegate {
         }
     }
 
-    func menuDidClose(_ menu: NSMenu) {
-        guard menu == self.menu || menu.title == L("menu.agentTasks") else { return }
-        stopRunningJobDurationTimer()
-    }
 }
 
 enum StatusBarMenuSupport {

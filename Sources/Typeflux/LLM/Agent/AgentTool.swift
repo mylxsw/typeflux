@@ -10,13 +10,3 @@ protocol AgentTool: Sendable {
     func execute(arguments: String) async throws -> String
 }
 
-/// Marker protocol for termination tools.
-protocol TerminationTool: AgentTool {}
-
-/// Built-in tool identifiers.
-enum BuiltinAgentToolName: String, CaseIterable {
-    case answerText = "answer_text"
-    case editText = "edit_text"
-    case getClipboard = "get_clipboard"
-    case runAgent = "run_agent"
-}

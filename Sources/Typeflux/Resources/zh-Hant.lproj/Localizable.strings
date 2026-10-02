@@ -186,10 +186,6 @@
 "menu.personas" = "人設";
 "menu.personas.empty" = "暫無人設";
 "menu.personas.edit" = "編輯人設";
-"menu.agentTasks" = "Agent 任務";
-"menu.agentTasks.empty" = "暫無執行中的任務";
-"menu.agentTasks.viewAll" = "查看所有任務";
-"menu.agentTasks.runningCount" = "%d 個執行中";
 "menu.appearance" = "外觀";
 "menu.settings" = "系統設定";
 "menu.setupGuide" = "新手引導";
@@ -1102,7 +1098,6 @@
 "studio.heading.agent" = "Agent";
 "studio.subheading.agent" = "管理「隨便問」可使用的工具、MCP 伺服器、技能與記憶。";
 "studio.search.agent" = "搜尋 Agent 設定...";
-"agent.beta.notice" = "目前 Agent 功能仍處於 Beta 階段，穩定性與行為表現可能會持續調整，請知悉後使用。";
 
 "settings.advanced.localOptimization.title" = "本地優化";
 "settings.advanced.localOptimization.subtitle" = "在背景下載本地語音識別模型，啟用後可加速語音識別速度，並支援離線使用。";
@@ -1123,8 +1118,6 @@
 "agent.settings.web" = "連網";
 "agent.settings.code" = "程式碼執行";
 "agent.settings.mcp" = "MCP 伺服器";
-"agent.general.stepLogging.title" = "Agent 步驟日誌";
-"agent.general.stepLogging.subtitle" = "記錄 Agent 的每一步推理和工具呼叫，方便除錯。";
 
 "agent.section.mcpServers" = "MCP 伺服器";
 "agent.mcp.empty" = "尚未設定 MCP 伺服器。新增伺服器以透過外部工具擴展 Agent 能力。";
@@ -1154,38 +1147,8 @@
 "agent.mcp.deleteDialog.title" = "刪除 MCP 伺服器";
 "agent.mcp.deleteDialog.message" = "確定刪除「%@」嗎？此操作無法復原。";
 
-"agent.section.skills" = "技能";
-"agent.skills.empty" = "尚未配置技能。技能可以為 Agent 提供命令執行、網路存取等專門能力。";
-"agent.skills.builtinBadge" = "內建";
 
 // Agent Jobs
-"agent.jobs.title" = "任務記錄";
-"agent.jobs.subtitle" = "Agent 任務執行歷史。";
-"agent.jobs.empty" = "暫無任務記錄。啟用 Agent 後使用「隨便問」時會自動建立任務。";
-"agent.jobs.clearAll" = "清除全部";
-"agent.jobs.toolCalls" = "%d 個工具";
-"agent.jobs.steps" = "%d 個步驟";
-"agent.jobs.detail.prompt" = "提示詞";
-"agent.jobs.detail.context" = "上下文";
-"agent.jobs.detail.steps" = "執行步驟";
-"agent.jobs.detail.result" = "結果";
-"agent.jobs.detail.result.view.plainText" = "純文字";
-"agent.jobs.detail.result.view.markdown" = "Markdown";
-"agent.jobs.detail.error" = "錯誤";
-"agent.jobs.detail.stepNumber" = "步驟 %d";
-"agent.jobs.detail.toolCall.arguments" = "呼叫參數";
-"agent.jobs.detail.reasoning" = "推理過程";
-"agent.jobs.detail.stepTokens" = "%d tokens";
-"agent.jobs.detail.context.showMore" = "展開全部";
-"agent.jobs.detail.context.showLess" = "收起";
-"agent.jobs.cancel" = "取消任務";
-"agent.jobs.status.running" = "執行中";
-"agent.jobs.status.completed" = "已完成";
-"agent.jobs.status.failed" = "失敗";
-"agent.jobs.clearAllDialog.title" = "清除全部任務";
-"agent.jobs.clearAllDialog.message" = "確定清除所有任務記錄嗎？此操作無法復原。";
-"agent.jobs.deleteDialog.title" = "刪除任務";
-"agent.jobs.deleteDialog.message" = "確定刪除「%@」嗎？此操作無法復原。";
 
 // MARK: - Auth & Account
 
@@ -1343,11 +1306,6 @@
 "auth.account.usageHours" = "%.1f 小時";
 "auth.account.usageDays" = "%.1f 天";
 
-"agent.clarification.windowTitle" = "助手需要確認";
-"agent.clarification.assistantSectionTitle" = "助手";
-"agent.clarification.hotkeyHint" = "按住快捷鍵錄製回覆";
-"agent.clarification.recordingHint" = "錄音中... 說完後鬆開快捷鍵";
-"agent.clarification.transcribingHint" = "思考中...";
 "cloudDataSync.title" = "詞庫與人設雲端同步";
 "cloudDataSync.subtitle" = "預設關閉。開啟後，僅同步自訂詞庫和自訂人設到目前帳號的其他裝置。";
 "cloudDataSync.consent.title" = "開啟雲端同步？";

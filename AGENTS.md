@@ -19,7 +19,7 @@ Use the package manifest in `Package.swift` as the source of truth.
 
 ## Coding Style & Naming Conventions
 
-Follow existing Swift style in the repo: 4-space indentation, one top-level type per file when practical, and small focused extensions such as `WorkflowController+Agent.swift`, `+Processing.swift`, `+Persona.swift`, and `+AutomaticVocabulary.swift`. Add new concerns as similarly named extensions rather than expanding the core file. Use `UpperCamelCase` for types, `lowerCamelCase` for methods and properties, and descriptive enum cases like `.openAICompatible`. This is an internationalized project, so all code and code comments must be written in English. Prefer protocol-backed services and dependency injection through `DIContainer` instead of hard-coded singletons. SwiftLint is configured; use `// swiftlint:disable file_length` at the top of intentionally large files. Keep changes consistent with nearby code.
+Follow existing Swift style in the repo: 4-space indentation, one top-level type per file when practical, and small focused extensions such as `WorkflowController+Processing.swift`, `+Persona.swift`, and `+AutomaticVocabulary.swift`. Add new concerns as similarly named extensions rather than expanding the core file. Use `UpperCamelCase` for types, `lowerCamelCase` for methods and properties, and descriptive enum cases like `.openAICompatible`. This is an internationalized project, so all code and code comments must be written in English. Prefer protocol-backed services and dependency injection through `DIContainer` instead of hard-coded singletons. SwiftLint is configured; use `// swiftlint:disable file_length` at the top of intentionally large files. Keep changes consistent with nearby code.
 
 ## Testing Guidelines
 

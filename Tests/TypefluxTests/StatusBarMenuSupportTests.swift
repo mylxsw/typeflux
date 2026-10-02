@@ -16,7 +16,6 @@ final class StatusBarMenuSupportTests: XCTestCase {
             appState: AppStateStore(),
             settingsStore: SettingsStore(defaults: defaults),
             historyStore: EmptyHistoryStore(),
-            agentJobStore: EmptyAgentJobStore(),
             onOpenAskConversations: { openCount += 1 }
         )
         controller.start()
@@ -73,8 +72,7 @@ final class StatusBarMenuSupportTests: XCTestCase {
             settingsStore: SettingsStore(
                 defaults: XCTUnwrap(UserDefaults(suiteName: "StatusBarMenuProgressTests.\(UUID().uuidString)"))
             ),
-            historyStore: EmptyHistoryStore(),
-            agentJobStore: EmptyAgentJobStore()
+            historyStore: EmptyHistoryStore()
         )
 
         controller.start()
@@ -98,8 +96,7 @@ final class StatusBarMenuSupportTests: XCTestCase {
             settingsStore: SettingsStore(
                 defaults: XCTUnwrap(UserDefaults(suiteName: "StatusBarMenuSupportTests.\(UUID().uuidString)"))
             ),
-            historyStore: EmptyHistoryStore(),
-            agentJobStore: EmptyAgentJobStore()
+            historyStore: EmptyHistoryStore()
         )
 
         controller.start()
@@ -173,19 +170,3 @@ private final class EmptyHistoryStore: HistoryStore {
     }
 }
 
-private struct EmptyAgentJobStore: AgentJobStore {
-    func save(_: AgentJob) async throws {}
-    func list(limit _: Int, offset _: Int) async throws -> [AgentJob] {
-        []
-    }
-
-    func job(id _: UUID) async throws -> AgentJob? {
-        nil
-    }
-
-    func delete(id _: UUID) async throws {}
-    func clear() async throws {}
-    func count() async throws -> Int {
-        0
-    }
-}
