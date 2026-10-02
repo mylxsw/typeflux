@@ -116,7 +116,7 @@ struct AskHarnessVisualTests {
         try notes.add("常用 Python 做数据分析", owner: "o")
         for tab in [AgentConfigurationTab.general, .tools, .skills, .memory] {
             let settingsView = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: temp.appendingPathComponent("skills")),
-                                                    notes: notes, owner: { "o" }, isSignedIn: { true }, tab: tab)
+                                                    notes: notes, owner: { "o" }, tab: tab)
                 .padding(24).frame(width: 760, alignment: .top).frame(maxHeight: .infinity, alignment: .top).background(StudioTheme.surface)
             for appearance in [NSAppearance.Name.aqua, .darkAqua] {
                 try await render(settingsView, size: NSSize(width: 760, height: 900), appearance: appearance,

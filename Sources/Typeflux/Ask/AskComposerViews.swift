@@ -139,7 +139,6 @@ struct AskComposer: View {
     private var footer: some View {
         HStack(spacing: 4) {
             AskRunLocationLabel(local: !model.cloudAvailable, compact: launcher, notice: model.localCapabilityNotice)
-                .padding(.trailing, 2)
                 .opacity(Self.recordingDim(active))
             AskModelMenu(library: model.modelLibrary, reference: Binding(
                 get: { model.modelReference(launcher: launcher) },

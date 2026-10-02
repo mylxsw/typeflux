@@ -273,35 +273,35 @@ private struct AskSourceList: View {
     }
 }
 
-/// Where Ask runs: Typeflux Cloud or this Mac with the user's own models. A
-/// warning mark carries a missing local capability in its tooltip.
+/// Local mode remains visible because it uses a separate conversation history.
+/// Cloud mode needs no badge; missing local capabilities stay in the tooltip.
 struct AskRunLocationLabel: View {
     var local: Bool
     var compact = false
     var notice: String?
 
-    static func title(local: Bool) -> String { L(local ? "ask.location.local" : "ask.location.cloud") }
-
-    static func help(local: Bool, notice: String?) -> String {
-        let base = L(local ? "ask.location.local.help" : "ask.location.cloud.help")
+    static func help(notice: String?) -> String {
+        let base = L("ask.location.local.help")
         return notice.map { base + "\n" + $0 } ?? base
     }
 
     var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: local ? "desktopcomputer" : "cloud").font(.system(size: 11, weight: .medium))
-            if !compact { Text(Self.title(local: local)).font(.system(size: 11.5, weight: .medium)).lineLimit(1).fixedSize() }
-            if notice != nil {
-                Image(systemName: "exclamationmark.circle.fill").font(.system(size: 10)).foregroundStyle(StudioTheme.warning)
+        if local {
+            HStack(spacing: 4) {
+                Image(systemName: "desktopcomputer").font(.system(size: 11, weight: .medium))
+                if !compact { Text(L("ask.location.local")).font(.system(size: 11.5, weight: .medium)).lineLimit(1).fixedSize() }
+                if notice != nil {
+                    Image(systemName: "exclamationmark.circle.fill").font(.system(size: 10)).foregroundStyle(StudioTheme.warning)
+                }
             }
+            .foregroundStyle(StudioTheme.textSecondary)
+            .padding(.horizontal, 7)
+            .frame(height: 22)
+            .background(AskTheme.hoverFill, in: Capsule())
+            .help(Self.help(notice: notice))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(L("ask.location.local"))
+            .accessibilityHint(Self.help(notice: notice))
         }
-        .foregroundStyle(StudioTheme.textSecondary)
-        .padding(.horizontal, 7)
-        .frame(height: 22)
-        .background(AskTheme.hoverFill, in: Capsule())
-        .help(Self.help(local: local, notice: notice))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Self.title(local: local))
-        .accessibilityHint(Self.help(local: local, notice: notice))
     }
 }

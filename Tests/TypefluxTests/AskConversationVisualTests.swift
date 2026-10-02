@@ -93,7 +93,8 @@ struct AskConversationVisualTests {
         fixture.model.launcherDraft.text = "帮我总结这页内容，并查找相关资料"
         fixture.model.captureWarning = L("ask.capture.permission")
         try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
-                         size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: .darkAqua, file: root.appendingPathComponent("launcher.png"))
+                         size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: .darkAqua,
+                         file: root.appendingPathComponent("launcher.png"), minimumPNGBytes: 4000)
 
         try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
                          size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: .aqua, file: root.appendingPathComponent("launcher-light.png"), voice: fixture.model.voiceInput)
