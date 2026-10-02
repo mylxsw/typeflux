@@ -64,3 +64,41 @@ struct CloudUsageCurrentPeriodStats: Decodable, Equatable {
         case credits
     }
 }
+
+/// Credits spent per day and per feature in the current usage period, in the
+/// time zone the client asked for.
+struct CloudUsageBreakdown: Decodable, Equatable {
+    struct Day: Decodable, Equatable {
+        /// `YYYY-MM-DD` in the breakdown's time zone.
+        let date: String
+        let voice: Int
+        let rewrite: Int
+        let ask: Int
+
+        var total: Int {
+            voice + rewrite + ask
+        }
+    }
+
+    let periodStart: String
+    let periodEnd: String
+    let timezone: String
+    let days: [Day]
+    let voice: Int
+    let rewrite: Int
+    let ask: Int
+
+    var total: Int {
+        voice + rewrite + ask
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case periodStart = "period_start"
+        case periodEnd = "period_end"
+        case timezone
+        case days
+        case voice
+        case rewrite
+        case ask
+    }
+}

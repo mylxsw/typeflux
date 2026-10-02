@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-private final class TransparentAskHostingView<Content: View>: NSHostingView<Content> {
+final class TransparentAskHostingView<Content: View>: NSHostingView<Content> {
     override var isOpaque: Bool { false }
 }
 

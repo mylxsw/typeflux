@@ -18,15 +18,34 @@ struct CloudUsageAPIService: Sendable {
         try await CloudUsageAPIService().fetchCurrentPeriodStats(token: token)
     }
 
+    /// Credits per local day and per feature, bucketed in `timeZone`.
+    func fetchCurrentPeriodBreakdown(token: String, timeZone: TimeZone) async throws -> CloudUsageBreakdown {
+        try await execute(
+            path: "/api/v1/usage/current-period/breakdown",
+            token: token,
+            query: [URLQueryItem(name: "tz", value: timeZone.identifier)]
+        )
+    }
+
+    static func fetchCurrentPeriodBreakdown(token: String, timeZone: TimeZone) async throws -> CloudUsageBreakdown {
+        try await CloudUsageAPIService().fetchCurrentPeriodBreakdown(token: token, timeZone: timeZone)
+    }
+
     private func execute<Response: Decodable>(
         path: String,
-        token: String
+        token: String,
+        query: [URLQueryItem] = []
     ) async throws -> Response {
         let data: Data
         let httpResponse: HTTPURLResponse
         do {
             (data, httpResponse) = try await executor.execute(apiPath: path) { baseURL in
-                let resolvedURL = AuthEndpointResolver.resolve(baseURL: baseURL, path: path)
+                var resolvedURL = AuthEndpointResolver.resolve(baseURL: baseURL, path: path)
+                if !query.isEmpty,
+                   var components = URLComponents(url: resolvedURL, resolvingAgainstBaseURL: false) {
+                    components.queryItems = query
+                    resolvedURL = components.url ?? resolvedURL
+                }
                 var request = URLRequest(url: resolvedURL)
                 request.httpMethod = "GET"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")

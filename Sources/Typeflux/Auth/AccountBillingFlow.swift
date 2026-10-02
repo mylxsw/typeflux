@@ -13,4 +13,16 @@ enum AccountBillingFlow {
             return try await createPortalSession()
         }
     }
+
+    static func destination(
+        for target: AccountStatusPresentation.Destination,
+        requestBillingPageToken: () async throws -> URL,
+        createPortalSession: () async throws -> URL
+    ) async throws -> URL {
+        try await destination(
+            for: target == .plans ? .subscribe : .manageBilling,
+            requestBillingPageToken: requestBillingPageToken,
+            createPortalSession: createPortalSession
+        )
+    }
 }
