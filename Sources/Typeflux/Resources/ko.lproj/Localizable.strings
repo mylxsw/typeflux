@@ -1090,10 +1090,10 @@
 
 // MARK: - Agent Framework
 
-"studio.section.agent" = "대리인";
-"studio.eyebrow.agent" = "에이전트 프레임워크";
-"studio.heading.agent" = "에이전트 구성";
-"studio.subheading.agent" = "에이전트 프레임워크, MCP 서버 및 도구 통합을 구성합니다.";
+"studio.section.agent" = "에이전트";
+"studio.eyebrow.agent" = "Ask";
+"studio.heading.agent" = "에이전트";
+"studio.subheading.agent" = "Ask가 사용할 수 있는 도구, MCP 서버, 스킬, 메모리를 관리합니다.";
 "studio.search.agent" = "검색 에이전트 설정...";
 "agent.beta.notice" = "에이전트 기능은 현재 베타 버전입니다. 안정성과 동작은 계속 변할 수 있으므로 사용 시 이 점을 염두에 두시기 바랍니다.";
 
@@ -1105,15 +1105,17 @@
 "settings.advanced.inputContextOptimization.title" = "입력 컨텍스트 사용";
 "settings.advanced.inputContextOptimization.subtitle" = "커서 주변의 짧은 텍스트를 일시적으로 읽어 연속 입력, 고유명사, 모호한 단어를 더 잘 처리합니다. 기록에는 저장되지 않습니다.";
 
-"settings.advanced.agentFramework.title" = "에이전트 프레임워크 활성화";
-"settings.advanced.agentFramework.subtitle" = "무엇이든 물어보세요에 다중 턴 에이전트 루프를 사용하세요. 도구 호출 및 MCP 서버 통합을 지원합니다.";
 
 "settings.advanced.stubbornPasteFallback.title" = "런처·단축키 창 호환 모드";
 "settings.advanced.stubbornPasteFallback.subtitle" = "대상 앱을 활성화하고 Cmd+V를 실제 키 입력처럼 보내 Alfred, Raycast, Warp, iTerm2 등 런처나 단축키 창에서도 텍스트를 입력할 수 있게 합니다. 다른 키보드 도구와 충돌하면 끄세요.";
 
 "agent.section.general" = "일반";
-"agent.general.enabled.title" = "에이전트 활성화";
-"agent.general.enabled.subtitle" = "무엇이든 물어보세요의 실행 흐름을 제어합니다. 활성화되면 무엇이든 물어보세요 기능이 크게 향상됩니다.";
+"agent.section.tools" = "도구";
+"agent.section.skillsMemory" = "스킬 및 메모리";
+"agent.settings.runMode" = "실행 위치";
+"agent.settings.web" = "웹";
+"agent.settings.code" = "코드 실행";
+"agent.settings.mcp" = "MCP 서버";
 "agent.general.stepLogging.title" = "에이전트 단계 로깅";
 "agent.general.stepLogging.subtitle" = "디버깅을 위한 각 에이전트 추론 단계 및 도구 호출을 기록합니다.";
 
@@ -1749,7 +1751,6 @@
 "ask.usage.externalShort" = "개인 API";
 
 /* GUL-151 Ask tools */
-"agent.section.askTools" = "Ask 도구";
 "ask.files.denied" = "이 경로는 Ask에 허용된 폴더 밖에 있습니다. 설정 → Agent → Ask 도구에서 폴더를 추가하세요.";
 "ask.files.tooLarge" = "파일이 1MB를 초과합니다.";
 "ask.files.editMissing" = "바꿀 텍스트를 찾지 못했습니다. 파일을 다시 읽으세요.";

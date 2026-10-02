@@ -1102,9 +1102,9 @@
 // MARK: - Agent Framework
 
 "studio.section.agent" = "Agent";
-"studio.eyebrow.agent" = "Agent Framework";
-"studio.heading.agent" = "Agent configuration";
-"studio.subheading.agent" = "Configure the Agent framework, MCP servers, and tool integrations.";
+"studio.eyebrow.agent" = "Ask Anything";
+"studio.heading.agent" = "Agent";
+"studio.subheading.agent" = "Tools, MCP servers, skills and memory that Ask Anything can use.";
 "studio.search.agent" = "Search agent settings...";
 "agent.beta.notice" = "Agent features are currently in Beta. Stability and behavior may continue to change, so please keep this in mind when using them.";
 
@@ -1116,15 +1116,17 @@
 "settings.advanced.inputContextOptimization.title" = "Use input context";
 "settings.advanced.inputContextOptimization.subtitle" = "Temporarily read a short snippet around the cursor to improve dictation continuity, proper nouns, and ambiguous words. The snippet is not saved to history.";
 
-"settings.advanced.agentFramework.title" = "Enable Agent framework";
-"settings.advanced.agentFramework.subtitle" = "Use the multi-turn Agent loop for Ask Anything. Supports tool calling and MCP server integration.";
 
 "settings.advanced.stubbornPasteFallback.title" = "Launcher & hotkey-window compatibility";
 "settings.advanced.stubbornPasteFallback.subtitle" = "Activate the target app and send Cmd+V as a real keystroke so insertion works in launcher and hotkey-window apps such as Alfred, Raycast, Warp, and iTerm2. Disable if you see conflicts with other keyboard tools.";
 
 "agent.section.general" = "General";
-"agent.general.enabled.title" = "Enable Agent";
-"agent.general.enabled.subtitle" = "Controls the execution flow of Ask Anything. When enabled, Ask Anything is significantly enhanced.";
+"agent.section.tools" = "Tools";
+"agent.section.skillsMemory" = "Skills & memory";
+"agent.settings.runMode" = "Where Ask runs";
+"agent.settings.web" = "Web";
+"agent.settings.code" = "Code";
+"agent.settings.mcp" = "MCP servers";
 "agent.general.stepLogging.title" = "Agent step logging";
 "agent.general.stepLogging.subtitle" = "Log each Agent reasoning step and tool call for debugging.";
 
@@ -1763,7 +1765,6 @@
 "ask.usage.externalShort" = "Own API";
 
 /* GUL-151 Ask tools */
-"agent.section.askTools" = "Ask tools";
 "ask.files.denied" = "This path is outside the folders authorized for Ask. Add the folder in Settings → Agent → Ask tools.";
 "ask.files.tooLarge" = "The file is larger than 1 MB.";
 "ask.files.editMissing" = "The text to replace was not found; read the file again.";

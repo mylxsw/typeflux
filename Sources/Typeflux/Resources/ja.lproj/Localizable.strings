@@ -1091,9 +1091,9 @@
 // MARK: - Agent Framework
 
 "studio.section.agent" = "エージェント";
-"studio.eyebrow.agent" = "エージェントフレームワーク";
-"studio.heading.agent" = "エージェントの構成";
-"studio.subheading.agent" = "エージェント フレームワーク、MCP サーバー、およびツール統合を構成します。";
+"studio.eyebrow.agent" = "Ask";
+"studio.heading.agent" = "エージェント";
+"studio.subheading.agent" = "Ask が使えるツール、MCP サーバー、スキル、メモリを管理します。";
 "studio.search.agent" = "エージェント設定を検索...";
 "agent.beta.notice" = "エージェント機能は現在ベータ版です。安定性や動作は今後も変化していく可能性がありますので、ご使用の際はご留意ください。";
 
@@ -1105,15 +1105,17 @@
 "settings.advanced.inputContextOptimization.title" = "入力コンテキストを使用";
 "settings.advanced.inputContextOptimization.subtitle" = "カーソル周辺の短いテキストを一時的に読み取り、連続入力、固有名詞、曖昧な語句の最適化に役立てます。履歴には保存されません。";
 
-"settings.advanced.agentFramework.title" = "エージェントフレームワークを有効にする";
-"settings.advanced.agentFramework.subtitle" = "「何でも質問」にはマルチターンのエージェント ループを使用します。ツールの呼び出しと MCP サーバーの統合をサポートします。";
 
 "settings.advanced.stubbornPasteFallback.title" = "ランチャー・ホットキーウィンドウ互換モード";
 "settings.advanced.stubbornPasteFallback.subtitle" = "対象アプリをアクティブ化し、Cmd+V を実際のキー入力として送信することで、Alfred、Raycast、Warp、iTerm2 などのランチャーやホットキー ウィンドウにもテキストを挿入できるようにします。他のキーボードツールと競合する場合はオフにしてください。";
 
 "agent.section.general" = "一般";
-"agent.general.enabled.title" = "エージェントを有効にする";
-"agent.general.enabled.subtitle" = "「Ask Anything」の実行フローを制御します。有効にすると、「何でも質問」が大幅に強化されます。";
+"agent.section.tools" = "ツール";
+"agent.section.skillsMemory" = "スキルとメモリ";
+"agent.settings.runMode" = "実行場所";
+"agent.settings.web" = "ウェブ";
+"agent.settings.code" = "コード実行";
+"agent.settings.mcp" = "MCP サーバー";
 "agent.general.stepLogging.title" = "エージェントステップのログ記録";
 "agent.general.stepLogging.subtitle" = "デバッグのためにエージェントの各推論ステップとツール呼び出しをログに記録します。";
 
@@ -1749,7 +1751,6 @@
 "ask.usage.externalShort" = "独自 API";
 
 /* GUL-151 Ask tools */
-"agent.section.askTools" = "Ask ツール";
 "ask.files.denied" = "このパスは Ask に許可されたフォルダの外にあります。設定 → Agent → Ask ツール でフォルダを追加してください。";
 "ask.files.tooLarge" = "ファイルが 1 MB を超えています。";
 "ask.files.editMissing" = "置き換えるテキストが見つかりません。ファイルを読み直してください。";

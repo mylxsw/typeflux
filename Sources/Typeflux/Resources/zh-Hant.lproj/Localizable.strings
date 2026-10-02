@@ -1098,9 +1098,9 @@
 // MARK: - Agent 框架
 
 "studio.section.agent" = "Agent";
-"studio.eyebrow.agent" = "Agent 框架";
-"studio.heading.agent" = "Agent 配置";
-"studio.subheading.agent" = "配置 Agent 框架、MCP 伺服器和工具整合。";
+"studio.eyebrow.agent" = "隨便問";
+"studio.heading.agent" = "Agent";
+"studio.subheading.agent" = "管理「隨便問」可使用的工具、MCP 伺服器、技能與記憶。";
 "studio.search.agent" = "搜尋 Agent 設定...";
 "agent.beta.notice" = "目前 Agent 功能仍處於 Beta 階段，穩定性與行為表現可能會持續調整，請知悉後使用。";
 
@@ -1112,15 +1112,17 @@
 "settings.advanced.inputContextOptimization.title" = "使用輸入框上下文";
 "settings.advanced.inputContextOptimization.subtitle" = "暫時讀取游標附近的一小段文字，協助優化連續輸入、專有名詞與模糊詞。不會儲存到歷史記錄。";
 
-"settings.advanced.agentFramework.title" = "啟用 Agent 框架";
-"settings.advanced.agentFramework.subtitle" = "為「隨便問」功能啟用多輪 Agent 迴圈，支援工具呼叫和 MCP 伺服器整合。";
 
 "settings.advanced.stubbornPasteFallback.title" = "啟動器與懸浮視窗相容";
 "settings.advanced.stubbornPasteFallback.subtitle" = "啟用目標應用並以真實按鍵方式傳送 Cmd+V，讓 Alfred、Raycast、Warp、iTerm2 等啟動器或熱鍵懸浮視窗能正常插入文字。若與其他鍵盤工具衝突，可關閉此選項。";
 
 "agent.section.general" = "一般";
-"agent.general.enabled.title" = "啟用 Agent";
-"agent.general.enabled.subtitle" = "此選項控制「隨便問」功能的執行流程。啟用後，「隨便問」功能將獲得顯著增強。";
+"agent.section.tools" = "工具";
+"agent.section.skillsMemory" = "技能與記憶";
+"agent.settings.runMode" = "執行方式";
+"agent.settings.web" = "連網";
+"agent.settings.code" = "程式碼執行";
+"agent.settings.mcp" = "MCP 伺服器";
 "agent.general.stepLogging.title" = "Agent 步驟日誌";
 "agent.general.stepLogging.subtitle" = "記錄 Agent 的每一步推理和工具呼叫，方便除錯。";
 
@@ -1760,7 +1762,6 @@
 "ask.usage.externalShort" = "自有 API";
 
 /* GUL-151 Ask tools */
-"agent.section.askTools" = "Ask 工具";
 "ask.files.denied" = "該路徑不在授權給 Ask 的資料夾中。請在 設定 → Agent → Ask 工具 中加入該資料夾。";
 "ask.files.tooLarge" = "檔案超過 1 MB。";
 "ask.files.editMissing" = "找不到要取代的文字，請重新讀取檔案。";
@@ -1774,18 +1775,18 @@
 "ask.memoryNotes.missing" = "沒有此 id 的筆記。";
 "ask.plan.title" = "計畫";
 "ask.plan.progress" = "已完成 %d/%d";
-"ask.settings.folders.title" = "Ask 可讀寫的資料夾";
+"ask.settings.folders.title" = "「隨便問」可讀寫的資料夾";
 "ask.settings.folders.subtitle" = "files 工具只能存取這些資料夾。讀取可在對話內一次允許，寫入需要確認。";
 "ask.settings.folders.empty" = "尚未加入資料夾。";
 "ask.settings.folders.add" = "加入資料夾…";
 "ask.settings.code.title" = "在沙箱中執行程式碼";
 "ask.settings.code.subtitle" = "Python、JavaScript 與 shell 程式在無網路、無法存取個人目錄的環境中執行，每次執行都需要確認。";
 "ask.settings.skills.title" = "技能";
-"ask.settings.skills.subtitle" = "Ask 在任務需要時載入的指示。可在 Skills/<名稱>/SKILL.md 中加入自己的技能。";
+"ask.settings.skills.subtitle" = "「隨便問」在任務需要時載入的指示。可在 Skills/<名稱>/SKILL.md 中加入自己的技能。";
 "ask.settings.skills.builtin" = "內建";
 "ask.settings.skills.open" = "開啟技能資料夾";
 "ask.settings.notes.title" = "已儲存的筆記";
-"ask.settings.notes.subtitle" = "你要求 Ask 記住的內容，會加入新對話的記憶。";
+"ask.settings.notes.subtitle" = "你要求「隨便問」記住的內容，會加入新對話的記憶。";
 "ask.settings.notes.empty" = "尚無筆記。";
 "ask.tool.files" = "檔案";
 "ask.tool.run_code" = "執行程式碼";
@@ -1821,8 +1822,8 @@
 "ask.local.empty" = "模型回傳了空白回答。";
 "ask.local.invalidTools" = "模型回傳了無效或不可用的工具呼叫。";
 "ask.local.emptyQuestion" = "請先輸入問題。";
-"ask.settings.local.title" = "在這台 Mac 上執行 Ask";
-"ask.settings.local.subtitle" = "即使已登入，對話、記錄與工具也都留在這台 Mac 上，並使用你自己的模型。未登入時 Ask 一律以此方式執行。";
+"ask.settings.local.title" = "在這台 Mac 上執行「隨便問」";
+"ask.settings.local.subtitle" = "即使已登入，對話、記錄與工具也都留在這台 Mac 上，並使用你自己的模型。未登入時「隨便問」一律以此方式執行。";
 "ask.settings.search.title" = "本機網頁搜尋";
 "ask.settings.search.subtitle" = "本機對話可使用你自己的 Tavily 或 Brave Search 金鑰搜尋網頁，金鑰儲存在鑰匙圈中。讀取網頁不需要金鑰。";
 "ask.settings.search.provider" = "搜尋服務";

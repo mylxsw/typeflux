@@ -191,8 +191,6 @@ final class StudioViewModel: ObservableObject {
         appLanguage == .traditionalChinese
     }
 
-    @Published var agentFrameworkEnabled: Bool
-    @Published var agentEnabled: Bool
     @Published var agentStepLoggingEnabled: Bool
     @Published var mcpServers: [MCPServerConfig]
     @Published var mcpDraftName: String = ""
@@ -209,12 +207,6 @@ final class StudioViewModel: ObservableObject {
     @Published var mcpConnectionTestState: MCPConnectionTestState = .idle
 
     // Agent Jobs
-    @Published private(set) var agentJobs: [AgentJob] = []
-    @Published private(set) var isLoadingJobs = false
-    @Published var showingJobsPage = false
-    @Published var selectedJobID: UUID?
-    @Published private(set) var selectedJobDetail: AgentJob?
-    private static let jobsPageSize = 50
 
     @Published var personaRewriteEnabled: Bool
     @Published var personaHotkeyAppliesToSelection: Bool
@@ -259,7 +251,6 @@ final class StudioViewModel: ObservableObject {
     var askToolSettings: SettingsStore { settingsStore }
     private let historyStore: HistoryStore
     private let historyStoreBox: HistoryStoreSendableBox
-    let agentJobStore: AgentJobStore
     private let modelManager: OllamaModelManaging
     private let localModelManager: LocalSTTModelManaging
     private let notificationService: LocalNotificationSending
@@ -272,7 +263,6 @@ final class StudioViewModel: ObservableObject {
     private var hotkeySettingsObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
     private var vocabularyObserver: NSObjectProtocol?
-    private var agentJobObserver: NSObjectProtocol?
     private var cloudAccountModelDefaultsObserver: NSObjectProtocol?
     private var localModelDownloadProgressObserver: NSObjectProtocol?
     private var llmTestTask: Task<Void, Never>?
@@ -291,7 +281,6 @@ final class StudioViewModel: ObservableObject {
         historyStore: HistoryStore,
         initialSection: StudioSection,
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
-        agentJobStore: AgentJobStore = SQLiteAgentJobStore(),
         modelManager: OllamaModelManaging = OllamaLocalModelManager(),
         localModelManager: LocalSTTModelManaging = LocalModelManager(),
         audioDeviceManager: AudioDeviceManager = AudioDeviceManager(),
@@ -303,7 +292,6 @@ final class StudioViewModel: ObservableObject {
         self.settingsStore = settingsStore
         self.historyStore = historyStore
         historyStoreBox = HistoryStoreSendableBox(historyStore)
-        self.agentJobStore = agentJobStore
         self.modelManager = modelManager
         self.localModelManager = localModelManager
         self.notificationService = notificationService
@@ -407,8 +395,6 @@ final class StudioViewModel: ObservableObject {
         textTransformationRule = settingsStore.outputOpenCCConfig
         autoUpdateEnabled = settingsStore.autoUpdateEnabled
         analyticsSharingEnabled = settingsStore.analyticsSharingEnabled
-        agentFrameworkEnabled = settingsStore.agentFrameworkEnabled
-        agentEnabled = settingsStore.agentEnabled
         agentStepLoggingEnabled = settingsStore.agentStepLoggingEnabled
         mcpServers = settingsStore.mcpServers
         personaRewriteEnabled = settingsStore.personaRewriteEnabled
@@ -513,15 +499,6 @@ final class StudioViewModel: ObservableObject {
                 }
             }
         }
-        agentJobObserver = NotificationCenter.default.addObserver(
-            forName: .agentJobStoreDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.refreshAgentJobs()
-            }
-        }
         cloudAccountModelDefaultsObserver = NotificationCenter.default.addObserver(
             forName: .cloudAccountModelDefaultsDidApply,
             object: settingsStore,
@@ -567,9 +544,6 @@ final class StudioViewModel: ObservableObject {
         }
         if let vocabularyObserver {
             NotificationCenter.default.removeObserver(vocabularyObserver)
-        }
-        if let agentJobObserver {
-            NotificationCenter.default.removeObserver(agentJobObserver)
         }
         if let cloudAccountModelDefaultsObserver {
             NotificationCenter.default.removeObserver(cloudAccountModelDefaultsObserver)
@@ -1640,16 +1614,6 @@ final class StudioViewModel: ObservableObject {
 
     // MARK: - Agent Framework
 
-    func setAgentFrameworkEnabled(_ value: Bool) {
-        agentFrameworkEnabled = value
-        settingsStore.agentFrameworkEnabled = value
-    }
-
-    func setAgentEnabled(_ value: Bool) {
-        agentEnabled = value
-        settingsStore.agentEnabled = value
-    }
-
     func setAgentStepLoggingEnabled(_ value: Bool) {
         agentStepLoggingEnabled = value
         settingsStore.agentStepLoggingEnabled = value
@@ -1840,69 +1804,6 @@ final class StudioViewModel: ObservableObject {
                 if !Task.isCancelled {
                     mcpConnectionTestState = .failure(message: error.localizedDescription)
                 }
-            }
-        }
-    }
-
-    // MARK: - Agent Jobs
-
-    func openJobsPage() {
-        showingJobsPage = true
-        refreshAgentJobs()
-    }
-
-    func closeJobsPage() {
-        showingJobsPage = false
-        selectedJobID = nil
-        selectedJobDetail = nil
-    }
-
-    func selectJob(_ job: AgentJob) {
-        selectedJobID = job.id
-        selectedJobDetail = job
-    }
-
-    func closeJobDetail() {
-        selectedJobID = nil
-        selectedJobDetail = nil
-    }
-
-    func refreshAgentJobs() {
-        guard showingJobsPage else { return }
-        isLoadingJobs = true
-        Task {
-            let jobs = await (try? agentJobStore.list(limit: Self.jobsPageSize, offset: 0)) ?? []
-            await MainActor.run {
-                self.agentJobs = jobs
-                self.isLoadingJobs = false
-                // If the currently viewed detail was updated, refresh it
-                if let selectedID = self.selectedJobID {
-                    self.selectedJobDetail = jobs.first { $0.id == selectedID }
-                }
-            }
-        }
-    }
-
-    func deleteAgentJob(id: UUID) {
-        Task {
-            try? await agentJobStore.delete(id: id)
-            await MainActor.run {
-                self.agentJobs.removeAll { $0.id == id }
-                if self.selectedJobID == id {
-                    self.selectedJobID = nil
-                    self.selectedJobDetail = nil
-                }
-            }
-        }
-    }
-
-    func clearAllAgentJobs() {
-        Task {
-            try? await agentJobStore.clear()
-            await MainActor.run {
-                self.agentJobs = []
-                self.selectedJobID = nil
-                self.selectedJobDetail = nil
             }
         }
     }

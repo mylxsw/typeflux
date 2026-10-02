@@ -1614,15 +1614,9 @@ final class LLMMultiTurnRouter: LLMMultiTurnService {
 
 - The existing `LLMAgentService.runTool()` remains unchanged; existing features (vocabulary monitoring, etc.) continue to work
 - The existing `decideAskSelection` two-step flow is kept as a fallback
-- The new Agent framework is controlled by a feature flag, disabled by default
-
-```swift
-// SettingsStore extension
-var agentFrameworkEnabled: Bool {
-    get { defaults.object(forKey: "agent.framework.enabled") as? Bool ?? false }
-    set { defaults.set(newValue, forKey: "agent.framework.enabled") }
-}
-```
+- The Agent framework started behind a beta feature flag. It is now always enabled: the
+  "Enable Agent framework" switch and `agentFrameworkEnabled` setting were removed, and the
+  Agent settings page is always shown in the sidebar.
 
 ---
 
