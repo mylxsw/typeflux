@@ -124,6 +124,18 @@ final class AskGlassMenuPresenter {
         return true
     }
 
+    /// Whether a screen point is over the open card or its anchor, give or
+    /// take `slop` so the gap between them does not count as leaving.
+    func containsPointer(_ point: NSPoint, slop: CGFloat = gap) -> Bool {
+        guard isShowing else { return false }
+        if let panel, panel.frame.insetBy(dx: -slop, dy: -slop).contains(point) { return true }
+        if let anchor, let window = anchor.window {
+            let rect = window.convertToScreen(anchor.convert(anchor.bounds, to: nil))
+            return rect.insetBy(dx: -slop, dy: -slop).contains(point)
+        }
+        return false
+    }
+
     private func installMonitors() {
         removeMonitors()
         if let local = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .keyDown], handler: { [weak self] event in

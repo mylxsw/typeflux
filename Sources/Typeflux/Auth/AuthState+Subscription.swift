@@ -91,6 +91,48 @@ extension AuthState {
         }
     }
 
+    /// Refreshes the subscription and the period's usage unless they were
+    /// fetched within `maxAge` (the account card asks on every hover).
+    func refreshAccountSummary(maxAge: TimeInterval = 60, now: Date = Date()) async {
+        guard isLoggedIn else { return }
+        if let last = lastAccountSummaryRefresh, now.timeIntervalSince(last) < maxAge { return }
+        lastAccountSummaryRefresh = now
+        await refreshTokenIfNeeded()
+        await refreshSubscription()
+        await refreshUsage()
+    }
+
+    /// Makes the next `refreshAccountSummary` fetch, e.g. after opening billing.
+    func invalidateAccountSummary() {
+        lastAccountSummaryRefresh = nil
+    }
+
+    /// Loads the per-day / per-feature credit breakdown. Failures (including a
+    /// server that predates the endpoint) clear it so the charts hide quietly.
+    @discardableResult
+    func refreshUsageBreakdown(timeZone: TimeZone = .current) async -> CloudUsageBreakdown? {
+        guard let token = accessToken else {
+            usageBreakdown = nil
+            return nil
+        }
+        guard !isLoadingUsageBreakdown else { return usageBreakdown }
+
+        isLoadingUsageBreakdown = true
+        defer { isLoadingUsageBreakdown = false }
+
+        do {
+            let breakdown = try await fetchCurrentPeriodUsageBreakdown(token, timeZone)
+            usageBreakdown = breakdown
+            return breakdown
+        } catch is CancellationError {
+            return usageBreakdown
+        } catch {
+            logger.info("Usage breakdown unavailable: \(error.localizedDescription, privacy: .public)")
+            usageBreakdown = nil
+            return nil
+        }
+    }
+
     func startCheckout(planCode: String = BillingPlan.defaultPlanCode) async throws -> URL {
         guard let token = accessToken else {
             throw AuthError.unauthorized

@@ -23,10 +23,11 @@ struct AskConversationView: View {
     @AppStorage("ask.sidebarCollapsed") private var storedSidebarCollapsed = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var windowWidth: CGFloat = 0
-    @ObservedObject private var auth = AuthState.shared
+    @ObservedObject private var auth: AuthState
 
-    init(model: AskConversationModel, showsUsage: Bool = false) {
+    init(model: AskConversationModel, showsUsage: Bool = false, auth: AuthState = .shared) {
         self.model = model
+        self.auth = auth
         _showsUsage = State(initialValue: showsUsage)
         _usageRunId = State(initialValue: model.selected?.run?.id)
     }
@@ -197,14 +198,14 @@ struct AskConversationView: View {
         query = ""
     }
 
-    /// The name alone: the letter badge in front of it pointed at nothing
-    /// (there is no avatar to set), so it is gone.
+    /// The name and plan badge (hover or click for the account card), or a
+    /// sign-in link; the letter badge that used to lead it pointed at nothing.
     private var accountFooter: some View {
         HStack(spacing: 9) {
-            Text(accountName)
-                .font(.system(size: 12.5, weight: .medium))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .lineLimit(1)
+            AskAccountFooterIdentity(auth: auth, name: accountName, runsLocally: !model.cloudAvailable) {
+                model.onOpenSettings?(.account)
+            }
+                .layoutPriority(1)
             Spacer(minLength: 4)
             Button { model.onOpenSettings?(.settings) } label: {
                 Image(systemName: "gearshape").font(.system(size: 14))

@@ -19,7 +19,9 @@ struct AccountView: View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             if let profile = authState.userProfile {
                 profileSummary(profile: profile)
-                accountOverview
+                planCard
+                usageSection
+                helpSection
                 // TODO(GUL-57): Restore this entry after cloud data sync is ready to ship.
                 // cloudDataSyncSection
             } else if authState.isLoading {
@@ -199,160 +201,56 @@ struct AccountView: View {
     //     .disabled(!cloudDataSync.canDeleteCloudData || cloudDataSync.isDeletingCloudData)
     // }
 
-    private var accountOverview: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                subscriptionHeader
+    // MARK: - Overview
 
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    AccountUsageCreditProgressView(
-                        credits: authState.usageCredits,
-                        isFreeAllowance: authState.subscription.treatsCreditsAsFreeAllowance,
-                        periodDescription: usageRangeDescription
-                    )
-
-                    if let error = authState.usageError {
-                        Text(error)
-                            .font(.studioBody(StudioTheme.Typography.bodySmall))
-                            .foregroundStyle(StudioTheme.danger)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
+    private var planCard: some View {
+        AccountPlanHeroCard(
+            authState: authState,
+            isOpeningBilling: isOpeningBilling,
+            errorMessage: billingActionError ?? authState.subscriptionError,
+            onOpenBilling: openBillingFlow,
+            onSync: syncBillingSubscription,
+            onRefresh: refreshAccountOverview
+        )
     }
 
-    private var showsSubscriptionDetails: Bool {
-        authState.subscription.shouldShowSubscriptionDetails || authState.subscriptionError != nil
-    }
-
-    private var subscriptionHeader: some View {
+    private var usageSection: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-                    ViewThatFits(in: .horizontal) {
-                        HStack(spacing: StudioTheme.Spacing.medium) {
-                            subscriptionTitle
-                            if showsSubscriptionDetails { subscriptionStatus }
-                        }
-                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-                            subscriptionTitle
-                            if showsSubscriptionDetails { subscriptionStatus }
-                        }
-                    }
-
-                    if showsSubscriptionDetails, let dateNotice = subscriptionDateNotice {
-                        Text(dateNotice)
-                            .font(.studioBody(StudioTheme.Typography.bodySmall))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    if subscriptionPresentation.showsSubscriptionSyncAction {
-                        subscriptionSyncButton
-                    }
-                }
-
-                Spacer(minLength: 0)
-
-                HStack(spacing: StudioTheme.Spacing.xSmall) {
-                    AccountRefreshIconButton(
-                        helpText: L("auth.account.refreshOverview"),
-                        isDisabled: authState.isLoadingSubscription || authState.isLoadingUsage
-                            || authState.isSyncingSubscription || isOpeningBilling,
-                        isLoading: authState.isLoadingSubscription || authState.isLoadingUsage,
-                        action: refreshAccountOverview
-                    )
-
-                    if showsSubscriptionDetails {
-                        StudioButton(
-                            title: L(subscriptionPresentation.billingAction == .manageBilling
-                                ? "auth.account.manageBilling" : "auth.account.subscribe"),
-                            systemImage: nil,
-                            variant: .primary,
-                            isDisabled: isOpeningBilling || authState.isSyncingSubscription,
-                            isLoading: isOpeningBilling,
-                            action: openBillingFlow
-                        )
-                    }
+            HStack(alignment: .firstTextBaseline) {
+                Text(L("account.page.usageSection"))
+                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                Spacer()
+                if let start = authState.usagePeriodStart.flatMap(ISO8601DateFormatter.typefluxBillingDate(from:)) {
+                    Text(L("account.page.usageSince", AccountStatusText.shortDate(start, locale: localization.locale)))
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textTertiary)
                 }
             }
-
-            if showsSubscriptionDetails, !authState.subscription.entitled {
-                Text(L(subscriptionPresentation.subtitleKey))
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            if let error = billingActionError ?? authState.subscriptionError {
-                Text(error)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.danger)
-                    .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 2)
+            AccountUsageMetricsGrid(stats: authState.usageStats, savedMinutes: UsageStatsStore.shared.savedMinutes)
+            if let breakdown = authState.usageBreakdown {
+                AccountCreditBreakdownView(breakdown: breakdown)
             }
         }
     }
 
-    private var subscriptionTitle: some View {
-        Text(showsSubscriptionDetails
-            ? "\(L("sidebar.accountCard.cloudAccount")) · \(localized(subscriptionPresentation.plan))"
-            : L("sidebar.accountCard.cloudAccount"))
-            .font(.studioBody(StudioTheme.Typography.cardTitle, weight: .semibold))
-            .foregroundStyle(StudioTheme.textPrimary)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private var subscriptionStatus: some View {
-        HStack(spacing: StudioTheme.Spacing.xxSmall) {
-            Circle()
-                .fill(authState.subscription.entitled ? StudioTheme.success : StudioTheme.textSecondary)
-                .frame(width: 6, height: 6)
-                .accessibilityHidden(true)
-            Text(localized(subscriptionPresentation.status))
-                .font(.studioBody(StudioTheme.Typography.bodySmall))
-                .foregroundStyle(StudioTheme.textSecondary)
-        }
-        .fixedSize()
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(L("auth.account.subscriptionStatus")): \(localized(subscriptionPresentation.status))")
-    }
-
-    private var subscriptionPresentation: AccountSubscriptionPresentation {
-        AccountSubscriptionPresentation.make(from: authState.subscription)
-    }
-
-    private var subscriptionSyncButton: some View {
-        Button(action: syncBillingSubscription) {
-            Group {
-                if authState.isSyncingSubscription {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Text(L("auth.account.subscriptionSyncAction"))
-                }
-            }
-            .font(.studioBody(StudioTheme.Typography.bodySmall))
-            .foregroundStyle(StudioTheme.textSecondary)
-        }
-        .buttonStyle(.plain)
-        .disabled(authState.isSyncingSubscription || authState.isLoadingSubscription || isOpeningBilling)
-    }
-
-    private func localized(_ value: AccountSubscriptionPresentation.TextValue) -> String {
-        switch value {
-        case let .localized(key):
-            L(key)
-        case let .literal(text):
-            text
-        }
-    }
-
-    private var subscriptionDateNotice: String? {
-        switch subscriptionPresentation.period {
-        case .unavailable, .cycle:
-            nil
-        case let .endsOn(dateString):
-            String(format: L("auth.account.subscriptionEndsOn"), formattedDate(dateString))
-        case let .renewsOn(dateString):
-            String(format: L("auth.account.nextRenewal"), formattedDate(dateString))
+    private var helpSection: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            Text(L("account.page.helpSection"))
+                .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
+                .foregroundStyle(StudioTheme.textTertiary)
+                .padding(.horizontal, 2)
+            AccountHelpSection(
+                showsSubscriptionSync: AccountSubscriptionPresentation.make(from: authState.subscription)
+                    .showsSubscriptionSyncAction,
+                showsInvoices: authState.subscription.billingEnabled
+                    && (authState.subscription.hasPaidSubscription
+                        || AccountStatusPresentation.isPaymentIssue(authState.subscription)),
+                isSyncing: authState.isSyncingSubscription,
+                onSync: syncBillingSubscription,
+                onOpenPortal: { openBillingFlow(.billingPortal) }
+            )
         }
     }
 
@@ -360,18 +258,11 @@ struct AccountView: View {
 
     private func profileSummary(profile: UserProfile) -> some View {
         HStack(alignment: .center, spacing: StudioTheme.Spacing.mediumLarge) {
-            Text(avatarInitial(from: profile))
-                .font(.studioBody(StudioTheme.Typography.sectionTitle, weight: .semibold))
-                .foregroundStyle(StudioTheme.accent)
-                .frame(width: 48, height: 48)
-                .background(Circle().fill(StudioTheme.accentSoft))
-                .accessibilityHidden(true)
-
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
                 Text(profile.resolvedDisplayName)
-                    .font(.studioBody(StudioTheme.Typography.cardTitle, weight: .semibold))
+                    .font(.studioBody(StudioTheme.Typography.sectionTitle, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text("\(profile.email) · \(providerDisplayName(profile.provider))")
+                Text(profileDetail(profile))
                     .font(.studioBody(StudioTheme.Typography.body))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .textSelection(.enabled)
@@ -400,6 +291,18 @@ struct AccountView: View {
             .fixedSize()
         }
         .padding(.vertical, StudioTheme.Spacing.xSmall)
+    }
+
+    /// "email · Signed in with Google · Joined Mar 2026".
+    private func profileDetail(_ profile: UserProfile) -> String {
+        var parts = [profile.email, AccountStatusText.provider(profile.provider)]
+        if let joined = ISO8601DateFormatter.typefluxBillingDate(from: profile.createdAt) {
+            let formatter = DateFormatter()
+            formatter.locale = localization.locale
+            formatter.setLocalizedDateFormatFromTemplate("yMMM")
+            parts.append(L("account.page.joined", formatter.string(from: joined)))
+        }
+        return parts.joined(separator: " · ")
     }
 
     // MARK: - Loading Card
@@ -443,46 +346,12 @@ struct AccountView: View {
 
     // MARK: - Helpers
 
-    private func avatarInitial(from profile: UserProfile) -> String {
-        let source = profile.resolvedDisplayName
-        return String(source.prefix(1)).uppercased()
-    }
-
-    private func providerDisplayName(_ provider: String) -> String {
-        switch provider {
-        case "password":
-            L("auth.account.providerEmail")
-        case "google":
-            L("auth.account.signedInWith", "Google")
-        case "apple":
-            L("auth.account.signedInWith", "Apple")
-        default:
-            provider
-        }
-    }
-
-    private func formattedDate(_ dateString: String) -> String {
-        AccountDateDisplayFormatter.date(dateString, locale: localization.locale)
-    }
-
-    private var usageRangeDescription: String {
-        guard let start = authState.usagePeriodStart,
-              let end = authState.usagePeriodEnd
-        else {
-            return L("auth.account.usageCycleUnavailable")
-        }
-        return String(
-            format: L("auth.account.usagePeriodHint"),
-            formattedDate(start),
-            formattedDate(end)
-        )
-    }
-
     private func refreshAccountOverview() {
         Task {
             await authState.refreshTokenIfNeeded()
             await authState.refreshSubscription()
             await authState.refreshUsage()
+            await authState.refreshUsageBreakdown()
         }
     }
 
@@ -500,18 +369,20 @@ struct AccountView: View {
         LoginWindowController.shared.show()
     }
 
-    private func openBillingFlow() {
+    private func openBillingFlow(_ destination: AccountStatusPresentation.Destination) {
+        guard !isOpeningBilling else { return }
         billingActionError = nil
         isOpeningBilling = true
 
         Task {
             do {
                 let url = try await AccountBillingFlow.destination(
-                    for: subscriptionPresentation.billingAction,
+                    for: destination,
                     requestBillingPageToken: { try await authState.requestBillingPageToken() },
                     createPortalSession: { try await authState.createBillingPortalSession() }
                 )
                 await MainActor.run {
+                    authState.invalidateAccountSummary()
                     NSWorkspace.shared.open(url)
                     isOpeningBilling = false
                 }
@@ -681,7 +552,7 @@ private struct ChangePasswordSheet: View {
     }
 }
 
-private struct AccountRefreshIconButton: View {
+struct AccountRefreshIconButton: View {
     let helpText: String
     var isDisabled = false
     var isLoading = false

@@ -57,6 +57,7 @@ final class AuthState: ObservableObject {
     let fetchSubscription: (String) async throws -> BillingSubscriptionSnapshot
     let syncBillingSubscription: (String) async throws -> BillingSubscriptionSnapshot
     let fetchCurrentPeriodUsageStats: (String) async throws -> CloudUsageCurrentPeriodStats
+    let fetchCurrentPeriodUsageBreakdown: (String, TimeZone) async throws -> CloudUsageBreakdown
     let createCheckoutSession: (String, String) async throws -> BillingCheckoutSession
     let createPortalSession: (String) async throws -> BillingPortalSession
     let issueBillingPageToken: (String) async throws -> BillingPageTokenResponse
@@ -74,6 +75,9 @@ final class AuthState: ObservableObject {
     @Published var usagePeriodEnd: String?
     @Published var isLoadingUsage: Bool = false
     @Published var usageError: String?
+    /// Credits per day and per feature; nil until loaded or when the server lacks the endpoint.
+    @Published var usageBreakdown: CloudUsageBreakdown?
+    @Published var isLoadingUsageBreakdown: Bool = false
 
     /// Refresh the access token when it expires within this window (7 days).
     static let refreshEarlyInterval: TimeInterval = 7 * 24 * 3600
@@ -86,6 +90,9 @@ final class AuthState: ObservableObject {
     var refreshTimer: Timer?
     var checkoutPollingTask: Task<Void, Never>?
     var pendingCheckoutSubscriptionEntitlement = false
+    /// When the account summary (subscription + usage) was last fetched for the
+    /// account card; throttles refreshes triggered by hovering and app activation.
+    var lastAccountSummaryRefresh: Date?
     var inMemorySessionToken: (token: String, expiresAt: Int)?
     var cachedStoredToken: (token: String, expiresAt: Int)?
     var cachedRefreshToken: String?
@@ -138,6 +145,8 @@ final class AuthState: ObservableObject {
         fetchCurrentPeriodUsageStats: @escaping (String) async throws -> CloudUsageCurrentPeriodStats = { token in
             try await CloudUsageAPIService.fetchCurrentPeriodStats(token: token)
         },
+        fetchCurrentPeriodUsageBreakdown: @escaping (String, TimeZone) async throws -> CloudUsageBreakdown =
+            CloudUsageAPIService.fetchCurrentPeriodBreakdown(token:timeZone:),
         createCheckoutSession: @escaping (String, String) async throws -> BillingCheckoutSession = { token, planCode in
             try await BillingAPIService.createCheckoutSession(token: token, planCode: planCode)
         },
@@ -166,6 +175,7 @@ final class AuthState: ObservableObject {
         self.fetchSubscription = fetchSubscription
         syncBillingSubscription = syncSubscription
         self.fetchCurrentPeriodUsageStats = fetchCurrentPeriodUsageStats
+        self.fetchCurrentPeriodUsageBreakdown = fetchCurrentPeriodUsageBreakdown
         self.createCheckoutSession = createCheckoutSession
         self.createPortalSession = createPortalSession
         self.issueBillingPageToken = issueBillingPageToken
@@ -211,6 +221,8 @@ final class AuthState: ObservableObject {
         usagePeriodStart = nil
         usagePeriodEnd = nil
         usageError = nil
+        usageBreakdown = nil
+        lastAccountSummaryRefresh = nil
         pendingCheckoutSubscriptionEntitlement = false
         checkoutPollingTask?.cancel()
         checkoutPollingTask = nil
