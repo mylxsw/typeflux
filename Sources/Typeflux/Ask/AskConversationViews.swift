@@ -197,9 +197,10 @@ struct AskConversationView: View {
         query = ""
     }
 
+    /// The name alone: the letter badge in front of it pointed at nothing
+    /// (there is no avatar to set), so it is gone.
     private var accountFooter: some View {
         HStack(spacing: 9) {
-            AskAccountBadge(name: accountName)
             Text(accountName)
                 .font(.system(size: 12.5, weight: .medium))
                 .foregroundStyle(StudioTheme.textSecondary)
@@ -215,7 +216,8 @@ struct AskConversationView: View {
             .help(L("sidebar.settingsAccessibility"))
             .accessibilityLabel(L("sidebar.settingsAccessibility"))
         }
-        .padding(.horizontal, 12)
+        .padding(.leading, AskMetrics.sidebarTextLeading)
+        .padding(.trailing, 12)
         .frame(height: 50)
     }
 
