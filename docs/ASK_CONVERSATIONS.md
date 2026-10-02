@@ -314,3 +314,29 @@ authorization-server discovery, dynamic client registration, PKCE S256 with a
 to sign in; Ask reuses or refreshes the token stored in the keychain and asks the
 user to sign in from Settings otherwise. The voice agent registers MCP tools with
 the same collision rule as Ask (`<server>_<tool>` when names clash).
+
+## Local mode (no Typeflux Cloud required)
+
+Signing in is optional. Without a Cloud session, or with Settings → Agent → Ask
+tools → "Run Ask on this Mac" switched on, Ask runs entirely on the device:
+
+- `AskRoutedAPI` sends each call to `AskAPIClient` (Cloud) or `AskLocalEngine`
+  (local). Local sessions use the owner `local` and an empty token, so switching
+  modes resets the conversation model and the account-scoped cache like an account
+  switch; Cloud and local histories stay separate.
+- `AskLocalEngine` mirrors the server's state machine: every model step is queued
+  as a device inference (`waiting_inference`) that the existing custom-model path
+  runs with the user's own model; device tools keep the same approval flow; history
+  is stored as JSON under `~/Library/Application Support/Typeflux/AskLocal/`.
+  It ports the system/memory/environment prompt, references, screen observations,
+  summaries after 28 messages, truncation detection, the 24-step limit, cancel,
+  retry, regenerate, expiry of interrupted runs and memory purge.
+- Engine-side tools: `update_plan`, `web_fetch` (public addresses only, checked after
+  DNS resolution and on redirects) and `web_search` when the user configures a
+  Tavily or Brave key in Ask tools settings (stored in the keychain).
+- Only the user's own models run locally. A Cloud model reference falls back to the
+  first available configured model; with none configured the send is refused with
+  guidance to add one in Settings → Models. Cloud models stay disabled in the picker.
+- Not available locally: the Cloud `research` sub-agent, server-side background
+  runs (a local run pauses while the app is closed and resumes from the workspace),
+  run traces and Cloud usage metering.

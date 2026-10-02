@@ -59,4 +59,10 @@ extension SettingsStore {
         get { defaults.object(forKey: "ask.codeExecutionEnabled") as? Bool ?? true }
         set { defaults.set(newValue, forKey: "ask.codeExecutionEnabled") }
     }
+
+    /// Runs Ask on this Mac with the user's own models even when signed in.
+    var askLocalModeEnabled: Bool {
+        get { defaults.bool(forKey: "ask.localMode") }
+        set { defaults.set(newValue, forKey: "ask.localMode") }
+    }
 }

@@ -1808,3 +1808,26 @@
 "ask.action.edit" = "编辑文件";
 "ask.action.remember" = "记住";
 "ask.action.forget" = "忘记";
+
+/* GUL-151 Local Ask */
+"ask.local.notFound" = "此对话不在这台 Mac 上。";
+"ask.local.expired" = "执行已过期，请重试以继续。";
+"ask.local.busy" = "此对话仍在运行。";
+"ask.local.full" = "请开始新对话以继续。";
+"ask.local.modelFailed" = "模型请求失败，请检查模型配置后重试。";
+"ask.local.badSummary" = "模型返回的摘要无效，请重试。";
+"ask.local.regenerateLatest" = "只能重新生成最新的回复。";
+"ask.local.modelRequired" = "不使用 Typeflux Cloud 时，请选择你自己配置的模型。可在 设置 → 模型 中添加。";
+"ask.local.conflict" = "对话已变化，请刷新后重试。";
+"ask.local.stepLimit" = "已达到 Agent 步数上限。";
+"ask.local.truncated" = "回答达到输出上限被截断，请重试或让模型继续。";
+"ask.local.empty" = "模型返回了空回答。";
+"ask.local.invalidTools" = "模型返回了无效或不可用的工具调用。";
+"ask.local.emptyQuestion" = "请先输入问题。";
+"ask.settings.local.title" = "在这台 Mac 上运行 Ask";
+"ask.settings.local.subtitle" = "即使已登录，对话、历史和工具也都留在这台 Mac 上，并使用你自己的模型。未登录时 Ask 始终以此方式运行。";
+"ask.settings.search.title" = "本机网页搜索";
+"ask.settings.search.subtitle" = "本地对话可使用你自己的 Tavily 或 Brave Search 密钥搜索网页，密钥保存在钥匙串中。读取网页无需密钥。";
+"ask.settings.search.provider" = "搜索服务";
+"ask.settings.search.none" = "关闭";
+"ask.settings.search.key" = "API 密钥";

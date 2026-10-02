@@ -38,13 +38,18 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         let deviceKey = "ask.deviceId"
         let deviceId = settings.defaults.string(forKey: deviceKey) ?? UUID().uuidString
         settings.defaults.set(deviceId, forKey: deviceKey)
-        model = AskConversationModel(api: AskAPIClient(), cache: cache, tools: tools,
+        let search = AskSearchSettings(defaults: settings.defaults)
+        let api = AskRoutedAPI(cloud: AskAPIClient(), local: AskLocalEngine(webTools: AskLocalWebTools(searchProvider: {
+            (search.provider, search.apiKey)
+        })))
+        model = AskConversationModel(api: api, cache: cache, tools: tools,
                                      capture: AskContextCapture(injector: injector,
                                                                 memory: AskMemoryProvider(settings: settings)),
                                      deviceId: deviceId,
                                      modelLibrary: modelLibrary) {
-            guard let token = AuthState.shared.accessToken, let owner = AuthState.shared.userProfile?.id else { return nil }
-            return (owner, token)
+            // Signing in is optional: without a Cloud session Ask runs on this Mac with the user's own models.
+            AskRoutedAPI.session(localMode: settings.askLocalModeEnabled, token: AuthState.shared.accessToken,
+                                 owner: AuthState.shared.userProfile?.id)
         }
         super.init()
         bindCallbacks()

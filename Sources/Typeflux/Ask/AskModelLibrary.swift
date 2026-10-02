@@ -264,6 +264,11 @@ final class AskModelLibrary: ObservableObject {
         return provider.models.isEmpty ? L("models.noModels") : nil
     }
 
+    /// The first usable model of the user's own providers.
+    func firstLocalReference(hasImage: Bool) -> String? {
+        selectableProviders(loggedIn: false, hasImage: hasImage).first?.models.first?.reference
+    }
+
     func sortedProviders(loggedIn: Bool) -> [RegisteredProvider] {
         ModelAvailability.sorted(providers) { unavailableReason($0, loggedIn: loggedIn) == nil }
     }

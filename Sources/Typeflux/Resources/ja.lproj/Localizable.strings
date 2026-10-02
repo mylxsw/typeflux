@@ -1794,3 +1794,26 @@
 "ask.action.edit" = "ファイルを編集";
 "ask.action.remember" = "記憶する";
 "ask.action.forget" = "忘れる";
+
+/* GUL-151 Local Ask */
+"ask.local.notFound" = "この会話はこの Mac にありません。";
+"ask.local.expired" = "実行の期限が切れました。続行するには再試行してください。";
+"ask.local.busy" = "この会話はまだ実行中です。";
+"ask.local.full" = "続けるには新しい会話を始めてください。";
+"ask.local.modelFailed" = "モデルへのリクエストが失敗しました。設定を確認して再試行してください。";
+"ask.local.badSummary" = "モデルが無効な要約を返しました。再試行してください。";
+"ask.local.regenerateLatest" = "再生成できるのは最新の返信だけです。";
+"ask.local.modelRequired" = "Typeflux Cloud を使わずに Ask を使うには、自分のモデルを選んでください。設定 → モデル で追加できます。";
+"ask.local.conflict" = "会話が変更されました。再読み込みしてもう一度お試しください。";
+"ask.local.stepLimit" = "エージェントのステップ上限に達しました。";
+"ask.local.truncated" = "回答が出力上限に達して途切れました。再試行するか続きを依頼してください。";
+"ask.local.empty" = "モデルが空の回答を返しました。";
+"ask.local.invalidTools" = "モデルが無効または利用できないツール呼び出しを返しました。";
+"ask.local.emptyQuestion" = "先に質問を入力してください。";
+"ask.settings.local.title" = "この Mac で Ask を実行";
+"ask.settings.local.subtitle" = "サインインしていても、会話・履歴・ツールはこの Mac に留まり、自分のモデルを使います。サインインしていない場合、Ask は常にこの方式で動作します。";
+"ask.settings.search.title" = "この Mac でのウェブ検索";
+"ask.settings.search.subtitle" = "ローカルの会話では、キーチェーンに保存した自分の Tavily または Brave Search のキーでウェブ検索できます。ウェブページの読み取りにキーは不要です。";
+"ask.settings.search.provider" = "検索サービス";
+"ask.settings.search.none" = "オフ";
+"ask.settings.search.key" = "API キー";

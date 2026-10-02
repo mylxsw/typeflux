@@ -10,11 +10,34 @@ struct AskToolsSettingsView: View {
 
     @State private var folders: [String] = []
     @State private var codeEnabled = true
+    @State private var localMode = false
+    @State private var searchProvider = AskSearchSettings.Provider.none
+    @State private var searchKey = ""
     @State private var skillList: [AskSkill] = []
     @State private var noteList: [AskMemoryNote] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
+            StudioCard {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+                    StudioSettingRow(title: L("ask.settings.local.title"), subtitle: L("ask.settings.local.subtitle")) {
+                        Toggle("", isOn: Binding(get: { localMode }, set: { localMode = $0; settings.askLocalModeEnabled = $0 }))
+                            .labelsHidden().toggleStyle(.switch)
+                    }
+                    sectionHeader(L("ask.settings.search.title"), L("ask.settings.search.subtitle"))
+                    Picker(L("ask.settings.search.provider"), selection: Binding(get: { searchProvider }, set: { setSearchProvider($0) })) {
+                        Text(L("ask.settings.search.none")).tag(AskSearchSettings.Provider.none)
+                        Text("Tavily").tag(AskSearchSettings.Provider.tavily)
+                        Text("Brave Search").tag(AskSearchSettings.Provider.brave)
+                    }
+                    .frame(maxWidth: 320)
+                    if searchProvider != .none {
+                        SecureField(L("ask.settings.search.key"), text: $searchKey, onCommit: { saveSearchKey() })
+                            .textFieldStyle(.roundedBorder).frame(maxWidth: 320)
+                            .onChange(of: searchKey) { _ in saveSearchKey() }
+                    }
+                }
+            }
             StudioCard {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
                     sectionHeader(L("ask.settings.folders.title"), L("ask.settings.folders.subtitle"))
@@ -79,9 +102,22 @@ struct AskToolsSettingsView: View {
         }
     }
 
+    var search: AskSearchSettings { AskSearchSettings(defaults: settings.defaults) }
+
+    func setSearchProvider(_ provider: AskSearchSettings.Provider) {
+        searchProvider = provider
+        search.provider = provider
+        if provider == .none { search.setAPIKey(""); searchKey = "" }
+    }
+
+    func saveSearchKey() { search.setAPIKey(searchKey) }
+
     func reload() {
         folders = settings.askFileAccessFolders
         codeEnabled = settings.askCodeExecutionEnabled
+        localMode = settings.askLocalModeEnabled
+        searchProvider = search.provider
+        searchKey = search.apiKey
         skillList = skills.skills()
         noteList = notes.list(owner: owner())
     }

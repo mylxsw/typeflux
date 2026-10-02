@@ -1808,3 +1808,26 @@
 "ask.action.edit" = "Edit file";
 "ask.action.remember" = "Remember";
 "ask.action.forget" = "Forget";
+
+/* GUL-151 Local Ask */
+"ask.local.notFound" = "This conversation is not on this Mac.";
+"ask.local.expired" = "Execution expired; retry to continue.";
+"ask.local.busy" = "This conversation is still running.";
+"ask.local.full" = "Start a new conversation to continue.";
+"ask.local.modelFailed" = "Your model request failed; check its configuration and retry.";
+"ask.local.badSummary" = "The model returned an invalid summary; retry to continue.";
+"ask.local.regenerateLatest" = "Only the latest reply can be regenerated.";
+"ask.local.modelRequired" = "Choose one of your own models to use Ask without Typeflux Cloud. Add one in Settings → Models.";
+"ask.local.conflict" = "The conversation changed; reload and try again.";
+"ask.local.stepLimit" = "Agent step limit reached.";
+"ask.local.truncated" = "The answer reached the output limit and was cut off; retry or ask to continue.";
+"ask.local.empty" = "The model returned an empty answer.";
+"ask.local.invalidTools" = "The model returned an invalid or unavailable tool call.";
+"ask.local.emptyQuestion" = "Type a question first.";
+"ask.settings.local.title" = "Run Ask on this Mac";
+"ask.settings.local.subtitle" = "Conversations, history and tools stay on this Mac and use your own models, even when you are signed in. Without signing in, Ask always runs this way.";
+"ask.settings.search.title" = "Web search on this Mac";
+"ask.settings.search.subtitle" = "Local conversations can search the web with your own Tavily or Brave Search key, stored in the keychain. Reading web pages works without a key.";
+"ask.settings.search.provider" = "Search provider";
+"ask.settings.search.none" = "Off";
+"ask.settings.search.key" = "API key";

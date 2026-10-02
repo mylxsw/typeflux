@@ -43,9 +43,20 @@ final class AskConversationModel: ObservableObject {
 
 
     func modelReference(launcher: Bool) -> String {
-        if launcher { return launcherDraft.modelRef ?? modelLibrary.defaultReference }
-        return draft.modelRef ?? selected.map { $0.modelRef ?? "cloud:default" } ?? modelLibrary.defaultReference
+        let reference = launcher
+            ? launcherDraft.modelRef ?? modelLibrary.defaultReference
+            : draft.modelRef ?? selected.map { $0.modelRef ?? "cloud:default" } ?? modelLibrary.defaultReference
+        return localFallback(reference, hasImage: requiresVision(launcher: launcher))
     }
+
+    /// Local conversations run on the user's own models; a Cloud reference falls back to the first one available.
+    func localFallback(_ reference: String, hasImage: Bool) -> String {
+        guard !cloudAvailable, reference.hasPrefix("cloud:") else { return reference }
+        return modelLibrary.firstLocalReference(hasImage: hasImage) ?? reference
+    }
+
+    /// False when Ask runs on this Mac: not signed in, or local mode is on.
+    var cloudAvailable: Bool { session().map { !$0.token.isEmpty } ?? false }
     func requiresVision(launcher: Bool) -> Bool {
         let current = launcher ? launcherDraft : draft
         return (current.includeScreenshot && current.screenshot != nil)
@@ -181,7 +192,8 @@ final class AskConversationModel: ObservableObject {
             }
             guard let self else { return }
             memoryPurgeTask = nil
-            guard purged else { return }
+            // A local session cleared its own copies; Cloud copies still need the next signed-in purge.
+            guard purged, !current.token.isEmpty else { return }
             if memoryPurgeGeneration == generation {
                 defaults.set(false, forKey: Self.memoryPurgePendingKey)
             } else {
@@ -440,7 +452,8 @@ final class AskConversationModel: ObservableObject {
         var value = newConversation ? AskConversation(id: id, title: String(submitted.text.prefix(50)), revision: 0, updatedAt: Date(), messages: []) : selected!
         let messageId = UUID().uuidString
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
-        request.modelRef = submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference : (value.modelRef ?? "cloud:default"))
+        request.modelRef = localFallback(submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference : (value.modelRef ?? "cloud:default")),
+                                         hasImage: request.image != nil || value.messages.contains { $0.image != nil })
         request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
         request.memory = newConversation && submitted.memoryOff != true
             ? Self.openingMemory(submitted.memory ?? capture.globalMemory()) : nil
@@ -498,6 +511,7 @@ final class AskConversationModel: ObservableObject {
 
     private func validateModel(_ reference: String?, token: String, hasImage: Bool = false) async throws {
         let reference = reference ?? "cloud:default"
+        if token.isEmpty, reference.hasPrefix("cloud:") { throw AskLocalError.message(L("ask.local.modelRequired")) }
         if reference.hasPrefix("cloud:"), reference != "cloud:default" {
             let catalog = try await api.models(token: token)
             try Task.checkCancellation()
@@ -509,13 +523,14 @@ final class AskConversationModel: ObservableObject {
         if provider.isOllama {
             await modelLibrary.probeOllama()
         }
-        if let reason = modelLibrary.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: true) {
+        if let reason = modelLibrary.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: !token.isEmpty) {
             throw AskLocalError.message(reason)
         }
     }
 
     func refreshImageModels() async {
-        guard let current = session() else { return }
+        // The Cloud catalog only refreshes for Cloud sessions; local mode keeps it untouched.
+        guard let current = session(), !current.token.isEmpty else { return }
         await modelLibrary.refresh(api: api, token: current.token)
         guard !Task.isCancelled else { return }
         await modelLibrary.probeOllama()
@@ -671,7 +686,7 @@ final class AskConversationModel: ObservableObject {
                     do {
                         let hasImage = inference.payload.contains("image_url")
                         if let reason = modelLibrary.selectionReason(
-                            model, provider: provider, hasImage: hasImage, loggedIn: true
+                            model, provider: provider, hasImage: hasImage, loggedIn: !current.token.isEmpty
                         ) {
                             throw AskLocalError.message(reason)
                         }

@@ -39,7 +39,7 @@ struct AskImageRecoveryPicker: View {
     var body: some View {
         AskImagePickerContent(library: model.modelLibrary, candidate: $candidate,
                               currentReference: model.modelReference(launcher: false),
-                              loggedIn: auth.isLoggedIn, loading: refreshing || model.modelLibrary.loading,
+                              loggedIn: model.cloudAvailable && auth.isLoggedIn, loading: refreshing || model.modelLibrary.loading,
                               hasSavedScreenshot: model.hasConversationImages,
                               busy: model.isBusy || model.isLoadingSelection || model.imageRecoveryTarget != target,
                               dismiss: dismiss, refresh: { refreshGeneration += 1 },
