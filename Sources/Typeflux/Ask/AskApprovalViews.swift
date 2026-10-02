@@ -70,6 +70,9 @@ struct AskApprovalCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
+                Image(systemName: "checkmark.shield").font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(tint)
+                    .accessibilityHidden(true)
                 AskStatusBadge(text: AskApprovalPresentation.riskLabel(risk), state: AskApprovalPresentation.riskState(risk))
                 Image(systemName: AskPresentation.toolSymbol(call)).font(.system(size: 12))
                     .foregroundStyle(StudioTheme.textSecondary)
@@ -118,8 +121,8 @@ struct AskApprovalCard: View {
             }
         }
         .padding(14)
-        .background(tint.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(tint.opacity(0.45)))
+        .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(tint.opacity(0.4), lineWidth: 0.5))
         .accessibilityElement(children: .contain)
     }
 

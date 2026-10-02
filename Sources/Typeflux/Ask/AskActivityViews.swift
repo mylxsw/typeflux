@@ -4,7 +4,7 @@ import SwiftUI
 /// One run's tool steps as a single block: open while it works or waits for a
 /// decision, folded into a one-line summary once it is done.
 struct AskActivityBlock: View {
-    static let corner: CGFloat = 14
+    static let corner: CGFloat = 18
 
     let group: AskActivityGroup
     let results: [AskMessage]
@@ -23,36 +23,44 @@ struct AskActivityBlock: View {
                 header
                 if expanded {
                     Rectangle().fill(AskTheme.separator).frame(height: 1)
-                    content.padding(.horizontal, 12).padding(.vertical, 10)
+                    content.padding(.horizontal, 14).padding(.vertical, 12)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
-            .background(AskTheme.hoverFill.opacity(0.5))
             .clipShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
+            // The card scrolls with the transcript, so it takes the glass card's
+            // shape and hairline on an opaque surface: live glass belongs to the
+            // floating controls layer, and one per tool step would be costly.
+            .askInWindowGlass(corner: Self.corner, opaqueFill: AskTheme.raisedSurface)
+            .environment(\.askGlassMaterialOverride, .opaque)
             .overlay(RoundedRectangle(cornerRadius: Self.corner, style: .continuous)
-                .strokeBorder(status == .attention ? StudioTheme.warning.opacity(0.45) : AskTheme.border.opacity(0.6)))
+                .strokeBorder(status == .attention ? StudioTheme.warning.opacity(0.55) : Color.clear))
             if !outputs.isEmpty { AskRunOutputsView(outputs: outputs) }
         }
     }
 
     private var header: some View {
-        Button { userExpanded = !expanded } label: {
-            HStack(spacing: 8) {
-                statusIcon.frame(width: 16)
+        Button {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.85)) { userExpanded = !expanded }
+        } label: {
+            HStack(spacing: 10) {
+                statusIcon.frame(width: 20, height: 20)
                 Text(AskActivity.title(group, status: status, plan: plan, results: results))
-                    .font(.system(size: 12.5, weight: .semibold))
+                    .font(.system(size: 13.5, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1)
                 Text(AskActivity.categorySummary(group.calls))
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(1)
                 Spacer(minLength: 6)
-                Image(systemName: expanded ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 9.5, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .rotationEffect(.degrees(expanded ? 180 : 0))
             }
-            .padding(.horizontal, 12)
-            .frame(height: 38)
+            .padding(.horizontal, 14)
+            .frame(height: 46)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -60,13 +68,22 @@ struct AskActivityBlock: View {
         .accessibilityValue(L(expanded ? "ask.activity.expanded" : "ask.activity.collapsed"))
     }
 
+    /// A filled disc per state, as in the design: green check, amber "!", red
+    /// cross; a spinner while it works.
     @ViewBuilder private var statusIcon: some View {
         switch status {
-        case .running: ProgressView().controlSize(.mini)
-        case .attention: Image(systemName: "hand.raised.fill").font(.system(size: 11)).foregroundStyle(StudioTheme.warning)
-        case .failed: Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 11)).foregroundStyle(StudioTheme.danger)
-        case .done: Image(systemName: "checkmark.circle.fill").font(.system(size: 12)).foregroundStyle(StudioTheme.success)
+        case .running: ProgressView().controlSize(.small)
+        case .attention: statusDisc("exclamationmark", fill: StudioTheme.warning, ink: .black)
+        case .failed: statusDisc("xmark", fill: StudioTheme.danger, ink: .white)
+        case .done: statusDisc("checkmark", fill: StudioTheme.success, ink: .white)
         }
+    }
+
+    private func statusDisc(_ symbol: String, fill: Color, ink: Color) -> some View {
+        Image(systemName: symbol).font(.system(size: 10, weight: .heavy))
+            .foregroundStyle(ink)
+            .frame(width: 20, height: 20)
+            .background(fill, in: Circle())
     }
 
     private var content: some View {

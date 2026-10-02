@@ -499,6 +499,33 @@ struct AskConversationVisualTests {
         fixture.model.resetSession()
     }
 
+    /// The ⌘K palette over the workspace, with the keyboard highlight on the
+    /// first matching conversation, in both appearances.
+    @Test func renderSearchPalette() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let now = Date()
+        let history = [
+            AskConversationSummary(id: "p1", title: "讲讲这一屏在做什么", updatedAt: now),
+            AskConversationSummary(id: "p2", title: "早上好呀。", updatedAt: now.addingTimeInterval(-3600)),
+            AskConversationSummary(id: "p3", title: "解释 Swift 并发里的 actor 重入", updatedAt: now.addingTimeInterval(-86400 * 4))
+        ]
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            let palette = AskSearchPaletteView(conversations: history, available: AskPaletteAction.allCases,
+                                               onAction: { _ in }, onOpen: { _ in }, onClose: {})
+                .environment(\.askGlassMaterialOverride, .opaque)
+                .frame(width: 900, height: 560)
+                .background(AskTheme.surface)
+            try await render(palette, size: NSSize(width: 900, height: 560), appearance: appearance,
+                             file: root.appendingPathComponent("search-palette-\(name).png"))
+        }
+    }
+
     private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL, voice: AskVoiceInput? = nil, minimumPNGBytes: Int = 10000) async throws {
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false

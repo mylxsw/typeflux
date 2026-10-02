@@ -9,11 +9,8 @@ struct AskConversationView: View {
     @State private var deleteId: String?
     @State private var pullDistance: CGFloat = 0
     @State private var restoredTranscript: String?
-    @State private var query = ""
     @State private var isSearching = false
-    @FocusState private var searchFocused: Bool
     @State private var collapsedGroups: Set<String> = []
-    @State private var headerHovering = false
     /// Height of the banners and composer floating over the transcript's bottom edge.
     @State private var bottomChromeHeight: CGFloat = 0
     /// Set by the toggle inside its animation. Driving the layout from the
@@ -129,15 +126,18 @@ struct AskConversationView: View {
     }
 
     private var sidebarToggle: some View {
-        titleBarButton("sidebar.left", label: L("ask.sidebar.toggle")) {
-            withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
-                // A sidebar that stepped aside for the usage panel comes back by closing the panel.
-                if !sidebarCollapsed, sidebarHidden {
-                    showsUsage = false
-                } else {
-                    sidebarChoice = !sidebarCollapsed
-                    storedSidebarCollapsed = sidebarChoice ?? false
-                }
+        titleBarButton("sidebar.left", label: L("ask.sidebar.toggle"), shortcut: "⌃⌘S") { toggleSidebar() }
+            .keyboardShortcut("s", modifiers: [.command, .control])
+    }
+
+    private func toggleSidebar() {
+        withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
+            // A sidebar that stepped aside for the usage panel comes back by closing the panel.
+            if !sidebarCollapsed, sidebarHidden {
+                showsUsage = false
+            } else {
+                sidebarChoice = !sidebarCollapsed
+                storedSidebarCollapsed = sidebarChoice ?? false
             }
         }
     }
@@ -188,14 +188,11 @@ struct AskConversationView: View {
     }
 
     private func openSearch() {
-        query = ""
-        isSearching = true
-        DispatchQueue.main.async { searchFocused = true }
+        withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) { isSearching = true }
     }
 
     private func closeSearch() {
-        isSearching = false
-        query = ""
+        withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) { isSearching = false }
     }
 
     /// The name and plan badge (hover or click for the account card), or a
@@ -229,111 +226,45 @@ struct AskConversationView: View {
 
     // MARK: - Search palette
 
-    /// Centered search card over a dimmed window: a field with a close button,
-    /// an action row and the matching conversations. Esc or a click outside closes it.
     private var searchPalette: some View {
-        ZStack {
-            Color.black.opacity(0.22)
-                .contentShape(Rectangle())
-                .onTapGesture { closeSearch() }
-            VStack(spacing: 0) {
-                HStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass").font(.system(size: 14))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                    TextField(L("ask.search"), text: $query)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 15))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .focused($searchFocused)
-                        .onSubmit { openFirstSearchResult() }
-                    Button { closeSearch() } label: {
-                        Image(systemName: "xmark").font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .frame(width: 26, height: 26)
-                            .background(AskTheme.controlSurface, in: Circle())
-                            .contentShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(L("ask.remove"))
-                }
-                .padding(.horizontal, 16)
-                .frame(height: 52)
-                Rectangle().fill(AskTheme.separator).frame(height: 1)
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 2) {
-                        if query.trimmingCharacters(in: .whitespaces).isEmpty {
-                            paletteHeader(L("ask.search.actions"))
-                            paletteRow(title: L("ask.new"), systemImage: "square.and.pencil", time: nil) {
-                                closeSearch(); model.newConversation()
-                            }
-                        }
-                        paletteHeader(L("ask.search.conversations"))
-                        let results = AskPresentation.filterHistory(model.conversations, query: query)
-                        ForEach(results, id: \.id) { item in
-                            paletteRow(title: item.title, systemImage: "bubble.left", time: item.updatedAt) {
-                                closeSearch(); Task { await model.select(item.id) }
-                            }
-                        }
-                        if results.isEmpty {
-                            Text(L(query.isEmpty ? "ask.history.empty" : "ask.history.searchEmpty"))
-                                .font(.system(size: 12))
-                                .foregroundStyle(StudioTheme.textTertiary)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 24)
-                        }
-                    }
-                    .padding(8)
-                }
+        AskSearchPaletteView(
+            conversations: model.conversations,
+            available: paletteActions,
+            onAction: { action in
+                closeSearch()
+                runPaletteAction(action)
+            },
+            onOpen: { id in
+                closeSearch()
+                Task { await model.select(id) }
+            },
+            onClose: closeSearch
+        )
+    }
+
+    /// Actions that can do something in the window's current state.
+    private var paletteActions: [AskPaletteAction] {
+        AskPaletteAction.allCases.filter { action in
+            switch action {
+            case .attachScreenshot:
+                return model.screenshotCapability(launcher: false) == .supported && !model.draft.includeScreenshot
+            case .usage:
+                return model.selectedId != nil
+            default:
+                return true
             }
-            .frame(width: 560, height: 420)
-            .askInWindowGlass(corner: AskMetrics.paletteCorner)
-            .shadow(color: Color.black.opacity(0.35), radius: 24, y: 10)
         }
-        .onExitCommand { closeSearch() }
-        .transition(.opacity)
     }
 
-    private func paletteHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(StudioTheme.textTertiary)
-            .padding(.horizontal, 10)
-            .padding(.top, 8)
-            .padding(.bottom, 4)
-    }
-
-    private func paletteRow(title: String, systemImage: String, time: Date?,
-                            action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: systemImage).font(.system(size: 13))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .frame(width: 18)
-                Text(title).font(.system(size: 13.5))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-                Spacer(minLength: 8)
-                if let time {
-                    Text(time, style: .time).font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
-            }
-            .padding(.horizontal, 10)
-            .frame(height: 36)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
+    private func runPaletteAction(_ action: AskPaletteAction) {
+        switch action {
+        case .newConversation: model.newConversation()
+        case .toggleSidebar: toggleSidebar()
+        case .usage: if !showsUsage { toggleUsage() }
+        case .attachScreenshot:
+            model.draft.includeScreenshot = true
+            if model.draft.screenshot == nil { Task { await model.refreshScreenshot(launcher: false) } }
         }
-        .buttonStyle(.plain)
-    }
-
-    /// Return opens the top match, or starts a new chat when nothing is typed.
-    private func openFirstSearchResult() {
-        if query.trimmingCharacters(in: .whitespaces).isEmpty {
-            closeSearch(); model.newConversation(); return
-        }
-        guard let first = AskPresentation.filterHistory(model.conversations, query: query).first else { return }
-        closeSearch()
-        Task { await model.select(first.id) }
     }
 
     private var visibleConversations: [AskConversationSummary] {
@@ -483,58 +414,85 @@ struct AskConversationView: View {
     }
 
     /// The title and the conversation's actions as two glass capsules over the
-    /// transcript. The actions stay dimmed until the pointer is over them, so
-    /// the delete button never carries the same weight as the title.
+    /// transcript: the title carries the run's state as a dot and a summary;
+    /// the actions capsule carries the credits spent, usage, a new chat and delete.
     private var header: some View {
         HStack(spacing: 8) {
             if let id = model.selectedId {
-                HStack(spacing: 8) {
+                HStack(spacing: 10) {
                     Text(model.selected?.title
                          ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
                          ?? L("ask.new"))
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 13.5, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
                         .lineLimit(1)
                     if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
                     if let summary = AskActivity.runSummary(model.selected?.run,
                                                             pendingApproval: model.pendingApprovals[id] != nil) {
                         AskRunLocationLabel(local: !model.cloudAvailable)
-                        Text(summary)
-                            .font(.system(size: 11.5))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .monospacedDigit()
-                            .lineLimit(1)
-                            .fixedSize()
+                        HStack(spacing: 5) {
+                            if let tone = AskRunTone.of(model.selected?.run,
+                                                        pendingApproval: model.pendingApprovals[id] != nil) {
+                                AskRunToneDot(tone: tone)
+                            }
+                            Text(summary)
+                                .font(.system(size: 12))
+                                .foregroundStyle(StudioTheme.textSecondary)
+                                .monospacedDigit()
+                                .lineLimit(1)
+                                .fixedSize()
+                        }
                     }
                 }
-                .padding(.horizontal, 14)
+                .padding(.leading, 14)
+                .padding(.trailing, 16)
                 .frame(height: AskMetrics.headerCapsuleHeight)
                 .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
+            } else {
+                Text(L("ask.new"))
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .padding(.horizontal, 16)
+                    .frame(height: AskMetrics.headerCapsuleHeight)
+                    .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
             Spacer(minLength: 8)
-            if let id = model.selectedId {
-                HStack(spacing: 2) {
-                    if let credits = headerCredits {
-                        Text(credits)
-                            .font(.system(size: 11.5))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .monospacedDigit()
-                            .lineLimit(1)
-                            .fixedSize()
-                            .padding(.leading, 10)
-                            .padding(.trailing, 4)
+            HStack(spacing: 2) {
+                if let credits = headerCredits {
+                    Button { toggleUsage() } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "sparkles").font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(AskTheme.accent)
+                            Text(credits)
+                                .font(.system(size: 12))
+                                .foregroundStyle(StudioTheme.textSecondary)
+                                .monospacedDigit()
+                                .lineLimit(1)
+                                .fixedSize()
+                        }
+                        .padding(.horizontal, 10)
+                        .frame(height: 28)
+                        .background(showsUsage ? AskTheme.hoverFill : Color.clear, in: Capsule())
+                        .contentShape(Capsule())
                     }
+                    .buttonStyle(.plain)
+                    .help(L("ask.usage.title"))
+                    .accessibilityLabel(L("ask.usage.title"))
+                    .accessibilityValue(credits)
+                    Rectangle().fill(AskTheme.separator).frame(width: 1, height: 16).padding(.horizontal, 3)
+                } else if model.selectedId != nil {
                     headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
+                }
+                AskHeaderIconButton(symbol: "square.and.pencil", label: L("ask.new"), shortcut: "⌘N") {
+                    model.newConversation()
+                }
+                if let id = model.selectedId {
                     headerAction(.trash, label: L("ask.delete")) { deleteId = id }
                 }
-                // Only the actions recede; the pill itself stays as solid as the title's.
-                .opacity(headerHovering || showsUsage ? 1 : 0.55)
-                .animation(.easeOut(duration: 0.15), value: headerHovering)
-                .padding(.horizontal, 3)
-                .frame(height: AskMetrics.headerCapsuleHeight)
-                .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
-                .onHover { headerHovering = $0 }
             }
+            .padding(.horizontal, 3)
+            .frame(height: AskMetrics.headerCapsuleHeight)
+            .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
         }
         .padding(.leading, sidebarHidden ? AskMetrics.collapsedTitleInset : 14)
         .padding(.trailing, 14)
@@ -561,30 +519,23 @@ struct AskConversationView: View {
 
     private func headerAction(_ kind: AskLineGlyph.Kind, label: String, active: Bool = false,
                               action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            AskLineIcon(kind: kind, size: 15)
-                .foregroundStyle(active ? AskTheme.accent : StudioTheme.textSecondary)
-                .frame(width: 28, height: 28)
-                .background(active ? AskTheme.hoverFill : Color.clear, in: Circle())
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help(label)
-        .accessibilityLabel(label)
+        AskHeaderLineButton(kind: kind, label: label, active: active, action: action)
     }
 
     private var emptyState: some View {
         VStack(spacing: 0) {
-            AskBrandMark().padding(.bottom, 18)
-            Text(L("ask.empty")).font(.system(size: 22, weight: .semibold))
+            AskConversationOrb().padding(.bottom, 20)
+            Text(L("ask.empty")).font(.system(size: 26, weight: .bold))
                 .foregroundStyle(StudioTheme.textPrimary)
-                .padding(.bottom, 7)
+                .padding(.bottom, 9)
             emptyHint
             HStack(alignment: .top, spacing: 12) {
-                suggestion("ask.suggest.screen", systemImage: "display", tint: .blue, shortcut: "1", screenshot: true)
-                suggestion("ask.suggest.selection", systemImage: "text.cursor", tint: .purple, shortcut: "2",
+                suggestion("ask.suggest.screen", systemImage: "display", tint: AskTheme.accent, shortcut: "1",
+                           screenshot: true)
+                suggestion("ask.suggest.selection", systemImage: "character.bubble", tint: AskTheme.accent,
+                           shortcut: "2", screenshot: false)
+                suggestion("ask.suggest.page", systemImage: "globe", tint: AskTheme.accent, shortcut: "3",
                            screenshot: false)
-                suggestion("ask.suggest.page", systemImage: "globe", tint: .green, shortcut: "3", screenshot: false)
             }
             .frame(maxWidth: AskMetrics.composerMaxWidth)
             .padding(.top, 26)
@@ -660,20 +611,7 @@ struct AskConversationView: View {
 
     private var composerArea: some View {
         VStack(spacing: 8) {
-            if model.isBusy {
-                Button { model.stop() } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "stop.fill").font(.system(size: 10))
-                        Text(L("ask.stop")).font(.system(size: 12, weight: .semibold))
-                    }
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .padding(.horizontal, 13)
-                    .frame(height: 28)
-                    .askInWindowGlassPill(height: 28)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L("ask.stop"))
-            }
+            // Stop lives in the send button's place while the run works.
             // The context budget used to occupy a whole row of its own below the
             // composer; it now rides in the footer next to the send button.
             AskComposer(model: model, launcher: false, onToggleUsage: { toggleUsage() })
@@ -893,10 +831,11 @@ private struct AskMessageView: View {
                         .textSelection(.enabled)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, 14)
+                        .padding(.horizontal, 15)
                         .padding(.vertical, 9)
-                        .background(AskTheme.bubbleSurface, in: AskBubbleShape())
-                        .overlay(AskBubbleShape().strokeBorder(AskTheme.border))
+                        .background(AskTheme.accent.opacity(0.18), in: AskBubbleShape(radius: 20, tail: 6))
+                        .overlay(AskBubbleShape(radius: 20, tail: 6)
+                            .strokeBorder(AskTheme.accent.opacity(0.42), lineWidth: 0.5))
                 }
                 if message.image != nil || message.selection != nil { attachments }
                 if message.steered == true {
@@ -1002,8 +941,8 @@ private struct AskMessageView: View {
     /// the actions reachable by VoiceOver and the keyboard at all times.
     private var turnActions: some View {
         HStack(spacing: 2) {
-            AskGhostButton(title: copied ? L("ask.copied") : L("ask.copy"),
-                           systemImage: copied ? "checkmark" : "doc.on.doc", active: copied) {
+            AskIconGhostButton(label: copied ? L("ask.copied") : L("ask.copy"),
+                               systemImage: copied ? "checkmark" : "doc.on.doc", active: copied) {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(message.text, forType: .string)
                 copied = true
@@ -1011,12 +950,25 @@ private struct AskMessageView: View {
             }
             // An interrupted answer already offers this on its tag.
             if canRegenerate, message.isError != true {
-                AskGhostButton(title: L("ask.regenerate"), systemImage: "arrow.clockwise", action: onRegenerate)
+                AskIconGhostButton(label: L("ask.regenerate"), systemImage: "arrow.clockwise", action: onRegenerate)
             }
-            AskGhostButton(title: L("ask.quote"), systemImage: "text.quote") {
+            AskIconGhostButton(label: L("ask.quote"), systemImage: "text.quote") {
                 onReference(AskReference(messageId: message.id, text: message.text, question: ""))
             }
-            AskGhostButton(title: usageLabel, systemImage: "chart.bar.xaxis", action: onUsage)
+            // The answer's cost is a quiet caption that opens the usage panel.
+            Button(action: onUsage) {
+                Text(usageLabel)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .monospacedDigit()
+                    .padding(.horizontal, 8)
+                    .frame(height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(L("ask.usage.title"))
+            .accessibilityLabel(L("ask.usage.title"))
+            .accessibilityValue(usageLabel)
         }
         .opacity(hovering || copied ? 1 : 0)
         .animation(.easeOut(duration: 0.12), value: hovering)
@@ -1035,6 +987,7 @@ private struct AskReasoningView: View {
     let milliseconds: Int
     let active: Bool
     @State private var expanded = false
+    @State private var reasoningHover = false
 
     private var label: String {
         active ? L("ask.reasoning.active") : L("ask.reasoning.complete", max(1, milliseconds / 1000))
@@ -1044,17 +997,26 @@ private struct AskReasoningView: View {
         VStack(alignment: .leading, spacing: 8) {
             Button { expanded.toggle() } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
-                    Image(systemName: "sparkle").font(.system(size: 10))
+                    Image(systemName: "sparkles").font(.system(size: 11))
                     Text(label)
-                        .font(.system(size: 11.5, weight: .medium))
-                    if active { ProgressView().controlSize(.mini) }
+                        .font(.system(size: 12.5, weight: .medium))
+                    if active {
+                        ProgressView().controlSize(.mini)
+                    } else {
+                        Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
+                            .rotationEffect(.degrees(expanded ? 90 : 0))
+                    }
                 }
-                .foregroundStyle(StudioTheme.textTertiary)
-                .contentShape(Rectangle())
+                .foregroundStyle(StudioTheme.textSecondary)
+                .padding(.leading, 8)
+                .padding(.trailing, 10)
+                .frame(height: 26)
+                .background(reasoningHover ? AskTheme.hoverFill : Color.clear, in: Capsule())
+                .contentShape(Capsule())
             }
             .buttonStyle(.plain)
+            .onHover { reasoningHover = $0 }
+            .padding(.leading, -8)
             .accessibilityLabel(label)
             if expanded {
                 AskTranscriptText(text: text)
@@ -1088,28 +1050,35 @@ private struct AskHistoryRow: View {
     var body: some View {
         Button(action: onSelect) {
             HStack(spacing: 8) {
+                // A conversation still working shows a breathing accent dot.
+                if busy { AskRunToneDot(tone: .running) }
                 Text(title)
                     .font(.system(size: 12.8, weight: selected ? .semibold : .regular))
                     .foregroundStyle(selected || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
                     .lineLimit(1)
                 Spacer(minLength: 4)
-                if busy {
-                    ProgressView().controlSize(.mini)
-                } else {
-                    Text(updatedAt, style: .time)
+                if !busy {
+                    Text(AskPresentation.historyTimeLabel(updatedAt))
                         .font(.system(size: 11))
                         .foregroundStyle(StudioTheme.textTertiary)
+                        .monospacedDigit()
                         .opacity(hovering ? 0 : 1)
                 }
             }
             .padding(.horizontal, 10)
-            .frame(height: 34)
+            .frame(height: 36)
             .frame(maxWidth: .infinity, alignment: .leading)
-            // Selection is a raised fill, concentric with the panel; no accent bar.
+            // Selection is an accent-tinted glass pill, concentric with the panel.
             .background(rowFill, in: RoundedRectangle(cornerRadius: AskMetrics.sidebarRowCorner, style: .continuous))
+            .overlay {
+                if selected {
+                    RoundedRectangle(cornerRadius: AskMetrics.sidebarRowCorner, style: .continuous)
+                        .strokeBorder(AskTheme.accent.opacity(0.4), lineWidth: 0.5)
+                }
+            }
             .contentShape(RoundedRectangle(cornerRadius: AskMetrics.sidebarRowCorner, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(AskPressableStyle.subtle)
         // Always mounted and only faded: removing the menu on hover-out would
         // tear it down while its popup is still tracking the pointer.
         .overlay(alignment: .trailing) {
@@ -1136,7 +1105,7 @@ private struct AskHistoryRow: View {
     }
 
     private var rowFill: Color {
-        if selected { return AskTheme.selectionFill }
+        if selected { return AskTheme.accent.opacity(0.18) }
         return hovering ? AskTheme.hoverFill : .clear
     }
 }

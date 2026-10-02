@@ -37,8 +37,8 @@ extension AskComposerInteractionTests {
         defer { window.close() }
         let editor = try #require(motionEditors(hosting).first)
         let start = editor.convert(editor.bounds, to: nil).maxX
-        // The header's usage action, left of delete in the trailing pill.
-        let samples = try await clickAndSample(NSPoint(x: window.frame.width - 14 - 3 - 28 - 14,
+        // The header's usage action leads the trailing pill: usage, new chat, delete (30pt each).
+        let samples = try await clickAndSample(NSPoint(x: window.frame.width - 14 - 3 - 30 - 30 - 15,
                                                        y: window.frame.height - AskMetrics.titleBarRowHeight / 2),
                                                in: window) { editor.convert(editor.bounds, to: nil).maxX }
         let end = try #require(samples.last)
