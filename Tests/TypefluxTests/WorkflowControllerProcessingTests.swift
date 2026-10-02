@@ -1226,7 +1226,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
     func testGenerateRewriteThrowsTimeoutWhenStreamDoesNotFinish() async {
         let controller = makeWorkflowController(
-            llmService: SlowProcessingLLMService(delay: .milliseconds(200)),
+            llmService: SlowProcessingLLMService(delay: .seconds(2)),
             configureSettings: configureReadyLLM
         )
 
@@ -1287,7 +1287,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         let controller = makeWorkflowController(
             llmService: ProgressingProcessingLLMService(
                 chunks: ["first", "late"],
-                delay: .milliseconds(200)
+                delay: .seconds(2)
             ),
             configureSettings: configureReadyLLM
         )
@@ -1326,7 +1326,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         let controller = makeWorkflowController(
             textInjector: textInjector,
             sttTranscriber: MockProcessingTranscriber(transcript: transcript),
-            llmService: SlowProcessingLLMService(delay: .milliseconds(200)),
+            llmService: SlowProcessingLLMService(delay: .seconds(2)),
             historyStore: historyStore,
             configureSettings: configureReadyLLM
         )
