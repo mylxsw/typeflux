@@ -383,3 +383,31 @@ Pure logic lives in `AskPaletteState`, `AskRunTone`, `AskSendControl`,
 `AskLiquidGlassRedesignTests`; `renderSearchPalette` captures the palette.
 Snapshots: `docs/images/ask-liquid-glass-*.png` (captured with the opaque
 fallback material, since system glass cannot be cached offscreen).
+
+### Fidelity pass (GUL-159, round 2)
+
+Every surface was compared against the design board rendered at the same
+1180 × 760 window size, using real on-screen captures with system Liquid Glass
+(`AskLivePreviewHarness`, opt-in with `TYPEFLUX_ASK_LIVE_PREVIEW=<seconds>`;
+scenes `chat`, `chat-top`, `empty`, `palette`, `approval`, `model-menu`,
+`reason-menu`, `launcher`; `TYPEFLUX_ASK_LIVE_APPEARANCE=light`). Side-by-side
+sheets: `docs/images/ask-liquid-glass-compare-*.png`.
+
+- Window: opaque base with three ambient glows (`AskWindowBackdrop`); in-window
+  glass uses the board's graphite/white tint at 45% frost; menus 60%.
+- Sidebar 264pt with a 34pt rounded search field and ⌘K key cap, 38pt rows, and
+  a footer with a separator, initials avatar, name and plan badge.
+- Header capsules 38pt; credits as a semibold number plus "credits".
+- Reading column 720pt; composer 760pt, 28pt corners, 34pt controls, 36pt send,
+  a focus hint row underneath; lit toggles get an accent ring and glow.
+- Prose 14.5pt, board heading sizes, hanging-indent lists, rounded inline-code
+  chips (`AskRoundedBackgroundLayoutManager`), rounded code blocks
+  (`AskCodeBlock`) and tables drawn by their cells as one rounded hairline frame
+  with header tint and row rules (`AskTableCellBlock`).
+- User attachments as chips above the bubble; reasoning shown above its tool
+  card; tool steps on a timeline with tool tags and a 参数/结果 switch.
+- The approval sits inside the tool card holding its step; "Allow for this
+  conversation" is the primary button unless the step is destructive.
+- Model menu: text capability badges, a credit-multiplier column, "My models"
+  group, "Manage models…" row; rows highlight with the accent like system menus.
+- The ⌥Space launcher lists the three suggestions while empty (↑/↓, Return).

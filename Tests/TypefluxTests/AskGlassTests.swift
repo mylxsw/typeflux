@@ -40,8 +40,8 @@ struct AskGlassTests {
         #expect(AskIconChipFace.fillColor(.neutral, hovering: false) == .clear)
         #expect(AskIconChipFace.fillColor(.unavailable, hovering: false) == .clear)
         #expect(AskIconChipFace.fillColor(.neutral, hovering: true) == AskTheme.hoverFill)
-        #expect(AskIconChipFace.fillColor(.active, hovering: false) == AskTheme.accent.opacity(0.20))
-        #expect(AskIconChipFace.fillColor(.active, hovering: true) == AskTheme.accent.opacity(0.30))
+        #expect(AskIconChipFace.fillColor(.active, hovering: false) == AskTheme.accent.opacity(0.16))
+        #expect(AskIconChipFace.fillColor(.active, hovering: true) == AskTheme.accent.opacity(0.24))
         #expect(AskIconChipFace.fillColor(.warning, hovering: false) == StudioTheme.warning.opacity(0.18))
         #expect(AskIconChipFace.fillColor(.warning, hovering: true) == StudioTheme.warning.opacity(0.26))
     }
@@ -90,18 +90,21 @@ struct AskGlassTests {
     }
 
     @Test func menuCornerIsConcentricWithItsRows() {
-        // Rows are inset 6pt from the card edge, so 12 + 6.
-        #expect(AskGlassCardSurface<EmptyView>.menuCorner == AskPopoverRow<EmptyView>.corner + 6)
+        // The design board's menu: 18pt card corners around 10pt rows inset 6pt.
+        #expect(AskGlassCardSurface<EmptyView>.menuCorner == 18)
+        #expect(AskPopoverRow<EmptyView>.corner == 10)
+        #expect(AskPopoverRow<EmptyView>.corner + 6 <= AskGlassCardSurface<EmptyView>.menuCorner)
         #expect(AskGlassCardSurface<EmptyView>.hoverCardCorner < AskGlassCardSurface<EmptyView>.menuCorner)
     }
 
     @Test func modelRowsShowImageAndReasoningCapabilities() {
         let plain = RegisteredModel(id: "a", name: "A")
-        #expect(AskModelCapabilities.symbols(plain).isEmpty)
+        #expect(AskModelCapabilities.badges(plain).isEmpty)
         let both = RegisteredModel(id: "b", name: "B", vision: true, reasoning: true)
-        #expect(AskModelCapabilities.symbols(both).map(\.symbol) == ["eye", "sparkles"])
+        #expect(AskModelCapabilities.badges(both).map(\.help)
+            == [L("ask.models.supportsImages"), L("ask.models.supportsReasoning")])
         let vision = RegisteredModel(id: "c", name: "C", vision: true, reasoning: false)
-        #expect(AskModelCapabilities.symbols(vision).map(\.help) == [L("ask.models.supportsImages")])
+        #expect(AskModelCapabilities.badges(vision).map(\.help) == [L("ask.models.supportsImages")])
     }
 
     @Test func settingsAndContextRecedeWhileRecording() {

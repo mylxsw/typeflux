@@ -13,14 +13,30 @@ struct AskActivityBlock: View {
     var streamingId: String?
     var approvalToolId: String?
     var outputs = AskRunOutputs()
+    /// The approval for one of this card's steps, shown under its header.
+    var approval: AnyView?
     @State private var userExpanded: Bool?
 
     private var expanded: Bool { userExpanded ?? (status == .running || status == .attention) }
 
+    /// The thinking before the first step, shown above the card like an
+    /// answer's reasoning rather than folded inside it.
+    private var leadReasoning: AskMessage? {
+        guard let lead = group.messages.first, let reasoning = lead.reasoning, !reasoning.isEmpty else { return nil }
+        return lead
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            if let lead = leadReasoning {
+                AskReasoningView(text: lead.reasoning ?? "", milliseconds: lead.reasoningMilliseconds ?? 0,
+                                 active: streamingId == lead.id && (lead.toolCalls ?? []).isEmpty)
+            }
             VStack(alignment: .leading, spacing: 0) {
                 header
+                if let approval {
+                    approval.padding(.horizontal, 14).padding(.bottom, 14)
+                }
                 if expanded {
                     Rectangle().fill(AskTheme.separator).frame(height: 1)
                     content.padding(.horizontal, 14).padding(.vertical, 12)
@@ -93,13 +109,14 @@ struct AskActivityBlock: View {
                 if !group.steps.isEmpty { Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 2) }
             }
             ForEach(group.messages) { message in
-                if let reasoning = message.reasoning, !reasoning.isEmpty {
+                if let reasoning = message.reasoning, !reasoning.isEmpty, message.id != leadReasoning?.id {
                     AskStepNote(text: reasoning, symbol: "sparkle")
                 }
                 if !message.text.isEmpty { AskStepNote(text: message.text, symbol: nil) }
                 ForEach((message.toolCalls ?? []).filter { $0.function.name != "update_plan" }) { call in
                     AskToolStepRow(call: call, result: results.first { $0.toolCallId == call.id },
-                                   preparing: streamingId == message.id, pending: approvalToolId == call.id)
+                                   preparing: streamingId == message.id, pending: approvalToolId == call.id,
+                                   isLast: call.id == group.steps.last?.id)
                 }
             }
         }
@@ -124,13 +141,22 @@ private struct AskStepNote: View {
     }
 }
 
-/// One tool call as a compact row; its arguments and result open on demand.
+/// One tool call as a step on the card's timeline: an icon tile, the step's
+/// name with its tool tag and status, a one-line detail, and its arguments and
+/// result behind a 参数/结果 switch once opened.
 struct AskToolStepRow: View {
+    enum Pane: Hashable { case arguments, result }
+
     let call: AskToolCall
     let result: AskMessage?
     var preparing = false
     var pending = false
+    /// The last step draws no line down to a next one.
+    var isLast = true
     @State private var expanded = false
+    @State private var pane = Pane.arguments
+
+    static let tileSize: CGFloat = 22
 
     private var state: AskActivityState {
         if preparing { return .running }
@@ -144,52 +170,90 @@ struct AskToolStepRow: View {
         return AskPresentation.toolStatusText(result: result, call: call)
     }
 
+    /// The tool's own name and action, e.g. "browser.read".
+    static func tag(_ call: AskToolCall) -> String {
+        let args = (try? JSONSerialization.jsonObject(with: Data(call.function.arguments.utf8))) as? [String: Any]
+        guard let action = args?["action"] as? String, !action.isEmpty else { return call.function.name }
+        return call.function.name + "." + action
+    }
+
+    /// A one-line detail under the name: the target path, else the result's first line.
+    static func detail(_ call: AskToolCall, result: AskMessage?) -> String? {
+        if let path = AskApprovalPresentation.detail(call) { return path }
+        let line = result?.text.split(whereSeparator: \.isNewline).first.map(String.init)?
+            .trimmingCharacters(in: .whitespaces)
+        return line?.isEmpty == false ? line : nil
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Button { expanded.toggle() } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: AskPresentation.toolSymbol(call))
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(width: 18)
-                    Text(AskTheme.toolTitle(call))
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Spacer(minLength: 6)
-                    // Finished steps stay quiet; only live, waiting and failed steps get a badge.
-                    if state == .done {
-                        Image(systemName: "checkmark").font(.system(size: 10, weight: .semibold))
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: AskPresentation.toolSymbol(call))
+                .font(.system(size: 10.5, weight: .medium))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .frame(width: Self.tileSize, height: Self.tileSize)
+                .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(AskTheme.separator, lineWidth: 0.5))
+            VStack(alignment: .leading, spacing: 3) {
+                Button { withAnimation(.easeOut(duration: 0.18)) { expanded.toggle() } } label: {
+                    HStack(spacing: 8) {
+                        Text(AskTheme.toolTitle(call))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Text(Self.tag(call)).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                            .lineLimit(1)
+                        Text(statusText).font(.system(size: 11, weight: .medium)).foregroundStyle(state.tint)
+                            .lineLimit(1)
+                        Spacer(minLength: 6)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 9, weight: .semibold))
                             .foregroundStyle(StudioTheme.textTertiary)
-                            .help(statusText)
-                    } else {
-                        AskStatusBadge(text: statusText, state: state)
+                            .rotationEffect(.degrees(expanded ? 90 : 0))
                     }
-                    Image(systemName: expanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                    .frame(minHeight: Self.tileSize)
+                    .contentShape(Rectangle())
                 }
-                .frame(minHeight: 24)
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .accessibilityLabel(AskTheme.toolTitle(call))
+                .accessibilityValue(statusText)
+                if let detail = Self.detail(call, result: result) {
+                    Text(detail).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                        .lineLimit(1).truncationMode(.middle)
+                }
+                if expanded {
+                    VStack(alignment: .leading, spacing: 8) {
+                        if result != nil {
+                            AskSegmentedControl(options: [(Pane.arguments, L("ask.tool.arguments")),
+                                                          (Pane.result, L("ask.tool.result"))],
+                                                selection: $pane)
+                                .frame(width: 112)
+                        }
+                        if pane == .arguments || result == nil {
+                            AskMonoBlock(title: "", text: call.function.arguments)
+                        } else if let result {
+                            if !result.text.isEmpty {
+                                AskMonoBlock(title: "", text: result.text, isError: result.isError == true)
+                            }
+                            if let url = result.image, let image = AskImage.decode(url) {
+                                Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 220)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            }
+                        }
+                    }
+                    .padding(.top, 6)
+                    .transition(.opacity)
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(AskTheme.toolTitle(call))
-            .accessibilityValue(statusText)
-            if expanded {
-                VStack(alignment: .leading, spacing: 8) {
-                    AskMonoBlock(title: L("ask.tool.arguments"), text: call.function.arguments)
-                    if let result {
-                        if !result.text.isEmpty {
-                            AskMonoBlock(title: L("ask.tool.result"), text: result.text, isError: result.isError == true)
-                        }
-                        if let url = result.image, let image = AskImage.decode(url) {
-                            Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 220)
-                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        }
-                    }
-                }
-                .padding(.leading, 26)
+        }
+        .padding(.vertical, 6)
+        // The timeline: a line from this step's tile down to the next one.
+        .background(alignment: .topLeading) {
+            if !isLast {
+                Rectangle().fill(AskTheme.separator).frame(width: 1.5)
+                    .padding(.top, 6 + Self.tileSize + 4)
+                    .padding(.bottom, -6)
+                    .offset(x: Self.tileSize / 2 - 0.75)
             }
         }
     }

@@ -63,7 +63,27 @@ struct AskComposer: View {
     private var glass: AskGlassMaterial? {
         chrome.glass ? glassOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency) : nil
     }
-    private func submit() { if launcher { model.submitLauncher() } else { model.submitDraft() } }
+    private func submit() {
+        if launcher, showsLauncherSuggestions, !active {
+            pick(AskSuggestion.all[min(suggestionIndex, AskSuggestion.all.count - 1)]); return
+        }
+        if launcher { model.submitLauncher() } else { model.submitDraft() }
+    }
+    @State private var suggestionIndex = 0
+    /// The launcher offers its starting points until something is typed. They
+    /// stay (disabled) while dictating, so the panel never jumps mid-recording.
+    private var showsLauncherSuggestions: Bool {
+        launcher && draft.wrappedValue.text.isEmpty && (draft.wrappedValue.references ?? []).isEmpty
+    }
+
+    /// Sends a suggestion as the question, with the screenshot when it asks for one.
+    private func pick(_ suggestion: AskSuggestion) {
+        draft.wrappedValue.text = suggestion.title
+        if suggestion.screenshot, model.screenshotCapability(launcher: launcher) == .supported {
+            draft.wrappedValue.includeScreenshot = true
+        }
+        model.submitLauncher()
+    }
     private var sendControl: AskSendControl {
         guard !launcher else { return .send(enabled: canSend) }
         return AskSendControl.resolve(busy: model.isBusy, hasDraft: model.draft.canSend,
@@ -86,6 +106,7 @@ struct AskComposer: View {
             }
         }
         .onChange(of: editorHeight) { _ in reportHeight() }
+        .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
         .onChange(of: model.error) { _ in reportHeight() }
         .onChange(of: model.launcherScreenshotNotice) { _ in reportHeight() }
         .onChange(of: model.screenshotNotice) { _ in reportHeight() }
@@ -131,6 +152,11 @@ struct AskComposer: View {
             }
             editorRow
             footer
+            if showsLauncherSuggestions {
+                AskLauncherSuggestions(highlighted: $suggestionIndex, onPick: pick)
+                    .disabled(active)
+                    .opacity(Self.recordingDim(active))
+            }
         }
         .background {
             if let glass {
@@ -190,7 +216,8 @@ struct AskComposer: View {
                 get: { model.modelReference(launcher: launcher) },
                 set: { model.selectModel($0, launcher: launcher) }
             ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
-               hasImage: !launcher && model.hasConversationImages, compact: true, cloudAvailable: model.cloudAvailable)
+               hasImage: !launcher && model.hasConversationImages, compact: true, cloudAvailable: model.cloudAvailable,
+               onManage: model.onOpenSettings.map { open in { open(.models) } })
             .opacity(Self.recordingDim(active))
             AskReasoningMenu(library: model.modelLibrary,
                              reference: model.modelReference(launcher: launcher),
@@ -199,7 +226,7 @@ struct AskComposer: View {
                              compact: true)
                 .opacity(Self.recordingDim(active))
             // "How to ask" and "what rides along" are separated by a rule.
-            Rectangle().fill(AskTheme.separator).frame(width: 1, height: 16).padding(.horizontal, 4)
+            Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
             contextChips
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .disabled(active)
@@ -211,7 +238,7 @@ struct AskComposer: View {
             AskVoiceButton(voice: voice, contextID: contextID,
                            enabled: launcher || !model.isLoadingSelection,
                            shortcut: voiceShortcut)
-                .frame(width: 32, height: 32)
+                .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
             if editingQueued {
                 AskQueueEditActions(canSave: model.draft.canSend, onCancel: { model.cancelQueuedEdit() },
                                     onSave: { model.saveQueuedEdit() })
@@ -243,7 +270,8 @@ struct AskComposer: View {
             selectionOff: value.selectionOff == true,
             memory: newConversation ? value.memory : nil,
             memoryOff: model.memorySwitchedOff(launcher: launcher),
-            memoryPinned: !newConversation && model.selected?.memory?.isEmpty == false
+            memoryPinned: !newConversation && model.selected?.memory?.isEmpty == false,
+            pinnedMemory: newConversation ? nil : model.selected?.memory
         )
     }
 
@@ -357,7 +385,8 @@ struct AskComposer: View {
         var banners = voice.error == nil ? 0 : 1
         if (launcher ? model.launcherScreenshotNotice : model.screenshotNotice) != nil { banners += 1 }
         if launcher, model.error != nil { banners += 1 }
-        onHeightChange(AskMetrics.launcherHeight(editor: editorHeight, banners: banners))
+        onHeightChange(AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
+                                                 suggestions: showsLauncherSuggestions))
     }
 }
 

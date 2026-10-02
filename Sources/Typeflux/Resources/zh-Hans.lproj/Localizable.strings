@@ -1481,6 +1481,12 @@
 "ask.search.actions" = "操作";
 "ask.search.conversations" = "对话";
 "ask.search.placeholder" = "搜索对话或操作";
+"ask.composer.hint" = "↩ 发送 · ⇧↩ 换行 · 按住 %@ 语音输入";
+"ask.launcher.hint" = "↩ 发送 · esc 关闭";
+"ask.models.multiplierColumn" = "积分倍率";
+"ask.models.ownAPI" = "自有 API";
+"ask.models.badge.vision" = "视觉";
+"ask.models.badge.reasoning" = "推理";
 "ask.history.searchEmpty" = "没有匹配的对话";
 "ask.selection.lines" = "选区 · %d 行";
 "ask.voice.hold" = "按住说话";

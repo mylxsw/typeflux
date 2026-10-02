@@ -186,3 +186,118 @@ struct AskIconGhostButton: View {
         .accessibilityLabel(label)
     }
 }
+
+/// A key drawn as a small key cap, e.g. "⌘K" in the sidebar's search field.
+struct AskKeyHint: View {
+    let text: String
+
+    var body: some View {
+        Text(verbatim: text)
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(StudioTheme.textTertiary)
+            .padding(.horizontal, 6)
+            .frame(height: 18)
+            .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .strokeBorder(AskTheme.separator, lineWidth: 0.5))
+            .accessibilityHidden(true)
+    }
+}
+
+/// The signed-in user's initials on the design board's violet gradient.
+struct AskAvatar: View {
+    let name: String
+    var size: CGFloat = 26
+
+    /// Up to two initials: the first letters of the first two words, or the
+    /// first two characters of a single word.
+    static func initials(_ name: String) -> String {
+        let words = name.split(whereSeparator: { $0.isWhitespace || $0 == "." || $0 == "_" || $0 == "-" })
+        let letters: [Character]
+        if words.count >= 2 {
+            letters = words.prefix(2).compactMap(\.first)
+        } else {
+            letters = Array((words.first ?? "").prefix(2))
+        }
+        return String(letters).uppercased()
+    }
+
+    var body: some View {
+        Text(verbatim: Self.initials(name))
+            .font(.system(size: size * 0.42, weight: .bold))
+            .foregroundStyle(Color.white)
+            .frame(width: size, height: size)
+            .background(LinearGradient(colors: [Color(red: 0.369, green: 0.361, blue: 0.902),
+                                                Color(red: 0.749, green: 0.353, blue: 0.949)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing), in: Circle())
+            .overlay(Circle().strokeBorder(Color.white.opacity(0.3), lineWidth: 0.5))
+            .accessibilityHidden(true)
+    }
+}
+
+/// What rode with a sent question, as a small capsule above its bubble: a
+/// screenshot thumbnail or an icon, then a label.
+struct AskSentAttachmentChip: View {
+    let title: String
+    var thumbnail: NSImage?
+    var systemImage: String?
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if let thumbnail {
+                Image(nsImage: thumbnail).resizable().scaledToFill()
+                    .frame(width: 26, height: 18)
+                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+            } else if let systemImage {
+                Image(systemName: systemImage).font(.system(size: 10.5, weight: .medium))
+            }
+            Text(title).lineLimit(1)
+        }
+        .font(.system(size: 11.5))
+        .foregroundStyle(StudioTheme.textSecondary)
+        .padding(.leading, thumbnail == nil ? 9 : 4)
+        .padding(.trailing, 9)
+        .frame(height: 26)
+        .background(AskTheme.hoverFill, in: Capsule())
+        .overlay(Capsule().strokeBorder(AskTheme.separator, lineWidth: 0.5))
+        .contentShape(Capsule())
+        .accessibilityLabel(title)
+    }
+}
+
+/// The keyboard hint under the workspace composer. It fades in while the
+/// editor has focus and keeps its height otherwise, so the card never moves.
+struct AskComposerHint: View {
+    @ObservedObject var voice: AskVoiceInput
+    let contextID: String
+    let settings: SettingsStore
+    @State private var voiceKey = "Fn"
+
+    static func text(voiceKey: String) -> String { L("ask.composer.hint", voiceKey) }
+
+    var body: some View {
+        Text(Self.text(voiceKey: voiceKey))
+            .font(.system(size: 11))
+            .foregroundStyle(StudioTheme.textTertiary)
+            .lineLimit(1)
+            .frame(height: AskMetrics.composerHintHeight - 8)
+            .opacity(voice.focusedContext == contextID ? 1 : 0)
+            .animation(.easeOut(duration: 0.2), value: voice.focusedContext == contextID)
+            .accessibilityHidden(true)
+            .onAppear(perform: refresh)
+            .onReceive(NotificationCenter.default.publisher(for: .hotkeySettingsDidChange)) { _ in refresh() }
+    }
+
+    private func refresh() {
+        voiceKey = settings.activationHotkey.map(HotkeyFormat.display) ?? "Fn"
+    }
+}
+
+/// The hairline between groups in a composer menu.
+struct AskPopoverDivider: View {
+    var body: some View {
+        Rectangle().fill(AskTheme.separator).frame(height: 0.5)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 5)
+    }
+}

@@ -12,6 +12,7 @@ struct AskTranscriptText: NSViewRepresentable {
 
     func makeNSView(context _: Context) -> Editor {
         let editor = Editor()
+        editor.textContainer?.replaceLayoutManager(AskRoundedBackgroundLayoutManager())
         editor.isEditable = false
         editor.isSelectable = true
         editor.isRichText = true
@@ -147,12 +148,68 @@ struct AskTranscriptText: NSViewRepresentable {
 }
 
 enum AskMarkdownText {
+    /// Body text on the design board: 14.5pt with a ~1.7 line height.
+    static let bodySize: CGFloat = 14.5
+    static let lineSpacing: CGFloat = 6
+    static let paragraphSpacing: CGFloat = 10
+    /// Where list text starts; the marker hangs in the space before it.
+    static let listIndent: CGFloat = 20
+
+    /// Inline code chips and code blocks share one translucent wash.
+    static let codeFill = NSColor(name: "AskCodeFill") { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            ? NSColor(white: 1, alpha: 0.07) : NSColor(white: 0, alpha: 0.05)
+    }
+
+    /// A list item's paragraph: the marker hangs before a tab stop where the text starts.
+    static func listStyle(_ base: NSParagraphStyle, depth: Int) -> NSMutableParagraphStyle {
+        let style = mutable(base)
+        let indent = listIndent * CGFloat(depth)
+        style.headIndent = indent
+        style.firstLineHeadIndent = indent - listIndent + 4
+        style.tabStops = [NSTextTab(textAlignment: .left, location: indent)]
+        style.defaultTabInterval = listIndent
+        style.paragraphSpacing = 4
+        return style
+    }
+
+    /// The last item of an outermost list keeps the body's paragraph gap.
+    static func closeList(in result: NSMutableAttributedString) {
+        guard result.length > 0,
+              let current = result.attribute(.paragraphStyle, at: result.length - 1, effectiveRange: nil)
+                  as? NSParagraphStyle,
+              current.textBlocks.isEmpty else { return }
+        let style = mutable(current)
+        style.paragraphSpacing = paragraphSpacing
+        var start = result.length - 1
+        let string = result.string as NSString
+        while start > 0, string.character(at: start - 1) != 10 { start -= 1 }
+        result.addAttribute(.paragraphStyle, value: style,
+                            range: NSRange(location: start, length: result.length - start))
+    }
+
+    /// A mutable copy of a paragraph style, for per-block adjustments.
+    static func mutable(_ style: NSParagraphStyle) -> NSMutableParagraphStyle {
+        let copy = NSMutableParagraphStyle()
+        copy.setParagraphStyle(style)
+        return copy
+    }
+
+    static func headingFont(level: Int) -> NSFont {
+        switch level {
+        case 1: return .systemFont(ofSize: 20, weight: .bold)
+        case 2: return .systemFont(ofSize: 17, weight: .bold)
+        case 3: return .systemFont(ofSize: 15.5, weight: .bold)
+        default: return .systemFont(ofSize: bodySize, weight: .bold)
+        }
+    }
+
     static func render(_ text: String, markdown: Bool = true) -> NSAttributedString {
         let paragraph = NSMutableParagraphStyle()
-        paragraph.lineSpacing = 6
-        paragraph.paragraphSpacing = 9
+        paragraph.lineSpacing = lineSpacing
+        paragraph.paragraphSpacing = paragraphSpacing
         let base: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 14), .foregroundColor: NSColor.labelColor,
+            .font: NSFont.systemFont(ofSize: bodySize), .foregroundColor: NSColor.labelColor,
             .paragraphStyle: paragraph
         ]
         guard markdown else { return NSAttributedString(string: text, attributes: base) }
@@ -160,26 +217,32 @@ enum AskMarkdownText {
         func append(_ string: String, _ attributes: [NSAttributedString.Key: Any]) {
             result.append(NSAttributedString(string: string, attributes: attributes))
         }
-        func visit(_ node: any Markup, _ inherited: [NSAttributedString.Key: Any]) {
+        func visit(_ node: any Markup, _ inherited: [NSAttributedString.Key: Any], listDepth: Int = 0) {
             var attributes = inherited
             if let text = node as? Markdown.Text {
                 append(text.string, attributes); return
             }
             if let code = node as? InlineCode {
                 attributes[.font] = NSFont.monospacedSystemFont(ofSize: 12.5, weight: .regular)
-                attributes[.backgroundColor] = NSColor.quaternaryLabelColor.withAlphaComponent(0.12)
+                attributes[.backgroundColor] = codeFill
                 append(code.code, attributes); return
             }
             if let code = node as? CodeBlock {
+                let block = AskCodeBlock()
+                let style = mutable(paragraph)
+                style.textBlocks = [block]
+                style.lineSpacing = 3
+                style.paragraphSpacing = 0
+                attributes[.paragraphStyle] = style
                 attributes[.font] = NSFont.monospacedSystemFont(ofSize: 12.5, weight: .regular)
-                attributes[.backgroundColor] = NSColor.quaternaryLabelColor.withAlphaComponent(0.12)
                 append(code.code + (code.code.hasSuffix("\n") ? "" : "\n"), attributes); return
             }
             if let heading = node as? Heading {
-                attributes[.font] = NSFont.systemFont(
-                    ofSize: CGFloat(max(14, 23 - heading.level * 2)),
-                    weight: .semibold
-                )
+                attributes[.font] = headingFont(level: heading.level)
+                let style = mutable(paragraph)
+                style.paragraphSpacingBefore = result.length == 0 ? 0 : 8
+                style.paragraphSpacing = 6
+                attributes[.paragraphStyle] = style
             }
             if node is BlockQuote {
                 let quoted = paragraph.mutableCopy() as! NSMutableParagraphStyle
@@ -191,8 +254,8 @@ enum AskMarkdownText {
                 attributes[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
             }
             if let table = node as? Markdown.Table {
-                let layout = AskMarkdownTable(columnCount: table.head.childCount)
                 let rows: [any Markup] = [table.head] + table.body.children.map { $0 }
+                let layout = AskMarkdownTable(columnCount: table.head.childCount, rowCount: rows.count)
                 for (rowIndex, row) in rows.enumerated() {
                     for (columnIndex, cell) in row.children.enumerated() {
                         let cellAttributes = layout.attributes(
@@ -232,22 +295,27 @@ enum AskMarkdownText {
                 append("────────────\n", attributes); return
             }
             if let list = node as? OrderedList {
+                attributes[.paragraphStyle] = listStyle(attributes[.paragraphStyle] as? NSParagraphStyle ?? paragraph,
+                                                         depth: listDepth + 1)
                 for (index, child) in list.children.enumerated() {
-                    append(
-                        "\(Int(list.startIndex) + index). ",
-                        attributes
-                    ); visit(child, attributes)
+                    append("\(Int(list.startIndex) + index).\t", attributes)
+                    visit(child, attributes, listDepth: listDepth + 1)
                 }
+                if listDepth == 0 { closeList(in: result) }
                 return
             }
             if let list = node as? UnorderedList {
+                attributes[.paragraphStyle] = listStyle(attributes[.paragraphStyle] as? NSParagraphStyle ?? paragraph,
+                                                         depth: listDepth + 1)
                 for child in list.children {
-                    append("• ", attributes); visit(child, attributes)
+                    append("•\t", attributes)
+                    visit(child, attributes, listDepth: listDepth + 1)
                 }
+                if listDepth == 0 { closeList(in: result) }
                 return
             }
             for child in node.children {
-                visit(child, attributes)
+                visit(child, attributes, listDepth: listDepth)
             }
             if node is Paragraph || node is Heading {
                 append("\n", attributes)
@@ -261,5 +329,81 @@ enum AskMarkdownText {
             result.deleteCharacters(in: NSRange(location: result.length - 1, length: 1))
         }
         return result
+    }
+}
+
+/// A fenced code block: a rounded, hairline-framed panel with padding.
+final class AskCodeBlock: NSTextBlock {
+    static let corner: CGFloat = 14
+
+    override init() {
+        super.init()
+        setWidth(14, type: .absoluteValueType, for: .padding, edge: .minX)
+        setWidth(14, type: .absoluteValueType, for: .padding, edge: .maxX)
+        setWidth(12, type: .absoluteValueType, for: .padding, edge: .minY)
+        setWidth(12, type: .absoluteValueType, for: .padding, edge: .maxY)
+        setWidth(6, type: .absoluteValueType, for: .margin, edge: .minY)
+        setWidth(12, type: .absoluteValueType, for: .margin, edge: .maxY)
+        setContentWidth(100, type: .percentageValueType)
+    }
+
+    required init?(coder: NSCoder) { super.init(coder: coder) }
+
+    override func drawBackground(withFrame frameRect: NSRect, in controlView: NSView?,
+                                 characterRange charRange: NSRange, layoutManager: NSLayoutManager) {
+        let path = NSBezierPath(roundedRect: frameRect.insetBy(dx: 0.25, dy: 0.25),
+                                xRadius: Self.corner, yRadius: Self.corner)
+        AskMarkdownText.codeFill.setFill()
+        path.fill()
+        AskTableCellBlock.rule.setStroke()
+        path.lineWidth = 1 / max(1, controlView?.window?.backingScaleFactor ?? 2)
+        path.stroke()
+    }
+}
+
+/// Draws background-colour runs (inline code) as rounded chips instead of
+/// TextKit's square fills. Selection highlights keep the system drawing.
+final class AskRoundedBackgroundLayoutManager: NSLayoutManager {
+    static let chipCorner: CGFloat = 5
+
+    override func fillBackgroundRectArray(_ rectArray: UnsafePointer<NSRect>, count rectCount: Int,
+                                          forCharacterRange charRange: NSRange, color: NSColor) {
+        guard color == AskMarkdownText.codeFill else {
+            super.fillBackgroundRectArray(rectArray, count: rectCount, forCharacterRange: charRange, color: color)
+            return
+        }
+        color.setFill()
+        // The transcript's text view has no container inset, so container and
+        // view coordinates share their origin.
+        for rect in Self.chipRects(rects: (0 ..< rectCount).map { rectArray[$0] }, glyphs: glyphBounds(charRange)) {
+            NSBezierPath(roundedRect: rect, xRadius: Self.chipCorner, yRadius: Self.chipCorner).fill()
+        }
+    }
+
+    /// The glyphs' own bounds on each line, in text container coordinates. A run
+    /// that wraps would otherwise fill to the end of its first line.
+    private func glyphBounds(_ charRange: NSRange) -> [NSRect] {
+        guard let container = textContainers.first else { return [] }
+        let glyphs = glyphRange(forCharacterRange: charRange, actualCharacterRange: nil)
+        var result: [NSRect] = []
+        enumerateLineFragments(forGlyphRange: glyphs) { _, _, _, lineGlyphs, _ in
+            let part = NSIntersectionRange(glyphs, lineGlyphs)
+            if part.length > 0 { result.append(self.boundingRect(forGlyphRange: part, in: container)) }
+        }
+        return result
+    }
+
+    /// One chip per line: the glyph bounds, a little wider so the code has
+    /// room, at the height TextKit gave the background run.
+    /// TextKit may pass one line or several per call, so each rect is matched
+    /// with the glyph bounds on the same line.
+    static func chipRects(rects: [NSRect], glyphs: [NSRect]) -> [NSRect] {
+        rects.map { rect in
+            let line = glyphs.first { $0.midY >= rect.minY && $0.midY <= rect.maxY }
+            let minX = line.map { max(rect.minX, $0.minX) } ?? rect.minX
+            let maxX = line.map { min(rect.maxX, $0.maxX) } ?? rect.maxX
+            return NSRect(x: minX - 3, y: rect.minY + 1,
+                          width: max(0, maxX - minX) + 6, height: max(0, rect.height - 2))
+        }
     }
 }
