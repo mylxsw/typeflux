@@ -1499,7 +1499,7 @@ extension WorkflowController {
         saveHistoryRecord(record)
         logPipelineEvent("llm-processing-started", for: record)
 
-        if settingsStore.agentFrameworkEnabled, settingsStore.agentEnabled {
+        if settingsStore.agentEnabled {
             try await processAgentAskFlowWithSelection(
                 transcribedText: transcribedText,
                 askContextText: askContextText,
@@ -1615,7 +1615,7 @@ extension WorkflowController {
         saveHistoryRecord(record)
         logPipelineEvent("llm-processing-started", for: record)
 
-        if settingsStore.agentFrameworkEnabled, settingsStore.agentEnabled {
+        if settingsStore.agentEnabled {
             let agentLaunchStartedAt = Date()
             try await processAgentAskFlowWithoutSelection(
                 transcribedText: transcribedText,

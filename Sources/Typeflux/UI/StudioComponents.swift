@@ -561,7 +561,6 @@ struct StudioShell<Content: View>: View {
     let onAccountAction: () -> Void
     let searchText: Binding<String>
     let searchPlaceholder: String
-    let agentEnabled: Bool
     let isLoggedIn: Bool
     let sidebarAccountPresentation: SidebarAccountCardPresentation
     let content: (CGSize) -> Content
@@ -576,7 +575,6 @@ struct StudioShell<Content: View>: View {
         onAccountAction: @escaping () -> Void,
         searchText: Binding<String>,
         searchPlaceholder: String,
-        agentEnabled: Bool = false,
         isLoggedIn: Bool = false,
         sidebarAccountPresentation: SidebarAccountCardPresentation,
         @ViewBuilder content: @escaping (CGSize) -> Content
@@ -590,7 +588,6 @@ struct StudioShell<Content: View>: View {
         self.onAccountAction = onAccountAction
         self.searchText = searchText
         self.searchPlaceholder = searchPlaceholder
-        self.agentEnabled = agentEnabled
         self.isLoggedIn = isLoggedIn
         self.sidebarAccountPresentation = sidebarAccountPresentation
         self.content = content
@@ -610,7 +607,6 @@ struct StudioShell<Content: View>: View {
                     onOpenGitHubIssue: onOpenGitHubIssue,
                     onOpenAbout: onOpenAbout,
                     onAccountAction: onAccountAction,
-                    agentEnabled: agentEnabled,
                     isLoggedIn: isLoggedIn,
                     accountPresentation: sidebarAccountPresentation
                 )
@@ -752,7 +748,6 @@ struct StudioSidebar: View {
     let onOpenGitHubIssue: () -> Void
     let onOpenAbout: () -> Void
     let onAccountAction: () -> Void
-    let agentEnabled: Bool
     let isLoggedIn: Bool
     let accountPresentation: SidebarAccountCardPresentation
     @ObservedObject private var localization = AppLocalization.shared
@@ -788,9 +783,7 @@ struct StudioSidebar: View {
 
             VStack(spacing: StudioTheme.Spacing.xxSmall) {
                 ForEach(StudioSection.sidebarUpperCases, id: \.self) { section in
-                    if section != .agent || agentEnabled {
-                        sidebarNavigationButton(for: section)
-                    }
+                    sidebarNavigationButton(for: section)
                 }
             }
 

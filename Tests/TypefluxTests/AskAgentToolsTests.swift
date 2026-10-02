@@ -282,7 +282,8 @@ final class AskAgentToolsTests: XCTestCase {
         settings.askFileAccessFolders = [root.path]
         let notes = AskMemoryNoteStore(fileURL: root.appendingPathComponent("view-notes.json"))
         let note = try notes.add("Prefers dark mode", owner: "o")
-        let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes, owner: { "o" })
+        let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes, owner: { "o" },
+                                        tab: .skillsMemory)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 900), styleMask: [.titled], backing: .buffered, defer: false)
         // ARC owns the window; closing must not release it a second time.
         window.isReleasedWhenClosed = false
@@ -325,17 +326,25 @@ final class AskAgentToolsTests: XCTestCase {
                                         notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("s.json")), owner: { "o" })
         view.removeFolder("/a")
         XCTAssertEqual(settings.askFileAccessFolders, ["/b"])
-        let settingsHost = NSHostingView(rootView: view.frame(width: 600))
-        settingsHost.layoutSubtreeIfNeeded()
-        XCTAssertGreaterThan(settingsHost.fittingSize.height, 100)
-        XCTAssertEqual(AgentConfigurationTab.askTools.title, L("agent.section.askTools"))
+        for tab in [AgentConfigurationTab.general, .tools, .skillsMemory] {
+            var tabView = view
+            tabView.tab = tab
+            let settingsHost = NSHostingView(rootView: tabView.frame(width: 600))
+            settingsHost.layoutSubtreeIfNeeded()
+            XCTAssertGreaterThan(settingsHost.fittingSize.height, 100, "\(tab)")
+        }
+        XCTAssertEqual(AgentConfigurationTab.tools.title, L("agent.section.tools"))
+        XCTAssertEqual(AskToolsSettingsView.searchProviderName(.none), L("ask.settings.search.none"))
+        XCTAssertEqual(AskToolsSettingsView.searchProviderName(.tavily), "Tavily")
+        XCTAssertEqual(AskToolsSettingsView.searchProviderName(.brave), "Brave Search")
     }
 
     func testNewStringsExistInEveryLanguage() throws {
         for language in AppLanguage.allCases {
             let bundle = try XCTUnwrap(language.bundleLocalizationCandidates.lazy
                 .compactMap { Bundle.appResources.path(forResource: $0, ofType: "lproj") }.first.flatMap(Bundle.init(path:)))
-            for key in ["ask.files.denied", "ask.code.unavailable", "ask.settings.folders.title", "ask.plan.title", "ask.action.inspect", "agent.section.askTools"] {
+            for key in ["ask.files.denied", "ask.code.unavailable", "ask.settings.folders.title", "ask.plan.title", "ask.action.inspect", "agent.section.tools",
+                        "agent.section.skillsMemory", "agent.settings.runMode", "agent.settings.web", "agent.settings.code", "agent.settings.mcp"] {
                 XCTAssertNotEqual(bundle.localizedString(forKey: key, value: nil, table: nil), key, "\(key) in \(language.rawValue)")
             }
             XCTAssertEqual(bundle.localizedString(forKey: "ask.plan.progress", value: nil, table: nil).components(separatedBy: "%d").count - 1, 2)

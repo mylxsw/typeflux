@@ -1,14 +1,6 @@
 import Foundation
 
 extension SettingsStore {
-    var agentFrameworkEnabled: Bool {
-        get { defaults.bool(forKey: "agent.frameworkEnabled") }
-        set {
-            defaults.set(newValue, forKey: "agent.frameworkEnabled")
-            NotificationCenter.default.post(name: .agentConfigurationDidChange, object: self)
-        }
-    }
-
     var agentEnabled: Bool {
         get {
             let stored = defaults.object(forKey: "agent.enabled")

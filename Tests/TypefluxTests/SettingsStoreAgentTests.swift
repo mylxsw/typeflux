@@ -21,28 +21,6 @@ final class SettingsStoreAgentTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - agentFrameworkEnabled
-
-    func testAgentFrameworkEnabledDefaultsToFalse() {
-        XCTAssertFalse(store.agentFrameworkEnabled)
-    }
-
-    func testAgentFrameworkEnabledSetAndGet() {
-        store.agentFrameworkEnabled = true
-        XCTAssertTrue(store.agentFrameworkEnabled)
-
-        store.agentFrameworkEnabled = false
-        XCTAssertFalse(store.agentFrameworkEnabled)
-    }
-
-    func testAgentFrameworkEnabledPostsConfigurationChangeNotification() {
-        let expectation = expectation(forNotification: .agentConfigurationDidChange, object: store)
-
-        store.agentFrameworkEnabled = true
-
-        wait(for: [expectation], timeout: 1.0)
-    }
-
     // MARK: - agentEnabled
 
     func testAgentEnabledDefaultsToTrue() {
@@ -54,6 +32,21 @@ final class SettingsStoreAgentTests: XCTestCase {
         XCTAssertFalse(store.agentEnabled)
 
         store.agentEnabled = true
+        XCTAssertTrue(store.agentEnabled)
+    }
+
+    func testAgentEnabledPostsConfigurationChangeNotification() {
+        let expectation = expectation(forNotification: .agentConfigurationDidChange, object: store)
+
+        store.agentEnabled = false
+
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    /// The Agent framework is no longer a beta opt-in: a value left by the removed
+    /// switch must not hide or disable anything.
+    func testLegacyFrameworkSwitchValueIsIgnored() {
+        defaults.set(false, forKey: "agent.frameworkEnabled")
         XCTAssertTrue(store.agentEnabled)
     }
 

@@ -424,8 +424,6 @@ struct StudioView: View {
     @State private var llmActivationMissingAPIKeyProviderName: String?
     @State private var isMCPServerDialogPresented = false
     @State private var mcpServerPendingDeletion: MCPServerConfig?
-    @State private var agentJobPendingDeletion: AgentJob?
-    @State private var showingClearAllJobsConfirmation = false
     @State private var showingClearHistoryConfirmation = false
     @State private var isDirectFeedbackPresented = false
     @State private var feedbackContent = ""
@@ -461,7 +459,6 @@ struct StudioView: View {
             onAccountAction: handleAccountAction,
             searchText: $viewModel.searchQuery,
             searchPlaceholder: viewModel.currentSection.searchPlaceholder,
-            agentEnabled: viewModel.agentFrameworkEnabled,
             isLoggedIn: authState.isLoggedIn,
             sidebarAccountPresentation: sidebarAccountPresentation
         ) { viewportSize in
@@ -635,9 +632,6 @@ struct StudioView: View {
             Button(L("common.cancel"), role: .cancel) {}
         } message: {
             Text(L("history.clearDialog.message"))
-        }
-        .sheet(isPresented: $viewModel.showingJobsPage) {
-            agentJobsSheet
         }
         .sheet(
             isPresented: $isDirectFeedbackPresented,
@@ -862,8 +856,7 @@ struct StudioView: View {
             StudioHeroHeader(
                 eyebrow: viewModel.currentSection.eyebrow,
                 title: viewModel.currentSection.heading,
-                subtitle: viewModel.currentSection.subheading,
-                badge: viewModel.currentSection == .agent ? "Beta" : nil
+                subtitle: viewModel.currentSection.subheading
             )
 
             if viewModel.currentSection == .vocabulary {
@@ -905,14 +898,6 @@ struct StudioView: View {
                     .menuIndicator(.hidden)
                     .fixedSize(horizontal: true, vertical: false)
                     .disabled(viewModel.isSynchronizingVocabulary)
-                }
-            } else if viewModel.currentSection == .agent {
-                Spacer()
-
-                StudioButton(
-                    title: L("agent.jobs.title"), systemImage: "list.bullet.rectangle", variant: .secondary
-                ) {
-                    viewModel.openJobsPage()
                 }
             } else if viewModel.currentSection == .history {
                 Spacer()
@@ -1111,7 +1096,7 @@ struct StudioView: View {
 
                 Spacer()
 
-                jobsCloseButton {
+                sheetCloseButton {
                     isPersonaAppBindingsSheetPresented = false
                 }
             }
@@ -1403,7 +1388,7 @@ struct StudioView: View {
 
                 Spacer()
 
-                jobsCloseButton {
+                sheetCloseButton {
                     isPersonaAppPickerPresented = false
                 }
             }
@@ -2617,8 +2602,6 @@ struct StudioView: View {
                                 )
                             }
 
-                            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
                             /*
                               Memory optimization is temporarily hidden and forced off until it can be
                               improved.
@@ -2684,22 +2667,6 @@ struct StudioView: View {
 
                              Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
                              */
-
-                            StudioSettingRow(
-                                title: L("settings.advanced.agentFramework.title"),
-                                subtitle: L("settings.advanced.agentFramework.subtitle"),
-                                badge: "Beta"
-                            ) {
-                                Toggle(
-                                    "",
-                                    isOn: Binding(
-                                        get: { viewModel.agentFrameworkEnabled },
-                                        set: viewModel.setAgentFrameworkEnabled
-                                    )
-                                )
-                                .labelsHidden()
-                                .toggleStyle(.switch)
-                            }
 
                             /*
                               Apple Speech fallback is intentionally hidden from settings and should no longer
@@ -2868,103 +2835,62 @@ struct StudioView: View {
     // MARK: - Agent Page
 
     private var agentPage: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            StudioSegmentedPicker(
+        VStack(alignment: .leading, spacing: 24) {
+            ModelSegmentedControl(
                 options: AgentConfigurationTab.allCases.map { (label: $0.title, value: $0) },
                 selection: $agentConfigurationTab
             )
 
-            switch agentConfigurationTab {
-            case .general:
-                agentGeneralTabContent
-            case .mcpServers:
+            if agentConfigurationTab == .mcpServers {
                 agentMCPServersTabContent
-            case .askTools:
-                AskToolsSettingsView(settings: viewModel.askToolSettings)
-            }
-        }
-    }
-
-    private var agentGeneralTabContent: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                StudioSettingRow(
-                    title: L("agent.general.enabled.title"),
-                    subtitle: L("agent.general.enabled.subtitle")
-                ) {
-                    Toggle("", isOn: Binding(
-                        get: { viewModel.agentEnabled },
-                        set: viewModel.setAgentEnabled
-                    ))
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                }
+            } else {
+                AskToolsSettingsView(settings: viewModel.askToolSettings, tab: agentConfigurationTab)
+                    // Rebuild per tab so each tab reloads its values when shown.
+                    .id(agentConfigurationTab)
             }
         }
     }
 
     private var agentMCPServersTabContent: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            if viewModel.mcpServers.isEmpty {
-                StudioCard {
-                    VStack(spacing: StudioTheme.Spacing.medium) {
-                        Image(systemName: "server.rack")
-                            .font(.system(size: 28, weight: .light))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                        Text(L("agent.mcp.empty"))
-                            .font(.studioBody(StudioTheme.Typography.body, weight: .regular))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, StudioTheme.Spacing.large)
-                }
-            } else {
-                ForEach(viewModel.mcpServers) { server in
-                    mcpServerListCard(server)
-                }
+        AgentSettingsSection(
+            title: L("agent.settings.mcp"),
+            detail: "\(viewModel.mcpServers.count)",
+            footnote: viewModel.mcpServers.isEmpty ? L("agent.mcp.empty") : nil
+        ) {
+            ForEach(viewModel.mcpServers) { server in
+                mcpServerRow(server)
+                ModelRowDivider(leading: 66)
             }
-
-            StudioButton(
-                title: L("agent.mcp.addServer"),
-                systemImage: "plus.circle.fill",
-                variant: .secondary
-            ) {
+            AgentSettingsActionRow(icon: "plus", title: L("agent.mcp.addServer")) {
                 viewModel.beginAddMCPServer()
                 isMCPServerDialogPresented = true
             }
         }
     }
 
-    private func mcpServerListCard(_ server: MCPServerConfig) -> some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
-                HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                        HStack(spacing: StudioTheme.Spacing.small) {
-                            Text(server.name.isEmpty ? L("agent.mcp.untitled") : server.name)
-                                .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
-                                .foregroundStyle(StudioTheme.textPrimary)
-                            StudioPill(title: mcpTransportLabel(for: server))
-                        }
-                        Text(mcpTransportDetail(for: server))
-                            .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .lineLimit(1)
-                    }
-
-                    Spacer()
-
-                    StudioButton(
-                        title: viewModel.isTestingMCPServer(server.id)
-                            ? L("agent.mcp.testing") : L("agent.mcp.testConnection"),
-                        systemImage: viewModel.isTestingMCPServer(server.id) ? nil : "network",
-                        variant: .secondary,
-                        isDisabled: viewModel.isTestingMCPServer(server.id),
-                        isLoading: viewModel.isTestingMCPServer(server.id)
-                    ) {
+    private func mcpServerRow(_ server: MCPServerConfig) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            AgentSettingsRow(
+                icon: "server.rack",
+                title: server.name.isEmpty ? L("agent.mcp.untitled") : server.name,
+                subtitle: mcpTransportDetail(for: server),
+                badge: mcpTransportLabel(for: server),
+                subtitleLineLimit: 1
+            ) {
+                HStack(spacing: 10) {
+                    Button {
                         viewModel.testMCPConnection(for: server)
+                    } label: {
+                        HStack(spacing: 5) {
+                            if viewModel.isTestingMCPServer(server.id) {
+                                ProgressView().controlSize(.small)
+                            }
+                            Text(viewModel.isTestingMCPServer(server.id)
+                                ? L("agent.mcp.testing") : L("agent.mcp.testConnection"))
+                        }
                     }
+                    .buttonStyle(ModelActionStyle())
+                    .disabled(viewModel.isTestingMCPServer(server.id))
 
                     Toggle("", isOn: Binding(
                         get: { server.enabled },
@@ -2973,11 +2899,11 @@ struct StudioView: View {
                     .labelsHidden()
                     .toggleStyle(.switch)
                 }
+            }
 
-                if viewModel.shouldShowMCPConnectionTestResult(for: server.id) {
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                    mcpConnectionTestResultView
-                }
+            if viewModel.shouldShowMCPConnectionTestResult(for: server.id) {
+                mcpConnectionTestResultView
+                    .padding(.leading, 66).padding(.trailing, 18).padding(.bottom, 14)
             }
         }
         .contentShape(Rectangle())
@@ -6376,396 +6302,7 @@ struct StudioView: View {
             : L("settings.models.routing.readinessNeedsSetup")
     }
 
-    // MARK: - Agent Jobs Sheet
-
-    private var agentJobsSheet: some View {
-        VStack(spacing: 0) {
-            if let job = viewModel.selectedJobDetail {
-                agentJobDetailView(job: job)
-            } else {
-                agentJobsListView
-            }
-        }
-        .frame(width: 820, height: 680)
-        .background(
-            ZStack {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                StudioTheme.modalSurface
-            }
-        )
-        .confirmationDialog(
-            L("agent.jobs.clearAllDialog.title"),
-            isPresented: $showingClearAllJobsConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button(L("common.delete"), role: .destructive) {
-                viewModel.clearAllAgentJobs()
-            }
-            Button(L("common.cancel"), role: .cancel) {}
-        } message: {
-            Text(L("agent.jobs.clearAllDialog.message"))
-        }
-        .confirmationDialog(
-            L("agent.jobs.deleteDialog.title"),
-            isPresented: Binding(
-                get: { agentJobPendingDeletion != nil },
-                set: { if !$0 { agentJobPendingDeletion = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            Button(L("common.delete"), role: .destructive) {
-                guard let job = agentJobPendingDeletion else { return }
-                viewModel.deleteAgentJob(id: job.id)
-                agentJobPendingDeletion = nil
-            }
-            Button(L("common.cancel"), role: .cancel) {
-                agentJobPendingDeletion = nil
-            }
-        } message: {
-            if let job = agentJobPendingDeletion {
-                Text(L("agent.jobs.deleteDialog.message", job.displayTitle))
-            }
-        }
-    }
-
-    private var agentJobsListView: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
-            // Header
-            HStack(alignment: .center) {
-                Text(L("agent.jobs.title"))
-                    .font(.studioDisplay(StudioTheme.Typography.subsectionTitle, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-
-                Spacer()
-
-                if !viewModel.agentJobs.isEmpty {
-                    StudioButton(
-                        title: L("agent.jobs.clearAll"),
-                        systemImage: "trash",
-                        variant: .secondary
-                    ) {
-                        showingClearAllJobsConfirmation = true
-                    }
-                }
-
-                jobsCloseButton(action: viewModel.closeJobsPage)
-            }
-            .padding(.horizontal, StudioTheme.Spacing.large)
-            .padding(.top, StudioTheme.Spacing.large)
-
-            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-            // Jobs list
-            if viewModel.isLoadingJobs, viewModel.agentJobs.isEmpty {
-                Spacer()
-                HStack {
-                    Spacer()
-                    ProgressView()
-                        .controlSize(.small)
-                    Spacer()
-                }
-                Spacer()
-            } else if viewModel.agentJobs.isEmpty {
-                Spacer()
-                VStack(spacing: StudioTheme.Spacing.medium) {
-                    Image(systemName: "tray")
-                        .font(.system(size: 28, weight: .light))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                    Text(L("agent.jobs.empty"))
-                        .font(.studioBody(StudioTheme.Typography.body, weight: .regular))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                Spacer()
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(viewModel.agentJobs) { job in
-                            agentJobRow(job)
-                            if job.id != viewModel.agentJobs.last?.id {
-                                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private func agentJobRow(_ job: AgentJob) -> some View {
-        HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
-            Circle()
-                .fill(jobStatusColor(job.status))
-                .frame(width: 8, height: 8)
-                .padding(.top, 6)
-
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                Text(job.displayTitle)
-                    .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .medium))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-
-                HStack(spacing: StudioTheme.Spacing.small) {
-                    Text(jobTimeText(job.createdAt))
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textTertiary)
-
-                    if let duration = job.formattedDuration {
-                        Text("·")
-                            .foregroundStyle(StudioTheme.textTertiary)
-                        Text(duration)
-                            .font(.studioBody(StudioTheme.Typography.bodySmall))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                    }
-
-                    if job.totalToolCalls > 0 {
-                        Text("·")
-                            .foregroundStyle(StudioTheme.textTertiary)
-                        Label(
-                            L("agent.jobs.toolCalls", job.totalToolCalls),
-                            systemImage: "wrench"
-                        )
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                    }
-
-                    if let tokens = job.formattedTotalTokens {
-                        Text("·")
-                            .foregroundStyle(StudioTheme.textTertiary)
-                        Text(tokens)
-                            .font(.studioBody(StudioTheme.Typography.bodySmall))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                    }
-                }
-            }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-                .foregroundStyle(StudioTheme.textTertiary)
-        }
-        .padding(.horizontal, StudioTheme.Spacing.large)
-        .padding(.vertical, StudioTheme.Spacing.medium)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            viewModel.selectJob(job)
-        }
-        .contextMenu {
-            Button(L("common.delete"), role: .destructive) {
-                agentJobPendingDeletion = job
-            }
-        }
-    }
-
-    // MARK: - Agent Job Detail
-
-    // swiftlint:disable:next function_body_length
-    private func agentJobDetailView(job: AgentJob) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header with centered title, back on the left, close on the right.
-            ZStack {
-                HStack {
-                    Button(action: viewModel.closeJobDetail) {
-                        HStack(spacing: StudioTheme.Spacing.xSmall) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-                            Text(L("agent.jobs.title"))
-                                .font(.studioBody(StudioTheme.Typography.body))
-                        }
-                        .foregroundStyle(StudioTheme.accent)
-                        .frame(minWidth: 120, alignment: .leading)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-
-                    Spacer()
-
-                    jobsCloseButton(action: viewModel.closeJobsPage)
-                        .frame(minWidth: 120, alignment: .trailing)
-                }
-
-                Text(job.displayTitle)
-                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .padding(.horizontal, 140)
-            }
-            .padding(.horizontal, StudioTheme.Spacing.large)
-            .padding(.top, StudioTheme.Spacing.large)
-            .padding(.bottom, StudioTheme.Spacing.medium)
-
-            // Job metadata
-            HStack(spacing: StudioTheme.Spacing.small) {
-                Circle()
-                    .fill(jobStatusColor(job.status))
-                    .frame(width: 10, height: 10)
-
-                Text(jobDetailTimeText(job.createdAt))
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textTertiary)
-
-                if let duration = job.formattedDuration {
-                    StudioPill(title: duration)
-                }
-
-                StudioPill(title: L("agent.jobs.steps", job.steps.count))
-
-                if job.totalToolCalls > 0 {
-                    StudioPill(title: L("agent.jobs.toolCalls", job.totalToolCalls))
-                }
-
-                if let tokens = job.formattedTotalTokens {
-                    StudioPill(title: tokens)
-                }
-            }
-            .padding(.horizontal, StudioTheme.Spacing.large)
-            .padding(.bottom, StudioTheme.Spacing.medium)
-
-            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-            // Scrollable content
-            ScrollView {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-                    jobSection(title: L("agent.jobs.detail.prompt"), icon: "person.fill", cardPadding: 12) {
-                        Text(job.userPrompt)
-                            .font(.studioBody(StudioTheme.Typography.body))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                            .textSelection(.enabled)
-                    }
-
-                    if let selectedText = job.selectedText, !selectedText.isEmpty {
-                        jobSection(title: L("agent.jobs.detail.context"), icon: "text.quote", cardPadding: 12) {
-                            ExpandableContextView(text: selectedText)
-                        }
-                    }
-
-                    if !job.steps.isEmpty {
-                        jobSection(title: L("agent.jobs.detail.steps"), icon: "list.number") {
-                            ForEach(job.steps) { step in
-                                jobStepView(step, isLast: step.id == job.steps.last?.id)
-                            }
-                        }
-                    }
-
-                    if let result = job.resultText, !result.isEmpty {
-                        jobSection(title: L("agent.jobs.detail.result"), icon: "sparkles", cardPadding: 12) {
-                            Text(result)
-                                .font(.studioBody(StudioTheme.Typography.body))
-                                .foregroundStyle(StudioTheme.textPrimary)
-                                .textSelection(.enabled)
-                        }
-                    }
-
-                    if let error = job.errorMessage, !error.isEmpty {
-                        jobSection(
-                            title: L("agent.jobs.detail.error"),
-                            icon: "exclamationmark.triangle.fill",
-                            cardPadding: 12
-                        ) {
-                            Text(error)
-                                .font(.studioBody(StudioTheme.Typography.body))
-                                .foregroundStyle(StudioTheme.danger)
-                                .textSelection(.enabled)
-                        }
-                    }
-                }
-                .padding(StudioTheme.Spacing.large)
-            }
-        }
-    }
-
-    private func jobSection(
-        title: String,
-        icon: String,
-        cardPadding: CGFloat = StudioTheme.Insets.cardDefault,
-        @ViewBuilder content: () -> some View
-    ) -> some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
-                Image(systemName: icon)
-                    .font(.system(size: StudioTheme.Typography.iconSmall))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                Text(title)
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
-            }
-
-            StudioCard(padding: cardPadding) {
-                content()
-            }
-        }
-    }
-
-    private func jobStepView(_ step: AgentJobStep, isLast: Bool) -> some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            // Step header: number, description, timing
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
-                Text(L("agent.jobs.detail.stepNumber", step.stepIndex + 1))
-                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
-
-                Text("·")
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textTertiary)
-
-                Text(step.stepDescription)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .medium))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-
-                Spacer()
-
-                // Token usage badge for this step
-                if let usage = step.tokenUsage, usage.totalTokens > 0 {
-                    Text(L("agent.jobs.detail.stepTokens", usage.totalTokens))
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
-
-                Text(step.formattedDuration)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
-
-            // Assistant reasoning/decision text
-            if let text = step.assistantText, !text.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: StudioTheme.Spacing.xSmall) {
-                        Image(systemName: "quote.bubble")
-                            .font(.system(size: 10))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                        Text(L("agent.jobs.detail.reasoning"))
-                            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                    }
-                    Text(text)
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
-                }
-                .padding(8)
-                .background(StudioTheme.surface.opacity(0.5))
-                .cornerRadius(6)
-            }
-
-            ForEach(step.toolCalls) { toolCall in
-                JobToolCallRow(toolCall: toolCall)
-            }
-
-            if !isLast {
-                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-            }
-        }
-    }
-
-    // MARK: - Job Helpers
-
-    private func jobsCloseButton(action: @escaping () -> Void) -> some View {
+    private func sheetCloseButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: "xmark")
                 .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .bold))
@@ -6775,27 +6312,6 @@ struct StudioView: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-    }
-
-    private func jobStatusColor(_ status: AgentJobStatus) -> Color {
-        switch status {
-        case .running: StudioTheme.warning
-        case .completed: StudioTheme.success
-        case .failed: StudioTheme.danger
-        }
-    }
-
-    private func jobTimeText(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
-    }
-
-    private func jobDetailTimeText(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .medium
-        return formatter.string(from: date)
     }
 }
 
@@ -6868,116 +6384,6 @@ private struct VocabularyTermCard: View {
             Image(systemName: "asterisk")
                 .font(.system(size: StudioTheme.Typography.iconRegular, weight: .bold))
                 .foregroundStyle(StudioTheme.warning)
-        }
-    }
-}
-
-/// Context text that collapses to 5 lines by default with an expand/collapse toggle.
-/// Only shows the toggle when the text actually exceeds the collapsed line limit.
-private struct ExpandableContextView: View {
-    let text: String
-
-    private static let collapsedLineLimit = 5
-
-    @State private var isExpanded = false
-    @State private var isTruncated = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(text)
-                .font(.studioBody(StudioTheme.Typography.bodySmall))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .textSelection(.enabled)
-                .lineLimit(isExpanded ? nil : Self.collapsedLineLimit)
-                .fixedSize(horizontal: false, vertical: true)
-                .background(
-                    // Invisible full-text view used to detect truncation
-                    GeometryReader { fullGeo in
-                        Text(text)
-                            .font(.studioBody(StudioTheme.Typography.bodySmall))
-                            .lineLimit(Self.collapsedLineLimit)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .background(
-                                GeometryReader { truncGeo in
-                                    Color.clear.onAppear {
-                                        isTruncated = truncGeo.size.height < fullGeo.size.height
-                                    }
-                                }
-                            )
-                            .hidden()
-                    }
-                )
-
-            if isTruncated {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isExpanded.toggle()
-                    }
-                } label: {
-                    Text(isExpanded
-                        ? L("agent.jobs.detail.context.showLess")
-                        : L("agent.jobs.detail.context.showMore"))
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .medium))
-                        .foregroundStyle(StudioTheme.accent)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-}
-
-/// A single tool call row in the agent job step detail.
-/// Clicking the function name toggles visibility of the function parameters (argumentsJSON).
-private struct JobToolCallRow: View {
-    let toolCall: AgentJobToolCall
-
-    @State private var showParameters = false
-
-    var body: some View {
-        HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
-            Image(systemName: toolCall.isError ? "xmark.circle.fill" : "wrench.fill")
-                .font(.system(size: 10))
-                .foregroundStyle(toolCall.isError ? StudioTheme.danger : StudioTheme.accent)
-                .padding(.top, 3)
-                .frame(width: 10)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        showParameters.toggle()
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(toolCall.name)
-                            .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .medium))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                        Image(systemName: showParameters ? "chevron.up" : "chevron.down")
-                            .font(.system(size: 8, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                    }
-                }
-                .buttonStyle(.plain)
-
-                if showParameters, !toolCall.argumentsJSON.isEmpty, toolCall.argumentsJSON != "{}" {
-                    Text(toolCall.argumentsJSON)
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
-                        .padding(6)
-                        .background(StudioTheme.surface.opacity(0.5))
-                        .cornerRadius(4)
-                }
-
-                if !toolCall.resultContent.isEmpty {
-                    Text(toolCall.resultContent)
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

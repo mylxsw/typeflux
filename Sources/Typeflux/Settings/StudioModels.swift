@@ -141,10 +141,12 @@ enum StudioModelDomain: String, CaseIterable, Identifiable {
     }
 }
 
+/// Tabs of the Agent settings page, in display order.
 enum AgentConfigurationTab: String, CaseIterable, Identifiable {
     case general
+    case tools
     case mcpServers
-    case askTools
+    case skillsMemory
 
     var id: String {
         rawValue
@@ -154,10 +156,12 @@ enum AgentConfigurationTab: String, CaseIterable, Identifiable {
         switch self {
         case .general:
             L("agent.section.general")
+        case .tools:
+            L("agent.section.tools")
         case .mcpServers:
             L("agent.section.mcpServers")
-        case .askTools:
-            L("agent.section.askTools")
+        case .skillsMemory:
+            L("agent.section.skillsMemory")
         }
     }
 }

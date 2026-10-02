@@ -245,7 +245,7 @@ final class StatusBarController: NSObject {
         personasItem.tag = MenuTag.personas
         personasItem.submenu = buildPersonasMenu()
         menu.addItem(personasItem)
-        if settingsStore.agentFrameworkEnabled, settingsStore.agentEnabled {
+        if settingsStore.agentEnabled {
             let agentTasksItem = NSMenuItem(title: L("menu.agentTasks"), action: nil, keyEquivalent: "")
             agentTasksItem.tag = MenuTag.agentTasks
             agentTasksItem.submenu = buildAgentTasksMenu()
