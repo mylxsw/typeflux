@@ -523,6 +523,48 @@ final class LocalModelTranscriberTests: XCTestCase {
         XCTAssertEqual(fakeInstaller.preparedSources, [.huggingFace, .huggingFace])
     }
 
+    /// Files that break while the first download is still sending its ready notification
+    /// must still be repaired: the repair request used to be dropped as "already in flight".
+    func testAutoModelDownloadServiceRepairsFilesInvalidatedWhileFinishingADownload() async throws {
+        let suiteName = "LocalModelTranscriberTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let fakeInstaller = FakeSherpaOnnxInstaller()
+        let manager = LocalModelManager(
+            fileManager: .default,
+            sherpaOnnxInstaller: fakeInstaller,
+            applicationSupportURL: makeTemporaryApplicationSupportURL(),
+            downloadSourceResolver: FixedLocalModelDownloadSourceResolver(sources: [.huggingFace]),
+            bundledModelsRootURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("typeflux-auto-empty-bundle-\(UUID().uuidString)", isDirectory: true)
+        )
+        let notifier = HookedLocalNotificationService()
+        let service = AutoModelDownloadService(modelManager: manager, settingsStore: SettingsStore(defaults: defaults),
+                                               notificationService: notifier)
+        let configuration = AutoModelDownloadService.recommendedConfiguration()
+        let layout = try XCTUnwrap(SherpaOnnxModelLayout.layout(for: .senseVoiceSmall))
+        notifier.onFirstNotification = {
+            // The model is marked ready, but the download has not finished yet.
+            guard let prepared = manager.preparedModelInfo(for: configuration) else { return }
+            let tokens = URL(fileURLWithPath: prepared.storagePath, isDirectory: true)
+                .appendingPathComponent(layout.modelRootDirectory, isDirectory: true)
+                .appendingPathComponent("tokens.txt", isDirectory: false)
+            try? FileManager.default.removeItem(at: tokens)
+            XCTAssertNil(service.makeTranscriberIfReady())
+        }
+
+        service.triggerIfNeeded()
+        let deadline = Date().addingTimeInterval(30)
+        while fakeInstaller.preparedSources.count < 2 || service.status != .completed, Date() < deadline {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        XCTAssertEqual(fakeInstaller.preparedSources, [.huggingFace, .huggingFace])
+        XCTAssertEqual(service.status, .completed)
+        XCTAssertNotNil(manager.preparedModelInfo(for: configuration))
+    }
+
     private func waitForAutoModel(
         _ service: AutoModelDownloadService,
         timeout: TimeInterval = 30
@@ -1593,6 +1635,17 @@ private final class CapturingProcessRunner: ProcessCommandRunning {
         lastArguments = arguments
         lastEnvironment = environment
         return ProcessCommandResult(stdout: stdout, stderr: "", exitCode: 0)
+    }
+}
+
+/// Runs a hook during the first local notification, then behaves like a no-op.
+final class HookedLocalNotificationService: LocalNotificationSending, @unchecked Sendable {
+    var onFirstNotification: (() -> Void)?
+    private(set) var count = 0
+
+    func sendLocalNotification(title _: String, body _: String, identifier _: String) async {
+        count += 1
+        if count == 1 { onFirstNotification?() }
     }
 }
 

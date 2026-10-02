@@ -67,6 +67,8 @@ final class AutoModelDownloadService {
     private var downloadTask: Task<Void, Never>?
     private var retryTask: Task<Void, Never>?
     private var isDownloadInFlight = false
+    /// Set when a repair is requested while a download is finishing; re-checked once it ends.
+    private var isRecheckPending = false
 
     private static let stateDefaultsKey = "stt.autoModelDownload.state"
     private static let maxBackoffInterval: TimeInterval = 3 * 60 * 60 // 3 hours
@@ -93,7 +95,11 @@ final class AutoModelDownloadService {
             markReady(config: config, storagePath: prepared.storagePath)
             return
         }
-        guard !stateLock.withLock({ isDownloadInFlight }) else { return }
+        let inFlight = stateLock.withLock { () -> Bool in
+            if isDownloadInFlight { isRecheckPending = true }
+            return isDownloadInFlight
+        }
+        guard !inFlight else { return }
 
         clearReady()
         // Always attempt repair on launch/use. LocalModelManager reuses complete files
@@ -149,7 +155,12 @@ final class AutoModelDownloadService {
 
     private func startDownloadIfNeeded() {
         let shouldStart = stateLock.withLock { () -> Bool in
-            guard !isDownloadInFlight else { return false }
+            guard !isDownloadInFlight else {
+                // The running download may already have marked the model ready (it is still
+                // sending the ready notification), so a repair asked for now must not be lost.
+                isRecheckPending = true
+                return false
+            }
             isDownloadInFlight = true
             return true
         }
@@ -164,10 +175,15 @@ final class AutoModelDownloadService {
 
     private func performDownload() async {
         defer {
-            stateLock.withLock {
+            let recheck = stateLock.withLock { () -> Bool in
                 isDownloadInFlight = false
                 downloadTask = nil
+                let recheck = isRecheckPending
+                isRecheckPending = false
+                return recheck
             }
+            // Validates the files again: marks the model ready, or repairs it.
+            if recheck, !Task.isCancelled { triggerIfNeeded() }
         }
 
         let config = Self.recommendedConfiguration()

@@ -84,6 +84,8 @@ struct OverlayTransitionTests {
         let (controller, window) = try makeRecording()
         defer { controller.dismissImmediately() }
         try await settle()
+        // Stretch the 0.16s dismissal so a late-resuming sleep still samples it mid-way.
+        controller.motionScale = 8
         controller.dismiss(after: 0)
         try await Task.sleep(for: .milliseconds(70))
         if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
