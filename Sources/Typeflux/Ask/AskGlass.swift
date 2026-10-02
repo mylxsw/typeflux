@@ -213,31 +213,57 @@ struct AskInWindowGlass: ViewModifier {
     var corner: CGFloat
     var opaqueFill: Color
     var cornerStyle: RoundedCornerStyle = .continuous
+    /// The drop shadow it floats on; nil for glass that sits inside another surface.
+    var elevation: AskElevation? = .panel
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.askGlassMaterialOverride) private var materialOverride
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: corner, style: cornerStyle) }
 
     func body(content: Content) -> some View {
         let material = materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency)
         content
             .background(AskGlassBackground(material: material, corner: corner, opaqueFill: opaqueFill,
                                            placement: .inWindow, cornerStyle: cornerStyle))
+            .background {
+                if let elevation { AskOuterShadow(shape: shape, elevation: elevation) }
+            }
             // Always outlined, unlike the launcher: frosted with the window's own
             // colours, the pills and cards would otherwise vanish on a white window.
-            .overlay(
-                RoundedRectangle(cornerRadius: corner, style: cornerStyle)
-                    .strokeBorder(AskTheme.border)
-                    .allowsHitTesting(false)
-            )
+            .overlay(shape.strokeBorder(AskTheme.border).allowsHitTesting(false))
+            // The rim catches the light on its top-leading edge, as glass does.
+            .overlay(shape.strokeBorder(AskRimLight.gradient(dark: colorScheme == .dark), lineWidth: 1)
+                .allowsHitTesting(false))
+            .askSpecular(in: shape)
+    }
+}
+
+/// The light along a glass edge: bright toward the top-leading corner, fading
+/// along the sides, with a fainter return at the bottom-trailing corner.
+enum AskRimLight {
+    static func strength(dark: Bool) -> (lit: Double, back: Double) { dark ? (0.30, 0.10) : (0.9, 0.45) }
+
+    static func gradient(dark: Bool) -> LinearGradient {
+        let value = strength(dark: dark)
+        return LinearGradient(stops: [
+            .init(color: Color.white.opacity(value.lit), location: 0),
+            .init(color: .clear, location: 0.34),
+            .init(color: .clear, location: 0.64),
+            .init(color: Color.white.opacity(value.back), location: 1)
+        ], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }
 
 extension View {
-    func askInWindowGlass(corner: CGFloat, opaqueFill: Color = AskTheme.glassFill) -> some View {
-        modifier(AskInWindowGlass(corner: corner, opaqueFill: opaqueFill))
+    func askInWindowGlass(corner: CGFloat, opaqueFill: Color = AskTheme.glassFill,
+                          elevation: AskElevation? = .panel) -> some View {
+        modifier(AskInWindowGlass(corner: corner, opaqueFill: opaqueFill, elevation: elevation))
     }
 
     /// A pill of the given height: header capsules and the stop button.
     func askInWindowGlassPill(height: CGFloat) -> some View {
-        modifier(AskInWindowGlass(corner: height / 2, opaqueFill: AskTheme.glassFill, cornerStyle: .circular))
+        modifier(AskInWindowGlass(corner: height / 2, opaqueFill: AskTheme.glassFill, cornerStyle: .circular,
+                                  elevation: .control))
     }
 }

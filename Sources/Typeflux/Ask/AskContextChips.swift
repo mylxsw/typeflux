@@ -275,6 +275,8 @@ struct AskIconChipFace: View {
                 }
             }
             .shadow(color: item.style == .active && appImage == nil ? AskTheme.accent.opacity(0.22) : .clear, radius: 9)
+            // Switching a toggle lights or dims its glass on a short spring.
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: item.style)
             .overlay(alignment: .topTrailing) {
                 if case let .count(value) = item.badge {
                     Text(verbatim: value > 99 ? "99+" : String(value))

@@ -123,8 +123,11 @@ struct AskRedesignLayoutTests {
         let suggested = AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: true)
         #expect(reported >= suggested - 4)
         #expect(reported <= suggested + 4)
+        let empty = reported
         fixture.model.launcherDraft.text = String(repeating: "Line of text\n", count: 30)
-        try await Task.sleep(for: .milliseconds(350))
+        // Wait for the typed height rather than a fixed delay, which flaked under load. The
+        // empty height (with suggestions) is already above 200, so wait for it to change.
+        for _ in 0 ..< 100 where reported == empty || reported < 200 { try await Task.sleep(for: .milliseconds(20)) }
         #expect(reported >= 200)
         #expect(reported <= AskMetrics.launcherHeight(editor: 148, banners: 0))
         fixture.model.resetSession()

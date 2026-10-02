@@ -577,9 +577,11 @@ struct AskSendButton: View {
                     .allowsHitTesting(false)
             }
         }
-        .shadow(color: enabled ? AskTheme.accent.opacity(0.45) : .clear, radius: 7, y: 3)
+        .shadow(color: enabled ? AskTheme.accent.opacity(0.5) : .clear, radius: 9, y: 3)
+        // Becoming sendable, the button lights up with a small spring.
+        .scaleEffect(enabled ? 1 : 0.94)
         .disabled(!enabled)
-        .animation(.easeOut(duration: 0.15), value: enabled)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: enabled)
         .accessibilityLabel(L("ask.send"))
     }
 }
