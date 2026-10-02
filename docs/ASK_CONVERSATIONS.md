@@ -376,7 +376,7 @@ the bottom switches scenes, appearance and glass style).
 
 Accent still means "recording" on the composer outline, so keyboard focus keeps
 the neutral border; the board's focus glow is intentionally not adopted.
-The ⌥Space launcher keeps its existing compact layout.
+The ⌥Space launcher's suggestion list was added in the fidelity pass below.
 
 Pure logic lives in `AskPaletteState`, `AskRunTone`, `AskSendControl`,
 `AskPresentation.historyTimeLabel` and `AskAttachmentStrip` and is covered by
