@@ -1,0 +1,21 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Typeflux controlled observation fixture</title>
+<style>body { font: 18px system-ui; padding: 24px; min-height: 2000px } input, textarea, [contenteditable] { display: block; margin: 16px; min-width: 220px; min-height: 30px }</style>
+<h1>Typeflux controlled observation fixture</h1>
+<input id="text" aria-label="Text field">
+<textarea id="area" aria-label="Text area"></textarea>
+<div id="editable" contenteditable="true" aria-label="Editable text">Initial</div>
+<input id="number" type="number" aria-label="Number">
+<input id="checkbox" type="checkbox" aria-label="Checkbox">
+<input id="readonly" readonly aria-label="Read only">
+<button id="click">Controlled click</button>
+<button id="replace" onclick="document.querySelector('#text').outerHTML = document.querySelector('#text').outerHTML">Redraw input</button>
+<a href="#next">Same-document navigation</a>
+<script>
+window.fixtureEvents = [];
+window.fixtureClicks = 0;
+document.addEventListener('input', event => fixtureEvents.push(['input', event.target.id, event.target.value || event.target.textContent]));
+document.addEventListener('change', event => fixtureEvents.push(['change', event.target.id, event.target.value || event.target.textContent]));
+document.querySelector('#click').addEventListener('click', () => fixtureClicks++);
+</script>
