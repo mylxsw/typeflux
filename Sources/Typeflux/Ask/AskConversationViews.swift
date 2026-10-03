@@ -180,6 +180,8 @@ struct AskConversationView: View {
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
+        // A borderless menu draws its label in the accent unless tinted.
+        .tint(StudioTheme.textSecondary)
         .foregroundStyle(StudioTheme.textSecondary)
         .frame(width: AskMetrics.newConversationMenuWidth, height: AskTitleBarButton.size.height)
         .help(L("ask.new.more"))
