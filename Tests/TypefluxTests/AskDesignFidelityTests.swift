@@ -126,8 +126,13 @@ struct AskDesignFidelityTests {
         #expect(AskAvatar.initials("") == "")
     }
 
-    @Test func composerHintNamesTheVoiceKey() {
-        #expect(AskComposerHint.text(voiceKey: "Fn").contains("Fn"))
+    @Test func composerShortcutsLiveInThePlaceholderAndHelp() {
+        // The hint row under the composer is gone; its keys moved here.
+        #expect(L("ask.input.placeholder").contains("/"))
+        #expect(L("ask.followup.placeholder").contains("/"))
+        #expect(L("ask.send.help").contains("↩"))
+        #expect(L("ask.send.help").contains("⇧↩"))
+        #expect(AskVoiceButton.help(shortcut: HotkeyBinding(keyCode: 61, modifierFlags: 0)) != L("ask.voice.buttonHint"))
         #expect(L("ask.launcher.hint") != "ask.launcher.hint")
     }
 

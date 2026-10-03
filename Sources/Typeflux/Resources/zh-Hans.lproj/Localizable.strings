@@ -1404,10 +1404,10 @@
 "ask.delete.confirm" = "删除此对话及其附件？";
 "ask.deny" = "拒绝";
 "ask.empty" = "有什么想问的？";
-"ask.followup.placeholder" = "继续追问…";
+"ask.followup.placeholder" = "继续追问，/ 调用命令";
 "ask.history" = "聊天历史";
 "ask.history.empty" = "暂无聊天记录";
-"ask.input.placeholder" = "输入问题…";
+"ask.input.placeholder" = "输入问题，/ 调用命令";
 "ask.loadMore" = "加载更多";
 "ask.loginRequired" = "请从菜单登录 Typeflux Cloud 后开始对话，草稿已保留。";
 "ask.new" = "新对话";
@@ -1434,6 +1434,9 @@
 "ask.memory.pinned" = "本会话使用开始时附带的记忆。";
 "ask.selection.remove" = "移除选中文本";
 "ask.send" = "发送";
+"ask.send.help" = "↩ 发送 · ⇧↩ 换行";
+"ask.notice.more" = "+%d 条提示";
+"ask.notice.less" = "收起";
 "ask.stop" = "停止";
 "ask.stopControl" = "停止控制";
 "ask.tool.accessibility" = "请在系统设置中允许辅助功能权限后操作桌面。";
@@ -1482,7 +1485,6 @@
 "ask.search.actions" = "操作";
 "ask.search.conversations" = "对话";
 "ask.search.placeholder" = "搜索对话或操作";
-"ask.composer.hint" = "↩ 发送 · ⇧↩ 换行 · 按住 %@ 语音输入";
 "ask.launcher.hint" = "↩ 发送 · esc 关闭";
 "ask.models.multiplierColumn" = "积分倍率";
 "ask.models.ownAPI" = "自有 API";
@@ -2068,6 +2070,5 @@
 "ask.command.manage" = "管理技能与 MCP →";
 "ask.command.on" = "已开启";
 "ask.command.off" = "已关闭";
-"ask.command.help.button" = "命令（⌘/），也可以直接输入 /";
 "ask.command.chip.skill" = "技能";
 "ask.command.chip.mcp" = "MCP";

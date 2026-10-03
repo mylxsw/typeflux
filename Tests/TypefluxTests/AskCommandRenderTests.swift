@@ -196,8 +196,8 @@ struct AskCommandRenderTests {
             AskAttachChoices(clipboardHasImage: false) { _ in }
             HStack {
                 AskAttachButton(model: f.model, launcher: false)
-                AskSlashButton(active: true, action: {})
-                AskSlashButton(active: false, disabled: true, action: {})
+                AskSlashShortcut(action: {})
+                AskSlashShortcut(disabled: true, action: {})
             }
             AskAttachmentStripView(items: [], onPreview: {}, onRemove: { _ in },
                                    attachments: [AskAttachment(kind: .folder, name: "src", path: "/tmp/src")], loading: true,

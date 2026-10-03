@@ -28,6 +28,7 @@ struct AskComposer: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.askGlassMaterialOverride) private var glassOverride
     @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(model: AskConversationModel, launcher: Bool, onDismiss: @escaping () -> Void = {},
          onHeightChange: @escaping (CGFloat) -> Void = { _ in },
@@ -119,48 +120,52 @@ struct AskComposer: View {
                                       canSend: canSend, editingQueued: editingQueued)
     }
 
+    /// Problems to know about or fix, most urgent first. The workspace shows its
+    /// send errors in the transcript, next to the answer they belong to.
+    private var notices: [AskComposerNotice] {
+        AskComposerNotice.resolve(
+            sendError: launcher ? model.error : nil,
+            voiceError: voice.context == contextID || voice.context == nil ? voice.error : nil,
+            attachment: model.attachmentNotice(launcher: launcher),
+            screenshot: launcher ? model.launcherScreenshotNotice : model.screenshotNotice
+        )
+    }
+    @State private var noticesExpanded = false
+    private var noticeRows: Int {
+        AskComposerNotice.visibleCount(total: notices.count, expanded: noticesExpanded)
+    }
+
+    private func dismiss(_ kind: AskComposerNotice.Kind) -> (() -> Void)? {
+        switch kind {
+        case .screenshot:
+            return { if launcher { model.launcherScreenshotNotice = nil } else { model.screenshotNotice = nil } }
+        case .attachment:
+            return { model.dismissAttachmentNotice(launcher: launcher) }
+        case .sendError, .voice:
+            return nil
+        }
+    }
+
     var body: some View {
-        VStack(spacing: AskMetrics.bannerSpacing) {
-            card
-            if let notice = launcher ? model.launcherScreenshotNotice : model.screenshotNotice {
-                AskBanner(text: notice, onDismiss: {
-                    if launcher { model.launcherScreenshotNotice = nil } else { model.screenshotNotice = nil }
-                })
+        card
+            .onChange(of: editorHeight) { _ in reportHeight() }
+            .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
+            .onChange(of: noticeRows) { _ in reportHeight() }
+            .onChange(of: showsStrip) { _ in reportHeight() }
+            .onChange(of: paletteOpen) { _ in reportHeight() }
+            .onChange(of: palette) { _ in if launcher { reportHeight() } }
+            .onChange(of: active) { recording in if recording { closePalette() } }
+            .onAppear { reportHeight() }
+            .onReceive(NotificationCenter.default.publisher(for: .hotkeySettingsDidChange)) { _ in
+                voiceShortcut = model.modelLibrary.settings.activationHotkey
             }
-            if let feedback = model.commandFeedback {
-                AskBanner(text: feedback, systemImage: "checkmark.circle")
-            }
-            if let notice = model.attachmentNotice(launcher: launcher) {
-                AskBanner(text: notice, tone: .warning, systemImage: "paperclip",
-                          onDismiss: { model.dismissAttachmentNotice(launcher: launcher) })
-            }
-            if let error = voice.error {
-                AskBanner(text: error, tone: .warning, systemImage: "mic.slash")
-            }
-            if launcher, let error = model.error {
-                AskBanner(text: error, tone: .warning)
-            }
-        }
-        .onChange(of: editorHeight) { _ in reportHeight() }
-        .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
-        .onChange(of: model.error) { _ in reportHeight() }
-        .onChange(of: model.launcherScreenshotNotice) { _ in reportHeight() }
-        .onChange(of: model.screenshotNotice) { _ in reportHeight() }
-        .onChange(of: voice.error) { _ in reportHeight() }
-        .onChange(of: model.attachmentNotice(launcher: launcher)) { _ in reportHeight() }
-        .onChange(of: showsStrip) { _ in reportHeight() }
-        .onChange(of: model.commandFeedback) { _ in reportHeight() }
-        .onChange(of: paletteOpen) { _ in reportHeight() }
-        .onChange(of: palette) { _ in if launcher { reportHeight() } }
-        .onChange(of: active) { recording in if recording { closePalette() } }
-        .onAppear { reportHeight() }
-        .onReceive(NotificationCenter.default.publisher(for: .hotkeySettingsDidChange)) { _ in
-            voiceShortcut = model.modelLibrary.settings.activationHotkey
-        }
     }
 
     private var card: some View {
         VStack(spacing: 0) {
+            if !notices.isEmpty {
+                AskComposerNoticeStack(notices: notices, expanded: $noticesExpanded, dismiss: dismiss)
+            }
             if !launcher, let id = model.selectedId {
                 AskQueueBar(model: model, expanded: Binding(
                     get: { expandedQueues.contains(id) },
@@ -362,7 +367,7 @@ struct AskComposer: View {
         model.runCommand(command, argument: argument, launcher: launcher)
     }
 
-    /// The footer's slash button and ⌘/: start a command where the caret is.
+    /// ⌘/ starts a command where the caret is; typing "/" does the same.
     private func startCommand() {
         if paletteOpen { closePalette(); return }
         let text = draft.wrappedValue.text
@@ -419,8 +424,6 @@ struct AskComposer: View {
             AskAttachButton(model: model, launcher: launcher,
                             disabled: active || (!launcher && model.isLoadingSelection))
                 .opacity(Self.recordingDim(active))
-            AskSlashButton(active: paletteOpen, disabled: active || (!launcher && model.isLoadingSelection), action: startCommand)
-                .opacity(Self.recordingDim(active))
             AskLocalModeButton(model: model)
                 .opacity(Self.recordingDim(active))
             AskModelMenu(library: model.modelLibrary, reference: Binding(
@@ -438,10 +441,20 @@ struct AskComposer: View {
                 .opacity(Self.recordingDim(active))
             // "How to ask" and "what rides along" are separated by a rule.
             Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
-            contextChips
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .disabled(active)
-                .opacity(Self.recordingDim(active))
+            HStack(spacing: 0) {
+                contextChips
+                    .disabled(active)
+                    .opacity(Self.recordingDim(active))
+                    .layoutPriority(1)
+                Spacer(minLength: 8)
+                // Confirms a command in the footer's empty space, inside the card.
+                if let feedback = model.commandFeedback, !active {
+                    AskComposerFootnote(text: feedback)
+                        .transition(.opacity)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: model.commandFeedback)
             voiceStatus
             if !launcher, onToggleUsage != nil, let context = model.usageContext {
                 AskContextUsageButton(context: context) { onToggleUsage?() }
@@ -464,6 +477,9 @@ struct AskComposer: View {
         .padding(.trailing, 10)
         .frame(height: chrome.footerHeight)
         .frame(maxWidth: .infinity)
+        .background {
+            AskSlashShortcut(disabled: active || (!launcher && model.isLoadingSelection), action: startCommand)
+        }
     }
 
     /// While the microphone is busy the settings and context recede, so the
@@ -594,11 +610,8 @@ struct AskComposer: View {
     }
 
     private func reportHeight() {
-        var banners = voice.error == nil ? 0 : 1
-        if (launcher ? model.launcherScreenshotNotice : model.screenshotNotice) != nil { banners += 1 }
-        if launcher, model.error != nil { banners += 1 }
-        if model.attachmentNotice(launcher: launcher) != nil { banners += 1 }
-        if model.commandFeedback != nil { banners += 1 }
+        // Confirmations ride in the footer, so only notice rows add height.
+        let banners = noticeRows
         let commands = launcher && paletteOpen ? AskCommandPaletteView.height(for: palette) + 10 : 0
         onHeightChange(AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
                                                  suggestions: showsLauncherSuggestions, attachments: showsStrip) + commands)

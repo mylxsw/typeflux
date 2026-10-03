@@ -218,34 +218,6 @@ struct AskSentAttachmentChip: View {
     }
 }
 
-/// The keyboard hint under the workspace composer. It fades in while the
-/// editor has focus and keeps its height otherwise, so the card never moves.
-struct AskComposerHint: View {
-    @ObservedObject var voice: AskVoiceInput
-    let contextID: String
-    let settings: SettingsStore
-    @State private var voiceKey = "Fn"
-
-    static func text(voiceKey: String) -> String { L("ask.composer.hint", voiceKey) }
-
-    var body: some View {
-        Text(Self.text(voiceKey: voiceKey))
-            .font(.system(size: 11))
-            .foregroundStyle(StudioTheme.textTertiary)
-            .lineLimit(1)
-            .frame(height: AskMetrics.composerHintHeight - 8)
-            .opacity(voice.focusedContext == contextID ? 1 : 0)
-            .animation(.easeOut(duration: 0.2), value: voice.focusedContext == contextID)
-            .accessibilityHidden(true)
-            .onAppear(perform: refresh)
-            .onReceive(NotificationCenter.default.publisher(for: .hotkeySettingsDidChange)) { _ in refresh() }
-    }
-
-    private func refresh() {
-        voiceKey = settings.activationHotkey.map(HotkeyFormat.display) ?? "Fn"
-    }
-}
-
 /// The hairline between groups in a composer menu.
 struct AskPopoverDivider: View {
     var body: some View {

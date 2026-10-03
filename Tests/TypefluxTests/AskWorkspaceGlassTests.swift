@@ -61,8 +61,8 @@ struct AskWorkspaceGlassTests {
     }
 
     @Test func composerAndSidebarBottomsLineUp() {
-        // The composer sits higher than the sidebar's bottom, over its keyboard hint.
-        #expect(AskMetrics.composerBottomInset + AskMetrics.composerHintHeight > AskMetrics.sidebarPanelInset)
+        // Nothing sits under the composer card, which still clears the sidebar's bottom inset.
+        #expect(AskMetrics.composerBottomInset > AskMetrics.sidebarPanelInset)
     }
 
     @Test func transcriptIsHiddenOutsideTheHeaderPills() {

@@ -212,11 +212,13 @@ enum AskMetrics {
     static let headerCapsuleHeight: CGFloat = 38
     /// How far the transcript fades out where it meets the window's top and bottom edges.
     static let transcriptEdgeFade: CGFloat = 28
-    /// Space between the window's bottom edge and the composer's hint row.
-    static let composerBottomInset: CGFloat = 16
-    /// The keyboard hint under the workspace composer; it keeps its room while
-    /// hidden so focusing the editor never moves the card.
-    static let composerHintHeight: CGFloat = 22
+    /// Space between the window's bottom edge and the composer card. Nothing
+    /// sits under the card: notices live inside it, confirmations in its footer.
+    static let composerBottomInset: CGFloat = 22
+    /// Notice rows inside the composer card are inset this far from its edges.
+    static let composerNoticeInset: CGFloat = 8
+    /// The footer's confirmation note never grows past this.
+    static let footnoteMaxWidth: CGFloat = 220
     /// Top of the header pills: centred in the title bar row.
     static var headerCapsuleTop: CGFloat { (titleBarRowHeight - headerCapsuleHeight) / 2 }
     /// The ⌘K search card, a glass card over the dimmed window.
@@ -228,6 +230,7 @@ enum AskMetrics {
     static let recoveryThumbnail = CGSize(width: 54, height: 36)
 
     /// Height of the launcher panel, including its transparent gutter.
+    /// `banners` counts the notice rows inside the card; each adds its height plus the gap above it.
     static func launcherHeight(editor: CGFloat, banners: Int, suggestions: Bool = false, attachments: Bool = false) -> CGFloat {
         let chrome = AskComposerChrome.launcher
         return editor + chrome.editorTopInset + chrome.editorBottomInset + chrome.footerHeight + launcherGutter * 2
@@ -441,8 +444,8 @@ struct AskMonoBlock: View {
     }
 }
 
-/// Disconnects, voice failures and confirmations all use the same bar so they
-/// never interrupt the transcript with red body text.
+/// Disconnects, voice failures and attachment refusals all use the same bar so
+/// they never interrupt the transcript with red body text.
 struct AskBanner: View {
     enum Tone { case info, warning, danger }
 
@@ -451,6 +454,9 @@ struct AskBanner: View {
     var systemImage: String?
     var actionTitle: String?
     var action: (() -> Void)?
+    /// "+N" on the composer's first notice, expanding the others.
+    var more: String?
+    var onMore: (() -> Void)?
     var onDismiss: (() -> Void)?
 
     var body: some View {
@@ -463,6 +469,14 @@ struct AskBanner: View {
                     Text(actionTitle).font(.system(size: 11.5, weight: .semibold))
                         .padding(.horizontal, 10).frame(height: 22)
                         .background(AskTheme.surface, in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            if let more, let onMore {
+                Button(action: onMore) {
+                    Text(more).font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .fixedSize()
                 }
                 .buttonStyle(.plain)
             }
@@ -500,6 +514,46 @@ struct AskBanner: View {
         case .warning: return AskTheme.warningSoft
         case .danger: return AskTheme.dangerSoft
         }
+    }
+}
+
+/// A conversation event in the transcript, such as an automatic model switch:
+/// a centred caption between two hairlines, with an optional link.
+struct AskSystemLine: View {
+    var text: String
+    var systemImage: String?
+    var actionTitle: String?
+    var action: (() -> Void)?
+    var onDismiss: (() -> Void)?
+
+    var body: some View {
+        HStack(spacing: 10) {
+            rule
+            HStack(spacing: 6) {
+                if let systemImage { Image(systemName: systemImage).font(.system(size: 11, weight: .medium)) }
+                Text(text).lineLimit(2).multilineTextAlignment(.center).textSelection(.enabled)
+                if let actionTitle, let action {
+                    Button(action: action) {
+                        Text(actionTitle).fontWeight(.semibold).foregroundStyle(AskTheme.accent)
+                    }
+                    .buttonStyle(.plain)
+                }
+                if let onDismiss {
+                    Button(action: onDismiss) { Image(systemName: "xmark").font(.system(size: 9, weight: .bold)) }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L("ask.remove"))
+                }
+            }
+            .font(.system(size: 11.5))
+            .foregroundStyle(StudioTheme.textTertiary)
+            .layoutPriority(1)
+            rule
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var rule: some View {
+        Rectangle().fill(AskTheme.separator).frame(height: 0.5).frame(minWidth: 16)
     }
 }
 
@@ -586,6 +640,8 @@ struct AskSendButton: View {
         .scaleEffect(enabled ? 1 : 0.94)
         .disabled(!enabled)
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: enabled)
+        // The keys live here rather than in a hint row under the composer.
+        .help(L("ask.send.help"))
         .accessibilityLabel(L("ask.send"))
     }
 }
