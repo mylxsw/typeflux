@@ -1026,53 +1026,30 @@ enum AskPresentation {
 /// The conversation window's surface under both the floating sidebar and the
 /// transcript. It reuses the settings window's tokens and material stack, so
 /// both windows read as one app.
-/// The workspace's canvas: a solid base with three soft ambient glows (accent
-/// behind the sidebar, violet low on the left, warm in the far corner), so the
-/// floating glass panels have colour to refract, as on the design board.
+/// The workspace's canvas: frosted glass over the desktop. The window blurs
+/// whatever is behind it and lays the app's own tint over that, so a colourful
+/// wallpaper reads only as a soft cast, never as the window's colour.
 struct AskWindowBackdrop: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
-    struct Glow: Equatable {
-        /// Centre as a fraction of the window.
-        var center: UnitPoint
-        /// Radii in points where the colour has faded out.
-        var radius: CGSize
-        var color: Color
-    }
-
+    /// The app's own tint over the blurred desktop.
     static func base(dark: Bool) -> Color {
         dark ? Color(red: 0.094, green: 0.094, blue: 0.110) : Color(red: 0.969, green: 0.969, blue: 0.976)
     }
 
-    static func glows(dark: Bool) -> [Glow] {
-        [
-            Glow(center: UnitPoint(x: 0.08, y: 0.18), radius: CGSize(width: 364, height: 294),
-                 color: AskTheme.accent.opacity(dark ? 0.30 : 0.18)),
-            Glow(center: UnitPoint(x: 0.18, y: 0.92), radius: CGSize(width: 322, height: 364),
-                 color: dark ? Color(red: 0.486, green: 0.227, blue: 0.929).opacity(0.24)
-                     : Color(red: 0.659, green: 0.333, blue: 0.969).opacity(0.12)),
-            Glow(center: UnitPoint(x: 0.96, y: 1.02), radius: CGSize(width: 420, height: 280),
-                 color: dark ? Color(red: 0.976, green: 0.451, blue: 0.086).opacity(0.08)
-                     : Color(red: 0.984, green: 0.573, blue: 0.235).opacity(0.10))
-        ]
+    /// How much of the tint covers the blur: enough to keep the window calm
+    /// and legible on any wallpaper, light enough that it still reads as frosted.
+    static func tintOpacity(dark: Bool, reduceTransparency: Bool) -> Double {
+        if reduceTransparency { return 1 }
+        return dark ? 0.78 : 0.72
     }
 
     var body: some View {
         let dark = colorScheme == .dark
-        Canvas { context, size in
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Self.base(dark: dark)))
-            for glow in Self.glows(dark: dark) {
-                let center = CGPoint(x: glow.center.x * size.width, y: glow.center.y * size.height)
-                var layer = context
-                // An ellipse: draw a circular gradient in a vertically scaled space.
-                let scale = glow.radius.height / glow.radius.width
-                layer.translateBy(x: center.x, y: center.y)
-                layer.scaleBy(x: 1, y: scale)
-                let radius = glow.radius.width
-                layer.fill(Path(ellipseIn: CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2)),
-                           with: .radialGradient(Gradient(colors: [glow.color, glow.color.opacity(0)]),
-                                                 center: .zero, startRadius: 0, endRadius: radius))
-            }
+        ZStack {
+            StudioVisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow, cornerRadius: nil)
+            Self.base(dark: dark).opacity(Self.tintOpacity(dark: dark, reduceTransparency: reduceTransparency))
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
