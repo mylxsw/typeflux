@@ -434,6 +434,57 @@ struct AskConversationVisualTests {
 
     }
 
+    /// GUL-193: the storage icon and card, the private header chip, and the merged history.
+    @Test func renderConversationStorageSurfaces() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let defaults = try #require(UserDefaults(suiteName: "ask-storage-shots-" + UUID().uuidString))
+        let profile = AskModelProfile(name: "我的 Ollama", baseURL: "http://127.0.0.1:11434/v1", model: "qwen3:8b")
+        defaults.set(try JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
+        let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false))
+        defer { fixture.model.resetSession() }
+        let auth = AuthState(loadStoredToken: { "token" }, loadStoredRefreshToken: { nil },
+                             loadStoredUserProfile: { nil })
+        let now = Date()
+        await fixture.api.seed(AskConversation(id: "cloud", title: "讲讲这一屏在做什么", revision: 1, updatedAt: now,
+                                               messages: [.init(id: "q1", role: "user", text: "讲讲这一屏在做什么", createdAt: now),
+                                                          .init(id: "a1", role: "assistant", text: "这一屏是 Grok 网页版。", createdAt: now)]))
+        await fixture.localAPI.seed(AskConversation(id: "private", title: "帮我整理体检报告要点", revision: 1,
+                                                    updatedAt: now.addingTimeInterval(-60),
+                                                    messages: [.init(id: "q2", role: "user", text: "帮我整理体检报告要点", createdAt: now),
+                                                               .init(id: "a2", role: "assistant", text: "已按指标分组整理。", createdAt: now)],
+                                                    modelRef: profile.reference))
+        await fixture.model.refreshHistory()
+        await fixture.model.select("private")
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            try await render(AskConversationView(model: fixture.model, auth: auth), size: NSSize(width: 1000, height: 640),
+                             appearance: appearance, file: root.appendingPathComponent("storage-private-\(name).png"))
+        }
+        await fixture.model.select("cloud")
+        try await render(AskConversationView(model: fixture.model, auth: auth), size: NSSize(width: 1000, height: 640),
+                         appearance: .darkAqua, file: root.appendingPathComponent("storage-cloud-dark.png"))
+        fixture.model.newConversation()
+        try await render(AskConversationView(model: fixture.model, auth: auth), size: NSSize(width: 1000, height: 640),
+                         appearance: .darkAqua, file: root.appendingPathComponent("storage-new-dark.png"))
+        let cards: [(String, AskLocalModeStatus)] = [
+            ("choose", .init(source: "我的 Ollama", searchConfigured: false, offersSignIn: false, local: true, changeable: true)),
+            ("locked-local", .init(source: "我的 Ollama", searchConfigured: true, offersSignIn: false)),
+            ("locked-cloud", .init(source: "我的 Ollama", searchConfigured: true, offersSignIn: false, local: false)),
+            ("signed-out", .init(source: "我的 Ollama", searchConfigured: false, offersSignIn: true))
+        ]
+        for (name, status) in cards {
+            try await render(AskLocalModeCard(status: status, onOpenSearchSettings: {}, onSignIn: {})
+                                .background(AskTheme.surface),
+                             size: NSSize(width: AskLocalModeCard.width, height: 380), appearance: .darkAqua,
+                             file: root.appendingPathComponent("storage-card-\(name).png"), minimumPNGBytes: 3000)
+        }
+    }
+
     @Test func renderUsageSurfaces() async throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_USAGE_SNAPSHOTS"] else { return }
         let root = URL(fileURLWithPath: directory)
