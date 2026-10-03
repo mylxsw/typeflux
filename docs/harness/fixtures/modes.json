@@ -1,0 +1,129 @@
+[
+  {
+    "id": "local",
+    "engine": "local",
+    "inference": "device_custom",
+    "send_request": {
+      "id": "message-1",
+      "device_id": "device-1",
+      "text": "Fixture",
+      "tools": [],
+      "model_ref": "custom:fixture"
+    },
+    "conversation": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "title": "Fixture",
+      "revision": 1,
+      "updated_at": "2026-10-03T00:00:00Z",
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Fixture question",
+          "created_at": "2026-10-03T00:00:00Z"
+        }
+      ],
+      "harness": {
+        "version": 1,
+        "capabilities": [
+          "scoped_approval_v1",
+          "typed_content_v1",
+          "observation_target_v1",
+          "workspace_refs_v1",
+          "future_capability_v99"
+        ]
+      },
+      "model_ref": "custom:fixture"
+    },
+    "peer": null,
+    "expected_new_capabilities": false
+  },
+  {
+    "id": "cloud-cloud",
+    "engine": "cloud",
+    "inference": "server_cloud",
+    "send_request": {
+      "id": "message-1",
+      "device_id": "device-1",
+      "text": "Fixture",
+      "tools": [],
+      "model_ref": "cloud:fixture"
+    },
+    "conversation": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "title": "Fixture",
+      "revision": 1,
+      "updated_at": "2026-10-03T00:00:00Z",
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Fixture question",
+          "created_at": "2026-10-03T00:00:00Z"
+        }
+      ],
+      "harness": {
+        "version": 1,
+        "capabilities": [
+          "scoped_approval_v1",
+          "typed_content_v1",
+          "observation_target_v1",
+          "workspace_refs_v1",
+          "future_capability_v99"
+        ]
+      },
+      "model_ref": "cloud:fixture"
+    },
+    "peer": {
+      "version": 1,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "expected_new_capabilities": false
+  },
+  {
+    "id": "cloud-custom",
+    "engine": "cloud",
+    "inference": "device_custom",
+    "send_request": {
+      "id": "message-1",
+      "device_id": "device-1",
+      "text": "Fixture",
+      "tools": [],
+      "model_ref": "custom:fixture"
+    },
+    "conversation": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "title": "Fixture",
+      "revision": 1,
+      "updated_at": "2026-10-03T00:00:00Z",
+      "messages": [
+        {
+          "id": "message-1",
+          "role": "user",
+          "text": "Fixture question",
+          "created_at": "2026-10-03T00:00:00Z"
+        }
+      ],
+      "harness": {
+        "version": 1,
+        "capabilities": [
+          "scoped_approval_v1",
+          "typed_content_v1",
+          "observation_target_v1",
+          "workspace_refs_v1",
+          "future_capability_v99"
+        ]
+      },
+      "model_ref": "custom:fixture"
+    },
+    "peer": {
+      "version": 1,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "expected_new_capabilities": false
+  }
+]

@@ -1,0 +1,202 @@
+{
+  "version": 1,
+  "capabilities": [
+    "scoped_approval_v1",
+    "typed_content_v1",
+    "observation_target_v1",
+    "workspace_refs_v1",
+    "future_capability_v99"
+  ],
+  "context": {
+    "owner_id": "fixture-owner",
+    "conversation_id": "11111111-1111-4111-8111-111111111111",
+    "run_id": "run-1",
+    "step_id": "step-1",
+    "tool_call_id": "call-1",
+    "tool_name": "browser_action",
+    "tool_version": "1",
+    "arguments_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "target": {
+      "kind": "browser_tab",
+      "id": "tab-1",
+      "version": "document-7",
+      "domain": "example.invalid",
+      "path": "/fixture"
+    },
+    "deadline": "2026-10-03T00:01:00Z",
+    "server_id": "server-1",
+    "server_version": "1",
+    "approval_id": "approval-1",
+    "idempotency_key": "operation-1"
+  },
+  "approval": {
+    "id": "approval-1",
+    "owner_id": "fixture-owner",
+    "conversation_id": "11111111-1111-4111-8111-111111111111",
+    "action": "browser_action",
+    "target": {
+      "kind": "browser_tab",
+      "id": "tab-1",
+      "version": "document-7",
+      "domain": "example.invalid",
+      "path": "/fixture"
+    },
+    "expires_at": "2026-10-03T00:01:00Z",
+    "single_use": true,
+    "arguments_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "allowed_arguments": {
+      "type": "object",
+      "properties": {
+        "document_generation": {
+          "const": "document-7"
+        }
+      },
+      "additionalProperties": false
+    },
+    "consumed_at": "2026-10-03T00:00:00Z",
+    "revoked_at": "2026-10-03T00:00:00Z"
+  },
+  "outcome": {
+    "status": "ok",
+    "content": [
+      {
+        "type": "text",
+        "text": "Fixture observation",
+        "annotations": {
+          "audience": [
+            "user"
+          ]
+        }
+      },
+      {
+        "type": "image",
+        "data": "AA==",
+        "mimeType": "image/png"
+      },
+      {
+        "type": "image",
+        "data": "AQ==",
+        "mimeType": "image/png"
+      },
+      {
+        "type": "audio",
+        "data": "Ag==",
+        "mimeType": "audio/wav"
+      },
+      {
+        "type": "resource_link",
+        "uri": "fixture://artifact-1",
+        "name": "fixture"
+      },
+      {
+        "type": "resource",
+        "resource": {
+          "uri": "fixture://text",
+          "text": "embedded",
+          "mimeType": "text/plain"
+        }
+      },
+      {
+        "type": "future_block",
+        "custom_key": {
+          "snake_case": 1,
+          "enabled": true,
+          "items": [
+            null,
+            0,
+            1,
+            false
+          ]
+        },
+        "_meta": {
+          "vendor/raw_key": "kept"
+        }
+      }
+    ],
+    "artifacts": [
+      {
+        "id": "artifact-1",
+        "owner_id": "fixture-owner",
+        "conversation_id": "11111111-1111-4111-8111-111111111111",
+        "run_id": "run-1",
+        "version": "1",
+        "media_type": "image/png",
+        "size_bytes": 4,
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "cleanup": "retain_until_expiry",
+        "expires_at": "2026-10-04T00:00:00Z"
+      }
+    ],
+    "duration_ms": 0,
+    "event_dispatched": true,
+    "effect_verified": false,
+    "truncated": false
+  },
+  "observation": {
+    "id": "observation-1",
+    "target": {
+      "kind": "browser_tab",
+      "id": "tab-1",
+      "version": "document-7",
+      "domain": "example.invalid",
+      "path": "/fixture"
+    },
+    "captured_at": "2026-10-03T00:00:00Z",
+    "app_id": "fixture.browser",
+    "process_instance_id": "process-instance-1",
+    "pid": 123,
+    "window_id": "window-1",
+    "display_id": "display-1",
+    "browser_id": "browser-1",
+    "tab_id": "tab-1",
+    "document_generation": "document-7",
+    "invalidation_reason": "navigation"
+  },
+  "workspace": {
+    "id": "workspace-1",
+    "owner_id": "fixture-owner",
+    "conversation_id": "11111111-1111-4111-8111-111111111111",
+    "run_id": "run-1",
+    "version": "revision-1",
+    "cleanup": "on_run_end"
+  },
+  "process": {
+    "id": "process-1",
+    "owner_id": "fixture-owner",
+    "conversation_id": "11111111-1111-4111-8111-111111111111",
+    "run_id": "run-1",
+    "workspace_id": "workspace-1",
+    "instance_id": "process-instance-1",
+    "started_at": "2026-10-03T00:00:00Z",
+    "cleanup": "terminate_group",
+    "pid": 123,
+    "process_group_id": 123
+  },
+  "artifacts": [
+    {
+      "id": "artifact-1",
+      "owner_id": "fixture-owner",
+      "conversation_id": "11111111-1111-4111-8111-111111111111",
+      "run_id": "run-1",
+      "version": "1",
+      "media_type": "image/png",
+      "size_bytes": 4,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "cleanup": "retain_until_expiry",
+      "expires_at": "2026-10-04T00:00:00Z"
+    }
+  ],
+  "budget": {
+    "limits": {
+      "steps": 10,
+      "wall_time_ms": 60000
+    },
+    "used": {
+      "steps": 1
+    },
+    "reserved": {
+      "steps": 0
+    }
+  },
+  "recovery_class": "manual_reconcile"
+}

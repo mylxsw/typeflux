@@ -1,0 +1,172 @@
+[
+  {
+    "id": "both-legacy",
+    "local": null,
+    "peer": null,
+    "enabled": [],
+    "requested": "typed_content_v1",
+    "expected": false
+  },
+  {
+    "id": "new-client-old-server",
+    "local": {
+      "version": 1,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "peer": null,
+    "enabled": [
+      "typed_content_v1"
+    ],
+    "requested": "typed_content_v1",
+    "expected": false
+  },
+  {
+    "id": "old-client-new-server",
+    "local": null,
+    "peer": {
+      "version": 1,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "enabled": [
+      "typed_content_v1"
+    ],
+    "requested": "typed_content_v1",
+    "expected": false
+  },
+  {
+    "id": "off-by-default",
+    "local": {
+      "version": 1,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "peer": {
+      "version": 1,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "enabled": [],
+    "requested": "typed_content_v1",
+    "expected": false
+  },
+  {
+    "id": "explicit-mutual-opt-in",
+    "local": {
+      "version": 1,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "peer": {
+      "version": 1,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "enabled": [
+      "typed_content_v1"
+    ],
+    "requested": "typed_content_v1",
+    "expected": true
+  },
+  {
+    "id": "unknown-capability",
+    "local": {
+      "version": 1,
+      "capabilities": [
+        "future_capability_v99"
+      ]
+    },
+    "peer": {
+      "version": 1,
+      "capabilities": [
+        "future_capability_v99"
+      ]
+    },
+    "enabled": [
+      "future_capability_v99"
+    ],
+    "requested": "future_capability_v99",
+    "expected": false
+  },
+  {
+    "id": "unknown-local-version",
+    "local": {
+      "version": 2,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "peer": {
+      "version": 1,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "enabled": [
+      "typed_content_v1"
+    ],
+    "requested": "typed_content_v1",
+    "expected": false
+  },
+  {
+    "id": "unknown-peer-version",
+    "local": {
+      "version": 1,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "peer": {
+      "version": 2,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "enabled": [
+      "typed_content_v1"
+    ],
+    "requested": "typed_content_v1",
+    "expected": false
+  },
+  {
+    "id": "missing-local-capability",
+    "local": {
+      "version": 1
+    },
+    "peer": {
+      "version": 1,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "enabled": [
+      "typed_content_v1"
+    ],
+    "requested": "typed_content_v1",
+    "expected": false
+  },
+  {
+    "id": "missing-peer-capability",
+    "local": {
+      "version": 1,
+      "capabilities": [
+        "typed_content_v1"
+      ]
+    },
+    "peer": {
+      "version": 1
+    },
+    "enabled": [
+      "typed_content_v1"
+    ],
+    "requested": "typed_content_v1",
+    "expected": false
+  }
+]

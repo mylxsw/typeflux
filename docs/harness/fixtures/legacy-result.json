@@ -1,0 +1,7 @@
+{
+  "run_id": "run-1",
+  "device_id": "device-1",
+  "tool_call_id": "call-1",
+  "content": "Fixture text",
+  "is_error": false
+}
