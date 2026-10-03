@@ -165,8 +165,12 @@ struct AskModelChoices: View {
     }
 
     private var composerBody: some View {
-        let choices = library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage, scenario: scenario)
-        let selectionAvailable = choices.contains { $0.models.contains { $0.reference == reference } }
+        // Every model the user can use is listed; those that cannot read this
+        // conversation's images stay visible, dimmed with the reason, instead of
+        // silently disappearing (custom models rarely declare vision support).
+        let choices = library.selectableProviders(loggedIn: loggedIn, hasImage: false, scenario: scenario)
+        let compatible = library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage, scenario: scenario)
+        let selectionAvailable = compatible.contains { $0.models.contains { $0.reference == reference } }
         return VStack(alignment: .leading, spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
@@ -184,10 +188,13 @@ struct AskModelChoices: View {
                                          trailing: index == 0 && provider.isCloud
                                              ? L("ask.models.multiplierColumn") : nil)
                         ForEach(provider.models) { model in
+                            let blocked = Self.imageReason(model, provider: provider, hasImage: hasImage,
+                                                           library: library, loggedIn: loggedIn, scenario: scenario)
                             AskPopoverRow(title: model.name,
                                           note: model.reference == library.defaultReference ? L("ask.models.isDefault") : nil,
-                                          caption: Self.caption(model),
-                                          selected: reference == model.reference) {
+                                          caption: blocked ?? Self.caption(model),
+                                          selected: reference == model.reference,
+                                          enabled: blocked == nil) {
                                 reference = model.reference; dismiss()
                             } accessory: {
                                 AskModelCapabilities(model: model)
@@ -232,6 +239,13 @@ struct AskModelChoices: View {
     }
 
     static let composerListMaxHeight: CGFloat = 460
+
+    /// Why a listed model cannot be picked for this conversation, if it cannot.
+    static func imageReason(_ model: RegisteredModel, provider: RegisteredProvider, hasImage: Bool,
+                            library: AskModelLibrary, loggedIn: Bool, scenario: String) -> String? {
+        guard hasImage else { return nil }
+        return library.selectionReason(model, provider: provider, hasImage: true, loggedIn: loggedIn, scenario: scenario)
+    }
 
     /// The footer only offers what it can do: nothing when the selection already
     /// is the default, instead of a greyed-out link.

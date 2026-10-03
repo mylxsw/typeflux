@@ -261,13 +261,17 @@ final class AskConversationModel: ObservableObject {
         normalizeScreenshotChoices()
         if let current = session(), owner != current.owner { resetSession(); owner = current.owner }
         let expectedOwner = owner
-        if launcherDraft.text.isEmpty, let cached = try? await cache.draft(key: "launcher", owner: owner) {
+        let typedBefore = !launcherDraft.text.isEmpty
+        var restored = false
+        if !typedBefore, let cached = try? await cache.draft(key: "launcher", owner: owner) {
             guard !Task.isCancelled, owner == expectedOwner else { return }
-            launcherDraft = cached
+            // The panel is already open: never replace anything typed meanwhile.
+            if launcherDraft.text.isEmpty, !cached.text.isEmpty { launcherDraft = cached; restored = true }
         }
         guard !Task.isCancelled else { return }
         // Restore an unfinished question without silently replacing its context.
-        if !launcherDraft.text.isEmpty { return }
+        // Text typed into the just-opened panel still gets this launch's context.
+        if typedBefore || restored { return }
         capturing = true
         let generation = UUID(); captureGeneration = generation
         defer { if generation == captureGeneration { capturing = false } }

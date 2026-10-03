@@ -60,16 +60,6 @@ struct AskMotionEffectsTests {
         #expect(AskPopIn.animation(reduceMotion: true) != AskPopIn.animation(reduceMotion: false))
     }
 
-    @Test func pointerLightFollowsThePointerInsideTheShape() {
-        let center = AskSpecularHighlight<Capsule>.center(CGPoint(x: 50, y: 10), in: CGSize(width: 200, height: 40))
-        #expect(center.x == 0.25 && center.y == 0.25)
-        // A zero-sized shape never divides by zero.
-        let degenerate = AskSpecularHighlight<Capsule>.center(CGPoint(x: 5, y: 5), in: .zero)
-        #expect(degenerate.x == 5 && degenerate.y == 5)
-        #expect(AskSpecularHighlight<Capsule>.intensity(dark: true) < AskSpecularHighlight<Capsule>.intensity(dark: false))
-        #expect(AskSpecularHighlight<Capsule>.radius > 0)
-    }
-
     @Test func rimLightIsBrightestOnTheLitEdge() {
         for dark in [true, false] {
             let rim = AskRimLight.strength(dark: dark)

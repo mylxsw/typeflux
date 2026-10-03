@@ -1132,6 +1132,8 @@ struct AskPopoverRow<Accessory: View>: View {
     var note: String?
     var caption: String?
     var selected: Bool
+    /// Listed but not choosable, e.g. a model that cannot read this conversation's images.
+    var enabled = true
     var action: () -> Void
     @ViewBuilder var accessory: () -> Accessory
     @State private var hovering = false
@@ -1175,15 +1177,19 @@ struct AskPopoverRow<Accessory: View>: View {
             .contentShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
         }
         .buttonStyle(.plain)
-        .onHover { hovering = $0 }
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : 0.45)
+        .onHover { hovering = enabled && $0 }
         .padding(.horizontal, 6)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
 extension AskPopoverRow where Accessory == EmptyView {
-    init(title: String, note: String? = nil, caption: String?, selected: Bool, action: @escaping () -> Void) {
-        self.init(title: title, note: note, caption: caption, selected: selected, action: action, accessory: { EmptyView() })
+    init(title: String, note: String? = nil, caption: String?, selected: Bool, enabled: Bool = true,
+         action: @escaping () -> Void) {
+        self.init(title: title, note: note, caption: caption, selected: selected, enabled: enabled, action: action,
+                  accessory: { EmptyView() })
     }
 }
 

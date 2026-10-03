@@ -89,57 +89,6 @@ extension View {
     func askElevation<S: Shape>(_ elevation: AskElevation, in shape: S) -> some View {
         background(AskOuterShadow(shape: shape, elevation: elevation))
     }
-
-    /// The pointer's light on a glass surface: a soft highlight that follows
-    /// the pointer while it is over the shape, as on the design board.
-    func askSpecular<S: Shape>(in shape: S) -> some View {
-        modifier(AskSpecularHighlight(shape: shape))
-    }
-}
-
-// MARK: - Pointer light
-
-struct AskSpecularHighlight<S: Shape>: ViewModifier {
-    let shape: S
-    @State private var location: CGPoint?
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorScheme) private var colorScheme
-
-    static var radius: CGFloat { 110 }
-
-    /// The pointer as a unit point inside the shape's bounds.
-    static func center(_ point: CGPoint, in size: CGSize) -> UnitPoint {
-        UnitPoint(x: point.x / max(size.width, 1), y: point.y / max(size.height, 1))
-    }
-
-    /// Brighter on dark glass, where a white glint reads; faint on light glass.
-    static func intensity(dark: Bool) -> Double { dark ? 0.14 : 0.35 }
-
-    func body(content: Content) -> some View {
-        content
-            .overlay {
-                if !reduceTransparency, let location {
-                    GeometryReader { proxy in
-                        let glint = Color.white.opacity(Self.intensity(dark: colorScheme == .dark))
-                        RadialGradient(colors: [glint, .clear],
-                                       center: Self.center(location, in: proxy.size),
-                                       startRadius: 0, endRadius: Self.radius)
-                    }
-                    .clipShape(shape)
-                    .blendMode(.plusLighter)
-                    .allowsHitTesting(false)
-                    .transition(.opacity)
-                }
-            }
-            .onContinuousHover { phase in
-                withAnimation(.easeOut(duration: 0.25)) {
-                    switch phase {
-                    case let .active(point): location = point
-                    case .ended: location = nil
-                    }
-                }
-            }
-    }
 }
 
 // MARK: - Entrances
@@ -267,8 +216,8 @@ struct AskLiftingCardStyle: ButtonStyle {
     }
 }
 
-/// The workspace composer's depth: the panel shadow under its glass, the rim
-/// light along its edge and the pointer's highlight. The launcher is its own
+/// The workspace composer's depth: the panel shadow under its glass and the
+/// rim light along its edge. The launcher is its own
 /// floating window and takes the system window shadow instead.
 struct AskWorkspaceCardDepth: ViewModifier {
     var enabled: Bool
@@ -282,7 +231,6 @@ struct AskWorkspaceCardDepth: ViewModifier {
                 .background(AskOuterShadow(shape: shape, elevation: .panel))
                 .overlay(shape.strokeBorder(AskRimLight.gradient(dark: colorScheme == .dark), lineWidth: 1)
                     .allowsHitTesting(false))
-                .askSpecular(in: shape)
         } else {
             content
         }

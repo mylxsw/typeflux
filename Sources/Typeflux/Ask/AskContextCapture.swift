@@ -56,8 +56,12 @@ final class AskContextCapture: AskContextCapturing {
         let app = NSWorkspace.shared.frontmostApplication
         let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
         let displayId = (screen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
-        // Capture before the launcher takes focus. The injector fixes the source
-        // target before its first asynchronous accessibility read.
+        // The screenshot runs alongside the accessibility read rather than after it;
+        // the launcher is already on screen and is excluded from the capture.
+        let screenshotTask: Task<String, Error>? = includeScreenshot
+            ? Task { [captureScreenshot] in try await captureScreenshot(displayId) } : nil
+        // The launcher never activates the app, so the source app stays frontmost.
+        // The injector fixes the source target before its first asynchronous read.
         let selection: TextSelectionSnapshot
         if includeSelection, accessibilityTrusted() {
             selection = await injector.selectionSnapshot(for: .readOnlyContext)
@@ -71,8 +75,8 @@ final class AskContextCapture: AskContextCapturing {
             // Resolved before the launcher takes focus, while the source app is still frontmost.
             memory: memory?.memory(bundleIdentifier: app?.bundleIdentifier, appName: app?.localizedName)
         )
-        if includeScreenshot {
-            do { result.screenshot = try await captureScreenshot(displayId) }
+        if let screenshotTask {
+            do { result.screenshot = try await screenshotTask.value }
             catch { result.warning = error.localizedDescription }
         }
         return result

@@ -235,7 +235,6 @@ struct AskInWindowGlass: ViewModifier {
             // The rim catches the light on its top-leading edge, as glass does.
             .overlay(shape.strokeBorder(AskRimLight.gradient(dark: colorScheme == .dark), lineWidth: 1)
                 .allowsHitTesting(false))
-            .askSpecular(in: shape)
     }
 }
 
