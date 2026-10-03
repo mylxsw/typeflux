@@ -1,4 +1,6 @@
+import AppKit
 import Foundation
+import SwiftUI
 import Testing
 @testable import Typeflux
 
@@ -97,6 +99,44 @@ struct AskConversationStorageTests {
         try await f.localAPI.delete(conversationId: "p", token: "")
         await f.model.refreshHistory()
         #expect(f.model.conversations.map(\.id) == ["a", "b"])
+    }
+
+    @Test func everyLocalPageIsListed() async throws {
+        let (f, _) = try fixture()
+        for index in 0 ..< 55 { await f.localAPI.seed(summary("p\(index)", TimeInterval(index))) }
+        await f.model.refreshHistory()
+        #expect(f.model.localConversationIds.count == 55)
+        #expect(f.model.conversations.count == 55)
+    }
+
+    @Test func theWorkspaceMarksPrivateConversations() async throws {
+        let (f, _) = try fixture()
+        await f.api.seed(summary("a", 30))
+        await f.localAPI.seed(summary("p", 20))
+        await f.model.refreshHistory()
+        await f.model.select("p")
+        let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil }, loadStoredUserProfile: { nil })
+        let hosting = NSHostingView(rootView: AskConversationView(model: f.model, auth: auth).frame(width: 1000))
+        hosting.layoutSubtreeIfNeeded()
+        #expect(hosting.fittingSize.height >= 530)
+        f.model.newConversation(storesLocally: true)
+        hosting.layoutSubtreeIfNeeded()
+        #expect(hosting.fittingSize.height >= 530)
+    }
+
+    @Test func settingsStoreTheDefault() throws {
+        let settings = SettingsStore(defaults: try #require(UserDefaults(suiteName: "ask-storage-settings-" + UUID().uuidString)))
+        #expect(!settings.askNewConversationsStayLocal)
+        // The key predates per-conversation storage; local mode carries over.
+        settings.defaults.set(true, forKey: "ask.localMode")
+        #expect(settings.askNewConversationsStayLocal)
+        let view = AskToolsSettingsView(settings: settings)
+        view.setNewConversationsStayLocal(false)
+        #expect(!settings.askNewConversationsStayLocal)
+        view.setNewConversationsStayLocal(true)
+        #expect(settings.askNewConversationsStayLocal)
+        #expect(AskToolsSettingsView.storageName(local: true) == L("ask.storage.local"))
+        #expect(AskToolsSettingsView.storageName(local: false) == L("ask.storage.cloud"))
     }
 
     @Test func cachedHistoryShowsPrivateRowsBeforeTheNetworkAnswers() async throws {

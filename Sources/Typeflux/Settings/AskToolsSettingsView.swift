@@ -51,10 +51,7 @@ struct AskToolsSettingsView: View {
                 selectorMenu(Self.storageName(local: newConversationsStayLocal),
                              label: L("ask.settings.local.title")) {
                     ForEach([false, true], id: \.self) { local in
-                        Button(Self.storageName(local: local)) {
-                            newConversationsStayLocal = local
-                            settings.askNewConversationsStayLocal = local
-                        }
+                        Button(Self.storageName(local: local)) { setNewConversationsStayLocal(local) }
                     }
                 }
             }
@@ -303,6 +300,11 @@ struct AskToolsSettingsView: View {
     }
 
     var search: AskSearchSettings { AskSearchSettings(defaults: settings.defaults) }
+
+    func setNewConversationsStayLocal(_ local: Bool) {
+        newConversationsStayLocal = local
+        settings.askNewConversationsStayLocal = local
+    }
 
     func setSearchProvider(_ provider: AskSearchSettings.Provider) {
         searchProvider = provider
