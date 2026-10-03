@@ -1,8 +1,10 @@
 import Foundation
 
-enum AskProjectRuntimeError: Error, Equatable {
+enum AskProjectRuntimeError: Error, LocalizedError, Equatable {
     case disabled, unavailable, invalidRequest, approvalRequired, denied, unknownLease
     case installationUnavailable, capacity, closed, inputFull, invalidCursor, portUnavailable
+
+    var errorDescription: String? { L("ask.terminal.error." + String(describing: self)) }
 }
 
 struct AskProjectLaunchRequest: Codable, Equatable {

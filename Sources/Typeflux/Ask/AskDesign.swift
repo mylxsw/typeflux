@@ -1022,6 +1022,10 @@ enum AskPresentation {
 
     /// An image from the screen or a page is a capture; any other tool produced its image.
     static func toolStatusText(result: AskMessage?, call: AskToolCall? = nil) -> String {
+        if call?.function.name == "project_terminal", let result,
+           let receipt = AskProjectTerminalReceipt.decode(result.resultText) {
+            return receipt.status.exitCode.map { L("ask.terminal.exit", String($0)) } ?? receipt.status.state.rawValue
+        }
         switch toolState(result: result) {
         case .running: return L("ask.tool.running")
         case .failed: return L("ask.tool.failed")
@@ -1040,7 +1044,7 @@ enum AskPresentation {
         case "web_fetch": return "network"
         case "artifact": return "doc.richtext"
         case "files", "project_files": return "folder"
-        case "run_code": return "terminal"
+        case "run_code", "project_terminal": return "terminal"
         case "skill": return "book"
         case "memory": return "brain"
         case "update_plan": return "list.bullet.clipboard"

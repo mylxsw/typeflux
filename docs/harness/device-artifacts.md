@@ -96,9 +96,9 @@ message. Save exports the **original entry file**, not a rewritten HTML page or
 an archive of all dependencies, and verifies the exact entry hash after the save
 dialog. Multi-file offline archive export is not part of this backend.
 
-The `AskPreviewSource.developmentService(process:address:)` seam is reserved for
-D04. It currently rejects all service addresses, including loopback: a URL alone
-is never a runtime lease or execution authorization.
+The `AskPreviewSource.developmentService(process:address:)` seam requires D04's
+host-created, live runtime capability. A URL alone still fails closed. Its
+explicit-resource HTTP proxy keeps WebKit offline; see [project integration](project-loop.md).
 
 The trust boundary relies on macOS WebKit's process sandbox and web security
 implementation. It does not claim protection against WebKit vulnerabilities or

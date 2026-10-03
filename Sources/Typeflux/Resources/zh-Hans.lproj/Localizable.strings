@@ -2122,3 +2122,23 @@
 "ask.artifact.close" = "关闭";
 "ask.artifact.truncated" = "文本预览已截断，保存文件可获取完整内容。";
 "ask.artifact.title" = "保存产物";
+
+// Project process evidence
+"ask.terminal.title" = "项目进程";
+"ask.terminal.stop" = "停止";
+"ask.terminal.exit" = "退出码：%@";
+"ask.terminal.lost" = "丢失的输出字节：%@";
+"ask.terminal.logFailed" = "无法保存进程日志。";
+"ask.terminal.error.disabled" = "Project execution is disabled.";
+"ask.terminal.error.unavailable" = "The required project runtime is unavailable.";
+"ask.terminal.error.invalidRequest" = "The project execution request is invalid.";
+"ask.terminal.error.approvalRequired" = "A new approval is required.";
+"ask.terminal.error.denied" = "Project access was revoked or denied.";
+"ask.terminal.error.unknownLease" = "This process belongs to a different run or app session.";
+"ask.terminal.error.installationUnavailable" = "Dependency installation is not supported.";
+"ask.terminal.error.capacity" = "The project runtime limit has been reached.";
+"ask.terminal.error.closed" = "The process has stopped.";
+"ask.terminal.error.inputFull" = "The input exceeds the supported buffer or line limit.";
+"ask.terminal.error.invalidCursor" = "The output cursor is invalid.";
+"ask.terminal.error.portUnavailable" = "The requested listener port is unavailable.";
+"ask.terminal.truncated" = "Output is truncated; the retained log may also be incomplete.";

@@ -23,6 +23,11 @@ enum AskToolRisk: Int, Comparable, Sendable {
 protocol AskToolExecuting {
     func bindConversation(_ id: String)
     func bindExecution(ownerId: String, conversationId: String, runId: String)
+    func cancelProjects(conversationId: String?)
+    func cancelProjectRun(_ scope: AskProjectScope)
+    func terminalStatus(_ ref: AskProcessRef) throws -> AskProjectTerminalReceipt
+    func stopTerminal(_ ref: AskProcessRef) throws
+    func terminalPreview(_ ref: AskProcessRef, entry: String, resources: [String]) throws -> AskDevelopmentPreview
     func loadArtifact(_ ref: AskArtifactRef, ownerId: String, conversationId: String) throws -> AskArtifactBundle
     func validateArtifact(_ ref: AskArtifactRef, ownerId: String, conversationId: String) throws
     var artifactPreviewEnabled: Bool { get }
@@ -41,6 +46,13 @@ protocol AskToolExecuting {
 }
 
 extension AskToolExecuting {
+    func cancelProjects(conversationId _: String?) {}
+    func cancelProjectRun(_: AskProjectScope) {}
+    func terminalStatus(_: AskProcessRef) throws -> AskProjectTerminalReceipt { throw AskProjectRuntimeError.disabled }
+    func stopTerminal(_: AskProcessRef) throws { throw AskProjectRuntimeError.disabled }
+    func terminalPreview(_: AskProcessRef, entry _: String, resources _: [String]) throws -> AskDevelopmentPreview {
+        throw AskProjectRuntimeError.disabled
+    }
     func validateArtifact(_ ref: AskArtifactRef, ownerId: String, conversationId: String) throws {
         _ = try loadArtifact(ref, ownerId: ownerId, conversationId: conversationId)
     }
@@ -84,6 +96,9 @@ final class AskLocalTools: AskToolExecuting {
     /// Independent rollout gate; production composition leaves this disabled.
     let projectModeEnabled: Bool
     var projectScopes: [String: AskProjectScope] = [:]
+    let projectRuntime: AskProjectRuntime?
+    var projectLeases: [String: AskProjectRuntimeLease] = [:]
+    var projectOutputBuffers: [String: AskTerminalTextBuffer] = [:]
     let owner: @MainActor () -> String
     let observationStore: AskObservationStore
     let browserExecutor: AskBrowserExecutor
@@ -102,6 +117,7 @@ final class AskLocalTools: AskToolExecuting {
          projects: AskProjectWorkspace = AskProjectWorkspace(), projectModeEnabled: Bool = false,
          artifactStore: AskArtifactStore = AskArtifactStore(), artifactCreationEnabled: Bool = false,
          artifactPreviewEnabled: Bool = false,
+         projectRuntime: AskProjectRuntime? = nil,
          owner: @escaping @MainActor () -> String = { GlobalSoulOwner.currentID }) {
         self.registry = registry; self.settings = settings
         let store = AskObservationStore()
@@ -113,6 +129,7 @@ final class AskLocalTools: AskToolExecuting {
         self.artifactCreationEnabled = artifactCreationEnabled
         self.artifactPreviewEnabled = artifactPreviewEnabled
         self.projects = projects; self.projectModeEnabled = projectModeEnabled
+        self.projectRuntime = projectRuntime
         self.sandbox = sandbox ?? AskCodeSandbox(readableDirectories: [skills.userDirectory])
     }
 
@@ -158,6 +175,7 @@ final class AskLocalTools: AskToolExecuting {
            let project = try? Self.projectDefinition(roots: fileTools(conversationId: conversationId).roots) {
             result.append(project)
             if artifactCreationEnabled { result.append(Self.artifactDefinition) }
+            if projectRuntime != nil { result.append(Self.terminalDefinition) }
         }
         if settings?.askCodeExecutionEnabled == true, let code = sandbox.definition() { result.append(code) }
         if let skill = skills.definition(enabledSkills) { result.append(skill) }
@@ -198,6 +216,7 @@ final class AskLocalTools: AskToolExecuting {
              ("browser", "read"), ("browser", "snapshot"), ("memory", "list"): return .read
         case ("files", _): return AskFileTools.risk(action: action)
         case ("artifact", _): return .write
+        case ("project_terminal", _): return ["status", "output"].contains(action) ? .read : .write
         case ("project_files", _): return ["list", "read", "review", "export"].contains(action) ? .read : .write
         case ("computer", _), ("browser", _), ("run_code", _), ("memory", _): return .write
         default: return .destructive
@@ -281,7 +300,7 @@ final class AskLocalTools: AskToolExecuting {
         }
         let args = try Self.jsonArguments(call.function.arguments)
         switch call.function.name {
-        case "artifact", "project_files": throw AskProjectError.denied // Requires the approved dispatch entry point.
+        case "artifact", "project_files", "project_terminal": throw AskProjectError.denied // Requires the approved dispatch entry point.
         case "computer", "browser":
             return try await executeAutomation(call.function.name, args: args, conversationId: conversationId)
         case "files":

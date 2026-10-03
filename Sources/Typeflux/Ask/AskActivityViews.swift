@@ -234,7 +234,10 @@ struct AskToolStepRow: View {
                         if pane == .arguments || result == nil {
                             AskMonoBlock(title: "", text: call.function.arguments)
                         } else if let result {
-                            if call.function.name == "project_files", result.isError != true,
+                            if call.function.name == "project_terminal",
+                               let receipt = AskProjectTerminalReceipt.decode(result.resultText) {
+                                AskProjectTerminalCard(receipt: receipt)
+                            } else if call.function.name == "project_files", result.isError != true,
                                let review = AskProjectReview.decode(result.resultText) {
                                 AskProjectReviewView(review: review, exportPatch: exportProjectPatch)
                             } else if !result.resultText.isEmpty {
