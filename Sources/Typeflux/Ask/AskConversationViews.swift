@@ -16,6 +16,8 @@ struct AskConversationView: View {
     @Namespace private var selectionSpace
     /// Height of the banners and composer floating over the transcript's bottom edge.
     @State private var bottomChromeHeight: CGFloat = 0
+    /// Files are dragged over the transcript; they attach to the draft when dropped.
+    @State private var transcriptDropTargeted = false
     /// Set by the toggle inside its animation. Driving the layout from the
     /// `@AppStorage` value alone re-rendered outside the animation, so the
     /// sidebar popped in and out instead of sliding.
@@ -434,6 +436,16 @@ struct AskConversationView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .mask(AskEdgeFade(topClear: AskMetrics.headerCapsuleTop, bottomClear: AskMetrics.composerBottomInset,
                               fade: AskMetrics.transcriptEdgeFade))
+            .overlay {
+                if transcriptDropTargeted {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(AskTheme.accent, style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
+                        .background(AskTheme.accent.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .padding(12)
+                        .allowsHitTesting(false)
+                }
+            }
+            .askAttachmentDrop(model: model, launcher: false, targeted: $transcriptDropTargeted)
             VStack(spacing: 0) {
                 statusColumn
                 composerArea
@@ -445,6 +457,7 @@ struct AskConversationView: View {
             header
         }
         .onPreferenceChange(AskBottomChromeHeight.self) { bottomChromeHeight = $0 }
+        .onChange(of: model.searchRequest) { _ in openSearch() }
         .frame(minWidth: AskMetrics.contentMinWidth)
     }
 
@@ -837,7 +850,8 @@ struct AskConversationView: View {
         model.steeredMessages.map { item in
             let request = item.draft.request(deviceId: model.deviceId, tools: [], id: item.id)
             return AskMessage(id: item.id, role: "user", text: request.text, selection: request.selection, source: request.source,
-                              image: request.image, createdAt: Date(), references: request.references, steered: true)
+                              image: request.image, createdAt: Date(), references: request.references, steered: true,
+                              attachments: request.attachments, mcpServers: request.mcpServers)
         }
     }
 
@@ -913,6 +927,20 @@ private struct AskMessageView: View {
                 }
                 // What rode with the question sits above it, as on the design board.
                 if message.image != nil || message.selection != nil { attachments }
+                if let files = message.attachments, !files.isEmpty {
+                    AskFlowLayout(spacing: 6, alignment: .trailing) {
+                        ForEach(files) { AskSentFileChip(attachment: $0) }
+                    }
+                }
+                let tools = (message.skills ?? []).map { AskChosenTool(kind: .skill, name: $0.name) }
+                    + (message.mcpServers ?? []).map { AskChosenTool(kind: .mcpServer, name: $0) }
+                if !tools.isEmpty {
+                    AskFlowLayout(spacing: 6, alignment: .trailing) {
+                        ForEach(tools) { tool in
+                            AskSentAttachmentChip(title: tool.caption + " · " + tool.name, systemImage: tool.symbol)
+                        }
+                    }
+                }
                 if !message.text.isEmpty {
                     Text(message.text)
                         .font(.system(size: 14))
@@ -1251,5 +1279,47 @@ private struct AskSuggestionCard: View {
         .onHover { hovering = isEnabled && $0 }
         .accessibilityLabel(title)
         .accessibilityHint(caption)
+    }
+}
+
+/// A file, image or folder sent with a question. Images and text open a preview;
+/// a folder shows its location in Finder.
+struct AskSentFileChip: View {
+    let attachment: AskAttachment
+    @State private var previewing = false
+
+    var body: some View {
+        Button {
+            if attachment.kind == .folder, let path = attachment.path {
+                NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+            } else {
+                previewing = true
+            }
+        } label: {
+            AskSentAttachmentChip(
+                title: [attachment.name, AskAttachmentStrip.caption(attachment)].compactMap { $0 }.joined(separator: " · "),
+                thumbnail: attachment.image.flatMap { AskAttachmentStrip.thumbnail(id: attachment.id, dataURL: $0) },
+                systemImage: AskAttachmentStrip.symbol(attachment)
+            )
+            .frame(maxWidth: 260)
+        }
+        .buttonStyle(.plain)
+        .help(attachment.path ?? attachment.name)
+        .popover(isPresented: $previewing) { preview }
+    }
+
+    @ViewBuilder private var preview: some View {
+        if let image = attachment.image.flatMap({ AskAttachmentStrip.thumbnail(id: attachment.id, dataURL: $0) }) {
+            Image(nsImage: image).resizable().scaledToFit().frame(maxWidth: 650, maxHeight: 520).padding()
+        } else {
+            ScrollView {
+                Text(String((attachment.text ?? "").prefix(20000)))
+                    .font(.system(size: 12, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(width: 480, height: 320)
+            .padding(14)
+        }
     }
 }

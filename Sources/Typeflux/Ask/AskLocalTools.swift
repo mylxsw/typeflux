@@ -27,10 +27,13 @@ protocol AskToolExecuting {
     func execute(_ call: AskToolCall, conversationId: String) async throws -> AskLocalToolOutput
     /// The MCP server behind a tool call, for approvals; nil for built-in tools.
     func mcpServerName(of call: AskToolCall) -> String?
+    /// Opens folders the user attached to the `files` tool for one conversation.
+    func grantFolders(_ paths: [String], conversationId: String)
 }
 
 extension AskToolExecuting {
     func mcpServerName(of _: AskToolCall) -> String? { nil }
+    func grantFolders(_: [String], conversationId _: String) {}
 }
 
 /// Calls require conversation approval or screenshot consent from the submitted draft.
@@ -48,15 +51,17 @@ final class AskLocalTools: AskToolExecuting {
     let sandbox: AskCodeSandbox
     let skills: AskSkillLibrary
     private let notes: AskMemoryNoteStore
+    let folderGrants: AskFolderGrants
     private let owner: @MainActor () -> String
     /// Running apps, injectable for tests.
     var runningBundleIdentifiers: () -> [String] = { NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier) }
 
     init(registry: MCPRegistry, runner: any ProcessCommandRunning = ProcessCommandRunner(), settings: SettingsStore? = nil,
          sandbox: AskCodeSandbox? = nil, skills: AskSkillLibrary = AskSkillLibrary(), notes: AskMemoryNoteStore = .shared,
+         folderGrants: AskFolderGrants = AskFolderGrants(),
          owner: @escaping @MainActor () -> String = { GlobalSoulOwner.currentID }) {
         self.registry = registry; self.runner = runner; self.settings = settings
-        self.skills = skills; self.notes = notes; self.owner = owner
+        self.skills = skills; self.notes = notes; self.folderGrants = folderGrants; self.owner = owner
         self.sandbox = sandbox ?? AskCodeSandbox(readableDirectories: [skills.userDirectory])
     }
 
@@ -70,6 +75,15 @@ final class AskLocalTools: AskToolExecuting {
 
     var fileTools: AskFileTools { AskFileTools(roots: settings?.askFileAccessFolders ?? []) }
 
+    /// Settings folders plus the folders attached to this conversation.
+    func fileTools(conversationId: String?) -> AskFileTools {
+        var roots = fileTools.roots
+        for path in conversationId.map(folderGrants.folders(for:)) ?? [] where !roots.contains(path) { roots.append(path) }
+        return AskFileTools(roots: roots)
+    }
+
+    func grantFolders(_ paths: [String], conversationId: String) { folderGrants.grant(paths, to: conversationId) }
+
     /// The bound browser, or a running Safari/Chrome when the question started elsewhere.
     func browserBundle(conversationId: String?) -> String? {
         // An existing conversation only controls the app it was bound to, which is gone after a restart.
@@ -82,7 +96,7 @@ final class AskLocalTools: AskToolExecuting {
     func definitions(conversationId: String?) async -> [AskToolDefinition] {
         await registry.connectAutoConnectServers()
         var result = Self.builtins.filter { $0.name != "browser" || browserBundle(conversationId: conversationId) != nil }
-        if let files = AskFileTools.definition(roots: fileTools.roots) { result.append(files) }
+        if let files = AskFileTools.definition(roots: fileTools(conversationId: conversationId).roots) { result.append(files) }
         if settings?.askCodeExecutionEnabled == true, let code = sandbox.definition() { result.append(code) }
         if let skill = skills.definition(enabledSkills) { result.append(skill) }
         result.append(AskMemoryNoteStore.definition)
@@ -207,7 +221,7 @@ final class AskLocalTools: AskToolExecuting {
             guard let bundle = browserBundle(conversationId: conversationId) else { throw AskLocalError.message(L("ask.tool.browserUnsupported")) }
             return try await executeBrowser(args, bundle: bundle)
         case "files":
-            let files = fileTools
+            let files = fileTools(conversationId: conversationId)
             let output = try await Task.detached(priority: .userInitiated) { try files.execute(args) }.value
             return .init(content: output)
         case "run_code":
