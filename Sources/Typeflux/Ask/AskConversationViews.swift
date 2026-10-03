@@ -181,8 +181,7 @@ struct AskConversationView: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .foregroundStyle(StudioTheme.textSecondary)
-        .frame(width: 16, height: AskTitleBarButton.size.height)
-        .padding(.leading, -4)
+        .frame(width: AskMetrics.newConversationMenuWidth, height: AskTitleBarButton.size.height)
         .help(L("ask.new.more"))
         .accessibilityLabel(L("ask.new.more"))
     }
@@ -599,7 +598,8 @@ struct AskConversationView: View {
                 .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
         }
-        .padding(.leading, sidebarHidden ? AskMetrics.collapsedTitleInset : 14)
+        .padding(.leading, sidebarHidden
+            ? AskMetrics.collapsedTitleInset + (model.isSignedIn ? AskMetrics.newConversationMenuWidth : 0) : 14)
         .padding(.trailing, 14)
         .frame(height: AskMetrics.titleBarRowHeight)
     }

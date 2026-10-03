@@ -191,6 +191,8 @@ enum AskMetrics {
     /// Header title inset when the sidebar is collapsed: past the pill holding
     /// the toggle, search and compose buttons, plus the gap between pills.
     static let collapsedTitleInset: CGFloat = trafficLightInset + titleBarButtonWidth * 3 + 6 + 12
+    /// The chevron beside compose that offers both kinds of new conversation (signed in).
+    static let newConversationMenuWidth: CGFloat = 14
     /// One centred reading column shared by the transcript and the composer, so
     /// questions, answers and the input line up instead of spanning the window.
     /// The design board's reading column is 720pt of content; the composer
