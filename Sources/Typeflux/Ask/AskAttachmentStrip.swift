@@ -154,6 +154,14 @@ struct AskAttachmentChip: View {
                 .truncationMode(.middle)
                 .frame(maxWidth: 180)
                 .fixedSize()
+            if let source = item.sourceAppName {
+                Text(source)
+                    .font(.system(size: 11))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .lineLimit(1)
+                    .frame(maxWidth: 100)
+                    .help(L("ask.context.selection.source", source))
+            }
             if let caption {
                 Text(caption)
                     .font(.system(size: 11))
@@ -184,7 +192,7 @@ struct AskAttachmentChip: View {
         .onHover { hovering = $0 }
         .help(item.detail ?? item.title)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(item.title)
+        .accessibilityLabel(item.title + (item.sourceAppName.map { ", " + L("ask.context.selection.source", $0) } ?? ""))
     }
 
     @ViewBuilder private var leading: some View {
@@ -204,6 +212,11 @@ struct AskAttachmentChip: View {
                 .foregroundStyle(AskTheme.accent)
                 .frame(width: 22, height: 22)
                 .background(AskTheme.accent.opacity(0.15), in: Circle())
+                .overlay(alignment: .bottomTrailing) {
+                    if let bundle = item.sourceAppBundleID, let icon = AskContextChips.appIcon(bundle) {
+                        Image(nsImage: icon).resizable().frame(width: 12, height: 12).offset(x: 2, y: 2)
+                    }
+                }
         }
     }
 }

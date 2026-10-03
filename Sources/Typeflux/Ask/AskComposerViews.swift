@@ -442,10 +442,24 @@ struct AskComposer: View {
             // "How to ask" and "what rides along" are separated by a rule.
             Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
             HStack(spacing: 0) {
-                contextChips
+                if launcher || draft.wrappedValue.source?.isEmpty == false {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 0) {
+                            sourceContextButton()
+                            contextChips
+                        }
+                        .fixedSize()
+                        sourceContextButton(controls: AnyView(contextChips))
+                    }
                     .disabled(active)
                     .opacity(Self.recordingDim(active))
                     .layoutPriority(1)
+                } else {
+                    contextChips
+                        .disabled(active)
+                        .opacity(Self.recordingDim(active))
+                        .layoutPriority(1)
+                }
                 Spacer(minLength: 8)
                 // Confirms a command in the footer's empty space, inside the card.
                 if let feedback = model.commandFeedback, !active {
@@ -455,7 +469,13 @@ struct AskComposer: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: model.commandFeedback)
-            voiceStatus
+            // Keep the recording label's space when it fits. An idle reservation
+            // must not push the context entry or send button outside a narrow card.
+            ViewThatFits(in: .horizontal) {
+                voiceStatus
+                if !active { Color.clear.frame(width: 0, height: 0) }
+            }
+            .layoutPriority(active ? 1 : -1)
             if !launcher, onToggleUsage != nil, let context = model.usageContext {
                 AskContextUsageButton(context: context) { onToggleUsage?() }
             }
@@ -486,12 +506,19 @@ struct AskComposer: View {
     /// recording state is the one thing that reads.
     static func recordingDim(_ active: Bool) -> Double { active ? 0.4 : 1 }
 
+    private func sourceContextButton(controls: AnyView? = nil) -> some View {
+        AskSourceContextButton(draft: draft, restored: launcher && model.launcherContextRestored,
+                               capturing: model.capturing, warning: launcher ? model.captureWarning : nil,
+                               refresh: launcher ? { Task { await model.refreshLauncherContext() } } : nil,
+                               controls: controls)
+    }
+
     private var contextItems: [AskContextItem] {
         let value = draft.wrappedValue
         let newConversation = launcher || model.selectedId == nil
         return AskContextChips.items(
             screenshot: screenshotState,
-            source: launcher ? value.source : nil,
+            source: value.source,
             sourceBundleID: value.sourceBundleID,
             selection: value.selection,
             selectionOff: value.selectionOff == true,
@@ -512,8 +539,8 @@ struct AskComposer: View {
         return value.includeScreenshot ? .attached : .off
     }
 
-    /// Icon chips, widest layout that fits first. Screenshot and source stay
-    /// visible; selection and memory fold into "+N" from the right.
+    /// Icon chips, widest layout that fits first. The screenshot stays visible;
+    /// selection and memory fold into "+N" from the right.
     private var contextChips: some View {
         let items = contextItems
         return ViewThatFits(in: .horizontal) {
@@ -625,7 +652,7 @@ private struct AskContextPreview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L("ask.context")).font(.system(size: 13, weight: .semibold))
-            if let source = draft.source { Text(source).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).lineLimit(2) }
+            Text(L("ask.context.screen.scope")).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
             if let date = draft.capturedAt { Text(date, style: .time).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary) }
             if let dataURL = draft.screenshot, let image = AskImage.decode(dataURL) {
                 Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 230)

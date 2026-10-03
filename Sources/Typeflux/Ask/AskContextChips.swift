@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// One piece of context riding with a question: the screenshot, the source
-/// app, a text selection or memory. The composer draws each as a round icon
+/// One piece of context riding with a question: the screenshot, a text
+/// selection or memory. The composer draws each as a round icon
 /// chip; the words live in a hover card, so a long window title can no longer
 /// push the whole group into an overflow menu.
 struct AskContextItem: Identifiable, Equatable {
@@ -27,12 +27,14 @@ struct AskContextItem: Identifiable, Equatable {
     var hint: String?
     var badge: Badge?
     var removable = false
+    /// Local provenance for a selection, independent of sending source metadata.
+    var sourceAppName: String?
+    var sourceAppBundleID: String?
 
     var id: String { kind.rawValue }
 
-    /// Screenshot and source decide whether the question carries what is on
-    /// screen, so they never collapse into "+N".
-    var alwaysVisible: Bool { kind == .screenshot || kind == .source }
+    /// The screenshot control remains available even when other chips overflow.
+    var alwaysVisible: Bool { kind == .screenshot }
 }
 
 /// The screenshot chip's state, resolved by the composer from the model.
@@ -66,26 +68,25 @@ enum AskContextChips {
         return String(flat.prefix(selectionPreviewLength)) + "…"
     }
 
-    /// Items in display order: screenshot, source, selection, memory.
+    /// Source metadata is inspected separately, not drawn as a standalone app icon.
+    /// Items in display order: screenshot, selection, memory.
     static func items(screenshot: AskScreenshotState, source: String?, sourceBundleID: String?,
                       selection: String?, selectionOff: Bool = false, memory: AskMemory?, memoryOff: Bool = false,
                       memoryPinned: Bool, pinnedMemory: AskMemory? = nil) -> [AskContextItem] {
         var items = [screenshotItem(screenshot)]
-        if let source, !source.isEmpty {
-            let parts = sourceParts(source)
-            items.append(AskContextItem(kind: .source, systemImage: "macwindow", appBundleID: sourceBundleID,
-                                        style: .neutral, title: parts.app, detail: parts.window))
-        }
         if let selection, !selection.isEmpty {
             // A toggle like memory: switched off it stays as a grey chip, so the
             // selected text can be switched back on for this question.
             let lines = AskPresentation.lineCount(selection)
+            let app = source.map { sourceParts($0).app.trimmingCharacters(in: .whitespacesAndNewlines) }
             items.append(AskContextItem(
                 kind: .selection, systemImage: "text.alignleft", style: selectionOff ? .neutral : .active,
                 title: L("ask.selection.lines", lines),
                 detail: "“" + selectionPreview(selection) + "”",
                 hint: L(selectionOff ? "ask.context.selection.onHint" : "ask.context.selection.offHint"),
-                badge: selectionOff ? nil : .count(lines)
+                badge: selectionOff ? nil : .count(lines),
+                sourceAppName: app.flatMap { $0.isEmpty ? nil : $0 },
+                sourceAppBundleID: app?.isEmpty == false ? sourceBundleID : nil
             ))
         }
         if memoryPinned {
@@ -115,7 +116,8 @@ enum AskContextChips {
                                   title: L("ask.screenshot"), hint: L("ask.context.screenshot.offHint"))
         case .attached:
             return AskContextItem(kind: .screenshot, systemImage: "camera.viewfinder", style: .active,
-                                  title: L("ask.context.screenshot.attached"), hint: L("ask.context.previewHint"),
+                                  title: L("ask.context.screenshot.attached"), detail: L("ask.context.screen.scope"),
+                                  hint: L("ask.context.previewHint"),
                                   removable: true)
         case let .unavailable(reason):
             return AskContextItem(kind: .screenshot, systemImage: "camera.viewfinder", style: .unavailable,
@@ -214,7 +216,8 @@ struct AskIconChip: View {
         .accessibilityElement(children: .ignore)
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel(item.title)
-        .accessibilityHint(item.detail ?? item.hint ?? "")
+        .accessibilityHint([item.sourceAppName.map { L("ask.context.selection.source", $0) },
+                            item.detail, item.hint].compactMap { $0 }.joined(separator: ", "))
         .accessibilityAction { action?() }
         .accessibilityAction(named: L("ask.remove")) { if item.removable { onRemove?() } }
     }
@@ -292,6 +295,8 @@ struct AskIconChipFace: View {
             }
             .overlay(alignment: .bottomTrailing) {
                 if case let .app(bundleID) = item.badge, let image = AskContextChips.appIcon(bundleID) {
+                    Image(nsImage: image).resizable().frame(width: 13, height: 13).offset(x: 1, y: 1)
+                } else if let bundleID = item.sourceAppBundleID, let image = AskContextChips.appIcon(bundleID) {
                     Image(nsImage: image).resizable().frame(width: 13, height: 13).offset(x: 1, y: 1)
                 }
             }
@@ -382,6 +387,10 @@ struct AskOverflowChip: View {
                         AskIconChipFace(item: item)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.title).font(.system(size: 12, weight: .semibold))
+                            if let source = item.sourceAppName {
+                                Text(L("ask.context.selection.source", source))
+                                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                            }
                             if let detail = item.detail {
                                 Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
                                     .lineLimit(3)
@@ -418,6 +427,10 @@ struct AskContextCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.title).font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
+                    if let source = item.sourceAppName {
+                        Text(L("ask.context.selection.source", source))
+                            .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                    }
                     if let detail = item.detail {
                         Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
                             .lineLimit(3)
