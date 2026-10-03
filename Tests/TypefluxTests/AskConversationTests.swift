@@ -203,11 +203,16 @@ struct AskTestFixture {
     let tools = AskTestTools()
     let capture = AskTestCapture()
     let model: AskConversationModel
-    init(authenticated: Bool = true, modelLibrary: AskModelLibrary? = nil) throws {
+    /// `localOnly` mirrors a signed-out Mac running Ask on the user's own models:
+    /// the session carries the local owner and no Cloud token.
+    init(authenticated: Bool = true, localOnly: Bool = false, modelLibrary: AskModelLibrary? = nil) throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent("ask-tests-" + UUID().uuidString)
         cache = try AskConversationCache(url: root.appendingPathComponent("cache.sqlite"))
         model = AskConversationModel(api: api, cache: cache, tools: tools, capture: capture,
-                                     deviceId: "device", modelLibrary: modelLibrary ?? AskModelLibrary(defaults: UserDefaults(suiteName: "ask-library-test-" + UUID().uuidString)!, automaticallyLoadsCatalog: false), session: { authenticated ? ("owner", "token") : nil })
+                                     deviceId: "device", modelLibrary: modelLibrary ?? AskModelLibrary(defaults: UserDefaults(suiteName: "ask-library-test-" + UUID().uuidString)!, automaticallyLoadsCatalog: false), session: {
+                                         if localOnly { return (AskRoutedAPI.localOwner, "") }
+                                         return authenticated ? ("owner", "token") : nil
+                                     })
     }
     func wait(_ predicate: () -> Bool) async throws {
         for _ in 0 ..< 1000 {

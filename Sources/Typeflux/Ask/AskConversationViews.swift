@@ -21,6 +21,7 @@ struct AskConversationView: View {
     /// sidebar popped in and out instead of sliding.
     @State private var sidebarChoice: Bool?
     @AppStorage("ask.sidebarCollapsed") private var storedSidebarCollapsed = false
+    @AppStorage(AskCloudPromo.dismissedKey) private var cloudPromoDismissedAt: Double = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var windowWidth: CGFloat = 0
     @ObservedObject private var auth: AuthState
@@ -205,16 +206,35 @@ struct AskConversationView: View {
     /// sign-in link; the letter badge that used to lead it pointed at nothing.
     private var accountFooter: some View {
         VStack(spacing: 0) {
+            if !auth.isLoggedIn, AskCloudPromo.isVisible(dismissedAt: cloudPromoDismissedAt) {
+                AskCloudPromoCard(onSignIn: { LoginWindowController.shared.show() }, onDismiss: {
+                    withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) {
+                        cloudPromoDismissedAt = Date().timeIntervalSince1970
+                    }
+                })
+                .padding(.horizontal, 10)
+                .padding(.bottom, 10)
+                .transition(.opacity)
+            }
             Rectangle().fill(AskTheme.separator).frame(height: 0.5)
             accountFooterRow
         }
     }
 
-    private var accountFooterRow: some View {
-        HStack(spacing: 9) {
+    /// Signed out, the footer says where Ask runs; the Cloud card above it carries the sign-in.
+    @ViewBuilder private var footerIdentity: some View {
+        if auth.isLoggedIn {
             AskAccountFooterIdentity(auth: auth, name: accountName, runsLocally: !model.cloudAvailable) {
                 model.onOpenSettings?(.account)
             }
+        } else {
+            AskLocalModeIdentity(model: model)
+        }
+    }
+
+    private var accountFooterRow: some View {
+        HStack(spacing: 9) {
+            footerIdentity
                 .layoutPriority(1)
             Spacer(minLength: 4)
             Button { model.onOpenSettings?(.settings) } label: {
@@ -229,7 +249,7 @@ struct AskConversationView: View {
         }
         .padding(.leading, 12)
         .padding(.trailing, 10)
-        .frame(height: 52)
+        .frame(height: auth.isLoggedIn ? 52 : 56)
     }
 
     private var accountName: String {
@@ -444,7 +464,6 @@ struct AskConversationView: View {
                     if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
                     if let summary = AskActivity.runSummary(model.selected?.run,
                                                             pendingApproval: model.pendingApprovals[id] != nil) {
-                        AskRunLocationLabel(local: !model.cloudAvailable)
                         HStack(spacing: 5) {
                             if let tone = AskRunTone.of(model.selected?.run,
                                                         pendingApproval: model.pendingApprovals[id] != nil) {
@@ -572,17 +591,24 @@ struct AskConversationView: View {
     /// This is a hotkey-summoned tool, so each row carries a real shortcut;
     /// Command-digit rather than Option-digit, which types a character.
     /// `key` names the title; its caption lives under `key + ".caption"`.
+    /// The screenshot suggestion follows the model: it names the vision model a
+    /// local draft moves to, or says why it cannot run and links to model settings.
     private func suggestion(_ key: String, systemImage: String, tint: Color,
                             shortcut: String, screenshot: Bool) -> some View {
-        let title = L(key), caption = L(key + ".caption")
+        let title = L(key)
+        let state = screenshot ? model.screenshotSuggestion(launcher: false) : .ready
+        let caption = state.caption(default: L(key + ".caption"))
+        let addsModel = state == .needsVisionModel
         return AskSuggestionCard(title: title, caption: caption, systemImage: systemImage, tint: tint,
-                                 shortcut: shortcut) {
+                                 shortcut: shortcut, dimmed: !state.enabled,
+                                 captionAction: addsModel ? L("ask.vision.add") : nil) {
+            if addsModel { model.onOpenSettings?(.models); return }
             model.draft.text = title
-            if screenshot { model.draft.includeScreenshot = true }
+            if screenshot { model.attachScreenshotForSuggestion(launcher: false) }
         }
         .keyboardShortcut(KeyEquivalent(Character(shortcut)), modifiers: .command)
-        .disabled(screenshot && model.screenshotCapability(launcher: false) != .supported)
-        .help((screenshot ? (model.screenshotCapability(launcher: false).hint ?? caption) : caption) + " · ⌘" + shortcut)
+        .disabled(!state.enabled && !addsModel)
+        .help((addsModel ? L("ask.vision.addHelp") : caption) + " · ⌘" + shortcut)
     }
 
     /// Banners and cards above the composer share its centred column, so they
@@ -594,6 +620,13 @@ struct AskConversationView: View {
     }
 
     @ViewBuilder private var statusArea: some View {
+        if let change = model.visibleVisionSwitch {
+            AskBanner(text: String(format: L("ask.vision.switched"), model.modelLibrary.name(for: change.to)),
+                      tone: .info, systemImage: "eye",
+                      actionTitle: String(format: L("ask.vision.revert"), model.modelLibrary.name(for: change.from)),
+                      action: { model.revertVisionSwitch() },
+                      onDismiss: { model.visionSwitch = nil })
+        }
         if model.imageRecoveryTarget == nil, let error = model.error {
             AskBanner(
                 text: error,
@@ -1173,9 +1206,14 @@ private struct AskSuggestionCard: View {
     let systemImage: String
     let tint: Color
     let shortcut: String
+    /// Shown as unavailable while still clickable, e.g. to open model settings.
+    var dimmed = false
+    /// A link after the caption, such as "Add".
+    var captionAction: String?
     var action: () -> Void
     @State private var hovering = false
     @Environment(\.isEnabled) private var isEnabled
+    private var available: Bool { isEnabled && !dimmed }
 
     static var corner: CGFloat { 18 }
 
@@ -1183,19 +1221,21 @@ private struct AskSuggestionCard: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
                 // The shortcut lives in the tooltip; the card face matches the design board.
+                let iconTint = available ? tint : StudioTheme.textTertiary
                 Image(systemName: systemImage).font(.system(size: 14))
-                    .foregroundStyle(hovering ? Color.white : tint)
+                    .foregroundStyle(hovering && available ? Color.white : iconTint)
                     .frame(width: 30, height: 30)
-                    .background(hovering ? tint : tint.opacity(0.14),
+                    .background(hovering && available ? iconTint : iconTint.opacity(0.14),
                                 in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(tint.opacity(0.35), lineWidth: 0.5))
+                        .strokeBorder(iconTint.opacity(0.35), lineWidth: 0.5))
                 Text(title).font(.system(size: 13.5, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(available ? StudioTheme.textPrimary : StudioTheme.textTertiary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(caption).font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                (Text(caption).foregroundColor(StudioTheme.textTertiary)
+                    + Text(captionAction.map { " · " + $0 } ?? "").fontWeight(.semibold).foregroundColor(AskTheme.accentText))
+                    .font(.system(size: 11.5)).lineLimit(1)
             }
             .padding(.horizontal, 14)
             .padding(.top, 14)
@@ -1203,7 +1243,7 @@ private struct AskSuggestionCard: View {
             .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
             .askInWindowGlass(corner: Self.corner, opaqueFill: AskTheme.composerSurface)
             .contentShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
-            .opacity(isEnabled ? 1 : 0.55)
+            .opacity(available ? 1 : 0.7)
             .animation(.easeOut(duration: 0.18), value: hovering)
         }
         .buttonStyle(AskLiftingCardStyle())

@@ -48,6 +48,12 @@ struct AskModelMenu: View {
                 AskCappedWidth(maxWidth: compact ? AskMetrics.modelMenuMaxWidth : .infinity) {
                     Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
                 }
+                if compact, Self.showsVisionTag(library: library, reference: reference) {
+                    Image(systemName: "eye").font(.system(size: 10.5, weight: .semibold))
+                        .foregroundStyle(AskTheme.accentText)
+                        .help(L("ask.models.supportsImages"))
+                        .accessibilityLabel(L("ask.models.supportsImages"))
+                }
                 if fieldStyle {
                     Spacer(minLength: 4)
                 }
@@ -74,7 +80,8 @@ struct AskModelMenu: View {
         .askMenu(isPresented: $expanded, glass: compact) {
             AskModelChoices(library: library, reference: $reference, scenario: scenario, showsDefaultAction: showsDefaultAction,
                             hasImage: hasImage, loggedIn: loggedIn, dismiss: { expanded = false },
-                            composerStyle: compact, onManage: onManage)
+                            composerStyle: compact, onManage: onManage,
+                            offersCloudSignIn: compact && scenario == "ask" && !auth.isLoggedIn)
         }
         .onChange(of: expanded) { isExpanded in
             if isExpanded && library.automaticallyLoadsCatalog {
@@ -88,6 +95,15 @@ struct AskModelMenu: View {
                 await library.probeOllama()
             }
         }
+    }
+}
+
+extension AskModelMenu {
+    /// The user's own models vary in what they read, so the composer marks one
+    /// that reads images. Cloud models all do and stay unmarked.
+    static func showsVisionTag(library: AskModelLibrary, reference: String) -> Bool {
+        guard let (provider, _) = library.registry.resolve(reference), !provider.isCloud else { return false }
+        return library.imageCapability(reference) == .supported
     }
 }
 
@@ -131,6 +147,8 @@ struct AskModelChoices: View {
     var composerStyle = false
     /// Opens model settings from the chooser's footer.
     var onManage: (() -> Void)?
+    /// Signed out: a locked Typeflux Cloud row says what signing in adds.
+    var offersCloudSignIn = false
 
     var body: some View {
         if composerStyle { composerBody } else { standardBody }
@@ -181,10 +199,14 @@ struct AskModelChoices: View {
                         Text(L("ask.models.unavailable")).font(.system(size: 12))
                             .foregroundStyle(StudioTheme.textTertiary)
                             .padding(.horizontal, 14).padding(.top, 12)
+                    } else if hasImage, compatible.flatMap(\.models).count < choices.flatMap(\.models).count {
+                        Label(L("ask.models.imageOnly"), systemImage: "info.circle").font(.system(size: 11.5))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                            .padding(.horizontal, 14).padding(.top, 8).padding(.bottom, 2)
                     }
                     ForEach(Array(choices.enumerated()), id: \.element.id) { index, provider in
                         if index > 0 { AskPopoverDivider() }
-                        AskPopoverHeader(title: provider.isCloud ? provider.name : L("ask.models.custom"),
+                        AskPopoverHeader(title: Self.groupTitle(provider),
                                          trailing: index == 0 && provider.isCloud
                                              ? L("ask.models.multiplierColumn") : nil)
                         ForEach(provider.models) { model in
@@ -201,12 +223,25 @@ struct AskModelChoices: View {
                                 if let multiplier = model.pricing?.multiplier,
                                    let text = AskMultiplierBadge.text(multiplier) {
                                     Text(text).font(.system(size: 11)).monospacedDigit()
-                                } else if !provider.isCloud {
-                                    Text(L("ask.models.ownAPI")).font(.system(size: 11))
+                                } else if let tag = Self.sourceTag(provider) {
+                                    Text(tag).font(.system(size: 11))
                                 }
                             }
                             .help(model.displayName + " — " + (model.pricing == nil
                                 ? L("models.cloud.priceUnknown") : L("models.cloud.priceExplanation")))
+                        }
+                    }
+                    if offersCloudSignIn {
+                        if !choices.isEmpty { AskPopoverDivider() }
+                        AskPopoverHeader(title: "Typeflux Cloud")
+                        AskPopoverRow(title: L("ask.models.cloudLocked.title"), caption: L("ask.models.cloudLocked.caption"),
+                                      selected: false) {
+                            dismiss(); LoginWindowController.shared.show()
+                        } accessory: {
+                            Text(L("ask.cloudPromo.signIn")).font(.system(size: 11.5, weight: .semibold))
+                                .foregroundStyle(Color.white)
+                                .padding(.horizontal, 10).frame(height: 22)
+                                .background(Capsule().fill(AskTheme.accent))
                         }
                     }
                 }
@@ -239,6 +274,17 @@ struct AskModelChoices: View {
     }
 
     static let composerListMaxHeight: CGFloat = 460
+
+    /// Each source is its own group; models on this Mac say so.
+    static func groupTitle(_ provider: RegisteredProvider) -> String {
+        provider.isOllama ? L("ask.models.localGroup") : provider.name
+    }
+
+    /// The trailing word on a row without a Cloud multiplier: where it runs.
+    static func sourceTag(_ provider: RegisteredProvider) -> String? {
+        if provider.isCloud { return nil }
+        return provider.isOllama ? L("ask.location.local") : L("ask.models.ownAPI")
+    }
 
     /// Why a listed model cannot be picked for this conversation, if it cannot.
     static func imageReason(_ model: RegisteredModel, provider: RegisteredProvider, hasImage: Bool,

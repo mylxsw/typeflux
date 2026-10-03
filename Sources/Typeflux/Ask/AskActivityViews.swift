@@ -358,31 +358,25 @@ private struct AskSourceList: View {
 /// Cloud mode needs no badge; missing local capabilities stay in the tooltip.
 struct AskRunLocationLabel: View {
     var local: Bool
-    var compact = false
-    var notice: String?
-
-    static func help(notice: String?) -> String {
-        let base = L("ask.location.local.help")
-        return notice.map { base + "\n" + $0 } ?? base
-    }
+    /// The card it opens is showing.
+    var highlighted = false
 
     var body: some View {
         if local {
+            // Running on the user's own models is a state, not a fault: no warning
+            // glyph, and the text stays in the launcher too. Gaps live in the card.
             HStack(spacing: 4) {
                 Image(systemName: "desktopcomputer").font(.system(size: 11, weight: .medium))
-                if !compact { Text(L("ask.location.local")).font(.system(size: 11.5, weight: .medium)).lineLimit(1).fixedSize() }
-                if notice != nil {
-                    Image(systemName: "exclamationmark.circle.fill").font(.system(size: 10)).foregroundStyle(StudioTheme.warning)
-                }
+                Text(L("ask.location.local")).font(.system(size: 11.5, weight: .medium)).lineLimit(1).fixedSize()
             }
-            .foregroundStyle(StudioTheme.textSecondary)
-            .padding(.horizontal, 7)
+            .foregroundStyle(highlighted ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+            .padding(.horizontal, 8)
             .frame(height: 22)
-            .background(AskTheme.hoverFill, in: Capsule())
-            .help(Self.help(notice: notice))
+            .background(highlighted ? AskTheme.pressFill : AskTheme.hoverFill, in: Capsule())
+            .help(L("ask.location.local.help"))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(L("ask.location.local"))
-            .accessibilityHint(Self.help(notice: notice))
+            .accessibilityHint(L("ask.location.local.help"))
         }
     }
 }
