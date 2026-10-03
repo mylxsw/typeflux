@@ -184,9 +184,11 @@ extension AskConversationModel {
         return uses.isEmpty ? nil : uses
     }
 
-    /// Shows a short confirmation, then clears it unless a newer one replaced it.
-    func confirm(_ text: String, for duration: Duration = .seconds(2)) {
+    /// Shows a short confirmation in the composer's footer, then clears it unless
+    /// a newer one replaced it. VoiceOver hears it, since the note is visual only.
+    func confirm(_ text: String, for duration: Duration = .milliseconds(1600)) {
         commandFeedback = text
+        AskAnnouncer.announce(text)
         Task { [weak self] in
             try? await Task.sleep(for: duration)
             if self?.commandFeedback == text { self?.commandFeedback = nil }

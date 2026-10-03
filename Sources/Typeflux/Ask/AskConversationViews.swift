@@ -446,10 +446,7 @@ struct AskConversationView: View {
                 }
             }
             .askAttachmentDrop(model: model, launcher: false, targeted: $transcriptDropTargeted)
-            VStack(spacing: 0) {
-                statusColumn
-                composerArea
-            }
+            composerArea
             .background(GeometryReader { geometry in
                 Color.clear.preference(key: AskBottomChromeHeight.self, value: geometry.size.height)
             })
@@ -588,6 +585,12 @@ struct AskConversationView: View {
             }
             .frame(maxWidth: AskMetrics.suggestionsMaxWidth)
             .padding(.top, 26)
+            // A new conversation has no transcript yet; its events sit under the suggestions.
+            if hasStatus {
+                statusColumn
+                    .frame(maxWidth: AskMetrics.suggestionsMaxWidth)
+                    .padding(.top, 20)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 32)
@@ -625,21 +628,33 @@ struct AskConversationView: View {
         .help((addsModel ? L("ask.vision.addHelp") : caption) + " · ⌘" + shortcut)
     }
 
-    /// Banners and cards above the composer share its centred column, so they
-    /// line up with the input instead of spanning the whole window.
+    /// Conversation events: they read in the transcript after the answer they
+    /// belong to, never around the composer.
     private var statusColumn: some View {
-        VStack(spacing: 6) { statusArea }
-            .frame(maxWidth: AskMetrics.composerMaxWidth)
-            .padding(.horizontal, 22)
+        VStack(spacing: 10) { statusArea }
+            .frame(maxWidth: AskMetrics.transcriptMaxWidth)
+    }
+
+    /// Whether `statusArea` shows anything, so an empty one adds no gap to the transcript.
+    private var hasStatus: Bool {
+        model.visibleVisionSwitch != nil || model.error != nil || model.imageRecoveryTarget != nil
+            || stoppedRun || resumable
+    }
+
+    /// The selected run failed or was stopped, and nothing is about to resume it.
+    private var stoppedRun: Bool {
+        guard !model.hasPendingSubmission, !model.isBusy, let run = model.selected?.run else { return false }
+        return run.status == "failed" || run.status == "cancelled"
     }
 
     @ViewBuilder private var statusArea: some View {
         if let change = model.visibleVisionSwitch {
-            AskBanner(text: String(format: L("ask.vision.switched"), model.modelLibrary.name(for: change.to)),
-                      tone: .info, systemImage: "eye",
-                      actionTitle: String(format: L("ask.vision.revert"), model.modelLibrary.name(for: change.from)),
-                      action: { model.revertVisionSwitch() },
-                      onDismiss: { model.visionSwitch = nil })
+            let library = model.modelLibrary
+            AskSystemLine(text: String(format: L("ask.vision.switched"), library.name(for: change.to)),
+                          systemImage: "eye",
+                          actionTitle: String(format: L("ask.vision.revert"), library.name(for: change.from)),
+                          action: { model.revertVisionSwitch() },
+                          onDismiss: { model.visionSwitch = nil })
         }
         if model.imageRecoveryTarget == nil, let error = model.error {
             AskBanner(
@@ -653,7 +668,7 @@ struct AskConversationView: View {
         if let target = model.imageRecoveryTarget {
             AskImageRecoveryCard(model: model, target: target)
                 .id(target.id)
-        } else if !model.hasPendingSubmission, let run = model.selected?.run, run.status == "failed" || run.status == "cancelled", !model.isBusy {
+        } else if stoppedRun, let run = model.selected?.run {
             AskBanner(text: run.error ?? L("ask.cancelled"), tone: .info,
                       systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
@@ -677,10 +692,10 @@ struct AskConversationView: View {
             // Stop lives in the send button's place while the run works.
             // The context budget used to occupy a whole row of its own below the
             // composer; it now rides in the footer next to the send button.
+            // Nothing sits under the card: its shortcuts are in the placeholder
+            // and on the send and microphone buttons' help.
             AskComposer(model: model, launcher: false, onToggleUsage: { toggleUsage() })
                 .disabled(model.isLoadingSelection)
-            AskComposerHint(voice: model.voiceInput, contextID: "chat:" + (model.selectedId ?? "new"),
-                            settings: model.modelLibrary.settings)
         }
         .frame(maxWidth: AskMetrics.composerMaxWidth)
         .padding(.horizontal, 22)
@@ -750,6 +765,8 @@ struct AskConversationView: View {
                         ForEach(steeredMessages) { message in
                             AskMessageView(message: message, steeredPending: true, onReference: { _ in }).id(message.id)
                         }
+                        // Errors, interrupted runs and model switches follow the last answer.
+                        if hasStatus { statusColumn.id("status") }
                         // The end marker spans the space under the composer, so
                         // scrolling to it leaves the last answer above the card.
                         Color.clear.frame(height: bottomChromeHeight + 1).id("bottom")
@@ -774,6 +791,14 @@ struct AskConversationView: View {
                 .overlay(alignment: .top) {
                     if model.isLoadingSelection, model.selected == nil {
                         AskDelayedProgress(title: L("ask.loading"))
+                            .padding(.top, AskMetrics.titleBarRowHeight + 24)
+                    }
+                    // Nothing loaded to follow: the failure takes the transcript's place.
+                    if model.selectionLoadFailed, model.selected == nil, let error = model.error {
+                        AskBanner(text: error, tone: .warning, actionTitle: L("ask.retry"),
+                                  action: { model.retrySelection() })
+                            .frame(maxWidth: AskMetrics.transcriptMaxWidth)
+                            .padding(.horizontal, AskMetrics.columnInset)
                             .padding(.top, AskMetrics.titleBarRowHeight + 24)
                     }
                 }
@@ -805,6 +830,8 @@ struct AskConversationView: View {
                 .onChange(of: model.selected?.messages.count) { _ in followBottom(proxy) }
                 .onChange(of: model.selectedId.flatMap { model.pendingApprovals[$0]?.id }) { _ in followBottom(proxy) }
                 .onChange(of: model.steeredMessages.count) { _ in followBottom(proxy) }
+                .onChange(of: hasStatus) { _ in followBottom(proxy) }
+                .onChange(of: model.error) { _ in followBottom(proxy) }
             }
         }
     }

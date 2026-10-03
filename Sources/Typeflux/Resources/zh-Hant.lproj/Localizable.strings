@@ -1401,10 +1401,10 @@
 "ask.delete.confirm" = "Delete this conversation and its attachments?";
 "ask.deny" = "Deny";
 "ask.empty" = "What would you like to ask?";
-"ask.followup.placeholder" = "Continue the conversation…";
+"ask.followup.placeholder" = "繼續追問，/ 呼叫指令";
 "ask.history" = "Conversations";
 "ask.history.empty" = "No conversations yet";
-"ask.input.placeholder" = "Ask anything…";
+"ask.input.placeholder" = "輸入問題，/ 呼叫指令";
 "ask.loadMore" = "Load more";
 "ask.loginRequired" = "Sign in to Typeflux Cloud from the menu to start a conversation. Your draft is kept.";
 "ask.new" = "New conversation";
@@ -1431,6 +1431,9 @@
 "ask.memory.pinned" = "本對話使用開始時附帶的記憶。";
 "ask.selection.remove" = "Remove selected text";
 "ask.send" = "Send";
+"ask.send.help" = "↩ 傳送 · ⇧↩ 換行";
+"ask.notice.more" = "+%d 則提示";
+"ask.notice.less" = "收合";
 "ask.stop" = "Stop";
 "ask.stopControl" = "Stop control";
 "ask.tool.accessibility" = "Allow Accessibility access in System Settings to control the desktop.";
@@ -1479,7 +1482,6 @@
 "ask.search.actions" = "操作";
 "ask.search.conversations" = "對話";
 "ask.search.placeholder" = "Search conversations or actions";
-"ask.composer.hint" = "↩ Send · ⇧↩ New line · Hold %@ to dictate";
 "ask.launcher.hint" = "↩ Send · esc Close";
 "ask.models.multiplierColumn" = "Credits ×";
 "ask.models.ownAPI" = "Own API";
@@ -2065,6 +2067,5 @@
 "ask.command.manage" = "管理技能與 MCP →";
 "ask.command.on" = "已開啟";
 "ask.command.off" = "已關閉";
-"ask.command.help.button" = "指令（⌘/），也可以直接輸入 /";
 "ask.command.chip.skill" = "技能";
 "ask.command.chip.mcp" = "MCP";

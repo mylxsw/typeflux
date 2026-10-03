@@ -1394,10 +1394,10 @@
 "ask.delete.confirm" = "Delete this conversation and its attachments?";
 "ask.deny" = "Deny";
 "ask.empty" = "What would you like to ask?";
-"ask.followup.placeholder" = "Continue the conversation…";
+"ask.followup.placeholder" = "続けて質問、/ でコマンド";
 "ask.history" = "Conversations";
 "ask.history.empty" = "No conversations yet";
-"ask.input.placeholder" = "Ask anything…";
+"ask.input.placeholder" = "質問を入力、/ でコマンド";
 "ask.loadMore" = "Load more";
 "ask.loginRequired" = "Sign in to Typeflux Cloud from the menu to start a conversation. Your draft is kept.";
 "ask.new" = "New conversation";
@@ -1424,6 +1424,9 @@
 "ask.memory.pinned" = "この会話は開始時に取り込んだメモリを使用しています。";
 "ask.selection.remove" = "Remove selected text";
 "ask.send" = "Send";
+"ask.send.help" = "↩ 送信 · ⇧↩ 改行";
+"ask.notice.more" = "他 %d 件";
+"ask.notice.less" = "閉じる";
 "ask.stop" = "Stop";
 "ask.stopControl" = "Stop control";
 "ask.tool.accessibility" = "Allow Accessibility access in System Settings to control the desktop.";
@@ -1472,7 +1475,6 @@
 "ask.search.actions" = "アクション";
 "ask.search.conversations" = "会話";
 "ask.search.placeholder" = "Search conversations or actions";
-"ask.composer.hint" = "↩ Send · ⇧↩ New line · Hold %@ to dictate";
 "ask.launcher.hint" = "↩ Send · esc Close";
 "ask.models.multiplierColumn" = "Credits ×";
 "ask.models.ownAPI" = "Own API";
@@ -2058,6 +2060,5 @@
 "ask.command.manage" = "スキルと MCP を管理 →";
 "ask.command.on" = "オン";
 "ask.command.off" = "オフ";
-"ask.command.help.button" = "コマンド（⌘/）。/ を入力しても開けます";
 "ask.command.chip.skill" = "スキル";
 "ask.command.chip.mcp" = "MCP";

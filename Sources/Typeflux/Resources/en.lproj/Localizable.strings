@@ -1404,10 +1404,10 @@
 "ask.delete.confirm" = "Delete this conversation and its attachments?";
 "ask.deny" = "Deny";
 "ask.empty" = "What would you like to ask?";
-"ask.followup.placeholder" = "Continue the conversation…";
+"ask.followup.placeholder" = "Continue the conversation, / for commands";
 "ask.history" = "Conversations";
 "ask.history.empty" = "No conversations yet";
-"ask.input.placeholder" = "Ask anything…";
+"ask.input.placeholder" = "Ask anything, / for commands";
 "ask.loadMore" = "Load more";
 "ask.loginRequired" = "Sign in to Typeflux Cloud from the menu to start a conversation. Your draft is kept.";
 "ask.new" = "New conversation";
@@ -1434,6 +1434,9 @@
 "ask.memory.pinned" = "This conversation uses the memory captured when it started.";
 "ask.selection.remove" = "Remove selected text";
 "ask.send" = "Send";
+"ask.send.help" = "↩ Send · ⇧↩ New line";
+"ask.notice.more" = "+%d more";
+"ask.notice.less" = "Show less";
 "ask.stop" = "Stop";
 "ask.stopControl" = "Stop control";
 "ask.tool.accessibility" = "Allow Accessibility access in System Settings to control the desktop.";
@@ -1482,7 +1485,6 @@
 "ask.search.actions" = "Actions";
 "ask.search.conversations" = "Conversations";
 "ask.search.placeholder" = "Search conversations or actions";
-"ask.composer.hint" = "↩ Send · ⇧↩ New line · Hold %@ to dictate";
 "ask.launcher.hint" = "↩ Send · esc Close";
 "ask.models.multiplierColumn" = "Credits ×";
 "ask.models.ownAPI" = "Own API";
@@ -2068,6 +2070,5 @@
 "ask.command.manage" = "Manage skills & MCP →";
 "ask.command.on" = "On";
 "ask.command.off" = "Off";
-"ask.command.help.button" = "Commands (⌘/). You can also type /";
 "ask.command.chip.skill" = "Skill";
 "ask.command.chip.mcp" = "MCP";
