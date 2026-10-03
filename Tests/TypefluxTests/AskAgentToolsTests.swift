@@ -156,15 +156,18 @@ final class AskAgentToolsTests: XCTestCase {
     // MARK: - Browser
 
     func testBrowserScriptsForSnapshotRefsAndNavigation() throws {
-        let snapshot = try AskLocalTools.browserScript(["action": "snapshot"], bundle: "com.apple.Safari")
-        XCTAssertTrue(snapshot.contains("data-typeflux-ref"))
-        let byRef = try AskLocalTools.browserScript(["action": "click", "ref": 7], bundle: "com.google.Chrome")
-        XCTAssertTrue(byRef.contains("data-typeflux-ref=\\\\\\\"7\\\\\\\""))
-        XCTAssertTrue(try AskLocalTools.browserScript(["action": "fill", "ref": 2, "text": "hi"], bundle: "com.apple.Safari").contains("dispatchEvent"))
-        XCTAssertTrue(try AskLocalTools.browserScript(["action": "back"], bundle: "com.apple.Safari").contains("history.back()"))
-        XCTAssertTrue(try AskLocalTools.browserScript(["action": "scroll", "amount": -2], bundle: "com.apple.Safari").contains("scrollBy(0,-2*"))
-        for invalid: [String: Any] in [["action": "click", "ref": 0], ["action": "scroll"], ["action": "scroll", "amount": 20], ["action": "fill", "ref": 1]] {
-            XCTAssertThrowsError(try AskLocalTools.browserScript(invalid, bundle: "com.apple.Safari"))
+        let snapshot = AskBrowserExecutor.observationScript(id: "version", read: false)
+        XCTAssertTrue(snapshot.contains("observationID"))
+        let byRef = try AskBrowserExecutor.command(["action": "click", "ref": "version:7"])
+        XCTAssertTrue(byRef.contains("version:7"))
+        for action in ["fill", "back", "scroll"] {
+            let args: [String: Any] = ["action": action, "ref": "version:2", "text": "hi", "amount": -2]
+            let command = try AskBrowserExecutor.command(args)
+            XCTAssertTrue(command.contains(action))
+        }
+        for invalid: [String: Any] in [["action": "click", "ref": 0], ["action": "scroll"],
+                                        ["action": "scroll", "amount": 20], ["action": "fill", "ref": 1]] {
+            XCTAssertThrowsError(try AskBrowserExecutor.command(invalid))
         }
     }
 
@@ -240,7 +243,7 @@ final class AskAgentToolsTests: XCTestCase {
     }
 
     func testComputerAndBrowserDispatchWithoutTouchingTheDesktop() async throws {
-        let runner = RecordingScriptRunner()
+        let runner = ObservationScriptRunner()
         let tools = AskLocalTools(registry: registry(), runner: runner, settings: settings(), skills: AskSkillLibrary(userDirectory: root),
                                   notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json")), owner: { "o" })
         tools.runningBundleIdentifiers = { ["com.apple.Safari"] }
@@ -253,8 +256,10 @@ final class AskAgentToolsTests: XCTestCase {
                 XCTFail("\(action) must fail without a target")
             } catch {}
         }
+        tools.browserExecutor.processInstance = { _ in "42:1" }
         let page = try await tools.execute(call("browser", ["action": "snapshot"]), conversationId: "c")
-        XCTAssertEqual(page.content, "page")
+        XCTAssertEqual(page.observation?.browserId, "com.apple.Safari")
+        XCTAssertEqual(page.outcome?.eventDispatched, false)
         XCTAssertTrue(runner.scripts.first?.contains("com.apple.Safari") == true)
         tools.runningBundleIdentifiers = { [] }
         do {
@@ -352,13 +357,5 @@ final class AskAgentToolsTests: XCTestCase {
             XCTAssertEqual(bundle.localizedString(forKey: "ask.activity.plan", value: nil, table: nil).components(separatedBy: "%d").count - 1, 2)
             XCTAssertEqual(bundle.localizedString(forKey: "ask.files.editAmbiguous", value: nil, table: nil).components(separatedBy: "%d").count - 1, 1)
         }
-    }
-}
-
-private final class RecordingScriptRunner: ProcessCommandRunning, @unchecked Sendable {
-    var scripts: [String] = []
-    func run(executablePath: String, arguments: [String], environment: [String: String]?, currentDirectoryURL: URL?) async throws -> ProcessCommandResult {
-        scripts.append(arguments.last ?? "")
-        return .init(stdout: "page", stderr: "", exitCode: 0)
     }
 }

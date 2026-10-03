@@ -7,6 +7,7 @@ final class ObservationScriptRunner: ProcessCommandRunning {
     var stamp = "12\u{1f}34\u{1f}https://example.invalid/\u{1f}1800000000"
     var scripts: [String] = []
     var result = #"{"status":"ok","message":"Dispatched","event_dispatched":true,"effect_verified":false}"#
+    var failure: (any Error)?
     var corruptCapture = false
     var failAction = false
     var onCapture: () -> Void = {}
@@ -19,6 +20,7 @@ final class ObservationScriptRunner: ProcessCommandRunning {
     ) async throws -> ProcessCommandResult {
         let script = arguments.last!
         scripts.append(script)
+        if let failure { throw failure }
         let output: String
         if script.contains("const observationID=") {
             onCapture()
@@ -155,7 +157,8 @@ struct AskBrowserExecutorTests {
         await #expect(throws: AskObservationError.needsObservation) { try await executor.target(bundle: bundle) }
         executor.processInstance = { _ in "42:1" }; runner.stamp = "invalid"
         await #expect(throws: AskObservationError.needsObservation) { try await executor.target(bundle: bundle) }
-        for args: [String: Any] in [["action": "click", "ref": 1], ["action": "fill", "ref": "v:1"],
+        for args: [String: Any] in [["action": "click", "ref": 1], ["action": "click", "ref": 1, "selector": "#test"],
+                                    ["action": "fill", "ref": "v:1"],
                                     ["action": "scroll", "amount": 11], ["action": "open", "url": "file:///tmp/test"],
                                     ["action": "unknown"]] {
             #expect(throws: AskObservationError.invalid) { try AskBrowserExecutor.command(args) }

@@ -93,6 +93,7 @@ final class AskBrowserExecutor {
                   let data = body.data(using: .utf8),
                   let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                   object["observation_id"] as? String == id else { throw AskObservationError.needsObservation }
+            try authorize()
             let reference = store.record(current.reference, scope: scope, id: id)
             return AskActionReceipt.observed(body, reference: reference).output()
         }
@@ -150,7 +151,8 @@ final class AskBrowserExecutor {
                   url.host != nil else { throw AskObservationError.invalid }
             command["url"] = raw
         case "click", "fill":
-            if let ref = args["ref"] as? String, !ref.isEmpty {
+            if let rawRef = args["ref"] {
+                guard let ref = rawRef as? String, !ref.isEmpty else { throw AskObservationError.invalid }
                 command["ref"] = ref
             } else if let selector = args["selector"] as? String, !selector.isEmpty,
                       selector.count <= 2000 {

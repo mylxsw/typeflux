@@ -86,6 +86,7 @@ final class AskComputerExecutor {
             try Task.checkCancellation()
             guard try environment.target().reference.target == current.reference.target
             else { throw AskObservationError.needsObservation }
+            try authorize()
             let reference = store.record(current.reference, scope: scope)
             return AskActionReceipt.observed(
                 "Coordinates are fractions of display \(current.display), from top-left (0,0) to bottom-right (1,1).\n" +
