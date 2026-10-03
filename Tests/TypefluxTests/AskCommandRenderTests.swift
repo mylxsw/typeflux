@@ -132,20 +132,24 @@ struct AskCommandRenderTests {
         try await press("\r", keyCode: 36, in: editor)
         #expect(f.model.memorySwitchedOff(launcher: false) != memory)
 
-        // A skill toggles its chip off again; Tab on a plain command writes it out.
+        // A skill toggles its chip off again.
         try await type("/meeting", in: editor)
         try await press("\r", keyCode: 36, in: editor)
         #expect(f.model.draft.skills == nil)
+
+        // Text with no matching command stays text.
+        try await type("/zzzz", in: editor)
+        #expect(f.model.draft.text == "/zzzz")
+        host.draw()
+        f.model.draft.text = ""
+        try await settle()
+
+        // Tab on a plain command writes it out; search hands over to the window's palette.
         try await type("/sea", in: editor)
         try await press("\t", keyCode: 48, in: editor)
         #expect(f.model.draft.text == "/search")
         try await press("\r", keyCode: 36, in: editor)
         #expect(f.model.searchRequest == 1)
-
-        // Text with no matching command sends as usual.
-        try await type("/zzzz", in: editor)
-        #expect(f.model.draft.text == "/zzzz")
-        host.draw()
     }
 
     @Test func theLauncherPaletteSitsUnderItsCard() async throws {
