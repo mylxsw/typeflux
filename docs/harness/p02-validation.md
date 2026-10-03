@@ -1,5 +1,43 @@
 # P02 approval validation — 2026-10-03
 
+## Merge verification against main `2d0258e7`
+
+Resolved the conversation, executor and five localization conflicts while
+retaining the new attachment and slash-command behavior. File approval and
+approved dispatch now use the same conversation-specific roots as tool discovery
+and ordinary execution. Steering still revokes pending approvals before any
+network suspension and preserves attachments, resolved skill instructions and
+MCP selections.
+
+- Focused merge regressions: 36 tests passed in five suites, including attached
+  folder reads, cross-conversation denial, root changes/revocation and steering
+  with the new context fields.
+- Final focused replay on the merged PR branch expanded that filter to include
+  selection and command rendering: all 43 tests in seven suites passed. Both
+  native/cancellation failures from the full run passed in isolation on the
+  candidate as well as main; their full-suite failures remain recorded below.
+- Full `swift test --enable-code-coverage`: XCTest reported 2,638 tests, one
+  opt-in skip and 64 failures across five tests (including two unexpected
+  errors). Swift Testing reported 662 tests with two failed tests/four issues.
+  The full suite is **not green**.
+- The five XCTest failures are in `AskLocalEngineReentrancyTests`: its mock
+  fetch fixture still expects a request after main disabled local `web_fetch`.
+  The other failures are
+  `ReadOnlySelectionRequestTests.cancelledQueueWaitDoesNotReadOrUnlockAnotherOperation`
+  and `AskCommandRenderTests.theWorkspacePaletteRunsCommandsFromTheKeyboard`.
+- A separate, unchanged `2d0258e7` worktree reproduced the same five engine
+  failures (81 failures including two unexpected errors in that run). Its
+  isolated selection/command-rendering filter passed all seven tests. These
+  tests and the local engine/web implementation match main byte-for-byte.
+- Coverage from this full run only: policy/store 110/110 lines (100%), executor
+  target boundary 199/215 (92.56%), conversation model 1,266/1,348 (93.92%).
+- All five localization files passed `plutil -lint`; `git diff --check` passed.
+
+The earlier results below describe the original implementation and its original
+baseline; they are not the results of this merge verification.
+
+## Initial implementation
+
 Tested implementation: `2c61e3892b76bbace00fc7f79ba2a5a9bc56d08f`.
 Baseline: `67b3f56` (the main checkout at task start), including P00 merge
 `b75081908c702e44041221bebc544a453c317e73`. PR base is `main`.

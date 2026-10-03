@@ -59,8 +59,8 @@ final class AskConversationModel: ObservableObject {
     var cloudAvailable: Bool { session().map { !$0.token.isEmpty } ?? false }
     func requiresVision(launcher: Bool) -> Bool {
         let current = launcher ? launcherDraft : draft
-        return (current.includeScreenshot && current.screenshot != nil)
-            || (!launcher && selected?.messages.contains(where: { $0.image != nil }) == true)
+        return current.sendsImage
+            || (!launcher && selected?.messages.contains(where: { $0.hasImage }) == true)
     }
 
     @Published var referenceLocation: String?
@@ -84,6 +84,19 @@ final class AskConversationModel: ObservableObject {
     /// Drafts whose user switched back, so they are not switched again.
     var visionSwitchDeclined: Set<String> = []
     @Published var screenshotNotice: String?
+    /// Why the last files could not all be attached, per composer.
+    @Published var attachmentNotice: String?
+    @Published var launcherAttachmentNotice: String?
+    /// Loads in flight per draft key (`visionDraftKey`); sending waits for them.
+    @Published var attachmentLoads: [String: Int] = [:]
+    /// Skills, MCP servers, notes and local mode for slash commands; the window controller fills it in.
+    var commandSources = AskCommandSources()
+    /// Bumped by the "/search" command; the window opens its search palette.
+    @Published var searchRequest = 0
+    /// A short confirmation after a slash command, cleared after a moment.
+    @Published var commandFeedback: String?
+    /// Command names, most recent first, for the palette's "Recent" group.
+    var recentCommands: [String] = []
     @Published private(set) var recoveringImages: [String: AskImageRecoveryTarget] = [:]
     @Published private(set) var conversations: [AskConversationSummary] = []
     @Published private(set) var selected: AskConversation?
@@ -221,14 +234,14 @@ final class AskConversationModel: ObservableObject {
 
     var isBusy: Bool { selected.map { busyIds.contains($0.id) || $0.run?.isActive == true } ?? false }
     var hasPendingSubmission: Bool { selectedId.map { pendingSends[$0] != nil } ?? false }
-    var canSend: Bool { canSendNow || canQueue || (isEditingQueued && draft.canSend) }
+    var canSend: Bool { !isLoadingAttachments(launcher: false) && (canSendNow || canQueue || (isEditingQueued && draft.canSend)) }
     private var canSendNow: Bool { !isLoadingSelection && (selectedId == nil || selected != nil) && draft.canSend && !isBusy && (selected.map { pendingSends[$0.id] == nil && !($0.run == nil && $0.messages.last?.role == "user") } ?? true) && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
     /// A busy conversation takes the follow-up into its queue instead.
     var canQueue: Bool {
         guard let value = selected, !isLoadingSelection, isBusy, !isEditingQueued else { return false }
         return draft.canSend && sendQueue.canEnqueue(value.id) && !capturing && !recordingIsActive() && !voiceInput.isOccupied
     }
-    var canSendLauncher: Bool { launcherDraft.canSend && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
+    var canSendLauncher: Bool { launcherDraft.canSend && !isLoadingAttachments(launcher: true) && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
 
     private func credentials() -> (owner: String, token: String)? {
         guard let current = session() else { error = L("ask.loginRequired"); return nil }
@@ -253,6 +266,7 @@ final class AskConversationModel: ObservableObject {
         snapshots = [:]; drafts = [:]; transcriptPositions = [:]
         historyGeneration = UUID(); historyOffset = 0; conversations = []
         launcherScreenshotNotice = nil; screenshotNotice = nil; recoveringImages = [:]
+        attachmentNotice = nil; launcherAttachmentNotice = nil
         launcherDraft = AskDraft(); draft = .followUp
         capturing = false; controllingConversationId = nil; onControlChanged?(false); owner = ""
     }
@@ -399,6 +413,7 @@ final class AskConversationModel: ObservableObject {
         // Commit navigation synchronously, before the first cache/network await.
         selectedId = id; selected = snapshots[id]; isLoadingSelection = true; selectionLoadFailed = false
         draft = drafts[id] ?? .followUp; error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
+        attachmentNotice = nil
         captureGeneration = UUID(); capturing = false
         if let oldId, !deletedConversationIDs.contains(oldId), let saved = drafts[oldId] { try? await cache.saveDraft(saved, key: oldId, owner: current.owner) }
         let cached = try? await cache.load(id: id, owner: current.owner)
@@ -447,6 +462,7 @@ final class AskConversationModel: ObservableObject {
         isLoadingSelection = false; selectionLoadFailed = false
         captureGeneration = UUID(); capturing = false
         draft = AskDraft(); error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
+        attachmentNotice = nil
         // No source app is trustworthy here, so only global memory applies.
         draft.memory = capture.globalMemory() ?? AskMemory()
     }
@@ -465,6 +481,7 @@ final class AskConversationModel: ObservableObject {
 
     func submitDraft() {
         normalizeScreenshotChoices()
+        guard !isLoadingAttachments(launcher: false) else { return }
         if isEditingQueued { saveQueuedEdit(); return }
         if canQueue, let id = selected?.id {
             sendQueue.enqueue(draft, to: id)
@@ -480,7 +497,8 @@ final class AskConversationModel: ObservableObject {
     private func submit(_ submitted: AskDraft, newConversation: Bool, messageId queuedId: String? = nil, clearsDraft: Bool = true) {
         guard submitted.referencesWithinLimit, submitted.text.utf8.count <= 32000,
               (submitted.sentSelection?.utf8.count ?? 0) <= 64000,
-              (submitted.source?.utf8.count ?? 0) <= 1000 else {
+              (submitted.source?.utf8.count ?? 0) <= 1000,
+              (submitted.attachments ?? []).reduce(0, { $0 + $1.payloadBytes }) <= AskAttachmentLimits.maximumPayloadBytes else {
             error = L("ask.input.tooLarge"); return
         }
         guard let current = credentials() else { return }
@@ -489,11 +507,14 @@ final class AskConversationModel: ObservableObject {
         guard !busyIds.contains(id) else { return }
         error = nil; operationErrors[id] = nil; busyIds.insert(id)
         if newConversation { tools.bindConversation(id) }
-        var value = newConversation ? AskConversation(id: id, title: String(submitted.text.prefix(50)), revision: 0, updatedAt: Date(), messages: []) : selected!
+        let folders = (submitted.attachments ?? []).compactMap { $0.kind == .folder ? $0.path : nil }
+        if !folders.isEmpty { tools.grantFolders(folders, conversationId: id) }
+        var value = newConversation ? AskConversation(id: id, title: String(submitted.title.prefix(50)), revision: 0, updatedAt: Date(), messages: []) : selected!
         let messageId = queuedId ?? UUID().uuidString
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
+        request.skills = skillUses(submitted.skills)
         request.modelRef = localFallback(submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference : (value.modelRef ?? "cloud:default")),
-                                         hasImage: request.image != nil || value.messages.contains { $0.image != nil })
+                                         hasImage: request.sendsImage || value.messages.contains { $0.hasImage })
         request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
         request.memory = newConversation && submitted.memoryOff != true
             ? Self.openingMemory(submitted.memory ?? capture.globalMemory()) : nil
@@ -501,7 +522,7 @@ final class AskConversationModel: ObservableObject {
         Self.applyMemoryChoice(submitted, newConversation: newConversation, request: &request, conversation: &value)
         pendingSends[id] = request
         screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
-        value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references))
+        value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references, attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
         selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID()
         if clearsDraft { draft = .followUp }
         snapshots[id] = value; selectionLoadFailed = false
@@ -523,7 +544,7 @@ final class AskConversationModel: ObservableObject {
                 do {
                     try await validateModel(
                         request.modelRef, token: current.token,
-                        hasImage: request.image != nil || value.messages.contains(where: { $0.image != nil })
+                        hasImage: request.sendsImage || value.messages.contains(where: { $0.hasImage })
                     )
                 } catch {
                     // No message was sent. Restore the editable draft so another model can be selected.
@@ -592,7 +613,7 @@ final class AskConversationModel: ObservableObject {
         let id = value.id
         let retryModelRef = modelReference(launcher: false)
         if pendingSends[id] == nil, let run = value.run, ["failed", "cancelled"].contains(run.status),
-           value.messages.contains(where: { $0.image != nil }) {
+           value.messages.contains(where: { $0.hasImage }) {
             guard canResumeImage else {
                 error = screenshotCapability(launcher: false).hint ?? L("ask.models.unavailable")
                 return
@@ -611,23 +632,24 @@ final class AskConversationModel: ObservableObject {
                 if let request = pendingSends[id] {
                     try await validateModel(
                         request.modelRef, token: current.token,
-                        hasImage: request.image != nil || value.messages.contains(where: { $0.image != nil })
+                        hasImage: request.sendsImage || value.messages.contains(where: { $0.hasImage })
                     )
                     response = try await api.send(conversationId: id, request: request, token: current.token)
                     pendingSends[id] = nil
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
                     let request = AskSendRequest(id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
-                                                 tools: await tools.definitions(conversationId: id), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references)
+                                                 tools: await tools.definitions(conversationId: id), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references,
+                                                 attachments: message.attachments)
                     try await validateModel(
                         request.modelRef, token: current.token,
-                        hasImage: request.image != nil || value.messages.contains(where: { $0.image != nil })
+                        hasImage: request.sendsImage || value.messages.contains(where: { $0.hasImage })
                     )
                     response = try await api.send(conversationId: id, request: request, token: current.token)
                 } else if let run = value.run, ["failed", "cancelled"].contains(run.status) {
                     try await validateModel(
                         retryModelRef, token: current.token,
-                        hasImage: value.messages.contains(where: { $0.image != nil })
+                        hasImage: value.messages.contains(where: { $0.hasImage })
                     )
                     response = try await api.retry(conversationId: id, runId: run.id, deviceId: deviceId, modelRef: retryModelRef, token: current.token)
                 } else {
@@ -671,7 +693,7 @@ final class AskConversationModel: ObservableObject {
                 let definitions = await tools.definitions(conversationId: id)
                 try await validateModel(
                     modelRef, token: current.token,
-                    hasImage: value.messages.contains(where: { $0.image != nil })
+                    hasImage: value.messages.contains(where: { $0.hasImage })
                 )
                 let request = AskRegenerateRequest(messageId: messageId, deviceId: deviceId,
                                                    modelRef: modelRef, tools: definitions)
@@ -1073,7 +1095,9 @@ extension AskConversationModel {
         // A changed instruction invalidates pending intent before the network suspension.
         approvalStore.revoke(conversation: id)
         approve(conversationId: id, allowed: false)
-        let request = AskSteerRequest(runId: run.id, message: latest.draft.request(deviceId: deviceId, tools: [], id: latest.id))
+        var message = latest.draft.request(deviceId: deviceId, tools: [], id: latest.id)
+        message.skills = skillUses(latest.draft.skills)
+        let request = AskSteerRequest(runId: run.id, message: message)
         Task { [weak self] in
             guard let self else { return }
             defer { steeringIds.remove(itemId) }

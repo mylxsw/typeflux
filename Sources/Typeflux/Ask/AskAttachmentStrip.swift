@@ -52,6 +52,14 @@ struct AskAttachmentStripView: View {
     var screenshot: NSImage?
     var onPreview: () -> Void
     var onRemove: (AskContextItem.Kind) -> Void
+    /// Files, images and folders the user added, after the captured context.
+    var attachments: [AskAttachment] = []
+    /// Files are still being read; a spinner holds their place.
+    var loading = false
+    var onRemoveAttachment: (String) -> Void = { _ in }
+    /// Skills and MCP servers chosen with slash commands.
+    var choices: [AskChosenTool] = []
+    var onRemoveChoice: (AskChosenTool) -> Void = { _ in }
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -62,15 +70,74 @@ struct AskAttachmentStripView: View {
                                       onRemove: item.kind == .source ? nil : { onRemove(item.kind) })
                         .transition(.scale(scale: 0.7).combined(with: .opacity))
                 }
+                ForEach(attachments) { attachment in
+                    AskAttachmentChip(item: AskAttachmentStrip.item(attachment),
+                                      thumbnail: attachment.image.flatMap { AskAttachmentStrip.thumbnail(id: attachment.id, dataURL: $0) },
+                                      caption: AskAttachmentStrip.caption(attachment),
+                                      onRemove: { onRemoveAttachment(attachment.id) })
+                        .transition(.scale(scale: 0.7).combined(with: .opacity))
+                }
+                ForEach(choices) { choice in
+                    AskAttachmentChip(item: AskContextItem(kind: .source, systemImage: choice.symbol, style: .active,
+                                                           title: choice.name, detail: choice.caption),
+                                      caption: choice.caption,
+                                      onRemove: { onRemoveChoice(choice) })
+                        .transition(.scale(scale: 0.7).combined(with: .opacity))
+                }
+                if loading {
+                    ProgressView().controlSize(.small)
+                        .frame(width: AskAttachmentChip.height, height: AskAttachmentChip.height)
+                        .accessibilityLabel(L("ask.attach.loading"))
+                }
             }
             .padding(.vertical, 1)
         }
     }
 }
 
-private struct AskAttachmentChip: View {
+extension AskAttachmentStrip {
+    /// A chip model for an attachment; the kind only picks the remove behaviour.
+    static func item(_ attachment: AskAttachment) -> AskContextItem {
+        AskContextItem(kind: .source, systemImage: symbol(attachment), style: .active, title: attachment.name,
+                       detail: attachment.kind == .folder ? attachment.path : attachment.name)
+    }
+
+    static func symbol(_ attachment: AskAttachment) -> String {
+        switch attachment.kind {
+        case .image: return "photo"
+        case .folder: return "folder"
+        case .file: return attachment.pages != nil ? "doc.richtext" : "doc.text"
+        }
+    }
+
+    /// Quiet facts after the name: pages, truncation, or that a folder is read-only.
+    static func caption(_ attachment: AskAttachment) -> String? {
+        switch attachment.kind {
+        case .folder: return L("ask.attach.folderReadOnly")
+        case .image: return nil
+        case .file:
+            var parts: [String] = []
+            if let pages = attachment.pages { parts.append(L("ask.attach.pages", pages)) }
+            if attachment.truncated == true { parts.append(L("ask.attach.truncated")) }
+            return parts.isEmpty ? nil : parts.joined(separator: " · ")
+        }
+    }
+
+    /// Attachment images are data URLs; each is decoded once and kept while the app runs.
+    @MainActor private static let imageCache = NSCache<NSString, NSImage>()
+
+    @MainActor static func thumbnail(id: String, dataURL: String) -> NSImage? {
+        if let cached = imageCache.object(forKey: id as NSString) { return cached }
+        guard let image = AskImage.decode(dataURL) else { return nil }
+        imageCache.setObject(image, forKey: id as NSString)
+        return image
+    }
+}
+
+struct AskAttachmentChip: View {
     let item: AskContextItem
     var thumbnail: NSImage?
+    var caption: String?
     var onTap: (() -> Void)?
     var onRemove: (() -> Void)?
     @State private var hovering = false
@@ -84,6 +151,16 @@ private struct AskAttachmentChip: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(maxWidth: 180)
+                .fixedSize()
+            if let caption {
+                Text(caption)
+                    .font(.system(size: 11))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
             if let onRemove {
                 Button(action: onRemove) {
                     Image(systemName: "xmark").font(.system(size: 8.5, weight: .bold))
@@ -129,4 +206,15 @@ private struct AskAttachmentChip: View {
                 .background(AskTheme.accent.opacity(0.15), in: Circle())
         }
     }
+}
+
+/// A skill or MCP server chosen with a slash command for the next message.
+struct AskChosenTool: Equatable, Identifiable {
+    enum Kind: String { case skill, mcpServer }
+    var kind: Kind
+    var name: String
+
+    var id: String { kind.rawValue + ":" + name }
+    var symbol: String { kind == .skill ? "bolt" : "powerplug" }
+    var caption: String { L(kind == .skill ? "ask.command.chip.skill" : "ask.command.chip.mcp") }
 }

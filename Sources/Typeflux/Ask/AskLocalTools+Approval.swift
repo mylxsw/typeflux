@@ -15,8 +15,9 @@ extension AskLocalTools {
         var reusable = false
         switch call.function.name {
         case "files":
-            definition = AskFileTools.definition(roots: fileTools.roots)
-            let path = try fileTools.resolve(args["path"] as? String ?? "", forWriting: args["action"] as? String == "write").path
+            let files = fileTools(conversationId: conversationId)
+            definition = AskFileTools.definition(roots: files.roots)
+            let path = try files.resolve(args["path"] as? String ?? "", forWriting: args["action"] as? String == "write").path
             target = Self.fileApprovalTarget(path)
             summary = path; reusable = true
         case "memory":
@@ -175,7 +176,7 @@ extension AskLocalTools {
             try Task.checkCancellation()
             return .init(content: String(output.stdout.prefix(60000)))
         case "files":
-            let files = fileTools
+            let files = fileTools(conversationId: conversationId)
             return try await Task.detached(priority: .userInitiated) {
                 let path = try files.resolve(args["path"] as? String ?? "", forWriting: args["action"] as? String == "write").path
                 guard Self.fileApprovalTarget(path) == binding.target else { throw AskLocalError.message(L("ask.approval.changed")) }

@@ -59,6 +59,41 @@ struct AskLocalApprovalTests {
         await #expect(throws: (any Error).self) { try await tools.approvalBinding(for: read, conversationId: "c") }
     }
 
+    @Test func attachedFoldersStayScopedThroughApprovalAndDispatch() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("attached.txt")
+        try Data("attached content".utf8).write(to: file)
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        let grants = AskFolderGrants(defaults: defaults)
+        let tools = AskLocalTools(registry: registry(), settings: SettingsStore(defaults: defaults), folderGrants: grants)
+        let read = try call("files", ["action": "read", "path": file.path])
+        await #expect(throws: (any Error).self) { try await tools.approvalBinding(for: read, conversationId: "c1") }
+        tools.grantFolders([root.path], conversationId: "c1")
+        let approved = try await tools.approvalBinding(for: read, conversationId: "c1")
+        #expect(approved.target.path == file.resolvingSymlinksInPath().path)
+        let raw = try await tools.execute(read, conversationId: "c1")
+        let result = try await tools.executeApproved(read, conversationId: "c1", binding: approved, authorize: {})
+        #expect(result.content == raw.content)
+        #expect(result.content.contains("attached content"))
+        await #expect(throws: (any Error).self) {
+            try await tools.executeApproved(read, conversationId: "c2", binding: approved, authorize: {})
+        }
+        // Changing even an unrelated root changes the advertised capability and invalidates approval.
+        tools.grantFolders([root.appendingPathComponent("extra").path], conversationId: "c1")
+        let changed = try await tools.approvalBinding(for: read, conversationId: "c1")
+        #expect(changed.target == approved.target)
+        #expect(changed.toolVersion != approved.toolVersion)
+        await #expect(throws: (any Error).self) {
+            try await tools.executeApproved(read, conversationId: "c1", binding: approved, authorize: {})
+        }
+        grants.revoke("c1")
+        await #expect(throws: (any Error).self) {
+            try await tools.executeApproved(read, conversationId: "c1", binding: changed, authorize: {})
+        }
+    }
+
     @Test func browserRechecksDocumentAndPinsApprovedTab() async throws {
         let runner = ApprovalScriptRunner(), tools = AskLocalTools(registry: registry(), runner: ApprovalScriptRunner())
         tools.runningBundleIdentifiers = { [] }

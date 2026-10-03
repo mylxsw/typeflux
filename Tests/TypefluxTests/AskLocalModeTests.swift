@@ -55,13 +55,9 @@ final class AskLocalWebToolsTests: XCTestCase {
         XCTAssertEqual(AskLocalWebTools.decodeEntities("&#xZZ; &quot;a&quot; &apos;b&#39;"), "&#xZZ; \"a\" 'b'")
     }
 
-    func testFetchSearchAndDefinitions() async throws {
+    func testSearchAndDefinitions() async throws {
         LocalStubProtocol.handler = { request in
             switch (request.url?.host, request.url?.path) {
-            case ("example.com", "/page"): return (200, "text/html; charset=utf-8", "<html><title>T</title><body><p>Body text</p></body></html>")
-            case ("example.com", "/data"): return (200, "application/json", #"{"ok":true}"#)
-            case ("example.com", "/image"): return (200, "image/png", "png")
-            case ("example.com", "/big"): return (200, "text/plain", String(repeating: "x", count: AskLocalWebTools.maxChars + 10))
             case ("api.tavily.com", _):
                 XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer tv")
                 return (200, "application/json", #"{"results":[{"title":"Go","url":"https://go.dev","content":"Release\nnotes"}]}"#)
@@ -72,25 +68,14 @@ final class AskLocalWebToolsTests: XCTestCase {
             }
         }
         var tools = AskLocalWebTools(session: LocalStubProtocol.session, resolve: { _ in ["93.184.216.34"] })
-        XCTAssertEqual(tools.definitions().map(\.name), ["web_fetch"])
-        let page = try await tools.fetch("https://example.com/page")
-        XCTAssertEqual(page, "URL: https://example.com/page\nTitle: T\n\nBody text")
-        let data = try await tools.fetch("https://example.com/data")
-        XCTAssertEqual(data, "URL: https://example.com/data\n\n{\"ok\":true}")
-        let big = try await tools.fetch("https://example.com/big")
-        XCTAssertTrue(big.hasSuffix("[truncated]"))
-        let (unsupported, failed) = await tools.execute(name: "web_fetch", arguments: #"{"url":"https://example.com/image"}"#)
-        XCTAssertTrue(failed)
-        XCTAssertTrue(unsupported.contains("image/png"))
-        let (missing, missingFailed) = await tools.execute(name: "web_fetch", arguments: #"{"url":"https://example.com/404"}"#)
-        XCTAssertTrue(missingFailed && missing.contains("404"))
+        XCTAssertTrue(tools.definitions().isEmpty)
         let (_, unknownFailed) = await tools.execute(name: "web_other", arguments: "{}")
         XCTAssertTrue(unknownFailed)
         let (_, noSearch) = await tools.execute(name: "web_search", arguments: #"{"query":"go"}"#)
         XCTAssertTrue(noSearch)
 
         tools.searchProvider = { (.tavily, "tv") }
-        XCTAssertEqual(tools.definitions().map(\.name), ["web_search", "web_fetch"])
+        XCTAssertEqual(tools.definitions().map(\.name), ["web_search"])
         let found = try await tools.search("go release", count: 50)
         XCTAssertEqual(found, "1. Go\n   https://go.dev\n   Release notes")
         tools.searchProvider = { (.brave, "br") }
@@ -122,6 +107,34 @@ final class AskLocalWebToolsTests: XCTestCase {
         }
         settings.setAPIKey("")
         XCTAssertEqual(settings.apiKey, "")
+        XCTAssertFalse(settings.isConfigured)
+    }
+
+    func testSearchResultsRemainUsableWithoutFetch() async throws {
+        LocalStubProtocol.handler = { request in
+            switch request.url?.host {
+            case "api.tavily.com":
+                return (200, "application/json", #"{"results":[{}, {"title":"Notes","url":"https://example.com/notes","content":"Read the snippet"}]}"#)
+            case "api.search.brave.com":
+                return (200, "application/json", #"{"web":{"results":[{}, {"title":"Docs","url":"https://example.com/docs","description":"Search\nsummary"}]}}"#)
+            default: return (200, "application/json", "{}")
+            }
+        }
+        var tools = AskLocalWebTools(session: LocalStubProtocol.session)
+        defer { tools.session.invalidateAndCancel() }
+        for provider in [AskSearchSettings.Provider.tavily, .brave] {
+            tools.searchProvider = { (provider, "fixture-key") }
+            let result = try await tools.search("query", count: 2)
+            let expected = provider == .tavily
+                ? "1. \n   \n2. Notes\n   https://example.com/notes\n   Read the snippet"
+                : "1. \n   \n2. Docs\n   https://example.com/docs\n   Search summary"
+            XCTAssertEqual(result, expected)
+            let limited = try await tools.search("query", count: 0)
+            XCTAssertEqual(limited, "1. \n   ")
+            tools.searchEndpoints[provider] = "https://empty.invalid/search"
+            let empty = try await tools.search("query", count: 2)
+            XCTAssertEqual(empty, "No results.")
+        }
     }
 }
 

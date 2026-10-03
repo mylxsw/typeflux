@@ -152,7 +152,13 @@ struct AskScopedApprovalTests {
         let id = try await start(f, call: call("computer", "click"))
         let approvalID = try #require(f.model.approvalID(id))
         await f.api.setDeliverSteers(true)
+        f.model.commandSources = AskCommandSources(skills: {
+            [AskSkill(name: "inspect", description: "Inspect", body: "Inspect before acting.")]
+        })
         f.model.draft.text = "Stop that action and inspect the new target"
+        f.model.draft.skills = ["inspect"]
+        f.model.draft.attachments = [.init(kind: .file, name: "target.txt", text: "New target")]
+        f.model.draft.mcpServers = ["local-tools"]
         f.model.submitDraft()
         let queued = try #require(f.model.queuedMessages.first)
         f.model.steerQueued(queued.id)
@@ -160,5 +166,9 @@ struct AskScopedApprovalTests {
         try await f.wait { f.model.steeringIds.isEmpty }
         #expect(f.tools.executions == 0)
         #expect(await f.api.steers.count == 1)
+        let request = try #require(await f.api.steers.first)
+        #expect(request.skills == [AskSkillUse(name: "inspect", instructions: "Inspect before acting.")])
+        #expect(request.attachments?.first?.text == "New target")
+        #expect(request.mcpServers == ["local-tools"])
     }
 }
