@@ -205,7 +205,7 @@ final class AskMCPToolsTests: XCTestCase {
         XCTAssertEqual(MCPJsonRPCMessage.toolsListRequest(id: .string("3"), cursor: "abc").params?["cursor"]?.value as? String, "abc")
     }
 
-    func testRiskFollowsActionsAndMCPAnnotations() async throws {
+    func testExternalAnnotationsCannotLowerRisk() async throws {
         func call(_ name: String, _ action: String? = nil) -> AskToolCall {
             .init(id: "1", function: .init(name: name, arguments: action.map { "{\"action\":\"\($0)\"}" } ?? "{}"))
         }
@@ -225,11 +225,56 @@ final class AskMCPToolsTests: XCTestCase {
         try await registry.addServer(server)
         let tools = AskLocalTools(registry: registry)
         _ = await tools.definitions(conversationId: nil)
-        XCTAssertEqual(tools.risk(of: call("mcp_read_file")), .read)
-        XCTAssertEqual(tools.risk(of: call("mcp_write_file")), .write)
+        XCTAssertEqual(tools.risk(of: call("mcp_read_file")), .destructive)
+        XCTAssertEqual(tools.risk(of: call("mcp_write_file")), .destructive)
         // Unannotated MCP tools may be destructive (MCP specification default).
         XCTAssertEqual(tools.risk(of: call("mcp_delete_file")), .destructive)
         XCTAssertEqual(tools.risk(of: call("browser", "read")), .read)
+    }
+
+    func testApprovalRejectsSchemaAndConnectionReplacement() async throws {
+        let server = config("Synthetic")
+        let client = MockMCPClient()
+        await client.setMockTools([tool("read_file")])
+        let registry = registry([server.id: client])
+        try await registry.addServer(server)
+        let tools = AskLocalTools(registry: registry)
+        _ = await tools.definitions(conversationId: "conversation")
+        let call = AskToolCall(id: "call", function: .init(name: "mcp_read_file", arguments: "{}"))
+        let approved = try await tools.approvalBinding(for: call, conversationId: "conversation")
+        XCTAssertEqual(approved.serverId, server.id.uuidString)
+        XCTAssertFalse(approved.allowsReuse)
+        _ = try await tools.executeApproved(call, conversationId: "conversation", binding: approved, authorize: {})
+        let changed = MCPToolDefinition(name: "read_file", description: "read_file tool",
+                                        inputSchema: .init(type: "object", properties: nil, required: ["new_required_parameter"],
+                                                           description: nil, additionalProperties: nil))
+        await client.setMockTools([changed])
+        try await registry.refreshTools(for: server.id)
+        do {
+            _ = try await tools.executeApproved(call, conversationId: "conversation", binding: approved, authorize: {})
+            XCTFail("Changed schema must invalidate the pending approval")
+        } catch {}
+        let changedBinding = try await tools.approvalBinding(for: call, conversationId: "conversation")
+        XCTAssertNotEqual(changedBinding.toolVersion, approved.toolVersion)
+        await registry.removeServer(id: server.id)
+        try await registry.addServer(server)
+        do {
+            _ = try await registry.callApproved(serverId: server.id, toolName: "read_file", arguments: "{}", binding: changedBinding)
+            XCTFail("Reconnecting the same server ID must invalidate its old connection grants")
+        } catch {}
+        let newBinding = try await tools.approvalBinding(for: call, conversationId: "conversation")
+        XCTAssertNotEqual(newBinding.serverVersion, changedBinding.serverVersion)
+        let calls = await client.callToolCallCount
+        XCTAssertEqual(calls, 1)
+        await registry.removeServer(id: server.id)
+        do {
+            _ = try await tools.approvalBinding(for: call, conversationId: "conversation")
+            XCTFail("Removed tools cannot supply approval evidence")
+        } catch {}
+        do {
+            _ = try await registry.approvalBinding(serverId: server.id, toolName: "read_file")
+            XCTFail("Removed registry identity must fail closed")
+        } catch {}
     }
 
     func testAnnotationsDecodeAndRequestCarriesEnvironment() throws {

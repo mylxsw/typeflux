@@ -282,7 +282,7 @@ struct AskConversationView: View {
         AskPaletteAction.allCases.filter { action in
             switch action {
             case .attachScreenshot:
-                return model.screenshotCapability(launcher: false) == .supported && !model.draft.includeScreenshot
+                return model.screenshotCapability(launcher: false).canAttach && !model.draft.includeScreenshot
             case .usage:
                 return model.selectedId != nil
             default:
@@ -695,13 +695,15 @@ struct AskConversationView: View {
     }
 
     private func approvalCard(_ call: AskToolCall, id: String, embedded: Bool) -> AskApprovalCard {
-        AskApprovalCard(call: call, risk: model.approvalRisk(id) ?? .destructive,
+        let approvalID = model.approvalID(id)
+        return AskApprovalCard(call: call, risk: model.approvalRisk(id) ?? .destructive,
                         mcpServer: model.mcpServerName(of: call),
+                        targetSummary: model.approvalTarget(id),
                         canAllowForConversation: model.canAllowForConversation(id),
                         embedded: embedded,
-                        onDeny: { model.approve(conversationId: id, allowed: false) },
-                        onAllowForConversation: { model.approveForConversation(id) },
-                        onAllow: { model.approve(conversationId: id, allowed: true) })
+                        onDeny: { model.approve(conversationId: id, allowed: false, expectedApprovalID: approvalID) },
+                        onAllowForConversation: { model.approveForConversation(id, expectedApprovalID: approvalID) },
+                        onAllow: { model.approve(conversationId: id, allowed: true, expectedApprovalID: approvalID) })
     }
 
     /// When a transcript row first appeared: its message's time, or its first step's.

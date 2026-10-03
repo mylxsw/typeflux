@@ -1,13 +1,20 @@
 import Foundation
 
 enum AskImageCapability: Equatable {
-    case supported, unsupported, unknown, unavailable
+    /// `unknown`: a Cloud model the catalog says nothing about, so images stay off.
+    /// `untested`: one of the user's own models nobody has confirmed either way; it gets a try,
+    /// and a failed run brings up the image recovery card.
+    case supported, unsupported, unknown, untested, unavailable
+
+    /// A screenshot can be attached: the model reads images, or it is the user's own and gets a try.
+    var canAttach: Bool { self == .supported || self == .untested }
 
     var hint: String? {
         switch self {
         case .supported: return nil
         case .unsupported: return L("ask.image.unsupported")
         case .unknown: return L("ask.image.unknown")
+        case .untested: return L("ask.image.untested")
         case .unavailable: return L("ask.models.unavailable")
         }
     }
@@ -15,9 +22,12 @@ enum AskImageCapability: Equatable {
 
 extension AskModelLibrary {
     func imageCapability(_ reference: String) -> AskImageCapability {
-        guard let (_, model) = registry.resolve(reference) else { return .unavailable }
-        guard let vision = model.vision else { return .unknown }
-        return vision ? .supported : .unsupported
+        guard let (provider, model) = registry.resolve(reference) else { return .unavailable }
+        switch model.effectiveVision {
+        case true?: return .supported
+        case false?: return .unsupported
+        case nil: return provider.isCloud ? .unknown : .untested
+        }
     }
 }
 
@@ -41,10 +51,10 @@ extension AskConversationModel {
     }
 
     func normalizeScreenshotChoices() {
-        if screenshotCapability(launcher: true) != .supported, launcherDraft.includeScreenshot {
+        if !screenshotCapability(launcher: true).canAttach, launcherDraft.includeScreenshot {
             launcherDraft.includeScreenshot = false
         }
-        if !isLoadingSelection, screenshotCapability(launcher: false) != .supported, draft.includeScreenshot {
+        if !isLoadingSelection, !screenshotCapability(launcher: false).canAttach, draft.includeScreenshot {
             draft.includeScreenshot = false
         }
     }
@@ -52,7 +62,7 @@ extension AskConversationModel {
     func selectModel(_ reference: String, launcher: Bool) {
         let wasAttached = launcher ? launcherDraft.includeScreenshot : draft.includeScreenshot
         if launcher { launcherDraft.modelRef = reference } else { draft.modelRef = reference }
-        let notice = wasAttached && screenshotCapability(launcher: launcher) != .supported
+        let notice = wasAttached && !screenshotCapability(launcher: launcher).canAttach
             ? L("ask.image.detached") : nil
         if launcher { launcherScreenshotNotice = notice } else { screenshotNotice = notice }
         if !launcher, imageRecoveryTarget != nil { error = nil }
@@ -60,6 +70,8 @@ extension AskConversationModel {
     }
 
     /// Only terminal runs can use the retry API. Pending tools keep their approval flow.
+    /// A failed run on a model of unknown vision support lands here too, so the card
+    /// can suggest a vision model or marking the model in settings.
     var imageRecoveryTarget: AskImageRecoveryTarget? {
         guard !hasPendingSubmission, let value = selected, let run = value.run,
               value.messages.contains(where: { $0.image != nil }) else { return nil }
@@ -73,7 +85,8 @@ extension AskConversationModel {
     var canResumeImage: Bool {
         guard screenshotCapability(launcher: false) == .supported,
               let (provider, selectedModel) = modelLibrary.registry.resolve(modelReference(launcher: false)) else { return false }
-        return modelLibrary.selectionReason(selectedModel, provider: provider, hasImage: true, loggedIn: true) == nil
+        return modelLibrary.selectionReason(selectedModel, provider: provider, hasImage: true, loggedIn: true,
+                                            confirmedVision: true) == nil
     }
 
     func resumeImage(_ target: AskImageRecoveryTarget, reference: String) {

@@ -52,7 +52,8 @@ final class AskConversationModel: ObservableObject {
     /// Local conversations run on the user's own models; a Cloud reference falls back to the first one available.
     func localFallback(_ reference: String, hasImage: Bool) -> String {
         guard !cloudAvailable, reference.hasPrefix("cloud:") else { return reference }
-        return modelLibrary.firstLocalReference(hasImage: hasImage) ?? reference
+        return modelLibrary.firstLocalReference(hasImage: hasImage)
+            ?? modelLibrary.firstLocalReference(hasImage: hasImage, confirmedVision: false) ?? reference
     }
 
     /// False when Ask runs on this Mac: not signed in, or local mode is on.
@@ -66,14 +67,14 @@ final class AskConversationModel: ObservableObject {
     @Published var referenceLocation: String?
     @Published var launcherDraft = AskDraft() {
         didSet {
-            if launcherDraft.includeScreenshot, screenshotCapability(launcher: true) != .supported {
+            if launcherDraft.includeScreenshot, !screenshotCapability(launcher: true).canAttach {
                 launcherDraft.includeScreenshot = false
             }
         }
     }
     @Published var draft = AskDraft.followUp {
         didSet {
-            if !isLoadingSelection, draft.includeScreenshot, screenshotCapability(launcher: false) != .supported {
+            if !isLoadingSelection, draft.includeScreenshot, !screenshotCapability(launcher: false).canAttach {
                 draft.includeScreenshot = false
             }
         }
@@ -138,10 +139,10 @@ final class AskConversationModel: ObservableObject {
     private var owner = ""
     private var operations: [String: Task<Void, Never>] = [:]
     private var operationIds: [String: UUID] = [:]
-    private var approvals: [String: CheckedContinuation<Bool, Never>] = [:]
-    /// Approvals the user extended to a whole conversation: tool name to the highest
-    /// risk allowed. Memory only, so grants end with the app session or account.
-    private var toolGrants: [String: [String: AskToolRisk]] = [:]
+    private var approvals: [String: CheckedContinuation<String?, Never>] = [:]
+    private var approvalRequests: [String: (id: UUID, request: AskApprovalRequest)] = [:]
+    let approvalStore = AskApprovalStore()
+    private let approvalReuseEnabled: Bool
     private var operationErrors: [String: String] = [:]
     private var pendingSends: [String: AskSendRequest] = [:]
     // Local consent for the latest submission, retained for retries but never restored from history.
@@ -163,10 +164,14 @@ final class AskConversationModel: ObservableObject {
     init(api: any AskAPI, cache: any AskCaching, tools: any AskToolExecuting,
          capture: any AskContextCapturing, deviceId: String, modelLibrary: AskModelLibrary? = nil,
          defaults: UserDefaults = .standard,
+         trustedApprovalPeer: AskHarnessContract? = nil, scopedApprovalEnabled: Bool = false,
          session: @escaping () -> (owner: String, token: String)?) {
         self.modelLibrary = modelLibrary ?? .shared
         self.api = api; self.cache = cache; self.tools = tools; self.capture = capture
         self.deviceId = deviceId; self.session = session; self.defaults = defaults
+        // Only DI-supplied, trusted advertisements may enable reuse. Conversation metadata is inert.
+        approvalReuseEnabled = AskHarnessContract(version: 1, capabilities: [AskHarnessCapability.scopedApproval.rawValue])
+            .permits(.scopedApproval, peer: trustedApprovalPeer, enabled: scopedApprovalEnabled ? [.scopedApproval] : [])
         normalizeScreenshotChoices()
         modelObserver = self.modelLibrary.objectWillChange.sink { [weak self] _ in
             Task { @MainActor [weak self] in
@@ -250,7 +255,7 @@ final class AskConversationModel: ObservableObject {
         historyErrorTask?.cancel(); historyRefreshError = nil
         pullRefreshID = nil; isRefreshingHistory = false
         operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]
-        approvals.values.forEach { $0.resume(returning: false) }; approvals = [:]; toolGrants = [:]
+        approvals.values.forEach { $0.resume(returning: nil) }; approvals = [:]; approvalRequests = [:]; approvalStore.reset()
         inferenceReceipts = [:]; inferenceUsage = [:]
         pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
         sendQueue = AskSendQueue(); steeringIds = []
@@ -306,7 +311,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func refreshScreenshot(launcher: Bool) async {
-        guard screenshotCapability(launcher: launcher) == .supported else { return }
+        guard screenshotCapability(launcher: launcher).canAttach else { return }
         let generation = UUID(); captureGeneration = generation; capturing = true
         let selectedId = selected?.id
         let context = await capture.capture(includeScreenshot: true, includeSelection: false)
@@ -796,25 +801,42 @@ final class AskConversationModel: ObservableObject {
                 // Consent comes from the submitted draft, never from historical images or live UI state.
                 let isScreenshot = call.function.name == "computer"
                     && (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) == "screenshot"
-                let approved: Bool
+                let binding = try await tools.approvalBinding(for: call, conversationId: value.id)
+                try Task.checkCancellation()
+                guard session()?.owner == current.owner else { throw CancellationError() }
+                let request = AskToolPolicy.request(call: call, owner: current.owner, conversation: value.id,
+                                                    run: run.id, step: String(run.steps), binding: binding,
+                                                    risk: tools.risk(of: call), reuseEnabled: approvalReuseEnabled,
+                                                    now: approvalStore.now())
+                let grantID: String?
                 let screenshotApproved = screenshotConsentMessageID != nil
                     && value.messages.last(where: { $0.role == "user" })?.id == screenshotConsentMessageID
-                if screenshotApproved && isScreenshot {
-                    approved = true
-                } else if isGranted(call, conversationId: value.id) {
-                    approved = true
+                if (screenshotApproved && isScreenshot) || tools.risk(of: call) == .none {
+                    grantID = approvalStore.issue(request)
+                } else if let reusable = approvalStore.reusableGrant(for: request) {
+                    grantID = reusable
                 } else {
+                    let approvalID = UUID()
+                    approvalRequests[value.id] = (approvalID, request)
                     pendingApprovals[value.id] = call
-                    approved = await withCheckedContinuation { approvals[value.id] = $0 }
-                    pendingApprovals[value.id] = nil
+                    grantID = await withCheckedContinuation { approvals[value.id] = $0 }
+                    if approvalRequests[value.id]?.id == approvalID {
+                        pendingApprovals[value.id] = nil
+                        approvalRequests[value.id] = nil
+                    }
                 }
                 try Task.checkCancellation()
                 result = AskToolResultRequest(runId: run.id, deviceId: deviceId, toolCallId: call.id, content: "User denied this tool call. Do not repeat it.", isError: true)
                 let latest = try await api.conversation(id: value.id, token: current.token)
                 try await accept(latest, owner: current.owner)
                 guard latest.run?.id == run.id, latest.run?.status == "waiting_tool",
-                      latest.run?.pending.first?.id == call.id else { return }
-                if approved {
+                      latest.run?.pending.first == call else {
+                    approvalStore.revoke(conversation: value.id)
+                    return
+                }
+                try Task.checkCancellation()
+                guard session()?.owner == current.owner else { throw CancellationError() }
+                if let grantID {
                     guard try await cache.claimTool(id: journalKey, owner: current.owner) else {
                         result?.content = "A previous execution was interrupted; its outcome is unknown. Do not replay it. Ask the user to inspect the result."
                         try await cache.saveToolResult(result!, owner: current.owner)
@@ -826,7 +848,21 @@ final class AskConversationModel: ObservableObject {
                             guard controllingConversationId == nil else { throw AskLocalError.message(L("ask.tool.busy")) }
                             controllingConversationId = value.id; onControlChanged?(true)
                         }
-                        let output = try await tools.execute(call, conversationId: value.id)
+                        // Claiming and fetching can suspend. Re-resolve local evidence at dispatch.
+                        let bindingNow = try await tools.approvalBinding(for: call, conversationId: value.id)
+                        try Task.checkCancellation()
+                        guard session()?.owner == current.owner else { throw CancellationError() }
+                        guard bindingNow == request.binding,
+                              approvalStore.consume(grantID, for: request) else {
+                            throw AskLocalError.message(L("ask.approval.changed"))
+                        }
+                        let output = try await tools.executeApproved(call, conversationId: value.id, binding: bindingNow) {
+                            try Task.checkCancellation()
+                            guard self.session()?.owner == current.owner,
+                                  self.approvalStore.validateDispatch(grantID, for: request) else {
+                                throw AskLocalError.message(L("ask.approval.changed"))
+                            }
+                        }
                         try Task.checkCancellation()
                         result?.content = output.content; result?.image = output.image; result?.isError = output.isError
                     } catch is CancellationError { throw CancellationError() }
@@ -840,42 +876,51 @@ final class AskConversationModel: ObservableObject {
         }
     }
 
-    func isGranted(_ call: AskToolCall, conversationId: String) -> Bool {
-        let risk = tools.risk(of: call)
-        if risk == .none { return true }
-        guard risk < .destructive, let granted = toolGrants[conversationId]?[call.function.name] else { return false }
-        return risk <= granted
+    /// This query never upgrades a tool name into a permission.
+    func isGranted(_ call: AskToolCall, conversationId: String) async -> Bool {
+        guard let current = session(), let value = snapshots[conversationId], let run = value.run,
+              let binding = try? await tools.approvalBinding(for: call, conversationId: conversationId) else { return false }
+        let request = AskToolPolicy.request(call: call, owner: current.owner, conversation: conversationId,
+                                           run: run.id, step: String(run.steps), binding: binding,
+                                           risk: tools.risk(of: call), reuseEnabled: approvalReuseEnabled,
+                                           now: approvalStore.now())
+        return approvalStore.reusableGrant(for: request) != nil
     }
 
-    /// The risk tier of the call waiting for approval.
     func approvalRisk(_ conversationId: String) -> AskToolRisk? {
-        pendingApprovals[conversationId].map { tools.risk(of: $0) }
+        approvalRequests[conversationId]?.request.risk
     }
 
+    func approvalID(_ conversationId: String) -> UUID? { approvalRequests[conversationId]?.id }
+    func approvalTarget(_ conversationId: String) -> String? { approvalRequests[conversationId]?.request.binding.summary }
     func mcpServerName(of call: AskToolCall) -> String? { tools.mcpServerName(of: call) }
 
-    /// Destructive calls can only be allowed once.
     func canAllowForConversation(_ conversationId: String) -> Bool {
-        pendingApprovals[conversationId].map { tools.risk(of: $0) < .destructive } ?? false
+        approvalRequests[conversationId]?.request.reusable == true
     }
 
-    /// Allows the pending call and later calls of the same tool at the same or lower risk.
-    func approveForConversation(_ conversationId: String) {
-        guard let call = pendingApprovals[conversationId] else { return }
-        let risk = tools.risk(of: call)
-        guard risk < .destructive else { return }
-        let name = call.function.name
-        toolGrants[conversationId, default: [:]][name] = max(risk, toolGrants[conversationId]?[name] ?? .read)
-        approve(conversationId: conversationId, allowed: true)
+    func approveForConversation(_ conversationId: String, expectedApprovalID: UUID? = nil) {
+        guard canAllowForConversation(conversationId) else { return }
+        resolveApproval(conversationId, allowed: true, reusable: true, expected: expectedApprovalID)
     }
 
-    func approve(conversationId: String, allowed: Bool) {
-        approvals.removeValue(forKey: conversationId)?.resume(returning: allowed)
+    func approve(conversationId: String, allowed: Bool, expectedApprovalID: UUID? = nil) {
+        resolveApproval(conversationId, allowed: allowed, reusable: false, expected: expectedApprovalID)
+    }
+
+    private func resolveApproval(_ conversationId: String, allowed: Bool, reusable: Bool, expected: UUID?) {
+        guard let pending = approvalRequests[conversationId], expected == nil || expected == pending.id,
+              let continuation = approvals.removeValue(forKey: conversationId) else { return }
+        let currentOwner = session()?.owner
+        let grant = allowed && currentOwner == pending.request.context.ownerId
+            ? approvalStore.issue(pending.request, reusable: reusable) : nil
+        continuation.resume(returning: grant)
     }
 
     func stop(id: String? = nil) {
         guard let current = credentials(), let id = id ?? selected?.id else { return }
         operations[id]?.cancel()
+        approvalStore.revoke(conversation: id)
         approve(conversationId: id, allowed: false)
         if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
         Task {
@@ -914,7 +959,7 @@ final class AskConversationModel: ObservableObject {
             conversations.removeAll { $0.id == id }
             drafts[id] = nil; snapshots[id] = nil; operationErrors[id] = nil; transcriptPositions[id] = nil
             sendQueue.clear(id)
-            screenshotConsent[id] = nil; toolGrants[id] = nil
+            screenshotConsent[id] = nil; approvalStore.revoke(conversation: id)
             if selectedId == id { selectedId = nil; newConversation() }
             else { persistDrafts() }
         } catch { self.error = error.localizedDescription }
@@ -1048,6 +1093,9 @@ extension AskConversationModel {
         guard let latest = sendQueue.messages(value.id).first(where: { $0.id == itemId }) else { return }
         let id = value.id
         steeringIds.insert(itemId)
+        // A changed instruction invalidates pending intent before the network suspension.
+        approvalStore.revoke(conversation: id)
+        approve(conversationId: id, allowed: false)
         var message = latest.draft.request(deviceId: deviceId, tools: [], id: latest.id)
         message.skills = skillUses(latest.draft.skills)
         let request = AskSteerRequest(runId: run.id, message: message)
@@ -1087,4 +1135,3 @@ extension AskConversationModel {
         submit(item.draft, newConversation: false, messageId: item.id, clearsDraft: false)
     }
 }
-

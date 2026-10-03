@@ -1578,6 +1578,10 @@
 "models.capabilityHint" = "モデルのドキュメントに基づき、対応する機能にチェックしてください";
 "models.visionYes" = "ビジョン（画像認識）に対応";
 "models.reasoningYes" = "推論に対応";
+"models.askBlocked" = "Ask には使用できません：%@";
+"models.rewriteBlocked" = "書き換えと推敲には使用できません：%@";
+"models.visionGuessed" = "モデル名からビジョン対応と推定しました。「···」メニューで変更できます";
+"ask.models.visionTrial" = "ビジョン対応は未確認です。画像の送信を試します";
 "models.usageHint" = "ラベルはそのモデルを使用中のシナリオを示します。「利用シーン」または「···」メニューから変更できます。";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
@@ -1625,6 +1629,7 @@
 // Screenshot capability and recovery
 "ask.image.unsupported" = "このモデルは画像認識に対応していません。スクリーンショットを添付するには対応モデルに切り替えてください。";
 "ask.image.unknown" = "このモデルの画像対応は未確認です。モデル設定を確認してください。";
+"ask.image.untested" = "このモデルは画像に対応していない可能性があります。ビジョン対応モデルに切り替えるか、モデル設定でビジョン対応を指定してください。";
 "ask.image.detached" = "このモデルは画像に対応していないため、スクリーンショットの添付を解除しました。";
 "ask.image.disabled" = "利用不可";
 "ask.image.captured" = "スクリーンショット取得済み";
@@ -1865,7 +1870,7 @@
 "ask.vision.addHelp" = "設定 → モデル で、llama3.2-vision や qwen2.5vl など画像対応モデルを追加してください。";
 "ask.vision.switched" = "この会話には画像があるため、画像に対応した %@ に切り替えました。";
 "ask.vision.revert" = "%@ に戻す";
-"ask.models.imageOnly" = "この会話には画像があるため、画像対応モデルのみ選べます。";
+"ask.models.imageOnly" = "この会話には画像があるため、ビジョン非対応のモデルはグレー表示です。";
 "ask.models.localGroup" = "このMac · Ollama";
 "ask.models.cloudLocked.title" = "MiniMax、Claude、GPT など";
 "ask.models.cloudLocked.caption" = "画像認識とWeb検索 · サインインで利用可能";
@@ -1968,6 +1973,12 @@
 "ask.queue.full" = "待機できるメッセージは %d 件までです。";
 "ask.steered" = "割り込み済み";
 "ask.steered.pending" = "割り込み済み · 次のステップで反映";
+
+// Scoped tool approval
+"ask.approval.changed" = "承認済みの操作、対象、またはツールが変更されました。確認して再度承認してください。";
+"ask.approval.allowExact" = "同じ操作を許可";
+"ask.approval.exactScope" = "この会話で 5 分間、同じ操作・対象・引数の繰り返しのみ許可します。";
+"ask.approval.singleUse" = "今回の呼び出しのみ許可します。次回は新たな承認が必要です。";
 
 /* Ask attachments */
 "ask.attach.title" = "添付";

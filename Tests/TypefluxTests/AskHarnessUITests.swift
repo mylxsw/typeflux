@@ -167,7 +167,7 @@ struct AskHarnessUITests {
         #expect(AskApprovalPresentation.preview(call("t", "computer", ["action": "type", "text": "hi"])) == .content("hi"))
         #expect(AskApprovalPresentation.preview(call("t", "browser", ["action": "fill", "text": "x"])) == .content("x"))
         #expect(AskApprovalPresentation.preview(call("m", "memory", ["action": "remember", "text": "likes tea"])) == .content("likes tea"))
-        #expect(AskApprovalPresentation.preview(call("d", "mcp_delete", ["id": "1"])) == .none)
+        #expect(AskApprovalPresentation.preview(call("d", "mcp_delete", ["id": "1"])) == .content("{\"id\":\"1\"}"))
         #expect(AskApprovalPresentation.detail(call("w", "files", ["path": "~/a/b.md"])) == "~/a/b.md")
         #expect(AskApprovalPresentation.detail(call("w", "run_code", ["path": "x"])) == nil)
         #expect(AskApprovalPresentation.clip(String(repeating: "a", count: 10), limit: 4) == "aaaa\n…")

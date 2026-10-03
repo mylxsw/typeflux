@@ -1588,6 +1588,10 @@
 "models.capabilityHint" = "请根据模型文档勾选该模型支持的能力";
 "models.visionYes" = "支持视觉（识图）";
 "models.reasoningYes" = "支持推理";
+"models.askBlocked" = "不能用于随便问：%@";
+"models.rewriteBlocked" = "不能用于转译与润色：%@";
+"models.visionGuessed" = "根据模型名推断支持视觉，可在「···」菜单中更改";
+"ask.models.visionTrial" = "视觉能力未确认，将尝试发送图片";
 "models.usageHint" = "标签表示该模型当前被哪个场景使用；可在「应用场景」或「···」菜单中更改。";
 "models.deleteHint" = "引用此模型的场景和对话将提示重新选择，不会自动替换。";
 "models.alreadyAdded" = "已在列表";
@@ -1635,6 +1639,7 @@
 // Screenshot capability and recovery
 "ask.image.unsupported" = "当前模型不支持图片识别，切换到支持图片识别的模型后可附带截图。";
 "ask.image.unknown" = "尚未确认当前模型是否支持图片识别，请检查模型配置。";
+"ask.image.untested" = "这个模型可能不支持图片。换一个支持视觉的模型，或在模型设置中标记它的视觉能力。";
 "ask.image.detached" = "已取消附带截图，当前模型不支持图片识别。";
 "ask.image.disabled" = "不可用";
 "ask.image.captured" = "截图已获取";
@@ -1875,7 +1880,7 @@
 "ask.vision.addHelp" = "在 设置 → 模型 中添加支持识图的模型，例如 llama3.2-vision、qwen2.5vl。";
 "ask.vision.switched" = "这段对话里有图片，已切换到支持识图的 %@。";
 "ask.vision.revert" = "改回 %@";
-"ask.models.imageOnly" = "这段对话里有图片，只能选支持识图的模型。";
+"ask.models.imageOnly" = "这段对话里有图片，不支持视觉的模型已置灰。";
 "ask.models.localGroup" = "本机 · Ollama";
 "ask.models.cloudLocked.title" = "MiniMax、Claude、GPT 等";
 "ask.models.cloudLocked.caption" = "支持识图和联网搜索 · 登录后可用";
@@ -1978,6 +1983,12 @@
 "ask.queue.full" = "最多可以排队 %d 条消息。";
 "ask.steered" = "已插队";
 "ask.steered.pending" = "已插队 · 下一步生效";
+
+// Scoped tool approval
+"ask.approval.changed" = "已批准的动作、目标或工具发生变化，请重新检查并批准。";
+"ask.approval.allowExact" = "允许重复此动作";
+"ask.approval.exactScope" = "仅在此会话的 5 分钟内允许重复相同动作、目标和参数。";
+"ask.approval.singleUse" = "仅允许执行本次调用，后续调用需要重新批准。";
 
 /* Ask attachments */
 "ask.attach.title" = "添加附件";
