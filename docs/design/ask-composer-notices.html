@@ -64,18 +64,17 @@
   .mic.err { color: var(--danger); background: var(--danger-soft); }
   .send { background: var(--ctl); color: var(--text-3); } .send.on { background: var(--accent); color: #fff; }
 
-  /* confirmation: the control itself flashes */
-  .flash { box-shadow: 0 0 0 1.5px var(--accent) inset; background: var(--accent-soft) !important; color: var(--accent-text) !important; }
-  .flash svg { color: var(--accent-text) !important; }
-  .check { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; flex: none; }
-  .badge-ok { position: absolute; right: -4px; top: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); color: #fff;
-    border: 1.5px solid var(--card); display: flex; align-items: center; justify-content: center; }
+  /* confirmation: one quiet line of text in the footer's empty space, no fill, no outline */
   .badge-warn { position: absolute; right: -4px; top: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--warn); color: #1d1d1f;
     border: 1.5px solid var(--card); display: flex; align-items: center; justify-content: center; font: 800 9px/1 sans-serif; }
-  /* inline toast that lives inside the footer, never below the card */
-  .ftoast { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 7px; border-radius: 13px;
-    background: var(--ok-soft); color: var(--ok); font-size: 12px; font-weight: 550; white-space: nowrap; }
-  .ftoast.fade { opacity: .45; }
+  .fnote { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 6px; color: var(--text-3); font-size: 11.5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+  .fnote svg { flex: none; opacity: .8; }
+  .fnote b { font-weight: 500; color: var(--text-2); }
+  .fnote.fade { opacity: .4; }
+  .tl { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+  .tl div { border-top: 2px solid rgba(255,255,255,.12); padding-top: 6px; font-size: 11px; color: var(--text-3); }
+  .tl div b { display: block; color: var(--text-2); font-weight: 600; }
 
   /* in-card notice row: top of the card, same width as the editor */
   .nrow { display: flex; align-items: center; gap: 8px; margin: 8px 8px 0; padding: 0 6px 0 10px; min-height: 34px; border-radius: 11px; font-size: 12.5px; }
@@ -185,7 +184,7 @@
 
 <h1>随便问 · 输入框提示信息重新设计</h1>
 <p class="sub">问题：「已切换到 coding/auto」这类提示统一用 <code>AskBanner</code> 堆在输入框<b>下方</b>。它会把输入框往上顶，还盖住了下面那行快捷键提示（截图红框处两行文字叠在一起）。模型切换、思考强度、截图、附件失败、语音出错、对话失败等七八种信息都挤在这一处，用户分不清哪条提示对应哪个操作。<br>
-方案：<b>输入框下方不再显示任何内容</b>。每条信息按它说的是什么，放回它所属的位置：状态确认在<b>对应控件上就地反馈</b>，需要处理的问题放进<b>卡片内部的提示条</b>，对话级事件写进<b>对话流</b>，快捷键说明改到<b>占位符和悬停提示</b>里。聊天页输入框和快捷浮窗（launcher）共用这套规则。</p>
+方案：<b>输入框下方不再显示任何内容</b>。每条信息按它说的是什么，放回它所属的位置：状态确认变成<b>底栏空白处的一行灰色小字</b>（控件本身只换值，不闪不弹），需要处理的问题放进<b>卡片内部的提示条</b>，对话级事件写进<b>对话流</b>，快捷键说明改到<b>占位符和悬停提示</b>里。聊天页输入框和快捷浮窗（launcher）共用这套规则。</p>
 
 <div class="grid">
   <!-- before -->
@@ -209,11 +208,11 @@
     <div class="label">信息分类 → 新位置（覆盖代码里现有的每一条）</div>
     <table class="tokens">
       <tr><th style="width:230px">现有信息</th><th style="width:230px">来源</th><th style="width:130px">类型</th><th>新的位置与形态</th></tr>
-      <tr><td>已切换到 %@（模型）</td><td><code>commandFeedback</code> · <code>ask.command.modelChanged</code></td><td><span class="tag c">状态确认</span></td><td>模型按钮<b>就地闪一下</b>：蓝色描边 + ✓，1.6s 后淡出。不出现文字条。</td></tr>
-      <tr><td>思考强度：%@</td><td><code>ask.command.reasoningChanged</code></td><td><span class="tag c">状态确认</span></td><td>思考强度按钮就地闪一下，同上。</td></tr>
-      <tr><td>已切换到本机模式 / Typeflux Cloud</td><td><code>ask.command.localOn/Off</code></td><td><span class="tag c">状态确认</span></td><td>「本机」按钮就地闪一下，按钮文字本身就是新状态。</td></tr>
-      <tr><td>已附带 / 已移除屏幕截图、选中文字、本条使用记忆</td><td><code>ask.command.screenshot*/selection*/memory*</code></td><td><span class="tag c">状态确认</span></td><td>对应的图标 chip 切换开关状态时<b>弹一下</b>（scale 1→1.12→1），右上角出现 ✓ 角标 1.2s。</td></tr>
-      <tr><td>已复制上一条回答 · 已记住</td><td><code>ask.command.copied/remembered</code></td><td><span class="tag c">一次性动作</span></td><td>底栏里、麦克风左边出现绿色<b>小胶囊</b>「✓ 已复制」，1.6s 淡出。它占用的是底栏的空白区域，卡片高度不变。</td></tr>
+      <tr><td>已切换到 %@（模型）</td><td><code>commandFeedback</code> · <code>ask.command.modelChanged</code></td><td><span class="tag c">状态确认</span></td><td>模型按钮只是<b>换成新名字</b>（文字交叉淡入 0.2s，无描边、无角标）；底栏空白处出现一行灰色小字「已切换到 coding/auto」，1.6s 后淡出。</td></tr>
+      <tr><td>思考强度：%@</td><td><code>ask.command.reasoningChanged</code></td><td><span class="tag c">状态确认</span></td><td>同上：按钮换值 + 底栏灰色小字。</td></tr>
+      <tr><td>已切换到本机模式 / Typeflux Cloud</td><td><code>ask.command.localOn/Off</code></td><td><span class="tag c">状态确认</span></td><td>同上：按钮换值 + 底栏灰色小字。</td></tr>
+      <tr><td>已附带 / 已移除屏幕截图、选中文字、本条使用记忆</td><td><code>ask.command.screenshot*/selection*/memory*</code></td><td><span class="tag c">状态确认</span></td><td>图标 chip 正常切换开/关的颜色（0.2s 渐变，不缩放、无角标）+ 底栏灰色小字。</td></tr>
+      <tr><td>已复制上一条回答 · 已记住</td><td><code>ask.command.copied/remembered</code></td><td><span class="tag c">状态确认</span></td><td>同一个位置、同一种灰色小字「✓ 已复制上一条回答」，没有底色。占用底栏空白，卡片高度不变。</td></tr>
       <tr><td>每条消息最多选 %d 个</td><td><code>ask.command.tooManyChoices</code></td><td><span class="tag w">操作被拒</span></td><td>命令面板里，对应条目原地抖一下，副标题改为警告色文字。面板外不再出提示。</td></tr>
       <tr><td>已取消附带截图，当前模型不支持图片识别</td><td><code>screenshotNotice</code> · <code>ask.image.detached</code></td><td><span class="tag w">需要知道/处理</span></td><td><b>卡片内提示条</b>（卡片顶部），附「换回识图模型」按钮和 ×。截图 chip 同时显示警告角标。</td></tr>
       <tr><td>附件被拒 / 图片需要识图模型</td><td><code>attachmentNotice</code></td><td><span class="tag w">需要知道/处理</span></td><td>卡片内提示条，紧挨附件条。被拒的附件显示为橙色描边的「幽灵」缩略图，3s 后自动移除。</td></tr>
@@ -258,12 +257,13 @@
               <div class="foot">
                 <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
                 <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
-                <span class="menu flash">coding/auto <span class="check"><svg width="9" height="9"><use href="#ok"/></svg></span></span>
+                <span class="menu">coding/auto <svg width="10" height="10"><use href="#chev"/></svg></span>
                 <span class="menu"><svg width="14" height="14"><use href="#spark"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
                 <span class="sep"></span>
                 <span class="ic"><svg width="15" height="15"><use href="#cam"/></svg></span>
                 <span class="ic on round"><svg width="15" height="15"><use href="#brain"/></svg></span>
                 <span class="spacer"></span>
+                <span class="fnote"><svg width="12" height="12"><use href="#okc"/></svg>已切换到 <b>coding/auto</b></span>
                 <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
                 <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
               </div>
@@ -275,7 +275,7 @@
       <div class="notes" style="flex:1">
         <h2>整体变化</h2>
         <ul>
-          <li>截图里是刚通过 <code>/</code> 命令切到 coding/auto 的那一刻：<b>模型按钮本身</b>变成蓝色软底和描边，名字后面加一个 ✓。1.6s 后恢复正常样式。眼睛本来就在看这个位置，不需要再读一行字。</li>
+          <li>截图里是刚通过 <code>/</code> 命令切到 coding/auto 的那一刻：模型按钮直接显示新名字，底栏右侧空白处出现一行三级灰小字「✓ 已切换到 coding/auto」，1.6s 后淡出。它在卡片<b>里面</b>，不占新的行，也不改变任何控件的样式。</li>
           <li>输入框下方只保留 22pt 外边距（<code>composerBottomInset</code>），<code>AskComposerHint</code> 整行删除。卡片的位置和高度不再因为提示而变化。</li>
           <li>斜杠按钮去掉，改为占位符「输入问题，<b>/</b> 调用命令」，让命令入口更容易被发现。底栏少一个图标，也就更不容易挤。</li>
           <li>快捷键说明：空对话的欢迎区已经有「⌘Space 唤起 · ⌥(R) 语音输入」，有内容后再放到悬停提示里（见 E）。</li>
@@ -286,7 +286,7 @@
 
   <!-- B: confirmations -->
   <div class="stage">
-    <div class="label">B · 状态确认：在控件上就地反馈，不出现文字条</div>
+    <div class="label">B · 状态确认：控件只换值，底栏空白处一行灰色小字，不闪、不弹、无底色</div>
     <div class="step">
       <div class="composer">
         <div class="editor"><span class="ph">输入问题，<kbd>/</kbd> 调用命令</span></div>
@@ -294,16 +294,23 @@
           <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
           <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
           <span class="menu">coding/auto <svg width="10" height="10"><use href="#chev"/></svg></span>
-          <span class="menu flash"><svg width="14" height="14"><use href="#spark"/></svg>高 <span class="check"><svg width="9" height="9"><use href="#ok"/></svg></span></span>
+          <span class="menu"><svg width="14" height="14"><use href="#spark"/></svg>高 <svg width="10" height="10"><use href="#chev"/></svg></span>
           <span class="sep"></span>
           <span class="ic"><svg width="15" height="15"><use href="#cam"/></svg></span>
           <span class="ic on round"><svg width="15" height="15"><use href="#brain"/></svg></span>
           <span class="spacer"></span>
+          <span class="fnote"><svg width="12" height="12"><use href="#okc"/></svg>思考强度：<b>高</b></span>
           <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
           <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
         </div>
       </div>
-      <div class="cap">B1 · /think 高 → 思考强度按钮闪一下（模型、本机/Cloud 用同样的效果）</div>
+      <div class="cap">B1 · /think 高 → 按钮文字从「默认」淡入为「高」，右侧出现灰色小字（模型、本机/Cloud 相同）</div>
+      <div class="tl">
+        <div><b>0ms</b>选择命令，面板关闭</div>
+        <div><b>0–200ms</b>按钮文字交叉淡入；小字淡入</div>
+        <div><b>200ms–1.8s</b>小字静止显示</div>
+        <div><b>1.8s–2.2s</b>小字淡出，底栏恢复原样</div>
+      </div>
     </div>
     <div class="step">
       <div class="composer">
@@ -314,14 +321,15 @@
           <span class="menu">coding/auto <svg width="10" height="10"><use href="#chev"/></svg></span>
           <span class="menu"><svg width="14" height="14"><use href="#spark"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
           <span class="sep"></span>
-          <span class="ic on" style="transform:scale(1.08)"><svg width="15" height="15"><use href="#cam"/></svg><span class="badge-ok"><svg width="8" height="8"><use href="#ok"/></svg></span></span>
+          <span class="ic on"><svg width="15" height="15"><use href="#cam"/></svg></span>
           <span class="ic on round"><svg width="15" height="15"><use href="#brain"/></svg></span>
           <span class="spacer"></span>
+          <span class="fnote"><svg width="12" height="12"><use href="#okc"/></svg>已附带屏幕截图</span>
           <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
           <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
         </div>
       </div>
-      <div class="cap">B2 · /screenshot → 截图 chip 弹一下、变成开启态，右上角 ✓ 角标 1.2s</div>
+      <div class="cap">B2 · /screenshot → 截图 chip 按正常开关样式变为开启（颜色 0.2s 渐变），右侧灰色小字</div>
     </div>
     <div class="step">
       <div class="composer">
@@ -335,21 +343,22 @@
           <span class="ic"><svg width="15" height="15"><use href="#cam"/></svg></span>
           <span class="ic on round"><svg width="15" height="15"><use href="#brain"/></svg></span>
           <span class="spacer"></span>
-          <span class="ftoast"><svg width="14" height="14"><use href="#okc"/></svg>已复制上一条回答</span>
+          <span class="fnote"><svg width="12" height="12"><use href="#okc"/></svg>已复制上一条回答</span>
           <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
           <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
         </div>
       </div>
-      <div class="cap">B3 · /copy、/remember 这类没有对应控件的动作 → 底栏空白处出现绿色胶囊，1.6s 淡出</div>
+      <div class="cap">B3 · /copy、/remember 这类没有对应控件的动作 → 同一位置、同一种灰色小字</div>
     </div>
   </div>
   <div class="notes">
     <h2>规则</h2>
     <ul>
-      <li><b>改了哪个状态，就在哪个控件上反馈</b>。<code>runCommand</code> 不再调用 <code>confirm(text)</code>，改为 <code>pulse(.model / .reasoning / .local / .screenshot / .selection / .memory)</code>。底栏用 <code>model.pulse</code> 判断哪个控件需要高亮。</li>
-      <li>动效：0→120ms 描边和软底淡入，✓ 从 0.6 缩放到 1；保持 1.2s；再用 300ms 淡出。开启「减少动态效果」时去掉缩放，只保留颜色变化。</li>
-      <li><b>无障碍</b>：视觉上没有文字了，但仍然通过 <code>NSAccessibility.post(.announcementRequested)</code> 把原来的确认文案（如「已切换到 coding/auto」）读给 VoiceOver。现有本地化 key 全部保留，作为播报文案使用。</li>
-      <li><b>B3 小胶囊</b>放在底栏 spacer 里，靠右对齐，紧贴麦克风。宽度不够时（launcher 很窄、底栏控件很多）只显示 ✓ 图标，悬停可看文字。它<b>不会改变卡片高度</b>。</li>
+      <li><b>控件只做它本来就会做的变化</b>：模型、思考强度、本机/Cloud 按钮直接显示新值；截图、选中文字、记忆 chip 切换成开或关的颜色。不加描边、✓ 角标或缩放，状态变化前后控件的样式规则完全一样。</li>
+      <li><b>所有确认共用一个位置、一种样式</b>：底栏 spacer 右侧、麦克风左边，11.5pt 三级灰文字，前面带一个 12pt 的 ✓ 线框图标，<b>没有底色和边框</b>。新值用二级灰加粗，便于一眼看到。</li>
+      <li>动效只有透明度：淡入 200ms，停留 1.6s，淡出 400ms，不位移、不缩放。「减少动态效果」下改为直接出现和消失。</li>
+      <li>它在卡片<b>内部</b>，占用的是底栏原本空着的区域，卡片高度和其他控件位置都不变。文字过长时尾部省略（最大宽度 220pt）；底栏放不下时（launcher 较窄或控件较多）不显示，只进行 VoiceOver 播报。</li>
+      <li><b>无障碍</b>：同时通过 <code>NSAccessibility.post(.announcementRequested)</code> 播报同样的文案。现有本地化 key（<code>ask.command.*</code>）全部沿用。</li>
       <li>连续触发时，后一次直接替换前一次，不排队。和现在 <code>confirm</code> 的“新的覆盖旧的”语义一致。</li>
     </ul>
   </div>
@@ -504,9 +513,10 @@
         <div class="editor"><span>这段报错是什么意思？</span></div>
         <div class="foot">
           <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
-          <span class="menu flash"><svg width="14" height="14"><use href="#mac"/></svg>本机 <span class="check"><svg width="9" height="9"><use href="#ok"/></svg></span></span>
+          <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
           <span class="menu">llama3.2 <svg width="10" height="10"><use href="#chev"/></svg></span>
           <span class="spacer"></span>
+          <span class="fnote"><svg width="12" height="12"><use href="#okc"/></svg>已切换到本机模式</span>
           <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
           <span class="send on"><svg width="15" height="15"><use href="#up"/></svg></span>
         </div>
@@ -517,7 +527,7 @@
     <h2>规则</h2>
     <ul>
       <li>launcher 的 banner 现在也堆在玻璃卡片外面，面板窗口跟着往下长（<code>reportHeight</code>）。改为全部放进卡片内：提示条在顶部，确认反馈在控件上。<b>玻璃卡片下方不再有其他内容</b>。</li>
-      <li>示例：发送失败后用户执行 <code>/local</code>，「本机」按钮闪一下表示已切换，提示条里的「重试」直接用新模式重新发送。</li>
+      <li>示例：发送失败后用户执行 <code>/local</code>，「本机」按钮显示新状态，底栏出现灰色小字「已切换到本机模式」，提示条里的「重试」直接用新模式重新发送。</li>
       <li>面板高度只在提示条出现或消失时变化。<code>reportHeight</code> 的监听从 7 个 <code>onChange</code> 减为 1 个（当前显示的提示条 id），其余监听（<code>commandFeedback</code>、各类 notice）可以删除。</li>
       <li>浅色玻璃上，提示条使用实色软底（见 G），避免和桌面背景混在一起。</li>
     </ul>
@@ -533,11 +543,11 @@
         <div class="foot">
           <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
           <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
-          <span class="menu flash">coding/auto <span class="check"><svg width="9" height="9"><use href="#ok"/></svg></span></span>
+          <span class="menu">coding/auto <svg width="10" height="10"><use href="#chev"/></svg></span>
           <span class="sep"></span>
           <span class="ic" style="color:var(--text-3)"><svg width="15" height="15"><use href="#cam"/></svg><span class="badge-warn">!</span></span>
           <span class="spacer"></span>
-          <span class="ftoast"><svg width="14" height="14"><use href="#okc"/></svg>已记住</span>
+          <span class="fnote"><svg width="12" height="12"><use href="#okc"/></svg>已记住</span>
           <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
           <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
         </div>
@@ -547,10 +557,9 @@
   <div class="notes">
     <h2>颜色与尺寸</h2>
     <table class="tokens">
-      <tr><td>就地反馈</td><td>描边 <code>AskTheme.accent</code> 1.5pt，填充 <code>accentSoft</code>，✓ 圆点 14pt。显示 1.2s，淡出 0.3s</td></tr>
-      <tr><td>底栏胶囊</td><td>高 26，填充 <code>successSoft</code>（深色 #30D158 14%），文字 12 / 550。显示 1.6s</td></tr>
+            <tr><td>底栏确认小字</td><td>11.5pt <code>StudioTheme.textTertiary</code>，新值用 <code>textSecondary</code> 500；✓ 线框 12pt；无底色、无边框；淡入 0.2s · 停留 1.6s · 淡出 0.4s；最大宽 220pt</td></tr>
       <tr><td>卡片内提示条</td><td>高 ≥34，圆角 11，左右内缩 8。<code>.warning</code> 用 <code>warningSoft</code>，<code>.danger</code> 用 <code>dangerSoft</code>，<code>.info</code> 用 <code>hover</code></td></tr>
-      <tr><td>控件角标</td><td>14pt 圆点，1.5pt 卡片色描边。警告用 <code>StudioTheme.warning</code>，确认用 <code>accent</code></td></tr>
+      <tr><td>控件角标</td><td>14pt 圆点，1.5pt 卡片色描边。只用于警告（<code>StudioTheme.warning</code>），确认不使用角标</td></tr>
       <tr><td>系统分隔线</td><td>11.5pt 三级灰文字，两侧是 1pt 8% 白色的线，链接用 <code>accentText</code></td></tr>
       <tr><td>输入框底边距</td><td>22pt（原来是提示行 22 + 底边距 16 = 38pt）</td></tr>
     </table>
@@ -562,11 +571,11 @@
     <table class="tokens">
       <tr><th style="width:300px">改动点</th><th>说明</th></tr>
       <tr><td><code>AskComposer.body</code></td><td>外层 <code>VStack</code> 只保留 <code>card</code>。5 个 <code>AskBanner</code> 移入 <code>card</code> 顶部，合并为一个 <code>AskComposerNotice</code>（按优先级取一条，其余计数）。</td></tr>
-      <tr><td><code>AskConversationModel.confirm(_:)</code></td><td>改为 <code>pulse(_ target: AskPulseTarget, announce: String)</code>。<code>commandFeedback: String?</code> 换成 <code>pulse: AskPulse?</code>（target + 文案 + id），由底栏控件读取。</td></tr>
+      <tr><td><code>AskConversationModel.confirm(_:)</code></td><td>保留 <code>confirm(text)</code> 和 <code>commandFeedback</code> 的语义，只改展示位置：由底栏的 <code>AskFooterNote</code> 读取并显示，同时发出 VoiceOver 播报。时长从 2s 调为 1.6s，加上 0.4s 淡出。</td></tr>
       <tr><td><code>AskComposerHint</code></td><td>删除；把快捷键文案移到麦克风和发送按钮的 <code>.help</code> 里。</td></tr>
       <tr><td><code>statusColumn</code> / <code>statusArea</code></td><td>删除。<code>visionSwitch</code> 渲染为 transcript 中的 <code>AskSystemLine</code>；<code>error</code>、失败或取消的 run、<code>resumable</code>、<code>AskImageRecoveryCard</code> 渲染在最后一条回答末尾。</td></tr>
       <tr><td><code>AskBanner</code></td><td>保留，用作卡片内提示条和对话流里失败卡片的基础样式，新增 <code>.inset</code>（卡片内）变体。</td></tr>
-      <tr><td>测试</td><td>为 <code>pulse</code> 的目标映射（每个 <code>AskCommand.action</code> 对应哪个控件）和提示条优先级选择补单元测试；用快照测试对比聊天页和 launcher 在各状态下的卡片高度，确认提示不会改变卡片底边位置。</td></tr>
+      <tr><td>测试</td><td>为确认文案的替换与过期（新的覆盖旧的、旧任务不清掉新文案）和提示条优先级选择补单元测试；用快照测试对比聊天页和 launcher 在各状态下的卡片高度，确认提示不会改变卡片底边位置。</td></tr>
     </table>
   </div>
 </div>
