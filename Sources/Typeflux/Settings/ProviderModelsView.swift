@@ -55,8 +55,11 @@ struct ProviderModelsView: View {
                 }
                 modelsHeader(provider).padding(.top, 26).padding(.bottom, 8)
                 modelsCard(provider)
-                Text(L("models.usageHint")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                    .padding(.horizontal, 4).padding(.top, 10)
+                if ModelSettingsPresentation.showsUsageHint(provider.models, rewriteReference: library.rewriteReference,
+                                                            defaultReference: library.defaultReference) {
+                    Text(L("models.usageHint")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                        .padding(.horizontal, 4).padding(.top, 10)
+                }
                 if provider.remote == .freeModel, let notice {
                     noticeText(notice).padding(.horizontal, 4).padding(.top, 8)
                 }
@@ -178,6 +181,7 @@ struct ProviderModelsView: View {
                     }
                     modelRow(
                         model,
+                        provider: provider,
                         canRewrite: rewriteReferences.contains(model.reference),
                         canAsk: askReferences.contains(model.reference)
                     )
@@ -193,7 +197,7 @@ struct ProviderModelsView: View {
 }
 
 extension ProviderModelsView {
-    private func modelRow(_ model: RegisteredModel, canRewrite: Bool, canAsk: Bool) -> some View {
+    private func modelRow(_ model: RegisteredModel, provider: RegisteredProvider, canRewrite: Bool, canAsk: Bool) -> some View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(model.id).font(.system(size: 13, design: .monospaced)).foregroundStyle(StudioTheme.textPrimary)
@@ -212,14 +216,21 @@ extension ProviderModelsView {
             }
             visionIndicator(model)
             Menu {
-                Button(L("models.useForRewrite")) { library.rewriteReference = model.reference }
-                    .disabled(!canRewrite || library.rewriteReference == model.reference)
-                Button(L("ask.models.makeDefault")) { library.defaultReference = model.reference }
-                    .disabled(!canAsk || library.defaultReference == model.reference)
+                // Checked when already in use; greyed out only when the scene cannot take it, with the reason below.
+                Toggle(L("models.useForRewrite"), isOn: Binding(
+                    get: { library.rewriteReference == model.reference },
+                    set: { if $0 { library.rewriteReference = model.reference } }
+                )).disabled(!canRewrite)
+                Toggle(L("ask.models.makeDefault"), isOn: Binding(
+                    get: { library.defaultReference == model.reference },
+                    set: { if $0 { library.defaultReference = model.reference } }
+                )).disabled(!canAsk)
+                ForEach(sceneBlockedNotes(model, provider: provider, canRewrite: canRewrite, canAsk: canAsk),
+                        id: \.self) { Text($0) }
                 Divider()
                 Text(L("models.capabilityHint"))
                 Toggle(L("models.visionYes"), isOn: Binding(
-                    get: { model.vision == true },
+                    get: { model.effectiveVision == true },
                     set: { setCapability(\.vision, $0, model: model) }
                 ))
                 // Unset reasoning still offers the effort menu (see `AskReasoningEffort`), so it reads as on.
@@ -237,13 +248,23 @@ extension ProviderModelsView {
         .padding(.leading, 18).padding(.trailing, 12).frame(minHeight: 46)
     }
 
+    private func sceneBlockedNotes(_ model: RegisteredModel, provider: RegisteredProvider,
+                                   canRewrite: Bool, canAsk: Bool) -> [String] {
+        func reason(_ scenario: String) -> String {
+            library.selectionReason(model, provider: provider, hasImage: false, loggedIn: auth.isLoggedIn, scenario: scenario)
+                ?? L("ask.models.unavailable")
+        }
+        return ModelSettingsPresentation.sceneBlockedNotes(rewrite: canRewrite ? nil : reason("rewrite"),
+                                                           ask: canAsk ? nil : reason("ask"))
+    }
+
     @ViewBuilder
     private func visionIndicator(_ model: RegisteredModel) -> some View {
-        switch model.vision {
+        switch model.effectiveVision {
         case true?:
             Text(L("ask.models.badge.vision")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
                 .lineLimit(1).fixedSize()
-                .help(L("ask.models.supportsImages"))
+                .help(L(model.visionIsGuessed ? "models.visionGuessed" : "ask.models.supportsImages"))
         case nil:
             Text(L("models.visionUnknownShort")).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
                 .lineLimit(1).fixedSize()

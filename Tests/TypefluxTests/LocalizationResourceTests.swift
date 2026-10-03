@@ -314,6 +314,9 @@ final class LocalizationResourceTests: XCTestCase {
             "models.capabilityHint",
             "models.visionYes",
             "models.reasoningYes",
+            "models.visionGuessed",
+            "ask.models.visionTrial",
+            "ask.image.untested",
             "models.showKey",
             "models.hideKey",
             "models.cloud.managedShort",
@@ -333,6 +336,11 @@ final class LocalizationResourceTests: XCTestCase {
                 for word in ["screenshot", "截图", "截圖", "スクリーンショット", "스크린샷"] {
                     XCTAssertFalse(localized.contains(word), "\(key) mentions screenshots in \(language.rawValue)")
                 }
+            }
+            for key in ["models.rewriteBlocked", "models.askBlocked"] {
+                let format = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(format, key, "Missing \(key) in \(language.rawValue)")
+                XCTAssertEqual(format.components(separatedBy: "%@").count - 1, 1, "\(key) in \(language.rawValue)")
             }
             let searchEmpty = bundle.localizedString(forKey: "models.searchEmpty", value: nil, table: nil)
             XCTAssertNotEqual(searchEmpty, "models.searchEmpty", "Missing models.searchEmpty in \(language.rawValue)")

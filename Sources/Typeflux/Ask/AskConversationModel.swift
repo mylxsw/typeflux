@@ -52,7 +52,8 @@ final class AskConversationModel: ObservableObject {
     /// Local conversations run on the user's own models; a Cloud reference falls back to the first one available.
     func localFallback(_ reference: String, hasImage: Bool) -> String {
         guard !cloudAvailable, reference.hasPrefix("cloud:") else { return reference }
-        return modelLibrary.firstLocalReference(hasImage: hasImage) ?? reference
+        return modelLibrary.firstLocalReference(hasImage: hasImage)
+            ?? modelLibrary.firstLocalReference(hasImage: hasImage, confirmedVision: false) ?? reference
     }
 
     /// False when Ask runs on this Mac: not signed in, or local mode is on.
@@ -66,14 +67,14 @@ final class AskConversationModel: ObservableObject {
     @Published var referenceLocation: String?
     @Published var launcherDraft = AskDraft() {
         didSet {
-            if launcherDraft.includeScreenshot, screenshotCapability(launcher: true) != .supported {
+            if launcherDraft.includeScreenshot, !screenshotCapability(launcher: true).canAttach {
                 launcherDraft.includeScreenshot = false
             }
         }
     }
     @Published var draft = AskDraft.followUp {
         didSet {
-            if !isLoadingSelection, draft.includeScreenshot, screenshotCapability(launcher: false) != .supported {
+            if !isLoadingSelection, draft.includeScreenshot, !screenshotCapability(launcher: false).canAttach {
                 draft.includeScreenshot = false
             }
         }
@@ -306,7 +307,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func refreshScreenshot(launcher: Bool) async {
-        guard screenshotCapability(launcher: launcher) == .supported else { return }
+        guard screenshotCapability(launcher: launcher).canAttach else { return }
         let generation = UUID(); captureGeneration = generation; capturing = true
         let selectedId = selected?.id
         let context = await capture.capture(includeScreenshot: true, includeSelection: false)

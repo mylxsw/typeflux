@@ -199,7 +199,8 @@ struct AskModelChoices: View {
                                                            library: library, loggedIn: loggedIn, scenario: scenario)
                             AskPopoverRow(title: model.name,
                                           note: model.reference == library.defaultReference ? L("ask.models.isDefault") : nil,
-                                          caption: blocked ?? Self.caption(model),
+                                          caption: blocked ?? Self.imageTrialCaption(model, provider: provider, hasImage: hasImage)
+                                              ?? Self.caption(model),
                                           selected: reference == model.reference,
                                           enabled: blocked == nil) {
                                 reference = model.reference; dismiss()
@@ -269,6 +270,11 @@ struct AskModelChoices: View {
     static func sourceTag(_ provider: RegisteredProvider) -> String? {
         if provider.isCloud { return nil }
         return provider.isOllama ? L("ask.location.local") : L("ask.models.ownAPI")
+    }
+
+    /// With images, a model of unknown vision support can be picked and is tried once; the row says so.
+    static func imageTrialCaption(_ model: RegisteredModel, provider: RegisteredProvider, hasImage: Bool) -> String? {
+        hasImage && !provider.isCloud && model.effectiveVision == nil ? L("ask.models.visionTrial") : nil
     }
 
     /// Why a listed model cannot be picked for this conversation, if it cannot.
@@ -357,7 +363,7 @@ struct AskModelCapabilities: View {
     let model: RegisteredModel
 
     static func badges(_ model: RegisteredModel) -> [(text: String, help: String)] {
-        model.vision == true ? [(L("ask.models.badge.vision"), L("ask.models.supportsImages"))] : []
+        model.effectiveVision == true ? [(L("ask.models.badge.vision"), L("ask.models.supportsImages"))] : []
     }
 
     var body: some View {

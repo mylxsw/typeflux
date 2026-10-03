@@ -136,4 +136,27 @@ final class ModelSettingsPresentationTests: XCTestCase {
             searchTerms: { [$0.name] + $0.models }
         )
     }
+
+    func testUsageHintOnlyShowsWhenARowHasATag() {
+        let models = [RegisteredModel(id: "a", name: "A", reference: "custom:a"),
+                      RegisteredModel(id: "b", name: "B", reference: "custom:b")]
+        XCTAssertFalse(ModelSettingsPresentation.showsUsageHint(models, rewriteReference: "cloud:default",
+                                                                defaultReference: "cloud:default"))
+        XCTAssertTrue(ModelSettingsPresentation.showsUsageHint(models, rewriteReference: "custom:b",
+                                                               defaultReference: "cloud:default"))
+        XCTAssertTrue(ModelSettingsPresentation.showsUsageHint(models, rewriteReference: "cloud:default",
+                                                               defaultReference: "custom:a"))
+        XCTAssertFalse(ModelSettingsPresentation.showsUsageHint([], rewriteReference: "x", defaultReference: "x"))
+    }
+
+    func testSceneBlockedNotesExplainGreyedOutActions() {
+        XCTAssertEqual(ModelSettingsPresentation.sceneBlockedNotes(rewrite: nil, ask: nil), [])
+        XCTAssertEqual(ModelSettingsPresentation.sceneBlockedNotes(rewrite: "Not a chat model", ask: "Not a chat model"),
+                       ["Not a chat model"])
+        XCTAssertEqual(ModelSettingsPresentation.sceneBlockedNotes(rewrite: "Rewrite off", ask: nil),
+                       [L("models.rewriteBlocked", "Rewrite off")])
+        XCTAssertEqual(ModelSettingsPresentation.sceneBlockedNotes(rewrite: "R", ask: "A"),
+                       [L("models.rewriteBlocked", "R"), L("models.askBlocked", "A")])
+        XCTAssertEqual(ModelSettingsPresentation.sceneBlockedNotes(rewrite: nil, ask: "A"), [L("models.askBlocked", "A")])
+    }
 }

@@ -282,7 +282,7 @@ struct AskConversationView: View {
         AskPaletteAction.allCases.filter { action in
             switch action {
             case .attachScreenshot:
-                return model.screenshotCapability(launcher: false) == .supported && !model.draft.includeScreenshot
+                return model.screenshotCapability(launcher: false).canAttach && !model.draft.includeScreenshot
             case .usage:
                 return model.selectedId != nil
             default:

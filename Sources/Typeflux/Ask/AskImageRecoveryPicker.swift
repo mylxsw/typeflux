@@ -157,7 +157,8 @@ struct AskImagePickerContent: View {
 extension AskModelLibrary {
     func imageRecoveryProviders(loggedIn: Bool) -> [RegisteredProvider] {
         // A cloud retry needs a fresh catalog. Local models remain usable when that fetch fails.
-        selectableProviders(loggedIn: loggedIn, hasImage: true)
+        // A retry needs a model known to read images; an unknown one may be what just failed.
+        selectableProviders(loggedIn: loggedIn, hasImage: true, confirmedVision: true)
             .filter { catalogError == nil || !$0.isCloud }
     }
 }

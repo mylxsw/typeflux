@@ -140,6 +140,7 @@ struct AskImageRecoveryCopy: Equatable {
         switch capability {
         case .unsupported: return L("ask.image.recoveryHint")
         case .unknown: return L("ask.image.unknown")
+        case .untested: return L("ask.image.untested")
         case .unavailable, .supported: return L("ask.models.unavailable")
         }
     }

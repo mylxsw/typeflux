@@ -1588,6 +1588,10 @@
 "models.capabilityHint" = "Check what this model supports, per its documentation";
 "models.visionYes" = "Supports vision (images)";
 "models.reasoningYes" = "Supports reasoning";
+"models.askBlocked" = "Can’t be used in Ask: %@";
+"models.rewriteBlocked" = "Can’t be used for rewriting: %@";
+"models.visionGuessed" = "Vision inferred from the model name; change it from the ··· menu";
+"ask.models.visionTrial" = "Vision unconfirmed; images will be tried";
 "models.usageHint" = "Badges show which scenario uses each model. Change them in Application scenarios or from the ··· menu.";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
@@ -1635,6 +1639,7 @@
 // Screenshot capability and recovery
 "ask.image.unsupported" = "This model cannot read images. Switch to a model with image support to attach a screenshot.";
 "ask.image.unknown" = "Image support is not confirmed for this model. Check its model settings.";
+"ask.image.untested" = "This model may not read images. Pick a vision model, or mark its vision support in model settings.";
 "ask.image.detached" = "Screenshot detached because this model cannot read images.";
 "ask.image.disabled" = "Unavailable";
 "ask.image.captured" = "Screenshot captured";
@@ -1875,7 +1880,7 @@
 "ask.vision.addHelp" = "Add a model that reads images, such as llama3.2-vision or qwen2.5vl, in Settings → Models.";
 "ask.vision.switched" = "This conversation has images, so it now uses %@, which can read them.";
 "ask.vision.revert" = "Use %@";
-"ask.models.imageOnly" = "This conversation has images: only models that read them can be picked.";
+"ask.models.imageOnly" = "This conversation has images: models that can’t read them are greyed out.";
 "ask.models.localGroup" = "This Mac · Ollama";
 "ask.models.cloudLocked.title" = "MiniMax, Claude, GPT and more";
 "ask.models.cloudLocked.caption" = "Read images and search the web · Sign in to use";

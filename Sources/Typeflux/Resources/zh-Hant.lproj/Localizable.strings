@@ -1585,6 +1585,10 @@
 "models.capabilityHint" = "請根據模型文件勾選該模型支援的能力";
 "models.visionYes" = "支援視覺（識圖）";
 "models.reasoningYes" = "支援推理";
+"models.askBlocked" = "無法用於隨便問：%@";
+"models.rewriteBlocked" = "無法用於轉譯與潤色：%@";
+"models.visionGuessed" = "根據模型名稱推斷支援視覺，可在「···」選單中變更";
+"ask.models.visionTrial" = "視覺能力未確認，將嘗試傳送圖片";
 "models.usageHint" = "標籤表示該模型目前被哪個場景使用；可在「應用場景」或「···」選單中變更。";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
@@ -1632,6 +1636,7 @@
 // Screenshot capability and recovery
 "ask.image.unsupported" = "目前模型不支援圖片辨識，切換到支援圖片的模型後可附加截圖。";
 "ask.image.unknown" = "尚未確認目前模型是否支援圖片，請檢查模型設定。";
+"ask.image.untested" = "這個模型可能不支援圖片。換一個支援視覺的模型，或在模型設定中標記它的視覺能力。";
 "ask.image.detached" = "已取消附加截圖，目前模型不支援圖片辨識。";
 "ask.image.disabled" = "無法使用";
 "ask.image.captured" = "截圖已取得";
@@ -1872,7 +1877,7 @@
 "ask.vision.addHelp" = "在 設定 → 模型 中新增支援識圖的模型，例如 llama3.2-vision、qwen2.5vl。";
 "ask.vision.switched" = "這段對話裡有圖片，已切換到支援識圖的 %@。";
 "ask.vision.revert" = "改回 %@";
-"ask.models.imageOnly" = "這段對話裡有圖片，只能選支援識圖的模型。";
+"ask.models.imageOnly" = "這段對話裡有圖片，不支援視覺的模型已變灰。";
 "ask.models.localGroup" = "本機 · Ollama";
 "ask.models.cloudLocked.title" = "MiniMax、Claude、GPT 等";
 "ask.models.cloudLocked.caption" = "支援識圖和聯網搜尋 · 登入後可用";
