@@ -1418,6 +1418,7 @@
 "ask.retry" = "重试";
 "ask.screenshot" = "附带截图";
 "ask.screenshot.unavailable" = "截图不可用";
+"ask.context.screenshot" = "截图";
 "ask.context.screenshot.attached" = "已附带截图";
 "ask.context.screenshot.offHint" = "点击附带当前屏幕截图";
 "ask.context.previewHint" = "点击预览";

@@ -1,19 +1,27 @@
 import AppKit
 import SwiftUI
 
-/// What rides with the next message, spelled out above the editor: one
-/// labelled capsule per attached item, each with its own remove button. The
-/// footer's round toggles switch items on and off; this strip makes the
-/// result readable at a glance.
+/// The content that rides with the next message, shown above the editor: one
+/// labelled capsule per item, each with its own remove button. The footer's
+/// round toggles are the switches; this strip only shows what is actually
+/// sent, so it never repeats a lit toggle in words.
 enum AskAttachmentStrip {
-    /// Items that are actually attached: switched-off, failed and unavailable
-    /// ones stay as footer toggles only.
-    static func attached(_ items: [AskContextItem]) -> [AskContextItem] {
-        items.filter { item in
+    /// Items with content to show. Switched-off, failed and unavailable items
+    /// stay as footer toggles only. Memory is left out because it is a setting
+    /// with nothing to preview, and a screenshot waits until it is captured.
+    /// Being in the strip already means "attached", so the screenshot takes
+    /// the short label.
+    static func attached(_ items: [AskContextItem], screenshotCaptured: Bool) -> [AskContextItem] {
+        items.compactMap { item in
             switch item.kind {
-            case .screenshot: return item.style == .active
-            case .source: return true
-            case .selection, .memory: return item.style == .active
+            case .screenshot:
+                guard item.style == .active, screenshotCaptured else { return nil }
+                var item = item
+                item.title = L("ask.context.screenshot")
+                return item
+            case .source: return item
+            case .selection: return item.style == .active ? item : nil
+            case .memory: return nil
             }
         }
     }

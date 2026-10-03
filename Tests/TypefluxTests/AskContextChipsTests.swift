@@ -131,7 +131,7 @@ struct AskContextChipsTests {
                 Bundle.module.path(forResource: $0, ofType: "lproj")
             }.first)
             let bundle = try #require(Bundle(path: path))
-            for key in ["ask.context.screenshot.attached", "ask.context.screenshot.offHint",
+            for key in ["ask.context.screenshot", "ask.context.screenshot.attached", "ask.context.screenshot.offHint",
                         "ask.context.previewHint", "ask.context.more",
                         "ask.context.memory.offHint", "ask.context.memory.onHint",
                         "ask.context.selection.offHint", "ask.context.selection.onHint",
