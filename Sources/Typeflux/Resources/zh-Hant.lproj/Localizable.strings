@@ -2083,3 +2083,21 @@
 "ask.project.error.tooLarge" = "檔案或變更集超過支援的大小限制。";
 "ask.project.error.invalid" = "專案操作無效，請先讀取檔案並提供預期版本。";
 "ask.project.error.unavailable" = "專案模式無法使用。";
+
+// Device artifacts and isolated previews
+"ask.artifact.error.unavailable" = "此產物或資源在本裝置上無法使用。";
+"ask.artifact.error.denied" = "產物存取遭拒，請檢查帳號與資料夾授權。";
+"ask.artifact.error.invalid" = "產物參照或資源清單無效。";
+"ask.artifact.error.tooLarge" = "產物超出檔案或資源大小限制。";
+"ask.artifact.error.unsupported" = "此格式無法預覽，仍可儲存原始檔案。";
+"ask.artifact.error.corrupt" = "產物完整性驗證失敗。";
+"ask.artifact.error.expired" = "此裝置產物已到期。";
+"ask.artifact.error.previewDisabled" = "HTML 預覽已關閉，仍可儲存原始檔案。";
+"ask.artifact.error.dynamicUnavailable" = "開發服務預覽尚未提供。";
+"ask.artifact.blocked" = "預覽已封鎖不允許的資源或導覽。";
+"ask.artifact.pageFailed" = "預覽程序已停止，請關閉後重試。";
+"ask.artifact.device" = "僅儲存在本裝置";
+"ask.artifact.expires" = "到期時間：%@";
+"ask.artifact.close" = "關閉";
+"ask.artifact.truncated" = "文字預覽已截斷，儲存檔案可取得完整內容。";
+"ask.artifact.title" = "儲存產物";

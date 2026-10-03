@@ -2076,3 +2076,21 @@
 "ask.project.error.tooLarge" = "ファイルまたは変更セットがサイズ制限を超えています。";
 "ask.project.error.invalid" = "無効な操作です。ファイルを読み取り、期待する版を指定してください。";
 "ask.project.error.unavailable" = "プロジェクトモードは利用できません。";
+
+// Device artifacts and isolated previews
+"ask.artifact.error.unavailable" = "この成果物またはリソースはこのデバイスでは利用できません。";
+"ask.artifact.error.denied" = "成果物へのアクセスが拒否されました。アカウントとフォルダの許可を確認してください。";
+"ask.artifact.error.invalid" = "成果物の参照またはリソース一覧が無効です。";
+"ask.artifact.error.tooLarge" = "成果物がファイル数またはサイズの制限を超えています。";
+"ask.artifact.error.unsupported" = "この形式はプレビューできません。元のファイルは保存できます。";
+"ask.artifact.error.corrupt" = "成果物の整合性検証に失敗しました。";
+"ask.artifact.error.expired" = "このデバイスの成果物は期限切れです。";
+"ask.artifact.error.previewDisabled" = "HTML プレビューは無効です。元のファイルは保存できます。";
+"ask.artifact.error.dynamicUnavailable" = "開発サービスのプレビューはまだ利用できません。";
+"ask.artifact.blocked" = "許可されていないリソースまたは移動をブロックしました。";
+"ask.artifact.pageFailed" = "プレビューが停止しました。閉じてから再試行してください。";
+"ask.artifact.device" = "このデバイスにのみ保存";
+"ask.artifact.expires" = "有効期限：%@";
+"ask.artifact.close" = "閉じる";
+"ask.artifact.truncated" = "テキストのプレビューを省略しています。全文はファイルを保存して確認してください。";
+"ask.artifact.title" = "成果物を保存";

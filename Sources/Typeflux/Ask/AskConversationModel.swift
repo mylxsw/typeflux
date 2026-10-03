@@ -879,6 +879,8 @@ final class AskConversationModel: ObservableObject {
                         if error is MCPInputError { result?.harness?.outcome?.status = "invalid" }
                         else if let projectError = error as? AskProjectError {
                             result?.harness?.outcome?.status = projectError == .denied ? "denied" : "invalid"
+                        } else if let artifactError = error as? AskArtifactError {
+                            result?.harness?.outcome?.status = artifactError == .denied ? "denied" : "invalid"
                         }
                         else if case MCPClientError.timedOut = error { result?.harness?.outcome?.status = "timeout" }
                     }
@@ -892,6 +894,20 @@ final class AskConversationModel: ObservableObject {
             try Task.checkCancellation()
             value = try await api.result(conversationId: value.id, request: result!, token: current.token)
         }
+    }
+
+    var artifactAccess: AskArtifactAccess {
+        .init(load: { [weak self] ref in
+            guard let self, let current = self.session(), self.selectedId == ref.conversationId else {
+                throw AskArtifactError.denied
+            }
+            return try self.tools.loadArtifact(ref, ownerId: current.owner, conversationId: ref.conversationId)
+        }, validate: { [weak self] ref in
+            guard let self, let current = self.session(), self.selectedId == ref.conversationId else {
+                throw AskArtifactError.denied
+            }
+            try self.tools.validateArtifact(ref, ownerId: current.owner, conversationId: ref.conversationId)
+        }, htmlEnabled: tools.artifactPreviewEnabled)
     }
 
     func exportProjectPatch(_ ref: AskWorkspaceRef) throws -> Data {

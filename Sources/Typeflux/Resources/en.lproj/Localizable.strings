@@ -2086,3 +2086,21 @@
 "ask.project.error.tooLarge" = "The file or change set exceeds the supported size limit.";
 "ask.project.error.invalid" = "Invalid project operation. Read the file first and supply its expected version.";
 "ask.project.error.unavailable" = "Project mode is unavailable.";
+
+// Device artifacts and isolated previews
+"ask.artifact.error.unavailable" = "This artifact or resource is unavailable on this device.";
+"ask.artifact.error.denied" = "Artifact access was denied. Check the account and folder authorization.";
+"ask.artifact.error.invalid" = "The artifact reference or resource list is invalid.";
+"ask.artifact.error.tooLarge" = "The artifact exceeds the file or resource size limit.";
+"ask.artifact.error.unsupported" = "This format cannot be previewed. You can still save the original file.";
+"ask.artifact.error.corrupt" = "Artifact integrity verification failed.";
+"ask.artifact.error.expired" = "This device artifact has expired.";
+"ask.artifact.error.previewDisabled" = "HTML preview is disabled. The original file can still be saved.";
+"ask.artifact.error.dynamicUnavailable" = "Development service preview is not available yet.";
+"ask.artifact.blocked" = "Preview blocked a prohibited resource or navigation.";
+"ask.artifact.pageFailed" = "The preview process stopped. Close and reopen to try again.";
+"ask.artifact.device" = "Stored only on this device";
+"ask.artifact.expires" = "Expires %@";
+"ask.artifact.close" = "Close";
+"ask.artifact.truncated" = "Text preview is truncated. Save the file for the complete content.";
+"ask.artifact.title" = "Create artifact";
