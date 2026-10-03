@@ -274,8 +274,7 @@ struct AskCommandExecutionTests {
                 if text == "fail" { throw AskLocalError.message("Memory is full") }
                 recorder.notes.append(text)
             },
-            localMode: { recorder.local },
-            setLocalMode: { recorder.local = $0 },
+            privateByDefault: { recorder.local },
             copy: { recorder.copied = $0 }
         )
         return (f, recorder)
@@ -299,7 +298,7 @@ struct AskCommandExecutionTests {
         f.model.runCommand(command(.memory, "memory"), launcher: false)
         #expect(f.model.memorySwitchedOff(launcher: false) != memory)
         f.model.runCommand(command(.localMode, "local"), launcher: false)
-        #expect(recorder.local)
+        #expect(f.model.storesLocally(launcher: false) && !recorder.local)
         #expect(f.model.commandFeedback == L("ask.command.localOn"))
         #expect(f.model.recentCommands.prefix(3) == ["local", "memory", "selection"])
     }
@@ -413,7 +412,9 @@ struct AskCommandExecutionTests {
         #expect(context.skills.map(\.name) == ["meeting-notes"])
         #expect(context.mcpServers.map(\.name) == ["github"])
         #expect(context.chosenSkills == ["meeting-notes"])
-        #expect(context.models.contains { $0.reference == context.currentModel })
+        #expect(!context.models.contains { $0.reference.hasPrefix("cloud:") })
+        recorder.local = false
+        #expect(f.model.commandContext(launcher: true).models.contains { $0.reference == context.currentModel })
     }
 
     @Test func feedbackClearsItself() async throws {

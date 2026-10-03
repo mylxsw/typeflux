@@ -1108,7 +1108,7 @@
 "agent.section.tools" = "ツール";
 "agent.section.skills" = "スキル";
 "agent.section.memory" = "メモリ";
-"agent.settings.runMode" = "実行場所";
+"agent.settings.runMode" = "会話の保存先";
 "agent.settings.web" = "ウェブ";
 "agent.settings.code" = "コード実行";
 "agent.settings.mcp" = "MCP サーバー";
@@ -1802,8 +1802,8 @@
 "ask.local.empty" = "モデルが空の回答を返しました。";
 "ask.local.invalidTools" = "モデルが無効または利用できないツール呼び出しを返しました。";
 "ask.local.emptyQuestion" = "先に質問を入力してください。";
-"ask.settings.local.title" = "ローカル会話モードを使う";
-"ask.settings.local.subtitle" = "設定したモデルを使い、会話履歴をこの Mac にのみ保存します。Typeflux Cloud とは同期しません。外部サービスのモデルには引き続きインターネット接続が必要です。サインアウト時は自動的にこのモードを使用します。";
+"ask.settings.local.title" = "新しい会話の保存先";
+"ask.settings.local.subtitle" = "「このMacのみ」を選ぶと、新しい会話は Typeflux Cloud にアップロードされず、設定したモデルを使います。既存の会話は変わりません。新規作成メニューや入力欄の保存先アイコンからいつでも選べます。サインアウト中は、すべての会話がこのMacに保存されます。";
 "ask.settings.search.title" = "この Mac でのウェブ検索";
 "ask.settings.search.subtitle" = "ローカルの会話では、キーチェーンに保存した自分の Tavily または Brave Search のキーでウェブ検索できます。ウェブページの読み取りにキーは不要です。";
 "ask.settings.search.provider" = "検索サービス";
@@ -1851,9 +1851,7 @@
 "ask.location.local" = "このMac";
 "ask.location.local.help" = "Ask はこのMacで自分のモデルを使って実行され、会話はこのMacに保存されます。";
 "ask.local.sourceNone" = "モデル未選択";
-"ask.local.card.title" = "このMacで実行中";
-"ask.local.card.body" = "Typeflux Cloud にサインインしていないため、Ask は設定したモデルを使います。会話はこのMacに保存されます。";
-"ask.local.card.bodyLocalMode" = "ローカルモードがオンのため、Ask は設定したモデルを使います。会話はこのMacに保存されます。";
+"ask.local.card.body" = "Typeflux Cloud にサインインしていないため、すべての会話はこのMacに保存され、設定したモデルを使います。";
 "ask.local.card.source" = "モデル";
 "ask.local.card.readPages" = "ページ読み取り";
 "ask.local.card.available" = "利用可能";
@@ -1861,7 +1859,7 @@
 "ask.local.card.noSearchHint" = "設定 → Agent → 一般";
 "ask.local.card.configure" = "設定する";
 "ask.local.card.cloudQuestion" = "クラウドのモデルを使いますか？";
-"ask.local.identity" = "ローカルモード";
+"ask.local.identity" = "未サインイン";
 "ask.local.identity.detail" = "%@ · このMacに保存";
 "ask.cloudPromo.body" = "サインインすると、画像認識やWeb検索に対応したクラウドのモデルを使え、会話がデバイス間で同期されます。";
 "ask.cloudPromo.signIn" = "サインイン";
@@ -1949,7 +1947,6 @@
 "account.page.view" = "表示";
 "account.page.voiceDetail" = "合計 %@";
 "account.status.badgeExhausted" = "上限に達しました";
-"account.status.badgeOwnModels" = "自分のモデル";
 "account.status.badgeLow" = "残り %@";
 "account.status.ends" = "%@ に終了";
 "account.status.paymentFailed" = "更新に失敗";
@@ -2023,7 +2020,7 @@
 "ask.command.copy" = "最後の回答をコピー";
 "ask.command.model" = "モデルを切り替え";
 "ask.command.think" = "推論の強さ";
-"ask.command.local" = "ローカルモード";
+"ask.command.local" = "このMacのみ";
 "ask.command.file" = "ファイルや画像を添付";
 "ask.command.folder" = "フォルダを追加（この会話で読み取り専用）";
 "ask.command.screenshot" = "スクリーンショットを添付";
@@ -2045,8 +2042,8 @@
 "ask.command.copied" = "最後の回答をコピーしました";
 "ask.command.modelChanged" = "%@ に切り替えました";
 "ask.command.reasoningChanged" = "推論の強さ：%@";
-"ask.command.localOn" = "ローカルモードに切り替えました";
-"ask.command.localOff" = "Typeflux Cloud に切り替えました";
+"ask.command.localOn" = "この会話はこのMacにのみ保存されます";
+"ask.command.localOff" = "この会話は Typeflux Cloud に同期されます";
 "ask.command.screenshotOn" = "スクリーンショットを添付しました";
 "ask.command.screenshotOff" = "スクリーンショットを外しました";
 "ask.command.selectionOn" = "選択したテキストを添付しました";
@@ -2062,6 +2059,27 @@
 "ask.command.off" = "オフ";
 "ask.command.chip.skill" = "スキル";
 "ask.command.chip.mcp" = "MCP";
+
+/* GUL-193 Per-conversation storage */
+"ask.storage.local" = "このMacのみ";
+"ask.storage.cloud" = "クラウド同期";
+"ask.storage.local.detail" = "Typeflux Cloud にアップロードせず、自分のモデルのみを使います";
+"ask.storage.cloud.detail" = "ほかのデバイスで続けられ、クラウドの全機能を使えます";
+"ask.storage.help" = "クリックして詳細を表示";
+"ask.storage.card.choose" = "この会話をどこに保存しますか？最初のメッセージを送信すると変更できません。";
+"ask.storage.card.lockedLocal" = "この会話はこのMacにのみ保存され、Typeflux Cloud にはアップロードされません。開始済みの会話は保存先を変更できません。";
+"ask.storage.card.lockedCloud" = "この会話は Typeflux Cloud に同期されています。開始済みの会話は保存先を変更できません。";
+"ask.storage.card.localNote" = "クラウドモデル、リサーチ、バックグラウンド実行、デバイス間の同期は使えません。自分の API モデルは引き続きそのプロバイダーにリクエストを送ります。";
+"ask.storage.card.cloudNote" = "クラウドモデルと自分のモデルを使え、画像認識・ウェブ検索・リサーチに対応し、デバイス間で同期されます。クラウドモデルの利用分は残量に含まれます。";
+"ask.storage.newLocal" = "新しいプライベート会話";
+"ask.storage.newCloud" = "新しいクラウド会話";
+"ask.storage.locked" = "開始済みの会話は保存先を変更できません";
+"ask.storage.signedOut" = "サインアウト中、会話はこのMacに保存されます";
+"ask.history.filter" = "会話を絞り込む";
+"ask.history.filter.all" = "すべて";
+"ask.history.filter.cloud" = "クラウド";
+"ask.history.filter.local" = "このMac";
+"ask.new.more" = "ほかの方法で新しい会話を始める";
 
 // Project workspaces
 "ask.project.title" = "プロジェクトファイル";

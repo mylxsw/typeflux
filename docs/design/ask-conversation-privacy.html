@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 随便问 — 私密对话（替代“本机模式”）交互设计稿</title>
+<style>
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Helvetica Neue", sans-serif;
+  --ease: cubic-bezier(.22, .9, .3, 1);
+  --accent: #0a84ff; --accent-rgb: 10,132,255;
+  --private: #bf5af2; --private-rgb: 191,90,242;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0e0e13; --win-bg: #1b1b20; --side-bg: #222228; --panel: #2a2a31; --menu: rgba(44,44,52,.96);
+  --text: rgba(255,255,255,.92); --text-2: rgba(235,235,245,.62); --text-3: rgba(235,235,245,.38);
+  --sep: rgba(255,255,255,.08); --hover: rgba(255,255,255,.07); --press: rgba(255,255,255,.12);
+  --border: rgba(255,255,255,.12); --shadow: 0 18px 50px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4);
+  --success: #32d74b; --warn: #ffd60a; --danger: #ff453a;
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --page: #e9e9ef; --win-bg: #fbfbfd; --side-bg: #f1f1f5; --panel: #ffffff; --menu: rgba(255,255,255,.97);
+  --text: rgba(0,0,0,.86); --text-2: rgba(60,60,67,.68); --text-3: rgba(60,60,67,.42);
+  --sep: rgba(0,0,0,.07); --hover: rgba(0,0,0,.05); --press: rgba(0,0,0,.09);
+  --border: rgba(0,0,0,.10); --shadow: 0 16px 44px rgba(30,30,60,.16), 0 1px 2px rgba(30,30,60,.12);
+  --success: #28a745; --warn: #b58300; --danger: #ff3b30;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font-family: var(--font); font-size: 13px; color: var(--text); background: var(--page); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+textarea { font: inherit; color: inherit; }
+svg.i { width: 15px; height: 15px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+svg.i.sm { width: 12px; height: 12px; }
+.hidden { display: none !important; }
+
+/* ---------- page layout ---------- */
+.page { display: grid; grid-template-columns: 1fr 340px; gap: 28px; max-width: 1560px; margin: 0 auto; padding: 24px 28px 48px; }
+h1 { font-size: 20px; margin: 0 0 6px; }
+.sub { color: var(--text-2); line-height: 1.6; margin: 0 0 18px; max-width: 980px; }
+.notes { position: sticky; top: 20px; align-self: start; display: flex; flex-direction: column; gap: 14px; }
+.note { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; line-height: 1.6; color: var(--text-2); }
+.note h3 { margin: 0 0 6px; font-size: 13px; color: var(--text); }
+.note ul { margin: 0; padding-left: 18px; }
+.note b { color: var(--text); }
+.note code { font-size: 11.5px; background: var(--hover); padding: 1px 5px; border-radius: 5px; }
+.tasks { display: flex; flex-direction: column; gap: 6px; }
+.task { display: flex; gap: 8px; align-items: flex-start; text-align: left; padding: 7px 9px; border-radius: 9px; background: var(--hover); color: var(--text); line-height: 1.45; }
+.task:hover { background: var(--press); }
+.task .n { flex: none; width: 18px; height: 18px; border-radius: 50%; background: rgba(var(--accent-rgb), .18); color: var(--accent); font-size: 11px; font-weight: 700; display: grid; place-items: center; margin-top: 1px; }
+
+/* ---------- window ---------- */
+.win { position: relative; width: 100%; min-width: 980px; height: 720px; display: flex; border-radius: 22px; overflow: hidden; background: var(--win-bg); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.side { width: 262px; flex: none; background: var(--side-bg); border-right: 1px solid var(--sep); display: flex; flex-direction: column; padding: 12px 10px; }
+.side-top { display: flex; align-items: center; gap: 7px; padding: 2px 4px 10px; }
+.lights { display: flex; gap: 7px; } .lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.side-top .sp { flex: 1; }
+.icon-btn { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; color: var(--text-2); position: relative; }
+.icon-btn:hover, .icon-btn.on { background: var(--hover); color: var(--text); }
+.search { display: flex; align-items: center; gap: 7px; padding: 7px 10px; background: var(--hover); border-radius: 10px; color: var(--text-3); margin-bottom: 8px; }
+.search kbd { margin-left: auto; font: 11px var(--font); padding: 1px 6px; border-radius: 5px; background: var(--hover); }
+.seg { display: flex; padding: 2px; border-radius: 9px; background: var(--hover); margin-bottom: 6px; }
+.seg button { flex: 1; padding: 4px 0; border-radius: 7px; font-size: 12px; color: var(--text-2); display: flex; align-items: center; justify-content: center; gap: 4px; }
+.seg button.on { background: var(--panel); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+.list { flex: 1; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+.grp { font-size: 11.5px; color: var(--text-3); padding: 10px 8px 4px; }
+.row { display: flex; align-items: center; gap: 7px; padding: 8px 9px; border-radius: 9px; cursor: pointer; color: var(--text); }
+.row:hover { background: var(--hover); }
+.row.sel { background: rgba(var(--accent-rgb), .22); }
+.row.sel.p { background: rgba(var(--private-rgb), .2); }
+.row .t { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .tm { color: var(--text-3); font-size: 11.5px; }
+.lock { color: var(--private); }
+.empty-list { color: var(--text-3); text-align: center; padding: 30px 10px; line-height: 1.6; }
+.promo { border-radius: 12px; padding: 10px 12px; margin: 8px 0; background: linear-gradient(135deg, rgba(var(--accent-rgb), .16), rgba(var(--private-rgb), .10)); border: 1px solid var(--sep); line-height: 1.5; color: var(--text-2); font-size: 12px; }
+.promo b { color: var(--text); display: block; margin-bottom: 2px; }
+.foot { display: flex; align-items: center; gap: 9px; padding: 8px 4px 2px; border-top: 1px solid var(--sep); margin-top: 6px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #bf5af2, #5e5ce6); flex: none; }
+.avatar.mac { border-radius: 9px; background: var(--hover); color: var(--text); }
+.foot .nm { font-weight: 600; } .foot .dt { font-size: 11px; color: var(--text-3); }
+.badge { font-size: 11px; padding: 1px 7px; border-radius: 6px; background: var(--hover); color: var(--text-2); }
+
+.main { flex: 1; display: flex; flex-direction: column; position: relative; min-width: 0; }
+.head { height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 18px; }
+.cap { display: flex; align-items: center; gap: 8px; padding: 6px 13px; border-radius: 999px; background: var(--hover); border: 1px solid var(--sep); max-width: 60%; }
+.cap .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex: none; }
+.head .sp { flex: 1; }
+.credits { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--hover); border: 1px solid var(--sep); font-size: 12.5px; }
+.credits b { font-weight: 600; } .credits span { color: var(--text-2); }
+.pchip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 12.5px; background: rgba(var(--private-rgb), .14); color: var(--private); border: 1px solid rgba(var(--private-rgb), .28); }
+.feed { flex: 1; overflow-y: auto; padding: 8px 64px 20px; }
+.msg-u { display: flex; justify-content: flex-end; margin: 14px 0; }
+.msg-u div { background: rgba(var(--accent-rgb), .22); padding: 9px 14px; border-radius: 16px; max-width: 70%; line-height: 1.55; }
+.msg-a { line-height: 1.7; color: var(--text); margin: 10px 0 18px; max-width: 760px; }
+.msg-a .meta { font-size: 11.5px; color: var(--text-3); margin-top: 4px; }
+.sysline { display: flex; align-items: center; gap: 10px; color: var(--text-3); font-size: 11.5px; margin: 12px 0; }
+.sysline::before, .sysline::after { content: ""; flex: 1; height: 1px; background: var(--sep); }
+.welcome { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; color: var(--text-2); }
+.welcome .big { font-size: 22px; font-weight: 600; color: var(--text); }
+.welcome .wicon { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; }
+.welcome .wicon svg { width: 24px; height: 24px; }
+.welcome .lines { line-height: 1.7; max-width: 440px; }
+
+/* composer */
+.composer { margin: 0 20px 18px; border-radius: 20px; background: var(--panel); border: 1px solid var(--border); box-shadow: 0 6px 20px rgba(0,0,0,.18); padding: 10px 10px 8px; position: relative; transition: box-shadow .25s, border-color .25s; }
+.main.p .composer { border-color: rgba(var(--private-rgb), .32); }
+.composer textarea { width: 100%; border: 0; outline: 0; background: none; resize: none; height: 44px; padding: 4px 8px; line-height: 1.5; }
+.composer textarea::placeholder { color: var(--text-3); }
+.bar { display: flex; align-items: center; gap: 4px; }
+.bar .sp { flex: 1; }
+.pill { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: 12.5px; color: var(--text); white-space: nowrap; }
+.pill:hover, .pill.on { background: var(--hover); }
+.store { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: var(--text-2); position: relative; }
+.store:hover, .store.on { background: var(--hover); color: var(--text); }
+.store.p { color: var(--private); }
+.store.p:hover, .store.p.on { background: rgba(var(--private-rgb), .14); color: var(--private); }
+.welcome kbd { font: 12px var(--font); padding: 1px 6px; border-radius: 5px; background: var(--hover); color: var(--text); }
+.pill .muted { color: var(--text-3); }
+.send { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; }
+.main.p .send { background: var(--private); }
+.send:disabled { opacity: .35; cursor: default; }
+.hint { position: absolute; left: 50%; bottom: calc(100% + 10px); transform: translateX(-50%); font-size: 12px; color: var(--text-2); background: var(--menu); border: 1px solid var(--border); padding: 5px 12px; border-radius: 999px; box-shadow: var(--shadow); opacity: 0; transition: opacity .25s; pointer-events: none; white-space: nowrap; }
+.hint.show { opacity: 1; }
+
+/* popovers */
+.pop { position: absolute; z-index: 20; background: var(--menu); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 12px; backdrop-filter: blur(20px); animation: popin .18s var(--ease); }
+@keyframes popin { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+.pop h4 { margin: 0 0 4px; font-size: 13px; display: flex; align-items: center; gap: 7px; }
+.pop p { margin: 0; color: var(--text-2); font-size: 12px; line-height: 1.55; }
+.pop .hr { height: 1px; background: var(--sep); margin: 10px 0; }
+.opt { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border-radius: 10px; width: 100%; text-align: left; border: 1px solid transparent; }
+.opt:hover { background: var(--hover); }
+.opt.on { border-color: rgba(var(--accent-rgb), .55); background: rgba(var(--accent-rgb), .08); }
+.opt.on.p { border-color: rgba(var(--private-rgb), .55); background: rgba(var(--private-rgb), .08); }
+.opt.dis { opacity: .45; cursor: not-allowed; }
+.opt .oi { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--hover); }
+.opt .oi.c { color: var(--accent); background: rgba(var(--accent-rgb), .14); }
+.opt .oi.p { color: var(--private); background: rgba(var(--private-rgb), .14); }
+.opt .ot { font-weight: 600; font-size: 12.5px; color: var(--text); }
+.opt .od { font-size: 11.5px; color: var(--text-2); line-height: 1.5; margin-top: 2px; }
+.opt .ck { margin-left: auto; color: var(--accent); align-self: center; }
+.opt.p .ck { color: var(--private); }
+.kv { display: grid; grid-template-columns: 70px 1fr; gap: 5px 8px; font-size: 12px; }
+.kv .k { color: var(--text-3); } .kv .v { color: var(--text); }
+.kv .v.no { color: var(--text-3); text-decoration: line-through; }
+.btn { padding: 5px 12px; border-radius: 999px; font-size: 12px; background: var(--hover); color: var(--text); border: 1px solid var(--sep); }
+.btn:hover { background: var(--press); }
+.btn.pri { background: var(--accent); color: #fff; border-color: transparent; }
+.btn.pp { background: var(--private); color: #fff; border-color: transparent; }
+.btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+.mi { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 8px; width: 100%; text-align: left; }
+.mi:hover:not(.dis) { background: var(--hover); }
+.mi.dis { opacity: .42; cursor: not-allowed; }
+.mi .ml { flex: 1; } .mi .md { font-size: 11px; color: var(--text-3); }
+.mi kbd { font: 11px var(--font); color: var(--text-3); }
+.mh { font-size: 11px; color: var(--text-3); padding: 6px 9px 3px; display: flex; justify-content: space-between; }
+.tag { font-size: 10.5px; padding: 1px 6px; border-radius: 5px; background: var(--hover); color: var(--text-2); }
+.tag.net { color: var(--warn); background: rgba(255,214,10,.12); }
+.tag.dev { color: var(--success); background: rgba(50,215,75,.12); }
+.callout { display: flex; gap: 8px; align-items: flex-start; font-size: 11.5px; color: var(--text-2); padding: 8px 10px; border-radius: 9px; background: rgba(var(--private-rgb), .08); margin-top: 6px; line-height: 1.5; }
+
+/* settings sheet */
+.scrim { position: absolute; inset: 0; background: rgba(0,0,0,.35); z-index: 30; display: grid; place-items: center; animation: popin .2s var(--ease); }
+.sheet { width: 520px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); padding: 18px 20px; }
+.sheet h3 { margin: 0 0 2px; font-size: 15px; }
+.sheet .crumb { color: var(--text-3); font-size: 12px; margin-bottom: 14px; }
+.srow { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--sep); }
+.srow .st { font-weight: 600; } .srow .sd { color: var(--text-2); font-size: 12px; line-height: 1.55; margin-top: 3px; }
+.srow .sc { margin-left: auto; flex: none; }
+.diff { font-size: 11.5px; color: var(--text-3); margin-top: 6px; }
+.diff s { color: var(--danger); }
+
+/* before/after */
+.cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 26px; }
+.cmp .note { color: var(--text-2); }
+.old-pill { display: inline-flex; gap: 6px; align-items: center; padding: 4px 10px; border-radius: 999px; background: var(--hover); color: var(--text); font-size: 12px; }
+
+/* dock */
+.dock { display: inline-flex; margin: 0 0 14px; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 16px; background: var(--menu); border: 1px solid var(--border); box-shadow: var(--shadow); z-index: 100; backdrop-filter: blur(20px); }
+.dock .lbl { font-size: 11.5px; color: var(--text-3); }
+.dock .seg { margin: 0; }
+.dock .seg button { padding: 4px 10px; }
+.dock .reset { font-size: 12px; color: var(--text-2); padding: 4px 8px; border-radius: 7px; }
+.dock .reset:hover { background: var(--hover); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="cloud" viewBox="0 0 16 16"><path d="M4.5 12.5h7.2a3 3 0 0 0 .3-6 4 4 0 0 0-7.7.9 2.6 2.6 0 0 0 .2 5.1z"/></symbol>
+  <symbol id="lock" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7"/></symbol>
+  <symbol id="mac" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="8" rx="1.3"/><path d="M6 13.5h4"/></symbol>
+  <symbol id="pen" viewBox="0 0 16 16"><path d="M10.5 2.5l3 3L6 13H3v-3z"/></symbol>
+  <symbol id="side" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M6 3v10"/></symbol>
+  <symbol id="search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></symbol>
+  <symbol id="chev" viewBox="0 0 16 16"><path d="M4.5 6.5 8 10l3.5-3.5"/></symbol>
+  <symbol id="up" viewBox="0 0 16 16"><path d="M8 13V3.5M3.8 7.5 8 3.3l4.2 4.2"/></symbol>
+  <symbol id="plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+  <symbol id="spark" viewBox="0 0 16 16"><path d="M8 1.5 9.3 6.7 14.5 8 9.3 9.3 8 14.5 6.7 9.3 1.5 8l5.2-1.3z"/></symbol>
+  <symbol id="gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1"/></symbol>
+  <symbol id="ok" viewBox="0 0 16 16"><path d="M3.5 8.3 6.5 11l6-6.5"/></symbol>
+  <symbol id="info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.3v3.6M8 5.2v.1"/></symbol>
+  <symbol id="globe" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c2 2 2 10.4 0 12.4M8 1.8c-2 2-2 10.4 0 12.4"/></symbol>
+  <symbol id="mic" viewBox="0 0 16 16"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2"/></symbol>
+</defs></svg>
+
+<div class="page">
+  <div>
+    <h1>随便问 · 用「私密对话」替代「本机模式」</h1>
+    <p class="sub">现在的“本机”是一个<b>全局开关</b>：打开后，云端历史整个被藏起来，云端模型不能选，组件上只显示“本机”两个字。用户分不清它说的是模型在本机跑，还是数据存在本机。新方案把它降级为<b>每个对话自己的属性</b>：普通对话同步到 Typeflux Cloud，私密对话只存在这台 Mac 上。两种对话出现在同一个列表里，靠锁形图标和紫色区分。“模型在哪里运行”只放在模型选择器里说明。<br>
+    下面的窗口<b>可以直接操作</b>：点输入框左下角的存储图标（☁ 云端同步 / 🔒 仅存本机）、顶部的新建按钮、模型名称和侧边栏筛选；发送消息试试。窗口上方的工具条可以切换登录状态和明暗主题。</p>
+    <div class="dock">
+      <span class="lbl">账号</span>
+      <div class="seg" id="dock-auth"><button data-v="in" class="on">已登录</button><button data-v="out">未登录</button></div>
+      <span class="lbl">主题</span>
+      <div class="seg" id="dock-theme"><button data-v="dark" class="on">深色</button><button data-v="light">浅色</button></div>
+      <button class="reset" id="dock-reset">重置</button>
+    </div>
+    <div class="win" id="win"></div>
+
+    <div class="cmp">
+      <div class="note">
+        <h3>现状（截图中的状态）</h3>
+        <ul>
+          <li>输入框胶囊 <span class="old-pill"><svg class="i sm"><use href="#mac"/></svg>本机</span>：看不出它表示的是存储位置、模型还是执行位置。</li>
+          <li>卡片写“在这台 Mac 上运行”，但模型来源是“自定义”远程 API，其实仍然联网。</li>
+          <li>打开开关后，侧边栏只显示本机历史，云端对话“消失”。</li>
+          <li>切换开关后会话不会立即重置，所以“本机”胶囊会和云端对话的 <code>160.79 credits</code> 同时出现。</li>
+          <li>已登录用户在卡片里没有办法切回云端。</li>
+        </ul>
+      </div>
+      <div class="note">
+        <h3>方案要点</h3>
+        <ul>
+          <li><b>存储</b>：每个对话单独决定。输入框里<b>只放一个图标</b>（☁ 或紫色 🔒），悬停显示名称，点击弹出详情卡片；<b>只在空对话里可以改</b>；发出第一条消息后就固定，点击只解释原因，不会出现半同步的对话。</li>
+          <li><b>历史</b>：合并成一个列表，私密对话带锁形图标，可以按「全部 / 云端 / 仅本机」筛选。</li>
+          <li><b>模型</b>：选择器把“在哪里运行”标成标签，例如「Ollama · 在本机运行」「API · 联网调用」。私密对话里，云端模型置灰并写明原因。</li>
+          <li><b>新对话页和内容区</b>：两种模式完全一致，保持现状（标题、提示、占位符都不变）。差异只体现在输入框图标、标题栏右侧、侧边栏锁形图标和模型选择器。</li>
+          <li><b>计费</b>：credits 只在云端对话的标题栏显示。私密对话改为显示「仅存本机」。</li>
+          <li><b>未登录</b>：所有对话自然都是私密对话。底部卡片显示“未登录 · 对话仅存本机”，新建菜单里“云端对话”显示为登录后可用。</li>
+          <li><b>设置</b>：「使用本机对话模式」开关改为「新对话默认：云端同步 / 仅存本机」。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <div class="note">
+      <h3>试试这些操作</h3>
+      <div class="tasks" id="tasks"></div>
+    </div>
+    <div class="note">
+      <h3>三个维度拆开</h3>
+      <ul>
+        <li><b>对话存在哪</b>：对话属性，用锁形图标和紫色表示。</li>
+        <li><b>用哪个模型</b>：模型选择器，标签注明模型是在本机运行还是联网调用。</li>
+        <li><b>Agent 在哪执行</b>：实现细节，不对用户展示。私密对话走 <code>AskLocalEngine</code>，云端对话走服务端。</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3>实现映射</h3>
+      <ul>
+        <li><code>AskRoutedAPI</code>：路由依据从“token 是否为空”改为“对话的 <code>storage</code>”。</li>
+        <li>列表合并：同时读取 <code>owner=local</code> 和账号 owner 的缓存，按时间合并，再带上来源标记。</li>
+        <li><code>askLocalModeEnabled</code> → <code>askNewConversationPrivate</code>，旧值直接迁移。</li>
+        <li>文案替换：<code>ask.location.local*</code> / <code>ask.local.card.*</code>。</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+
+<script>
+const CLOUD_MODELS = [
+  { id: 'cloud:auto', name: 'coding/auto', desc: 'Typeflux Cloud · 自动选择' },
+  { id: 'cloud:sonnet', name: 'Claude Sonnet 5.5', desc: 'Typeflux Cloud' },
+  { id: 'cloud:research', name: 'Deep Research', desc: 'Typeflux Cloud · 研究子 Agent' },
+];
+const OWN_MODELS = [
+  { id: 'own:openai', name: 'gpt-4.1（我的 OpenAI）', desc: 'OpenAI 兼容 API', where: 'net' },
+  { id: 'own:ollama', name: 'qwen3:8b', desc: 'Ollama', where: 'dev' },
+];
+const ALL_MODELS = [...CLOUD_MODELS, ...OWN_MODELS];
+
+function seed() {
+  return [
+    { id: 'c1', title: '讲讲这一屏在做什么', time: '11:57', group: '今天', private: false, model: 'cloud:auto', credits: '160.79',
+      messages: [['u', '讲讲这一屏在做什么'], ['a', '这一屏是 Grok 网页版，你在和它讨论哈佛幸福课的英文原稿……']] },
+    { id: 'p1', title: '帮我整理体检报告要点', time: '09:49', group: '今天', private: true, model: 'own:ollama',
+      messages: [['u', '帮我整理体检报告要点'], ['a', '已按指标分组整理，异常项 3 个：……']] },
+    { id: 'c2', title: '早上好呀。', time: '10:45', group: '昨天', private: false, model: 'cloud:sonnet', credits: '2.14',
+      messages: [['u', '早上好呀。'], ['a', '早上好！今天想做点什么？']] },
+    { id: 'p2', title: '合同条款里的竞业限制', time: '19:05', group: '昨天', private: true, model: 'own:openai',
+      messages: [['u', '合同条款里的竞业限制合理吗'], ['a', '从你贴出的第 7 条看，期限 2 年、补偿 30%……']] },
+    { id: 'c3', title: '帮我优化一下这个帖子…', time: '10月1日', group: '更早', private: false, model: 'cloud:auto', credits: '5.02',
+      messages: [['u', '帮我优化一下这个帖子'], ['a', '调整了开头钩子和结尾行动号召……']] },
+  ];
+}
+
+const S = {
+  signedIn: true, theme: 'dark', filter: 'all', defaultPrivate: false,
+  convs: seed(), sel: 'c1', draft: null, pop: null, settings: false, text: '', hint: '', done: new Set(),
+};
+let hintTimer = null;
+
+const TASKS = [
+  ['store', '点输入框左下角的 ☁ 图标，看看已有对话为什么不能改存储位置'],
+  ['newp', '点顶部 ✎ 旁边的 ⌄，新建一个私密对话'],
+  ['model', '在私密对话里打开模型选择器，看云端模型怎么置灰'],
+  ['send', '在私密对话里发一条消息，看列表里出现的锁形图标'],
+  ['filter', '用侧边栏的「仅本机」筛选'],
+  ['out', '在窗口上方的工具条切到「未登录」'],
+  ['settings', '点左下角 ⚙，看新的默认设置'],
+];
+
+function conv() { return S.sel === 'new' ? S.draft : S.convs.find(c => c.id === S.sel); }
+function isPrivate(c) { return !S.signedIn || (c && c.private); }
+function modelOf(id) { return ALL_MODELS.find(m => m.id === id); }
+function mark(k) { S.done.add(k); }
+function flash(t) { S.hint = t; clearTimeout(hintTimer); hintTimer = setTimeout(() => { S.hint = ''; render(); }, 1800); }
+const ic = (id, cls = '') => `<svg class="i ${cls}"><use href="#${id}"/></svg>`;
+const esc = s => s.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+
+function newConversation(priv) {
+  const p = !S.signedIn || priv;
+  S.draft = { id: 'new', title: '新对话', private: p, model: p ? 'own:ollama' : 'cloud:auto', messages: [] };
+  S.sel = 'new'; S.pop = null;
+  if (p) mark('newp');
+}
+
+function visibleConvs() {
+  return S.convs.filter(c => {
+    if (!S.signedIn && !c.private) return false; // signed out: Cloud history is not reachable
+    if (S.filter === 'cloud') return !c.private;
+    if (S.filter === 'local') return c.private;
+    return true;
+  });
+}
+
+/* ---------- views ---------- */
+function sidebar() {
+  const list = visibleConvs();
+  let rows = '', group = '';
+  for (const c of list) {
+    if (c.group !== group) { group = c.group; rows += `<div class="grp">${group}</div>`; }
+    const p = isPrivate(c);
+    rows += `<div class="row ${S.sel === c.id ? 'sel' : ''} ${p ? 'p' : ''}" data-act="select" data-id="${c.id}" title="${p ? '私密对话 · 仅存本机' : '云端同步'}">
+      ${p ? `<span class="lock">${ic('lock', 'sm')}</span>` : ''}<span class="t">${esc(c.title)}</span><span class="tm">${c.time}</span></div>`;
+  }
+  if (!list.length) rows = `<div class="empty-list">${S.filter === 'cloud' && !S.signedIn ? '登录后显示云端对话' : '没有对话'}</div>`;
+  const seg = S.signedIn ? `<div class="seg">
+      <button class="${S.filter === 'all' ? 'on' : ''}" data-act="filter" data-v="all">全部</button>
+      <button class="${S.filter === 'cloud' ? 'on' : ''}" data-act="filter" data-v="cloud">${ic('cloud', 'sm')}云端</button>
+      <button class="${S.filter === 'local' ? 'on' : ''}" data-act="filter" data-v="local">${ic('lock', 'sm')}仅本机</button></div>` : '';
+  const foot = S.signedIn
+    ? `<div class="foot"><div class="avatar">DV</div><div style="flex:1;min-width:0"><div class="nm">Demir Von</div><div class="dt">Pro · 云端额度 82%</div></div><button class="icon-btn" data-act="settings" title="设置">${ic('gear')}</button></div>`
+    : `<div class="promo"><b>${ic('cloud', 'sm')} Typeflux Cloud</b>登录后可以开云端对话：识图、联网搜索、深入研究，并在多台设备间同步。私密对话照常留在本机。<div style="margin-top:6px"><button class="btn pri" data-act="signin">登录</button></div></div>
+       <div class="foot"><div class="avatar mac">${ic('mac')}</div><div style="flex:1;min-width:0"><div class="nm">未登录</div><div class="dt">对话仅存本机 · 使用你自己的模型</div></div><button class="icon-btn" data-act="settings" title="设置">${ic('gear')}</button></div>`;
+  return `<div class="side">
+    <div class="side-top"><div class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div><span class="sp"></span>
+      <button class="icon-btn" title="新对话（${S.signedIn && !S.defaultPrivate ? '云端同步' : '仅存本机'}）" data-act="new-default">${ic('pen')}</button>
+      <button class="icon-btn ${S.pop === 'newmenu' ? 'on' : ''}" data-act="newmenu" title="更多新建方式" style="width:18px;margin-left:-6px">${ic('chev', 'sm')}</button>
+      <button class="icon-btn" title="侧边栏">${ic('side')}</button></div>
+    <div class="search">${ic('search', 'sm')}搜索对话<kbd>⌘K</kbd></div>
+    ${seg}
+    <div class="list">${rows}</div>
+    ${foot}
+  </div>`;
+}
+
+function newMenu() {
+  if (S.pop !== 'newmenu') return '';
+  const cloudDis = !S.signedIn;
+  return `<div class="pop" style="left:150px;top:46px;width:290px;padding:6px">
+    <button class="mi ${cloudDis ? 'dis' : ''}" data-act="${cloudDis ? 'noop' : 'new-cloud'}">${ic('cloud')}<span class="ml">新对话<div class="md">${cloudDis ? '登录 Typeflux Cloud 后可用' : '同步到 Typeflux Cloud，可用全部模型'}</div></span><kbd>⌘N</kbd></button>
+    <button class="mi" data-act="new-private"><span class="lock">${ic('lock')}</span><span class="ml">新私密对话<div class="md">只存在这台 Mac 上，使用你自己的模型</div></span><kbd>⇧⌘N</kbd></button>
+  </div>`;
+}
+
+function header(c) {
+  const p = isPrivate(c);
+  const right = p
+    ? `<div class="pchip" title="这段对话不会上传到 Typeflux Cloud">${ic('lock', 'sm')}仅存本机</div>`
+    : (c.credits ? `<div class="credits">${ic('spark', 'sm')}<b>${c.credits}</b><span>credits</span></div>` : '');
+  return `<div class="head"><div class="cap">${c.messages.length ? '<span class="dot"></span>' : ''}<span class="t">${esc(c.title)}</span></div><span class="sp"></span>${right}</div>`;
+}
+
+function feed(c) {
+  // The new-conversation page stays exactly as it is today in both modes.
+  if (!c.messages.length) {
+    return `<div class="feed"><div class="welcome">
+      <div class="big">有什么想问的？</div>
+      <div class="lines">随时按 <kbd>⌥ Space</kbd> 唤起 · 按住 <kbd>⌥(R)</kbd> 语音输入</div>
+    </div></div>`;
+  }
+  let html = '<div class="feed">';
+  for (const [r, t] of c.messages) {
+    html += r === 'u' ? `<div class="msg-u"><div>${esc(t)}</div></div>`
+      : `<div class="msg-a">${esc(t)}<div class="meta">${esc(modelOf(c.model).name)}</div></div>`;
+  }
+  return html + '</div>';
+}
+
+function storePop(c) {
+  if (S.pop !== 'store') return '';
+  const p = isPrivate(c);
+  const editable = c.messages.length === 0 && S.signedIn;
+  const caps = p
+    ? `<div class="kv"><span class="k">存储</span><span class="v">只在这台 Mac 上</span>
+         <span class="k">模型</span><span class="v">你自己的模型（API 模型仍会联网）</span>
+         <span class="k">读取网页</span><span class="v">可用</span>
+         <span class="k">网页搜索</span><span class="v">需要配置 Tavily / Brave 密钥</span>
+         <span class="k">不可用</span><span class="v">云端模型、深入研究、后台运行、多设备同步</span></div>`
+    : `<div class="kv"><span class="k">存储</span><span class="v">Typeflux Cloud，多设备同步</span>
+         <span class="k">模型</span><span class="v">云端模型 + 你自己的模型</span>
+         <span class="k">能力</span><span class="v">识图、联网搜索、深入研究、后台运行</span>
+         <span class="k">计费</span><span class="v">云端模型计入额度，自己的模型不计</span></div>`;
+  let body;
+  if (editable) {
+    body = `<p>这段对话保存在哪里？发出第一条消息后就不能再改。</p><div class="hr"></div>
+      <button class="opt ${!p ? 'on' : ''}" data-act="set-store" data-v="cloud"><span class="oi c">${ic('cloud')}</span><span><div class="ot">云端同步</div><div class="od">在其他设备上继续，可用全部云端能力</div></span>${!p ? `<span class="ck">${ic('ok')}</span>` : ''}</button>
+      <button class="opt p ${p ? 'on' : ''}" data-act="set-store" data-v="private"><span class="oi p">${ic('lock')}</span><span><div class="ot">仅存本机</div><div class="od">不上传到 Typeflux Cloud，只用你自己的模型</div></span>${p ? `<span class="ck">${ic('ok')}</span>` : ''}</button>
+      <div class="hr"></div>${caps}`;
+  } else if (!S.signedIn) {
+    body = `<p>你还没有登录 Typeflux Cloud，所有对话都只存在这台 Mac 上，使用你自己配置的模型。</p><div class="hr"></div>${caps}
+      <div class="btns"><button class="btn pri" data-act="signin">登录以使用云端对话</button></div>`;
+  } else {
+    body = `<p>${p ? '这是一段私密对话，内容只保存在这台 Mac 上。' : '这段对话已经同步到 Typeflux Cloud。'}已有消息的对话不能更改存储位置，以免一部分内容已经上传，另一部分只在本机。</p><div class="hr"></div>${caps}
+      <div class="btns"><button class="btn ${p ? 'pri' : 'pp'}" data-act="${p ? 'new-cloud' : 'new-private'}">${ic(p ? 'cloud' : 'lock', 'sm')} 新建${p ? '云端' : '私密'}对话</button></div>`;
+  }
+  return `<div class="pop" style="left:20px;bottom:${S.signedIn ? 74 : 74}px;width:360px">
+    <h4>${ic(p ? 'lock' : 'cloud')} ${p ? '仅存本机' : '云端同步'}</h4>${body}</div>`;
+}
+
+function modelPop(c) {
+  if (S.pop !== 'model') return '';
+  const p = isPrivate(c);
+  let h = `<div class="mh"><span>Typeflux Cloud</span>${p ? '<span>私密对话不可用</span>' : ''}</div>`;
+  for (const m of CLOUD_MODELS) {
+    const dis = p;
+    h += `<button class="mi ${dis ? 'dis' : ''}" data-act="${dis ? 'noop' : 'pick'}" data-id="${m.id}">${ic('cloud', 'sm')}<span class="ml">${m.name}<div class="md">${m.desc}</div></span>${c.model === m.id ? ic('ok', 'sm') : ''}</button>`;
+  }
+  h += `<div class="mh"><span>我的模型</span></div>`;
+  for (const m of OWN_MODELS) {
+    h += `<button class="mi" data-act="pick" data-id="${m.id}">${ic(m.where === 'dev' ? 'mac' : 'globe', 'sm')}<span class="ml">${m.name}<div class="md">${m.desc} <span class="tag ${m.where}">${m.where === 'dev' ? '在本机运行' : '联网调用'}</span></div></span>${c.model === m.id ? ic('ok', 'sm') : ''}</button>`;
+  }
+  if (p) h += `<div class="callout">${ic('info', 'sm')}<span>私密对话不经过 Typeflux Cloud，所以只能使用你自己的模型。需要云端模型，请${S.signedIn ? '<a href="#" data-act="new-cloud" style="color:var(--accent)">新建云端对话</a>' : '先登录'}。</span></div>`;
+  return `<div class="pop" style="left:76px;bottom:74px;width:330px;padding:6px">${h}</div>`;
+}
+
+function composer(c) {
+  const p = isPrivate(c);
+  const m = modelOf(c.model);
+  return `<div class="composer">
+    <textarea id="ta" placeholder="${c.messages.length ? '继续追问，/ 调用命令' : '输入问题，/ 调用命令'}">${esc(S.text)}</textarea>
+    <div class="bar">
+      <button class="pill" title="附件">${ic('plus')}</button>
+      <button class="store ${p ? 'p' : ''} ${S.pop === 'store' ? 'on' : ''}" data-act="store"
+        title="${p ? '仅存本机' : '云端同步'} · 点击查看详情" aria-label="${p ? '仅存本机' : '云端同步'}">${ic(p ? 'lock' : 'cloud')}</button>
+      <button class="pill ${S.pop === 'model' ? 'on' : ''}" data-act="model">${esc(m.name)}${ic('chev', 'sm')}</button>
+      <button class="pill">${ic('spark', 'sm')}默认${ic('chev', 'sm')}</button>
+      <span class="sp"></span>
+      <button class="pill" title="按住 ⌥(R) 语音输入">${ic('mic')}</button>
+      <button class="send" data-act="send" ${S.text.trim() ? '' : 'disabled'}>${ic('up')}</button>
+    </div>
+    <div class="hint ${S.hint ? 'show' : ''}">${esc(S.hint)}</div>
+  </div>`;
+}
+
+function settingsSheet() {
+  if (!S.settings) return '';
+  return `<div class="scrim" data-act="close-settings"><div class="sheet" data-stop="1">
+    <h3>随便问</h3><div class="crumb">设置 → Agent → 通用</div>
+    <div class="srow"><div><div class="st">新对话默认保存在</div>
+      <div class="sd">只影响新建的对话，已有对话不变。新建菜单里随时可以选另一种。${S.signedIn ? '' : '<br>未登录时只能新建私密对话。'}</div>
+      <div class="diff">替换原来的 <s>「使用本机对话模式」</s> 开关。旧设置开启的用户会迁移为「仅存本机」。</div></div>
+      <div class="sc"><div class="seg" style="width:190px">
+        <button class="${!S.defaultPrivate && S.signedIn ? 'on' : ''}" data-act="default" data-v="cloud" ${S.signedIn ? '' : 'disabled style="opacity:.4"'}>${ic('cloud', 'sm')}云端同步</button>
+        <button class="${S.defaultPrivate || !S.signedIn ? 'on' : ''}" data-act="default" data-v="private">${ic('lock', 'sm')}仅存本机</button></div></div></div>
+    <div class="srow"><div><div class="st">私密对话的网页搜索</div><div class="sd">私密对话可以用你自己的 Tavily 或 Brave Search 密钥搜索网页，密钥保存在钥匙串中。读取网页不需要密钥。</div></div>
+      <div class="sc"><button class="btn">关闭 ${ic('chev', 'sm')}</button></div></div>
+    <div class="btns"><button class="btn pri" data-act="close-settings">完成</button></div>
+  </div></div>`;
+}
+
+function render() {
+  document.documentElement.dataset.theme = S.theme;
+  let c = conv();
+  if (!c || (!S.signedIn && !c.private)) { newConversation(true); c = conv(); }
+  // A private conversation never keeps a Cloud model.
+  if (isPrivate(c) && c.model.startsWith('cloud:')) c.model = 'own:ollama';
+  const ta = document.getElementById('ta');
+  const focused = ta && document.activeElement === ta;
+  document.getElementById('win').innerHTML = sidebar() + newMenu()
+    + `<div class="main ${isPrivate(c) ? 'p' : ''}">${header(c)}${feed(c)}${composer(c)}${storePop(c)}${modelPop(c)}</div>` + settingsSheet();
+  const feedEl = document.querySelector('.feed'); if (feedEl) feedEl.scrollTop = feedEl.scrollHeight;
+  if (focused) { const t = document.getElementById('ta'); t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+  document.getElementById('tasks').innerHTML = TASKS.map(([k, t], i) =>
+    `<div class="task" style="${S.done.has(k) ? 'opacity:.5' : ''}"><span class="n">${S.done.has(k) ? '✓' : i + 1}</span><span>${t}</span></div>`).join('');
+  document.querySelectorAll('#dock-auth button').forEach(b => b.classList.toggle('on', (b.dataset.v === 'in') === S.signedIn));
+  document.querySelectorAll('#dock-theme button').forEach(b => b.classList.toggle('on', b.dataset.v === S.theme));
+}
+
+function send() {
+  const t = S.text.trim(); if (!t) return;
+  let c = conv();
+  if (S.sel === 'new') {
+    c.id = 'n' + Date.now(); c.title = t.slice(0, 18); c.time = '刚刚'; c.group = '今天';
+    if (!c.private && S.signedIn) c.credits = '0.42';
+    if (!S.signedIn) c.private = true;
+    S.convs.unshift(c); S.sel = c.id; S.draft = null;
+  }
+  c.messages.push(['u', t]);
+  c.messages.push(['a', '（示例回答）好的，我来看看。']);
+  if (isPrivate(c)) mark('send');
+  S.text = '';
+  flash(isPrivate(c) ? '已保存在这台 Mac 上' : '已同步到 Typeflux Cloud');
+  render();
+}
+
+document.getElementById('win').addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (e.target.closest('[data-stop]') && !(el && el.closest('[data-stop]'))) return;
+  if (!el) { if (S.pop && !e.target.closest('.pop')) { S.pop = null; render(); } return; }
+  e.preventDefault();
+  const act = el.dataset.act, c = conv();
+  switch (act) {
+    case 'select': S.sel = el.dataset.id; S.pop = null; S.text = ''; S.hint = ''; break;
+    case 'filter': S.filter = el.dataset.v; if (S.filter === 'local') mark('filter'); break;
+    case 'newmenu': S.pop = S.pop === 'newmenu' ? null : 'newmenu'; break;
+    case 'new-default': newConversation(S.defaultPrivate); break;
+    case 'new-cloud': newConversation(false); flash('新的云端对话'); break;
+    case 'new-private': newConversation(true); flash('新的私密对话 · 仅存本机'); break;
+    case 'store': S.pop = S.pop === 'store' ? null : 'store'; mark('store'); break;
+    case 'set-store': {
+      c.private = el.dataset.v === 'private';
+      c.model = c.private ? 'own:ollama' : 'cloud:auto';
+      S.pop = null; flash(c.private ? '这段对话将只保存在这台 Mac 上' : '这段对话将同步到 Typeflux Cloud');
+      if (c.private) mark('newp');
+      break;
+    }
+    case 'model': S.pop = S.pop === 'model' ? null : 'model'; if (isPrivate(c)) mark('model'); break;
+    case 'pick': c.model = el.dataset.id; S.pop = null; flash('已切换到 ' + modelOf(c.model).name); break;
+    case 'send': send(); return;
+    case 'settings': S.settings = true; S.pop = null; mark('settings'); break;
+    case 'close-settings': S.settings = false; break;
+    case 'default': S.defaultPrivate = el.dataset.v === 'private'; break;
+    case 'signin': setAuth(true); return;
+    case 'noop': return;
+  }
+  render();
+});
+document.getElementById('win').addEventListener('input', e => {
+  if (e.target.id !== 'ta') return;
+  S.text = e.target.value;
+  const b = document.querySelector('.send'); if (b) b.disabled = !S.text.trim();
+});
+document.getElementById('win').addEventListener('keydown', e => {
+  if (e.target.id === 'ta' && e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { S.pop = null; S.settings = false; render(); } });
+
+function setAuth(v) {
+  S.signedIn = v; S.pop = null; S.settings = false; S.filter = 'all';
+  if (!v) { mark('out'); const c = conv(); if (!c || !c.private) newConversation(true); }
+  render();
+}
+document.getElementById('dock-auth').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setAuth(b.dataset.v === 'in'); });
+document.getElementById('dock-theme').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { S.theme = b.dataset.v; render(); } });
+document.getElementById('dock-reset').addEventListener('click', () => {
+  Object.assign(S, { signedIn: true, filter: 'all', defaultPrivate: false, convs: seed(), sel: 'c1', draft: null, pop: null, settings: false, text: '', hint: '', done: new Set() });
+  render();
+});
+render();
+</script>
+</body>
+</html>

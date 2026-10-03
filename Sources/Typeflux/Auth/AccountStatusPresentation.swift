@@ -15,8 +15,6 @@ struct AccountStatusPresentation: Equatable {
         /// Remaining quota, in whole percent, once it drops below the low threshold.
         case low(percent: Int)
         case exhausted
-        /// Ask runs on the user's own models (local mode).
-        case ownModels
     }
 
     enum QuotaLevel: Equatable {
@@ -136,14 +134,6 @@ struct AccountStatusPresentation: Equatable {
             periodNote: periodNote(for: subscription, paymentIssue: paymentIssue, usagePeriodEnd: usagePeriodEnd),
             forecast: forecast
         )
-    }
-
-    /// The Ask sidebar's badge: "Own models" replaces the plain plan label
-    /// while Ask runs locally; quota and payment warnings still win, since
-    /// dictation keeps using Cloud.
-    func footerBadge(runsLocally: Bool) -> (badge: Badge?, tone: Tone) {
-        guard runsLocally, badgeTone == .neutral || badgeTone == .accent else { return (badge, badgeTone) }
-        return (.ownModels, .neutral)
     }
 
     static func isPaymentIssue(_ subscription: BillingSubscriptionSnapshot) -> Bool {

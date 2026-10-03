@@ -100,7 +100,7 @@ struct AccountStatusTextTests {
     }
 
     @Test func everyStateHasWording() {
-        let badges: [AccountStatusPresentation.Badge] = [.plan("Pro"), .low(percent: 12), .exhausted, .ownModels]
+        let badges: [AccountStatusPresentation.Badge] = [.plan("Pro"), .low(percent: 12), .exhausted]
         for badge in badges { #expect(!AccountStatusText.badge(badge).isEmpty) }
         #expect(AccountStatusText.badge(.plan("Pro")) == "Pro")
         #expect(AccountStatusText.badge(.low(percent: 12)).contains("12%"))

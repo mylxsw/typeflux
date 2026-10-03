@@ -79,11 +79,13 @@ extension AskComposerInteractionTests {
             try await Task.sleep(for: .milliseconds(400))
             #expect(fixture.model.selectedId == "compose")
             let width = AskMetrics.titleBarButtonWidth
-            // Expanded: [compose][toggle] right-aligned in the sidebar's title row.
-            // Collapsed: [toggle][search][compose] in the pill after the traffic lights.
+            // Expanded: [compose][new menu][toggle] right-aligned in the sidebar's title row.
+            // Collapsed: [toggle][search][compose][new menu] in the pill after the traffic lights.
+            // The new-conversation menu shows while signed in, as the fixture is.
+            let menu = AskMetrics.newConversationMenuWidth
             let x = collapsed
                 ? AskMetrics.trafficLightInset + 3 + width * 2.5
-                : AskMetrics.sidebarWidth - 6 - AskMetrics.sidebarPanelInset - width - 2 - width / 2
+                : AskMetrics.sidebarWidth - 6 - AskMetrics.sidebarPanelInset - width - 2 - menu - 2 - width / 2
             let point = NSPoint(x: x, y: window.frame.height - AskMetrics.titleBarRowHeight / 2)
             for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
                 let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],

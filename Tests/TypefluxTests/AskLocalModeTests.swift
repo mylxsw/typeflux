@@ -191,11 +191,12 @@ final class AskRoutedAPITests: XCTestCase {
         XCTAssertEqual(cloudPurges, 1)
     }
 
-    func testSessionPrefersCloudOnlyWhenSignedInAndNotLocal() {
-        XCTAssertTrue(AskRoutedAPI.session(localMode: false, token: "t", owner: "u") == ("u", "t"))
-        XCTAssertTrue(AskRoutedAPI.session(localMode: true, token: "t", owner: "u") == ("local", ""))
-        XCTAssertTrue(AskRoutedAPI.session(localMode: false, token: nil, owner: "u") == ("local", ""))
-        XCTAssertTrue(AskRoutedAPI.session(localMode: false, token: "t", owner: "") == ("local", ""))
+    func testSessionIsTheCloudAccountOnlyWhenSignedIn() {
+        XCTAssertTrue(AskRoutedAPI.session(token: "t", owner: "u") == ("u", "t"))
+        XCTAssertTrue(AskRoutedAPI.session(token: nil, owner: "u") == ("local", ""))
+        XCTAssertTrue(AskRoutedAPI.session(token: "", owner: "u") == ("local", ""))
+        XCTAssertTrue(AskRoutedAPI.session(token: "t", owner: "") == ("local", ""))
+        XCTAssertTrue(AskRoutedAPI.session(token: "t", owner: nil) == ("local", ""))
     }
 
     func testPromptPiecesMatchTheServer() throws {
@@ -246,11 +247,11 @@ final class AskLocalModeIntegrationTests: XCTestCase {
         let model = AskConversationModel(api: AskRoutedAPI(cloud: AskAPIClient(), local: engine),
                                          cache: try AskConversationCache(url: root.appendingPathComponent("cache.sqlite")),
                                          tools: AskTestTools(), capture: AskTestCapture(), deviceId: "device", modelLibrary: library,
-                                         session: { AskRoutedAPI.session(localMode: false, token: nil, owner: nil) })
+                                         session: { AskRoutedAPI.session(token: nil, owner: nil) })
         XCTAssertFalse(model.cloudAvailable)
         // The Cloud default falls back to one of the user's own models.
         XCTAssertEqual(model.modelReference(launcher: true), firstLocal)
-        XCTAssertEqual(model.localFallback("custom:x", hasImage: false), "custom:x")
+        XCTAssertEqual(model.localFallback("custom:x", hasImage: false, local: true), "custom:x")
 
         var requests: [[String: Any]] = []
         LocalStubProtocol.handler = { request in
@@ -287,6 +288,6 @@ final class AskLocalModeIntegrationTests: XCTestCase {
                                             tools: AskTestTools(), capture: AskTestCapture(), deviceId: "device", modelLibrary: library,
                                             session: { ("owner", "token") })
         XCTAssertTrue(signedIn.cloudAvailable)
-        XCTAssertEqual(signedIn.localFallback("cloud:default", hasImage: false), "cloud:default")
+        XCTAssertEqual(signedIn.localFallback("cloud:default", hasImage: false, local: false), "cloud:default")
     }
 }

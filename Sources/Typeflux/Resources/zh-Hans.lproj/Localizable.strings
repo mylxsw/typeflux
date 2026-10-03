@@ -1119,7 +1119,7 @@
 "agent.section.tools" = "工具";
 "agent.section.skills" = "技能";
 "agent.section.memory" = "记忆";
-"agent.settings.runMode" = "运行方式";
+"agent.settings.runMode" = "对话存储";
 "agent.settings.web" = "联网";
 "agent.settings.code" = "代码执行";
 "agent.settings.mcp" = "MCP 服务器";
@@ -1812,8 +1812,8 @@
 "ask.local.empty" = "模型返回了空回答。";
 "ask.local.invalidTools" = "模型返回了无效或不可用的工具调用。";
 "ask.local.emptyQuestion" = "请先输入问题。";
-"ask.settings.local.title" = "使用本机对话模式";
-"ask.settings.local.subtitle" = "开启后使用你配置的模型，对话历史仅保存在本机，不与 Typeflux Cloud 同步。第三方模型仍需联网。未登录时自动使用本机模式。";
+"ask.settings.local.title" = "新对话默认保存在";
+"ask.settings.local.subtitle" = "选择「仅存本机」后，新对话不会上传到 Typeflux Cloud，只使用你配置的模型；已有对话不受影响。新建菜单和输入框里的存储图标随时可以改选。未登录时，所有对话都只保存在本机。";
 "ask.settings.search.title" = "本机网页搜索";
 "ask.settings.search.subtitle" = "本地对话可使用你自己的 Tavily 或 Brave Search 密钥搜索网页，密钥保存在钥匙串中。读取网页无需密钥。";
 "ask.settings.search.provider" = "搜索服务";
@@ -1861,9 +1861,7 @@
 "ask.location.local" = "本机";
 "ask.location.local.help" = "“随便问”在这台 Mac 上使用你自己的模型运行，对话保存在本机。";
 "ask.local.sourceNone" = "未选择模型";
-"ask.local.card.title" = "在这台 Mac 上运行";
-"ask.local.card.body" = "没有登录 Typeflux Cloud，所以“随便问”使用你自己配置的模型，对话只保存在本机。";
-"ask.local.card.bodyLocalMode" = "已开启本机模式，“随便问”使用你自己配置的模型，对话只保存在本机。";
+"ask.local.card.body" = "没有登录 Typeflux Cloud，所有对话都只保存在这台 Mac 上，使用你自己配置的模型。";
 "ask.local.card.source" = "模型来源";
 "ask.local.card.readPages" = "读取网页";
 "ask.local.card.available" = "可用";
@@ -1871,7 +1869,7 @@
 "ask.local.card.noSearchHint" = "设置 → Agent → 通用";
 "ask.local.card.configure" = "去设置";
 "ask.local.card.cloudQuestion" = "想用云端模型？";
-"ask.local.identity" = "本机模式";
+"ask.local.identity" = "未登录";
 "ask.local.identity.detail" = "%@ · 对话仅存本机";
 "ask.cloudPromo.body" = "登录后可使用云端模型（支持识图、联网搜索），对话在多台设备间同步。";
 "ask.cloudPromo.signIn" = "登录";
@@ -1959,7 +1957,6 @@
 "account.page.view" = "查看";
 "account.page.voiceDetail" = "共 %@";
 "account.status.badgeExhausted" = "额度已用完";
-"account.status.badgeOwnModels" = "自有模型";
 "account.status.badgeLow" = "剩 %@";
 "account.status.ends" = "%@ 到期";
 "account.status.paymentFailed" = "续费失败";
@@ -2033,7 +2030,7 @@
 "ask.command.copy" = "复制上一条回答";
 "ask.command.model" = "切换模型";
 "ask.command.think" = "思考强度";
-"ask.command.local" = "本机模式";
+"ask.command.local" = "仅存本机";
 "ask.command.file" = "上传文件或图片";
 "ask.command.folder" = "添加文件夹（本次对话只读）";
 "ask.command.screenshot" = "附带屏幕截图";
@@ -2055,8 +2052,8 @@
 "ask.command.copied" = "已复制上一条回答";
 "ask.command.modelChanged" = "已切换到 %@";
 "ask.command.reasoningChanged" = "思考强度：%@";
-"ask.command.localOn" = "已切换到本机模式";
-"ask.command.localOff" = "已切换到 Typeflux Cloud";
+"ask.command.localOn" = "这段对话将只保存在这台 Mac 上";
+"ask.command.localOff" = "这段对话将同步到 Typeflux Cloud";
 "ask.command.screenshotOn" = "已附带屏幕截图";
 "ask.command.screenshotOff" = "已移除屏幕截图";
 "ask.command.selectionOn" = "已附带选中的文字";
@@ -2072,6 +2069,27 @@
 "ask.command.off" = "已关闭";
 "ask.command.chip.skill" = "技能";
 "ask.command.chip.mcp" = "MCP";
+
+/* GUL-193 Per-conversation storage */
+"ask.storage.local" = "仅存本机";
+"ask.storage.cloud" = "云端同步";
+"ask.storage.local.detail" = "不上传到 Typeflux Cloud，只使用你自己的模型";
+"ask.storage.cloud.detail" = "在其他设备上继续，可使用全部云端能力";
+"ask.storage.help" = "点击查看详情";
+"ask.storage.card.choose" = "这段对话保存在哪里？发出第一条消息后就不能再改。";
+"ask.storage.card.lockedLocal" = "这段对话只保存在这台 Mac 上，不会上传到 Typeflux Cloud。已经开始的对话不能更改存储位置。";
+"ask.storage.card.lockedCloud" = "这段对话已同步到 Typeflux Cloud。已经开始的对话不能更改存储位置。";
+"ask.storage.card.localNote" = "不能使用云端模型、深入研究、后台运行和多设备同步。你自己的 API 模型仍会联网调用其服务商。";
+"ask.storage.card.cloudNote" = "可使用云端模型和你自己的模型，支持识图、联网搜索和深入研究，并在多台设备间同步。云端模型的用量计入额度。";
+"ask.storage.newLocal" = "新建私密对话";
+"ask.storage.newCloud" = "新建云端对话";
+"ask.storage.locked" = "已经开始的对话不能更改存储位置";
+"ask.storage.signedOut" = "未登录时，对话只保存在这台 Mac 上";
+"ask.history.filter" = "筛选对话";
+"ask.history.filter.all" = "全部";
+"ask.history.filter.cloud" = "云端";
+"ask.history.filter.local" = "仅本机";
+"ask.new.more" = "更多新建方式";
 
 // Project workspaces
 "ask.project.title" = "项目文件";

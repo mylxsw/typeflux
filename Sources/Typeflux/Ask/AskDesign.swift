@@ -42,6 +42,8 @@ enum AskTheme {
         light: NSColor(calibratedRed: 0.906, green: 0.937, blue: 1.0, alpha: 1),
         dark: NSColor(calibratedRed: 0.082, green: 0.149, blue: 0.243, alpha: 1)
     )
+    /// Marks conversations kept on this Mac (the lock icon, the header chip).
+    static let privateTint = Color(nsColor: .systemPurple)
     static let accentText = StudioTheme.dynamic(
         light: NSColor(calibratedRed: 0.106, green: 0.341, blue: 0.839, alpha: 1),
         dark: NSColor(calibratedRed: 0.557, green: 0.741, blue: 1.0, alpha: 1)
@@ -191,6 +193,8 @@ enum AskMetrics {
     /// Header title inset when the sidebar is collapsed: past the pill holding
     /// the toggle, search and compose buttons, plus the gap between pills.
     static let collapsedTitleInset: CGFloat = trafficLightInset + titleBarButtonWidth * 3 + 6 + 12
+    /// The chevron beside compose that offers both kinds of new conversation (signed in).
+    static let newConversationMenuWidth: CGFloat = 14
     /// One centred reading column shared by the transcript and the composer, so
     /// questions, answers and the input line up instead of spanning the window.
     /// The design board's reading column is 720pt of content; the composer
@@ -616,6 +620,8 @@ struct AskCapsuleButtonStyle: ButtonStyle {
 struct AskSendButton: View {
     static let size: CGFloat = 36
     var enabled: Bool
+    /// Lit in the private tint for a conversation kept on this Mac.
+    var tint: Color = AskTheme.accent
     var action: () -> Void
 
     var body: some View {
@@ -629,7 +635,7 @@ struct AskSendButton: View {
         .foregroundStyle(enabled ? Color.white : StudioTheme.textTertiary)
         // The only solid control in the composer: a lit accent drop when it can send,
         // a faint translucent well otherwise, so it sits on glass and opaque cards alike.
-        .background(Circle().fill(enabled ? AskTheme.accent : AskTheme.hoverFill))
+        .background(Circle().fill(enabled ? tint : AskTheme.hoverFill))
         .overlay {
             if enabled {
                 Circle().fill(RadialGradient(colors: [Color.white.opacity(0.32), .clear],
@@ -637,7 +643,7 @@ struct AskSendButton: View {
                     .allowsHitTesting(false)
             }
         }
-        .shadow(color: enabled ? AskTheme.accent.opacity(0.5) : .clear, radius: 9, y: 3)
+        .shadow(color: enabled ? tint.opacity(0.5) : .clear, radius: 9, y: 3)
         // Becoming sendable, the button lights up with a small spring.
         .scaleEffect(enabled ? 1 : 0.94)
         .disabled(!enabled)

@@ -113,11 +113,8 @@ struct AccountViewRenderingTests {
                                       width: AskAccountCard.width)
             #expect(card.fittingSize.height > 150, "card \(name)")
 
-            for local in [false, true] {
-                let footer = try await host(AskAccountFooterIdentity(auth: auth, name: "Demir Von",
-                                                                     runsLocally: local) {}, width: 230)
-                #expect(footer.fittingSize.height > 0)
-            }
+            let footer = try await host(AskAccountFooterIdentity(auth: auth, name: "Demir Von") {}, width: 230)
+            #expect(footer.fittingSize.height > 0)
         }
     }
 

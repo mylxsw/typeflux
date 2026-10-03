@@ -1119,7 +1119,7 @@
 "agent.section.tools" = "Tools";
 "agent.section.skills" = "Skills";
 "agent.section.memory" = "Memory";
-"agent.settings.runMode" = "Where Ask runs";
+"agent.settings.runMode" = "Conversation storage";
 "agent.settings.web" = "Web";
 "agent.settings.code" = "Code";
 "agent.settings.mcp" = "MCP servers";
@@ -1812,8 +1812,8 @@
 "ask.local.empty" = "The model returned an empty answer.";
 "ask.local.invalidTools" = "The model returned an invalid or unavailable tool call.";
 "ask.local.emptyQuestion" = "Type a question first.";
-"ask.settings.local.title" = "Use local conversation mode";
-"ask.settings.local.subtitle" = "Use your configured models and keep conversation history on this Mac without syncing it to Typeflux Cloud. Third-party models still require internet access. This mode is used automatically when signed out.";
+"ask.settings.local.title" = "Keep new conversations";
+"ask.settings.local.subtitle" = "With Only on this Mac, new conversations are not uploaded to Typeflux Cloud and use the models you set up. Existing conversations stay where they are. You can pick either kind from the new conversation menu or the storage icon in the composer. When signed out, every conversation stays on this Mac.";
 "ask.settings.search.title" = "Web search on this Mac";
 "ask.settings.search.subtitle" = "Local conversations can search the web with your own Tavily or Brave Search key, stored in the keychain. Reading web pages works without a key.";
 "ask.settings.search.provider" = "Search provider";
@@ -1861,9 +1861,7 @@
 "ask.location.local" = "This Mac";
 "ask.location.local.help" = "Ask runs on this Mac with your own models. Conversations stay on this Mac.";
 "ask.local.sourceNone" = "No model selected";
-"ask.local.card.title" = "Running on this Mac";
-"ask.local.card.body" = "You are not signed in to Typeflux Cloud, so Ask uses the models you set up. Conversations stay on this Mac.";
-"ask.local.card.bodyLocalMode" = "Local mode is on, so Ask uses the models you set up. Conversations stay on this Mac.";
+"ask.local.card.body" = "You are not signed in to Typeflux Cloud, so every conversation stays on this Mac and uses the models you set up.";
 "ask.local.card.source" = "Models";
 "ask.local.card.readPages" = "Read pages";
 "ask.local.card.available" = "Available";
@@ -1871,7 +1869,7 @@
 "ask.local.card.noSearchHint" = "Settings → Agent → General";
 "ask.local.card.configure" = "Set Up";
 "ask.local.card.cloudQuestion" = "Want Cloud models?";
-"ask.local.identity" = "Local mode";
+"ask.local.identity" = "Not signed in";
 "ask.local.identity.detail" = "%@ · Stays on this Mac";
 "ask.cloudPromo.body" = "Sign in to use Cloud models that read images and search the web, with conversations on all your devices.";
 "ask.cloudPromo.signIn" = "Sign In";
@@ -1959,7 +1957,6 @@
 "account.page.view" = "View";
 "account.page.voiceDetail" = "%@ recorded";
 "account.status.badgeExhausted" = "Quota used up";
-"account.status.badgeOwnModels" = "Own models";
 "account.status.badgeLow" = "%@ left";
 "account.status.ends" = "Ends %@";
 "account.status.paymentFailed" = "Renewal failed";
@@ -2033,7 +2030,7 @@
 "ask.command.copy" = "Copy the last answer";
 "ask.command.model" = "Switch model";
 "ask.command.think" = "Reasoning effort";
-"ask.command.local" = "Local mode";
+"ask.command.local" = "Only on this Mac";
 "ask.command.file" = "Attach files or images";
 "ask.command.folder" = "Add a folder (read-only in this conversation)";
 "ask.command.screenshot" = "Attach the screenshot";
@@ -2055,8 +2052,8 @@
 "ask.command.copied" = "Copied the last answer";
 "ask.command.modelChanged" = "Switched to %@";
 "ask.command.reasoningChanged" = "Reasoning effort: %@";
-"ask.command.localOn" = "Switched to local mode";
-"ask.command.localOff" = "Switched to Typeflux Cloud";
+"ask.command.localOn" = "This conversation will stay on this Mac";
+"ask.command.localOff" = "This conversation will sync to Typeflux Cloud";
 "ask.command.screenshotOn" = "Screenshot attached";
 "ask.command.screenshotOff" = "Screenshot removed";
 "ask.command.selectionOn" = "Selected text attached";
@@ -2072,6 +2069,27 @@
 "ask.command.off" = "Off";
 "ask.command.chip.skill" = "Skill";
 "ask.command.chip.mcp" = "MCP";
+
+/* GUL-193 Per-conversation storage */
+"ask.storage.local" = "Only on this Mac";
+"ask.storage.cloud" = "Synced to Cloud";
+"ask.storage.local.detail" = "Not uploaded to Typeflux Cloud; uses only your own models";
+"ask.storage.cloud.detail" = "Continue on your other devices with every Cloud feature";
+"ask.storage.help" = "Click for details";
+"ask.storage.card.choose" = "Where should this conversation be kept? It cannot change after the first message.";
+"ask.storage.card.lockedLocal" = "This conversation is kept only on this Mac and is never uploaded to Typeflux Cloud. A conversation that has started cannot change where it is kept.";
+"ask.storage.card.lockedCloud" = "This conversation is synced to Typeflux Cloud. A conversation that has started cannot change where it is kept.";
+"ask.storage.card.localNote" = "Cloud models, research, background runs and sync across devices are not available. Your own API models still send requests to their provider.";
+"ask.storage.card.cloudNote" = "Use Cloud models and your own models, with image understanding, web search and research, synced across your devices. Cloud models count toward your quota.";
+"ask.storage.newLocal" = "New private conversation";
+"ask.storage.newCloud" = "New Cloud conversation";
+"ask.storage.locked" = "A conversation that has started cannot change where it is kept";
+"ask.storage.signedOut" = "While signed out, conversations stay on this Mac";
+"ask.history.filter" = "Filter conversations";
+"ask.history.filter.all" = "All";
+"ask.history.filter.cloud" = "Cloud";
+"ask.history.filter.local" = "This Mac";
+"ask.new.more" = "More ways to start a conversation";
 
 // Project workspaces
 "ask.project.title" = "Project files";

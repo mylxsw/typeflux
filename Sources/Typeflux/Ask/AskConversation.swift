@@ -206,6 +206,9 @@ struct AskDraft: Codable, Equatable, Sendable {
     /// Skill and MCP server names chosen with a slash command for the next message.
     var skills: [String]? = nil
     var mcpServers: [String]? = nil
+    /// Where a new conversation is kept: true on this Mac, false in Typeflux Cloud,
+    /// nil for the default from settings. Ignored once the conversation exists.
+    var storesLocally: Bool? = nil
 
     /// The selection that rides with the question: nil once switched off.
     var sentSelection: String? { selectionOff == true ? nil : selection }

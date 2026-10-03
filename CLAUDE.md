@@ -73,7 +73,7 @@ make format
 
 `LLMRouter` dispatches to `OpenAICompatibleLLMService` or `OllamaLLMService` based on settings.
 
-**Ask Anything** (`Ask/`): the 随便问 conversation window. Requests run on Typeflux Cloud or, in local mode, on the user's own models (`Ask/Local/`). Local tools implement `AgentTool` (`LLM/Agent/AgentTool.swift`); `AskReasoningEffort` and `AskReasoningRequest` carry the user's reasoning choice, and Ask never sends "thinking off" parameters (only rewrite and transcription do).
+**Ask Anything** (`Ask/`): the 随便问 conversation window. Each conversation is kept in Typeflux Cloud or, as a private conversation, on this Mac with the user's own models (`Ask/Local/`); `AskConversationModel` routes every call per conversation (see `docs/ASK_CONVERSATIONS.md`). Local tools implement `AgentTool` (`LLM/Agent/AgentTool.swift`); `AskReasoningEffort` and `AskReasoningRequest` carry the user's reasoning choice, and Ask never sends "thinking off" parameters (only rewrite and transcription do).
 
 **MCP Support** (`LLM/MCP/`): Model Context Protocol integration:
 - `StdioMCPClient.swift` — local process transport

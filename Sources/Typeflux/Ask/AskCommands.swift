@@ -74,7 +74,10 @@ struct AskCommandContext: Equatable, Sendable {
     var currentModel = ""
     var reasoningAvailable = false
     var reasoning: AskReasoningEffort = .providerDefault
+    /// The conversation is kept on this Mac.
     var localMode = false
+    /// Why the conversation's storage cannot change, e.g. it has already started.
+    var storageLocked: String?
     var screenshotOn = false
     /// Why a screenshot cannot be attached, e.g. the model cannot read images.
     var screenshotUnavailable: String?
@@ -126,8 +129,9 @@ enum AskCommandCatalog {
                                      aliases: ["reasoning", "effort"]))
         }
         result += [
-            AskCommand(action: .localMode, name: "local", title: L("ask.command.local"), symbol: "desktopcomputer",
-                       group: .model, kind: .toggle(on: context.localMode), aliases: ["offline"]),
+            AskCommand(action: .localMode, name: "local", title: L("ask.command.local"), symbol: "lock",
+                       group: .model, kind: .toggle(on: context.localMode), disabledReason: context.storageLocked,
+                       aliases: ["offline", "private"]),
             AskCommand(action: .attachFiles, name: "file", title: L("ask.command.file"), symbol: "paperclip",
                        group: .context, trailing: "⌘U", aliases: ["upload", "image", "attach"]),
             AskCommand(action: .attachFolder, name: "folder", title: L("ask.command.folder"), symbol: "folder",

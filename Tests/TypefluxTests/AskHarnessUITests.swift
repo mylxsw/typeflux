@@ -217,20 +217,6 @@ struct AskHarnessUITests {
         #expect(fits(AskRunOutputsView(outputs: outputs)) > 40)
     }
 
-    @Test func cloudLocationLabelOccupiesNoSpace() {
-        for highlighted in [false, true] {
-            let hosting = NSHostingView(rootView: AskRunLocationLabel(local: false, highlighted: highlighted))
-            hosting.layoutSubtreeIfNeeded()
-            #expect(hosting.fittingSize == .zero)
-        }
-    }
-
-    @Test func localLocationLabelKeepsItsHeightInEveryState() {
-        for highlighted in [false, true] {
-            #expect(fits(AskRunLocationLabel(local: true, highlighted: highlighted), width: 120) == 22)
-        }
-    }
-
     @Test func artifactsCopyAsImagesAndEncodeAsPNG() throws {
         let picture = try #require(AskImage.decode(image))
         let pasteboard = NSPasteboard(name: .init("ask-artifact-\(UUID().uuidString)"))
@@ -284,7 +270,7 @@ struct AskHarnessUITests {
         _ = try notes.add("Prefers short answers", owner: "o")
         for tab in [AgentConfigurationTab.general, .tools, .skills, .memory] {
             for localMode in [true, false] {
-                settings.askLocalModeEnabled = localMode
+                settings.askNewConversationsStayLocal = localMode
                 let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes,
                                                 owner: { "o" }, tab: tab)
                 let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 900), styleMask: [.titled], backing: .buffered, defer: false)

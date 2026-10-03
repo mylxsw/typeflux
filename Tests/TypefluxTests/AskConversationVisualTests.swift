@@ -434,6 +434,139 @@ struct AskConversationVisualTests {
 
     }
 
+    /// GUL-193: the storage icon and card, the private header chip, and the merged history.
+    @Test func renderConversationStorageSurfaces() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let defaults = try #require(UserDefaults(suiteName: "ask-storage-shots-" + UUID().uuidString))
+        let profile = AskModelProfile(name: "我的 Ollama", baseURL: "http://127.0.0.1:11434/v1", model: "qwen3:8b")
+        defaults.set(try JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        let fixture = try AskTestFixture(modelLibrary: library)
+        defer { fixture.model.resetSession() }
+        let expiry = Int(Date().timeIntervalSince1970) + 3600
+        let auth = AuthState(loadStoredToken: { ("token", expiry) }, loadStoredRefreshToken: { nil },
+                             loadStoredUserProfile: { nil })
+        let now = Date()
+        func turn(_ id: String, _ question: String, _ answer: String) -> [AskMessage] {
+            [.init(id: id + "q", role: "user", text: question, createdAt: now),
+             .init(id: id + "a", role: "assistant", text: answer, createdAt: now)]
+        }
+        await fixture.api.seed(AskConversation(id: "cloud", title: "讲讲这一屏在做什么", revision: 1, updatedAt: now,
+                                               messages: turn("c", "讲讲这一屏在做什么", "这一屏是 Grok 网页版。")))
+        await fixture.localAPI.seed(AskConversation(id: "private", title: "帮我整理体检报告要点", revision: 1,
+                                                    updatedAt: now.addingTimeInterval(-60),
+                                                    messages: turn("p", "帮我整理体检报告要点", "已按指标分组整理。"),
+                                                    modelRef: profile.reference))
+        await fixture.model.refreshHistory()
+        await fixture.model.select("private")
+        let size = NSSize(width: 1000, height: 640)
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            try await render(AskConversationView(model: fixture.model, auth: auth), size: size,
+                             appearance: appearance, file: root.appendingPathComponent("storage-private-\(name).png"))
+        }
+        await fixture.model.select("cloud")
+        try await render(AskConversationView(model: fixture.model, auth: auth), size: size,
+                         appearance: .darkAqua, file: root.appendingPathComponent("storage-cloud-dark.png"))
+        let source = "我的 Ollama"
+        let cards: [(String, AskLocalModeStatus)] = [
+            ("choose", .init(source: source, searchConfigured: false, offersSignIn: false, changeable: true)),
+            ("locked-local", .init(source: source, searchConfigured: true, offersSignIn: false)),
+            ("locked-cloud", .init(source: source, searchConfigured: true, offersSignIn: false, local: false)),
+            ("signed-out", .init(source: source, searchConfigured: false, offersSignIn: true))
+        ]
+        for (name, status) in cards {
+            try await render(AskLocalModeCard(status: status, onOpenSearchSettings: {}, onSignIn: {})
+                                .background(AskTheme.surface),
+                             size: NSSize(width: AskLocalModeCard.width, height: 380), appearance: .darkAqua,
+                             file: root.appendingPathComponent("storage-card-\(name).png"), minimumPNGBytes: 3000)
+        }
+    }
+
+    /// Holds the workspace on screen, configured like the real window, so a window
+    /// capture shows the glass the offscreen snapshots cannot draw. Each scene's name
+    /// is written to `TYPEFLUX_ASK_HOLD_MARKER` while it is shown.
+    @Test func holdConversationStorageWindow() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let seconds = environment["TYPEFLUX_ASK_HOLD"].flatMap(Double.init),
+              let marker = environment["TYPEFLUX_ASK_HOLD_MARKER"] else { return }
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let defaults = try #require(UserDefaults(suiteName: "ask-storage-hold-" + UUID().uuidString))
+        let profile = AskModelProfile(name: "我的 Ollama", baseURL: "http://127.0.0.1:11434/v1", model: "qwen3:8b")
+        defaults.set(try JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
+        let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false))
+        defer { fixture.model.resetSession() }
+        let now = Date()
+        func turn(_ id: String, _ question: String, _ answer: String) -> [AskMessage] {
+            [.init(id: id + "q", role: "user", text: question, createdAt: now),
+             .init(id: id + "a", role: "assistant", text: answer, createdAt: now)]
+        }
+        var cloud = AskConversation(id: "cloud", title: "讲讲这一屏在做什么", revision: 1, updatedAt: now,
+                                    messages: turn("c", "讲讲这一屏在做什么", "这一屏是 Grok 网页版，你在和 Grok 讨论哈佛幸福课。"))
+        cloud.usage = AskConversationUsage(version: 1, since: now, historicalGap: false,
+                                           total: AskUsageTotals(microcredits: 160_790_000, calls: 3), runs: [:])
+        await fixture.api.seed(cloud)
+        await fixture.localAPI.seed(AskConversation(id: "private", title: "帮我整理体检报告要点", revision: 1,
+                                                    updatedAt: now.addingTimeInterval(-60),
+                                                    messages: turn("p", "帮我整理体检报告要点", "已按指标分组整理，异常项 3 个。"),
+                                                    modelRef: profile.reference))
+        await fixture.model.refreshHistory()
+        let window = NSWindow(contentRect: NSRect(x: 120, y: 120, width: 1100, height: 740),
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+                              backing: .buffered, defer: false)
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.isReleasedWhenClosed = false
+        window.toolbar = NSToolbar(identifier: "ask-storage-hold")
+        window.toolbarStyle = .unified
+        window.titlebarSeparatorStyle = .none
+        window.appearance = NSAppearance(named: environment["TYPEFLUX_ASK_HOLD_LIGHT"] == nil ? .darkAqua : .aqua)
+        // A signed-in account, so the footer shows what a Cloud user sees.
+        let auth = AuthState(
+            loadStoredToken: { ("valid-token", Int(Date().timeIntervalSince1970) + 3600) },
+            loadStoredRefreshToken: { nil },
+            loadStoredUserProfile: {
+                UserProfile(id: "u", email: "demir@example.com", name: "Demir Von", status: 1, provider: "google",
+                            createdAt: "2026-03-01T00:00:00Z", updatedAt: "2026-03-01T00:00:00Z")
+            },
+            saveStoredToken: { _, _ in }, saveStoredUserProfile: { _ in }, clearStoredSession: {},
+            fetchProfile: { _ in throw AuthError.invalidResponse },
+            fetchSubscription: { _ in
+                BillingSubscriptionSnapshot(planCode: "pro", status: "active", currentPeriodStart: nil,
+                                            currentPeriodEnd: nil, cancelAtPeriodEnd: false, entitled: true,
+                                            billingEnabled: true)
+            },
+            fetchCurrentPeriodUsageStats: { _ in throw AuthError.invalidResponse },
+            fetchCurrentPeriodUsageBreakdown: { _, _ in throw AuthError.invalidResponse }
+        )
+        window.contentView = TransparentAskHostingView(rootView: AskConversationView(model: fixture.model, auth: auth))
+        window.makeKeyAndOrderFront(nil)
+        defer { window.close() }
+        func show(_ scene: String) async throws {
+            try scene.write(toFile: marker, atomically: true, encoding: .utf8)
+            try await Task.sleep(for: .seconds(seconds))
+        }
+        await fixture.model.select("private")
+        try await show("private")
+        await fixture.model.select("cloud")
+        try await show("cloud")
+        fixture.model.newConversation(storesLocally: true)
+        try await show("new-private")
+        fixture.model.newConversation(storesLocally: false)
+        try await show("new-cloud")
+        try "done".write(toFile: marker, atomically: true, encoding: .utf8)
+    }
+
     @Test func renderUsageSurfaces() async throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_USAGE_SNAPSHOTS"] else { return }
         let root = URL(fileURLWithPath: directory)

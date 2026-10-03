@@ -241,6 +241,11 @@ struct AskComposer: View {
                 RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
                     .strokeBorder(AskTheme.accent, lineWidth: dropTargeted ? 2 : 1.5)
                     .allowsHitTesting(false)
+            } else if privateTint {
+                // Signed in, a conversation kept on this Mac keeps a quiet private edge.
+                RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
+                    .strokeBorder(AskTheme.privateTint.opacity(0.45), lineWidth: 1)
+                    .allowsHitTesting(false)
             }
         }
         .askAttachmentDrop(model: model, launcher: launcher, targeted: $cardDropTargeted)
@@ -419,18 +424,24 @@ struct AskComposer: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// Signed in, a conversation kept on this Mac is marked in the private tint; signed
+    /// out every conversation is, so nothing needs telling apart.
+    private var privateTint: Bool { model.isSignedIn && model.storesLocally(launcher: launcher) }
+
     private var footer: some View {
         HStack(spacing: 4) {
             AskAttachButton(model: model, launcher: launcher,
                             disabled: active || (!launcher && model.isLoadingSelection))
                 .opacity(Self.recordingDim(active))
-            AskLocalModeButton(model: model)
+            AskStorageButton(model: model, launcher: launcher)
+                .disabled(active)
                 .opacity(Self.recordingDim(active))
             AskModelMenu(library: model.modelLibrary, reference: Binding(
                 get: { model.modelReference(launcher: launcher) },
                 set: { model.selectModel($0, launcher: launcher) }
             ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
-               hasImage: !launcher && model.hasConversationImages, compact: true, cloudAvailable: model.cloudAvailable,
+               hasImage: !launcher && model.hasConversationImages, compact: true,
+               cloudAvailable: model.cloudAvailable(launcher: launcher),
                onManage: model.onOpenSettings.map { open in { open(.models) } })
             .opacity(Self.recordingDim(active))
             AskReasoningMenu(library: model.modelLibrary,
@@ -469,7 +480,9 @@ struct AskComposer: View {
             } else {
                 switch sendControl {
                 case .stop: AskStopButton { model.stop() }
-                case let .send(enabled): AskSendButton(enabled: enabled, action: submit)
+                case let .send(enabled):
+                    AskSendButton(enabled: enabled, tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
+                                  action: submit)
                 }
             }
         }

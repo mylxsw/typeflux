@@ -1,26 +1,38 @@
 import AppKit
 import SwiftUI
 
-/// What the "On this Mac" card reports about a local run.
+/// What the storage card reports about a composer's conversation.
 struct AskLocalModeStatus: Equatable {
     /// Where the conversation's model runs, e.g. "Ollama".
     var source: String
     var searchConfigured: Bool
-    /// Signed out: the card offers Typeflux Cloud. A signed-in user who chose
-    /// local mode already knows about it.
+    /// Signed out: the card offers Typeflux Cloud.
     var offersSignIn: Bool
+    /// The conversation is kept on this Mac rather than in Typeflux Cloud.
+    var local = true
+    /// The conversation has not started, so where it is kept can still change.
+    var changeable = false
 
     @MainActor
-    static func make(model: AskConversationModel, signedIn: Bool) -> Self {
+    static func make(model: AskConversationModel, signedIn: Bool, launcher: Bool = false) -> Self {
         let library = model.modelLibrary
-        let provider = library.registry.resolve(model.modelReference(launcher: false))?.0
+        let provider = library.registry.resolve(model.modelReference(launcher: launcher))?.0
         return .init(source: provider.map(sourceName) ?? L("ask.local.sourceNone"),
                      searchConfigured: AskSearchSettings(defaults: library.settings.defaults).provider != .none,
-                     offersSignIn: !signedIn)
+                     offersSignIn: !signedIn,
+                     local: model.storesLocally(launcher: launcher),
+                     changeable: model.canChangeStorage(launcher: launcher))
     }
 
     static func sourceName(_ provider: RegisteredProvider) -> String {
         provider.isOllama ? "Ollama" : provider.name
+    }
+
+    /// The card's lead sentence: why it is kept here, or what the choice means.
+    var summaryKey: String {
+        if offersSignIn { return "ask.local.card.body" }
+        if changeable { return "ask.storage.card.choose" }
+        return local ? "ask.storage.card.lockedLocal" : "ask.storage.card.lockedCloud"
     }
 }
 
@@ -35,47 +47,102 @@ enum AskCloudPromo {
     }
 }
 
-/// The card behind "On this Mac": why Ask runs here, what works, the one fix
-/// for what does not, and the way to Typeflux Cloud.
+/// The sidebar's filter while conversations are kept both in Typeflux Cloud and on this Mac.
+enum AskHistoryFilter: String, CaseIterable {
+    case all, cloud, local
+
+    var titleKey: String { "ask.history.filter." + rawValue }
+
+    var symbol: String? {
+        switch self {
+        case .all: nil
+        case .cloud: "cloud"
+        case .local: "lock"
+        }
+    }
+
+    func apply(_ items: [AskConversationSummary], isLocal: (String) -> Bool) -> [AskConversationSummary] {
+        switch self {
+        case .all: items
+        case .cloud: items.filter { !isLocal($0.id) }
+        case .local: items.filter { isLocal($0.id) }
+        }
+    }
+}
+
+/// The sidebar's filter as one full-width segmented bar: a translucent well with the
+/// chosen segment raised, so it reads as part of the glass panel.
+struct AskHistoryFilterBar: View {
+    @Binding var selection: AskHistoryFilter
+    static let height: CGFloat = 28
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(AskHistoryFilter.allCases, id: \.self) { filter in
+                let chosen = selection == filter
+                Button { selection = filter } label: {
+                    HStack(spacing: 4) {
+                        if let symbol = filter.symbol {
+                            Image(systemName: symbol).font(.system(size: 10.5, weight: .medium))
+                        }
+                        Text(L(filter.titleKey)).font(.system(size: 12, weight: chosen ? .semibold : .regular))
+                    }
+                    .foregroundStyle(chosen ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: Self.height - 4)
+                    .background {
+                        if chosen {
+                            RoundedRectangle(cornerRadius: 7, style: .continuous).fill(AskTheme.controlSurface)
+                                .shadow(color: .black.opacity(0.18), radius: 1.5, y: 1)
+                        }
+                    }
+                    .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(chosen ? .isSelected : [])
+            }
+        }
+        .padding(2)
+        .frame(height: Self.height)
+        .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L("ask.history.filter"))
+    }
+}
+
+/// The card behind the composer's storage icon: where the conversation is kept,
+/// the choice while it has not started, what works here, and the way to the other kind.
 struct AskLocalModeCard: View {
-    static let width: CGFloat = 320
+    static let width: CGFloat = 330
 
     let status: AskLocalModeStatus
     var onOpenSearchSettings: () -> Void
     var onSignIn: () -> Void
+    /// Picks where the new conversation is kept: true on this Mac.
+    var onChoose: (Bool) -> Void = { _ in }
+    /// Starts a conversation of the other kind, for one that already started.
+    var onStartOther: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 5) {
-                Label(L("ask.local.card.title"), systemImage: "desktopcomputer")
+                Label(L(status.local ? "ask.storage.local" : "ask.storage.cloud"),
+                      systemImage: status.local ? "lock" : "cloud")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text(L(status.offersSignIn ? "ask.local.card.body" : "ask.local.card.bodyLocalMode"))
+                Text(L(status.summaryKey))
                     .font(.system(size: 11.5))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Rectangle().fill(AskTheme.separator).frame(height: 0.5)
-            VStack(spacing: 6) {
-                row(L("ask.local.card.source"), status.source)
-                row(L("ask.local.card.readPages"), L("ask.local.card.available"))
-            }
-            if !status.searchConfigured {
-                HStack(spacing: 8) {
-                    Image(systemName: "info.circle").font(.system(size: 13)).foregroundStyle(StudioTheme.warning)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(L("ask.local.card.noSearch")).font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                        Text(L("ask.local.card.noSearchHint")).font(.system(size: 11))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                    }
-                    Spacer(minLength: 6)
-                    Button(L("ask.local.card.configure"), action: onOpenSearchSettings)
-                        .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+            if status.changeable {
+                VStack(spacing: 4) {
+                    option(local: false)
+                    option(local: true)
                 }
-                .padding(.horizontal, 10).padding(.vertical, 8)
-                .background(StudioTheme.warning.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
+            Rectangle().fill(AskTheme.separator).frame(height: 0.5)
+            if status.local { localDetails } else { cloudDetails }
             if status.offersSignIn {
                 Rectangle().fill(AskTheme.separator).frame(height: 0.5)
                 HStack(spacing: 8) {
@@ -85,10 +152,85 @@ struct AskLocalModeCard: View {
                     Button(L("account.card.signIn"), action: onSignIn)
                         .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
                 }
+            } else if !status.changeable {
+                HStack {
+                    Spacer(minLength: 0)
+                    Button(L(status.local ? "ask.storage.newCloud" : "ask.storage.newLocal"), action: onStartOther)
+                        .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+                }
             }
         }
         .padding(14)
         .frame(width: Self.width, alignment: .leading)
+    }
+
+    @ViewBuilder private var localDetails: some View {
+        VStack(spacing: 6) {
+            row(L("ask.local.card.source"), status.source)
+            row(L("ask.local.card.readPages"), L("ask.local.card.available"))
+        }
+        if !status.searchConfigured {
+            HStack(spacing: 8) {
+                Image(systemName: "info.circle").font(.system(size: 13)).foregroundStyle(StudioTheme.warning)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(L("ask.local.card.noSearch")).font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text(L("ask.local.card.noSearchHint")).font(.system(size: 11))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
+                Spacer(minLength: 6)
+                Button(L("ask.local.card.configure"), action: onOpenSearchSettings)
+                    .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+            }
+            .padding(.horizontal, 10).padding(.vertical, 8)
+            .background(StudioTheme.warning.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        note(L("ask.storage.card.localNote"))
+    }
+
+    private var cloudDetails: some View {
+        note(L("ask.storage.card.cloudNote"))
+    }
+
+    private func note(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11))
+            .foregroundStyle(StudioTheme.textTertiary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func option(local: Bool) -> some View {
+        let chosen = status.local == local
+        let tint = local ? AskTheme.privateTint : AskTheme.accent
+        return Button { onChoose(local) } label: {
+            HStack(spacing: 10) {
+                Image(systemName: local ? "lock" : "cloud")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(tint)
+                    .frame(width: 26, height: 26)
+                    .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(L(local ? "ask.storage.local" : "ask.storage.cloud"))
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text(L(local ? "ask.storage.local.detail" : "ask.storage.cloud.detail"))
+                        .font(.system(size: 11))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 6)
+                if chosen {
+                    Image(systemName: "checkmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(tint)
+                }
+            }
+            .padding(.horizontal, 8).padding(.vertical, 7)
+            .background(chosen ? tint.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(chosen ? tint.opacity(0.5) : .clear, lineWidth: 1))
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(chosen ? .isSelected : [])
     }
 
     private func row(_ label: String, _ value: String) -> some View {
@@ -102,42 +244,65 @@ struct AskLocalModeCard: View {
     }
 }
 
-/// Opens the local-mode card from any anchor and runs its actions.
+/// Opens the storage card from any anchor and runs its actions.
 private struct AskLocalModeMenu: ViewModifier {
     @Binding var isPresented: Bool
     let status: AskLocalModeStatus
-    let openSettings: ((StudioSection) -> Void)?
+    let model: AskConversationModel
+    var launcher = false
 
     func body(content: Content) -> some View {
         content.askMenu(isPresented: $isPresented, glass: true) {
             AskLocalModeCard(status: status, onOpenSearchSettings: {
                 isPresented = false
-                openSettings?(.agent)
+                model.onOpenSettings?(.agent)
             }, onSignIn: {
                 isPresented = false
                 LoginWindowController.shared.show()
+            }, onChoose: { local in
+                isPresented = false
+                model.setStoresLocally(local, launcher: launcher)
+            }, onStartOther: {
+                isPresented = false
+                model.newConversation(storesLocally: !status.local)
             })
         }
     }
 }
 
-/// The composer's "On this Mac" pill. It reads as a neutral state, not a
-/// warning, and a click explains it.
-struct AskLocalModeButton: View {
+/// The composer's storage icon: a cloud, or a lock for a conversation kept on this
+/// Mac. It carries no text so it stays quiet; hovering names it, a click explains it.
+struct AskStorageButton: View {
     @ObservedObject var model: AskConversationModel
+    var launcher = false
     @ObservedObject var auth: AuthState = .shared
     @State private var presented = false
+    @State private var hovering = false
+
+    static let size: CGFloat = 26
 
     var body: some View {
-        if !model.cloudAvailable {
-            Button { presented.toggle() } label: {
-                AskRunLocationLabel(local: true, highlighted: presented)
-            }
-            .buttonStyle(.plain)
-            .modifier(AskLocalModeMenu(isPresented: $presented,
-                                       status: .make(model: model, signedIn: auth.isLoggedIn),
-                                       openSettings: model.onOpenSettings))
+        let local = model.storesLocally(launcher: launcher)
+        let name = L(local ? "ask.storage.local" : "ask.storage.cloud")
+        let active = hovering || presented
+        Button { presented.toggle() } label: {
+            Image(systemName: local ? "lock" : "cloud")
+                .font(.system(size: 12.5, weight: .medium))
+                .foregroundStyle(local ? AskTheme.privateTint
+                    : active ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                .frame(width: Self.size, height: Self.size)
+                .background(active ? (local ? AskTheme.privateTint.opacity(0.14) : AskTheme.hoverFill) : .clear,
+                            in: Circle())
+                .contentShape(Circle())
         }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .help(name + " · " + L("ask.storage.help"))
+        .accessibilityLabel(name)
+        .accessibilityHint(L("ask.storage.help"))
+        .modifier(AskLocalModeMenu(isPresented: $presented,
+                                   status: .make(model: model, signedIn: model.isSignedIn, launcher: launcher),
+                                   model: model, launcher: launcher))
     }
 }
 
@@ -173,7 +338,7 @@ struct AskLocalModeIdentity: View {
         .buttonStyle(.plain)
         .padding(.leading, -4)
         .onHover { hovering = $0 }
-        .modifier(AskLocalModeMenu(isPresented: $presented, status: status, openSettings: model.onOpenSettings))
+        .modifier(AskLocalModeMenu(isPresented: $presented, status: status, model: model))
         .accessibilityLabel(L("ask.local.identity"))
         .accessibilityHint(L("ask.location.local.help"))
     }
