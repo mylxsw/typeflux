@@ -2167,3 +2167,21 @@
 "memory.account" = "현재 계정";
 "memory.recentScope" = "Recent는 이 Mac에만 저장되며 계정 및 앱 또는 페이지별로 격리되고 24시간 후 만료됩니다. Soul은 계정의 자동 요약으로 삭제할 때까지 유지됩니다.";
 "memory.saveFailed" = "기억 변경 내용을 저장하지 못했습니다. 다시 시도하세요.";
+
+// Run budget reservations and reconciliation.
+"ask.budget.title" = "Run budget";
+"ask.budget.client" = "Usage is client-reported; external charges are not verified.";
+"ask.budget.estimate" = "Reservations are estimates; provider charges may differ.";
+"ask.budget.tokens" = "Reported tokens: %lld · occupied: %lld / %lld";
+"ask.budget.web" = "Web requests: %lld / %lld";
+"ask.budget.pending" = "%d unsettled reservations remain occupied.";
+"ask.budget.stopped" = "Stopped: %@. Existing results are preserved.";
+"ask.budget.reason.tokens" = "token budget reached";
+"ask.budget.reason.cost_estimate" = "estimated cost budget reached";
+"ask.budget.reason.web_requests" = "web request limit reached";
+"ask.budget.reason.children" = "research limit reached";
+"ask.budget.reason.operations" = "operation limit reached";
+"ask.budget.reason.duration" = "time limit reached";
+"ask.budget.reason.context_capacity" = "context is full; reduce attachments or tool schemas";
+"ask.budget.reason.budget_unavailable" = "budget journal unavailable";
+"ask.budget.evidence" = "Collected tool results (not independently verified):";

@@ -15,6 +15,9 @@ extension AskCustomInference {
         try AskModelProfile(name: provider.name, baseURL: connection.baseURL, model: connection.model).validate()
         guard let body = try JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any],
               let base = URL(string: connection.baseURL) else { throw AskLocalError.message(L("ask.models.invalid")) }
+        let bounded = body["typeflux_budget"] as? Bool == true
+        let deadline = body["typeflux_deadline"] as? Double
+        if bounded, let deadline, Date().timeIntervalSince1970 >= deadline { throw AskBudgetError.reached("duration") }
         let anthropic = connection.provider.apiStyle == .anthropic
         var url = anthropic ? OpenAIEndpointResolver.resolve(from: base, path: "messages")
             : base.appendingPathComponent("models/\(connection.model):generateContent")
@@ -26,7 +29,7 @@ extension AskCustomInference {
         }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.timeoutInterval = 180
+        request.timeoutInterval = bounded ? min(180, max(0.1, (deadline ?? Date().timeIntervalSince1970 + 180) - Date().timeIntervalSince1970)) : 180
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(connection.apiKey, forHTTPHeaderField: anthropic ? "x-api-key" : "x-goog-api-key")
         if anthropic {
@@ -36,11 +39,11 @@ extension AskCustomInference {
         if anthropic, onProgress != nil { native["stream"] = true }
         let effort = AskReasoningRequest.effort(in: body)
         if anthropic {
-            AskReasoningRequest.applyAnthropic(effort: effort, to: &native)
+            AskReasoningRequest.applyAnthropic(effort: effort, to: &native, totalOutputLimit: bounded ? body["max_tokens"] as? Int : nil)
         } else {
             AskReasoningRequest.applyGemini(effort: effort, to: &native)
         }
-        return try await AskReasoningRequest.send(native) { native in
+        return try await AskReasoningRequest.send(native, allowRetry: !bounded) { native in
             request.httpBody = try JSONSerialization.data(withJSONObject: native)
             return try await sendNative(request, anthropic: anthropic, onUsage: onUsage, onProgress: onProgress)
         }

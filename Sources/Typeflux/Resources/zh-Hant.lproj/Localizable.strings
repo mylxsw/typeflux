@@ -2174,3 +2174,21 @@
 "memory.account" = "目前帳號";
 "memory.recentScope" = "Recent 只儲存在這台 Mac，依帳號及應用程式或頁面隔離，24 小時後到期。Soul 是目前帳號的自動摘要，保留至刪除。";
 "memory.saveFailed" = "無法儲存記憶變更，請重試。";
+
+// Run budget reservations and reconciliation.
+"ask.budget.title" = "Run budget";
+"ask.budget.client" = "Usage is client-reported; external charges are not verified.";
+"ask.budget.estimate" = "Reservations are estimates; provider charges may differ.";
+"ask.budget.tokens" = "Reported tokens: %lld · occupied: %lld / %lld";
+"ask.budget.web" = "Web requests: %lld / %lld";
+"ask.budget.pending" = "%d unsettled reservations remain occupied.";
+"ask.budget.stopped" = "Stopped: %@. Existing results are preserved.";
+"ask.budget.reason.tokens" = "token budget reached";
+"ask.budget.reason.cost_estimate" = "estimated cost budget reached";
+"ask.budget.reason.web_requests" = "web request limit reached";
+"ask.budget.reason.children" = "research limit reached";
+"ask.budget.reason.operations" = "operation limit reached";
+"ask.budget.reason.duration" = "time limit reached";
+"ask.budget.reason.context_capacity" = "context is full; reduce attachments or tool schemas";
+"ask.budget.reason.budget_unavailable" = "budget journal unavailable";
+"ask.budget.evidence" = "Collected tool results (not independently verified):";

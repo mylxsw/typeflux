@@ -20,14 +20,20 @@ struct AskBudgetStore: Sendable {
         var value: AskBudgetController
         if FileManager.default.fileExists(atPath: file.path) {
             value = try AskCoding.decoder().decode(AskBudgetController.self, from: Data(contentsOf: file))
-        } else if let initial { value = initial } else { throw AskBudgetError.missing }
+        } else if let initial {
+            value = initial
+        } else {
+            throw AskBudgetError.missing
+        }
         guard value.valid, value.runId == root else { throw AskBudgetError.invalid }
         var failure: Error?
         do { try change(&value) } catch { failure = error }
         guard value.valid else { throw AskBudgetError.invalid }
         // A reached-budget reason is durable even though the dispatch was denied.
         try AskCoding.encoder().encode(value).write(to: file, options: [.atomic, .completeFileProtection])
-        if let failure { throw failure }
+        if let failure {
+            throw failure
+        }
         return value
     }
 }

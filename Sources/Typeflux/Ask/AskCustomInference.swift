@@ -36,6 +36,9 @@ struct AskCustomInference: Sendable {
         try profile.validate()
         guard var body = try JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any],
               let base = URL(string: profile.baseURL) else { throw AskLocalError.message(L("ask.models.invalid")) }
+        let bounded = body.removeValue(forKey: "typeflux_budget") as? Bool == true
+        let deadline = body.removeValue(forKey: "typeflux_deadline") as? Double
+        if bounded, let deadline, Date().timeIntervalSince1970 >= deadline { throw AskBudgetError.reached("duration") }
         if let messages = body["messages"] as? [[String: Any]] {
             body["messages"] = messages.map { message in
                 var message = message
@@ -55,12 +58,12 @@ struct AskCustomInference: Sendable {
         let url = OpenAIEndpointResolver.resolve(from: base, path: "chat/completions")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.timeoutInterval = 180
+        request.timeoutInterval = bounded ? min(180, max(0.1, (deadline ?? Date().timeIntervalSince1970 + 180) - Date().timeIntervalSince1970)) : 180
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if !key.isEmpty {
             request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         }
-        return try await AskReasoningRequest.send(body) { body in
+        return try await AskReasoningRequest.send(body, allowRetry: !bounded) { body in
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
             return try await send(request, onUsage: onUsage, onProgress: onProgress)
         }

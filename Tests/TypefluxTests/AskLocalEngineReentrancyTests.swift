@@ -158,7 +158,7 @@ final class AskLocalEngineReentrancyTests: XCTestCase {
             try await assertPersisted(result)
             let saved = try AskCoding.decoder().decode(AskLocalRecord.self,
                 from: Data(contentsOf: directory.appendingPathComponent(initial.id + ".json")))
-            XCTAssertEqual(saved.cloudCalls, 3)
+            XCTAssertEqual(saved.cloudCalls, 1, "Only the web request consumes the quota")
             XCTAssertNil(saved.steering)
             XCTAssertEqual(fixture.requestCount, 1)
         }

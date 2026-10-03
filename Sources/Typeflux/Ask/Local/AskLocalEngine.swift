@@ -3,6 +3,7 @@ import Foundation
 
 /// Engine-only state stored next to a local conversation.
 struct AskLocalRecord: Codable, Equatable, Sendable {
+    var contextLimits: AskContextLimits?
     var typedContentEnabled: Bool?
     var conversation: AskConversation
     var timeZone: String?
@@ -38,12 +39,20 @@ actor AskLocalEngine: AskAPI {
     let directory: URL
     private let typedContentEnabled: Bool
     private let webTools: AskLocalWebTools
-    private let now: @Sendable () -> Date
+    let budgetEnabled: Bool
+    let budgetLimits: AskBudgetResources
+    let contextLimits: @Sendable (String) -> AskContextLimits
+    let now: @Sendable () -> Date
     private var records: [String: AskLocalRecord] = [:]
     private var loaded = false
 
     init(directory: URL = AskLocalEngine.defaultDirectory, webTools: AskLocalWebTools = AskLocalWebTools(),
-         now: @escaping @Sendable () -> Date = Date.init, typedContentEnabled: Bool = false) {
+         now: @escaping @Sendable () -> Date = Date.init, typedContentEnabled: Bool = false,
+         budgetEnabled: Bool = false, budgetLimits: AskBudgetResources = .standard,
+         contextLimits: @escaping @Sendable (String) -> AskContextLimits = { _ in .init() }) {
+        self.budgetEnabled = budgetEnabled
+        self.budgetLimits = budgetLimits
+        self.contextLimits = contextLimits
         self.typedContentEnabled = typedContentEnabled
         self.directory = directory
         self.webTools = webTools
@@ -77,6 +86,7 @@ actor AskLocalEngine: AskAPI {
     }
 
     private func save(_ record: inout AskLocalRecord) throws {
+        try refreshBudget(&record)
         record.conversation.revision += 1
         record.conversation.updatedAt = now()
         record.conversation.run?.updatedAt = now()
@@ -102,6 +112,7 @@ actor AskLocalEngine: AskAPI {
             record.conversation.run?.error = L("ask.local.expired")
             try save(&record)
         }
+        try refreshBudget(&record)
         return record
     }
 
@@ -183,6 +194,7 @@ actor AskLocalEngine: AskAPI {
         guard let run = record.conversation.run, run.id == request.runId, run.deviceId == request.deviceId else { throw conflict() }
         if record.conversation.messages.contains(where: { $0.role == "tool" && $0.toolCallId == request.toolCallId }) { return record.conversation }
         guard run.status == "waiting_tool", run.pending.first?.id == request.toolCallId else { throw conflict() }
+        try settleBudgetTool(record, callId: request.toolCallId)
         record.conversation.messages.append(request.message(step: run.steps, now: now()))
         record.conversation.run?.pending.removeFirst()
         return try await continueTools(&record)
@@ -191,6 +203,11 @@ actor AskLocalEngine: AskAPI {
     func inferenceResult(conversationId: String, request: AskInferenceResult, token _: String) async throws -> AskConversation {
         var record = try record(conversationId)
         guard let run = record.conversation.run, run.id == request.runId, run.deviceId == request.deviceId else { throw conflict() }
+        if run.budgetEnabled == true {
+            try settleInference(record, request)
+            try refreshBudget(&record)
+            if run.status != "waiting_inference" || run.inference?.id != request.inferenceId { return record.conversation }
+        }
         if record.lastInferenceId == request.inferenceId { return record.conversation }
         guard run.status == "waiting_inference", let inference = run.inference, inference.id == request.inferenceId else { throw conflict() }
         record.lastInferenceId = request.inferenceId
@@ -223,6 +240,7 @@ actor AskLocalEngine: AskAPI {
         guard let run = record.conversation.run, run.id == runId else { throw conflict() }
         guard run.isActive else { return record.conversation }
         if let partial, run.status == "waiting_inference", run.inference?.id == partial.inferenceId, partial.deviceId == run.deviceId {
+            try settleInference(record, partial)
             record.conversation.run?.preview = partial.content
             record.conversation.run?.reasoning = partial.reasoning
         }
@@ -262,7 +280,8 @@ actor AskLocalEngine: AskAPI {
         record.conversation.modelRef = model
         record.conversation.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: deviceId, status: "running", steps: 0, updatedAt: now(),
                                          tools: run.tools, pending: [], modelRef: model,
-                                         reasoningEffort: model == run.modelRef ? run.reasoningEffort : nil)
+                                         reasoningEffort: model == run.modelRef ? run.reasoningEffort : nil,
+                                         budgetEnabled: run.budgetEnabled, budgetRootId: run.budgetRootId, budgetDeadline: run.budgetDeadline, budgetLimits: run.budgetLimits)
         prepareRun(&record)
         return try await step(&record)
     }
@@ -308,6 +327,16 @@ actor AskLocalEngine: AskAPI {
 
     private func prepareRun(_ record: inout AskLocalRecord) {
         record.typedContentEnabled = typedContentEnabled
+        if budgetEnabled || record.conversation.run?.budgetEnabled == true {
+            record.conversation.run?.budgetEnabled = true
+            if record.conversation.run?.budgetRootId == nil {
+                let root = record.conversation.run?.id
+                record.conversation.run?.budgetRootId = root
+                record.conversation.run?.budgetDeadline = Date(timeIntervalSince1970: now().timeIntervalSince1970.rounded(.down) + 600)
+                record.conversation.run?.budgetLimits = budgetLimits
+            }
+            record.contextLimits = contextLimits(record.conversation.run?.modelRef ?? "")
+        }
         // Messages left from an earlier run were taken back by the device.
         record.steering = nil
         record.builtinTools = [Self.planTool] + webTools.definitions()
@@ -333,12 +362,13 @@ actor AskLocalEngine: AskAPI {
 
     /// Queues the next on-device inference: a summary when the history is long, otherwise the answer.
     private func step(_ record: inout AskLocalRecord) async throws -> AskConversation {
+        record.conversation.memory = record.conversation.memory?.usable(at: now())
         if record.conversation.run?.status == "running" { deliverSteering(&record) }
         guard let run = record.conversation.run else { return record.conversation }
         guard run.steps < Self.maxSteps + (run.extraSteps ?? 0) else { return try fail(&record, L("ask.local.stepLimit")) }
         let c = record.conversation
         let through = c.summaryThrough ?? 0
-        if c.messages.count - through > Self.summarizeAfter {
+        if run.budgetEnabled != true, c.messages.count - through > Self.summarizeAfter {
             var cut = c.messages.count - Self.keepRecent
             while cut > through, c.messages[cut].role != "user" { cut -= 1 }
             if cut > through {
@@ -354,9 +384,22 @@ actor AskLocalEngine: AskAPI {
     }
 
     private func queue(_ record: inout AskLocalRecord, payload: [String: Any], summaryThrough: Int?) throws -> AskConversation {
+        let id = UUID().uuidString.lowercased()
+        var bounded = payload
+        if record.conversation.run?.budgetEnabled == true {
+            do {
+                let plan = try AskContextPlanner.plan(payload, limits: record.contextLimits ?? .init())
+                bounded = plan.payload
+                try reserveBudget(record, operationId: id, callId: id, kind: "model",
+                                  resources: .init(tokens: Int64(plan.inputTokens + plan.outputReserve), operations: 1))
+                bounded["typeflux_budget"] = true
+                bounded["typeflux_deadline"] = record.conversation.run?.budgetDeadline?.timeIntervalSince1970
+                record.conversation.contextUsage = .init(modelRef: record.conversation.run?.modelRef ?? "", inputTokens: plan.inputTokens,
+                    outputReserve: plan.outputReserve, capacity: plan.capacity, summarized: record.conversation.summary != nil, estimated: true, trimmed: plan.trimmed)
+            } catch { return try stopBudget(&record, error: error) }
+        }
         record.conversation.run?.status = "waiting_inference"
-        record.conversation.run?.inference = AskInference(id: UUID().uuidString.lowercased(), payload: AskLocalPrompt.json(payload),
-                                                         summaryThrough: summaryThrough)
+        record.conversation.run?.inference = AskInference(id: id, payload: AskLocalPrompt.json(bounded), summaryThrough: summaryThrough)
         try save(&record)
         return record.conversation
     }
@@ -402,9 +445,11 @@ actor AskLocalEngine: AskAPI {
     private func continueTools(_ record: inout AskLocalRecord) async throws -> AskConversation {
         while let call = record.conversation.run?.pending.first, isBuiltin(call, record) {
             record.conversation.run?.status = "running"
+            do { try reserveBudgetTool(record, call: call) } catch { return try stopBudget(&record, error: error) }
             try save(&record)
             let runId = record.conversation.run?.id
-            let result = await executeBuiltin(call, cloudCalls: record.cloudCalls)
+            let result = await executeBuiltin(call, cloudCalls: record.cloudCalls, budgeted: record.conversation.run?.budgetEnabled == true)
+            try settleBudgetTool(record, callId: call.id)
             guard let latest = records[record.conversation.id] else {
                 throw AskLocalError.message(L("ask.local.notFound"))
             }
@@ -420,9 +465,10 @@ actor AskLocalEngine: AskAPI {
             record.conversation.messages.append(AskMessage(id: UUID().uuidString, role: "tool", text: result.text,
                                                            toolCallId: call.id, isError: result.isError, createdAt: now()))
             record.conversation.run?.pending.removeFirst()
-            record.cloudCalls += 1
+            if call.function.name != "update_plan" { record.cloudCalls += 1 }
         }
-        if record.conversation.run?.pending.isEmpty == false {
+        if let call = record.conversation.run?.pending.first {
+            do { try reserveBudgetTool(record, call: call) } catch { return try stopBudget(&record, error: error) }
             record.conversation.run?.status = "waiting_tool"
             try save(&record)
             return record.conversation
@@ -437,8 +483,8 @@ actor AskLocalEngine: AskAPI {
         var plan: [AskPlanItem]?
     }
 
-    private func executeBuiltin(_ call: AskToolCall, cloudCalls: Int) async -> BuiltinResult {
-        guard cloudCalls < Self.maxBuiltinCalls else {
+    private func executeBuiltin(_ call: AskToolCall, cloudCalls: Int, budgeted: Bool) async -> BuiltinResult {
+        guard call.function.name == "update_plan" || cloudCalls < Self.maxBuiltinCalls else {
             return BuiltinResult(
                 text: "Web tool limit for this request reached. Answer with the information gathered so far.",
                 isError: true)
@@ -449,7 +495,14 @@ actor AskLocalEngine: AskAPI {
                                      plan: try Self.parsePlan(call.function.arguments))
             } catch { return BuiltinResult(text: error.localizedDescription, isError: true) }
         }
-        let (text, failed) = await webTools.execute(name: call.function.name, arguments: call.function.arguments)
+        var boundedTools = webTools
+        if budgeted {
+            // One reservation authorizes one request; redirect follow-ups require
+            // a fresh reservation, so this local adapter refuses them.
+            boundedTools.session = URLSession(configuration: webTools.session.configuration, delegate: AskModelRedirectPolicy(), delegateQueue: nil)
+        }
+        defer { if budgeted { boundedTools.session.finishTasksAndInvalidate() } }
+        let (text, failed) = await boundedTools.execute(name: call.function.name, arguments: call.function.arguments)
         return BuiltinResult(text: text, isError: failed)
     }
 
@@ -468,7 +521,7 @@ actor AskLocalEngine: AskAPI {
         return true
     }
 
-    private func fail(_ record: inout AskLocalRecord, _ reason: String) throws -> AskConversation {
+    func fail(_ record: inout AskLocalRecord, _ reason: String) throws -> AskConversation {
         keepPartial(&record)
         closePending(&record, reason: reason)
         record.conversation.run?.status = "failed"
