@@ -270,7 +270,7 @@ struct AskHarnessUITests {
         _ = try notes.add("Prefers short answers", owner: "o")
         for tab in [AgentConfigurationTab.general, .tools, .skills, .memory] {
             for localMode in [true, false] {
-                settings.askLocalModeEnabled = localMode
+                settings.askNewConversationsStayLocal = localMode
                 let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes,
                                                 owner: { "o" }, tab: tab)
                 let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 900), styleMask: [.titled], backing: .buffered, defer: false)
