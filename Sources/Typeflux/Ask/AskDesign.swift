@@ -228,12 +228,16 @@ enum AskMetrics {
     static let recoveryThumbnail = CGSize(width: 54, height: 36)
 
     /// Height of the launcher panel, including its transparent gutter.
-    static func launcherHeight(editor: CGFloat, banners: Int, suggestions: Bool = false) -> CGFloat {
+    static func launcherHeight(editor: CGFloat, banners: Int, suggestions: Bool = false, attachments: Bool = false) -> CGFloat {
         let chrome = AskComposerChrome.launcher
         return editor + chrome.editorTopInset + chrome.editorBottomInset + chrome.footerHeight + launcherGutter * 2
             + CGFloat(banners) * (bannerHeight + bannerSpacing)
             + (suggestions ? AskLauncherSuggestions.height : 0)
+            + (attachments ? attachmentStripHeight : 0)
     }
+
+    /// The attachment strip above the editor: one row of chips and its top padding.
+    static let attachmentStripHeight: CGFloat = 40
 }
 
 /// Surface of the shared composer. The launcher and the workspace are the same

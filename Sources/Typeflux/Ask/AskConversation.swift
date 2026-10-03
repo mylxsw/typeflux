@@ -35,8 +35,15 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     var runId: String? = nil
     /// Sent into a run that was already working ("jumped the queue").
     var steered: Bool? = nil
+    var attachments: [AskAttachment]? = nil
+    /// Skills and MCP servers the user chose for this question with a slash command.
+    var skills: [AskSkillUse]? = nil
+    var mcpServers: [String]? = nil
     var harness: AskHarnessContract? = nil
     var diagnostic: AskResultDiagnostic? = nil
+
+    /// The screenshot or an attached image; such a conversation needs a vision model.
+    var hasImage: Bool { image != nil || attachments?.contains { $0.kind == .image } == true }
 }
 
 struct AskRun: Codable, Equatable, Sendable {
@@ -107,12 +114,26 @@ struct AskSendRequest: Codable, Equatable, Sendable {
     var modelRef: String? = nil
     var reasoningEffort: String? = nil
     var references: [AskReference]? = nil
+    var attachments: [AskAttachment]? = nil
+    var skills: [AskSkillUse]? = nil
+    var mcpServers: [String]? = nil
     var memory: AskMemory? = nil
     /// A follow-up asked without the conversation's pinned memory; omitted otherwise.
     var memoryOff: Bool?
     /// Device context for the server's environment prompt (IANA zone, BCP 47 locale).
     var timeZone: String? = TimeZone.current.identifier
     var locale: String? = Locale.current.identifier(.bcp47)
+}
+
+/// A skill the user chose for one question, with the instructions it carries,
+/// so the model follows it without first having to load it.
+struct AskSkillUse: Codable, Equatable, Sendable {
+    var name: String
+    var instructions: String
+}
+
+extension AskSendRequest {
+    var sendsImage: Bool { image != nil || attachments?.contains { $0.kind == .image } == true }
 }
 
 /// Replaces the latest assistant reply with a fresh run on the same question.
@@ -135,10 +156,14 @@ struct AskSteerRequest: Codable, Equatable, Sendable {
     var source: String?
     var image: String?
     var references: [AskReference]? = nil
+    var attachments: [AskAttachment]? = nil
+    var skills: [AskSkillUse]? = nil
+    var mcpServers: [String]? = nil
 
     init(runId: String, message: AskSendRequest) {
         self.runId = runId; deviceId = message.deviceId; id = message.id; text = message.text
         selection = message.selection; source = message.source; image = message.image; references = message.references
+        attachments = message.attachments; skills = message.skills; mcpServers = message.mcpServers
     }
 }
 
@@ -176,14 +201,30 @@ struct AskDraft: Codable, Equatable, Sendable {
     /// The user switched the selected text off for this question. Like memory it
     /// is kept, so the chip can switch it back on; nil in drafts saved before this.
     var selectionOff: Bool? = nil
+    /// Files, images and folders the user added; nil when there are none.
+    var attachments: [AskAttachment]? = nil
+    /// Skill and MCP server names chosen with a slash command for the next message.
+    var skills: [String]? = nil
+    var mcpServers: [String]? = nil
 
     /// The selection that rides with the question: nil once switched off.
     var sentSelection: String? { selectionOff == true ? nil : selection }
 
+    /// Attachments alone are a question too: "what is in this file" is implied.
     var canSend: Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-            (references ?? []).contains { !$0.question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            (references ?? []).contains { !$0.question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } ||
+            !(attachments ?? []).isEmpty
     }
+
+    /// A conversation opened with attachments only is named after the first one.
+    var title: String {
+        let typed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return typed.isEmpty ? attachments?.first?.name ?? typed : typed
+    }
+
+    /// A screenshot or an attached image rides with the question.
+    var sendsImage: Bool { (includeScreenshot && screenshot != nil) || attachedImageCount > 0 }
 
     var referencesWithinLimit: Bool {
         let items = references ?? []
@@ -194,7 +235,8 @@ struct AskDraft: Codable, Equatable, Sendable {
         AskSendRequest(
             id: id, deviceId: deviceId, text: text.trimmingCharacters(in: .whitespacesAndNewlines),
             selection: sentSelection, source: source,
-            image: includeScreenshot ? screenshot : nil, tools: tools, modelRef: modelRef, references: references
+            image: includeScreenshot ? screenshot : nil, tools: tools, modelRef: modelRef, references: references,
+            attachments: attachments, mcpServers: mcpServers
         )
     }
 

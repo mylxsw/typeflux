@@ -57,7 +57,7 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertTrue(text.contains("Device locale: zh-Hans-CN."))
         XCTAssertTrue(text.contains("Prefers &lt;b&gt;short&lt;/b&gt; answers"))
         let toolNames = (body["tools"] as? [[String: Any]])?.compactMap { ($0["function"] as? [String: Any])?["name"] as? String }
-        XCTAssertEqual(toolNames, ["computer", "browser", "update_plan", "web_fetch"])
+        XCTAssertEqual(toolNames, ["computer", "browser", "update_plan"])
         XCTAssertEqual(body["parallel_tool_calls"] as? Bool, true)
 
         // The model plans (run here) and reads the page (device tool).
@@ -228,7 +228,7 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertThrowsError(try AskLocalEngine.parsePlan(#"{"items":[{"step":" ","status":"pending"}]}"#))
     }
 
-    func testStaleRunsExpireAndWebFetchRunsOnDevice() async throws {
+    func testStaleRunsExpireAndUnavailableFetchIsRejected() async throws {
         let clock = Clock()
         let engine = engine(now: { clock.now })
         var c = try await engine.send(conversationId: "stale", request: request(), token: "")
@@ -237,12 +237,30 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertEqual(c.run?.status, "failed")
         XCTAssertEqual(c.run?.error, L("ask.local.expired"))
 
-        // web_fetch is refused for private addresses by the engine's web tools.
+        // New runs do not advertise web_fetch. A model inventing it is rejected.
         c = try await engine.retry(conversationId: "stale", runId: c.run!.id, deviceId: device, modelRef: nil, token: "")
         c = try await answer(engine, c, calls: [call("web_fetch", #"{"url":"http://192.168.1.1/admin"}"#, id: "f1")])
-        XCTAssertEqual(c.run?.status, "waiting_inference")
-        let result = try XCTUnwrap(c.messages.first { $0.toolCallId == "f1" })
-        XCTAssertEqual(result.isError, true)
+        XCTAssertEqual(c.run?.status, "failed")
+        XCTAssertEqual(c.run?.error, L("ask.local.invalidTools"))
+        XCTAssertFalse(c.messages.contains { $0.toolCallId == "f1" })
+    }
+
+    func testPersistedFetchDefinitionReturnsAnErrorWithoutDispatchingToDevice() async throws {
+        let original = engine()
+        let c = try await original.send(conversationId: "legacy-fetch", request: request(), token: "")
+        let file = directory.appendingPathComponent("legacy-fetch.json")
+        var record = try AskCoding.decoder().decode(AskLocalRecord.self, from: Data(contentsOf: file))
+        // Simulate an on-disk run created before web_fetch was disabled.
+        record.builtinTools.append(AskToolDefinition(name: "web_fetch", description: "Legacy fetch",
+                                                    parameters: AskLocalWebTools.schema(["url": ["type": "string"]], required: ["url"])))
+        try AskCoding.encoder().encode(record).write(to: file, options: .atomic)
+        let reopened = engine()
+        let result = try await answer(reopened, c, calls: [call("web_fetch", #"{"url":"https://example.com/"}"#, id: "legacy-f1")])
+        XCTAssertEqual(result.run?.status, "waiting_inference")
+        XCTAssertTrue(result.run?.pending.isEmpty == true)
+        let message = try XCTUnwrap(result.messages.first { $0.toolCallId == "legacy-f1" })
+        XCTAssertEqual(message.isError, true)
+        XCTAssertEqual(message.text, "Local web_fetch is unavailable because a safe connection to the destination cannot be guaranteed. No request was sent.")
     }
 
     private func assertThrows(_ message: String, file: StaticString = #filePath, line: UInt = #line, _ body: () async throws -> Void) async {
