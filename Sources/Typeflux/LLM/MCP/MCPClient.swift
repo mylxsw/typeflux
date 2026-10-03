@@ -55,7 +55,6 @@ enum MCPProtocol {
 }
 
 extension MCPClient {
-    /// Called when the server announces `notifications/tools/list_changed`. Only
-    /// transports with a server-to-client channel (stdio) deliver it.
+    /// Transports without server notifications may leave this callback unused.
     func setToolsChangedHandler(_ handler: @escaping @Sendable () async -> Void) async {}
 }

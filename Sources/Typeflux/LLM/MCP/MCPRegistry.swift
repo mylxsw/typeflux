@@ -6,6 +6,9 @@ actor MCPRegistry {
     private var serverConfigs: [UUID: MCPServerConfig] = [:]
     /// Keyed by server and tool name: two servers may expose tools with the same name.
     private var cachedTools: [ToolKey: MCPToolAdapter] = [:]
+    private var connecting: [UUID: Task<Void, Error>] = [:]
+    private var generations: [UUID: UUID] = [:]
+    private var connectionErrors: [UUID: String] = [:]
 
     private struct ToolKey: Hashable {
         let serverId: UUID
@@ -21,29 +24,78 @@ actor MCPRegistry {
         self.clientFactory = clientFactory ?? Self.makeClient(for:)
     }
 
-    /// Registers an MCP server.
+    /// Registers or reconnects a server; concurrent callers share one attempt.
     func addServer(_ config: MCPServerConfig) async throws {
-        let client = clientFactory(config)
-        try await client.connect()
-        servers[config.id] = client
-        serverConfigs[config.id] = config
+        try Task.checkCancellation()
+        if let task = connecting[config.id] {
+            try await task.value
+            return
+        }
         let serverId = config.id
-        await client.setToolsChangedHandler { [weak self] in try? await self?.refreshTools(for: serverId) }
+        let generation = UUID()
+        generations[serverId] = generation
+        let task = Task { try await self.establish(config, generation: generation) }
+        connecting[serverId] = task
         do {
-            try await refreshTools(for: config.id)
+            try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+            guard generations[serverId] == generation else { throw MCPClientError.notConnected }
+            connecting[serverId] = nil
+            connectionErrors[serverId] = nil
         } catch {
-            // A server whose tools cannot be listed is unusable; do not keep its process alive.
-            await removeServer(id: config.id)
+            if generations[serverId] == generation {
+                await removeServer(id: serverId)
+                if generations[serverId] == nil {
+                    connectionErrors[serverId] = error.localizedDescription
+                }
+            }
             throw error
         }
     }
 
+    private func establish(_ config: MCPServerConfig, generation: UUID) async throws {
+        let serverId = config.id
+        if let existing = servers[serverId] {
+            if await existing.isConnected {
+                await existing.setToolsChangedHandler { [weak self] in
+                    try? await self?.refreshTools(for: serverId, generation: generation)
+                }
+                return
+            }
+            cachedTools = cachedTools.filter { $0.key.serverId != serverId }
+            await existing.disconnect()
+        }
+        try Task.checkCancellation()
+        guard generations[serverId] == generation else { throw MCPClientError.notConnected }
+        let client = clientFactory(config)
+        servers[serverId] = client
+        serverConfigs[serverId] = config
+        do {
+            try await client.connect()
+            try Task.checkCancellation()
+            guard generations[serverId] == generation else { throw MCPClientError.notConnected }
+        } catch {
+            // A late connection may finish after removeServer already disconnected
+            // it. Release it again instead of leaving an unregistered process alive.
+            if generations[serverId] != generation {
+                await client.disconnect()
+            }
+            throw error
+        }
+        await client.setToolsChangedHandler { [weak self] in
+            try? await self?.refreshTools(for: serverId, generation: generation)
+        }
+        try await refreshTools(for: serverId, generation: generation)
+    }
+
     /// Removes an MCP server.
     func removeServer(id: UUID) async {
-        await servers[id]?.disconnect()
-        servers.removeValue(forKey: id)
+        let client = servers.removeValue(forKey: id)
+        generations[id] = nil
+        connecting.removeValue(forKey: id)?.cancel()
         serverConfigs.removeValue(forKey: id)
+        connectionErrors[id] = nil
         cachedTools = cachedTools.filter { $0.key.serverId != id }
+        await client?.disconnect()
     }
 
     /// Returns all MCP tools.
@@ -56,7 +108,11 @@ actor MCPRegistry {
         cachedTools.map { key, tool in
             MCPRegisteredTool(serverId: key.serverId, serverName: serverConfigs[key.serverId]?.name ?? "", tool: tool)
         }.sorted {
-            ($0.serverName, $0.serverId.uuidString, $0.tool.toolDef.name) < ($1.serverName, $1.serverId.uuidString, $1.tool.toolDef.name)
+            ($0.serverName, $0.serverId.uuidString, $0.tool.toolDef.name) < (
+                $1.serverName,
+                $1.serverId.uuidString,
+                $1.tool.toolDef.name
+            )
         }
     }
 
@@ -65,7 +121,10 @@ actor MCPRegistry {
     func uniqueAgentTools() -> [any AgentTool] {
         AskLocalTools.mcpToolNames(registeredTools()).map { name, entry in
             let bare = String(name.dropFirst("mcp_".count))
-            return bare == entry.tool.toolDef.name ? entry.tool as any AgentTool : MCPRenamedTool(base: entry.tool, name: bare)
+            return bare == entry.tool.toolDef.name ? entry.tool as any AgentTool : MCPRenamedTool(
+                base: entry.tool,
+                name: bare
+            )
         }
     }
 
@@ -78,7 +137,6 @@ actor MCPRegistry {
     /// Reconnects all servers with autoConnect enabled.
     func connectAutoConnectServers() async {
         for config in settingsStore.servers where config.enabled && config.autoConnect {
-            guard servers[config.id] == nil else { continue }
             try? await addServer(config)
         }
     }
@@ -86,14 +144,24 @@ actor MCPRegistry {
     /// Connects all enabled servers in the given list (skips already-connected ones).
     func connectEnabledServers(_ configs: [MCPServerConfig]) async {
         for config in configs where config.enabled {
-            guard servers[config.id] == nil else { continue }
             try? await addServer(config)
         }
     }
 
     /// Returns the number of connected servers.
     var connectedServerCount: Int {
-        servers.count
+        get async {
+            var count = 0
+            for client in servers.values where await client.isConnected {
+                count += 1
+            }
+            return count
+        }
+    }
+
+    /// Bulk/background connects retain their failure reason for diagnostics.
+    func lastConnectionError(for serverId: UUID) -> String? {
+        connectionErrors[serverId]
     }
 
     // MARK: - Private
@@ -110,16 +178,39 @@ actor MCPRegistry {
             let url = URL(string: httpConfig.url) ?? URL(string: "http://localhost")!
             // Background connections reuse or refresh a sign-in but never open a browser.
             return HTTPMCPClient(config: MCPHTTPConfig(url: url, headers: httpConfig.headers,
-                                                       authorizer: MCPOAuthAuthorizer(resource: url, interactive: false)))
+                                                       authorizer: MCPOAuthAuthorizer(
+                                                           resource: url,
+                                                           interactive: false
+                                                       )))
         }
     }
 
     func refreshTools(for serverId: UUID) async throws {
+        guard let generation = generations[serverId] else { return }
+        try await refreshTools(for: serverId, generation: generation)
+    }
+
+    private func refreshTools(for serverId: UUID, generation: UUID) async throws {
+        guard generations[serverId] == generation else { return }
         guard let client = servers[serverId] else { return }
-        let tools = try await client.listTools()
-        cachedTools = cachedTools.filter { $0.key.serverId != serverId }
-        for toolDef in tools {
-            cachedTools[ToolKey(serverId: serverId, name: toolDef.name)] = MCPToolAdapter(client: client, toolDef: toolDef)
+        do {
+            let tools = try await client.listTools()
+            try Task.checkCancellation()
+            guard generations[serverId] == generation else { throw MCPClientError.notConnected }
+            cachedTools = cachedTools.filter { $0.key.serverId != serverId }
+            for toolDef in tools {
+                cachedTools[ToolKey(serverId: serverId, name: toolDef.name)] = MCPToolAdapter(
+                    client: client,
+                    toolDef: toolDef
+                )
+            }
+            connectionErrors[serverId] = nil
+        } catch {
+            if generations[serverId] == generation {
+                cachedTools = cachedTools.filter { $0.key.serverId != serverId }
+                connectionErrors[serverId] = error.localizedDescription
+            }
+            throw error
         }
     }
 }
