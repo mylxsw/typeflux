@@ -113,7 +113,8 @@ final class AskMCPToolsTests: XCTestCase {
         XCTAssertEqual(names, ["computer", "skill", "memory", "mcp_lookup"])
         let output = try await tools.execute(.init(id: "1", function: .init(name: "mcp_lookup", arguments: "{}")), conversationId: "c")
         XCTAssertTrue(output.isError)
-        XCTAssertEqual(output.content, "quota exceeded")
+        XCTAssertTrue(output.content.contains("quota exceeded"))
+        XCTAssertEqual(output.outcome?.safeStatus, .unknown)
     }
 
     func testOutputMapsTextResourcesAndImages() throws {
@@ -121,8 +122,9 @@ final class AskMCPToolsTests: XCTestCase {
             MCPContentBlock(type: "text", text: "line"),
             MCPContentBlock(type: "resource", resource: MCPEmbeddedResource(uri: "file:///a", mimeType: "text/plain", text: "file body"))
         ], isError: nil))
-        XCTAssertEqual(text.content, "line\nfile body")
-        XCTAssertFalse(text.isError)
+        XCTAssertTrue(text.content.contains("file body"))
+        XCTAssertTrue(text.content.contains("unsupported"))
+        XCTAssertTrue(text.isError)
         XCTAssertNil(text.image)
 
         let png = try Self.pngBase64(width: 3200, height: 1600)
@@ -136,20 +138,24 @@ final class AskMCPToolsTests: XCTestCase {
         let jpeg = try XCTUnwrap(Data(base64Encoded: String(dataURL.dropFirst("data:image/jpeg;base64,".count))))
         let rep = try XCTUnwrap(NSBitmapImageRep(data: jpeg))
         XCTAssertEqual(max(rep.pixelsWide, rep.pixelsHigh), 1600)
-        XCTAssertEqual(image.content, "[2 image(s) from the tool could not be attached]")
+        XCTAssertEqual(image.outcome?.content?.count, 3)
+        XCTAssertTrue(image.content.contains("Multiple images retained"))
+        XCTAssertTrue(image.isError)
 
         let invalid = AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "image", data: "@@@")], isError: false))
         XCTAssertNil(invalid.image)
-        XCTAssertEqual(invalid.content, "[1 image(s) from the tool could not be attached]")
+        XCTAssertTrue(invalid.content.contains("Unsupported or invalid image"))
+        XCTAssertTrue(invalid.isError)
 
-        let onlyImage = AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "image", data: png)], isError: false))
-        XCTAssertEqual(onlyImage.content, "The tool returned an image.")
+        let onlyImage = AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "image", data: png, mimeType: "image/png")], isError: false))
+        XCTAssertEqual(onlyImage.content, "[Tool image attached]")
         let empty = AskLocalTools.output(from: MCPToolsCallResult(content: [], isError: true))
-        XCTAssertEqual(empty.content, "The tool returned no content.")
+        XCTAssertTrue(empty.content.contains("Tool returned no content"))
         XCTAssertTrue(empty.isError)
 
         let long = AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "text", text: String(repeating: "x", count: 70000))], isError: false))
-        XCTAssertEqual(long.content.count, 60000)
+        XCTAssertTrue(long.content.contains("projection truncated"))
+        XCTAssertTrue(long.isError)
     }
 
     func testAgentAdapterStillReportsErrorsAndResourceText() async throws {
@@ -160,7 +166,9 @@ final class AskMCPToolsTests: XCTestCase {
             MCPContentBlock(type: "resource", resource: MCPEmbeddedResource(uri: nil, mimeType: nil, text: "embedded"))
         ], isError: true))
         let output = try await MCPToolAdapter(client: client, toolDef: tool("t")).execute(arguments: "{}")
-        XCTAssertEqual(output, #"{"error":"embedded"}"#)
+        XCTAssertTrue(output.contains("embedded"))
+        XCTAssertTrue(output.contains("Unsupported"))
+        XCTAssertTrue(output.contains("error"))
     }
 
     func testToolPagesStopOnRepeatedCursorAndPageLimit() async throws {

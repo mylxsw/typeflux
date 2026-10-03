@@ -6,6 +6,7 @@ struct AskLocalToolOutput: Sendable {
     var image: String?
     /// The tool ran but reported failure, so the model must not treat its output as success.
     var isError = false
+    var outcome: AskExecutionOutcome? = nil
 }
 
 /// Presentation risk only. Risk tiers never imply authorization.
@@ -118,7 +119,7 @@ final class AskLocalTools: AskToolExecuting {
         mcpTools = [:]
         mcpServers = [:]
         mcpIdentities = [:]
-        var schemaBytes = 0
+        var schemaBytes = result.reduce(0) { $0 + $1.parameters.data.count }
         for (name, entry) in Self.mcpToolNames(await registry.registeredTools()) {
             let tool = entry.tool
             guard mcpTools[name] == nil,
@@ -256,21 +257,9 @@ final class AskLocalTools: AskToolExecuting {
         }
     }
 
-    /// Keeps the MCP error flag and the first image; Ask results carry at most one JPEG.
+    /// Retains ordered typed content, with a conservative legacy projection.
     nonisolated static func output(from result: MCPToolsCallResult) -> AskLocalToolOutput {
-        var notes: [String] = []
-        var image: String?
-        let images = result.content.filter { $0.type == "image" }
-        for block in images where image == nil {
-            image = block.data.flatMap(jpegDataURL(base64:))
-        }
-        if images.count > (image == nil ? 0 : 1) {
-            notes.append("[\(images.count - (image == nil ? 0 : 1)) image(s) from the tool could not be attached]")
-        }
-        var content = result.textContent
-        if !notes.isEmpty { content += (content.isEmpty ? "" : "\n") + notes.joined(separator: "\n") }
-        if content.isEmpty { content = image == nil ? "The tool returned no content." : "The tool returned an image." }
-        return .init(content: String(content.prefix(60000)), image: image, isError: result.isError == true)
+        AskTypedContent.output(from: result)
     }
 
     /// Re-encodes a tool image as a JPEG within the limits the Ask server accepts.

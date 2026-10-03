@@ -39,6 +39,8 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     /// Skills and MCP servers the user chose for this question with a slash command.
     var skills: [AskSkillUse]? = nil
     var mcpServers: [String]? = nil
+    var harness: AskHarnessContract? = nil
+    var diagnostic: AskResultDiagnostic? = nil
 
     /// The screenshot or an attached image; such a conversation needs a vision model.
     var hasImage: Bool { image != nil || attachments?.contains { $0.kind == .image } == true }
@@ -172,7 +174,7 @@ struct AskToolResultRequest: Codable, Equatable, Sendable {
     var content: String
     var isError: Bool
     var image: String? = nil
-    /// Reserved until typed content is negotiated and integrated by GUL-173.
+    /// Raw result metadata, independent of the conservative legacy projection.
     var harness: AskHarnessContract? = nil
 }
 

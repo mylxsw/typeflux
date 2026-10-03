@@ -127,7 +127,7 @@ final class MCPToolAdapterTests: XCTestCase {
         let toolDef = makeMockTool()
         let adapter = MCPToolAdapter(client: client, toolDef: toolDef)
 
-        let result = try await adapter.execute(arguments: "{}")
+        let result = try await adapter.execute(arguments: #"{"query":"test"}"#)
         XCTAssertTrue(result.contains("\"error\""))
     }
 
@@ -137,9 +137,11 @@ final class MCPToolAdapterTests: XCTestCase {
         let toolDef = makeMockTool()
         let adapter = MCPToolAdapter(client: client, toolDef: toolDef)
 
-        // Invalid JSON should still work (uses empty dict fallback)
-        let result = try await adapter.execute(arguments: "not valid json")
-        XCTAssertFalse(result.isEmpty)
+        // Reject malformed JSON before invoking the MCP client.
+        do { _ = try await adapter.execute(arguments: "not valid json"); XCTFail("Expected invalid input") }
+        catch { XCTAssertTrue(error is MCPInputError) }
+        let count = await client.callToolCallCount
+        XCTAssertEqual(count, 0)
     }
 
     func testAdapterSchemaConversion() async throws {
