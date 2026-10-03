@@ -1775,7 +1775,7 @@
 "ask.settings.skills.install" = "從 GitHub 安裝…";
 "ask.settings.skills.installTitle" = "從 GitHub 安裝技能";
 "ask.settings.skills.installHint" = "貼上儲存庫、資料夾或 SKILL.md 的連結。每個包含 SKILL.md 的資料夾會安裝為一個技能；同名的已安裝技能會被更新。";
-"ask.settings.skills.installWarning" = "技能是「隨便問」會遵循的指示，以及程式碼沙箱中可讀取的檔案。請只從可信來源安裝。";
+"ask.settings.skills.installWarning" = "技能提供指示與沙箱可讀檔案，請僅從可信來源安裝。同名技能會被取代並保留上一版本；停用狀態保持不變，權限宣告不授予存取權。";
 "ask.settings.skills.installAction" = "安裝";
 "ask.settings.skills.installing" = "正在安裝…";
 "ask.settings.skills.local" = "本機";
@@ -2156,3 +2156,27 @@
 "ask.terminal.error.invalidCursor" = "The output cursor is invalid.";
 "ask.terminal.error.portUnavailable" = "The requested listener port is unavailable.";
 "ask.terminal.truncated" = "Output is truncated; the retained log may also be incomplete.";
+
+"ask.skills.parse.malformed" = "YAML 中繼資料格式無效，請檢查語法與結束分隔符。";
+
+"ask.skills.parse.unsupported" = "不支援此中繼資料結構。請使用純量欄位、純量 metadata 與權限清單；不支援錨點、自訂標籤與巢狀物件。";
+
+"ask.skills.parse.invalidSkill" = "技能需要有效名稱與非空內文。";
+
+"ask.skills.install.truncated" = "GitHub 傳回的檔案樹不完整，未安裝任何內容。請使用較小的儲存庫。";
+
+"ask.skills.install.unsafeResource" = "技能包含不安全路徑、符號連結、子模組或不支援的檔案，未作任何變更。";
+
+"ask.skills.install.invalidSource" = "無法驗證來源版本或下載的檔案，未安裝任何內容。";
+
+"ask.skills.install.noPrevious" = "沒有可還原的上一版本。";
+
+"ask.settings.skills.actionFailed" = "無法修改此技能";
+
+"ask.settings.skills.rollback" = "還原上一版本";
+
+"ask.settings.skills.unverifiedVersion" = "舊版安裝：提交版本未知";
+
+"ask.settings.skills.declarations" = "宣告權限（不授予存取權）：";
+
+"ask.skills.install.nameConflict" = "技能名稱與本機資料夾衝突。請先重新命名衝突的資料夾，再安裝。";
