@@ -559,7 +559,7 @@ struct AskConversationView: View {
 
     private var emptyState: some View {
         VStack(spacing: 0) {
-            AskConversationOrb().padding(.bottom, 20)
+            AskEmptyStateOrb(voice: model.voiceInput).padding(.bottom, 20)
             Text(L("ask.empty")).font(.system(size: 26, weight: .bold))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .padding(.bottom, 9)

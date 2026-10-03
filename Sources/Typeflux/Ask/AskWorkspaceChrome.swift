@@ -115,53 +115,6 @@ struct AskHeaderLineButton: View {
     }
 }
 
-/// The empty state's mark: a glass orb whose colours slowly turn, in place of
-/// a flat tile. Reduce Motion holds it still.
-struct AskConversationOrb: View {
-    var size: CGFloat = 76
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    static let colors: [Color] = [
-        AskTheme.accent,
-        Color(red: 0.75, green: 0.35, blue: 0.95),
-        Color(red: 1.0, green: 0.22, blue: 0.37),
-        Color(red: 1.0, green: 0.62, blue: 0.04),
-        AskTheme.accent
-    ]
-
-    /// One turn every 12 seconds.
-    static func angle(at date: Date) -> Angle {
-        .degrees(date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 12) * 30)
-    }
-
-    var body: some View {
-        Group {
-            if reduceMotion {
-                orb(angle: .zero)
-            } else {
-                TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
-                    orb(angle: Self.angle(at: context.date))
-                }
-            }
-        }
-        .frame(width: size, height: size)
-        .accessibilityHidden(true)
-    }
-
-    private func orb(angle: Angle) -> some View {
-        ZStack {
-            Circle().fill(AngularGradient(colors: Self.colors, center: .center, angle: angle))
-            // The lens: a soft white bloom toward the light, a shaded lower rim.
-            Circle().fill(RadialGradient(colors: [Color.white.opacity(0.85), Color.white.opacity(0)],
-                                         center: UnitPoint(x: 0.32, y: 0.26), startRadius: 0, endRadius: size * 0.32))
-            Circle().fill(RadialGradient(colors: [Color.clear, Color.black.opacity(0.22)],
-                                         center: .center, startRadius: size * 0.3, endRadius: size * 0.52))
-            Circle().strokeBorder(Color.white.opacity(0.35), lineWidth: 1)
-        }
-        .shadow(color: AskTheme.accent.opacity(0.4), radius: size * 0.22, y: size * 0.12)
-    }
-}
-
 /// An icon-only action under an answer. The words live in the tooltip and the
 /// accessibility label, so the strip stays as quiet as the design's.
 struct AskIconGhostButton: View {
