@@ -35,6 +35,8 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     var runId: String? = nil
     /// Sent into a run that was already working ("jumped the queue").
     var steered: Bool? = nil
+    var harness: AskHarnessContract? = nil
+    var diagnostic: AskResultDiagnostic? = nil
 }
 
 struct AskRun: Codable, Equatable, Sendable {
@@ -147,7 +149,7 @@ struct AskToolResultRequest: Codable, Equatable, Sendable {
     var content: String
     var isError: Bool
     var image: String? = nil
-    /// Reserved until typed content is negotiated and integrated by GUL-173.
+    /// Raw result metadata, independent of the conservative legacy projection.
     var harness: AskHarnessContract? = nil
 }
 

@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "$defs": {
+    "count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "count"
+      ]
+    },
+    {
+      "required": [
+        "name"
+      ]
+    }
+  ],
+  "properties": {
+    "count": {
+      "$ref": "#/$defs/count"
+    },
+    "name": {
+      "type": "string",
+      "enum": [
+        "a",
+        "b"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

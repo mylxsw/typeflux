@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 
 /// Adapter from MCP tools to AgentTool.
 struct MCPToolAdapter: AgentTool {
@@ -15,20 +16,16 @@ struct MCPToolAdapter: AgentTool {
 
     /// Calls the tool and keeps the MCP error flag and non-text content.
     func call(arguments: String) async throws -> MCPToolsCallResult {
-        let args: [String: Any] = if let data = arguments.data(using: .utf8),
-                                     let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            dict
-        } else {
-            [:]
-        }
+        let args = try MCPInputValidator.validate(arguments: arguments, schema: toolDef.inputSchema)
         return try await client.callTool(name: toolDef.name, arguments: args)
     }
 
     func execute(arguments: String) async throws -> String {
         let result = try await call(arguments: arguments)
-        let content = result.textContent
+        let output = AskTypedContent.output(from: result)
+        let content = output.content
 
-        let dict: [String: Any] = if result.isError == true {
+        let dict: [String: Any] = if output.isError {
             ["error": content]
         } else {
             ["result": content]
@@ -40,41 +37,29 @@ struct MCPToolAdapter: AgentTool {
     // MARK: - Private
 
     private func convertSchema(_ mcpSchema: MCPObjectSchema) -> LLMJSONSchema {
-        var schema: [String: AnySendable] = [
-            "type": .string("object")
-        ]
-
-        if let properties = mcpSchema.properties {
-            var propsDict: [String: AnySendable] = [:]
-            for (key, value) in properties {
-                propsDict[key] = convertAnyCodable(value)
-            }
-            schema["properties"] = .object(propsDict)
-        }
-
-        if let required = mcpSchema.required {
-            schema["required"] = .array(required.map { .string($0) })
-        }
-
-        return LLMJSONSchema(name: toolDef.name, schema: schema, strict: false)
+        LLMJSONSchema(name: toolDef.name, schema: mcpSchema.raw.mapValues(convertAnyCodable), strict: false)
     }
 
     private func convertAnyCodable(_ value: AnyCodable) -> AnySendable {
         switch value.value {
+        case let number as NSNumber:
+            if CFGetTypeID(number) == CFBooleanGetTypeID() { return .bool(number.boolValue) }
+            if ["f", "d"].contains(String(cString: number.objCType)) { return .double(number.doubleValue) }
+            return .int(number.intValue)
         case let str as String:
-            .string(str)
+            return .string(str)
         case let int as Int:
-            .int(int)
+            return .int(int)
         case let double as Double:
-            .double(double)
+            return .double(double)
         case let bool as Bool:
-            .bool(bool)
+            return .bool(bool)
         case let array as [Any]:
-            .array(array.map { convertAnyCodable(AnyCodable($0)) })
+            return .array(array.map { convertAnyCodable(AnyCodable($0)) })
         case let dict as [String: Any]:
-            .object(dict.mapValues { convertAnyCodable(AnyCodable($0)) })
+            return .object(dict.mapValues { convertAnyCodable(AnyCodable($0)) })
         default:
-            .null
+            return .null
         }
     }
 }
