@@ -145,7 +145,7 @@ struct AskDesignFidelityTests {
 
     @Test func modelCapabilitiesReadAsWords() {
         let both = RegisteredModel(id: "m", name: "M", vision: true, reasoning: true)
-        #expect(AskModelCapabilities.badges(both).map(\.text) == [L("ask.models.badge.vision"), L("ask.models.badge.reasoning")])
+        #expect(AskModelCapabilities.badges(both).map(\.text) == [L("ask.models.badge.vision")])
         #expect(AskModelCapabilities.badges(RegisteredModel(id: "t", name: "T")).isEmpty)
     }
 

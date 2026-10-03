@@ -1484,7 +1484,6 @@
 "ask.models.multiplierColumn" = "Credits ×";
 "ask.models.ownAPI" = "Own API";
 "ask.models.badge.vision" = "Vision";
-"ask.models.badge.reasoning" = "Reasoning";
 "ask.history.searchEmpty" = "沒有符合的對話";
 "ask.selection.lines" = "選取 · %d 行";
 "ask.voice.hold" = "按住說話";
@@ -1544,7 +1543,6 @@
 "ask.models.makeDefault" = "Set as Ask default";
 "ask.models.isDefault" = "預設";
 "ask.models.supportsImages" = "支援圖片與截圖";
-"ask.models.supportsReasoning" = "支援調整推理強度";
 "ask.models.compatible" = "Supports OpenAI-compatible APIs. Screenshots require vision support; tools require tool-calling support.";
 "ask.models.name" = "Name";
 "ask.models.url" = "API URL";
@@ -1561,8 +1559,8 @@
 "models.endpointMissing" = "Enter an API endpoint to use";
 "models.keyMissing" = "Enter an API key to use";
 "models.noModels" = "Add a model to use this provider";
-"models.noVision" = "This model does not support screenshots";
-"models.unknownVision" = "Vision capability unknown; confirm in provider details";
+"models.noVision" = "此模型不支援視覺";
+"models.unknownVision" = "視覺能力未知，可在模型設定中標記";
 "models.corrupt" = "The model catalog could not be read. Existing data has been preserved.";
 "models.invalidResponse" = "The provider returned an invalid model response";
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
@@ -1584,9 +1582,9 @@
 "models.manual" = "Add manually";
 "models.load" = "Load from provider";
 "models.add" = "Add selected";
-"models.visionHint" = "Confirm screenshot support from the model documentation";
-"models.visionYes" = "Supports screenshots";
-"models.visionNo" = "Does not support screenshots";
+"models.capabilityHint" = "請根據模型文件勾選該模型支援的能力";
+"models.visionYes" = "支援視覺（識圖）";
+"models.reasoningYes" = "支援推理";
 "models.usageHint" = "標籤表示該模型目前被哪個場景使用；可在「應用場景」或「···」選單中變更。";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
@@ -1626,7 +1624,7 @@
 "models.searchEmpty" = "沒有與「%@」相符的服務商或模型";
 "models.connection" = "連線";
 "models.useForRewrite" = "用於轉譯與潤色";
-"models.visionUnknownShort" = "截圖能力未知";
+"models.visionUnknownShort" = "視覺能力未知";
 "models.showKey" = "顯示 API Key";
 "models.hideKey" = "隱藏 API Key";
 "models.cloud.managedShort" = "由 Typeflux 管理";

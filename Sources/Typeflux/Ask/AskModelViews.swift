@@ -48,12 +48,6 @@ struct AskModelMenu: View {
                 AskCappedWidth(maxWidth: compact ? AskMetrics.modelMenuMaxWidth : .infinity) {
                     Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
                 }
-                if compact, Self.showsVisionTag(library: library, reference: reference) {
-                    Image(systemName: "eye").font(.system(size: 10.5, weight: .semibold))
-                        .foregroundStyle(AskTheme.accentText)
-                        .help(L("ask.models.supportsImages"))
-                        .accessibilityLabel(L("ask.models.supportsImages"))
-                }
                 if fieldStyle {
                     Spacer(minLength: 4)
                 }
@@ -95,15 +89,6 @@ struct AskModelMenu: View {
                 await library.probeOllama()
             }
         }
-    }
-}
-
-extension AskModelMenu {
-    /// The user's own models vary in what they read, so the composer marks one
-    /// that reads images. Cloud models all do and stay unmarked.
-    static func showsVisionTag(library: AskModelLibrary, reference: String) -> Bool {
-        guard let (provider, _) = library.registry.resolve(reference), !provider.isCloud else { return false }
-        return library.imageCapability(reference) == .supported
     }
 }
 
@@ -365,19 +350,14 @@ struct AskModelChoices: View {
     }
 }
 
-/// Small capability glyphs in a model row: images (eye) and adjustable reasoning
-/// (sparkles, the same symbol as the composer's reasoning menu).
+/// Outlined capability words in a model row. Only vision is marked: it decides
+/// whether a conversation with images can use the model. Reasoning is not, since
+/// nearly every model reasons and the composer's reasoning menu covers it.
 struct AskModelCapabilities: View {
     let model: RegisteredModel
 
-    /// Short words for the outlined capability badges on the design board.
     static func badges(_ model: RegisteredModel) -> [(text: String, help: String)] {
-        var result: [(text: String, help: String)] = []
-        if model.vision == true { result.append((L("ask.models.badge.vision"), L("ask.models.supportsImages"))) }
-        if model.reasoning == true {
-            result.append((L("ask.models.badge.reasoning"), L("ask.models.supportsReasoning")))
-        }
-        return result
+        model.vision == true ? [(L("ask.models.badge.vision"), L("ask.models.supportsImages"))] : []
     }
 
     var body: some View {

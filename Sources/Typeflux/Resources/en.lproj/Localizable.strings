@@ -1487,7 +1487,6 @@
 "ask.models.multiplierColumn" = "Credits ×";
 "ask.models.ownAPI" = "Own API";
 "ask.models.badge.vision" = "Vision";
-"ask.models.badge.reasoning" = "Reasoning";
 "ask.history.searchEmpty" = "No matching conversations";
 "ask.selection.lines" = "Selection · %d lines";
 "ask.voice.hold" = "Hold to speak";
@@ -1547,7 +1546,6 @@
 "ask.models.makeDefault" = "Set as Ask default";
 "ask.models.isDefault" = "Default";
 "ask.models.supportsImages" = "Understands images and screenshots";
-"ask.models.supportsReasoning" = "Supports adjustable reasoning";
 "ask.models.compatible" = "Supports OpenAI-compatible APIs. Screenshots require vision support; tools require tool-calling support.";
 "ask.models.name" = "Name";
 "ask.models.url" = "API URL";
@@ -1564,8 +1562,8 @@
 "models.endpointMissing" = "Enter an API endpoint to use";
 "models.keyMissing" = "Enter an API key to use";
 "models.noModels" = "Add a model to use this provider";
-"models.noVision" = "This model does not support screenshots";
-"models.unknownVision" = "Vision capability unknown; confirm in provider details";
+"models.noVision" = "This model does not support vision";
+"models.unknownVision" = "Vision support unknown; mark it in model settings";
 "models.corrupt" = "The model catalog could not be read. Existing data has been preserved.";
 "models.invalidResponse" = "The provider returned an invalid model response";
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
@@ -1587,9 +1585,9 @@
 "models.manual" = "Add manually";
 "models.load" = "Load from provider";
 "models.add" = "Add selected";
-"models.visionHint" = "Confirm screenshot support from the model documentation";
-"models.visionYes" = "Supports screenshots";
-"models.visionNo" = "Does not support screenshots";
+"models.capabilityHint" = "Check what this model supports, per its documentation";
+"models.visionYes" = "Supports vision (images)";
+"models.reasoningYes" = "Supports reasoning";
 "models.usageHint" = "Badges show which scenario uses each model. Change them in Application scenarios or from the ··· menu.";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
@@ -1629,7 +1627,7 @@
 "models.searchEmpty" = "No providers or models match “%@”";
 "models.connection" = "Connection";
 "models.useForRewrite" = "Use for Rewrite and polish";
-"models.visionUnknownShort" = "Screenshot support unknown";
+"models.visionUnknownShort" = "Vision support unknown";
 "models.showKey" = "Show API key";
 "models.hideKey" = "Hide API key";
 "models.cloud.managedShort" = "Managed by Typeflux";
