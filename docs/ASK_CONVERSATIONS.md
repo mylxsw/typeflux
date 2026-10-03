@@ -423,8 +423,9 @@ Reduce Transparency aware:
   ambient shadow plus a 1pt contact shadow (dark 38% · 34pt blur · 12pt drop for
   panels; light uses a fainter navy tint). `AskOuterShadow` draws it outside the
   shape only, so glass never darkens and labels never get shadows.
-- Glass edges: a gradient rim light (`AskRimLight`) and a pointer-following
-  highlight (`askSpecular`) on the sidebar, header capsules, composer, cards and palette.
+- Glass edges: a gradient rim light (`AskRimLight`) on the sidebar, header
+  capsules, composer, cards and palette. (A pointer-following highlight was
+  tried and removed in review.)
 - Menus, hover cards and the ⌘K palette pop in from their anchor (scale 0.9,
   4pt blur, spring 0.32s); new messages and tool cards rise 10pt into place
   (only items under 3 s old, so loading a conversation never animates).
@@ -439,3 +440,28 @@ The ⌥Space launcher opens centred on the screen like Spotlight
 (`AskLauncherPlacement`): the empty launcher, suggestions included, is centred,
 and it grows downward from a fixed top edge while typing, staying 12pt inside
 the usable screen. It no longer sits on the recording capsule's bottom inset.
+
+### Model chooser in conversations with images (GUL-159)
+
+A conversation that already holds a screenshot can only continue on a model
+that reads images. The chooser used to drop every other model from the list,
+so custom models (which rarely declare vision support) seemed to vanish. They
+are now listed dimmed and unselectable, with the reason as their caption
+(`AskModelChoices.imageReason`).
+
+### Instant launcher (GUL-159)
+
+⌥Space used to await the whole context capture (draft cache, accessibility
+selection, ScreenCaptureKit screenshot and JPEG encoding, memory) before the
+panel was even created, a few hundred milliseconds on every press. Now:
+
+- `showLauncher()` positions and shows the panel synchronously, then runs
+  `prepareLauncher()` in the background. The panel never activates the app, so
+  the source app stays frontmost for the selection read and the screenshot,
+  which already excludes Typeflux's own windows. Chips show the capturing state.
+- The panel is built once at launch (`prewarmLauncher()`), not on first use.
+- The screenshot runs concurrently with the selection read.
+- A cached draft never overwrites text typed into the just-opened panel, and
+  text typed early still receives this launch's context.
+- Pressing the hotkey again while context is still arriving refocuses the
+  editor; toggling closes it and cancels the capture as before.

@@ -115,6 +115,8 @@ final class AppCoordinator {
         self.workflowController = workflowController
         if let ask = di.askConversationWindowController {
             workflowController.onAskRequested = { [weak ask] in ask?.toggleLauncher() }
+            // Build the launcher while the app is idle, so the first ⌥Space shows it at once.
+            DispatchQueue.main.async { [weak ask] in ask?.prewarmLauncher() }
             let voice = ask.model.voiceInput
             voice.recorder = WorkflowComposerRecording(workflowController)
             workflowController.composerVoiceInput = voice

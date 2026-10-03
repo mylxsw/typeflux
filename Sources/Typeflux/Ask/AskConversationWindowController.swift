@@ -75,43 +75,59 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         }
     }
 
+    /// Shows the launcher at once, then fills in its context. The panel never
+    /// activates the app, so the source app stays frontmost while its selection,
+    /// screenshot and memory are captured behind the visible panel (our own
+    /// windows are excluded from the screenshot). Capturing first used to hold
+    /// the panel back by a few hundred milliseconds on every press.
     func showLauncher() {
-        guard launchTask == nil else { return }
+        // Already open (its context may still be arriving): just bring the editor back.
         if launcher?.isVisible == true { launcher?.makeKeyAndOrderFront(nil); focusEditor(in: launcher); return }
+        guard launchTask == nil else { return }
         if NSWorkspace.shared.frontmostApplication?.processIdentifier != ProcessInfo.processInfo.processIdentifier {
             tools?.targetApplication = NSWorkspace.shared.frontmostApplication
         }
+        let panel = launcherPanel()
+        applyAppearance(panel)
+        let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
+        if let frame = screen?.visibleFrame {
+            let width = min(AskMetrics.launcherWidth, frame.width - 40)
+            panel.setFrame(AskLauncherPlacement.frame(height: launcherHeight, width: width, screen: frame), display: true)
+        }
+        // Take keyboard focus without activating the app and raising its other windows.
+        panel.makeKeyAndOrderFront(nil)
+        focusEditor(in: panel)
+        installClickMonitors()
         launchTask = Task { [weak self] in
             guard let self else { return }
             // A cancelled launch must not clear a newer launch task.
             defer { if !Task.isCancelled { launchTask = nil } }
             guard !Task.isCancelled else { return }
             await model.prepareLauncher()
-            guard !Task.isCancelled else { return }
-            if launcher == nil {
-                let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: launcherHeight),
-                                             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-                panel.level = .floating
-                panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
-                panel.isMovableByWindowBackground = false
-                panel.hidesOnDeactivate = false
-                panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-                panel.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.ask-launcher")
-                panel.contentView = FirstMouseHostingView(rootView: AskLauncherView(model: model, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }))
-                launcher = panel
-            }
-            applyAppearance(launcher)
-            let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
-            if let frame = screen?.visibleFrame {
-                let width = min(AskMetrics.launcherWidth, frame.width - 40)
-                let height = launcherHeight
-                launcher?.setFrame(AskLauncherPlacement.frame(height: height, width: width, screen: frame), display: true)
-            }
-            // Take keyboard focus without activating the app and raising its other windows.
-            launcher?.makeKeyAndOrderFront(nil)
-            focusEditor(in: launcher)
-            installClickMonitors()
         }
+    }
+
+    /// The launcher panel, built once and reused. `prewarmLauncher()` builds it
+    /// ahead of the first press so that press pays no setup cost.
+    private func launcherPanel() -> AskFloatingPanel {
+        if let launcher { return launcher }
+        let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: launcherHeight),
+                                     styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel.level = .floating
+        panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
+        panel.isMovableByWindowBackground = false
+        panel.hidesOnDeactivate = false
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.ask-launcher")
+        panel.contentView = FirstMouseHostingView(rootView: AskLauncherView(model: model, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }))
+        launcher = panel
+        return panel
+    }
+
+    /// Builds the launcher panel and lays out its view while the app is idle.
+    func prewarmLauncher() {
+        let panel = launcherPanel()
+        panel.contentView?.layoutSubtreeIfNeeded()
     }
 
     private func resizeLauncher(height: CGFloat) {

@@ -95,6 +95,32 @@ struct AskLauncherToggleTests {
         #expect(panel() == nil)
     }
 
+    @Test func textTypedWhileCapturingKeepsTheLaunchContext() async throws {
+        _ = NSApplication.shared
+        let f = try AskTestFixture(authenticated: false)
+        let capture = HeldLauncherCapture()
+        let model = AskConversationModel(api: f.api, cache: f.cache, tools: f.tools, capture: capture,
+                                         deviceId: "test", modelLibrary: f.model.modelLibrary, session: { nil })
+        let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
+        let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: model)
+        defer {
+            controller.dismissLauncher()
+            for id in Array(capture.pending.keys) { capture.finish(id) }
+            model.resetSession(); f.model.resetSession()
+        }
+        controller.toggleLauncher()
+        // Visible in the same run-loop turn as the hotkey, before any capture.
+        #expect(panel() != nil)
+        #expect(capture.calls == 0)
+        try await f.wait { capture.pending[1] != nil }
+        // The user starts typing before the context arrives; both survive.
+        model.launcherDraft.text = "Typed early"
+        capture.finish(1)
+        try await f.wait { model.launcherDraft.selection != nil }
+        #expect(model.launcherDraft.text == "Typed early")
+        #expect(model.launcherDraft.selection == "Selection 1")
+    }
+
     @Test func cancelledPreparationCannotReopenOrClearNewLaunch() async throws {
         _ = NSApplication.shared
         let f = try AskTestFixture(authenticated: false)
@@ -109,27 +135,34 @@ struct AskLauncherToggleTests {
             model.resetSession(); f.model.resetSession()
         }
 
+        // The panel is on screen before its context has been captured.
         controller.toggleLauncher()
         try await f.wait { capture.pending[1] != nil }
+        #expect(panel() != nil)
         controller.toggleLauncher()
+        #expect(panel() == nil)
         controller.toggleLauncher()
         try await f.wait { capture.pending[2] != nil }
+        #expect(panel() != nil)
         capture.finish(1)
         // Let the old task finish while the replacement is still preparing.
         for _ in 0..<10 { await Task.yield() }
-        #expect(panel() == nil)
+        #expect(panel() != nil)
         #expect(model.launcherDraft.selection == nil)
         #expect(model.capturing)
         controller.toggleLauncher()
+        #expect(panel() == nil)
         capture.finish(2)
         try await f.wait { !model.capturing }
+        // A cancelled launch neither reopens the panel nor applies its context.
         #expect(panel() == nil)
         #expect(model.launcherDraft.selection == nil)
 
         controller.toggleLauncher()
         try await f.wait { capture.pending[3] != nil }
+        #expect(panel() != nil)
         capture.finish(3)
-        try await f.wait { panel() != nil }
+        try await f.wait { model.launcherDraft.selection != nil }
         #expect(model.launcherDraft.selection == "Selection 3")
     }
 }
