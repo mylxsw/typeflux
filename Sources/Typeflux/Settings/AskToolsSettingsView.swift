@@ -245,25 +245,9 @@ struct AskToolsSettingsView: View {
         .background(ModelVisualStyle.canvas)
     }
 
-    @ViewBuilder private var memorySections: some View {
-        AgentSettingsSection(title: L("ask.settings.notes.title"), detail: "\(memoryNotes.notes.count)",
-                             footnote: L("ask.settings.notes.subtitle")) {
-            if memoryNotes.notes.isEmpty {
-                AgentSettingsEmptyRow(text: L("ask.settings.notes.empty"))
-            }
-            ForEach(Array(memoryNotes.notes.enumerated()), id: \.element.id) { index, note in
-                if index > 0 { ModelRowDivider(leading: 66) }
-                AgentSettingsRow(icon: "brain", title: note.text, titleLineLimit: nil) {
-                    AgentSettingsIconButton(systemImage: "trash", help: L("ask.remove"), role: .destructive) {
-                        removeNote(note)
-                    }
-                }
-            }
-        }
-        if let error = memoryNotes.error {
-            Text(error).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+    private var memorySections: some View {
+        MemoryNotesEditorView(model: memoryNotes, store: notes, owner: owner(),
+                              correctionsEnabled: MemoryRollout.enabled(settings.defaults))
     }
 
     func setSkill(_ name: String, enabled: Bool) {

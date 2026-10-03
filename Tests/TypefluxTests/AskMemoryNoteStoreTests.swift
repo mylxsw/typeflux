@@ -128,7 +128,9 @@ final class AskMemoryNoteStoreTests: XCTestCase {
         let json = #"{"a":[{"id":"deadbeef","text":"Legacy note","createdAt":12345}],"b":[{"id":"abcdef01","text":"Private note","createdAt":67890}]}"#
         try Data(json.utf8).write(to: file)
         let store = AskMemoryNoteStore(fileURL: file)
-        let expected = AskMemoryNote(id: "deadbeef", text: "Legacy note", createdAt: Date(timeIntervalSinceReferenceDate: 12345))
+        let date = Date(timeIntervalSinceReferenceDate: 12345)
+        let expected = AskMemoryNote(id: "deadbeef", text: "Legacy note", createdAt: date,
+                                    provenance: .init(id: "deadbeef", source: .explicit, owner: "a", scope: "account", createdAt: date, updatedAt: date))
         XCTAssertEqual(store.list(owner: "a"), [expected])
         XCTAssertFalse(try store.remove(id: "deadbeef", owner: "b"))
         XCTAssertEqual(try store.add("LEGACY NOTE", owner: "a"), expected)

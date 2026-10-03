@@ -57,13 +57,13 @@ extension WorkflowController {
         let memoryScope = recentInputMemoryScope?.appIdentifier == appIdentifier
             ? recentInputMemoryScope
             : RecentInputMemoryScope.resolve(bundleIdentifier: appIdentifier)
+        let soulOwnerID = await MainActor.run { GlobalSoulOwner.currentID }
         let recentInput: [String] = if let memoryScope,
                                        settingsStore.recentInputMemoryAllowed(for: memoryScope.appIdentifier) {
-            RecentInputMemoryStore.shared.recent(scope: memoryScope.key)
+            RecentInputMemoryStore.shared.recent(scope: memoryScope.key, owner: soulOwnerID)
         } else {
             []
         }
-        let soulOwnerID = await MainActor.run { GlobalSoulOwner.currentID }
         let globalSoul = settingsStore.globalSoulMemoryEnabled
             ? GlobalSoulMemoryStore.shared.soul(ownerID: soulOwnerID)?.text
             : nil
@@ -95,13 +95,14 @@ extension WorkflowController {
         let memoryID = UUID()
         let deliveredAt = Date()
         let ownerID = GlobalSoulOwner.currentID
+        let soulGeneration = GlobalSoulMemoryStore.shared.currentGeneration()
         // A confirmed write may be sent before an AX read completes. Save its short
         // delivered text now, then replace it if the user edits the live input.
         if deliveryConfirmed,
            let excerpt = RecentInputMemoryExcerpt.excerpt(body: insertedText, leading: "", trailing: "") {
             let saved = store.upsert(
                 id: memoryID, appIdentifier: scope.appIdentifier, scope: scope.key,
-                text: excerpt, expectedGeneration: storeGeneration
+                text: excerpt, expectedGeneration: storeGeneration, owner: ownerID
             )
             NetworkDebugLogger.logMessage("[Recent Input Memory] confirmed delivery saved=\(saved) app=\(scope.appIdentifier)")
         }
@@ -113,7 +114,7 @@ extension WorkflowController {
             // Some editors publish their AX value just after insertion. Retry briefly,
             // but do not make a confirmed delivery depend on that value being readable.
             for attempt in 0 ..< 4 {
-                guard !Task.isCancelled,
+                guard !Task.isCancelled, GlobalSoulOwner.currentID == ownerID,
                       settingsStore.recentInputMemoryAllowed(for: scope.appIdentifier)
                 else { return }
                 let snapshot = await textInjector.currentInputTextSnapshot()
@@ -139,9 +140,9 @@ extension WorkflowController {
                 NetworkDebugLogger.logMessage("[Recent Input Memory] AX observation unavailable; confirmed=\(deliveryConfirmed)")
                 return
             }
-            guard store.upsert(
+            guard GlobalSoulOwner.currentID == ownerID, store.upsert(
                 id: memoryID, appIdentifier: scope.appIdentifier, scope: scope.key,
-                text: firstExcerpt, expectedGeneration: storeGeneration
+                text: firstExcerpt, expectedGeneration: storeGeneration, owner: ownerID
             ) else { return }
             NetworkDebugLogger.logMessage("[Recent Input Memory] observed input saved app=\(scope.appIdentifier)")
             var latestBody = captured.body
@@ -152,7 +153,7 @@ extension WorkflowController {
                    GlobalSoulOwner.currentID == ownerID {
                     GlobalSoulMemoryStore.shared.recordFinalInput(
                         id: memoryID, ownerID: ownerID, appIdentifier: scope.appIdentifier,
-                        text: latestBody, at: deliveredAt
+                        text: latestBody, at: deliveredAt, expectedGeneration: soulGeneration
                     )
                     GlobalSoulConsolidator.shared.schedule()
                 }
@@ -162,7 +163,7 @@ extension WorkflowController {
 
             while Date() < deadline, !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled,
+                guard !Task.isCancelled, GlobalSoulOwner.currentID == ownerID,
                       settingsStore.recentInputMemoryAllowed(for: scope.appIdentifier)
                 else { return }
                 let snapshot = await textInjector.currentInputTextSnapshot()
@@ -175,7 +176,7 @@ extension WorkflowController {
                     in: currentText, leading: captured.leading, trailing: captured.trailing
                 ) else { break }
                 if body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    store.delete(id: memoryID)
+                    store.delete(id: memoryID, owner: ownerID)
                     return
                 }
                 if body != latestBody {
@@ -187,7 +188,7 @@ extension WorkflowController {
                 }
             }
 
-            guard !Task.isCancelled,
+            guard !Task.isCancelled, GlobalSoulOwner.currentID == ownerID,
                   settingsStore.recentInputMemoryAllowed(for: scope.appIdentifier),
                   let finalExcerpt = RecentInputMemoryExcerpt.excerpt(
                       body: latestBody, leading: captured.leading, trailing: captured.trailing
@@ -195,7 +196,7 @@ extension WorkflowController {
             else { return }
             store.upsert(
                 id: memoryID, appIdentifier: scope.appIdentifier, scope: scope.key,
-                text: finalExcerpt, expectedGeneration: storeGeneration
+                text: finalExcerpt, expectedGeneration: storeGeneration, owner: ownerID
             )
         }
     }

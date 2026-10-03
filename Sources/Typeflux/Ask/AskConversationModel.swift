@@ -196,6 +196,7 @@ final class AskConversationModel: ObservableObject {
     private var modelObserver: AnyCancellable?
     private var memoryObserver: AnyCancellable?
     private let defaults: UserDefaults
+    private let memoryInvalidations: MemoryInvalidationStore
     private var memoryPurgeTask: Task<Void, Never>?
     private var memoryPurgeGeneration = 0
     static let memoryPurgePendingKey = "ask.memory.purgePending"
@@ -208,6 +209,7 @@ final class AskConversationModel: ObservableObject {
         self.modelLibrary = modelLibrary ?? .shared
         self.api = api; self.cache = cache; self.tools = tools; self.capture = capture
         self.deviceId = deviceId; self.session = session; self.defaults = defaults
+        memoryInvalidations = MemoryInvalidationStore(defaults: defaults)
         // Only DI-supplied, trusted advertisements may enable reuse. Conversation metadata is inert.
         approvalReuseEnabled = AskHarnessContract(version: 1, capabilities: [AskHarnessCapability.scopedApproval.rawValue])
             .permits(.scopedApproval, peer: trustedApprovalPeer, enabled: scopedApprovalEnabled ? [.scopedApproval] : [])
@@ -222,14 +224,22 @@ final class AskConversationModel: ObservableObject {
         authObserver = NotificationCenter.default.publisher(for: .authDidLogout).sink { [weak self] _ in
             Task { @MainActor in self?.resetSession() }
         }
-        memoryObserver = NotificationCenter.default.publisher(for: .askMemoryDidClear).sink { [weak self] _ in
-            Task { @MainActor in self?.clearMemory() }
+        memoryObserver = NotificationCenter.default.publisher(for: .askMemoryDidClear)
+            .sink { [weak self] notification in
+            let changedOwner = notification.userInfo?["owner"] as? String
+            Task { @MainActor in
+                guard let self, changedOwner == nil || changedOwner == self.session()?.owner else { return }
+                self.clearMemory()
+            }
         }
     }
 
     /// Drops captured memory and removes the copies pinned to server conversations.
     /// The purge stays pending across launches until the server confirms it.
     func clearMemory() {
+        let account = session()?.owner ?? "local"
+        memoryInvalidations.invalidate(owner: account, notify: false)
+        for id in pendingSends.keys { pendingSends[id]?.memory = nil }
         if launcherDraft.memory != nil { launcherDraft.memory = AskMemory() }
         if draft.memory != nil { draft.memory = AskMemory() }
         for (id, value) in drafts where value.memory != nil { drafts[id]?.memory = AskMemory() }
@@ -237,6 +247,7 @@ final class AskConversationModel: ObservableObject {
         selected?.memory = nil
         memoryPurgeGeneration += 1
         defaults.set(true, forKey: Self.memoryPurgePendingKey)
+        defaults.set(true, forKey: Self.memoryPurgePendingKey + "." + account)
         persistDrafts()
         flushMemoryPurge()
     }
@@ -244,22 +255,29 @@ final class AskConversationModel: ObservableObject {
     /// Retries a pending purge; it runs whenever the user is signed in. A clear
     /// that happens while a purge is in flight triggers one more purge afterwards.
     func flushMemoryPurge() {
-        guard memoryPurgeTask == nil, defaults.bool(forKey: Self.memoryPurgePendingKey),
-              let current = session() else { return }
+        guard memoryPurgeTask == nil, let current = session(),
+              defaults.bool(forKey: Self.memoryPurgePendingKey + "." + current.owner) else { return }
         let generation = memoryPurgeGeneration
+        let cutoff = memoryInvalidations.cutoff(owner: current.owner)
         memoryPurgeTask = Task { [weak self, api] in
             var purged = false
             do {
-                try await api.purgeMemory(token: current.token)
+                try await api.purgeMemory(owner: current.owner, token: current.token)
                 purged = true
             } catch {
                 NetworkDebugLogger.logMessage("[Ask Memory] purge failed: \(error.localizedDescription)")
             }
             guard let self else { return }
             memoryPurgeTask = nil
-            // A local session cleared its own copies; Cloud copies still need the next signed-in purge.
-            guard purged, !current.token.isEmpty else { return }
-            if memoryPurgeGeneration == generation {
+            // Completion only acknowledges the account and deletion epoch that started this request.
+            guard purged else { return }
+            guard session()?.owner == current.owner else {
+                // Never acknowledge another account's pending deletion with this response.
+                flushMemoryPurge()
+                return
+            }
+            if memoryPurgeGeneration == generation, memoryInvalidations.cutoff(owner: current.owner) == cutoff {
+                defaults.set(false, forKey: Self.memoryPurgePendingKey + "." + current.owner)
                 defaults.set(false, forKey: Self.memoryPurgePendingKey)
             } else {
                 flushMemoryPurge()
@@ -554,7 +572,8 @@ final class AskConversationModel: ObservableObject {
         let savedDraft = try? await cache.draft(key: id, owner: current.owner)
         guard generation == selectionGeneration, owner == current.account else { return }
         if let cached {
-            let merged = snapshots[id]?.reconciling(cached) ?? cached
+            let merged = sanitizedMemory(snapshots[id]?.reconciling(cached) ?? cached,
+                                         account: current.account, local: current.token.isEmpty)
             selected = merged; snapshots[id] = merged
         }
         draft = drafts[id] ?? savedDraft ?? .followUp
@@ -565,7 +584,8 @@ final class AskConversationModel: ObservableObject {
             if !hasUnconfirmedMessage { try await cache.save(value, owner: current.owner) }
             let latest = try await cache.load(id: id, owner: current.owner) ?? value
             guard owner == current.account else { return }
-            snapshots[id] = snapshots[id]?.reconciling(latest) ?? latest
+            snapshots[id] = sanitizedMemory(snapshots[id]?.reconciling(latest) ?? latest,
+                                            account: current.account, local: current.token.isEmpty)
             guard generation == selectionGeneration else { return }
             selected = snapshots[id] ?? latest; isLoadingSelection = false
             switchToVisionModelIfNeeded(launcher: false); normalizeScreenshotChoices(); error = operationErrors[id]
@@ -660,7 +680,8 @@ final class AskConversationModel: ObservableObject {
                                          local: local)
         request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
         request.memory = newConversation && submitted.memoryOff != true
-            ? Self.openingMemory(submitted.memory ?? capture.globalMemory()) : nil
+            ? (submitted.memory ?? capture.globalMemory())?.usable(owner: current.account,
+                                                                  invalidations: memoryInvalidations) : nil
         value.modelRef = request.modelRef
         Self.applyMemoryChoice(submitted, newConversation: newConversation, request: &request, conversation: &value)
         pendingSends[id] = request
@@ -709,6 +730,7 @@ final class AskConversationModel: ObservableObject {
                     throw error
                 }
                 try Task.checkCancellation()
+                request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
                 pendingSends[id] = request
                 let response = try await api.send(conversationId: id, request: request, token: current.token)
                 pendingSends[id] = nil
@@ -773,11 +795,12 @@ final class AskConversationModel: ObservableObject {
             do {
                 _ = await tools.definitions(conversationId: id)
                 let response: AskConversation
-                if let request = pendingSends[id] {
+                if var request = pendingSends[id] {
                     try await validateModel(
                         request.modelRef, token: current.token,
                         hasImage: request.sendsImage || value.messages.contains(where: { $0.hasImage })
                     )
+                    request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
                     response = try await api.send(conversationId: id, request: request, token: current.token)
                     pendingSends[id] = nil
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
@@ -848,11 +871,24 @@ final class AskConversationModel: ObservableObject {
         }
     }
 
+    private func sanitizedMemory(_ value: AskConversation, account: String, local: Bool) -> AskConversation {
+        var value = value
+        // Legacy local snapshots have no attributable account. Keep their history
+        // readable, but never adopt that memory into the next signed-in account.
+        if local, account != AskRoutedAPI.localOwner, value.memory?.owner == nil { value.memory = nil }
+        value.memory = value.memory?.usable(owner: account, invalidations: memoryInvalidations)
+        if value.memory == nil, let payload = value.run?.inference?.payload {
+            value.run?.inference?.payload = AskMemory.removingInjection(from: payload)
+        }
+        return value
+    }
+
     private func accept(_ value: AskConversation, route: AskRoute) async throws {
         try Task.checkCancellation()
         guard owner == route.account else { throw CancellationError() }
         if let previous = snapshots[value.id], !value.isNewer(than: previous) { return }
         var value = snapshots[value.id]?.reconciling(value, preservingEqualRevisionContent: true) ?? value
+        value = sanitizedMemory(value, account: route.account, local: route.token.isEmpty)
         // Persist meaningful message/state changes, not every transient preview.
         if snapshots[value.id]?.messages != value.messages || snapshots[value.id]?.run?.status != value.run?.status || snapshots[value.id]?.usage != value.usage {
             try await cache.save(value, owner: route.owner)
@@ -862,6 +898,7 @@ final class AskConversationModel: ObservableObject {
         // may have advanced the state while this task was suspended.
         if let latest = snapshots[value.id], !value.isNewer(than: latest) { return }
         value = snapshots[value.id]?.reconciling(value, preservingEqualRevisionContent: true) ?? value
+        value = sanitizedMemory(value, account: route.account, local: route.token.isEmpty)
         snapshots[value.id] = value
         if selected?.id == value.id { selected = selected?.reconciling(value, preservingEqualRevisionContent: true) ?? value }
         if let inferenceID = progressInferenceIDs[value.id], value.run?.inference?.id != inferenceID {
@@ -893,7 +930,9 @@ final class AskConversationModel: ObservableObject {
         }
         var value = initial
         while true {
+            value = sanitizedMemory(value, account: current.account, local: current.token.isEmpty)
             try await accept(value, route: current)
+            value = sanitizedMemory(value, account: current.account, local: current.token.isEmpty)
             guard let run = value.run, run.isActive else { return }
             if run.status == "running" {
                 try await Task.sleep(for: .seconds(1))

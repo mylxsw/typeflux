@@ -185,6 +185,7 @@ final class AuthState: ObservableObject {
     // MARK: - Login
 
     func handleLoginSuccess(token: String, expiresAt: Int, refreshToken: String? = nil) async {
+        RecentInputMemoryStore.shared.invalidateObservations()
         let normalizedExpiresAt = normalizeLoginExpiry(expiresAt)
         inMemorySessionToken = (token, normalizedExpiresAt)
         cachedStoredToken = (token, normalizedExpiresAt)
@@ -201,7 +202,10 @@ final class AuthState: ObservableObject {
     // MARK: - Logout
 
     func logout(clearRecentInputMemory: Bool = true) {
-        if clearRecentInputMemory { RecentInputMemoryStore.shared.clear() }
+        RecentInputMemoryStore.shared.invalidateObservations()
+        if clearRecentInputMemory {
+            RecentInputMemoryStore.shared.clear(owner: userProfile?.id ?? loadStoredUserProfile()?.id ?? "local")
+        }
         if let refreshToken = cachedRefreshToken {
             Task {
                 try? await AuthAPIService.logout(refreshToken: refreshToken)

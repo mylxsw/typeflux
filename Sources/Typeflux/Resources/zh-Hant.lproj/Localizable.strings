@@ -2156,3 +2156,21 @@
 "ask.terminal.error.invalidCursor" = "The output cursor is invalid.";
 "ask.terminal.error.portUnavailable" = "The requested listener port is unavailable.";
 "ask.terminal.truncated" = "Output is truncated; the retained log may also be incomplete.";
+
+// Memory provenance and retention
+"memory.search" = "搜尋來源記憶";
+"memory.correct" = "更正記憶";
+"memory.deleteSource" = "刪除來源記憶";
+"memory.boundaries" = "刪除或更正來源記憶會使相關快照失效，停止後續注入。Ask 的記憶按鈕只控制注入；工具儲存記憶仍需核准。對話歷史須另外刪除，摘要和既有回覆可能保留衍生文字。";
+"memory.retention" = "保留期限";
+"memory.keepRetention" = "保留目前期限";
+"memory.forever" = "直到刪除";
+"memory.days7" = "7 天";
+"memory.days30" = "30 天";
+"memory.cancel" = "取消";
+"memory.save" = "儲存更正";
+"memory.correction" = "使用者更正";
+"memory.explicit" = "明確儲存的筆記";
+"memory.account" = "目前帳號";
+"memory.recentScope" = "Recent 只儲存在這台 Mac，依帳號及應用程式或頁面隔離，24 小時後到期。Soul 是目前帳號的自動摘要，保留至刪除。";
+"memory.saveFailed" = "無法儲存記憶變更，請重試。";
