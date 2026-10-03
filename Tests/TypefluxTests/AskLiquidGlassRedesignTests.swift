@@ -191,22 +191,37 @@ struct AskLiquidGlassRedesignTests {
 
     // MARK: - Attachment strip
 
-    @Test func stripListsOnlyWhatIsAttached() {
+    @Test func stripListsOnlyContentThatIsSent() {
         let attached = AskContextChips.items(screenshot: .attached, source: "Chrome — GUL-155", sourceBundleID: nil,
                                              selection: "a\nb", selectionOff: false, memory: nil, memoryPinned: true)
-        #expect(AskAttachmentStrip.attached(attached).map(\.kind) == [.screenshot, .source, .selection, .memory])
+        // Memory is a setting: its lit footer toggle is enough, so the strip leaves it out.
+        let strip = AskAttachmentStrip.attached(attached, screenshotCaptured: true)
+        #expect(strip.map(\.kind) == [.screenshot, .source, .selection])
+        // Being in the strip already says "attached"; the label just names the item.
+        #expect(strip.first?.title == L("ask.context.screenshot"))
+        #expect(strip.first?.title != L("ask.context.screenshot.attached"))
+        // The footer chip keeps describing the state in its hover card.
+        #expect(attached.first?.title == L("ask.context.screenshot.attached"))
+
+        // Switched on but not captured yet: nothing to show until the image arrives.
+        #expect(AskAttachmentStrip.attached(attached, screenshotCaptured: false).map(\.kind) == [.source, .selection])
 
         let off = AskContextChips.items(screenshot: .off, source: nil, sourceBundleID: nil,
                                         selection: "a", selectionOff: true, memory: nil, memoryOff: true,
                                         memoryPinned: true)
-        #expect(AskAttachmentStrip.attached(off).isEmpty)
+        #expect(AskAttachmentStrip.attached(off, screenshotCaptured: true).isEmpty)
+
+        let memoryOnly = AskContextChips.items(screenshot: .off, source: nil, sourceBundleID: nil,
+                                               selection: nil, memory: nil, memoryPinned: true)
+        #expect(memoryOnly.contains { $0.kind == .memory && $0.style == .active })
+        #expect(AskAttachmentStrip.attached(memoryOnly, screenshotCaptured: false).isEmpty)
 
         let failed = AskContextChips.items(screenshot: .failed(permission: true, message: "x"), source: nil,
                                            sourceBundleID: nil, selection: nil, memory: nil, memoryPinned: false)
-        #expect(AskAttachmentStrip.attached(failed).isEmpty)
+        #expect(AskAttachmentStrip.attached(failed, screenshotCaptured: true).isEmpty)
         let unavailable = AskContextChips.items(screenshot: .unavailable(reason: "no vision"), source: nil,
                                                 sourceBundleID: nil, selection: nil, memory: nil, memoryPinned: false)
-        #expect(AskAttachmentStrip.attached(unavailable).isEmpty)
+        #expect(AskAttachmentStrip.attached(unavailable, screenshotCaptured: true).isEmpty)
     }
 
     @MainActor @Test func screenshotThumbnailIsDecodedOncePerCapture() {

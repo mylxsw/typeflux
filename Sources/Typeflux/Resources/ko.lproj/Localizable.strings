@@ -1408,6 +1408,7 @@
 "ask.retry" = "Retry";
 "ask.screenshot" = "Attach screenshot";
 "ask.screenshot.unavailable" = "스크린샷 사용 불가";
+"ask.context.screenshot" = "스크린샷";
 "ask.context.screenshot.attached" = "스크린샷 첨부됨";
 "ask.context.screenshot.offHint" = "클릭하여 현재 화면 스크린샷 첨부";
 "ask.context.previewHint" = "클릭하여 미리보기";

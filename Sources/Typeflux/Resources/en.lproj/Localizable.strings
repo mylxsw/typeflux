@@ -1418,6 +1418,7 @@
 "ask.retry" = "Retry";
 "ask.screenshot" = "Attach screenshot";
 "ask.screenshot.unavailable" = "Screenshot unavailable";
+"ask.context.screenshot" = "Screenshot";
 "ask.context.screenshot.attached" = "Screenshot attached";
 "ask.context.screenshot.offHint" = "Click to attach a screenshot of the current screen";
 "ask.context.previewHint" = "Click to preview";

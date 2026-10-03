@@ -46,8 +46,10 @@ struct AskComposer: View {
     private var listening: Bool { voice.context == contextID && voice.phase == .listening }
     @State private var showingScreenshot = false
     @State private var showingStripPreview = false
-    /// The workspace spells out what is attached above the editor.
-    private var attachedItems: [AskContextItem] { AskAttachmentStrip.attached(contextItems) }
+    /// The workspace shows the content that is sent above the editor.
+    private var attachedItems: [AskContextItem] {
+        AskAttachmentStrip.attached(contextItems, screenshotCaptured: draft.wrappedValue.screenshot != nil)
+    }
     @State private var editorHeight: CGFloat = 32
     @State private var voiceShortcut: HotkeyBinding?
     /// Conversations whose queue list is expanded.

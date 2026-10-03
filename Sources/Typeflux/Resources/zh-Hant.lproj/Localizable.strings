@@ -1415,6 +1415,7 @@
 "ask.retry" = "Retry";
 "ask.screenshot" = "Attach screenshot";
 "ask.screenshot.unavailable" = "截圖不可用";
+"ask.context.screenshot" = "截圖";
 "ask.context.screenshot.attached" = "已附帶截圖";
 "ask.context.screenshot.offHint" = "點擊附帶目前螢幕截圖";
 "ask.context.previewHint" = "點擊預覽";
