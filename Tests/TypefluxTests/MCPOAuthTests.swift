@@ -198,10 +198,12 @@ final class MCPOAuthTests: XCTestCase {
             XCTAssertEqual(OAuthStubProtocol.form(body)["grant_type"], "refresh_token")
             return (200, [:], #"{"access_token":"fresh","refresh_token":"r2"}"#)
         }
-        OAuthStubProtocol.routes["mcp.example.com/mcp"] = { request, _ in
+        OAuthStubProtocol.routes["mcp.example.com/mcp"] = { request, body in
             guard request.value(forHTTPHeaderField: "Authorization") == "Bearer fresh" else {
                 return (401, ["WWW-Authenticate": #"Bearer resource_metadata="https://mcp.example.com/.well-known/oauth-protected-resource/mcp""#], "{}")
             }
+            let message = try? JSONDecoder().decode(MCPJsonRPCMessage.self, from: body ?? Data())
+            if message?.method == "notifications/initialized" { return (202, [:], "") }
             return (200, [:], #"{"jsonrpc":"2.0","id":"1","result":{"protocolVersion":"2025-06-18","capabilities":{},"serverInfo":{"name":"Secure","version":"1"}}}"#)
         }
         let store = MemoryTokenStore()
@@ -212,7 +214,7 @@ final class MCPOAuthTests: XCTestCase {
         let info = await client.serverInfo
         XCTAssertEqual(info?.protocolVersion, "2025-06-18")
         let sent = OAuthStubProtocol.requests.filter { $0.0.url?.path == "/mcp" }.map { $0.0.value(forHTTPHeaderField: "Authorization") }
-        XCTAssertEqual(sent, ["Bearer stale", "Bearer fresh"])
+        XCTAssertEqual(sent, ["Bearer stale", "Bearer fresh", "Bearer fresh"])
         let initialize = try XCTUnwrap(OAuthStubProtocol.requests.first { $0.0.url?.path == "/mcp" }?.1)
         XCTAssertTrue(String(decoding: initialize, as: UTF8.self).contains(MCPProtocol.latestVersion))
 
@@ -224,11 +226,13 @@ final class MCPOAuthTests: XCTestCase {
         } catch let MCPClientError.serverError(code, _) { XCTAssertEqual(code, 401) }
         // A token that is rejected again is reported once instead of looping.
         OAuthStubProtocol.routes["mcp.example.com/mcp"] = { _, _ in (401, [:], "{}") }
+        let before = OAuthStubProtocol.requests.filter { $0.0.url?.path == "/mcp" }.count
         let again = HTTPMCPClient(config: MCPHTTPConfig(url: resource, urlSession: OAuthStubProtocol.session(), authorizer: authorizer))
         do {
             try await again.connect()
             XCTFail("Expected 401")
         } catch let MCPClientError.serverError(code, _) { XCTAssertEqual(code, 401) }
+        XCTAssertEqual(OAuthStubProtocol.requests.filter { $0.0.url?.path == "/mcp" }.count - before, 2)
     }
 
     func testKeychainStoreRoundTrip() {
