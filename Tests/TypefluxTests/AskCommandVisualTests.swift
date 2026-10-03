@@ -117,11 +117,11 @@ struct AskCommandVisualTests {
             let launcherField = try #require(editor(in: launcherHost))
             panel.makeFirstResponder(launcherField)
             // Real key presses arrive one run-loop turn apart, so SwiftUI updates in between.
-            for character in "/sk" {
+            for character in "/me" {
                 type(String(character), into: launcherField)
                 try await Task.sleep(for: .milliseconds(150))
             }
-            #expect(fixture.model.launcherDraft.text == "/sk")
+            #expect(fixture.model.launcherDraft.text == "/me")
             try await Task.sleep(for: .milliseconds(300))
             try snapshot(launcherHost, to: root.appendingPathComponent("commands-launcher-\(name).png"))
         }
