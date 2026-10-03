@@ -144,9 +144,9 @@ struct AskComposerTextView: NSViewRepresentable {
 
         /// Hands files or images on `pasteboard` to `onAttach`; false leaves it to the text system.
         @discardableResult
-        func attach(from pasteboard: NSPasteboard) -> Bool {
-            guard let onAttach, isEditable, AskAttachmentSource.canRead(from: pasteboard) else { return false }
-            let sources = AskAttachmentSource.read(from: pasteboard)
+        func attach(from pasteboard: NSPasteboard, textWins: Bool = true) -> Bool {
+            guard let onAttach, isEditable, AskAttachmentSource.canRead(from: pasteboard, textWins: textWins) else { return false }
+            let sources = AskAttachmentSource.read(from: pasteboard, textWins: textWins)
             guard !sources.isEmpty else { return false }
             onAttach(sources)
             return true
@@ -167,7 +167,7 @@ struct AskComposerTextView: NSViewRepresentable {
             super.acceptableDragTypes + [.fileURL, .png, .tiff]
         }
         private func attachesDrop(_ sender: NSDraggingInfo) -> Bool {
-            onAttach != nil && isEditable && AskAttachmentSource.canRead(from: sender.draggingPasteboard)
+            onAttach != nil && isEditable && AskAttachmentSource.canRead(from: sender.draggingPasteboard, textWins: false)
         }
         override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
             guard attachesDrop(sender) else { return super.draggingEntered(sender) }
@@ -186,7 +186,7 @@ struct AskComposerTextView: NSViewRepresentable {
         }
         override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
             onDropTargetChange(false)
-            if attach(from: sender.draggingPasteboard) { return true }
+            if attach(from: sender.draggingPasteboard, textWins: false) { return true }
             return super.performDragOperation(sender)
         }
         override func concludeDragOperation(_ sender: NSDraggingInfo?) {

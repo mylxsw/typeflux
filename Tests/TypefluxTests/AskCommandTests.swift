@@ -23,6 +23,11 @@ struct AskSlashQueryTests {
         #expect(AskSlashQuery.parse("/mo\n", caret: 4) == nil, "a new line ends the token")
     }
 
+    @Test func theChineseSlashKeyOpensCommandsToo() {
+        #expect(AskSlashQuery.parse("、mo", caret: 3)?.name == "mo")
+        #expect(AskSlashQuery.parse("苹果、香蕉", caret: 5) == nil, "a list separator inside text is not a command")
+    }
+
     @Test func onlyTheTextBeforeTheCaretCounts() {
         #expect(AskSlashQuery.parse("/model and more", caret: 3)?.name == "mo")
         #expect(AskSlashQuery.parse("/中文", caret: 3)?.name == "中文")

@@ -88,10 +88,12 @@ enum AskAttachmentSource: Equatable, @unchecked Sendable {
     /// File URLs come first: Finder puts both the files and their names on the pasteboard.
     /// Image data counts only without text, because apps such as Notes or Word put a
     /// picture of copied text next to the text itself, and that must paste as text.
-    static func read(from pasteboard: NSPasteboard) -> [AskAttachmentSource] {
+    /// A drag is deliberate, so `textWins` is false there: an image dragged out of
+    /// a browser also carries its address as text, and must still attach.
+    static func read(from pasteboard: NSPasteboard, textWins: Bool = true) -> [AskAttachmentSource] {
         let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
         if !urls.isEmpty { return urls.map { .file($0) } }
-        guard pasteboard.availableType(from: [.string]) == nil else { return [] }
+        guard !textWins || pasteboard.availableType(from: [.string]) == nil else { return [] }
         for type in [NSPasteboard.PasteboardType.png, .tiff] {
             if let data = pasteboard.data(forType: type) { return [.image(data, name: L("ask.attach.pastedImage"))] }
         }
@@ -99,9 +101,10 @@ enum AskAttachmentSource: Equatable, @unchecked Sendable {
     }
 
     /// Whether a paste or drop should attach rather than insert text.
-    static func canRead(from pasteboard: NSPasteboard) -> Bool {
+    static func canRead(from pasteboard: NSPasteboard, textWins: Bool = true) -> Bool {
         if pasteboard.canReadObject(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) { return true }
-        return pasteboard.availableType(from: [.string]) == nil && pasteboard.availableType(from: [.png, .tiff]) != nil
+        guard !textWins || pasteboard.availableType(from: [.string]) == nil else { return false }
+        return pasteboard.availableType(from: [.png, .tiff]) != nil
     }
 }
 

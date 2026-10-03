@@ -299,7 +299,8 @@ struct AskCommandPaletteState: Equatable {
 /// The slash token the caret is in: "/mo" while choosing a command, "/model gpt"
 /// while filtering a submenu, "/remember milk" while typing an argument. A slash
 /// counts only at the start of the text or after whitespace, so paths such as
-/// "a/b" never open the palette.
+/// "a/b" never open the palette. "、" counts too: Chinese input methods type it
+/// on the slash key.
 struct AskSlashQuery: Equatable {
     /// UTF-16 range from the slash to the caret.
     var range: NSRange
@@ -307,7 +308,8 @@ struct AskSlashQuery: Equatable {
     /// Text after "name "; nil until a space follows the name.
     var argument: String?
 
-    private static let pattern = try! NSRegularExpression(pattern: #"(?:^|(?<=\s))/([^\s/]*)(?: ([^\n]*))?\z"#)
+    /// "/" or the "、" a Chinese input method types on the slash key.
+    private static let pattern = try! NSRegularExpression(pattern: #"(?:^|(?<=\s))[/、]([^\s/、]*)(?: ([^\n]*))?\z"#)
 
     static func parse(_ text: String, caret: Int) -> AskSlashQuery? {
         let string = text as NSString

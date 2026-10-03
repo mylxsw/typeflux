@@ -67,6 +67,8 @@ struct AskComposer: View {
     @State private var slash: AskSlashQuery?
     /// Escape closed the palette for the token starting here; it stays closed until that token goes.
     @State private var dismissedSlash: Int?
+    /// Read once when the palette opens; running a command closes it.
+    @State private var commandContext: AskCommandContext?
     /// The workspace shows the content that is sent above the editor.
     private var attachedItems: [AskContextItem] {
         AskAttachmentStrip.attached(contextItems, screenshotCaptured: draft.wrappedValue.screenshot != nil)
@@ -266,7 +268,8 @@ struct AskComposer: View {
     /// the one command waiting for its argument. Nothing to show closes it.
     private func refreshPalette() {
         guard let slash else { closePalette(); return }
-        let context = model.commandContext(launcher: launcher)
+        let context = commandContext ?? model.commandContext(launcher: launcher)
+        commandContext = context
         let commands = AskCommandCatalog.commands(context)
         var rows: [AskCommandMatcher.Match] = []
         var parent: AskCommand?
@@ -295,6 +298,7 @@ struct AskComposer: View {
     }
 
     private func closePalette() {
+        commandContext = nil
         guard paletteOpen else { return }
         withAnimation(.easeOut(duration: 0.12)) { paletteOpen = false }
     }

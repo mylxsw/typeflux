@@ -37,10 +37,13 @@ struct AskAttachButton: View {
         }
         // ⌘U picks files directly, without opening the menu.
         .background {
+            // Invisible rather than hidden: a hidden button drops its shortcut.
             Button("") { model.pickAttachments(folders: false, launcher: launcher) }
                 .keyboardShortcut("u", modifiers: .command)
                 .disabled(disabled)
-                .hidden()
+                .opacity(0)
+                .frame(width: 0, height: 0)
+                .accessibilityHidden(true)
         }
     }
 }

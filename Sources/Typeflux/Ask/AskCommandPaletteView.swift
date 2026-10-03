@@ -10,7 +10,8 @@ struct AskCommandPaletteView: View {
 
     static let rowHeight: CGFloat = 44
     static let groupHeight: CGFloat = 26
-    static let chromeHeight: CGFloat = 70
+    /// Header (32), footer (36), the list's vertical padding (8) and the dividers.
+    static let chromeHeight: CGFloat = 78
     static let maximumListHeight: CGFloat = 300
 
     /// Height of the whole palette for `state`, so the launcher can size its panel.

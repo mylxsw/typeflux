@@ -218,6 +218,9 @@ struct AskAttachmentPasteboardTests {
         board.setData(png, forType: .png)
         #expect(!AskAttachmentSource.canRead(from: board))
         #expect(AskAttachmentSource.read(from: board).isEmpty)
+        // A drag is deliberate: the image wins over the address dragged with it.
+        #expect(AskAttachmentSource.canRead(from: board, textWins: false))
+        #expect(AskAttachmentSource.read(from: board, textWins: false).count == 1)
     }
 
     @Test func theEditorAttachesOnPasteAndLeavesTextAlone() {
@@ -234,6 +237,7 @@ struct AskAttachmentPasteboardTests {
         board.clearContents()
         board.setString("text", forType: .string)
         #expect(!editor.attach(from: board))
+        #expect(!editor.attach(from: board, textWins: false), "plain text never attaches")
         editor.isEditable = false
         board.clearContents()
         board.writeObjects([URL(fileURLWithPath: "/tmp/a.txt") as NSURL])
