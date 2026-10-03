@@ -3,6 +3,7 @@ import ScreenCaptureKit
 
 struct AskCapturedContext: Sendable {
     var selection: String?
+    var selectionStatus: String?
     var source: String?
     /// The source app, so the composer can draw its icon.
     var sourceBundleID: String?
@@ -14,16 +15,19 @@ struct AskCapturedContext: Sendable {
 
 @MainActor
 protocol AskContextCapturing {
-    func capture(includeScreenshot: Bool, includeSelection: Bool) async -> AskCapturedContext
+    func makeSelectionRequest() -> ReadOnlySelectionRequest
+    func capture(includeScreenshot: Bool, includeSelection: Bool, request: ReadOnlySelectionRequest) async -> AskCapturedContext
     /// Memory for a conversation started without a source application.
     func globalMemory() -> AskMemory?
 }
 
 extension AskContextCapturing {
     func globalMemory() -> AskMemory? { nil }
+    func makeSelectionRequest() -> ReadOnlySelectionRequest { .frontmost() }
 
-    func capture(includeScreenshot: Bool) async -> AskCapturedContext {
-        await capture(includeScreenshot: includeScreenshot, includeSelection: true)
+    func capture(includeScreenshot: Bool, includeSelection: Bool = true) async -> AskCapturedContext {
+        await capture(includeScreenshot: includeScreenshot, includeSelection: includeSelection,
+                      request: makeSelectionRequest())
     }
 }
 
@@ -32,18 +36,21 @@ final class AskContextCapture: AskContextCapturing {
     private static let screenCaptureRequestedKey = "ask.screenCaptureAccessRequested"
     private let injector: TextInjector
     private let memory: (any AskMemoryProviding)?
+    private let frontmostProcessID: () -> pid_t?
     private let accessibilityTrusted: () -> Bool
     private let captureScreenshot: (CGDirectDisplayID?) async throws -> String
 
     init(
         injector: TextInjector, memory: (any AskMemoryProviding)? = nil,
         accessibilityTrusted: @escaping () -> Bool = { AXIsProcessTrusted() },
+        frontmostProcessID: @escaping () -> pid_t? = { NSWorkspace.shared.frontmostApplication?.processIdentifier },
         captureScreenshot: @escaping (CGDirectDisplayID?) async throws -> String = {
             try await AskContextCapture.screenshot(displayId: $0).dataURL
         }
     ) {
         self.injector = injector
         self.memory = memory
+        self.frontmostProcessID = frontmostProcessID
         self.accessibilityTrusted = accessibilityTrusted
         self.captureScreenshot = captureScreenshot
     }
@@ -52,33 +59,53 @@ final class AskContextCapture: AskContextCapturing {
         memory?.memory(bundleIdentifier: nil, appName: nil)
     }
 
-    func capture(includeScreenshot: Bool, includeSelection: Bool) async -> AskCapturedContext {
-        let app = NSWorkspace.shared.frontmostApplication
+    func makeSelectionRequest() -> ReadOnlySelectionRequest { injector.makeReadOnlySelectionRequest() }
+
+    func capture(includeScreenshot: Bool, includeSelection: Bool, request: ReadOnlySelectionRequest) async -> AskCapturedContext {
+        func discarded(_ status: String) -> AskCapturedContext {
+            request.log(status: status)
+            return AskCapturedContext(selectionStatus: status)
+        }
+        guard !Task.isCancelled else { return discarded("capture-cancelled") }
+        guard request.matches(processID: frontmostProcessID()) else {
+            return discarded(request.processID == nil ? "source-unavailable" : "target-changed")
+        }
         let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
         let displayId = (screen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
         // The screenshot runs alongside the accessibility read rather than after it;
         // the launcher is already on screen and is excluded from the capture.
         let screenshotTask: Task<String, Error>? = includeScreenshot
             ? Task { [captureScreenshot] in try await captureScreenshot(displayId) } : nil
-        // The launcher never activates the app, so the source app stays frontmost.
-        // The injector fixes the source target before its first asynchronous read.
+        defer { screenshotTask?.cancel() }
+        // The request was fixed before the launcher took focus and before any
+        // draft/operation-queue waits. Never recapture the frontmost app here.
         let selection: TextSelectionSnapshot
-        if includeSelection, accessibilityTrusted() {
-            selection = await injector.selectionSnapshot(for: .readOnlyContext)
+        if !includeSelection {
+            selection = TextSelectionSnapshot(source: "selection-not-requested")
+        } else if request.nativeSnapshot != nil || accessibilityTrusted() {
+            selection = await injector.readOnlySelectionSnapshot(for: request)
         } else {
-            selection = TextSelectionSnapshot(source: "selection-not-requested-or-unavailable")
+            selection = TextSelectionSnapshot(source: "permission-missing")
+        }
+        request.log(status: selection.source, details: ["phase": "capture-result"])
+        guard !Task.isCancelled else { return discarded("capture-cancelled") }
+        guard request.matches(processID: frontmostProcessID()), selection.source != "target-changed" else {
+            return discarded("target-changed")
         }
         var result = AskCapturedContext(
             selection: selection.selectedText,
-            source: [app?.localizedName, selection.windowTitle].compactMap { $0 }.joined(separator: " — "),
-            sourceBundleID: app?.bundleIdentifier,
-            // Resolved before the launcher takes focus, while the source app is still frontmost.
-            memory: memory?.memory(bundleIdentifier: app?.bundleIdentifier, appName: app?.localizedName)
+            selectionStatus: selection.source,
+            source: [request.processName, selection.windowTitle].compactMap { $0 }.joined(separator: " — "),
+            sourceBundleID: request.bundleIdentifier,
+            // Source identity stays the same even after asynchronous selection reads.
+            memory: memory?.memory(bundleIdentifier: request.bundleIdentifier, appName: request.processName)
         )
         if let screenshotTask {
             do { result.screenshot = try await screenshotTask.value }
             catch { result.warning = error.localizedDescription }
         }
+        guard !Task.isCancelled else { return discarded("capture-cancelled") }
+        guard request.matches(processID: frontmostProcessID()) else { return discarded("target-changed") }
         return result
     }
 

@@ -87,6 +87,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         if NSWorkspace.shared.frontmostApplication?.processIdentifier != ProcessInfo.processInfo.processIdentifier {
             tools?.targetApplication = NSWorkspace.shared.frontmostApplication
         }
+        let selectionRequest = model.makeLauncherSelectionRequest()
         let panel = launcherPanel()
         applyAppearance(panel)
         let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
@@ -103,7 +104,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             // A cancelled launch must not clear a newer launch task.
             defer { if !Task.isCancelled { launchTask = nil } }
             guard !Task.isCancelled else { return }
-            await model.prepareLauncher()
+            await model.prepareLauncher(request: selectionRequest)
         }
     }
 

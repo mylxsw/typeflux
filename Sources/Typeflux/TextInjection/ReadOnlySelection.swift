@@ -6,6 +6,8 @@ final class ReadOnlySelectionBudget {
     private var remaining: Int
     private let deadline: TimeInterval
     private let now: () -> TimeInterval
+    private(set) var operations = 0
+    private(set) var exhaustedReason: String?
 
     init(operations: Int = 96, seconds: TimeInterval = 0.35,
          now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
@@ -15,26 +17,26 @@ final class ReadOnlySelectionBudget {
     }
 
     func take() -> Bool {
-        guard remaining > 0, now() < deadline else { return false }
+        guard now() < deadline else { exhaustedReason = "deadline"; return false }
+        guard remaining > 0 else { exhaustedReason = "operations"; return false }
         remaining -= 1
+        operations += 1
         return true
     }
 }
 
 enum ReadOnlySelection {
     static func capture(
-        readAX: () -> String?, copy: () -> String?, targetMatches: () -> Bool,
+        readAX: () -> String?, targetMatches: () -> Bool,
         checkCancellation: () throws -> Void
     ) throws -> (text: String?, source: String) {
         try checkCancellation()
+        guard targetMatches() else { return (nil, "target-changed") }
         let selectedText = readAX()
         try checkCancellation()
         guard targetMatches() else { return (nil, "target-changed") }
         if let selectedText { return (selectedText, "accessibility-context") }
-        let copiedText = copy()
-        try checkCancellation()
-        guard targetMatches() else { return (nil, "target-changed") }
-        return (copiedText, copiedText == nil ? "none" : "clipboard-copy")
+        return (nil, "none")
     }
 
     static func text(
@@ -76,7 +78,8 @@ enum ReadOnlySelection {
     /// infer a selection from a label, full value, or editability alone.
     static func find<Node>(
         roots: [Node], budget: ReadOnlySelectionBudget,
-        read: (Node) -> String?, children: (Node) -> [Node], matches: (Node, Node) -> Bool
+        read: (Node) -> String?, children: (Node) -> [Node], matches: (Node, Node) -> Bool,
+        onTruncation: () -> Void = {}
     ) -> (node: Node, text: String)? {
         var pending = Array(roots.prefix(2))
         var seen: [Node] = []
@@ -91,7 +94,11 @@ enum ReadOnlySelection {
             }
             // Bound both the requests and the in-memory queue for wide/cyclic trees.
             if pending.count < 96 {
-                pending.append(contentsOf: children(node).prefix(96 - pending.count))
+                let descendants = children(node)
+                if descendants.count > 96 - pending.count { onTruncation() }
+                pending.append(contentsOf: descendants.prefix(96 - pending.count))
+            } else {
+                onTruncation()
             }
         }
         return nil

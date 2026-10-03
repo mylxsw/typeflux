@@ -15,7 +15,7 @@ enum SelectionCaptureIntent: Equatable {
     /// with opaque accessibility trees may use the transactional clipboard fallback.
     case explicitSelectionAction
 
-    /// Capture context, including non-focused selections, without authorizing replacement.
+    /// Read AX context without sending keys, accessing the clipboard or authorizing replacement.
     case readOnlyContext
 }
 
@@ -95,6 +95,10 @@ struct CurrentInputTextSnapshot {
 }
 
 protocol TextInjector {
+    @MainActor
+    func makeReadOnlySelectionRequest() -> ReadOnlySelectionRequest
+    @MainActor
+    func readOnlySelectionSnapshot(for request: ReadOnlySelectionRequest) async -> TextSelectionSnapshot
     func selectionSnapshot(for intent: SelectionCaptureIntent) async -> TextSelectionSnapshot
     func currentInputTextSnapshot() async -> CurrentInputTextSnapshot
     func currentInputText() async -> String?

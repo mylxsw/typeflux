@@ -254,7 +254,10 @@ final class AskConversationModel: ObservableObject {
         capturing = false; controllingConversationId = nil; onControlChanged?(false); owner = ""
     }
 
-    func prepareLauncher() async {
+    func makeLauncherSelectionRequest() -> ReadOnlySelectionRequest { capture.makeSelectionRequest() }
+
+    func prepareLauncher(request: ReadOnlySelectionRequest? = nil) async {
+        let request = request ?? makeLauncherSelectionRequest()
         guard !Task.isCancelled else { return }
         flushMemoryPurge()
         captureWarning = nil
@@ -275,7 +278,7 @@ final class AskConversationModel: ObservableObject {
         capturing = true
         let generation = UUID(); captureGeneration = generation
         defer { if generation == captureGeneration { capturing = false } }
-        let context = await capture.capture(includeScreenshot: launcherDraft.includeScreenshot)
+        let context = await capture.capture(includeScreenshot: launcherDraft.includeScreenshot, includeSelection: true, request: request)
         guard !Task.isCancelled, generation == captureGeneration else { return }
         launcherDraft.selection = context.selection
         launcherDraft.selectionOff = nil

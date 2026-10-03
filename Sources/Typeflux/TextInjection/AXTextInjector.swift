@@ -515,6 +515,9 @@ final class AXTextInjector: TextInjector {
 
     @MainActor
     func selectionSnapshot(for intent: SelectionCaptureIntent) async -> TextSelectionSnapshot {
+        if intent == .readOnlyContext {
+            return await readOnlySelectionSnapshot(for: makeReadOnlySelectionRequest())
+        }
         do { try await acquireTextOperation() }
         catch { return TextSelectionSnapshot(source: "capture-cancelled-or-busy") }
         defer { deliveryInProgress = false }
@@ -788,8 +791,10 @@ final class AXTextInjector: TextInjector {
         switch intent {
         case .automaticInsertion:
             selectedRange?.length ?? 0 > 0
-        case .explicitSelectionAction, .readOnlyContext:
+        case .explicitSelectionAction:
             true
+        case .readOnlyContext:
+            false
         }
     }
 

@@ -6,9 +6,13 @@ import Testing
 private final class HeldLauncherCapture: AskContextCapturing {
     var pending: [Int: CheckedContinuation<AskCapturedContext, Never>] = [:]
     private(set) var calls = 0
+    var requests: [ReadOnlySelectionRequest] = []
+    var onMakeRequest: (() -> ReadOnlySelectionRequest)?
+    func makeSelectionRequest() -> ReadOnlySelectionRequest { onMakeRequest?() ?? .frontmost() }
 
-    func capture(includeScreenshot: Bool, includeSelection: Bool) async -> AskCapturedContext {
+    func capture(includeScreenshot: Bool, includeSelection: Bool, request: ReadOnlySelectionRequest) async -> AskCapturedContext {
         calls += 1
+        requests.append(request)
         let id = calls
         return await withCheckedContinuation { pending[id] = $0 }
     }
@@ -108,11 +112,22 @@ struct AskLauncherToggleTests {
             for id in Array(capture.pending.keys) { capture.finish(id) }
             model.resetSession(); f.model.resetSession()
         }
+        let original = ReadOnlySelectionRequest(processID: 42, processName: "Original")
+        var source = original
+        var madeBeforePanel = false
+        capture.onMakeRequest = {
+            madeBeforePanel = self.panel() == nil
+            return source
+        }
         controller.toggleLauncher()
+        source = ReadOnlySelectionRequest(processID: 99, processName: "New frontmost")
+        #expect(madeBeforePanel)
         // Visible in the same run-loop turn as the hotkey, before any capture.
         #expect(panel() != nil)
         #expect(capture.calls == 0)
         try await f.wait { capture.pending[1] != nil }
+        #expect(capture.requests.map(\.id) == [original.id])
+        #expect(capture.requests.first?.processID == 42)
         // The user starts typing before the context arrives; both survive.
         model.launcherDraft.text = "Typed early"
         capture.finish(1)

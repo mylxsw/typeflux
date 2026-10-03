@@ -13,7 +13,7 @@ final class ReadOnlySelectionTests: XCTestCase {
                         parameterizedText: @escaping (CFRange) -> String? = { _ in nil }) -> String? {
         AXTextInjector().readOnlySelectedText(
             from: AXUIElementCreateSystemWide(), budget: ReadOnlySelectionBudget(operations: operations),
-            attributeValue: { attributes[$0] }, parameterizedText: parameterizedText
+            attributeRead: { (.success, attributes[$0]) }, parameterizedText: parameterizedText
         )
     }
 
@@ -232,64 +232,55 @@ final class ReadOnlySelectionTests: XCTestCase {
         }
     }
 
-    func testReadOnlyProbeAllowsMissingRangeWhileDictationStillRejectsIt() {
-        XCTAssertTrue(AXTextInjector.shouldProbeClipboardSelection(selectedRange: nil, intent: .readOnlyContext))
+    func testReadOnlyContextNeverProbesClipboardRegardlessOfRange() {
+        for range in [nil, CFRange(location: 0, length: 0), CFRange(location: 0, length: 3)] {
+            XCTAssertFalse(AXTextInjector.shouldProbeClipboardSelection(selectedRange: range, intent: .readOnlyContext))
+            XCTAssertTrue(AXTextInjector.shouldProbeClipboardSelection(selectedRange: range, intent: .explicitSelectionAction))
+        }
         XCTAssertFalse(AXTextInjector.shouldProbeClipboardSelection(selectedRange: nil, intent: .automaticInsertion))
-        XCTAssertFalse(AXTextInjector.shouldProbeClipboardSelection(
-            selectedRange: CFRange(location: 0, length: 0), intent: .automaticInsertion
-        ))
     }
 
-    func testCapturePrefersAXAndOnlyCopiesWhenAXIsUnavailable() throws {
-        let ax = try ReadOnlySelection.capture(
-            readAX: { "selection" }, copy: { XCTFail(); return nil },
-            targetMatches: { true }, checkCancellation: {}
+    func testCaptureReturnsAXTextOrEmptyWithoutCopyCapability() throws {
+        for text in ["selection", nil] {
+            let result = try ReadOnlySelection.capture(
+                readAX: { text }, targetMatches: { true }, checkCancellation: {}
+            )
+            XCTAssertEqual(result.text, text)
+            XCTAssertEqual(result.source, text == nil ? "none" : "accessibility-context")
+        }
+    }
+
+    func testTargetChangeBeforeReadDoesNotReadAnotherApplication() throws {
+        let result = try ReadOnlySelection.capture(
+            readAX: { XCTFail("Must not read a changed target"); return nil },
+            targetMatches: { false }, checkCancellation: {}
         )
-        XCTAssertEqual(ax.text, "selection")
-        XCTAssertEqual(ax.source, "accessibility-context")
-        for copied in ["selection", nil] {
-            var copies = 0
-            let result = try ReadOnlySelection.capture(
-                readAX: { nil }, copy: { copies += 1; return copied },
-                targetMatches: { true }, checkCancellation: {}
-            )
-            XCTAssertEqual(copies, 1)
-            XCTAssertEqual(result.text, copied)
-            XCTAssertEqual(result.source, copied == nil ? "none" : "clipboard-copy")
-        }
+        XCTAssertNil(result.text)
+        XCTAssertEqual(result.source, "target-changed")
     }
 
-    func testTargetChangeDiscardsTextAndPreventsCopyIntoAnotherApp() throws {
-        for selected in ["old selection", nil] {
-            let result = try ReadOnlySelection.capture(
-                readAX: { selected }, copy: { XCTFail(); return nil },
-                targetMatches: { false }, checkCancellation: {}
-            )
-            XCTAssertNil(result.text)
-            XCTAssertEqual(result.source, "target-changed")
-        }
+    func testTargetChangeDuringReadDiscardsText() throws {
         var matches = true
         let result = try ReadOnlySelection.capture(
-            readAX: { nil }, copy: { matches = false; return "unrelated text" },
+            readAX: { matches = false; return "unrelated text" },
             targetMatches: { matches }, checkCancellation: {}
         )
         XCTAssertNil(result.text)
         XCTAssertEqual(result.source, "target-changed")
     }
 
-    func testCancellationBeforeReadOrCopyOrAfterCopyDiscardsCapture() {
-        for cancellationStep in 1...3 {
+    func testCancellationBeforeOrAfterReadDiscardsCapture() {
+        for cancellationStep in 1...2 {
             var checks = 0
-            var copies = 0
+            var reads = 0
             XCTAssertThrowsError(try ReadOnlySelection.capture(
-                readAX: { if cancellationStep == 1 { XCTFail() }; return nil },
-                copy: { copies += 1; return "copied" }, targetMatches: { true },
+                readAX: { reads += 1; return "selection" }, targetMatches: { true },
                 checkCancellation: {
                     checks += 1
                     if checks == cancellationStep { throw CancellationError() }
                 }
             ))
-            XCTAssertEqual(copies, cancellationStep == 3 ? 1 : 0)
+            XCTAssertEqual(reads, cancellationStep == 2 ? 1 : 0)
         }
     }
 }
