@@ -107,8 +107,11 @@ struct AskComposerTextView: NSViewRepresentable {
             (editor as? Editor)?.reportHeight()
             (editor as? Editor)?.reportSlash()
         }
+        /// `updateNSView` moves the caret while SwiftUI is updating; report on the next
+        /// turn so the composer never changes its state in the middle of an update.
         func textViewDidChangeSelection(_ notification: Notification) {
-            (notification.object as? Editor)?.reportSlash()
+            guard let editor = notification.object as? Editor else { return }
+            DispatchQueue.main.async { [weak editor] in editor?.reportSlash() }
         }
     }
 

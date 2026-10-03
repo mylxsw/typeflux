@@ -134,7 +134,7 @@ struct AskCommandCatalogTests {
         let models = AskCommandCatalog.submenu(.model, context: context)
         #expect(models.map(\.name) == ["Model A", "Model B"])
         #expect(models.first?.selected == true)
-        #expect(models.allSatisfy(\.plain))
+        #expect(models.allSatisfy { $0.plain })
         #expect(models.first?.detail == L("ask.command.model.vision"))
         let levels = AskCommandCatalog.submenu(.reasoning, context: context)
         #expect(levels.count == AskReasoningEffort.allCases.count)
