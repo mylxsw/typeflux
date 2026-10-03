@@ -1,9 +1,8 @@
 import Foundation
 
-/// Runs short programs for Ask under a macOS Seatbelt profile: no network, no
-/// reads from the user's home folder, and writes only inside a per-conversation
-/// workspace in the temporary directory. Files persist between calls of the
-/// same conversation so a program can build on earlier output.
+/// Analysis execution is gated off in production until hostile process/session
+/// escape is contained. The opt-in path validates file/environment isolation and
+/// manages descendants that remain in their original process group.
 struct AskCodeSandbox: Sendable {
     enum Language: String, CaseIterable, Sendable {
         case python, javascript, shell
@@ -24,40 +23,47 @@ struct AskCodeSandbox: Sendable {
     static let sandboxExec = "/usr/bin/sandbox-exec"
 
     var baseDirectory: URL
-    /// Extra folders programs may read, such as the Skills folder.
     var readableDirectories: [URL]
-    var home: String
-    var environment: [String: String]
+    /// Test/integration opt-in only. Do not connect to a user setting until the
+    /// process containment acceptance gate documented in docs is satisfied.
+    var allowProcessGroupExecution: Bool
 
-    init(baseDirectory: URL = FileManager.default.temporaryDirectory.appendingPathComponent("TypefluxAskSandbox", isDirectory: true),
-         readableDirectories: [URL] = [], home: String = NSHomeDirectory(),
-         environment: [String: String] = ProcessInfo.processInfo.environment) {
+    init(
+        baseDirectory: URL = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "TypefluxAskSandbox-v2",
+            isDirectory: true
+        ),
+        readableDirectories: [URL] = [],
+        home _: String = NSHomeDirectory(),
+        environment _: [String: String] = [:],
+        allowProcessGroupExecution: Bool = false
+    ) {
         self.baseDirectory = baseDirectory
         self.readableDirectories = readableDirectories
-        self.home = home
-        self.environment = environment
+        self.allowProcessGroupExecution = allowProcessGroupExecution
     }
 
-    var isSupported: Bool { FileManager.default.isExecutableFile(atPath: Self.sandboxExec) }
+    var isSupported: Bool {
+        allowProcessGroupExecution && FileManager.default.isExecutableFile(atPath: Self.sandboxExec)
+    }
 
+    /// Never derive child environment or executable search from the app's env.
     var launchEnvironment: [String: String] {
-        StdioMCPClient.launchEnvironment(base: environment, overrides: [:], home: home)
+        ["PATH": "/usr/bin:/bin", "LANG": "en_US.UTF-8", "LC_ALL": "en_US.UTF-8",
+         "MPLBACKEND": "Agg", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1"]
     }
 
-    /// Interpreters found on this Mac. The /usr/bin/python3 stub would open an
-    /// installer dialog when the Command Line Tools are missing, so it only counts
-    /// when they are installed.
+    /// Only OS/CLT runtimes with a bounded dependency root are supported. Homebrew,
+    /// pyenv, nvm and arbitrary PATH runtimes require separate dependency validation.
     func interpreter(for language: Language) -> URL? {
         switch language {
         case .shell: return URL(fileURLWithPath: "/bin/zsh")
-        case .javascript: return StdioMCPClient.resolveExecutable("node", searchPath: launchEnvironment["PATH"] ?? "")
+        case .javascript: return nil
         case .python:
-            guard let url = StdioMCPClient.resolveExecutable("python3", searchPath: launchEnvironment["PATH"] ?? "") else { return nil }
-            if url.path == "/usr/bin/python3" {
-                let tools = ["/Library/Developer/CommandLineTools/usr/bin/python3", "/Applications/Xcode.app/Contents/Developer/usr/bin/python3"]
-                return tools.contains(where: FileManager.default.isExecutableFile(atPath:)) ? url : nil
-            }
-            return url
+            let path = Self.realPath("/Library/Developer/CommandLineTools/usr/bin/python3")
+            let root = "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/"
+            guard path.hasPrefix(root), FileManager.default.isExecutableFile(atPath: path) else { return nil }
+            return URL(fileURLWithPath: path)
         }
     }
 
@@ -84,30 +90,39 @@ struct AskCodeSandbox: Sendable {
         as PNG or JPEG in the working directory; the first new image is returned. Default time limit \(Self.defaultTimeout) s. \
         Each run needs user approval.
         """
-        return AskToolDefinition(name: "run_code", description: description,
-                                 parameters: JSONValue(data: try! JSONSerialization.data(withJSONObject: schema, options: .sortedKeys)))
+        guard let data = try? JSONSerialization.data(withJSONObject: schema, options: .sortedKeys) else { return nil }
+        return AskToolDefinition(name: "run_code", description: description, parameters: JSONValue(data: data))
     }
 
     func workspace(for conversationId: String) throws -> URL {
-        let safe = conversationId.filter { $0.isLetter || $0.isNumber || $0 == "-" }.prefix(64)
-        let url = baseDirectory.appendingPathComponent(safe.isEmpty ? "default" : String(safe), isDirectory: true)
-        try FileManager.default.createDirectory(at: url.appendingPathComponent(".tmp"), withIntermediateDirectories: true)
-        return URL(fileURLWithPath: Self.realPath(url.path), isDirectory: true)
+        let root = try AskSecureDirectory.openRoot(baseDirectory)
+        let sessions = try root.child("sessions", create: true, privateDirectory: true)
+        let workspace = try sessions.child(
+            AskSecureDirectory.sessionName(conversationId),
+            create: true,
+            privateDirectory: true
+        )
+        _ = try workspace.child(".tmp", create: true, privateDirectory: true)
+        return try workspace.url
     }
 
-    /// Seatbelt matches real paths (/private/var/...), which URL.resolvingSymlinksInPath strips.
+    /// Only used for trusted OS runtime lookup, never for host writes.
     static func realPath(_ path: String) -> String {
         guard let resolved = realpath(path, nil) else { return path }
         defer { free(resolved) }
         return String(cString: resolved)
     }
 
-    /// Removes workspaces untouched for `age`, best effort.
+    /// Only inactive v2 sessions are pruned; legacy roots are never followed.
     func pruneWorkspaces(olderThan age: TimeInterval = 7 * 24 * 3600, now: Date = Date()) {
-        let items = (try? FileManager.default.contentsOfDirectory(at: baseDirectory, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
-        for item in items {
-            let modified = (try? item.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? now
-            if now.timeIntervalSince(modified) > age { try? FileManager.default.removeItem(at: item) }
+        guard let root = try? AskSecureDirectory.openRoot(baseDirectory, create: false),
+              let sessions = try? root.child("sessions") else { return }
+        for name in sessions.entries() {
+            guard let child = try? sessions.child(name), (try? child.lock()) != nil else { continue }
+            var info = stat()
+            guard fstat(child.descriptor, &info) == 0,
+                  now.timeIntervalSince1970 - Double(info.st_mtimespec.tv_sec) > age else { continue }
+            try? sessions.remove(name)
         }
     }
 
@@ -115,17 +130,35 @@ struct AskCodeSandbox: Sendable {
         "\"" + path.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") + "\""
     }
 
-    /// Later rules win, so the workspace and readable folders are re-allowed after the home folder is denied.
-    static func profile(workspace: String, home: String, readable: [String]) -> String {
-        let allowed = ([workspace] + readable).map { "(subpath \(quoted($0)))" }.joined(separator: " ")
+    static func profile(workspace: String, home _: String, readable: [String]) -> String {
+        let system = ["/bin", "/usr/bin", "/usr/lib", "/System/Library", "/usr/share/locale", "/usr/share/zoneinfo"]
+        let roots = system + [workspace] + readable
+        // realpath/lstat need metadata on each ancestor, not its contents.
+        var ancestors = Set(["/var", "/tmp", "/etc"])
+        for root in roots {
+            var parent = (root as NSString).deletingLastPathComponent
+            while !parent.isEmpty, parent != "/" {
+                ancestors.insert(parent)
+                parent = (parent as NSString).deletingLastPathComponent
+            }
+        }
+        let metadata = ancestors.sorted().map { "(literal \(quoted($0)))" }.joined(separator: " ")
+        let allowed = roots.map { "(subpath \(quoted($0)))" }.joined(separator: " ")
         return """
         (version 1)
         (allow default)
         (deny network*)
+        (deny file-read*)
+        (allow file-read-metadata \(metadata))
+        (allow file-read* \(allowed) (literal "/") (literal "/dev/null") (literal "/dev/urandom") (literal "/dev/random"))
         (deny file-write*)
-        (allow file-write* (subpath \(quoted(workspace))) (literal "/dev/null") (literal "/dev/tty") (literal "/dev/dtracehelper"))
-        (deny file-read* (subpath \(quoted(home))))
-        (allow file-read* \(allowed))
+        (allow file-write* (subpath \(quoted(workspace))) (literal "/dev/null"))
+        (deny file-write* (literal \(quoted(workspace))))
+        (deny mach-lookup)
+        (deny appleevent-send)
+        (deny process-info*)
+        (allow process-info-pidinfo (target self))
+        (deny signal (target others))
         """
     }
 
@@ -138,104 +171,90 @@ struct AskCodeSandbox: Sendable {
         var image: String?
     }
 
-    func run(_ language: Language, code: String, conversationId: String, timeout: Int = defaultTimeout) async throws -> Execution {
+    func run(_ language: Language, code: String, conversationId: String,
+             timeout: Int = defaultTimeout) async throws -> Execution {
         guard code.utf8.count <= Self.maximumCodeBytes else { throw AskLocalError.message(L("ask.code.tooLarge")) }
-        guard isSupported, let interpreter = interpreter(for: language) else { throw AskLocalError.message(L("ask.code.unavailable")) }
-        let workspace = try workspace(for: conversationId)
-        let scriptDirectory = workspace.appendingPathComponent(".run", isDirectory: true)
-        try FileManager.default.createDirectory(at: scriptDirectory, withIntermediateDirectories: true)
-        let script = scriptDirectory.appendingPathComponent("main." + language.fileExtension)
-        try Data(code.utf8).write(to: script)
-        let before = Self.snapshot(workspace)
-
-        // An interpreter installed under the home folder (pyenv, nvm) must stay readable.
-        let realHome = Self.realPath(home)
-        let interpreterRoot = (Self.realPath(interpreter.path) as NSString).deletingLastPathComponent
-        let interpreterPrefix = (interpreterRoot as NSString).deletingLastPathComponent
-        var readable = readableDirectories.map { Self.realPath($0.path) }
-        if interpreterPrefix.hasPrefix(realHome + "/") { readable.append(interpreterPrefix) }
-        let profile = Self.profile(workspace: workspace.path, home: realHome, readable: readable)
-
-        var env = launchEnvironment
-        env["HOME"] = workspace.path
-        env["TMPDIR"] = workspace.appendingPathComponent(".tmp").path + "/"
-        env["MPLBACKEND"] = "Agg"
-        env["PYTHONDONTWRITEBYTECODE"] = "1"
-        env["LANG"] = "en_US.UTF-8"
-
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: Self.sandboxExec)
-        process.arguments = ["-p", profile, interpreter.path, script.path]
-        process.currentDirectoryURL = workspace
-        process.environment = env
-        process.standardInput = FileHandle.nullDevice
-        let stdout = AskOutputCollector(limit: Self.maximumOutputCharacters)
-        let stderr = AskOutputCollector(limit: Self.maximumOutputCharacters)
-        let outPipe = Pipe(), errPipe = Pipe()
-        process.standardOutput = outPipe
-        process.standardError = errPipe
-        outPipe.fileHandleForReading.readabilityHandler = { stdout.append($0.availableData) }
-        errPipe.fileHandleForReading.readabilityHandler = { stderr.append($0.availableData) }
-
-        let finished = AsyncStream<Void>.makeStream()
-        process.terminationHandler = { _ in finished.continuation.yield(); finished.continuation.finish() }
-        try process.run()
-        let limit = min(max(1, timeout), Self.maximumTimeout)
-        let timedOut = await withTaskCancellationHandler {
-            await withTaskGroup(of: Bool.self) { group in
-                group.addTask { for await _ in finished.stream {}; return false }
-                group.addTask {
-                    try? await Task.sleep(for: .seconds(limit))
-                    return !Task.isCancelled
-                }
-                let first = await group.next() ?? false
-                group.cancelAll()
-                return first
-            }
-        } onCancel: {
-            Self.stop(process)
+        guard isSupported else {
+            throw AskLocalError.message("Code execution is unavailable: " +
+                "untrusted process containment has not been validated for this runtime.")
         }
-        if timedOut || Task.isCancelled { Self.stop(process) }
-        process.waitUntilExit()
-        outPipe.fileHandleForReading.readabilityHandler = nil
-        errPipe.fileHandleForReading.readabilityHandler = nil
-        stdout.append(outPipe.fileHandleForReading.readDataToEndOfFile())
-        stderr.append(errPipe.fileHandleForReading.readDataToEndOfFile())
+        guard let interpreter = interpreter(for: language)
+        else { throw AskLocalError.message(L("ask.code.unavailable")) }
         try Task.checkCancellation()
+        let root = try AskSecureDirectory.openRoot(baseDirectory)
+        let sessions = try root.child("sessions", create: true, privateDirectory: true)
+        let workspace = try sessions.child(
+            AskSecureDirectory.sessionName(conversationId),
+            create: true,
+            privateDirectory: true
+        )
+        try workspace.lock()
+        guard futimes(workspace.descriptor, nil) == 0 else { throw AskSecureDirectory.failure("touch workspace") }
+        let temporary = try workspace.child(".tmp", create: true, privateDirectory: true)
+        let workspaceURL = try workspace.url
+        let scripts = try root.child("scripts", create: true, privateDirectory: true)
+        let runID = UUID().uuidString
+        let control = try scripts.child(runID, create: true, privateDirectory: true)
+        defer { try? scripts.remove(runID) }
+        let scriptName = "main." + language.fileExtension
+        try control.createFile(scriptName, data: Data(code.utf8))
+        let script = try control.url.appendingPathComponent(scriptName)
+        let before = workspace.snapshot()
+        let readable = try readableRoots(control: control, root: root, language: language, interpreter: interpreter)
+        let profile = Self.profile(workspace: workspaceURL.path, home: NSHomeDirectory(), readable: readable)
+        var env = launchEnvironment
+        env["HOME"] = workspaceURL.path
+        env["TMPDIR"] = try temporary.url.path + "/"
+        // -f disables shell startup files; -I disables Python environment/user-site
+        // injection, including modules in the writable current directory.
+        let flags = language == .shell ? ["-f"] : ["-I"]
+        let result = try await ManagedProcess().run(.init(executable: Self.sandboxExec,
+                                                          arguments: ["-p", profile, interpreter.path] + flags +
+                                                              [script.path], environment: env,
+                                                          directoryDescriptor: workspace.descriptor,
+                                                          timeout: Double(min(
+                                                              max(1, timeout),
+                                                              Self.maximumTimeout
+                                                          )),
+                                                          outputLimit: Self.maximumOutputCharacters))
+        if result.termination == .cancelled {
+            throw CancellationError()
+        }
+        try Task.checkCancellation()
+        let changed = Self.changes(before: before, after: workspace.snapshot())
+        return Execution(exitCode: result.exitCode, timedOut: result.termination == .timedOut,
+                         stdout: result.stdout, stderr: result.stderr, changedFiles: changed,
+                         image: Self.firstImage(changed, workspace: workspace))
+    }
 
-        let changed = Self.changes(before: before, after: Self.snapshot(workspace))
-        var image: String?
+    private func readableRoots(control: AskSecureDirectory, root: AskSecureDirectory,
+                               language: Language, interpreter: URL) throws -> [String] {
+        var readable = try [control.url.path]
+        if language == .python {
+            // Version directory contains the executable, stdlib and extension libs.
+            readable.append(interpreter.deletingLastPathComponent().deletingLastPathComponent().path)
+        }
+        let rootPath = try root.url.path
+        for directory in readableDirectories where FileManager.default.fileExists(atPath: directory.path) {
+            let opened = try AskSecureDirectory.openRoot(directory, create: false, privateRoot: false)
+            let path = try opened.url.path
+            guard !rootPath.hasPrefix(path + "/"), !path.hasPrefix(rootPath + "/"), path != rootPath,
+                  path != "/", path != NSHomeDirectory() else {
+                throw AskLocalError.message("Code execution refused an overlapping readable directory.")
+            }
+            readable.append(path)
+        }
+        return readable
+    }
+
+    private static func firstImage(_ changed: [(name: String, size: Int)], workspace: AskSecureDirectory) -> String? {
         for file in changed where ["png", "jpg", "jpeg"].contains((file.name as NSString).pathExtension.lowercased()) {
-            if let data = try? Data(contentsOf: workspace.appendingPathComponent(file.name)),
+            if let data = try? workspace.readFile(file.name, limit: 10 * 1024 * 1024),
                let url = AskLocalTools.jpegDataURL(base64: data.base64EncodedString()) {
-                image = url
-                break
+                return url
             }
         }
-        return Execution(exitCode: process.terminationStatus, timedOut: timedOut, stdout: stdout.text, stderr: stderr.text,
-                         changedFiles: changed, image: image)
-    }
-
-    static func stop(_ process: Process) {
-        guard process.isRunning else { return }
-        process.terminate()
-        let pid = process.processIdentifier
-        DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
-            if process.isRunning { kill(pid, SIGKILL) }
-        }
-    }
-
-    static func snapshot(_ directory: URL) -> [String: (Date, Int)] {
-        var result: [String: (Date, Int)] = [:]
-        let keys: [URLResourceKey] = [.contentModificationDateKey, .fileSizeKey, .isRegularFileKey]
-        guard let enumerator = FileManager.default.enumerator(at: directory, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles]) else { return result }
-        for case let url as URL in enumerator {
-            guard let values = try? url.resourceValues(forKeys: Set(keys)), values.isRegularFile == true else { continue }
-            guard url.path.hasPrefix(directory.path + "/") else { continue }
-            let relative = String(url.path.dropFirst(directory.path.count + 1))
-            result[relative] = (values.contentModificationDate ?? .distantPast, values.fileSize ?? 0)
-        }
-        return result
+        return nil
     }
 
     static func changes(before: [String: (Date, Int)], after: [String: (Date, Int)]) -> [(name: String, size: Int)] {
@@ -246,14 +265,22 @@ struct AskCodeSandbox: Sendable {
 
     static func report(_ execution: Execution, workspace: String) -> String {
         var lines = [execution.timedOut ? "Timed out; the program was stopped." : "Exit code: \(execution.exitCode)"]
-        if !execution.stdout.isEmpty { lines += ["--- stdout ---", execution.stdout] }
-        if !execution.stderr.isEmpty { lines += ["--- stderr ---", execution.stderr] }
-        if execution.stdout.isEmpty && execution.stderr.isEmpty { lines.append("(no output)") }
+        if !execution.stdout.isEmpty {
+            lines += ["--- stdout ---", execution.stdout]
+        }
+        if !execution.stderr.isEmpty {
+            lines += ["--- stderr ---", execution.stderr]
+        }
+        if execution.stdout.isEmpty, execution.stderr.isEmpty {
+            lines.append("(no output)")
+        }
         if !execution.changedFiles.isEmpty {
             lines.append("Files written in the workspace \(workspace):")
             lines += execution.changedFiles.prefix(50).map { "- \($0.name) (\($0.size) bytes)" }
         }
-        if execution.image != nil { lines.append("The first new image is attached.") }
+        if execution.image != nil {
+            lines.append("The first new image is attached.")
+        }
         return lines.joined(separator: "\n")
     }
 }
