@@ -29,14 +29,15 @@ struct AskConversationVisualTests {
         #expect(launcher.frame.width == AskMetrics.launcherWidth)
         // Empty, it lists the suggestions under the controls.
         #expect(launcher.frame.height <= AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: true) + 4)
-        let bottom = launcher.frame.minY
+        // Centred on the screen like Spotlight; it grows downward from a fixed top.
+        let top = launcher.frame.maxY
         let visibleFrame = try #require(launcher.screen?.visibleFrame)
-        #expect(abs(bottom + 6 - visibleFrame.minY - OverlayController.recordingVisibleBottomInset) < 1)
+        #expect(abs(launcher.frame.midY - visibleFrame.midY) < 2)
         #expect(abs(launcher.frame.midX - visibleFrame.midX) < 1)
         fixture.model.launcherDraft.text = String(repeating: "Line of text\n", count: 30)
         try await fixture.wait { launcher.frame.height >= 200 }
         #expect(launcher.frame.height <= 230)
-        #expect(abs(launcher.frame.minY - bottom) < 1)
+        #expect(abs(launcher.frame.maxY - top) < 1)
         controller.dismissLauncher(); controller.showLauncher()
         try await fixture.wait { launcher.isVisible }
         #expect(launcher.frame.height >= 200)

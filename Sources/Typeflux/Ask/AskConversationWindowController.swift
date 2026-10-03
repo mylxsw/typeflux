@@ -105,7 +105,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             if let frame = screen?.visibleFrame {
                 let width = min(AskMetrics.launcherWidth, frame.width - 40)
                 let height = launcherHeight
-                launcher?.setFrame(NSRect(x: frame.midX - width / 2, y: frame.minY + OverlayController.recordingVisibleBottomInset - AskMetrics.launcherGutter, width: width, height: height), display: true)
+                launcher?.setFrame(AskLauncherPlacement.frame(height: height, width: width, screen: frame), display: true)
             }
             // Take keyboard focus without activating the app and raising its other windows.
             launcher?.makeKeyAndOrderFront(nil)
@@ -117,9 +117,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private func resizeLauncher(height: CGFloat) {
         launcherHeight = height
         guard let launcher, abs(launcher.frame.height - height) > 1 else { return }
-        var frame = launcher.frame
-        frame.size.height = height
-        launcher.setFrame(frame, display: true)
+        launcher.setFrame(AskLauncherPlacement.resized(launcher.frame, height: height,
+                                                       screen: launcher.screen?.visibleFrame), display: true)
     }
 
     func dismissLauncher() {
