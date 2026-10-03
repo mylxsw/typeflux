@@ -101,8 +101,9 @@ struct CloudProviderModelsView: View {
                 ModelUsageBadge(text: L(key), accent: true)
             }
             if model.vision == true {
-                Image(systemName: "photo").font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                    .help(L("models.visionYes"))
+                Text(L("ask.models.badge.vision")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                    .lineLimit(1).fixedSize()
+                    .help(L("ask.models.supportsImages"))
             }
         }
         .padding(.horizontal, 18).padding(.vertical, 12)
