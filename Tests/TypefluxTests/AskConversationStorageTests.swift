@@ -16,9 +16,9 @@ struct AskConversationStorageTests {
         let profile = AskModelProfile(name: "My model", baseURL: "https://models.example/v1", model: "my-model")
         defaults.set(try JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
-        let f = try AskTestFixture(modelLibrary: library)
-        f.model.commandSources = AskCommandSources(privateByDefault: { privateByDefault })
-        return (f, profile.reference)
+        let fixture = try AskTestFixture(modelLibrary: library)
+        fixture.model.commandSources = AskCommandSources(privateByDefault: { privateByDefault })
+        return (fixture, profile.reference)
     }
 
     private func summary(_ id: String, _ offset: TimeInterval) -> AskConversation {
@@ -27,105 +27,106 @@ struct AskConversationStorageTests {
     }
 
     @Test func aPrivateConversationGoesToThisMacOnly() async throws {
-        let (f, own) = try fixture()
-        f.model.newConversation(storesLocally: true)
-        #expect(f.model.storesLocally(launcher: false))
-        #expect(!f.model.cloudAvailable)
-        f.model.draft.text = "Keep this here"
-        f.model.draft.modelRef = own
-        f.model.submitDraft()
-        try await f.wait { f.model.busyIds.isEmpty && f.model.selected?.run?.status == "completed" }
-        let id = try #require(f.model.selectedId)
-        #expect(await f.localAPI.sends.count == 1)
-        #expect(await f.api.sends.isEmpty)
-        #expect(f.model.isLocal(id))
-        #expect(f.model.localConversationIds == [id])
+        let (fixture, own) = try fixture()
+        fixture.model.newConversation(storesLocally: true)
+        #expect(fixture.model.storesLocally(launcher: false))
+        #expect(!fixture.model.cloudAvailable)
+        fixture.model.draft.text = "Keep this here"
+        fixture.model.draft.modelRef = own
+        fixture.model.submitDraft()
+        try await fixture.wait { fixture.model.busyIds.isEmpty && fixture.model.selected?.run?.status == "completed" }
+        let id = try #require(fixture.model.selectedId)
+        #expect(await fixture.localAPI.sends.count == 1)
+        #expect(await fixture.api.sends.isEmpty)
+        #expect(fixture.model.isLocal(id))
+        #expect(fixture.model.localConversationIds == [id])
         // Its copy lives in the local partition, never under the account.
-        #expect(try await f.cache.load(id: id, owner: AskRoutedAPI.localOwner) != nil)
-        #expect(try await f.cache.load(id: id, owner: f.sessionState.owner) == nil)
+        #expect(try await fixture.cache.load(id: id, owner: AskRoutedAPI.localOwner) != nil)
+        #expect(try await fixture.cache.load(id: id, owner: fixture.sessionState.owner) == nil)
         // Started conversations keep their place.
-        #expect(!f.model.canChangeStorage(launcher: false))
-        f.model.setStoresLocally(false, launcher: false)
-        #expect(f.model.storesLocally(launcher: false))
+        #expect(!fixture.model.canChangeStorage(launcher: false))
+        fixture.model.setStoresLocally(false, launcher: false)
+        #expect(fixture.model.storesLocally(launcher: false))
     }
 
     @Test func aCloudConversationNeverTouchesTheLocalEngine() async throws {
-        let (f, _) = try fixture()
-        f.model.newConversation()
-        #expect(!f.model.storesLocally(launcher: false))
-        #expect(f.model.cloudAvailable)
-        f.model.draft.text = "Sync this"
-        f.model.submitDraft()
-        try await f.wait { f.model.busyIds.isEmpty && f.model.selected?.run?.status == "completed" }
-        let id = try #require(f.model.selectedId)
-        #expect(await f.api.sends.count == 1)
-        #expect(await f.localAPI.sends.isEmpty)
-        #expect(!f.model.isLocal(id))
-        #expect(try await f.cache.load(id: id, owner: f.sessionState.owner) != nil)
+        let (fixture, _) = try fixture()
+        fixture.model.newConversation()
+        #expect(!fixture.model.storesLocally(launcher: false))
+        #expect(fixture.model.cloudAvailable)
+        fixture.model.draft.text = "Sync this"
+        fixture.model.submitDraft()
+        try await fixture.wait { fixture.model.busyIds.isEmpty && fixture.model.selected?.run?.status == "completed" }
+        let id = try #require(fixture.model.selectedId)
+        #expect(await fixture.api.sends.count == 1)
+        #expect(await fixture.localAPI.sends.isEmpty)
+        #expect(!fixture.model.isLocal(id))
+        #expect(try await fixture.cache.load(id: id, owner: fixture.sessionState.owner) != nil)
     }
 
     @Test func theDefaultAndTheDraftChoiceDecideNewConversations() throws {
-        let (f, own) = try fixture(privateByDefault: true)
-        #expect(f.model.storesLocally(launcher: true))
-        #expect(f.model.storesLocally(launcher: false))
-        f.model.setStoresLocally(false, launcher: true)
-        #expect(!f.model.storesLocally(launcher: true))
-        #expect(f.model.storesLocally(launcher: false))
+        let (fixture, own) = try fixture(privateByDefault: true)
+        #expect(fixture.model.storesLocally(launcher: true))
+        #expect(fixture.model.storesLocally(launcher: false))
+        fixture.model.setStoresLocally(false, launcher: true)
+        #expect(!fixture.model.storesLocally(launcher: true))
+        #expect(fixture.model.storesLocally(launcher: false))
         // A Cloud reference in a private draft falls back to the user's own model.
-        #expect(f.model.modelReference(launcher: false) == own)
-        f.model.newConversation(storesLocally: false)
-        #expect(!f.model.storesLocally(launcher: false))
-        #expect(f.model.localFallback("cloud:default", hasImage: false, local: false) == "cloud:default")
-        #expect(f.model.localFallback("cloud:default", hasImage: false, local: true) == own)
+        #expect(fixture.model.modelReference(launcher: false) == own)
+        fixture.model.newConversation(storesLocally: false)
+        #expect(!fixture.model.storesLocally(launcher: false))
+        #expect(fixture.model.localFallback("cloud:default", hasImage: false, local: false) == "cloud:default")
+        #expect(fixture.model.localFallback("cloud:default", hasImage: false, local: true) == own)
     }
 
     @Test func historyListsBothKindsWithoutMovingRows() async throws {
-        let (f, _) = try fixture()
-        await f.api.seed(summary("a", 30))
-        await f.api.seed(summary("b", 10))
-        await f.localAPI.seed(summary("p", 20))
-        await f.model.refreshHistory()
-        #expect(f.model.conversations.map(\.id) == ["a", "p", "b"])
-        #expect(f.model.localConversationIds == ["p"])
-        #expect(f.model.isLocal("p") && !f.model.isLocal("a"))
+        let (fixture, _) = try fixture()
+        await fixture.api.seed(summary("a", 30))
+        await fixture.api.seed(summary("b", 10))
+        await fixture.localAPI.seed(summary("p", 20))
+        await fixture.model.refreshHistory()
+        #expect(fixture.model.conversations.map(\.id) == ["a", "p", "b"])
+        #expect(fixture.model.localConversationIds == ["p"])
+        #expect(fixture.model.isLocal("p") && !fixture.model.isLocal("a"))
 
         // A local list that fails to load keeps the private rows it already had.
-        await f.localAPI.setFailList(true)
-        await f.model.refreshHistory()
-        #expect(f.model.conversations.map(\.id) == ["a", "p", "b"])
-        await f.localAPI.setFailList(false)
+        await fixture.localAPI.setFailList(true)
+        await fixture.model.refreshHistory()
+        #expect(fixture.model.conversations.map(\.id) == ["a", "p", "b"])
+        await fixture.localAPI.setFailList(false)
 
         // Deleted elsewhere: the next read drops it.
-        try await f.localAPI.delete(conversationId: "p", token: "")
-        await f.model.refreshHistory()
-        #expect(f.model.conversations.map(\.id) == ["a", "b"])
+        try await fixture.localAPI.delete(conversationId: "p", token: "")
+        await fixture.model.refreshHistory()
+        #expect(fixture.model.conversations.map(\.id) == ["a", "b"])
     }
 
     @Test func everyLocalPageIsListed() async throws {
-        let (f, _) = try fixture()
-        for index in 0 ..< 55 { await f.localAPI.seed(summary("p\(index)", TimeInterval(index))) }
-        await f.model.refreshHistory()
-        #expect(f.model.localConversationIds.count == 55)
-        #expect(f.model.conversations.count == 55)
+        let (fixture, _) = try fixture()
+        for index in 0 ..< 55 { await fixture.localAPI.seed(summary("p\(index)", TimeInterval(index))) }
+        await fixture.model.refreshHistory()
+        #expect(fixture.model.localConversationIds.count == 55)
+        #expect(fixture.model.conversations.count == 55)
     }
 
     @Test func theWorkspaceMarksPrivateConversations() async throws {
-        let (f, _) = try fixture()
-        await f.api.seed(summary("a", 30))
-        await f.localAPI.seed(summary("p", 20))
-        await f.model.refreshHistory()
-        await f.model.select("p")
+        let (fixture, _) = try fixture()
+        await fixture.api.seed(summary("a", 30))
+        await fixture.localAPI.seed(summary("p", 20))
+        await fixture.model.refreshHistory()
+        await fixture.model.select("p")
         let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil }, loadStoredUserProfile: { nil })
-        let hosting = NSHostingView(rootView: AskConversationView(model: f.model, auth: auth).frame(width: 1000))
+        let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model, auth: auth).frame(width: 1000))
         hosting.layoutSubtreeIfNeeded()
         #expect(hosting.fittingSize.height >= 530)
-        f.model.newConversation(storesLocally: true)
+        fixture.model.newConversation(storesLocally: true)
         hosting.layoutSubtreeIfNeeded()
         #expect(hosting.fittingSize.height >= 530)
     }
 
     @Test func settingsStoreTheDefault() throws {
-        let settings = SettingsStore(defaults: try #require(UserDefaults(suiteName: "ask-storage-settings-" + UUID().uuidString)))
+        let defaults = try #require(UserDefaults(suiteName: "ask-storage-settings-" + UUID().uuidString))
+        let settings = SettingsStore(defaults: defaults)
         #expect(!settings.askNewConversationsStayLocal)
         // The key predates per-conversation storage; local mode carries over.
         settings.defaults.set(true, forKey: "ask.localMode")
@@ -140,77 +141,86 @@ struct AskConversationStorageTests {
     }
 
     @Test func cachedHistoryShowsPrivateRowsBeforeTheNetworkAnswers() async throws {
-        let (f, _) = try fixture()
-        try await f.cache.save(summary("p", 20), owner: AskRoutedAPI.localOwner)
-        try await f.cache.save(summary("a", 30), owner: f.sessionState.owner)
-        await f.api.setFailList(true)
-        await f.model.refreshHistory()
-        #expect(f.model.conversations.map(\.id) == ["a", "p"])
-        #expect(f.model.localConversationIds.contains("p"))
+        let (fixture, _) = try fixture()
+        try await fixture.cache.save(summary("p", 20), owner: AskRoutedAPI.localOwner)
+        try await fixture.cache.save(summary("a", 30), owner: fixture.sessionState.owner)
+        await fixture.api.setFailList(true)
+        await fixture.model.refreshHistory()
+        #expect(fixture.model.conversations.map(\.id) == ["a", "p"])
+        #expect(fixture.model.localConversationIds.contains("p"))
     }
 
     @Test func selectingAndDeletingAPrivateConversationUseTheLocalEngine() async throws {
-        let (f, _) = try fixture()
-        await f.localAPI.seed(summary("p", 20))
-        await f.model.refreshHistory()
-        await f.model.select("p")
-        #expect(f.model.selected?.id == "p")
-        #expect(f.model.storesLocally(launcher: false))
-        #expect(!f.model.canChangeStorage(launcher: false))
+        let (fixture, _) = try fixture()
+        await fixture.localAPI.seed(summary("p", 20))
+        await fixture.model.refreshHistory()
+        await fixture.model.select("p")
+        #expect(fixture.model.selected?.id == "p")
+        #expect(fixture.model.storesLocally(launcher: false))
+        #expect(!fixture.model.canChangeStorage(launcher: false))
 
         // Its follow-up draft is saved with it, in the local partition.
-        f.model.draft.text = "later"
-        f.model.persistDrafts()
+        fixture.model.draft.text = "later"
+        fixture.model.persistDrafts()
         for _ in 0 ..< 400 {
-            if try await f.cache.draft(key: "p", owner: AskRoutedAPI.localOwner) != nil { break }
+            if try await fixture.cache.draft(key: "p", owner: AskRoutedAPI.localOwner) != nil { break }
             try await Task.sleep(for: .milliseconds(5))
         }
-        #expect(try await f.cache.draft(key: "p", owner: AskRoutedAPI.localOwner)?.text == "later")
+        #expect(try await fixture.cache.draft(key: "p", owner: AskRoutedAPI.localOwner)?.text == "later")
 
-        await f.model.delete("p")
-        #expect(await f.localAPI.values["p"] == nil)
-        #expect(f.model.conversations.isEmpty)
-        #expect(f.model.localConversationIds.isEmpty)
-        #expect(f.model.selectedId == nil)
+        await fixture.model.delete("p")
+        #expect(await fixture.localAPI.values["p"] == nil)
+        #expect(fixture.model.conversations.isEmpty)
+        #expect(fixture.model.localConversationIds.isEmpty)
+        #expect(fixture.model.selectedId == nil)
     }
 
     @Test func signedOutEverythingStaysOnThisMac() throws {
-        let f = try AskTestFixture(localOnly: true)
-        #expect(!f.model.isSignedIn)
-        #expect(f.model.storesLocally(launcher: false))
-        #expect(f.model.storesLocally(launcher: true))
-        #expect(f.model.isLocal("any"))
-        #expect(!f.model.canChangeStorage(launcher: true))
-        f.model.newConversation(storesLocally: false)
-        #expect(f.model.draft.storesLocally == nil)
-        #expect(f.model.storesLocally(launcher: false))
-        let context = f.model.commandContext(launcher: false)
+        let fixture = try AskTestFixture(localOnly: true)
+        #expect(!fixture.model.isSignedIn)
+        #expect(fixture.model.storesLocally(launcher: false))
+        #expect(fixture.model.storesLocally(launcher: true))
+        #expect(fixture.model.isLocal("any"))
+        #expect(!fixture.model.canChangeStorage(launcher: true))
+        fixture.model.newConversation(storesLocally: false)
+        #expect(fixture.model.draft.storesLocally == nil)
+        #expect(fixture.model.storesLocally(launcher: false))
+        let context = fixture.model.commandContext(launcher: false)
         #expect(context.localMode)
         #expect(context.storageLocked == L("ask.storage.signedOut"))
     }
 
     @Test func theLocalCommandIsLockedOnceAConversationStarted() async throws {
-        let (f, _) = try fixture()
-        await f.api.seed(summary("a", 30))
-        await f.model.select("a")
-        let context = f.model.commandContext(launcher: false)
+        let (fixture, _) = try fixture()
+        await fixture.api.seed(summary("a", 30))
+        await fixture.model.select("a")
+        let context = fixture.model.commandContext(launcher: false)
         #expect(!context.localMode)
         #expect(context.storageLocked == L("ask.storage.locked"))
         let command = try #require(AskCommandCatalog.commands(context).first { $0.action == .localMode })
         #expect(command.disabledReason == L("ask.storage.locked"))
-        f.model.runCommand(command, launcher: false)
-        #expect(!f.model.storesLocally(launcher: false))
+        fixture.model.runCommand(command, launcher: false)
+        #expect(!fixture.model.storesLocally(launcher: false))
         // The launcher always starts a new conversation, so it can still choose.
-        #expect(f.model.commandContext(launcher: true).storageLocked == nil)
+        #expect(fixture.model.commandContext(launcher: true).storageLocked == nil)
+        fixture.model.newConversation()
+        let open = try #require(AskCommandCatalog.commands(fixture.model.commandContext(launcher: false))
+            .first { $0.action == .localMode })
+        #expect(open.enabled)
+        fixture.model.runCommand(open, launcher: false)
+        #expect(fixture.model.storesLocally(launcher: false))
+        fixture.model.runCommand(open, launcher: false)
+        #expect(!fixture.model.storesLocally(launcher: false))
+        #expect(fixture.model.commandFeedback == L("ask.command.localOff"))
     }
 
     @Test func statusDescribesTheComposersConversation() throws {
-        let (f, _) = try fixture()
-        let cloud = AskLocalModeStatus.make(model: f.model, signedIn: true)
+        let (fixture, _) = try fixture()
+        let cloud = AskLocalModeStatus.make(model: fixture.model, signedIn: true)
         #expect(!cloud.local && cloud.changeable && !cloud.offersSignIn)
         #expect(cloud.summaryKey == "ask.storage.card.choose")
-        f.model.setStoresLocally(true, launcher: false)
-        let local = AskLocalModeStatus.make(model: f.model, signedIn: true)
+        fixture.model.setStoresLocally(true, launcher: false)
+        let local = AskLocalModeStatus.make(model: fixture.model, signedIn: true)
         #expect(local.local && local.source == "My model")
         #expect(AskLocalModeStatus(source: "", searchConfigured: true, offersSignIn: false).summaryKey
             == "ask.storage.card.lockedLocal")

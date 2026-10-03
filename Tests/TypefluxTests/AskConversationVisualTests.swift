@@ -446,36 +446,39 @@ struct AskConversationVisualTests {
         let defaults = try #require(UserDefaults(suiteName: "ask-storage-shots-" + UUID().uuidString))
         let profile = AskModelProfile(name: "我的 Ollama", baseURL: "http://127.0.0.1:11434/v1", model: "qwen3:8b")
         defaults.set(try JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
-        let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false))
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        let fixture = try AskTestFixture(modelLibrary: library)
         defer { fixture.model.resetSession() }
-        let auth = AuthState(loadStoredToken: { ("token", Int(Date().timeIntervalSince1970) + 3600) }, loadStoredRefreshToken: { nil },
+        let expiry = Int(Date().timeIntervalSince1970) + 3600
+        let auth = AuthState(loadStoredToken: { ("token", expiry) }, loadStoredRefreshToken: { nil },
                              loadStoredUserProfile: { nil })
         let now = Date()
+        func turn(_ id: String, _ question: String, _ answer: String) -> [AskMessage] {
+            [.init(id: id + "q", role: "user", text: question, createdAt: now),
+             .init(id: id + "a", role: "assistant", text: answer, createdAt: now)]
+        }
         await fixture.api.seed(AskConversation(id: "cloud", title: "讲讲这一屏在做什么", revision: 1, updatedAt: now,
-                                               messages: [.init(id: "q1", role: "user", text: "讲讲这一屏在做什么", createdAt: now),
-                                                          .init(id: "a1", role: "assistant", text: "这一屏是 Grok 网页版。", createdAt: now)]))
+                                               messages: turn("c", "讲讲这一屏在做什么", "这一屏是 Grok 网页版。")))
         await fixture.localAPI.seed(AskConversation(id: "private", title: "帮我整理体检报告要点", revision: 1,
                                                     updatedAt: now.addingTimeInterval(-60),
-                                                    messages: [.init(id: "q2", role: "user", text: "帮我整理体检报告要点", createdAt: now),
-                                                               .init(id: "a2", role: "assistant", text: "已按指标分组整理。", createdAt: now)],
+                                                    messages: turn("p", "帮我整理体检报告要点", "已按指标分组整理。"),
                                                     modelRef: profile.reference))
         await fixture.model.refreshHistory()
         await fixture.model.select("private")
+        let size = NSSize(width: 1000, height: 640)
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
-            try await render(AskConversationView(model: fixture.model, auth: auth), size: NSSize(width: 1000, height: 640),
+            try await render(AskConversationView(model: fixture.model, auth: auth), size: size,
                              appearance: appearance, file: root.appendingPathComponent("storage-private-\(name).png"))
         }
         await fixture.model.select("cloud")
-        try await render(AskConversationView(model: fixture.model, auth: auth), size: NSSize(width: 1000, height: 640),
+        try await render(AskConversationView(model: fixture.model, auth: auth), size: size,
                          appearance: .darkAqua, file: root.appendingPathComponent("storage-cloud-dark.png"))
-        fixture.model.newConversation()
-        try await render(AskConversationView(model: fixture.model, auth: auth), size: NSSize(width: 1000, height: 640),
-                         appearance: .darkAqua, file: root.appendingPathComponent("storage-new-dark.png"))
+        let source = "我的 Ollama"
         let cards: [(String, AskLocalModeStatus)] = [
-            ("choose", .init(source: "我的 Ollama", searchConfigured: false, offersSignIn: false, local: true, changeable: true)),
-            ("locked-local", .init(source: "我的 Ollama", searchConfigured: true, offersSignIn: false)),
-            ("locked-cloud", .init(source: "我的 Ollama", searchConfigured: true, offersSignIn: false, local: false)),
-            ("signed-out", .init(source: "我的 Ollama", searchConfigured: false, offersSignIn: true))
+            ("choose", .init(source: source, searchConfigured: false, offersSignIn: false, changeable: true)),
+            ("locked-local", .init(source: source, searchConfigured: true, offersSignIn: false)),
+            ("locked-cloud", .init(source: source, searchConfigured: true, offersSignIn: false, local: false)),
+            ("signed-out", .init(source: source, searchConfigured: false, offersSignIn: true))
         ]
         for (name, status) in cards {
             try await render(AskLocalModeCard(status: status, onOpenSearchSettings: {}, onSignIn: {})

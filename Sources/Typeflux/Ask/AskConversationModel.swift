@@ -602,7 +602,8 @@ final class AskConversationModel: ObservableObject {
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
         request.skills = skillUses(submitted.skills)
         request.modelRef = localFallback(submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference : (value.modelRef ?? "cloud:default")),
-                                         hasImage: request.sendsImage || value.messages.contains { $0.hasImage }, local: local)
+                                         hasImage: request.sendsImage || value.messages.contains { $0.hasImage },
+                                         local: local)
         request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
         request.memory = newConversation && submitted.memoryOff != true
             ? Self.openingMemory(submitted.memory ?? capture.globalMemory()) : nil
@@ -697,7 +698,8 @@ final class AskConversationModel: ObservableObject {
 
     func resume() {
         selectionObservation?.cancel(); selectionObservation = nil
-        guard let value = selected, !busyIds.contains(value.id), let current = credentials(for: value.id) else { return }
+        guard let value = selected, !busyIds.contains(value.id),
+              let current = credentials(for: value.id) else { return }
         let id = value.id
         let retryModelRef = modelReference(launcher: false)
         if pendingSends[id] == nil, let run = value.run, ["failed", "cancelled"].contains(run.status),
@@ -767,7 +769,8 @@ final class AskConversationModel: ObservableObject {
     /// would duplicate the question in the transcript and pay for the extra turn.
     func regenerate(_ messageId: String) {
         selectionObservation?.cancel(); selectionObservation = nil
-        guard let value = selected, !busyIds.contains(value.id), let current = credentials(for: value.id) else { return }
+        guard let value = selected, !busyIds.contains(value.id),
+              let current = credentials(for: value.id) else { return }
         let id = value.id
         let modelRef = modelReference(launcher: false)
         busyIds.insert(id); error = nil; operationErrors[id] = nil

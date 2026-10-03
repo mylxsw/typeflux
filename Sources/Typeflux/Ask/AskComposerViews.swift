@@ -431,7 +431,8 @@ struct AskComposer: View {
                 get: { model.modelReference(launcher: launcher) },
                 set: { model.selectModel($0, launcher: launcher) }
             ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
-               hasImage: !launcher && model.hasConversationImages, compact: true, cloudAvailable: model.cloudAvailable(launcher: launcher),
+               hasImage: !launcher && model.hasConversationImages, compact: true,
+               cloudAvailable: model.cloudAvailable(launcher: launcher),
                onManage: model.onOpenSettings.map { open in { open(.models) } })
             .opacity(Self.recordingDim(active))
             AskReasoningMenu(library: model.modelLibrary,
