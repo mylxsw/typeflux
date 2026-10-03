@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Typeflux · 随便问 输入框提示信息重新设计</title>
+<style>
+  :root {
+    --win: #1e1e20; --side: #26262a; --card: #2e2e2e; --hair: rgba(255,255,255,.10); --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
+    --accent: #0a84ff; --accent-soft: #15263e; --accent-text: #8ebdff; --hover: rgba(255,255,255,.08); --ctl: #3d3d3d;
+    --pop: #323232; --ok: #30d158; --ok-soft: rgba(48,209,88,.14); --warn: #ffb340; --warn-soft: rgba(255,179,64,.12);
+    --danger: #ff6961; --danger-soft: rgba(255,105,97,.13);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 48px 48px; background: #0c0c0d; color: var(--text); width: 1600px;
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--text-2); margin: 0 0 26px; max-width: 1400px; }
+  .sub b { color: var(--text); }
+  h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 780px 1fr; gap: 30px 40px; align-items: start; }
+  .full { grid-column: 1 / -1; }
+  .stage { border-radius: 14px; padding: 30px 40px; border: 1px solid rgba(255,255,255,.05); background: #1f2023; position: relative; }
+  .stage.light { background: #eceef1; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); margin-bottom: 14px; }
+  .notes { color: var(--text-2); font-size: 12.5px; }
+  .notes b { color: var(--text); font-weight: 600; }
+  .notes ul { margin: 0; padding-left: 18px; } .notes li { margin: 0 0 6px; }
+  code { font-size: 11.5px; color: #c9c9cc; }
+  .before img { width: 760px; border-radius: 10px; display: block; }
+  .step { margin-bottom: 22px; } .step:last-child { margin-bottom: 0; }
+  .cap { font-size: 11px; color: var(--text-3); margin: 8px 0 0 2px; }
+
+  /* table */
+  .tokens { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .tokens th { text-align: left; font-weight: 600; color: var(--text); padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,.14); }
+  .tokens td { padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,.06); color: var(--text-2); vertical-align: top; }
+  .tokens td:first-child { color: var(--text); white-space: nowrap; }
+  .tag { display: inline-block; font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 9px; white-space: nowrap; }
+  .tag.c { background: var(--ok-soft); color: var(--ok); }
+  .tag.w { background: var(--warn-soft); color: var(--warn); }
+  .tag.s { background: var(--accent-soft); color: var(--accent-text); }
+  .tag.h { background: var(--hover); color: var(--text-2); }
+
+  /* composer */
+  .composer { width: 680px; border-radius: 18px; background: var(--card); border: 1px solid rgba(255,255,255,.16); position: relative;
+    box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+  .editor { padding: 15px 18px 6px; min-height: 52px; font-size: 14px; line-height: 22px; }
+  .ph { color: var(--text-3); }
+  .ph kbd { font: 600 11px/1 -apple-system, "PingFang SC", sans-serif; padding: 2px 5px; border-radius: 5px; border: 1px solid var(--hair); color: var(--text-3); margin: 0 1px; }
+  .foot { display: flex; align-items: center; gap: 6px; height: 48px; padding: 0 10px 0 10px; position: relative; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; color: var(--text-2); flex: none; position: relative; }
+  .menu { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 9px; border-radius: 8px; position: relative;
+    font-size: 13px; font-weight: 550; white-space: nowrap; color: var(--text); transition: none; }
+  .menu svg { color: var(--text-2); flex: none; }
+  .menu.pill { background: var(--hover); color: var(--text-2); font-weight: 500; font-size: 12.5px; }
+  .sep { width: 1px; height: 16px; background: rgba(255,255,255,.10); margin: 0 2px; }
+  .spacer { flex: 1; }
+  .ic { position: relative; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-2); flex: none; }
+  .ic.on { background: var(--accent-soft); color: var(--accent-text); }
+  .ic.round { border-radius: 50%; }
+  .mic, .send { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex: none; position: relative; }
+  .mic { color: var(--text-2); }
+  .mic.err { color: var(--danger); background: var(--danger-soft); }
+  .send { background: var(--ctl); color: var(--text-3); } .send.on { background: var(--accent); color: #fff; }
+
+  /* confirmation: the control itself flashes */
+  .flash { box-shadow: 0 0 0 1.5px var(--accent) inset; background: var(--accent-soft) !important; color: var(--accent-text) !important; }
+  .flash svg { color: var(--accent-text) !important; }
+  .check { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .badge-ok { position: absolute; right: -4px; top: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); color: #fff;
+    border: 1.5px solid var(--card); display: flex; align-items: center; justify-content: center; }
+  .badge-warn { position: absolute; right: -4px; top: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--warn); color: #1d1d1f;
+    border: 1.5px solid var(--card); display: flex; align-items: center; justify-content: center; font: 800 9px/1 sans-serif; }
+  /* inline toast that lives inside the footer, never below the card */
+  .ftoast { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 7px; border-radius: 13px;
+    background: var(--ok-soft); color: var(--ok); font-size: 12px; font-weight: 550; white-space: nowrap; }
+  .ftoast.fade { opacity: .45; }
+
+  /* in-card notice row: top of the card, same width as the editor */
+  .nrow { display: flex; align-items: center; gap: 8px; margin: 8px 8px 0; padding: 0 6px 0 10px; min-height: 34px; border-radius: 11px; font-size: 12.5px; }
+  .nrow.w { background: var(--warn-soft); color: var(--warn); }
+  .nrow.i { background: var(--hover); color: var(--text-2); }
+  .nrow.d { background: var(--danger-soft); color: var(--danger); }
+  .nrow .t { flex: 1; color: var(--text); opacity: .92; }
+  .nrow .a { font-size: 11.5px; font-weight: 600; padding: 0 10px; height: 24px; border-radius: 12px; display: inline-flex; align-items: center;
+    background: rgba(255,255,255,.08); color: var(--text); white-space: nowrap; }
+  .nrow .x { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-3); border-radius: 6px; }
+  .nrow .more { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+
+  /* chips strip */
+  .strip { display: flex; gap: 8px; padding: 10px 12px 0; }
+  .att { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 10px 0 6px; border-radius: 10px; border: 1px solid var(--hair); font-size: 12px; position: relative; }
+  .att .thumb { width: 28px; height: 28px; border-radius: 6px; background: linear-gradient(135deg, #3d5a80, #98c1d9); }
+  .att.bad { border-color: rgba(255,179,64,.55); }
+  .att.bad .thumb { filter: grayscale(1) brightness(.6); }
+  .att small { display: block; color: var(--text-3); font-size: 10.5px; }
+
+  /* popover / tooltip */
+  .tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--pop); border: 1px solid rgba(255,255,255,.14);
+    border-radius: 9px; padding: 8px 10px; width: max-content; max-width: 300px; box-shadow: 0 10px 28px rgba(0,0,0,.45); z-index: 3; text-align: left; }
+  .tip b { display: block; font-size: 12px; color: var(--text); font-weight: 600; }
+  .tip i { display: block; font-style: normal; font-size: 11.5px; color: var(--text-2); margin-top: 2px; line-height: 1.45; }
+  .tip em { display: block; font-style: normal; font-size: 11px; color: var(--accent-text); margin-top: 5px; font-weight: 600; }
+  .tip kbd { font: 600 10.5px/1 -apple-system, "PingFang SC", sans-serif; padding: 2px 5px; border-radius: 5px; background: rgba(255,255,255,.08); color: var(--text); }
+  .tip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border: 5px solid transparent; border-top-color: var(--pop); }
+  .tip.r { left: auto; right: -6px; transform: none; } .tip.r::after { left: auto; right: 16px; }
+  .tip.l { left: -6px; transform: none; } .tip.l::after { left: 20px; }
+
+  /* window mock */
+  .win { width: 1040px; height: 640px; border-radius: 14px; background: var(--win); border: 1px solid rgba(255,255,255,.08); display: flex; overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,.55); }
+  .side { width: 250px; background: var(--side); padding: 14px 10px; display: flex; flex-direction: column; gap: 4px; flex: none; }
+  .lights { display: flex; gap: 7px; padding: 2px 6px 14px; } .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .search { height: 30px; border-radius: 8px; background: rgba(255,255,255,.06); color: var(--text-3); font-size: 12.5px; display: flex; align-items: center; padding: 0 10px; margin-bottom: 10px; }
+  .grp { font-size: 11px; color: var(--text-3); padding: 8px 8px 4px; }
+  .it { display: flex; justify-content: space-between; padding: 7px 8px; border-radius: 7px; font-size: 13px; color: var(--text); }
+  .it span:last-child { color: var(--text-3); font-size: 11.5px; }
+  .it.sel { background: rgba(255,255,255,.07); }
+  .main { flex: 1; display: flex; flex-direction: column; position: relative; }
+  .tbar { height: 46px; display: flex; align-items: center; padding: 0 16px; }
+  .tbar span { height: 28px; padding: 0 12px; border-radius: 14px; background: rgba(255,255,255,.07); display: inline-flex; align-items: center; font-weight: 600; font-size: 12.5px; }
+  .body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+  .orb { width: 72px; height: 72px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffd29d, #f17a55 40%, #19c3c3 75%, #0b6ea8); box-shadow: 0 0 40px rgba(25,195,195,.25); }
+  .hello { font-size: 22px; font-weight: 650; margin-top: 8px; }
+  .keys { color: var(--text-2); font-size: 12.5px; }
+  .keys kbd { font: 600 11px/1 -apple-system, sans-serif; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--hair); color: var(--text); margin: 0 2px; }
+  .sugs { display: flex; gap: 12px; margin-top: 18px; }
+  .sug { width: 200px; border-radius: 12px; border: 1px solid var(--hair); background: rgba(255,255,255,.03); padding: 12px; }
+  .sug b { display: block; font-size: 13px; margin-top: 8px; } .sug small { color: var(--text-3); font-size: 11.5px; }
+  .sug i { display: block; width: 24px; height: 24px; border-radius: 7px; background: var(--accent-soft); }
+  .dock { padding: 0 34px 22px; display: flex; justify-content: center; position: relative; }
+  .dock .composer { width: 100%; max-width: 720px; }
+  .edgeline { position: absolute; left: 34px; right: 34px; bottom: 0; height: 22px; border: 1px dashed rgba(48,209,88,.5); border-top: none; border-radius: 0 0 8px 8px; }
+  .edgeline span { position: absolute; right: 8px; bottom: 3px; font-size: 10.5px; color: var(--ok); }
+
+  /* transcript */
+  .tx { width: 680px; display: flex; flex-direction: column; gap: 12px; }
+  .bubble { align-self: flex-end; max-width: 70%; background: #3a3a3c; padding: 9px 13px; border-radius: 16px 16px 4px 16px; font-size: 13.5px; }
+  .answer { font-size: 13.5px; line-height: 1.6; color: var(--text); }
+  .sysline { display: flex; align-items: center; gap: 10px; color: var(--text-3); font-size: 11.5px; }
+  .sysline::before, .sysline::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,.08); }
+  .sysline a { color: var(--accent-text); text-decoration: none; font-weight: 600; }
+  .fail { border-radius: 12px; border: 1px solid rgba(255,179,64,.35); background: var(--warn-soft); padding: 10px 12px; display: flex; gap: 10px; align-items: center; font-size: 12.5px; }
+  .fail .t { flex: 1; } .fail .t small { display: block; color: var(--text-2); font-size: 11.5px; margin-top: 1px; }
+  .fail .a { font-size: 11.5px; font-weight: 600; padding: 0 12px; height: 26px; border-radius: 13px; display: inline-flex; align-items: center; background: var(--accent); color: #fff; }
+  .fail .a.g { background: rgba(255,255,255,.1); color: var(--text); }
+  .acts { display: flex; gap: 4px; color: var(--text-3); }
+  .acts span { width: 26px; height: 26px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; position: relative; }
+
+  /* launcher */
+  .launcher { width: 640px; border-radius: 22px; background: rgba(46,46,48,.82); border: 1px solid rgba(255,255,255,.18); box-shadow: 0 30px 70px rgba(0,0,0,.55); backdrop-filter: blur(20px); }
+  .launcher .editor { padding: 16px 18px 6px; }
+  .dsk { border-radius: 14px; padding: 46px 0 40px; display: flex; justify-content: center; background: linear-gradient(140deg, #2b3b55, #493a5d 50%, #20343a); }
+
+  /* light */
+  .light .composer { --card: #fff; --hair: rgba(0,0,0,.10); --text: #1d1d1f; --text-2: #5d5d63; --text-3: #9a9aa0; --hover: rgba(0,0,0,.05);
+    --accent-soft: #e7efff; --accent-text: #1b57d6; --ctl: #ececec; --warn: #b26a00; --warn-soft: #fff4e0; --ok: #1a8f3c; --ok-soft: #e4f6e9;
+    color: var(--text); box-shadow: 0 24px 60px rgba(20,30,50,.18); border-color: rgba(0,0,0,.12); }
+  .light .sep { background: rgba(0,0,0,.1); }
+  .light .nrow .a { background: rgba(0,0,0,.06); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="mic" viewBox="0 0 16 16"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+  <symbol id="micx" viewBox="0 0 16 16"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2M2 2l12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+  <symbol id="up" viewBox="0 0 16 16"><path d="M8 13V3.5M3.8 7.5 8 3.3l4.2 4.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="cam" viewBox="0 0 16 16"><path d="M2 5V3.2C2 2.5 2.5 2 3.2 2H5M11 2h1.8c.7 0 1.2.5 1.2 1.2V5M14 11v1.8c0 .7-.5 1.2-1.2 1.2H11M5 14H3.2C2.5 14 2 13.5 2 12.8V11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="brain" viewBox="0 0 16 16"><path d="M8 3v10M6 2.8C4.4 2.8 3.3 4 3.6 5.6 2.4 6.3 2.3 8.4 3.5 9.3 3 11 4.4 12.9 6 12.6M10 2.8c1.6 0 2.7 1.2 2.4 2.8 1.2.7 1.3 2.8.1 3.7.5 1.7-.9 3.6-2.5 3.3" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></symbol>
+  <symbol id="spark" viewBox="0 0 16 16"><path d="M8 1.5 9.3 6.7 14.5 8 9.3 9.3 8 14.5 6.7 9.3 1.5 8l5.2-1.3z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
+  <symbol id="plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="slash" viewBox="0 0 16 16"><path d="M10.5 2.5 5.5 13.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="mac" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="8" rx="1.3" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 13.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+  <symbol id="ok" viewBox="0 0 10 10"><path d="M2.3 5.2 4.2 7 7.8 3.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="okc" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5.3 8.2 7.2 10 10.8 6.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="warn" viewBox="0 0 16 16"><path d="M8 2 14.5 13.5h-13z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6.5v3.3M8 11.6v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="clip" viewBox="0 0 16 16"><path d="M13 7.5 8 12.5a3 3 0 0 1-4.3-4.3L9 3a2 2 0 0 1 2.8 2.8L6.7 11a1 1 0 0 1-1.4-1.4L10 5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+  <symbol id="eye" viewBox="0 0 16 16"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+  <symbol id="retry" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v2.8h-2.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="copy" viewBox="0 0 16 16"><rect x="5" y="5" width="8.5" height="8.5" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M3 10.5V3.6C3 3.1 3.4 2.5 4 2.5h6.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+  <symbol id="x" viewBox="0 0 10 10"><path d="M2.5 2.5l5 5M7.5 2.5l-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+</defs></svg>
+
+<h1>随便问 · 输入框提示信息重新设计</h1>
+<p class="sub">问题：「已切换到 coding/auto」这类提示统一用 <code>AskBanner</code> 堆在输入框<b>下方</b>。它会把输入框往上顶，还盖住了下面那行快捷键提示（截图红框处两行文字叠在一起）。模型切换、思考强度、截图、附件失败、语音出错、对话失败等七八种信息都挤在这一处，用户分不清哪条提示对应哪个操作。<br>
+方案：<b>输入框下方不再显示任何内容</b>。每条信息按它说的是什么，放回它所属的位置：状态确认在<b>对应控件上就地反馈</b>，需要处理的问题放进<b>卡片内部的提示条</b>，对话级事件写进<b>对话流</b>，快捷键说明改到<b>占位符和悬停提示</b>里。聊天页输入框和快捷浮窗（launcher）共用这套规则。</p>
+
+<div class="grid">
+  <!-- before -->
+  <div class="before">
+    <div class="label">现状（Issue 截图）</div>
+    <img src="before-composer-notices.png" alt="current">
+  </div>
+  <div class="notes">
+    <h2>现状问题</h2>
+    <ul>
+      <li><b>位置不对</b>：提示和造成它的控件离得很远。切换的是左下角的模型按钮，确认却出现在整张卡片下方。</li>
+      <li><b>布局跳动</b>：每出现一条 banner，<code>AskComposer</code> 的 VStack 就增高一截，输入框往上顶，对话内容也跟着移动。2 秒后提示消失，又跳回去。</li>
+      <li><b>和快捷键提示重叠</b>：<code>AskComposerHint</code>（↩ 发送 · ⇧↩ 换行 · 按住 ⌥(R) 语音输入）固定在最底部，和 banner 叠在一起，两边都看不清。</li>
+      <li><b>重复</b>：「已切换到 coding/auto」只是在复述底栏模型按钮上已经显示的内容。</li>
+      <li><b>所有提示长得一样</b>：成功确认、要处理的警告、可以撤销的自动切换，都用同一种灰色条。最多能同时叠 5 条（截图提示、命令反馈、附件、语音、错误）。</li>
+    </ul>
+  </div>
+
+  <!-- taxonomy -->
+  <div class="full stage" style="padding:24px 28px">
+    <div class="label">信息分类 → 新位置（覆盖代码里现有的每一条）</div>
+    <table class="tokens">
+      <tr><th style="width:230px">现有信息</th><th style="width:230px">来源</th><th style="width:130px">类型</th><th>新的位置与形态</th></tr>
+      <tr><td>已切换到 %@（模型）</td><td><code>commandFeedback</code> · <code>ask.command.modelChanged</code></td><td><span class="tag c">状态确认</span></td><td>模型按钮<b>就地闪一下</b>：蓝色描边 + ✓，1.6s 后淡出。不出现文字条。</td></tr>
+      <tr><td>思考强度：%@</td><td><code>ask.command.reasoningChanged</code></td><td><span class="tag c">状态确认</span></td><td>思考强度按钮就地闪一下，同上。</td></tr>
+      <tr><td>已切换到本机模式 / Typeflux Cloud</td><td><code>ask.command.localOn/Off</code></td><td><span class="tag c">状态确认</span></td><td>「本机」按钮就地闪一下，按钮文字本身就是新状态。</td></tr>
+      <tr><td>已附带 / 已移除屏幕截图、选中文字、本条使用记忆</td><td><code>ask.command.screenshot*/selection*/memory*</code></td><td><span class="tag c">状态确认</span></td><td>对应的图标 chip 切换开关状态时<b>弹一下</b>（scale 1→1.12→1），右上角出现 ✓ 角标 1.2s。</td></tr>
+      <tr><td>已复制上一条回答 · 已记住</td><td><code>ask.command.copied/remembered</code></td><td><span class="tag c">一次性动作</span></td><td>底栏里、麦克风左边出现绿色<b>小胶囊</b>「✓ 已复制」，1.6s 淡出。它占用的是底栏的空白区域，卡片高度不变。</td></tr>
+      <tr><td>每条消息最多选 %d 个</td><td><code>ask.command.tooManyChoices</code></td><td><span class="tag w">操作被拒</span></td><td>命令面板里，对应条目原地抖一下，副标题改为警告色文字。面板外不再出提示。</td></tr>
+      <tr><td>已取消附带截图，当前模型不支持图片识别</td><td><code>screenshotNotice</code> · <code>ask.image.detached</code></td><td><span class="tag w">需要知道/处理</span></td><td><b>卡片内提示条</b>（卡片顶部），附「换回识图模型」按钮和 ×。截图 chip 同时显示警告角标。</td></tr>
+      <tr><td>附件被拒 / 图片需要识图模型</td><td><code>attachmentNotice</code></td><td><span class="tag w">需要知道/处理</span></td><td>卡片内提示条，紧挨附件条。被拒的附件显示为橙色描边的「幽灵」缩略图，3s 后自动移除。</td></tr>
+      <tr><td>语音输入出错</td><td><code>voice.error</code></td><td><span class="tag w">需要知道/处理</span></td><td>麦克风按钮变红色斜杠图标，同时显示卡片内提示条（附「重试」）。悬停麦克风可看完整原因。</td></tr>
+      <tr><td>launcher 发送错误</td><td><code>model.error</code>（launcher）</td><td><span class="tag w">需要处理</span></td><td>卡片内提示条，附「重试」。</td></tr>
+      <tr><td>已切换到支持识图的 %@ · 改回</td><td><code>visionSwitch</code></td><td><span class="tag s">对话事件</span></td><td>在<b>对话流</b>中这条用户消息的上方，插入一行居中的系统分隔线，带「改回 X」链接。它会留在历史里，以后能回看模型是在哪一条换的。</td></tr>
+      <tr><td>出错 · 重试 / 已停止 · 继续处理 / 还有未完成的回复</td><td><code>error</code> · <code>run.status</code> · <code>resumable</code></td><td><span class="tag s">对话事件</span></td><td>作为<b>失败卡片附在对应回答末尾</b>，带「重试 / 继续处理」，不再浮在输入框上方。</td></tr>
+      <tr><td>↩ 发送 · ⇧↩ 换行 · 按住 ⌥(R) 语音输入</td><td><code>AskComposerHint</code></td><td><span class="tag h">使用说明</span></td><td>删除底部这一行。改为：占位符「输入问题，/ 调用命令」；悬停发送按钮显示 ↩ / ⇧↩；悬停麦克风显示「按住 ⌥(R)」；欢迎页已有的那行快捷键说明保留。</td></tr>
+    </table>
+  </div>
+
+  <!-- A: workspace after -->
+  <div class="full">
+    <div class="label">A · 新的聊天页：输入框贴近窗口底边，下方不放任何内容</div>
+    <div style="display:flex; gap:40px; align-items:flex-start">
+      <div class="win">
+        <div class="side">
+          <div class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+          <div class="search">搜索对话 <span style="margin-left:auto">⌘K</span></div>
+          <div class="grp">今天</div>
+          <div class="it"><span>讲讲这一屏在做什么</span><span>11:57</span></div>
+          <div class="it"><span>讲讲这一屏在做什么</span><span>09:49</span></div>
+          <div class="grp">昨天</div>
+          <div class="it"><span>早上好呀。</span><span>10:45</span></div>
+          <div class="it"><span>Hello, can you hear me?…</span><span>01:09</span></div>
+        </div>
+        <div class="main">
+          <div class="tbar"><span>新对话</span></div>
+          <div class="body">
+            <div class="orb"></div>
+            <div class="hello">有什么想问的？</div>
+            <div class="keys">随时按 <kbd>⌘ Space</kbd> 唤起 · 按住 <kbd>⌥(R)</kbd> 语音输入</div>
+            <div class="sugs">
+              <div class="sug"><i></i><b>讲讲这一屏在做什么</b><small>带当前截图</small></div>
+              <div class="sug"><i></i><b>翻译我选中的文字</b><small>保留原格式</small></div>
+              <div class="sug"><i></i><b>读一下这个网页并总结</b><small>用当前浏览器</small></div>
+            </div>
+          </div>
+          <div class="dock">
+            <div class="composer">
+              <div class="editor"><span class="ph">输入问题，<kbd>/</kbd> 调用命令</span></div>
+              <div class="foot">
+                <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
+                <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
+                <span class="menu flash">coding/auto <span class="check"><svg width="9" height="9"><use href="#ok"/></svg></span></span>
+                <span class="menu"><svg width="14" height="14"><use href="#spark"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+                <span class="sep"></span>
+                <span class="ic"><svg width="15" height="15"><use href="#cam"/></svg></span>
+                <span class="ic on round"><svg width="15" height="15"><use href="#brain"/></svg></span>
+                <span class="spacer"></span>
+                <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+                <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
+              </div>
+            </div>
+            <div class="edgeline"><span>底部只留 22pt 外边距</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="notes" style="flex:1">
+        <h2>整体变化</h2>
+        <ul>
+          <li>截图里是刚通过 <code>/</code> 命令切到 coding/auto 的那一刻：<b>模型按钮本身</b>变成蓝色软底和描边，名字后面加一个 ✓。1.6s 后恢复正常样式。眼睛本来就在看这个位置，不需要再读一行字。</li>
+          <li>输入框下方只保留 22pt 外边距（<code>composerBottomInset</code>），<code>AskComposerHint</code> 整行删除。卡片的位置和高度不再因为提示而变化。</li>
+          <li>斜杠按钮去掉，改为占位符「输入问题，<b>/</b> 调用命令」，让命令入口更容易被发现。底栏少一个图标，也就更不容易挤。</li>
+          <li>快捷键说明：空对话的欢迎区已经有「⌘Space 唤起 · ⌥(R) 语音输入」，有内容后再放到悬停提示里（见 E）。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- B: confirmations -->
+  <div class="stage">
+    <div class="label">B · 状态确认：在控件上就地反馈，不出现文字条</div>
+    <div class="step">
+      <div class="composer">
+        <div class="editor"><span class="ph">输入问题，<kbd>/</kbd> 调用命令</span></div>
+        <div class="foot">
+          <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
+          <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
+          <span class="menu">coding/auto <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="menu flash"><svg width="14" height="14"><use href="#spark"/></svg>高 <span class="check"><svg width="9" height="9"><use href="#ok"/></svg></span></span>
+          <span class="sep"></span>
+          <span class="ic"><svg width="15" height="15"><use href="#cam"/></svg></span>
+          <span class="ic on round"><svg width="15" height="15"><use href="#brain"/></svg></span>
+          <span class="spacer"></span>
+          <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+          <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
+        </div>
+      </div>
+      <div class="cap">B1 · /think 高 → 思考强度按钮闪一下（模型、本机/Cloud 用同样的效果）</div>
+    </div>
+    <div class="step">
+      <div class="composer">
+        <div class="editor"><span class="ph">输入问题，<kbd>/</kbd> 调用命令</span></div>
+        <div class="foot">
+          <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
+          <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
+          <span class="menu">coding/auto <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="menu"><svg width="14" height="14"><use href="#spark"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="sep"></span>
+          <span class="ic on" style="transform:scale(1.08)"><svg width="15" height="15"><use href="#cam"/></svg><span class="badge-ok"><svg width="8" height="8"><use href="#ok"/></svg></span></span>
+          <span class="ic on round"><svg width="15" height="15"><use href="#brain"/></svg></span>
+          <span class="spacer"></span>
+          <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+          <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
+        </div>
+      </div>
+      <div class="cap">B2 · /screenshot → 截图 chip 弹一下、变成开启态，右上角 ✓ 角标 1.2s</div>
+    </div>
+    <div class="step">
+      <div class="composer">
+        <div class="editor"><span class="ph">输入问题，<kbd>/</kbd> 调用命令</span></div>
+        <div class="foot">
+          <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
+          <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
+          <span class="menu">coding/auto <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="menu"><svg width="14" height="14"><use href="#spark"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="sep"></span>
+          <span class="ic"><svg width="15" height="15"><use href="#cam"/></svg></span>
+          <span class="ic on round"><svg width="15" height="15"><use href="#brain"/></svg></span>
+          <span class="spacer"></span>
+          <span class="ftoast"><svg width="14" height="14"><use href="#okc"/></svg>已复制上一条回答</span>
+          <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+          <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
+        </div>
+      </div>
+      <div class="cap">B3 · /copy、/remember 这类没有对应控件的动作 → 底栏空白处出现绿色胶囊，1.6s 淡出</div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>规则</h2>
+    <ul>
+      <li><b>改了哪个状态，就在哪个控件上反馈</b>。<code>runCommand</code> 不再调用 <code>confirm(text)</code>，改为 <code>pulse(.model / .reasoning / .local / .screenshot / .selection / .memory)</code>。底栏用 <code>model.pulse</code> 判断哪个控件需要高亮。</li>
+      <li>动效：0→120ms 描边和软底淡入，✓ 从 0.6 缩放到 1；保持 1.2s；再用 300ms 淡出。开启「减少动态效果」时去掉缩放，只保留颜色变化。</li>
+      <li><b>无障碍</b>：视觉上没有文字了，但仍然通过 <code>NSAccessibility.post(.announcementRequested)</code> 把原来的确认文案（如「已切换到 coding/auto」）读给 VoiceOver。现有本地化 key 全部保留，作为播报文案使用。</li>
+      <li><b>B3 小胶囊</b>放在底栏 spacer 里，靠右对齐，紧贴麦克风。宽度不够时（launcher 很窄、底栏控件很多）只显示 ✓ 图标，悬停可看文字。它<b>不会改变卡片高度</b>。</li>
+      <li>连续触发时，后一次直接替换前一次，不排队。和现在 <code>confirm</code> 的“新的覆盖旧的”语义一致。</li>
+    </ul>
+  </div>
+
+  <!-- C: in-card notices -->
+  <div class="stage">
+    <div class="label">C · 需要知道或处理的问题：卡片内提示条（顶部），与来源控件同时标记</div>
+    <div class="step">
+      <div class="composer">
+        <div class="nrow w"><svg width="14" height="14"><use href="#cam"/></svg><span class="t">已取消附带截图：coding/auto 不支持图片识别</span><span class="a">换回 qwen2.5-vl</span><span class="x"><svg width="9" height="9"><use href="#x"/></svg></span></div>
+        <div class="editor"><span class="ph">输入问题，<kbd>/</kbd> 调用命令</span></div>
+        <div class="foot">
+          <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
+          <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
+          <span class="menu">coding/auto <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="menu"><svg width="14" height="14"><use href="#spark"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="sep"></span>
+          <span class="ic" style="color:var(--text-3)"><svg width="15" height="15"><use href="#cam"/></svg><span class="badge-warn">!</span></span>
+          <span class="ic on round"><svg width="15" height="15"><use href="#brain"/></svg></span>
+          <span class="spacer"></span>
+          <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+          <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
+        </div>
+      </div>
+      <div class="cap">C1 · 换到不支持识图的模型，截图被自动摘掉：提示条带「换回」按钮，截图 chip 显示 ! 角标</div>
+    </div>
+    <div class="step">
+      <div class="composer">
+        <div class="strip">
+          <div class="att"><span class="thumb"></span><span>design.png<small>1.2 MB</small></span></div>
+          <div class="att bad"><span class="thumb"></span><span>video.mov<small style="color:var(--warn)">不支持</small></span></div>
+        </div>
+        <div class="nrow w"><svg width="14" height="14"><use href="#clip"/></svg><span class="t">video.mov 无法添加：只支持图片、PDF 和文本文件</span><span class="x"><svg width="9" height="9"><use href="#x"/></svg></span></div>
+        <div class="editor"><span class="ph">输入问题，<kbd>/</kbd> 调用命令</span></div>
+        <div class="foot">
+          <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
+          <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
+          <span class="menu">qwen2.5-vl <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="spacer"></span>
+          <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+          <span class="send on"><svg width="15" height="15"><use href="#up"/></svg></span>
+        </div>
+      </div>
+      <div class="cap">C2 · 附件被拒：提示条紧挨附件条，被拒的文件以橙色「幽灵」缩略图出现 3s 后移除</div>
+    </div>
+    <div class="step">
+      <div class="composer">
+        <div class="nrow w"><svg width="14" height="14"><use href="#micx"/></svg><span class="t">麦克风权限被关闭，无法语音输入</span><span class="a">打开系统设置</span><span class="x"><svg width="9" height="9"><use href="#x"/></svg></span></div>
+        <div class="editor"><span class="ph">输入问题，<kbd>/</kbd> 调用命令</span></div>
+        <div class="foot">
+          <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
+          <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
+          <span class="menu">coding/auto <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="spacer"></span>
+          <span class="nrow" style="margin:0; padding:0; min-height:0; color:var(--text-3); font-size:11px">+1 条提示</span>
+          <span class="mic err"><svg width="16" height="16"><use href="#micx"/></svg></span>
+          <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
+        </div>
+      </div>
+      <div class="cap">C3 · 语音出错：麦克风按钮变红 + 提示条；同时有多条提示时只显示一条，其余收进「+1 条提示」</div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>规则</h2>
+    <ul>
+      <li><b>位置</b>：在卡片内部、编辑区上方，和 <code>AskQueueEditingHeader</code>、附件条同一层。距离卡片左右各 8pt，圆角 11，高度 34。它属于输入框本身，不会落到卡片外面。</li>
+      <li><b>只放需要用户知道或处理的事</b>：被自动撤销的选择、被拒的附件、语音或发送失败。成功类确认一律不进这里。</li>
+      <li><b>双重标记</b>：提示条说明原因，来源控件同时显示状态（截图 chip 的 ! 角标、红色麦克风、橙色幽灵附件）。用户关掉提示条后，控件上的状态仍然保留，悬停可再次看到原因。</li>
+      <li><b>同一时间最多一条</b>。优先级：发送错误 &gt; 语音 &gt; 附件 &gt; 截图。其余条数在底栏显示为「+N 条提示」，点击展开成列表。现在的实现会同时叠出最多 5 条，这是布局跳动的主要原因。</li>
+      <li><b>关闭方式</b>：提示条有 ×；导致它的状态被修正后自动消失（换回识图模型、重新授权麦克风、移除了出问题的附件），不需要额外等待。</li>
+      <li>提示条展开或收起时，卡片向<b>上</b>长（底边保持不动），沿用 0.25s spring 动画。输入光标和底栏都不移动。</li>
+    </ul>
+  </div>
+
+  <!-- D: conversation events -->
+  <div class="stage">
+    <div class="label">D · 对话级事件：写进对话流，不浮在输入框附近</div>
+    <div class="tx">
+      <div class="sysline"><svg width="13" height="13"><use href="#eye"/></svg>这条消息带图片，已切换到 qwen2.5-vl · <a>改回 coding/auto</a></div>
+      <div class="bubble">讲讲这一屏在做什么</div>
+      <div class="answer">这是 Typeflux 的「随便问」窗口。左侧是对话列表，按今天、昨天、更早分组；中间是空对话的欢迎页，提供三个快捷提问……</div>
+      <div class="acts"><span><svg width="14" height="14"><use href="#copy"/></svg></span><span><svg width="14" height="14"><use href="#retry"/></svg></span></div>
+      <div class="bubble">再帮我把它翻成英文</div>
+      <div class="answer" style="color:var(--text-2)">The window is Typeflux's "Ask Anything" panel. On the left…</div>
+      <div class="fail"><svg width="16" height="16" style="color:var(--warn)"><use href="#warn"/></svg><span class="t">回答中断：网络连接已断开<small>已生成的内容已保留</small></span><span class="a g">复制错误</span><span class="a">继续处理</span></div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>规则</h2>
+    <ul>
+      <li><b>自动切换识图模型</b>（<code>visionSwitch</code>）记录的是「这条对话从哪一条开始换了模型」，属于对话历史，所以写成对话流中的一行系统分隔线。「改回 X」在下一条消息发出前都能点；发出后链接变成普通文字，只作记录。</li>
+      <li><b>失败、停止、未完成</b>（<code>error</code>、<code>run.status == failed/cancelled</code>、<code>resumable</code>）对应的是某一条回答，所以作为卡片附在那条回答末尾。「重试 / 继续处理」就在出错位置，不用再去输入框附近找。</li>
+      <li><code>statusColumn</code>（输入框上方的那组 banner）随之删除。这样输入框的上方和下方都不再有额外的提示。</li>
+      <li><code>AskImageRecoveryCard</code> 本来就是一张卡片，同样移到对应回答末尾，样式不变。</li>
+      <li>选中会话加载失败（<code>selectionLoadFailed</code>）不是某条回答的问题，改为在对话区居中显示空状态：「加载失败 · 重试」。</li>
+    </ul>
+  </div>
+
+  <!-- E: hints -->
+  <div class="stage">
+    <div class="label">E · 快捷键说明：从固定的底部提示行，改为占位符和悬停提示</div>
+    <div class="step" style="padding-top:70px">
+      <div class="composer">
+        <div class="editor"><span>帮我总结一下这篇文章的要点</span></div>
+        <div class="foot">
+          <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
+          <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
+          <span class="menu">coding/auto <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="menu"><svg width="14" height="14"><use href="#spark"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="spacer"></span>
+          <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg>
+            <div class="tip"><b>语音输入</b><i>按住 <kbd>⌥(R)</kbd> 说话，松开插入</i></div></span>
+          <span class="send on"><svg width="15" height="15"><use href="#up"/></svg></span>
+        </div>
+      </div>
+      <div class="cap">E1 · 悬停麦克风：显示语音快捷键（随设置里的 activationHotkey 变化）</div>
+    </div>
+    <div class="step" style="padding-top:70px">
+      <div class="composer">
+        <div class="editor"><span>帮我总结一下这篇文章的要点</span></div>
+        <div class="foot">
+          <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
+          <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
+          <span class="menu">coding/auto <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="menu"><svg width="14" height="14"><use href="#spark"/></svg>默认 <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="spacer"></span>
+          <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+          <span class="send on"><svg width="15" height="15"><use href="#up"/></svg>
+            <div class="tip r"><b>发送</b><i><kbd>↩</kbd> 发送 · <kbd>⇧↩</kbd> 换行</i></div></span>
+        </div>
+      </div>
+      <div class="cap">E2 · 悬停发送按钮：显示发送与换行快捷键</div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>规则</h2>
+    <ul>
+      <li>空对话的欢迎区已经展示过「⌘Space 唤起 · 按住 ⌥(R) 语音输入」。<b>↩ 发送</b>是聊天输入框的通用习惯，不需要一直显示。</li>
+      <li>麦克风按钮的 <code>.help</code> 显示「按住 ⌥(R) 说话，松开插入」，内容跟随 <code>activationHotkey</code> 的设置实时更新（复用 <code>AskComposerHint.refresh</code> 的逻辑）。</li>
+      <li>发送按钮的 <code>.help</code> 显示「↩ 发送 · ⇧↩ 换行」。排队、停止状态沿用 <code>AskSendControl</code> 各自的提示文字。</li>
+      <li>占位符「输入问题，/ 调用命令」替代斜杠按钮，命令入口一直可见。</li>
+      <li><code>ask.composer.hint</code> 这个 key 可以删除；<code>AskMetrics.composerHintHeight</code> 归零后，把 <code>composerBottomInset</code> 调整为 22。</li>
+    </ul>
+  </div>
+
+  <!-- F: launcher -->
+  <div class="stage">
+    <div class="label">F · 快捷浮窗（launcher）：同一套规则，浮窗只在需要时向上长</div>
+    <div class="dsk">
+      <div class="launcher composer">
+        <div class="nrow d"><svg width="14" height="14"><use href="#warn"/></svg><span class="t">发送失败：Typeflux Cloud 暂时不可用</span><span class="a">重试</span><span class="x"><svg width="9" height="9"><use href="#x"/></svg></span></div>
+        <div class="editor"><span>这段报错是什么意思？</span></div>
+        <div class="foot">
+          <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
+          <span class="menu flash"><svg width="14" height="14"><use href="#mac"/></svg>本机 <span class="check"><svg width="9" height="9"><use href="#ok"/></svg></span></span>
+          <span class="menu">llama3.2 <svg width="10" height="10"><use href="#chev"/></svg></span>
+          <span class="spacer"></span>
+          <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+          <span class="send on"><svg width="15" height="15"><use href="#up"/></svg></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>规则</h2>
+    <ul>
+      <li>launcher 的 banner 现在也堆在玻璃卡片外面，面板窗口跟着往下长（<code>reportHeight</code>）。改为全部放进卡片内：提示条在顶部，确认反馈在控件上。<b>玻璃卡片下方不再有其他内容</b>。</li>
+      <li>示例：发送失败后用户执行 <code>/local</code>，「本机」按钮闪一下表示已切换，提示条里的「重试」直接用新模式重新发送。</li>
+      <li>面板高度只在提示条出现或消失时变化。<code>reportHeight</code> 的监听从 7 个 <code>onChange</code> 减为 1 个（当前显示的提示条 id），其余监听（<code>commandFeedback</code>、各类 notice）可以删除。</li>
+      <li>浅色玻璃上，提示条使用实色软底（见 G），避免和桌面背景混在一起。</li>
+    </ul>
+  </div>
+
+  <!-- G: light -->
+  <div class="stage light">
+    <div class="label" style="color:#6e6e73">G · 浅色模式</div>
+    <div class="step">
+      <div class="composer">
+        <div class="nrow w"><svg width="14" height="14"><use href="#cam"/></svg><span class="t">已取消附带截图：coding/auto 不支持图片识别</span><span class="a">换回 qwen2.5-vl</span><span class="x"><svg width="9" height="9"><use href="#x"/></svg></span></div>
+        <div class="editor"><span class="ph">输入问题，<kbd>/</kbd> 调用命令</span></div>
+        <div class="foot">
+          <span class="btn"><svg width="15" height="15"><use href="#plus"/></svg></span>
+          <span class="menu pill"><svg width="14" height="14"><use href="#mac"/></svg>本机</span>
+          <span class="menu flash">coding/auto <span class="check"><svg width="9" height="9"><use href="#ok"/></svg></span></span>
+          <span class="sep"></span>
+          <span class="ic" style="color:var(--text-3)"><svg width="15" height="15"><use href="#cam"/></svg><span class="badge-warn">!</span></span>
+          <span class="spacer"></span>
+          <span class="ftoast"><svg width="14" height="14"><use href="#okc"/></svg>已记住</span>
+          <span class="mic"><svg width="16" height="16"><use href="#mic"/></svg></span>
+          <span class="send"><svg width="15" height="15"><use href="#up"/></svg></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>颜色与尺寸</h2>
+    <table class="tokens">
+      <tr><td>就地反馈</td><td>描边 <code>AskTheme.accent</code> 1.5pt，填充 <code>accentSoft</code>，✓ 圆点 14pt。显示 1.2s，淡出 0.3s</td></tr>
+      <tr><td>底栏胶囊</td><td>高 26，填充 <code>successSoft</code>（深色 #30D158 14%），文字 12 / 550。显示 1.6s</td></tr>
+      <tr><td>卡片内提示条</td><td>高 ≥34，圆角 11，左右内缩 8。<code>.warning</code> 用 <code>warningSoft</code>，<code>.danger</code> 用 <code>dangerSoft</code>，<code>.info</code> 用 <code>hover</code></td></tr>
+      <tr><td>控件角标</td><td>14pt 圆点，1.5pt 卡片色描边。警告用 <code>StudioTheme.warning</code>，确认用 <code>accent</code></td></tr>
+      <tr><td>系统分隔线</td><td>11.5pt 三级灰文字，两侧是 1pt 8% 白色的线，链接用 <code>accentText</code></td></tr>
+      <tr><td>输入框底边距</td><td>22pt（原来是提示行 22 + 底边距 16 = 38pt）</td></tr>
+    </table>
+  </div>
+
+  <!-- H: impl mapping -->
+  <div class="full stage" style="padding:24px 28px">
+    <div class="label">H · 实现映射（供开发评估，本设计稿不包含代码改动）</div>
+    <table class="tokens">
+      <tr><th style="width:300px">改动点</th><th>说明</th></tr>
+      <tr><td><code>AskComposer.body</code></td><td>外层 <code>VStack</code> 只保留 <code>card</code>。5 个 <code>AskBanner</code> 移入 <code>card</code> 顶部，合并为一个 <code>AskComposerNotice</code>（按优先级取一条，其余计数）。</td></tr>
+      <tr><td><code>AskConversationModel.confirm(_:)</code></td><td>改为 <code>pulse(_ target: AskPulseTarget, announce: String)</code>。<code>commandFeedback: String?</code> 换成 <code>pulse: AskPulse?</code>（target + 文案 + id），由底栏控件读取。</td></tr>
+      <tr><td><code>AskComposerHint</code></td><td>删除；把快捷键文案移到麦克风和发送按钮的 <code>.help</code> 里。</td></tr>
+      <tr><td><code>statusColumn</code> / <code>statusArea</code></td><td>删除。<code>visionSwitch</code> 渲染为 transcript 中的 <code>AskSystemLine</code>；<code>error</code>、失败或取消的 run、<code>resumable</code>、<code>AskImageRecoveryCard</code> 渲染在最后一条回答末尾。</td></tr>
+      <tr><td><code>AskBanner</code></td><td>保留，用作卡片内提示条和对话流里失败卡片的基础样式，新增 <code>.inset</code>（卡片内）变体。</td></tr>
+      <tr><td>测试</td><td>为 <code>pulse</code> 的目标映射（每个 <code>AskCommand.action</code> 对应哪个控件）和提示条优先级选择补单元测试；用快照测试对比聊天页和 launcher 在各状态下的卡片高度，确认提示不会改变卡片底边位置。</td></tr>
+    </table>
+  </div>
+</div>
+</body>
+</html>
