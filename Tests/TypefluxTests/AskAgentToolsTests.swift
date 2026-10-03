@@ -206,7 +206,7 @@ final class AskAgentToolsTests: XCTestCase {
         XCTAssertEqual(settings.askFileAccessFolders, [folder.path])
         XCTAssertTrue(settings.askCodeExecutionEnabled)
         let notes = AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json"))
-        let sandbox = AskCodeSandbox(baseDirectory: root.appendingPathComponent("sandbox"))
+        let sandbox = AskCodeSandbox(baseDirectory: root.appendingPathComponent("sandbox"), allowProcessGroupExecution: true)
         let tools = AskLocalTools(registry: registry(), settings: settings, sandbox: sandbox,
                                   skills: AskSkillLibrary(userDirectory: root.appendingPathComponent("skills")), notes: notes, owner: { "me" })
         tools.runningBundleIdentifiers = { [] }

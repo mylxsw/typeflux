@@ -102,7 +102,7 @@ final class AskCodeSandboxTests: XCTestCase {
 
     override func setUpWithError() throws {
         base = FileManager.default.temporaryDirectory.appendingPathComponent("ask-sandbox-\(UUID().uuidString)")
-        sandbox = AskCodeSandbox(baseDirectory: base)
+        sandbox = AskCodeSandbox(baseDirectory: base, allowProcessGroupExecution: true)
         try XCTSkipUnless(sandbox.isSupported, "sandbox-exec is unavailable")
     }
 
@@ -173,7 +173,7 @@ final class AskCodeSandboxTests: XCTestCase {
         let profile = AskCodeSandbox.profile(workspace: "/w \"q\"", home: "/Users/me", readable: ["/r"])
         XCTAssertTrue(profile.contains("(deny network*)"))
         XCTAssertTrue(profile.contains("(subpath \"/w \\\"q\\\"\")"))
-        XCTAssertTrue(profile.contains("(deny file-read* (subpath \"/Users/me\"))"))
+        XCTAssertTrue(profile.contains("(deny file-read*)"))
         XCTAssertTrue(profile.contains("(subpath \"/r\")"))
         do {
             _ = try await sandbox.run(.shell, code: String(repeating: "a", count: AskCodeSandbox.maximumCodeBytes + 1), conversationId: "x")
