@@ -1978,3 +1978,9 @@
 "ask.queue.full" = "Up to %d messages can wait.";
 "ask.steered" = "Jumped in";
 "ask.steered.pending" = "Jumped in · read at the next step";
+
+// Scoped tool approval
+"ask.approval.changed" = "The approved action, target, or tool changed. Review and approve a new call.";
+"ask.approval.allowExact" = "Allow this exact action";
+"ask.approval.exactScope" = "Only this action, target and unchanged arguments may repeat for 5 minutes in this conversation.";
+"ask.approval.singleUse" = "Allows this call once. Later calls require a new approval.";

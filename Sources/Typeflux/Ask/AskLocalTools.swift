@@ -8,8 +8,7 @@ struct AskLocalToolOutput: Sendable {
     var isError = false
 }
 
-/// How much a tool call can change. Grants for a conversation cover a tool up to the
-/// granted level; destructive calls always ask.
+/// Presentation risk only. Risk tiers never imply authorization.
 enum AskToolRisk: Int, Comparable, Sendable {
     /// Loads app-provided instructions only; runs without approval.
     case none
@@ -25,30 +24,46 @@ protocol AskToolExecuting {
     /// Tools usable from this conversation; tools that need an unavailable target are omitted.
     func definitions(conversationId: String?) async -> [AskToolDefinition]
     func execute(_ call: AskToolCall, conversationId: String) async throws -> AskLocalToolOutput
+    func approvalBinding(for call: AskToolCall, conversationId: String) async throws -> AskToolBinding
+    func executeApproved(_ call: AskToolCall, conversationId: String, binding: AskToolBinding,
+                         authorize: () throws -> Void) async throws -> AskLocalToolOutput
     /// The MCP server behind a tool call, for approvals; nil for built-in tools.
     func mcpServerName(of call: AskToolCall) -> String?
 }
 
 extension AskToolExecuting {
     func mcpServerName(of _: AskToolCall) -> String? { nil }
+    func executeApproved(_ call: AskToolCall, conversationId: String, binding: AskToolBinding,
+                         authorize: () throws -> Void) async throws -> AskLocalToolOutput {
+        let current = try await approvalBinding(for: call, conversationId: conversationId)
+        try Task.checkCancellation()
+        guard current == binding else { throw AskLocalError.message(L("ask.approval.changed")) }
+        try authorize()
+        return try await execute(call, conversationId: conversationId)
+    }
 }
 
 /// Calls require conversation approval or screenshot consent from the submitted draft.
 /// All calls pass through the persistent execution journal before reaching this executor.
 @MainActor
 final class AskLocalTools: AskToolExecuting {
-    private let registry: MCPRegistry
+    let registry: MCPRegistry
     private var mcpTools: [String: MCPToolAdapter] = [:]
     private var mcpServers: [String: String] = [:]
+    var mcpIdentities: [String: UUID] = [:]
     var targetApplication: NSRunningApplication?
-    private var capturedDisplays: [String: CGDirectDisplayID] = [:]
-    private var targets: [String: NSRunningApplication] = [:]
-    private let runner: any ProcessCommandRunning
-    private let settings: SettingsStore?
+    var capturedDisplays: [String: CGDirectDisplayID] = [:]
+    var targets: [String: NSRunningApplication] = [:]
+    let runner: any ProcessCommandRunning
+    let settings: SettingsStore?
     let sandbox: AskCodeSandbox
     let skills: AskSkillLibrary
     private let notes: AskMemoryNoteStore
-    private let owner: @MainActor () -> String
+    let owner: @MainActor () -> String
+    var approvalWindows: [pid_t: (AXUIElement, String)] = [:]
+    var focusedApprovalWindow: (pid_t) -> AXUIElement? = AskLocalTools.focusedWindow
+    var approvalWindowFrame: (AXUIElement) -> CGRect? = AskLocalTools.windowFrame
+    var approvalProcessStart: (NSRunningApplication) -> Date? = { $0.isTerminated ? nil : $0.launchDate }
     /// Running apps, injectable for tests.
     var runningBundleIdentifiers: () -> [String] = { NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier) }
 
@@ -88,6 +103,7 @@ final class AskLocalTools: AskToolExecuting {
         result.append(AskMemoryNoteStore.definition)
         mcpTools = [:]
         mcpServers = [:]
+        mcpIdentities = [:]
         var schemaBytes = 0
         for (name, entry) in Self.mcpToolNames(await registry.registeredTools()) {
             let tool = entry.tool
@@ -97,6 +113,7 @@ final class AskLocalTools: AskToolExecuting {
             schemaBytes += schema.count
             mcpTools[name] = tool
             mcpServers[name] = entry.serverName
+            mcpIdentities[name] = entry.serverId
             result.append(.init(name: name, description: String(tool.definition.description.prefix(2000)), parameters: JSONValue(data: schema)))
             if result.count == 64 { break }
         }
@@ -105,14 +122,9 @@ final class AskLocalTools: AskToolExecuting {
 
     func mcpServerName(of call: AskToolCall) -> String? { mcpServers[call.function.name] }
 
-    /// MCP tools follow their annotations; per the MCP specification an unannotated
-    /// tool may be destructive, so it keeps asking every time.
+    /// External annotations are hints, never evidence of a trusted read-only tool.
     func risk(of call: AskToolCall) -> AskToolRisk {
-        if let tool = mcpTools[call.function.name] {
-            let hints = tool.toolDef.annotations
-            if hints?.readOnlyHint == true { return .read }
-            return hints?.destructiveHint == false ? .write : .destructive
-        }
+        if mcpTools[call.function.name] != nil { return .destructive }
         return Self.builtinRisk(call)
     }
 
@@ -289,7 +301,9 @@ final class AskLocalTools: AskToolExecuting {
         capturedDisplays[conversationId].map { CGDisplayBounds($0) }
     }
 
-    private func computer(_ args: [String: Any], target: NSRunningApplication?, conversationId: String) async throws -> AskLocalToolOutput {
+    func computer(_ args: [String: Any], target: NSRunningApplication?, conversationId: String,
+                  validate: () throws -> Void = {}, validatePoint: (CGPoint) throws -> Void = { _ in }) async throws -> AskLocalToolOutput {
+        try validate()
         let action = args["action"] as? String ?? ""
         switch action {
         case "screenshot":
@@ -325,6 +339,7 @@ final class AskLocalTools: AskToolExecuting {
         // Allow the window server to focus the approved application before events.
         try await Task.sleep(for: .milliseconds(200))
         try Task.checkCancellation()
+        try validate()
         guard NSWorkspace.shared.frontmostApplication?.processIdentifier == target?.processIdentifier else {
             throw AskLocalError.message(L("ask.tool.targetMissing"))
         }
@@ -332,6 +347,7 @@ final class AskLocalTools: AskToolExecuting {
             guard let bounds = displayBounds(conversationId), let x = args[xKey] as? Double ?? (args[xKey] as? Int).map(Double.init),
                   let y = args[yKey] as? Double ?? (args[yKey] as? Int).map(Double.init),
                   let point = AskDesktopActions.point(x: x, y: y, in: bounds) else { throw AskLocalError.message(L("ask.tool.invalid")) }
+            try validatePoint(point)
             return point
         }
         func post(_ type: CGEventType, at point: CGPoint, button: CGMouseButton = .left, clicks: Int64 = 1) {
@@ -359,19 +375,23 @@ final class AskLocalTools: AskToolExecuting {
         case "drag":
             let from = try point("x", "y"), to = try point("to_x", "to_y")
             post(.leftMouseDown, at: from)
+            var lastPoint = from
+            defer { post(.leftMouseUp, at: lastPoint) }
             for step in 1 ... 12 {
                 try Task.checkCancellation()
+                try validate()
                 let t = CGFloat(step) / 12
-                post(.leftMouseDragged, at: CGPoint(x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t))
+                lastPoint = CGPoint(x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t)
+                post(.leftMouseDragged, at: lastPoint)
                 try await Task.sleep(for: .milliseconds(15))
             }
-            post(.leftMouseUp, at: to)
         case "type":
             guard let text = args["text"] as? String, text.utf16.count <= 10000 else { throw AskLocalError.message(L("ask.tool.invalid")) }
             let chars = Array(text.utf16)
             var offset = 0
             while offset < chars.count {
                 try Task.checkCancellation()
+                try validate()
                 var end = min(chars.count, offset + 20)
                 if end < chars.count, (0xD800 ... 0xDBFF).contains(chars[end - 1]) { end -= 1 }
                 let slice = Array(chars[offset ..< end])
@@ -429,7 +449,7 @@ final class AskLocalTools: AskToolExecuting {
     return {ref:i+1,tag:e.tagName.toLowerCase(),role:e.getAttribute('role')||e.type||'',name}})})})()
     """
 
-    nonisolated static func browserScript(_ args: [String: Any], bundle: String) throws -> String {
+    nonisolated static func browserScript(_ args: [String: Any], bundle: String, approvedDocument: String? = nil) throws -> String {
         guard ["com.apple.Safari", "com.google.Chrome"].contains(bundle) else {
             throw AskLocalError.message(L("ask.tool.browserUnsupported"))
         }
@@ -464,9 +484,17 @@ final class AskLocalTools: AskToolExecuting {
             script = "(()=>{const e=document.querySelector(\(Self.javascriptLiteral(selector)));if(!e)return 'Element not found';\(action)return 'Action dispatched; read page to verify';})()"
         default: throw AskLocalError.message(L("ask.tool.invalid"))
         }
+        var guarded = script
+        if let approvedDocument {
+            let fields = approvedDocument.split(separator: "\u{1f}", omittingEmptySubsequences: false)
+            guard fields.count == 4 else { throw AskLocalError.message(L("ask.approval.changed")) }
+            // Check and act within the same JavaScript turn, including a navigation
+            // occurring after the AppleScript target check but before JS dispatch.
+            guarded = "if(location.href!==\(Self.javascriptLiteral(String(fields[2])))||String(performance.timeOrigin)!==\(Self.javascriptLiteral(String(fields[3])))){throw new Error('Approval target changed');};" + script
+        }
         let command = bundle == "com.apple.Safari"
-            ? "do JavaScript \(Self.appleScriptLiteral(script)) in front document"
-            : "execute active tab of front window javascript \(Self.appleScriptLiteral(script))"
+            ? "do JavaScript \(Self.appleScriptLiteral(guarded)) in front document"
+            : "execute active tab of front window javascript \(Self.appleScriptLiteral(guarded))"
         let source = "with timeout of 20 seconds\ntell application id \(Self.appleScriptLiteral(bundle))\n\(command)\nend tell\nend timeout"
         return source
     }

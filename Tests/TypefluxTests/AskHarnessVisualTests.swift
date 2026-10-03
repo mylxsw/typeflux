@@ -44,6 +44,27 @@ struct AskHarnessVisualTests {
         AskToolCall(id: id, type: "function", function: .init(name: name, arguments: args))
     }
 
+    @Test func renderScopedApprovalCards() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.english)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let code = call("code", "run_code", #"{"language":"python","code":"print(1 + 1)"}"#)
+        let send = call("send", "mcp_send_message", #"{"recipient":"team@example.invalid","message":"Release candidate is ready for review."}"#)
+        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+            let cards = VStack(spacing: 20) {
+                AskApprovalCard(call: code, risk: .write, targetSummary: "Python / analysis workspace", onDeny: {}, onAllow: {})
+                AskApprovalCard(call: send, risk: .destructive, mcpServer: "Team service",
+                                targetSummary: "Team service / send_message", onDeny: {}, onAllow: {})
+            }.padding(24).frame(width: 820, height: 440).background(AskTheme.monoSurface)
+            try await render(cards, size: .init(width: 820, height: 440), appearance: appearance,
+                             file: root.appendingPathComponent("scoped-approval-\(appearance == .aqua ? "light" : "dark").png"))
+        }
+    }
+
     @Test func renderAgentHarnessSurfaces() async throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
         let root = URL(fileURLWithPath: directory)
@@ -87,7 +108,7 @@ struct AskHarnessVisualTests {
                              file: root.appendingPathComponent("harness-run-\(appearance == .aqua ? "light" : "dark").png"))
         }
 
-        // 2. Approval for a write (grantable) and for a destructive MCP call (allow once only).
+        // 2. File writes and destructive MCP calls both require a single-use approval.
         await fixture.api.setTool(call("w", "files", ##"{"action":"edit","path":"~/Documents/release.md","old_text":"# Release 4.2","new_text":"# Release 4.2 (final)"}"##))
         fixture.model.draft.text = "把标题改成正式版"
         fixture.model.submitDraft()
