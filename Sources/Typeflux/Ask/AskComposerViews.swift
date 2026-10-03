@@ -46,6 +46,16 @@ struct AskComposer: View {
     private var listening: Bool { voice.context == contextID && voice.phase == .listening }
     @State private var showingScreenshot = false
     @State private var showingStripPreview = false
+    /// Files are dragged over the editor or the card.
+    @State private var editorDropTargeted = false
+    @State private var cardDropTargeted = false
+    private var dropTargeted: Bool { editorDropTargeted || cardDropTargeted }
+    private var userAttachments: [AskAttachment] { draft.wrappedValue.attachments ?? [] }
+    private var loadingAttachments: Bool { model.isLoadingAttachments(launcher: launcher) }
+    /// The launcher shows only what the user added; its captured context stays in the footer.
+    private var showsStrip: Bool {
+        !userAttachments.isEmpty || loadingAttachments || (!launcher && !attachedItems.isEmpty)
+    }
     /// The workspace shows the content that is sent above the editor.
     private var attachedItems: [AskContextItem] {
         AskAttachmentStrip.attached(contextItems, screenshotCaptured: draft.wrappedValue.screenshot != nil)
@@ -79,6 +89,7 @@ struct AskComposer: View {
     /// stay (disabled) while dictating, so the panel never jumps mid-recording.
     private var showsLauncherSuggestions: Bool {
         launcher && draft.wrappedValue.text.isEmpty && (draft.wrappedValue.references ?? []).isEmpty
+            && (draft.wrappedValue.attachments ?? []).isEmpty && !model.isLoadingAttachments(launcher: true)
     }
 
     /// Sends a suggestion as the question, with the screenshot when it asks for one.
@@ -103,6 +114,10 @@ struct AskComposer: View {
                     if launcher { model.launcherScreenshotNotice = nil } else { model.screenshotNotice = nil }
                 })
             }
+            if let notice = model.attachmentNotice(launcher: launcher) {
+                AskBanner(text: notice, tone: .warning, systemImage: "paperclip",
+                          onDismiss: { model.dismissAttachmentNotice(launcher: launcher) })
+            }
             if let error = voice.error {
                 AskBanner(text: error, tone: .warning, systemImage: "mic.slash")
             }
@@ -116,6 +131,8 @@ struct AskComposer: View {
         .onChange(of: model.launcherScreenshotNotice) { _ in reportHeight() }
         .onChange(of: model.screenshotNotice) { _ in reportHeight() }
         .onChange(of: voice.error) { _ in reportHeight() }
+        .onChange(of: model.attachmentNotice(launcher: launcher)) { _ in reportHeight() }
+        .onChange(of: showsStrip) { _ in reportHeight() }
         .onAppear { reportHeight() }
         .onReceive(NotificationCenter.default.publisher(for: .hotkeySettingsDidChange)) { _ in
             voiceShortcut = model.modelLibrary.settings.activationHotkey
@@ -141,13 +158,16 @@ struct AskComposer: View {
                     .padding(.horizontal, chrome.horizontalInset - 4)
                     .padding(.top, 10)
             }
-            if !launcher, !attachedItems.isEmpty {
+            if showsStrip {
                 AskAttachmentStripView(
-                    items: attachedItems,
+                    items: launcher ? [] : attachedItems,
                     screenshot: AskAttachmentStrip.thumbnail(dataURL: draft.wrappedValue.screenshot,
                                                              capturedAt: draft.wrappedValue.capturedAt),
                     onPreview: { showingStripPreview = true },
-                    onRemove: remove
+                    onRemove: remove,
+                    attachments: userAttachments,
+                    loading: loadingAttachments,
+                    onRemoveAttachment: { model.removeAttachment($0, launcher: launcher) }
                 )
                 .padding(.horizontal, chrome.horizontalInset - 4)
                 .padding(.top, 10)
@@ -155,7 +175,7 @@ struct AskComposer: View {
                     AskContextPreview(draft: draft,
                                       recapture: { Task { await model.refreshScreenshot(launcher: launcher) } })
                 }
-                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: attachedItems.map(\.id))
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: attachedItems.map(\.id) + userAttachments.map(\.id))
             }
             editorRow
             footer
@@ -178,12 +198,13 @@ struct AskComposer: View {
         .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner,
                                  idle: chrome.idleBorder(on: glass, increasedContrast: contrast == .increased)))
         .overlay {
-            if editingQueued {
+            if editingQueued || dropTargeted {
                 RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
-                    .strokeBorder(AskTheme.accent, lineWidth: 1.5)
+                    .strokeBorder(AskTheme.accent, lineWidth: dropTargeted ? 2 : 1.5)
                     .allowsHitTesting(false)
             }
         }
+        .askAttachmentDrop(model: model, launcher: launcher, targeted: $cardDropTargeted)
     }
 
     /// Quotes waiting in the draft name what the follow-up is about.
@@ -212,7 +233,9 @@ struct AskComposer: View {
                     fontSize: chrome.editorFontSize,
                     onSubmit: submit,
                     onDismiss: { if editingQueued { model.cancelQueuedEdit() } else { onDismiss() } },
-                    onHeightChange: { editorHeight = $0 }
+                    onHeightChange: { editorHeight = $0 },
+                    onAttach: { model.addAttachments($0, launcher: launcher) },
+                    onDropTargetChange: { editorDropTargeted = $0 }
                 )
                 .frame(height: editorHeight)
                 .disabled(!launcher && model.isLoadingSelection)
@@ -226,6 +249,9 @@ struct AskComposer: View {
 
     private var footer: some View {
         HStack(spacing: 4) {
+            AskAttachButton(model: model, launcher: launcher,
+                            disabled: active || (!launcher && model.isLoadingSelection))
+                .opacity(Self.recordingDim(active))
             AskLocalModeButton(model: model)
                 .opacity(Self.recordingDim(active))
             AskModelMenu(library: model.modelLibrary, reference: Binding(
@@ -401,8 +427,9 @@ struct AskComposer: View {
         var banners = voice.error == nil ? 0 : 1
         if (launcher ? model.launcherScreenshotNotice : model.screenshotNotice) != nil { banners += 1 }
         if launcher, model.error != nil { banners += 1 }
+        if model.attachmentNotice(launcher: launcher) != nil { banners += 1 }
         onHeightChange(AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
-                                                 suggestions: showsLauncherSuggestions))
+                                                 suggestions: showsLauncherSuggestions, attachments: showsStrip))
     }
 }
 

@@ -1975,3 +1975,29 @@
 "ask.queue.full" = "最多可以排隊 %d 則訊息。";
 "ask.steered" = "已插隊";
 "ask.steered.pending" = "已插隊 · 下一步生效";
+
+/* Ask attachments */
+"ask.attach.title" = "新增附件";
+"ask.attach.help" = "新增檔案、圖片或資料夾（⌘U），也可以直接貼上或拖入";
+"ask.attach.files" = "檔案或圖片…";
+"ask.attach.files.caption" = "圖片、文字、程式碼或 PDF";
+"ask.attach.folder" = "資料夾…";
+"ask.attach.folder.caption" = "本次對話可讀取，不會上傳";
+"ask.attach.clipboard" = "貼上剪貼簿圖片";
+"ask.attach.clipboard.caption" = "剪貼簿裡的截圖或圖片";
+"ask.attach.pickFiles" = "選擇要傳給隨便問的檔案或圖片";
+"ask.attach.pickFolders" = "選擇隨便問在本次對話中可以讀取的資料夾";
+"ask.attach.add" = "新增";
+"ask.attach.loading" = "正在讀取附件";
+"ask.attach.pastedImage" = "貼上的圖片";
+"ask.attach.pdfPage" = "%@ 第 %d 頁";
+"ask.attach.folderReadOnly" = "唯讀";
+"ask.attach.pages" = "%d 頁";
+"ask.attach.truncated" = "已截斷";
+"ask.attach.unsupported" = "暫不支援「%@」的格式。";
+"ask.attach.tooLarge" = "「%@」太大，無法新增。";
+"ask.attach.unreadable" = "無法讀取「%@」。";
+"ask.attach.tooMany" = "每則訊息最多新增 %d 個檔案。";
+"ask.attach.tooManyImages" = "每則訊息最多 %d 張圖片（含螢幕截圖）。";
+"ask.attach.tooManyFolders" = "每則訊息最多新增 %d 個資料夾。";
+"ask.attach.payload" = "附件內容過多，請移除部分檔案後再新增。";

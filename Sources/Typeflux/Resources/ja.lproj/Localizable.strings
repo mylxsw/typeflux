@@ -1968,3 +1968,29 @@
 "ask.queue.full" = "待機できるメッセージは %d 件までです。";
 "ask.steered" = "割り込み済み";
 "ask.steered.pending" = "割り込み済み · 次のステップで反映";
+
+/* Ask attachments */
+"ask.attach.title" = "添付";
+"ask.attach.help" = "ファイル、画像、フォルダを添付（⌘U）。貼り付けやドラッグでも追加できます";
+"ask.attach.files" = "ファイルまたは画像…";
+"ask.attach.files.caption" = "画像、テキスト、コード、PDF";
+"ask.attach.folder" = "フォルダ…";
+"ask.attach.folder.caption" = "この会話で読み取り可能、アップロードされません";
+"ask.attach.clipboard" = "クリップボードの画像を貼り付け";
+"ask.attach.clipboard.caption" = "クリップボードのスクリーンショットや画像";
+"ask.attach.pickFiles" = "Ask に送るファイルや画像を選択";
+"ask.attach.pickFolders" = "この会話で Ask が読み取れるフォルダを選択";
+"ask.attach.add" = "追加";
+"ask.attach.loading" = "添付ファイルを読み込み中";
+"ask.attach.pastedImage" = "貼り付けた画像";
+"ask.attach.pdfPage" = "%@ %d ページ";
+"ask.attach.folderReadOnly" = "読み取り専用";
+"ask.attach.pages" = "%d ページ";
+"ask.attach.truncated" = "切り詰め済み";
+"ask.attach.unsupported" = "「%@」の形式にはまだ対応していません。";
+"ask.attach.tooLarge" = "「%@」は大きすぎて添付できません。";
+"ask.attach.unreadable" = "「%@」を読み取れませんでした。";
+"ask.attach.tooMany" = "1 件のメッセージに添付できるファイルは %d 個までです。";
+"ask.attach.tooManyImages" = "1 件のメッセージに添付できる画像は %d 枚までです（スクリーンショットを含む）。";
+"ask.attach.tooManyFolders" = "1 件のメッセージに添付できるフォルダは %d 個までです。";
+"ask.attach.payload" = "添付内容が大きすぎます。いくつかのファイルを削除してください。";

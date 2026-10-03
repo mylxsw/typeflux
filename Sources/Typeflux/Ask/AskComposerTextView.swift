@@ -16,6 +16,10 @@ struct AskComposerTextView: NSViewRepresentable {
     var onSubmit: () -> Void
     var onDismiss: () -> Void = {}
     var onHeightChange: (CGFloat) -> Void = { _ in }
+    /// Receives files and images pasted (⌘V, Edit menu or context menu) or dropped
+    /// on the editor. Nil keeps the plain text behaviour.
+    var onAttach: (([AskAttachmentSource]) -> Void)?
+    var onDropTargetChange: (Bool) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -47,6 +51,8 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onSubmit = onSubmit
         editor.onDismiss = onDismiss
         editor.onHeightChange = onHeightChange
+        editor.onAttach = onAttach
+        editor.onDropTargetChange = onDropTargetChange
         editor.setAccessibilityLabel(placeholder)
         editor.setAccessibilityHelp(L("ask.voice.holdHint"))
         scroll.documentView = editor
@@ -73,6 +79,8 @@ struct AskComposerTextView: NSViewRepresentable {
         if editor.isEditable != isEnabled { editor.isEditable = isEnabled }
         editor.onSubmit = onSubmit; editor.onDismiss = onDismiss
         editor.onHeightChange = onHeightChange
+        editor.onAttach = onAttach
+        editor.onDropTargetChange = onDropTargetChange
         if editor.font?.pointSize != fontSize { editor.font = .systemFont(ofSize: fontSize) }
         if editor.string != text, !editor.hasMarkedText() {
             editor.string = text
@@ -107,7 +115,61 @@ struct AskComposerTextView: NSViewRepresentable {
         var onSubmit: () -> Void = {}
         var onDismiss: () -> Void = {}
         var onHeightChange: (CGFloat) -> Void = { _ in }
+        var onAttach: (([AskAttachmentSource]) -> Void)?
+        var onDropTargetChange: (Bool) -> Void = { _ in }
         private var reportedHeight: CGFloat = 0
+
+        /// Hands files or images on `pasteboard` to `onAttach`; false leaves it to the text system.
+        @discardableResult
+        func attach(from pasteboard: NSPasteboard) -> Bool {
+            guard let onAttach, isEditable, AskAttachmentSource.canRead(from: pasteboard) else { return false }
+            let sources = AskAttachmentSource.read(from: pasteboard)
+            guard !sources.isEmpty else { return false }
+            onAttach(sources)
+            return true
+        }
+        override func paste(_ sender: Any?) {
+            if !attach(from: .general) { super.paste(sender) }
+        }
+        override func pasteAsPlainText(_ sender: Any?) {
+            if !attach(from: .general) { super.pasteAsPlainText(sender) }
+        }
+        /// A plain text view disables Paste for an image-only pasteboard; attaching makes it valid.
+        override func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
+            if [#selector(paste(_:)), #selector(pasteAsPlainText(_:))].contains(item.action),
+               onAttach != nil, isEditable, AskAttachmentSource.canRead(from: .general) { return true }
+            return super.validateUserInterfaceItem(item)
+        }
+        override var acceptableDragTypes: [NSPasteboard.PasteboardType] {
+            super.acceptableDragTypes + [.fileURL, .png, .tiff]
+        }
+        private func attachesDrop(_ sender: NSDraggingInfo) -> Bool {
+            onAttach != nil && isEditable && AskAttachmentSource.canRead(from: sender.draggingPasteboard)
+        }
+        override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+            guard attachesDrop(sender) else { return super.draggingEntered(sender) }
+            onDropTargetChange(true)
+            return .copy
+        }
+        override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+            attachesDrop(sender) ? .copy : super.draggingUpdated(sender)
+        }
+        override func draggingExited(_ sender: NSDraggingInfo?) {
+            onDropTargetChange(false)
+            super.draggingExited(sender)
+        }
+        override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
+            attachesDrop(sender) || super.prepareForDragOperation(sender)
+        }
+        override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+            onDropTargetChange(false)
+            if attach(from: sender.draggingPasteboard) { return true }
+            return super.performDragOperation(sender)
+        }
+        override func concludeDragOperation(_ sender: NSDraggingInfo?) {
+            onDropTargetChange(false)
+            super.concludeDragOperation(sender)
+        }
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             windowObservers.forEach { NotificationCenter.default.removeObserver($0) }

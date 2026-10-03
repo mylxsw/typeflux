@@ -138,9 +138,10 @@ actor AskLocalEngine: AskAPI {
         guard Self.validID(id) else { throw AskLocalError.message(L("ask.local.notFound")) }
         let hasQuestion = !request.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || (request.references ?? []).contains { !$0.question.trimmingCharacters(in: .whitespaces).isEmpty }
+            || !(request.attachments ?? []).isEmpty
         guard hasQuestion else { throw AskLocalError.message(L("ask.local.emptyQuestion")) }
         var record = records[id] ?? AskLocalRecord(conversation: AskConversation(
-            id: id, title: String(request.text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(50)),
+            id: id, title: String(Self.title(request).prefix(50)),
             revision: 0, updatedAt: now(), messages: []))
         if record.conversation.messages.contains(where: { $0.id == request.id }) { return record.conversation }
         if record.conversation.run?.isActive == true { throw AskLocalError.message(L("ask.local.busy")) }
@@ -152,7 +153,8 @@ actor AskLocalEngine: AskAPI {
         if let zone = request.timeZone, TimeZone(identifier: zone) != nil { record.timeZone = zone }
         if let locale = request.locale, !locale.isEmpty, locale.count <= 35 { record.locale = locale }
         c.messages.append(AskMessage(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source,
-                                     image: request.image, createdAt: now(), reasoningEffort: request.reasoningEffort, references: request.references))
+                                     image: request.image, createdAt: now(), reasoningEffort: request.reasoningEffort, references: request.references,
+                                     attachments: request.attachments))
         c.modelRef = modelRef
         c.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: request.deviceId, status: "running", steps: 0, updatedAt: now(),
                        tools: request.tools, pending: [], modelRef: modelRef, reasoningEffort: request.reasoningEffort)
@@ -224,13 +226,14 @@ actor AskLocalEngine: AskAPI {
         guard let run = record.conversation.run, run.isActive, run.id == request.runId else { throw conflict() }
         let hasQuestion = !request.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || (request.references ?? []).contains { !$0.question.trimmingCharacters(in: .whitespaces).isEmpty }
+            || !(request.attachments ?? []).isEmpty
         guard hasQuestion else { throw AskLocalError.message(L("ask.local.emptyQuestion")) }
         var waiting = record.steering ?? []
         if waiting.contains(where: { $0.id == request.id }) { return record.conversation }
         guard waiting.count < Self.maxSteering else { throw AskLocalError.message(L("ask.queue.full", Self.maxSteering)) }
         waiting.append(AskMessage(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source,
                                   image: request.image, createdAt: now(), reasoningEffort: run.reasoningEffort,
-                                  references: request.references, runId: run.id, steered: true))
+                                  references: request.references, runId: run.id, steered: true, attachments: request.attachments))
         record.steering = waiting
         try save(&record)
         return record.conversation
@@ -273,6 +276,12 @@ actor AskLocalEngine: AskAPI {
     // MARK: - Run
 
     /// Only the user's own models run locally; Typeflux Cloud models need the Cloud service.
+    /// The typed question, or the first attachment's name when only files were sent.
+    static func title(_ request: AskSendRequest) -> String {
+        let typed = request.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return typed.isEmpty ? request.attachments?.first?.name ?? typed : typed
+    }
+
     static func localModel(_ reference: String?) throws -> String {
         guard let reference, !reference.isEmpty, !reference.hasPrefix("cloud:") else {
             throw AskLocalError.message(L("ask.local.modelRequired"))

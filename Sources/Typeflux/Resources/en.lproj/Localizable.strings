@@ -1978,3 +1978,29 @@
 "ask.queue.full" = "Up to %d messages can wait.";
 "ask.steered" = "Jumped in";
 "ask.steered.pending" = "Jumped in · read at the next step";
+
+/* Ask attachments */
+"ask.attach.title" = "Attach";
+"ask.attach.help" = "Attach files, images or a folder (⌘U). You can also paste or drop them here";
+"ask.attach.files" = "Files or Images…";
+"ask.attach.files.caption" = "Images, text, code or PDF";
+"ask.attach.folder" = "Folder…";
+"ask.attach.folder.caption" = "Readable in this conversation, never uploaded";
+"ask.attach.clipboard" = "Paste Image from Clipboard";
+"ask.attach.clipboard.caption" = "A screenshot or image on the clipboard";
+"ask.attach.pickFiles" = "Choose files or images to send to Ask";
+"ask.attach.pickFolders" = "Choose a folder Ask can read in this conversation";
+"ask.attach.add" = "Add";
+"ask.attach.loading" = "Reading attachments";
+"ask.attach.pastedImage" = "Pasted image";
+"ask.attach.pdfPage" = "%@ page %d";
+"ask.attach.folderReadOnly" = "Read-only";
+"ask.attach.pages" = "%d pages";
+"ask.attach.truncated" = "Truncated";
+"ask.attach.unsupported" = "“%@” is a format Ask can't read yet.";
+"ask.attach.tooLarge" = "“%@” is too large to attach.";
+"ask.attach.unreadable" = "Couldn't read “%@”.";
+"ask.attach.tooMany" = "Attach up to %d files per message.";
+"ask.attach.tooManyImages" = "Up to %d images per message, including the screenshot.";
+"ask.attach.tooManyFolders" = "Attach up to %d folders per message.";
+"ask.attach.payload" = "The attachments are too large. Remove some files first.";
