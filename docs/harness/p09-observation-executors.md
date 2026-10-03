@@ -15,7 +15,10 @@ head `2ece25153b3ce3d4beccff6ea3ad89ca25ddb703`, based on main
 (`fe1d68e4`), P06 core #262 (`2506ffcd`) and P09 #266 without repeating the
 superseded prerequisite commits. Shared-file integration began after P06's
 implementation run completed and its author released this exact foundation.
-P06's raw/approved MCP result adapter and the P02 folder grants, pending-call
+P06 subsequently merged as `bfc927cdfb1fdfd91acfa4a17710acdf741a4c75`.
+The follow-up branch was moved to main `658e291ab5c6e62eed29abb3fae1595bb835afee`;
+the latter adds design documents only, with identical production/test sources.
+Its PR base is main and contains no duplicate P06 commits. P06's raw/approved MCP result adapter and the P02 folder grants, pending-call
 comparison, journal claim, grant consumption and late authorization callback
 are preserved. No other PR is merged automatically.
 

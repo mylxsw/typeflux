@@ -7,7 +7,7 @@ struct AskLocalToolOutput: Sendable {
     /// The tool ran but reported failure, so the model must not treat its output as success.
     var isError = false
     var outcome: AskExecutionOutcome? = nil
-    var observation: AskObservationRef? = nil
+    var observation: AskObservationRef?
 }
 
 /// Presentation risk only. Risk tiers never imply authorization.
