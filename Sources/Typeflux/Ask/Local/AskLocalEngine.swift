@@ -154,7 +154,7 @@ actor AskLocalEngine: AskAPI {
         if let locale = request.locale, !locale.isEmpty, locale.count <= 35 { record.locale = locale }
         c.messages.append(AskMessage(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source,
                                      image: request.image, createdAt: now(), reasoningEffort: request.reasoningEffort, references: request.references,
-                                     attachments: request.attachments))
+                                     attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
         c.modelRef = modelRef
         c.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: request.deviceId, status: "running", steps: 0, updatedAt: now(),
                        tools: request.tools, pending: [], modelRef: modelRef, reasoningEffort: request.reasoningEffort)
@@ -233,7 +233,8 @@ actor AskLocalEngine: AskAPI {
         guard waiting.count < Self.maxSteering else { throw AskLocalError.message(L("ask.queue.full", Self.maxSteering)) }
         waiting.append(AskMessage(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source,
                                   image: request.image, createdAt: now(), reasoningEffort: run.reasoningEffort,
-                                  references: request.references, runId: run.id, steered: true, attachments: request.attachments))
+                                  references: request.references, runId: run.id, steered: true, attachments: request.attachments,
+                                  skills: request.skills, mcpServers: request.mcpServers))
         record.steering = waiting
         try save(&record)
         return record.conversation

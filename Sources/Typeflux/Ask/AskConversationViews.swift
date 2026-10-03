@@ -457,6 +457,7 @@ struct AskConversationView: View {
             header
         }
         .onPreferenceChange(AskBottomChromeHeight.self) { bottomChromeHeight = $0 }
+        .onChange(of: model.searchRequest) { _ in openSearch() }
         .frame(minWidth: AskMetrics.contentMinWidth)
     }
 
@@ -849,7 +850,7 @@ struct AskConversationView: View {
             let request = item.draft.request(deviceId: model.deviceId, tools: [], id: item.id)
             return AskMessage(id: item.id, role: "user", text: request.text, selection: request.selection, source: request.source,
                               image: request.image, createdAt: Date(), references: request.references, steered: true,
-                              attachments: request.attachments)
+                              attachments: request.attachments, mcpServers: request.mcpServers)
         }
     }
 
@@ -928,6 +929,15 @@ private struct AskMessageView: View {
                 if let files = message.attachments, !files.isEmpty {
                     AskFlowLayout(spacing: 6, alignment: .trailing) {
                         ForEach(files) { AskSentFileChip(attachment: $0) }
+                    }
+                }
+                let tools = (message.skills ?? []).map { AskChosenTool(kind: .skill, name: $0.name) }
+                    + (message.mcpServers ?? []).map { AskChosenTool(kind: .mcpServer, name: $0) }
+                if !tools.isEmpty {
+                    AskFlowLayout(spacing: 6, alignment: .trailing) {
+                        ForEach(tools) { tool in
+                            AskSentAttachmentChip(title: tool.caption + " · " + tool.name, systemImage: tool.symbol)
+                        }
                     }
                 }
                 if !message.text.isEmpty {

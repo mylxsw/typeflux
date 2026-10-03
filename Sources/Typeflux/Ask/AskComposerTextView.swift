@@ -20,6 +20,11 @@ struct AskComposerTextView: NSViewRepresentable {
     /// on the editor. Nil keeps the plain text behaviour.
     var onAttach: (([AskAttachmentSource]) -> Void)?
     var onDropTargetChange: (Bool) -> Void = { _ in }
+    /// The slash token before the caret after each edit or caret move, and
+    /// whether the user typed the change (pastes and dictation do not open commands).
+    var onSlashQuery: ((AskSlashQuery?, Bool) -> Void)?
+    /// Arrow, Return, Tab and Escape while the command palette is open; true when handled.
+    var onCommandKey: ((AskCommandKey) -> Bool)?
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -53,6 +58,8 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onHeightChange = onHeightChange
         editor.onAttach = onAttach
         editor.onDropTargetChange = onDropTargetChange
+        editor.onSlashQuery = onSlashQuery
+        editor.onCommandKey = onCommandKey
         editor.setAccessibilityLabel(placeholder)
         editor.setAccessibilityHelp(L("ask.voice.holdHint"))
         scroll.documentView = editor
@@ -81,6 +88,8 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onHeightChange = onHeightChange
         editor.onAttach = onAttach
         editor.onDropTargetChange = onDropTargetChange
+        editor.onSlashQuery = onSlashQuery
+        editor.onCommandKey = onCommandKey
         if editor.font?.pointSize != fontSize { editor.font = .systemFont(ofSize: fontSize) }
         if editor.string != text, !editor.hasMarkedText() {
             editor.string = text
@@ -96,6 +105,10 @@ struct AskComposerTextView: NSViewRepresentable {
             guard let editor = notification.object as? NSTextView else { return }
             parent.text = editor.string
             (editor as? Editor)?.reportHeight()
+            (editor as? Editor)?.reportSlash()
+        }
+        func textViewDidChangeSelection(_ notification: Notification) {
+            (notification.object as? Editor)?.reportSlash()
         }
     }
 
@@ -117,7 +130,17 @@ struct AskComposerTextView: NSViewRepresentable {
         var onHeightChange: (CGFloat) -> Void = { _ in }
         var onAttach: (([AskAttachmentSource]) -> Void)?
         var onDropTargetChange: (Bool) -> Void = { _ in }
+        var onSlashQuery: ((AskSlashQuery?, Bool) -> Void)?
+        var onCommandKey: ((AskCommandKey) -> Bool)?
+        /// A key press is being handled; edits made now were typed.
+        private(set) var typing = false
         private var reportedHeight: CGFloat = 0
+
+        func reportSlash() {
+            guard let onSlashQuery, !hasMarkedText() else { return }
+            let caret = selectedRange()
+            onSlashQuery(caret.length == 0 ? AskSlashQuery.parse(string, caret: caret.location) : nil, typing)
+        }
 
         /// Hands files or images on `pasteboard` to `onAttach`; false leaves it to the text system.
         @discardableResult
@@ -315,10 +338,13 @@ struct AskComposerTextView: NSViewRepresentable {
                 if event.keyCode == 53 { cancelInteraction() }
                 return
             }
+            if !hasMarkedText(), let key = AskCommandKey(event), onCommandKey?(key) == true { return }
             if event.keyCode == 36, !event.modifierFlags.contains(.shift), !hasMarkedText() {
                 onSubmit(); return
             }
             if event.keyCode == 53, !hasMarkedText() { onDismiss(); return }
+            typing = true
+            defer { typing = false }
             super.keyDown(with: event)
         }
     }

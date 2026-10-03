@@ -89,6 +89,14 @@ final class AskConversationModel: ObservableObject {
     @Published var launcherAttachmentNotice: String?
     /// Loads in flight per draft key (`visionDraftKey`); sending waits for them.
     @Published var attachmentLoads: [String: Int] = [:]
+    /// Skills, MCP servers, notes and local mode for slash commands; the window controller fills it in.
+    var commandSources = AskCommandSources()
+    /// Bumped by the "/search" command; the window opens its search palette.
+    @Published var searchRequest = 0
+    /// A short confirmation after a slash command, cleared after a moment.
+    @Published var commandFeedback: String?
+    /// Command names, most recent first, for the palette's "Recent" group.
+    var recentCommands: [String] = []
     @Published private(set) var recoveringImages: [String: AskImageRecoveryTarget] = [:]
     @Published private(set) var conversations: [AskConversationSummary] = []
     @Published private(set) var selected: AskConversation?
@@ -500,6 +508,7 @@ final class AskConversationModel: ObservableObject {
         var value = newConversation ? AskConversation(id: id, title: String(submitted.title.prefix(50)), revision: 0, updatedAt: Date(), messages: []) : selected!
         let messageId = queuedId ?? UUID().uuidString
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
+        request.skills = skillUses(submitted.skills)
         request.modelRef = localFallback(submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference : (value.modelRef ?? "cloud:default")),
                                          hasImage: request.sendsImage || value.messages.contains { $0.hasImage })
         request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
@@ -509,7 +518,7 @@ final class AskConversationModel: ObservableObject {
         Self.applyMemoryChoice(submitted, newConversation: newConversation, request: &request, conversation: &value)
         pendingSends[id] = request
         screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
-        value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references, attachments: request.attachments))
+        value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references, attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
         selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID()
         if clearsDraft { draft = .followUp }
         snapshots[id] = value; selectionLoadFailed = false
@@ -1039,7 +1048,9 @@ extension AskConversationModel {
         guard let latest = sendQueue.messages(value.id).first(where: { $0.id == itemId }) else { return }
         let id = value.id
         steeringIds.insert(itemId)
-        let request = AskSteerRequest(runId: run.id, message: latest.draft.request(deviceId: deviceId, tools: [], id: latest.id))
+        var message = latest.draft.request(deviceId: deviceId, tools: [], id: latest.id)
+        message.skills = skillUses(latest.draft.skills)
+        let request = AskSteerRequest(runId: run.id, message: message)
         Task { [weak self] in
             guard let self else { return }
             defer { steeringIds.remove(itemId) }

@@ -52,6 +52,13 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                                  owner: AuthState.shared.userProfile?.id)
         }
         super.init()
+        model.commandSources = AskCommandSources(
+            skills: { tools.enabledSkills },
+            mcpServers: { MCPSettingsStore().servers.map { AskMCPServerSummary(name: $0.name, enabled: $0.enabled) } },
+            remember: { text in try AskMemoryNoteStore.shared.add(text, owner: GlobalSoulOwner.currentID) },
+            localMode: { settings.askLocalModeEnabled },
+            setLocalMode: { settings.askLocalModeEnabled = $0 }
+        )
         bindCallbacks()
     }
 

@@ -57,6 +57,9 @@ struct AskAttachmentStripView: View {
     /// Files are still being read; a spinner holds their place.
     var loading = false
     var onRemoveAttachment: (String) -> Void = { _ in }
+    /// Skills and MCP servers chosen with slash commands.
+    var choices: [AskChosenTool] = []
+    var onRemoveChoice: (AskChosenTool) -> Void = { _ in }
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -72,6 +75,13 @@ struct AskAttachmentStripView: View {
                                       thumbnail: attachment.image.flatMap { AskAttachmentStrip.thumbnail(id: attachment.id, dataURL: $0) },
                                       caption: AskAttachmentStrip.caption(attachment),
                                       onRemove: { onRemoveAttachment(attachment.id) })
+                        .transition(.scale(scale: 0.7).combined(with: .opacity))
+                }
+                ForEach(choices) { choice in
+                    AskAttachmentChip(item: AskContextItem(kind: .source, systemImage: choice.symbol, style: .active,
+                                                           title: choice.name, detail: choice.caption),
+                                      caption: choice.caption,
+                                      onRemove: { onRemoveChoice(choice) })
                         .transition(.scale(scale: 0.7).combined(with: .opacity))
                 }
                 if loading {
@@ -196,4 +206,15 @@ struct AskAttachmentChip: View {
                 .background(AskTheme.accent.opacity(0.15), in: Circle())
         }
     }
+}
+
+/// A skill or MCP server chosen with a slash command for the next message.
+struct AskChosenTool: Equatable, Identifiable {
+    enum Kind: String { case skill, mcpServer }
+    var kind: Kind
+    var name: String
+
+    var id: String { kind.rawValue + ":" + name }
+    var symbol: String { kind == .skill ? "bolt" : "powerplug" }
+    var caption: String { L(kind == .skill ? "ask.command.chip.skill" : "ask.command.chip.mcp") }
 }

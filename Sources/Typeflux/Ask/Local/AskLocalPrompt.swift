@@ -75,6 +75,23 @@ enum AskLocalPrompt {
         return text
     }
 
+    /// Skills and MCP servers the user picked with a slash command for this question.
+    /// Mirrors `choiceContext` in the server's Ask engine.
+    static func choices(skills: [AskSkillUse]?, mcpServers: [String]?) -> String {
+        var text = ""
+        if let skills, !skills.isEmpty {
+            text += "\n\nThe user chose these skills for this question; follow their instructions:"
+            for skill in skills {
+                text += "\n<skill name=" + attribute(skill.name) + ">\n" + skill.instructions + "\n</skill>"
+            }
+        }
+        if let mcpServers, !mcpServers.isEmpty {
+            text += "\n\nThe user wants this answered with the tools of these MCP servers where they apply: " +
+                mcpServers.joined(separator: ", ") + "."
+        }
+        return text
+    }
+
     /// A JSON string literal that keeps "/" readable in paths.
     static func attribute(_ text: String) -> String {
         let encoder = JSONEncoder(); encoder.outputFormatting = .withoutEscapingSlashes
@@ -86,7 +103,7 @@ enum AskLocalPrompt {
         if m.selection?.isEmpty == false || m.source?.isEmpty == false {
             text += "\n\n<screen_context source=" + quoted(m.source ?? "") + ">\n" + (m.selection ?? "") + "\n</screen_context>"
         }
-        text += attachments(m.attachments)
+        text += attachments(m.attachments) + choices(skills: m.skills, mcpServers: m.mcpServers)
         var result: [String: Any] = ["role": m.role]
         let images = (m.image.map { [$0] } ?? []) + (m.attachments ?? []).compactMap { $0.kind == .image ? $0.image : nil }
         if m.role == "tool", m.isError == true {

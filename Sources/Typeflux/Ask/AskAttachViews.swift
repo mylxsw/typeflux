@@ -45,6 +45,31 @@ struct AskAttachButton: View {
     }
 }
 
+/// The composer's "/" control: starts a slash command, like typing "/" (⌘/).
+struct AskSlashButton: View {
+    var active: Bool
+    var disabled = false
+    var action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Text(verbatim: "/")
+                .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                .foregroundStyle(active ? AskTheme.accent : hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+                .background(active ? AskTheme.accent.opacity(0.16) : hovering ? AskTheme.hoverFill : Color.clear, in: Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .disabled(disabled)
+        .keyboardShortcut("/", modifiers: .command)
+        .help(L("ask.command.help.button"))
+        .accessibilityLabel(L("ask.command.title"))
+    }
+}
+
 struct AskAttachChoices: View {
     enum Choice { case files, folder, clipboard }
 
