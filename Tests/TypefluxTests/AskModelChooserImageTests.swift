@@ -40,4 +40,44 @@ struct AskModelChooserImageTests {
                                                 loggedIn: true, scenario: "ask") == nil)
         }
     }
+
+    @Test func ownModelsOfUnknownVisionCanBeTriedWithImages() throws {
+        let library = try library()
+        // Only these models on Ollama, without the migrated default.
+        var registry = library.registry
+        if let index = registry.providers.firstIndex(where: { $0.isOllama }) { registry.providers[index].models = [] }
+        try library.commit(registry)
+        try library.addModels([
+            RegisteredModel(id: "house-model", name: "House", reference: "custom:house"),
+            RegisteredModel(id: "gpt-4o", name: "GPT-4o", reference: "custom:guessed"),
+            RegisteredModel(id: "deepseek-chat", name: "DeepSeek", reference: "custom:text")
+        ], providerID: "ollama")
+        library.ollamaAvailable = true
+        let ollama = try #require(library.providers.first { $0.isOllama })
+        let byReference = Dictionary(uniqueKeysWithValues: ollama.models.map { ($0.reference, $0) })
+        let house = try #require(byReference["custom:house"])
+        #expect(AskModelChoices.imageReason(house, provider: ollama, hasImage: true, library: library,
+                                            loggedIn: true, scenario: "ask") == nil)
+        #expect(AskModelChoices.imageTrialCaption(house, provider: ollama, hasImage: true) == L("ask.models.visionTrial"))
+        #expect(AskModelChoices.imageTrialCaption(house, provider: ollama, hasImage: false) == nil)
+        let guessed = try #require(byReference["custom:guessed"])
+        #expect(AskModelChoices.imageTrialCaption(guessed, provider: ollama, hasImage: true) == nil)
+        #expect(AskModelCapabilities.badges(guessed).map(\.text) == [L("ask.models.badge.vision")])
+        let text = try #require(byReference["custom:text"])
+        #expect(AskModelChoices.imageReason(text, provider: ollama, hasImage: true, library: library,
+                                            loggedIn: true, scenario: "ask") == L("models.noVision"))
+
+        let lenient = library.selectableProviders(loggedIn: true, hasImage: true).flatMap(\.models).map(\.reference)
+        #expect(lenient.contains("custom:house") && lenient.contains("custom:guessed") && !lenient.contains("custom:text"))
+        let strict = library.selectableProviders(loggedIn: true, hasImage: true, confirmedVision: true)
+            .flatMap(\.models).map(\.reference)
+        #expect(!strict.contains("custom:house") && strict.contains("custom:guessed"))
+        // Cloud models follow the catalog and are never tried blind.
+        let cloud = try #require(library.providers.first { $0.isCloud })
+        let cloudUnknown = try #require(cloud.models.first { $0.id == "unknown" })
+        #expect(!AskModelLibrary.acceptsImages(cloudUnknown, provider: cloud, confirmedOnly: false))
+        #expect(AskModelChoices.imageTrialCaption(cloudUnknown, provider: cloud, hasImage: true) == nil)
+        // A local fallback prefers a confirmed vision model.
+        #expect(library.firstLocalReference(hasImage: true) == "custom:guessed")
+    }
 }

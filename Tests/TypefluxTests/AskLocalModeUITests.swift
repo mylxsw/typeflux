@@ -32,6 +32,18 @@ struct AskLocalModeUITests {
 
     // MARK: - Vision switch
 
+    @Test func untestedLocalModelKeepsTheDraftAndTriesImages() throws {
+        let house = RegisteredModel(id: "house-model", name: "house-model", reference: "custom:house")
+        let f = try localFixture([house, vision])
+        f.model.draft = AskDraft(text: "What is this?", screenshot: "data:image/jpeg;base64,YQ==", modelRef: house.reference)
+        f.model.draft.includeScreenshot = true
+        #expect(f.model.draft.includeScreenshot)
+        #expect(f.model.visionCandidate(launcher: false) == nil)
+        #expect(!f.model.switchToVisionModelIfNeeded(launcher: false))
+        #expect(f.model.modelReference(launcher: false) == house.reference)
+        #expect(f.model.screenshotSuggestion(launcher: false) == .ready)
+    }
+
     @Test func screenshotSuggestionMovesALocalDraftToAVisionModel() throws {
         let f = try localFixture([text, vision])
         #expect(f.model.screenshotSuggestion(launcher: false) == .switches(model: vision.name))

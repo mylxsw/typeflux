@@ -45,7 +45,8 @@ extension AskConversationModel {
 
     /// The model a local draft would move to so that it can send images, if it needs one.
     func visionCandidate(launcher: Bool) -> String? {
-        guard !cloudAvailable, screenshotCapability(launcher: launcher) != .supported,
+        // A model of unknown support keeps the draft: it gets a try before anything moves.
+        guard !cloudAvailable, !screenshotCapability(launcher: launcher).canAttach,
               let reference = modelLibrary.firstLocalReference(hasImage: true),
               reference != modelReference(launcher: launcher) else { return nil }
         return reference
@@ -81,7 +82,7 @@ extension AskConversationModel {
 
     func screenshotSuggestion(launcher: Bool) -> AskScreenshotSuggestion {
         let capability = screenshotCapability(launcher: launcher)
-        if capability == .supported { return .ready }
+        if capability.canAttach { return .ready }
         if let candidate = visionCandidate(launcher: launcher) {
             return .switches(model: modelLibrary.name(for: candidate))
         }
@@ -92,7 +93,7 @@ extension AskConversationModel {
     /// Prepares a draft for the "explain this screen" suggestion: a vision model, then the screenshot.
     func attachScreenshotForSuggestion(launcher: Bool) {
         switchToVisionModelIfNeeded(launcher: launcher, needsVision: true)
-        guard screenshotCapability(launcher: launcher) == .supported else { return }
+        guard screenshotCapability(launcher: launcher).canAttach else { return }
         if launcher { launcherDraft.includeScreenshot = true } else { draft.includeScreenshot = true }
     }
 }

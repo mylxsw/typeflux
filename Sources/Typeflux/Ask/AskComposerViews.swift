@@ -293,7 +293,8 @@ struct AskComposer: View {
 
     private var screenshotState: AskScreenshotState {
         let value = draft.wrappedValue
-        if let reason = model.screenshotCapability(launcher: launcher).hint { return .unavailable(reason: reason) }
+        let capability = model.screenshotCapability(launcher: launcher)
+        if !capability.canAttach, let reason = capability.hint { return .unavailable(reason: reason) }
         if value.includeScreenshot, value.screenshot == nil, let warning = model.captureWarning {
             return .failed(permission: warning == L("ask.capture.permission"), message: warning)
         }

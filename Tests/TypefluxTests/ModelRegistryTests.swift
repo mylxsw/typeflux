@@ -143,10 +143,13 @@ final class ModelRegistryTests: XCTestCase {
         let available = library.sortedProviders(loggedIn: true)
         XCTAssertEqual(available.first?.remote, .typefluxCloud)
         XCTAssertEqual(available.dropFirst().first?.remote, .openAI)
-        let model = try XCTUnwrap(openAI.models.first)
+        var model = try XCTUnwrap(openAI.models.first)
+        model.id = "private-house-model"
         XCTAssertNil(library.selectionReason(model, provider: openAI, hasImage: false, loggedIn: true))
+        // Unknown vision on the user's own model gets a try, unless a confirmed vision model is required.
+        XCTAssertNil(library.selectionReason(model, provider: openAI, hasImage: true, loggedIn: true))
         XCTAssertEqual(
-            library.selectionReason(model, provider: openAI, hasImage: true, loggedIn: true),
+            library.selectionReason(model, provider: openAI, hasImage: true, loggedIn: true, confirmedVision: true),
             L("models.unknownVision")
         )
         var vision = model; vision.vision = true
@@ -182,7 +185,10 @@ final class ModelRegistryTests: XCTestCase {
         XCTAssertFalse(choices.flatMap(\.models).contains { $0.reference == embedding.reference })
         let imageChoices = library.selectableProviders(loggedIn: true, hasImage: true)
         XCTAssertTrue(imageChoices.contains { $0.isCloud })
-        XCTAssertEqual(imageChoices.first { $0.remote == .openAI }?.models.map(\.reference), [vision.reference])
+        // The migrated default model may also qualify through its name; these three must not depend on it.
+        let added = [text.reference, vision.reference, embedding.reference]
+        XCTAssertEqual(imageChoices.first { $0.remote == .openAI }?.models.map(\.reference).filter(added.contains),
+                       [vision.reference])
         settings.setLLMAPIKey("", for: .openAI)
         XCTAssertFalse(library.selectableProviders(loggedIn: false, hasImage: false).contains { $0.remote == .openAI })
         // Configuration remains editable; filtering must not delete saved models.

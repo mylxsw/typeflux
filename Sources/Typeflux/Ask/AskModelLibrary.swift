@@ -275,9 +275,11 @@ final class AskModelLibrary: ObservableObject {
         return provider.models.isEmpty ? L("models.noModels") : nil
     }
 
-    /// The first usable model of the user's own providers.
-    func firstLocalReference(hasImage: Bool) -> String? {
-        selectableProviders(loggedIn: false, hasImage: hasImage).first?.models.first?.reference
+    /// The first usable model of the user's own providers. With images, only one known to
+    /// read them unless `confirmedVision` is false.
+    func firstLocalReference(hasImage: Bool, confirmedVision: Bool = true) -> String? {
+        selectableProviders(loggedIn: false, hasImage: hasImage, confirmedVision: confirmedVision)
+            .first?.models.first?.reference
     }
 
     func sortedProviders(loggedIn: Bool) -> [RegisteredProvider] {
@@ -285,19 +287,21 @@ final class AskModelLibrary: ObservableObject {
     }
 
     /// Picker contents, not the editable configuration catalog. Preserve stable references.
-    func selectableProviders(loggedIn: Bool, hasImage: Bool, scenario: String = "ask") -> [RegisteredProvider] {
+    func selectableProviders(loggedIn: Bool, hasImage: Bool, scenario: String = "ask",
+                             confirmedVision: Bool = false) -> [RegisteredProvider] {
         providers.compactMap { provider in
             guard unavailableReason(provider, loggedIn: loggedIn) == nil else { return nil }
             var available = provider
             available.models = (provider.isCloud && scenario == "rewrite" ? (rewriteCloud?.map(\.registered) ?? provider.models) : provider.models).filter {
-                $0.exclusionReason == nil && ($0.scenarios?.contains(scenario) ?? true) && (!hasImage || $0.vision == true)
+                $0.exclusionReason == nil && ($0.scenarios?.contains(scenario) ?? true)
+                    && (!hasImage || Self.acceptsImages($0, provider: provider, confirmedOnly: confirmedVision))
             }
             return available.models.isEmpty ? nil : available
         }
     }
 
     func selectionReason(_ model: RegisteredModel, provider: RegisteredProvider, hasImage: Bool,
-                         loggedIn: Bool, scenario: String = "ask") -> String? {
+                         loggedIn: Bool, scenario: String = "ask", confirmedVision: Bool = false) -> String? {
         if provider.isCloud, scenario == "rewrite", let rewriteCloud,
            !rewriteCloud.contains(where: { $0.reference == model.reference }) { return L("ask.models.unavailable") }
         let model = provider.isCloud && scenario == "rewrite"
@@ -309,11 +313,21 @@ final class AskModelLibrary: ObservableObject {
         if let reason = model.exclusionReason {
             return reason
         }
-        if hasImage,
-           model.vision != true {
-            return L(model.vision == false ? "models.noVision" : "models.unknownVision")
+        if hasImage, !Self.acceptsImages(model, provider: provider, confirmedOnly: confirmedVision) {
+            return L(model.effectiveVision == false ? "models.noVision" : "models.unknownVision")
         }
         return nil
+    }
+
+    /// Whether images may be sent to a model. Known vision models always; the user's
+    /// own models of unknown support too, unless `confirmedOnly`: they get one try,
+    /// and a failure brings up the image recovery card. Cloud models follow the catalog.
+    static func acceptsImages(_ model: RegisteredModel, provider: RegisteredProvider, confirmedOnly: Bool) -> Bool {
+        switch model.effectiveVision {
+        case true?: return true
+        case false?: return false
+        case nil: return !confirmedOnly && !provider.isCloud
+        }
     }
 
     func name(for reference: String, scenario: String = "ask") -> String {

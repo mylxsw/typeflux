@@ -70,4 +70,23 @@ enum ModelSettingsPresentation {
         }
         return keys
     }
+
+    /// The note explaining scene tags only helps when some row shows one.
+    static func showsUsageHint(_ models: [RegisteredModel], rewriteReference: String, defaultReference: String) -> Bool {
+        models.contains {
+            !usageKeys(reference: $0.reference, rewriteReference: rewriteReference, defaultReference: defaultReference).isEmpty
+        }
+    }
+
+    /// Lines under a model's scene actions saying why they are greyed out. One line
+    /// when both scenes share the reason, otherwise one per blocked scene.
+    static func sceneBlockedNotes(rewrite: String?, ask: String?) -> [String] {
+        switch (rewrite, ask) {
+        case (nil, nil): return []
+        case let (rewrite?, ask?) where rewrite == ask: return [rewrite]
+        default:
+            return [rewrite.map { L("models.rewriteBlocked", $0) }, ask.map { L("models.askBlocked", $0) }]
+                .compactMap { $0 }
+        }
+    }
 }

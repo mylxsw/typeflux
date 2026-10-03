@@ -166,6 +166,39 @@ struct AskImageCapabilityTests {
         #expect(await f.api.sends.first?.text == "A new question")
     }
 
+    @Test func ownModelOfUnknownVisionGetsATryAndRecoveryAfterFailure() async throws {
+        let f = try await fixture()
+        defer { f.model.resetSession() }
+        var registry = f.model.modelLibrary.registry
+        registry.providers.append(.init(id: "fixture", name: "Own", baseURL: "https://example.invalid/v1",
+            models: [.init(id: "house-model", name: "House", reference: "custom:house")]))
+        try f.model.modelLibrary.commit(registry)
+        #expect(f.model.modelLibrary.imageCapability("custom:house") == .untested)
+        #expect(f.model.modelLibrary.imageCapability("cloud:unknown") == .unknown)
+        #expect(AskImageCapability.untested.canAttach && AskImageCapability.supported.canAttach)
+        #expect(!AskImageCapability.unknown.canAttach && !AskImageCapability.unsupported.canAttach)
+        #expect(AskImageCapability.untested.hint == L("ask.image.untested"))
+
+        // Attaching a screenshot is allowed and the suggestion is ready, without moving the draft.
+        f.model.launcherDraft = AskDraft(text: "Question", screenshot: Self.image, modelRef: "custom:house")
+        f.model.launcherDraft.includeScreenshot = true
+        #expect(f.model.launcherDraft.includeScreenshot)
+        #expect(f.model.screenshotSuggestion(launcher: true) == .ready)
+        #expect(f.model.visionCandidate(launcher: true) == nil)
+
+        // When that try fails, the recovery card appears and only resumes on a confirmed vision model.
+        let value = conversation(reference: "custom:house")
+        await f.api.seed(value)
+        await f.model.select(value.id)
+        #expect(f.model.imageRecoveryTarget != nil)
+        #expect(!f.model.canResumeImage)
+        let retryable = f.model.modelLibrary.imageRecoveryProviders(loggedIn: true).flatMap(\.models).map(\.reference)
+        #expect(!retryable.contains("custom:house"))
+        #expect(retryable.contains("cloud:vision"))
+        #expect(AskImageRecoveryCopy(busy: false, canResume: false, capability: .untested, modelName: "House").detail
+            == L("ask.image.untested"))
+    }
+
     func fixture() async throws -> AskTestFixture {
         let f = try AskTestFixture()
         await f.model.prepareLauncher()
