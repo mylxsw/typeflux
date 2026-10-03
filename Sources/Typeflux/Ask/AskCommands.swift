@@ -278,10 +278,15 @@ struct AskCommandPaletteState: Equatable {
 
     var highlightedCommand: AskCommand? { rows.indices.contains(highlighted) ? rows[highlighted].command : nil }
 
-    mutating func update(rows: [AskCommandMatcher.Match]) {
+    /// A new query puts the best match first under the highlight; the same query
+    /// (a refresh) keeps the highlighted row where it is.
+    mutating func update(rows: [AskCommandMatcher.Match], query: String? = nil, parent: AskCommand? = nil) {
         let previous = highlightedCommand?.id
+        let sameList = (query ?? self.query) == self.query && parent?.id == self.parent?.id
         self.rows = rows
-        highlighted = previous.flatMap { id in rows.firstIndex { $0.command.id == id } } ?? 0
+        if let query { self.query = query }
+        self.parent = parent
+        highlighted = sameList ? previous.flatMap { id in rows.firstIndex { $0.command.id == id } } ?? 0 : 0
         if !(highlightedCommand?.enabled ?? true) { move(1) }
     }
 

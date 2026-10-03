@@ -214,6 +214,21 @@ struct AskCommandPaletteStateTests {
         #expect(state.highlightedCommand?.name == "c3")
     }
 
+    @Test func aNewQueryHighlightsTheBestMatch() {
+        var state = AskCommandPaletteState()
+        state.update(rows: rows([true, true, true]), query: "m")
+        state.move(1)
+        #expect(state.highlighted == 1)
+        state.update(rows: rows([true, true, true]), query: "me")
+        #expect(state.highlighted == 0)
+        state.move(1)
+        let submenu = AskCommand(action: .model, name: "model", title: "", symbol: "", group: .model)
+        state.update(rows: rows([true, true]), query: "me", parent: submenu)
+        #expect(state.highlighted == 0, "opening a submenu starts at its first choice")
+        #expect(state.parent == submenu)
+        #expect(state.query == "me")
+    }
+
     @Test func theHighlightFollowsItsRowAcrossUpdates() {
         var state = AskCommandPaletteState()
         state.update(rows: rows([true, true, true]))

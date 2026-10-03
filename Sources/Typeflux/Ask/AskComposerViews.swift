@@ -295,9 +295,7 @@ struct AskComposer: View {
             rows = AskCommandMatcher.filter(listed, query: slash.name)
         }
         guard !rows.isEmpty else { closePalette(); return }
-        palette.parent = parent
-        palette.query = slash.argument ?? slash.name
-        palette.update(rows: rows)
+        palette.update(rows: rows, query: slash.argument ?? slash.name, parent: parent)
         withAnimation(.easeOut(duration: 0.15)) { paletteOpen = true }
     }
 
