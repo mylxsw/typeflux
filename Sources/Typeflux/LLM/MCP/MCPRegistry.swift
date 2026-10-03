@@ -6,6 +6,9 @@ actor MCPRegistry {
     private var serverConfigs: [UUID: MCPServerConfig] = [:]
     /// Keyed by server and tool name: two servers may expose tools with the same name.
     private var cachedTools: [ToolKey: MCPToolAdapter] = [:]
+    /// Invalidate approvals on every accepted tools/list, including changes to
+    /// schema keywords an older decoder cannot represent.
+    private var toolRevisions: [ToolKey: UUID] = [:]
     private var connecting: [UUID: Task<Void, Error>] = [:]
     private var generations: [UUID: UUID] = [:]
     private var connectionErrors: [UUID: String] = [:]
@@ -95,6 +98,7 @@ actor MCPRegistry {
         serverConfigs.removeValue(forKey: id)
         connectionErrors[id] = nil
         cachedTools = cachedTools.filter { $0.key.serverId != id }
+        toolRevisions = toolRevisions.filter { $0.key.serverId != id }
         await client?.disconnect()
     }
 
@@ -132,6 +136,31 @@ actor MCPRegistry {
     func serverId(forToolName name: String) -> UUID? {
         let owners = cachedTools.keys.filter { $0.name == name }
         return owners.count == 1 ? owners.first?.serverId : nil
+    }
+
+    /// Local registry evidence, including the connection generation. Display names
+    /// and server-provided read-only annotations cannot transfer an approval.
+    func approvalBinding(serverId: UUID, toolName: String) throws -> AskToolBinding {
+        guard let generation = generations[serverId], let revision = toolRevisions[ToolKey(serverId: serverId, name: toolName)],
+              let tool = cachedTools[ToolKey(serverId: serverId, name: toolName)] else {
+            throw MCPClientError.notConnected
+        }
+        let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+        return .init(target: .init(kind: "mcp_server", id: serverId.uuidString, version: generation.uuidString),
+                     toolVersion: revision.uuidString + ":" + AskToolPolicy.digest(try encoder.encode(tool.toolDef)),
+                     serverId: serverId.uuidString, serverVersion: generation.uuidString,
+                     summary: (serverConfigs[serverId]?.name ?? "MCP") + " / " + toolName)
+    }
+
+    func callApproved(serverId: UUID, toolName: String, arguments: String,
+                      binding: AskToolBinding, authorize: @MainActor () throws -> Void = {}) async throws -> MCPToolsCallResult {
+        try await authorize()
+        guard try approvalBinding(serverId: serverId, toolName: toolName) == binding,
+              let tool = cachedTools[ToolKey(serverId: serverId, name: toolName)] else {
+            throw AskLocalError.message(L("ask.approval.changed"))
+        }
+        try Task.checkCancellation()
+        return try await tool.call(arguments: arguments)
     }
 
     /// Reconnects all servers with autoConnect enabled.
@@ -198,7 +227,9 @@ actor MCPRegistry {
             try Task.checkCancellation()
             guard generations[serverId] == generation else { throw MCPClientError.notConnected }
             cachedTools = cachedTools.filter { $0.key.serverId != serverId }
+            toolRevisions = toolRevisions.filter { $0.key.serverId != serverId }
             for toolDef in tools {
+                toolRevisions[ToolKey(serverId: serverId, name: toolDef.name)] = UUID()
                 cachedTools[ToolKey(serverId: serverId, name: toolDef.name)] = MCPToolAdapter(
                     client: client,
                     toolDef: toolDef

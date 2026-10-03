@@ -24,7 +24,7 @@ enum AskApprovalPresentation {
         case ("memory", "remember"):
             return (args["text"] as? String).map { .content(clip($0)) } ?? .none
         default:
-            return .none
+            return AskLocalTools.builtinRisk(call) >= .write ? .content(clip(call.function.arguments)) : .none
         }
     }
 
@@ -59,6 +59,7 @@ struct AskApprovalCard: View {
     let call: AskToolCall
     let risk: AskToolRisk
     var mcpServer: String?
+    var targetSummary: String?
     var canAllowForConversation = false
     /// Inside its tool card rather than on its own after the transcript.
     var embedded = false
@@ -103,14 +104,18 @@ struct AskApprovalCard: View {
                             .background(riskTint.opacity(0.16), in: Capsule())
                             .fixedSize()
                     }
-                    if let detail = AskApprovalPresentation.detail(call) {
+                    if let detail = targetSummary ?? AskApprovalPresentation.detail(call) {
                         Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                            .lineLimit(1).truncationMode(.middle).textSelection(.enabled)
+                            .lineLimit(3).truncationMode(.middle).textSelection(.enabled).help(detail)
                     }
                 }
                 Spacer(minLength: 0)
             }
             preview
+            Text(AskToolPolicy.action(call)).font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(StudioTheme.textSecondary)
+            Text(L(canAllowForConversation ? "ask.approval.exactScope" : "ask.approval.singleUse"))
+                .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
             if risk == .destructive {
                 Text(L("ask.approval.destructiveHint")).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
             }
@@ -137,9 +142,9 @@ struct AskApprovalCard: View {
                     .keyboardShortcut(.return, modifiers: .command)
                     .help(L("ask.approval.allowHelp"))
                 if canAllowForConversation {
-                    Button(action: onAllowForConversation) { Text(L("ask.allowConversation")) }
+                    Button(action: onAllowForConversation) { Text(L("ask.approval.allowExact")) }
                         .buttonStyle(AskCapsuleButtonStyle(kind: conversationFirst ? .primary : .secondary))
-                        .help(L("ask.allowConversation.help"))
+                        .help(L("ask.approval.exactScope"))
                 }
             }
             if showsArguments {

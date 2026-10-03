@@ -165,6 +165,14 @@ actor AskTestAPI: AskAPI {
 @MainActor
 final class AskTestTools: AskToolExecuting {
     var executions = 0
+    var bindingVersion = "v1"
+    var targetID = "test-target"
+    var beforeBinding: (() -> Void)?
+    func approvalBinding(for call: AskToolCall, conversationId: String) async throws -> AskToolBinding {
+        beforeBinding?()
+        return .init(target: .init(kind: "workspace", id: targetID), toolVersion: bindingVersion,
+              summary: "Test target", allowsReuse: true)
+    }
     var fail = false
     var reportsError = false
     var bound: [String] = []
@@ -199,7 +207,11 @@ final class AskTestCapture: AskContextCapturing {
 }
 
 @MainActor
+final class AskTestSession { var owner = "owner" }
+
+@MainActor
 struct AskTestFixture {
+    let sessionState = AskTestSession()
     let root: URL
     let cache: AskConversationCache
     let api = AskTestAPI()
@@ -208,13 +220,15 @@ struct AskTestFixture {
     let model: AskConversationModel
     /// `localOnly` mirrors a signed-out Mac running Ask on the user's own models:
     /// the session carries the local owner and no Cloud token.
-    init(authenticated: Bool = true, localOnly: Bool = false, modelLibrary: AskModelLibrary? = nil) throws {
+    init(authenticated: Bool = true, localOnly: Bool = false, modelLibrary: AskModelLibrary? = nil, approvalReuseEnabled: Bool = false) throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent("ask-tests-" + UUID().uuidString)
         cache = try AskConversationCache(url: root.appendingPathComponent("cache.sqlite"))
         model = AskConversationModel(api: api, cache: cache, tools: tools, capture: capture,
-                                     deviceId: "device", modelLibrary: modelLibrary ?? AskModelLibrary(defaults: UserDefaults(suiteName: "ask-library-test-" + UUID().uuidString)!, automaticallyLoadsCatalog: false), session: {
+                                     deviceId: "device", modelLibrary: modelLibrary ?? AskModelLibrary(defaults: UserDefaults(suiteName: "ask-library-test-" + UUID().uuidString)!, automaticallyLoadsCatalog: false),
+                                     trustedApprovalPeer: approvalReuseEnabled ? .init(version: 1, capabilities: ["scoped_approval_v1"]) : nil,
+                                     scopedApprovalEnabled: approvalReuseEnabled, session: { [sessionState] in
                                          if localOnly { return (AskRoutedAPI.localOwner, "") }
-                                         return authenticated ? ("owner", "token") : nil
+                                         return authenticated ? (sessionState.owner, "token") : nil
                                      })
     }
     func wait(_ predicate: () -> Bool) async throws {
@@ -337,8 +351,9 @@ struct AskConversationTests {
         #expect(f.model.controllingConversationId == nil)
     }
 
-    @Test func conversationGrantsCoverSameToolUpToGrantedRisk() async throws {
-        let f = try AskTestFixture()
+    @Test func conversationGrantsCoverOnlyExactReadActions() async throws {
+        let f = try AskTestFixture(approvalReuseEnabled: true)
+        defer { f.model.resetSession() }
         func browser(_ id: String, _ action: String) -> AskToolCall {
             .init(id: id, type: "function", function: .init(name: "browser", arguments: "{\"action\":\"\(action)\"}"))
         }
@@ -350,29 +365,26 @@ struct AskConversationTests {
         let id = try #require(f.model.selected?.id)
         #expect(f.model.canAllowForConversation(id))
         f.model.approveForConversation(id)
-
-        // The second read runs without asking; the first write asks again.
         try await f.wait { f.model.pendingApprovals[id]?.id == "fill-1" }
         #expect(f.tools.executions == 2)
-        #expect(f.model.isGranted(browser("x", "read"), conversationId: id))
-        #expect(!f.model.isGranted(browser("x", "fill"), conversationId: id))
-        f.model.approveForConversation(id)
-
-        // The write grant covers the next write; destructive calls always ask and cannot be granted.
-        try await f.wait { f.model.pendingApprovals[id]?.id == "danger-1" }
-        #expect(f.tools.executions == 4)
+        #expect(await f.model.isGranted(browser("x", "read"), conversationId: id))
+        #expect(!(await f.model.isGranted(browser("x", "fill"), conversationId: id)))
         #expect(!f.model.canAllowForConversation(id))
         f.model.approveForConversation(id)
-        #expect(f.model.pendingApprovals[id]?.id == "danger-1")
+        #expect(f.tools.executions == 2)
+        f.model.approve(conversationId: id, allowed: true)
+        try await f.wait { f.model.pendingApprovals[id]?.id == "fill-2" }
+        #expect(f.tools.executions == 3)
+        f.model.approve(conversationId: id, allowed: true)
+        try await f.wait { f.model.pendingApprovals[id]?.id == "danger-1" }
+        #expect(!f.model.canAllowForConversation(id))
         f.model.approve(conversationId: id, allowed: false)
         try await f.wait { f.model.busyIds.isEmpty }
         #expect(f.tools.executions == 4)
         #expect(await f.api.results.map(\.isError) == [false, false, false, false, true])
-
-        // Grants are scoped to the conversation and dropped on sign-out.
-        #expect(!f.model.isGranted(browser("x", "read"), conversationId: "other"))
+        #expect(!(await f.model.isGranted(browser("x", "read"), conversationId: "other")))
         f.model.resetSession()
-        #expect(!f.model.isGranted(browser("x", "read"), conversationId: id))
+        #expect(!(await f.model.isGranted(browser("x", "read"), conversationId: id)))
         f.model.approveForConversation("missing")
     }
 

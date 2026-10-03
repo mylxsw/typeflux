@@ -1974,6 +1974,12 @@
 "ask.steered" = "割り込み済み";
 "ask.steered.pending" = "割り込み済み · 次のステップで反映";
 
+// Scoped tool approval
+"ask.approval.changed" = "承認済みの操作、対象、またはツールが変更されました。確認して再度承認してください。";
+"ask.approval.allowExact" = "同じ操作を許可";
+"ask.approval.exactScope" = "この会話で 5 分間、同じ操作・対象・引数の繰り返しのみ許可します。";
+"ask.approval.singleUse" = "今回の呼び出しのみ許可します。次回は新たな承認が必要です。";
+
 /* Ask attachments */
 "ask.attach.title" = "添付";
 "ask.attach.help" = "ファイル、画像、フォルダを添付（⌘U）。貼り付けやドラッグでも追加できます";

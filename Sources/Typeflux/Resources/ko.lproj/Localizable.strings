@@ -1974,6 +1974,12 @@
 "ask.steered" = "끼어들기됨";
 "ask.steered.pending" = "끼어들기됨 · 다음 단계에서 반영";
 
+// Scoped tool approval
+"ask.approval.changed" = "승인한 작업, 대상 또는 도구가 변경되었습니다. 다시 검토하고 승인하세요.";
+"ask.approval.allowExact" = "동일한 작업 허용";
+"ask.approval.exactScope" = "이 대화에서 5분 동안 작업, 대상, 인수가 모두 동일한 호출만 반복할 수 있습니다.";
+"ask.approval.singleUse" = "이번 호출만 허용합니다. 이후 호출은 새 승인이 필요합니다.";
+
 /* Ask attachments */
 "ask.attach.title" = "첨부";
 "ask.attach.help" = "파일, 이미지 또는 폴더 첨부(⌘U). 붙여넣거나 끌어다 놓을 수도 있습니다";

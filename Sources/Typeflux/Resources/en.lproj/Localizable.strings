@@ -1984,6 +1984,12 @@
 "ask.steered" = "Jumped in";
 "ask.steered.pending" = "Jumped in · read at the next step";
 
+// Scoped tool approval
+"ask.approval.changed" = "The approved action, target, or tool changed. Review and approve a new call.";
+"ask.approval.allowExact" = "Allow this exact action";
+"ask.approval.exactScope" = "Only this action, target and unchanged arguments may repeat for 5 minutes in this conversation.";
+"ask.approval.singleUse" = "Allows this call once. Later calls require a new approval.";
+
 /* Ask attachments */
 "ask.attach.title" = "Attach";
 "ask.attach.help" = "Attach files, images or a folder (⌘U). You can also paste or drop them here";

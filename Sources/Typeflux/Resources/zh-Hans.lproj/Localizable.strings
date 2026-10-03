@@ -1984,6 +1984,12 @@
 "ask.steered" = "已插队";
 "ask.steered.pending" = "已插队 · 下一步生效";
 
+// Scoped tool approval
+"ask.approval.changed" = "已批准的动作、目标或工具发生变化，请重新检查并批准。";
+"ask.approval.allowExact" = "允许重复此动作";
+"ask.approval.exactScope" = "仅在此会话的 5 分钟内允许重复相同动作、目标和参数。";
+"ask.approval.singleUse" = "仅允许执行本次调用，后续调用需要重新批准。";
+
 /* Ask attachments */
 "ask.attach.title" = "添加附件";
 "ask.attach.help" = "添加文件、图片或文件夹（⌘U），也可以直接粘贴或拖入";
