@@ -8,12 +8,60 @@ import Testing
 struct AskConversationOrbTests {
     private let start = Date(timeIntervalSinceReferenceDate: 0)
 
-    @Test func loopRunsEveryEightSecondsAndTwiceAsFastWhileListening() {
-        #expect(AskConversationOrb.phase(at: start, listening: false) == 0)
-        #expect(AskConversationOrb.phase(at: start.addingTimeInterval(2), listening: false) == 0.25)
-        #expect(AskConversationOrb.phase(at: start.addingTimeInterval(8), listening: false) == 0)
-        #expect(AskConversationOrb.phase(at: start.addingTimeInterval(2), listening: true) == 0.5)
-        #expect(AskConversationOrb.phase(at: start.addingTimeInterval(4), listening: true) == 0)
+    @Test func loopRunsEveryEightSecondsAndUpToTwiceAsFastWhileListening() {
+        #expect(AskOrbMotion.speed(energy: 0) == 1.0 / 8)
+        #expect(AskOrbMotion.speed(energy: 1) == 1.0 / 4)
+        var calm = AskOrbMotion()
+        for _ in 0 ..< 80 { calm = calm.advanced(by: 0.025, listening: false) }
+        #expect(abs(calm.phase - 0.25) < 0.0001)
+        #expect(calm.energy == 0)
+        var listening = AskOrbMotion(phase: 0, energy: 1)
+        for _ in 0 ..< 40 { listening = listening.advanced(by: 0.05, listening: true) }
+        #expect(abs(listening.phase - 0.5) < 0.0001)
+    }
+
+    @Test func startingAndStoppingToListenNeverJumps() {
+        var motion = AskOrbMotion(phase: 0.6, energy: 0)
+        var previous = motion
+        for frame in 0 ..< 300 {
+            motion = motion.advanced(by: 1.0 / 30, listening: frame >= 60 && frame < 180)
+            // Each frame moves the loop by at most one listening frame's worth,
+            // and the energy by a small step: no snap in colour, shape or glow.
+            let moved = (motion.phase - previous.phase + 1).truncatingRemainder(dividingBy: 1)
+            #expect(moved > 0 && moved <= 1.0 / 30 / 4 + 0.000001)
+            #expect(abs(motion.energy - previous.energy) < 0.1)
+            #expect(abs(AskConversationOrb.wobble(energy: motion.energy)
+                - AskConversationOrb.wobble(energy: previous.energy)) < 0.005)
+            previous = motion
+        }
+        // A second after each change the energy has nearly settled.
+        var rising = AskOrbMotion()
+        for _ in 0 ..< 30 { rising = rising.advanced(by: 1.0 / 30, listening: true) }
+        #expect(rising.energy > 0.9)
+        var falling = AskOrbMotion(phase: 0, energy: 1)
+        for _ in 0 ..< 30 { falling = falling.advanced(by: 1.0 / 30, listening: false) }
+        #expect(falling.energy < 0.1)
+    }
+
+    @Test func longGapsAndClockSkewCountAsOneFrame() {
+        let motion = AskOrbMotion(phase: 0.2, energy: 0)
+        #expect(motion.advanced(by: 60, listening: true) == motion.advanced(by: AskOrbMotion.maxStep, listening: true))
+        #expect(motion.advanced(by: -1, listening: true) == motion)
+        let clock = AskOrbClock()
+        #expect(clock.advance(to: start, listening: false) == AskOrbMotion())
+        let next = clock.advance(to: start.addingTimeInterval(0.05), listening: false)
+        #expect(abs(next.phase - 0.05 / 8) < 0.000001)
+        #expect(clock.motion == next)
+    }
+
+    @Test func blendsEaseBetweenCalmAndListening() {
+        #expect(AskOrbMotion.ease(-1) == 0 && AskOrbMotion.ease(0) == 0)
+        #expect(AskOrbMotion.ease(0.5) == 0.5)
+        #expect(AskOrbMotion.ease(1) == 1 && AskOrbMotion.ease(2) == 1)
+        #expect(AskConversationOrb.wobble(energy: 0) == AskConversationOrb.calmWobble)
+        #expect(abs(AskConversationOrb.wobble(energy: 1) - AskConversationOrb.listeningWobble) < 0.000001)
+        #expect(AskConversationOrb.glowOpacity(energy: 0) == 0.62)
+        #expect(abs(AskConversationOrb.glowOpacity(energy: 1) - 0.8) < 0.000001)
     }
 
     @Test func breathStaysGentleAndLoops() {

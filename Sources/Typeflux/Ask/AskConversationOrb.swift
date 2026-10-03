@@ -2,13 +2,15 @@ import SwiftUI
 
 /// The empty state's mark: a drop of colour that slowly changes shape while its
 /// gradient flows through it, over a soft glow of the same colours. Everything
-/// runs on one 8 s loop, twice as fast while the user dictates a new question.
+/// runs on one 8 s loop, up to twice as fast while the user dictates a new
+/// question; `AskOrbMotion` eases between the two so nothing jumps.
 /// Reduce Motion holds it still.
 struct AskConversationOrb: View {
     var size: CGFloat = 88
     var listening = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
+    @State private var clock = AskOrbClock()
 
     static let period: TimeInterval = 8
     static let colors: [Color] = [
@@ -24,12 +26,6 @@ struct AskConversationOrb: View {
     static let listeningWobble = 0.1
     /// The frame Reduce Motion shows: a gently irregular drop rather than a circle.
     static let stillPhase = 0.15
-
-    /// Position in the loop, in 0..<1.
-    static func phase(at date: Date, listening: Bool) -> Double {
-        let period = listening ? Self.period / 2 : Self.period
-        return date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: period) / period
-    }
 
     /// Two breaths per loop, between 1 and 1.035.
     static func breath(_ phase: Double) -> CGFloat {
@@ -57,10 +53,11 @@ struct AskConversationOrb: View {
     var body: some View {
         Group {
             if reduceMotion {
-                drop(phase: Self.stillPhase)
+                drop(phase: Self.stillPhase, energy: 0)
             } else {
                 TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
-                    drop(phase: Self.phase(at: context.date, listening: listening))
+                    let motion = clock.advance(to: context.date, listening: listening)
+                    drop(phase: motion.phase, energy: motion.energy)
                 }
             }
         }
@@ -73,9 +70,18 @@ struct AskConversationOrb: View {
         .accessibilityHidden(true)
     }
 
+    /// The outline's wobble and the glow's strength for an energy between calm (0) and listening (1).
+    static func wobble(energy: Double) -> Double {
+        calmWobble + (listeningWobble - calmWobble) * AskOrbMotion.ease(energy)
+    }
+
+    static func glowOpacity(energy: Double) -> Double {
+        0.62 + (0.8 - 0.62) * AskOrbMotion.ease(energy)
+    }
+
     /// One frame of the drop; internal so renders can step through the loop.
-    func drop(phase: Double) -> some View {
-        let shape = AskFluidDropShape(phase: phase, wobble: listening ? Self.listeningWobble : Self.calmWobble)
+    func drop(phase: Double, energy: Double) -> some View {
+        let shape = AskFluidDropShape(phase: phase, wobble: Self.wobble(energy: energy))
         let axis = Self.flow(phase)
         let fill = LinearGradient(colors: Self.flowColors, startPoint: axis.start, endPoint: axis.end)
         return ZStack {
@@ -83,7 +89,7 @@ struct AskConversationOrb: View {
             shape.fill(fill)
                 .scaleEffect(0.9)
                 .blur(radius: size * 0.16)
-                .opacity(listening ? 0.8 : 0.62)
+                .opacity(Self.glowOpacity(energy: energy))
                 .offset(y: size * 0.06)
             shape.fill(fill)
                 // A soft highlight toward the light, and a faint shade at the rim.
@@ -95,6 +101,55 @@ struct AskConversationOrb: View {
                                                    startRadius: size * 0.28, endRadius: size * 0.52)))
         }
         .scaleEffect(Self.breath(phase))
+    }
+}
+
+/// Where the orb is in its loop and how lively it is. The phase is integrated
+/// from elapsed time, so a change of speed never moves it; the energy follows
+/// the listening state with an exponential ease, so speed, outline and glow
+/// all blend over about a second instead of switching.
+struct AskOrbMotion: Equatable {
+    var phase: Double = 0
+    /// 0 is calm, 1 is listening.
+    var energy: Double = 0
+
+    /// How quickly the energy follows: it covers 63% of the way in this time.
+    static let response: TimeInterval = 0.35
+    /// A gap longer than this (a hidden window, a stalled frame) counts as one frame.
+    static let maxStep: TimeInterval = 0.1
+
+    /// Loops per second at this energy: one per 8 s calm, one per 4 s listening.
+    static func speed(energy: Double) -> Double {
+        (1 + energy) / AskConversationOrb.period
+    }
+
+    /// Smoothstep, so a blend starts and settles softly.
+    static func ease(_ value: Double) -> Double {
+        let x = min(max(value, 0), 1)
+        return x * x * (3 - 2 * x)
+    }
+
+    func advanced(by elapsed: TimeInterval, listening: Bool) -> AskOrbMotion {
+        let step = min(max(elapsed, 0), Self.maxStep)
+        let target: Double = listening ? 1 : 0
+        let energy = self.energy + (target - self.energy) * (1 - exp(-step / Self.response))
+        // The midpoint speed keeps the phase smooth while the energy moves.
+        let speed = Self.speed(energy: (self.energy + energy) / 2)
+        let phase = (self.phase + step * speed).truncatingRemainder(dividingBy: 1)
+        return AskOrbMotion(phase: phase, energy: energy)
+    }
+}
+
+/// Carries `AskOrbMotion` between timeline frames without re-rendering on its own.
+final class AskOrbClock {
+    private(set) var motion = AskOrbMotion()
+    private var last: Date?
+
+    func advance(to date: Date, listening: Bool) -> AskOrbMotion {
+        let elapsed = last.map { date.timeIntervalSince($0) } ?? 0
+        last = date
+        motion = motion.advanced(by: elapsed, listening: listening)
+        return motion
     }
 }
 
