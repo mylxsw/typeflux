@@ -29,6 +29,7 @@ enum AskReasoningRequest {
     }
 
     /// Sets Gemini's thinking budget and asks for thought summaries to show in the transcript.
+    /// Keep maxOutputTokens unchanged: it caps the combined thinking and answer output.
     static func applyGemini(effort: String?, to native: inout [String: Any]) {
         guard let effort, let budget = geminiBudgets[effort] else { return }
         var config = native["generationConfig"] as? [String: Any] ?? [:]

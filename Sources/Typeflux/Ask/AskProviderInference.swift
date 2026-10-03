@@ -1,3 +1,4 @@
+import CoreFoundation
 import Foundation
 
 extension AskCustomInference {
@@ -103,7 +104,14 @@ extension AskCustomInference {
             }
             return result
         }
-        var result: [String: Any] = ["contents": output]
+        let limit = body["max_tokens"] ?? AskLocalPrompt.maxAnswerTokens
+        // JSON booleans also bridge to Int. Reject malformed limits instead of
+        // silently falling back to the provider's potentially larger default.
+        guard let number = limit as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID(),
+              let maxOutputTokens = limit as? Int, maxOutputTokens > 0, maxOutputTokens <= Int(Int32.max) else {
+            throw AskLocalError.message(L("models.invalidResponse"))
+        }
+        var result: [String: Any] = ["contents": output, "generationConfig": ["maxOutputTokens": maxOutputTokens]]
         if !system.isEmpty {
             result["systemInstruction"] = ["parts": [["text": system.joined(separator: "\n\n")]]]
         }

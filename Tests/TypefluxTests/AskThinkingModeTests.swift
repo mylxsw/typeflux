@@ -3,8 +3,9 @@ import Foundation
 import XCTest
 
 /// Captures the JSON body of every request sent through the Ask inference adapter.
-private final class AskThinkingCaptureProtocol: URLProtocol, @unchecked Sendable {
+final class AskThinkingCaptureProtocol: URLProtocol, @unchecked Sendable {
     nonisolated(unsafe) static var bodies: [[String: Any]] = []
+    nonisolated(unsafe) static var requests: [URLRequest] = []
     /// Status for requests that carry reasoning parameters, to simulate a provider rejecting them.
     nonisolated(unsafe) static var reasoningStatus = 200
     nonisolated(unsafe) static var reply = #"{"choices":[{"message":{"content":"OK"}}]}"#
@@ -12,6 +13,7 @@ private final class AskThinkingCaptureProtocol: URLProtocol, @unchecked Sendable
     override class func canInit(with _: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
+        Self.requests.append(request)
         var status = 200
         if let data = Self.bodyData(request),
            let body = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
@@ -59,6 +61,7 @@ final class AskThinkingModeTests: XCTestCase {
 
     override func tearDown() {
         AskThinkingCaptureProtocol.bodies = []
+        AskThinkingCaptureProtocol.requests = []
         AskThinkingCaptureProtocol.reasoningStatus = 200
         AskThinkingCaptureProtocol.reply = #"{"choices":[{"message":{"content":"OK"}}]}"#
         super.tearDown()
@@ -126,7 +129,7 @@ final class AskThinkingModeTests: XCTestCase {
     func testRejectedEffortIsRetriedOnceWithoutIt() async throws {
         AskThinkingCaptureProtocol.reasoningStatus = 400
         let adapter = AskCustomInference(session: AskThinkingCaptureProtocol.session)
-        let payload = #"{"messages":[{"role":"user","content":"Why?"}],"reasoning_effort":"high"}"#
+        let payload = #"{"messages":[{"role":"user","content":"Why?"}],"reasoning_effort":"high","max_tokens":1500}"#
         let (text, _) = try await adapter.complete(
             profile: AskModelProfile(name: "Custom", baseURL: "https://example.invalid/v1", model: "m"),
             key: "", payload: payload
@@ -135,6 +138,7 @@ final class AskThinkingModeTests: XCTestCase {
         XCTAssertEqual(AskThinkingCaptureProtocol.bodies.count, 2)
         XCTAssertEqual(AskThinkingCaptureProtocol.bodies[0]["reasoning_effort"] as? String, "high")
         XCTAssertNil(AskThinkingCaptureProtocol.bodies[1]["reasoning_effort"])
+        XCTAssertEqual(AskThinkingCaptureProtocol.bodies.map { $0["max_tokens"] as? Int }, [1500, 1500])
     }
 
     func testRejectionWithoutReasoningIsNotRetried() async {
