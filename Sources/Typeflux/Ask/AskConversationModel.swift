@@ -798,6 +798,7 @@ final class AskConversationModel: ObservableObject {
             try await cache.associateTool(id: journalKey, conversationId: value.id, owner: current.owner)
             var result = try await cache.toolResult(id: journalKey, owner: current.owner)
             if result == nil {
+                tools.bindExecution(ownerId: current.owner, conversationId: value.id, runId: run.id)
                 // Consent comes from the submitted draft, never from historical images or live UI state.
                 let isScreenshot = call.function.name == "computer"
                     && (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) == "screenshot"
@@ -876,6 +877,9 @@ final class AskConversationModel: ObservableObject {
                     catch {
                         result?.content = error.localizedDescription
                         if error is MCPInputError { result?.harness?.outcome?.status = "invalid" }
+                        else if let projectError = error as? AskProjectError {
+                            result?.harness?.outcome?.status = projectError == .denied ? "denied" : "invalid"
+                        }
                         else if case MCPClientError.timedOut = error { result?.harness?.outcome?.status = "timeout" }
                     }
                     if let scope = approvalStore.auditScope(grantID) {
@@ -888,6 +892,11 @@ final class AskConversationModel: ObservableObject {
             try Task.checkCancellation()
             value = try await api.result(conversationId: value.id, request: result!, token: current.token)
         }
+    }
+
+    func exportProjectPatch(_ ref: AskWorkspaceRef) throws -> Data {
+        guard let current = session(), selectedId == ref.conversationId else { throw AskProjectError.denied }
+        return try tools.exportProjectPatch(ref, ownerId: current.owner, conversationId: ref.conversationId)
     }
 
     /// This query never upgrades a tool name into a permission.

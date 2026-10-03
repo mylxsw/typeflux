@@ -2072,3 +2072,17 @@
 "ask.command.off" = "已关闭";
 "ask.command.chip.skill" = "技能";
 "ask.command.chip.mcp" = "MCP";
+
+// Project workspaces
+"ask.project.title" = "项目文件";
+"ask.project.review" = "审阅变更";
+"ask.project.export" = "导出补丁…";
+"ask.project.staged" = "变更单独暂存，源文件保持不变。";
+"ask.project.truncated" = "差异预览已缩短，请导出补丁查看完整变更。";
+"ask.project.error.denied" = "项目授权已撤销或目标不安全，请重新授权。";
+"ask.project.error.invalidPath" = "请使用相对文件路径，不包含链接、上级目录或 .git 元数据。";
+"ask.project.error.conflict" = "源文件或暂存版本已变化，未覆盖任何内容。请撤销暂存变更后重新读取。";
+"ask.project.error.binary" = "该文件是二进制文件或不是有效的 UTF-8 文本。";
+"ask.project.error.tooLarge" = "文件或变更集超过支持的大小限制。";
+"ask.project.error.invalid" = "项目操作无效，请先读取文件并提供预期版本。";
+"ask.project.error.unavailable" = "项目模式不可用。";

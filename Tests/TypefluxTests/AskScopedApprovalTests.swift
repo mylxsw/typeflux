@@ -56,6 +56,8 @@ struct AskScopedApprovalTests {
         #expect(context.ownerId == (local ? AskRoutedAPI.localOwner : "owner"))
         #expect(context.conversationId == id)
         #expect(context.runId == receipt.runId)
+        #expect(f.tools.executionScope == AskProjectScope(ownerId: context.ownerId,
+                                                          conversationId: id, runId: receipt.runId))
         #expect(context.toolCallId == receipt.toolCallId)
         #expect(scope.target == context.target)
         #expect(scope.consumedAt != nil)

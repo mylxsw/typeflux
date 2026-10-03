@@ -869,7 +869,7 @@ struct AskConversationView: View {
                              approval: pending.flatMap { pending in
                                  group.calls.contains { $0.id == pending.call.id }
                                      ? AnyView(approvalCard(pending.call, id: pending.id, embedded: true)) : nil
-                             })
+                             }, exportProjectPatch: model.exportProjectPatch)
                 .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
         }
     }

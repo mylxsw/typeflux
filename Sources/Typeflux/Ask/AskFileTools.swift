@@ -114,7 +114,7 @@ struct AskFileTools: Sendable {
         let text = try Self.text(at: url)
         let lines = text.components(separatedBy: "\n")
         let start = min(max(0, offset), lines.count)
-        let end = min(lines.count, start + max(1, limit ?? lines.count))
+        let end = start + min(lines.count - start, max(1, limit ?? lines.count))
         var out = "File: \(url.path) (\(lines.count) lines)\n"
         for index in start ..< end {
             let line = "\(index + 1)\t\(lines[index])\n"
@@ -137,6 +137,8 @@ struct AskFileTools: Sendable {
             : [root]
         var matches: [String] = []
         for file in files {
+            // Enumeration can yield a symlinked file outside the grant.
+            guard (try? resolve(file.path)) != nil else { continue }
             let values = try? file.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
             guard values?.isRegularFile == true, (values?.fileSize ?? 0) <= Self.maximumSearchFileBytes,
                   let text = try? Self.text(at: file) else { continue }
@@ -175,7 +177,7 @@ struct AskFileTools: Sendable {
     /// UTF-8 text only; files with NUL bytes are treated as binary.
     static func text(at url: URL) throws -> String {
         let data = try Data(contentsOf: url, options: .mappedIfSafe)
-        guard !data.prefix(8192).contains(0), let text = String(data: data, encoding: .utf8) else {
+        guard !data.contains(0), let text = String(data: data, encoding: .utf8) else {
             throw AskLocalError.message(L("ask.files.binary"))
         }
         return text

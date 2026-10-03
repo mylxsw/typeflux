@@ -2069,3 +2069,17 @@
 "ask.command.off" = "已關閉";
 "ask.command.chip.skill" = "技能";
 "ask.command.chip.mcp" = "MCP";
+
+// Project workspaces
+"ask.project.title" = "專案檔案";
+"ask.project.review" = "審閱變更";
+"ask.project.export" = "匯出修補檔…";
+"ask.project.staged" = "變更獨立暫存，來源檔案保持不變。";
+"ask.project.truncated" = "差異預覽已縮短，請匯出修補檔查看完整變更。";
+"ask.project.error.denied" = "專案授權已撤銷或目標不安全，請重新授權。";
+"ask.project.error.invalidPath" = "請使用相對檔案路徑，不包含連結、上層目錄或 .git 中繼資料。";
+"ask.project.error.conflict" = "來源檔案或暫存版本已變更，未覆寫任何內容。請撤銷暫存變更後重新讀取。";
+"ask.project.error.binary" = "此檔案是二進位檔案或不是有效的 UTF-8 文字。";
+"ask.project.error.tooLarge" = "檔案或變更集超過支援的大小限制。";
+"ask.project.error.invalid" = "專案操作無效，請先讀取檔案並提供預期版本。";
+"ask.project.error.unavailable" = "專案模式無法使用。";

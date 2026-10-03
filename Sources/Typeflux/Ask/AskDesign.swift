@@ -124,6 +124,7 @@ enum AskTheme {
         }
         let args = (try? AskLocalTools.jsonArguments(call.function.arguments)) ?? [:]
         switch name {
+        case "project_files": return L("ask.project.title") + " · " + (args["action"] as? String ?? "")
         case "update_plan": return L("ask.tool.update_plan")
         case "research":
             let question = (args["question"] as? String).map { String($0.prefix(60)) }
@@ -1030,7 +1031,7 @@ enum AskPresentation {
         case "browser": return "globe"
         case "web_search": return "magnifyingglass"
         case "web_fetch": return "network"
-        case "files": return "folder"
+        case "files", "project_files": return "folder"
         case "run_code": return "terminal"
         case "skill": return "book"
         case "memory": return "brain"
