@@ -67,6 +67,7 @@ struct AskConversationView: View {
         .ignoresSafeArea(.container, edges: .top)
         .frame(minWidth: 740, minHeight: 530)
         .tint(AskTheme.accent)
+        .environment(\.askArtifactAccess, model.artifactAccess)
         .onChange(of: model.draft) { _ in model.persistDrafts() }
         .confirmationDialog(
             L("ask.delete.confirm"),

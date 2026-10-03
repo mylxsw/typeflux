@@ -9,9 +9,10 @@ struct AskRunOutputs: Equatable {
     }
 
     var artifacts: [Artifact] = []
+    var storedArtifacts: [AskArtifactRef] = []
     var sources: [URL] = []
 
-    var isEmpty: Bool { artifacts.isEmpty && sources.isEmpty }
+    var isEmpty: Bool { artifacts.isEmpty && storedArtifacts.isEmpty && sources.isEmpty }
 }
 
 /// Consecutive assistant steps that called tools, shown as one collapsible block.
@@ -53,7 +54,7 @@ enum AskActivity {
             switch name {
             case "web_search", "research": .search
             case "web_fetch", "browser": .web
-            case "files": .files
+            case "files", "project_files", "artifact": .files
             case "run_code": .code
             case "computer": .computer
             default: .other
@@ -101,6 +102,18 @@ enum AskActivity {
                let url = URL(string: raw), ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
                !value.sources.contains(url) {
                 value.sources.append(url)
+            }
+            if let result = results.first(where: { $0.toolCallId == call.id }) {
+                var refs = result.harness?.version == 1
+                    ? (result.harness?.outcome?.artifacts ?? []) + (result.harness?.artifacts ?? []) : []
+                if let receipt = try? JSONDecoder().decode(
+                    AskArtifactReceipt.self, from: Data(result.resultText.utf8)
+                ) {
+                    refs.append(receipt.artifact)
+                }
+                for ref in refs where !value.storedArtifacts.contains(where: { $0.id == ref.id }) {
+                    value.storedArtifacts.append(ref)
+                }
             }
             guard !["computer", "browser"].contains(name),
                   let result = results.first(where: { $0.toolCallId == call.id }),

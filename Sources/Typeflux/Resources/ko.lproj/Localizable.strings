@@ -2076,3 +2076,21 @@
 "ask.project.error.tooLarge" = "파일 또는 변경 집합이 지원되는 크기 제한을 초과했습니다.";
 "ask.project.error.invalid" = "잘못된 작업입니다. 파일을 먼저 읽고 예상 버전을 지정하세요.";
 "ask.project.error.unavailable" = "프로젝트 모드를 사용할 수 없습니다.";
+
+// Device artifacts and isolated previews
+"ask.artifact.error.unavailable" = "이 결과물 또는 리소스를 이 기기에서 사용할 수 없습니다.";
+"ask.artifact.error.denied" = "결과물 접근이 거부되었습니다. 계정과 폴더 권한을 확인하세요.";
+"ask.artifact.error.invalid" = "결과물 참조 또는 리소스 목록이 올바르지 않습니다.";
+"ask.artifact.error.tooLarge" = "결과물이 파일 또는 리소스 크기 제한을 초과했습니다.";
+"ask.artifact.error.unsupported" = "미리 볼 수 없는 형식입니다. 원본 파일은 저장할 수 있습니다.";
+"ask.artifact.error.corrupt" = "결과물 무결성 확인에 실패했습니다.";
+"ask.artifact.error.expired" = "이 기기의 결과물이 만료되었습니다.";
+"ask.artifact.error.previewDisabled" = "HTML 미리보기가 꺼져 있습니다. 원본 파일은 저장할 수 있습니다.";
+"ask.artifact.error.dynamicUnavailable" = "개발 서비스 미리보기는 아직 사용할 수 없습니다.";
+"ask.artifact.blocked" = "허용되지 않는 리소스 또는 이동을 차단했습니다.";
+"ask.artifact.pageFailed" = "미리보기가 중지되었습니다. 닫은 후 다시 시도하세요.";
+"ask.artifact.device" = "이 기기에만 저장됨";
+"ask.artifact.expires" = "만료일: %@";
+"ask.artifact.close" = "닫기";
+"ask.artifact.truncated" = "텍스트 미리보기가 잘렸습니다. 전체 내용은 파일을 저장하여 확인하세요.";
+"ask.artifact.title" = "결과물 저장";

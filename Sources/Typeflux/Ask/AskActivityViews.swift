@@ -273,6 +273,9 @@ struct AskRunOutputsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            ForEach(outputs.storedArtifacts, id: \.id) { ref in
+                AskStoredArtifactCard(ref: ref)
+            }
             ForEach(outputs.artifacts) { artifact in
                 AskArtifactCard(artifact: artifact)
             }
@@ -287,6 +290,7 @@ private struct AskArtifactCard: View {
     let artifact: AskRunOutputs.Artifact
     @State private var preview = false
     @State private var copied = false
+    @State private var saveError: String?
 
     var body: some View {
         if let image = AskImage.decode(artifact.image) {
@@ -315,8 +319,14 @@ private struct AskArtifactCard: View {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
                         }
                         AskGhostButton(title: L("ask.artifact.save"), systemImage: "square.and.arrow.down") {
-                            AskArtifactActions.save(image)
+                            do {
+                                try AskArtifactActions.save(image)
+                                saveError = nil
+                            } catch { saveError = error.localizedDescription }
                         }
+                    }
+                    if let saveError {
+                        Text(saveError).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
                     }
                 }
             }
@@ -335,12 +345,17 @@ enum AskArtifactActions {
         return rep.representation(using: .png, properties: [:])
     }
 
-    @MainActor static func save(_ image: NSImage) {
+    static func exportImage(_ image: NSImage, to url: URL) throws {
+        guard let data = pngData(image) else { throw AskArtifactError.unsupported }
+        try data.write(to: url, options: .atomic)
+    }
+
+    @MainActor static func save(_ image: NSImage) throws {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.png]
         panel.nameFieldStringValue = "Typeflux.png"
-        guard panel.runModal() == .OK, let url = panel.url, let data = pngData(image) else { return }
-        try? data.write(to: url)
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        try exportImage(image, to: url)
     }
 }
 

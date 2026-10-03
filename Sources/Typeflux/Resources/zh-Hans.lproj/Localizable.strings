@@ -2086,3 +2086,21 @@
 "ask.project.error.tooLarge" = "文件或变更集超过支持的大小限制。";
 "ask.project.error.invalid" = "项目操作无效，请先读取文件并提供预期版本。";
 "ask.project.error.unavailable" = "项目模式不可用。";
+
+// Device artifacts and isolated previews
+"ask.artifact.error.unavailable" = "此产物或资源在本设备上不可用。";
+"ask.artifact.error.denied" = "产物访问被拒绝，请检查账号和目录授权。";
+"ask.artifact.error.invalid" = "产物引用或资源清单无效。";
+"ask.artifact.error.tooLarge" = "产物超出文件或资源体积限制。";
+"ask.artifact.error.unsupported" = "此格式无法预览，仍可保存原始文件。";
+"ask.artifact.error.corrupt" = "产物完整性校验失败。";
+"ask.artifact.error.expired" = "此设备产物已到期。";
+"ask.artifact.error.previewDisabled" = "HTML 预览已关闭，仍可保存原始文件。";
+"ask.artifact.error.dynamicUnavailable" = "开发服务预览尚不可用。";
+"ask.artifact.blocked" = "预览已阻止不允许的资源或导航。";
+"ask.artifact.pageFailed" = "预览进程已停止，请关闭后重试。";
+"ask.artifact.device" = "仅保存在本设备";
+"ask.artifact.expires" = "到期时间：%@";
+"ask.artifact.close" = "关闭";
+"ask.artifact.truncated" = "文本预览已截断，保存文件可获取完整内容。";
+"ask.artifact.title" = "保存产物";
