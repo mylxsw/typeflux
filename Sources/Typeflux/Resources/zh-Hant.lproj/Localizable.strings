@@ -1115,7 +1115,7 @@
 "agent.section.tools" = "工具";
 "agent.section.skills" = "技能";
 "agent.section.memory" = "記憶";
-"agent.settings.runMode" = "執行方式";
+"agent.settings.runMode" = "對話儲存";
 "agent.settings.web" = "連網";
 "agent.settings.code" = "程式碼執行";
 "agent.settings.mcp" = "MCP 伺服器";
@@ -1866,7 +1866,7 @@
 "ask.local.card.noSearchHint" = "設定 → Agent → 一般";
 "ask.local.card.configure" = "前往設定";
 "ask.local.card.cloudQuestion" = "想用雲端模型？";
-"ask.local.identity" = "本機模式";
+"ask.local.identity" = "未登入";
 "ask.local.identity.detail" = "%@ · 對話僅存本機";
 "ask.cloudPromo.body" = "登入後可使用雲端模型（支援識圖、聯網搜尋），對話在多台裝置間同步。";
 "ask.cloudPromo.signIn" = "登入";

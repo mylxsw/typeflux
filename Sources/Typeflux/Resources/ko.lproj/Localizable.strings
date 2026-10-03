@@ -1108,7 +1108,7 @@
 "agent.section.tools" = "도구";
 "agent.section.skills" = "스킬";
 "agent.section.memory" = "메모리";
-"agent.settings.runMode" = "실행 위치";
+"agent.settings.runMode" = "대화 저장 위치";
 "agent.settings.web" = "웹";
 "agent.settings.code" = "코드 실행";
 "agent.settings.mcp" = "MCP 서버";
@@ -1859,7 +1859,7 @@
 "ask.local.card.noSearchHint" = "설정 → Agent → 일반";
 "ask.local.card.configure" = "설정";
 "ask.local.card.cloudQuestion" = "클라우드 모델을 사용하시겠어요?";
-"ask.local.identity" = "로컬 모드";
+"ask.local.identity" = "로그인 안 됨";
 "ask.local.identity.detail" = "%@ · 이 Mac에만 저장";
 "ask.cloudPromo.body" = "로그인하면 이미지 인식과 웹 검색을 지원하는 클라우드 모델을 사용하고 여러 기기에서 대화를 동기화할 수 있습니다.";
 "ask.cloudPromo.signIn" = "로그인";

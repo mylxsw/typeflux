@@ -1119,7 +1119,7 @@
 "agent.section.tools" = "Tools";
 "agent.section.skills" = "Skills";
 "agent.section.memory" = "Memory";
-"agent.settings.runMode" = "Where Ask runs";
+"agent.settings.runMode" = "Conversation storage";
 "agent.settings.web" = "Web";
 "agent.settings.code" = "Code";
 "agent.settings.mcp" = "MCP servers";
@@ -1869,7 +1869,7 @@
 "ask.local.card.noSearchHint" = "Settings → Agent → General";
 "ask.local.card.configure" = "Set Up";
 "ask.local.card.cloudQuestion" = "Want Cloud models?";
-"ask.local.identity" = "Local mode";
+"ask.local.identity" = "Not signed in";
 "ask.local.identity.detail" = "%@ · Stays on this Mac";
 "ask.cloudPromo.body" = "Sign in to use Cloud models that read images and search the web, with conversations on all your devices.";
 "ask.cloudPromo.signIn" = "Sign In";
