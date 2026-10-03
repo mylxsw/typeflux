@@ -11,6 +11,8 @@ struct AskConversationView: View {
     @State private var restoredTranscript: String?
     @State private var isSearching = false
     @State private var collapsedGroups: Set<String> = []
+    /// Which conversations the sidebar lists while some are kept on this Mac.
+    @State private var historyFilter = AskHistoryFilter.all
     @State private var searchHover = false
     /// The selected row's pill slides between rows instead of jumping.
     @Namespace private var selectionSpace
@@ -99,6 +101,9 @@ struct AskConversationView: View {
             // traffic lights. The compose and toggle buttons float above it.
             Color.clear.frame(height: AskMetrics.sidebarTopInset - AskMetrics.sidebarPanelInset)
             sidebarSearchField.padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 8)
+            if showsHistoryFilter {
+                historyFilterPicker.padding(.horizontal, 10).padding(.bottom, 8)
+            }
             historyList
             accountFooter
         }
@@ -162,6 +167,30 @@ struct AskConversationView: View {
     private var composeButton: some View {
         titleBarButton("square.and.pencil", label: L("ask.new"), shortcut: "⌘N") { model.newConversation() }
             .keyboardShortcut("n", modifiers: .command)
+            .contextMenu { newConversationMenu }
+            .background { newPrivateShortcut }
+    }
+
+    /// Both kinds of new conversation; the private one only exists while signed in.
+    @ViewBuilder private var newConversationMenu: some View {
+        Button { model.newConversation(storesLocally: false) } label: {
+            Label(L("ask.storage.newCloud"), systemImage: "cloud")
+        }
+        .disabled(!model.isSignedIn)
+        Button { model.newConversation(storesLocally: true) } label: {
+            Label(L("ask.storage.newLocal"), systemImage: "lock")
+        }
+        .disabled(!model.isSignedIn)
+    }
+
+    /// ⇧⌘N without another visible control in the title bar.
+    private var newPrivateShortcut: some View {
+        Button(L("ask.storage.newLocal")) { model.newConversation(storesLocally: true) }
+            .keyboardShortcut("n", modifiers: [.command, .shift])
+            .disabled(!model.isSignedIn)
+            .opacity(0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 
     private func titleBarButton(_ symbol: String, label: String, shortcut: String? = nil,
@@ -226,7 +255,7 @@ struct AskConversationView: View {
     /// Signed out, the footer says where Ask runs; the Cloud card above it carries the sign-in.
     @ViewBuilder private var footerIdentity: some View {
         if auth.isLoggedIn {
-            AskAccountFooterIdentity(auth: auth, name: accountName, runsLocally: !model.cloudAvailable) {
+            AskAccountFooterIdentity(auth: auth, name: accountName) {
                 model.onOpenSettings?(.account)
             }
         } else {
@@ -285,6 +314,8 @@ struct AskConversationView: View {
                 return model.screenshotCapability(launcher: false).canAttach && !model.draft.includeScreenshot
             case .usage:
                 return model.selectedId != nil
+            case .newPrivateConversation:
+                return model.isSignedIn
             default:
                 return true
             }
@@ -294,6 +325,7 @@ struct AskConversationView: View {
     private func runPaletteAction(_ action: AskPaletteAction) {
         switch action {
         case .newConversation: model.newConversation()
+        case .newPrivateConversation: model.newConversation(storesLocally: true)
         case .toggleSidebar: toggleSidebar()
         case .usage: if !showsUsage { toggleUsage() }
         case .attachScreenshot:
@@ -302,8 +334,24 @@ struct AskConversationView: View {
         }
     }
 
+    /// The filter only appears once a conversation is kept on this Mac while signed in;
+    /// signed out, every conversation is.
+    private var showsHistoryFilter: Bool { model.isSignedIn && !model.localConversationIds.isEmpty }
+
     private var visibleConversations: [AskConversationSummary] {
-        model.conversations
+        guard showsHistoryFilter else { return model.conversations }
+        return historyFilter.apply(model.conversations, isLocal: model.isLocal)
+    }
+
+    private var historyFilterPicker: some View {
+        Picker(L("ask.history.filter"), selection: $historyFilter) {
+            ForEach(AskHistoryFilter.allCases, id: \.self) { filter in
+                Text(L(filter.titleKey)).tag(filter)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .controlSize(.small)
     }
 
     private var historyList: some View {
@@ -404,6 +452,7 @@ struct AskConversationView: View {
         AskHistoryRow(
             title: item.title,
             updatedAt: item.updatedAt,
+            stored: model.isSignedIn && model.isLocal(item.id),
             selected: model.selectedId == item.id,
             busy: model.busyIds.contains(item.id),
             selectionSpace: selectionSpace,
@@ -502,6 +551,9 @@ struct AskConversationView: View {
                     .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
             Spacer(minLength: 8)
+            if model.isSignedIn, model.storesLocally(launcher: false) {
+                privateChip
+            }
             if let id = model.selectedId {
                 HStack(spacing: 2) {
                     if let credits = headerCredits {
@@ -543,6 +595,20 @@ struct AskConversationView: View {
         .padding(.leading, sidebarHidden ? AskMetrics.collapsedTitleInset : 14)
         .padding(.trailing, 14)
         .frame(height: AskMetrics.titleBarRowHeight)
+    }
+
+    /// Signed in, a conversation kept on this Mac says so where Cloud ones show credits.
+    private var privateChip: some View {
+        Label(L("ask.storage.local"), systemImage: "lock")
+            .font(.system(size: 12.5, weight: .medium))
+            .foregroundStyle(AskTheme.privateTint)
+            .labelStyle(.titleAndIcon)
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, 12)
+            .frame(height: AskMetrics.headerCapsuleHeight)
+            .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
+            .help(L("ask.storage.local.detail"))
     }
 
     private var headerCredits: String? {
@@ -1182,6 +1248,8 @@ private struct AskTranscriptFrames: PreferenceKey {
 private struct AskHistoryRow: View {
     let title: String
     let updatedAt: Date
+    /// Kept on this Mac; marked only while signed in, when Cloud ones are listed too.
+    var stored = false
     let selected: Bool
     let busy: Bool
     let selectionSpace: Namespace.ID
@@ -1194,6 +1262,12 @@ private struct AskHistoryRow: View {
             HStack(spacing: 8) {
                 // A conversation still working shows a breathing accent dot.
                 if busy { AskRunToneDot(tone: .running) }
+                if stored {
+                    Image(systemName: "lock").font(.system(size: 10.5, weight: .medium))
+                        .foregroundStyle(AskTheme.privateTint)
+                        .help(L("ask.storage.local"))
+                        .accessibilityLabel(L("ask.storage.local"))
+                }
                 Text(title)
                     .font(.system(size: 13, weight: selected ? .semibold : .regular))
                     .foregroundStyle(selected || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)

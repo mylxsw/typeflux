@@ -172,13 +172,20 @@ struct AskLocalModeUITests {
     @Test func localSurfacesRender() throws {
         let f = try localFixture([text, vision])
         for status in [AskLocalModeStatus(source: "Ollama", searchConfigured: false, offersSignIn: true),
-                       AskLocalModeStatus(source: "Ollama", searchConfigured: true, offersSignIn: false)] {
-            #expect(fits(AskLocalModeCard(status: status, onOpenSearchSettings: {}, onSignIn: {})).height > 100)
+                       AskLocalModeStatus(source: "Ollama", searchConfigured: true, offersSignIn: false),
+                       AskLocalModeStatus(source: "Ollama", searchConfigured: true, offersSignIn: false,
+                                          local: false, changeable: true),
+                       AskLocalModeStatus(source: "Ollama", searchConfigured: true, offersSignIn: false,
+                                          local: false)] {
+            #expect(fits(AskLocalModeCard(status: status, onOpenSearchSettings: {}, onSignIn: {})).height > 80)
         }
         #expect(fits(AskCloudPromoCard(onSignIn: {}, onDismiss: {}), width: 236).height > 60)
         #expect(fits(AskLocalModeIdentity(model: f.model), width: 200).height == 40)
-        #expect(fits(AskLocalModeButton(model: f.model)).height == 22)
-        #expect(fits(AskLocalModeButton(model: try AskTestFixture().model)) == .zero)
+        // The storage icon keeps one size, signed out (a lock) or in a Cloud conversation.
+        let size = CGSize(width: AskStorageButton.size, height: AskStorageButton.size)
+        #expect(fits(AskStorageButton(model: f.model)) == size)
+        #expect(fits(AskStorageButton(model: try AskTestFixture().model)) == size)
+        #expect(fits(AskStorageButton(model: try AskTestFixture().model, launcher: true)) == size)
     }
 
     @Test func workspaceRendersTheSignedOutFooterAndSwitchBanner() throws {

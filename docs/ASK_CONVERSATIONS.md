@@ -315,15 +315,41 @@ to sign in; Ask reuses or refreshes the token stored in the keychain and asks th
 user to sign in from Settings otherwise. The voice agent registers MCP tools with
 the same collision rule as Ask (`<server>_<tool>` when names clash).
 
-## Local mode (no Typeflux Cloud required)
+## Conversation storage: Typeflux Cloud or this Mac (GUL-193)
 
-Signing in is optional. Without a Cloud session, or with Settings → Agent → Ask
-tools → "Run Ask on this Mac" switched on, Ask runs entirely on the device:
+Each conversation is kept in one place, chosen before its first message and fixed
+afterwards, so none is ever half uploaded. Signed out, every conversation stays on
+this Mac; signing in is optional. The design board is
+`docs/design/ask-conversation-privacy.html`.
 
-- `AskRoutedAPI` sends each call to `AskAPIClient` (Cloud) or `AskLocalEngine`
-  (local). Local sessions use the owner `local` and an empty token, so switching
-  modes resets the conversation model and the account-scoped cache like an account
-  switch; Cloud and local histories stay separate.
+- Where a conversation is kept is separate from which model answers: a Cloud
+  conversation can use Cloud models or the user's own, a private one only the
+  user's own models (API models still call their provider). "Where the agent loop
+  runs" is an implementation detail and is not shown.
+- The session closure returns the account (`AskRoutedAPI.session(token:owner:)`).
+  `AskConversationModel` routes every call per conversation through `AskRoute`:
+  `owner` is the cache partition (`local` for private conversations), `token` picks
+  the backend (`AskRoutedAPI` sends an empty token to `AskLocalEngine`), and
+  `account` is the session the work started in, so a sign-out or account switch
+  drops late results for both kinds. Switching the default never resets the model.
+- `localConversationIds` records which conversations are private. Signed in,
+  `refreshHistory` reads the Cloud page and every local page and merges them:
+  existing rows never move, new private rows are inserted by date, and a local
+  list that fails to load keeps its rows. Drafts of a private conversation are
+  saved in the `local` partition.
+- A new draft carries `AskDraft.storesLocally` (nil follows Settings → Agent →
+  "Keep new conversations", stored under the old `ask.localMode` key so users who
+  had local mode on keep starting private conversations). The launcher always
+  starts a new conversation and can choose too.
+- UI: the composer shows only an icon (`AskStorageButton`: a cloud, or a purple
+  lock); hovering names it and a click opens `AskLocalModeCard`, which offers the
+  choice for a conversation that has not started, explains why a started one is
+  fixed, and offers the other kind of new conversation. Signed in, a private
+  conversation shows a "Only on this Mac" header chip instead of credits, a lock
+  in the sidebar, and the sidebar gets an All / Cloud / This Mac filter once a
+  private conversation exists. ⇧⌘N, the compose button's context menu and the
+  palette start a private conversation; `/local` toggles the new draft's storage.
+  The new-conversation page and the transcript look the same in both kinds.
 - `AskLocalEngine` mirrors the server's state machine: every model step is queued
   as a device inference (`waiting_inference`) that the existing custom-model path
   runs with the user's own model; device tools keep the same approval flow; history
@@ -334,12 +360,12 @@ tools → "Run Ask on this Mac" switched on, Ask runs entirely on the device:
 - Engine-side tools: `update_plan`, `web_fetch` (public addresses only, checked after
   DNS resolution and on redirects) and `web_search` when the user configures a
   Tavily or Brave key in Ask tools settings (stored in the keychain).
-- Only the user's own models run locally. A Cloud model reference falls back to the
-  first available configured model; with none configured the send is refused with
+- A Cloud model reference in a private conversation falls back to the first
+  available configured model; with none configured the send is refused with
   guidance to add one in Settings → Models. Cloud models stay disabled in the picker.
-- Not available locally: the Cloud `research` sub-agent, server-side background
-  runs (a local run pauses while the app is closed and resumes from the workspace),
-  run traces and Cloud usage metering.
+- Not available in private conversations: Cloud models, the `research` sub-agent,
+  server-side background runs (a local run pauses while the app is closed and
+  resumes from the workspace), run traces, Cloud usage metering and sync.
 
 ## Liquid Glass workspace refresh (GUL-159, 2026-10-02)
 

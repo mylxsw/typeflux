@@ -42,6 +42,8 @@ enum AskTheme {
         light: NSColor(calibratedRed: 0.906, green: 0.937, blue: 1.0, alpha: 1),
         dark: NSColor(calibratedRed: 0.082, green: 0.149, blue: 0.243, alpha: 1)
     )
+    /// Marks conversations kept on this Mac (the lock icon, the header chip).
+    static let privateTint = Color(nsColor: .systemPurple)
     static let accentText = StudioTheme.dynamic(
         light: NSColor(calibratedRed: 0.106, green: 0.341, blue: 0.839, alpha: 1),
         dark: NSColor(calibratedRed: 0.557, green: 0.741, blue: 1.0, alpha: 1)

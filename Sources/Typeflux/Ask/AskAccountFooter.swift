@@ -85,8 +85,6 @@ final class AskAccountCardHover: ObservableObject {
 struct AskAccountFooterIdentity: View {
     @ObservedObject var auth: AuthState
     let name: String
-    /// Ask runs on the user's own models rather than Cloud.
-    var runsLocally = false
     let onOpenAccount: () -> Void
     @StateObject private var hover = AskAccountCardHover()
     @State private var hovering = false
@@ -111,7 +109,7 @@ struct AskAccountFooterIdentity: View {
     }
 
     private var identity: some View {
-        let footer = presentation.footerBadge(runsLocally: runsLocally)
+        let footer = presentation
         let highlighted = hovering || hover.isPresented
         return Button { hover.click() } label: {
             HStack(spacing: 9) {
@@ -122,7 +120,7 @@ struct AskAccountFooterIdentity: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                 if let badge = footer.badge {
-                    AskAccountBadge(text: AccountStatusText.badge(badge), tone: footer.tone)
+                    AskAccountBadge(text: AccountStatusText.badge(badge), tone: footer.badgeTone)
                 }
             }
             .padding(.leading, 4)

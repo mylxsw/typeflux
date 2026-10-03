@@ -217,20 +217,6 @@ struct AskHarnessUITests {
         #expect(fits(AskRunOutputsView(outputs: outputs)) > 40)
     }
 
-    @Test func cloudLocationLabelOccupiesNoSpace() {
-        for highlighted in [false, true] {
-            let hosting = NSHostingView(rootView: AskRunLocationLabel(local: false, highlighted: highlighted))
-            hosting.layoutSubtreeIfNeeded()
-            #expect(hosting.fittingSize == .zero)
-        }
-    }
-
-    @Test func localLocationLabelKeepsItsHeightInEveryState() {
-        for highlighted in [false, true] {
-            #expect(fits(AskRunLocationLabel(local: true, highlighted: highlighted), width: 120) == 22)
-        }
-    }
-
     @Test func artifactsCopyAsImagesAndEncodeAsPNG() throws {
         let picture = try #require(AskImage.decode(image))
         let pasteboard = NSPasteboard(name: .init("ask-artifact-\(UUID().uuidString)"))

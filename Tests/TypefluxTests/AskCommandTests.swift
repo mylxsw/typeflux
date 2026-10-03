@@ -274,8 +274,7 @@ struct AskCommandExecutionTests {
                 if text == "fail" { throw AskLocalError.message("Memory is full") }
                 recorder.notes.append(text)
             },
-            localMode: { recorder.local },
-            setLocalMode: { recorder.local = $0 },
+            privateByDefault: { recorder.local },
             copy: { recorder.copied = $0 }
         )
         return (f, recorder)
@@ -298,10 +297,15 @@ struct AskCommandExecutionTests {
         let memory = f.model.memorySwitchedOff(launcher: false)
         f.model.runCommand(command(.memory, "memory"), launcher: false)
         #expect(f.model.memorySwitchedOff(launcher: false) != memory)
+        // "/local" keeps the new conversation on this Mac; the default stays as it was.
         f.model.runCommand(command(.localMode, "local"), launcher: false)
-        #expect(recorder.local)
+        #expect(f.model.storesLocally(launcher: false))
+        #expect(!recorder.local)
         #expect(f.model.commandFeedback == L("ask.command.localOn"))
         #expect(f.model.recentCommands.prefix(3) == ["local", "memory", "selection"])
+        f.model.runCommand(command(.localMode, "local"), launcher: false)
+        #expect(!f.model.storesLocally(launcher: false))
+        #expect(f.model.commandFeedback == L("ask.command.localOff"))
     }
 
     @Test func screenshotToggleRespectsTheModel() throws {

@@ -3,6 +3,8 @@ import Foundation
 /// A command the ⌘K palette can run without leaving the keyboard.
 enum AskPaletteAction: String, CaseIterable, Equatable {
     case newConversation
+    /// A conversation kept on this Mac; offered while signed in.
+    case newPrivateConversation
     case attachScreenshot
     case toggleSidebar
     case usage
@@ -10,6 +12,7 @@ enum AskPaletteAction: String, CaseIterable, Equatable {
     var titleKey: String {
         switch self {
         case .newConversation: return "ask.new"
+        case .newPrivateConversation: return "ask.storage.newLocal"
         case .attachScreenshot: return "ask.screenshot"
         case .toggleSidebar: return "ask.sidebar.toggle"
         case .usage: return "ask.usage.title"
@@ -19,6 +22,7 @@ enum AskPaletteAction: String, CaseIterable, Equatable {
     var systemImage: String {
         switch self {
         case .newConversation: return "square.and.pencil"
+        case .newPrivateConversation: return "lock"
         case .attachScreenshot: return "camera.viewfinder"
         case .toggleSidebar: return "sidebar.left"
         case .usage: return "chart.bar.xaxis"
@@ -29,6 +33,7 @@ enum AskPaletteAction: String, CaseIterable, Equatable {
     var shortcut: String? {
         switch self {
         case .newConversation: return "⌘N"
+        case .newPrivateConversation: return "⇧⌘N"
         case .toggleSidebar: return "⌃⌘S"
         default: return nil
         }

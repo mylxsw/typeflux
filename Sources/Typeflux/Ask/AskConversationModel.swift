@@ -4,10 +4,10 @@ import Combine
 @MainActor
 final class AskConversationModel: ObservableObject {
     func usagePage(id: String, runId: String?, cursor: Int64?) async throws -> AskUsagePage {
-        guard let current = credentials() else { throw AuthError.unauthorized }
+        guard let current = credentials(for: id) else { throw AuthError.unauthorized }
         let page = try await api.usage(id: id, runId: runId, cursor: cursor, token: current.token)
         try Task.checkCancellation()
-        guard owner == current.owner else { throw CancellationError() }
+        guard owner == current.account else { throw CancellationError() }
         return page
     }
 
@@ -46,18 +46,53 @@ final class AskConversationModel: ObservableObject {
         let reference = launcher
             ? launcherDraft.modelRef ?? modelLibrary.defaultReference
             : draft.modelRef ?? selected.map { $0.modelRef ?? "cloud:default" } ?? modelLibrary.defaultReference
-        return localFallback(reference, hasImage: requiresVision(launcher: launcher))
+        return localFallback(reference, hasImage: requiresVision(launcher: launcher),
+                             local: storesLocally(launcher: launcher))
     }
 
-    /// Local conversations run on the user's own models; a Cloud reference falls back to the first one available.
-    func localFallback(_ reference: String, hasImage: Bool) -> String {
-        guard !cloudAvailable, reference.hasPrefix("cloud:") else { return reference }
+    /// Conversations kept on this Mac run on the user's own models; a Cloud reference
+    /// falls back to the first one available.
+    func localFallback(_ reference: String, hasImage: Bool, local: Bool) -> String {
+        guard local, reference.hasPrefix("cloud:") else { return reference }
         return modelLibrary.firstLocalReference(hasImage: hasImage)
             ?? modelLibrary.firstLocalReference(hasImage: hasImage, confirmedVision: false) ?? reference
     }
 
-    /// False when Ask runs on this Mac: not signed in, or local mode is on.
-    var cloudAvailable: Bool { session().map { !$0.token.isEmpty } ?? false }
+    /// Whether the conversation window's composer can use Cloud models: signed in,
+    /// and its conversation is not one kept on this Mac.
+    var cloudAvailable: Bool { cloudAvailable(launcher: false) }
+    func cloudAvailable(launcher: Bool) -> Bool { !storesLocally(launcher: launcher) }
+
+    /// A Typeflux Cloud session exists; without one every conversation stays on this Mac.
+    var isSignedIn: Bool { session().map { !$0.token.isEmpty } ?? false }
+
+    /// Whether this composer's conversation stays on this Mac: always when signed out,
+    /// the stored place for an existing conversation, else the draft's choice or the default.
+    func storesLocally(launcher: Bool) -> Bool {
+        guard isSignedIn else { return true }
+        if !launcher, let id = selectedId { return isLocal(id) }
+        return (launcher ? launcherDraft : draft).storesLocally ?? commandSources.privateByDefault()
+    }
+
+    /// Only a conversation that has not started can still choose where it is stored,
+    /// so none is ever half uploaded and half kept on this Mac.
+    func canChangeStorage(launcher: Bool) -> Bool {
+        isSignedIn && (launcher || selectedId == nil)
+    }
+
+    func setStoresLocally(_ value: Bool, launcher: Bool) {
+        guard canChangeStorage(launcher: launcher) else { return }
+        if launcher { launcherDraft.storesLocally = value } else { draft.storesLocally = value }
+        persistDrafts()
+    }
+
+    /// The conversation is kept on this Mac rather than in the Typeflux Cloud account.
+    func isLocal(_ id: String) -> Bool { !isSignedIn || localConversationIds.contains(id) }
+
+    /// The cache partition of a conversation's copies and drafts.
+    private func cacheOwner(_ id: String) -> String {
+        localConversationIds.contains(id) ? AskRoutedAPI.localOwner : owner
+    }
     func requiresVision(launcher: Bool) -> Bool {
         let current = launcher ? launcherDraft : draft
         return current.sendsImage
@@ -100,6 +135,8 @@ final class AskConversationModel: ObservableObject {
     var recentCommands: [String] = []
     @Published private(set) var recoveringImages: [String: AskImageRecoveryTarget] = [:]
     @Published private(set) var conversations: [AskConversationSummary] = []
+    /// Conversations stored on this Mac. Signed in, they are listed beside the Cloud ones.
+    @Published private(set) var localConversationIds: Set<String> = []
     @Published private(set) var selected: AskConversation?
     @Published private(set) var selectedId: String?
     @Published private(set) var isLoadingSelection = false
@@ -244,10 +281,19 @@ final class AskConversationModel: ObservableObject {
     }
     var canSendLauncher: Bool { launcherDraft.canSend && !isLoadingAttachments(launcher: true) && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
 
-    private func credentials() -> (owner: String, token: String)? {
+    /// The account session; switching accounts resets the model first.
+    private func credentials() -> AskRoute? {
         guard let current = session() else { error = L("ask.loginRequired"); return nil }
         if owner != current.owner { resetSession(); owner = current.owner }
-        return current
+        return AskRoute(account: current.owner, owner: current.owner, token: current.token)
+    }
+
+    /// The session for one conversation: the local engine for a conversation kept on
+    /// this Mac, otherwise the Cloud account. A new conversation (nil) follows the draft.
+    private func credentials(for id: String?) -> AskRoute? {
+        guard let account = credentials() else { return nil }
+        let local = id.map(isLocal) ?? storesLocally(launcher: false)
+        return local ? account.local : account
     }
 
     func resetSession() {
@@ -265,7 +311,7 @@ final class AskConversationModel: ObservableObject {
         inferenceProgress = [:]; progressInferenceIDs = [:]
         selected = nil; selectedId = nil; isLoadingSelection = false; selectionLoadFailed = false
         snapshots = [:]; drafts = [:]; transcriptPositions = [:]
-        historyGeneration = UUID(); historyOffset = 0; conversations = []
+        historyGeneration = UUID(); historyOffset = 0; conversations = []; localConversationIds = []
         launcherScreenshotNotice = nil; screenshotNotice = nil; recoveringImages = [:]
         attachmentNotice = nil; launcherAttachmentNotice = nil
         launcherDraft = AskDraft(); draft = .followUp
@@ -328,6 +374,7 @@ final class AskConversationModel: ObservableObject {
         let editing = sendQueue.editing.flatMap { $0.conversationId == selectedId ? $0.stash : nil }
         let launcher = launcherDraft, followUp = editing ?? draft, owner = owner
         let id = isLoadingSelection ? nil : selectedId.flatMap { deletedConversationIDs.contains($0) ? nil : $0 }
+        let followUpOwner = id.map(cacheOwner) ?? owner
         if let id, !isLoadingSelection { drafts[id] = followUp }
         draftSaveConversationID = id
         draftSave = Task { [cache] in
@@ -336,7 +383,7 @@ final class AskConversationModel: ObservableObject {
                 try await cache.saveDraft(launcher, key: "launcher", owner: owner)
                 try Task.checkCancellation()
                 if let id, self.owner == owner, !deletedConversationIDs.contains(id) {
-                    try await cache.saveDraft(followUp, key: id, owner: owner)
+                    try await cache.saveDraft(followUp, key: id, owner: followUpOwner)
                 }
             } catch is CancellationError {} catch { self.error = L("ask.cache.failed") }
         }
@@ -361,34 +408,66 @@ final class AskConversationModel: ObservableObject {
     func refreshHistory(loadMore: Bool = false, inlineError: Bool = false) async {
         guard let current = credentials() else { return }
         let generation = UUID(); historyGeneration = generation
+        // Signed in, conversations kept on this Mac are listed beside the Cloud ones.
+        let separateLocal = !current.token.isEmpty
         if !loadMore, conversations.isEmpty {
             let cached = (try? await cache.list(owner: current.owner)) ?? []
-            guard owner == current.owner, generation == historyGeneration else { return }
-            conversations = Self.unique(cached)
+            let cachedLocal = separateLocal ? (try? await cache.list(owner: AskRoutedAPI.localOwner)) ?? [] : []
+            guard owner == current.account, generation == historyGeneration else { return }
+            localConversationIds.formUnion(cachedLocal.map(\.id))
+            conversations = Self.unique(Self.insertingByDate(cachedLocal, into: Self.unique(cached)))
         }
         do {
             let offset = loadMore ? historyOffset : 0
             let items = try await api.list(token: current.token, offset: offset)
-            guard owner == current.owner, generation == historyGeneration else { return }
+            let localItems = separateLocal && !loadMore ? try? await localHistory() : nil
+            guard owner == current.account, generation == historyGeneration else { return }
+            if let localItems { localConversationIds.formUnion(localItems.map(\.id)) }
             // Retain row positions while reading. Polling must never remove and
             // reinsert the selected row, and pagination uses server rows, not UI count.
             let incoming = Self.unique(items)
-            let byId = Dictionary(uniqueKeysWithValues: incoming.map { ($0.id, $0) })
+            let incomingLocal = Self.unique(localItems ?? []).filter { item in !incoming.contains { $0.id == item.id } }
+            let byId = Dictionary(uniqueKeysWithValues: (incoming + incomingLocal).map { ($0.id, $0) })
             var merged = conversations.compactMap { item -> AskConversationSummary? in
                 if let updated = byId[item.id] { return updated.updatedAt >= item.updatedAt ? updated : item }
-                return loadMore || busyIds.contains(item.id) || pendingSends[item.id] != nil || selectedId == item.id ? item : nil
+                // A list that could not be read says nothing about its conversations.
+                let unread = separateLocal && localItems == nil && localConversationIds.contains(item.id)
+                return loadMore || unread || busyIds.contains(item.id) || pendingSends[item.id] != nil
+                    || selectedId == item.id ? item : nil
             }
             let existing = Set(merged.map(\.id))
             merged.append(contentsOf: incoming.filter { !existing.contains($0.id) })
+            merged = Self.insertingByDate(incomingLocal.filter { !existing.contains($0.id) }, into: merged)
             conversations = Self.unique(merged)
             historyOffset = offset + items.count
             historyHasMore = items.count == 50
         } catch {
-            if owner == current.owner, generation == historyGeneration {
+            if owner == current.account, generation == historyGeneration {
                 if inlineError { historyRefreshError = L("ask.history.refreshFailed") }
                 else { self.error = error.localizedDescription }
             }
         }
+    }
+
+    /// Every conversation stored on this Mac; the engine pages by 50.
+    private func localHistory() async throws -> [AskConversationSummary] {
+        var all: [AskConversationSummary] = []
+        while true {
+            let page = try await api.list(token: "", offset: all.count)
+            all += page
+            if page.count < 50 { return all }
+        }
+    }
+
+    /// Adds rows without moving the ones already listed: each goes above the first older row.
+    static func insertingByDate(_ items: [AskConversationSummary],
+                                into list: [AskConversationSummary]) -> [AskConversationSummary] {
+        var result = list
+        for item in items where !result.contains(where: { $0.id == item.id }) {
+            let index = result.firstIndex { $0.updatedAt < item.updatedAt } ?? result.endIndex
+            result.insert(item, at: index)
+        }
+        return result
     }
 
     private static func unique(_ items: [AskConversationSummary]) -> [AskConversationSummary] {
@@ -402,8 +481,8 @@ final class AskConversationModel: ObservableObject {
     }
 
     func select(_ rawId: String, reload: Bool = false) async {
-        guard let current = credentials() else { return }
         let id = AskConversationID.canonical(rawId)
+        guard let current = credentials(for: id) else { return }
         if selectedId == id, isLoadingSelection || (!reload && selected != nil && !selectionLoadFailed) { return }
         voiceInput.cancel()
         cancelQueuedEdit(advancing: false)
@@ -416,10 +495,10 @@ final class AskConversationModel: ObservableObject {
         draft = drafts[id] ?? .followUp; error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
         attachmentNotice = nil
         captureGeneration = UUID(); capturing = false
-        if let oldId, !deletedConversationIDs.contains(oldId), let saved = drafts[oldId] { try? await cache.saveDraft(saved, key: oldId, owner: current.owner) }
+        if let oldId, !deletedConversationIDs.contains(oldId), let saved = drafts[oldId] { try? await cache.saveDraft(saved, key: oldId, owner: cacheOwner(oldId)) }
         let cached = try? await cache.load(id: id, owner: current.owner)
         let savedDraft = try? await cache.draft(key: id, owner: current.owner)
-        guard generation == selectionGeneration, owner == current.owner else { return }
+        guard generation == selectionGeneration, owner == current.account else { return }
         if let cached {
             let merged = snapshots[id]?.reconciling(cached) ?? cached
             selected = merged; snapshots[id] = merged
@@ -427,11 +506,11 @@ final class AskConversationModel: ObservableObject {
         draft = drafts[id] ?? savedDraft ?? .followUp
         do {
             let value = try await api.conversation(id: id, token: current.token)
-            guard owner == current.owner else { return }
+            guard owner == current.account else { return }
             let hasUnconfirmedMessage = pendingSends[id].map { pending in !value.messages.contains { $0.id == pending.id } } ?? false
             if !hasUnconfirmedMessage { try await cache.save(value, owner: current.owner) }
             let latest = try await cache.load(id: id, owner: current.owner) ?? value
-            guard owner == current.owner else { return }
+            guard owner == current.account else { return }
             snapshots[id] = snapshots[id]?.reconciling(latest) ?? latest
             guard generation == selectionGeneration else { return }
             selected = snapshots[id] ?? latest; isLoadingSelection = false
@@ -443,7 +522,7 @@ final class AskConversationModel: ObservableObject {
             }
             // Loading a conversation never resumes desktop tools automatically.
         } catch {
-            if generation == selectionGeneration, owner == current.owner {
+            if generation == selectionGeneration, owner == current.account {
                 isLoadingSelection = false; selectionLoadFailed = true; self.error = error.localizedDescription
             }
         }
@@ -454,7 +533,9 @@ final class AskConversationModel: ObservableObject {
         Task { await select(id, reload: true) }
     }
 
-    func newConversation() {
+    /// `storesLocally` starts a conversation kept on this Mac (true) or in Typeflux Cloud
+    /// (false); nil follows the default from settings.
+    func newConversation(storesLocally: Bool? = nil) {
         selectionObservation?.cancel(); selectionObservation = nil
         voiceInput.cancel()
         cancelQueuedEdit(advancing: false)
@@ -464,6 +545,7 @@ final class AskConversationModel: ObservableObject {
         captureGeneration = UUID(); capturing = false
         draft = AskDraft(); error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
         attachmentNotice = nil
+        if isSignedIn { draft.storesLocally = storesLocally }
         // No source app is trustworthy here, so only global memory applies.
         draft.memory = capture.globalMemory() ?? AskMemory()
     }
@@ -502,10 +584,15 @@ final class AskConversationModel: ObservableObject {
               (submitted.attachments ?? []).reduce(0, { $0 + $1.payloadBytes }) <= AskAttachmentLimits.maximumPayloadBytes else {
             error = L("ask.input.tooLarge"); return
         }
-        guard let current = credentials() else { return }
+        guard let account = credentials() else { return }
         guard newConversation || selected != nil else { return }
         let id = newConversation ? UUID().uuidString.lowercased() : selected!.id
         guard !busyIds.contains(id) else { return }
+        let local = newConversation
+            ? account.token.isEmpty || (submitted.storesLocally ?? commandSources.privateByDefault())
+            : isLocal(id)
+        if newConversation, local { localConversationIds.insert(id) }
+        let current = local ? account.local : account
         error = nil; operationErrors[id] = nil; busyIds.insert(id)
         if newConversation { tools.bindConversation(id) }
         let folders = (submitted.attachments ?? []).compactMap { $0.kind == .folder ? $0.path : nil }
@@ -515,7 +602,7 @@ final class AskConversationModel: ObservableObject {
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
         request.skills = skillUses(submitted.skills)
         request.modelRef = localFallback(submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference : (value.modelRef ?? "cloud:default")),
-                                         hasImage: request.sendsImage || value.messages.contains { $0.hasImage })
+                                         hasImage: request.sendsImage || value.messages.contains { $0.hasImage }, local: local)
         request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
         request.memory = newConversation && submitted.memoryOff != true
             ? Self.openingMemory(submitted.memory ?? capture.globalMemory()) : nil
@@ -549,7 +636,7 @@ final class AskConversationModel: ObservableObject {
                     )
                 } catch {
                     // No message was sent. Restore the editable draft so another model can be selected.
-                    guard owner == current.owner else { throw CancellationError() }
+                    guard owner == current.account else { throw CancellationError() }
                     pendingSends[id] = nil
                     var unsent = value
                     unsent.messages.removeAll { $0.id == messageId }
@@ -571,7 +658,7 @@ final class AskConversationModel: ObservableObject {
                 let response = try await api.send(conversationId: id, request: request, token: current.token)
                 pendingSends[id] = nil
                 try await drive(response, current: current, screenshotConsentMessageID: submitted.includeScreenshot ? messageId : nil)
-            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.owner) }
+            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
@@ -610,7 +697,7 @@ final class AskConversationModel: ObservableObject {
 
     func resume() {
         selectionObservation?.cancel(); selectionObservation = nil
-        guard let current = credentials(), let value = selected, !busyIds.contains(value.id) else { return }
+        guard let value = selected, !busyIds.contains(value.id), let current = credentials(for: value.id) else { return }
         let id = value.id
         let retryModelRef = modelReference(launcher: false)
         if pendingSends[id] == nil, let run = value.run, ["failed", "cancelled"].contains(run.status),
@@ -657,7 +744,7 @@ final class AskConversationModel: ObservableObject {
                     response = try await api.conversation(id: id, token: current.token)
                 }
                 try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])
-            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.owner) }
+            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
@@ -680,7 +767,7 @@ final class AskConversationModel: ObservableObject {
     /// would duplicate the question in the transcript and pay for the extra turn.
     func regenerate(_ messageId: String) {
         selectionObservation?.cancel(); selectionObservation = nil
-        guard let current = credentials(), let value = selected, !busyIds.contains(value.id) else { return }
+        guard let value = selected, !busyIds.contains(value.id), let current = credentials(for: value.id) else { return }
         let id = value.id
         let modelRef = modelReference(launcher: false)
         busyIds.insert(id); error = nil; operationErrors[id] = nil
@@ -700,20 +787,20 @@ final class AskConversationModel: ObservableObject {
                                                    modelRef: modelRef, tools: definitions)
                 let response = try await api.regenerate(conversationId: id, request: request, token: current.token)
                 try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])
-            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.owner) }
+            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
-    private func accept(_ value: AskConversation, owner expectedOwner: String) async throws {
+    private func accept(_ value: AskConversation, route: AskRoute) async throws {
         try Task.checkCancellation()
-        guard owner == expectedOwner else { throw CancellationError() }
+        guard owner == route.account else { throw CancellationError() }
         if let previous = snapshots[value.id], !value.isNewer(than: previous) { return }
         var value = snapshots[value.id]?.reconciling(value, preservingEqualRevisionContent: true) ?? value
         // Persist meaningful message/state changes, not every transient preview.
         if snapshots[value.id]?.messages != value.messages || snapshots[value.id]?.run?.status != value.run?.status || snapshots[value.id]?.usage != value.usage {
-            try await cache.save(value, owner: expectedOwner)
+            try await cache.save(value, owner: route.owner)
         }
-        guard owner == expectedOwner else { throw CancellationError() }
+        guard owner == route.account else { throw CancellationError() }
         // Recheck after the cache write: another delivery or optimistic send
         // may have advanced the state while this task was suspended.
         if let latest = snapshots[value.id], !value.isNewer(than: latest) { return }
@@ -740,11 +827,11 @@ final class AskConversationModel: ObservableObject {
         } else { conversations.insert(summary, at: 0) }
     }
 
-    private func drive(_ initial: AskConversation, current: (owner: String, token: String),
+    private func drive(_ initial: AskConversation, current: AskRoute,
                        screenshotConsentMessageID: String?) async throws {
         var value = initial
         while true {
-            try await accept(value, owner: current.owner)
+            try await accept(value, route: current)
             guard let run = value.run, run.isActive else { return }
             if run.status == "running" {
                 try await Task.sleep(for: .seconds(1))
@@ -756,7 +843,7 @@ final class AskConversationModel: ObservableObject {
                 guard let reference = run.modelRef,
                       let (provider, model) = modelLibrary.registry.resolve(reference) else {
                     value = try await api.inferenceResult(conversationId: value.id, request: AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: "", failed: true), token: current.token)
-                    try await accept(value, owner: current.owner)
+                    try await accept(value, route: current)
                     throw AskLocalError.message(L("ask.models.unavailable"))
                 }
                 var receipt = inferenceReceipts[inference.id]
@@ -773,9 +860,9 @@ final class AskConversationModel: ObservableObject {
                         let conversationID = value.id
                         let (text, calls) = try await customInference.complete(provider: provider,
                             connection: modelLibrary.connection(provider, model: model), payload: inference.payload,
-                            onUsage: { [weak self] usage in await self?.recordInferenceUsage(usage, id: inference.id, owner: current.owner) },
+                            onUsage: { [weak self] usage in await self?.recordInferenceUsage(usage, id: inference.id, owner: current.account) },
                             onProgress: { [weak self] progress in
-                                await self?.updateInferenceProgress(progress, id: conversationID, inferenceID: inference.id, owner: current.owner, visible: inference.summaryThrough == nil || inference.summaryThrough == 0)
+                                await self?.updateInferenceProgress(progress, id: conversationID, inferenceID: inference.id, owner: current.account, visible: inference.summaryThrough == nil || inference.summaryThrough == 0)
                             })
                         let progress = inferenceProgress[value.id]
                         receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: text, toolCalls: calls, usage: inferenceUsage[inference.id], reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds,
@@ -786,7 +873,7 @@ final class AskConversationModel: ObservableObject {
                         receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: progress?.text ?? "", usage: inferenceUsage[inference.id], failed: true, reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds)
                     }
                     try Task.checkCancellation()
-                    guard owner == current.owner else { throw CancellationError() }
+                    guard owner == current.account else { throw CancellationError() }
                     inferenceReceipts[inference.id] = receipt
                 }
                 value = try await api.inferenceResult(conversationId: value.id, request: receipt!, token: current.token)
@@ -803,8 +890,8 @@ final class AskConversationModel: ObservableObject {
                     && (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) == "screenshot"
                 let binding = try await tools.approvalBinding(for: call, conversationId: value.id)
                 try Task.checkCancellation()
-                guard session()?.owner == current.owner else { throw CancellationError() }
-                let request = AskToolPolicy.request(call: call, owner: current.owner, conversation: value.id,
+                guard session()?.owner == current.account else { throw CancellationError() }
+                let request = AskToolPolicy.request(call: call, owner: current.account, conversation: value.id,
                                                     run: run.id, step: String(run.steps), binding: binding,
                                                     risk: tools.risk(of: call), reuseEnabled: approvalReuseEnabled,
                                                     now: approvalStore.now())
@@ -834,14 +921,14 @@ final class AskConversationModel: ObservableObject {
                                                              approval: grantID.flatMap { approvalStore.auditScope($0) },
                                                              outcome: .init(status: "denied")))
                 let latest = try await api.conversation(id: value.id, token: current.token)
-                try await accept(latest, owner: current.owner)
+                try await accept(latest, route: current)
                 guard latest.run?.id == run.id, latest.run?.status == "waiting_tool",
                       latest.run?.pending.first == call else {
                     approvalStore.revoke(conversation: value.id)
                     return
                 }
                 try Task.checkCancellation()
-                guard session()?.owner == current.owner else { throw CancellationError() }
+                guard session()?.owner == current.account else { throw CancellationError() }
                 if let grantID {
                     result?.harness?.outcome?.status = "unknown"
                     guard try await cache.claimTool(id: journalKey, owner: current.owner) else {
@@ -858,14 +945,14 @@ final class AskConversationModel: ObservableObject {
                         // Claiming and fetching can suspend. Re-resolve local evidence at dispatch.
                         let bindingNow = try await tools.approvalBinding(for: call, conversationId: value.id)
                         try Task.checkCancellation()
-                        guard session()?.owner == current.owner else { throw CancellationError() }
+                        guard session()?.owner == current.account else { throw CancellationError() }
                         guard bindingNow == request.binding,
                               approvalStore.consume(grantID, for: request) else {
                             throw AskLocalError.message(L("ask.approval.changed"))
                         }
                         let output = try await tools.executeApproved(call, conversationId: value.id, binding: bindingNow) {
                             try Task.checkCancellation()
-                            guard self.session()?.owner == current.owner,
+                            guard self.session()?.owner == current.account,
                                   self.approvalStore.validateDispatch(grantID, for: request) else {
                                 throw AskLocalError.message(L("ask.approval.changed"))
                             }
@@ -892,9 +979,9 @@ final class AskConversationModel: ObservableObject {
 
     /// This query never upgrades a tool name into a permission.
     func isGranted(_ call: AskToolCall, conversationId: String) async -> Bool {
-        guard let current = session(), let value = snapshots[conversationId], let run = value.run,
+        guard let account = session(), let value = snapshots[conversationId], let run = value.run,
               let binding = try? await tools.approvalBinding(for: call, conversationId: conversationId) else { return false }
-        let request = AskToolPolicy.request(call: call, owner: current.owner, conversation: conversationId,
+        let request = AskToolPolicy.request(call: call, owner: account.owner, conversation: conversationId,
                                            run: run.id, step: String(run.steps), binding: binding,
                                            risk: tools.risk(of: call), reuseEnabled: approvalReuseEnabled,
                                            now: approvalStore.now())
@@ -932,7 +1019,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func stop(id: String? = nil) {
-        guard let current = credentials(), let id = id ?? selected?.id else { return }
+        guard let id = id ?? selected?.id, let current = credentials(for: id) else { return }
         operations[id]?.cancel()
         approvalStore.revoke(conversation: id)
         approve(conversationId: id, allowed: false)
@@ -949,17 +1036,17 @@ final class AskConversationModel: ObservableObject {
                                                  reasoningMilliseconds: progress.reasoningMilliseconds)
                 }
                 let stopped = try await api.cancel(conversationId: id, runId: run.id, partial: partial, token: current.token)
-                if owner == current.owner { pendingSends[id] = nil }
-                try await accept(stopped, owner: current.owner)
-            } catch { reportOperationError(error, id: id, owner: current.owner) }
+                if owner == current.account { pendingSends[id] = nil }
+                try await accept(stopped, route: current)
+            } catch { reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
     func delete(_ id: String) async {
-        guard let current = credentials(), !busyIds.contains(id) else { return }
+        guard !busyIds.contains(id), let current = credentials(for: id) else { return }
         do {
             try await api.delete(conversationId: id, token: current.token)
-            guard owner == current.owner else { return }
+            guard owner == current.account else { return }
             deletedConversationIDs.insert(id)
             // Drain a writer already inside the cache before deleting its draft.
             // New writers check the tombstone immediately before saving.
@@ -969,8 +1056,8 @@ final class AskConversationModel: ObservableObject {
                 await pendingSave?.value
             }
             try await cache.delete(id: id, owner: current.owner)
-            guard owner == current.owner else { return }
-            conversations.removeAll { $0.id == id }
+            guard owner == current.account else { return }
+            conversations.removeAll { $0.id == id }; localConversationIds.remove(id)
             drafts[id] = nil; snapshots[id] = nil; operationErrors[id] = nil; transcriptPositions[id] = nil
             sendQueue.clear(id)
             screenshotConsent[id] = nil; approvalStore.revoke(conversation: id)
@@ -1004,11 +1091,11 @@ final class AskConversationModel: ObservableObject {
         inferenceProgress[id] = progress
     }
 
-    private func monitorConversation(id: String, current: (owner: String, token: String)) -> Task<Void, Never> {
+    private func monitorConversation(id: String, current: AskRoute) -> Task<Void, Never> {
         Task { [weak self] in
             while !Task.isCancelled {
                 do {
-                    guard let self, owner == current.owner else { return }
+                    guard let self, owner == current.account else { return }
                     try await api.observe(id: id, token: current.token) { [weak self] value in
                         guard let self else { throw CancellationError() }
                         try await self.acceptObserved(value, current: current)
@@ -1025,15 +1112,27 @@ final class AskConversationModel: ObservableObject {
         }
     }
 
-    private func acceptObserved(_ value: AskConversation, current: (owner: String, token: String)) async throws {
-        guard owner == current.owner else { throw CancellationError() }
+    private func acceptObserved(_ value: AskConversation, current: AskRoute) async throws {
+        guard owner == current.account else { throw CancellationError() }
         if let pending = pendingSends[value.id], !value.messages.contains(where: { $0.id == pending.id }) { return }
-        try await accept(value, owner: current.owner)
+        try await accept(value, route: current)
         if value.run?.isActive == false {
             approve(conversationId: value.id, allowed: false)
             throw CancellationError()
         }
     }
+}
+
+/// Where one conversation's calls go. `owner` partitions the cache and `token` picks the
+/// backend; `account` is the session the work started in, so a sign-out or account
+/// switch drops its late results even for conversations kept on this Mac.
+struct AskRoute: Equatable, Sendable {
+    var account: String
+    var owner: String
+    var token: String
+
+    /// The same session, sent to the engine on this Mac.
+    var local: AskRoute { .init(account: account, owner: AskRoutedAPI.localOwner, token: "") }
 }
 
 // MARK: - Send queue
@@ -1101,7 +1200,7 @@ extension AskConversationModel {
     /// Hands a queued message to the running run, which reads it at its next step.
     /// A run that already ended gets it as the next turn instead.
     func steerQueued(_ itemId: String) {
-        guard let current = credentials(), let value = selected, let run = value.run, run.isActive,
+        guard let value = selected, let current = credentials(for: value.id), let run = value.run, run.isActive,
               !steeringIds.contains(itemId), sendQueue.messages(value.id).contains(where: { $0.id == itemId }) else { return }
         if sendQueue.isEditing(value.id, itemId: itemId) { saveQueuedEdit(advancing: false) }
         guard let latest = sendQueue.messages(value.id).first(where: { $0.id == itemId }) else { return }
@@ -1118,21 +1217,21 @@ extension AskConversationModel {
             defer { steeringIds.remove(itemId) }
             do {
                 let response = try await api.steer(conversationId: id, request: request, token: current.token)
-                guard owner == current.owner else { return }
+                guard owner == current.account else { return }
                 sendQueue.markSteered(latest, in: id)
-                try await accept(response, owner: current.owner)
+                try await accept(response, route: current)
             } catch {
-                guard owner == current.owner else { return }
+                guard owner == current.account else { return }
                 // The run ended first: send it ahead of the rest of the queue.
                 let refreshed = try? await api.conversation(id: id, token: current.token)
-                guard owner == current.owner else { return }
+                guard owner == current.account else { return }
                 if let refreshed, refreshed.run?.isActive != true {
                     sendQueue.putFirst(latest, in: id)
                     sendQueue.resume(id)
-                    try? await accept(refreshed, owner: current.owner)
+                    try? await accept(refreshed, route: current)
                     queueDidSettle(id)
                 } else {
-                    reportOperationError(error, id: id, owner: current.owner)
+                    reportOperationError(error, id: id, owner: current.account)
                 }
             }
         }

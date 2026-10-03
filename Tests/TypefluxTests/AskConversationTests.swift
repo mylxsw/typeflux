@@ -215,6 +215,8 @@ struct AskTestFixture {
     let root: URL
     let cache: AskConversationCache
     let api = AskTestAPI()
+    /// Answers for conversations kept on this Mac while the fixture is signed in.
+    let localAPI = AskTestAPI()
     let tools = AskTestTools()
     let capture = AskTestCapture()
     let model: AskConversationModel
@@ -223,7 +225,9 @@ struct AskTestFixture {
     init(authenticated: Bool = true, localOnly: Bool = false, modelLibrary: AskModelLibrary? = nil, approvalReuseEnabled: Bool = false) throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent("ask-tests-" + UUID().uuidString)
         cache = try AskConversationCache(url: root.appendingPathComponent("cache.sqlite"))
-        model = AskConversationModel(api: api, cache: cache, tools: tools, capture: capture,
+        // Signed in, calls route by token like the app: Cloud to `api`, this Mac to `localAPI`.
+        let routed: any AskAPI = localOnly ? api : AskRoutedAPI(cloud: api, local: localAPI)
+        model = AskConversationModel(api: routed, cache: cache, tools: tools, capture: capture,
                                      deviceId: "device", modelLibrary: modelLibrary ?? AskModelLibrary(defaults: UserDefaults(suiteName: "ask-library-test-" + UUID().uuidString)!, automaticallyLoadsCatalog: false),
                                      trustedApprovalPeer: approvalReuseEnabled ? .init(version: 1, capabilities: ["scoped_approval_v1"]) : nil,
                                      scopedApprovalEnabled: approvalReuseEnabled, session: { [sessionState] in

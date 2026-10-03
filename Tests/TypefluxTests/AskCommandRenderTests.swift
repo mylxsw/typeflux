@@ -62,8 +62,7 @@ struct AskCommandRenderTests {
             skills: { AskBuiltinSkills.all },
             mcpServers: { [AskMCPServerSummary(name: "github", enabled: true)] },
             remember: { recorder.notes.append($0) },
-            localMode: { false },
-            setLocalMode: { _ in }
+            privateByDefault: { false }
         )
         return (f, recorder)
     }

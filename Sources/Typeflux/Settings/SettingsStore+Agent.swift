@@ -39,8 +39,10 @@ extension SettingsStore {
         set { defaults.set(newValue.sorted(), forKey: "ask.disabledSkills") }
     }
 
-    /// Runs Ask on this Mac with the user's own models even when signed in.
-    var askLocalModeEnabled: Bool {
+    /// New Ask conversations are kept on this Mac instead of Typeflux Cloud. The key
+    /// predates per-conversation storage, when it switched all of Ask to this Mac,
+    /// so users who had that on keep starting private conversations.
+    var askNewConversationsStayLocal: Bool {
         get { defaults.bool(forKey: "ask.localMode") }
         set { defaults.set(newValue, forKey: "ask.localMode") }
     }

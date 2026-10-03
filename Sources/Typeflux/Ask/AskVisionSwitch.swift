@@ -46,7 +46,7 @@ extension AskConversationModel {
     /// The model a local draft would move to so that it can send images, if it needs one.
     func visionCandidate(launcher: Bool) -> String? {
         // A model of unknown support keeps the draft: it gets a try before anything moves.
-        guard !cloudAvailable, !screenshotCapability(launcher: launcher).canAttach,
+        guard !cloudAvailable(launcher: launcher), !screenshotCapability(launcher: launcher).canAttach,
               let reference = modelLibrary.firstLocalReference(hasImage: true),
               reference != modelReference(launcher: launcher) else { return nil }
         return reference
@@ -86,7 +86,7 @@ extension AskConversationModel {
         if let candidate = visionCandidate(launcher: launcher) {
             return .switches(model: modelLibrary.name(for: candidate))
         }
-        if !cloudAvailable { return .needsVisionModel }
+        if !cloudAvailable(launcher: launcher) { return .needsVisionModel }
         return .unavailable(reason: capability.hint ?? L("ask.models.unavailable"))
     }
 

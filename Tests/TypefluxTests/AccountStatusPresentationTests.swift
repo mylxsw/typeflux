@@ -135,19 +135,6 @@ struct AccountStatusPresentationTests {
         #expect(nothing.periodNote == nil)
     }
 
-    @Test func localAskShowsOwnModelsUnlessSomethingNeedsAttention() {
-        let pro = Self.make(Self.pro, Self.credits(used: 100))
-        #expect(pro.footerBadge(runsLocally: false).badge == .plan("Pro"))
-        #expect(pro.footerBadge(runsLocally: true).badge == .ownModels)
-        #expect(pro.footerBadge(runsLocally: true).tone == .neutral)
-        let noBilling = Self.make(Self.snapshot(plan: "free", status: "free", paid: false, billing: false), nil)
-        #expect(noBilling.footerBadge(runsLocally: true).badge == .ownModels)
-        let low = Self.make(Self.free, Self.credits(used: 900))
-        #expect(low.footerBadge(runsLocally: true).badge == .low(percent: 10))
-        let pastDue = Self.make(Self.snapshot(plan: "pro", status: "past_due", paid: true, entitled: false), nil)
-        #expect(pastDue.footerBadge(runsLocally: true).tone == .danger)
-    }
-
     @Test func planNamesComeFromTheServerWhenUnknown() {
         let team = Self.snapshot(plan: "team", status: "active", paid: true)
         #expect(AccountStatusPresentation.planName(for: team) == "Team")

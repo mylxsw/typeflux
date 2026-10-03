@@ -424,13 +424,14 @@ struct AskComposer: View {
             AskAttachButton(model: model, launcher: launcher,
                             disabled: active || (!launcher && model.isLoadingSelection))
                 .opacity(Self.recordingDim(active))
-            AskLocalModeButton(model: model)
+            AskStorageButton(model: model, launcher: launcher)
+                .disabled(active)
                 .opacity(Self.recordingDim(active))
             AskModelMenu(library: model.modelLibrary, reference: Binding(
                 get: { model.modelReference(launcher: launcher) },
                 set: { model.selectModel($0, launcher: launcher) }
             ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
-               hasImage: !launcher && model.hasConversationImages, compact: true, cloudAvailable: model.cloudAvailable,
+               hasImage: !launcher && model.hasConversationImages, compact: true, cloudAvailable: model.cloudAvailable(launcher: launcher),
                onManage: model.onOpenSettings.map { open in { open(.models) } })
             .opacity(Self.recordingDim(active))
             AskReasoningMenu(library: model.modelLibrary,

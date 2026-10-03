@@ -10,7 +10,7 @@ struct AskToolsSettingsView: View {
 
     @State private var folders: [String] = []
     @State private var codeEnabled = true
-    @State private var localMode = false
+    @State private var newConversationsStayLocal = false
     @State private var searchProvider = AskSearchSettings.Provider.none
     @State private var searchKey = ""
     @State private var skillList: [AskSkill] = []
@@ -46,10 +46,17 @@ struct AskToolsSettingsView: View {
 
     @ViewBuilder private var generalSections: some View {
         AgentSettingsSection(title: L("agent.settings.runMode")) {
-            AgentSettingsRow(icon: "desktopcomputer", title: L("ask.settings.local.title"),
+            AgentSettingsRow(icon: newConversationsStayLocal ? "lock" : "cloud", title: L("ask.settings.local.title"),
                              subtitle: L("ask.settings.local.subtitle"), subtitleLineLimit: nil) {
-                Toggle("", isOn: Binding(get: { localMode }, set: { localMode = $0; settings.askLocalModeEnabled = $0 }))
-                    .labelsHidden().toggleStyle(.switch)
+                selectorMenu(Self.storageName(local: newConversationsStayLocal),
+                             label: L("ask.settings.local.title")) {
+                    ForEach([false, true], id: \.self) { local in
+                        Button(Self.storageName(local: local)) {
+                            newConversationsStayLocal = local
+                            settings.askNewConversationsStayLocal = local
+                        }
+                    }
+                }
             }
         }
         AgentSettingsSection(title: L("agent.settings.web")) {
@@ -79,12 +86,24 @@ struct AskToolsSettingsView: View {
     }
 
     private var searchProviderMenu: some View {
-        Menu {
+        selectorMenu(Self.searchProviderName(searchProvider), label: L("ask.settings.search.provider")) {
             ForEach(AskSearchSettings.Provider.allCases, id: \.self) { provider in
                 Button(Self.searchProviderName(provider)) { setSearchProvider(provider) }
             }
+        }
+    }
+
+    static func storageName(local: Bool) -> String {
+        L(local ? "ask.storage.local" : "ask.storage.cloud")
+    }
+
+    /// A pop-up styled like the Models page selectors.
+    private func selectorMenu<Items: View>(_ value: String, label: String,
+                                           @ViewBuilder items: () -> Items) -> some View {
+        Menu {
+            items()
         } label: {
-            Text(Self.searchProviderName(searchProvider))
+            Text(value)
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
@@ -106,7 +125,7 @@ struct AskToolsSettingsView: View {
             RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
                 .strokeBorder(ModelVisualStyle.border)
         )
-        .accessibilityLabel(L("ask.settings.search.provider"))
+        .accessibilityLabel(label)
     }
 
     static func searchProviderName(_ provider: AskSearchSettings.Provider) -> String {
@@ -296,7 +315,7 @@ struct AskToolsSettingsView: View {
     func reload() {
         folders = settings.askFileAccessFolders
         codeEnabled = settings.askCodeExecutionEnabled
-        localMode = settings.askLocalModeEnabled
+        newConversationsStayLocal = settings.askNewConversationsStayLocal
         searchProvider = search.provider
         searchKey = search.apiKey
         skillList = skills.skills()

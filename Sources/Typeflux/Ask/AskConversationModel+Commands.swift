@@ -9,8 +9,8 @@ struct AskCommandSources {
     var skills: @MainActor () -> [AskSkill] = { [] }
     var mcpServers: @MainActor () -> [AskMCPServerSummary] = { [] }
     var remember: @MainActor (String) throws -> Void = { _ in }
-    var localMode: @MainActor () -> Bool = { false }
-    var setLocalMode: @MainActor (Bool) -> Void = { _ in }
+    /// Whether new conversations are kept on this Mac by default.
+    var privateByDefault: @MainActor () -> Bool = { false }
     /// Built-in skill names, for the "Built-in" badge.
     var builtinSkillNames: @MainActor () -> Set<String> = { Set(AskBuiltinSkills.all.map(\.name)) }
     var copy: @MainActor (String) -> Void = { text in
@@ -44,7 +44,8 @@ extension AskConversationModel {
         context.busy = !launcher && (isBusy || isLoadingSelection)
         context.hasAnswer = !launcher && latestAnswer != nil
         // Only models that can take this draft, as the model menu offers them.
-        let providers = modelLibrary.selectableProviders(loggedIn: cloudAvailable, hasImage: requiresVision(launcher: launcher))
+        let providers = modelLibrary.selectableProviders(loggedIn: cloudAvailable(launcher: launcher),
+                                                         hasImage: requiresVision(launcher: launcher))
         context.models = providers.flatMap { $0.models.map(\.reference) }.map { reference in
             .init(reference: reference, name: modelLibrary.name(for: reference),
                   vision: modelLibrary.imageCapability(reference) == .supported)
@@ -52,7 +53,9 @@ extension AskConversationModel {
         context.currentModel = reference
         context.reasoningAvailable = AskReasoningEffort.isAvailable(for: modelLibrary.registry.resolve(reference)?.1)
         context.reasoning = reasoningEffort
-        context.localMode = commandSources.localMode()
+        context.localMode = storesLocally(launcher: launcher)
+        context.storageLocked = canChangeStorage(launcher: launcher) ? nil
+            : L(isSignedIn ? "ask.storage.locked" : "ask.storage.signedOut")
         context.screenshotOn = value.includeScreenshot
         context.screenshotUnavailable = capability == .supported ? nil : capability.hint
         context.selectionAvailable = value.selection?.isEmpty == false
@@ -98,9 +101,9 @@ extension AskConversationModel {
             reasoningEffort = effort
             confirm(L("ask.command.reasoningChanged", effort.label))
         case .localMode:
-            let on = !commandSources.localMode()
-            commandSources.setLocalMode(on)
-            objectWillChange.send()
+            guard canChangeStorage(launcher: launcher) else { return }
+            let on = !storesLocally(launcher: launcher)
+            setStoresLocally(on, launcher: launcher)
             confirm(L(on ? "ask.command.localOn" : "ask.command.localOff"))
         case .attachFiles:
             pickAttachments(folders: false, launcher: launcher)

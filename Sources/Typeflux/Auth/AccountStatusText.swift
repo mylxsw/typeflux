@@ -15,7 +15,6 @@ enum AccountStatusText {
         case let .plan(name): name
         case let .low(percent): L("account.status.badgeLow", "\(percent)%")
         case .exhausted: L("account.status.badgeExhausted")
-        case .ownModels: L("account.status.badgeOwnModels")
         }
     }
 

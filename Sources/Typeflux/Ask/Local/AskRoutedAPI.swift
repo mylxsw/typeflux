@@ -1,8 +1,8 @@
 import Foundation
 
-/// Sends each Ask call to Typeflux Cloud or to the on-device engine. Local
-/// sessions carry an empty token, so routing needs no extra state and an
-/// account switch (which changes the session owner) resets the conversation model.
+/// Sends each Ask call to Typeflux Cloud or to the on-device engine. Calls for a
+/// conversation kept on this Mac carry an empty token, so routing needs no extra
+/// state; the conversation model picks the token per conversation.
 struct AskRoutedAPI: AskAPI {
     static let localOwner = "local"
 
@@ -53,9 +53,9 @@ struct AskRoutedAPI: AskAPI {
         if !token.isEmpty { try await cloud.purgeMemory(token: token) }
     }
 
-    /// The Cloud session when signed in and local mode is off; otherwise the local session.
-    static func session(localMode: Bool, token: String?, owner: String?) -> (owner: String, token: String) {
-        guard !localMode, let token, !token.isEmpty, let owner, !owner.isEmpty else { return (localOwner, "") }
+    /// The Cloud account when signed in; otherwise the local session.
+    static func session(token: String?, owner: String?) -> (owner: String, token: String) {
+        guard let token, !token.isEmpty, let owner, !owner.isEmpty else { return (localOwner, "") }
         return (owner, token)
     }
 }
