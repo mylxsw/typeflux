@@ -949,6 +949,10 @@ enum AskPresentation {
 
     static func toolState(result: AskMessage?) -> AskActivityState {
         guard let result else { return .running }
+        if let contract = result.harness {
+            guard contract.version == 1 else { return .failed }
+            if let outcome = contract.outcome { return outcome.safeStatus == .ok ? .done : .failed }
+        }
         return result.isError == true ? .failed : .done
     }
 
@@ -958,7 +962,7 @@ enum AskPresentation {
         case .running: return L("ask.tool.running")
         case .failed: return L("ask.tool.failed")
         default:
-            guard result?.image != nil else { return L("ask.tool.done") }
+            guard result?.resultImages.isEmpty == false else { return L("ask.tool.done") }
             let captures = call.map { ["computer", "browser"].contains($0.function.name) } ?? true
             return L(captures ? "ask.image.captured" : "ask.image.generated")
         }

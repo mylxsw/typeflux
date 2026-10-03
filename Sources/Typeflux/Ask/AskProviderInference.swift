@@ -118,7 +118,7 @@ extension AskCustomInference {
         if !functions.isEmpty {
             result["tools"] = [["functionDeclarations": functions.map { function in
                 ["name": function["name"] ?? "", "description": function["description"] ?? "",
-                 "parameters": function["parameters"] ?? [:]]
+                 "parametersJsonSchema": function["parameters"] ?? [:]]
             }]]
         }
         return result

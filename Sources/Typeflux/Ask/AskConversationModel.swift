@@ -826,7 +826,13 @@ final class AskConversationModel: ObservableObject {
                     }
                 }
                 try Task.checkCancellation()
-                result = AskToolResultRequest(runId: run.id, deviceId: deviceId, toolCallId: call.id, content: "User denied this tool call. Do not repeat it.", isError: true)
+                var context = request.context
+                context.approvalId = grantID
+                result = AskToolResultRequest(runId: run.id, deviceId: deviceId, toolCallId: call.id,
+                                              content: "User denied this tool call. Do not repeat it.", isError: true,
+                                              harness: .init(version: 1, context: context,
+                                                             approval: grantID.flatMap { approvalStore.auditScope($0) },
+                                                             outcome: .init(status: "denied")))
                 let latest = try await api.conversation(id: value.id, token: current.token)
                 try await accept(latest, owner: current.owner)
                 guard latest.run?.id == run.id, latest.run?.status == "waiting_tool",
@@ -837,6 +843,7 @@ final class AskConversationModel: ObservableObject {
                 try Task.checkCancellation()
                 guard session()?.owner == current.owner else { throw CancellationError() }
                 if let grantID {
+                    result?.harness?.outcome?.status = "unknown"
                     guard try await cache.claimTool(id: journalKey, owner: current.owner) else {
                         result?.content = "A previous execution was interrupted; its outcome is unknown. Do not replay it. Ask the user to inspect the result."
                         try await cache.saveToolResult(result!, owner: current.owner)
@@ -864,9 +871,16 @@ final class AskConversationModel: ObservableObject {
                             }
                         }
                         try Task.checkCancellation()
-                        result?.content = output.content; result?.image = output.image; result?.isError = output.isError
+                        result?.record(output)
                     } catch is CancellationError { throw CancellationError() }
-                    catch { result?.content = error.localizedDescription }
+                    catch {
+                        result?.content = error.localizedDescription
+                        if error is MCPInputError { result?.harness?.outcome?.status = "invalid" }
+                        else if case MCPClientError.timedOut = error { result?.harness?.outcome?.status = "timeout" }
+                    }
+                    if let scope = approvalStore.auditScope(grantID) {
+                        result?.harness?.approval = scope
+                    }
                     if controllingConversationId == value.id { controllingConversationId = nil; onControlChanged?(false) }
                 }
                 try await cache.saveToolResult(result!, owner: current.owner)

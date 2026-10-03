@@ -130,6 +130,9 @@ final class AskApprovalStore {
         return grant.request.reusable && request.reusable
     }
 
+    /// A historical receipt only. No persisted scope can be imported as a grant.
+    func auditScope(_ id: String) -> AskApprovalScope? { grants[id]?.scope }
+
     func revoke(conversation: String) { grants = grants.filter { $0.value.scope.conversationId != conversation } }
     func reset() { grants.removeAll() }
 }

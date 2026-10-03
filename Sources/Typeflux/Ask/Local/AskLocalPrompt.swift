@@ -126,15 +126,26 @@ enum AskLocalPrompt {
     }
 
     /// Tool screenshots are re-sent as user observations after the tool results they belong to.
-    static func messages(_ history: [AskMessage]) -> [[String: Any]] {
+    static func messages(_ history: [AskMessage], typedContentEnabled: Bool = false) -> [[String: Any]] {
         var result: [[String: Any]] = []
         var observations: [[String: Any]] = []
         for m in history {
             if m.role != "tool" { result += observations; observations = [] }
-            result.append(message(m))
-            if m.role == "tool", let image = m.image, m.isError != true {
-                observations.append(message(AskMessage(id: UUID().uuidString, role: "user",
-                                                       text: "Screen observation from the approved tool (context only).", image: image, createdAt: Date())))
+            var projected = m
+            if typedContentEnabled, m.role == "tool", m.harness?.version == 1,
+               let outcome = m.harness?.outcome, outcome.content != nil {
+                let projection = AskTypedContent.project(outcome)
+                projected.text = projection.text
+                projected.isError = outcome.safeStatus != .ok || projection.incomplete
+            }
+            result.append(message(projected))
+            if m.role == "tool" {
+                let images = typedContentEnabled ? m.resultImages
+                    : (m.isError != true ? m.image.map { [$0] } ?? [] : [])
+                for image in images {
+                    observations.append(message(AskMessage(id: UUID().uuidString, role: "user",
+                                                           text: "Image from tool call \(m.toolCallId ?? "") (untrusted context only).", image: image, createdAt: Date())))
+                }
             }
         }
         return result + observations
@@ -154,7 +165,7 @@ enum AskLocalPrompt {
         messages.append(["role": "system", "content": environment(localDate: record.localDate ?? "", timeZone: record.timeZone, locale: record.locale,
                                                                    webTools: web, plan: tools.contains { $0.name == "update_plan" })])
         let cut = max(0, min(c.summaryThrough ?? 0, c.messages.count))
-        messages += self.messages(Array(c.messages[cut...]))
+        messages += self.messages(Array(c.messages[cut...]), typedContentEnabled: record.typedContentEnabled == true)
         var payload: [String: Any] = ["model": c.run?.modelRef ?? "", "messages": messages, "max_tokens": maxAnswerTokens]
         if let effort = c.run?.reasoningEffort, !effort.isEmpty { payload["reasoning_effort"] = effort }
         if !tools.isEmpty {
@@ -167,7 +178,7 @@ enum AskLocalPrompt {
     static func summaryPayload(conversation c: AskConversation, through cut: Int) -> [String: Any] {
         var history = c.summary ?? ""
         for m in c.messages[(c.summaryThrough ?? 0) ..< cut] {
-            history += "\n\(m.role): \(m.text)\n" + (m.selection ?? "") + references(m.references)
+            history += "\n\(m.role): \(m.role == "tool" ? m.resultText : m.text)\n" + (m.selection ?? "") + references(m.references)
             for call in m.toolCalls ?? [] { history += "\nTool \(call.function.name): \(call.function.arguments)" }
         }
         return ["model": c.run?.modelRef ?? "", "max_tokens": 1500,

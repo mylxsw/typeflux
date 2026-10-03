@@ -98,6 +98,29 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertTrue(empty.isEmpty)
     }
 
+    func testTypedResultThroughLocalRunAndReopen() async throws {
+        let engine = AskLocalEngine(directory: directory, webTools: AskLocalWebTools(resolve: { _ in [] }), typedContentEnabled: true)
+        let id = UUID().uuidString.lowercased()
+        var c = try await engine.send(conversationId: id, request: request(), token: "")
+        c = try await answer(engine, c, calls: [call("browser", #"{"action":"read"}"#, id: "typed")])
+        let output = AskTypedContent.output(from: try AskTypedContentTests.result())
+        var receipt = AskToolResultRequest(runId: c.run!.id, deviceId: device, toolCallId: "typed", content: "", isError: false)
+        receipt.record(output)
+        c = try await engine.result(conversationId: id, request: receipt, token: "")
+        let prompt = try payload(c)
+        let messages = try XCTUnwrap(prompt["messages"] as? [[String: Any]])
+        let observations = messages.filter { ($0["content"] as? [[String: Any]])?.contains { $0["type"] as? String == "image_url" } == true }
+        XCTAssertEqual(observations.count, 2)
+        XCTAssertTrue(c.run!.inference!.payload.contains("Structured content"))
+        let reopened = try await self.engine().conversation(id: id, token: "")
+        let saved = try XCTUnwrap(reopened.messages.first { $0.toolCallId == "typed" })
+        XCTAssertEqual(saved.resultImages.count, 2)
+        XCTAssertEqual(saved.harness?.outcome?.content?.count, 7)
+        XCTAssertEqual(saved.diagnostic?.runId, receipt.runId)
+        let again = try await engine.result(conversationId: id, request: receipt, token: "")
+        XCTAssertEqual(again.revision, c.revision)
+    }
+
     func testCloudModelsAreRejectedAndRequestsValidated() async throws {
         let engine = engine()
         var cloud = request()

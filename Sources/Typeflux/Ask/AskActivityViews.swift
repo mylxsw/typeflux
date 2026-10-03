@@ -180,7 +180,7 @@ struct AskToolStepRow: View {
     /// A one-line detail under the name: the target path, else the result's first line.
     static func detail(_ call: AskToolCall, result: AskMessage?) -> String? {
         if let path = AskApprovalPresentation.detail(call) { return path }
-        let line = result?.text.split(whereSeparator: \.isNewline).first.map(String.init)?
+        let line = result?.resultText.split(whereSeparator: \.isNewline).first.map(String.init)?
             .trimmingCharacters(in: .whitespaces)
         return line?.isEmpty == false ? line : nil
     }
@@ -232,12 +232,15 @@ struct AskToolStepRow: View {
                         if pane == .arguments || result == nil {
                             AskMonoBlock(title: "", text: call.function.arguments)
                         } else if let result {
-                            if !result.text.isEmpty {
-                                AskMonoBlock(title: "", text: result.text, isError: result.isError == true)
+                            if !result.resultText.isEmpty {
+                                AskMonoBlock(title: "", text: result.resultText,
+                                             isError: AskPresentation.toolState(result: result) == .failed)
                             }
-                            if let url = result.image, let image = AskImage.decode(url) {
-                                Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 220)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            ForEach(Array(result.resultImages.enumerated()), id: \.offset) { _, url in
+                                if let image = AskImage.decode(url) {
+                                    Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 220)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                }
                             }
                         }
                     }

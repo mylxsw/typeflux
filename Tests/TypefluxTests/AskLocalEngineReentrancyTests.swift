@@ -32,13 +32,15 @@ final class AskLocalEngineReentrancyTests: XCTestCase {
             id: "steering", deviceId: device, text: "Also explain the result", tools: []))
     }
 
-    /// The request has reached URLSession, but no headers or body arrive until
-    /// the test finishes its actor calls. Always release and collect the task.
+    /// Suspend a configured search at URLSession while the actor accepts other
+    /// calls. P08 disables general web_fetch, so the fixture uses web_search to
+    /// keep testing the same late server-tool completion without bypassing it.
+    /// Always release and collect the task.
     private func fetch(_ fixture: SuspendedLocalFetch, engine: AskLocalEngine, conversation: AskConversation,
                        before: [AskToolCall] = [], after: [AskToolCall] = [],
                        whileSuspended: (AskInferenceResult) async throws -> Void) async throws -> AskConversation {
-        let call = AskToolCall(id: "fetch", type: "function", function: .init(name: "web_fetch", arguments:
-            "{\"url\":\"\(fixture.url.absoluteString)\"}"))
+        let call = AskToolCall(id: "fetch", type: "function", function: .init(name: "web_search", arguments:
+            "{\"query\":\"fixture\"}"))
         let run = try XCTUnwrap(conversation.run)
         let request = AskInferenceResult(runId: run.id, deviceId: device, inferenceId: try XCTUnwrap(run.inference?.id),
                                          content: "", toolCalls: before + [call] + after)
@@ -233,7 +235,7 @@ final class AskLocalEngineReentrancyTests: XCTestCase {
 /// Each URL has its own gate, so parallel tests cannot release one another's
 /// fetch. A released gate also completes unexpected retries instead of hanging.
 private final class SuspendedLocalFetch: @unchecked Sendable {
-    let started = XCTestExpectation(description: "web_fetch suspended")
+    let started = XCTestExpectation(description: "web_search suspended")
     let url = URL(string: "https://example.com/\(UUID().uuidString)")!
     let status: Int
     private let lock = NSLock()
@@ -250,7 +252,10 @@ private final class SuspendedLocalFetch: @unchecked Sendable {
         SuspendedLocalFetchProtocol.register(self)
     }
 
-    var tools: AskLocalWebTools { AskLocalWebTools(session: session, resolve: { _ in ["93.184.216.34"] }) }
+    var tools: AskLocalWebTools {
+        AskLocalWebTools(session: session, searchProvider: { (.tavily, "fixture") },
+                         resolve: { _ in ["93.184.216.34"] }, searchEndpoints: [.tavily: url.absoluteString])
+    }
     var requestCount: Int { lock.withLock { count } }
 
     func receive(_ request: SuspendedLocalFetchProtocol) {
@@ -276,9 +281,9 @@ private final class SuspendedLocalFetch: @unchecked Sendable {
 
     private func complete(_ request: SuspendedLocalFetchProtocol) {
         let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: nil,
-                                       headerFields: ["Content-Type": "text/plain"])!
+                                       headerFields: ["Content-Type": "application/json"])!
         request.client?.urlProtocol(request, didReceive: response, cacheStoragePolicy: .notAllowed)
-        request.client?.urlProtocol(request, didLoad: Data("Fetched page".utf8))
+        request.client?.urlProtocol(request, didLoad: Data(#"{"results":[{"title":"Fixture","url":"https://example.com","content":"Fetched page"}]}"#.utf8))
         request.client?.urlProtocolDidFinishLoading(request)
     }
 
