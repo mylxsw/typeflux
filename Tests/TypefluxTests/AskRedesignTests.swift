@@ -178,16 +178,14 @@ struct AskRedesignLayoutTests {
 @Suite("Ask redesign fidelity helpers")
 @MainActor
 struct AskRedesignFidelityTests {
-    @Test func referenceStripShowsUpToThreeQuotesThenScrolls() {
-        let chip = AskReferenceStrip.chipHeight
-        let gap = AskReferenceStrip.chipSpacing
-        #expect(AskReferenceStrip.stripHeight(count: 0) == 0)
-        #expect(AskReferenceStrip.stripHeight(count: 1) == chip)
-        #expect(AskReferenceStrip.stripHeight(count: 2) == chip * 2 + gap)
-        #expect(AskReferenceStrip.stripHeight(count: 3) == chip * 3 + gap * 2)
-        // Past three the strip stops growing and scrolls instead.
-        #expect(AskReferenceStrip.stripHeight(count: 8) == AskReferenceStrip.stripHeight(count: 3))
-        #expect(AskReferenceStrip.stripHeight(count: -1) == 0)
+    @Test func referenceTrayFoldsPastFourAndScrollsPastThreeRows() {
+        #expect(AskReferenceStrip.visibleCount(total: 0, expanded: false) == 0)
+        #expect(AskReferenceStrip.visibleCount(total: 3, expanded: false) == 3)
+        #expect(AskReferenceStrip.visibleCount(total: 8, expanded: false) == AskReferenceStrip.collapsedLimit)
+        #expect(AskReferenceStrip.visibleCount(total: 8, expanded: true) == 8)
+        #expect(AskReferenceStrip.visibleCount(total: -1, expanded: true) == 0)
+        // Expanded, the tray stops at three pill rows and scrolls instead.
+        #expect(AskReferenceStrip.maxExpandedHeight == AskReferenceChip.height * 3 + AskReferenceStrip.spacing * 2)
     }
 
     @Test func transcriptAndComposerShareOneCentredColumn() {

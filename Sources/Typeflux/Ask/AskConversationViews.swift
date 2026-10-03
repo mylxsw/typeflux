@@ -769,6 +769,7 @@ struct AskConversationView: View {
         case let .message(message):
             AskMessageView(message: message,
                            onReference: { model.addReference($0) },
+                           onLocate: { model.referenceLocation = $0 },
                            usage: message.runId.flatMap { model.selected?.usage?.runs[$0] },
                            onUsage: { usageRunId = message.runId; setUsage(true) },
                            isStreaming: message.id == streamingId,
@@ -851,6 +852,8 @@ private struct AskMessageView: View {
     /// A jumped message the running run has not read yet.
     var steeredPending = false
     var onReference: (AskReference) -> Void
+    /// Scrolls to the answer a sent quote came from.
+    var onLocate: (String) -> Void = { _ in }
     var usage: AskUsageTotals? = nil
     var onUsage: () -> Void = {}
     var isStreaming = false
@@ -871,7 +874,9 @@ private struct AskMessageView: View {
         HStack(alignment: .top, spacing: 0) {
             Spacer(minLength: 48)
             VStack(alignment: .trailing, spacing: 6) {
-                if let references = message.references, !references.isEmpty { AskSentReferences(references: references) }
+                if let references = message.references, !references.isEmpty {
+                    AskSentReferences(references: references, locate: onLocate)
+                }
                 // What rode with the question sits above it, as on the design board.
                 if message.image != nil || message.selection != nil { attachments }
                 if !message.text.isEmpty {

@@ -1670,7 +1670,6 @@
 "ask.voice.stopHint" = "停止錄音並填入文字，按 Esc 取消。";
 
 // Selected reply references
-"ask.references.question" = "針對這段追問";
 "ask.references.optional" = "輸入問題（可選）";
 "ask.references.explain" = "解釋這段";
 "ask.selection.explain" = "解釋";
@@ -1678,12 +1677,16 @@
 "ask.selection.ask" = "追問";
 "ask.references.translate" = "翻譯這段";
 "ask.references.source" = "選取片段";
-"ask.references.save" = "加入草稿";
-"ask.references.manage" = "管理（%d）";
 "ask.references.locate" = "定位原文";
-"ask.references.edit" = "編輯";
-"ask.references.close" = "關閉";
-"ask.references.update" = "儲存修改";
+"ask.references.placeholder.one" = "針對這段繼續追問…";
+"ask.references.placeholder.many" = "針對這 %d 段繼續追問…";
+"ask.references.clear" = "清除";
+"ask.references.collapse" = "收起";
+"ask.references.showAll" = "顯示全部 %d 段引用";
+"ask.references.position" = "引用 %d / %d";
+"ask.references.remove" = "移除引用";
+"ask.references.saveHint" = "⌘↩ 儲存";
+"ask.references.closeHint" = "Esc 關閉";
 // Ask conversation usage
 "ask.usage.title" = "用量";
 "ask.usage.close" = "關閉用量";
