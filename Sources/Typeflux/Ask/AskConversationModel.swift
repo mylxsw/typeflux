@@ -153,6 +153,8 @@ final class AskConversationModel: ObservableObject {
     /// Queued messages being handed to a running run.
     @Published private(set) var steeringIds: Set<String> = []
     @Published private(set) var capturing = false
+    /// Reopening an unfinished question preserves its original captured context.
+    @Published private(set) var launcherContextRestored = false
     @Published var error: String?
     @Published var captureWarning: String?
     @Published private(set) var isRefreshingHistory = false
@@ -315,7 +317,7 @@ final class AskConversationModel: ObservableObject {
         historyGeneration = UUID(); historyOffset = 0; conversations = []; localConversationIds = []
         launcherScreenshotNotice = nil; screenshotNotice = nil; recoveringImages = [:]
         attachmentNotice = nil; launcherAttachmentNotice = nil
-        launcherDraft = AskDraft(); draft = .followUp
+        launcherDraft = AskDraft(); draft = .followUp; launcherContextRestored = false
         capturing = false; controllingConversationId = nil; onControlChanged?(false); owner = ""
     }
 
@@ -329,30 +331,81 @@ final class AskConversationModel: ObservableObject {
         normalizeScreenshotChoices()
         if let current = session(), owner != current.owner { resetSession(); owner = current.owner }
         let expectedOwner = owner
+        let expectedSessionOwner = session()?.owner
+        // Invalidate an older preparation before awaiting the draft cache.
+        let generation = UUID(); captureGeneration = generation; capturing = false
         let typedBefore = !launcherDraft.text.isEmpty
         var restored = false
         if !typedBefore, let cached = try? await cache.draft(key: "launcher", owner: owner) {
-            guard !Task.isCancelled, owner == expectedOwner else { return }
+            guard !Task.isCancelled, generation == captureGeneration,
+                  owner == expectedOwner, session()?.owner == expectedSessionOwner else { return }
             // The panel is already open: never replace anything typed meanwhile.
             if launcherDraft.text.isEmpty, !cached.text.isEmpty { launcherDraft = cached; restored = true }
         }
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, generation == captureGeneration,
+              owner == expectedOwner, session()?.owner == expectedSessionOwner else { return }
         // Restore an unfinished question without silently replacing its context.
         // Text typed into the just-opened panel still gets this launch's context.
-        if typedBefore || restored { return }
-        capturing = true
-        let generation = UUID(); captureGeneration = generation
+        if typedBefore || restored { launcherContextRestored = true; return }
+        capturing = true; launcherContextRestored = false
+        let memoryGeneration = memoryPurgeGeneration
         defer { if generation == captureGeneration { capturing = false } }
         let context = await capture.capture(includeScreenshot: launcherDraft.includeScreenshot, includeSelection: true, request: request)
-        guard !Task.isCancelled, generation == captureGeneration else { return }
+        guard !Task.isCancelled, generation == captureGeneration,
+              owner == expectedOwner, session()?.owner == expectedSessionOwner else { return }
         launcherDraft.selection = context.selection
         launcherDraft.selectionOff = nil
         launcherDraft.source = context.source
         launcherDraft.sourceBundleID = context.sourceBundleID
+        launcherDraft.sourceOff = nil
         launcherDraft.screenshot = context.screenshot
         launcherDraft.capturedAt = context.capturedAt
-        launcherDraft.memory = context.memory ?? AskMemory()
+        launcherDraft.memory = memoryGeneration == memoryPurgeGeneration ? context.memory ?? AskMemory() : AskMemory()
         launcherDraft.memoryOff = nil
+        captureWarning = context.warning
+        persistDrafts()
+    }
+
+    /// Explicitly replace captured context while keeping the question and the
+    /// user's inclusion choices, including changes made while capture awaits.
+    func refreshLauncherContext() async {
+        guard !Task.isCancelled else { return }
+        // The nonactivating launcher leaves the source app frontmost. Pin it
+        // now, before any asynchronous accessibility or screenshot work.
+        let request = makeLauncherSelectionRequest()
+        if let current = session(), owner != current.owner { resetSession(); owner = current.owner }
+        normalizeScreenshotChoices()
+        let expectedOwner = owner, expectedSessionOwner = session()?.owner
+        let memoryGeneration = memoryPurgeGeneration
+        let includeScreenshot = launcherDraft.includeScreenshot
+        let generation = UUID(); captureGeneration = generation
+        capturing = true; captureWarning = nil
+        defer { if generation == captureGeneration { capturing = false } }
+        // A popover can activate Typeflux even though the launcher itself is
+        // nonactivating. Its editor is never a replacement source application.
+        guard request.processID != ProcessInfo.processInfo.processIdentifier else {
+            captureWarning = L("ask.context.refresh.externalApp")
+            return
+        }
+        let context = await capture.capture(includeScreenshot: includeScreenshot, includeSelection: true, request: request)
+        guard !Task.isCancelled, generation == captureGeneration,
+              owner == expectedOwner, session()?.owner == expectedSessionOwner else { return }
+        // Only a completed read may replace the prior selection. Permission
+        // failures, AX errors and incomplete searches do not prove its absence.
+        let selectionFailed = context.selectionStatus.map {
+            !["accessibility-context", "no-selection-found"].contains($0)
+        } ?? false
+        guard !selectionFailed, !includeScreenshot || context.screenshot != nil else {
+            captureWarning = context.warning ?? L("ask.context.refresh.failed")
+            return
+        }
+        launcherDraft.selection = context.selection
+        launcherDraft.source = context.source
+        launcherDraft.sourceBundleID = context.sourceBundleID
+        launcherDraft.screenshot = context.screenshot
+        launcherDraft.capturedAt = context.capturedAt
+        launcherDraft.memory = memoryGeneration == memoryPurgeGeneration ? context.memory ?? AskMemory() : AskMemory()
+        launcherContextRestored = false
         captureWarning = context.warning
         persistDrafts()
     }
@@ -581,7 +634,7 @@ final class AskConversationModel: ObservableObject {
     private func submit(_ submitted: AskDraft, newConversation: Bool, messageId queuedId: String? = nil, clearsDraft: Bool = true) {
         guard submitted.referencesWithinLimit, submitted.text.utf8.count <= 32000,
               (submitted.sentSelection?.utf8.count ?? 0) <= 64000,
-              (submitted.source?.utf8.count ?? 0) <= 1000,
+              (submitted.sentSource?.utf8.count ?? 0) <= 1000,
               (submitted.attachments ?? []).reduce(0, { $0 + $1.payloadBytes }) <= AskAttachmentLimits.maximumPayloadBytes else {
             error = L("ask.input.tooLarge"); return
         }
@@ -617,7 +670,7 @@ final class AskConversationModel: ObservableObject {
         if clearsDraft { draft = .followUp }
         snapshots[id] = value; selectionLoadFailed = false
         updateSummary(value)
-        if newConversation { launcherDraft = AskDraft() }
+        if newConversation { launcherDraft = AskDraft(); launcherContextRestored = false }
         // A queued message sending on its own must not bring the window forward.
         if clearsDraft { onShowConversation?() }
         persistDrafts()

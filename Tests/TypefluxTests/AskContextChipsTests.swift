@@ -21,14 +21,35 @@ struct AskContextChipsTests {
         #expect(AskContextChips.sourceParts("Finder — ").window == nil)
     }
 
-    @Test func sourceChipIsTheAppIconWithTheWindowInItsCard() throws {
-        let source = try #require(items(source: "Google Chrome — Multica", bundle: "com.google.Chrome")
-            .first { $0.kind == .source })
-        #expect(source.appBundleID == "com.google.Chrome")
-        #expect(source.title == "Google Chrome")
-        #expect(source.detail == "Multica")
-        #expect(!source.removable)
-        #expect(items(source: "").allSatisfy { $0.kind != .source })
+    @Test func sourceIsSelectionProvenanceInsteadOfAStandaloneChip() throws {
+        let all = items(source: "Google Chrome — Multica", bundle: "com.google.Chrome", selection: "Selected text")
+        #expect(all.allSatisfy { $0.kind != .source })
+        let selection = try #require(all.first { $0.kind == .selection })
+        #expect(selection.sourceAppName == "Google Chrome")
+        #expect(selection.sourceAppBundleID == "com.google.Chrome")
+        #expect(selection.badge == .count(1))
+        #expect(selection.detail == "“Selected text”")
+        #expect(items(source: "Finder", bundle: "com.apple.finder").map(\.kind) == [.screenshot])
+    }
+
+    @Test func selectionProvenanceKeepsTheNameWhenTheAppIconIsUnavailable() throws {
+        let selection = try #require(items(source: "Uninstalled app — Document", bundle: "test.missing.application",
+                                           selection: "text").first { $0.kind == .selection })
+        #expect(selection.sourceAppName == "Uninstalled app")
+        #expect(selection.sourceAppBundleID == "test.missing.application")
+        for source in [nil, "", "  \n"] as [String?] {
+            let unknown = try #require(items(source: source, selection: "text").first { $0.kind == .selection })
+            #expect(unknown.sourceAppName == nil)
+            #expect(unknown.sourceAppBundleID == nil)
+        }
+        let noBundle = try #require(items(source: "Finder", selection: "text").first { $0.kind == .selection })
+        #expect(noBundle.sourceAppName == "Finder")
+        #expect(noBundle.sourceAppBundleID == nil)
+        let off = try #require(items(source: "Finder", bundle: "com.apple.finder", selection: "text", selectionOff: true)
+            .first { $0.kind == .selection })
+        #expect(off.style == .neutral)
+        #expect(off.sourceAppName == "Finder")
+        #expect(off.sourceAppBundleID == "com.apple.finder")
     }
 
     @Test func appIconTileIsOpticallySmallerThanTheChipWithoutInnerMargin() {
@@ -102,13 +123,13 @@ struct AskContextChipsTests {
     @Test func overflowFoldsSelectionAndMemoryFromTheRight() {
         let all = items(screenshot: .attached, source: "Chrome — Tab", selection: "a",
                         memory: AskMemory(global: "soul"))
-        #expect(all.map(\.kind) == [.screenshot, .source, .selection, .memory])
+        #expect(all.map(\.kind) == [.screenshot, .selection, .memory])
         let layouts = AskContextChips.layouts(all)
         #expect(layouts.count == 3)
         #expect(layouts[0].hidden.isEmpty)
-        #expect(layouts[1].shown.map(\.kind) == [.screenshot, .source, .selection])
+        #expect(layouts[1].shown.map(\.kind) == [.screenshot, .selection])
         #expect(layouts[1].hidden.map(\.kind) == [.memory])
-        #expect(layouts[2].shown.map(\.kind) == [.screenshot, .source])
+        #expect(layouts[2].shown.map(\.kind) == [.screenshot])
         #expect(layouts[2].hidden.map(\.kind) == [.selection, .memory])
         #expect(AskContextChips.layouts(items()).count == 1)
     }
@@ -132,7 +153,12 @@ struct AskContextChipsTests {
             }.first)
             let bundle = try #require(Bundle(path: path))
             for key in ["ask.context.screenshot", "ask.context.screenshot.attached", "ask.context.screenshot.offHint",
-                        "ask.context.previewHint", "ask.context.more",
+                        "ask.context.previewHint", "ask.context.more", "ask.context.details",
+                        "ask.context.source", "ask.context.source.draft", "ask.context.source.included",
+                        "ask.context.source.excluded", "ask.context.source.remove", "ask.context.source.restore",
+                        "ask.context.source.none", "ask.context.refresh", "ask.context.refresh.hint",
+                        "ask.context.refresh.failed", "ask.context.refresh.externalApp", "ask.context.screen.included", "ask.context.screen.excluded",
+                        "ask.context.screen.scope", "ask.context.selection.source", "ask.context.selection.excluded",
                         "ask.context.memory.offHint", "ask.context.memory.onHint",
                         "ask.context.selection.offHint", "ask.context.selection.onHint",
                         "ask.models.isDefault", "ask.models.supportsImages"] {

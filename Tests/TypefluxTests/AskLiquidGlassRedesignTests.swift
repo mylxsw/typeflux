@@ -192,7 +192,8 @@ struct AskLiquidGlassRedesignTests {
                                              selection: "a\nb", selectionOff: false, memory: nil, memoryPinned: true)
         // Memory is a setting: its lit footer toggle is enough, so the strip leaves it out.
         let strip = AskAttachmentStrip.attached(attached, screenshotCaptured: true)
-        #expect(strip.map(\.kind) == [.screenshot, .source, .selection])
+        #expect(strip.map(\.kind) == [.screenshot, .selection])
+        #expect(strip.last?.sourceAppName == "Chrome")
         // Being in the strip already says "attached"; the label just names the item.
         #expect(strip.first?.title == L("ask.context.screenshot"))
         #expect(strip.first?.title != L("ask.context.screenshot.attached"))
@@ -200,7 +201,7 @@ struct AskLiquidGlassRedesignTests {
         #expect(attached.first?.title == L("ask.context.screenshot.attached"))
 
         // Switched on but not captured yet: nothing to show until the image arrives.
-        #expect(AskAttachmentStrip.attached(attached, screenshotCaptured: false).map(\.kind) == [.source, .selection])
+        #expect(AskAttachmentStrip.attached(attached, screenshotCaptured: false).map(\.kind) == [.selection])
 
         let off = AskContextChips.items(screenshot: .off, source: nil, sourceBundleID: nil,
                                         selection: "a", selectionOff: true, memory: nil, memoryOff: true,

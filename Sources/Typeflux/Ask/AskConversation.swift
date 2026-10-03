@@ -186,6 +186,9 @@ struct AskDraft: Codable, Equatable, Sendable {
     var source: String?
     /// Bundle identifier of `source`'s app; nil for drafts saved before it existed.
     var sourceBundleID: String? = nil
+    /// The user excluded source metadata from this question. Keep the local
+    /// identity for inspection and re-enabling; older drafts inherit inclusion.
+    var sourceOff: Bool? = nil
     var capturedAt: Date?
     var modelRef: String? = nil
 
@@ -210,8 +213,18 @@ struct AskDraft: Codable, Equatable, Sendable {
     /// nil for the default from settings. Ignored once the conversation exists.
     var storesLocally: Bool? = nil
 
+    private enum CodingKeys: String, CodingKey {
+        case text, includeScreenshot, screenshot, selection, source, sourceOff, capturedAt, modelRef
+        case references, memory, memoryOff, selectionOff, attachments, skills, mcpServers
+        // convertFromSnakeCase maps source_bundle_id to sourceBundleId.
+        case sourceBundleID = "sourceBundleId"
+    }
+
     /// The selection that rides with the question: nil once switched off.
     var sentSelection: String? { selectionOff == true ? nil : selection }
+
+    /// Source metadata is independent of selected text, screenshots and memory.
+    var sentSource: String? { sourceOff == true ? nil : source }
 
     /// Attachments alone are a question too: "what is in this file" is implied.
     var canSend: Bool {
@@ -237,7 +250,7 @@ struct AskDraft: Codable, Equatable, Sendable {
     func request(deviceId: String, tools: [AskToolDefinition], id: String = UUID().uuidString) -> AskSendRequest {
         AskSendRequest(
             id: id, deviceId: deviceId, text: text.trimmingCharacters(in: .whitespacesAndNewlines),
-            selection: sentSelection, source: source,
+            selection: sentSelection, source: sentSource,
             image: includeScreenshot ? screenshot : nil, tools: tools, modelRef: modelRef, references: references,
             attachments: attachments, mcpServers: mcpServers
         )

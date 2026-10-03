@@ -81,6 +81,74 @@ struct AskConversationVisualTests {
         fixture.model.resetSession()
     }
 
+    @Test func renderSourceContextSurfaces() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let png = try AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 320, height: 200), type: .png)
+        var draft = AskDraft(text: "解释这段选中的内容", includeScreenshot: true,
+                             screenshot: "data:image/png;base64," + png.base64EncodedString(),
+                             selection: "来源信息属于这份草稿。\n重新截图不会更换选区来源。",
+                             source: "Safari — Typeflux 产品方案：上下文来源与截图范围说明",
+                             sourceBundleID: "com.apple.Safari", capturedAt: Date(timeIntervalSince1970: 1_791_014_400))
+        let localSuite = "ask-source-local-" + UUID().uuidString
+        let localDefaults = try #require(UserDefaults(suiteName: localSuite))
+        defer { localDefaults.removePersistentDomain(forName: localSuite) }
+        let profile = AskModelProfile(name: "Local model", baseURL: "http://127.0.0.1:11434/v1",
+                                      model: "typeflux/assistant-dev")
+        try localDefaults.set(JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
+        let localLibrary = AskModelLibrary(defaults: localDefaults, automaticallyLoadsCatalog: false)
+        localLibrary.defaultReference = profile.reference
+        let local = try AskTestFixture(localOnly: true, modelLibrary: localLibrary)
+        local.model.launcherDraft = AskDraft(includeScreenshot: false, source: "Safari", sourceBundleID: "com.apple.Safari")
+        local.model.launcherDraft.memory = AskMemory(global: "Saved preferences")
+        defer { local.model.resetSession() }
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            let fixture = try AskTestFixture()
+            fixture.model.launcherDraft = draft
+            defer { fixture.model.resetSession() }
+            try await render(AskLauncherView(model: fixture.model, onDismiss: {})
+                                .environment(\.askGlassMaterialOverride, .opaque),
+                             size: NSSize(width: AskMetrics.launcherWidth, height: 150), appearance: appearance,
+                             file: root.appendingPathComponent("source-launcher-\(name).png"), minimumPNGBytes: 4000)
+            try await render(AskLauncherView(model: fixture.model, onDismiss: {})
+                                .environment(\.askGlassMaterialOverride, .opaque),
+                             size: NSSize(width: 430, height: 150), appearance: appearance,
+                             file: root.appendingPathComponent("source-launcher-narrow-\(name).png"), minimumPNGBytes: 4000)
+            for width in [AskMetrics.launcherWidth, CGFloat(430)] {
+                try await render(AskLauncherView(model: local.model, onDismiss: {})
+                                    .environment(\.askGlassMaterialOverride, .opaque),
+                                 size: NSSize(width: width, height: AskMetrics.launcherHeight(editor: 32, banners: 0,
+                                                                                           suggestions: true)),
+                                 appearance: appearance,
+                                 file: root.appendingPathComponent("source-local-\(Int(width))-\(name).png"),
+                                 minimumPNGBytes: 4000)
+            }
+            try await render(AskSourceContextDetails(draft: .constant(draft), refresh: {}).background(Color(nsColor: .windowBackgroundColor)),
+                             size: NSSize(width: 430, height: 520), appearance: appearance,
+                             file: root.appendingPathComponent("source-context-included-\(name).png"), minimumPNGBytes: 4000)
+            draft.sourceOff = true
+            try await render(AskSourceContextDetails(draft: .constant(draft), refresh: {}).background(Color(nsColor: .windowBackgroundColor)),
+                             size: NSSize(width: 430, height: 520), appearance: appearance,
+                             file: root.appendingPathComponent("source-context-excluded-\(name).png"), minimumPNGBytes: 4000)
+            draft.sourceOff = nil
+            try await render(AskSourceContextDetails(draft: .constant(draft), restored: true, refresh: {}).background(Color(nsColor: .windowBackgroundColor)),
+                             size: NSSize(width: 430, height: 520), appearance: appearance,
+                             file: root.appendingPathComponent("source-context-restored-\(name).png"), minimumPNGBytes: 4000)
+            try await render(AskSourceContextDetails(draft: .constant(draft), capturing: true, refresh: {}).background(Color(nsColor: .windowBackgroundColor)),
+                             size: NSSize(width: 430, height: 520), appearance: appearance,
+                             file: root.appendingPathComponent("source-context-capturing-\(name).png"), minimumPNGBytes: 4000)
+            let unknown = AskDraft(text: "A question", includeScreenshot: false, selection: "Selected text")
+            try await render(AskSourceContextDetails(draft: .constant(unknown), warning: "屏幕录制权限尚未开启", refresh: {}).background(Color(nsColor: .windowBackgroundColor)),
+                             size: NSSize(width: 430, height: 520), appearance: appearance,
+                             file: root.appendingPathComponent("source-context-unavailable-\(name).png"), minimumPNGBytes: 4000)
+        }
+    }
+
     @Test func renderApprovedSurfaces() async throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
         let root = URL(fileURLWithPath: directory)
