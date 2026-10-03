@@ -1,8 +1,7 @@
 import Foundation
 import WebKit
 
-/// D04 may supply a separately validated runtime lease here. A URL alone never
-/// grants access to a development service; dynamic loading remains fail-closed.
+/// A URL/DTO alone never grants access: services also need a live host capability.
 enum AskPreviewSource {
     case artifact(AskArtifactRef)
     case developmentService(process: AskProcessRef, address: URL)
@@ -64,22 +63,44 @@ struct AskPreviewPolicy {
     private(set) var webView: WKWebView?
     private(set) var policy: AskPreviewPolicy?
     private var bundle: AskArtifactBundle?
+    private var development: AskDevelopmentPreview?
+    private var resourceTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
     private var validate: (() throws -> Void)?
     private var timer: Timer?
     private var generation = UUID()
     var report: (String) -> Void = { _ in }
+    private(set) var diagnostics: [String] = []
 
     func open(_ source: AskPreviewSource, enabled: Bool,
               validateAccess: ((AskArtifactRef) throws -> Void)? = nil,
+              development: AskDevelopmentPreview? = nil,
               load: @escaping (AskArtifactRef) throws -> AskArtifactBundle) async throws -> WKWebView {
         try Task.checkCancellation()
         close()
         let ticket = generation
         guard enabled else { throw AskArtifactError.previewDisabled }
-        guard case let .artifact(ref) = source else { throw AskArtifactError.dynamicUnavailable }
-        let bundle = try load(ref)
-        guard ref.mediaType == "text/html" else { throw AskArtifactError.unsupported }
-        let policy = AskPreviewPolicy(token: UUID().uuidString.lowercased(), paths: Set(bundle.files.keys))
+        let bundle: AskArtifactBundle?
+        let paths: Set<String>, entry: String
+        let validate: () throws -> Void
+        switch source {
+        case let .artifact(ref):
+            let loaded = try load(ref)
+            guard ref.mediaType == "text/html" else { throw AskArtifactError.unsupported }
+            bundle = loaded; paths = Set(loaded.files.keys); entry = loaded.manifest.entry
+            validate = {
+                if let validateAccess {
+                    try validateAccess(ref)
+                } else {
+                    _ = try load(ref)
+                }
+            }
+        case let .developmentService(process, address):
+            guard let development else { throw AskArtifactError.dynamicUnavailable }
+            try development.validate(process: process, address: address)
+            bundle = nil; paths = development.paths; entry = development.entry
+            validate = { try development.validate(process: process, address: address) }
+        }
+        let policy = AskPreviewPolicy(token: UUID().uuidString.lowercased(), paths: paths)
         let rules = try await WKContentRuleListStore.default().compileContentRuleList(
             forIdentifier: "TypefluxArtifact-" + policy.token, encodedContentRuleList: policy.contentRules
         )
@@ -90,8 +111,41 @@ struct AskPreviewPolicy {
         try Task.checkCancellation()
         guard ticket == generation else { throw CancellationError() }
         // Rule compilation suspends: revalidate owner, expiry and grants before loading.
-        let validate = { if let validateAccess { try validateAccess(ref) } else { _ = try load(ref) } }
         try validate()
+        guard let rules else { throw AskArtifactError.unavailable }
+        let configuration = try configuration(rules: rules)
+        install(bundle: bundle, development: development, policy: policy, validate: validate)
+        let view = WKWebView(frame: .zero, configuration: configuration)
+        view.navigationDelegate = self
+        view.uiDelegate = self
+        view.allowsLinkPreview = false
+        webView = view
+        view.load(URLRequest(url: policy.url(entry)))
+        beginMonitoring()
+        return view
+    }
+
+    private func install(bundle: AskArtifactBundle?, development: AskDevelopmentPreview?,
+                         policy: AskPreviewPolicy, validate: @escaping () throws -> Void) {
+        self.bundle = bundle
+        self.development = development
+        development?.invalidated = { [weak self] in
+            self?.record(L("ask.artifact.error.denied")); self?.close()
+        }
+        diagnostics = []
+        self.policy = policy
+        self.validate = validate
+    }
+
+    private func beginMonitoring() {
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.check() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+    }
+
+    private func configuration(rules: WKContentRuleList) throws -> WKWebViewConfiguration {
         let configuration = WKWebViewConfiguration()
         try AskPreviewEnginePolicy.apply(to: configuration.preferences)
         configuration.websiteDataStore = .nonPersistent()
@@ -99,28 +153,16 @@ struct AskPreviewPolicy {
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
         configuration.mediaTypesRequiringUserActionForPlayback = .all
-        guard let rules else { throw AskArtifactError.unavailable }
         configuration.userContentController.add(rules)
         configuration.userContentController.addUserScript(WKUserScript(
             source: Self.errorCollector, injectionTime: .atDocumentStart, forMainFrameOnly: true,
             in: .defaultClient
         ))
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: Self.consoleCollector, injectionTime: .atDocumentStart, forMainFrameOnly: true, in: .page
+        ))
         configuration.setURLSchemeHandler(self, forURLScheme: AskPreviewPolicy.scheme)
-        self.bundle = bundle
-        self.policy = policy
-        self.validate = validate
-        let view = WKWebView(frame: .zero, configuration: configuration)
-        view.navigationDelegate = self
-        view.uiDelegate = self
-        view.allowsLinkPreview = false
-        webView = view
-        view.load(URLRequest(url: policy.url(bundle.manifest.entry)))
-        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.check() }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        self.timer = timer
-        return view
+        return configuration
     }
 
     private static let errorCollector = """
@@ -133,9 +175,58 @@ struct AskPreviewPolicy {
     addEventListener('securitypolicyviolation', () => record('Preview blocked a prohibited resource or action'));
     """
 
+    private static let consoleCollector = """
+    globalThis.typefluxPreviewConsole = [];
+    globalThis.typefluxPreviewPageErrors = [];
+    function recordPageError(message) {
+      if (typefluxPreviewPageErrors.length < 8) typefluxPreviewPageErrors.push(String(message).slice(0,500));
+    }
+    addEventListener('error', e => recordPageError(e.message || 'A page resource failed to load'), true);
+    addEventListener('unhandledrejection', e => recordPageError(e.reason || 'Unhandled page rejection'));
+    for (const level of ['log', 'info', 'warn', 'error']) {
+      const original = console[level].bind(console);
+      console[level] = (...args) => {
+        if (typefluxPreviewConsole.length < 64)
+          typefluxPreviewConsole.push((level + ': ' + args.map(String).join(' ')).slice(0,1000));
+        if (level === 'error') recordPageError(args.join(' '));
+        original(...args);
+      };
+    }
+    """
+
+    private func record(_ message: String) {
+        if diagnostics.count < 64 {
+            diagnostics.append(String(message.prefix(1000)))
+        }
+        report(message)
+    }
+
+    func collectDiagnostics() async throws -> (errors: [String], console: [String]) {
+        try validate?()
+        guard let view = webView else { throw AskArtifactError.unavailable }
+        let errors = try await view.evaluateJavaScript(
+            "typefluxPreviewErrors.splice(0)",
+            in: nil,
+            in: .defaultClient
+        ) as? [String] ?? []
+        for error in errors {
+            record(error)
+        }
+        let pageErrors = try await view.evaluateJavaScript(
+            "(globalThis.typefluxPreviewPageErrors || []).slice(0,8).map(x => String(x).slice(0,500))"
+        ) as? [String] ?? []
+        for error in pageErrors where !diagnostics.contains(error) { record(error) }
+        let console = try await view.evaluateJavaScript(
+            "(globalThis.typefluxPreviewConsole || []).slice(0,64).map(x => String(x).slice(0,1000))"
+        ) as? [String] ?? []
+        try validate?()
+        guard webView === view else { throw AskArtifactError.unavailable }
+        return (diagnostics, console)
+    }
+
     func check() {
         do { try validate?() } catch {
-            report(error.localizedDescription)
+            record(error.localizedDescription)
             close()
             return
         }
@@ -143,7 +234,7 @@ struct AskPreviewPolicy {
             "typefluxPreviewErrors.splice(0).join('\\n')", in: nil, in: .defaultClient
         ) { [weak self] result in
             if case let .success(value) = result, let text = value as? String, !text.isEmpty {
-                self?.report(text)
+                self?.record(text)
             }
         }
     }
@@ -152,6 +243,8 @@ struct AskPreviewPolicy {
         generation = UUID()
         timer?.invalidate()
         timer = nil
+        resourceTasks.values.forEach { $0.cancel() }; resourceTasks = [:]
+        development?.close(); development = nil
         webView?.stopLoading()
         webView?.navigationDelegate = nil
         webView?.uiDelegate = nil
@@ -165,50 +258,77 @@ struct AskPreviewPolicy {
         policy = nil
         validate = nil
     }
+}
 
+extension AskPreviewHost {
     func webView(_: WKWebView, start urlSchemeTask: any WKURLSchemeTask) {
         do {
             try validate?()
-            guard let policy, let bundle, let url = urlSchemeTask.request.url,
+            guard let policy, let url = urlSchemeTask.request.url,
                   urlSchemeTask.request.httpMethod == "GET" else { throw AskArtifactError.denied }
             let path = try policy.path(url)
-            guard let data = bundle.files[path] else { throw AskArtifactError.unavailable }
-            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: [
-                "Content-Type": AskArtifactStore.mediaType(path) + "; charset=utf-8",
-                "Content-Security-Policy": policy.contentSecurityPolicy,
-                "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer"
-            ])!
-            urlSchemeTask.didReceive(response)
-            urlSchemeTask.didReceive(data)
-            urlSchemeTask.didFinish()
+            if let development {
+                let id = ObjectIdentifier(urlSchemeTask)
+                let ticket = generation
+                resourceTasks[id] = Task { @MainActor [weak self] in
+                    do {
+                        let data = try await development.load(path)
+                        try Task.checkCancellation()
+                        guard let self, generation == ticket, resourceTasks[id] != nil else { return }
+                        resourceTasks[id] = nil
+                        respond(urlSchemeTask, url: url, path: path, data: data, policy: policy)
+                    } catch {
+                        guard let self, generation == ticket, resourceTasks[id] != nil else { return }
+                        resourceTasks[id] = nil
+                        record(error.localizedDescription); urlSchemeTask.didFailWithError(error)
+                    }
+                }
+                return
+            }
+            guard let data = bundle?.files[path] else { throw AskArtifactError.unavailable }
+            respond(urlSchemeTask, url: url, path: path, data: data, policy: policy)
         } catch {
-            report(error.localizedDescription)
+            record(error.localizedDescription)
             urlSchemeTask.didFailWithError(error)
         }
     }
 
-    func webView(_: WKWebView, stop _: any WKURLSchemeTask) {}
+    private func respond(_ urlSchemeTask: any WKURLSchemeTask, url: URL, path: String,
+                         data: Data, policy: AskPreviewPolicy) {
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: [
+            "Content-Type": AskArtifactStore.mediaType(path) + "; charset=utf-8",
+            "Content-Security-Policy": policy.contentSecurityPolicy,
+            "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer"
+        ])!
+        urlSchemeTask.didReceive(response)
+        urlSchemeTask.didReceive(data)
+        urlSchemeTask.didFinish()
+    }
+
+    func webView(_: WKWebView, stop task: any WKURLSchemeTask) {
+        resourceTasks.removeValue(forKey: ObjectIdentifier(task))?.cancel()
+    }
 
     func webView(_: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         let allowed = navigationAction.targetFrame?.isMainFrame == true && !navigationAction.shouldPerformDownload &&
             navigationAction.request.url.flatMap { try? policy?.path($0) } != nil
         if !allowed {
-            report(L("ask.artifact.blocked"))
+            record(L("ask.artifact.blocked"))
         }
         decisionHandler(allowed ? .allow : .cancel)
     }
 
     func webView(_: WKWebView, didFail _: WKNavigation!, withError error: Error) {
-        report(error.localizedDescription)
+        record(error.localizedDescription)
     }
 
     func webView(_: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: Error) {
-        report(error.localizedDescription)
+        record(error.localizedDescription)
     }
 
     func webViewWebContentProcessDidTerminate(_: WKWebView) {
-        report(L("ask.artifact.pageFailed"))
+        record(L("ask.artifact.pageFailed"))
         close()
     }
 

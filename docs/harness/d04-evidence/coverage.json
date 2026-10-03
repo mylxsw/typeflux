@@ -1,0 +1,82 @@
+{
+  "AskDevelopmentPreview.swift": {
+    "count": 87,
+    "covered": 87,
+    "percent": 100
+  },
+  "AskPreviewHost.swift": {
+    "count": 311,
+    "covered": 283,
+    "percent": 90.9967845659164
+  },
+  "AskProjectPreviewCapture.swift": {
+    "count": 50,
+    "covered": 47,
+    "percent": 94
+  },
+  "AskActivityViews.swift": {
+    "count": 764,
+    "covered": 650,
+    "percent": 85.07853403141361
+  },
+  "AskApprovalViews.swift": {
+    "count": 358,
+    "covered": 345,
+    "percent": 96.36871508379889
+  },
+  "AskConversationModel.swift": {
+    "count": 1537,
+    "covered": 1451,
+    "percent": 94.40468445022772
+  },
+  "AskConversationViews.swift": {
+    "count": 2694,
+    "covered": 2150,
+    "percent": 79.80697847067557
+  },
+  "AskDesign.swift": {
+    "count": 1353,
+    "covered": 1189,
+    "percent": 87.87878787878788
+  },
+  "AskLocalTools+Approval.swift": {
+    "count": 144,
+    "covered": 132,
+    "percent": 91.66666666666666
+  },
+  "AskLocalTools.swift": {
+    "count": 256,
+    "covered": 240,
+    "percent": 93.75
+  },
+  "AskLocalTools+Project.swift": {
+    "count": 130,
+    "covered": 128,
+    "percent": 98.46153846153847
+  },
+  "AskLocalTools+Terminal.swift": {
+    "count": 238,
+    "covered": 232,
+    "percent": 97.47899159663865
+  },
+  "AskProjectRuntime.swift": {
+    "count": 239,
+    "covered": 239,
+    "percent": 100
+  },
+  "AskProjectRuntimePolicy.swift": {
+    "count": 93,
+    "covered": 91,
+    "percent": 97.84946236559139
+  },
+  "AskProjectTerminalCard.swift": {
+    "count": 236,
+    "covered": 148,
+    "percent": 62.71186440677966
+  },
+  "AskTerminalTextBuffer.swift": {
+    "count": 42,
+    "covered": 42,
+    "percent": 100
+  }
+}

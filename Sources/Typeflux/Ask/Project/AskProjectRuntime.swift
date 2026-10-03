@@ -29,6 +29,7 @@ final class AskProjectRuntime {
     private var observer: NSObjectProtocol?
     private var timer: Timer?
     private var closed = false
+    private var invalidationObservers: [UUID: (AskProjectRuntimeLease, () -> Void)] = [:]
     private(set) var invalidatedLeases: [AskProjectRuntimeLease] = []
 
     init(storageURL: URL, projects: AskProjectWorkspace, enabled: Bool = false,
@@ -93,7 +94,8 @@ final class AskProjectRuntime {
     func start(_ request: AskProjectLaunchRequest, workspace: AskWorkspaceRef, scope: AskProjectScope,
                authorizedRoots: @escaping () -> [String], callId: String,
                grantId: String, approvals: AskApprovalStore,
-               beforeCopyValidation: (() throws -> Void)? = nil) throws -> AskProjectRuntimeLease {
+               beforeCopyValidation: (() throws -> Void)? = nil,
+               authorize: () throws -> Void = {}) throws -> AskProjectRuntimeLease {
         try Task.checkCancellation()
         let approval = try approval(for: request, workspace: workspace, scope: scope,
                                     authorizedRoots: authorizedRoots(), callId: callId)
@@ -122,6 +124,7 @@ final class AskProjectRuntime {
         let current = try self.approval(for: request, workspace: workspace, scope: scope,
                                         authorizedRoots: authorizedRoots(), callId: callId)
         try Task.checkCancellation()
+        try authorize()
         // Deadline is reconstructed, but the grant matcher compares its own expiry
         // and every stable execution field (including the entire request hash).
         guard current.binding == approval.binding, approvals.consume(grantId, for: current) else {
@@ -183,6 +186,7 @@ final class AskProjectRuntime {
 
     func stop(_ lease: AskProjectRuntimeLease, scope: AskProjectScope) throws {
         try entry(lease, scope: scope).process.stop()
+        notifyInvalidations()
     }
 
     func serviceAddress(_ lease: AskProjectRuntimeLease, scope: AskProjectScope) throws -> URL? {
@@ -195,6 +199,7 @@ final class AskProjectRuntime {
             entry.lease.workspace.conversationId == scope.conversationId && entry.lease.workspace.runId == scope.runId {
             entry.process.stop(.cancelled)
         }
+        notifyInvalidations()
     }
 
     func workspaceDeleted(_ workspace: AskWorkspaceRef, scope: AskProjectScope) {
@@ -203,6 +208,7 @@ final class AskProjectRuntime {
         for entry in entries.values where entry.lease.workspace.id == workspace.id {
             entry.process.stop(.revoked)
         }
+        notifyInvalidations()
     }
 
     private func authorized(_ entry: Entry) -> Bool {
@@ -226,6 +232,29 @@ final class AskProjectRuntime {
                 entry.process.stop(.revoked)
             }
         }
+        notifyInvalidations()
+    }
+
+    /// Host-only subscription. Stop/revocation closes pages synchronously; natural
+    /// exit and timeout are detected by the existing 250 ms lifecycle timer.
+    func observeInvalidation(_ lease: AskProjectRuntimeLease, scope: AskProjectScope,
+                             action: @escaping () -> Void) throws -> UUID {
+        guard try status(lease, scope: scope).state == .ready else { throw AskProjectRuntimeError.closed }
+        let id = UUID()
+        invalidationObservers[id] = (lease, action)
+        return id
+    }
+
+    func removeObserver(_ id: UUID) { invalidationObservers[id] = nil }
+
+    private func notifyInvalidations() {
+        let invalid = invalidationObservers.filter { _, value in
+            entries[value.0.id]?.process.snapshot().state != .ready
+        }
+        for (id, value) in invalid {
+            invalidationObservers[id] = nil
+            value.1()
+        }
     }
 
     func shutdown() {
@@ -233,5 +262,14 @@ final class AskProjectRuntime {
         for entry in entries.values {
             entry.process.stop(.appExit)
         }
+        notifyInvalidations()
+    }
+}
+
+extension AskProjectRuntimeLease {
+    var reference: AskProcessRef {
+        .init(id: id, ownerId: workspace.ownerId, conversationId: workspace.conversationId,
+              runId: workspace.runId, workspaceId: workspace.id, instanceId: sessionId,
+              startedAt: Date(timeIntervalSince1970: createdAt.timeIntervalSince1970.rounded(.down)), cleanup: "app_session")
     }
 }

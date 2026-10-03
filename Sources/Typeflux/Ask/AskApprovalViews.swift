@@ -13,6 +13,13 @@ enum AskApprovalPresentation {
     static func preview(_ call: AskToolCall) -> Preview {
         let args = (try? AskLocalTools.jsonArguments(call.function.arguments)) ?? [:]
         switch (call.function.name, args["action"] as? String ?? "") {
+        case ("project_terminal", "start"):
+            if let request = try? AskLocalTools.launchRequest(args),
+               let text = try? AskLocalTools.terminalJSON(request) {
+                return .content(text)
+            }
+            return .content(call.function.arguments)
+        case ("project_terminal", _): return .content(call.function.arguments)
         case ("files", "edit"), ("project_files", "edit"):
             return .diff(removed: args["old_text"] as? String ?? "", added: args["new_text"] as? String ?? "")
         case ("files", "write"), ("project_files", "write"):

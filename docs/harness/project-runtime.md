@@ -2,8 +2,9 @@
 
 `AskProjectRuntime` is an independent, default-disabled host component. It does
 not enable analysis `run_code`, register model tools, change Settings, or enable
-provider/wire capabilities. D04 owns serial `AskLocalTools`/DI registration,
-approval presentation, terminal UI, and the D03 dynamic preview connection.
+provider/wire capabilities. D04's [project integration](project-loop.md) supplies
+optional `AskLocalTools` injection, approval presentation, terminal UI and the
+D03 preview connection. Application composition keeps these disabled.
 
 ## Supported execution boundary
 
@@ -141,8 +142,8 @@ external guardian; an orphan can remain sandboxed, and old deadlines no longer
 run. Recovery invalidates its handle and reports the old lease instead of
 pretending it was cleaned up or risking PID-reuse kills. A crash-proof guardian
 with process identity validation is required before claiming cleanup after
-ungraceful termination. This limitation and the missing D04 UI wiring are
-rollout gates, not silently accepted production behavior.
+ungraceful termination. This limitation remains a rollout gate even with D04's
+optional UI wiring, not silently accepted production behavior.
 
 Disabling this component stops new launches and calls `shutdown`, retaining
 artifacts/logs. Analysis mode never inherits project execution or network

@@ -1,0 +1,32 @@
+{
+  "artifacts" : [
+    {
+      "exported_hash" : "sha256:d5d0fb59f8cdfd29ea6227b5e76b10690e6fa024597c5373d8e85cc54d1f1cfe",
+      "hash" : "sha256:d5d0fb59f8cdfd29ea6227b5e76b10690e6fa024597c5373d8e85cc54d1f1cfe",
+      "id" : "bcf6c247-9fa5-4b98-9ed7-933d48e7070a",
+      "opened_hash" : "sha256:d5d0fb59f8cdfd29ea6227b5e76b10690e6fa024597c5373d8e85cc54d1f1cfe"
+    },
+    {
+      "exported_hash" : "sha256:2f2e2701637e91aad53cf71bc4b9ce8a3fbb5265fe019e944e6544e1441ab80e",
+      "hash" : "sha256:2f2e2701637e91aad53cf71bc4b9ce8a3fbb5265fe019e944e6544e1441ab80e",
+      "id" : "60299e6a-6cb6-42c2-b699-38e712a21fed",
+      "opened_hash" : "sha256:2f2e2701637e91aad53cf71bc4b9ce8a3fbb5265fe019e944e6544e1441ab80e"
+    }
+  ],
+  "console" : [
+
+  ],
+  "console_errors" : [
+
+  ],
+  "diff" : "diff --git \"a\/index.html\" \"b\/index.html\"\n--- \"a\/index.html\"\n+++ \"b\/index.html\"\n@@ -1,3 +1,3 @@\n-<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><title>Static benchmark<\/title>\n-<h1>Prototype<\/h1><p id=\"status\"><\/p>\n-<script>document.getElementById('status').textContent = 'Offline static page verified';<\/script><\/html>\n+<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><title>Static benchmark<\/title>\n+<h1>Launch ready<\/h1><p id=\"status\"><\/p>\n+<script>document.getElementById('status').textContent = 'Offline static page verified';<\/script><\/html>\n",
+  "mode" : "local",
+  "page_text" : "Launch ready\n\nOffline static page verified",
+  "port_closed" : true,
+  "process_reaped" : true,
+  "readiness" : "static_loaded",
+  "scenario" : "static",
+  "screenshot_hash" : "sha256:2f2e2701637e91aad53cf71bc4b9ce8a3fbb5265fe019e944e6544e1441ab80e",
+  "test_exit_code" : 0,
+  "workspace_version" : "642f8003-1c9f-4369-9338-f8102b2b2e52"
+}

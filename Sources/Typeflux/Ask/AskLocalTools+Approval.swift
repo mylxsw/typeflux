@@ -14,6 +14,7 @@ extension AskLocalTools {
         var summary: String
         var reusable = false
         switch call.function.name {
+        case "project_terminal": return try terminalBinding(call, conversationId: conversationId)
         case "artifact":
             target = try artifactBinding(args, conversationId: conversationId)
             definition = Self.artifactDefinition
@@ -96,6 +97,8 @@ extension AskLocalTools {
         }
         let args = try Self.jsonArguments(call.function.arguments)
         switch call.function.name {
+        case "project_terminal":
+            return try await executeTerminal(call, conversationId: conversationId, authorize: authorize)
         case "artifact", "project_files":
             return try executeApprovedWorkspaceTool(call.function.name, args: args,
                                                     conversationId: conversationId, target: binding.target)

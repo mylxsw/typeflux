@@ -1,0 +1,38 @@
+{
+  "artifacts" : [
+    {
+      "exported_hash" : "sha256:2dc3aa3c48a96fc6433b936a292547f48c6a234c6535c40ef16952afa94bcb16",
+      "hash" : "sha256:2dc3aa3c48a96fc6433b936a292547f48c6a234c6535c40ef16952afa94bcb16",
+      "id" : "9a41f808-f225-4e8c-8067-0935580163aa",
+      "opened_hash" : "sha256:2dc3aa3c48a96fc6433b936a292547f48c6a234c6535c40ef16952afa94bcb16"
+    },
+    {
+      "exported_hash" : "sha256:2f6606cb7bc4c565323c3f1aea8c71c6d900be27d0a282bb08e8ca627d3f5218",
+      "hash" : "sha256:2f6606cb7bc4c565323c3f1aea8c71c6d900be27d0a282bb08e8ca627d3f5218",
+      "id" : "e6bd25c8-06d8-4c1d-b3d4-2f760f514eed",
+      "opened_hash" : "sha256:2f6606cb7bc4c565323c3f1aea8c71c6d900be27d0a282bb08e8ca627d3f5218"
+    },
+    {
+      "exported_hash" : "sha256:1353d74f838b71e20f40602c6daddcafc2827d7947ea26ae56c5eb0dee259462",
+      "hash" : "sha256:1353d74f838b71e20f40602c6daddcafc2827d7947ea26ae56c5eb0dee259462",
+      "id" : "dffd6e01-7e19-44d4-b6ab-fe3b1b1f504c",
+      "opened_hash" : "sha256:1353d74f838b71e20f40602c6daddcafc2827d7947ea26ae56c5eb0dee259462"
+    }
+  ],
+  "console" : [
+    "info: Benchmark script loaded"
+  ],
+  "console_errors" : [
+
+  ],
+  "diff" : "diff --git \"a\/index.html\" \"b\/index.html\"\n--- \"a\/index.html\"\n+++ \"b\/index.html\"\n@@ -1,5 +1,5 @@\n-<!doctype html>\n-<html lang=\"en\"><meta charset=\"utf-8\"><title>Typeflux project benchmark<\/title>\n-<link rel=\"stylesheet\" href=\"style.css\">\n-<main><p>TYPEFLUX PROJECT BENCHMARK<\/p><h1>Prototype<\/h1><p id=\"status\">Loading<\/p><\/main>\n-<script src=\"app.js\"><\/script><\/html>\n+<!doctype html>\n+<html lang=\"en\"><meta charset=\"utf-8\"><title>Typeflux project benchmark<\/title>\n+<link rel=\"stylesheet\" href=\"style.css\">\n+<main><p>TYPEFLUX PROJECT BENCHMARK<\/p><h1>Launch ready<\/h1><p id=\"status\">Loading<\/p><\/main>\n+<script src=\"app.js\"><\/script><\/html>\n",
+  "mode" : "local",
+  "page_text" : "TYPEFLUX PROJECT BENCHMARK\n\nLaunch ready\n\nJavaScript verified",
+  "port_closed" : true,
+  "process_reaped" : true,
+  "readiness" : "nonce_verified",
+  "scenario" : "frontend",
+  "screenshot_hash" : "sha256:2f6606cb7bc4c565323c3f1aea8c71c6d900be27d0a282bb08e8ca627d3f5218",
+  "test_exit_code" : 0,
+  "workspace_version" : "e0e4596b-115b-4c14-bfd2-e87e2b45c758"
+}

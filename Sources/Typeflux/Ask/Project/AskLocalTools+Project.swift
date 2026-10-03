@@ -35,7 +35,9 @@ extension AskLocalTools {
     }
 
     func bindExecution(ownerId: String, conversationId: String, runId: String) {
-        projectScopes[conversationId] = .init(ownerId: ownerId, conversationId: conversationId, runId: runId)
+        let next = AskProjectScope(ownerId: ownerId, conversationId: conversationId, runId: runId)
+        if let previous = projectScopes[conversationId], previous != next { projectRuntime?.cancel(scope: previous) }
+        projectScopes[conversationId] = next
     }
 
     func projectScope(_ conversationId: String) throws -> AskProjectScope {

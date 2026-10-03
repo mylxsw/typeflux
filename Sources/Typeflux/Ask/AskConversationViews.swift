@@ -70,6 +70,7 @@ struct AskConversationView: View {
         .frame(minWidth: 740, minHeight: 530)
         .tint(AskTheme.accent)
         .environment(\.askArtifactAccess, model.artifactAccess)
+        .environment(\.askTerminalAccess, model.terminalAccess)
         .onChange(of: model.draft) { _ in model.persistDrafts() }
         .confirmationDialog(
             L("ask.delete.confirm"),

@@ -2112,3 +2112,23 @@
 "ask.artifact.close" = "닫기";
 "ask.artifact.truncated" = "텍스트 미리보기가 잘렸습니다. 전체 내용은 파일을 저장하여 확인하세요.";
 "ask.artifact.title" = "결과물 저장";
+
+// Project process evidence
+"ask.terminal.title" = "프로젝트 프로세스";
+"ask.terminal.stop" = "중지";
+"ask.terminal.exit" = "종료 코드: %@";
+"ask.terminal.lost" = "손실된 출력 바이트: %@";
+"ask.terminal.logFailed" = "프로세스 로그를 저장하지 못했습니다.";
+"ask.terminal.error.disabled" = "Project execution is disabled.";
+"ask.terminal.error.unavailable" = "The required project runtime is unavailable.";
+"ask.terminal.error.invalidRequest" = "The project execution request is invalid.";
+"ask.terminal.error.approvalRequired" = "A new approval is required.";
+"ask.terminal.error.denied" = "Project access was revoked or denied.";
+"ask.terminal.error.unknownLease" = "This process belongs to a different run or app session.";
+"ask.terminal.error.installationUnavailable" = "Dependency installation is not supported.";
+"ask.terminal.error.capacity" = "The project runtime limit has been reached.";
+"ask.terminal.error.closed" = "The process has stopped.";
+"ask.terminal.error.inputFull" = "The input exceeds the supported buffer or line limit.";
+"ask.terminal.error.invalidCursor" = "The output cursor is invalid.";
+"ask.terminal.error.portUnavailable" = "The requested listener port is unavailable.";
+"ask.terminal.truncated" = "Output is truncated; the retained log may also be incomplete.";

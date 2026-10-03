@@ -297,6 +297,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        tools.cancelProjects(conversationId: nil)
         voiceInput.cancel()
         historyErrorTask?.cancel(); historyRefreshError = nil
         pullRefreshID = nil; isRefreshingHistory = false
@@ -832,6 +833,11 @@ final class AskConversationModel: ObservableObject {
 
     private func drive(_ initial: AskConversation, current: AskRoute,
                        screenshotConsentMessageID: String?) async throws {
+        defer {
+            if Task.isCancelled, let run = initial.run {
+                tools.cancelProjectRun(.init(ownerId: current.account, conversationId: initial.id, runId: run.id))
+            }
+        }
         var value = initial
         while true {
             try await accept(value, route: current)
@@ -842,6 +848,7 @@ final class AskConversationModel: ObservableObject {
                 continue
             }
             guard run.deviceId == deviceId else { throw AskLocalError.message(L("ask.tool.otherDevice")) }
+            tools.bindExecution(ownerId: current.account, conversationId: value.id, runId: run.id)
             if run.status == "waiting_inference", let inference = run.inference {
                 guard let reference = run.modelRef,
                       let (provider, model) = modelLibrary.registry.resolve(reference) else {
@@ -988,6 +995,28 @@ final class AskConversationModel: ObservableObject {
         }
     }
 
+    var terminalAccess: AskTerminalAccess {
+        .init(status: { [weak self] ref in
+            guard let self else { throw AskProjectRuntimeError.denied }
+            try self.validateTerminalAccess(ref)
+            return try self.tools.terminalStatus(ref)
+        }, stop: { [weak self] ref in
+            guard let self else { throw AskProjectRuntimeError.denied }
+            try self.validateTerminalAccess(ref)
+            try self.tools.stopTerminal(ref)
+        }, preview: { [weak self] ref, entry, resources in
+            guard let self else { throw AskProjectRuntimeError.denied }
+            try self.validateTerminalAccess(ref)
+            return try self.tools.terminalPreview(ref, entry: entry, resources: resources)
+        })
+    }
+
+    private func validateTerminalAccess(_ ref: AskProcessRef) throws {
+        guard session()?.owner == ref.ownerId, selectedId == ref.conversationId else {
+            throw AskProjectRuntimeError.denied
+        }
+    }
+
     var artifactAccess: AskArtifactAccess {
         .init(load: { [weak self] ref in
             guard let self, let current = self.session(), self.selectedId == ref.conversationId else {
@@ -1050,6 +1079,7 @@ final class AskConversationModel: ObservableObject {
 
     func stop(id: String? = nil) {
         guard let id = id ?? selected?.id, let current = credentials(for: id) else { return }
+        tools.cancelProjects(conversationId: id)
         operations[id]?.cancel()
         approvalStore.revoke(conversation: id)
         approve(conversationId: id, allowed: false)
@@ -1074,6 +1104,7 @@ final class AskConversationModel: ObservableObject {
 
     func delete(_ id: String) async {
         guard !busyIds.contains(id), let current = credentials(for: id) else { return }
+        tools.cancelProjects(conversationId: id)
         do {
             try await api.delete(conversationId: id, token: current.token)
             guard owner == current.account else { return }
