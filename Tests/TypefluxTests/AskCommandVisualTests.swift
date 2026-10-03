@@ -113,7 +113,12 @@ struct AskCommandVisualTests {
             try await Task.sleep(for: .milliseconds(400))
             let launcherField = try #require(editor(in: launcherHost))
             panel.makeFirstResponder(launcherField)
-            for character in "/sk" { type(String(character), into: launcherField) }
+            for character in "/sk" {
+                type(String(character), into: launcherField)
+                try await Task.sleep(for: .milliseconds(150))
+                let current = editor(in: launcherHost)
+                print("LAUNCHER-DEBUG typed=\(character) field=\(launcherField.string) draft=\(fixture.model.launcherDraft.text) same=\(current === launcherField) inWindow=\(launcherField.window != nil) current=\(current?.string ?? "nil")")
+            }
             try await Task.sleep(for: .milliseconds(400))
             try snapshot(launcherHost, to: root.appendingPathComponent("commands-launcher-\(name).png"))
         }
