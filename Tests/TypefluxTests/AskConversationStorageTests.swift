@@ -49,6 +49,24 @@ struct AskConversationStorageTests {
         #expect(fixture.model.storesLocally(launcher: false))
     }
 
+    @Test func aPrivateConversationsToolsRunUnderTheAccount() async throws {
+        let (fixture, own) = try fixture()
+        // Project and artifact scopes are read back with the account, so tools bind to it too.
+        await fixture.localAPI.setTool(.init(id: "call", function: .init(name: "browser", arguments: #"{"action":"read"}"#)))
+        fixture.model.newConversation(storesLocally: true)
+        fixture.model.draft.text = "Read this page"
+        fixture.model.draft.modelRef = own
+        fixture.model.submitDraft()
+        try await fixture.wait { !fixture.model.pendingApprovals.isEmpty }
+        let id = try #require(fixture.model.selectedId)
+        #expect(fixture.model.isLocal(id))
+        #expect(fixture.tools.executionScope?.ownerId == fixture.sessionState.owner)
+        #expect(fixture.tools.executionScope?.conversationId == id)
+        fixture.model.approve(conversationId: id, allowed: false)
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        #expect(await fixture.api.results.isEmpty)
+    }
+
     @Test func aCloudConversationNeverTouchesTheLocalEngine() async throws {
         let (fixture, _) = try fixture()
         fixture.model.newConversation()

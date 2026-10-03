@@ -2087,3 +2087,35 @@
 "ask.history.filter.cloud" = "雲端";
 "ask.history.filter.local" = "僅本機";
 "ask.new.more" = "更多新增方式";
+
+// Project workspaces
+"ask.project.title" = "專案檔案";
+"ask.project.review" = "審閱變更";
+"ask.project.export" = "匯出修補檔…";
+"ask.project.staged" = "變更獨立暫存，來源檔案保持不變。";
+"ask.project.truncated" = "差異預覽已縮短，請匯出修補檔查看完整變更。";
+"ask.project.error.denied" = "專案授權已撤銷或目標不安全，請重新授權。";
+"ask.project.error.invalidPath" = "請使用相對檔案路徑，不包含連結、上層目錄或 .git 中繼資料。";
+"ask.project.error.conflict" = "來源檔案或暫存版本已變更，未覆寫任何內容。請撤銷暫存變更後重新讀取。";
+"ask.project.error.binary" = "此檔案是二進位檔案或不是有效的 UTF-8 文字。";
+"ask.project.error.tooLarge" = "檔案或變更集超過支援的大小限制。";
+"ask.project.error.invalid" = "專案操作無效，請先讀取檔案並提供預期版本。";
+"ask.project.error.unavailable" = "專案模式無法使用。";
+
+// Device artifacts and isolated previews
+"ask.artifact.error.unavailable" = "此產物或資源在本裝置上無法使用。";
+"ask.artifact.error.denied" = "產物存取遭拒，請檢查帳號與資料夾授權。";
+"ask.artifact.error.invalid" = "產物參照或資源清單無效。";
+"ask.artifact.error.tooLarge" = "產物超出檔案或資源大小限制。";
+"ask.artifact.error.unsupported" = "此格式無法預覽，仍可儲存原始檔案。";
+"ask.artifact.error.corrupt" = "產物完整性驗證失敗。";
+"ask.artifact.error.expired" = "此裝置產物已到期。";
+"ask.artifact.error.previewDisabled" = "HTML 預覽已關閉，仍可儲存原始檔案。";
+"ask.artifact.error.dynamicUnavailable" = "開發服務預覽尚未提供。";
+"ask.artifact.blocked" = "預覽已封鎖不允許的資源或導覽。";
+"ask.artifact.pageFailed" = "預覽程序已停止，請關閉後重試。";
+"ask.artifact.device" = "僅儲存在本裝置";
+"ask.artifact.expires" = "到期時間：%@";
+"ask.artifact.close" = "關閉";
+"ask.artifact.truncated" = "文字預覽已截斷，儲存檔案可取得完整內容。";
+"ask.artifact.title" = "儲存產物";

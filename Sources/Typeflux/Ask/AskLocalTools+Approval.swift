@@ -14,6 +14,14 @@ extension AskLocalTools {
         var summary: String
         var reusable = false
         switch call.function.name {
+        case "artifact":
+            target = try artifactBinding(args, conversationId: conversationId)
+            definition = Self.artifactDefinition
+            summary = target.id + " / " + (args["entry"] as? String ?? "")
+        case "project_files":
+            target = try projectBinding(args, conversationId: conversationId)
+            definition = try Self.projectDefinition(roots: fileTools(conversationId: conversationId).roots)
+            summary = (target.path ?? "") + " / " + target.id + " / " + (args["action"] as? String ?? "")
         case "files":
             let files = fileTools(conversationId: conversationId)
             definition = AskFileTools.definition(roots: files.roots)
@@ -88,6 +96,9 @@ extension AskLocalTools {
         }
         let args = try Self.jsonArguments(call.function.arguments)
         switch call.function.name {
+        case "artifact", "project_files":
+            return try executeApprovedWorkspaceTool(call.function.name, args: args,
+                                                    conversationId: conversationId, target: binding.target)
         case "computer", "browser":
             return try await executeAutomation(call.function.name, args: args, conversationId: conversationId,
                                                approved: binding.target, authorize: authorize)
@@ -101,4 +112,20 @@ extension AskLocalTools {
         default: return try await execute(call, conversationId: conversationId)
         }
     }
+
+    private func executeApprovedWorkspaceTool(_ name: String, args: [String: Any],
+                                              conversationId: String, target: AskExecutionTarget) throws -> AskLocalToolOutput {
+        // No suspension between live authorization, descriptor validation and publication.
+        if name == "artifact" {
+            guard try artifactBinding(args, conversationId: conversationId) == target else {
+                throw AskProjectError.conflict
+            }
+            return try executeArtifact(args, conversationId: conversationId)
+        }
+        guard try projectBinding(args, conversationId: conversationId) == target else {
+            throw AskProjectError.conflict
+        }
+        return try executeProject(args, conversationId: conversationId)
+    }
+
 }

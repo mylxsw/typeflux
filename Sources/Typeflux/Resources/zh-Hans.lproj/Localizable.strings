@@ -2090,3 +2090,35 @@
 "ask.history.filter.cloud" = "云端";
 "ask.history.filter.local" = "仅本机";
 "ask.new.more" = "更多新建方式";
+
+// Project workspaces
+"ask.project.title" = "项目文件";
+"ask.project.review" = "审阅变更";
+"ask.project.export" = "导出补丁…";
+"ask.project.staged" = "变更单独暂存，源文件保持不变。";
+"ask.project.truncated" = "差异预览已缩短，请导出补丁查看完整变更。";
+"ask.project.error.denied" = "项目授权已撤销或目标不安全，请重新授权。";
+"ask.project.error.invalidPath" = "请使用相对文件路径，不包含链接、上级目录或 .git 元数据。";
+"ask.project.error.conflict" = "源文件或暂存版本已变化，未覆盖任何内容。请撤销暂存变更后重新读取。";
+"ask.project.error.binary" = "该文件是二进制文件或不是有效的 UTF-8 文本。";
+"ask.project.error.tooLarge" = "文件或变更集超过支持的大小限制。";
+"ask.project.error.invalid" = "项目操作无效，请先读取文件并提供预期版本。";
+"ask.project.error.unavailable" = "项目模式不可用。";
+
+// Device artifacts and isolated previews
+"ask.artifact.error.unavailable" = "此产物或资源在本设备上不可用。";
+"ask.artifact.error.denied" = "产物访问被拒绝，请检查账号和目录授权。";
+"ask.artifact.error.invalid" = "产物引用或资源清单无效。";
+"ask.artifact.error.tooLarge" = "产物超出文件或资源体积限制。";
+"ask.artifact.error.unsupported" = "此格式无法预览，仍可保存原始文件。";
+"ask.artifact.error.corrupt" = "产物完整性校验失败。";
+"ask.artifact.error.expired" = "此设备产物已到期。";
+"ask.artifact.error.previewDisabled" = "HTML 预览已关闭，仍可保存原始文件。";
+"ask.artifact.error.dynamicUnavailable" = "开发服务预览尚不可用。";
+"ask.artifact.blocked" = "预览已阻止不允许的资源或导航。";
+"ask.artifact.pageFailed" = "预览进程已停止，请关闭后重试。";
+"ask.artifact.device" = "仅保存在本设备";
+"ask.artifact.expires" = "到期时间：%@";
+"ask.artifact.close" = "关闭";
+"ask.artifact.truncated" = "文本预览已截断，保存文件可获取完整内容。";
+"ask.artifact.title" = "保存产物";

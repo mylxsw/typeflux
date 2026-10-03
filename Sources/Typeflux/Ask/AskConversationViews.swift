@@ -69,6 +69,7 @@ struct AskConversationView: View {
         .ignoresSafeArea(.container, edges: .top)
         .frame(minWidth: 740, minHeight: 530)
         .tint(AskTheme.accent)
+        .environment(\.askArtifactAccess, model.artifactAccess)
         .onChange(of: model.draft) { _ in model.persistDrafts() }
         .confirmationDialog(
             L("ask.delete.confirm"),
@@ -949,7 +950,7 @@ struct AskConversationView: View {
                              approval: pending.flatMap { pending in
                                  group.calls.contains { $0.id == pending.call.id }
                                      ? AnyView(approvalCard(pending.call, id: pending.id, embedded: true)) : nil
-                             })
+                             }, exportProjectPatch: model.exportProjectPatch)
                 .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
         }
     }

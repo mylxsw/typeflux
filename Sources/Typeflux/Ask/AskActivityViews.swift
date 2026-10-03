@@ -15,6 +15,7 @@ struct AskActivityBlock: View {
     var outputs = AskRunOutputs()
     /// The approval for one of this card's steps, shown under its header.
     var approval: AnyView?
+    var exportProjectPatch: ((AskWorkspaceRef) throws -> Data)?
     @State private var userExpanded: Bool?
 
     private var expanded: Bool { userExpanded ?? (status == .running || status == .attention) }
@@ -116,7 +117,7 @@ struct AskActivityBlock: View {
                 ForEach((message.toolCalls ?? []).filter { $0.function.name != "update_plan" }) { call in
                     AskToolStepRow(call: call, result: results.first { $0.toolCallId == call.id },
                                    preparing: streamingId == message.id, pending: approvalToolId == call.id,
-                                   isLast: call.id == group.steps.last?.id)
+                                   isLast: call.id == group.steps.last?.id, exportProjectPatch: exportProjectPatch)
                 }
             }
         }
@@ -153,6 +154,7 @@ struct AskToolStepRow: View {
     var pending = false
     /// The last step draws no line down to a next one.
     var isLast = true
+    var exportProjectPatch: ((AskWorkspaceRef) throws -> Data)?
     @State private var expanded = false
     @State private var pane = Pane.arguments
 
@@ -232,7 +234,10 @@ struct AskToolStepRow: View {
                         if pane == .arguments || result == nil {
                             AskMonoBlock(title: "", text: call.function.arguments)
                         } else if let result {
-                            if !result.resultText.isEmpty {
+                            if call.function.name == "project_files", result.isError != true,
+                               let review = AskProjectReview.decode(result.resultText) {
+                                AskProjectReviewView(review: review, exportPatch: exportProjectPatch)
+                            } else if !result.resultText.isEmpty {
                                 AskMonoBlock(title: "", text: result.resultText,
                                              isError: AskPresentation.toolState(result: result) == .failed)
                             }
@@ -268,6 +273,9 @@ struct AskRunOutputsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            ForEach(outputs.storedArtifacts, id: \.id) { ref in
+                AskStoredArtifactCard(ref: ref)
+            }
             ForEach(outputs.artifacts) { artifact in
                 AskArtifactCard(artifact: artifact)
             }
@@ -282,6 +290,7 @@ private struct AskArtifactCard: View {
     let artifact: AskRunOutputs.Artifact
     @State private var preview = false
     @State private var copied = false
+    @State private var saveError: String?
 
     var body: some View {
         if let image = AskImage.decode(artifact.image) {
@@ -310,8 +319,14 @@ private struct AskArtifactCard: View {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
                         }
                         AskGhostButton(title: L("ask.artifact.save"), systemImage: "square.and.arrow.down") {
-                            AskArtifactActions.save(image)
+                            do {
+                                try AskArtifactActions.save(image)
+                                saveError = nil
+                            } catch { saveError = error.localizedDescription }
                         }
+                    }
+                    if let saveError {
+                        Text(saveError).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
                     }
                 }
             }
@@ -330,12 +345,17 @@ enum AskArtifactActions {
         return rep.representation(using: .png, properties: [:])
     }
 
-    @MainActor static func save(_ image: NSImage) {
+    static func exportImage(_ image: NSImage, to url: URL) throws {
+        guard let data = pngData(image) else { throw AskArtifactError.unsupported }
+        try data.write(to: url, options: .atomic)
+    }
+
+    @MainActor static func save(_ image: NSImage) throws {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.png]
         panel.nameFieldStringValue = "Typeflux.png"
-        guard panel.runModal() == .OK, let url = panel.url, let data = pngData(image) else { return }
-        try? data.write(to: url)
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        try exportImage(image, to: url)
     }
 }
 

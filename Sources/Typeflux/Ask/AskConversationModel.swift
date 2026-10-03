@@ -888,6 +888,9 @@ final class AskConversationModel: ObservableObject {
             try await cache.associateTool(id: journalKey, conversationId: value.id, owner: current.owner)
             var result = try await cache.toolResult(id: journalKey, owner: current.owner)
             if result == nil {
+                // Project and artifact scopes belong to the account, as `artifactAccess` reads them,
+                // not to the cache partition a private conversation uses.
+                tools.bindExecution(ownerId: current.account, conversationId: value.id, runId: run.id)
                 // Consent comes from the submitted draft, never from historical images or live UI state.
                 let isScreenshot = call.function.name == "computer"
                     && (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) == "screenshot"
@@ -966,6 +969,11 @@ final class AskConversationModel: ObservableObject {
                     catch {
                         result?.content = error.localizedDescription
                         if error is MCPInputError { result?.harness?.outcome?.status = "invalid" }
+                        else if let projectError = error as? AskProjectError {
+                            result?.harness?.outcome?.status = projectError == .denied ? "denied" : "invalid"
+                        } else if let artifactError = error as? AskArtifactError {
+                            result?.harness?.outcome?.status = artifactError == .denied ? "denied" : "invalid"
+                        }
                         else if case MCPClientError.timedOut = error { result?.harness?.outcome?.status = "timeout" }
                     }
                     if let scope = approvalStore.auditScope(grantID) {
@@ -978,6 +986,25 @@ final class AskConversationModel: ObservableObject {
             try Task.checkCancellation()
             value = try await api.result(conversationId: value.id, request: result!, token: current.token)
         }
+    }
+
+    var artifactAccess: AskArtifactAccess {
+        .init(load: { [weak self] ref in
+            guard let self, let current = self.session(), self.selectedId == ref.conversationId else {
+                throw AskArtifactError.denied
+            }
+            return try self.tools.loadArtifact(ref, ownerId: current.owner, conversationId: ref.conversationId)
+        }, validate: { [weak self] ref in
+            guard let self, let current = self.session(), self.selectedId == ref.conversationId else {
+                throw AskArtifactError.denied
+            }
+            try self.tools.validateArtifact(ref, ownerId: current.owner, conversationId: ref.conversationId)
+        }, htmlEnabled: tools.artifactPreviewEnabled)
+    }
+
+    func exportProjectPatch(_ ref: AskWorkspaceRef) throws -> Data {
+        guard let current = session(), selectedId == ref.conversationId else { throw AskProjectError.denied }
+        return try tools.exportProjectPatch(ref, ownerId: current.owner, conversationId: ref.conversationId)
     }
 
     /// This query never upgrades a tool name into a permission.
