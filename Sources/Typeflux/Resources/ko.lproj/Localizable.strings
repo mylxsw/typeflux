@@ -1662,7 +1662,6 @@
 "ask.voice.stopHint" = "녹음을 중지하고 텍스트를 삽입합니다. Esc로 취소합니다.";
 
 // Selected reply references
-"ask.references.question" = "이 부분에 대해 질문";
 "ask.references.optional" = "질문 (선택 사항)";
 "ask.references.explain" = "이 부분 설명하기";
 "ask.selection.explain" = "설명";
@@ -1670,9 +1669,7 @@
 "ask.selection.ask" = "질문";
 "ask.references.translate" = "이 부분 번역하기";
 "ask.references.source" = "선택한 부분";
-"ask.references.save" = "초안에 추가";
 "ask.references.locate" = "원문 보기";
-"ask.references.update" = "변경 사항 저장";
 "ask.references.placeholder.one" = "이 부분에 대해 질문…";
 "ask.references.placeholder.many" = "이 %d개 부분에 대해 질문…";
 "ask.references.clear" = "지우기";
@@ -1680,6 +1677,8 @@
 "ask.references.showAll" = "인용 %d개 모두 보기";
 "ask.references.position" = "인용 %d / %d";
 "ask.references.remove" = "인용 삭제";
+"ask.references.saveHint" = "⌘↩ 저장";
+"ask.references.closeHint" = "Esc 닫기";
 // Ask conversation usage
 "ask.usage.title" = "사용량";
 "ask.usage.close" = "사용량 닫기";

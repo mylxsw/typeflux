@@ -1,23 +1,27 @@
 // swiftlint:disable file_length
 import SwiftUI
 
-/// The popover a quote pill opens for its question. The excerpt is drawn as an
-/// accent-ruled quote, the question sits in a framed field whose placeholder
-/// lines up with the caret, suggested questions are chips, and the actions are
-/// Ask capsules rather than stock bordered buttons.
+/// The popover a quote pill opens, laid out as on the GUL-161 design board: a
+/// header with the quote's position and "Locate source", the excerpt behind an
+/// accent rule, a one-line question field with suggested questions, and a
+/// footer with "Remove quote" and the keyboard hints. Like other macOS
+/// popovers it keeps an edit when dismissed by clicking elsewhere; Esc
+/// discards it.
 struct AskReferenceEditor: View {
     @State var reference: AskReference
     var save: (AskReference) -> Void
     var cancel: () -> Void
-    var editing = false
     var byteBudget = 64000
-    /// "Quote 2 of 3" when the editor opens from a pill in the composer tray.
+    /// "Quote 2 / 3" when the tray holds several quotes.
     var position: String?
     /// Scrolls the transcript to the answer the excerpt came from.
     var locate: (() -> Void)?
     var remove: (() -> Void)?
+    @State private var original: AskReference?
+    @State private var finished = false
     @FocusState private var focused: Bool
 
+    static let width: CGFloat = 360
     /// One-tap questions, in the order of the selection bar.
     static let suggestions: [AskSelectionAction] = [.explain, .translate]
 
@@ -25,109 +29,145 @@ struct AskReferenceEditor: View {
         reference.text.utf8.count + reference.question.utf8.count > budget
     }
 
+    /// Whether dismissing the popover should keep the edit.
+    static func keepsOnDismiss(_ reference: AskReference, original: AskReference?, budget: Int) -> Bool {
+        guard let original else { return false }
+        return reference != original && !exceedsBudget(reference, budget: budget)
+    }
+
     private var tooLarge: Bool { Self.exceedsBudget(reference, budget: byteBudget) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 7) {
-                Image(systemName: "text.bubble").foregroundStyle(AskTheme.accentText)
-                Text(position ?? L("ask.references.question"))
-                Spacer(minLength: 8)
-                if let locate {
-                    Button(action: locate) {
-                        Label(L("ask.references.locate"), systemImage: "arrow.up.forward.square")
-                            .font(.system(size: 12))
-                            .foregroundStyle(AskTheme.accentText)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .font(.system(size: 14, weight: .semibold))
-            quote
-            VStack(alignment: .leading, spacing: 8) {
-                questionField
-                HStack(spacing: 6) {
-                    ForEach(Self.suggestions, id: \.rawValue) { action in
-                        AskChip(
-                            title: action.question,
-                            systemImage: action.systemImage,
-                            style: reference.question == action.question ? .active : .neutral,
-                            action: { reference.question = action.question; focused = true }
-                        )
-                    }
-                }
-            }
-            HStack(spacing: 8) {
-                if let remove {
-                    Button(L("ask.references.remove"), action: remove)
-                        .buttonStyle(.plain)
+        VStack(alignment: .leading, spacing: 0) {
+            header
+            quote.padding(.top, 10)
+            questionField.padding(.top, 12)
+            suggestionRow.padding(.top, 8)
+            footer.padding(.top, 12)
+        }
+        .padding(14)
+        .frame(width: Self.width)
+        .background(AskTheme.popoverSurface)
+        .tint(AskTheme.accent)
+        .onAppear {
+            original = reference
+            focused = true
+        }
+        .onDisappear {
+            if !finished, Self.keepsOnDismiss(reference, original: original, budget: byteBudget) { save(reference) }
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "quote.opening")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(AskTheme.accentText)
+            Text(position ?? L("ask.quote"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
+            Spacer(minLength: 8)
+            if let locate {
+                // Leaving for the source closes the popover, which keeps the edit.
+                Button(action: locate) {
+                    Label(L("ask.references.locate"), systemImage: "arrow.up.forward.square")
                         .font(.system(size: 12))
-                        .foregroundStyle(StudioTheme.danger)
+                        .foregroundStyle(AskTheme.accentText)
                 }
-                if tooLarge {
-                    Label(L("ask.input.tooLarge"), systemImage: "exclamationmark.triangle")
-                        .font(.system(size: 11)).foregroundStyle(StudioTheme.warning)
-                        .lineLimit(2)
-                }
-                Spacer(minLength: 0)
-                Button(L("common.cancel"), action: cancel)
-                    .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
-                    .keyboardShortcut(.cancelAction)
-                Button(L(editing ? "ask.references.update" : "ask.references.save")) { save(reference) }
-                    .buttonStyle(AskCapsuleButtonStyle())
-                    .keyboardShortcut(.return, modifiers: .command)
-                    .help("⌘↩")
-                    .disabled(tooLarge)
+                .buttonStyle(.plain)
             }
         }
-        .padding(20).frame(width: 440)
-        .background(AskTheme.popoverSurface).tint(AskTheme.accent)
-        .onAppear { focused = true }
     }
 
     private var quote: some View {
         ScrollView {
             Text(reference.text.trimmingCharacters(in: .whitespacesAndNewlines))
                 .font(.system(size: 12.5))
-                .lineSpacing(2)
+                .lineSpacing(4)
                 .foregroundStyle(StudioTheme.textSecondary)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 12).padding(.trailing, 10).padding(.vertical, 9)
+                .padding(.leading, 12)
+                .padding(.vertical, 2)
         }
-        .frame(maxHeight: 112)
+        .frame(maxHeight: 104)
         .fixedSize(horizontal: false, vertical: true)
-        .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(alignment: .leading) {
             Rectangle().fill(AskTheme.accent).frame(width: 2)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(AskTheme.border))
     }
 
-    /// NSTextView pads its text by 5pt, so the placeholder takes the same inset
-    /// and never sits under the caret.
+    /// One line that grows to three, so a short question reads as a field
+    /// rather than an empty text box. Return keeps the question.
     private var questionField: some View {
-        ZStack(alignment: .topLeading) {
-            if reference.question.isEmpty {
-                Text(L("ask.references.optional"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .padding(.leading, 5)
-                    .allowsHitTesting(false)
-            }
-            TextEditor(text: $reference.question)
-                .font(.system(size: 13))
-                .scrollContentBackground(.hidden)
-                .focused($focused)
-                .accessibilityLabel(L("ask.references.optional"))
-        }
-        .padding(.horizontal, 7).padding(.vertical, 8)
-        .frame(height: 84)
-        .background(AskTheme.composerSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .strokeBorder(focused ? AskTheme.accent.opacity(0.6) : AskTheme.border))
+        TextField(L("ask.references.optional"), text: $reference.question, axis: .vertical)
+            .textFieldStyle(.plain)
+            .font(.system(size: 12.5))
+            .foregroundStyle(StudioTheme.textPrimary)
+            .lineLimit(1...3)
+            .focused($focused)
+            .onSubmit(commit)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .frame(minHeight: 34)
+            .background(AskTheme.composerSurface, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .strokeBorder(focused ? AskTheme.accent.opacity(0.6) : AskTheme.border))
     }
+
+    private var suggestionRow: some View {
+        HStack(spacing: 6) {
+            ForEach(Self.suggestions, id: \.rawValue) { action in
+                let active = reference.question == action.question
+                Button { reference.question = action.question; focused = true } label: {
+                    Label(action.question, systemImage: action.systemImage)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(active ? AskTheme.accentText : StudioTheme.textSecondary)
+                        .padding(.horizontal, 9)
+                        .frame(height: 24)
+                        .background(active ? AskTheme.accentSoft : .clear, in: Capsule())
+                        .overlay(Capsule().strokeBorder(active ? .clear : AskTheme.border))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var footer: some View {
+        HStack(spacing: 8) {
+            if let remove {
+                Button(L("ask.references.remove")) { finish(); remove() }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(StudioTheme.danger)
+            }
+            Spacer(minLength: 8)
+            if tooLarge {
+                Label(L("ask.input.tooLarge"), systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(StudioTheme.warning)
+                    .lineLimit(1)
+            } else {
+                // The hints are the buttons, so the shortcuts work and a pointer can use them.
+                Button(L("ask.references.saveHint"), action: commit)
+                    .buttonStyle(.plain)
+                    .keyboardShortcut(.return, modifiers: .command)
+                Text("·")
+                Button(L("ask.references.closeHint")) { finish(); cancel() }
+                    .buttonStyle(.plain)
+                    .keyboardShortcut(.cancelAction)
+            }
+        }
+        .font(.system(size: 11.5))
+        .foregroundStyle(StudioTheme.textTertiary)
+    }
+
+    private func commit() {
+        guard !tooLarge else { return }
+        finish()
+        save(reference)
+    }
+
+    private func finish() { finished = true }
 }
 
 extension AskReference {
@@ -197,6 +237,9 @@ struct AskFlowLayout: Layout {
     var alignment: HorizontalAlignment = .leading
     /// The widest a child may be; a single child may be widened by the caller.
     var itemMaxWidth: CGFloat = .infinity
+    /// Sends the last child to the trailing edge of its row, the way "Clear"
+    /// closes the tray on the design board.
+    var pinsLastToTrailingEdge = false
 
     struct Row: Equatable {
         var indices: [Int]
@@ -249,6 +292,9 @@ struct AskFlowLayout: Layout {
             var left = alignment == .trailing ? bounds.maxX - row.width : bounds.minX
             for index in row.indices {
                 let width = min(sizes[index].width, bounds.width)
+                if pinsLastToTrailingEdge, index == sizes.count - 1, alignment != .trailing {
+                    left = max(left, bounds.maxX - width)
+                }
                 subviews[index].place(at: CGPoint(x: left, y: top + (row.height - sizes[index].height) / 2),
                                       proposal: ProposedViewSize(width: width, height: sizes[index].height))
                 left += width + spacing
@@ -268,13 +314,17 @@ struct AskReferenceChip: View {
     var selected = false
     var action: () -> Void
     var onRemove: (() -> Void)?
-    @State private var hovering = false
+    /// Follows the pointer; starts false.
+    @State var hovering = false
 
     static let height: CGFloat = 28
     static let corner: CGFloat = 9
-    static let maxWidth: CGFloat = 190
-    /// A typed question can be long; it keeps at most this much of the pill.
-    static let labelMaxWidth: CGFloat = 104
+    static let maxWidth: CGFloat = 188
+
+    static func showsExcerpt(_ intent: AskReference.Intent) -> Bool {
+        if case .question = intent { return false }
+        return true
+    }
 
     private var highlighted: Bool { hovering || selected }
 
@@ -287,18 +337,18 @@ struct AskReferenceChip: View {
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(AskTheme.accentText)
                     if let label = intent.label {
-                        AskCappedWidth(maxWidth: Self.labelMaxWidth) {
-                            Text(label).fontWeight(.semibold).foregroundStyle(AskTheme.accentText)
-                                .lineLimit(1).truncationMode(.tail)
-                        }
-                        .layoutPriority(1)
-                        if case .question = intent {
-                            Text("·").foregroundStyle(StudioTheme.textTertiary)
-                        }
+                        Text(label).fontWeight(.semibold).foregroundStyle(AskTheme.accentText)
+                            .lineLimit(1).truncationMode(.tail)
+                            .layoutPriority(1)
                     }
-                    Text(reference.preview)
-                        .foregroundStyle(highlighted ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                        .lineLimit(1).truncationMode(.tail)
+                    // A typed question says what the quote is for; its excerpt
+                    // would only get a character or two, so it lives in the
+                    // tooltip and the popover instead.
+                    if Self.showsExcerpt(intent) {
+                        Text(reference.preview)
+                            .foregroundStyle(highlighted ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                            .lineLimit(1).truncationMode(.tail)
+                    }
                 }
                 .font(.system(size: 12))
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -306,7 +356,8 @@ struct AskReferenceChip: View {
             }
             .buttonStyle(.plain)
             if let onRemove {
-                // Kept in the layout while hidden, so pills never re-wrap on hover.
+                // Kept in the layout while hidden, so pills never re-wrap on
+                // hover. Only the pointer reveals it, as on the design board.
                 Button(action: onRemove) {
                     Image(systemName: "xmark").font(.system(size: 7.5, weight: .bold))
                         .foregroundStyle(StudioTheme.textSecondary)
@@ -315,8 +366,8 @@ struct AskReferenceChip: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .opacity(highlighted ? 1 : 0)
-                .allowsHitTesting(highlighted)
+                .opacity(hovering ? 1 : 0)
+                .allowsHitTesting(hovering)
                 .accessibilityHidden(true)
             }
         }
@@ -416,7 +467,8 @@ struct AskReferenceStrip: View {
 
     private func tray(_ items: [AskReference]) -> some View {
         let shown = Self.visibleCount(total: items.count, expanded: expanded)
-        return AskFlowLayout(spacing: Self.spacing, itemMaxWidth: AskReferenceChip.maxWidth) {
+        return AskFlowLayout(spacing: Self.spacing, itemMaxWidth: AskReferenceChip.maxWidth,
+                             pinsLastToTrailingEdge: items.count > 1) {
             ForEach(Array(items.prefix(shown).enumerated()), id: \.element.id) { index, reference in
                 chip(reference, index: index, total: items.count)
             }
@@ -438,7 +490,7 @@ struct AskReferenceStrip: View {
                 Button { editing = nil; references = nil } label: {
                     Text(L("ask.references.clear"))
                         .font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(StudioTheme.textTertiary)
                         .padding(.horizontal, 6)
                         .frame(height: AskReferenceChip.height)
                         .contentShape(Rectangle())
@@ -460,10 +512,11 @@ struct AskReferenceStrip: View {
                     reference: reference,
                     save: { updated in
                         references = Self.replacing(updated, in: references)
-                        editing = nil
+                        // A popover dismissed by opening another pill saves late;
+                        // it must not close the one that replaced it.
+                        if editing == updated.id { editing = nil }
                     },
-                    cancel: { editing = nil },
-                    editing: true,
+                    cancel: { if editing == reference.id { editing = nil } },
                     byteBudget: Self.byteBudget(for: reference, in: references),
                     position: total > 1 ? L("ask.references.position", index + 1, total) : nil,
                     locate: { editing = nil; locate(reference.messageId) },
@@ -501,9 +554,12 @@ struct AskSentReferences: View {
     let references: [AskReference]
     var locate: (String) -> Void = { _ in }
 
+    /// Three pills share one row of the bubble column.
+    static let itemMaxWidth = ((AskMetrics.bubbleMaxWidth - AskReferenceStrip.spacing * 2) / 3).rounded(.down)
+
     var body: some View {
         AskFlowLayout(spacing: AskReferenceStrip.spacing, alignment: .trailing,
-                      itemMaxWidth: AskReferenceChip.maxWidth) {
+                      itemMaxWidth: Self.itemMaxWidth) {
             ForEach(references) { reference in
                 AskReferenceChip(reference: reference, style: .sent, action: { locate(reference.messageId) })
             }

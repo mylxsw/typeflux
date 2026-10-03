@@ -48,6 +48,27 @@ struct AskReferenceChipTests {
         #expect(NSImage(systemSymbolName: "quote.opening", accessibilityDescription: nil) != nil)
     }
 
+    @Test func typedQuestionPillsShowOnlyTheQuestion() {
+        #expect(AskReferenceChip.showsExcerpt(.quote))
+        #expect(AskReferenceChip.showsExcerpt(.explain))
+        #expect(AskReferenceChip.showsExcerpt(.translate))
+        #expect(!AskReferenceChip.showsExcerpt(.question("Why?")))
+        #expect(AskReferenceChip.maxWidth == 188)
+        // Three sent pills fit beside each other in the bubble column.
+        #expect(AskSentReferences.itemMaxWidth * 3 + AskReferenceStrip.spacing * 2 <= AskMetrics.bubbleMaxWidth)
+    }
+
+    @Test func dismissKeepsOnlyRealEditsWithinBudget() {
+        let original = reference("abc")
+        var edited = original
+        edited.question = "Why?"
+        #expect(AskReferenceEditor.keepsOnDismiss(edited, original: original, budget: 100))
+        #expect(!AskReferenceEditor.keepsOnDismiss(original, original: original, budget: 100))
+        #expect(!AskReferenceEditor.keepsOnDismiss(edited, original: nil, budget: 100))
+        #expect(!AskReferenceEditor.keepsOnDismiss(edited, original: original, budget: 5))
+        #expect(AskReferenceEditor.width == 360)
+    }
+
     @Test func accessibilityLabelNamesIntentAndExcerpt() {
         #expect(AskReferenceChip.accessibilityLabel(reference("，text")) == L("ask.references.source") + ": text")
         #expect(AskReferenceChip.accessibilityLabel(reference("text", question: "Why?")) == "Why?: text")
@@ -102,9 +123,35 @@ struct AskReferenceChipTests {
         #expect(AskReferenceStrip.byteBudget(for: edited, in: nil) == 64000)
     }
 
+    @Test func pinnedLastItemSitsAtTheTrailingEdge() async throws {
+        _ = NSApplication.shared
+        let box = MinXBox()
+        func probe(pinned: Bool) -> some View {
+            AskFlowLayout(spacing: 6, pinsLastToTrailingEdge: pinned) {
+                Color.red.frame(width: 50, height: 20)
+                Color.blue.frame(width: 30, height: 20)
+                    .background(GeometryReader { geometry in
+                        Color.clear.preference(key: MinXKey.self, value: geometry.frame(in: .named("flow")).minX)
+                    })
+            }
+            .frame(width: 300)
+            .coordinateSpace(name: "flow")
+            .onPreferenceChange(MinXKey.self) { box.value = $0 }
+        }
+        for (pinned, expected) in [(true, CGFloat(270)), (false, CGFloat(56))] {
+            let host = NSHostingView(rootView: probe(pinned: pinned))
+            host.frame = NSRect(x: 0, y: 0, width: 300, height: 40)
+            host.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(30))
+            host.layoutSubtreeIfNeeded()
+            #expect(abs(box.value - expected) < 1, "pinned: \(pinned)")
+        }
+    }
+
     @Test func newCopyExistsInEveryLanguage() throws {
         let plain = ["ask.references.placeholder.one", "ask.references.clear", "ask.references.collapse",
-                     "ask.references.remove", "ask.references.locate"]
+                     "ask.references.remove", "ask.references.locate", "ask.references.saveHint",
+                     "ask.references.closeHint", "ask.references.optional", "ask.quote"]
         let formatted = ["ask.references.placeholder.many": 1, "ask.references.showAll": 1,
                          "ask.references.position": 2]
         for language in AppLanguage.allCases {
@@ -138,7 +185,7 @@ struct AskReferenceChipTests {
                 let view = VStack(spacing: 12) {
                     AskReferenceStrip(references: .constant(Array(mixed.prefix(count))), locate: { _ in })
                     AskSentReferences(references: Array(mixed.prefix(count)))
-                    AskReferenceEditor(reference: mixed[2], save: { _ in }, cancel: {}, editing: true,
+                    AskReferenceEditor(reference: mixed[2], save: { _ in }, cancel: {},
                                        position: L("ask.references.position", 3, count),
                                        locate: {}, remove: {})
                 }
@@ -211,4 +258,13 @@ struct AskReferenceChipTests {
         host.cacheDisplay(in: host.bounds, to: bitmap)
         return bitmap
     }
+}
+
+private final class MinXBox {
+    var value: CGFloat = -1
+}
+
+private struct MinXKey: PreferenceKey {
+    static let defaultValue: CGFloat = -1
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }

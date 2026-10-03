@@ -1672,7 +1672,6 @@
 "ask.voice.stopHint" = "Stop recording and insert text. Escape cancels.";
 
 // Selected reply references
-"ask.references.question" = "Follow-up question";
 "ask.references.optional" = "Question (optional)";
 "ask.references.explain" = "Explain this excerpt";
 "ask.selection.explain" = "Explain";
@@ -1680,9 +1679,7 @@
 "ask.selection.ask" = "Ask";
 "ask.references.translate" = "Translate this excerpt";
 "ask.references.source" = "Selected excerpt";
-"ask.references.save" = "Add to draft";
 "ask.references.locate" = "Locate source";
-"ask.references.update" = "Save changes";
 "ask.references.placeholder.one" = "Ask about this excerpt…";
 "ask.references.placeholder.many" = "Ask about these %d excerpts…";
 "ask.references.clear" = "Clear";
@@ -1690,6 +1687,8 @@
 "ask.references.showAll" = "Show all %d excerpts";
 "ask.references.position" = "Quote %d of %d";
 "ask.references.remove" = "Remove quote";
+"ask.references.saveHint" = "⌘↩ Save";
+"ask.references.closeHint" = "Esc Close";
 // Ask conversation usage
 "ask.usage.title" = "Usage";
 "ask.usage.close" = "Close usage";
