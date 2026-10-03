@@ -104,8 +104,11 @@ enum AskActivity {
             }
             guard !["computer", "browser"].contains(name),
                   let result = results.first(where: { $0.toolCallId == call.id }),
-                  result.isError != true, let image = result.image else { continue }
-            value.artifacts.append(.init(id: call.id, image: image, toolName: name))
+                  result.isError != true || result.harness?.outcome != nil else { continue }
+            for (index, image) in result.resultImages.enumerated() {
+                value.artifacts.append(.init(id: index == 0 ? call.id : call.id + "/" + String(index),
+                                             image: image, toolName: name))
+            }
         }
         return value
     }
@@ -139,7 +142,9 @@ enum AskActivity {
         if live { return .running }
         if let streamingId, group.messageIds.contains(streamingId) { return .running }
         if group.calls.contains(where: { call in !results.contains { $0.toolCallId == call.id } }) { return .running }
-        if group.steps.contains(where: { call in results.first { $0.toolCallId == call.id }?.isError == true }) { return .failed }
+        if group.steps.contains(where: { call in
+            AskPresentation.toolState(result: results.first { $0.toolCallId == call.id }) == .failed
+        }) { return .failed }
         return .done
     }
 
@@ -153,7 +158,9 @@ enum AskActivity {
             if let plan, !plan.isEmpty {
                 title = L("ask.activity.plan", plan.filter { $0.status == "completed" }.count, plan.count) + " · " + title
             }
-            let failures = group.steps.filter { call in results.first { $0.toolCallId == call.id }?.isError == true }.count
+            let failures = group.steps.filter { call in
+                AskPresentation.toolState(result: results.first { $0.toolCallId == call.id }) == .failed
+            }.count
             if failures > 0 { title += " · " + L("ask.activity.failures", failures) }
             return title
         }

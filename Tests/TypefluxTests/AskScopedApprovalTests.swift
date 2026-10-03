@@ -2,6 +2,12 @@ import Foundation
 import Testing
 @testable import Typeflux
 
+private struct ApprovalReceiptCatalog: ProviderModelCatalog {
+    func models(provider: RegisteredProvider, connection: SettingsStore.TextLLMConfiguration) async throws -> [RegisteredModel] {
+        [.init(id: "fixture", name: "Fixture", reference: "custom:receipt", vision: false)]
+    }
+}
+
 @Suite("Ask scoped approval integration")
 @MainActor
 struct AskScopedApprovalTests {
@@ -26,6 +32,44 @@ struct AskScopedApprovalTests {
                 #expect(bundle.localizedString(forKey: key, value: nil, table: nil) != key)
             }
         }
+    }
+
+    @Test(arguments: [false, true])
+    func resultJournalRetainsTrustedApprovalContext(local: Bool) async throws {
+        let defaults = try #require(UserDefaults(suiteName: "ask-approval-receipt-" + UUID().uuidString))
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false, catalog: ApprovalReceiptCatalog())
+        if local {
+            let model = RegisteredModel(id: "fixture", name: "Fixture", reference: "custom:receipt", vision: false)
+            try library.addModels([model], providerID: "ollama")
+            library.ollamaAvailable = true
+            library.defaultReference = model.reference
+        }
+        let f = try AskTestFixture(localOnly: local, modelLibrary: library)
+        defer { f.model.resetSession() }
+        let id = try await start(f, call: call("memory", "remember"))
+        f.model.approve(conversationId: id, allowed: true)
+        try await f.wait { f.model.busyIds.isEmpty }
+        let receipt = try #require(await f.api.results.first)
+        let context = try #require(receipt.harness?.context)
+        let scope = try #require(receipt.harness?.approval)
+        #expect(context.approvalId == scope.id)
+        #expect(context.ownerId == (local ? AskRoutedAPI.localOwner : "owner"))
+        #expect(context.conversationId == id)
+        #expect(context.runId == receipt.runId)
+        #expect(context.toolCallId == receipt.toolCallId)
+        #expect(scope.target == context.target)
+        #expect(scope.consumedAt != nil)
+        #expect(receipt.harness?.outcome?.safeStatus == .ok)
+        let saved = try #require(await f.cache.toolResult(id: receipt.runId + "/" + receipt.toolCallId, owner: context.ownerId))
+        let savedContext = try #require(saved.harness?.context)
+        #expect(savedContext.ownerId == context.ownerId)
+        #expect(savedContext.runId == context.runId)
+        #expect(savedContext.toolCallId == context.toolCallId)
+        #expect(savedContext.approvalId == context.approvalId)
+        #expect(savedContext.argumentsHash == context.argumentsHash)
+        #expect(savedContext.target == context.target)
+        #expect(saved.harness?.approval?.id == scope.id)
+        #expect(saved.forPeer(nil).harness == nil)
     }
 
     @Test func legacyPeerNeverOffersSessionGrants() async throws {
@@ -60,6 +104,10 @@ struct AskScopedApprovalTests {
         f.model.approve(conversationId: id, allowed: false)
         try await f.wait { f.model.busyIds.isEmpty }
         #expect(await f.api.results.map(\.isError) == [false, true])
+        let receipts = await f.api.results
+        #expect(receipts.map { $0.harness?.outcome?.safeStatus } == [.ok, .denied])
+        #expect(receipts.first?.harness?.approval?.consumedAt != nil)
+        #expect(receipts.last?.harness?.approval == nil)
     }
 
     @Test(arguments: ["target", "schema", "expiry", "revocation"])
@@ -79,6 +127,7 @@ struct AskScopedApprovalTests {
         try await f.wait { f.model.busyIds.isEmpty }
         #expect(f.tools.executions == 0)
         #expect(await f.api.results.first?.isError == true)
+        #expect(await f.api.results.first?.harness?.outcome?.safeStatus == .unknown)
     }
 
     @Test func sameCallIDWithChangedArgumentsCannotUseOldApproval() async throws {

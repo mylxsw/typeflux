@@ -16,9 +16,9 @@ if [ -z "$PROFDATA" ]; then
 fi
 
 # Find the test binary inside the xctest bundle
-TEST_BINARY=$(find "${BIN_PATH}" -path "*/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests" -type f 2>/dev/null | head -1)
+TEST_BINARY=$(find "${BIN_PATH}" \( -path "*/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests" -o -path "*/TypefluxTests.xctest/Contents/MacOS/TypefluxTests" \) -type f 2>/dev/null | head -1)
 if [ -z "$TEST_BINARY" ]; then
-    echo "Error: Could not find TypefluxPackageTests binary in .build/"
+    echo "Error: Could not find Typeflux test binary in .build/"
     echo "Available xctest bundles:"
     find .build -name "*.xctest" -type d
     exit 1

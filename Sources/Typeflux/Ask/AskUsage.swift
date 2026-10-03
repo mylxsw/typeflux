@@ -141,7 +141,20 @@ extension AskConversation {
     func reconciling(_ incoming: Self, preservingEqualRevisionContent: Bool = false) -> Self {
         guard incoming.id == id else { return incoming }
         if preservingEqualRevisionContent, incoming.revision == revision { return mergingUsage(from: incoming) }
-        return incoming.revision >= revision ? incoming.mergingUsage(from: self) : mergingUsage(from: incoming)
+        var result = incoming.revision >= revision ? incoming.mergingUsage(from: self) : mergingUsage(from: incoming)
+        // A legacy server cannot echo typed receipts; retain them only on the same
+        // persisted message identity. Never resurrect a deleted message or permission.
+        let prior = incoming.revision >= revision ? self : incoming
+        for index in result.messages.indices
+        where result.messages[index].role == "tool" && result.messages[index].harness == nil {
+            let message = result.messages[index]
+            if let old = prior.messages.first(where: { $0.id == message.id && $0.toolCallId == message.toolCallId }) {
+                result.messages[index].harness = old.harness
+                result.messages[index].diagnostic = old.diagnostic
+                result.messages[index].runId = old.runId ?? message.runId
+            }
+        }
+        return result
     }
     func isNewer(than older: Self) -> Bool {
         revision > older.revision || (usage?.version ?? 0) > (older.usage?.version ?? 0)

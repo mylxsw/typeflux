@@ -522,7 +522,12 @@ struct AskConversationTests {
         #expect(results.count == 1)
         #expect(results.first?.isError == !hasResult)
         if hasResult { #expect(results.first?.content == "Already executed") }
-        else { #expect(results.first?.content.contains("unknown") == true) }
+        else {
+            #expect(results.first?.content.contains("unknown") == true)
+            #expect(results.first?.harness?.outcome?.safeStatus == .unknown)
+            #expect(results.first?.harness?.context?.toolCallId == call.id)
+            #expect(results.first?.harness?.approval?.consumedAt == nil)
+        }
     }
 
     @Test func oversizedInputStaysEditableWithoutNetworkRequest() async throws {

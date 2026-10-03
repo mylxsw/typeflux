@@ -59,8 +59,12 @@ struct AskAPIClient: AskAPI {
     }
     let executor: CloudRequestExecutor
     let streamSession: URLSession
+    private let trustedPeer: AskHarnessContract?
+    private let enabledCapabilities: Set<AskHarnessCapability>
 
-    init(executor: CloudRequestExecutor = CloudRequestExecutor(), streamSession: URLSession = .shared) {
+    init(executor: CloudRequestExecutor = CloudRequestExecutor(), streamSession: URLSession = .shared,
+         trustedPeer: AskHarnessContract? = nil, enabledCapabilities: Set<AskHarnessCapability> = []) {
+        self.trustedPeer = trustedPeer; self.enabledCapabilities = enabledCapabilities
         self.executor = executor; self.streamSession = streamSession
     }
 
@@ -74,7 +78,15 @@ struct AskAPIClient: AskAPI {
         try await execute(path: "/\(conversationId)/messages", method: "POST", body: AskCoding.encoder().encode(request), token: token)
     }
     func result(conversationId: String, request: AskToolResultRequest, token: String) async throws -> AskConversation {
-        try await execute(path: "/\(conversationId)/tool-results", method: "POST", body: AskCoding.encoder().encode(request), token: token)
+        let wire = request.forPeer(trustedPeer, enabled: enabledCapabilities)
+        var response: AskConversation = try await execute(path: "/\(conversationId)/tool-results", method: "POST", body: AskCoding.encoder().encode(wire), token: token)
+        // Keep the local receipt visible even when an old server only echoes legacy fields.
+        if let index = response.messages.firstIndex(where: { $0.role == "tool" && $0.toolCallId == request.toolCallId }),
+           response.messages[index].harness == nil {
+            response.messages[index].harness = request.harness
+            response.messages[index].runId = request.runId
+        }
+        return response
     }
     func cancel(conversationId: String, runId: String, token: String) async throws -> AskConversation {
         try await execute(path: "/\(conversationId)/cancel", method: "POST", body: JSONSerialization.data(withJSONObject: ["run_id": runId]), token: token)

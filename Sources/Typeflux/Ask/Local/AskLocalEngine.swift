@@ -3,6 +3,7 @@ import Foundation
 
 /// Engine-only state stored next to a local conversation.
 struct AskLocalRecord: Codable, Equatable, Sendable {
+    var typedContentEnabled: Bool?
     var conversation: AskConversation
     var timeZone: String?
     var locale: String?
@@ -35,13 +36,15 @@ actor AskLocalEngine: AskAPI {
     static let staleAfter: TimeInterval = 10 * 60
 
     let directory: URL
+    private let typedContentEnabled: Bool
     private let webTools: AskLocalWebTools
     private let now: @Sendable () -> Date
     private var records: [String: AskLocalRecord] = [:]
     private var loaded = false
 
     init(directory: URL = AskLocalEngine.defaultDirectory, webTools: AskLocalWebTools = AskLocalWebTools(),
-         now: @escaping @Sendable () -> Date = Date.init) {
+         now: @escaping @Sendable () -> Date = Date.init, typedContentEnabled: Bool = false) {
+        self.typedContentEnabled = typedContentEnabled
         self.directory = directory
         self.webTools = webTools
         self.now = now
@@ -168,8 +171,7 @@ actor AskLocalEngine: AskAPI {
         guard let run = record.conversation.run, run.id == request.runId, run.deviceId == request.deviceId else { throw conflict() }
         if record.conversation.messages.contains(where: { $0.role == "tool" && $0.toolCallId == request.toolCallId }) { return record.conversation }
         guard run.status == "waiting_tool", run.pending.first?.id == request.toolCallId else { throw conflict() }
-        record.conversation.messages.append(AskMessage(id: UUID().uuidString, role: "tool", text: String(request.content.prefix(256_000)),
-                                                       image: request.image, toolCallId: request.toolCallId, isError: request.isError, createdAt: now()))
+        record.conversation.messages.append(request.message(step: run.steps, now: now()))
         record.conversation.run?.pending.removeFirst()
         return try await continueTools(&record)
     }
@@ -213,7 +215,7 @@ actor AskLocalEngine: AskAPI {
             record.conversation.run?.reasoning = partial.reasoning
         }
         keepPartial(&record)
-        closePending(&record, reason: "Cancelled by the user. Do not repeat this action.")
+        closePending(&record, reason: "Cancelled by the user. Do not repeat this action.", status: .cancelled)
         record.conversation.run?.status = "cancelled"
         try save(&record)
         return record.conversation
@@ -293,6 +295,7 @@ actor AskLocalEngine: AskAPI {
     private func conflict() -> AskLocalError { .message(L("ask.local.conflict")) }
 
     private func prepareRun(_ record: inout AskLocalRecord) {
+        record.typedContentEnabled = typedContentEnabled
         // Messages left from an earlier run were taken back by the device.
         record.steering = nil
         record.builtinTools = [Self.planTool] + webTools.definitions()
@@ -480,9 +483,13 @@ actor AskLocalEngine: AskAPI {
         record.conversation.run?.previewTools = nil
     }
 
-    private func closePending(_ record: inout AskLocalRecord, reason: String) {
+    private func closePending(_ record: inout AskLocalRecord, reason: String, status: AskExecutionStatus = .unknown) {
         for call in record.conversation.run?.pending ?? [] {
-            record.conversation.messages.append(AskMessage(id: UUID().uuidString, role: "tool", text: reason, toolCallId: call.id, isError: true, createdAt: now()))
+            let request = AskToolResultRequest(runId: record.conversation.run?.id ?? "",
+                                               deviceId: record.conversation.run?.deviceId ?? "", toolCallId: call.id,
+                                               content: reason, isError: true,
+                                               harness: .init(version: 1, outcome: .init(status: status.rawValue)))
+            record.conversation.messages.append(request.message(step: record.conversation.run?.steps ?? 0, now: now()))
         }
         record.conversation.run?.pending = []
         record.conversation.run?.inference = nil

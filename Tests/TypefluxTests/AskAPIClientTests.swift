@@ -77,6 +77,27 @@ struct AskAPIClientTests {
         #expect(try AskCoding.decoder().decode(AskToolResultRequest.self, from: requests[2].httpBody!) == result)
     }
 
+    @Test func typedResultUsesTrustedOptInAndRetainsLegacyReceipt() async throws {
+        for enabled in [false, true] {
+            let stub = AskHTTPStub()
+            let selector = CloudEndpointSelector(baseURLs: [URL(string: "https://ask.example")!], prober: AskHTTPProber())
+            let api = AskAPIClient(executor: CloudRequestExecutor(selector: selector, session: stub),
+                                   trustedPeer: enabled ? AskTypedContent.advertisement : nil, enabledCapabilities: enabled ? [.typedContent] : [])
+            var receipt = AskToolResultRequest(runId: "run", deviceId: "device", toolCallId: "call", content: "", isError: false)
+            receipt.record(AskTypedContent.output(from: try AskTypedContentTests.result()))
+            let oldMessage = AskMessage(id: "stored", role: "tool", text: receipt.content, image: receipt.image, toolCallId: "call", isError: true, createdAt: Date())
+            let c = AskConversation(id: "c", title: "t", revision: 2, updatedAt: Date(), messages: [oldMessage])
+            await stub.configure(payload: Data("{\"code\":\"OK\",\"data\":".utf8) + (try AskCoding.encoder().encode(c)) + Data("}".utf8))
+            let response = try await api.result(conversationId: "c", request: receipt, token: "t")
+            let wire = try #require(await stub.requests.last?.httpBody)
+            let decoded = try AskCoding.decoder().decode(AskToolResultRequest.self, from: wire)
+            #expect((decoded.harness != nil) == enabled)
+            #expect(decoded.isError)
+            #expect(response.messages[0].harness?.outcome?.content?.count == 7)
+            #expect(response.messages[0].resultImages.count == 2)
+        }
+    }
+
     @Test func memoryPurgeDeletesPinnedMemoryForTheSignedInUser() async throws {
         let stub = AskHTTPStub(); await stub.configure(payload: Data(#"{"code":"OK","data":{"purged":3}}"#.utf8))
         try await client(stub).purgeMemory(token: "secret")
