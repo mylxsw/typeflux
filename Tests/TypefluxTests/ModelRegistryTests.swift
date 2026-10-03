@@ -107,6 +107,34 @@ final class ModelRegistryTests: XCTestCase {
         XCTAssertThrowsError(try library.removeModel("missing", providerID: "missing"))
     }
 
+    func testSetCapabilityRecordsVisionAndReasoningPerModel() throws {
+        let library = AskModelLibrary(defaults: defaults)
+        try library.addModels([.init(id: "custom", name: "Custom"), .init(id: "other", name: "Other")],
+                              providerID: "openAI")
+        let models = try XCTUnwrap(library.providers.first { $0.id == "openAI" }?.models)
+        let model = try XCTUnwrap(models.first { $0.id == "custom" })
+        let other = try XCTUnwrap(models.first { $0.id == "other" })
+
+        try library.setCapability(\.vision, true, reference: model.reference, providerID: "openAI")
+        try library.setCapability(\.reasoning, false, reference: model.reference, providerID: "openAI")
+        XCTAssertEqual(library.registry.resolve(model.reference)?.1.vision, true)
+        XCTAssertEqual(library.registry.resolve(model.reference)?.1.reasoning, false)
+        XCTAssertEqual(library.imageCapability(model.reference), .supported)
+        XCTAssertFalse(AskReasoningEffort.isAvailable(for: library.registry.resolve(model.reference)?.1))
+        XCTAssertNil(library.registry.resolve(other.reference)?.1.vision)
+        XCTAssertNil(library.registry.resolve(other.reference)?.1.reasoning)
+
+        try library.setCapability(\.vision, false, reference: model.reference, providerID: "openAI")
+        try library.setCapability(\.reasoning, true, reference: model.reference, providerID: "openAI")
+        XCTAssertEqual(library.imageCapability(model.reference), .unsupported)
+        XCTAssertTrue(AskReasoningEffort.isAvailable(for: library.registry.resolve(model.reference)?.1))
+        // Persisted, not just in memory.
+        XCTAssertEqual(ModelRegistry.read(defaults)?.resolve(model.reference)?.1.vision, false)
+
+        XCTAssertThrowsError(try library.setCapability(\.vision, true, reference: "custom:missing", providerID: "openAI"))
+        XCTAssertThrowsError(try library.setCapability(\.vision, true, reference: model.reference, providerID: "missing"))
+    }
+
     func testProviderOrderingAndCapabilityReasons() throws {
         let library = AskModelLibrary(defaults: defaults)
         let openAI = try XCTUnwrap(library.providers.first { $0.remote == .openAI })

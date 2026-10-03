@@ -215,6 +215,17 @@ final class AskModelLibrary: ObservableObject {
         try commit(next)
     }
 
+    /// Records what the user confirmed a model supports, e.g. `\.vision` or `\.reasoning`.
+    func setCapability(_ capability: WritableKeyPath<RegisteredModel, Bool?>, _ value: Bool,
+                       reference: String, providerID: String) throws {
+        var next = registry
+        guard let index = next.providers.firstIndex(where: { $0.id == providerID }),
+              let modelIndex = next.providers[index].models.firstIndex(where: { $0.reference == reference })
+        else { throw unavailable() }
+        next.providers[index].models[modelIndex][keyPath: capability] = value
+        try commit(next)
+    }
+
     func updateConnection(_ provider: RegisteredProvider, baseURL: String, key: String) throws {
         if let remote = provider.remote {
             settings.setLLMBaseURL(baseURL, for: remote)

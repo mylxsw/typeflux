@@ -217,14 +217,15 @@ extension ProviderModelsView {
                 Button(L("ask.models.makeDefault")) { library.defaultReference = model.reference }
                     .disabled(!canAsk || library.defaultReference == model.reference)
                 Divider()
-                Text(L("models.visionHint"))
+                Text(L("models.capabilityHint"))
                 Toggle(L("models.visionYes"), isOn: Binding(
                     get: { model.vision == true },
-                    set: { if $0 { setVision(true, model: model) } }
+                    set: { setCapability(\.vision, $0, model: model) }
                 ))
-                Toggle(L("models.visionNo"), isOn: Binding(
-                    get: { model.vision == false },
-                    set: { if $0 { setVision(false, model: model) } }
+                // Unset reasoning still offers the effort menu (see `AskReasoningEffort`), so it reads as on.
+                Toggle(L("models.reasoningYes"), isOn: Binding(
+                    get: { model.reasoning != false },
+                    set: { setCapability(\.reasoning, $0, model: model) }
                 ))
                 Divider()
                 Button(L("ask.models.delete"), role: .destructive) { pendingDeletion = model }
@@ -240,12 +241,13 @@ extension ProviderModelsView {
     private func visionIndicator(_ model: RegisteredModel) -> some View {
         switch model.vision {
         case true?:
-            Image(systemName: "photo").font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                .help(L("models.visionYes"))
+            Text(L("ask.models.badge.vision")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                .lineLimit(1).fixedSize()
+                .help(L("ask.models.supportsImages"))
         case nil:
             Text(L("models.visionUnknownShort")).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
                 .lineLimit(1).fixedSize()
-                .help(L("models.visionHint"))
+                .help(L("models.capabilityHint"))
         case false?:
             EmptyView()
         }
@@ -307,15 +309,9 @@ extension ProviderModelsView {
         do { try action(); notice = nil } catch { notice = error.localizedDescription }
     }
 
-    private func setVision(_ value: Bool, model: RegisteredModel) {
-        perform {
-            var next = library.registry
-            guard let index = next.providers.firstIndex(where: { $0.id == providerID }),
-                  let modelIndex = next.providers[index].models.firstIndex(where: { $0.reference == model.reference })
-            else { return }
-            next.providers[index].models[modelIndex].vision = value
-            try library.commit(next)
-        }
+    private func setCapability(_ capability: WritableKeyPath<RegisteredModel, Bool?>, _ value: Bool,
+                               model: RegisteredModel) {
+        perform { try library.setCapability(capability, value, reference: model.reference, providerID: providerID) }
     }
 
     private func load(_ provider: RegisteredProvider) {

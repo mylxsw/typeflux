@@ -311,6 +311,9 @@ final class LocalizationResourceTests: XCTestCase {
             "models.connection",
             "models.useForRewrite",
             "models.visionUnknownShort",
+            "models.capabilityHint",
+            "models.visionYes",
+            "models.reasoningYes",
             "models.showKey",
             "models.hideKey",
             "models.cloud.managedShort",
@@ -323,6 +326,13 @@ final class LocalizationResourceTests: XCTestCase {
                 let localized = bundle.localizedString(forKey: key, value: nil, table: nil)
                 XCTAssertNotEqual(localized, key, "Missing localized value for \(key) in \(language.rawValue)")
                 XCTAssertFalse(localized.isEmpty)
+            }
+            // Vision means reading any image, not just screenshots; the copy must say so.
+            for key in ["models.visionYes", "models.noVision", "models.unknownVision", "models.visionUnknownShort"] {
+                let localized = bundle.localizedString(forKey: key, value: nil, table: nil).lowercased()
+                for word in ["screenshot", "截图", "截圖", "スクリーンショット", "스크린샷"] {
+                    XCTAssertFalse(localized.contains(word), "\(key) mentions screenshots in \(language.rawValue)")
+                }
             }
             let searchEmpty = bundle.localizedString(forKey: "models.searchEmpty", value: nil, table: nil)
             XCTAssertNotEqual(searchEmpty, "models.searchEmpty", "Missing models.searchEmpty in \(language.rawValue)")

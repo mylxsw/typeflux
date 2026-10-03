@@ -97,14 +97,15 @@ struct AskGlassTests {
         #expect(AskGlassCardSurface<EmptyView>.hoverCardCorner < AskGlassCardSurface<EmptyView>.menuCorner)
     }
 
-    @Test func modelRowsShowImageAndReasoningCapabilities() {
+    @Test func modelRowsShowOnlyImageCapability() {
         let plain = RegisteredModel(id: "a", name: "A")
         #expect(AskModelCapabilities.badges(plain).isEmpty)
         let both = RegisteredModel(id: "b", name: "B", vision: true, reasoning: true)
-        #expect(AskModelCapabilities.badges(both).map(\.help)
-            == [L("ask.models.supportsImages"), L("ask.models.supportsReasoning")])
+        #expect(AskModelCapabilities.badges(both).map(\.help) == [L("ask.models.supportsImages")])
         let vision = RegisteredModel(id: "c", name: "C", vision: true, reasoning: false)
         #expect(AskModelCapabilities.badges(vision).map(\.help) == [L("ask.models.supportsImages")])
+        // Reasoning alone earns no badge: nearly every model reasons.
+        #expect(AskModelCapabilities.badges(RegisteredModel(id: "d", name: "D", vision: false, reasoning: true)).isEmpty)
     }
 
     @Test func settingsAndContextRecedeWhileRecording() {

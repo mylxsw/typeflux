@@ -135,7 +135,7 @@ struct AskContextChipsTests {
                         "ask.context.previewHint", "ask.context.more",
                         "ask.context.memory.offHint", "ask.context.memory.onHint",
                         "ask.context.selection.offHint", "ask.context.selection.onHint",
-                        "ask.models.isDefault", "ask.models.supportsImages", "ask.models.supportsReasoning"] {
+                        "ask.models.isDefault", "ask.models.supportsImages"] {
                 let value = bundle.localizedString(forKey: key, value: nil, table: nil)
                 #expect(value != key, "Missing \(key) for \(language.rawValue)")
             }

@@ -190,15 +190,18 @@ struct AskLocalModeUITests {
         #expect(AskModelChoices.sourceTag(cloud) == nil)
     }
 
-    @Test func composerMarksOwnModelsThatReadImages() throws {
-        let f = try localFixture([text, vision])
+    @Test func composerShowsOnlyTheModelName() throws {
+        // Same name, different vision: the footer control must not grow a capability icon.
+        let seeing = RegisteredModel(id: "same-a", name: "same", reference: "custom:seeing", vision: true)
+        let blind = RegisteredModel(id: "same-b", name: "same", reference: "custom:blind", vision: false)
+        let f = try localFixture([seeing, blind])
         let library = f.model.modelLibrary
-        #expect(AskModelMenu.showsVisionTag(library: library, reference: vision.reference))
-        #expect(!AskModelMenu.showsVisionTag(library: library, reference: text.reference))
-        #expect(!AskModelMenu.showsVisionTag(library: library, reference: "cloud:default"))
-        #expect(!AskModelMenu.showsVisionTag(library: library, reference: "custom:missing"))
-        #expect(fits(AskModelMenu(library: library, reference: .constant(vision.reference), compact: true,
-                                  cloudAvailable: false)).height > 20)
+        let seeingSize = fits(AskModelMenu(library: library, reference: .constant(seeing.reference), compact: true,
+                                           cloudAvailable: false))
+        let blindSize = fits(AskModelMenu(library: library, reference: .constant(blind.reference), compact: true,
+                                          cloudAvailable: false))
+        #expect(seeingSize.height > 20)
+        #expect(seeingSize.width == blindSize.width)
     }
 
     @Test func composerMenuShowsImageNoteAndLockedCloud() throws {

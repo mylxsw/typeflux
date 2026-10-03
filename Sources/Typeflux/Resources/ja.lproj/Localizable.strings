@@ -1477,7 +1477,6 @@
 "ask.models.multiplierColumn" = "Credits ×";
 "ask.models.ownAPI" = "Own API";
 "ask.models.badge.vision" = "Vision";
-"ask.models.badge.reasoning" = "Reasoning";
 "ask.history.searchEmpty" = "一致する会話がありません";
 "ask.selection.lines" = "選択範囲 · %d 行";
 "ask.voice.hold" = "長押しで話す";
@@ -1537,7 +1536,6 @@
 "ask.models.makeDefault" = "Set as Ask default";
 "ask.models.isDefault" = "デフォルト";
 "ask.models.supportsImages" = "画像とスクリーンショットに対応";
-"ask.models.supportsReasoning" = "推論の強さを調整可能";
 "ask.models.compatible" = "Supports OpenAI-compatible APIs. Screenshots require vision support; tools require tool-calling support.";
 "ask.models.name" = "Name";
 "ask.models.url" = "API URL";
@@ -1554,8 +1552,8 @@
 "models.endpointMissing" = "Enter an API endpoint to use";
 "models.keyMissing" = "Enter an API key to use";
 "models.noModels" = "Add a model to use this provider";
-"models.noVision" = "This model does not support screenshots";
-"models.unknownVision" = "Vision capability unknown; confirm in provider details";
+"models.noVision" = "このモデルはビジョンに対応していません";
+"models.unknownVision" = "ビジョン対応は不明です。モデル設定で指定できます";
 "models.corrupt" = "The model catalog could not be read. Existing data has been preserved.";
 "models.invalidResponse" = "The provider returned an invalid model response";
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
@@ -1577,9 +1575,9 @@
 "models.manual" = "Add manually";
 "models.load" = "Load from provider";
 "models.add" = "Add selected";
-"models.visionHint" = "Confirm screenshot support from the model documentation";
-"models.visionYes" = "Supports screenshots";
-"models.visionNo" = "Does not support screenshots";
+"models.capabilityHint" = "モデルのドキュメントに基づき、対応する機能にチェックしてください";
+"models.visionYes" = "ビジョン（画像認識）に対応";
+"models.reasoningYes" = "推論に対応";
 "models.usageHint" = "ラベルはそのモデルを使用中のシナリオを示します。「利用シーン」または「···」メニューから変更できます。";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
@@ -1619,7 +1617,7 @@
 "models.searchEmpty" = "「%@」に一致するプロバイダーまたはモデルはありません";
 "models.connection" = "接続";
 "models.useForRewrite" = "書き換えと推敲に使用";
-"models.visionUnknownShort" = "スクリーンショット対応は不明";
+"models.visionUnknownShort" = "ビジョン対応は不明";
 "models.showKey" = "API キーを表示";
 "models.hideKey" = "API キーを隠す";
 "models.cloud.managedShort" = "Typeflux が管理";

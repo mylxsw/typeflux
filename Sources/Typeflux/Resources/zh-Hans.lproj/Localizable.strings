@@ -1487,7 +1487,6 @@
 "ask.models.multiplierColumn" = "积分倍率";
 "ask.models.ownAPI" = "自有 API";
 "ask.models.badge.vision" = "视觉";
-"ask.models.badge.reasoning" = "推理";
 "ask.history.searchEmpty" = "没有匹配的对话";
 "ask.selection.lines" = "选区 · %d 行";
 "ask.voice.hold" = "按住说话";
@@ -1547,7 +1546,6 @@
 "ask.models.makeDefault" = "设为随便问默认";
 "ask.models.isDefault" = "默认";
 "ask.models.supportsImages" = "支持图片与截图";
-"ask.models.supportsReasoning" = "支持调节推理强度";
 "ask.models.compatible" = "支持 OpenAI 兼容 API。截图需要模型支持视觉，工具调用需要对应能力。";
 "ask.models.name" = "名称";
 "ask.models.url" = "API 地址";
@@ -1564,8 +1562,8 @@
 "models.endpointMissing" = "填入 API 地址后可用";
 "models.keyMissing" = "填入 API Key 后可用";
 "models.noModels" = "添加模型后可用";
-"models.noVision" = "此模型不支持截图";
-"models.unknownVision" = "视觉能力未知，请在服务商详情中确认";
+"models.noVision" = "此模型不支持视觉";
+"models.unknownVision" = "视觉能力未知，可在模型设置中标记";
 "models.corrupt" = "模型目录无法读取，原始数据已保留。";
 "models.invalidResponse" = "服务商返回的模型数据格式无效";
 "models.httpError" = "服务商返回 HTTP %d，请检查地址和凭据。";
@@ -1587,9 +1585,9 @@
 "models.manual" = "手动添加";
 "models.load" = "从服务商加载";
 "models.add" = "添加";
-"models.visionHint" = "请根据模型文档确认是否支持截图";
-"models.visionYes" = "支持截图";
-"models.visionNo" = "不支持截图";
+"models.capabilityHint" = "请根据模型文档勾选该模型支持的能力";
+"models.visionYes" = "支持视觉（识图）";
+"models.reasoningYes" = "支持推理";
 "models.usageHint" = "标签表示该模型当前被哪个场景使用；可在「应用场景」或「···」菜单中更改。";
 "models.deleteHint" = "引用此模型的场景和对话将提示重新选择，不会自动替换。";
 "models.alreadyAdded" = "已在列表";
@@ -1629,7 +1627,7 @@
 "models.searchEmpty" = "没有与“%@”匹配的服务商或模型";
 "models.connection" = "连接";
 "models.useForRewrite" = "用于转译与润色";
-"models.visionUnknownShort" = "截图能力未知";
+"models.visionUnknownShort" = "视觉能力未知";
 "models.showKey" = "显示 API Key";
 "models.hideKey" = "隐藏 API Key";
 "models.cloud.managedShort" = "由 Typeflux 管理";
