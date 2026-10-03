@@ -48,6 +48,7 @@ final class RealtimeTranscriptionSessionTests: XCTestCase {
 
         await session.start()
         await session.append(buffer)
+        await upstream.waitUntilStartCalled()
         let chunkCountBeforeStart = await upstream.sentChunkCount()
         XCTAssertEqual(chunkCountBeforeStart, 0)
 
