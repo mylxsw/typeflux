@@ -1177,8 +1177,8 @@ private struct AskTranscriptFrames: PreferenceKey {
     }
 }
 
-/// A history row. Hovering swaps the timestamp for an overflow menu, so the row
-/// actions are discoverable without a right click.
+/// A history row keeps its timestamp visible on hover. Deletion is available
+/// from the conversation header and the row's context menu.
 private struct AskHistoryRow: View {
     let title: String
     let updatedAt: Date
@@ -1204,7 +1204,6 @@ private struct AskHistoryRow: View {
                         .font(.system(size: 11))
                         .foregroundStyle(StudioTheme.textTertiary)
                         .monospacedDigit()
-                        .opacity(hovering ? 0 : 1)
                 }
             }
             .padding(.leading, 12)
@@ -1229,24 +1228,6 @@ private struct AskHistoryRow: View {
             .contentShape(RoundedRectangle(cornerRadius: AskMetrics.sidebarRowCorner, style: .continuous))
         }
         .buttonStyle(AskPressableStyle.subtle)
-        // Always mounted and only faded: removing the menu on hover-out would
-        // tear it down while its popup is still tracking the pointer.
-        .overlay(alignment: .trailing) {
-            Menu {
-                Button(L("ask.delete"), role: .destructive, action: onDelete)
-            } label: {
-                Image(systemName: "ellipsis").font(.system(size: 12, weight: .semibold))
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .foregroundStyle(StudioTheme.textSecondary)
-            .padding(.trailing, 10)
-            .opacity(hovering && !busy ? 1 : 0)
-            .allowsHitTesting(hovering && !busy)
-            .accessibilityHidden(busy)
-            .help(L("ask.delete"))
-        }
         .onHover { hovering = $0 }
         .accessibilityAddTraits(selected ? .isSelected : [])
         .contextMenu {
