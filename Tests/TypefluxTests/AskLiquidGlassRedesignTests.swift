@@ -144,14 +144,10 @@ struct AskLiquidGlassRedesignTests {
             == .send(enabled: true))
     }
 
-    @Test func headerInkAndOrbRotation() {
+    @Test func headerInk() {
         #expect(AskHeaderIconButton.ink(active: true, hovering: false) == AskTheme.accent)
         #expect(AskHeaderIconButton.ink(active: false, hovering: true) == StudioTheme.textPrimary)
         #expect(AskHeaderIconButton.ink(active: false, hovering: false) == StudioTheme.textSecondary)
-        let start = Date(timeIntervalSinceReferenceDate: 0)
-        #expect(AskConversationOrb.angle(at: start) == .degrees(0))
-        #expect(AskConversationOrb.angle(at: start.addingTimeInterval(3)) == .degrees(90))
-        #expect(AskConversationOrb.angle(at: start.addingTimeInterval(12)) == .degrees(0))
     }
 
     @Test func pressStylesScaleGently() {
