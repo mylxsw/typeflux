@@ -2,47 +2,113 @@ import AppKit
 import ApplicationServices
 
 extension AXTextInjector {
+    @MainActor
+    func makeReadOnlySelectionRequest() -> ReadOnlySelectionRequest {
+        var request = ReadOnlySelectionRequest.frontmost()
+        // Local AppKit reads only, before the launcher takes the native editor's focus.
+        if request.processID == ProcessInfo.processInfo.processIdentifier {
+            request.nativeSnapshot = typefluxNativeTextTarget().map(typefluxNativeSelectionSnapshot)
+                ?? typefluxReadOnlyWindowSelectionSnapshot(source: "typeflux-non-text-window")
+        }
+        return request
+    }
+
+    @MainActor
+    func readOnlySelectionSnapshot(for request: ReadOnlySelectionRequest) async -> TextSelectionSnapshot {
+        do { try await acquireTextOperation() }
+        catch { return TextSelectionSnapshot(source: Task.isCancelled ? "capture-cancelled" : "capture-busy") }
+        defer { deliveryInProgress = false }
+        latestSelectionContext = nil
+        guard !Task.isCancelled else { return TextSelectionSnapshot(source: "capture-cancelled") }
+        guard request.matches(processID: frontmostProcessID()) else {
+            return TextSelectionSnapshot(source: "target-changed")
+        }
+        if let snapshot = request.nativeSnapshot { return snapshot.readOnlyContext() }
+        guard AXIsProcessTrusted() else { return TextSelectionSnapshot(source: "permission-missing") }
+        let cancellation = SelectionReplacementCancellationToken()
+        do {
+            return try await performSelectionReplacementWork(cancellationToken: cancellation) {
+                try self.readOnlySelectionSnapshot(
+                    target: ExternalSelectionCaptureTarget(processID: request.processID,
+                        processName: request.processName, bundleIdentifier: request.bundleIdentifier),
+                    cancellation: cancellation, request: request
+                )
+            }
+        } catch {
+            return TextSelectionSnapshot(source: "capture-cancelled")
+        }
+    }
+
     func readOnlySelectionSnapshot(
         target: ExternalSelectionCaptureTarget,
-        cancellation: SelectionReplacementCancellationToken
+        cancellation: SelectionReplacementCancellationToken,
+        request: ReadOnlySelectionRequest? = nil
     ) throws -> TextSelectionSnapshot {
+        let request = request ?? ReadOnlySelectionRequest(processID: target.processID,
+            processName: target.processName, bundleIdentifier: target.bundleIdentifier)
         let processID = target.processID
-        let window = processID.flatMap(focusedWindowElement(for:))
-        let focused = processID.flatMap(deliveryFocusedElement(for:))
         let budget = ReadOnlySelectionBudget()
+        let diagnostics = ReadOnlySelectionDiagnostics()
+        var window: AXUIElement?
+        var didReadWindow = false
+        // Read only the pinned app's roots. Avoid the general focus resolver's
+        // independent traversal and keep root failures inside this diagnostic budget.
+        func element(_ attribute: String, application: AXUIElement) -> AXUIElement? {
+            guard budget.take() else { return nil }
+            var value: CFTypeRef?
+            let error = AXUIElementCopyAttributeValue(application, attribute as CFString, &value)
+            diagnostics.record(attribute, error: error)
+            guard error == .success, let value, CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+            return unsafeBitCast(value, to: AXUIElement.self)
+        }
         let result = try ReadOnlySelection.capture(
             readAX: {
-                ReadOnlySelection.find(
+                guard let processID else { return nil }
+                let app = AXUIElementCreateApplication(processID)
+                AXUIElementSetMessagingTimeout(app, Self.replacementAXMessagingTimeout)
+                window = element(kAXFocusedWindowAttribute, application: app)
+                didReadWindow = true
+                let focused = element(kAXFocusedUIElementAttribute, application: app)
+                return ReadOnlySelection.find(
                     roots: [focused, window].compactMap { $0 }, budget: budget,
-                    read: { self.readOnlySelectedText(from: $0, budget: budget) },
+                    read: { self.readOnlySelectedText(from: $0, budget: budget, diagnostics: diagnostics) },
                     children: { element in
                         guard budget.take() else { return [] }
+                        var count: CFIndex = 0
+                        let countError = AXUIElementGetAttributeValueCount(element, kAXChildrenAttribute as CFString, &count)
+                        diagnostics.record("AXChildren.count", error: countError)
+                        if countError == .success, count == 0 { return [] }
+                        guard budget.take() else { return [] }
+                        // Some bridges support sliced reads but not count queries.
+                        let limit = countError == .success ? min(max(count, 0), 32) : 32
                         var children: CFArray?
-                        // Fetch a bounded slice without materializing the entire AX array.
-                        guard AXUIElementCopyAttributeValues(
-                            element, kAXChildrenAttribute as CFString, 0, 32, &children
-                        ) == .success, let children = children as? [AXUIElement] else { return [] }
+                        let error = AXUIElementCopyAttributeValues(
+                            element, kAXChildrenAttribute as CFString, 0, limit, &children
+                        )
+                        diagnostics.record(kAXChildrenAttribute, error: error)
+                        guard error == .success, let children = children as? [AXUIElement] else { return [] }
+                        if countError == .success ? count > children.count : children.count == 32 {
+                            diagnostics.treeTruncated = true
+                        }
                         return children
                     },
-                    matches: { CFEqual($0, $1) }
+                    matches: { CFEqual($0, $1) },
+                    onTruncation: { diagnostics.treeTruncated = true }
                 )?.text
             },
-            copy: {
-                self.logger.debug("read-only AX selection unavailable — trying clipboard-copy")
-                let text = self.readSelectedTextViaCopy(
-                    processID: processID, milliseconds: Self.copySelectionTimeoutMilliseconds
-                )
-                if text == nil { self.logger.debug("clipboard-copy attempted but returned no text") }
-                return text
+            targetMatches: {
+                guard request.matches(processID: self.frontmostProcessID()) else { return false }
+                return !didReadWindow || self.readOnlyTargetMatches(processID: processID, window: window)
             },
-            targetMatches: { self.readOnlyTargetMatches(processID: processID, window: window) },
             checkCancellation: { try cancellation.checkCancellation() }
         )
-        logger.debug("read-only selection source=\(result.source, privacy: .public) textLength=\(result.text?.utf16.count ?? 0)")
+        let status = result.source == "target-changed" ? result.source
+            : diagnostics.status(text: result.text, budget: budget)
+        request.log(status: status, details: diagnostics.details(budget: budget))
         return TextSelectionSnapshot(
             processID: processID, processName: target.processName,
             bundleIdentifier: target.bundleIdentifier, selectedText: result.text,
-            source: result.source, windowTitle: window.flatMap(windowTitle(of:)),
+            source: status, windowTitle: window.flatMap(windowTitle(of:)),
             isFocusedTarget: result.text != nil
         ).readOnlyContext()
     }
@@ -59,16 +125,19 @@ extension AXTextInjector {
 
     func readOnlySelectedText(
         from element: AXUIElement, budget: ReadOnlySelectionBudget,
-        attributeValue: ((String) -> AnyObject?)? = nil,
+        diagnostics: ReadOnlySelectionDiagnostics = ReadOnlySelectionDiagnostics(),
+        attributeRead: ((String) -> (AXError, AnyObject?))? = nil,
         parameterizedText: ((CFRange) -> String?)? = nil
     ) -> String? {
         AXUIElementSetMessagingTimeout(element, Self.replacementAXMessagingTimeout)
         func attribute(_ name: String) -> AnyObject? {
             guard budget.take() else { return nil }
-            if let attributeValue { return attributeValue(name) }
+            let error: AXError
             var value: AnyObject?
-            guard AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success else { return nil }
-            return value
+            if let attributeRead { (error, value) = attributeRead(name) }
+            else { error = AXUIElementCopyAttributeValue(element, name as CFString, &value) }
+            diagnostics.record(name, error: error)
+            return error == .success ? value : nil
         }
         func string(_ value: AnyObject?) -> String? {
             (value as? String) ?? (value as? NSAttributedString)?.string
@@ -80,15 +149,33 @@ extension AXTextInjector {
             var range = CFRange()
             return AXValueGetValue(typed, .cfRange, &range) ? range : nil
         }
-        let selectedText = string(attribute(kAXSelectedTextAttribute as String))
-        let selectedRange = range(attribute(kAXSelectedTextRangeAttribute as String))
+        diagnostics.nodes += 1
+        let role = string(attribute(kAXRoleAttribute as String))
+        if let role { diagnostics.roles[role, default: 0] += 1 }
+        let textValue = attribute(kAXSelectedTextAttribute as String)
+        let selectedText = string(textValue)
+        if textValue != nil, selectedText == nil { diagnostics.invalidValues += 1 }
+        if selectedText?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true {
+            diagnostics.emptySelections += 1
+        }
+        func observedRange(_ value: AnyObject?) -> CFRange? {
+            guard let value else { return nil }
+            guard let result = range(value), result.location >= 0, result.length >= 0,
+                  result.location <= Int.max - result.length else {
+                diagnostics.invalidValues += 1
+                return nil
+            }
+            if result.length > 0 { diagnostics.positiveRanges += 1 }
+            else { diagnostics.emptySelections += 1 }
+            return result
+        }
+        let selectedRange = observedRange(attribute(kAXSelectedTextRangeAttribute as String))
         return ReadOnlySelection.text(
             selectedText: {
                 guard selectedText != nil else { return nil }
                 let value = string(attribute(kAXValueAttribute as String))
                 let placeholder = string(attribute(kAXPlaceholderValueAttribute as String))
                 let title = string(attribute(kAXTitleAttribute as String))
-                let role = string(attribute(kAXRoleAttribute as String))
                 guard budget.take() else { return nil }
                 return Self.validSelectionText(
                     selectedText: selectedText, selectedRange: selectedRange,
@@ -97,9 +184,13 @@ extension AXTextInjector {
             },
             ranges: {
                 if let selectedRange, selectedRange.length > 0 { return [selectedRange] }
-                guard let values = attribute(kAXSelectedTextRangesAttribute as String) as? [AnyObject],
-                      !values.isEmpty, values.count <= 16 else { return [] }
-                let ranges = values.compactMap(range)
+                guard let value = attribute(kAXSelectedTextRangesAttribute as String) else { return [] }
+                guard let values = value as? [AnyObject], values.count <= 16 else {
+                    diagnostics.invalidValues += 1
+                    return []
+                }
+                if values.isEmpty { diagnostics.emptySelections += 1 }
+                let ranges = values.compactMap(observedRange)
                 return ranges.count == values.count ? ranges : []
             },
             stringForRange: { selectedRange in
@@ -108,10 +199,11 @@ extension AXTextInjector {
                 var selectedRange = selectedRange
                 guard let parameter = AXValueCreate(.cfRange, &selectedRange) else { return nil }
                 var value: CFTypeRef?
-                guard AXUIElementCopyParameterizedAttributeValue(
+                let error = AXUIElementCopyParameterizedAttributeValue(
                     element, kAXStringForRangeParameterizedAttribute as CFString, parameter, &value
-                ) == .success else { return nil }
-                return value as? String
+                )
+                diagnostics.record(kAXStringForRangeParameterizedAttribute, error: error)
+                return error == .success ? value as? String : nil
             },
             value: { string(attribute(kAXValueAttribute as String)) }
         )
