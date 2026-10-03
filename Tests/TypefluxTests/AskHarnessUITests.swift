@@ -218,20 +218,16 @@ struct AskHarnessUITests {
     }
 
     @Test func cloudLocationLabelOccupiesNoSpace() {
-        for compact in [false, true] {
-            let hosting = NSHostingView(rootView: AskRunLocationLabel(local: false, compact: compact))
+        for highlighted in [false, true] {
+            let hosting = NSHostingView(rootView: AskRunLocationLabel(local: false, highlighted: highlighted))
             hosting.layoutSubtreeIfNeeded()
             #expect(hosting.fittingSize == .zero)
         }
     }
 
-    @Test func localLocationLabelKeepsItsExplanationAndCapabilityWarning() {
-        #expect(AskRunLocationLabel.help(notice: nil) == L("ask.location.local.help"))
-        #expect(AskRunLocationLabel.help(notice: "n") == L("ask.location.local.help") + "\nn")
-        for compact in [false, true] {
-            for notice in [nil, "n"] as [String?] {
-                #expect(fits(AskRunLocationLabel(local: true, compact: compact, notice: notice), width: 120) == 22)
-            }
+    @Test func localLocationLabelKeepsItsHeightInEveryState() {
+        for highlighted in [false, true] {
+            #expect(fits(AskRunLocationLabel(local: true, highlighted: highlighted), width: 120) == 22)
         }
     }
 
@@ -251,7 +247,6 @@ struct AskHarnessUITests {
         let cloud = try AskTestFixture()
         #expect(cloud.model.approvalRisk("missing") == nil)
         #expect(cloud.model.mcpServerName(of: call("m", "mcp_x")) == nil)
-        #expect(cloud.model.localCapabilityNotice == nil)
         await cloud.api.setTool(call("w", "danger_delete", [:]))
         await cloud.api.seed(.init(id: "c", title: "C", revision: 1, updatedAt: now, messages: []))
         await cloud.model.refreshHistory()
@@ -270,9 +265,9 @@ struct AskHarnessUITests {
         let previous = search.provider
         defer { search.provider = previous }
         search.provider = .none
-        #expect(local.model.localCapabilityNotice == L("ask.location.noSearch"))
+        #expect(!AskLocalModeStatus.make(model: local.model, signedIn: false).searchConfigured)
         search.provider = .brave
-        #expect(local.model.localCapabilityNotice == nil)
+        #expect(AskLocalModeStatus.make(model: local.model, signedIn: false).searchConfigured)
     }
 
     // MARK: - Settings and skills

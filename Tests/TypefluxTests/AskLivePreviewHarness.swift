@@ -9,6 +9,8 @@ import Testing
 /// keeps it on screen for `TYPEFLUX_ASK_LIVE_PREVIEW` seconds to be captured.
 /// `TYPEFLUX_ASK_LIVE_SCENE` picks chat (default), empty, palette or approval;
 /// `TYPEFLUX_ASK_LIVE_APPEARANCE` picks dark (default) or light.
+/// `TYPEFLUX_ASK_LIVE_ACCOUNT=local` shows a signed-out Mac that runs Ask only on
+/// the user's own (Ollama) models instead of the signed-in Cloud account.
 /// It never touches a real account, microphone, screen or desktop tool.
 @Suite("Ask live preview", .serialized)
 @MainActor
@@ -24,11 +26,12 @@ struct AskLivePreviewHarness {
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let localOnly = environment["TYPEFLUX_ASK_LIVE_ACCOUNT"] == "local"
         let auth = AuthState.shared
         let previousProfile = auth.userProfile, previousLoggedIn = auth.isLoggedIn
-        auth.userProfile = UserProfile(id: "preview", email: "demir@example.com", name: "Demir Von", status: 1,
-                                       provider: "email", createdAt: "", updatedAt: "")
-        auth.isLoggedIn = true
+        auth.userProfile = localOnly ? nil : UserProfile(id: "preview", email: "demir@example.com", name: "Demir Von",
+                                                         status: 1, provider: "email", createdAt: "", updatedAt: "")
+        auth.isLoggedIn = !localOnly
         defer { auth.userProfile = previousProfile; auth.isLoggedIn = previousLoggedIn }
 
         let librarySuite = "ask-live-library-" + UUID().uuidString
@@ -37,9 +40,19 @@ struct AskLivePreviewHarness {
         let library = AskModelLibrary(defaults: libraryDefaults, automaticallyLoadsCatalog: false)
         try library.addModels(Self.cloudModels(), providerID: "typefluxCloud")
         library.defaultReference = "cloud:minimax-m3"
+        if localOnly {
+            try library.addModels(Self.localModels(), providerID: "ollama")
+            library.ollamaAvailable = true
+            library.defaultReference = try #require(library.firstLocalReference(hasImage: false))
+        }
+        let modelReference = library.defaultReference
         // The approval flow runs a stubbed tool call; the default library keeps it model-agnostic.
-        let fixture = try scene == "approval" || scene == "motion" ? AskTestFixture() : AskTestFixture(modelLibrary: library)
-        for conversation in Self.history() { await fixture.api.seed(conversation) }
+        let fixture = try scene == "approval" || scene == "motion"
+            ? AskTestFixture(localOnly: localOnly)
+            : AskTestFixture(localOnly: localOnly, modelLibrary: library)
+        for conversation in Self.history() {
+            await fixture.api.seed(localOnly ? Self.localized(conversation, modelReference: modelReference) : conversation)
+        }
         await fixture.model.refreshHistory()
         switch scene {
         case "empty":
@@ -104,8 +117,8 @@ struct AskLivePreviewHarness {
             content.addSubview(anchor)
             if scene == "model-menu" {
                 AskGlassMenuPresenter.shared.show(
-                    AskModelChoices(library: library, reference: .constant("cloud:minimax-m3"), loggedIn: true,
-                                    composerStyle: true, onManage: {}),
+                    AskModelChoices(library: library, reference: .constant(modelReference), loggedIn: !localOnly,
+                                    composerStyle: true, onManage: {}, offersCloudSignIn: localOnly),
                     owner: UUID(), anchor: anchor, onClose: {})
             } else {
                 AskGlassMenuPresenter.shared.show(AskReasoningChoices(effort: .constant(.providerDefault)),
@@ -176,6 +189,27 @@ struct AskLivePreviewHarness {
             model("gemini", "Gemini 3 Pro", vision: true, multiplier: "2", context: 1_000_000, output: 64000),
             model("deepseek", "DeepSeek V3.2", vision: false, multiplier: "0.5", context: 128_000, output: 32000)
         ]
+    }
+
+    /// Models a signed-out user pulled into Ollama.
+    static func localModels() -> [RegisteredModel] {
+        [
+            RegisteredModel(id: "qwen3:8b", name: "qwen3:8b"),
+            RegisteredModel(id: "llama3.2-vision:11b", name: "llama3.2-vision:11b", vision: true),
+            RegisteredModel(id: "gemma3:4b", name: "gemma3:4b")
+        ]
+    }
+
+    /// A conversation as a local run stores it: on the user's model, without Cloud credits.
+    static func localized(_ conversation: AskConversation, modelReference: String) -> AskConversation {
+        var local = conversation
+        if local.modelRef != nil { local.modelRef = modelReference }
+        local.usage = nil
+        if let context = local.contextUsage {
+            local.contextUsage = .init(modelRef: modelReference, inputTokens: context.inputTokens,
+                                       outputReserve: context.outputReserve, capacity: 32768, summarized: false)
+        }
+        return local
     }
 
     /// The design board's sidebar: today, yesterday and an older conversation.

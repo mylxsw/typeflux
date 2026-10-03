@@ -67,7 +67,10 @@ struct AskComposer: View {
     }
     private func submit() {
         if launcher, showsLauncherSuggestions, !active {
-            pick(AskSuggestion.all[min(suggestionIndex, AskSuggestion.all.count - 1)]); return
+            let disabled = AskLauncherSuggestions.disabled(screenshot: model.screenshotSuggestion(launcher: true))
+            let index = AskSuggestion.available(min(suggestionIndex, AskSuggestion.all.count - 1), skipping: disabled)
+            if !disabled.contains(index) { pick(AskSuggestion.all[index]) }
+            return
         }
         if launcher { model.submitLauncher() } else { model.submitDraft() }
     }
@@ -80,10 +83,10 @@ struct AskComposer: View {
 
     /// Sends a suggestion as the question, with the screenshot when it asks for one.
     private func pick(_ suggestion: AskSuggestion) {
+        // A local draft moves to a vision model first; without one the row cannot be picked.
+        if suggestion.screenshot, !model.screenshotSuggestion(launcher: launcher).enabled { return }
         draft.wrappedValue.text = suggestion.title
-        if suggestion.screenshot, model.screenshotCapability(launcher: launcher) == .supported {
-            draft.wrappedValue.includeScreenshot = true
-        }
+        if suggestion.screenshot { model.attachScreenshotForSuggestion(launcher: launcher) }
         model.submitLauncher()
     }
     private var sendControl: AskSendControl {
@@ -157,7 +160,8 @@ struct AskComposer: View {
             editorRow
             footer
             if showsLauncherSuggestions {
-                AskLauncherSuggestions(highlighted: $suggestionIndex, onPick: pick)
+                AskLauncherSuggestions(highlighted: $suggestionIndex,
+                                       screenshot: model.screenshotSuggestion(launcher: true), onPick: pick)
                     .disabled(active)
                     .opacity(Self.recordingDim(active))
             }
@@ -222,7 +226,7 @@ struct AskComposer: View {
 
     private var footer: some View {
         HStack(spacing: 4) {
-            AskRunLocationLabel(local: !model.cloudAvailable, compact: launcher, notice: model.localCapabilityNotice)
+            AskLocalModeButton(model: model)
                 .opacity(Self.recordingDim(active))
             AskModelMenu(library: model.modelLibrary, reference: Binding(
                 get: { model.modelReference(launcher: launcher) },

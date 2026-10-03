@@ -57,11 +57,6 @@ final class AskConversationModel: ObservableObject {
 
     /// False when Ask runs on this Mac: not signed in, or local mode is on.
     var cloudAvailable: Bool { session().map { !$0.token.isEmpty } ?? false }
-    /// A capability the user's own setup lacks, surfaced before sending rather than after a run fails.
-    var localCapabilityNotice: String? {
-        guard !cloudAvailable, AskSearchSettings(defaults: modelLibrary.settings.defaults).provider == .none else { return nil }
-        return L("ask.location.noSearch")
-    }
     func requiresVision(launcher: Bool) -> Bool {
         let current = launcher ? launcherDraft : draft
         return (current.includeScreenshot && current.screenshot != nil)
@@ -84,6 +79,10 @@ final class AskConversationModel: ObservableObject {
         }
     }
     @Published var launcherScreenshotNotice: String?
+    /// A local conversation that moved to a vision model; the banner offers the way back.
+    @Published var visionSwitch: AskVisionSwitch?
+    /// Drafts whose user switched back, so they are not switched again.
+    var visionSwitchDeclined: Set<String> = []
     @Published var screenshotNotice: String?
     @Published private(set) var recoveringImages: [String: AskImageRecoveryTarget] = [:]
     @Published private(set) var conversations: [AskConversationSummary] = []
@@ -395,7 +394,7 @@ final class AskConversationModel: ObservableObject {
         if let oldId, !isLoadingSelection { drafts[oldId] = oldDraft }
         // Commit navigation synchronously, before the first cache/network await.
         selectedId = id; selected = snapshots[id]; isLoadingSelection = true; selectionLoadFailed = false
-        draft = drafts[id] ?? .followUp; error = nil; captureWarning = nil; screenshotNotice = nil
+        draft = drafts[id] ?? .followUp; error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
         captureGeneration = UUID(); capturing = false
         if let oldId, !deletedConversationIDs.contains(oldId), let saved = drafts[oldId] { try? await cache.saveDraft(saved, key: oldId, owner: current.owner) }
         let cached = try? await cache.load(id: id, owner: current.owner)
@@ -415,7 +414,8 @@ final class AskConversationModel: ObservableObject {
             guard owner == current.owner else { return }
             snapshots[id] = snapshots[id]?.reconciling(latest) ?? latest
             guard generation == selectionGeneration else { return }
-            selected = snapshots[id] ?? latest; isLoadingSelection = false; normalizeScreenshotChoices(); error = operationErrors[id]
+            selected = snapshots[id] ?? latest; isLoadingSelection = false
+            switchToVisionModelIfNeeded(launcher: false); normalizeScreenshotChoices(); error = operationErrors[id]
             queueDidSettle(id)
             // Observe active runs without resuming desktop tools or inference.
             if latest.run?.isActive == true, !busyIds.contains(id) {
@@ -442,7 +442,7 @@ final class AskConversationModel: ObservableObject {
         selectionGeneration = UUID(); selected = nil; selectedId = nil
         isLoadingSelection = false; selectionLoadFailed = false
         captureGeneration = UUID(); capturing = false
-        draft = AskDraft(); error = nil; captureWarning = nil; screenshotNotice = nil
+        draft = AskDraft(); error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
         // No source app is trustworthy here, so only global memory applies.
         draft.memory = capture.globalMemory() ?? AskMemory()
     }

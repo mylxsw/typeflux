@@ -18,10 +18,21 @@ struct AskSuggestion: Equatable, Identifiable {
         AskSuggestion(key: "ask.suggest.page", systemImage: "globe")
     ]
 
-    /// Moves a highlight among the suggestions, wrapping at both ends.
-    static func step(_ index: Int, by delta: Int, count: Int = all.count) -> Int {
+    /// Moves a highlight among the suggestions, wrapping at both ends and
+    /// passing over the ones that cannot run.
+    static func step(_ index: Int, by delta: Int, count: Int = all.count, skipping disabled: Set<Int> = []) -> Int {
         guard count > 0 else { return 0 }
-        return ((index + delta) % count + count) % count
+        var next = index
+        for _ in 0 ..< count {
+            next = ((next + delta) % count + count) % count
+            if !disabled.contains(next) { return next }
+        }
+        return index
+    }
+
+    /// The highlight to start from: the given one, or the next that can run.
+    static func available(_ index: Int, count: Int = all.count, skipping disabled: Set<Int>) -> Int {
+        disabled.contains(index) ? step(index, by: 1, count: count, skipping: disabled) : index
     }
 }
 
@@ -30,7 +41,15 @@ struct AskSuggestion: Equatable, Identifiable {
 /// the keyboard hint. ↑/↓ move the highlight and Return sends it.
 struct AskLauncherSuggestions: View {
     @Binding var highlighted: Int
+    /// What the screenshot suggestion can do with the launcher's model.
+    var screenshot: AskScreenshotSuggestion = .ready
     var onPick: (AskSuggestion) -> Void
+
+    /// Rows that cannot run: the screenshot one when no model here can read images.
+    static func disabled(screenshot: AskScreenshotSuggestion) -> Set<Int> {
+        guard !screenshot.enabled else { return [] }
+        return Set(AskSuggestion.all.indices.filter { AskSuggestion.all[$0].screenshot })
+    }
 
     static let rowHeight: CGFloat = 42
     static let rowSpacing: CGFloat = 2
@@ -47,8 +66,9 @@ struct AskLauncherSuggestions: View {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
             VStack(spacing: Self.rowSpacing) {
                 ForEach(Array(AskSuggestion.all.enumerated()), id: \.element.id) { index, suggestion in
-                    row(suggestion, highlighted: index == highlighted)
-                        .onHover { if $0 { highlighted = index } }
+                    let enabled = !disabled.contains(index)
+                    row(suggestion, highlighted: enabled && index == highlighted, enabled: enabled)
+                        .onHover { if $0, enabled { highlighted = index } }
                 }
             }
             .padding(Self.listPadding)
@@ -60,22 +80,33 @@ struct AskLauncherSuggestions: View {
                 .frame(height: Self.hintHeight, alignment: .top)
                 .accessibilityHidden(true)
         }
-        .background(AskArrowKeyMonitor { delta in highlighted = AskSuggestion.step(highlighted, by: delta) })
+        .background(AskArrowKeyMonitor { delta in
+            highlighted = AskSuggestion.step(highlighted, by: delta, skipping: disabled)
+        })
+        .onAppear { highlighted = AskSuggestion.available(highlighted, skipping: disabled) }
+        .onChange(of: screenshot) { _ in highlighted = AskSuggestion.available(highlighted, skipping: disabled) }
     }
 
-    private func row(_ suggestion: AskSuggestion, highlighted: Bool) -> some View {
-        Button { onPick(suggestion) } label: {
+    private var disabled: Set<Int> { Self.disabled(screenshot: screenshot) }
+
+    private func caption(_ suggestion: AskSuggestion) -> String {
+        suggestion.screenshot ? screenshot.caption(default: suggestion.caption) : suggestion.caption
+    }
+
+    private func row(_ suggestion: AskSuggestion, highlighted: Bool, enabled: Bool) -> some View {
+        let tint = enabled ? AskTheme.accent : StudioTheme.textTertiary
+        return Button { onPick(suggestion) } label: {
             HStack(spacing: 12) {
                 Image(systemName: suggestion.systemImage).font(.system(size: 12.5))
-                    .foregroundStyle(AskTheme.accent)
+                    .foregroundStyle(tint)
                     .frame(width: 28, height: 28)
-                    .background(AskTheme.accent.opacity(0.14),
+                    .background(tint.opacity(0.14),
                                 in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                 Text(suggestion.title).font(.system(size: 13.5))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(enabled ? StudioTheme.textPrimary : StudioTheme.textTertiary)
                     .lineLimit(1)
                 Spacer(minLength: 8)
-                Text(suggestion.caption).font(.system(size: 11.5))
+                Text(caption(suggestion)).font(.system(size: 11.5))
                     .foregroundStyle(StudioTheme.textTertiary)
                     .lineLimit(1)
             }
@@ -86,8 +117,9 @@ struct AskLauncherSuggestions: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(!enabled)
         .accessibilityLabel(suggestion.title)
-        .accessibilityHint(suggestion.caption)
+        .accessibilityHint(caption(suggestion))
         .accessibilityAddTraits(highlighted ? .isSelected : [])
     }
 }
