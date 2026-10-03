@@ -209,6 +209,7 @@ struct AskComposer: View {
             footer
             if launcher, paletteOpen {
                 paletteView
+                    .frame(height: AskCommandPaletteView.height(for: palette))
                     .padding(.horizontal, 10)
                     .padding(.bottom, 10)
             }
@@ -241,9 +242,12 @@ struct AskComposer: View {
         // The workspace palette floats above the card without moving the transcript.
         .overlay(alignment: .top) {
             if !launcher, paletteOpen {
+                // Its height is known, so it sits exactly 8 pt above the card.
+                let height = AskCommandPaletteView.height(for: palette)
                 paletteView
-                    .alignmentGuide(.top) { $0[.bottom] + 8 }
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    .frame(height: height)
+                    .offset(y: -height - 8)
+                    .transition(.opacity)
             }
         }
     }
