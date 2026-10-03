@@ -55,12 +55,18 @@ final class AskObservationStore {
         return reference
     }
 
-    func validate(id: String?, scope: Scope, target: AskExecutionTarget) throws -> AskObservationRef {
+    func reference(id: String?, scope: Scope) throws -> AskObservationRef {
         guard let id, let entry = entries[scope], entry.reference.id == id,
-              now() < entry.deadline, entry.reference.target == target else {
+              now() < entry.deadline else {
             throw AskObservationError.needsObservation
         }
         return entry.reference
+    }
+
+    func validate(id: String?, scope: Scope, target: AskExecutionTarget) throws -> AskObservationRef {
+        let reference = try reference(id: id, scope: scope)
+        guard reference.target == target else { throw AskObservationError.needsObservation }
+        return reference
     }
 
     /// Consume before dispatch, including attempts whose external result is unknown.
@@ -92,7 +98,7 @@ struct AskActionReceipt {
     func output(image: String? = nil) -> AskLocalToolOutput {
         do { return try encodedOutput(image: image) } catch {
             return .init(content: "Result unknown: receipt encoding failed. Observe and reconcile before retrying.",
-                         isError: true)
+                         isError: true, outcome: .init(status: "unknown", effectVerified: false))
         }
     }
 
@@ -119,7 +125,8 @@ struct AskActionReceipt {
             message = String(message.prefix(message.count / 2)) + "\n[Observation text truncated]"
             content = try encode()
         }
-        return .init(content: content, image: image, isError: outcome.safeStatus != .ok)
+        return .init(content: content, image: image, isError: outcome.safeStatus != .ok,
+                     outcome: outcome, observation: observation)
     }
 
     static func observed(_ message: String, reference: AskObservationRef?) -> Self {

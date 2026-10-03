@@ -172,6 +172,7 @@ extension AskToolResultRequest {
         let outcome = output.outcome ?? .init(status: output.isError ? "unknown" : "ok")
         if harness == nil { harness = AskHarnessContract(version: 1) }
         harness?.outcome = outcome
+        harness?.observation = output.observation
     }
 
     func message(step: Int, now: Date) -> AskMessage {

@@ -1,29 +1,56 @@
 ## Delivery boundary
 
-This PR delivers the independent P09 executor core and controlled acceptance
-fixtures. It does **not** finish GUL-175: production `AskLocalTools` and
-`AskLocalTools+Approval` still use their existing implementations. The final
-adapter must be integrated serially after P06 publishes its fixed adapter
-commit, preserving its shared raw/approved MCP result adapter. Both new
-executors default to `writesEnabled = false`; no production capability is
-enabled by this PR.
+The independent executor core was merged in PR #266 as
+`2e5130f8ca4867ad2438e785acd22d19366f20d5`. The follow-up connects both
+production `AskLocalTools.execute` and `executeApproved` to those executors
+and removes the previous parallel AppleScript/CGEvent implementations.
+Browser/computer writes remain **disabled by default**, including the legacy
+entrypoints. Read-only browser observation, desktop inspect/wait and screenshot
+consent remain available. Native granted-path acceptance is still required
+before enabling writes; see `p09-validation.md` for the current evidence.
 
-The initial dependency was P02 `d53c0ddc2bc11a6e8917b2480cf31b5f29137976`
-(PR #261). P02 then merged main to resolve conflicts. After reviewing the
-changes to approval binding, attached-folder scope, pending calls and steering,
-this branch fast-forwarded to the reviewed fixed commit
-`a9ebc93d5f2788e49f4155a78223ad35f3ae5d8a`. P02 subsequently squash-merged as
-`fe1d68e446d715ad9f20e3517d2c170191ec4af9`; P09 was moved onto that main
-commit without repeating P02's commits. **The PR base is main.** The P06 core
-head observed during this work was `756fb4473da7aa5475d2792a17c6c3ab78bb739c`
-(#262), and the delivered adapter was
-`390c466f46c41447bb31d0f59671b593005d7e72` (#265). Neither is imported here.
-The user requested a further #262 conflict repair at 10:41 UTC. P06 completed
-that repair at `297e812391d38adddc5c744659282ec51ee0f643`, but adapter #265
-remained at `390c466f...`, conflicting with current main and still including
-the superseded core/P02 prerequisites. Final shared-entry integration needs a
-refreshed compatible adapter foundation; this PR does not copy or redo P06's
-shared adapter to bypass that dependency.
+The integration foundation is P06 adapter PR #265's reviewed, delivered fixed
+head `2ece25153b3ce3d4beccff6ea3ad89ca25ddb703`, based on main
+`2e5130f8ca4867ad2438e785acd22d19366f20d5`. It includes final P02 #261
+(`fe1d68e4`), P06 core #262 (`2506ffcd`) and P09 #266 without repeating the
+superseded prerequisite commits. Shared-file integration began after P06's
+implementation run completed and its author released this exact foundation.
+P06's raw/approved MCP result adapter and the P02 folder grants, pending-call
+comparison, journal claim, grant consumption and late authorization callback
+are preserved. No other PR is merged automatically.
+
+## Production routing
+
+Each `AskLocalTools` instance owns one observation store and its two executors.
+Scopes come from the trusted owner, conversation and tool, never arguments.
+Rebinding a conversation invalidates its observations. Owner/rebind changes
+are checked again after asynchronous preparation and during dispatch. Browser
+writes select the browser recorded in the local observation; they never fall
+back to a different running browser. The default AppleScript runner now uses
+`AskAutomationScriptRunner`'s bounded process contract.
+
+Both entrypoints require fresh `observation_id` values for writes. The tool
+schema advertises string refs; numeric refs are rejected even if a selector
+is also supplied. Desktop scroll requires x/y inside the observed window.
+`approvalBinding` delegates to executor binding, retains schema identity and
+`allowsReuse = false`, and passes the exact approved target and authorization
+callback to execution. Tests enable writes only on injected fixtures; there is
+no production setting or capability-negotiation change that enables them.
+
+`AskScreenObservation` handles screenshot consent when a stable AX target
+cannot be obtained. It binds display identity/topology, checks the returned
+display and authorization after capture, and clears older write observations.
+Its result carries an image but **no write observation**. A display mismatch or
+permission failure cannot silently become a successful capture of another
+screen. When AX evidence is available, screenshots go through the computer
+executor and can establish a normal target-bound observation.
+
+Receipts set `AskLocalToolOutput.outcome` and its trusted observation field;
+P06's `record` path preserves them in the journal/cache and local message
+projection. Legacy text still contains dispatch/effect evidence, so disabling
+typed wire negotiation does not turn an unknown effect into success. Persisted
+observations are diagnostic evidence only: reopening/restarting never restores
+the in-memory authority to write.
 
 ## Local evidence and execution
 
@@ -92,28 +119,14 @@ bounded with an explicit truncation marker; observation evidence stays separate.
   not issue a usable write observation. Never substitute another display when
   capture returns an unexpected display ID.
 
-## Serial integration requirements
+## Acceptance still required before rollout
 
-1. Read P06's delivery and fixed adapter commit; inspect both P02/P06 PR states.
-   If #261 merges, move this change to updated main and retarget its PR without
-   reintroducing P02 commits. Re-run the combined tests after integration.
-2. Give each `AskLocalTools` instance one store and its executor instances.
-   Create scopes from the trusted owner and conversation, not model arguments.
-   Keep a bound browser/process selection for each observation.
-3. Advertise `observation_id` and string refs for write actions; require `x,y`
-   for desktop scrolling. Do not silently accept old numeric refs. Keep write
-   capabilities disabled until desktop and combined acceptance are complete.
-4. Use executor `binding` in `approvalBinding`, preserving `AskToolBinding`,
-   tool/schema identity and `allowsReuse = false`. Pass the exact binding target
-   and the existing `authorize` callback into execution. Preserve pending-call
-   revalidation, journal claim, grant consumption and late revocation checks.
-5. Route both raw and approved computer/browser calls through the new executor.
-   Remove the old event/JS implementation only after its tests migrate. Leave
-   P06's shared MCP adapter and the folder-grant changes intact. Adapt receipts
-   through P06's outcome/typed-content projection without enabling negotiation.
-6. Complete real Safari/Chrome tab/window/navigation and macOS granted/denied
-   permission acceptance. Keep unknown results unresolved and preserve read-only
-   observation when a write path is disabled.
+Real Safari/Chrome tab/window/navigation and macOS granted/denied permission
+acceptance must complete before enabling writes. WebKit DOM and injected
+executor tests are controlled regression tests, not substitutes for that
+acceptance. Keep authorization reuse off and unknown outcomes unresolved;
+never automatically replay a partially dispatched action. Missing permissions
+are reported separately from compilation, unit tests and full-suite failures.
 
 ## Reproducible fixtures
 
@@ -121,7 +134,7 @@ The deterministic tests exercise a real WKWebView DOM as well as injected
 executor races. They are not Safari/Chrome or desktop permission acceptance.
 
 ```sh
-swift test --filter 'Ask(BrowserDOM|BrowserExecutor|ComputerExecutor|ComputerTargetProbe|ObservationStore|AutomationScriptRunner)Tests'
+swift test --filter 'Ask(AutomationIntegration|LocalTools|LocalApproval|AgentTools|BrowserDOM|BrowserExecutor|ComputerExecutor|ComputerTargetProbe|ObservationStore|AutomationScriptRunner|ScopedApproval|ToolPolicy|TypedContentIntegration)Tests'
 TYPEFLUX_AUTOMATION_ACCEPTANCE=1 swift test --filter AskAutomationAcceptanceTests
 make coverage
 ```

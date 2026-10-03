@@ -2,15 +2,6 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-private final class ApprovalScriptRunner: ProcessCommandRunning {
-    var stamp = "12\u{1f}34\u{1f}https://example.invalid/account\u{1f}1800000000"
-    var scripts: [String] = []
-    func run(executablePath: String, arguments: [String], environment: [String: String]?, currentDirectoryURL: URL?) async throws -> ProcessCommandResult {
-        scripts.append(arguments[1])
-        return .init(stdout: stamp, stderr: "", exitCode: 0)
-    }
-}
-
 @Suite("Ask local authorization evidence")
 @MainActor
 struct AskLocalApprovalTests {
@@ -95,35 +86,30 @@ struct AskLocalApprovalTests {
     }
 
     @Test func browserRechecksDocumentAndPinsApprovedTab() async throws {
-        let runner = ApprovalScriptRunner(), tools = AskLocalTools(registry: registry(), runner: ApprovalScriptRunner())
-        tools.runningBundleIdentifiers = { [] }
-        let action = try call("browser", ["action": "open", "url": "https://destination.invalid/path"])
-        await #expect(throws: (any Error).self) { try await tools.approvalBinding(for: action, conversationId: "c") }
-        let browser = AskLocalTools(registry: registry(), runner: runner)
+        let runner = ObservationScriptRunner(), browser = AskLocalTools(registry: registry(), runner: runner)
+        browser.browserExecutor.writesEnabled = true
+        browser.browserExecutor.processInstance = { _ in "42:1" }
         browser.runningBundleIdentifiers = { ["com.google.Chrome"] }
+        let snapshot = try call("browser", ["action": "snapshot"])
+        let observed = try await browser.execute(snapshot, conversationId: "c")
+        let id = try #require(observed.observation?.id)
+        let action = try call("browser", ["action": "open", "url": "https://destination.invalid/path", "observation_id": id])
         let approved = try await browser.approvalBinding(for: action, conversationId: "c")
         #expect(approved.target.domain == "example.invalid")
-        #expect(approved.summary.contains("destination.invalid"))
-        #expect(!approved.allowsReuse)
+        #expect(approved.summary.contains("destination.invalid")); #expect(!approved.allowsReuse)
+        let stamp = runner.stamp
+        runner.stamp += "changed"
+        await #expect(throws: (any Error).self) { try await browser.executeApproved(action, conversationId: "c", binding: approved, authorize: {}) }
+        runner.stamp = stamp
         _ = try await browser.executeApproved(action, conversationId: "c", binding: approved, authorize: {})
         let dispatched = try #require(runner.scripts.last)
-        #expect(dispatched.contains("if stamp is not"))
-        #expect(dispatched.contains("if(location.href!=="))
+        #expect(dispatched.contains("if stamp is not")); #expect(dispatched.contains("if(location.href!=="))
         #expect(dispatched.contains("String(performance.timeOrigin)!=="))
         #expect(dispatched.contains("execute approvedTab javascript"))
         #expect(!dispatched.contains("execute active tab of front window"))
-        runner.stamp = "12\u{1f}35\u{1f}https://other.invalid/\u{1f}1800000001"
         await #expect(throws: (any Error).self) { try await browser.executeApproved(action, conversationId: "c", binding: approved, authorize: {}) }
         runner.stamp = "invalid snapshot"
-        await #expect(throws: (any Error).self) { try await browser.approvalBinding(for: action, conversationId: "c") }
-        let safari = AskLocalTools.browserApprovalScript(bundle: "com.apple.Safari", expected: "a\"b",
-                                                       actionScript: try AskLocalTools.browserScript(["action": "read"], bundle: "com.apple.Safari"))
-        #expect(safari.contains("index of approvedTab"))
-        #expect(!safari.contains("in front document"))
-        #expect(safari.contains("in approvedTab"))
-        #expect(throws: (any Error).self) {
-            try AskLocalTools.browserScript(["action": "read"], bundle: "com.apple.Safari", approvedDocument: "invalid")
-        }
+        await #expect(throws: (any Error).self) { try await browser.approvalBinding(for: snapshot, conversationId: "c") }
     }
 
     @Test func memorySkillAndCodeBindingsAreLocalEvidence() async throws {
@@ -156,32 +142,17 @@ struct AskLocalApprovalTests {
         await #expect(throws: (any Error).self) { try await tools.approvalBinding(for: call("unknown", [:]), conversationId: "c") }
     }
 
-    @Test func desktopEvidenceTracksWindowAndDisplay() async throws {
+    @Test func desktopReadOnlyBindingsRemainAvailableWithoutAX() async throws {
         let tools = AskLocalTools(registry: registry())
+        tools.computerProbe.accessibilityTrusted = { false }
         let inspect = try call("computer", ["action": "inspect"])
         await #expect(throws: (any Error).self) { try await tools.approvalBinding(for: inspect, conversationId: "c") }
-        tools.targets["c"] = NSRunningApplication.current
-        tools.approvalProcessStart = { _ in Date(timeIntervalSince1970: 1_800_000_000) }
-        tools.focusedApprovalWindow = { _ in nil }
-        await #expect(throws: (any Error).self) { try await tools.approvalBinding(for: inspect, conversationId: "c") }
-        tools.focusedApprovalWindow = { AXUIElementCreateApplication($0) }
-        tools.approvalWindowFrame = { _ in CGRect(x: 0, y: 0, width: 200, height: 200) }
-        try tools.validateApprovalPoint(CGPoint(x: 100, y: 100), conversationId: "c")
-        #expect(throws: (any Error).self) { try tools.validateApprovalPoint(CGPoint(x: 201, y: 100), conversationId: "c") }
-        #expect(throws: (any Error).self) { try tools.validateApprovalPoint(.zero, conversationId: "missing") }
-        let approved = try await tools.approvalBinding(for: inspect, conversationId: "c")
-        #expect(try await tools.approvalBinding(for: inspect, conversationId: "c") == approved)
-        tools.capturedDisplays["c"] = 123
-        #expect(try await tools.approvalBinding(for: inspect, conversationId: "c") != approved)
-        tools.focusedApprovalWindow = { AXUIElementCreateApplication($0 + 1) }
-        #expect(try await tools.approvalBinding(for: inspect, conversationId: "c").target.id != approved.target.id)
         let wait = try call("computer", ["action": "wait", "seconds": 0])
-        let waitBinding = try await tools.approvalBinding(for: wait, conversationId: "c")
+        let binding = try await tools.approvalBinding(for: wait, conversationId: "c")
         var checks = 0
-        _ = try await tools.executeApproved(wait, conversationId: "c", binding: waitBinding) { checks += 1 }
+        _ = try await tools.executeApproved(wait, conversationId: "c", binding: binding) { checks += 1 }
         #expect(checks >= 2)
         let screenshot = try call("computer", ["action": "screenshot"])
-        // This reads display metadata; it never captures the real screen in a unit test.
         if !NSScreen.screens.isEmpty {
             let display = try await tools.approvalBinding(for: screenshot, conversationId: "c")
             #expect(display.target.id.hasPrefix("display:")); #expect(!display.allowsReuse)
