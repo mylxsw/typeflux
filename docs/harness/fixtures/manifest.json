@@ -1,0 +1,9 @@
+{
+  "contract-v1.json": "2e2a1982e718439371930645c224258a4c191bfebc9a818bc4aab347db79e45b",
+  "current-conversation.json": "3f8f466dadeb5628528caa5112519baa6952d429886e35ae36a118f9aad87515",
+  "current-result.json": "eb9ca71d586cf29ee16e3bf0a59d7b1598c110c289e6dd29e0ec43f4aad3cce3",
+  "legacy-conversation.json": "153e9b0d84f9031ef18bf8bf2e72f382b2557c57dd6259d590b44ecee3b4dcf1",
+  "legacy-result.json": "a40d78d6a5be4ec8920dcdab10acc7eb20ab1f1b770f37a96fd40d2459162d17",
+  "modes.json": "8c2ace90a6f0354bb3a987fd341d1467ada0a90e907f32c5c82831b5113ffe74",
+  "negotiation.json": "48a8c465cc5d1819c3a5ad2a90389424efd2ab93b906f3709f9d69f3cff937ea"
+}

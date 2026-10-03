@@ -69,6 +69,8 @@ struct AskPlanItem: Codable, Equatable, Sendable, Hashable {
 }
 
 struct AskConversation: Codable, Identifiable, Equatable, Sendable {
+    /// Optional, inert contract metadata. Legacy snapshots have no envelope.
+    var harness: AskHarnessContract? = nil
     @AskConversationID var id: String
     var title: String
     var revision: Int64
@@ -145,6 +147,8 @@ struct AskToolResultRequest: Codable, Equatable, Sendable {
     var content: String
     var isError: Bool
     var image: String? = nil
+    /// Reserved until typed content is negotiated and integrated by GUL-173.
+    var harness: AskHarnessContract? = nil
 }
 
 struct AskDraft: Codable, Equatable, Sendable {
