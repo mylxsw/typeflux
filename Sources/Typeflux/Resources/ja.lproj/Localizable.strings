@@ -1671,11 +1671,15 @@
 "ask.references.translate" = "この部分を翻訳して";
 "ask.references.source" = "選択した箇所";
 "ask.references.save" = "下書きに追加";
-"ask.references.manage" = "管理（%d）";
 "ask.references.locate" = "元の回答へ";
-"ask.references.edit" = "編集";
-"ask.references.close" = "閉じる";
 "ask.references.update" = "変更を保存";
+"ask.references.placeholder.one" = "この部分について質問…";
+"ask.references.placeholder.many" = "この %d 件について質問…";
+"ask.references.clear" = "クリア";
+"ask.references.collapse" = "折りたたむ";
+"ask.references.showAll" = "%d 件の引用をすべて表示";
+"ask.references.position" = "引用 %d / %d";
+"ask.references.remove" = "引用を削除";
 // Ask conversation usage
 "ask.usage.title" = "使用量";
 "ask.usage.close" = "使用量を閉じる";

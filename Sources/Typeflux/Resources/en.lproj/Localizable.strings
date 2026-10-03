@@ -1681,11 +1681,15 @@
 "ask.references.translate" = "Translate this excerpt";
 "ask.references.source" = "Selected excerpt";
 "ask.references.save" = "Add to draft";
-"ask.references.manage" = "Manage (%d)";
 "ask.references.locate" = "Locate source";
-"ask.references.edit" = "Edit";
-"ask.references.close" = "Close";
 "ask.references.update" = "Save changes";
+"ask.references.placeholder.one" = "Ask about this excerpt…";
+"ask.references.placeholder.many" = "Ask about these %d excerpts…";
+"ask.references.clear" = "Clear";
+"ask.references.collapse" = "Show less";
+"ask.references.showAll" = "Show all %d excerpts";
+"ask.references.position" = "Quote %d of %d";
+"ask.references.remove" = "Remove quote";
 // Ask conversation usage
 "ask.usage.title" = "Usage";
 "ask.usage.close" = "Close usage";

@@ -1678,11 +1678,15 @@
 "ask.references.translate" = "翻譯這段";
 "ask.references.source" = "選取片段";
 "ask.references.save" = "加入草稿";
-"ask.references.manage" = "管理（%d）";
 "ask.references.locate" = "定位原文";
-"ask.references.edit" = "編輯";
-"ask.references.close" = "關閉";
 "ask.references.update" = "儲存修改";
+"ask.references.placeholder.one" = "針對這段繼續追問…";
+"ask.references.placeholder.many" = "針對這 %d 段繼續追問…";
+"ask.references.clear" = "清除";
+"ask.references.collapse" = "收起";
+"ask.references.showAll" = "顯示全部 %d 段引用";
+"ask.references.position" = "引用 %d / %d";
+"ask.references.remove" = "移除引用";
 // Ask conversation usage
 "ask.usage.title" = "用量";
 "ask.usage.close" = "關閉用量";

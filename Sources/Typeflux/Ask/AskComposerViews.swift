@@ -133,6 +133,8 @@ struct AskComposer: View {
             }
             if !(draft.wrappedValue.references ?? []).isEmpty {
                 AskReferenceStrip(references: draft.references, locate: { model.referenceLocation = $0 })
+                    .padding(.horizontal, chrome.horizontalInset - 4)
+                    .padding(.top, 10)
             }
             if !launcher, !attachedItems.isEmpty {
                 AskAttachmentStripView(
@@ -178,11 +180,18 @@ struct AskComposer: View {
         }
     }
 
+    /// Quotes waiting in the draft name what the follow-up is about.
+    private var placeholder: String {
+        if launcher || model.selectedId == nil { return L("ask.input.placeholder") }
+        return AskReferenceStrip.placeholder(count: draft.wrappedValue.references?.count ?? 0)
+            ?? L("ask.followup.placeholder")
+    }
+
     private var editorRow: some View {
         HStack(alignment: .top, spacing: 11) {
             ZStack(alignment: .topLeading) {
                 if draft.wrappedValue.text.isEmpty {
-                    Text(L(launcher || model.selectedId == nil ? "ask.input.placeholder" : "ask.followup.placeholder"))
+                    Text(placeholder)
                         .font(.system(size: chrome.editorFontSize))
                         .foregroundStyle(StudioTheme.textTertiary)
                         .padding(.leading, AskComposerTextView.lineFragmentPadding)
@@ -191,7 +200,7 @@ struct AskComposer: View {
                 }
                 AskComposerTextView(
                     text: draft.text,
-                    placeholder: L(launcher || model.selectedId == nil ? "ask.input.placeholder" : "ask.followup.placeholder"),
+                    placeholder: placeholder,
                     voice: voice,
                     contextID: contextID,
                     fontSize: chrome.editorFontSize,

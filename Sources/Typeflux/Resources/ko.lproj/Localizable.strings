@@ -1671,11 +1671,15 @@
 "ask.references.translate" = "이 부분 번역하기";
 "ask.references.source" = "선택한 부분";
 "ask.references.save" = "초안에 추가";
-"ask.references.manage" = "관리 (%d)";
 "ask.references.locate" = "원문 보기";
-"ask.references.edit" = "편집";
-"ask.references.close" = "닫기";
 "ask.references.update" = "변경 사항 저장";
+"ask.references.placeholder.one" = "이 부분에 대해 질문…";
+"ask.references.placeholder.many" = "이 %d개 부분에 대해 질문…";
+"ask.references.clear" = "지우기";
+"ask.references.collapse" = "접기";
+"ask.references.showAll" = "인용 %d개 모두 보기";
+"ask.references.position" = "인용 %d / %d";
+"ask.references.remove" = "인용 삭제";
 // Ask conversation usage
 "ask.usage.title" = "사용량";
 "ask.usage.close" = "사용량 닫기";

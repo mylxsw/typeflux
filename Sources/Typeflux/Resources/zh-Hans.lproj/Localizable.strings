@@ -1681,11 +1681,15 @@
 "ask.references.translate" = "翻译这段";
 "ask.references.source" = "选中片段";
 "ask.references.save" = "添加到草稿";
-"ask.references.manage" = "管理（%d）";
 "ask.references.locate" = "定位原文";
-"ask.references.edit" = "编辑";
-"ask.references.close" = "关闭";
 "ask.references.update" = "保存修改";
+"ask.references.placeholder.one" = "针对这段继续追问…";
+"ask.references.placeholder.many" = "针对这 %d 段继续追问…";
+"ask.references.clear" = "清除";
+"ask.references.collapse" = "收起";
+"ask.references.showAll" = "显示全部 %d 段引用";
+"ask.references.position" = "引用 %d / %d";
+"ask.references.remove" = "移除引用";
 // Ask conversation usage
 "ask.usage.title" = "用量";
 "ask.usage.close" = "关闭用量";
