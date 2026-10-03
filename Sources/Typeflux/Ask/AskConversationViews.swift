@@ -450,7 +450,8 @@ struct AskConversationView: View {
 
     /// The title and the conversation's actions as two glass capsules over the
     /// transcript: the title carries the run's state as a dot and a summary;
-    /// the actions capsule carries the credits spent, usage, a new chat and delete.
+    /// the actions capsule appears only for an existing conversation and carries
+    /// the credits spent, usage, a new chat and delete.
     private var header: some View {
         HStack(spacing: 8) {
             if let id = model.selectedId {
@@ -491,43 +492,43 @@ struct AskConversationView: View {
                     .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
             Spacer(minLength: 8)
-            HStack(spacing: 2) {
-                if let credits = headerCredits {
-                    Button { toggleUsage() } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "sparkles").font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(AskTheme.accent)
-                            (Text(credits).font(.system(size: 12.5, weight: .semibold))
-                                .foregroundColor(StudioTheme.textPrimary)
-                                + Text(verbatim: " credits").font(.system(size: 12.5))
-                                .foregroundColor(StudioTheme.textSecondary))
-                                .monospacedDigit()
-                                .lineLimit(1)
-                                .fixedSize()
+            if let id = model.selectedId {
+                HStack(spacing: 2) {
+                    if let credits = headerCredits {
+                        Button { toggleUsage() } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "sparkles").font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(AskTheme.accent)
+                                (Text(credits).font(.system(size: 12.5, weight: .semibold))
+                                    .foregroundColor(StudioTheme.textPrimary)
+                                    + Text(verbatim: " credits").font(.system(size: 12.5))
+                                    .foregroundColor(StudioTheme.textSecondary))
+                                    .monospacedDigit()
+                                    .lineLimit(1)
+                                    .fixedSize()
+                            }
+                            .padding(.horizontal, 10)
+                            .frame(height: 28)
+                            .background(showsUsage ? AskTheme.hoverFill : Color.clear, in: Capsule())
+                            .contentShape(Capsule())
                         }
-                        .padding(.horizontal, 10)
-                        .frame(height: 28)
-                        .background(showsUsage ? AskTheme.hoverFill : Color.clear, in: Capsule())
-                        .contentShape(Capsule())
+                        .buttonStyle(.plain)
+                        .help(L("ask.usage.title"))
+                        .accessibilityLabel(L("ask.usage.title"))
+                        .accessibilityValue(credits + " credits")
+                        Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
+                    } else {
+                        headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
                     }
-                    .buttonStyle(.plain)
-                    .help(L("ask.usage.title"))
-                    .accessibilityLabel(L("ask.usage.title"))
-                    .accessibilityValue(credits + " credits")
-                    Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
-                } else if model.selectedId != nil {
-                    headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
-                }
-                AskHeaderIconButton(symbol: "square.and.pencil", label: L("ask.new"), shortcut: "⌘N") {
-                    model.newConversation()
-                }
-                if let id = model.selectedId {
+                    AskHeaderIconButton(symbol: "square.and.pencil", label: L("ask.new"), shortcut: "⌘N") {
+                        model.newConversation()
+                    }
                     headerAction(.trash, label: L("ask.delete")) { deleteId = id }
                 }
+                .padding(.horizontal, 3)
+                .frame(height: AskMetrics.headerCapsuleHeight)
+                .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
-            .padding(.horizontal, 3)
-            .frame(height: AskMetrics.headerCapsuleHeight)
-            .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
         }
         .padding(.leading, sidebarHidden ? AskMetrics.collapsedTitleInset : 14)
         .padding(.trailing, 14)
