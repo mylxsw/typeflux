@@ -54,6 +54,7 @@ enum AskDesktopActions {
         var value: String
         var frame: CGRect?
         var children: [Node] = []
+        var identity: String? = nil
     }
 
     static let maximumNodes = 300
@@ -89,7 +90,7 @@ enum AskDesktopActions {
     }
 
     /// Reads the focused window of `pid` (or its first window) from the accessibility API.
-    static func snapshot(pid: pid_t) -> Node? {
+    static func snapshot(pid: pid_t, identify: (AXUIElement) -> String? = { _ in nil }) -> Node? {
         let app = AXUIElementCreateApplication(pid)
         var budget = maximumNodes * 4
         func attribute(_ element: AXUIElement, _ name: String) -> AnyObject? {
@@ -112,6 +113,7 @@ enum AskDesktopActions {
             if !(value is String) { value = nil }
             var result = Node(role: string(element, kAXRoleAttribute), name: [string(element, kAXTitleAttribute), string(element, kAXDescriptionAttribute)].first { !$0.isEmpty } ?? "",
                               value: (value as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines), frame: frame(element))
+            result.identity = identify(element)
             if depth < maximumDepth, budget > 0, let children = attribute(element, kAXChildrenAttribute) as? [AXUIElement] {
                 result.children = children.prefix(100).compactMap { budget > 0 ? node($0, depth: depth + 1) : nil }
             }
