@@ -1768,7 +1768,7 @@
 "ask.settings.skills.install" = "GitHub からインストール…";
 "ask.settings.skills.installTitle" = "GitHub からスキルをインストール";
 "ask.settings.skills.installHint" = "リポジトリ、フォルダ、または SKILL.md のリンクを貼り付けてください。SKILL.md を含む各フォルダが 1 つのスキルになり、同名のスキルは更新されます。";
-"ask.settings.skills.installWarning" = "スキルは Ask が従う指示と、コードサンドボックスで読めるファイルです。信頼できる提供元からのみインストールしてください。";
+"ask.settings.skills.installWarning" = "スキルは指示とサンドボックス内で読めるファイルを提供します。信頼できる提供元のみ利用してください。同名のスキルは置き換わり、以前のバージョンを1つ保持します。無効状態は維持され、権限の宣言でアクセスは付与されません。";
 "ask.settings.skills.installAction" = "インストール";
 "ask.settings.skills.installing" = "インストール中…";
 "ask.settings.skills.local" = "ローカル";
@@ -2149,3 +2149,27 @@
 "ask.terminal.error.invalidCursor" = "The output cursor is invalid.";
 "ask.terminal.error.portUnavailable" = "The requested listener port is unavailable.";
 "ask.terminal.truncated" = "Output is truncated; the retained log may also be incomplete.";
+
+"ask.skills.parse.malformed" = "YAML フロントマターが無効です。構文と終了区切りを確認してください。";
+
+"ask.skills.parse.unsupported" = "未対応の構造です。スカラー値、スカラーの metadata、権限リストを使用してください。アンカー、独自タグ、入れ子のオブジェクトは未対応です。";
+
+"ask.skills.parse.invalidSkill" = "有効な名前と空でない本文が必要です。";
+
+"ask.skills.install.truncated" = "GitHub のファイルツリーが不完全なため、インストールしていません。より小さいリポジトリを使用してください。";
+
+"ask.skills.install.unsafeResource" = "安全でないパス、シンボリックリンク、サブモジュール、または未対応のファイルが含まれています。変更はありません。";
+
+"ask.skills.install.invalidSource" = "ソースのバージョンまたはダウンロードしたファイルを検証できません。インストールしていません。";
+
+"ask.skills.install.noPrevious" = "以前のバージョンはありません。";
+
+"ask.settings.skills.actionFailed" = "スキルを変更できません";
+
+"ask.settings.skills.rollback" = "以前のバージョンに戻す";
+
+"ask.settings.skills.unverifiedVersion" = "旧形式のインストール：コミット不明";
+
+"ask.settings.skills.declarations" = "宣言された権限（アクセスは付与されません）：";
+
+"ask.skills.install.nameConflict" = "スキル名がローカルフォルダと競合しています。競合するフォルダの名前を変更してからインストールしてください。";

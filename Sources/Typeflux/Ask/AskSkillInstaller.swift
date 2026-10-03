@@ -1,16 +1,5 @@
 import Foundation
 
-/// Where a user skill was installed from, saved next to its SKILL.md.
-struct AskSkillSource: Codable, Equatable, Sendable {
-    static let fileName = ".source.json"
-
-    var url: String
-    var repository: String
-    var ref: String
-    var path: String
-    var installedAt: Date
-}
-
 /// Installs skills from GitHub into the user Skills folder.
 ///
 /// Accepts a repository (`github.com/owner/repo`), a folder (`…/tree/<ref>/<path>`) or a
@@ -32,6 +21,13 @@ struct AskSkillInstaller: Sendable {
         var path: String
     }
 
+    private struct Source {
+        var target: Target
+        var input: String
+        var ref: String
+        var commit: String
+    }
+
     struct Result: Equatable {
         var installed: [String]
         var replaced: [String]
@@ -41,7 +37,8 @@ struct AskSkillInstaller: Sendable {
     var session: URLSession = .init(configuration: .ephemeral)
     var apiBase = URL(string: "https://api.github.com")!
     var rawBase = URL(string: "https://raw.githubusercontent.com")!
-    var now: @Sendable () -> Date = Date.init
+    var move: @Sendable (URL, URL) throws -> Void = { try FileManager.default.moveItem(at: $0, to: $1) }
+    var now: @Sendable () -> Date = { Date() }
 
     // MARK: - URL parsing
 
@@ -49,6 +46,8 @@ struct AskSkillInstaller: Sendable {
         var text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         if !text.contains("://") { text = "https://" + text }
         guard let url = URL(string: text), let host = url.host?.lowercased(),
+              url.scheme == "https", url.user == nil, url.password == nil, url.port == nil,
+              url.query == nil, url.fragment == nil,
               host == "github.com" || host == "www.github.com" else {
             throw AskLocalError.message(L("ask.skills.install.invalidURL"))
         }
@@ -71,7 +70,7 @@ struct AskSkillInstaller: Sendable {
             guard pathParts.last == "SKILL.md" else { throw AskLocalError.message(L("ask.skills.install.invalidURL")) }
             pathParts.removeLast()
         }
-        guard pathParts.allSatisfy(Self.isSafePathComponent) else {
+        guard Self.isSafePathComponent(ref), pathParts.allSatisfy(Self.isSafePathComponent) else {
             throw AskLocalError.message(L("ask.skills.install.invalidURL"))
         }
         return Target(owner: owner, repository: repository, ref: ref, path: pathParts.joined(separator: "/"))
@@ -83,7 +82,9 @@ struct AskSkillInstaller: Sendable {
     }
 
     static func isSafePathComponent(_ value: String) -> Bool {
-        !value.isEmpty && value != "." && value != ".." && !value.contains("\\") && !value.hasPrefix(".")
+        !value.isEmpty && value != "." && value != ".."
+            && !value.contains("\\") && !value.contains("/") && !value.hasPrefix(".")
+            && !value.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) })
     }
 
     // MARK: - Install
@@ -96,69 +97,78 @@ struct AskSkillInstaller: Sendable {
         } else {
             ref = try await defaultBranch(target)
         }
-        let files = try await tree(target, ref: ref)
+        let commit = try await resolveCommit(target, ref: ref)
+        let files = try await tree(target, commit: commit)
         let skillFolders = Self.skillFolders(in: files, under: target.path)
         guard !skillFolders.isEmpty else { throw AskLocalError.message(L("ask.skills.install.notFound")) }
         guard skillFolders.count <= Self.maximumSkillsPerInstall else {
             throw AskLocalError.message(L("ask.skills.install.tooMany"))
         }
-        let fileManager = FileManager.default
-        // Stage beside the destination so the final move stays on one volume; hidden
-        // folders are ignored by the skill list, so a half-finished install never shows.
-        let staging = library.userDirectory.appendingPathComponent(".install-\(UUID().uuidString)", isDirectory: true)
-        try fileManager.createDirectory(at: staging, withIntermediateDirectories: true)
-        defer { try? fileManager.removeItem(at: staging) }
-
+        let manager = FileManager.default
+        let staging = library.userDirectory.deletingLastPathComponent()
+            .appendingPathComponent(".skill-download-" + UUID().uuidString, isDirectory: true)
+        try manager.createDirectory(at: staging, withIntermediateDirectories: true)
+        defer { try? manager.removeItem(at: staging) }
+        let source = Source(target: target, input: input, ref: ref, commit: commit)
         var prepared: [(name: String, folder: URL)] = []
         for folder in skillFolders {
-            // Hidden files (.git*, .github/…) are not part of a skill.
-            let skillFiles = files.filter { folder.isEmpty || $0.path.hasPrefix(folder + "/") }
-                .filter { Self.belongs($0.path, to: folder, otherSkills: skillFolders) }
-                .filter { Self.relativePath($0.path, in: folder).split(separator: "/").map(String.init).allSatisfy(Self.isSafePathComponent) }
-            guard skillFiles.count <= Self.maximumFilesPerSkill,
-                  skillFiles.reduce(0, { $0 + $1.size }) <= Self.maximumSkillBytes,
-                  skillFiles.allSatisfy({ $0.size <= Self.maximumFileBytes }) else {
-                throw AskLocalError.message(L("ask.skills.install.tooLarge"))
-            }
-            let local = staging.appendingPathComponent(UUID().uuidString, isDirectory: true)
-            for file in skillFiles {
-                let components = Self.relativePath(file.path, in: folder).split(separator: "/").map(String.init)
-                let destination = components.reduce(local) { $0.appendingPathComponent($1) }
-                try fileManager.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try await download(target, ref: ref, path: file.path).write(to: destination)
-            }
-            let skillFile = local.appendingPathComponent("SKILL.md")
-            guard let text = try? String(contentsOf: skillFile, encoding: .utf8),
-                  let skill = AskSkillLibrary.parse(text, fallbackName: folder.split(separator: "/").last.map(String.init) ?? target.repository) else {
-                throw AskLocalError.message(L("ask.skills.install.invalidSkill"))
-            }
-            let source = AskSkillSource(url: input.trimmingCharacters(in: .whitespacesAndNewlines),
-                                        repository: "\(target.owner)/\(target.repository)", ref: ref, path: folder, installedAt: now())
-            let encoder = JSONEncoder()
-            encoder.dateEncodingStrategy = .iso8601
-            try encoder.encode(source).write(to: local.appendingPathComponent(AskSkillSource.fileName))
-            prepared.append((skill.name, local))
+            prepared.append(try await prepare(folder, folders: skillFolders, files: files,
+                                              source: source, staging: staging))
         }
-
         let names = prepared.map(\.name)
         guard Set(names).count == names.count else { throw AskLocalError.message(L("ask.skills.install.invalidSkill")) }
-        let existing = Set(library.userSkillNames())
-        let newCount = names.filter { !existing.contains($0) }.count
-        guard existing.count + newCount <= AskSkillLibrary.maximumSkills else {
-            throw AskLocalError.message(L("ask.skills.install.tooMany"))
-        }
+        try Task.checkCancellation()
+        let replaced = try AskSkillInstallationStore(directory: library.userDirectory, move: move).install(prepared)
+        return Result(installed: names.sorted(), replaced: replaced)
+    }
 
-        var replaced: [String] = []
-        for (name, folder) in prepared {
-            let destination = library.userDirectory.appendingPathComponent(name, isDirectory: true)
-            if fileManager.fileExists(atPath: destination.path) {
-                _ = try fileManager.replaceItemAt(destination, withItemAt: folder)
-                replaced.append(name)
-            } else {
-                try fileManager.moveItem(at: folder, to: destination)
-            }
+    private func prepare(_ folder: String, folders: [String], files: [RemoteFile], source: Source,
+                         staging: URL) async throws -> (name: String, folder: URL) {
+        let selected = files.filter { Self.belongs($0.path, to: folder, otherSkills: folders) }
+        guard selected.allSatisfy({ ["100644", "100755"].contains($0.mode) }) else {
+            throw AskLocalError.message(L("ask.skills.install.unsafeResource"))
         }
-        return Result(installed: names.sorted(), replaced: replaced.sorted())
+        let skillFiles = selected.filter {
+            Self.relativePath($0.path, in: folder).split(separator: "/").map(String.init)
+                .allSatisfy(Self.isSafePathComponent)
+        }
+        guard skillFiles.count <= Self.maximumFilesPerSkill,
+              skillFiles.allSatisfy({ $0.size >= 0 && $0.size <= Self.maximumFileBytes }),
+              skillFiles.reduce(0, { $0 + $1.size }) <= Self.maximumSkillBytes else {
+            throw AskLocalError.message(L("ask.skills.install.tooLarge"))
+        }
+        let manager = FileManager.default
+        let local = staging.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        var resources: [AskSkillSource.Resource] = []
+        for file in skillFiles {
+            let relative = Self.relativePath(file.path, in: folder)
+            let destination = local.appendingPathComponent(relative)
+            try manager.createDirectory(at: destination.deletingLastPathComponent(),
+                                        withIntermediateDirectories: true)
+            let data = try await download(source.target, commit: source.commit, file: file)
+            try data.write(to: destination)
+            resources.append(.init(path: relative, bytes: data.count, sha256: Self.sha256(data)))
+        }
+        let skillFile = local.appendingPathComponent("SKILL.md")
+        guard let text = try? String(contentsOf: skillFile, encoding: .utf8) else {
+            throw AskLocalError.message(L("ask.skills.install.invalidSkill"))
+        }
+        let skill: AskSkill
+        do {
+            skill = try AskSkillParser.parse(text, fallbackName: folder.split(separator: "/").last.map(String.init)
+                                            ?? source.target.repository)
+        } catch AskSkillParser.Failure.invalidSkill {
+            throw AskLocalError.message(L("ask.skills.install.invalidSkill"))
+        }
+        let metadata = AskSkillSource(url: source.input.trimmingCharacters(in: .whitespacesAndNewlines),
+                                    repository: "\(source.target.owner)/\(source.target.repository)", ref: source.ref,
+                                    path: folder, installedAt: now(), commit: source.commit, installationID: UUID(),
+                                    version: skill.version, resources: resources.sorted { $0.path < $1.path },
+                                    declaredPermissions: skill.declaredPermissions)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        try encoder.encode(metadata).write(to: local.appendingPathComponent(AskSkillSource.fileName))
+        return (skill.name, local)
     }
 
     /// Folders that hold a SKILL.md at or below `root` ("" means the repository root).
@@ -166,7 +176,8 @@ struct AskSkillInstaller: Sendable {
         files.compactMap { file -> String? in
             guard file.path == "SKILL.md" || file.path.hasSuffix("/SKILL.md") else { return nil }
             let folder = file.path == "SKILL.md" ? "" : String(file.path.dropLast("/SKILL.md".count))
-            guard root.isEmpty || folder == root || folder.hasPrefix(root + "/") else { return nil }
+            guard folder.split(separator: "/").map(String.init).allSatisfy(Self.isSafePathComponent),
+                  root.isEmpty || folder == root || folder.hasPrefix(root + "/") else { return nil }
             return folder
         }.sorted()
     }
@@ -181,92 +192,4 @@ struct AskSkillInstaller: Sendable {
         return owner == folder
     }
 
-    // MARK: - GitHub
-
-    struct RemoteFile: Equatable {
-        var path: String
-        var size: Int
-    }
-
-    private func defaultBranch(_ target: Target) async throws -> String {
-        let data = try await get(apiBase.appendingPathComponent("repos/\(target.owner)/\(target.repository)"))
-        guard let body = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let branch = body["default_branch"] as? String, !branch.isEmpty else {
-            throw AskLocalError.message(L("ask.skills.install.notFound"))
-        }
-        return branch
-    }
-
-    private func tree(_ target: Target, ref: String) async throws -> [RemoteFile] {
-        var url = apiBase.appendingPathComponent("repos/\(target.owner)/\(target.repository)/git/trees/\(ref)")
-        url = URL(string: url.absoluteString + "?recursive=1")!
-        let data = try await get(url)
-        guard let body = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let entries = body["tree"] as? [[String: Any]] else {
-            throw AskLocalError.message(L("ask.skills.install.notFound"))
-        }
-        // Regular files only: symlinks (120000) and submodules (commit) are skipped.
-        return entries.compactMap { entry in
-            guard entry["type"] as? String == "blob", let path = entry["path"] as? String,
-                  ["100644", "100755"].contains(entry["mode"] as? String ?? "") else { return nil }
-            return RemoteFile(path: path, size: entry["size"] as? Int ?? 0)
-        }
-    }
-
-    private func download(_ target: Target, ref: String, path: String) async throws -> Data {
-        let encoded = path.split(separator: "/").map {
-            String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0)
-        }.joined(separator: "/")
-        let url = URL(string: "\(rawBase.absoluteString)/\(target.owner)/\(target.repository)/\(ref)/\(encoded)")!
-        let data = try await get(url)
-        guard data.count <= Self.maximumFileBytes else { throw AskLocalError.message(L("ask.skills.install.tooLarge")) }
-        return data
-    }
-
-    private func get(_ url: URL) async throws -> Data {
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 30
-        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await session.data(for: request)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            throw AskLocalError.message(L("ask.skills.install.network"))
-        }
-        guard let http = response as? HTTPURLResponse else { throw AskLocalError.message(L("ask.skills.install.network")) }
-        switch http.statusCode {
-        case 200 ..< 300: return data
-        case 404: throw AskLocalError.message(L("ask.skills.install.notFound"))
-        case 403, 429: throw AskLocalError.message(L("ask.skills.install.rateLimited"))
-        default: throw AskLocalError.message(L("ask.skills.install.network"))
-        }
-    }
-}
-
-extension AskSkillLibrary {
-    /// Names of skills installed in the user folder (built-ins excluded).
-    func userSkillNames() -> [String] {
-        skills().filter { $0.directory != nil }.map(\.name)
-    }
-
-    /// The GitHub source of an installed skill, if it was installed from a URL.
-    func source(of skill: AskSkill) -> AskSkillSource? {
-        guard let directory = skill.directory,
-              let data = try? Data(contentsOf: directory.appendingPathComponent(AskSkillSource.fileName)) else { return nil }
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return try? decoder.decode(AskSkillSource.self, from: data)
-    }
-
-    /// Deletes a user skill's folder. Built-in skills cannot be removed.
-    func remove(_ skill: AskSkill) throws {
-        guard let directory = skill.directory,
-              directory.standardizedFileURL.deletingLastPathComponent().path == userDirectory.standardizedFileURL.path else {
-            throw AskLocalError.message(L("ask.skills.install.cannotRemove"))
-        }
-        try FileManager.default.removeItem(at: directory)
-    }
 }

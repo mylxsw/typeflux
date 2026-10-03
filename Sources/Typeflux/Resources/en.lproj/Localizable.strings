@@ -1778,7 +1778,7 @@
 "ask.settings.skills.install" = "Install from GitHub…";
 "ask.settings.skills.installTitle" = "Install a skill from GitHub";
 "ask.settings.skills.installHint" = "Paste a repository, folder or SKILL.md link. Every folder with a SKILL.md becomes a skill; an installed skill with the same name is updated.";
-"ask.settings.skills.installWarning" = "Skills are instructions Ask follows and files it can read in the code sandbox. Install only from sources you trust.";
+"ask.settings.skills.installWarning" = "Skills provide instructions and sandbox-readable files. Install only from sources you trust. Matching names replace existing skills and keep one previous version. Disabled skills stay disabled; permission declarations grant no access.";
 "ask.settings.skills.installAction" = "Install";
 "ask.settings.skills.installing" = "Installing…";
 "ask.settings.skills.local" = "Local";
@@ -2159,3 +2159,27 @@
 "ask.terminal.error.invalidCursor" = "The output cursor is invalid.";
 "ask.terminal.error.portUnavailable" = "The requested listener port is unavailable.";
 "ask.terminal.truncated" = "Output is truncated; the retained log may also be incomplete.";
+
+"ask.skills.parse.malformed" = "Invalid YAML frontmatter. Check the syntax and closing delimiter.";
+
+"ask.skills.parse.unsupported" = "Unsupported frontmatter structure. Use scalar fields, scalar metadata, and permission lists; anchors, tags and nested objects are not supported.";
+
+"ask.skills.parse.invalidSkill" = "The skill needs a valid name and a nonempty body.";
+
+"ask.skills.install.truncated" = "GitHub returned an incomplete file tree. Nothing was installed. Use a smaller repository.";
+
+"ask.skills.install.unsafeResource" = "The skill contains an unsafe path, symbolic link, submodule or unsupported file. Nothing was changed.";
+
+"ask.skills.install.invalidSource" = "The source version or downloaded files could not be verified. Nothing was installed.";
+
+"ask.skills.install.noPrevious" = "No previous version is available.";
+
+"ask.settings.skills.actionFailed" = "Could not change this skill";
+
+"ask.settings.skills.rollback" = "Restore previous version";
+
+"ask.settings.skills.unverifiedVersion" = "Legacy install: commit unknown";
+
+"ask.settings.skills.declarations" = "Declared permissions (no access granted):";
+
+"ask.skills.install.nameConflict" = "This skill name conflicts with local folders. Rename the conflicting folders before installing.";

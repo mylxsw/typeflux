@@ -8,6 +8,9 @@ struct AskSkill: Equatable, Sendable {
     var body: String
     /// The folder holding a user skill's SKILL.md and any helper files.
     var directory: URL?
+    /// Informational declarations only; never consumed by the execution authorization layer.
+    var declaredPermissions: [String] = []
+    var version: String?
 }
 
 /// Built-in skills plus user skills in `Skills/<name>/SKILL.md` under Application
@@ -32,10 +35,14 @@ struct AskSkillLibrary: Sendable {
     func skills() -> [AskSkill] {
         var byName: [String: AskSkill] = [:]
         for skill in builtins { byName[skill.name] = skill }
-        let folders = (try? FileManager.default.contentsOfDirectory(at: userDirectory, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])) ?? []
+        let folders = (try? FileManager.default.contentsOfDirectory(
+            at: userDirectory, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
+        )) ?? []
         for folder in folders.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
             let file = folder.appendingPathComponent("SKILL.md")
-            guard let text = try? String(contentsOf: file, encoding: .utf8),
+            guard (try? folder.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) != true,
+                  (try? file.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) != true,
+                  let text = try? String(contentsOf: file, encoding: .utf8),
                   var skill = Self.parse(text, fallbackName: folder.lastPathComponent) else { continue }
             skill.directory = folder
             byName[skill.name] = skill
@@ -43,32 +50,9 @@ struct AskSkillLibrary: Sendable {
         return byName.values.sorted { $0.name < $1.name }.prefix(Self.maximumSkills).map { $0 }
     }
 
-    /// Reads optional `name:` / `description:` front matter between `---` lines.
+    /// Invalid or unsupported frontmatter is excluded from the library.
     static func parse(_ text: String, fallbackName: String) -> AskSkill? {
-        var name = fallbackName
-        var description = ""
-        var body = text
-        let lines = text.components(separatedBy: "\n")
-        if lines.first?.trimmingCharacters(in: .whitespaces) == "---",
-           let end = lines.dropFirst().firstIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "---" }) {
-            for line in lines[1 ..< end] {
-                let parts = line.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
-                guard parts.count == 2 else { continue }
-                let value = parts[1].trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
-                if parts[0] == "name" { name = value }
-                if parts[0] == "description" { description = value }
-            }
-            body = lines[(end + 1)...].joined(separator: "\n")
-        }
-        let slug = String(name.lowercased().map { $0.isLetter || $0.isNumber ? $0 : "-" })
-            .split(separator: "-").joined(separator: "-")
-        body = body.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !slug.isEmpty, slug.count <= 64, slug.allSatisfy({ $0.isASCII }), !body.isEmpty else { return nil }
-        if description.isEmpty {
-            description = body.components(separatedBy: "\n").first { !$0.trimmingCharacters(in: .whitespaces).isEmpty && !$0.hasPrefix("#") } ?? slug
-        }
-        return AskSkill(name: slug, description: String(description.prefix(maximumDescriptionCharacters)),
-                        body: String(body.prefix(maximumBodyCharacters)))
+        try? AskSkillParser.parse(text, fallbackName: fallbackName)
     }
 
     func definition(_ skills: [AskSkill]) -> AskToolDefinition? {
@@ -82,12 +66,14 @@ struct AskSkillLibrary: Sendable {
         Load the full instructions of a skill before doing a task it covers, then follow them. Skills:
         \(index)
         """
-        return AskToolDefinition(name: "skill", description: description,
-                                 parameters: JSONValue(data: try! JSONSerialization.data(withJSONObject: schema, options: .sortedKeys)))
+        guard let data = try? JSONSerialization.data(withJSONObject: schema, options: .sortedKeys) else { return nil }
+        return AskToolDefinition(name: "skill", description: description, parameters: JSONValue(data: data))
     }
 
     func load(_ name: String) throws -> String {
-        guard let skill = skills().first(where: { $0.name == name }) else { throw AskLocalError.message(L("ask.skills.missing")) }
+        guard let skill = skills().first(where: { $0.name == name }) else {
+            throw AskLocalError.message(L("ask.skills.missing"))
+        }
         var text = "# Skill: \(skill.name)\n\n\(skill.body)"
         if let directory = skill.directory {
             let files = ((try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? [])
