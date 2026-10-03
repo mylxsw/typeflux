@@ -15,12 +15,14 @@ final class AskMemoryNoteStore: @unchecked Sendable {
 
     private let lock = NSLock()
     private let fileURL: URL
+    private let storage: any AskMemoryNoteFileStorage
     private var notes: [String: [AskMemoryNote]]
 
-    init(fileURL: URL? = nil) {
+    init(fileURL: URL? = nil, storage: any AskMemoryNoteFileStorage = LocalAskMemoryNoteFileStorage()) {
         self.fileURL = fileURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Typeflux/ask-memory-notes.json")
-        let data = try? Data(contentsOf: self.fileURL)
+        self.storage = storage
+        let data = try? storage.read(from: self.fileURL)
         notes = data.flatMap { try? JSONDecoder().decode([String: [AskMemoryNote]].self, from: $0) } ?? [:]
     }
 
@@ -39,8 +41,9 @@ final class AskMemoryNoteStore: @unchecked Sendable {
         guard list.count < Self.maximumNotes else { throw AskLocalError.message(L("ask.memoryNotes.full")) }
         let note = AskMemoryNote(id: String(UUID().uuidString.prefix(8)).lowercased(), text: trimmed, createdAt: now)
         list.append(note)
-        notes[owner] = list
-        try persist()
+        var candidate = notes
+        candidate[owner] = list
+        try commit(candidate)
         return note
     }
 
@@ -48,20 +51,23 @@ final class AskMemoryNoteStore: @unchecked Sendable {
     func remove(id: String, owner: String) throws -> Bool {
         lock.lock(); defer { lock.unlock() }
         guard let index = notes[owner]?.firstIndex(where: { $0.id == id }) else { return false }
-        notes[owner]?.remove(at: index)
-        try persist()
+        var candidate = notes
+        candidate[owner]?.remove(at: index)
+        try commit(candidate)
         return true
     }
 
     func clear(owner: String) throws {
         lock.lock(); defer { lock.unlock() }
-        notes[owner] = nil
-        try persist()
+        var candidate = notes
+        candidate[owner] = nil
+        try commit(candidate)
     }
 
-    private func persist() throws {
-        try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try JSONEncoder().encode(notes).write(to: fileURL, options: [.atomic, .completeFileProtection])
+    /// Called with the lock held so readers and later mutations see only commits.
+    private func commit(_ candidate: [String: [AskMemoryNote]]) throws {
+        try storage.writeAtomically(JSONEncoder().encode(candidate), to: fileURL)
+        notes = candidate
     }
 
     /// Notes as a memory block, newest first, within `limit` characters.

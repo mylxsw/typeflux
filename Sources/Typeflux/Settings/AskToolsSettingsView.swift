@@ -15,7 +15,7 @@ struct AskToolsSettingsView: View {
     @State private var searchKey = ""
     @State private var skillList: [AskSkill] = []
     @State private var disabledSkills: Set<String> = []
-    @State private var noteList: [AskMemoryNote] = []
+    @StateObject var memoryNotes = AskMemoryNotesSettingsModel()
     @State private var showingInstall = false
     @State private var installURL = ""
     @State private var installing = false
@@ -230,12 +230,12 @@ struct AskToolsSettingsView: View {
     }
 
     @ViewBuilder private var memorySections: some View {
-        AgentSettingsSection(title: L("ask.settings.notes.title"), detail: "\(noteList.count)",
+        AgentSettingsSection(title: L("ask.settings.notes.title"), detail: "\(memoryNotes.notes.count)",
                              footnote: L("ask.settings.notes.subtitle")) {
-            if noteList.isEmpty {
+            if memoryNotes.notes.isEmpty {
                 AgentSettingsEmptyRow(text: L("ask.settings.notes.empty"))
             }
-            ForEach(Array(noteList.enumerated()), id: \.element.id) { index, note in
+            ForEach(Array(memoryNotes.notes.enumerated()), id: \.element.id) { index, note in
                 if index > 0 { ModelRowDivider(leading: 66) }
                 AgentSettingsRow(icon: "brain", title: note.text, titleLineLimit: nil) {
                     AgentSettingsIconButton(systemImage: "trash", help: L("ask.remove"), role: .destructive) {
@@ -243,6 +243,10 @@ struct AskToolsSettingsView: View {
                     }
                 }
             }
+        }
+        if let error = memoryNotes.error {
+            Text(error).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -297,7 +301,7 @@ struct AskToolsSettingsView: View {
         searchKey = search.apiKey
         skillList = skills.skills()
         disabledSkills = settings.askDisabledSkills
-        noteList = notes.list(owner: owner())
+        memoryNotes.reload(from: notes, owner: owner())
     }
 
     private func addFolder() {
@@ -317,8 +321,7 @@ struct AskToolsSettingsView: View {
     }
 
     func removeNote(_ note: AskMemoryNote) {
-        _ = try? notes.remove(id: note.id, owner: owner())
-        reload()
+        memoryNotes.remove(note, from: notes, owner: owner())
     }
 
     private func openSkillsFolder() {
