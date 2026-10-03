@@ -9,6 +9,7 @@ import UniformTypeIdentifiers
 @Suite("Ask command rendering", .serialized)
 @MainActor
 struct AskCommandRenderTests {
+    @MainActor
     final class Host {
         let window: AskTestVoiceWindow
         let view: NSView
