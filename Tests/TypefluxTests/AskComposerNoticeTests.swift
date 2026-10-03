@@ -159,51 +159,57 @@ struct AskNoticeVisualTests {
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
 
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
-            let fixture = try AskTestFixture()
-            let now = Date()
-            let conversation = AskConversation(id: "notices", title: "讲讲这一屏在做什么", revision: 1, updatedAt: now, messages: [
-                .init(id: "q1", role: "user", text: "讲讲这一屏在做什么", createdAt: now),
-                .init(id: "a1", role: "assistant", text: "这是 Typeflux 的「随便问」窗口。左侧是对话列表，中间是对话内容。", createdAt: now),
-                .init(id: "q2", role: "user", text: "再帮我把它翻成英文", createdAt: now)
-            ], run: .init(id: "run", deviceId: "device", status: "failed", error: "回答中断：网络连接已断开",
-                          steps: 1, updatedAt: now, tools: [], pending: []))
-            await fixture.api.seed(conversation)
-            await fixture.model.refreshHistory()
-            await fixture.model.select(conversation.id)
-            fixture.model.visionSwitch = AskVisionSwitch(draftKey: "notices", from: "local:llama3.2", to: "local:qwen2.5-vl")
-            fixture.model.screenshotNotice = L("ask.image.detached")
-            fixture.model.attachmentNotice = "video.mov 无法添加"
-            fixture.model.commandFeedback = L("ask.command.modelChanged", "coding/auto")
+            let fixture = try await noticeFixture()
+            defer { fixture.model.resetSession() }
+            let workspace = AskConversationView(model: fixture.model).environment(\.askGlassMaterialOverride, .opaque)
+            try await render(workspace, size: NSSize(width: 1100, height: 720), appearance: appearance,
+                             to: root.appendingPathComponent("notices-workspace-\(name).png"))
 
-            let size = NSSize(width: 1100, height: 720)
-            let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
-                                            backing: .buffered, defer: false)
-            window.isReleasedWhenClosed = false
-            window.appearance = NSAppearance(named: appearance)
-            let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model)
-                .environment(\.askGlassMaterialOverride, .opaque))
-            hosting.frame = NSRect(origin: .zero, size: size)
-            window.contentView = hosting
-            window.makeKeyAndOrderFront(nil)
-            defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
-            try await Task.sleep(for: .milliseconds(800))
-            try snapshot(hosting, to: root.appendingPathComponent("notices-workspace-\(name).png"))
-
-            let launcherSize = NSSize(width: AskMetrics.launcherWidth, height: 220)
-            let panel = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: launcherSize), styleMask: [.borderless],
-                                           backing: .buffered, defer: false)
-            panel.isReleasedWhenClosed = false
-            panel.appearance = NSAppearance(named: appearance)
             fixture.model.launcherDraft.text = "这段报错是什么意思？"
             fixture.model.error = "发送失败：Typeflux Cloud 暂时不可用"
-            let launcher = NSHostingView(rootView: AskLauncherView(model: fixture.model, onDismiss: {})
-                .environment(\.askGlassMaterialOverride, .opaque))
-            launcher.frame = NSRect(origin: .zero, size: launcherSize)
-            panel.contentView = launcher
-            panel.orderFront(nil)
-            defer { panel.orderOut(nil); panel.close() }
-            try await Task.sleep(for: .milliseconds(500))
-            try snapshot(launcher, to: root.appendingPathComponent("notices-launcher-\(name).png"))
+            let launcher = AskLauncherView(model: fixture.model, onDismiss: {})
+                .environment(\.askGlassMaterialOverride, .opaque)
+            let panel = NSSize(width: AskMetrics.launcherWidth, height: 220)
+            try await render(launcher, size: panel, appearance: appearance,
+                             to: root.appendingPathComponent("notices-launcher-\(name).png"))
         }
+    }
+
+    /// A conversation whose last run failed, with a model switch, two notices and a confirmation.
+    private func noticeFixture() async throws -> AskTestFixture {
+        let fixture = try AskTestFixture()
+        let now = Date()
+        let messages: [AskMessage] = [
+            .init(id: "q1", role: "user", text: "讲讲这一屏在做什么", createdAt: now),
+            .init(id: "a1", role: "assistant", text: "这是 Typeflux 的「随便问」窗口。左侧是对话列表，中间是对话内容。", createdAt: now),
+            .init(id: "q2", role: "user", text: "再帮我把它翻成英文", createdAt: now)
+        ]
+        let run = AskRun(id: "run", deviceId: "device", status: "failed", error: "回答中断：网络连接已断开",
+                         steps: 1, updatedAt: now, tools: [], pending: [])
+        let conversation = AskConversation(id: "notices", title: "讲讲这一屏在做什么", revision: 1, updatedAt: now,
+                                           messages: messages, run: run)
+        await fixture.api.seed(conversation)
+        await fixture.model.refreshHistory()
+        await fixture.model.select(conversation.id)
+        fixture.model.visionSwitch = AskVisionSwitch(draftKey: "notices", from: "local:llama3.2",
+                                                     to: "local:qwen2.5-vl")
+        fixture.model.screenshotNotice = L("ask.image.detached")
+        fixture.model.attachmentNotice = "video.mov 无法添加"
+        fixture.model.commandFeedback = L("ask.command.modelChanged", "coding/auto")
+        return fixture
+    }
+
+    private func render(_ view: some View, size: NSSize, appearance: NSAppearance.Name, to url: URL) async throws {
+        let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
+                                        backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: appearance)
+        let hosting = NSHostingView(rootView: view)
+        hosting.frame = NSRect(origin: .zero, size: size)
+        window.contentView = hosting
+        window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil); window.close() }
+        try await Task.sleep(for: .milliseconds(800))
+        try snapshot(hosting, to: url)
     }
 }

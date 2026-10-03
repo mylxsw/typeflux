@@ -132,7 +132,8 @@ struct AskDesignFidelityTests {
         #expect(L("ask.followup.placeholder").contains("/"))
         #expect(L("ask.send.help").contains("↩"))
         #expect(L("ask.send.help").contains("⇧↩"))
-        #expect(AskVoiceButton.help(shortcut: HotkeyBinding(keyCode: 61, modifierFlags: 0)) != L("ask.voice.buttonHint"))
+        let rightOption = HotkeyBinding(keyCode: HotkeyBinding.rightOptionKeyCode, modifierFlags: 0)
+        #expect(AskVoiceButton.help(shortcut: rightOption) != L("ask.voice.buttonHint"))
         #expect(L("ask.launcher.hint") != "ask.launcher.hint")
     }
 

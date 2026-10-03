@@ -649,9 +649,10 @@ struct AskConversationView: View {
 
     @ViewBuilder private var statusArea: some View {
         if let change = model.visibleVisionSwitch {
-            AskSystemLine(text: String(format: L("ask.vision.switched"), model.modelLibrary.name(for: change.to)),
+            let library = model.modelLibrary
+            AskSystemLine(text: String(format: L("ask.vision.switched"), library.name(for: change.to)),
                           systemImage: "eye",
-                          actionTitle: String(format: L("ask.vision.revert"), model.modelLibrary.name(for: change.from)),
+                          actionTitle: String(format: L("ask.vision.revert"), library.name(for: change.from)),
                           action: { model.revertVisionSwitch() },
                           onDismiss: { model.visionSwitch = nil })
         }
