@@ -168,6 +168,8 @@ final class AskTestTools: AskToolExecuting {
     var reportsError = false
     var bound: [String] = []
     func bindConversation(_ id: String) { bound.append(id) }
+    var grantedFolders: [String: [String]] = [:]
+    func grantFolders(_ paths: [String], conversationId: String) { grantedFolders[conversationId, default: []] += paths }
     var definitionRequests: [String?] = []
     func risk(of call: AskToolCall) -> AskToolRisk {
         call.function.name.hasPrefix("danger") ? .destructive : AskLocalTools.builtinRisk(call)

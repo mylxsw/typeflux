@@ -18,7 +18,7 @@ extension AskConversationModel {
     /// the draft that was on screen when they arrived. A draft the user left in
     /// the meantime is not touched.
     func addAttachments(_ sources: [AskAttachmentSource], launcher: Bool,
-                        load: @escaping @Sendable ([AskAttachmentSource]) -> AskAttachmentBatch = AskAttachmentBatch.load) {
+                        load: @escaping @Sendable ([AskAttachmentSource]) -> AskAttachmentBatch = { AskAttachmentBatch.load($0) }) {
         guard !sources.isEmpty else { return }
         let key = visionDraftKey(launcher: launcher)
         attachmentLoads[key, default: 0] += 1
