@@ -125,7 +125,7 @@ struct AskComposer: View {
     private var notices: [AskComposerNotice] {
         AskComposerNotice.resolve(
             sendError: launcher ? model.error : nil,
-            voiceError: voice.context == contextID || voice.context == nil ? voice.error : nil,
+            voiceError: voice.error,
             attachment: model.attachmentNotice(launcher: launcher),
             screenshot: launcher ? model.launcherScreenshotNotice : model.screenshotNotice
         )
