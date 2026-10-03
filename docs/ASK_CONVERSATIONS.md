@@ -393,8 +393,10 @@ scenes `chat`, `chat-top`, `empty`, `palette`, `approval`, `model-menu`,
 `reason-menu`, `launcher`; `TYPEFLUX_ASK_LIVE_APPEARANCE=light`). Side-by-side
 sheets: `docs/images/ask-liquid-glass-compare-*.png`.
 
-- Window: opaque base with three ambient glows (`AskWindowBackdrop`); in-window
-  glass uses the board's graphite/white tint at 45% frost; menus 60%.
+- Window: frosted glass over the desktop (`AskWindowBackdrop`: behind-window
+  blur under the app's own tint at 78% dark / 72% light); the board's colourful
+  backdrop is the desktop wallpaper, not the window. In-window glass uses the
+  board's graphite/white tint at 45% frost; menus 60%.
 - Sidebar 264pt with a 34pt rounded search field and ⌘K key cap, 38pt rows, and
   a footer with a separator, initials avatar, name and plan badge.
 - Header capsules 38pt; credits as a semibold number plus "credits".
@@ -430,3 +432,10 @@ Reduce Transparency aware:
   light up on a spring; suggestion cards lift 3pt and press to 0.97; the send
   button springs when it becomes available; "正在思考" shimmers.
 - Menus close instantly, like system menus.
+
+### Launcher placement (GUL-159)
+
+The ⌥Space launcher opens centred on the screen like Spotlight
+(`AskLauncherPlacement`): the empty launcher, suggestions included, is centred,
+and it grows downward from a fixed top edge while typing, staying 12pt inside
+the usable screen. It no longer sits on the recording capsule's bottom inset.

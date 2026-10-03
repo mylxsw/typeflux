@@ -9,15 +9,12 @@ import Testing
 struct AskDesignFidelityTests {
     // MARK: - Window and glass
 
-    @Test func backdropHasASolidBaseAndThreeGlowsInBothAppearances() {
+    @Test func windowIsFrostedGlassOverTheDesktop() {
+        // The desktop shows through as a soft cast; the window keeps its own tint.
         for dark in [true, false] {
-            let glows = AskWindowBackdrop.glows(dark: dark)
-            #expect(glows.count == 3)
-            // Accent behind the sidebar, violet low on the left, warm in the far corner.
-            #expect(glows[0].center.x < 0.2 && glows[0].center.y < 0.3)
-            #expect(glows[1].center.x < 0.3 && glows[1].center.y > 0.8)
-            #expect(glows[2].center.x > 0.9 && glows[2].center.y > 0.9)
-            #expect(glows.allSatisfy { $0.radius.width > 0 && $0.radius.height > 0 })
+            let tint = AskWindowBackdrop.tintOpacity(dark: dark, reduceTransparency: false)
+            #expect(tint > 0.6 && tint < 0.9)
+            #expect(AskWindowBackdrop.tintOpacity(dark: dark, reduceTransparency: true) == 1)
         }
         #expect(AskWindowBackdrop.base(dark: true) != AskWindowBackdrop.base(dark: false))
     }
