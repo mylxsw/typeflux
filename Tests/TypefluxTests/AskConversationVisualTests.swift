@@ -448,7 +448,7 @@ struct AskConversationVisualTests {
         defaults.set(try JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
         let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false))
         defer { fixture.model.resetSession() }
-        let auth = AuthState(loadStoredToken: { "token" }, loadStoredRefreshToken: { nil },
+        let auth = AuthState(loadStoredToken: { ("token", Int(Date().timeIntervalSince1970) + 3600) }, loadStoredRefreshToken: { nil },
                              loadStoredUserProfile: { nil })
         let now = Date()
         await fixture.api.seed(AskConversation(id: "cloud", title: "讲讲这一屏在做什么", revision: 1, updatedAt: now,
