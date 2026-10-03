@@ -15,6 +15,14 @@ struct AskMemory: Codable, Equatable, Sendable {
         var excerpts: [String]
     }
 
+    struct Budget: Codable, Equatable, Sendable {
+        var globalScalars: Int
+        var appScalars: Int
+        var globalLimit = AskMemory.maximumGlobalLength
+        var excerptLimit = AskMemory.maximumExcerptLength
+        var excerptCountLimit = AskMemory.maximumExcerpts
+    }
+
     // Mirrors the server's limits. Go counts runes, which are Unicode scalars.
     static let maximumGlobalLength = 1000
     static let maximumExcerptLength = 1000
@@ -24,6 +32,35 @@ struct AskMemory: Codable, Equatable, Sendable {
 
     var global: String?
     var app: App?
+    var owner: String?
+    var capturedAt: Date?
+    var expiry: Date?
+    /// Additive wire provenance. Emission remains opt-in until API/client acceptance.
+    var sources: [MemoryProvenance]?
+    var budget: Budget?
+
+    func usable(owner: String? = nil, at date: Date = Date(),
+                invalidations: MemoryInvalidationStore = .shared) -> AskMemory? {
+        guard !isEmpty, expiry.map({ $0 > date }) ?? true,
+              sources?.allSatisfy({ $0.expiry.map { $0 > date } ?? true }) ?? true else { return nil }
+        let account = owner ?? self.owner
+        if let account, !invalidations.permits(self, owner: account) {
+            return nil
+        }
+        return self
+    }
+
+    /// Remove only the generated memory system message, preserving conversation history.
+    static func removingInjection(from payload: String) -> String {
+        guard var object = (try? JSONSerialization.jsonObject(with: Data(payload.utf8))) as? [String: Any],
+              let messages = object["messages"] as? [[String: Any]] else { return payload }
+        object["messages"] = messages.filter {
+            !(($0["role"] as? String) == "system" && ($0["content"] as? String)?.hasPrefix("<user_memory>\n") == true)
+        }
+        guard let data = try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        else { return payload }
+        return String(data: data, encoding: .utf8) ?? payload
+    }
 
     /// An empty value means memory was resolved and is unavailable or removed by the user.
     var isEmpty: Bool {
@@ -54,6 +91,7 @@ protocol AskMemoryProviding {
 /// Reads the same stores, switches and exclusions as dictation memory.
 @MainActor
 struct AskMemoryProvider: AskMemoryProviding {
+    private let structuredMemoryEnabled: Bool
     private let settings: SettingsStore
     private let soulStore: GlobalSoulMemoryStore
     private let recentStore: RecentInputMemoryStore
@@ -64,6 +102,7 @@ struct AskMemoryProvider: AskMemoryProviding {
 
     init(
         settings: SettingsStore,
+        structuredMemoryEnabled: Bool? = nil,
         soulStore: GlobalSoulMemoryStore = .shared,
         recentStore: RecentInputMemoryStore = .shared,
         noteStore: AskMemoryNoteStore = .shared,
@@ -74,6 +113,7 @@ struct AskMemoryProvider: AskMemoryProviding {
         }
     ) {
         self.settings = settings
+        self.structuredMemoryEnabled = structuredMemoryEnabled ?? MemoryRollout.enabled(settings.defaults)
         self.soulStore = soulStore
         self.recentStore = recentStore
         self.noteStore = noteStore
@@ -83,23 +123,39 @@ struct AskMemoryProvider: AskMemoryProviding {
     }
 
     func memory(bundleIdentifier: String?, appName: String?) -> AskMemory? {
-        var result = AskMemory()
-        var global = ""
-        if settings.globalSoulMemoryEnabled, let soul = soulStore.soul(ownerID: ownerID())?.text {
-            global = AskMemory.clipped(soul, to: AskMemory.maximumGlobalLength)
+        let owner = ownerID()
+        var result = AskMemory(owner: owner, capturedAt: Date())
+        var sources: [MemoryProvenance] = []
+        // Explicit corrections and notes have first claim on the global budget.
+        let notes = noteStore.list(owner: owner)
+        var global = AskMemoryNoteStore.memoryText(notes, limit: AskMemory.maximumGlobalLength) ?? ""
+        sources += AskMemoryNoteStore.injectionNotes(notes, limit: AskMemory.maximumGlobalLength)
+            .compactMap(\.provenance)
+        if settings.globalSoulMemoryEnabled, let soul = soulStore.soul(ownerID: owner) {
+            let room = AskMemory.maximumGlobalLength - global.unicodeScalars.count - (global.isEmpty ? 0 : 2)
+            let text = AskMemory.clipped(soul.text, to: max(0, room))
+            if !text.isEmpty {
+                global += (global.isEmpty ? "" : "\n\n") + text
+                if let source = soul.provenance {
+                    sources.append(source)
+                }
+            }
         }
-        // Notes the user explicitly saved share the global budget after the soul summary.
-        let room = AskMemory.maximumGlobalLength - global.unicodeScalars.count - 2
-        if let notes = AskMemoryNoteStore.memoryText(noteStore.list(owner: ownerID()), limit: room) {
-            global = global.isEmpty ? notes : global + "\n\n" + notes
+        if !global.isEmpty {
+            result.global = global
         }
-        global = AskMemory.clipped(global, to: AskMemory.maximumGlobalLength)
-        if !global.isEmpty { result.global = global }
-        result.app = appMemory(bundleIdentifier: bundleIdentifier, appName: appName)
+        result.app = appMemory(bundleIdentifier: bundleIdentifier, appName: appName, sources: &sources)
+        result.expiry = sources.compactMap(\.expiry).min()
+        if structuredMemoryEnabled {
+            result.sources = sources
+            result.budget = .init(globalScalars: global.unicodeScalars.count,
+                                  appScalars: result.app?.excerpts.reduce(0) { $0 + $1.unicodeScalars.count } ?? 0)
+        }
         return result.isEmpty ? nil : result
     }
 
-    private func appMemory(bundleIdentifier: String?, appName: String?) -> AskMemory.App? {
+    private func appMemory(bundleIdentifier: String?, appName: String?, sources: inout [MemoryProvenance]) -> AskMemory
+        .App? {
         // Check the switches before resolving: browser scopes read the page URL via Apple Events.
         guard let bundleIdentifier, !bundleIdentifier.isEmpty,
               bundleIdentifier.utf8.count <= AskMemory.maximumAppIDBytes,
@@ -108,8 +164,11 @@ struct AskMemoryProvider: AskMemoryProviding {
               let scope = resolveScope(bundleIdentifier),
               settings.recentInputMemoryAllowed(for: scope.appIdentifier)
         else { return nil }
-        let excerpts = recentStore.recent(scope: scope.key, limit: AskMemory.maximumExcerpts)
-            .map { AskMemory.clipped($0, to: AskMemory.maximumExcerptLength) }
+        let items = recentStore.list(owner: ownerID()).filter { $0.scope == scope.key }
+            .prefix(AskMemory.maximumExcerpts)
+        sources += items.compactMap(\.provenance)
+        let excerpts = items
+            .map { AskMemory.clipped($0.text, to: AskMemory.maximumExcerptLength) }
             .filter { !$0.isEmpty }
         guard !excerpts.isEmpty else { return nil }
         let name = appName.map { AskMemory.clipped($0, to: AskMemory.maximumAppNameLength) }

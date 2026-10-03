@@ -89,6 +89,10 @@ actor AskLocalEngine: AskAPI {
         loadAll()
         let id = AskConversationID.canonical(id)
         guard Self.validID(id), var record = records[id] else { throw AskLocalError.message(L("ask.local.notFound")) }
+        record.conversation.memory = record.conversation.memory?.usable(at: now())
+        if record.conversation.memory == nil, let payload = record.conversation.run?.inference?.payload {
+            record.conversation.run?.inference?.payload = AskMemory.removingInjection(from: payload)
+        }
         // An interrupted inference or engine step must not strand the conversation.
         if let run = record.conversation.run, run.isActive, run.status != "waiting_tool",
            now().timeIntervalSince(run.updatedAt) > Self.staleAfter {
@@ -125,12 +129,20 @@ actor AskLocalEngine: AskAPI {
         try? FileManager.default.removeItem(at: file(id))
     }
 
-    func purgeMemory(token _: String) async throws {
+    func purgeMemory(token _: String) async throws { try clearMemorySnapshots(owner: nil) }
+
+    func purgeMemory(owner: String, token _: String) async throws { try clearMemorySnapshots(owner: owner) }
+
+    private func clearMemorySnapshots(owner: String?) throws {
         loadAll()
         for id in Array(records.keys) where records[id]?.conversation.memory != nil {
             guard var record = records[id] else { continue }
+            if let owner, let capturedOwner = record.conversation.memory?.owner, capturedOwner != owner { continue }
             record.conversation.memory = nil
             record.conversation.memoryOff = nil
+            if let payload = record.conversation.run?.inference?.payload {
+                record.conversation.run?.inference?.payload = AskMemory.removingInjection(from: payload)
+            }
             try save(&record)
         }
     }
@@ -151,7 +163,7 @@ actor AskLocalEngine: AskAPI {
         guard record.conversation.messages.count < Self.maxMessages else { throw AskLocalError.message(L("ask.local.full")) }
         let modelRef = try Self.localModel(request.modelRef)
         var c = record.conversation
-        if c.messages.isEmpty { c.memory = request.memory.flatMap { $0.isEmpty ? nil : $0 } }
+        if c.messages.isEmpty { c.memory = request.memory?.usable(at: now()) }
         c.memoryOff = c.memory != nil && request.memoryOff == true ? true : nil
         if let zone = request.timeZone, TimeZone(identifier: zone) != nil { record.timeZone = zone }
         if let locale = request.locale, !locale.isEmpty, locale.count <= 35 { record.locale = locale }

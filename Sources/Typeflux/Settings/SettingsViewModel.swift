@@ -180,6 +180,7 @@ final class StudioViewModel: ObservableObject {
     @Published var globalSoulMemory: GlobalSoulMemory?
     @Published var recentInputMemoryExcludedApps: [String]
     @Published var recentInputMemoryApplications: [String]
+    @Published var memoryOperationError: String?
     @Published var recentInputMemoryItems: [RecentInputMemory]
     @Published var inputContextOptimizationEnabled: Bool
     @Published var textTransformationEnabled: Bool
@@ -386,9 +387,10 @@ final class StudioViewModel: ObservableObject {
         globalSoulMemory = GlobalSoulMemoryStore.shared.soul(ownerID: GlobalSoulOwner.currentID)
         recentInputMemoryExcludedApps = settingsStore.recentInputMemoryExcludedApps
         recentInputMemoryApplications = Array(Set(
-            RecentInputMemoryStore.shared.appIdentifiers() + settingsStore.recentInputMemoryExcludedApps
+            RecentInputMemoryStore.shared.appIdentifiers(owner: GlobalSoulOwner.currentID)
+                + settingsStore.recentInputMemoryExcludedApps
         )).sorted()
-        recentInputMemoryItems = RecentInputMemoryStore.shared.list()
+        recentInputMemoryItems = RecentInputMemoryStore.shared.list(owner: GlobalSoulOwner.currentID)
         inputContextOptimizationEnabled = settingsStore.inputContextOptimizationEnabled
         textTransformationEnabled = settingsStore.outputOpenCCEnabled
         textTransformationRule = settingsStore.outputOpenCCConfig
@@ -1517,7 +1519,7 @@ final class StudioViewModel: ObservableObject {
             globalSoulMemoryEnabled = false
             settingsStore.globalSoulMemoryEnabled = false
             GlobalSoulMemoryStore.shared.clearPending()
-            NotificationCenter.default.post(name: .askMemoryDidClear, object: nil)
+            MemoryInvalidationStore.shared.invalidate(owner: GlobalSoulOwner.currentID)
         }
         GlobalSoulConsolidator.shared.schedule()
     }
@@ -1531,15 +1533,18 @@ final class StudioViewModel: ObservableObject {
         settingsStore.globalSoulMemoryEnabled = value
         if !value {
             GlobalSoulMemoryStore.shared.clearPending()
-            NotificationCenter.default.post(name: .askMemoryDidClear, object: nil)
+            MemoryInvalidationStore.shared.invalidate(owner: GlobalSoulOwner.currentID)
         }
         GlobalSoulConsolidator.shared.schedule()
     }
 
     func deleteGlobalSoulMemory() {
-        GlobalSoulMemoryStore.shared.deleteSoul(ownerID: GlobalSoulOwner.currentID)
+        guard GlobalSoulMemoryStore.shared.deleteSoul(ownerID: GlobalSoulOwner.currentID) else {
+            memoryOperationError = L("memory.saveFailed"); return
+        }
+        memoryOperationError = nil
         refreshRecentInputMemoryApplications()
-        NotificationCenter.default.post(name: .askMemoryDidClear, object: nil)
+        MemoryInvalidationStore.shared.invalidate(owner: GlobalSoulOwner.currentID)
     }
 
     func setRecentInputMemoryAllowed(_ allowed: Bool, appIdentifier: String) {
@@ -1549,28 +1554,34 @@ final class StudioViewModel: ObservableObject {
         settingsStore.recentInputMemoryExcludedApps = recentInputMemoryExcludedApps
         if !allowed {
             GlobalSoulMemoryStore.shared.clearPending(appIdentifier: appIdentifier)
-            NotificationCenter.default.post(name: .askMemoryDidClear, object: nil)
+            MemoryInvalidationStore.shared.invalidate(owner: GlobalSoulOwner.currentID)
         }
         GlobalSoulConsolidator.shared.schedule()
     }
 
     func clearRecentInputMemory(appIdentifier: String? = nil) {
-        RecentInputMemoryStore.shared.clear(appIdentifier: appIdentifier)
+        guard RecentInputMemoryStore.shared.clear(appIdentifier: appIdentifier, owner: GlobalSoulOwner.currentID) else {
+            memoryOperationError = L("memory.saveFailed"); return
+        }
+        memoryOperationError = nil
         refreshRecentInputMemoryApplications()
-        NotificationCenter.default.post(name: .askMemoryDidClear, object: nil)
+        MemoryInvalidationStore.shared.invalidate(owner: GlobalSoulOwner.currentID)
         GlobalSoulConsolidator.shared.schedule()
     }
 
     func deleteRecentInputMemory(id: UUID) {
-        RecentInputMemoryStore.shared.delete(id: id)
+        guard RecentInputMemoryStore.shared.delete(id: id, owner: GlobalSoulOwner.currentID) else {
+            memoryOperationError = L("memory.saveFailed"); return
+        }
+        memoryOperationError = nil
         refreshRecentInputMemoryApplications()
-        NotificationCenter.default.post(name: .askMemoryDidClear, object: nil)
+        MemoryInvalidationStore.shared.invalidate(owner: GlobalSoulOwner.currentID)
         GlobalSoulConsolidator.shared.schedule()
     }
 
     func refreshRecentInputMemoryApplications() {
         globalSoulMemory = GlobalSoulMemoryStore.shared.soul(ownerID: GlobalSoulOwner.currentID)
-        recentInputMemoryItems = RecentInputMemoryStore.shared.list()
+        recentInputMemoryItems = RecentInputMemoryStore.shared.list(owner: GlobalSoulOwner.currentID)
         recentInputMemoryApplications = Array(Set(
             recentInputMemoryItems.map(\.appIdentifier) + recentInputMemoryExcludedApps
         )).sorted()

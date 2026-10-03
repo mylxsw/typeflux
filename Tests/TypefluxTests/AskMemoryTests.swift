@@ -71,7 +71,7 @@ private struct ProviderFixture {
     }
 
     func remember(_ text: String, app: String = "com.apple.dt.Xcode", scope: String? = nil, at date: Date = Date()) {
-        recent.upsert(id: UUID(), appIdentifier: app, scope: scope ?? app, text: text, at: date)
+        recent.upsert(id: UUID(), appIdentifier: app, scope: scope ?? app, text: text, at: date, owner: "owner")
     }
 }
 
@@ -397,6 +397,26 @@ struct AskMemoryTests {
         await f.model.waitForMemoryPurge()
         #expect(await f.api.purgeTokens == ["token", "token"])
         #expect(!f.defaults.bool(forKey: AskConversationModel.memoryPurgePendingKey))
+    }
+
+    @Test func clearedMemoryCannotReturnFromOldConversationFetchOrRestoredDraft() async throws {
+        let fixture = try AskMemoryFixture()
+        fixture.capture.global = AskMemory(global: "stale source")
+        fixture.model.draft = AskDraft(text: "Question")
+        fixture.model.submitDraft()
+        try await fixture.wait { fixture.model.busyIds.isEmpty && fixture.model.selected != nil }
+        let id = try #require(fixture.model.selected?.id)
+        fixture.model.clearMemory()
+        await fixture.model.waitForMemoryPurge()
+        // The fixture's purge records the request but intentionally retains stale server data.
+        await fixture.model.select(id, reload: true)
+        #expect(fixture.model.selected?.memory == nil)
+        fixture.model.draft = AskDraft(text: "Next", memory: AskMemory(global: "old draft"))
+        fixture.model.newConversation()
+        fixture.model.draft.text = "Another question"
+        fixture.model.submitDraft()
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        #expect(await fixture.api.sends.last?.memory == nil)
     }
 
     @Test func signedOutPurgeWaitsForASession() async throws {

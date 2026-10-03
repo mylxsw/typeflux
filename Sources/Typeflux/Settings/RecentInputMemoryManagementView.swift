@@ -6,6 +6,7 @@ struct RecentInputMemoryManagementView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedAppIdentifier: String?
     @State private var isGlobalSoulSelected = false
+    @State private var query = ""
 
     private var applications: [String] {
         let identifiers = Set(viewModel.recentInputMemoryApplications)
@@ -34,6 +35,12 @@ struct RecentInputMemoryManagementView: View {
             }
             .padding(StudioTheme.Spacing.large)
 
+            Text(L("memory.recentScope")).font(.caption).foregroundStyle(.secondary).padding(.horizontal)
+            Text(L("memory.boundaries")).font(.caption).foregroundStyle(.secondary).padding(.horizontal)
+            TextField(L("memory.search"), text: $query).padding()
+            if let error = viewModel.memoryOperationError {
+                Text(error).font(.caption).foregroundStyle(StudioTheme.danger).padding(.horizontal)
+            }
             Divider()
 
             HStack(spacing: 0) {
@@ -172,7 +179,9 @@ struct RecentInputMemoryManagementView: View {
     }
 
     private func appCard(for appIdentifier: String) -> some View {
-        let memories = viewModel.recentInputMemoryItems.filter { $0.appIdentifier == appIdentifier }
+        let memories = viewModel.recentInputMemoryItems.filter {
+            $0.appIdentifier == appIdentifier && (query.isEmpty || $0.text.localizedCaseInsensitiveContains(query))
+        }
         return StudioCard {
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
                 HStack(spacing: StudioTheme.Spacing.medium) {

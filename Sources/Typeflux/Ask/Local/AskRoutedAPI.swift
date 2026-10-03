@@ -53,6 +53,12 @@ struct AskRoutedAPI: AskAPI {
         if !token.isEmpty { try await cloud.purgeMemory(token: token) }
     }
 
+    /// Source ownership is separate from the shared local conversation cache.
+    func purgeMemory(owner: String, token: String) async throws {
+        try await local.purgeMemory(owner: owner, token: "")
+        if !token.isEmpty { try await cloud.purgeMemory(token: token) }
+    }
+
     /// The Cloud account when signed in; otherwise the local session.
     static func session(token: String?, owner: String?) -> (owner: String, token: String) {
         guard let token, !token.isEmpty, let owner, !owner.isEmpty else { return (localOwner, "") }
