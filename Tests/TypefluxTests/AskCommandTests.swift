@@ -417,7 +417,12 @@ struct AskCommandExecutionTests {
         #expect(context.skills.map(\.name) == ["meeting-notes"])
         #expect(context.mcpServers.map(\.name) == ["github"])
         #expect(context.chosenSkills == ["meeting-notes"])
-        #expect(context.models.contains { $0.reference == context.currentModel })
+        // A private conversation is not offered Cloud models.
+        #expect(!context.models.contains { $0.reference.hasPrefix("cloud:") })
+        recorder.local = false
+        let cloud = f.model.commandContext(launcher: true)
+        #expect(!cloud.localMode)
+        #expect(cloud.models.contains { $0.reference == cloud.currentModel })
     }
 
     @Test func feedbackClearsItself() async throws {
