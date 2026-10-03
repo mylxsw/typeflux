@@ -94,6 +94,28 @@ struct AskCommandVisualTests {
             type("\u{1b}", keyCode: 53, into: field)
             try await Task.sleep(for: .milliseconds(200))
             #expect(fixture.model.draft.text == "/model ", "escape closes the palette and keeps the text")
+
+            // The launcher lists commands under its card, where its suggestions go.
+            fixture.model.launcherDraft = AskDraft(includeScreenshot: false)
+            fixture.model.launcherDraft.append([photo])
+            let launcherSize = NSSize(width: 720, height: 620)
+            let panel = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: launcherSize), styleMask: [.borderless], backing: .buffered, defer: false)
+            panel.isReleasedWhenClosed = false
+            panel.appearance = NSAppearance(named: appearance)
+            let launcherHost = NSHostingView(rootView: VStack {
+                AskLauncherView(model: fixture.model, onDismiss: {}).environment(\.askGlassMaterialOverride, .opaque)
+                Spacer(minLength: 0)
+            }.background(AskTheme.surface))
+            launcherHost.frame = NSRect(origin: .zero, size: launcherSize)
+            panel.contentView = launcherHost
+            panel.makeKeyAndOrderFront(nil)
+            defer { panel.orderOut(nil); panel.close() }
+            try await Task.sleep(for: .milliseconds(400))
+            let launcherField = try #require(editor(in: launcherHost))
+            panel.makeFirstResponder(launcherField)
+            for character in "/sk" { type(String(character), into: launcherField) }
+            try await Task.sleep(for: .milliseconds(400))
+            try snapshot(launcherHost, to: root.appendingPathComponent("commands-launcher-\(name).png"))
         }
     }
 }
