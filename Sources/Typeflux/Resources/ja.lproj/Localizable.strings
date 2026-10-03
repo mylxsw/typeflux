@@ -2062,3 +2062,17 @@
 "ask.command.off" = "オフ";
 "ask.command.chip.skill" = "スキル";
 "ask.command.chip.mcp" = "MCP";
+
+// Project workspaces
+"ask.project.title" = "プロジェクトファイル";
+"ask.project.review" = "変更を確認";
+"ask.project.export" = "パッチを書き出す…";
+"ask.project.staged" = "変更は別に保存され、元のファイルは保持されます。";
+"ask.project.truncated" = "差分のプレビューを省略しました。全変更はパッチを書き出して確認してください。";
+"ask.project.error.denied" = "プロジェクトの許可が取り消されたか、対象が安全ではありません。再度許可してください。";
+"ask.project.error.invalidPath" = "リンク、上位ディレクトリ、.git を含まない相対パスを使用してください。";
+"ask.project.error.conflict" = "元のファイルまたは保存済みの版が変わりました。上書きはしていません。変更を破棄して再度読み取ってください。";
+"ask.project.error.binary" = "バイナリファイル、または有効な UTF-8 テキストではありません。";
+"ask.project.error.tooLarge" = "ファイルまたは変更セットがサイズ制限を超えています。";
+"ask.project.error.invalid" = "無効な操作です。ファイルを読み取り、期待する版を指定してください。";
+"ask.project.error.unavailable" = "プロジェクトモードは利用できません。";

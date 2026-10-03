@@ -94,6 +94,18 @@ final class AskFileToolsTests: XCTestCase {
         XCTAssertEqual(AskFileTools.risk(action: "search"), .read)
         XCTAssertEqual(AskFileTools.risk(action: "edit"), .write)
     }
+
+    func testExtremePagingAndBinaryBeyondInitialChunk() throws {
+        XCTAssertTrue(try tools.read("docs/notes.txt", offset: 1, limit: Int.max).contains("2\tBeta line"))
+        XCTAssertFalse(try tools.read("docs/notes.txt", offset: Int.max, limit: Int.max).contains("alpha"))
+        XCTAssertTrue(try tools.read("docs/notes.txt", offset: Int.min, limit: Int.min).contains("1\talpha"))
+        try (Data(repeating: 65, count: 9000) + Data([0])).write(to: root.appendingPathComponent("late-binary"))
+        XCTAssertThrowsError(try tools.read("late-binary", offset: 0, limit: 1))
+        try Data([0xff, 0xfe]).write(to: root.appendingPathComponent("utf16"))
+        XCTAssertThrowsError(try tools.read("utf16", offset: 0, limit: 1))
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("leak.txt"), withDestinationURL: outside.appendingPathComponent("secret.txt"))
+        XCTAssertEqual(try tools.search(".", pattern: "secret"), "No matches.")
+    }
 }
 
 final class AskCodeSandboxTests: XCTestCase {

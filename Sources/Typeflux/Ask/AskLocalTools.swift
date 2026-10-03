@@ -22,6 +22,8 @@ enum AskToolRisk: Int, Comparable, Sendable {
 @MainActor
 protocol AskToolExecuting {
     func bindConversation(_ id: String)
+    func bindExecution(ownerId: String, conversationId: String, runId: String)
+    func exportProjectPatch(_ ref: AskWorkspaceRef, ownerId: String, conversationId: String) throws -> Data
     func risk(of call: AskToolCall) -> AskToolRisk
     /// Tools usable from this conversation; tools that need an unavailable target are omitted.
     func definitions(conversationId: String?) async -> [AskToolDefinition]
@@ -36,6 +38,8 @@ protocol AskToolExecuting {
 }
 
 extension AskToolExecuting {
+    func bindExecution(ownerId _: String, conversationId _: String, runId _: String) {}
+    func exportProjectPatch(_: AskWorkspaceRef, ownerId _: String, conversationId _: String) throws -> Data { throw AskProjectError.unavailable }
     func mcpServerName(of _: AskToolCall) -> String? { nil }
     func grantFolders(_: [String], conversationId _: String) {}
     func executeApproved(_ call: AskToolCall, conversationId: String, binding: AskToolBinding,
@@ -63,6 +67,10 @@ final class AskLocalTools: AskToolExecuting {
     let skills: AskSkillLibrary
     private let notes: AskMemoryNoteStore
     let folderGrants: AskFolderGrants
+    let projects: AskProjectWorkspace
+    /// Independent rollout gate; production composition leaves this disabled.
+    let projectModeEnabled: Bool
+    var projectScopes: [String: AskProjectScope] = [:]
     let owner: @MainActor () -> String
     let observationStore: AskObservationStore
     let browserExecutor: AskBrowserExecutor
@@ -78,6 +86,7 @@ final class AskLocalTools: AskToolExecuting {
     init(registry: MCPRegistry, runner: any ProcessCommandRunning = AskAutomationScriptRunner(), settings: SettingsStore? = nil,
          sandbox: AskCodeSandbox? = nil, skills: AskSkillLibrary = AskSkillLibrary(), notes: AskMemoryNoteStore = .shared,
          folderGrants: AskFolderGrants = AskFolderGrants(),
+         projects: AskProjectWorkspace = AskProjectWorkspace(), projectModeEnabled: Bool = false,
          owner: @escaping @MainActor () -> String = { GlobalSoulOwner.currentID }) {
         self.registry = registry; self.settings = settings
         let store = AskObservationStore()
@@ -85,6 +94,7 @@ final class AskLocalTools: AskToolExecuting {
         browserExecutor = AskBrowserExecutor(store: store, runner: runner)
         computerExecutor = AskComputerExecutor(store: store)
         self.skills = skills; self.notes = notes; self.folderGrants = folderGrants; self.owner = owner
+        self.projects = projects; self.projectModeEnabled = projectModeEnabled
         self.sandbox = sandbox ?? AskCodeSandbox(readableDirectories: [skills.userDirectory])
     }
 
@@ -126,6 +136,10 @@ final class AskLocalTools: AskToolExecuting {
         await registry.connectAutoConnectServers()
         var result = Self.builtins.filter { $0.name != "browser" || browserBundle(conversationId: conversationId) != nil }
         if let files = AskFileTools.definition(roots: fileTools(conversationId: conversationId).roots) { result.append(files) }
+        if projectModeEnabled, !fileTools(conversationId: conversationId).roots.isEmpty,
+           let project = try? Self.projectDefinition(roots: fileTools(conversationId: conversationId).roots) {
+            result.append(project)
+        }
         if settings?.askCodeExecutionEnabled == true, let code = sandbox.definition() { result.append(code) }
         if let skill = skills.definition(enabledSkills) { result.append(skill) }
         result.append(AskMemoryNoteStore.definition)
@@ -164,6 +178,7 @@ final class AskLocalTools: AskToolExecuting {
         case ("computer", "screenshot"), ("computer", "inspect"), ("computer", "wait"),
              ("browser", "read"), ("browser", "snapshot"), ("memory", "list"): return .read
         case ("files", _): return AskFileTools.risk(action: action)
+        case ("project_files", _): return ["list", "read", "review", "export"].contains(action) ? .read : .write
         case ("computer", _), ("browser", _), ("run_code", _), ("memory", _): return .write
         default: return .destructive
         }
@@ -246,6 +261,7 @@ final class AskLocalTools: AskToolExecuting {
         }
         let args = try Self.jsonArguments(call.function.arguments)
         switch call.function.name {
+        case "project_files": throw AskProjectError.denied // Requires the approved dispatch entry point.
         case "computer", "browser":
             return try await executeAutomation(call.function.name, args: args, conversationId: conversationId)
         case "files":

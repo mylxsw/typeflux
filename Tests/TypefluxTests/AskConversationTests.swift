@@ -177,6 +177,10 @@ final class AskTestTools: AskToolExecuting {
     var reportsError = false
     var bound: [String] = []
     func bindConversation(_ id: String) { bound.append(id) }
+    var executionScope: AskProjectScope?
+    func bindExecution(ownerId: String, conversationId: String, runId: String) {
+        executionScope = .init(ownerId: ownerId, conversationId: conversationId, runId: runId)
+    }
     var grantedFolders: [String: [String]] = [:]
     func grantFolders(_ paths: [String], conversationId: String) { grantedFolders[conversationId, default: []] += paths }
     var definitionRequests: [String?] = []

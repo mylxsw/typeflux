@@ -2072,3 +2072,17 @@
 "ask.command.off" = "Off";
 "ask.command.chip.skill" = "Skill";
 "ask.command.chip.mcp" = "MCP";
+
+// Project workspaces
+"ask.project.title" = "Project files";
+"ask.project.review" = "Review changes";
+"ask.project.export" = "Export patch…";
+"ask.project.staged" = "Changes are staged separately. Your source files are preserved.";
+"ask.project.truncated" = "Diff preview shortened. Export the patch for the complete changes.";
+"ask.project.error.denied" = "Project access was revoked or the target is unsafe. Authorize the project again.";
+"ask.project.error.invalidPath" = "Use a relative file path without links, traversal or .git metadata.";
+"ask.project.error.conflict" = "The source or staged version changed. Nothing was overwritten. Revert staged changes and read again.";
+"ask.project.error.binary" = "This file is binary or is not valid UTF-8 text.";
+"ask.project.error.tooLarge" = "The file or change set exceeds the supported size limit.";
+"ask.project.error.invalid" = "Invalid project operation. Read the file first and supply its expected version.";
+"ask.project.error.unavailable" = "Project mode is unavailable.";

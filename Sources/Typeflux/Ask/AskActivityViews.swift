@@ -15,6 +15,7 @@ struct AskActivityBlock: View {
     var outputs = AskRunOutputs()
     /// The approval for one of this card's steps, shown under its header.
     var approval: AnyView?
+    var exportProjectPatch: ((AskWorkspaceRef) throws -> Data)?
     @State private var userExpanded: Bool?
 
     private var expanded: Bool { userExpanded ?? (status == .running || status == .attention) }
@@ -116,7 +117,7 @@ struct AskActivityBlock: View {
                 ForEach((message.toolCalls ?? []).filter { $0.function.name != "update_plan" }) { call in
                     AskToolStepRow(call: call, result: results.first { $0.toolCallId == call.id },
                                    preparing: streamingId == message.id, pending: approvalToolId == call.id,
-                                   isLast: call.id == group.steps.last?.id)
+                                   isLast: call.id == group.steps.last?.id, exportProjectPatch: exportProjectPatch)
                 }
             }
         }
@@ -153,6 +154,7 @@ struct AskToolStepRow: View {
     var pending = false
     /// The last step draws no line down to a next one.
     var isLast = true
+    var exportProjectPatch: ((AskWorkspaceRef) throws -> Data)?
     @State private var expanded = false
     @State private var pane = Pane.arguments
 
@@ -232,7 +234,10 @@ struct AskToolStepRow: View {
                         if pane == .arguments || result == nil {
                             AskMonoBlock(title: "", text: call.function.arguments)
                         } else if let result {
-                            if !result.resultText.isEmpty {
+                            if call.function.name == "project_files", result.isError != true,
+                               let review = AskProjectReview.decode(result.resultText) {
+                                AskProjectReviewView(review: review, exportPatch: exportProjectPatch)
+                            } else if !result.resultText.isEmpty {
                                 AskMonoBlock(title: "", text: result.resultText,
                                              isError: AskPresentation.toolState(result: result) == .failed)
                             }

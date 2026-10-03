@@ -2062,3 +2062,17 @@
 "ask.command.off" = "꺼짐";
 "ask.command.chip.skill" = "스킬";
 "ask.command.chip.mcp" = "MCP";
+
+// Project workspaces
+"ask.project.title" = "프로젝트 파일";
+"ask.project.review" = "변경 검토";
+"ask.project.export" = "패치 내보내기…";
+"ask.project.staged" = "변경은 별도로 저장되며 원본 파일은 유지됩니다.";
+"ask.project.truncated" = "차이 미리보기가 축약되었습니다. 전체 변경은 패치를 내보내 확인하세요.";
+"ask.project.error.denied" = "프로젝트 권한이 취소되었거나 대상이 안전하지 않습니다. 다시 허용하세요.";
+"ask.project.error.invalidPath" = "링크, 상위 경로 또는 .git 메타데이터가 없는 상대 경로를 사용하세요.";
+"ask.project.error.conflict" = "원본 또는 저장된 버전이 변경되었습니다. 덮어쓰지 않았습니다. 변경을 취소하고 다시 읽으세요.";
+"ask.project.error.binary" = "바이너리 파일이거나 유효한 UTF-8 텍스트가 아닙니다.";
+"ask.project.error.tooLarge" = "파일 또는 변경 집합이 지원되는 크기 제한을 초과했습니다.";
+"ask.project.error.invalid" = "잘못된 작업입니다. 파일을 먼저 읽고 예상 버전을 지정하세요.";
+"ask.project.error.unavailable" = "프로젝트 모드를 사용할 수 없습니다.";

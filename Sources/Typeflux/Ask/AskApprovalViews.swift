@@ -13,9 +13,9 @@ enum AskApprovalPresentation {
     static func preview(_ call: AskToolCall) -> Preview {
         let args = (try? AskLocalTools.jsonArguments(call.function.arguments)) ?? [:]
         switch (call.function.name, args["action"] as? String ?? "") {
-        case ("files", "edit"):
+        case ("files", "edit"), ("project_files", "edit"):
             return .diff(removed: args["old_text"] as? String ?? "", added: args["new_text"] as? String ?? "")
-        case ("files", "write"):
+        case ("files", "write"), ("project_files", "write"):
             return (args["content"] as? String).map { .content(clip($0)) } ?? .none
         case ("run_code", _):
             return (args["code"] as? String).map { .content(clip($0)) } ?? .none
@@ -30,7 +30,7 @@ enum AskApprovalPresentation {
 
     /// The full path for file calls, which the row title shortens to a name.
     static func detail(_ call: AskToolCall) -> String? {
-        guard call.function.name == "files",
+        guard ["files", "project_files"].contains(call.function.name),
               let path = (try? AskLocalTools.jsonArguments(call.function.arguments))?["path"] as? String,
               !path.isEmpty else { return nil }
         return path

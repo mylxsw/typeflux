@@ -14,6 +14,10 @@ extension AskLocalTools {
         var summary: String
         var reusable = false
         switch call.function.name {
+        case "project_files":
+            target = try projectBinding(args, conversationId: conversationId)
+            definition = try Self.projectDefinition(roots: fileTools(conversationId: conversationId).roots)
+            summary = (target.path ?? "") + " / " + target.id + " / " + (args["action"] as? String ?? "")
         case "files":
             let files = fileTools(conversationId: conversationId)
             definition = AskFileTools.definition(roots: files.roots)
@@ -88,6 +92,13 @@ extension AskLocalTools {
         }
         let args = try Self.jsonArguments(call.function.arguments)
         switch call.function.name {
+        case "project_files":
+            // No suspension between live authorization, descriptor validation and
+            // manifest publication. Revocation/account changes cannot interleave.
+            guard try projectBinding(args, conversationId: conversationId) == binding.target else {
+                throw AskProjectError.conflict
+            }
+            return try executeProject(args, conversationId: conversationId)
         case "computer", "browser":
             return try await executeAutomation(call.function.name, args: args, conversationId: conversationId,
                                                approved: binding.target, authorize: authorize)
