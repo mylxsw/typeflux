@@ -257,26 +257,3 @@ struct AskCodeSandbox: Sendable {
         return lines.joined(separator: "\n")
     }
 }
-
-/// Collects process output up to a limit while still draining the pipe.
-final class AskOutputCollector: @unchecked Sendable {
-    private let lock = NSLock()
-    private var data = Data()
-    private var dropped = 0
-    private let limit: Int
-
-    init(limit: Int) { self.limit = limit }
-
-    func append(_ chunk: Data) {
-        lock.lock(); defer { lock.unlock() }
-        let room = max(0, limit - data.count)
-        data.append(chunk.prefix(room))
-        dropped += max(0, chunk.count - room)
-    }
-
-    var text: String {
-        lock.lock(); defer { lock.unlock() }
-        let body = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-        return dropped > 0 ? body + "\n[\(dropped) more bytes omitted]" : body
-    }
-}
