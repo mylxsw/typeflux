@@ -531,7 +531,25 @@ struct AskConversationVisualTests {
         window.toolbarStyle = .unified
         window.titlebarSeparatorStyle = .none
         window.appearance = NSAppearance(named: environment["TYPEFLUX_ASK_HOLD_LIGHT"] == nil ? .darkAqua : .aqua)
-        window.contentView = TransparentAskHostingView(rootView: AskConversationView(model: fixture.model))
+        // A signed-in account, so the footer shows what a Cloud user sees.
+        let auth = AuthState(
+            loadStoredToken: { ("valid-token", Int(Date().timeIntervalSince1970) + 3600) },
+            loadStoredRefreshToken: { nil },
+            loadStoredUserProfile: {
+                UserProfile(id: "u", email: "demir@example.com", name: "Demir Von", status: 1, provider: "google",
+                            createdAt: "2026-03-01T00:00:00Z", updatedAt: "2026-03-01T00:00:00Z")
+            },
+            saveStoredToken: { _, _ in }, saveStoredUserProfile: { _ in }, clearStoredSession: {},
+            fetchProfile: { _ in throw AuthError.invalidResponse },
+            fetchSubscription: { _ in
+                BillingSubscriptionSnapshot(planCode: "pro", status: "active", currentPeriodStart: nil,
+                                            currentPeriodEnd: nil, cancelAtPeriodEnd: false, entitled: true,
+                                            billingEnabled: true)
+            },
+            fetchCurrentPeriodUsageStats: { _ in throw AuthError.invalidResponse },
+            fetchCurrentPeriodUsageBreakdown: { _, _ in throw AuthError.invalidResponse }
+        )
+        window.contentView = TransparentAskHostingView(rootView: AskConversationView(model: fixture.model, auth: auth))
         window.makeKeyAndOrderFront(nil)
         defer { window.close() }
         func show(_ scene: String) async throws {

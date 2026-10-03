@@ -124,6 +124,17 @@ struct AskConversationStorageTests {
         #expect(hosting.fittingSize.height >= 530)
     }
 
+    @Test func filterBarPicksAFilter() {
+        var selection = AskHistoryFilter.all
+        let binding = Binding(get: { selection }, set: { selection = $0 })
+        let hosting = NSHostingView(rootView: AskHistoryFilterBar(selection: binding).frame(width: 240))
+        hosting.layoutSubtreeIfNeeded()
+        #expect(abs(hosting.fittingSize.height - AskHistoryFilterBar.height) < 1)
+        #expect(AskHistoryFilter.all.symbol == nil)
+        #expect(AskHistoryFilter.cloud.symbol == "cloud")
+        #expect(AskHistoryFilter.local.symbol == "lock")
+    }
+
     @Test func settingsStoreTheDefault() throws {
         let defaults = try #require(UserDefaults(suiteName: "ask-storage-settings-" + UUID().uuidString))
         let settings = SettingsStore(defaults: defaults)

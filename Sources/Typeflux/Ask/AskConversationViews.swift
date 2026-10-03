@@ -126,6 +126,7 @@ struct AskConversationView: View {
                     .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             } else {
                 composeButton
+                if model.isSignedIn { newConversationMenuButton }
                 sidebarToggle
             }
         }
@@ -159,6 +160,7 @@ struct AskConversationView: View {
             titleBarButton("magnifyingglass", label: L("ask.search")) { openSearch() }
                 .keyboardShortcut("k", modifiers: .command)
             composeButton
+            if model.isSignedIn { newConversationMenuButton }
         }
     }
 
@@ -167,20 +169,32 @@ struct AskConversationView: View {
     private var composeButton: some View {
         titleBarButton("square.and.pencil", label: L("ask.new"), shortcut: "⌘N") { model.newConversation() }
             .keyboardShortcut("n", modifiers: .command)
-            .contextMenu { newConversationMenu }
             .background { newPrivateShortcut }
     }
 
-    /// Both kinds of new conversation; the private one only exists while signed in.
+    /// The chevron beside "new chat": both kinds of new conversation, as in the design.
+    private var newConversationMenuButton: some View {
+        Menu { newConversationMenu } label: {
+            Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .foregroundStyle(StudioTheme.textSecondary)
+        .frame(width: 16, height: AskTitleBarButton.size.height)
+        .padding(.leading, -4)
+        .help(L("ask.new.more"))
+        .accessibilityLabel(L("ask.new.more"))
+    }
+
+    /// Both kinds of new conversation; the menu only shows while signed in.
     @ViewBuilder private var newConversationMenu: some View {
         Button { model.newConversation(storesLocally: false) } label: {
             Label(L("ask.storage.newCloud"), systemImage: "cloud")
         }
-        .disabled(!model.isSignedIn)
         Button { model.newConversation(storesLocally: true) } label: {
             Label(L("ask.storage.newLocal"), systemImage: "lock")
         }
-        .disabled(!model.isSignedIn)
     }
 
     /// ⇧⌘N without another visible control in the title bar.
@@ -344,14 +358,7 @@ struct AskConversationView: View {
     }
 
     private var historyFilterPicker: some View {
-        Picker(L("ask.history.filter"), selection: $historyFilter) {
-            ForEach(AskHistoryFilter.allCases, id: \.self) { filter in
-                Text(L(filter.titleKey)).tag(filter)
-            }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .controlSize(.small)
+        AskHistoryFilterBar(selection: $historyFilter)
     }
 
     private var historyList: some View {
@@ -608,6 +615,11 @@ struct AskConversationView: View {
             .padding(.horizontal, 12)
             .frame(height: AskMetrics.headerCapsuleHeight)
             .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
+            .overlay {
+                Capsule().fill(AskTheme.privateTint.opacity(0.12))
+                    .overlay(Capsule().strokeBorder(AskTheme.privateTint.opacity(0.35), lineWidth: 0.5))
+                    .allowsHitTesting(false)
+            }
             .help(L("ask.storage.local.detail"))
     }
 
@@ -1291,9 +1303,10 @@ private struct AskHistoryRow: View {
                 ZStack {
                     if hovering, !selected { shape.fill(AskTheme.hoverFill).transition(.opacity) }
                     if selected {
-                        shape.fill(AskTheme.accent.opacity(0.18))
-                            .overlay(shape.strokeBorder(AskTheme.accent.opacity(0.4), lineWidth: 0.5))
-                            .shadow(color: AskTheme.accent.opacity(0.18), radius: 6, y: 2)
+                        let tint = stored ? AskTheme.privateTint : AskTheme.accent
+                        shape.fill(tint.opacity(0.18))
+                            .overlay(shape.strokeBorder(tint.opacity(0.4), lineWidth: 0.5))
+                            .shadow(color: tint.opacity(0.18), radius: 6, y: 2)
                             .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
                     }
                 }
