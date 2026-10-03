@@ -379,15 +379,21 @@ actor AskLocalEngine: AskAPI {
             record.conversation.run?.status = "running"
             try save(&record)
             let runId = record.conversation.run?.id
-            let (text, failed) = await executeBuiltin(call, &record)
-            // A cancel may have landed while a web tool was running; its state wins.
-            guard let latest = records[record.conversation.id], latest.conversation.run?.id == runId,
-                  latest.conversation.run?.status == "running", latest.conversation.run?.pending.first?.id == call.id else {
-                return records[record.conversation.id]?.conversation ?? record.conversation
+            let result = await executeBuiltin(call, cloudCalls: record.cloudCalls)
+            guard let latest = records[record.conversation.id] else {
+                throw AskLocalError.message(L("ask.local.notFound"))
             }
-            record.conversation.revision = latest.conversation.revision
-            record.steering = latest.steering
-            record.conversation.messages.append(AskMessage(id: UUID().uuidString, role: "tool", text: text, toolCallId: call.id, isError: failed, createdAt: now()))
+            // Cancellation or a replacement run wins over a late tool result.
+            guard latest.conversation.run?.id == runId,
+                  latest.conversation.run?.status == "running", latest.conversation.run?.pending.first?.id == call.id else {
+                return latest.conversation
+            }
+            // Apply only the tool's delta to current state. In particular, never
+            // write memory from the snapshot taken before a concurrent purge.
+            record = latest
+            if let plan = result.plan { record.conversation.run?.plan = plan }
+            record.conversation.messages.append(AskMessage(id: UUID().uuidString, role: "tool", text: result.text,
+                                                           toolCallId: call.id, isError: result.isError, createdAt: now()))
             record.conversation.run?.pending.removeFirst()
             record.cloudCalls += 1
         }
@@ -400,17 +406,26 @@ actor AskLocalEngine: AskAPI {
         return try await step(&record)
     }
 
-    private func executeBuiltin(_ call: AskToolCall, _ record: inout AskLocalRecord) async -> (String, Bool) {
-        guard record.cloudCalls < Self.maxBuiltinCalls else {
-            return ("Web tool limit for this request reached. Answer with the information gathered so far.", true)
+    private struct BuiltinResult {
+        var text: String
+        var isError: Bool
+        var plan: [AskPlanItem]?
+    }
+
+    private func executeBuiltin(_ call: AskToolCall, cloudCalls: Int) async -> BuiltinResult {
+        guard cloudCalls < Self.maxBuiltinCalls else {
+            return BuiltinResult(
+                text: "Web tool limit for this request reached. Answer with the information gathered so far.",
+                isError: true)
         }
         if call.function.name == "update_plan" {
             do {
-                record.conversation.run?.plan = try Self.parsePlan(call.function.arguments)
-                return ("Plan updated.", false)
-            } catch { return (error.localizedDescription, true) }
+                return BuiltinResult(text: "Plan updated.", isError: false,
+                                     plan: try Self.parsePlan(call.function.arguments))
+            } catch { return BuiltinResult(text: error.localizedDescription, isError: true) }
         }
-        return await webTools.execute(name: call.function.name, arguments: call.function.arguments)
+        let (text, failed) = await webTools.execute(name: call.function.name, arguments: call.function.arguments)
+        return BuiltinResult(text: text, isError: failed)
     }
 
     /// Appends the messages waiting for this run. Only at a step boundary, so a user
