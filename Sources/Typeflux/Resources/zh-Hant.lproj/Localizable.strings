@@ -1478,6 +1478,12 @@
 "ask.search.actions" = "操作";
 "ask.search.conversations" = "對話";
 "ask.search.placeholder" = "Search conversations or actions";
+"ask.composer.hint" = "↩ Send · ⇧↩ New line · Hold %@ to dictate";
+"ask.launcher.hint" = "↩ Send · esc Close";
+"ask.models.multiplierColumn" = "Credits ×";
+"ask.models.ownAPI" = "Own API";
+"ask.models.badge.vision" = "Vision";
+"ask.models.badge.reasoning" = "Reasoning";
 "ask.history.searchEmpty" = "沒有符合的對話";
 "ask.selection.lines" = "選取 · %d 行";
 "ask.voice.hold" = "按住說話";

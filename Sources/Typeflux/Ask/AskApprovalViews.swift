@@ -60,32 +60,55 @@ struct AskApprovalCard: View {
     let risk: AskToolRisk
     var mcpServer: String?
     var canAllowForConversation = false
+    /// Inside its tool card rather than on its own after the transcript.
+    var embedded = false
     var onDeny: () -> Void
     var onAllowForConversation: () -> Void = {}
     var onAllow: () -> Void
     @State private var showsArguments = false
 
-    private var tint: Color { AskApprovalPresentation.riskState(risk).tint }
+    /// The panel's tint: the accent, except red for destructive steps.
+    static func panelTint(_ risk: AskToolRisk) -> Color { risk == .destructive ? StudioTheme.danger : AskTheme.accent }
+
+    /// Which button carries the primary style, as on the design board: allowing
+    /// for the conversation when offered, else allowing once. A destructive step
+    /// never makes "allow for the conversation" the prominent choice.
+    static func primaryIsConversation(risk: AskToolRisk, canAllowForConversation: Bool) -> Bool {
+        canAllowForConversation && risk != .destructive
+    }
+
+    private var tint: Color { Self.panelTint(risk) }
+    private var riskTint: Color { AskApprovalPresentation.riskState(risk).tint }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Image(systemName: "checkmark.shield").font(.system(size: 15, weight: .medium))
                     .foregroundStyle(tint)
                     .accessibilityHidden(true)
-                AskStatusBadge(text: AskApprovalPresentation.riskLabel(risk), state: AskApprovalPresentation.riskState(risk))
-                Image(systemName: AskPresentation.toolSymbol(call)).font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                Text(AskTheme.toolTitle(call, mcpServer: mcpServer))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Image(systemName: AskPresentation.toolSymbol(call)).font(.system(size: 12))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                        Text(AskTheme.toolTitle(call, mcpServer: mcpServer))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Text(AskApprovalPresentation.riskLabel(risk))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(riskTint)
+                            .padding(.horizontal, 7)
+                            .frame(height: 18)
+                            .background(riskTint.opacity(0.16), in: Capsule())
+                            .fixedSize()
+                    }
+                    if let detail = AskApprovalPresentation.detail(call) {
+                        Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                            .lineLimit(1).truncationMode(.middle).textSelection(.enabled)
+                    }
+                }
                 Spacer(minLength: 0)
-            }
-            if let detail = AskApprovalPresentation.detail(call) {
-                Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
-                    .lineLimit(1).truncationMode(.middle).textSelection(.enabled)
             }
             preview
             if risk == .destructive {
@@ -102,27 +125,31 @@ struct AskApprovalCard: View {
                 }
                 .buttonStyle(.plain)
                 Spacer(minLength: 8)
+                let conversationFirst = Self.primaryIsConversation(risk: risk,
+                                                                   canAllowForConversation: canAllowForConversation)
                 Button(action: onDeny) { Text(L("ask.deny")) }
                     .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
                     .keyboardShortcut(.cancelAction)
                     .help(L("ask.approval.denyHelp"))
-                if canAllowForConversation {
-                    Button(action: onAllowForConversation) { Text(L("ask.allowConversation")) }
-                        .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
-                        .help(L("ask.allowConversation.help"))
-                }
                 Button(action: onAllow) { Text(L(risk == .destructive ? "ask.approval.allowDestructive" : "ask.allowOnce")) }
-                    .buttonStyle(AskCapsuleButtonStyle(kind: risk == .destructive ? .destructive : .primary))
+                    .buttonStyle(AskCapsuleButtonStyle(kind: risk == .destructive ? .destructive
+                        : (conversationFirst ? .secondary : .primary)))
                     .keyboardShortcut(.return, modifiers: .command)
                     .help(L("ask.approval.allowHelp"))
+                if canAllowForConversation {
+                    Button(action: onAllowForConversation) { Text(L("ask.allowConversation")) }
+                        .buttonStyle(AskCapsuleButtonStyle(kind: conversationFirst ? .primary : .secondary))
+                        .help(L("ask.allowConversation.help"))
+                }
             }
             if showsArguments {
                 AskMonoBlock(title: L("ask.tool.arguments"), text: call.function.arguments)
             }
         }
-        .padding(14)
-        .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(tint.opacity(0.4), lineWidth: 0.5))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(tint.opacity(0.3), lineWidth: 0.5))
         .accessibilityElement(children: .contain)
     }
 

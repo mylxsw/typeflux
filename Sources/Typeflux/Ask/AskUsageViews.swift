@@ -5,6 +5,13 @@ import SwiftUI
 /// composer footer. It replaced a full-width row under the composer that spent
 /// a whole line restating what the panel already explains in detail.
 struct AskContextUsageButton: View {
+    /// Whole percent, with any non-empty context shown as at least 1%.
+    static func percentText(_ fraction: Double?) -> String {
+        guard let fraction else { return "—" }
+        let value = Int((min(1, max(0, fraction)) * 100).rounded())
+        return "\(fraction > 0 ? max(1, value) : 0)%"
+    }
+
     let context: AskContextUsage
     var action: () -> Void
     @State private var hovering = false
@@ -21,17 +28,16 @@ struct AskContextUsageButton: View {
                         .stroke(tint, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                 }
-                .frame(width: 15, height: 15)
-                Text(context.fraction.map { "\(Int($0 * 100))%" } ?? "—")
-                    .font(.system(size: 11, weight: .medium)).monospacedDigit()
+                .frame(width: 16, height: 16)
+                Text(Self.percentText(context.fraction))
+                    .font(.system(size: 12)).monospacedDigit()
             }
             .foregroundStyle(hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-            .padding(.leading, 7)
-            .padding(.trailing, 9)
-            .frame(height: 28)
-            .background(hovering ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .padding(.leading, 9)
+            .padding(.trailing, 10)
+            .frame(height: AskMetrics.composerControlHeight)
+            .background(hovering ? AskTheme.hoverFill : Color.clear, in: Capsule())
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }

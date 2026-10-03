@@ -17,8 +17,13 @@ struct AskWorkspaceGlassTests {
 
     @Test func onlyInWindowGlassIsFrostedForLegibility() {
         #expect(AskGlassPlacement.floating.frost == 0)
-        #expect(AskGlassPlacement.inWindow.frost > 0.5)
-        #expect(AskGlassPlacement.inWindow.frost < 1)
+        // Frosted enough to keep text legible, clear enough for the backdrop's glows.
+        #expect(AskGlassPlacement.inWindow.frost >= 0.4)
+        #expect(AskGlassPlacement.inWindow.frost <= 0.6)
+        // Menus sit over the transcript and need more frost than the window chrome.
+        #expect(AskGlassPlacement.menu.frost > AskGlassPlacement.inWindow.frost)
+        #expect(AskGlassPlacement.menu.blending == .behindWindow)
+        #expect(AskGlassPlacement.menu.fallbackMaterial == .menu)
     }
 
     @Test func inWindowComposerKeepsItsHairlineOnGlass() {
@@ -56,7 +61,8 @@ struct AskWorkspaceGlassTests {
     }
 
     @Test func composerAndSidebarBottomsLineUp() {
-        #expect(AskMetrics.composerBottomInset == AskMetrics.sidebarPanelInset)
+        // The composer sits higher than the sidebar's bottom, over its keyboard hint.
+        #expect(AskMetrics.composerBottomInset + AskMetrics.composerHintHeight > AskMetrics.sidebarPanelInset)
     }
 
     @Test func transcriptIsHiddenOutsideTheHeaderPills() {

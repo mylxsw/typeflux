@@ -70,11 +70,14 @@ struct AskPresentationTests {
 
     @Test func launcherHeightIsTheComposerCardPlusItsGutter() {
         let resting = AskMetrics.launcherHeight(editor: 32, banners: 0)
-        // 32 editor + 14 + 2 insets + 52 footer + 6 gutter on each side.
-        #expect(resting == 112)
-        #expect(AskMetrics.launcherHeight(editor: 148, banners: 0) == 228)
+        // 32 editor + 14 + 2 insets + 54 footer + 6 gutter on each side.
+        #expect(resting == 114)
+        #expect(AskMetrics.launcherHeight(editor: 148, banners: 0) == 230)
         #expect(AskMetrics.launcherHeight(editor: 32, banners: 1) == resting + 38)
         #expect(AskMetrics.launcherHeight(editor: 32, banners: 2) == resting + 76)
+        // The empty launcher lists its suggestions under the controls.
+        #expect(AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: true)
+            == resting + AskLauncherSuggestions.height)
     }
 
     @Test func focusAloneKeepsTheNeutralBorder() {
@@ -116,10 +119,15 @@ struct AskRedesignLayoutTests {
         window.orderFront(nil)
         defer { window.orderOut(nil); window.close() }
         try await Task.sleep(for: .milliseconds(300))
-        #expect(reported >= 110)
-        #expect(reported <= 120)
+        // Empty, the launcher offers its suggestions under the controls.
+        let suggested = AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: true)
+        #expect(reported >= suggested - 4)
+        #expect(reported <= suggested + 4)
+        let empty = reported
         fixture.model.launcherDraft.text = String(repeating: "Line of text\n", count: 30)
-        try await Task.sleep(for: .milliseconds(350))
+        // Wait for the typed height rather than a fixed delay, which flaked under load. The
+        // empty height (with suggestions) is already above 200, so wait for it to change.
+        for _ in 0 ..< 100 where reported == empty || reported < 200 { try await Task.sleep(for: .milliseconds(20)) }
         #expect(reported >= 200)
         #expect(reported <= AskMetrics.launcherHeight(editor: 148, banners: 0))
         fixture.model.resetSession()
@@ -183,7 +191,9 @@ struct AskRedesignFidelityTests {
     }
 
     @Test func transcriptAndComposerShareOneCentredColumn() {
-        #expect(AskMetrics.composerMaxWidth == AskMetrics.columnWidth)
+        // The composer's text lines up with the transcript column's edges.
+        #expect(AskMetrics.composerMaxWidth - AskComposerChrome.workspace.horizontalInset * 2
+            == AskMetrics.transcriptMaxWidth)
         #expect(AskMetrics.transcriptMaxWidth == AskMetrics.columnWidth - AskMetrics.columnInset * 2)
         #expect(AskMetrics.bubbleMaxWidth < AskMetrics.transcriptMaxWidth)
     }
@@ -260,6 +270,7 @@ struct AskDesignPolishTests {
         // The composer card must not blend into the popover or panel cards.
         #expect(AskTheme.composerSurface != AskTheme.popoverSurface)
         #expect(AskTheme.panelCard != AskTheme.segmentTrack)
-        #expect(AskTheme.primaryAction != AskTheme.accent)
+        // In-window glass has its own tint, distinct from the opaque cards.
+        #expect(AskTheme.glassFill != AskTheme.composerSurface)
     }
 }

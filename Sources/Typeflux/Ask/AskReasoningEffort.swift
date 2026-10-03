@@ -94,8 +94,15 @@ struct AskReasoningChoices: View {
                     effort = choice; dismiss()
                 }
             }
+            Text(L("ask.reasoning.help"))
+                .font(.system(size: 11))
+                .foregroundStyle(StudioTheme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 16)
+                .padding(.top, 4)
+                .padding(.bottom, 4)
         }
         .padding(.vertical, 6)
-        .frame(width: 300)
+        .frame(width: 280)
     }
 }

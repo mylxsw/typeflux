@@ -41,7 +41,13 @@ import Testing
         #expect(header.startingRow == 0 && body.startingRow == 1)
         #expect(time.startingColumn == 1 && cost.startingColumn == 2)
         #expect(header.backgroundColor != nil && body.backgroundColor == nil)
-        #expect(body.width(for: .border, edge: .minX) == 0.5)
+        // The rounded frame and row rules are drawn by the cells, not as block borders.
+        #expect(body.width(for: .border, edge: .minX) == 0)
+        #expect(body.width(for: .padding, edge: .minX) == AskMarkdownTable.horizontalPadding)
+        let edges = try #require(header as? AskTableCellBlock).edges
+        #expect(edges == .init(top: true, bottom: false, left: true, right: false))
+        let lastCost = try #require(block(value, at: "月费") as? AskTableCellBlock).edges
+        #expect(lastCost == .init(top: false, bottom: true, left: false, right: true))
         for (text, alignment) in [("步骤", NSTextAlignment.left), ("时间", .center), ("大致成本", .right)] {
             let range = (value.string as NSString).range(of: text)
             let style = try #require(value.attribute(

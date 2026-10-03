@@ -376,10 +376,57 @@ the bottom switches scenes, appearance and glass style).
 
 Accent still means "recording" on the composer outline, so keyboard focus keeps
 the neutral border; the board's focus glow is intentionally not adopted.
-The ⌥Space launcher keeps its existing compact layout.
+The ⌥Space launcher's suggestion list was added in the fidelity pass below.
 
 Pure logic lives in `AskPaletteState`, `AskRunTone`, `AskSendControl`,
 `AskPresentation.historyTimeLabel` and `AskAttachmentStrip` and is covered by
 `AskLiquidGlassRedesignTests`; `renderSearchPalette` captures the palette.
 Snapshots: `docs/images/ask-liquid-glass-*.png` (captured with the opaque
 fallback material, since system glass cannot be cached offscreen).
+
+### Fidelity pass (GUL-159, round 2)
+
+Every surface was compared against the design board rendered at the same
+1180 × 760 window size, using real on-screen captures with system Liquid Glass
+(`AskLivePreviewHarness`, opt-in with `TYPEFLUX_ASK_LIVE_PREVIEW=<seconds>`;
+scenes `chat`, `chat-top`, `empty`, `palette`, `approval`, `model-menu`,
+`reason-menu`, `launcher`; `TYPEFLUX_ASK_LIVE_APPEARANCE=light`). Side-by-side
+sheets: `docs/images/ask-liquid-glass-compare-*.png`.
+
+- Window: opaque base with three ambient glows (`AskWindowBackdrop`); in-window
+  glass uses the board's graphite/white tint at 45% frost; menus 60%.
+- Sidebar 264pt with a 34pt rounded search field and ⌘K key cap, 38pt rows, and
+  a footer with a separator, initials avatar, name and plan badge.
+- Header capsules 38pt; credits as a semibold number plus "credits".
+- Reading column 720pt; composer 760pt, 28pt corners, 34pt controls, 36pt send,
+  a focus hint row underneath; lit toggles get an accent ring and glow.
+- Prose 14.5pt, board heading sizes, hanging-indent lists, rounded inline-code
+  chips (`AskRoundedBackgroundLayoutManager`), rounded code blocks
+  (`AskCodeBlock`) and tables drawn by their cells as one rounded hairline frame
+  with header tint and row rules (`AskTableCellBlock`).
+- User attachments as chips above the bubble; reasoning shown above its tool
+  card; tool steps on a timeline with tool tags and a 参数/结果 switch.
+- The approval sits inside the tool card holding its step; "Allow for this
+  conversation" is the primary button unless the step is destructive.
+- Model menu: text capability badges, a credit-multiplier column, "My models"
+  group, "Manage models…" row; rows highlight with the accent like system menus.
+- The ⌥Space launcher lists the three suggestions while empty (↑/↓, Return).
+
+### Shadows and motion (GUL-159, round 3)
+
+`AskMotionEffects.swift` holds the board's depth and motion, all Reduce Motion /
+Reduce Transparency aware:
+
+- Elevation (`AskElevation`): control, panel and popover levels, each a soft
+  ambient shadow plus a 1pt contact shadow (dark 38% · 34pt blur · 12pt drop for
+  panels; light uses a fainter navy tint). `AskOuterShadow` draws it outside the
+  shape only, so glass never darkens and labels never get shadows.
+- Glass edges: a gradient rim light (`AskRimLight`) and a pointer-following
+  highlight (`askSpecular`) on the sidebar, header capsules, composer, cards and palette.
+- Menus, hover cards and the ⌘K palette pop in from their anchor (scale 0.9,
+  4pt blur, spring 0.32s); new messages and tool cards rise 10pt into place
+  (only items under 3 s old, so loading a conversation never animates).
+- The sidebar's selection pill slides between rows (matched geometry); toggles
+  light up on a spring; suggestion cards lift 3pt and press to 0.97; the send
+  button springs when it becomes available; "正在思考" shimmers.
+- Menus close instantly, like system menus.

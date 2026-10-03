@@ -82,17 +82,23 @@ enum AskTheme {
         light: NSColor(srgbRed: 0.918, green: 0.922, blue: 0.933, alpha: 1),
         dark: NSColor(srgbRed: 0.180, green: 0.180, blue: 0.180, alpha: 1)
     )
-    /// The design board's primary blue (#1D81DD dark / #1670C8 light), used for
-    /// the sidebar's primary action. `accent` stays the app-wide control tint.
-    static let primaryAction = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0.086, green: 0.439, blue: 0.784, alpha: 1),
-        dark: NSColor(srgbRed: 0.114, green: 0.506, blue: 0.867, alpha: 1)
-    )
     /// The launcher's idle edge. It floats over arbitrary windows, so it needs a
     /// firmer outline than the workspace composer's `border` to read as a panel.
     static let floatingBorder = StudioTheme.dynamic(
         light: NSColor(calibratedWhite: 0, alpha: 0.12),
         dark: NSColor(calibratedWhite: 1, alpha: 0.18)
+    )
+    /// The design board's glass tint for in-window panels (sidebar, header
+    /// pills, composer): a cool graphite in dark, white in light. Frosted at
+    /// `AskGlassPlacement.inWindow.frost`, so the backdrop's glows show through.
+    static let glassFill = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
+        dark: NSColor(srgbRed: 0.173, green: 0.173, blue: 0.204, alpha: 1)
+    )
+    /// The pressed (or hovered field) wash, one step above `hoverFill`.
+    static let pressFill = StudioTheme.dynamic(
+        light: NSColor(calibratedWhite: 0, alpha: 0.09),
+        dark: NSColor(calibratedWhite: 1, alpha: 0.12)
     )
     /// Translucent hover wash, so borderless controls read the same on any surface.
     static let hoverFill = StudioTheme.dynamic(
@@ -153,16 +159,16 @@ enum AskMetrics {
     static let launcherWidth: CGFloat = 680
     /// Breathing room around the launcher card.
     static let launcherGutter: CGFloat = 6
-    /// The launcher's glass card: 26 = footer inset 10 + the 32pt send button's radius 16,
+    /// The launcher's glass card: 27 = footer inset 10 + the 34pt controls' radius 17,
     /// so the corner stays concentric with the controls in it.
-    static let launcherCardCorner: CGFloat = 26
+    static let launcherCardCorner: CGFloat = 27
     /// Height of every footer control: menus, context chips, microphone and send.
-    static let composerControlHeight: CGFloat = 32
+    static let composerControlHeight: CGFloat = 34
     /// Horizontal padding inside the footer's text menus (model, reasoning).
     static let composerControlPadding: CGFloat = 10
     static let bannerHeight: CGFloat = 32
     static let bannerSpacing: CGFloat = 6
-    static let sidebarWidth: CGFloat = 248
+    static let sidebarWidth: CGFloat = 264
     /// The usage panel's glass card; it floats inset like the sidebar.
     static let usagePanelWidth: CGFloat = 330
     /// The transcript column's narrowest width; below sidebar + a comfortable
@@ -185,11 +191,15 @@ enum AskMetrics {
     static let collapsedTitleInset: CGFloat = trafficLightInset + titleBarButtonWidth * 3 + 6 + 12
     /// One centred reading column shared by the transcript and the composer, so
     /// questions, answers and the input line up instead of spanning the window.
-    static let columnWidth: CGFloat = 720
+    /// The design board's reading column is 720pt of content; the composer
+    /// card is 20pt wider on each side so its text lines up with the column.
+    static let columnWidth: CGFloat = 768
     static let columnInset: CGFloat = 24
-    static let composerMaxWidth: CGFloat = columnWidth
+    static let composerMaxWidth: CGFloat = 760
+    /// The empty state's three suggestion cards.
+    static let suggestionsMaxWidth: CGFloat = 680
     static let transcriptMaxWidth: CGFloat = columnWidth - columnInset * 2
-    static let bubbleMaxWidth: CGFloat = 540
+    static let bubbleMaxWidth: CGFloat = 560
     /// The sidebar floats as a glass panel inset from the window edges; its
     /// corner is concentric with the 12pt rows inset 8pt inside it.
     static let sidebarPanelInset: CGFloat = 8
@@ -199,12 +209,14 @@ enum AskMetrics {
     /// padding, so the account name lines up with the history titles.
     static let sidebarTextLeading: CGFloat = sidebarPanelInset + 10
     /// Title and action capsules floating in the header over the transcript.
-    static let headerCapsuleHeight: CGFloat = 34
+    static let headerCapsuleHeight: CGFloat = 38
     /// How far the transcript fades out where it meets the window's top and bottom edges.
     static let transcriptEdgeFade: CGFloat = 28
-    /// Space between the window's bottom edge and the composer card, the same
-    /// inset as the sidebar panel so both bottoms line up.
-    static let composerBottomInset: CGFloat = sidebarPanelInset
+    /// Space between the window's bottom edge and the composer's hint row.
+    static let composerBottomInset: CGFloat = 16
+    /// The keyboard hint under the workspace composer; it keeps its room while
+    /// hidden so focusing the editor never moves the card.
+    static let composerHintHeight: CGFloat = 22
     /// Top of the header pills: centred in the title bar row.
     static var headerCapsuleTop: CGFloat { (titleBarRowHeight - headerCapsuleHeight) / 2 }
     /// The ⌘K search card, a glass card over the dimmed window.
@@ -216,10 +228,11 @@ enum AskMetrics {
     static let recoveryThumbnail = CGSize(width: 54, height: 36)
 
     /// Height of the launcher panel, including its transparent gutter.
-    static func launcherHeight(editor: CGFloat, banners: Int) -> CGFloat {
+    static func launcherHeight(editor: CGFloat, banners: Int, suggestions: Bool = false) -> CGFloat {
         let chrome = AskComposerChrome.launcher
         return editor + chrome.editorTopInset + chrome.editorBottomInset + chrome.footerHeight + launcherGutter * 2
             + CGFloat(banners) * (bannerHeight + bannerSpacing)
+            + (suggestions ? AskLauncherSuggestions.height : 0)
     }
 }
 
@@ -253,7 +266,7 @@ struct AskComposerChrome: Equatable {
         glass: true,
         editorTopInset: 14,
         editorBottomInset: 2,
-        footerHeight: 52,
+        footerHeight: 54,
         footerLeadingInset: 10
     )
 
@@ -263,6 +276,13 @@ struct AskComposerChrome: Equatable {
         var chrome = launcher
         chrome.idleBorder = AskTheme.border
         chrome.placement = .inWindow
+        chrome.fill = AskTheme.glassFill
+        // The design board's in-window card: 28pt corners, text 20pt in, a 48pt footer.
+        chrome.corner = 28
+        chrome.horizontalInset = 20
+        chrome.editorTopInset = 14
+        chrome.editorBottomInset = 4
+        chrome.footerHeight = 48
         return chrome
     }()
 
@@ -399,9 +419,11 @@ struct AskMonoBlock: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(StudioTheme.textTertiary)
+            if !title.isEmpty {
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textTertiary)
+            }
             Text(text)
                 .font(.system(size: 11.5, design: .monospaced))
                 .foregroundStyle(isError ? StudioTheme.danger : StudioTheme.textSecondary)
@@ -409,8 +431,8 @@ struct AskMonoBlock: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
-                .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(AskTheme.separator))
+                .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.separator))
         }
     }
 }
@@ -503,15 +525,27 @@ struct AskCapsuleButtonStyle: ButtonStyle {
                 .padding(.horizontal, 14)
                 .frame(height: 30)
                 .background(fill, in: Capsule())
-                .overlay(Capsule().strokeBorder(kind == .secondary ? AskTheme.border : Color.clear))
+                // A lit top edge on filled buttons, like the board's glass buttons.
+                .overlay {
+                    if kind != .secondary {
+                        Capsule().fill(LinearGradient(colors: [Color.white.opacity(0.18), .clear],
+                                                      startPoint: .top, endPoint: .bottom))
+                            .allowsHitTesting(false)
+                    }
+                }
+                .overlay(Capsule().strokeBorder(kind == .secondary ? AskTheme.border : Color.white.opacity(0.3),
+                                                lineWidth: kind == .secondary ? 1 : 0.5))
+                .shadow(color: kind == .primary ? AskTheme.accent.opacity(0.4) : .clear, radius: 7, y: 3)
                 .contentShape(Capsule())
-                .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.45)
+                .scaleEffect(configuration.isPressed ? 0.95 : 1)
+                .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
+                .opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1) : 0.45)
                 .fixedSize()
         }
 
         private var fill: Color {
             switch kind {
-            case .primary: AskTheme.primaryAction
+            case .primary: AskTheme.accent
             case .secondary: AskTheme.hoverFill
             case .destructive: StudioTheme.danger
             }
@@ -520,14 +554,15 @@ struct AskCapsuleButtonStyle: ButtonStyle {
 }
 
 struct AskSendButton: View {
+    static let size: CGFloat = 36
     var enabled: Bool
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(systemName: "arrow.up")
-                .font(.system(size: 15, weight: .semibold))
-                .frame(width: 32, height: 32)
+                .font(.system(size: 16, weight: .semibold))
+                .frame(width: AskSendButton.size, height: AskSendButton.size)
                 .contentShape(Circle())
         }
         .buttonStyle(AskPressableStyle())
@@ -542,9 +577,11 @@ struct AskSendButton: View {
                     .allowsHitTesting(false)
             }
         }
-        .shadow(color: enabled ? AskTheme.accent.opacity(0.45) : .clear, radius: 7, y: 3)
+        .shadow(color: enabled ? AskTheme.accent.opacity(0.5) : .clear, radius: 9, y: 3)
+        // Becoming sendable, the button lights up with a small spring.
+        .scaleEffect(enabled ? 1 : 0.94)
         .disabled(!enabled)
-        .animation(.easeOut(duration: 0.15), value: enabled)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: enabled)
         .accessibilityLabel(L("ask.send"))
     }
 }
@@ -559,7 +596,7 @@ struct AskStopButton: View {
             RoundedRectangle(cornerRadius: 3, style: .continuous)
                 .fill(StudioTheme.textPrimary)
                 .frame(width: 11, height: 11)
-                .frame(width: 32, height: 32)
+                .frame(width: AskSendButton.size, height: AskSendButton.size)
                 .background(Circle().fill(AskTheme.hoverFill))
                 .overlay(Circle().strokeBorder(AskTheme.border))
                 .contentShape(Circle())
@@ -989,12 +1026,56 @@ enum AskPresentation {
 /// The conversation window's surface under both the floating sidebar and the
 /// transcript. It reuses the settings window's tokens and material stack, so
 /// both windows read as one app.
+/// The workspace's canvas: a solid base with three soft ambient glows (accent
+/// behind the sidebar, violet low on the left, warm in the far corner), so the
+/// floating glass panels have colour to refract, as on the design board.
 struct AskWindowBackdrop: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    struct Glow: Equatable {
+        /// Centre as a fraction of the window.
+        var center: UnitPoint
+        /// Radii in points where the colour has faded out.
+        var radius: CGSize
+        var color: Color
+    }
+
+    static func base(dark: Bool) -> Color {
+        dark ? Color(red: 0.094, green: 0.094, blue: 0.110) : Color(red: 0.969, green: 0.969, blue: 0.976)
+    }
+
+    static func glows(dark: Bool) -> [Glow] {
+        [
+            Glow(center: UnitPoint(x: 0.08, y: 0.18), radius: CGSize(width: 364, height: 294),
+                 color: AskTheme.accent.opacity(dark ? 0.30 : 0.18)),
+            Glow(center: UnitPoint(x: 0.18, y: 0.92), radius: CGSize(width: 322, height: 364),
+                 color: dark ? Color(red: 0.486, green: 0.227, blue: 0.929).opacity(0.24)
+                     : Color(red: 0.659, green: 0.333, blue: 0.969).opacity(0.12)),
+            Glow(center: UnitPoint(x: 0.96, y: 1.02), radius: CGSize(width: 420, height: 280),
+                 color: dark ? Color(red: 0.976, green: 0.451, blue: 0.086).opacity(0.08)
+                     : Color(red: 0.984, green: 0.573, blue: 0.235).opacity(0.10))
+        ]
+    }
+
     var body: some View {
-        ZStack {
-            Rectangle().fill(.ultraThinMaterial)
-            StudioTheme.shellSurface
+        let dark = colorScheme == .dark
+        Canvas { context, size in
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Self.base(dark: dark)))
+            for glow in Self.glows(dark: dark) {
+                let center = CGPoint(x: glow.center.x * size.width, y: glow.center.y * size.height)
+                var layer = context
+                // An ellipse: draw a circular gradient in a vertically scaled space.
+                let scale = glow.radius.height / glow.radius.width
+                layer.translateBy(x: center.x, y: center.y)
+                layer.scaleBy(x: 1, y: scale)
+                let radius = glow.radius.width
+                layer.fill(Path(ellipseIn: CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2)),
+                           with: .radialGradient(Gradient(colors: [glow.color, glow.color.opacity(0)]),
+                                                 center: .zero, startRadius: 0, endRadius: radius))
+            }
         }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
@@ -1045,16 +1126,21 @@ struct AskLineIcon: View {
 /// Section title inside a composer popover.
 struct AskPopoverHeader: View {
     var title: String
+    /// A column label at the trailing edge, e.g. the models' credit multiplier.
+    var trailing: String?
 
     var body: some View {
-        Text(title)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(StudioTheme.textTertiary)
-            .padding(.horizontal, 10)
-            .padding(.top, 8)
-            .padding(.bottom, 4)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityAddTraits(.isHeader)
+        HStack {
+            Text(title).accessibilityAddTraits(.isHeader)
+            Spacer(minLength: 8)
+            if let trailing { Text(trailing) }
+        }
+        .font(.system(size: 11, weight: .semibold))
+        .foregroundStyle(StudioTheme.textTertiary)
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -1062,7 +1148,7 @@ struct AskPopoverHeader: View {
 /// row aligned, title over caption, then an optional trailing accessory. The
 /// selection is the checkmark alone; only the pointer fills a row.
 struct AskPopoverRow<Accessory: View>: View {
-    static var corner: CGFloat { 12 }
+    static var corner: CGFloat { 10 }
 
     var title: String
     /// Quiet text after the title, such as "Default".
@@ -1076,35 +1162,38 @@ struct AskPopoverRow<Accessory: View>: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                Image(systemName: "checkmark").font(.system(size: 11.5, weight: .bold))
-                    .foregroundStyle(AskTheme.accent)
+                Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(hovering ? Color.white : AskTheme.accent)
                     .frame(width: 14)
                     .opacity(selected ? 1 : 0)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
-                        Text(title).font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
+                        Text(title).font(.system(size: 13))
+                            .foregroundStyle(hovering ? Color.white : StudioTheme.textPrimary)
                             .lineLimit(1).truncationMode(.middle)
                         if let note {
                             Text(verbatim: "· " + note).font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(StudioTheme.textTertiary)
+                                .foregroundStyle(hovering ? Color.white.opacity(0.8) : StudioTheme.textTertiary)
                                 .lineLimit(1).fixedSize()
                         }
                     }
                     if let caption, !caption.isEmpty {
-                        Text(caption).font(.system(size: 11.5))
-                            .foregroundStyle(StudioTheme.textTertiary)
+                        Text(caption).font(.system(size: 11))
+                            .foregroundStyle(hovering ? Color.white.opacity(0.8) : StudioTheme.textTertiary)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 Spacer(minLength: 8)
                 accessory()
+                    .foregroundStyle(hovering ? Color.white.opacity(0.85) : StudioTheme.textTertiary)
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 7)
+            .frame(minHeight: 32)
+            .padding(.vertical, 5)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(hovering ? AskTheme.hoverFill : Color.clear,
+            // Menus highlight like the system's: the row under the pointer fills with the accent.
+            .background(hovering ? AskTheme.accent : Color.clear,
                         in: RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
         }

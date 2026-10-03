@@ -114,23 +114,25 @@ struct AskAccountFooterIdentity: View {
         let footer = presentation.footerBadge(runsLocally: runsLocally)
         let highlighted = hovering || hover.isPresented
         return Button { hover.click() } label: {
-            HStack(spacing: 7) {
+            HStack(spacing: 9) {
+                AskAvatar(name: name)
                 Text(name)
-                    .font(.system(size: 12.5, weight: .medium))
-                    .foregroundStyle(highlighted ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 if let badge = footer.badge {
                     AskAccountBadge(text: AccountStatusText.badge(badge), tone: footer.tone)
                 }
             }
-            .padding(.horizontal, 8)
-            .frame(height: 30)
+            .padding(.leading, 4)
+            .padding(.trailing, 8)
+            .frame(height: 34)
             .background(Capsule().fill(highlighted ? AskTheme.hoverFill : .clear))
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .padding(.leading, -8)
+        .padding(.leading, -4)
         .onHover { inside in
             hovering = inside
             hover.hover(inside)
