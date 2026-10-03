@@ -82,7 +82,10 @@ struct AskCommandVisualTests {
             try await Task.sleep(for: .milliseconds(400))
             try snapshot(hosting, to: root.appendingPathComponent("commands-palette-\(name).png"))
 
-            for character in "mo" { type(String(character), into: field) }
+            for character in "mo" {
+                type(String(character), into: field)
+                try await Task.sleep(for: .milliseconds(150))
+            }
             try await Task.sleep(for: .milliseconds(300))
             try snapshot(hosting, to: root.appendingPathComponent("commands-filtered-\(name).png"))
 
@@ -113,13 +116,13 @@ struct AskCommandVisualTests {
             try await Task.sleep(for: .milliseconds(400))
             let launcherField = try #require(editor(in: launcherHost))
             panel.makeFirstResponder(launcherField)
+            // Real key presses arrive one run-loop turn apart, so SwiftUI updates in between.
             for character in "/sk" {
                 type(String(character), into: launcherField)
                 try await Task.sleep(for: .milliseconds(150))
-                let current = editor(in: launcherHost)
-                print("LAUNCHER-DEBUG typed=\(character) field=\(launcherField.string) draft=\(fixture.model.launcherDraft.text) same=\(current === launcherField) inWindow=\(launcherField.window != nil) current=\(current?.string ?? "nil")")
             }
-            try await Task.sleep(for: .milliseconds(400))
+            #expect(fixture.model.launcherDraft.text == "/sk")
+            try await Task.sleep(for: .milliseconds(300))
             try snapshot(launcherHost, to: root.appendingPathComponent("commands-launcher-\(name).png"))
         }
     }
