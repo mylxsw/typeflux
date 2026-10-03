@@ -347,8 +347,9 @@ this Mac; signing in is optional. The design board is
   fixed, and offers the other kind of new conversation. Signed in, a private
   conversation shows a "Only on this Mac" header chip instead of credits, a lock
   in the sidebar, and the sidebar gets an All / Cloud / This Mac filter once a
-  private conversation exists. ⇧⌘N, the compose button's context menu and the
-  palette start a private conversation; `/local` toggles the new draft's storage.
+  private conversation exists; a private conversation's composer and send button
+  take the private tint. ⇧⌘N, the chevron menu beside compose and the palette
+  start a private conversation; `/local` toggles the new draft's storage.
   The new-conversation page and the transcript look the same in both kinds.
 - `AskLocalEngine` mirrors the server's state machine: every model step is queued
   as a device inference (`waiting_inference`) that the existing custom-model path
