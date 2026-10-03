@@ -488,6 +488,67 @@ struct AskConversationVisualTests {
         }
     }
 
+    /// Holds the workspace on screen, configured like the real window, so a window
+    /// capture shows the glass the offscreen snapshots cannot draw. Each scene's name
+    /// is written to `TYPEFLUX_ASK_HOLD_MARKER` while it is shown.
+    @Test func holdConversationStorageWindow() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let seconds = environment["TYPEFLUX_ASK_HOLD"].flatMap(Double.init),
+              let marker = environment["TYPEFLUX_ASK_HOLD_MARKER"] else { return }
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let defaults = try #require(UserDefaults(suiteName: "ask-storage-hold-" + UUID().uuidString))
+        let profile = AskModelProfile(name: "我的 Ollama", baseURL: "http://127.0.0.1:11434/v1", model: "qwen3:8b")
+        defaults.set(try JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
+        let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false))
+        defer { fixture.model.resetSession() }
+        let now = Date()
+        func turn(_ id: String, _ question: String, _ answer: String) -> [AskMessage] {
+            [.init(id: id + "q", role: "user", text: question, createdAt: now),
+             .init(id: id + "a", role: "assistant", text: answer, createdAt: now)]
+        }
+        var cloud = AskConversation(id: "cloud", title: "讲讲这一屏在做什么", revision: 1, updatedAt: now,
+                                    messages: turn("c", "讲讲这一屏在做什么", "这一屏是 Grok 网页版，你在和 Grok 讨论哈佛幸福课。"))
+        cloud.usage = AskConversationUsage(version: 1, since: now, historicalGap: false,
+                                           total: AskUsageTotals(microcredits: 160_790_000, calls: 3), runs: [:])
+        await fixture.api.seed(cloud)
+        await fixture.localAPI.seed(AskConversation(id: "private", title: "帮我整理体检报告要点", revision: 1,
+                                                    updatedAt: now.addingTimeInterval(-60),
+                                                    messages: turn("p", "帮我整理体检报告要点", "已按指标分组整理，异常项 3 个。"),
+                                                    modelRef: profile.reference))
+        await fixture.model.refreshHistory()
+        let window = NSWindow(contentRect: NSRect(x: 120, y: 120, width: 1100, height: 740),
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+                              backing: .buffered, defer: false)
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.isReleasedWhenClosed = false
+        window.toolbar = NSToolbar(identifier: "ask-storage-hold")
+        window.toolbarStyle = .unified
+        window.titlebarSeparatorStyle = .none
+        window.appearance = NSAppearance(named: environment["TYPEFLUX_ASK_HOLD_LIGHT"] == nil ? .darkAqua : .aqua)
+        window.contentView = TransparentAskHostingView(rootView: AskConversationView(model: fixture.model))
+        window.makeKeyAndOrderFront(nil)
+        defer { window.close() }
+        func show(_ scene: String) async throws {
+            try scene.write(toFile: marker, atomically: true, encoding: .utf8)
+            try await Task.sleep(for: .seconds(seconds))
+        }
+        await fixture.model.select("private")
+        try await show("private")
+        await fixture.model.select("cloud")
+        try await show("cloud")
+        fixture.model.newConversation(storesLocally: true)
+        try await show("new-private")
+        fixture.model.newConversation(storesLocally: false)
+        try await show("new-cloud")
+        try "done".write(toFile: marker, atomically: true, encoding: .utf8)
+    }
+
     @Test func renderUsageSurfaces() async throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_USAGE_SNAPSHOTS"] else { return }
         let root = URL(fileURLWithPath: directory)
