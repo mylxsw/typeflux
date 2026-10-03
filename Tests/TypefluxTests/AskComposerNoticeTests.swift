@@ -132,8 +132,9 @@ struct AskLauncherNoticeLayoutTests {
     }
 }
 
-/// Opt-in renders of the composer's notices (set TYPEFLUX_ASK_SNAPSHOTS): a
-/// failed run in the transcript, a notice row and a confirmation in the card.
+/// Renders the composer's notices: a failed run and a model switch in the
+/// transcript, a notice row and a confirmation in the card. The PNGs land in
+/// TYPEFLUX_ASK_SNAPSHOTS when it is set, otherwise in a temporary directory.
 @Suite("Ask notice snapshots", .serialized)
 @MainActor
 struct AskNoticeVisualTests {
@@ -147,9 +148,11 @@ struct AskNoticeVisualTests {
     }
 
     @Test func renderNotices() async throws {
-        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
-        let root = URL(fileURLWithPath: directory)
+        let keep = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"]
+        let root = keep.map { URL(fileURLWithPath: $0) }
+            ?? FileManager.default.temporaryDirectory.appendingPathComponent("ask-notices-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { if keep == nil { try? FileManager.default.removeItem(at: root) } }
         _ = NSApplication.shared
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
