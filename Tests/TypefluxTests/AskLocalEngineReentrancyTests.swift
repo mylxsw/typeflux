@@ -232,6 +232,113 @@ final class AskLocalEngineReentrancyTests: XCTestCase {
     }
 }
 
+extension AskLocalEngineReentrancyTests {
+    func testBudgetedRetryLateUsageAndMemoryPurgeWhileNewRunIsSuspended() async throws {
+        for cancelRetry in [false, true] {
+            let fixture = SuspendedLocalFetch()
+            defer { fixture.close() }
+            let engine = AskLocalEngine(directory: directory, webTools: fixture.tools, budgetEnabled: true)
+            let initial = try await send(engine, id: "budget-\(cancelRetry)")
+            let old = try staleReceipt(XCTUnwrap(initial.run))
+            let notesFile = directory.appendingPathComponent("notes-\(cancelRetry).json")
+            let notes = AskMemoryNoteStore(fileURL: notesFile)
+            let note = try notes.add(secret, owner: "source-owner")
+            let suite = UUID().uuidString
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+            defer { defaults.removePersistentDomain(forName: suite) }
+            _ = try await engine.cancel(conversationId: initial.id, runId: old.runId, token: "")
+            let retry = try await engine.retry(conversationId: initial.id, runId: old.runId,
+                                               deviceId: device, modelRef: nil, token: "")
+            var beforeRelease: AskConversation!
+            var result = try await fetch(fixture, engine: engine, conversation: retry) { _ in
+                XCTAssertTrue(try notes.remove(id: note.id, owner: "source-owner"))
+                let reopenedNotes = AskMemoryNoteStore(fileURL: notesFile)
+                reopenedNotes.recoverInvalidations(using: MemoryInvalidationStore(defaults: defaults))
+                try await engine.purgeMemory(owner: "source-owner", token: "")
+                let late = try await assertLateUsageAfterPurge(
+                    engine, id: initial.id, receipt: old, runId: retry.run?.id
+                )
+                beforeRelease = cancelRetry
+                    ? try await engine.cancel(conversationId: initial.id, runId: retry.run!.id, token: "")
+                    : late
+            }
+            assertPurged(result)
+            XCTAssertEqual(result.run?.id, retry.run?.id)
+            XCTAssertEqual(result.run?.status, cancelRetry ? "cancelled" : "waiting_inference")
+            XCTAssertEqual(result.run?.budget?.actual.tokens, 10)
+            XCTAssertEqual(result.run?.budgetRootId, initial.run?.budgetRootId)
+            if cancelRetry {
+                XCTAssertEqual(result.messages, beforeRelease.messages)
+                XCTAssertEqual(result.revision, beforeRelease.revision)
+            } else {
+                result = try await completeBudgetedRetry(engine, conversation: result)
+            }
+            XCTAssertFalse(result.messages.contains { $0.text == old.content || $0.toolCallId == "stale-plan" })
+            try await assertBudgetedRecovery(result, old: old, notesFile: notesFile,
+                                             defaults: defaults, snapshot: initial.memory)
+            XCTAssertEqual(fixture.requestCount, 1)
+        }
+    }
+
+    private func completeBudgetedRetry(_ engine: AskLocalEngine,
+                                       conversation: AskConversation) async throws -> AskConversation {
+        let completion = try AskInferenceResult(
+            runId: XCTUnwrap(conversation.run?.id), deviceId: device,
+            inferenceId: XCTUnwrap(conversation.run?.inference?.id), content: "Fresh answer",
+            usage: .init(promptTokens: 10, completionTokens: 10, totalTokens: 20)
+        )
+        let result = try await engine.inferenceResult(conversationId: conversation.id, request: completion, token: "")
+        XCTAssertEqual(result.run?.status, "completed")
+        XCTAssertEqual(result.run?.budget?.actual.tokens, 30)
+        return result
+    }
+
+    private func staleReceipt(_ run: AskRun) throws -> AskInferenceResult {
+        try .init(runId: run.id, deviceId: device, inferenceId: XCTUnwrap(run.inference?.id),
+                  content: "Stale answer", toolCalls: [plan("stale-plan", status: "completed")],
+                  usage: .init(promptTokens: 5, completionTokens: 5, totalTokens: 10))
+    }
+
+    private func assertLateUsageAfterPurge(_ engine: AskLocalEngine, id: String,
+                                           receipt: AskInferenceResult, runId: String?) async throws -> AskConversation {
+        let purged = try await engine.conversation(id: id, token: "")
+        let late = try await engine.inferenceResult(conversationId: id, request: receipt, token: "")
+        assertPurged(late)
+        XCTAssertEqual(late.revision, purged.revision)
+        XCTAssertEqual(late.messages, purged.messages)
+        XCTAssertEqual(late.run?.id, runId)
+        XCTAssertEqual(late.run?.status, "running")
+        XCTAssertEqual(late.run?.pending, purged.run?.pending)
+        XCTAssertEqual(late.run?.plan, purged.run?.plan)
+        XCTAssertEqual(late.run?.budget?.actual.tokens, 10)
+        XCTAssertEqual(late.run?.budget?.occupied, purged.run?.budget?.occupied)
+        let duplicate = try await engine.inferenceResult(conversationId: id, request: receipt, token: "")
+        XCTAssertEqual(duplicate, late)
+        return late
+    }
+
+    private func assertBudgetedRecovery(_ result: AskConversation, old: AskInferenceResult,
+                                        notesFile: URL, defaults: UserDefaults, snapshot: AskMemory?) async throws {
+        try await assertPersisted(result)
+        let reopened = AskLocalEngine(directory: directory, budgetEnabled: true)
+        let duplicate = try await reopened.inferenceResult(conversationId: result.id, request: old, token: "")
+        XCTAssertEqual(duplicate.run?.budget, result.run?.budget)
+        assertPurged(duplicate)
+        let tombstones = try JSONDecoder().decode([String: [AskMemoryNote]].self, from: Data(contentsOf: notesFile))
+        XCTAssertNotNil(tombstones["source-owner"]?.first?.deletedAt)
+        XCTAssertEqual(tombstones["source-owner"]?.first?.text, "")
+        let invalidations = MemoryInvalidationStore(defaults: defaults)
+        XCTAssertNotNil(invalidations.cutoff(owner: "source-owner"))
+        XCTAssertNil(try XCTUnwrap(snapshot).usable(owner: "source-owner", invalidations: invalidations))
+        let journal = try AskBudgetStore(directory: directory).update(
+            conversation: result.id, root: XCTUnwrap(result.run?.budgetRootId)
+        ) { _ in }
+        XCTAssertEqual(journal.reservations[old.inferenceId]?.actual.tokens, 10)
+        XCTAssertEqual(journal.reservations[old.inferenceId]?.state, "pending")
+        XCTAssertEqual(journal.reservations[old.inferenceId]?.identity?.owner, AskRoutedAPI.localOwner)
+    }
+}
+
 /// Each URL has its own gate, so parallel tests cannot release one another's
 /// fetch. A released gate also completes unexpected retries instead of hanging.
 private final class SuspendedLocalFetch: @unchecked Sendable {
@@ -283,7 +390,10 @@ private final class SuspendedLocalFetch: @unchecked Sendable {
         let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: nil,
                                        headerFields: ["Content-Type": "application/json"])!
         request.client?.urlProtocol(request, didReceive: response, cacheStoragePolicy: .notAllowed)
-        request.client?.urlProtocol(request, didLoad: Data(#"{"results":[{"title":"Fixture","url":"https://example.com","content":"Fetched page"}]}"#.utf8))
+        let body = #"""
+        {"results":[{"title":"Fixture","url":"https://example.com","content":"Fetched page"}]}
+        """#
+        request.client?.urlProtocol(request, didLoad: Data(body.utf8))
         request.client?.urlProtocolDidFinishLoading(request)
     }
 
