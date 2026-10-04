@@ -402,8 +402,9 @@ struct AskConversationVisualTests {
         try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
                          size: NSSize(width: 600, height: 160), appearance: .darkAqua,
                          file: root.appendingPathComponent("ask-reasoning-client-dark.png"))
-        try await render(AskReasoningChoices(effort: .constant(.high)),
-                         size: NSSize(width: 200, height: 200), appearance: .darkAqua,
+        try await render(AskModelEffortCard(library: library, reference: .constant("cloud:deep"),
+                                            effort: .constant(.high), loggedIn: true),
+                         size: NSSize(width: AskModelEffortCard.width, height: 200), appearance: .darkAqua,
                          file: root.appendingPathComponent("ask-reasoning-choices.png"), minimumPNGBytes: 2000)
         try await render(AskModelChoices(library: library, reference: .constant("cloud:deep"), loggedIn: true),
                          size: NSSize(width: 360, height: 200), appearance: .darkAqua,

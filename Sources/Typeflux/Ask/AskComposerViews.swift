@@ -459,14 +459,9 @@ struct AskComposer: View {
             ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
                hasImage: !launcher && model.hasConversationImages, compact: true,
                cloudAvailable: model.cloudAvailable(launcher: launcher),
-               onManage: model.onOpenSettings.map { open in { open(.models) } })
+               onManage: model.onOpenSettings.map { open in { open(.models) } },
+               effort: $model.reasoningEffort)
             .opacity(Self.recordingDim(active))
-            AskReasoningMenu(library: model.modelLibrary,
-                             reference: model.modelReference(launcher: launcher),
-                             effort: $model.reasoningEffort,
-                             disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
-                             compact: true)
-                .opacity(Self.recordingDim(active))
             // "How to ask" and "what rides along" are separated by a rule.
             Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
             HStack(spacing: 0) {

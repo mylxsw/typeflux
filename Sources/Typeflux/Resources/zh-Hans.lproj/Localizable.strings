@@ -1554,7 +1554,7 @@
 "ask.reasoning.default.caption" = "由模型决定思考深度";
 "ask.reasoning.low.caption" = "最快，适合简单问题";
 "ask.reasoning.medium.caption" = "速度与深度均衡";
-"ask.reasoning.high.caption" = "思考最充分，更慢且消耗更多积分";
+"ask.reasoning.high.caption" = "思考更充分，适合复杂问题";
 "ask.suggest.screen" = "讲讲这一屏在做什么";
 "ask.suggest.screen.caption" = "带当前截图";
 "ask.suggest.selection" = "翻译我选中的文字";
@@ -1659,11 +1659,10 @@
 
 // Ask reasoning effort
 "ask.reasoning.title" = "推理强度";
-"ask.reasoning.default" = "默认";
-"ask.reasoning.low" = "低";
-"ask.reasoning.medium" = "中";
+"ask.reasoning.default" = "自动";
+"ask.reasoning.low" = "轻度";
+"ask.reasoning.medium" = "中等";
 "ask.reasoning.high" = "高";
-"ask.reasoning.help" = "选择下一条消息的推理强度。较高强度可能需要更长时间并消耗更多积分。";
 
 // Server-managed Cloud model list
 "models.cloud.managed" = "随便问的可用模型由 Typeflux Cloud 自动同步，模型配置由服务端统一管理。";
@@ -2244,3 +2243,13 @@
 "ask.settings.skills.declarations" = "声明权限（不授予访问权）：";
 
 "ask.skills.install.nameConflict" = "技能名称与本地文件夹冲突。请先重命名冲突的文件夹，再安装。";
+
+/* GUL-193 Reasoning effort levels */
+"ask.reasoning.xhigh" = "超高";
+"ask.reasoning.max" = "极致";
+"ask.reasoning.xhigh.caption" = "深入推理，更慢，消耗更多积分";
+"ask.reasoning.max.caption" = "最大推理深度，最慢，消耗最多积分";
+"ask.reasoning.unsupported" = "这个模型不支持调节推理强度，会按它自己的方式回答。";
+"ask.reasoning.changeModel" = "更换模型";
+"ask.reasoning.reset" = "恢复为自动";
+"ask.reasoning.snapped" = "当前模型不支持「%@」，已调整为「%@」";

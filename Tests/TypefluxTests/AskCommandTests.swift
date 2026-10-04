@@ -137,7 +137,8 @@ struct AskCommandCatalogTests {
         #expect(models.allSatisfy { $0.plain })
         #expect(models.first?.detail == L("ask.command.model.vision"))
         let levels = AskCommandCatalog.submenu(.reasoning, context: context)
-        #expect(levels.count == AskReasoningEffort.allCases.count)
+        // "Auto" plus the levels the current model offers.
+        #expect(levels.count == 1 + context.reasoningLevels.count)
         #expect(levels.first?.selected == true)
         #expect(AskCommandCatalog.submenu(.help, context: context).isEmpty)
     }
