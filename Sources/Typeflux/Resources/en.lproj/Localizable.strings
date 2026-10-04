@@ -2132,7 +2132,6 @@
 "ask.history.filter.all" = "All";
 "ask.history.filter.cloud" = "Cloud";
 "ask.history.filter.local" = "This Mac";
-"ask.new.more" = "More ways to start a conversation";
 
 // Project workspaces
 "ask.project.title" = "Project files";

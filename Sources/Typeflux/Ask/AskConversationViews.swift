@@ -128,7 +128,6 @@ struct AskConversationView: View {
                     .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             } else {
                 composeButton
-                if model.isSignedIn { newConversationMenuButton }
                 sidebarToggle
             }
         }
@@ -162,7 +161,6 @@ struct AskConversationView: View {
             titleBarButton("magnifyingglass", label: L("ask.search")) { openSearch() }
                 .keyboardShortcut("k", modifiers: .command)
             composeButton
-            if model.isSignedIn { newConversationMenuButton }
         }
     }
 
@@ -172,32 +170,6 @@ struct AskConversationView: View {
         titleBarButton("square.and.pencil", label: L("ask.new"), shortcut: "⌘N") { model.newConversation() }
             .keyboardShortcut("n", modifiers: .command)
             .background { newPrivateShortcut }
-    }
-
-    /// The chevron beside "new chat": both kinds of new conversation, as in the design.
-    private var newConversationMenuButton: some View {
-        Menu { newConversationMenu } label: {
-            Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        // A borderless menu draws its label in the accent unless tinted.
-        .tint(StudioTheme.textSecondary)
-        .foregroundStyle(StudioTheme.textSecondary)
-        .frame(width: AskMetrics.newConversationMenuWidth, height: AskTitleBarButton.size.height)
-        .help(L("ask.new.more"))
-        .accessibilityLabel(L("ask.new.more"))
-    }
-
-    /// Both kinds of new conversation; the menu only shows while signed in.
-    @ViewBuilder private var newConversationMenu: some View {
-        Button { model.newConversation(storesLocally: false) } label: {
-            Label(L("ask.storage.newCloud"), systemImage: "cloud")
-        }
-        Button { model.newConversation(storesLocally: true) } label: {
-            Label(L("ask.storage.newLocal"), systemImage: "lock")
-        }
     }
 
     /// ⇧⌘N without another visible control in the title bar.
@@ -602,8 +574,7 @@ struct AskConversationView: View {
                 .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
         }
-        .padding(.leading, sidebarHidden
-            ? AskMetrics.collapsedTitleInset + (model.isSignedIn ? AskMetrics.newConversationMenuWidth : 0) : 14)
+        .padding(.leading, sidebarHidden ? AskMetrics.collapsedTitleInset : 14)
         .padding(.trailing, 14)
         .frame(height: AskMetrics.titleBarRowHeight)
     }

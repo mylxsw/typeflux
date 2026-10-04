@@ -2129,7 +2129,6 @@
 "ask.history.filter.all" = "全部";
 "ask.history.filter.cloud" = "雲端";
 "ask.history.filter.local" = "僅本機";
-"ask.new.more" = "更多新增方式";
 
 // Project workspaces
 "ask.project.title" = "專案檔案";
