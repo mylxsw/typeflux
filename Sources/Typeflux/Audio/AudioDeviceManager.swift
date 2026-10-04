@@ -1,5 +1,6 @@
 import CoreAudio
 import Foundation
+import IOKit
 
 struct AudioInputDevice: Identifiable, Equatable {
     let id: String
@@ -13,6 +14,21 @@ protocol AudioDeviceManaging {
     func observeDefaultInputDeviceChanges(
         _ handler: @escaping @Sendable () -> Void
     ) -> AudioInputDeviceChangeObservation?
+    /// The input the Automatic microphone setting records from. It follows the system
+    /// default except when that default is a Bluetooth headset (see
+    /// `AutomaticInputDeviceSelector`).
+    func automaticRecordingInputDeviceID() -> AudioDeviceID?
+    func isBluetoothInputDevice(_ deviceID: AudioDeviceID) -> Bool
+}
+
+extension AudioDeviceManaging {
+    func automaticRecordingInputDeviceID() -> AudioDeviceID? {
+        defaultInputDeviceID()
+    }
+
+    func isBluetoothInputDevice(_: AudioDeviceID) -> Bool {
+        false
+    }
 }
 
 protocol AudioInputDeviceChangeObservation: AnyObject {
@@ -22,6 +38,7 @@ protocol AudioInputDeviceChangeObservation: AnyObject {
 final class AudioDeviceManager: AudioDeviceManaging {
     static let automaticDeviceID = ""
     private let defaultInputObservationQueue = DispatchQueue(label: "typeflux.audio.default-input-observation")
+    private let substitutionLog = AutomaticInputDeviceSelector.SubstitutionLog()
 
     func availableInputDevices() -> [AudioInputDevice] {
         allAudioDeviceIDs()
@@ -108,6 +125,51 @@ final class AudioDeviceManager: AudioDeviceManaging {
             queue: defaultInputObservationQueue,
             listener: listener
         )
+    }
+
+    func automaticRecordingInputDeviceID() -> AudioDeviceID? {
+        let systemDefault = defaultInputDeviceID()
+        let selected = AutomaticInputDeviceSelector.select(
+            systemDefault: systemDefault,
+            inputDeviceIDs: { allAudioDeviceIDs().filter(deviceSupportsInput) },
+            transportType: transportType(for:),
+            builtInMicrophoneIsUsable: { !Self.isClamshellClosed() }
+        )
+        if let message = substitutionLog.message(systemDefault: systemDefault, selected: selected) {
+            NetworkDebugLogger.logMessage(message)
+        }
+        return selected
+    }
+
+    func isBluetoothInputDevice(_ deviceID: AudioDeviceID) -> Bool {
+        transportType(for: deviceID).map(AutomaticInputDeviceSelector.isBluetooth) ?? false
+    }
+
+    private func transportType(for deviceID: AudioDeviceID) -> UInt32? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyTransportType,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var value: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        let status = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &value)
+        guard status == noErr else { return nil }
+        return value
+    }
+
+    /// Desktop Macs do not publish a clamshell state, so their built-in input stays usable.
+    static func isClamshellClosed() -> Bool {
+        let rootDomain = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPMrootDomain"))
+        guard rootDomain != IO_OBJECT_NULL else { return false }
+        defer { IOObjectRelease(rootDomain) }
+        let value = IORegistryEntryCreateCFProperty(
+            rootDomain,
+            "AppleClamshellState" as CFString,
+            kCFAllocatorDefault,
+            0
+        )?.takeRetainedValue()
+        return (value as? Bool) ?? false
     }
 
     private func allAudioDeviceIDs() -> [AudioDeviceID] {

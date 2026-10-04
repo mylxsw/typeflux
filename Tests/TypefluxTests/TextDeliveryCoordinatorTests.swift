@@ -105,6 +105,55 @@ struct TextDeliveryCoordinatorTests {
         #expect(backend.events == ["resolve", "native", "observe"])
     }
 
+    @Test func timingExcludesClipboardRetentionAfterPaste() async throws {
+        let backend = FakeDeliveryBackend()
+        backend.nativeResult = .unsupported
+        backend.pasteApplied = false
+        backend.onCleanup = { try? await Task.sleep(for: .milliseconds(300)) }
+        let startedAt = Date()
+        let (result, writtenAt) = await TextDeliveryTiming.measure {
+            try? await TextDeliveryCoordinator(backend: backend).deliver("new", to: .currentInput)
+        }
+        let returnedAt = Date()
+        #expect(result == .unconfirmed(.paste))
+        #expect(writtenAt >= startedAt)
+        #expect(returnedAt.timeIntervalSince(writtenAt) >= 0.25)
+    }
+
+    @Test(arguments: [NativeTextWriteResult.acknowledged, .unconfirmed])
+    func timingMarksNativeWrites(nativeResult: NativeTextWriteResult) async throws {
+        let backend = FakeDeliveryBackend()
+        backend.nativeResult = nativeResult
+        let startedAt = Date()
+        let (_, writtenAt) = await TextDeliveryTiming.measure {
+            try? await TextDeliveryCoordinator(backend: backend).deliver("new", to: .currentInput)
+        }
+        #expect(writtenAt >= startedAt)
+        #expect(writtenAt <= Date())
+    }
+
+    @Test func timingMarksNativeWriteToTheInputFoundAfterClipboardPreparation() async throws {
+        let backend = FakeDeliveryBackend()
+        backend.nativeResult = .unsupported
+        backend.onPrepare = { backend.nativeResult = .unconfirmed }
+        backend.onCleanup = { try? await Task.sleep(for: .milliseconds(300)) }
+        let (_, writtenAt) = await TextDeliveryTiming.measure {
+            try? await TextDeliveryCoordinator(backend: backend).deliver("new", to: .currentInput)
+        }
+        #expect(backend.pasteIdentities.isEmpty)
+        #expect(Date().timeIntervalSince(writtenAt) >= 0.25)
+    }
+
+    @Test func timingWithoutAWriteFallsBackToCompletion() async throws {
+        let backend = FakeDeliveryBackend()
+        backend.failureStage = "resolve"
+        let startedAt = Date()
+        let (_, writtenAt) = await TextDeliveryTiming.measure {
+            try? await TextDeliveryCoordinator(backend: backend).deliver("new", to: .currentInput)
+        }
+        #expect(writtenAt >= startedAt)
+    }
+
     @Test func ignoredPasteReturnsUnconfirmedAndCleansUp() async throws {
         let backend = FakeDeliveryBackend()
         backend.nativeResult = .unsupported
@@ -250,6 +299,7 @@ private final class FakeDeliveryBackend: TextDeliveryBackend {
     var onPrepare: (() -> Void)?
     var onPaste: (() -> Void)?
     var onNative: (() async -> Void)?
+    var onCleanup: (() async -> Void)?
     var events: [String] = []
     var pasteIdentities: [Int] = []
     var cleanupConfirmed: Bool?
@@ -322,5 +372,6 @@ private final class FakeDeliveryBackend: TextDeliveryBackend {
     func finishClipboard(_: Int, confirmed: Bool) async {
         events.append("cleanup")
         cleanupConfirmed = confirmed
+        await onCleanup?()
     }
 }

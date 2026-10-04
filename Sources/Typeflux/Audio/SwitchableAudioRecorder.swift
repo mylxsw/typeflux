@@ -71,6 +71,10 @@ final class SwitchableAudioRecorder: AudioRecorder {
         active = recorder
     }
 
+    var activeInputIsBluetooth: Bool {
+        lock.withLock { active?.activeInputIsBluetooth ?? false }
+    }
+
     func stop() throws -> AudioFile {
         lock.lock()
         defer { lock.unlock() }

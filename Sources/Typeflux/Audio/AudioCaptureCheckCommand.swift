@@ -22,7 +22,7 @@
             let settings = SettingsStore()
             guard
                 let device = devices.resolveInputDeviceID(for: settings.preferredMicrophoneID)
-                    ?? devices.defaultInputDeviceID()
+                    ?? devices.automaticRecordingInputDeviceID()
             else { return 1 }
             do {
                 for iteration in 1...count {

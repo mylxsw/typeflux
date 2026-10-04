@@ -179,6 +179,29 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(result.outcome, .inserted)
         XCTAssertEqual(injector.insertedTexts, ["new result"])
         XCTAssertTrue(injector.replacedTexts.isEmpty)
+        XCTAssertLessThanOrEqual(result.appliedAt, Date())
+    }
+
+    func testLegacyAskEditRecordsApplyTiming() async throws {
+        let injector = MockProcessingTextInjector()
+        let controller = makeWorkflowController(textInjector: injector)
+        var record = HistoryRecord(date: Date())
+        var timing = HistoryPipelineTiming()
+        let startedAt = Date()
+        try await controller.applyLegacyAskDecision(
+            .init(decision: AskSelectionDecision(answerEdit: .edit, content: "rewritten"), completedAt: startedAt),
+            question: "rewrite",
+            selectedText: nil,
+            selectionSnapshot: TextSelectionSnapshot(),
+            record: &record,
+            pipelineTiming: &timing,
+            sessionID: controller.processingSessionID
+        )
+        XCTAssertEqual(injector.insertedTexts, ["rewritten"])
+        XCTAssertEqual(record.mode, .editSelection)
+        let appliedAt = try XCTUnwrap(timing.applyCompletedAt)
+        XCTAssertGreaterThanOrEqual(appliedAt, try XCTUnwrap(timing.applyStartedAt))
+        XCTAssertLessThanOrEqual(appliedAt, Date())
     }
 
     func testApplyTranscribedTextRemovesPeriodFromShortDictation() async {

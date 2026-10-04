@@ -141,7 +141,7 @@
 "settings.output.opencc.config.t2s" = "Traditional → Simplified";
 "settings.audio" = "Audio";
 "settings.microphone.title" = "Microphone";
-"settings.microphone.subtitle" = "Pick the device used for dictation. Automatic follows the current macOS default input.";
+"settings.microphone.subtitle" = "Pick the device used for dictation. Automatic follows the current macOS default input, but prefers the Mac's built-in or a wired microphone over a Bluetooth headset so the first words are not lost.";
 "settings.microphone.automatic" = "Automatic";
 "settings.instantVoiceInput.title" = "Speak Immediately";
 "settings.instantVoiceInput.subtitle" = "Shortens microphone startup time, so you can speak as soon as you press the shortcut without missing anything. The microphone stays on for 15 minutes after use.";

@@ -308,15 +308,17 @@ extension WorkflowController {
             try ensureProcessingIsActive(sessionID)
             pipelineTiming.applyStartedAt = Date()
             record.pipelineTiming = pipelineTiming
-            let (outcome, processedText) = await applyText(
-                askDecisionResult.decision.trimmedContent,
-                replace: replaceSelection,
-                fallbackTitle: L("workflow.result.copyTitle"),
-                targetSnapshot: selectionSnapshot
-            )
+            let ((outcome, processedText), appliedAt) = await TextDeliveryTiming.measure {
+                await applyText(
+                    askDecisionResult.decision.trimmedContent,
+                    replace: replaceSelection,
+                    fallbackTitle: L("workflow.result.copyTitle"),
+                    targetSnapshot: selectionSnapshot
+                )
+            }
             record.selectionEditedText = askDecisionResult.decision.trimmedContent
             record.postProcessedText = processedText
-            pipelineTiming.applyCompletedAt = Date()
+            pipelineTiming.applyCompletedAt = appliedAt
             record.pipelineTiming = pipelineTiming
             record.processingStatus = .succeeded
             record.applyStatus = outcome.historyStatus
@@ -403,7 +405,7 @@ extension WorkflowController {
         _ text: String,
         selectionSnapshot: TextSelectionSnapshot,
         record: inout HistoryRecord
-    ) async -> (outcome: ApplyOutcome, openCCResult: String?, finalResult: String) {
+    ) async -> (outcome: ApplyOutcome, openCCResult: String?, finalResult: String, appliedAt: Date) {
         let applySessionID = processingSessionID
         // 1. Remove a neutral period from short conversational dictation output.
         let optimizedText = DictationOutputOptimizer.optimize(text)
@@ -431,10 +433,10 @@ extension WorkflowController {
         record.postProcessedText = insertionReadyText
         record.openCCResultText = openCCResult
         saveHistoryRecord(record)
-        let (outcome, finalAppliedText) = await applyText(
-            insertionReadyText, replace: false, expectedSessionID: applySessionID
-        )
-        return (outcome, openCCResult, finalAppliedText)
+        let (application, appliedAt) = await TextDeliveryTiming.measure {
+            await applyText(insertionReadyText, replace: false, expectedSessionID: applySessionID)
+        }
+        return (application.0, openCCResult, application.1, appliedAt)
     }
 
     func finishRecordingAndProcess(
@@ -1776,7 +1778,7 @@ extension WorkflowController {
             record.personaResultText = transcribedText
             record.openCCResultText = result.openCCResult
             record.postProcessedText = result.finalResult
-            pipelineTiming.applyCompletedAt = Date()
+            pipelineTiming.applyCompletedAt = result.appliedAt
             record.pipelineTiming = pipelineTiming
             record.applyStatus = result.outcome.historyStatus
             record.applyMessage = result.outcome.message
@@ -1988,7 +1990,7 @@ extension WorkflowController {
         record.personaResultText = rewriteOutput
         record.openCCResultText = result.openCCResult
         record.postProcessedText = result.finalResult
-        pipelineTiming.applyCompletedAt = Date()
+        pipelineTiming.applyCompletedAt = result.appliedAt
         record.pipelineTiming = pipelineTiming
         record.applyStatus = result.outcome.historyStatus
         record.applyMessage = result.outcome.message
@@ -2023,7 +2025,7 @@ extension WorkflowController {
         record.transcriptText = transcribedText
         record.openCCResultText = result.openCCResult
         record.postProcessedText = result.finalResult
-        pipelineTiming.applyCompletedAt = Date()
+        pipelineTiming.applyCompletedAt = result.appliedAt
         record.pipelineTiming = pipelineTiming
         record.applyStatus = result.outcome.historyStatus
         record.applyMessage = result.outcome.message

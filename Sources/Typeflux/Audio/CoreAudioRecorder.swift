@@ -24,10 +24,17 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
     private var deviceObservation: CoreAudioDeviceObservation?
     private var deviceObservationID = UUID()
     private var suspended = false
+    private let activeInputLock = NSLock()
+    private var activeInputBluetooth = false
+
+    var activeInputIsBluetooth: Bool {
+        activeInputLock.withLock { activeInputBluetooth }
+    }
 
     private final class Session {
         let id: UUID
         var input: CoreAudioInputCapturing
+        var deviceID: AudioDeviceID
         let startDate: Date
         let startHostTime: UInt64
         let url: URL
@@ -43,11 +50,12 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
         var lastMeterHostTime: UInt64 = 0
 
         init(
-            id: UUID, input: CoreAudioInputCapturing, url: URL, levelHandler: @escaping (Float) -> Void,
-            bufferHandler: ((AVAudioPCMBuffer) -> Void)?
+            id: UUID, input: CoreAudioInputCapturing, deviceID: AudioDeviceID, url: URL,
+            levelHandler: @escaping (Float) -> Void, bufferHandler: ((AVAudioPCMBuffer) -> Void)?
         ) {
             self.id = id
             self.input = input
+            self.deviceID = deviceID
             self.url = url
             startDate = Date()
             startHostTime = mach_absolute_time()
@@ -107,6 +115,7 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
                 if session?.id == attempt.id {
                     session?.input.stop()
                     session = nil
+                    setActiveInput(nil)
                     timer?.cancel()
                     timer = nil
                     invalidateDeviceObservation()
@@ -125,7 +134,7 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
         guard session == nil, !suspended else {
             throw AVFoundationAudioRecorder.RecorderError.inputDeviceUnavailable
         }
-        let input = try takeInput()
+        let (deviceID, input) = try takeInput()
         guard !attempt.isCancelled else {
             invalidateDeviceObservation()
             throw AVFoundationAudioRecorder.RecorderError.inputStartupTimedOut
@@ -136,7 +145,8 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
         let day = String(format: "%04d/%02d/%02d", components.year!, components.month!, components.day!)
         let url = outputDirectory.appendingPathComponent(day).appendingPathComponent(UUID().uuidString + ".wav")
         let current = Session(
-            id: attempt.id, input: input, url: url, levelHandler: levelHandler, bufferHandler: audioBufferHandler)
+            id: attempt.id, input: input, deviceID: deviceID, url: url, levelHandler: levelHandler,
+            bufferHandler: audioBufferHandler)
         // Publish the session before starting hardware. Early input stays in the C ring
         // until this queue returns, even if file creation or UI work is delayed.
         session = current
@@ -148,6 +158,7 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
             invalidateDeviceObservation()
             throw error
         }
+        setActiveInput(deviceID)
         RecordingStartupLatencyTrace.shared.mark("audio.hal_start_return")
         let timer = DispatchSource.makeTimerSource(queue: queue)
         timer.schedule(deadline: .now(), repeating: .milliseconds(4), leeway: .milliseconds(1))
@@ -172,6 +183,7 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
             timer = nil
             consumeInput(checkHealth: false)
             session = nil
+            setActiveInput(nil)
             invalidateDeviceObservation()
             outputMuter.endMutedSession()
             defer { prepareIfAuthorized() }
@@ -264,7 +276,7 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
         }
     }
 
-    private func takeInput() throws -> CoreAudioInputCapturing {
+    private func takeInput() throws -> (AudioDeviceID, CoreAudioInputCapturing) {
         let id = try resolvedDeviceID()
         let input: CoreAudioInputCapturing
         if let prepared, prepared.id == id {
@@ -274,13 +286,19 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
         }
         prepared = nil
         observeDevice(id)
-        return input
+        return (id, input)
     }
 
     private func resolvedDeviceID() throws -> AudioDeviceID {
+        // An explicitly selected microphone always wins, Bluetooth included.
         let preferred = settings.preferredMicrophoneID
         if !preferred.isEmpty, let id = devices.resolveInputDeviceID(for: preferred) { return id }
-        return try AVFoundationAudioRecorder.requireInputDeviceID(devices.defaultInputDeviceID())
+        return try AVFoundationAudioRecorder.requireInputDeviceID(devices.automaticRecordingInputDeviceID())
+    }
+
+    private func setActiveInput(_ deviceID: AudioDeviceID?) {
+        let bluetooth = deviceID.map(devices.isBluetoothInputDevice) ?? false
+        activeInputLock.withLock { activeInputBluetooth = bluetooth }
     }
 
     private func prepareIfAuthorized() {
@@ -310,14 +328,23 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
         current.input.stop()
         consumeInput(checkHealth: false)
         do {
-            current.input = try takeInput()
+            (current.deviceID, current.input) = try takeInput()
             current.lastCallbackHostTime = mach_absolute_time()
             try current.input.start()
+            setActiveInput(current.deviceID)
             NetworkDebugLogger.logMessage("[Core Audio Recorder] Restarted input after a device change.")
         } catch {
             current.input.stop()
             current.error = error
         }
+    }
+
+    private func defaultInputChanged() {
+        guard settings.preferredMicrophoneID.isEmpty else { return }
+        // Connecting a headset changes the system default, yet Automatic may keep
+        // recording from the same wired input. Never interrupt that recording.
+        if let current = session, (try? resolvedDeviceID()) == current.deviceID { return }
+        inputChanged()
     }
 
     private func observeDevice(_ id: AudioDeviceID) {
@@ -341,10 +368,7 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
                 forName: .preferredMicrophoneDidChange, object: settings, queue: nil
             ) { [weak self] _ in self?.queue.async { [weak self] in self?.inputChanged() } })
         defaultInputObservation = devices.observeDefaultInputDeviceChanges { [weak self] in
-            self?.queue.async { [weak self] in
-                guard let self, self.settings.preferredMicrophoneID.isEmpty else { return }
-                self.inputChanged()
-            }
+            self?.queue.async { [weak self] in self?.defaultInputChanged() }
         }
         let workspace = NSWorkspace.shared.notificationCenter
         workspaceObservers.append(
@@ -386,6 +410,7 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
     #if DEBUG
         func drainForTesting() { queue.sync {} }
         func inputChangedForTesting() { queue.sync { inputChanged() } }
+        func defaultInputChangedForTesting() { queue.sync { defaultInputChanged() } }
     #endif
 }
 

@@ -133,7 +133,7 @@
 "settings.language.subtitle" = "选择 Typeflux 界面的显示语言。";
 "settings.audio" = "音频";
 "settings.microphone.title" = "麦克风";
-"settings.microphone.subtitle" = "选择听写使用的输入设备。自动模式会跟随当前 macOS 默认输入设备。";
+"settings.microphone.subtitle" = "选择听写使用的输入设备。自动模式会跟随当前 macOS 默认输入设备；若默认设备是蓝牙耳机，则改用 Mac 自带或有线麦克风，避免开头丢字。";
 "settings.microphone.automatic" = "自动";
 "settings.instantVoiceInput.title" = "按键即说";
 "settings.instantVoiceInput.subtitle" = "缩短麦克风启动耗时，按下快捷键就能直接说话，不漏任何内容。使用后麦克风会保持启用 15 分钟。";

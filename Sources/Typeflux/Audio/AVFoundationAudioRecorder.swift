@@ -58,6 +58,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private var muteTask: Task<Void, Never>?
     private var inputHealthCheckWorkItem: DispatchWorkItem?
     private var isRecording = false
+    private var activeInputBluetooth = false
     private var isTapInstalled = false
     private var activeRecordingID: UUID?
     private var activeBufferCallbacks = 0
@@ -110,6 +111,12 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         inputHealthCheckWorkItem?.cancel()
     }
 
+    var activeInputIsBluetooth: Bool {
+        stateCondition.lock()
+        defer { stateCondition.unlock() }
+        return activeInputBluetooth
+    }
+
     func start(
         levelHandler: @escaping (Float) -> Void,
         audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
@@ -153,6 +160,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         engine = preparedSession.engine
         isTapInstalled = true
         observeInputChanges(for: engine)
+        // Query Core Audio before taking the state lock that tap callbacks also use.
+        let inputIsBluetooth = audioDeviceManager.isBluetoothInputDevice(engine.inputNode.auAudioUnit.deviceID)
         let startedAt = Date()
         stateCondition.lock()
         audioFile = preparedSession.audioFile
@@ -164,6 +173,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         firstAudioBufferAt = preparedSession.firstAudioBufferAt
         activeRecordingID = preparedSession.id
         activeInputGenerationID = preparedSession.inputGenerationID
+        activeInputBluetooth = inputIsBluetooth
         isRecording = true
         inputBufferCallbackCount = 0
         let callbackCountAtStart = 0
@@ -247,6 +257,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         audioEngineStartedAt = nil
         firstAudioBufferAt = nil
         isRecording = false
+        activeInputBluetooth = false
         activeRecordingID = nil
         activeInputGenerationID = nil
         peakInputPowerSinceStart = -.infinity
@@ -293,6 +304,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         audioEngineStartedAt = nil
         firstAudioBufferAt = nil
         isRecording = false
+        activeInputBluetooth = false
         activeRecordingID = nil
         activeInputGenerationID = nil
         peakInputPowerSinceStart = -.infinity
@@ -1243,7 +1255,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     }
 
     private func resolveInputDeviceIDForRecording() -> AudioDeviceID? {
-        resolveExplicitInputDeviceIDForRecording() ?? audioDeviceManager.defaultInputDeviceID()
+        // An explicitly selected microphone always wins, Bluetooth included.
+        resolveExplicitInputDeviceIDForRecording() ?? audioDeviceManager.automaticRecordingInputDeviceID()
     }
 
     private func resetUnavailablePreferredMicrophone(preferredID: String) {

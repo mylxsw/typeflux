@@ -192,6 +192,136 @@ struct CoreAudioRecorderTests {
         #expect(resolved == 42)
     }
 
+    @Test func automaticSelectionRecordsFromTheAutomaticInputInsteadOfABluetoothDefault() throws {
+        let fixture = Fixture()
+        defer { fixture.cleanup() }
+        fixture.devices.automatic = 7
+        fixture.devices.bluetooth = [42]
+        let input = try FakeInput()
+        input.packetsOnStart = [try input.packet(amplitude: 0.2)]
+        var resolved: [AudioDeviceID] = []
+        let recorder = fixture.recorder { id in
+            resolved.append(id)
+            return input
+        }
+        try recorder.start(levelHandler: { _ in })
+        #expect(!recorder.activeInputIsBluetooth)
+        _ = try recorder.stop()
+        #expect(resolved == [7])
+    }
+
+    @Test func explicitlySelectedBluetoothMicrophoneWinsOverAutomaticSelection() throws {
+        let fixture = Fixture()
+        defer { fixture.cleanup() }
+        fixture.settings.preferredMicrophoneID = "airpods"
+        fixture.devices.explicit = ["airpods": 10]
+        fixture.devices.automatic = 7
+        fixture.devices.bluetooth = [10]
+        let input = try FakeInput()
+        input.packetsOnStart = [try input.packet(amplitude: 0.2)]
+        var resolved: [AudioDeviceID] = []
+        let recorder = fixture.recorder { id in
+            resolved.append(id)
+            return input
+        }
+        #expect(!recorder.activeInputIsBluetooth)
+        try recorder.start(levelHandler: { _ in })
+        #expect(recorder.activeInputIsBluetooth)
+        _ = try recorder.stop()
+        #expect(!recorder.activeInputIsBluetooth)
+        #expect(resolved == [10])
+    }
+
+    @Test func defaultInputChangeKeepsRecordingWhenAutomaticInputIsUnchanged() throws {
+        let fixture = Fixture()
+        defer { fixture.cleanup() }
+        fixture.devices.automatic = 7
+        let input = try FakeInput()
+        input.packetsOnStart = [try input.packet(amplitude: 0.2)]
+        var attempts = 0
+        let recorder = fixture.recorder { _ in
+            attempts += 1
+            return input
+        }
+        try recorder.start(levelHandler: { _ in })
+        // A headset connected and became the system default; Automatic still picks 7.
+        recorder.defaultInputChangedForTesting()
+        #expect(input.stops == 0)
+        #expect(attempts == 1)
+        _ = try recorder.stop()
+    }
+
+    @Test func defaultInputChangeSwitchesToTheNewAutomaticInput() throws {
+        let fixture = Fixture()
+        defer { fixture.cleanup() }
+        fixture.devices.automatic = 7
+        let oldInput = try FakeInput()
+        oldInput.packetsOnStart = [try oldInput.packet(amplitude: 0.2)]
+        let replacement = try FakeInput()
+        replacement.packetsOnStart = [try replacement.packet(amplitude: 0.5)]
+        var resolved: [AudioDeviceID] = []
+        let recorder = fixture.recorder { id in
+            resolved.append(id)
+            return id == 7 ? oldInput : replacement
+        }
+        try recorder.start(levelHandler: { _ in })
+        fixture.devices.automatic = 8
+        fixture.devices.bluetooth = [8]
+        recorder.defaultInputChangedForTesting()
+        #expect(recorder.activeInputIsBluetooth)
+        let result = try recorder.stop()
+        #expect(resolved == [7, 8])
+        #expect(oldInput.stops == 1)
+        #expect(replacement.starts == 1)
+        #expect(try AVAudioFile(forReading: result.fileURL).length == 320)
+    }
+
+    @Test func systemDefaultChangeNotificationReachesTheRecorder() throws {
+        let fixture = Fixture()
+        defer { fixture.cleanup() }
+        fixture.devices.automatic = 7
+        let oldInput = try FakeInput()
+        oldInput.packetsOnStart = [try oldInput.packet(amplitude: 0.2)]
+        let replacement = try FakeInput()
+        replacement.packetsOnStart = [try replacement.packet(amplitude: 0.5)]
+        var resolved: [AudioDeviceID] = []
+        let recorder = CoreAudioRecorder(
+            settingsStore: fixture.settings, audioDeviceManager: fixture.devices,
+            outputDirectory: fixture.directory, prepareImmediately: false, observeChanges: true,
+            makeInput: { id in
+                resolved.append(id)
+                return id == 7 ? oldInput : replacement
+            })
+        try recorder.start(levelHandler: { _ in })
+        fixture.devices.automatic = 8
+        let notify = try #require(fixture.devices.defaultInputChanged)
+        notify()
+        recorder.drainForTesting()
+        _ = try recorder.stop()
+        #expect(resolved == [7, 8])
+        #expect(replacement.starts == 1)
+    }
+
+    @Test func explicitMicrophoneIgnoresSystemDefaultChanges() throws {
+        let fixture = Fixture()
+        defer { fixture.cleanup() }
+        fixture.settings.preferredMicrophoneID = "usb"
+        fixture.devices.explicit = ["usb": 5]
+        let input = try FakeInput()
+        input.packetsOnStart = [try input.packet(amplitude: 0.2)]
+        var attempts = 0
+        let recorder = fixture.recorder { _ in
+            attempts += 1
+            return input
+        }
+        try recorder.start(levelHandler: { _ in })
+        fixture.devices.automatic = 8
+        recorder.defaultInputChangedForTesting()
+        #expect(attempts == 1)
+        #expect(input.stops == 0)
+        _ = try recorder.stop()
+    }
+
     @Test func timedOutPreparationCannotStartTheMicrophoneLater() throws {
         let fixture = Fixture()
         defer { fixture.cleanup() }
@@ -294,21 +424,31 @@ struct CoreAudioRecorderTests {
     }
 
     private final class Devices: AudioDeviceManaging {
+        var explicit: [String: AudioDeviceID] = [:]
+        var automatic: AudioDeviceID = 42
+        var bluetooth: Set<AudioDeviceID> = []
         func availableInputDevices() -> [AudioInputDevice] { [] }
-        func resolveInputDeviceID(for uniqueID: String) -> AudioDeviceID? { nil }
+        func resolveInputDeviceID(for uniqueID: String) -> AudioDeviceID? { explicit[uniqueID] }
         func defaultInputDeviceID() -> AudioDeviceID? { 42 }
+        func automaticRecordingInputDeviceID() -> AudioDeviceID? { automatic }
+        func isBluetoothInputDevice(_ deviceID: AudioDeviceID) -> Bool { bluetooth.contains(deviceID) }
+        var defaultInputChanged: (@Sendable () -> Void)?
         func observeDefaultInputDeviceChanges(_ handler: @escaping @Sendable () -> Void)
             -> AudioInputDeviceChangeObservation?
-        { nil }
+        {
+            defaultInputChanged = handler
+            return nil
+        }
     }
 
     private final class Fixture {
         let suite = "CoreAudioRecorderTests." + UUID().uuidString
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         lazy var settings = SettingsStore(defaults: UserDefaults(suiteName: suite)!)
+        let devices = Devices()
         func recorder(makeInput: @escaping (AudioDeviceID) throws -> CoreAudioInputCapturing) -> CoreAudioRecorder {
             CoreAudioRecorder(
-                settingsStore: settings, audioDeviceManager: Devices(), outputDirectory: directory,
+                settingsStore: settings, audioDeviceManager: devices, outputDirectory: directory,
                 prepareImmediately: false, observeChanges: false, makeInput: makeInput)
         }
         func cleanup() {
@@ -356,10 +496,24 @@ struct SwitchableAudioRecorderTests {
         #expect(legacy.stops == 1)
     }
 
+    @Test func reportsBluetoothInputOfTheActiveRecorderOnly() throws {
+        let core = FakeRecorder()
+        core.bluetooth = true
+        let recorder = SwitchableAudioRecorder(
+            useCoreAudio: { true }, makeCoreAudio: { core }, makeLegacy: { FakeRecorder() })
+        #expect(!recorder.activeInputIsBluetooth)
+        try recorder.start(levelHandler: { _ in })
+        #expect(recorder.activeInputIsBluetooth)
+        _ = try recorder.stop()
+        #expect(!recorder.activeInputIsBluetooth)
+    }
+
     private final class FakeRecorder: AudioRecorder {
         var starts = 0
         var stops = 0
         var failStart = false
+        var bluetooth = false
+        var activeInputIsBluetooth: Bool { bluetooth }
         func start(levelHandler: @escaping (Float) -> Void, audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?) throws {
             starts += 1
             if failStart { throw NSError(domain: "test", code: 1) }
