@@ -42,11 +42,11 @@ enum AskReasoningEffort: String, CaseIterable {
     /// "Auto" stays "Auto"; with nothing offered there is nothing to choose.
     func nearest(in offered: [AskReasoningEffort]) -> AskReasoningEffort {
         guard self != .providerDefault, !offered.isEmpty, !offered.contains(self),
-              let at = Self.levels.firstIndex(of: self) else { return offered.isEmpty ? .providerDefault : self }
+              let origin = Self.levels.firstIndex(of: self) else { return offered.isEmpty ? .providerDefault : self }
+        let rank = { (effort: AskReasoningEffort) in Self.levels.firstIndex(of: effort) ?? 0 }
         return offered.min { lhs, rhs in
-            let left = abs((Self.levels.firstIndex(of: lhs) ?? 0) - at)
-            let right = abs((Self.levels.firstIndex(of: rhs) ?? 0) - at)
-            return left == right ? (Self.levels.firstIndex(of: lhs) ?? 0) < (Self.levels.firstIndex(of: rhs) ?? 0) : left < right
+            let left = abs(rank(lhs) - origin), right = abs(rank(rhs) - origin)
+            return left == right ? rank(lhs) < rank(rhs) : left < right
         } ?? self
     }
 

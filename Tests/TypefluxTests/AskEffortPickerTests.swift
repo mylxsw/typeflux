@@ -19,9 +19,11 @@ struct AskEffortPickerTests {
         #expect(AskReasoningEffort.levels(for: three) == AskReasoningEffort.defaultLevels)
         #expect(AskReasoningEffort.levels(for: plain).isEmpty)
         #expect(AskReasoningEffort.levels(for: nil).isEmpty)
-        let odd = RegisteredModel(id: "odd", name: "Odd", reference: "cloud:odd", reasoning: true, reasoningEfforts: ["turbo", "max"])
+        let odd = RegisteredModel(id: "odd", name: "Odd", reference: "cloud:odd", reasoning: true,
+                                  reasoningEfforts: ["turbo", "max"])
         #expect(AskReasoningEffort.levels(for: odd) == [.max])
-        let unknown = RegisteredModel(id: "x", name: "X", reference: "cloud:x", reasoning: true, reasoningEfforts: ["turbo"])
+        let unknown = RegisteredModel(id: "x", name: "X", reference: "cloud:x", reasoning: true,
+                                      reasoningEfforts: ["turbo"])
         #expect(AskReasoningEffort.levels(for: unknown) == AskReasoningEffort.defaultLevels)
         // The user's own models offer the default levels unless known not to reason.
         #expect(AskReasoningEffort.levels(for: .init(id: "own", name: "Own")) == AskReasoningEffort.defaultLevels)
@@ -50,7 +52,8 @@ struct AskEffortPickerTests {
     }
 
     @Test func catalogLevelsDecodeAndSurviveTheRegistry() throws {
-        let json = #"{"id":"deep","name":"Deep","capabilities":{"reasoning":true},"reasoning_efforts":["low","high","max"]}"#
+        let json = #"{"id":"deep","name":"Deep","capabilities":{"reasoning":true},"#
+            + #""reasoning_efforts":["low","high","max"]}"#
         let model = try AskCoding.decoder().decode(AskCloudModel.self, from: Data(json.utf8))
         #expect(model.reasoningEfforts == ["low", "high", "max"])
         let restored = try JSONDecoder().decode(RegisteredModel.self, from: JSONEncoder().encode(model.registered))
@@ -70,8 +73,12 @@ struct AskEffortPickerTests {
     private func fixture() throws -> AskTestFixture {
         let defaults = try #require(UserDefaults(suiteName: "ask-effort-" + UUID().uuidString))
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
-        try library.addModels([five, three, plain].map { var m = $0; m.scenarios = ["ask"]; return m },
-                              providerID: "typefluxCloud")
+        let models = [five, three, plain].map { model in
+            var copy = model
+            copy.scenarios = ["ask"]
+            return copy
+        }
+        try library.addModels(models, providerID: "typefluxCloud")
         return try AskTestFixture(modelLibrary: library)
     }
 
@@ -144,7 +151,8 @@ struct AskEffortPickerTests {
         let models = fits(AskModelEffortCard(library: library, reference: .constant(five.reference),
                                              effort: .constant(.high), loggedIn: true, page: .models))
         #expect(models.height > unsupported.height)
-        let slider = fits(AskEffortSlider(levels: AskReasoningEffort.levels, effort: .constant(.max)).frame(width: 300))
+        let slider = fits(AskEffortSlider(levels: AskReasoningEffort.levels, effort: .constant(.max))
+            .frame(width: 300))
         #expect(slider.height == AskEffortSlider.height)
         // The chip grows to show the level, and shows only the model for "Auto".
         let withLevel = fits(AskModelMenu(library: library, reference: .constant(five.reference), compact: true,

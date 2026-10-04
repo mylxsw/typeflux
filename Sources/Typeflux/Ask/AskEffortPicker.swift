@@ -155,10 +155,10 @@ struct AskEffortSlider: View {
     }
 
     /// The stop nearest to `x`.
-    static func index(at x: CGFloat, count: Int, width: CGFloat) -> Int {
+    static func index(at position: CGFloat, count: Int, width: CGFloat) -> Int {
         guard count > 1 else { return 0 }
-        return (0 ..< count).min { abs(knobCenter(index: $0, count: count, width: width) - x)
-            < abs(knobCenter(index: $1, count: count, width: width) - x) } ?? 0
+        return (0 ..< count).min { abs(knobCenter(index: $0, count: count, width: width) - position)
+            < abs(knobCenter(index: $1, count: count, width: width) - position) } ?? 0
     }
 
     private var auto: Bool { effort == .providerDefault }
@@ -264,13 +264,13 @@ struct AskLiquidFill: View {
         let span = max(Double(width), 40) + 20
         for index in 0 ..< Self.particleCount {
             let speed = 8 + Self.noise(index, 1) * 16
-            let x = (Self.noise(index, 2) * 340 + time * speed).truncatingRemainder(dividingBy: span) - 10
-            guard x < Double(width) - AskEffortSlider.knob / 2 - 10 else { continue }
+            let left = (Self.noise(index, 2) * 340 + time * speed).truncatingRemainder(dividingBy: span) - 10
+            guard left < Double(width) - AskEffortSlider.knob / 2 - 10 else { continue }
             let phase = Self.noise(index, 3) * 6.28
-            let y = 7 + Self.noise(index, 4) * Double(height - 14) + sin(time * 1.3 + phase) * 1.6
+            let top = 7 + Self.noise(index, 4) * Double(height - 14) + sin(time * 1.3 + phase) * 1.6
             let alpha = 0.35 + 0.65 * abs(sin(time * (0.6 + Self.noise(index, 5) * 1.6) + phase))
             let radius = 0.6 + Self.noise(index, 6) * 1.1
-            canvas.fill(Path(ellipseIn: CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)),
+            canvas.fill(Path(ellipseIn: CGRect(x: left - radius, y: top - radius, width: radius * 2, height: radius * 2)),
                         with: .color(.white.opacity(alpha * 0.85)))
         }
         // A glossy top half and a darker lower edge give the fill depth.
