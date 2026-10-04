@@ -2,10 +2,13 @@
 
 GUL-183 extends the existing SQLite tool claim/receipt journal to cover device
 inference and explicit recovery. The implementation starts from Swift main
-`e5135cc6ec623d47b436c9d18657b559a27bdb8f` (including GUL-195 / #282), with
-API main `ee8889102df23c80c107f6b92b6e85177fc41333` as the compatibility target.
-The copied R03 v1 fixture is byte-identical to that API revision. No API code,
-PostgreSQL migration, worker, budget counter or production flag changes here.
+`e5135cc6ec623d47b436c9d18657b559a27bdb8f` (including GUL-195 / #282), then
+integrates main `5ec2bf5a` (GUL-193 / #283). The compatibility target is API main
+`981d226bc09829026851675b5498a843a33792a9`, including per-model reasoning levels.
+The copied R03 v1 fixture is byte-identical to that API revision and its preceding
+`ee888910` revision. A companion API PR adds only regression tests and a required
+PostgreSQL gate entry. No PostgreSQL migration, worker, budget counter or
+production flag changes here.
 
 ## Persistence and dispatch
 
@@ -105,7 +108,9 @@ diagnostics; the client does not invent private worker journal evidence.
 See `r04-validation.md` for this revision's measured results. SQLite failure
 injection, client/model restart, receipt-only retransmission, identity changes,
 SSE ordering, budget/Memory regression, native recovery rendering and recovery-action
-state transitions are covered by local tests. The R03 PostgreSQL gate is rerun against
+state transitions are covered by local tests. Real subprocess SIGKILL tests verify
+SQLite durability after claim and after receipt commit; this is not a full desktop
+application lifecycle test. The R03 PostgreSQL gate is rerun against
 an isolated PostgreSQL 16 instance, independently of the Swift transport tests.
 These layered checks are not a live Swift-to-production-provider acceptance run.
 Real provider/MCP, multi-machine desktop identity, browser/computer permission
