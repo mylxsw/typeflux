@@ -18,6 +18,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private let dockVisibility: DockVisibilityController
     private let settings: SettingsStore
     private let tools: AskLocalTools?
+    private let conversationFrameAutosaveName: NSWindow.FrameAutosaveName
     private var launcher: AskFloatingPanel?
     private var launcherHeight = AskMetrics.launcherHeight(editor: 32, banners: 0)
     private var conversationWindow: NSWindow?
@@ -30,6 +31,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
          dockVisibility: DockVisibilityController = .shared) throws {
         self.dockVisibility = dockVisibility
         self.settings = settings
+        conversationFrameAutosaveName = "AskConversationWorkspace"
         let tools = AskLocalTools(registry: registry, settings: settings)
         let sandbox = tools.sandbox
         Task.detached(priority: .utility) { sandbox.pruneWorkspaces() }
@@ -65,9 +67,11 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         bindCallbacks()
     }
 
-    init(settings: SettingsStore, model: AskConversationModel, dockVisibility: DockVisibilityController = .shared) {
+    init(settings: SettingsStore, model: AskConversationModel, dockVisibility: DockVisibilityController = .shared,
+         conversationFrameAutosaveName: NSWindow.FrameAutosaveName = "AskConversationWorkspace") {
         self.dockVisibility = dockVisibility
         self.settings = settings; self.model = model; self.tools = nil
+        self.conversationFrameAutosaveName = conversationFrameAutosaveName
         super.init()
         bindCallbacks()
     }
@@ -172,9 +176,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
             window.isReleasedWhenClosed = false
-            window.minSize = NSSize(width: 760, height: 560)
             window.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.ask-conversations")
-            window.setFrameAutosaveName("AskConversationWorkspace")
             window.delegate = self
             // An empty unified toolbar gives the title bar its 52pt height and centres
             // the traffic lights, so the in-window tools can share their centre line.
@@ -186,7 +188,24 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             // the sidebar) can make the hosting view resize or zoom the window.
             hosting.sizingOptions = []
             window.contentView = hosting
-            window.center()
+            // NSHostingView uses Auto Layout, which supersedes NSWindow.minSize.
+            // Constrain its actual viewport after installation so subsequent SwiftUI
+            // layouts cannot silently remove the supported minimum window size.
+            let minimum = AskWorkspaceLayout.minimumWindowSize
+            NSLayoutConstraint.activate([
+                hosting.widthAnchor.constraint(greaterThanOrEqualToConstant: minimum.width),
+                hosting.heightAnchor.constraint(greaterThanOrEqualToConstant: minimum.height)
+            ])
+            window.contentMinSize = minimum
+            window.setFrameAutosaveName(conversationFrameAutosaveName)
+            if window.setFrameUsingName(conversationFrameAutosaveName) {
+                // Growing an obsolete undersized frame must not push its controls
+                // below the visible screen, including after a display change.
+                let visibleFrame = window.constrainFrameRect(window.frame, to: window.screen)
+                window.setFrame(visibleFrame, display: false)
+            } else {
+                window.center()
+            }
             conversationWindow = window
         }
         guard let conversationWindow else { return }

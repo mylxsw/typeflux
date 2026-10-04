@@ -225,6 +225,10 @@ struct AskSendQueueTests {
     @Test func aFailedJumpIsReportedWhileTheRunIsStillWorking() async throws {
         let f = try AskTestFixture()
         let id = try await busyConversation(f)
+        // Steering rejects the pending tool first. Keep another tool pending
+        // so its result cannot complete the run before the failed steer refresh.
+        let continuing = toolCall()
+        await f.api.queueFollowUpTools([continuing])
         await f.api.setFailSteer(true)
         f.model.draft.text = "Rejected"
         f.model.submitDraft()
@@ -232,6 +236,7 @@ struct AskSendQueueTests {
         f.model.steerQueued(item.id)
         try await f.wait { f.model.error != nil }
         #expect(f.model.queuedMessages.map(\.id) == [item.id])
+        try await f.wait { f.model.pendingApprovals[id]?.id == continuing.id }
         f.model.approve(conversationId: id, allowed: false)
         try await f.wait { f.model.busyIds.isEmpty && f.model.queuedMessages.isEmpty }
     }

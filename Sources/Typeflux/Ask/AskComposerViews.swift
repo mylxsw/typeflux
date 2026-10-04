@@ -18,6 +18,9 @@ struct AskLauncherView: View {
 /// The launcher and the workspace share the same composer.
 struct AskComposer: View {
     @ObservedObject var model: AskConversationModel
+    var compact: Bool
+    var availableWidth: CGFloat?
+    var availableHeight: CGFloat?
     var launcher: Bool
     var onDismiss: () -> Void = {}
     var onHeightChange: (CGFloat) -> Void = { _ in }
@@ -30,10 +33,15 @@ struct AskComposer: View {
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(model: AskConversationModel, launcher: Bool, onDismiss: @escaping () -> Void = {},
+    init(model: AskConversationModel, compact: Bool = false, availableWidth: CGFloat? = nil,
+         availableHeight: CGFloat? = nil,
+         launcher: Bool, onDismiss: @escaping () -> Void = {},
          onHeightChange: @escaping (CGFloat) -> Void = { _ in },
          onToggleUsage: (() -> Void)? = nil) {
         self.model = model
+        self.compact = compact
+        self.availableWidth = availableWidth
+        self.availableHeight = availableHeight
         self.launcher = launcher
         self.onDismiss = onDismiss
         self.onHeightChange = onHeightChange
@@ -76,6 +84,22 @@ struct AskComposer: View {
                                         capturing: model.capturingScreenshot)
     }
     @State private var editorHeight: CGFloat = 32
+    @State private var measuredWidth: CGFloat = 600
+    @State private var supplementalHeight: CGFloat = 0
+    @State private var cardHeight: CGFloat = 0
+    private var layout: AskComposerLayout {
+        AskComposerLayout(launcher: launcher, compact: compact, width: availableWidth ?? measuredWidth,
+                          availableHeight: availableHeight, paletteOpen: paletteOpen,
+                          supplementalHeight: hasSupplementalContent ? max(40, supplementalHeight) : 0)
+    }
+    private var paletteMaximumHeight: CGFloat? { layout.paletteMaximumHeight(composerHeight: cardHeight) }
+    private var compactPalette: Bool {
+        !launcher && (layout.usesCompactMetrics
+            || AskCommandPaletteView.height(for: palette) > (paletteMaximumHeight ?? .infinity))
+    }
+    private var paletteHeight: CGFloat {
+        AskCommandPaletteView.height(for: palette, compact: compactPalette, maximumHeight: paletteMaximumHeight)
+    }
     @State private var voiceShortcut: HotkeyBinding?
     /// Conversations whose queue list is expanded.
     @State private var expandedQueues: Set<String> = []
@@ -149,6 +173,17 @@ struct AskComposer: View {
 
     var body: some View {
         card
+            .background(GeometryReader { geometry in
+                Color.clear.preference(key: AskComposerWidth.self, value: geometry.size.width)
+                    .preference(key: AskComposerHeight.self, value: geometry.size.height)
+            })
+            .onPreferenceChange(AskComposerWidth.self) { width in
+                if availableWidth == nil, !launcher, width > 0, abs(measuredWidth - width) > 0.5 {
+                    measuredWidth = width
+                }
+            }
+            .onPreferenceChange(AskComposerSupplementalHeight.self) { supplementalHeight = $0 }
+            .onPreferenceChange(AskComposerHeight.self) { cardHeight = $0 }
             .onChange(of: editorHeight) { _ in reportHeight() }
             .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
             .onChange(of: noticeRows) { _ in reportHeight() }
@@ -167,6 +202,76 @@ struct AskComposer: View {
     }
 
     private var card: some View {
+        VStack(spacing: 0) {
+            if launcher {
+                supplementalContent
+            } else if hasSupplementalContent {
+                ScrollView(.vertical) {
+                    supplementalContent
+                        .background(GeometryReader { geometry in
+                            Color.clear.preference(key: AskComposerSupplementalHeight.self, value: geometry.size.height)
+                        })
+                }
+                .frame(height: min(max(1, supplementalHeight), layout.supplementalMaximumHeight))
+            }
+            editorRow
+            footer
+            if launcher, paletteOpen {
+                paletteView
+                    .frame(height: AskCommandPaletteView.height(for: palette))
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 10)
+            }
+            if showsLauncherSuggestions {
+                AskLauncherSuggestions(highlighted: $suggestionIndex,
+                                       screenshot: model.screenshotSuggestion(launcher: true), onPick: pick)
+                    .disabled(active)
+                    .opacity(Self.recordingDim(active))
+            }
+        }
+        .background {
+            if let glass {
+                chrome.glassBackground(glass)
+            } else {
+                chrome.fill
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
+        .modifier(AskWorkspaceCardDepth(enabled: !launcher, corner: chrome.corner))
+        .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner,
+                                 idle: chrome.idleBorder(on: glass, increasedContrast: contrast == .increased)))
+        .overlay {
+            if editingQueued || dropTargeted {
+                RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
+                    .strokeBorder(AskTheme.accent, lineWidth: dropTargeted ? 2 : 1.5)
+                    .allowsHitTesting(false)
+            } else if privateTint {
+                // Signed in, a conversation kept on this Mac keeps a quiet private edge.
+                RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
+                    .strokeBorder(AskTheme.privateTint.opacity(0.45), lineWidth: 1)
+                    .allowsHitTesting(false)
+            }
+        }
+        .askAttachmentDrop(model: model, launcher: launcher, targeted: $cardDropTargeted)
+        // The workspace palette floats above the card without moving the transcript.
+        .overlay(alignment: .top) {
+            if !launcher, paletteOpen {
+                // Its height is known, so it sits exactly 8 pt above the card.
+                let height = paletteHeight
+                paletteView
+                    .frame(height: height)
+                    .offset(y: -height - 8)
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    private var hasSupplementalContent: Bool {
+        !notices.isEmpty || (!launcher && !model.queuedMessages.isEmpty) || editingQueued
+            || !(draft.wrappedValue.references ?? []).isEmpty || showsStrip
+    }
+
+    private var supplementalContent: some View {
         VStack(spacing: 0) {
             if !notices.isEmpty {
                 AskComposerNoticeStack(notices: notices, expanded: $noticesExpanded, dismiss: dismiss)
@@ -227,60 +332,13 @@ struct AskComposer: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.8),
                            value: attachedItems.map(\.id) + userAttachments.map(\.id) + chosenTools.map(\.id))
             }
-            editorRow
-            footer
-            if launcher, paletteOpen {
-                paletteView
-                    .frame(height: AskCommandPaletteView.height(for: palette))
-                    .padding(.horizontal, 10)
-                    .padding(.bottom, 10)
-            }
-            if showsLauncherSuggestions {
-                AskLauncherSuggestions(highlighted: $suggestionIndex,
-                                       screenshot: model.screenshotSuggestion(launcher: true), onPick: pick)
-                    .disabled(active)
-                    .opacity(Self.recordingDim(active))
-            }
-        }
-        .background {
-            if let glass {
-                chrome.glassBackground(glass)
-            } else {
-                chrome.fill
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
-        .modifier(AskWorkspaceCardDepth(enabled: !launcher, corner: chrome.corner))
-        .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner,
-                                 idle: chrome.idleBorder(on: glass, increasedContrast: contrast == .increased)))
-        .overlay {
-            if editingQueued || dropTargeted {
-                RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
-                    .strokeBorder(AskTheme.accent, lineWidth: dropTargeted ? 2 : 1.5)
-                    .allowsHitTesting(false)
-            } else if privateTint {
-                // Signed in, a conversation kept on this Mac keeps a quiet private edge.
-                RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
-                    .strokeBorder(AskTheme.privateTint.opacity(0.45), lineWidth: 1)
-                    .allowsHitTesting(false)
-            }
-        }
-        .askAttachmentDrop(model: model, launcher: launcher, targeted: $cardDropTargeted)
-        // The workspace palette floats above the card without moving the transcript.
-        .overlay(alignment: .top) {
-            if !launcher, paletteOpen {
-                // Its height is known, so it sits exactly 8 pt above the card.
-                let height = AskCommandPaletteView.height(for: palette)
-                paletteView
-                    .frame(height: height)
-                    .offset(y: -height - 8)
-                    .transition(.opacity)
-            }
         }
     }
 
     private var paletteView: some View {
-        AskCommandPaletteView(state: palette, onPick: pickCommand, onHighlight: { palette.highlighted = $0 },
+        AskCommandPaletteView(state: palette, compact: compactPalette,
+                              maximumHeight: launcher ? nil : paletteMaximumHeight,
+                              onPick: pickCommand, onHighlight: { palette.highlighted = $0 },
                               onManage: model.onOpenSettings.map { open in { closePalette(); open(.agent) } })
     }
 
@@ -423,6 +481,7 @@ struct AskComposer: View {
                     voice: voice,
                     contextID: contextID,
                     fontSize: chrome.editorFontSize,
+                    maximumHeight: layout.editorMaximumHeight,
                     onSubmit: submit,
                     onDismiss: { if editingQueued { model.cancelQueuedEdit() } else { onDismiss() } },
                     onHeightChange: { editorHeight = $0 },
@@ -431,13 +490,13 @@ struct AskComposer: View {
                     onSlashQuery: slashChanged,
                     onCommandKey: commandKey
                 )
-                .frame(height: editorHeight)
+                .frame(height: min(editorHeight, layout.editorMaximumHeight))
                 .disabled(!launcher && model.isLoadingSelection)
             }
         }
         .padding(.horizontal, chrome.horizontalInset)
-        .padding(.top, chrome.editorTopInset)
-        .padding(.bottom, chrome.editorBottomInset)
+        .padding(.top, layout.editorTopInset)
+        .padding(.bottom, layout.editorBottomInset)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -450,6 +509,7 @@ struct AskComposer: View {
             AskAttachButton(model: model, launcher: launcher,
                             disabled: active || (!launcher && model.isLoadingSelection))
                 .opacity(Self.recordingDim(active))
+                .accessibilityIdentifier("ask.composer.attach")
             AskStorageButton(model: model, launcher: launcher)
                 .disabled(active)
                 .opacity(Self.recordingDim(active))
@@ -458,63 +518,111 @@ struct AskComposer: View {
                 set: { model.selectModel($0, launcher: launcher) }
             ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
                hasImage: !launcher && model.hasConversationImages, compact: true,
+               condensed: layout.condensedFooter,
                cloudAvailable: model.cloudAvailable(launcher: launcher),
                onManage: model.onOpenSettings.map { open in { open(.models) } },
                effort: $model.reasoningEffort)
             .opacity(Self.recordingDim(active))
+            .accessibilityIdentifier("ask.composer.model")
             // "How to ask" and "what rides along" are separated by a rule.
-            Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
-            HStack(spacing: 0) {
-                contextChips
+            if layout.condensedFooter {
+                contextMenu
                     .disabled(active)
                     .opacity(Self.recordingDim(active))
-                    .layoutPriority(1)
-                Spacer(minLength: 8)
-                // Confirms a command in the footer's empty space, inside the card.
-                if let feedback = model.capturedContentFeedback(launcher: launcher), !active {
-                    AskCapturedContentFeedbackView(feedback: feedback) {
-                        model.undoCapturedContent(launcher: launcher)
+                Spacer(minLength: 0)
+            } else {
+                Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
+                HStack(spacing: 0) {
+                    contextChips
+                        .disabled(active)
+                        .opacity(Self.recordingDim(active))
+                        .layoutPriority(1)
+                    Spacer(minLength: 8)
+                    // Confirms a command in the footer's empty space, inside the card.
+                    if let feedback = model.capturedContentFeedback(launcher: launcher), !active {
+                        AskCapturedContentFeedbackView(feedback: feedback) {
+                            model.undoCapturedContent(launcher: launcher)
+                        }
+                    } else if let feedback = model.commandFeedback, !active {
+                        AskComposerFootnote(text: feedback)
+                            .transition(.opacity)
                     }
-                } else if let feedback = model.commandFeedback, !active {
-                    AskComposerFootnote(text: feedback)
-                        .transition(.opacity)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: model.commandFeedback)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: model.commandFeedback)
             // Keep the recording label's space when it fits. An idle reservation
             // must not push the context entry or send button outside a narrow card.
-            ViewThatFits(in: .horizontal) {
-                voiceStatus
-                if !active { Color.clear.frame(width: 0, height: 0) }
+            if !layout.condensedFooter {
+                ViewThatFits(in: .horizontal) {
+                    voiceStatus
+                    if !active { Color.clear.frame(width: 0, height: 0) }
+                }
+                .layoutPriority(active ? 1 : -1)
             }
-            .layoutPriority(active ? 1 : -1)
-            if !launcher, onToggleUsage != nil, let context = model.usageContext {
+            if !launcher, !layout.condensedFooter, onToggleUsage != nil, let context = model.usageContext {
                 AskContextUsageButton(context: context) { onToggleUsage?() }
             }
             AskVoiceButton(voice: voice, contextID: contextID,
                            enabled: launcher || !model.isLoadingSelection,
                            shortcut: voiceShortcut)
                 .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+                .accessibilityIdentifier("ask.composer.voice")
             if editingQueued {
-                AskQueueEditActions(canSave: model.draft.canSend, onCancel: { model.cancelQueuedEdit() },
+                AskQueueEditActions(canSave: model.draft.canSend, compact: layout.condensedFooter,
+                                    onCancel: { model.cancelQueuedEdit() },
                                     onSave: { model.saveQueuedEdit() })
             } else {
-                switch sendControl {
-                case .stop: AskStopButton { model.stop() }
-                case let .send(enabled):
-                    AskSendButton(enabled: enabled, tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
-                                  action: submit)
+                Group {
+                    switch sendControl {
+                    case .stop: AskStopButton { model.stop() }
+                    case let .send(enabled):
+                        AskSendButton(enabled: enabled, tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
+                                      action: submit)
+                    }
                 }
+                .accessibilityIdentifier("ask.composer.send")
             }
         }
         .padding(.leading, chrome.footerLeadingInset)
         .padding(.trailing, 10)
-        .frame(height: chrome.footerHeight)
+        .frame(height: layout.footerHeight)
         .frame(maxWidth: .infinity)
         .background {
             AskSlashShortcut(disabled: active || (!launcher && model.isLoadingSelection), action: startCommand)
         }
+    }
+
+    /// Secondary switches remain reachable without pushing primary actions out
+    /// of a narrow footer. They use the same actions as the full-size chips.
+    private var contextMenu: some View {
+        Menu {
+            ForEach(contextItems.filter { $0.kind == .screenshot || $0.kind == .memory }) { item in
+                Toggle(isOn: Binding(
+                    get: { item.kind == .screenshot ? draft.wrappedValue.includeScreenshot : item.style == .active },
+                    set: { _ in
+                        if item.kind == .screenshot { screenshotToggleAction?() } else { memoryToggle() }
+                    }
+                )) {
+                    Label(item.kind == .screenshot ? L("ask.screenshot") : item.title, systemImage: item.systemImage)
+                }
+                .disabled(item.kind == .screenshot && screenshotToggleAction == nil)
+            }
+            if let onToggleUsage {
+                Divider()
+                Button(action: onToggleUsage) { Label(L("ask.usage.title"), systemImage: "chart.pie") }
+            }
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                .font(.system(size: 13))
+                .frame(width: 26, height: AskMetrics.composerControlHeight)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(L("ask.context"))
+        .accessibilityLabel(L("ask.context"))
+        .accessibilityIdentifier("ask.context.menu")
     }
 
     /// While the microphone is busy the settings and context recede, so the
@@ -648,6 +756,21 @@ struct AskComposer: View {
                                                  suggestions: showsLauncherSuggestions, attachments: showsStrip,
                                                  attachmentHeight: attachmentHeight) + commands)
     }
+}
+
+private struct AskComposerWidth: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
+private struct AskComposerSupplementalHeight: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
+private struct AskComposerHeight: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
 private struct AskContextPreview: View {

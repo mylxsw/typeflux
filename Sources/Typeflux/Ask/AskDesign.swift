@@ -175,10 +175,6 @@ enum AskMetrics {
     static let sidebarWidth: CGFloat = 264
     /// The usage panel's glass card; it floats inset like the sidebar.
     static let usagePanelWidth: CGFloat = 330
-    /// The transcript column's narrowest width; below sidebar + a comfortable
-    /// column + usage panel, the sidebar steps aside while the panel is open.
-    static let contentMinWidth: CGFloat = 420
-    static let contentComfortWidth: CGFloat = 480
     /// Height of the title bar row; the unified toolbar centres the traffic lights in it.
     static let titleBarRowHeight: CGFloat = 52
     /// Space above the sidebar's first row, clearing the title bar tools.
@@ -976,15 +972,6 @@ struct AskVoiceBorder: ViewModifier {
 /// Pure helpers behind the redesigned surfaces, kept separate so they can be
 /// unit tested without rendering a window.
 enum AskPresentation {
-    /// Whether the sidebar should step aside so the usage panel fits beside a
-    /// comfortable transcript column. An unmeasured (zero) width never hides it.
-    static func sidebarYields(windowWidth: CGFloat, usageShown: Bool) -> Bool {
-        guard usageShown, windowWidth > 0 else { return false }
-        let needed = AskMetrics.sidebarWidth + AskMetrics.contentComfortWidth
-            + AskMetrics.usagePanelWidth + AskMetrics.sidebarPanelInset
-        return windowWidth < needed
-    }
-
     /// Whether the transcript is scrolled to its end. The end marker starts
     /// right after the last message; the composer floats over the bottom
     /// `coveredBottom` points, so "at the end" means the marker begins above the card.
@@ -1393,12 +1380,6 @@ struct AskDelayedProgress: View {
                 withAnimation(.easeOut(duration: 0.18)) { visible = true }
             }
     }
-}
-
-/// Reports the conversation window's width, so its columns can make room.
-struct AskWindowWidth: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
 /// Reports the height of the banners and composer floating over the transcript.

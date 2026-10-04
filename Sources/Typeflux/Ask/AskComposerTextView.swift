@@ -13,6 +13,7 @@ struct AskComposerTextView: NSViewRepresentable {
     var voice: AskVoiceInput? = nil
     var contextID: String = "launcher"
     var fontSize: CGFloat = StudioTheme.Typography.bodyLarge
+    var maximumHeight: CGFloat = 148
     var onSubmit: () -> Void
     var onDismiss: () -> Void = {}
     var onHeightChange: (CGFloat) -> Void = { _ in }
@@ -56,6 +57,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onSubmit = onSubmit
         editor.onDismiss = onDismiss
         editor.onHeightChange = onHeightChange
+        editor.maximumHeight = maximumHeight
         editor.onAttach = onAttach
         editor.onDropTargetChange = onDropTargetChange
         editor.onSlashQuery = onSlashQuery
@@ -86,6 +88,7 @@ struct AskComposerTextView: NSViewRepresentable {
         if editor.isEditable != isEnabled { editor.isEditable = isEnabled }
         editor.onSubmit = onSubmit; editor.onDismiss = onDismiss
         editor.onHeightChange = onHeightChange
+        editor.maximumHeight = maximumHeight
         editor.onAttach = onAttach
         editor.onDropTargetChange = onDropTargetChange
         editor.onSlashQuery = onSlashQuery
@@ -138,6 +141,7 @@ struct AskComposerTextView: NSViewRepresentable {
         /// A key press is being handled; edits made now were typed.
         private(set) var typing = false
         private var reportedHeight: CGFloat = 0
+        var maximumHeight: CGFloat = 148
 
         func reportSlash() {
             guard let onSlashQuery, !hasMarkedText() else { return }
@@ -330,7 +334,8 @@ struct AskComposerTextView: NSViewRepresentable {
         func reportHeight() {
             guard let layoutManager, let textContainer else { return }
             layoutManager.ensureLayout(for: textContainer)
-            let height = min(148, max(32, ceil(layoutManager.usedRect(for: textContainer).height + 12)))
+            let contentHeight = ceil(layoutManager.usedRect(for: textContainer).height + 12)
+            let height = min(max(32, maximumHeight), max(32, contentHeight))
             guard height != reportedHeight else { return }
             reportedHeight = height
             DispatchQueue.main.async { [weak self] in self?.onHeightChange(height) }

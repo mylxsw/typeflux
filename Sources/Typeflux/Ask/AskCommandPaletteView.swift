@@ -4,6 +4,8 @@ import SwiftUI
 /// a header naming the open submenu, and the keys that drive it.
 struct AskCommandPaletteView: View {
     let state: AskCommandPaletteState
+    var compact = false
+    var maximumHeight: CGFloat?
     var onPick: (Int) -> Void
     var onHighlight: (Int) -> Void
     var onManage: (() -> Void)?
@@ -15,10 +17,13 @@ struct AskCommandPaletteView: View {
     static let maximumListHeight: CGFloat = 300
 
     /// Height of the whole palette for `state`, so the launcher can size its panel.
-    static func height(for state: AskCommandPaletteState) -> CGFloat {
-        let groups = groupStarts(state).count
+    static func height(for state: AskCommandPaletteState, compact: Bool = false,
+                       maximumHeight: CGFloat? = nil) -> CGFloat {
+        let chrome: CGFloat = compact ? 24 : chromeHeight
+        let groups = compact ? 0 : groupStarts(state).count
         let list = CGFloat(state.rows.count) * rowHeight + CGFloat(groups) * groupHeight
-        return chromeHeight + min(list, maximumListHeight)
+        let limit = maximumHeight.map { max(rowHeight, $0 - chrome) } ?? (compact ? rowHeight : maximumListHeight)
+        return chrome + min(list, min(limit, maximumListHeight))
     }
 
     /// Row indexes that begin a group. Groups label the full list only; a search
@@ -33,10 +38,10 @@ struct AskCommandPaletteView: View {
     }
 
     var body: some View {
-        let starts = Self.groupStarts(state)
+        let starts = compact ? [] : Self.groupStarts(state)
         VStack(spacing: 0) {
             header
-            Divider().opacity(0.5)
+            if !compact { Divider().opacity(0.5) }
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
@@ -56,20 +61,24 @@ struct AskCommandPaletteView: View {
                         }
                     }
                     .padding(.horizontal, 6)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, compact ? 0 : 4)
                 }
-                .frame(maxHeight: Self.maximumListHeight)
+                .frame(maxHeight: Self.height(for: state, compact: compact, maximumHeight: maximumHeight)
+                    - (compact ? 24 : Self.chromeHeight))
                 .fixedSize(horizontal: false, vertical: true)
                 .onChange(of: state.highlighted) { index in proxy.scrollTo(index) }
             }
-            Divider().opacity(0.5)
-            footer
+            if !compact {
+                Divider().opacity(0.5)
+                footer
+            }
         }
         .background(AskTheme.popoverSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(AskTheme.border, lineWidth: 0.5))
         .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(L("ask.command.title"))
+        .accessibilityIdentifier("ask.command.palette")
     }
 
     private var header: some View {
@@ -87,7 +96,7 @@ struct AskCommandPaletteView: View {
         }
         .foregroundStyle(StudioTheme.textSecondary)
         .padding(.horizontal, 14)
-        .frame(height: 32)
+        .frame(height: compact ? 24 : 32)
     }
 
     private var footer: some View {

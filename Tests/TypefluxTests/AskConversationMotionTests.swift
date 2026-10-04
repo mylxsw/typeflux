@@ -8,6 +8,8 @@ import Testing
 /// clicks, so they live in the serialized event-delivery suite.
 extension AskComposerInteractionTests {
     @Test func sidebarSlidesWhenToggled() async throws {
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
         // Isolated preferences: suites run in parallel and others read the real key.
         let suite = "ask-motion-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
@@ -17,9 +19,7 @@ extension AskComposerInteractionTests {
         defer { window.close() }
         let editor = try #require(motionEditors(hosting).first)
         let start = editor.convert(editor.bounds, to: nil).minX
-        // The toggle sits at the trailing end of the sidebar's title bar row.
-        let samples = try await clickAndSample(NSPoint(x: AskMetrics.sidebarWidth - 6 - AskMetrics.sidebarPanelInset - 15,
-                                                       y: window.frame.height - AskMetrics.titleBarRowHeight / 2),
+        let samples = try await clickAndSample(AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.sidebar", in: window),
                                                in: window) { editor.convert(editor.bounds, to: nil).minX }
         let end = try #require(samples.last)
         #expect(end < start - 50, "The transcript column takes the sidebar's space")
@@ -29,6 +29,8 @@ extension AskComposerInteractionTests {
     }
 
     @Test func usagePanelSlidesWhenToggled() async throws {
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
         let suite = "ask-motion-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -37,9 +39,7 @@ extension AskComposerInteractionTests {
         defer { window.close() }
         let editor = try #require(motionEditors(hosting).first)
         let start = editor.convert(editor.bounds, to: nil).maxX
-        // The header's usage action leads the trailing pill: usage, new chat, delete (30pt each).
-        let samples = try await clickAndSample(NSPoint(x: window.frame.width - 14 - 3 - 30 - 30 - 15,
-                                                       y: window.frame.height - AskMetrics.titleBarRowHeight / 2),
+        let samples = try await clickAndSample(AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.usage", in: window),
                                                in: window) { editor.convert(editor.bounds, to: nil).maxX }
         let end = try #require(samples.last)
         #expect(end < start - 50, "The usage panel takes room from the transcript column")

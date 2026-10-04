@@ -18,6 +18,8 @@ struct AskConversationView: View {
     @Namespace private var selectionSpace
     /// Height of the banners and composer floating over the transcript's bottom edge.
     @State private var bottomChromeHeight: CGFloat = 0
+    @State private var transcriptViewportSize: CGSize = .zero
+    @State private var transcriptCoveredBottom: CGFloat = 0
     /// Files are dragged over the transcript; they attach to the draft when dropped.
     @State private var transcriptDropTargeted = false
     /// Set by the toggle inside its animation. Driving the layout from the
@@ -27,7 +29,10 @@ struct AskConversationView: View {
     @AppStorage("ask.sidebarCollapsed") private var storedSidebarCollapsed = false
     @AppStorage(AskCloudPromo.dismissedKey) private var cloudPromoDismissedAt: Double = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var windowWidth: CGFloat = 0
+    @State private var windowSize = AskWorkspaceLayout.minimumWindowSize
+    @State private var showsSidebarDrawer = false
+    @FocusState private var drawerCloseFocused: Bool
+    @State private var previousResponder: NSResponder?
     @ObservedObject private var auth: AuthState
 
     init(model: AskConversationModel, showsUsage: Bool = false, auth: AuthState = .shared) {
@@ -38,36 +43,45 @@ struct AskConversationView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            HStack(spacing: 0) {
-                if !sidebarHidden {
-                    sidebar.frame(width: AskMetrics.sidebarWidth)
-                        .transition(AskMotion.panel(edge: .leading, reduceMotion: reduceMotion))
-                }
-                content
-                if showsUsage {
-                    AskUsagePanel(model: model, runId: $usageRunId, close: { setUsage(false) })
-                        .id(model.selectedId)
-                        .transition(AskMotion.panel(edge: .trailing, reduceMotion: reduceMotion))
-                }
-            }
-            // One surface for the whole window: the sidebar floats on it as a
-            // glass panel instead of being a differently tinted column.
-            .background(AskWindowBackdrop())
-            .background(GeometryReader { geometry in
-                Color.clear.preference(key: AskWindowWidth.self, value: geometry.size.width)
-            })
-            titleBarTools
-            if isSearching { searchPalette }
+        GeometryReader { geometry in
+            workspace
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .onAppear { windowSize = geometry.size }
+                .onChange(of: geometry.size) { windowSize = $0 }
         }
-        // Lay out from the very top of the window so the tools share the
-        // traffic lights' baseline instead of sitting below the title bar.
-        .onChange(of: model.selectedId) { _ in usageRunId = nil }
-        .onPreferenceChange(AskWindowWidth.self) { width in
-            withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) { windowWidth = width }
-        }
+        // Measure the viewport, rather than the intrinsic width of its children.
         .ignoresSafeArea(.container, edges: .top)
-        .frame(minWidth: 740, minHeight: 530)
+        .onChange(of: model.selectedId) { _ in
+            usageRunId = nil
+            showsSidebarDrawer = false
+        }
+        .onChange(of: layout.sidebarInline) { inline in
+            if inline { showsSidebarDrawer = false }
+        }
+        .onChange(of: layout.usageOverlay) { overlay in
+            // A resize must not queue a second drawer behind the open history.
+            if overlay, showsSidebarDrawer { showsUsage = false }
+        }
+        .onChange(of: hasModal) { shown in
+            if shown {
+                if let window = NSApp.keyWindow,
+                   window.identifier?.rawValue == "ai.gulu.app.typeflux.window.ask-conversations" {
+                    previousResponder = window.firstResponder
+                    window.makeFirstResponder(nil)
+                }
+                if hasDrawer { drawerCloseFocused = true }
+            } else {
+                if let editor = previousResponder as? NSView {
+                    // Let the background controls become enabled before restoring
+                    // focus, and never redirect a different window's responder.
+                    DispatchQueue.main.async { [weak editor] in
+                        guard let editor, let window = editor.window, window.isKeyWindow else { return }
+                        window.makeFirstResponder(editor)
+                    }
+                }
+                previousResponder = nil
+            }
+        }
         .tint(AskTheme.accent)
         .environment(\.askArtifactAccess, model.artifactAccess)
         .environment(\.askTerminalAccess, model.terminalAccess)
@@ -83,6 +97,42 @@ struct AskConversationView: View {
         }
     }
 
+    private var layout: AskWorkspaceLayout {
+        AskWorkspaceLayout(size: windowSize, sidebarCollapsed: sidebarCollapsed, showsUsage: showsUsage)
+    }
+
+    private var hasDrawer: Bool { showsSidebarDrawer || layout.usageOverlay }
+    private var hasModal: Bool { hasDrawer || isSearching }
+
+    private var workspace: some View {
+        ZStack(alignment: .topLeading) {
+            ZStack(alignment: .topLeading) {
+                HStack(spacing: 0) {
+                    if !sidebarHidden {
+                        sidebar.frame(width: AskMetrics.sidebarWidth)
+                            .transition(AskMotion.panel(edge: .leading, reduceMotion: reduceMotion))
+                    }
+                    content
+                    if layout.usageInline {
+                        AskUsagePanel(model: model, compact: layout.isShort,
+                                      runId: $usageRunId, close: { setUsage(false) })
+                            .id(model.selectedId)
+                            .transition(AskMotion.panel(edge: .trailing, reduceMotion: reduceMotion))
+                    }
+                }
+                // One surface for the whole window: the sidebar floats on it as a
+                // glass panel instead of being a differently tinted column.
+                .background(AskWindowBackdrop())
+                titleBarTools
+            }
+            .disabled(hasModal)
+            .accessibilityHidden(hasModal)
+            if hasDrawer { drawer }
+            if isSearching { searchPalette }
+        }
+        .clipped()
+    }
+
     // MARK: - Sidebar
 
     /// The user's choice: this window's latest toggle, else the stored preference.
@@ -91,8 +141,56 @@ struct AskConversationView: View {
     /// Hidden by the user, or stepping aside while the usage panel needs the
     /// room: three columns overflowed a narrow window and pushed the sidebar
     /// against its edge.
-    private var sidebarHidden: Bool {
-        sidebarCollapsed || AskPresentation.sidebarYields(windowWidth: windowWidth, usageShown: showsUsage)
+    private var sidebarHidden: Bool { !layout.sidebarInline }
+
+    private var drawer: some View {
+        ZStack(alignment: showsSidebarDrawer ? .leading : .trailing) {
+            Color.black.opacity(0.24)
+                .contentShape(Rectangle())
+                .onTapGesture { closeDrawer() }
+                .accessibilityHidden(true)
+            if showsSidebarDrawer {
+                VStack(spacing: 0) {
+                    HStack {
+                        Text(L("ask.search.conversations")).font(.system(size: 13, weight: .semibold))
+                        Spacer()
+                        Button(action: closeDrawer) { Image(systemName: "xmark").frame(width: 28, height: 28) }
+                            .buttonStyle(.plain)
+                            .keyboardShortcut(.cancelAction)
+                            .accessibilityLabel(L("ask.artifact.close"))
+                            .accessibilityIdentifier("ask.workspace.drawer.close")
+                            .focused($drawerCloseFocused)
+                    }
+                    .padding(.leading, AskMetrics.trafficLightInset - 8)
+                    .padding(.trailing, 12).frame(height: 40)
+                    sidebarSearchField.padding(.horizontal, 10).padding(.bottom, 8)
+                    if showsHistoryFilter { historyFilterPicker.padding(.horizontal, 10).padding(.bottom, 8) }
+                    historyList
+                    accountFooter
+                }
+                .frame(width: min(AskMetrics.sidebarWidth, layout.drawerWidth))
+                .askInWindowGlass(corner: AskMetrics.sidebarPanelCorner, opaqueFill: AskTheme.glassFill)
+                .padding(8)
+                .transition(AskMotion.panel(edge: .leading, reduceMotion: reduceMotion))
+            } else {
+                AskUsagePanel(model: model, compact: layout.isShort, focusCloseOnAppear: true,
+                              runId: $usageRunId, close: { setUsage(false) })
+                    .frame(width: layout.drawerWidth)
+                    .padding(.leading, 8)
+                    .padding(.top, layout.usageOverlayTopInset)
+                    .transition(AskMotion.panel(edge: .trailing, reduceMotion: reduceMotion))
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isModal)
+        .onExitCommand(perform: closeDrawer)
+    }
+
+    private func closeDrawer() {
+        withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
+            if !showsSidebarDrawer { showsUsage = false }
+            showsSidebarDrawer = false
+        }
     }
 
     /// A glass panel floating inset from the window edges, with the traffic
@@ -135,18 +233,33 @@ struct AskConversationView: View {
         .padding(.trailing, sidebarHidden ? 0 : 6 + AskMetrics.sidebarPanelInset)
         .frame(width: sidebarHidden ? nil : AskMetrics.sidebarWidth, alignment: .leading)
         .frame(height: AskMetrics.titleBarRowHeight)
+        .background {
+            if layout.compactContent {
+                // A native Menu creates its items lazily. Register search even
+                // before the compact overflow menu has been opened once.
+                Button(L("ask.search"), action: openSearch)
+                    .keyboardShortcut("k", modifiers: .command)
+                    .opacity(0)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
     }
 
     private var sidebarToggle: some View {
         titleBarButton("sidebar.left", label: L("ask.sidebar.toggle"), shortcut: "⌃⌘S") { toggleSidebar() }
             .keyboardShortcut("s", modifiers: [.command, .control])
+            .accessibilityIdentifier("ask.workspace.sidebar")
     }
 
     private func toggleSidebar() {
         withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
-            // A sidebar that stepped aside for the usage panel comes back by closing the panel.
-            if !sidebarCollapsed, sidebarHidden {
-                showsUsage = false
+            if !layout.sidebarInline,
+               windowSize.width - (layout.usageInline ? layout.usageWidth : 0)
+               < AskMetrics.sidebarWidth + AskWorkspaceLayout.comfortableContentWidth {
+                // Opening the drawer never overwrites a preference for a wider window.
+                if layout.usageOverlay { showsUsage = false }
+                showsSidebarDrawer.toggle()
             } else {
                 sidebarChoice = !sidebarCollapsed
                 storedSidebarCollapsed = sidebarChoice ?? false
@@ -158,8 +271,10 @@ struct AskConversationView: View {
     private var collapsedTools: some View {
         HStack(spacing: 0) {
             sidebarToggle
-            titleBarButton("magnifyingglass", label: L("ask.search")) { openSearch() }
-                .keyboardShortcut("k", modifiers: .command)
+            if !layout.compactContent {
+                titleBarButton("magnifyingglass", label: L("ask.search")) { openSearch() }
+                    .keyboardShortcut("k", modifiers: .command)
+            }
             composeButton
         }
     }
@@ -169,6 +284,7 @@ struct AskConversationView: View {
     private var composeButton: some View {
         titleBarButton("square.and.pencil", label: L("ask.new"), shortcut: "⌘N") { model.newConversation() }
             .keyboardShortcut("n", modifiers: .command)
+            .accessibilityIdentifier("ask.workspace.new")
             .background { newPrivateShortcut }
     }
 
@@ -215,7 +331,10 @@ struct AskConversationView: View {
     }
 
     private func openSearch() {
-        withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) { isSearching = true }
+        withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) {
+            closeDrawer()
+            isSearching = true
+        }
     }
 
     private func closeSearch() {
@@ -226,7 +345,7 @@ struct AskConversationView: View {
     /// sign-in link; the letter badge that used to lead it pointed at nothing.
     private var accountFooter: some View {
         VStack(spacing: 0) {
-            if !auth.isLoggedIn, AskCloudPromo.isVisible(dismissedAt: cloudPromoDismissedAt) {
+            if !layout.isShort, !auth.isLoggedIn, AskCloudPromo.isVisible(dismissedAt: cloudPromoDismissedAt) {
                 AskCloudPromoCard(onSignIn: { LoginWindowController.shared.show() }, onDismiss: {
                     withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) {
                         cloudPromoDismissedAt = Date().timeIntervalSince1970
@@ -414,7 +533,7 @@ struct AskConversationView: View {
                         .animation(.easeOut(duration: 0.15), value: progress >= 1)
                 }
                 Text(model.historyRefreshError ?? L(refreshing ? "ask.history.refreshing"
-                    : progress >= 1 ? "ask.history.release" : "ask.history.pull"))
+                        : progress >= 1 ? "ask.history.release" : "ask.history.pull"))
                     .lineLimit(2)
             }
             .font(.system(size: 11))
@@ -438,7 +557,10 @@ struct AskConversationView: View {
             selected: model.selectedId == item.id,
             busy: model.busyIds.contains(item.id),
             selectionSpace: selectionSpace,
-            onSelect: { Task { await model.select(item.id) } },
+            onSelect: {
+                showsSidebarDrawer = false
+                Task { await model.select(item.id) }
+            },
             onDelete: { deleteId = item.id }
         )
     }
@@ -465,7 +587,9 @@ struct AskConversationView: View {
             }
             .animation(AskMotion.revealAnimation(reduceMotion: reduceMotion), value: model.selectedId == nil)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .mask(AskEdgeFade(topClear: AskMetrics.headerCapsuleTop, bottomClear: AskMetrics.composerBottomInset,
+            .mask(AskEdgeFade(topClear: layout.compactContent || layout.isShort
+                ? AskMetrics.titleBarRowHeight : AskMetrics.headerCapsuleTop,
+                bottomClear: layout.composerBottomInset,
                               fade: AskMetrics.transcriptEdgeFade))
             .overlay {
                 if transcriptDropTargeted {
@@ -478,34 +602,70 @@ struct AskConversationView: View {
             }
             .askAttachmentDrop(model: model, launcher: false, targeted: $transcriptDropTargeted)
             composerArea
-            .background(GeometryReader { geometry in
-                Color.clear.preference(key: AskBottomChromeHeight.self, value: geometry.size.height)
-            })
-            .frame(maxHeight: .infinity, alignment: .bottom)
+                .background(GeometryReader { geometry in
+                    Color.clear.preference(key: AskBottomChromeHeight.self, value: geometry.size.height)
+                })
+                .frame(maxHeight: .infinity, alignment: .bottom)
             header
         }
         .onPreferenceChange(AskBottomChromeHeight.self) { bottomChromeHeight = $0 }
         .onChange(of: model.searchRequest) { _ in openSearch() }
-        .frame(minWidth: AskMetrics.contentMinWidth)
+        .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// The title and the conversation's actions as two glass capsules over the
     /// transcript: the title carries the run's state as a dot and a summary;
     /// the actions capsule appears only for an existing conversation and carries
-    /// the credits spent, usage, a new chat and delete.
-    private var header: some View {
+    /// the credits spent, usage, and delete.
+    @ViewBuilder private var header: some View {
+        if layout.compactContent { compactHeader } else { spaciousHeader }
+    }
+
+    /// Keep the essential actions in one row; the title yields before controls do.
+    private var compactHeader: some View {
+        HStack(spacing: 4) {
+            Text(model.selected?.title ?? L("ask.new"))
+                .font(.system(size: 12.5, weight: .semibold))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .lineLimit(1)
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+            headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
+                .accessibilityIdentifier("ask.workspace.usage")
+            Menu {
+                Button(L("ask.search"), action: openSearch).keyboardShortcut("k", modifiers: .command)
+                if model.isSignedIn, model.storesLocally(launcher: false) {
+                    Label(L("ask.storage.local"), systemImage: "lock")
+                }
+                if let id = model.selectedId {
+                    Button(L("ask.delete"), role: .destructive) { deleteId = id }
+                }
+            } label: {
+                Image(systemName: "ellipsis").frame(width: 28, height: 30)
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .accessibilityLabel(L("ask.search.actions"))
+            .accessibilityIdentifier("ask.workspace.more")
+        }
+        .padding(.leading, AskMetrics.trafficLightInset + AskMetrics.titleBarButtonWidth * 2 + 18)
+        .padding(.trailing, 10)
+        .frame(height: AskMetrics.titleBarRowHeight)
+    }
+
+    private var spaciousHeader: some View {
         HStack(spacing: 8) {
             if let id = model.selectedId {
                 HStack(spacing: 10) {
                     Text(model.selected?.title
-                         ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
-                         ?? L("ask.new"))
+                        ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
+                        ?? L("ask.new"))
                         .font(.system(size: 13.5, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
                         .lineLimit(1)
                     if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
-                    if let summary = AskActivity.runSummary(model.selected?.run,
-                                                            pendingApproval: model.pendingApprovals[id] != nil) {
+                    if layout.mainWidth >= 760, let summary = AskActivity.runSummary(
+                        model.selected?.run, pendingApproval: model.pendingApprovals[id] != nil) {
                         HStack(spacing: 5) {
                             if let tone = AskRunTone.of(model.selected?.run,
                                                         pendingApproval: model.pendingApprovals[id] != nil) {
@@ -560,12 +720,11 @@ struct AskConversationView: View {
                         .help(L("ask.usage.title"))
                         .accessibilityLabel(L("ask.usage.title"))
                         .accessibilityValue(credits + " credits")
+                        .accessibilityIdentifier("ask.workspace.usage")
                         Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
                     } else {
                         headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
-                    }
-                    AskHeaderIconButton(symbol: "square.and.pencil", label: L("ask.new"), shortcut: "⌘N") {
-                        model.newConversation()
+                            .accessibilityIdentifier("ask.workspace.usage")
                     }
                     headerAction(.trash, label: L("ask.delete")) { deleteId = id }
                 }
@@ -581,21 +740,25 @@ struct AskConversationView: View {
 
     /// Signed in, a conversation kept on this Mac says so where Cloud ones show credits.
     private var privateChip: some View {
-        Label(L("ask.storage.local"), systemImage: "lock")
-            .font(.system(size: 12.5, weight: .medium))
-            .foregroundStyle(AskTheme.privateTint)
-            .labelStyle(.titleAndIcon)
-            .lineLimit(1)
-            .fixedSize()
-            .padding(.horizontal, 12)
-            .frame(height: AskMetrics.headerCapsuleHeight)
-            .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
-            .overlay {
-                Capsule().fill(AskTheme.privateTint.opacity(0.12))
-                    .overlay(Capsule().strokeBorder(AskTheme.privateTint.opacity(0.35), lineWidth: 0.5))
-                    .allowsHitTesting(false)
-            }
-            .help(L("ask.storage.local.detail"))
+        HStack(spacing: 5) {
+            Image(systemName: "lock")
+            if layout.mainWidth >= 760 { Text(L("ask.storage.local")) }
+        }
+        .font(.system(size: 12.5, weight: .medium))
+        .foregroundStyle(AskTheme.privateTint)
+        .labelStyle(.titleAndIcon)
+        .lineLimit(1)
+        .fixedSize()
+        .padding(.horizontal, 12)
+        .frame(height: AskMetrics.headerCapsuleHeight)
+        .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
+        .overlay {
+            Capsule().fill(AskTheme.privateTint.opacity(0.12))
+                .overlay(Capsule().strokeBorder(AskTheme.privateTint.opacity(0.35), lineWidth: 0.5))
+                .allowsHitTesting(false)
+        }
+        .help(L("ask.storage.local.detail"))
+        .accessibilityLabel(L("ask.storage.local"))
     }
 
     private var headerCredits: String? {
@@ -613,7 +776,11 @@ struct AskConversationView: View {
     /// The usage panel slides in from the trailing edge like the sidebar.
     private func setUsage(_ shown: Bool) {
         guard shown != showsUsage else { return }
-        withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) { showsUsage = shown }
+        withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
+            showsSidebarDrawer = false
+            isSearching = false
+            showsUsage = shown
+        }
     }
 
     private func headerAction(_ kind: AskLineGlyph.Kind, label: String, active: Bool = false,
@@ -622,33 +789,49 @@ struct AskConversationView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 0) {
-            AskEmptyStateOrb(voice: model.voiceInput).padding(.bottom, 20)
-            Text(L("ask.empty")).font(.system(size: 26, weight: .bold))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .padding(.bottom, 9)
-            emptyHint
-            HStack(alignment: .top, spacing: 12) {
-                suggestion("ask.suggest.screen", systemImage: "display", tint: AskTheme.accent, shortcut: "1",
-                           screenshot: true)
-                suggestion("ask.suggest.selection", systemImage: "character.bubble", tint: AskTheme.accent,
-                           shortcut: "2", screenshot: false)
-                suggestion("ask.suggest.page", systemImage: "globe", tint: AskTheme.accent, shortcut: "3",
-                           screenshot: false)
+        GeometryReader { viewport in
+            ScrollView {
+                VStack(spacing: 0) {
+                    if !layout.isShort {
+                        AskEmptyStateOrb(voice: model.voiceInput).padding(.bottom, 20)
+                    }
+                    if !layout.isVeryShort {
+                        Text(L("ask.empty")).font(.system(size: layout.isShort ? 20 : 26, weight: .bold))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                            .padding(.bottom, 9)
+                    }
+                    if !layout.isShort { emptyHint }
+                    suggestions
+                        .frame(maxWidth: AskMetrics.suggestionsMaxWidth)
+                        .padding(.top, layout.isShort ? 4 : 26)
+                    if hasStatus {
+                        statusColumn
+                            .frame(maxWidth: AskMetrics.suggestionsMaxWidth)
+                            .padding(.top, 20)
+                    }
+                }
+                .padding(.horizontal, layout.horizontalInset)
+                .padding(.vertical, layout.isShort ? 6 : 16)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: max(0, viewport.size.height - AskMetrics.titleBarRowHeight - bottomChromeHeight))
             }
-            .frame(maxWidth: AskMetrics.suggestionsMaxWidth)
-            .padding(.top, 26)
-            // A new conversation has no transcript yet; its events sit under the suggestions.
-            if hasStatus {
-                statusColumn
-                    .frame(maxWidth: AskMetrics.suggestionsMaxWidth)
-                    .padding(.top, 20)
-            }
+            .padding(.top, AskMetrics.titleBarRowHeight)
+            .padding(.bottom, bottomChromeHeight)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 32)
-        .padding(.top, AskMetrics.titleBarRowHeight)
-        .padding(.bottom, bottomChromeHeight)
+    }
+
+    private var suggestions: some View {
+        let arrangement = layout.compactContent
+            ? AnyLayout(VStackLayout(spacing: layout.isVeryShort ? 4 : 8))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+        return arrangement {
+            suggestion("ask.suggest.screen", systemImage: "display", tint: AskTheme.accent, shortcut: "1",
+                       screenshot: true)
+            suggestion("ask.suggest.selection", systemImage: "character.bubble", tint: AskTheme.accent,
+                       shortcut: "2", screenshot: false)
+            suggestion("ask.suggest.page", systemImage: "globe", tint: AskTheme.accent, shortcut: "3",
+                       screenshot: false)
+        }
     }
 
     /// Summon and voice shortcuts, read from the configured hotkeys.
@@ -670,7 +853,8 @@ struct AskConversationView: View {
         let caption = state.caption(default: L(key + ".caption"))
         let addsModel = state == .needsVisionModel
         return AskSuggestionCard(title: title, caption: caption, systemImage: systemImage, tint: tint,
-                                 shortcut: shortcut, dimmed: !state.enabled,
+                                 shortcut: shortcut, compact: layout.compactContent || layout.isShort,
+                                 short: layout.isShort, dimmed: !state.enabled,
                                  captionAction: addsModel ? L("ask.vision.add") : nil) {
             if addsModel { model.onOpenSettings?(.models); return }
             model.draft.text = title
@@ -761,13 +945,15 @@ struct AskConversationView: View {
             // composer; it now rides in the footer next to the send button.
             // Nothing sits under the card: its shortcuts are in the placeholder
             // and on the send and microphone buttons' help.
-            AskComposer(model: model, launcher: false, onToggleUsage: { toggleUsage() })
+            AskComposer(model: model, compact: layout.isShort, availableWidth: layout.composerWidth,
+                        availableHeight: layout.composerAvailableHeight,
+                        launcher: false, onToggleUsage: { toggleUsage() })
                 .disabled(model.isLoadingSelection)
         }
         .frame(maxWidth: AskMetrics.composerMaxWidth)
-        .padding(.horizontal, 22)
-        .padding(.top, 8)
-        .padding(.bottom, AskMetrics.composerBottomInset)
+        .padding(.horizontal, layout.compactContent ? 12 : 22)
+        .padding(.top, layout.composerTopInset)
+        .padding(.bottom, layout.composerBottomInset)
     }
 
     /// The decision sits at the end of the conversation it belongs to.
@@ -778,14 +964,15 @@ struct AskConversationView: View {
 
     private func approvalCard(_ call: AskToolCall, id: String, embedded: Bool) -> AskApprovalCard {
         let approvalID = model.approvalID(id)
-        return AskApprovalCard(call: call, risk: model.approvalRisk(id) ?? .destructive,
-                        mcpServer: model.mcpServerName(of: call),
-                        targetSummary: model.approvalTarget(id),
-                        canAllowForConversation: model.canAllowForConversation(id),
-                        embedded: embedded,
-                        onDeny: { model.approve(conversationId: id, allowed: false, expectedApprovalID: approvalID) },
-                        onAllowForConversation: { model.approveForConversation(id, expectedApprovalID: approvalID) },
-                        onAllow: { model.approve(conversationId: id, allowed: true, expectedApprovalID: approvalID) })
+        return AskApprovalCard(
+            call: call, risk: model.approvalRisk(id) ?? .destructive,
+            mcpServer: model.mcpServerName(of: call),
+            targetSummary: model.approvalTarget(id),
+            canAllowForConversation: model.canAllowForConversation(id),
+            embedded: embedded,
+            onDeny: { model.approve(conversationId: id, allowed: false, expectedApprovalID: approvalID) },
+            onAllowForConversation: { model.approveForConversation(id, expectedApprovalID: approvalID) },
+            onAllow: { model.approve(conversationId: id, allowed: true, expectedApprovalID: approvalID) })
     }
 
     /// When a transcript row first appeared: its message's time, or its first step's.
@@ -844,7 +1031,7 @@ struct AskConversationView: View {
                     }
                     // One centred column: the question, the answer and the
                     // composer below share the same edges on any window width.
-                    .padding(.horizontal, AskMetrics.columnInset)
+                    .padding(.horizontal, layout.horizontalInset)
                     .padding(.top, AskMetrics.titleBarRowHeight + 14)
                     .padding(.bottom, 8)
                     .frame(maxWidth: AskMetrics.columnWidth)
@@ -871,6 +1058,15 @@ struct AskConversationView: View {
                 }
                 .onPreferenceChange(AskTranscriptFrames.self) { frames in
                     guard let id = model.selectedId, restoredTranscript == id else { return }
+                    // A resize can move the end marker before ScrollView adjusts
+                    // its offset. Preserve the existing reading intent for that
+                    // layout pass instead of interpreting it as a manual scroll.
+                    if transcriptViewportSize != viewport.size || transcriptCoveredBottom != bottomChromeHeight {
+                        transcriptViewportSize = viewport.size
+                        transcriptCoveredBottom = bottomChromeHeight
+                        followBottom(proxy, afterLayoutChange: true)
+                        return
+                    }
                     if let bottom = frames["bottom"], AskPresentation.isFollowingBottom(
                         markerTop: bottom.minY, viewport: viewport.size.height, coveredBottom: bottomChromeHeight) {
                         model.transcriptPositions[id] = "bottom"
@@ -892,6 +1088,8 @@ struct AskConversationView: View {
                 .onChange(of: model.selectedId) { _ in restoredTranscript = nil }
                 .onChange(of: model.selected?.id) { _ in restoreTranscript(proxy) }
                 .onAppear { restoreTranscript(proxy) }
+                .onChange(of: viewport.size) { _ in followBottom(proxy, afterLayoutChange: true) }
+                .onChange(of: bottomChromeHeight) { _ in followBottom(proxy, afterLayoutChange: true) }
                 .onChange(of: model.selected?.run?.preview) { _ in followBottom(proxy) }
                 .onChange(of: model.inferenceProgress) { _ in followBottom(proxy) }
                 .onChange(of: model.selected?.messages.count) { _ in followBottom(proxy) }
@@ -965,8 +1163,10 @@ struct AskConversationView: View {
         return messages
     }
 
-    private func followBottom(_ proxy: ScrollViewProxy) {
-        guard NSEvent.pressedMouseButtons & 1 == 0 else { return }
+    private func followBottom(_ proxy: ScrollViewProxy, afterLayoutChange: Bool = false) {
+        // Resizing is itself a mouse drag. Keep following through those geometry
+        // changes while ordinary streamed updates still respect text selection.
+        guard afterLayoutChange || NSEvent.pressedMouseButtons & 1 == 0 else { return }
         if let editor = NSApp.keyWindow?.firstResponder as? AskTranscriptText.Editor,
            editor.selectedRange().length > 0 { return }
         guard let id = model.selectedId, restoredTranscript == id,
@@ -977,6 +1177,7 @@ struct AskConversationView: View {
     private func restoreTranscript(_ proxy: ScrollViewProxy) {
         guard let id = model.selected?.id, restoredTranscript != id else { return }
         let anchor = model.transcriptPositions[id] ?? "bottom"
+        model.transcriptPositions[id] = anchor
         DispatchQueue.main.async {
             guard model.selectedId == id else { return }
             proxy.scrollTo(anchor, anchor: anchor == "bottom" ? .bottom : .top)
@@ -1071,7 +1272,7 @@ private struct AskMessageView: View {
                 AskTranscriptText(text: message.text, onAsk: isStreaming ? nil : { text, question in
                     onReference(AskReference(messageId: message.id, text: text, question: question))
                 })
-                    .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
+                .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
             }
             if !outputs.isEmpty, !isStreaming {
                 AskRunOutputsView(outputs: outputs)
@@ -1288,6 +1489,8 @@ private struct AskSuggestionCard: View {
     let systemImage: String
     let tint: Color
     let shortcut: String
+    var compact = false
+    var short = false
     /// Shown as unavailable while still clickable, e.g. to open model settings.
     var dimmed = false
     /// A link after the caption, such as "Add".
@@ -1301,28 +1504,51 @@ private struct AskSuggestionCard: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 10) {
-                // The shortcut lives in the tooltip; the card face matches the design board.
-                let iconTint = available ? tint : StudioTheme.textTertiary
-                Image(systemName: systemImage).font(.system(size: 14))
-                    .foregroundStyle(hovering && available ? Color.white : iconTint)
-                    .frame(width: 30, height: 30)
-                    .background(hovering && available ? iconTint : iconTint.opacity(0.14),
-                                in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(iconTint.opacity(0.35), lineWidth: 0.5))
-                Text(title).font(.system(size: 13.5, weight: .semibold))
-                    .foregroundStyle(available ? StudioTheme.textPrimary : StudioTheme.textTertiary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                (Text(caption).foregroundColor(StudioTheme.textTertiary)
-                    + Text(captionAction.map { " · " + $0 } ?? "").fontWeight(.semibold).foregroundColor(AskTheme.accentText))
-                    .font(.system(size: 11.5)).lineLimit(1)
+            Group {
+                if compact {
+                    HStack(spacing: 10) {
+                        Image(systemName: systemImage)
+                            .foregroundStyle(available ? tint : StudioTheme.textTertiary)
+                            .frame(width: 24, height: 24)
+                            .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(title).font(.system(size: 12.5, weight: .medium)).lineLimit(1)
+                            if !short {
+                                Text(captionAction.map { caption + " · " + $0 } ?? caption)
+                                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, short ? 3 : 9)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    VStack(alignment: .leading, spacing: 10) {
+                        // The shortcut lives in the tooltip; the card face matches the design board.
+                        let iconTint = available ? tint : StudioTheme.textTertiary
+                        Image(systemName: systemImage).font(.system(size: 14))
+                            .foregroundStyle(hovering && available ? Color.white : iconTint)
+                            .frame(width: 30, height: 30)
+                            .background(hovering && available ? iconTint : iconTint.opacity(0.14),
+                                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(iconTint.opacity(0.35), lineWidth: 0.5))
+                        Text(title).font(.system(size: 13.5, weight: .semibold))
+                            .foregroundStyle(available ? StudioTheme.textPrimary : StudioTheme.textTertiary)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                        (Text(caption).foregroundColor(StudioTheme.textTertiary)
+                            + Text(captionAction.map { " · " + $0 } ?? "")
+                            .fontWeight(.semibold).foregroundColor(AskTheme.accentText))
+                            .font(.system(size: 11.5)).lineLimit(1)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.top, 14)
+                    .padding(.bottom, 13)
+                    .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
+                }
             }
-            .padding(.horizontal, 14)
-            .padding(.top, 14)
-            .padding(.bottom, 13)
-            .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
             .askInWindowGlass(corner: Self.corner, opaqueFill: AskTheme.composerSurface)
             .contentShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
             .opacity(available ? 1 : 0.7)

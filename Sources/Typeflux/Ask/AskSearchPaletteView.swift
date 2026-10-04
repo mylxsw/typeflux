@@ -19,13 +19,16 @@ struct AskSearchPaletteView: View {
     static let rowHeight: CGFloat = 36
 
     var body: some View {
-        ZStack(alignment: .top) {
-            Color.black.opacity(0.18)
-                .contentShape(Rectangle())
-                .onTapGesture { onClose() }
-            card
-                .askPopIn(anchor: .top)
-                .padding(.top, AskMetrics.titleBarRowHeight + 18)
+        GeometryReader { geometry in
+            ZStack(alignment: .top) {
+                Color.black.opacity(0.18)
+                    .contentShape(Rectangle())
+                    .onTapGesture { onClose() }
+                card(listHeight: Self.listHeight(in: geometry.size.height))
+                    .askPopIn(anchor: .top)
+                    .padding(.horizontal, 12)
+                    .padding(.top, Self.topInset(in: geometry.size.height))
+            }
         }
         .onExitCommand { onClose() }
         .onAppear {
@@ -37,12 +40,21 @@ struct AskSearchPaletteView: View {
         .background(AskArrowKeyMonitor { delta in state.move(delta) })
     }
 
-    private var card: some View {
+    static func topInset(in height: CGFloat) -> CGFloat {
+        height < 500 ? AskMetrics.titleBarRowHeight : AskMetrics.titleBarRowHeight + 18
+    }
+
+    static func listHeight(in height: CGFloat) -> CGFloat {
+        max(0, min(listMaxHeight, height - topInset(in: height) - 55 - 12))
+    }
+
+    private func card(listHeight: CGFloat) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass").font(.system(size: 15, weight: .medium))
                     .foregroundStyle(StudioTheme.textTertiary)
                 TextField(L("ask.search.placeholder"), text: $query)
+                    .accessibilityIdentifier("ask.workspace.search.field")
                     .textFieldStyle(.plain)
                     .font(.system(size: 16))
                     .foregroundStyle(StudioTheme.textPrimary)
@@ -56,19 +68,20 @@ struct AskSearchPaletteView: View {
                     .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
                     .onTapGesture { onClose() }
                     .accessibilityLabel(L("ask.remove"))
+                    .accessibilityIdentifier("ask.workspace.search.close")
                     .accessibilityAddTraits(.isButton)
             }
             .padding(.horizontal, 18)
             .frame(height: 54)
             Rectangle().fill(AskTheme.separator).frame(height: 1)
-            list
+            list(maxHeight: listHeight)
         }
-        .frame(width: Self.width)
+        .frame(maxWidth: Self.width)
         .askInWindowGlass(corner: AskMetrics.paletteCorner, opaqueFill: AskTheme.popoverSurface,
                           elevation: .popover)
     }
 
-    private var list: some View {
+    private func list(maxHeight: CGFloat) -> some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
@@ -94,8 +107,7 @@ struct AskSearchPaletteView: View {
                 }
                 .padding(6)
             }
-            .frame(maxHeight: Self.listMaxHeight)
-            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxHeight: maxHeight)
             .onChange(of: state.highlighted) { index in
                 guard let index, state.rows.indices.contains(index) else { return }
                 proxy.scrollTo(state.rows[index].id)
