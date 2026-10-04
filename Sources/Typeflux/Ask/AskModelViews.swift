@@ -12,6 +12,8 @@ struct AskModelMenu: View {
     /// there, so it loses its border and only fills under the pointer. Settings
     /// keeps the bordered field it was designed with.
     var compact = false
+    /// Narrow workspace cards reserve room for send and voice controls.
+    var condensed = false
     /// Whether Cloud models can run here; Ask passes false in local mode. Defaults to the sign-in state.
     var cloudAvailable: Bool? = nil
     /// Composer only: a "Manage models…" row that opens settings.
@@ -59,10 +61,10 @@ struct AskModelMenu: View {
                 }
                 // A long model name must not squeeze the context chips out of the
                 // footer, and a short one hugs its text instead of padding out to the cap.
-                AskCappedWidth(maxWidth: compact ? AskMetrics.modelMenuMaxWidth : .infinity) {
+                AskCappedWidth(maxWidth: condensed ? 84 : compact ? AskMetrics.modelMenuMaxWidth : .infinity) {
                     Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
                 }
-                if let shownEffort {
+                if let shownEffort, !condensed {
                     Text(shownEffort.label)
                         .font(.system(size: 13.5, weight: .regular))
                         .foregroundStyle(shownEffort.isTop(in: effortLevels)

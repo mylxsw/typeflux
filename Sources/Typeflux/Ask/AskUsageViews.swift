@@ -53,6 +53,8 @@ struct AskContextUsageButton: View {
 
 struct AskUsagePanel: View {
     @ObservedObject var model: AskConversationModel
+    var compact = false
+    var focusCloseOnAppear = false
     @ObservedObject private var auth = AuthState.shared
     @Binding var runId: String?
     var close: () -> Void
@@ -60,6 +62,7 @@ struct AskUsagePanel: View {
     @State private var cursor: Int64?
     @State private var loading = false
     @State private var loadError = false
+    @FocusState private var closeFocused: Bool
 
     private var usage: AskConversationUsage? { model.selected?.usage }
     private var totals: AskUsageTotals? { runId.flatMap { usage?.runs[$0] } ?? (runId == nil ? usage?.total : nil) }
@@ -80,7 +83,10 @@ struct AskUsagePanel: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .keyboardShortcut(focusCloseOnAppear ? .cancelAction : nil)
+                .focused($closeFocused)
                 .accessibilityLabel(L("ask.usage.close"))
+                .accessibilityIdentifier("ask.workspace.drawer.close")
             }
             .padding(.leading, 16).padding(.trailing, 10)
             // Centred on the header pills' row, below the panel's own inset.
@@ -89,7 +95,7 @@ struct AskUsagePanel: View {
             ScrollView {
                 // Two questions, two cards: "does the next message still fit?"
                 // and "what did this cost?".
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: compact ? 8 : 12) {
                     if let context = model.usageContext { contextCard(context) }
                     if let budget = model.selected?.run?.budget { AskBudgetView(budget: budget) }
                     AskSegmentedControl(options: scopeOptions, selection: $runId)
@@ -104,7 +110,7 @@ struct AskUsagePanel: View {
                     callsSection
                     help("ask.usage.scopeHelp")
                 }
-                .padding(16)
+                .padding(compact ? 12 : 16)
             }
             if let credits = auth.usageCredits {
                 Rectangle().fill(AskTheme.separator).frame(height: 1)
@@ -115,7 +121,7 @@ struct AskUsagePanel: View {
                         .monospacedDigit()
                 }
                 .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-                .padding(.horizontal, 16).padding(.vertical, 12)
+                .padding(.horizontal, 16).padding(.vertical, compact ? 8 : 12)
                 // Account-wide data is independently refreshed by AuthState.
             }
         }
@@ -127,6 +133,8 @@ struct AskUsagePanel: View {
         .padding([.trailing, .top, .bottom], AskMetrics.sidebarPanelInset)
         .task(id: loadKey) { await load(reset: true) }
         .onExitCommand(perform: close)
+        .onAppear { if focusCloseOnAppear { closeFocused = true } }
+        .onChange(of: focusCloseOnAppear) { if $0 { closeFocused = true } }
     }
 
     /// "This turn" only exists once the conversation has a run to scope to.
@@ -222,9 +230,9 @@ struct AskUsagePanel: View {
     }
 
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 9, content: content)
+        VStack(alignment: .leading, spacing: compact ? 6 : 9, content: content)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 14).padding(.vertical, 13)
+            .padding(.horizontal, compact ? 10 : 14).padding(.vertical, compact ? 9 : 13)
             .background(AskTheme.panelCard, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.border))
     }
@@ -240,7 +248,7 @@ struct AskUsagePanel: View {
     /// The card's one large number, with its unit set small beside it.
     private func figure(_ value: String, unit: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 5) {
-            Text(value).font(.system(size: 26, weight: .semibold)).monospacedDigit()
+            Text(value).font(.system(size: compact ? 21 : 26, weight: .semibold)).monospacedDigit()
                 .foregroundStyle(StudioTheme.textPrimary)
             Text(verbatim: unit).font(.system(size: 13, weight: .medium))
                 .foregroundStyle(StudioTheme.textTertiary)

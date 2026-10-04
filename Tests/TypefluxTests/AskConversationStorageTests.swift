@@ -134,12 +134,19 @@ struct AskConversationStorageTests {
         await fixture.model.refreshHistory()
         await fixture.model.select("p")
         let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil }, loadStoredUserProfile: { nil })
-        let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model, auth: auth).frame(width: 1000))
-        hosting.layoutSubtreeIfNeeded()
-        #expect(hosting.fittingSize.height >= 530)
-        fixture.model.newConversation(storesLocally: true)
-        hosting.layoutSubtreeIfNeeded()
-        #expect(hosting.fittingSize.height >= 530)
+        let host = try AskStorageViewportTestHost(model: fixture.model, auth: auth)
+        defer { host.close() }
+        for newConversation in [false, true] {
+            if newConversation { fixture.model.newConversation(storesLocally: true) }
+            fixture.model.draft.text = "Keep this draft private"
+            for size in [NSSize(width: 1000, height: 760), NSSize(width: 440, height: 320)] {
+                try await host.resize(to: size)
+                try host.assertComposer(text: "Keep this draft private")
+                try host.assertVisible(label: L("ask.storage.local"))
+                #expect(fixture.model.storesLocally(launcher: false))
+                #expect(fixture.model.selectedId == (newConversation ? nil : "p"))
+            }
+        }
     }
 
     @Test func filterBarPicksAFilter() {
@@ -291,5 +298,91 @@ struct AskConversationStorageTests {
                 #expect(bundle.localizedString(forKey: key, value: nil, table: nil) != key, "\(key) in \(language)")
             }
         }
+    }
+}
+
+/// These storage surfaces must remain usable inside the actual viewport, including short windows.
+@MainActor
+final class AskStorageViewportTestHost {
+    private let window: NSWindow
+    private let suite = "ask-storage-viewport-" + UUID().uuidString
+    private let defaults: UserDefaults
+    private let accessibility = AskWorkspaceTestAccessibility()
+
+    init(model: AskConversationModel, auth: AuthState) throws {
+        defaults = try #require(UserDefaults(suiteName: suite))
+        defaults.set(false, forKey: "ask.sidebarCollapsed")
+        window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 1180, height: 760),
+                          styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let host = NSHostingView(rootView: AskConversationView(model: model, auth: auth).defaultAppStorage(defaults))
+        host.sizingOptions = []
+        window.contentView = host
+        window.orderFront(nil)
+    }
+
+    func resize(to size: NSSize) async throws {
+        window.setContentSize(size)
+        window.contentView?.layoutSubtreeIfNeeded()
+        try await Task.sleep(for: .milliseconds(250))
+        window.contentView?.layoutSubtreeIfNeeded()
+    }
+
+    func assertComposer(text: String) throws {
+        let content = try #require(window.contentView)
+        func editor(in view: NSView) -> AskComposerTextView.Editor? {
+            if let editor = view as? AskComposerTextView.Editor { return editor }
+            for child in view.subviews {
+                if let found = editor(in: child) { return found }
+            }
+            return nil
+        }
+        let editor = try #require(editor(in: content))
+        let scroll = try #require(editor.enclosingScrollView)
+        let frame = scroll.convert(scroll.bounds, to: content)
+        #expect(frame.width > 100 && frame.height >= 28)
+        #expect(content.bounds.insetBy(dx: -1, dy: -1).contains(frame))
+        #expect(editor.string == text)
+        for identifier in ["ask.composer.attach", "ask.composer.model", "ask.composer.voice", "ask.composer.send"] {
+            let frames = accessibleFrames(key: "accessibilityIdentifier", value: identifier)
+            #expect(frames.contains(where: isVisible), "Composer control outside viewport: \(identifier)")
+        }
+    }
+
+    func assertVisible(label: String) throws {
+        #expect(accessibleFrames(key: "accessibilityLabel", value: label).contains(where: isVisible),
+                "Missing visible storage state: \(label)")
+    }
+
+    private func isVisible(_ frame: NSRect) -> Bool {
+        guard frame.width > 0, frame.height > 0, let content = window.contentView else { return false }
+        let local = content.convert(window.convertFromScreen(frame), from: nil)
+        return content.bounds.insetBy(dx: -1, dy: -1).contains(local)
+    }
+
+    private func accessibleFrames(key: String, value expected: String) -> [NSRect] {
+        var seen = Set<ObjectIdentifier>()
+        var frames: [NSRect] = []
+        func value(_ object: NSObject, _ key: String) -> Any? {
+            object.responds(to: NSSelectorFromString(key)) ? object.value(forKey: key) : nil
+        }
+        func visit(_ object: NSObject) {
+            guard seen.insert(ObjectIdentifier(object)).inserted else { return }
+            if value(object, key) as? String == expected,
+               let frame = value(object, "accessibilityFrame") as? NSValue {
+                frames.append(frame.rectValue)
+            }
+            for child in value(object, "accessibilityChildren") as? [NSObject] ?? [] { visit(child) }
+        }
+        visit(window)
+        if let content = window.contentView { visit(content) }
+        return frames
+    }
+
+    func close() {
+        window.orderOut(nil)
+        window.close()
+        defaults.removePersistentDomain(forName: suite)
+        accessibility.restore()
     }
 }

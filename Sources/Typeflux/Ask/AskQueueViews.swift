@@ -152,16 +152,29 @@ struct AskQueueEditingHeader: View {
 /// Replaces the send button while a queued message is being edited.
 struct AskQueueEditActions: View {
     var canSave: Bool
+    var compact = false
     var onCancel: () -> Void
     var onSave: () -> Void
 
     var body: some View {
         HStack(spacing: 6) {
-            Button(action: onCancel) { Text(L("ask.queue.cancel")) }
+            Button(action: onCancel) {
+                if compact { Image(systemName: "xmark") } else { Text(L("ask.queue.cancel")) }
+            }
                 .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
-            Button(action: onSave) { Label(L("ask.queue.save"), systemImage: "checkmark") }
+                .accessibilityLabel(L("ask.queue.cancel"))
+                .accessibilityIdentifier("ask.queue.cancel")
+            Button(action: onSave) {
+                if compact {
+                    Image(systemName: "checkmark")
+                } else {
+                    Label(L("ask.queue.save"), systemImage: "checkmark")
+                }
+            }
                 .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
                 .disabled(!canSave)
+                .accessibilityLabel(L("ask.queue.save"))
+                .accessibilityIdentifier("ask.queue.save")
         }
     }
 }

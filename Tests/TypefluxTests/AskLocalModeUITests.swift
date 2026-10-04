@@ -188,11 +188,24 @@ struct AskLocalModeUITests {
         #expect(fits(AskStorageButton(model: try AskTestFixture().model, launcher: true)) == size)
     }
 
-    @Test func workspaceRendersTheSignedOutFooterAndSwitchBanner() throws {
+    @Test func workspaceRendersTheSignedOutFooterAndSwitchBanner() async throws {
         let f = try localFixture([text, vision])
         let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil }, loadStoredUserProfile: { nil })
-        f.model.switchToVisionModelIfNeeded(launcher: false, needsVision: true)
-        #expect(fits(AskConversationView(model: f.model, auth: auth), width: 1100).height >= 530)
+        #expect(f.model.switchToVisionModelIfNeeded(launcher: false, needsVision: true))
+        f.model.draft.text = "Describe this image"
+        let host = try AskStorageViewportTestHost(model: f.model, auth: auth)
+        defer { host.close() }
+        for size in [NSSize(width: 1180, height: 760), NSSize(width: 960, height: 320)] {
+            try await host.resize(to: size)
+            try host.assertComposer(text: "Describe this image")
+            try host.assertVisible(label: L("ask.local.identity"))
+            try host.assertVisible(label: L("ask.storage.local"))
+            #expect(!f.model.isSignedIn)
+            #expect(f.model.storesLocally(launcher: false))
+            #expect(f.model.modelReference(launcher: false) == vision.reference)
+            #expect(f.model.visibleVisionSwitch == AskVisionSwitch(draftKey: "new", from: text.reference,
+                                                                  to: vision.reference))
+        }
     }
 
     // MARK: - Model menu

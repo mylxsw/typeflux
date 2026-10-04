@@ -256,6 +256,22 @@ struct AskCommandPaletteStateTests {
         state.parent = AskCommand(action: .model, name: "model", title: "", symbol: "", group: .model)
         #expect(AskCommandPaletteView.groupStarts(state).isEmpty)
     }
+
+    @Test func compactPaletteLeavesSpaceForTheEditorInShortWindows() {
+        var state = AskCommandPaletteState()
+        #expect(AskCommandPaletteView.height(for: state, compact: true) == 24)
+        state.update(rows: rows([true]))
+        #expect(AskCommandPaletteView.height(for: state, compact: true) == 68)
+        state.update(rows: rows(Array(repeating: true, count: 40)))
+        #expect(AskCommandPaletteView.height(for: state, compact: true) == 68)
+        state.move(1)
+        #expect(state.highlightedCommand?.name == "c1")
+        #expect(state.rows.count == 40)
+        #expect(AskCommandPaletteView.height(for: state) > 68)
+        #expect(AskCommandPaletteView.height(for: state, compact: true, maximumHeight: 112) == 112)
+        #expect(AskCommandPaletteView.height(for: state, maximumHeight: 200) == 200)
+        #expect(AskCommandPaletteView.height(for: state, compact: true, maximumHeight: 1000) == 324)
+    }
 }
 
 @Suite("Ask command execution")

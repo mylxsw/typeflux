@@ -69,7 +69,7 @@ struct AskCommandRenderTests {
 
     final class Recorder { var notes: [String] = [] }
 
-    @Test func theWorkspacePaletteRunsCommandsFromTheKeyboard() async throws {
+    @Test(arguments: [false, true]) func theWorkspacePaletteRunsCommandsFromTheKeyboard(compact: Bool) async throws {
         let (f, recorder) = try fixture()
         let photo = AskAttachment(kind: .image, name: "shot.png",
                                   image: AskAttachmentLoader.jpegDataURL(AskAttachmentFixture.image(width: 40, height: 30)))
@@ -79,7 +79,11 @@ struct AskCommandRenderTests {
         f.model.draft.mcpServers = ["github"]
         f.model.confirm("Done", for: .seconds(5))
         f.model.attachmentNotice = "Notice"
-        let host = Host(AskConversationView(model: f.model), size: NSSize(width: 1100, height: 760))
+        let workspace = compact ? AnyView(VStack {
+            Spacer(minLength: 0)
+            AskComposer(model: f.model, compact: true, launcher: false)
+        }) : AnyView(AskConversationView(model: f.model))
+        let host = Host(workspace, size: compact ? NSSize(width: 360, height: 280) : NSSize(width: 1100, height: 760))
         defer { host.close(); f.model.resetSession() }
         try await settle(400)
         host.draw()
