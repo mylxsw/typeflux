@@ -588,7 +588,9 @@ struct AskConversationVisualTests {
                     AskGlassCardSurface(corner: AskGlassCardSurface<EmptyView>.menuCorner) {
                         AskModelEffortCard(library: model.modelLibrary, reference: $scene.reference,
                                            effort: $scene.effort, loggedIn: true, page: scene.page)
-                            .id(scene.page)
+                            // The card keeps its own state once open, as in the menu; a new
+                            // scene opens a new card.
+                            .id("\(scene.page)-\(scene.reference)-\(scene.effort.rawValue)")
                     }
                     .padding(.leading, 380).padding(.bottom, 84)
                 }
