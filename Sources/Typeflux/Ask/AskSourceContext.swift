@@ -1,47 +1,38 @@
 import SwiftUI
 
-/// A quiet, named entry point for inspecting the metadata sent with a question.
-/// It remains usable when screenshots are disabled or unsupported by the model.
-struct AskSourceContextButton: View {
-    @Binding var draft: AskDraft
-    var restored = false
-    var capturing = false
-    var warning: String?
-    var refresh: (() -> Void)?
-    /// A narrow composer moves its existing controls into this panel.
-    var controls: AnyView?
-    @State private var presented = false
+/// The same compact, keyboard-accessible action is used on the saved source
+/// chip and its details. The tooltip describes its target and selection impact.
+struct AskSourceRefreshButton: View {
+    var help: String
+    var disabled = false
+    var action: () -> Void
 
     var body: some View {
-        Button { presented.toggle() } label: {
-            HStack(spacing: 4) {
-                Text(L("ask.context.details")).font(.system(size: 12, weight: .medium)).lineLimit(1)
-                Image(systemName: "chevron.down").font(.system(size: 8, weight: .semibold))
-            }
-            .foregroundStyle(StudioTheme.textSecondary)
-            .padding(.horizontal, 6)
-            .frame(height: AskMetrics.composerControlHeight)
-            .contentShape(Rectangle())
+        Button(action: action) {
+            Image(systemName: "arrow.clockwise")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .frame(width: 24, height: 24)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .fixedSize(horizontal: true, vertical: false)
-        .accessibilityIdentifier("ask.context.details")
-        .accessibilityLabel(L("ask.context.details"))
-        .popover(isPresented: $presented, arrowEdge: .top) {
-            AskSourceContextDetails(draft: $draft, restored: restored, capturing: capturing,
-                                    warning: warning, refresh: refresh, controls: controls)
-        }
+        .disabled(disabled)
+        .help(help)
+        .accessibilityLabel(help)
+        .accessibilityIdentifier("ask.context.refresh")
     }
 }
 
-/// Metadata, selection provenance, and screenshot scope are separate facts.
+/// Inspect only the app and window metadata represented by the source chip.
+/// Selection and screenshot content have their own previews and removals.
 struct AskSourceContextDetails: View {
     @Binding var draft: AskDraft
     var restored = false
     var capturing = false
     var warning: String?
     var refresh: (() -> Void)?
-    var controls: AnyView?
+    var refreshHelp: String?
+    var onRemove: (() -> Void)?
 
     private var source: (app: String, window: String?)? {
         guard let value = draft.source,
@@ -51,50 +42,53 @@ struct AskSourceContextDetails: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(L("ask.context.details"))
-                .font(.system(size: 13, weight: .semibold))
+            HStack(spacing: 6) {
+                if let bundle = draft.sourceBundleID, let image = AskContextChips.appIcon(bundle) {
+                    Image(nsImage: image).resizable().frame(width: 18, height: 18)
+                        .accessibilityHidden(true)
+                }
+                Text(L(restored ? "ask.context.source.draft" : "ask.context.source"))
+                    .font(.system(size: 13, weight: .semibold))
+            }
             if let source {
-                sourceDetails(app: source.app, window: source.window)
+                Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
+                    metadataRow(L("ask.context.source.app"), value: source.app)
+                    if let window = source.window {
+                        metadataRow(L("ask.context.source.window"), value: window)
+                    }
+                }
+                Text(L("ask.context.source.metadataOnly"))
+                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                if draft.sourceOff == true {
+                    Text(L("ask.context.source.excluded"))
+                        .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                }
             } else {
                 Text(L("ask.context.source.none"))
                     .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
             }
-            Divider()
-            Label(L(draft.includeScreenshot && draft.screenshot != nil
-                    ? "ask.context.screen.included" : "ask.context.screen.excluded"), systemImage: "display")
-                .font(.system(size: 12))
-            Text(L("ask.context.screen.scope"))
-                .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-            if let selection = draft.sentSelection, !selection.isEmpty {
-                Label(L("ask.selection.lines", AskPresentation.lineCount(selection)), systemImage: "text.alignleft")
-                    .font(.system(size: 12))
-                if let source {
-                    Text(L("ask.context.selection.source", source.app))
-                        .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-                }
-                Text(AskContextChips.selectionPreview(selection))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-                    .lineLimit(3)
-            } else {
-                Label(L("ask.context.selection.excluded"), systemImage: "text.alignleft")
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-            }
-            if let controls {
-                controls
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier("ask.context.controls")
-            }
-            if let refresh {
-                Divider()
+            if source != nil || refresh != nil {
                 HStack(spacing: 8) {
-                    Button(L("ask.context.refresh"), action: refresh)
+                    Spacer(minLength: 0)
+                    if let refresh {
+                        AskSourceRefreshButton(help: refreshHelp ?? L("ask.context.refresh.hint"),
+                                               disabled: capturing, action: refresh)
+                    }
+                    if source != nil {
+                        let key = draft.sourceOff == true ? "ask.context.source.restore" : "ask.context.source.remove"
+                        Button(L(key)) {
+                            if draft.sourceOff == true {
+                                draft.sourceOff = nil
+                            } else if let onRemove {
+                                onRemove()
+                            } else {
+                                draft.sourceOff = true
+                            }
+                        }
                         .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
-                        .accessibilityIdentifier("ask.context.refresh")
-                        .disabled(capturing)
-                    if capturing { ProgressView().controlSize(.small) }
+                        .accessibilityIdentifier(key)
+                    }
                 }
-                Text(L("ask.context.refresh.hint"))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
             }
             if let warning {
                 Text(warning).font(.system(size: 11)).foregroundStyle(StudioTheme.warning)
@@ -104,30 +98,53 @@ struct AskSourceContextDetails: View {
         .foregroundStyle(StudioTheme.textPrimary)
         .fixedSize(horizontal: false, vertical: true)
         .padding(16)
-        .frame(width: 320)
+        .frame(width: 340)
     }
 
-    private func sourceDetails(app: String, window: String?) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(L(restored ? "ask.context.source.draft" : "ask.context.source"))
-                .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-            HStack(spacing: 6) {
-                if let bundle = draft.sourceBundleID, let image = AskContextChips.appIcon(bundle) {
-                    Image(nsImage: image).resizable().frame(width: 18, height: 18)
-                        .accessibilityHidden(true)
-                }
-                Text(app).font(.system(size: 12, weight: .medium)).lineLimit(2)
-            }
-            if let window {
-                Text(window).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-                    .lineLimit(3).help(window)
-            }
-            Text(L(draft.sourceOff == true ? "ask.context.source.excluded" : "ask.context.source.included"))
-                .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-            let key = draft.sourceOff == true ? "ask.context.source.restore" : "ask.context.source.remove"
-            Button(L(key)) { draft.sourceOff = draft.sourceOff == true ? nil : true }
-                .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
-                .accessibilityIdentifier(key)
+    private func metadataRow(_ label: String, value: String) -> some View {
+        GridRow(alignment: .top) {
+            Text(label).foregroundStyle(StudioTheme.textSecondary)
+            Text(value).textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .font(.system(size: 12))
+    }
+}
+
+/// The complete selected text is inspectable even after source metadata has
+/// been removed. Its provenance describes capture, not the outgoing metadata.
+struct AskSelectedTextDetails: View {
+    var text: String
+    var source: String?
+    var restored = false
+    var onRemove: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(L("ask.selection.lines", AskPresentation.lineCount(text)))
+                .font(.system(size: 13, weight: .semibold))
+            if let source, !source.isEmpty {
+                Text(L("ask.context.selection.source", source)
+                     + (restored ? " · " + L("ask.context.source.previous") : ""))
+                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+            }
+            ScrollView {
+                Text(text).font(.system(size: 12))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+            }
+            .frame(maxHeight: 240)
+            .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 8))
+            HStack {
+                Spacer()
+                Button(L("ask.selection.remove"), action: onRemove)
+                    .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+                    .accessibilityIdentifier("ask.context.selection.remove")
+            }
+        }
+        .foregroundStyle(StudioTheme.textPrimary)
+        .padding(16)
+        .frame(width: 360)
     }
 }

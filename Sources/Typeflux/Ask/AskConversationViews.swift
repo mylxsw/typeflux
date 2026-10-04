@@ -1020,8 +1020,6 @@ private struct AskMessageView: View {
     var onRegenerate: () -> Void = {}
     /// Images and pages from the tool steps before this answer.
     var outputs = AskRunOutputs()
-    @State private var showImage = false
-    @State private var showSelection = false
     @State private var copied = false
     @State private var hovering = false
 
@@ -1036,8 +1034,6 @@ private struct AskMessageView: View {
                 if let references = message.references, !references.isEmpty {
                     AskSentReferences(references: references, locate: onLocate)
                 }
-                // What rode with the question sits above it, as on the design board.
-                if message.image != nil || message.selection != nil { attachments }
                 if let files = message.attachments, !files.isEmpty {
                     AskFlowLayout(spacing: 6, alignment: .trailing) {
                         ForEach(files) { AskSentFileChip(attachment: $0) }
@@ -1066,6 +1062,7 @@ private struct AskMessageView: View {
                         .overlay(AskBubbleShape(radius: 20, tail: 6)
                             .strokeBorder(AskTheme.accent.opacity(0.42), lineWidth: 0.5))
                 }
+                AskMessageProvenanceView(message: message)
                 if message.steered == true {
                     Label(L(steeredPending ? "ask.steered.pending" : "ask.steered"), systemImage: "arrow.turn.down.right")
                         .font(.system(size: 11))
@@ -1073,36 +1070,6 @@ private struct AskMessageView: View {
                 }
             }
             .frame(maxWidth: AskMetrics.bubbleMaxWidth, alignment: .trailing)
-        }
-    }
-
-    private var attachments: some View {
-        HStack(spacing: 6) {
-            if let text = message.selection {
-                Button { showSelection = true } label: {
-                    AskSentAttachmentChip(title: L("ask.selection.lines", AskPresentation.lineCount(text)),
-                                          systemImage: "text.alignleft")
-                }
-                .buttonStyle(.plain)
-                    .popover(isPresented: $showSelection) {
-                        ScrollView {
-                            Text(text).font(.system(size: 12)).textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .frame(width: 380, height: 220)
-                        .padding(14)
-                    }
-            }
-            if let url = message.image, let image = AskImage.decode(url) {
-                Button { showImage.toggle() } label: {
-                    AskSentAttachmentChip(title: L("ask.context.screenshot.attached"), thumbnail: image)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L("ask.preview"))
-                .popover(isPresented: $showImage) {
-                    Image(nsImage: image).resizable().scaledToFit().frame(width: 650).padding()
-                }
-            }
         }
     }
 
