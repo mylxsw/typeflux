@@ -1,8 +1,9 @@
 # iOS Ask client
 
-The initial iOS app is a SwiftUI chat client for Typeflux Ask. It uses the existing
-account and cloud conversation API. It does not include dictation, a keyboard
-extension, local model inference, or a desktop tool executor.
+The iOS app is a SwiftUI chat client for Typeflux Ask. It uses the existing
+account and cloud conversation API and supports dictation through Apple Speech.
+It does not include a keyboard extension, local model inference, or a desktop
+tool executor.
 
 ## Code ownership
 
@@ -143,28 +144,33 @@ preferences use a separate UserDefaults domain and reset to System by default;
 `--synthetic-preserve-settings` explicitly retains them for persistence tests.
 
 The existing `@autotest` PR workflow runs shared-package, iOS, and Mac tests.
-Account registration, password reset, purchasing, and App Store distribution
-are outside this initial chat implementation.
+Account registration, purchasing, and App Store distribution are outside this
+implementation.
 
 ## Simulator previews
 
 These screenshots come from the SwiftUI app with synthetic fixtures, not a live
 account or model response. The model names and credit multipliers are test data.
 
-<img src="images/ios/verification/v3-new-conversation.png" alt="New conversation with the Mac colour drop" width="260">
-<img src="images/ios/verification/v3-reasoning.png" alt="Unified model and reasoning card" width="260">
-<img src="images/ios/verification/v3-model-list.png" alt="Cloud model list" width="260">
-<img src="images/ios/verification/v3-conversation.png" alt="Conversation with reasoning and Markdown" width="260">
-<img src="images/ios/verification/v3-zh-dark-empty.png" alt="Simplified Chinese dark appearance" width="260">
-<img src="images/ios/verification/v3-zh-keyboard-models.png" alt="Model selection above the keyboard" width="260">
+<img src="images/ios/v4/01-new-conversation.png" alt="New conversation and two-row composer" width="260">
+<img src="images/ios/v4/02-reasoning.png" alt="Model and reasoning card" width="260">
+<img src="images/ios/v4/04-sidebar.png" alt="History sidebar and account footer" width="260">
+<img src="images/ios/v4/05-conversation.png" alt="Conversation with reasoning and Markdown" width="260">
+<img src="images/ios/v4/07-settings.png" alt="Settings with profile and credits" width="260">
+<img src="images/ios/v4/08-welcome.png" alt="Apple and email sign-in options" width="260">
 
-## Chat and settings verification screenshots
+The [v4 validation report](validation/gul-199-ios-v4.md) records the test results
+and remaining limitations. The [v4 screenshot set](images/ios/v4) includes all
+14 captures, including model selection, streaming, dark appearance, tool details,
+email login, and password reset.
+
+## Earlier chat and settings verification
 
 The [screenshot index](images/ios/verification/README.md) covers rich
 replies, long streaming output, stop/failure states, PhotosPicker and image
 messages, models, keyboard layouts, light/dark settings, account information,
-and sign-out confirmation. All images come from the final passing native
-iOS UI-test run using offline fixtures. See the
+and sign-out confirmation from the earlier interface. Those images came from
+its passing native iOS UI-test run using offline fixtures. See the
 [validation report](validation/gul-199-ios-chat.md) for results and limitations.
 
 The [screenshot review and optimization plan](validation/gul-199-ios-polish.md)
