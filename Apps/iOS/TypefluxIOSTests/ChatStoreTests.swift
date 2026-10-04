@@ -255,7 +255,9 @@ struct ChatStoreTests {
         #expect(store.errorMessage?.contains("Refresh") == true)
         #expect(await api.sentRequests.isEmpty)
     }
+}
 
+extension ChatStoreTests {
     @Test func `failed model can be changed without reusing old request`() async {
         let (store, api, _) = makeStore()
         await store.login(email: "user@example.com", password: "password")
@@ -366,6 +368,208 @@ struct ChatStoreTests {
     }
 }
 
+extension ChatStoreTests {
+    @Test func `history must load before sending or validating photo compatibility`() async throws {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        await api.setMessages([ChatMessage(id: "photo", role: "user", text: "Describe", image: "synthetic")])
+        await api.pauseConversation()
+        let selection = Task { await store.select("one") }
+        try await eventually { await api.waitingForConversation }
+        #expect(store.isLoadingConversation)
+        store.modelRef = "cloud:text-only"
+        store.draft = "Follow up"
+        #expect(!store.canSend)
+        await store.send()
+        #expect(await api.sentRequests.isEmpty)
+        await api.completeConversation()
+        await selection.value
+        #expect(!store.isLoadingConversation)
+        #expect(store.hasConversationImages)
+        #expect(!store.canSend)
+        #expect(store.composerValidation?.contains("conversation contains photos") == true)
+    }
+
+    @Test func `failed history load stays unsendable until reload or a new conversation`() async {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        await api.failConversationFetch()
+        await store.select("one")
+        store.draft = "Follow up"
+        #expect(!store.isLoadingConversation)
+        #expect(!store.canSend)
+        #expect(store.errorMessage != nil)
+        await store.send()
+        #expect(await api.sentRequests.isEmpty)
+        await api.allowConversationFetch()
+        await store.reloadConversation()
+        #expect(store.canSend)
+        #expect(store.errorMessage == nil)
+        await api.failConversationFetch()
+        await store.select("one")
+        store.newConversation()
+        store.draft = "New question"
+        #expect(store.canSend)
+    }
+
+    @Test func `reasoning choice reaches the actual request and auto omits the parameter`() async throws {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        #expect(store.selectedModelID == "balanced")
+        #expect(store.supportedReasoningLevels == [.low, .medium, .high])
+        store.selectReasoningEffort(.high)
+        store.draft = "Think through this"
+        await store.send()
+        let request = try #require(await api.sentRequests.first)
+        let body = try #require(JSONSerialization
+            .jsonObject(with: ChatCoding.encoder().encode(request)) as? [String: Any])
+        #expect(body["reasoning_effort"] as? String == "high")
+        store.selectReasoningEffort(.providerDefault)
+        store.draft = "Use your default"
+        await store.send()
+        let automatic = try #require(await api.sentRequests.last)
+        let autoBody = try #require(JSONSerialization
+            .jsonObject(with: ChatCoding.encoder().encode(automatic)) as? [String: Any])
+        #expect(!autoBody.keys.contains("reasoning_effort"))
+    }
+
+    @Test func `model changes clamp reasoning to closest supported level`() async throws {
+        let (store, api, _) = makeStore()
+        await api.setModels([
+            ChatModel(id: "balanced", name: "Balanced", reasoning: true),
+            ChatModel(id: "advanced", name: "Advanced", reasoning: true, reasoningEfforts: ["low", "max"]),
+            ChatModel(id: "plain", name: "Plain", reasoning: false)
+        ])
+        await store.login(email: "user@example.com", password: "password")
+        store.selectReasoningEffort(.high)
+        #expect(try store.selectModel(#require(store.models.first { $0.id == "advanced" })))
+        #expect(store.reasoningEffort == .low)
+        store.selectReasoningEffort(.max)
+        store.modelRef = "cloud:balanced"
+        #expect(store.reasoningEffort == .high)
+        store.modelRef = "cloud:plain"
+        #expect(store.reasoningEffort == .providerDefault)
+        #expect(store.supportedReasoningLevels.isEmpty)
+        store.selectReasoningEffort(.max)
+        #expect(store.reasoningEffort == .providerDefault)
+        #expect(!store.selectModel(ChatModel(id: "unavailable", name: "Unavailable")))
+    }
+
+    @Test func `catalog refresh clamps effort even when model reference is unchanged`() async {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        store.selectReasoningEffort(.high)
+        await api.setModels([ChatModel(id: "balanced", name: "Balanced", reasoning: true, reasoningEfforts: ["low"])])
+        await store.refreshHome()
+        #expect(store.modelRef == "cloud:balanced")
+        #expect(store.reasoningEffort == .low)
+        await api.setModels([ChatModel(id: "replacement", name: "Replacement", reasoning: false)])
+        await store.refreshHome()
+        #expect(store.modelRef == "cloud:replacement")
+        #expect(store.reasoningEffort == .providerDefault)
+    }
+
+    @Test func `photos keep incompatible models visible but prevent choosing or sending them`() async throws {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        store.imageDataURL = "synthetic"
+        store.draft = "Describe this"
+        let textOnly = try #require(store.models.first { $0.id == "text-only" })
+        #expect(store.hasConversationImages)
+        #expect(!store.selectModel(textOnly))
+        #expect(store.selectedModelID == "balanced")
+        // Selection validates the catalog entry, not capability claims from a stale picker.
+        #expect(!store.selectModel(ChatModel(id: "text-only", name: "Text", vision: true)))
+        store.modelRef = textOnly.reference
+        await store.send()
+        #expect(await api.sentRequests.isEmpty)
+        store.imageDataURL = nil
+        #expect(!store.hasConversationImages)
+        #expect(store.selectModel(textOnly))
+        #expect(store.canSend)
+    }
+
+    @Test func `photos in conversation history require vision for every follow up`() async throws {
+        for message in [
+            ChatMessage(id: "photo", role: "user", text: "Describe", image: "synthetic"),
+            ChatMessage(id: "attachment", role: "user", text: "Describe", attachments: [.init(kind: "image")])
+        ] {
+            let (store, api, _) = makeStore()
+            await store.login(email: "user@example.com", password: "password")
+            await api.setMessages([message])
+            await store.select("one")
+            #expect(store.hasConversationImages)
+            #expect(store.imageDataURL == nil)
+            let textOnly = try #require(store.models.first { $0.id == "text-only" })
+            #expect(!store.selectModel(textOnly))
+            store.modelRef = textOnly.reference
+            store.draft = "What else?"
+            #expect(store.composerValidation?.contains("conversation contains photos") == true)
+            await store.send()
+            #expect(await api.sentRequests.isEmpty)
+            store.newConversation()
+            #expect(!store.hasConversationImages)
+            #expect(store.selectModel(textOnly))
+        }
+    }
+
+    @Test func `active runs prevent model and reasoning changes`() async throws {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        await store.setForeground(false)
+        await api.setActiveRun()
+        await store.select("one")
+        #expect(store.isBusy)
+        #expect(try !store.selectModel(#require(store.models.first { $0.id == "text-only" })))
+        store.selectReasoningEffort(.high)
+        #expect(store.reasoningEffort == .providerDefault)
+        await store.cancelRun()
+        #expect(!store.isBusy)
+        store.selectReasoningEffort(.high)
+        #expect(store.reasoningEffort == .high)
+    }
+
+    @Test func `new conversations and account changes isolate model and reasoning choices`() async {
+        let (store, _, _) = makeStore()
+        await store.login(email: "first@example.com", password: "password")
+        store.selectReasoningEffort(.high)
+        store.newConversation()
+        #expect(store.reasoningEffort == .providerDefault)
+        store.modelRef = "cloud:text-only"
+        store.newConversation()
+        #expect(store.modelRef == "cloud:balanced")
+        store.selectReasoningEffort(.high)
+        await store.select("one")
+        #expect(store.reasoningEffort == .providerDefault)
+        store.selectReasoningEffort(.high)
+        await store.login(email: "second@example.com", password: "password")
+        #expect(store.reasoningEffort == .providerDefault)
+        #expect(store.modelRef == "cloud:balanced")
+        store.selectReasoningEffort(.high)
+        await store.signOut()
+        #expect(store.reasoningEffort == .providerDefault)
+        #expect(store.selectedModel == nil)
+        #expect(store.supportedReasoningLevels.isEmpty)
+    }
+
+    @Test func `changing effort after failed send creates a new request identity`() async {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        await api.loseNextSend()
+        store.selectReasoningEffort(.low)
+        store.draft = "Hello"
+        await store.send()
+        #expect(store.draft == "Hello")
+        store.selectReasoningEffort(.high)
+        await store.send()
+        let requests = await api.sentRequests
+        #expect(requests.count == 2)
+        #expect(requests.first?.reasoningEffort == "low")
+        #expect(requests.last?.reasoningEffort == "high")
+        #expect(requests.first?.id != requests.last?.id)
+    }
+}
+
 private extension ChatStoreTests {
     // A fixture groups the subject with its two independent test doubles.
     // swiftlint:disable:next large_tuple
@@ -435,6 +639,10 @@ private actor FakeChatAPI: ChatAPI {
     }
 
     var document = ChatConversation(id: "one", title: "A conversation", revision: 1)
+    private var catalog = [
+        ChatModel(id: "balanced", name: "Balanced", vision: true, reasoning: true),
+        ChatModel(id: "text-only", name: "Text", vision: false, reasoning: false)
+    ]
     private var loginRejected = false
     private var refreshRejected = false
     private var refreshPaused = false
@@ -507,6 +715,10 @@ private actor FakeChatAPI: ChatAPI {
         conversationFails = true
     }
 
+    func allowConversationFetch() {
+        conversationFails = false
+    }
+
     func pauseNextList() {
         listPaused = true
     }
@@ -517,6 +729,14 @@ private actor FakeChatAPI: ChatAPI {
 
     func setActiveRun() {
         document.run = ChatRun(id: "run", deviceId: "mac", status: "running")
+    }
+
+    func setModels(_ models: [ChatModel]) {
+        catalog = models
+    }
+
+    func setMessages(_ messages: [ChatMessage]) {
+        document.messages = messages
     }
 
     func login(email _: String, password _: String) async throws -> ChatSession {
@@ -543,10 +763,7 @@ private actor FakeChatAPI: ChatAPI {
     }
 
     func models(token _: String) async throws -> [ChatModel] {
-        [
-            ChatModel(id: "balanced", name: "Balanced", vision: true),
-            ChatModel(id: "text-only", name: "Text", vision: false)
-        ]
+        catalog
     }
 
     func list(token: String, offset: Int) async throws -> [ChatConversationSummary] {
@@ -590,7 +807,7 @@ private actor FakeChatAPI: ChatAPI {
             throw URLError(.networkConnectionLost)
         }
         document.id = conversationId
-        document.messages.append(ChatMessage(id: request.id, role: "user", text: request.text))
+        document.messages.append(ChatMessage(id: request.id, role: "user", text: request.text, image: request.image))
         document.revision += 1
         if sendFails {
             throw URLError(.networkConnectionLost)

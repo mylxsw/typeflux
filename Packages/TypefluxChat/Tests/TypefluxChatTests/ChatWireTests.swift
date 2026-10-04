@@ -82,6 +82,45 @@ final class ChatWireTests: XCTestCase {
         XCTAssertNil(models[1].pricing)
     }
 
+    func testCatalogDecodesMacReasoningCapabilitiesAndContextLimits() throws {
+        let payload = #"[{"id":"reasoner","name":"Reasoner","capabilities":{"reasoning":true,"future":{"metadata":"ignored"}},"reasoning_efforts":["low","xhigh","max"],"context_window_tokens":200000,"max_output_tokens":64000},{"id":"legacy","name":"Legacy"},{"id":"plain","name":"Plain","capabilities":{"reasoning":false}}]"#
+        let models = try ChatCoding.decoder().decode([ChatModel].self, from: Data(payload.utf8))
+        XCTAssertEqual(models[0].reasoning, true)
+        XCTAssertEqual(models[0].reasoningEfforts, ["low", "xhigh", "max"])
+        XCTAssertEqual(models[0].contextWindowTokens, 200000)
+        XCTAssertEqual(models[0].maxOutputTokens, 64000)
+        XCTAssertNil(models[1].reasoning)
+        XCTAssertNil(models[1].reasoningEfforts)
+        XCTAssertNil(models[1].contextWindowTokens)
+        XCTAssertNil(models[1].maxOutputTokens)
+        XCTAssertEqual(models[2].reasoning, false)
+    }
+
+    func testMessageAndRunKeepReasoningAndDesktopImageAttachments() throws {
+        let payload = #"{"id":"reply","role":"assistant","text":"Answer","created_at":"2026-01-02T03:04:05Z","reasoning":"Considered options","reasoning_milliseconds":4200,"attachments":[{"kind":"image","unknown_metadata":true}]}"#
+        let message = try ChatCoding.decoder().decode(ChatMessage.self, from: Data(payload.utf8))
+        XCTAssertEqual(message.reasoning, "Considered options")
+        XCTAssertEqual(message.reasoningMilliseconds, 4200)
+        XCTAssertTrue(message.hasImage)
+        XCTAssertTrue(ChatMessage(id: "image", role: "user", text: "", image: "image").hasImage)
+        XCTAssertFalse(ChatMessage(id: "text", role: "user", text: "", attachments: [.init(kind: "future")]).hasImage)
+        XCTAssertNil(ChatMessage(id: "legacy", role: "user", text: "").reasoningMilliseconds)
+        let runPayload = #"{"id":"run","device_id":"phone","status":"running","updated_at":"2026-01-02T03:04:05Z","reasoning":"Thinking","reasoning_milliseconds":1200}"#
+        let run = try ChatCoding.decoder().decode(ChatRun.self, from: Data(runPayload.utf8))
+        XCTAssertEqual(run.reasoning, "Thinking")
+        XCTAssertEqual(run.reasoningMilliseconds, 1200)
+    }
+
+    func testRequestEncodesReasoningEffortAndOmitsProviderDefault() throws {
+        for effort in [nil, "low", "max"] as [String?] {
+            let request = ChatSendRequest(deviceId: "phone", text: "Hello", reasoningEffort: effort)
+            let body = try JSONSerialization.jsonObject(with: ChatCoding.encoder().encode(request)) as! [String: Any]
+            XCTAssertEqual(body["reasoning_effort"] as? String, effort)
+            XCTAssertNil(body["reasoningEffort"])
+            if effort == nil { XCTAssertFalse(body.keys.contains("reasoning_effort")) }
+        }
+    }
+
     func testEnvelopeDistinguishesUnauthorizedServerAndMalformedResponses() throws {
         let value: Int = try ChatRequest.decode(data: Data(#"{"code":"OK","data":42}"#.utf8), statusCode: 200)
         XCTAssertEqual(value, 42)

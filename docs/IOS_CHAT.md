@@ -38,8 +38,21 @@ replacement document that could erase desktop-only metadata.
   refresh tokens in endpoint-scoped Keychain entries.
 - Browse and continue cloud conversations, create conversations, and choose
   from the account's cloud models with their server-provided credit multiplier.
+- Use the Mac-aligned colour drop, composer, message bubbles, and history rows.
+  A single model entry opens the reasoning card; its model subtitle opens the
+  model list. Selecting a model returns to the reasoning card.
+- Choose Auto or a supported reasoning level. The model's highest level uses
+  purple; switching models keeps the closest supported level and explains any
+  adjustment. Auto omits `reasoning_effort` from the request.
+- Read foldable reasoning and grouped tool steps, copy or quote a response, and
+  view Markdown headings, lists, quotes, code, and horizontally scrolling tables.
+- Search loaded history and collapse date groups. English and Simplified Chinese
+  follow system language; colours follow light/dark appearance. Reduce Motion
+  freezes ambient animation and Reduce Transparency uses solid card surfaces.
 - Send text and a photo with a vision-capable model; show streamed responses,
-  tool activity/results, and cancellation.
+  tool activity/results, and cancellation. A conversation containing photos
+  requires a vision-capable model. An existing conversation must load
+  successfully before its composer can send a follow-up.
 - Reload the server snapshot after returning to the foreground. Reconnect an
   interrupted stream without automatically replaying message POSTs.
 - Show runs waiting for a desktop tool or local model as waiting for their
@@ -92,7 +105,8 @@ configured endpoint. HTTP, URLs containing credentials, queries, or fragments
 are rejected. Never put API keys or account passwords in the project.
 
 For a network-free UI preview, add `--synthetic-preview` to the scheme's launch
-arguments in a Debug build. This mode uses labelled synthetic conversations,
+arguments in a Debug build. Add `--synthetic-tools` for a desktop-tool run or
+`--synthetic-dark` to force dark appearance. This mode uses labelled synthetic conversations,
 an in-memory account, and no production requests. It is excluded from Release
 builds and is not evidence of live account/API validation.
 
@@ -102,7 +116,12 @@ are outside this initial chat implementation.
 
 ## Simulator previews
 
-These screenshots use synthetic fixtures, not a live account or model response.
+These screenshots come from the SwiftUI app with synthetic fixtures, not a live
+account or model response. The model names and credit multipliers are test data.
 
-<img src="images/ios/synthetic-login.png" alt="Synthetic login preview" width="280">
-<img src="images/ios/synthetic-chat.png" alt="Synthetic chat preview" width="280">
+<img src="images/ios/v3-new-conversation.png" alt="New conversation with the Mac colour drop" width="260">
+<img src="images/ios/v3-reasoning.png" alt="Unified model and reasoning card" width="260">
+<img src="images/ios/v3-model-list.png" alt="Cloud model list" width="260">
+<img src="images/ios/v3-conversation.png" alt="Conversation with reasoning and Markdown" width="260">
+<img src="images/ios/v3-zh-dark-empty.png" alt="Simplified Chinese dark appearance" width="260">
+<img src="images/ios/v3-zh-keyboard-models.png" alt="Model selection above the keyboard" width="260">

@@ -10,9 +10,8 @@ struct LoginView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     VStack(alignment: .leading, spacing: 14) {
-                        Image(systemName: "bubble.left.and.text.bubble.right.fill")
-                            .font(.system(size: 42)).foregroundStyle(.indigo)
-                        Text("Ask anything.").font(.largeTitle.bold())
+                        ChatOrb(size: 88)
+                        Text("Ask anything").font(.largeTitle.bold())
                         Text("Your Typeflux conversations, wherever an idea finds you.")
                             .font(.title3).foregroundStyle(.secondary)
                     }
@@ -29,7 +28,8 @@ struct LoginView: View {
                     }
                     .padding(18).background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 18))
                     if let error = store.errorMessage {
-                        Text(error).font(.callout).foregroundStyle(.red).accessibilityIdentifier("login.error")
+                        Text(NSLocalizedString(error, comment: "Sign-in error")).font(.callout).foregroundStyle(.red)
+                            .accessibilityIdentifier("login.error")
                     }
                     Button {
                         Task {
@@ -57,6 +57,7 @@ struct LoginView: View {
                 .padding(28).frame(maxWidth: 520)
                 .frame(maxWidth: .infinity)
             }
+            .background(ChatTheme.background)
             .navigationTitle("Typeflux").navigationBarTitleDisplayMode(.inline)
         }
     }

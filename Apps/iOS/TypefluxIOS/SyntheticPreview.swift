@@ -41,14 +41,24 @@
                 text: "Help me make a simple morning routine that leaves room to think."
             ),
             ChatMessage(id: "answer", role: "assistant", text: """
-            Start with **three small things**:
+                        Start with **three small things**:
 
-            1. Leave your phone aside for the first ten minutes.
-            2. Write down the one thing that matters today.
-            3. Make a cup of coffee and give yourself a little quiet.
+                        1. Leave your phone aside for the first ten minutes.
+                        2. Write down the one thing that matters today.
+                        3. Make a cup of coffee and give yourself a little quiet.
 
-            A good routine should create space, not another list to complete.
-            """)
+                        A good routine should create space, not another list to complete.
+
+                        | Habit | Time | Why |
+                        | --- | --- | --- |
+                        | Quiet | 10 min | Make room to think |
+                        | Plan | 2 min | Pick one priority |
+
+                        ```swift
+                        let priority = "One meaningful thing"
+                        ```
+                        """, reasoning: "Keep the routine short enough to repeat, with time for a single priority.",
+                        reasoningMilliseconds: 2400)
         ])
         init(showTools: Bool = false) {
             if showTools {
@@ -87,8 +97,17 @@
 
         func logout(refreshToken _: String) async throws {}
         func models(token _: String) async throws -> [ChatModel] {
-            [ChatModel(id: "preview", name: "Preview model", vision: true),
-             ChatModel(id: "text-preview", name: "Text preview model", vision: false)]
+            [ChatModel(id: "preview", name: "Preview model", vision: true,
+                       pricing: ["multiplier": "3"], reasoning: true,
+                       reasoningEfforts: ["low", "medium", "high", "xhigh", "max"],
+                       contextWindowTokens: 1_000_000, maxOutputTokens: 64000),
+             ChatModel(id: "text-preview", name: "Text preview model", vision: false,
+                       reasoning: true, reasoningEfforts: ["low", "medium", "high"]),
+             ChatModel(id: "fast-preview", name: "Fast preview model", vision: true,
+                       pricing: ["multiplier": "1"], reasoning: true,
+                       reasoningEfforts: ["low", "medium", "high"],
+                       contextWindowTokens: 128_000, maxOutputTokens: 32000),
+             ChatModel(id: "standard-preview", name: "Standard preview model", vision: false, reasoning: false)]
         }
 
         func list(token _: String, offset: Int) async throws -> [ChatConversationSummary] {

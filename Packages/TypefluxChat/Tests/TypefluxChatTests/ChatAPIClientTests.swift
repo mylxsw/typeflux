@@ -141,6 +141,23 @@ final class ChatAPIClientTests: XCTestCase {
         try await api.observe(id: id, token: "access") { value in XCTAssertEqual(value.id, id) }
     }
 
+    func testSendCarriesChosenReasoningEffortAndOmitsAutoOnActualHTTPBody() async throws {
+        for effort in [nil, "xhigh"] as [String?] {
+            let (api, session, host) = fixture { request, client, proto in
+                XCTAssertEqual(request.httpMethod, "POST")
+                XCTAssertTrue(request.url!.path.hasSuffix("/messages"))
+                let body = try self.body(request)
+                XCTAssertEqual(body["reasoning_effort"] as? String, effort)
+                XCTAssertEqual(body["model_ref"] as? String, "cloud:reasoner")
+                if effort == nil { XCTAssertFalse(body.keys.contains("reasoning_effort")) }
+                self.finish(request, client, proto, body: "{\"code\":\"OK\",\"data\":\(chatSnapshot)}")
+            }
+            defer { session.invalidateAndCancel(); FixtureProtocol.registry.remove(host) }
+            _ = try await api.send(conversationId: "chat", request: .init(deviceId: "phone", text: "Hello",
+                modelRef: "cloud:reasoner", reasoningEffort: effort), token: "access")
+        }
+    }
+
     func testUnauthorizedDoesNotRequireJSONOrRetryMutation() async throws {
         let (api, session, host) = fixture { request, client, proto in
             self.finish(request, client, proto, body: "Unauthorized", status: 401)

@@ -30,11 +30,14 @@ struct TypefluxIOSApp: App {
                     LoginView(store: store)
                 }
             }
-            .tint(.indigo)
-            .task { await store.restore() }
-            .onChange(of: scenePhase) { _, phase in
-                Task { await store.setForeground(phase == .active) }
-            }
+            .tint(ChatTheme.accent)
+            #if DEBUG
+                .preferredColorScheme(ProcessInfo.processInfo.arguments.contains("--synthetic-dark") ? .dark : nil)
+            #endif
+                .task { await store.restore() }
+                .onChange(of: scenePhase) { _, phase in
+                    Task { await store.setForeground(phase == .active) }
+                }
         }
     }
 }

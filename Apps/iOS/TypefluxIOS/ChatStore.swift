@@ -8,13 +8,18 @@ final class ChatStore {
     private(set) var email = ""
     private(set) var isAuthenticated = false
     private(set) var isLoading = false
+    private(set) var isLoadingConversation = false
     private(set) var isSending = false
     private(set) var conversations: [ChatConversationSummary] = []
     private(set) var models: [ChatModel] = []
     private(set) var conversation: ChatConversation?
     private(set) var selectedID: String?
     private(set) var hasMore = false
-    var modelRef = ""
+    var modelRef = "" {
+        didSet { reasoningEffort = reasoningEffort.nearest(in: supportedReasoningLevels) }
+    }
+
+    private(set) var reasoningEffort: ChatReasoningEffort = .providerDefault
     var draft = ""
     var imageDataURL: String?
     var errorMessage: String?
@@ -32,6 +37,7 @@ final class ChatStore {
     private var isForeground = true
     private var pendingRequest: ChatSendRequest?
     private var activeSendID: String?
+    private var requiresConversationSnapshot = false
 
     init(
         service: any ChatAPI,
@@ -45,32 +51,6 @@ final class ChatStore {
         self.deviceID = deviceID
         self.isSynthetic = isSynthetic
         self.reconnectDelay = reconnectDelay
-    }
-
-    var isRunning: Bool {
-        conversation?.run?.isActive == true
-    }
-
-    var composerValidation: String? {
-        if draft.utf8.count > 32000 {
-            return "Keep messages under 32 KB."
-        }
-        if isAuthenticated, !models.contains(where: { $0.reference == modelRef }) {
-            return "Choose an available cloud model. Refresh if the model list is empty."
-        }
-        if imageDataURL != nil, models.first(where: { $0.reference == modelRef })?.vision != true {
-            return "Choose a model that supports photos, or remove the attached photo."
-        }
-        return nil
-    }
-
-    var canSend: Bool {
-        isAuthenticated && !isSending && !isRunning && composerValidation == nil && !draft
-            .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    var attachmentContext: String {
-        "\(accountGeneration):\(selectionGeneration)"
     }
 
     func restore() async {
@@ -138,6 +118,7 @@ final class ChatStore {
             if !models.contains(where: { $0.reference == modelRef }) {
                 modelRef = models.first?.reference ?? ""
             }
+            reasoningEffort = reasoningEffort.nearest(in: supportedReasoningLevels)
         } catch { report(error, generation: generation) }
     }
 
@@ -169,6 +150,7 @@ final class ChatStore {
 
     func select(_ id: String) async {
         changeSelection(id)
+        requiresConversationSnapshot = true
         await reloadConversation()
     }
 
@@ -176,10 +158,19 @@ final class ChatStore {
         guard let id = selectedID, isAuthenticated else { return }
         let generation = accountGeneration
         let selection = selectionGeneration
+        isLoadingConversation = true
+        defer {
+            if generation == accountGeneration, selection == selectionGeneration {
+                isLoadingConversation = false
+            }
+        }
         do {
             let value = try await authorized { [service] token in try await service.conversation(id: id, token: token) }
             guard generation == accountGeneration, selection == selectionGeneration else { return }
             accept(value)
+            if reportFailure {
+                errorMessage = nil
+            }
             startObservation()
         } catch {
             if reportFailure, selection == selectionGeneration {
@@ -274,14 +265,83 @@ final class ChatStore {
     }
 }
 
+extension ChatStore {
+    var isRunning: Bool {
+        conversation?.run?.isActive == true
+    }
+
+    var composerValidation: String? {
+        if requiresConversationSnapshot, conversation == nil {
+            return "Load this conversation before sending a follow-up."
+        }
+        if draft.utf8.count > 32000 {
+            return "Keep messages under 32 KB."
+        }
+        if isAuthenticated, !models.contains(where: { $0.reference == modelRef }) {
+            return "Choose an available cloud model. Refresh if the model list is empty."
+        }
+        if hasConversationImages, selectedModel?.vision != true {
+            if conversation?.messages.contains(where: \.hasImage) == true {
+                return "This conversation contains photos. Choose a model that supports photos."
+            }
+            return "Choose a model that supports photos, or remove the attached photo."
+        }
+        return nil
+    }
+
+    var canSend: Bool {
+        isAuthenticated && !isSending && !isRunning && composerValidation == nil && !draft
+            .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var attachmentContext: String {
+        "\(accountGeneration):\(selectionGeneration)"
+    }
+
+    var isBusy: Bool {
+        isSending || isRunning
+    }
+
+    var selectedModel: ChatModel? {
+        models.first { $0.reference == modelRef }
+    }
+
+    var selectedModelID: String? {
+        selectedModel?.id
+    }
+
+    var supportedReasoningLevels: [ChatReasoningEffort] {
+        ChatReasoningEffort.levels(for: selectedModel)
+    }
+
+    var hasConversationImages: Bool {
+        imageDataURL != nil || conversation?.messages.contains(where: \.hasImage) == true
+    }
+
+    @discardableResult
+    func selectModel(_ model: ChatModel) -> Bool {
+        guard !isBusy, let available = models.first(where: { $0.reference == model.reference }),
+              !hasConversationImages || available.vision == true else { return false }
+        modelRef = available.reference
+        return true
+    }
+
+    func selectReasoningEffort(_ effort: ChatReasoningEffort) {
+        guard !isBusy else { return }
+        reasoningEffort = effort.nearest(in: supportedReasoningLevels)
+    }
+}
+
 private extension ChatStore {
     func sendRequest(text: String) -> ChatSendRequest {
         let requestedModel = modelRef.isEmpty ? nil : modelRef
+        let requestedEffort = reasoningEffort.requestValue(for: selectedModel)
         if let pendingRequest, pendingRequest.text == text, pendingRequest.image == imageDataURL,
-           pendingRequest.modelRef == requestedModel {
+           pendingRequest.modelRef == requestedModel, pendingRequest.reasoningEffort == requestedEffort {
             return pendingRequest
         }
-        return ChatSendRequest(deviceId: deviceID, text: text, image: imageDataURL, modelRef: requestedModel)
+        return ChatSendRequest(deviceId: deviceID, text: text, image: imageDataURL,
+                               modelRef: requestedModel, reasoningEffort: requestedEffort)
     }
 
     private func changeSelection(_ id: String) {
@@ -290,8 +350,12 @@ private extension ChatStore {
         selectionGeneration += 1
         selectedID = id
         conversation = nil
+        requiresConversationSnapshot = false
+        isLoadingConversation = false
         draft = ""
         imageDataURL = nil
+        modelRef = models.first?.reference ?? ""
+        reasoningEffort = .providerDefault
         errorMessage = nil
         isSending = false
         pendingRequest = nil
@@ -318,14 +382,8 @@ private extension ChatStore {
             while observationIsCurrent(generation: generation, selection: selection) {
                 do {
                     if reconnecting {
-                        let snapshot = try await authorized { [service] token in
-                            try await service.conversation(id: id, token: token)
-                        }
-                        guard generation == accountGeneration, selection == selectionGeneration else { return }
-                        accept(snapshot)
-                        if !isRunning {
-                            return
-                        }
+                        guard try await refreshObservedConversation(id: id, generation: generation,
+                                                                    selection: selection) else { return }
                     }
                     try await authorized { [service] token in
                         try await service.observe(id: id, token: token) { [weak self] value in
@@ -340,8 +398,8 @@ private extension ChatStore {
                     // A normal EOF does not consume the network-failure retry budget.
                     failures = 0
                 } catch {
-                    guard generation == accountGeneration, selection == selectionGeneration,
-                          !Task.isCancelled, !(error is CancellationError) else { return }
+                    guard observationIsCurrent(generation: generation, selection: selection),
+                          !(error is CancellationError) else { return }
                     failures += 1
                     if failures > 3 {
                         errorMessage = "Live updates paused. Refresh this conversation to reconnect."
@@ -354,6 +412,15 @@ private extension ChatStore {
                 reconnecting = true
             }
         }
+    }
+
+    private func refreshObservedConversation(id: String, generation: Int, selection: Int) async throws -> Bool {
+        let snapshot = try await authorized { [service] token in
+            try await service.conversation(id: id, token: token)
+        }
+        guard generation == accountGeneration, selection == selectionGeneration else { return false }
+        accept(snapshot)
+        return isRunning
     }
 
     func observationIsCurrent(generation: Int, selection: Int) -> Bool {
