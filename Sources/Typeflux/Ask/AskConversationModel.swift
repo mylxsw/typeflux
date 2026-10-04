@@ -940,6 +940,11 @@ final class AskConversationModel: ObservableObject {
                 continue
             }
             guard run.deviceId == deviceId else { throw AskLocalError.message(L("ask.tool.otherDevice")) }
+            if run.budgetEnabled == true, let deadline = run.budgetDeadline, Date() >= deadline {
+                value = try await api.cancel(conversationId: value.id, runId: run.id, token: current.token)
+                try await accept(value, route: current)
+                throw AskLocalError.message(L("ask.budget.stopped", L("ask.budget.reason.duration")))
+            }
             tools.bindExecution(ownerId: current.account, conversationId: value.id, runId: run.id)
             if run.status == "waiting_inference", let inference = run.inference {
                 guard let reference = run.modelRef,
@@ -960,8 +965,9 @@ final class AskConversationModel: ObservableObject {
                         progressInferenceIDs[value.id] = inference.id
                         inferenceProgress[value.id] = AskStreamProgress()
                         let conversationID = value.id
+                        let payload = try AskContextPlanner.devicePayload(inference.payload, model: model, budgeted: run.budgetEnabled == true)
                         let (text, calls) = try await customInference.complete(provider: provider,
-                            connection: modelLibrary.connection(provider, model: model), payload: inference.payload,
+                            connection: modelLibrary.connection(provider, model: model), payload: payload,
                             onUsage: { [weak self] usage in await self?.recordInferenceUsage(usage, id: inference.id, owner: current.account) },
                             onProgress: { [weak self] progress in
                                 await self?.updateInferenceProgress(progress, id: conversationID, inferenceID: inference.id, owner: current.account, visible: inference.summaryThrough == nil || inference.summaryThrough == 0)
@@ -1057,6 +1063,9 @@ final class AskConversationModel: ObservableObject {
                         }
                         let output = try await tools.executeApproved(call, conversationId: value.id, binding: bindingNow) {
                             try Task.checkCancellation()
+                            if run.budgetEnabled == true, let deadline = run.budgetDeadline, Date() >= deadline {
+                                throw AskLocalError.message(L("ask.budget.stopped", L("ask.budget.reason.duration")))
+                            }
                             guard self.session()?.owner == current.account,
                                   self.approvalStore.validateDispatch(grantID, for: request) else {
                                 throw AskLocalError.message(L("ask.approval.changed"))

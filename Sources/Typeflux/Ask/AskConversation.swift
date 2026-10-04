@@ -69,6 +69,13 @@ struct AskRun: Codable, Equatable, Sendable {
     /// Extra steps granted after messages were sent into the running run.
     var extraSteps: Int? = nil
 
+    var budgetEnabled: Bool? = nil
+    var budgetRootId: String? = nil
+    var budgetDeadline: Date? = nil
+    var budgetLimits: AskBudgetResources? = nil
+    var budget: AskBudgetSummary? = nil
+    var stopReason: String? = nil
+
     var isActive: Bool { status == "running" || status == "waiting_tool" || status == "waiting_inference" }
 }
 

@@ -1,0 +1,61 @@
+{
+  "state": {
+    "version": 1,
+    "revision": 3,
+    "run_id": "run",
+    "limits": {
+      "tokens": 1000,
+      "microcredits": 1000,
+      "web_requests": 2,
+      "children": 1,
+      "operations": 10
+    },
+    "deadline": "1970-01-01T00:03:20Z",
+    "reservations": {
+      "model": {
+        "run_id": "run",
+        "operation_id": "model",
+        "step_id": "1",
+        "call_id": "model",
+        "kind": "answer",
+        "reserved": {
+          "tokens": 900,
+          "microcredits": 900,
+          "web_requests": 0,
+          "children": 0,
+          "operations": 1
+        },
+        "actual": {
+          "tokens": 0,
+          "microcredits": 0,
+          "web_requests": 0,
+          "children": 0,
+          "operations": 1
+        },
+        "state": "pending",
+        "source": "unknown",
+        "tokens_final": false,
+        "cost_final": false
+      }
+    }
+  },
+  "late_usage": {
+    "actual": {
+      "tokens": 100,
+      "microcredits": 50,
+      "web_requests": 0,
+      "children": 0,
+      "operations": 0
+    },
+    "source": "provider",
+    "tokens_final": true,
+    "cost_final": true
+  },
+  "expected_occupied": {
+    "tokens": 100,
+    "microcredits": 50,
+    "web_requests": 0,
+    "children": 0,
+    "operations": 1
+  }
+}

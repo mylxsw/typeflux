@@ -91,6 +91,7 @@ struct AskUsagePanel: View {
                 // and "what did this cost?".
                 VStack(alignment: .leading, spacing: 12) {
                     if let context = model.usageContext { contextCard(context) }
+                    if let budget = model.selected?.run?.budget { AskBudgetView(budget: budget) }
                     AskSegmentedControl(options: scopeOptions, selection: $runId)
                         .padding(.top, 4)
                     if let totals {

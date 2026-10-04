@@ -106,6 +106,8 @@ struct AskContextUsage: Codable, Equatable, Sendable {
     var outputReserve: Int
     var capacity: Int?
     var summarized: Bool
+    var estimated: Bool? = nil
+    var trimmed: Bool? = nil
     var remaining: Int? { capacity.flatMap { $0 > 0 ? max(0, $0 - inputTokens - outputReserve) : nil } }
     var fraction: Double? { capacity.flatMap { $0 > 0 ? Double(inputTokens) / Double($0) : nil } }
     var isHigh: Bool { remaining == 0 }
@@ -136,6 +138,9 @@ extension AskConversation {
         guard let older, older.id == id else { return self }
         var result = self
         if (older.usage?.version ?? 0) > (usage?.version ?? 0) { result.usage = older.usage }
+        if older.run?.id == run?.id, (older.run?.budget?.version ?? 0) > (run?.budget?.version ?? 0) {
+            result.run?.budget = older.run?.budget
+        }
         return result
     }
     func reconciling(_ incoming: Self, preservingEqualRevisionContent: Bool = false) -> Self {
@@ -158,5 +163,6 @@ extension AskConversation {
     }
     func isNewer(than older: Self) -> Bool {
         revision > older.revision || (usage?.version ?? 0) > (older.usage?.version ?? 0)
+            || (run?.id == older.run?.id && (run?.budget?.version ?? 0) > (older.run?.budget?.version ?? 0))
     }
 }
