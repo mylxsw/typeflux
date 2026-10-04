@@ -11,21 +11,26 @@ struct ChatModelPicker: View {
     var body: some View {
         let shown = store.reasoningEffort.nearest(in: store.supportedReasoningLevels)
         Button { expanded = true } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: 6) {
                 Text(store.selectedModel?.name ?? NSLocalizedString("Choose model", comment: ""))
                     .lineLimit(1).truncationMode(.middle)
                 if shown != .providerDefault {
                     Text(shown.label)
+                        .font(.system(size: 13.5, weight: .regular))
                         .foregroundStyle(shown.isTop(in: store.supportedReasoningLevels)
                             ? ChatTheme.purple : ChatTheme.secondary)
                         .lineLimit(1).fixedSize()
                 }
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(ChatTheme.secondary)
+                    .rotationEffect(.degrees(expanded ? 180 : 0))
             }
-            .font(.subheadline.weight(.semibold))
-            .padding(.horizontal, 10)
+            .font(.system(size: 13.5, weight: .semibold))
+            .foregroundStyle(.primary)
+            .padding(.leading, 11).padding(.trailing, 10)
+            .frame(height: 34)
+            .background(expanded ? ChatTheme.fill : .clear, in: Capsule())
             .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
@@ -38,7 +43,7 @@ struct ChatModelPicker: View {
         .popover(isPresented: $expanded, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
             ChatModelEffortCard(store: store, maximumHeight: maximumHeight)
                 .presentationCompactAdaptation(.popover)
-                .presentationBackground(ChatTheme.popover)
+                .presentationBackground(.regularMaterial)
         }
         .onChange(of: store.isBusy) { _, busy in
             if busy {
@@ -55,8 +60,9 @@ struct ChatModelEffortCard: View {
     @State private var page: Page = .effort
     @State private var selectionNotice: String?
 
-    static let width: CGFloat = 272
-    static let modelsWidth: CGFloat = 330
+    /// The Mac card's 272 / 330 pt, scaled for touch.
+    static let width: CGFloat = 300
+    static let modelsWidth: CGFloat = 352
 
     init(store: ChatStore, page: Page = .effort, maximumHeight: CGFloat = 420) {
         self.store = store
@@ -76,7 +82,7 @@ struct ChatModelEffortCard: View {
         .frame(minWidth: Self.width,
                idealWidth: page == .models ? Self.modelsWidth : Self.width,
                maxWidth: page == .models ? Self.modelsWidth : Self.width)
-        .background(ChatTheme.popover)
+        .background(ChatTheme.glassTint)
         .disabled(store.isBusy)
     }
 
@@ -90,15 +96,16 @@ struct ChatModelEffortCard: View {
 
     private var effortPage: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 0) {
                 Color.clear.frame(width: 44, height: 44)
-                VStack(spacing: 1) {
+                VStack(spacing: 0) {
                     Text(store.supportedReasoningLevels.isEmpty
                         ? store.selectedModel?.name ?? NSLocalizedString("Choose model", comment: "")
                         : shown.label)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(effortColor)
-                        .lineLimit(2)
+                        .lineLimit(2).multilineTextAlignment(.center)
+                        .padding(.top, 8)
                         .accessibilityIdentifier("reasoningTitle")
                     Button { page = .models } label: {
                         HStack(spacing: 3) {
@@ -106,11 +113,12 @@ struct ChatModelEffortCard: View {
                                 ? NSLocalizedString("Change model", comment: "")
                                 : store.selectedModel?.name ?? NSLocalizedString("Choose model", comment: ""))
                                 .lineLimit(1).truncationMode(.middle)
-                            Image(systemName: "chevron.right").font(.system(size: 8, weight: .semibold))
+                            Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
                         }
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(ChatTheme.secondary)
-                        .frame(minHeight: 44)
+                        .padding(.horizontal, 8)
+                        .frame(minHeight: 32)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -124,7 +132,7 @@ struct ChatModelEffortCard: View {
                     selectionNotice = nil
                 } label: {
                     Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(ChatTheme.secondary)
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
@@ -140,28 +148,32 @@ struct ChatModelEffortCard: View {
                     "This model does not offer reasoning levels and answers in its own way.",
                     comment: ""
                 ))
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(ChatTheme.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(10)
+                .padding(12)
                 .frame(maxWidth: .infinity)
-                .background(ChatTheme.raised, in: RoundedRectangle(cornerRadius: 8))
+                .background(ChatTheme.fill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(.top, 8)
             } else {
                 ChatEffortSlider(levels: store.supportedReasoningLevels, effort: Binding(
                     get: { store.reasoningEffort },
                     set: { store.selectReasoningEffort($0); selectionNotice = nil }
                 ))
+                .padding(.horizontal, 4).padding(.top, 6)
+                ChatEffortTicks(levels: store.supportedReasoningLevels, shown: shown)
+                    .padding(.horizontal, 6)
                 Text(shown.caption)
-                    .font(.caption)
+                    .font(.system(size: 13))
                     .foregroundStyle(ChatTheme.secondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 3)
+                    .padding(.top, 10)
             }
             if let selectionNotice {
                 Text(selectionNotice)
-                    .font(.caption2)
+                    .font(.system(size: 12))
                     .foregroundStyle(ChatTheme.secondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -169,7 +181,7 @@ struct ChatModelEffortCard: View {
                     .accessibilityIdentifier("reasoningAdjustment")
             }
         }
-        .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 16)
+        .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 16)
     }
 
     private var effortColor: Color {
@@ -182,42 +194,45 @@ struct ChatModelEffortCard: View {
     private var modelsPage: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button { page = .effort } label: {
-                Label(NSLocalizedString("Reasoning effort", comment: ""), systemImage: "chevron.left")
-                    .font(.subheadline)
-                    .foregroundStyle(ChatTheme.secondary)
-                    .padding(.horizontal, 14)
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left").font(.system(size: 11, weight: .semibold))
+                    Text(NSLocalizedString("Reasoning effort", comment: ""))
+                }
+                .font(.system(size: 13.5))
+                .foregroundStyle(ChatTheme.secondary)
+                .padding(.horizontal, 16)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("backToReasoning")
-            VStack(alignment: .leading, spacing: 0) {
-                HStack {
-                    Text("Typeflux Cloud")
-                    Spacer()
-                    Text(NSLocalizedString("Credits", comment: ""))
-                }
-                .font(.caption.weight(.medium))
-                .foregroundStyle(ChatTheme.secondary)
-                .padding(.horizontal, 16).padding(.vertical, 8)
-                if store.hasConversationImages, store.models.contains(where: { $0.vision != true }) {
-                    Label(NSLocalizedString("This conversation needs a model that supports photos.", comment: ""),
-                          systemImage: "info.circle")
-                        .font(.caption)
-                        .foregroundStyle(ChatTheme.secondary)
-                        .padding(.horizontal, 16).padding(.bottom, 8)
-                }
+            HStack {
+                Text(verbatim: "Typeflux Cloud")
+                Spacer()
+                Text(NSLocalizedString("Credits", comment: ""))
+            }
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(ChatTheme.tertiary)
+            .padding(.horizontal, 18).padding(.bottom, 6)
+            if store.hasConversationImages, store.models.contains(where: { $0.vision != true }) {
+                Label(NSLocalizedString("This conversation needs a model that supports photos.", comment: ""),
+                      systemImage: "info.circle")
+                    .font(.system(size: 12))
+                    .foregroundStyle(ChatTheme.secondary)
+                    .padding(.horizontal, 18).padding(.bottom, 6)
+            }
+            VStack(spacing: 2) {
                 ForEach(store.models) { model in
                     modelRow(model)
                 }
             }
-            .padding(.bottom, 6)
-            Rectangle().fill(ChatTheme.separator).frame(height: 0.5)
+            .padding(.horizontal, 6)
+            Rectangle().fill(ChatTheme.separator).frame(height: 0.5).padding(.top, 6)
             Text(NSLocalizedString("Models and pricing are provided by Typeflux Cloud.", comment: ""))
-                .font(.caption2)
-                .foregroundStyle(ChatTheme.secondary)
+                .font(.system(size: 12))
+                .foregroundStyle(ChatTheme.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(14)
+                .padding(.horizontal, 18).padding(.vertical, 12)
         }
     }
 
@@ -232,44 +247,85 @@ struct ChatModelEffortCard: View {
                          previous.label, shown.label) : nil
             page = .effort
         } label: {
-            HStack(alignment: .center, spacing: 8) {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(ChatTheme.accentText)
-                    .frame(width: 14).opacity(selected ? 1 : 0)
-                VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .center, spacing: 11) {
+                ChatModelLogo(model: model)
+                VStack(alignment: .leading, spacing: 1) {
                     Text(model.name)
-                        .font(.subheadline.weight(selected ? .semibold : .regular))
-                        .foregroundStyle(blocked ? ChatTheme.secondary : Color.primary)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(blocked ? ChatTheme.secondary : selected ? ChatTheme.accentText : Color.primary)
                         .lineLimit(2)
                     if blocked {
                         Text(NSLocalizedString("Does not support photos", comment: ""))
-                            .font(.caption2).foregroundStyle(ChatTheme.secondary)
+                            .font(.system(size: 12)).foregroundStyle(ChatTheme.secondary)
                     } else if let capacity = ChatModelPickerDisplay.capacity(model) {
-                        Text(capacity).font(.caption2).foregroundStyle(ChatTheme.secondary)
+                        Text(capacity).font(.system(size: 12)).foregroundStyle(ChatTheme.secondary)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if model.vision == true {
                     Text(NSLocalizedString("Vision", comment: ""))
-                        .font(.system(size: 10))
-                        .padding(.horizontal, 5).padding(.vertical, 2)
-                        .overlay(Capsule().strokeBorder(ChatTheme.secondary, lineWidth: 0.5))
+                        .font(.system(size: 10.5, weight: .semibold))
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(ChatTheme.tertiary, lineWidth: 0.8))
                         .foregroundStyle(ChatTheme.secondary)
                 }
                 if let multiplier = ChatModelPickerDisplay.multiplier(model) {
-                    Text(multiplier).font(.caption).monospacedDigit()
+                    Text(multiplier).font(.system(size: 13)).monospacedDigit()
                         .foregroundStyle(ChatTheme.secondary)
                 }
+                Image(systemName: "checkmark")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(ChatTheme.accent)
+                    .frame(width: 15).opacity(selected ? 1 : 0)
             }
-            .padding(.horizontal, 14).padding(.vertical, 9)
-            .frame(minHeight: 44)
+            .padding(.horizontal, 12).padding(.vertical, 9)
+            .frame(minHeight: 50)
+            .background(selected ? ChatTheme.accentSoft : .clear,
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .opacity(blocked ? 0.55 : 1)
             .contentShape(Rectangle())
         }
         .buttonStyle(ChatModelRowStyle())
         .disabled(blocked || store.isBusy)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("model-" + model.id)
+    }
+}
+
+/// The level names under the slider; the chosen one takes the title's color.
+struct ChatEffortTicks: View {
+    let levels: [ChatReasoningEffort]
+    let shown: ChatReasoningEffort
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(levels.enumerated()), id: \.offset) { index, level in
+                Text(level.label)
+                    .font(.system(size: 11.5, weight: level == shown ? .semibold : .regular))
+                    .foregroundStyle(level == shown
+                        ? (level.isTop(in: levels) ? ChatTheme.purple : ChatTheme.accentText)
+                        : ChatTheme.tertiary)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity,
+                           alignment: index == 0 ? .leading : index == levels.count - 1 ? .trailing : .center)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// A provider tile: the brand initial on its color, so the list scans like the Mac menu.
+struct ChatModelLogo: View {
+    let model: ChatModel
+
+    var body: some View {
+        let brand = ChatModelPickerDisplay.brand(model)
+        Text(brand.letter)
+            .font(.system(size: 12.5, weight: .bold)).foregroundStyle(.white)
+            .frame(width: 28, height: 28)
+            .background(LinearGradient(colors: brand.colors, startPoint: .topLeading, endPoint: .bottomTrailing),
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .accessibilityHidden(true)
     }
 }
 
@@ -280,7 +336,7 @@ struct ChatModelRowStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .background(configuration.isPressed && isEnabled ? ChatTheme.raised : .clear,
+            .background(configuration.isPressed && isEnabled ? ChatTheme.fill : .clear,
                         in: RoundedRectangle(cornerRadius: 10))
     }
 }
@@ -346,6 +402,26 @@ enum ChatModelPickerDisplay {
                       count(context), count(output))
     }
 
+    /// Known providers get their brand color; anything else a neutral tile.
+    static func brand(_ model: ChatModel) -> (letter: String, colors: [Color]) {
+        let key = (model.id + " " + model.name).lowercased()
+        let table: [(String, String, [Color])] = [
+            ("claude", "C", [Color(red: 0.85, green: 0.47, blue: 0.34), Color(red: 0.76, green: 0.37, blue: 0.24)]),
+            ("gpt", "G", [Color(red: 0.06, green: 0.64, blue: 0.50), Color(red: 0.04, green: 0.48, blue: 0.37)]),
+            ("deepseek", "D", [Color(red: 0.30, green: 0.42, blue: 1), Color(red: 0.18, green: 0.28, blue: 0.79)]),
+            ("minimax", "M", [Color(red: 1, green: 0.37, blue: 0.43), Color(red: 1, green: 0.70, blue: 0.28)]),
+            ("gemini", "G", [Color(red: 0.26, green: 0.52, blue: 0.96), Color(red: 0.55, green: 0.36, blue: 0.96)]),
+            ("qwen", "Q", [Color(red: 0.42, green: 0.33, blue: 0.93), Color(red: 0.31, green: 0.24, blue: 0.78)]),
+            ("kimi", "K", [Color(red: 0.2, green: 0.2, blue: 0.22), Color(red: 0.05, green: 0.05, blue: 0.06)]),
+            ("glm", "Z", [Color(red: 0.18, green: 0.43, blue: 0.94), Color(red: 0.09, green: 0.3, blue: 0.75)])
+        ]
+        if let match = table.first(where: { key.contains($0.0) }) {
+            return (match.1, match.2)
+        }
+        let letter = model.name.trimmingCharacters(in: .whitespaces).first.map { String($0).uppercased() } ?? "?"
+        return (letter, [Color(red: 0.56, green: 0.56, blue: 0.6), Color(red: 0.42, green: 0.42, blue: 0.46)])
+    }
+
     static func count(_ value: Int) -> String {
         if value >= 1_000_000 {
             return (Double(value) / 1_000_000).formatted(.number.precision(.fractionLength(0 ... 1))) + "M"
@@ -357,7 +433,7 @@ enum ChatModelPickerDisplay {
     }
 }
 
-/// A 26-point Mac track inside a 44-point touch target. Auto is not a real stop.
+/// The Mac track enlarged for touch: 32 pt high inside a 44-point target. Auto is not a real stop.
 struct ChatEffortSlider: View {
     let levels: [ChatReasoningEffort]
     @Binding var effort: ChatReasoningEffort
@@ -368,8 +444,8 @@ struct ChatEffortSlider: View {
         reduceMotionOverride ?? systemReduceMotion
     }
 
-    static let height: CGFloat = 26
-    static let knobSize: CGFloat = 20
+    static let height: CGFloat = 32
+    static let knobSize: CGFloat = 26
     static let inset: CGFloat = 3
     static let touchHeight: CGFloat = 44
 
@@ -415,8 +491,9 @@ struct ChatEffortSlider: View {
             let width = geometry.size.width
             let center = Self.knobCenter(index: index, count: levels.count, width: width)
             ZStack(alignment: .leading) {
-                Capsule().fill(ChatTheme.controlSurface)
-                    .overlay(Capsule().strokeBorder(.black.opacity(0.18), lineWidth: 0.5))
+                Capsule().fill(ChatTheme.fill)
+                    .overlay(Capsule().strokeBorder(.black.opacity(0.14), lineWidth: 0.5))
+                    .shadow(color: .black.opacity(0.12), radius: 1, y: 1)
                 ForEach(levels.indices, id: \.self) { stop in
                     Circle().fill(ChatTheme.tertiary)
                         .frame(width: 4, height: 4)

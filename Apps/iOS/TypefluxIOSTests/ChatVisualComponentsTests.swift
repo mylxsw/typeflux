@@ -73,9 +73,10 @@ struct ChatVisualComponentsTests {
     @Test func `slider touch positions clamp and top level fills the whole track`() {
         for count in 2 ... 5 {
             let width: CGFloat = 248
-            #expect(ChatEffortSlider.knobCenter(index: 0, count: count, width: width) == 13)
+            // 3 pt inset plus half of the 26 pt knob.
+            #expect(ChatEffortSlider.knobCenter(index: 0, count: count, width: width) == 16)
             let last = ChatEffortSlider.knobCenter(index: count - 1, count: count, width: width)
-            #expect(last == 235)
+            #expect(last == 232)
             #expect(ChatEffortSlider.fillWidth(knobCenter: last, width: width) == width)
             #expect(ChatEffortSlider.index(at: -100, count: count, width: width) == 0)
             #expect(ChatEffortSlider.index(at: 1000, count: count, width: width) == count - 1)
@@ -158,21 +159,19 @@ struct ChatVisualComponentsTests {
 
     @Test func `every custom dynamic theme color resolves correctly off the main actor`() async {
         let colors = [
-            ChatTheme.accent, ChatTheme.background, ChatTheme.card, ChatTheme.raised,
-            ChatTheme.sidebar, ChatTheme.controlSurface, ChatTheme.popover, ChatTheme.accentText,
-            ChatTheme.accentSoft, ChatTheme.purple, ChatTheme.border, ChatTheme.separator
+            ChatTheme.accent, ChatTheme.background, ChatTheme.card, ChatTheme.bubble, ChatTheme.bubbleText,
+            ChatTheme.codeBackground, ChatTheme.accentText, ChatTheme.accentSoft, ChatTheme.purple,
+            ChatTheme.fill, ChatTheme.border
         ].map { UIColor($0) }
         let expectedLight: [[CGFloat]] = [
-            [0.18, 0.43, 0.94, 1], [0.985, 0.985, 0.985, 1], [1, 1, 1, 1],
-            [0.965, 0.965, 0.965, 1], [0.940, 0.940, 0.940, 1], [0.925, 0.925, 0.925, 1],
-            [1, 1, 1, 1], [0.106, 0.341, 0.839, 1], [0.906, 0.937, 1, 1],
-            [0.49, 0.25, 0.94, 1], [0.886, 0.898, 0.918, 1], [0.910, 0.922, 0.937, 1]
+            [0.18, 0.43, 0.94, 1], [0.961, 0.961, 0.969, 1], [1, 1, 1, 1], [0.894, 0.929, 0.992, 1],
+            [0.063, 0.137, 0.302, 1], [0.949, 0.953, 0.965, 1], [0.106, 0.341, 0.839, 1],
+            [0.902, 0.933, 0.992, 1], [0.49, 0.25, 0.94, 1], [0.47, 0.47, 0.50, 0.10], [0, 0, 0, 0.08]
         ]
         let expectedDark: [[CGFloat]] = [
-            [0.09, 0.55, 1, 1], [0.122, 0.122, 0.122, 1], [0.180, 0.180, 0.180, 1],
-            [0.150, 0.150, 0.150, 1], [0.075, 0.075, 0.075, 1], [0.180, 0.180, 0.180, 1],
-            [0.196, 0.196, 0.196, 1], [0.557, 0.741, 1, 1], [0.082, 0.149, 0.243, 1],
-            [0.71, 0.55, 1, 1], [1, 1, 1, 0.10], [1, 1, 1, 0.07]
+            [0.09, 0.55, 1, 1], [0.059, 0.059, 0.071, 1], [0.110, 0.110, 0.129, 1], [0.118, 0.200, 0.341, 1],
+            [0.882, 0.922, 1, 1], [0.094, 0.094, 0.114, 1], [0.557, 0.741, 1, 1],
+            [0.082, 0.149, 0.243, 1], [0.71, 0.55, 1, 1], [0.47, 0.47, 0.50, 0.20], [1, 1, 1, 0.09]
         ]
         let resolved = await Task.detached { @Sendable in
             dispatchPrecondition(condition: .notOnQueue(.main))
@@ -251,7 +250,7 @@ struct ChatVisualComponentsTests {
                 }
                 .buttonStyle(ChatModelRowStyle())
                 .disabled(disabled)
-                .background(ChatTheme.popover)
+                .background(ChatTheme.card)
                 .environment(\.colorScheme, scheme)
                 return try #require(ImageRenderer(content: button).uiImage?.pngData())
             }

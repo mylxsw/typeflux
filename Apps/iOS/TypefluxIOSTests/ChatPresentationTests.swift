@@ -82,4 +82,70 @@ struct ChatPresentationTests {
         #expect(!ChatPresentation.hasHorizontalOverflow(contentWidth: .infinity, viewportWidth: 360))
         #expect(!ChatPresentation.hasHorizontalOverflow(contentWidth: 600, viewportWidth: .nan))
     }
+
+    @Test func `title pill status counts the latest turn's steps`() {
+        let search = ChatToolCall(id: "s", function: .init(name: "web_search", arguments: #"{"query":"q"}"#))
+        let fetch = ChatToolCall(id: "f", function: .init(name: "web_fetch", arguments: "{}"))
+        let old = ChatToolCall(id: "old", function: .init(name: "web_search", arguments: "{}"))
+        var conversation = ChatConversation(id: "c", title: "T", revision: 1, messages: [
+            ChatMessage(id: "q0", role: "user", text: "Earlier"),
+            ChatMessage(id: "a0", role: "assistant", text: "", toolCalls: [old]),
+            ChatMessage(id: "q1", role: "user", text: "Now"),
+            ChatMessage(id: "a1", role: "assistant", text: "", toolCalls: [search])
+        ])
+        conversation.run = ChatRun(id: "r", deviceId: "d", status: "running", pending: [search, fetch])
+        #expect(ChatTranscript.stepCount(conversation) == 2)
+        #expect(ChatPresentation.runStatusLine(conversation.run!, steps: 2) == "Running · Step 2")
+        conversation.run?.status = "completed"
+        #expect(ChatTranscript.stepCount(conversation) == 1)
+        #expect(ChatPresentation.runStatusLine(conversation.run!, steps: 1) == "Completed · 1 steps")
+        #expect(ChatPresentation.runStatusLine(conversation.run!, steps: 0) == "Completed")
+        conversation.run?.status = "failed"
+        #expect(ChatPresentation.runStatusLine(conversation.run!, steps: 3) == "Failed")
+        conversation.run?.status = "waiting_tool"
+        #expect(ChatPresentation.runStatusLine(conversation.run!, steps: 0) == "Waiting for Mac · Step 1")
+        #expect(ChatTranscript.stepCount(ChatConversation(id: "empty", title: "", revision: 0)) == 0)
+    }
+
+    @Test func `tool card titles name the distinct tools or the live step`() {
+        let search = ChatToolCall(id: "s", function: .init(name: "web_search", arguments: "{}"))
+        let again = ChatToolCall(id: "s2", function: .init(name: "web_search", arguments: "{}"))
+        let fetch = ChatToolCall(id: "f", function: .init(name: "web_fetch", arguments: "{}"))
+        let steps = [search, again, fetch].map { ChatTranscript.Step(call: $0, result: nil, status: .done) }
+        var activity = ChatTranscript.Activity(id: "a", messages: [], steps: steps, status: .done)
+        #expect(ChatTranscript.activityTitle(activity) == "Called 3 tools")
+        #expect(ChatTranscript.activitySubtitle(activity) == "Search the web · Read webpage")
+        activity.status = .running
+        #expect(ChatTranscript.activityTitle(activity) == "Using tools")
+        #expect(ChatTranscript.activitySubtitle(activity) == "Step 3")
+        activity.status = .waiting
+        #expect(ChatTranscript.activityTitle(activity) == "Waiting for Mac")
+        activity.status = .failed
+        #expect(ChatTranscript.activityTitle(activity) == "Tool failed")
+        activity.status = .stopped
+        #expect(ChatTranscript.activityTitle(activity) == "Called 3 tools")
+    }
+
+    @Test func `sidebar times show the clock for recent items and the date for older ones`() throws {
+        let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 10, day: 4, hour: 19, minute: 5)))
+        let locale = Locale(identifier: "en_US_POSIX")
+        var formatterCalendar = calendar
+        formatterCalendar.locale = locale
+        let today = now.addingTimeInterval(-60)
+        let older = now.addingTimeInterval(-6 * 86400)
+        let clock = ChatPresentation.historyTime(today, now: now, calendar: calendar, locale: locale)
+        let date = ChatPresentation.historyTime(older, now: now, calendar: calendar, locale: locale)
+        #expect(clock.contains(":"))
+        #expect(!date.contains(":"))
+        #expect(clock != date)
+    }
+
+    @Test func `provider tiles use brand colors and fall back to the initial`() {
+        #expect(ChatModelPickerDisplay.brand(ChatModel(id: "claude-sonnet", name: "Claude Sonnet")).letter == "C")
+        #expect(ChatModelPickerDisplay.brand(ChatModel(id: "m3", name: "MiniMax M3")).letter == "M")
+        #expect(ChatModelPickerDisplay.brand(ChatModel(id: "x", name: "deepseek v4")).letter == "D")
+        #expect(ChatModelPickerDisplay.brand(ChatModel(id: "x", name: "zeta")).letter == "Z")
+        #expect(ChatModelPickerDisplay.brand(ChatModel(id: "x", name: "  ")).letter == "?")
+        #expect(ChatModelPickerDisplay.brand(ChatModel(id: "x", name: "zeta")).colors.count == 2)
+    }
 }

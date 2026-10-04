@@ -106,6 +106,43 @@ enum ChatTranscript {
         return items
     }
 
+    /// Tool steps in the latest turn: what the header's "N steps" counts.
+    static func stepCount(_ conversation: ChatConversation) -> Int {
+        let messages = conversation.messages
+        let start = (messages.lastIndex(where: { $0.role == "user" }) ?? -1) + 1
+        var ids = Set(messages[start...].flatMap { $0.toolCalls ?? [] }.map(\.id))
+        if conversation.run?.isActive == true {
+            ids.formUnion(conversation.run?.pending.map(\.id) ?? [])
+        }
+        return ids.count
+    }
+
+    /// "Called 2 tools", or the live state while the card is still working.
+    static func activityTitle(_ activity: Activity) -> String {
+        switch activity.status {
+        case .running: NSLocalizedString("Using tools", comment: "Activity card title")
+        case .waiting: NSLocalizedString("Waiting for Mac", comment: "Activity card title")
+        case .failed: NSLocalizedString("Tool failed", comment: "Activity card title")
+        case .stopped, .done:
+            String(format: NSLocalizedString("Called %d tools", comment: "Activity card title"), activity.steps.count)
+        }
+    }
+
+    /// The distinct readable tool names, or the live step number.
+    static func activitySubtitle(_ activity: Activity) -> String {
+        if activity.status == .running || activity.status == .waiting {
+            return String(format: NSLocalizedString("Step %d", comment: "Activity step"), max(1, activity.steps.count))
+        }
+        var names: [String] = []
+        for step in activity.steps {
+            let name = ChatToolPresentation.title(step.call)
+            if !names.contains(name) {
+                names.append(name)
+            }
+        }
+        return names.joined(separator: " · ")
+    }
+
     static func preview(_ conversation: ChatConversation) -> String? {
         guard let text = conversation.run?.preview, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               conversation.messages.last(where: { $0.role == "assistant" })?.text != text else { return nil }

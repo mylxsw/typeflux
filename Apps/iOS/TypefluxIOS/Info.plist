@@ -17,4 +17,7 @@
     <key>UISupportedInterfaceOrientations~ipad</key><array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationPortraitUpsideDown</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
     <key>TYPEFLUX_API_URL</key><string>$(TYPEFLUX_API_URL)</string>
     <key>ITSAppUsesNonExemptEncryption</key><false/>
+    <key>NSMicrophoneUsageDescription</key><string>Typeflux uses the microphone when you dictate a question.</string>
+    <key>NSSpeechRecognitionUsageDescription</key><string>Typeflux turns your dictation into text for the message you are writing.</string>
+    <key>NSCameraUsageDescription</key><string>Typeflux uses the camera when you take a photo to ask about.</string>
 </dict></plist>
