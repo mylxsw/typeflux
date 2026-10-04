@@ -25,15 +25,22 @@ struct AskAttachButton: View {
         .disabled(disabled)
         .help(L("ask.attach.help"))
         .accessibilityLabel(L("ask.attach.title"))
+        .accessibilityIdentifier("ask.attach")
         .askMenu(isPresented: $expanded, glass: true) {
-            AskAttachChoices(clipboardHasImage: AskAttachmentSource.canRead(from: .general)) { choice in
+            AskAttachChoices(clipboardHasImage: AskAttachmentSource.canRead(from: .general),
+                             sourceToRestore: sourceToRestore, selectionLinesToRestore: selectionLinesToRestore,
+                             restoreEnabled: !model.capturing,
+                             restore: { kind in
+                                 expanded = false
+                                 model.restoreCapturedContent(kind, launcher: launcher)
+                             }, choose: { choice in
                 expanded = false
                 switch choice {
                 case .files: model.pickAttachments(folders: false, launcher: launcher)
                 case .folder: model.pickAttachments(folders: true, launcher: launcher)
                 case .clipboard: model.addAttachments(AskAttachmentSource.read(from: .general), launcher: launcher)
                 }
-            }
+            })
         }
         // ⌘U picks files directly, without opening the menu.
         .background {
@@ -45,6 +52,18 @@ struct AskAttachButton: View {
                 .frame(width: 0, height: 0)
                 .accessibilityHidden(true)
         }
+    }
+
+    private var draft: AskDraft { launcher ? model.launcherDraft : model.draft }
+
+    private var sourceToRestore: String? {
+        guard draft.sourceOff == true, let source = draft.source, !source.isEmpty else { return nil }
+        return AskContextChips.sourceParts(source).app
+    }
+
+    private var selectionLinesToRestore: Int? {
+        guard draft.selectionOff == true, let selection = draft.selection, !selection.isEmpty else { return nil }
+        return AskPresentation.lineCount(selection)
     }
 }
 
@@ -69,6 +88,10 @@ struct AskAttachChoices: View {
     enum Choice { case files, folder, clipboard }
 
     var clipboardHasImage: Bool
+    var sourceToRestore: String?
+    var selectionLinesToRestore: Int?
+    var restoreEnabled = true
+    var restore: (AskCapturedContentKind) -> Void = { _ in }
     var choose: (Choice) -> Void
 
     var body: some View {
@@ -76,16 +99,36 @@ struct AskAttachChoices: View {
             AskPopoverHeader(title: L("ask.attach.title"))
             row("ask.attach.files", "ask.attach.files.caption", "paperclip", .files)
             row("ask.attach.folder", "ask.attach.folder.caption", "folder", .folder)
-            row("ask.attach.clipboard", "ask.attach.clipboard.caption", "doc.on.clipboard", .clipboard, enabled: clipboardHasImage)
+            row("ask.attach.clipboard", "ask.attach.clipboard.caption", "doc.on.clipboard", .clipboard,
+                enabled: clipboardHasImage)
+            if sourceToRestore != nil || selectionLinesToRestore != nil {
+                Divider().padding(.vertical, 5)
+                if let sourceToRestore {
+                    restoreRow(L("ask.context.restore.source", sourceToRestore), "app", .source)
+                }
+                if let selectionLinesToRestore {
+                    restoreRow(L("ask.context.restore.selection", selectionLinesToRestore),
+                               "text.alignleft", .selection)
+                }
+            }
         }
         .padding(.vertical, 6)
         .frame(width: 280)
     }
 
-    private func row(_ title: String, _ caption: String, _ symbol: String, _ choice: Choice, enabled: Bool = true) -> some View {
-        AskPopoverRow(title: L(title), caption: L(caption), selected: false, enabled: enabled, action: { choose(choice) }) {
+    private func restoreRow(_ title: String, _ symbol: String, _ kind: AskCapturedContentKind) -> some View {
+        AskPopoverRow(title: title, selected: false, enabled: restoreEnabled, action: { restore(kind) }, accessory: {
             Image(systemName: symbol).font(.system(size: 12, weight: .medium))
-        }
+        })
+        .accessibilityIdentifier(kind == .source ? "ask.context.restore.source" : "ask.context.restore.selection")
+    }
+
+    private func row(_ title: String, _ caption: String, _ symbol: String,
+                     _ choice: Choice, enabled: Bool = true) -> some View {
+        AskPopoverRow(title: L(title), caption: L(caption), selected: false,
+                      enabled: enabled, action: { choose(choice) }, accessory: {
+            Image(systemName: symbol).font(.system(size: 12, weight: .medium))
+        })
     }
 }
 

@@ -14,8 +14,8 @@ struct AskLauncherView: View {
     }
 }
 
-/// Two layers: the editor row carries the question, the footer carries context
-/// and actions. The launcher and the workspace share it so both behave the same.
+/// Included content sits above the editor; switches and actions sit below it.
+/// The launcher and the workspace share the same composer.
 struct AskComposer: View {
     @ObservedObject var model: AskConversationModel
     var launcher: Bool
@@ -45,7 +45,6 @@ struct AskComposer: View {
     private var contextID: String { launcher ? "launcher" : "chat:" + (model.selectedId ?? "new") }
     private var active: Bool { voice.context == contextID && voice.isActive }
     private var listening: Bool { voice.context == contextID && voice.phase == .listening }
-    @State private var showingScreenshot = false
     @State private var showingStripPreview = false
     /// Files are dragged over the editor or the card.
     @State private var editorDropTargeted = false
@@ -53,9 +52,10 @@ struct AskComposer: View {
     private var dropTargeted: Bool { editorDropTargeted || cardDropTargeted }
     private var userAttachments: [AskAttachment] { draft.wrappedValue.attachments ?? [] }
     private var loadingAttachments: Bool { model.isLoadingAttachments(launcher: launcher) }
-    /// The launcher shows only what the user added; its captured context stays in the footer.
+    @State private var attachmentHeight: CGFloat = 30
+    /// Both composers show each included item above the editor.
     private var showsStrip: Bool {
-        !userAttachments.isEmpty || loadingAttachments || !chosenTools.isEmpty || (!launcher && !attachedItems.isEmpty)
+        !userAttachments.isEmpty || loadingAttachments || !chosenTools.isEmpty || !attachedItems.isEmpty
     }
     /// Skills and MCP servers chosen with slash commands, shown as chips.
     private var chosenTools: [AskChosenTool] {
@@ -72,7 +72,8 @@ struct AskComposer: View {
     @State private var commandContext: AskCommandContext?
     /// The workspace shows the content that is sent above the editor.
     private var attachedItems: [AskContextItem] {
-        AskAttachmentStrip.attached(contextItems, screenshotCaptured: draft.wrappedValue.screenshot != nil)
+        AskAttachmentStrip.contentItems(draft: draft.wrappedValue, screenshotState: screenshotState,
+                                        capturing: model.capturingScreenshot)
     }
     @State private var editorHeight: CGFloat = 32
     @State private var voiceShortcut: HotkeyBinding?
@@ -152,6 +153,10 @@ struct AskComposer: View {
             .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
             .onChange(of: noticeRows) { _ in reportHeight() }
             .onChange(of: showsStrip) { _ in reportHeight() }
+            .onChange(of: attachmentHeight) { _ in reportHeight() }
+            .onPreferenceChange(AskCapturedStripHeight.self) { height in
+                if height > 0, abs(attachmentHeight - height) > 0.5 { attachmentHeight = height }
+            }
             .onChange(of: paletteOpen) { _ in reportHeight() }
             .onChange(of: palette) { _ in if launcher { reportHeight() } }
             .onChange(of: active) { recording in if recording { closePalette() } }
@@ -185,7 +190,7 @@ struct AskComposer: View {
             }
             if showsStrip {
                 AskAttachmentStripView(
-                    items: launcher ? [] : attachedItems,
+                    items: attachedItems,
                     screenshot: AskAttachmentStrip.thumbnail(dataURL: draft.wrappedValue.screenshot,
                                                              capturedAt: draft.wrappedValue.capturedAt),
                     onPreview: { showingStripPreview = true },
@@ -199,13 +204,25 @@ struct AskComposer: View {
                         case .skill: model.removeChoice(skill: choice.name, launcher: launcher)
                         case .mcpServer: model.removeChoice(mcpServer: choice.name, launcher: launcher)
                         }
-                    }
+                    },
+                    draft: draft,
+                    restored: launcher && model.launcherContextRestored,
+                    capturing: model.capturing,
+                    refreshSource: launcher ? { Task { await model.refreshLauncherContext() } } : nil,
+                    sourceRefreshHelp: sourceRefreshHelp,
+                    onScreenshotAction: screenshotAction,
+                    screenshotCapturing: model.capturingScreenshot
                 )
+                .disabled(active)
+                .background(GeometryReader { geometry in
+                    Color.clear.preference(key: AskCapturedStripHeight.self, value: geometry.size.height)
+                })
                 .padding(.horizontal, chrome.horizontalInset - 4)
                 .padding(.top, 10)
                 .popover(isPresented: $showingStripPreview) {
-                    AskContextPreview(draft: draft,
-                                      recapture: { Task { await model.refreshScreenshot(launcher: launcher) } })
+                    AskContextPreview(draft: draft, capturing: model.capturing, warning: model.captureWarning,
+                                      recapture: { Task { await model.refreshScreenshot(launcher: launcher) } },
+                                      remove: { remove(.screenshot); showingStripPreview = false })
                 }
                 .animation(.spring(response: 0.3, dampingFraction: 0.8),
                            value: attachedItems.map(\.id) + userAttachments.map(\.id) + chosenTools.map(\.id))
@@ -453,27 +470,17 @@ struct AskComposer: View {
             // "How to ask" and "what rides along" are separated by a rule.
             Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
             HStack(spacing: 0) {
-                if launcher || draft.wrappedValue.source?.isEmpty == false {
-                    ViewThatFits(in: .horizontal) {
-                        HStack(spacing: 0) {
-                            sourceContextButton()
-                            contextChips
-                        }
-                        .fixedSize()
-                        sourceContextButton(controls: AnyView(contextChips))
-                    }
+                contextChips
                     .disabled(active)
                     .opacity(Self.recordingDim(active))
                     .layoutPriority(1)
-                } else {
-                    contextChips
-                        .disabled(active)
-                        .opacity(Self.recordingDim(active))
-                        .layoutPriority(1)
-                }
                 Spacer(minLength: 8)
                 // Confirms a command in the footer's empty space, inside the card.
-                if let feedback = model.commandFeedback, !active {
+                if let feedback = model.capturedContentFeedback(launcher: launcher), !active {
+                    AskCapturedContentFeedbackView(feedback: feedback) {
+                        model.undoCapturedContent(launcher: launcher)
+                    }
+                } else if let feedback = model.commandFeedback, !active {
                     AskComposerFootnote(text: feedback)
                         .transition(.opacity)
                 }
@@ -519,11 +526,11 @@ struct AskComposer: View {
     /// recording state is the one thing that reads.
     static func recordingDim(_ active: Bool) -> Double { active ? 0.4 : 1 }
 
-    private func sourceContextButton(controls: AnyView? = nil) -> some View {
-        AskSourceContextButton(draft: draft, restored: launcher && model.launcherContextRestored,
-                               capturing: model.capturing, warning: launcher ? model.captureWarning : nil,
-                               refresh: launcher ? { Task { await model.refreshLauncherContext() } } : nil,
-                               controls: controls)
+    private var sourceRefreshHelp: String {
+        if let name = model.launcherReplacementAppName {
+            return L("ask.context.refresh.target", name)
+        }
+        return L("ask.context.refresh.hint")
     }
 
     private var contextItems: [AskContextItem] {
@@ -552,54 +559,47 @@ struct AskComposer: View {
         return value.includeScreenshot ? .attached : .off
     }
 
-    /// Icon chips, widest layout that fits first. The screenshot stays visible;
-    /// selection and memory fold into "+N" from the right.
+    /// The footer holds only switches. Included content lives in the strip.
     private var contextChips: some View {
-        let items = contextItems
-        return ViewThatFits(in: .horizontal) {
-            ForEach(Array(AskContextChips.layouts(items).enumerated()), id: \.offset) { _, layout in
-                HStack(spacing: AskContextChips.spacing) {
-                    ForEach(layout.shown) { chip($0) }
-                    if !layout.hidden.isEmpty {
-                        AskOverflowChip(hidden: layout.hidden, onRemove: remove)
-                    }
-                    if model.capturing { ProgressView().controlSize(.small) }
+        HStack(spacing: AskContextChips.spacing) {
+            ForEach(contextItems.filter { $0.kind == .screenshot || $0.kind == .memory }) { item in
+                if item.kind == .screenshot {
+                    AskIconChip(item: screenshotSwitch(item), action: screenshotToggleAction)
+                } else {
+                    AskIconChip(item: item, action: memoryToggle)
                 }
-                .fixedSize()
             }
         }
+        .fixedSize()
     }
 
-    @ViewBuilder private func chip(_ item: AskContextItem) -> some View {
-        switch item.kind {
-        case .screenshot:
-            AskIconChip(item: item, action: screenshotAction, onRemove: { remove(.screenshot) })
-                .popover(isPresented: $showingScreenshot) {
-                    AskContextPreview(draft: draft,
-                                      recapture: { Task { await model.refreshScreenshot(launcher: launcher) } })
-                }
-        case .selection:
-            // The hover card previews the text; a click switches it on or off.
-            AskIconChip(item: item, action: selectionToggle)
-        case .source:
-            AskIconChip(item: item)
-        case .memory:
-            AskIconChip(item: item, action: memoryToggle)
+    private func screenshotSwitch(_ item: AskContextItem) -> AskContextItem {
+        var item = item
+        if draft.wrappedValue.includeScreenshot {
+            item.hint = L("ask.context.screenshot.removeHint")
         }
+        return item
+    }
+
+    private var screenshotToggleAction: (() -> Void)? {
+        if draft.wrappedValue.includeScreenshot { return { remove(.screenshot) } }
+        return screenshotAction
     }
 
     private var screenshotAction: (() -> Void)? {
         switch screenshotState {
         case .unavailable: return nil
-        case .attached: return { showingScreenshot = true }
+        case .attached: return { remove(.screenshot) }
         case .off:
+            if model.capturing && draft.wrappedValue.screenshot == nil { return nil }
             return {
-                draft.wrappedValue.includeScreenshot = true
+                model.restoreCapturedContent(.screenshot, launcher: launcher)
                 if draft.wrappedValue.screenshot == nil {
                     Task { await model.refreshScreenshot(launcher: launcher) }
                 }
             }
         case let .failed(permission, _):
+            if !permission && model.capturing { return nil }
             return {
                 if permission {
                     // Registers the app in the list first, otherwise the pane shows no Typeflux entry.
@@ -618,16 +618,12 @@ struct AskComposer: View {
     /// and for a follow-up on the memory pinned to the conversation.
     private func memoryToggle() { model.toggleMemory(launcher: launcher) }
 
-    private func selectionToggle() {
-        draft.wrappedValue.selectionOff = draft.wrappedValue.selectionOff == true ? nil : true
-    }
-
     private func remove(_ kind: AskContextItem.Kind) {
         switch kind {
-        case .screenshot: draft.wrappedValue.includeScreenshot = false
-        case .selection: draft.wrappedValue.selectionOff = true
-        case .memory: draft.wrappedValue.memoryOff = true
-        case .source: break
+        case .screenshot: model.removeCapturedContent(.screenshot, launcher: launcher)
+        case .selection: model.removeCapturedContent(.selection, launcher: launcher)
+        case .source: model.removeCapturedContent(.source, launcher: launcher)
+        case .memory: model.toggleMemory(launcher: launcher)
         }
     }
 
@@ -654,26 +650,34 @@ struct AskComposer: View {
         let banners = noticeRows
         let commands = launcher && paletteOpen ? AskCommandPaletteView.height(for: palette) + 10 : 0
         onHeightChange(AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
-                                                 suggestions: showsLauncherSuggestions, attachments: showsStrip) + commands)
+                                                 suggestions: showsLauncherSuggestions, attachments: showsStrip,
+                                                 attachmentHeight: attachmentHeight) + commands)
     }
 }
 
 private struct AskContextPreview: View {
     @Binding var draft: AskDraft
+    var capturing = false
+    var warning: String?
     var recapture: () -> Void
+    var remove: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(L("ask.context")).font(.system(size: 13, weight: .semibold))
+            Text(L("ask.context.screen.full")).font(.system(size: 13, weight: .semibold))
             Text(L("ask.context.screen.scope")).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
             if let date = draft.capturedAt { Text(date, style: .time).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary) }
             if let dataURL = draft.screenshot, let image = AskImage.decode(dataURL) {
                 Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 230)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 HStack(spacing: 8) {
-                    Button(L("ask.capture.refresh"), action: recapture)
-                    Button(L("ask.remove")) { draft.screenshot = nil; draft.includeScreenshot = false }
+                    Button(L("ask.capture.refresh"), action: recapture).disabled(capturing)
+                    Button(L("ask.remove"), action: remove)
                 }
+            }
+            if let warning {
+                Text(warning).font(.system(size: 11)).foregroundStyle(StudioTheme.warning)
+                    .accessibilityIdentifier("ask.context.screenshot.warning")
             }
             Text(L("ask.context.notice")).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
         }
