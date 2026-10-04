@@ -2235,25 +2235,26 @@
 "ask.skills.install.nameConflict" = "스킬 이름이 로컬 폴더와 충돌합니다. 충돌하는 폴더 이름을 변경한 후 설치하세요.";
 
 /* Execution recovery */
-"ask.recovery.unknown" = "이전 작업의 결과를 확인해 주세요";
-"ask.recovery.unknownBody" = "이전 작업이 이미 완료되었을 수 있습니다. 반복하기 전에 관련 앱이나 파일을 확인하세요.";
-"ask.recovery.checkBody" = "Typeflux는 이 작업을 자동으로 반복하지 않습니다.";
-"ask.recovery.endBody" = "작업을 종료하면 이후 작업이 중단됩니다. 이미 완료된 작업은 되돌리지 않습니다.";
-"ask.recovery.binding" = "이 작업을 시작한 기기에서 원래 계정으로 로그인하여 결과를 확인하거나 작업을 계속하세요.";
-"ask.recovery.otherDevice" = "원래 기기에서 계속해 주세요";
-"ask.recovery.saved" = "결과 동기화가 필요합니다";
-"ask.recovery.savedBody" = "결과는 이 Mac에 저장되어 있습니다. 작업을 반복하지 않고 다시 동기화할 수 있습니다.";
-"ask.recovery.paused" = "작업이 일시 중지되었습니다";
-"ask.recovery.activeBody" = "이전 작업이 아직 끝나지 않았습니다. 중단한 지점부터 계속할 수 있습니다.";
-"ask.recovery.finished" = "작업이 종료되었습니다";
-"ask.recovery.finishedBody" = "추가 질문을 하거나 새 작업을 시작할 수 있습니다.";
-"ask.recovery.inspect" = "해결 방법 보기";
-"ask.recovery.retransmit" = "결과 동기화";
+"ask.recovery.unknown" = "이번 작업의 결과를 확인할 수 없습니다";
+"ask.recovery.unknownBody" = "Typeflux가 이번 작업의 완료 여부를 확인할 수 없습니다. 두 번 실행하지 않도록 같은 작업을 자동으로 반복하지 않습니다.";
+"ask.recovery.checkBody" = "메시지 전송이나 파일 수정 등이 포함된 작업이라면 해당 앱에서 이미 완료되었는지 먼저 확인하세요.";
+"ask.recovery.endBody" = "중지하면 Typeflux는 이번 작업을 더 이상 진행하지 않습니다. 이미 완료된 작업은 되돌리지 않습니다. 이후 대화로 돌아가 질문을 이어갈 수 있습니다.";
+"ask.recovery.binding" = "이 메시지를 보낼 때 사용한 기기에서 당시 계정으로 로그인한 뒤 이 대화를 여세요.";
+"ask.recovery.otherDevice" = "원래 사용한 기기로 돌아가세요";
+"ask.recovery.saved" = "대화 진행 상황이 아직 업데이트되지 않았습니다";
+"ask.recovery.savedBody" = "작업 결과는 이 Mac에 저장되어 있습니다. \"대화 업데이트\"를 누르면 작업을 반복하지 않고 최신 진행 상황을 확인할 수 있습니다.";
+"ask.recovery.paused" = "이번 작업이 아직 끝나지 않았습니다";
+"ask.recovery.activeBody" = "\"작업 계속\"을 누르면 Typeflux가 남은 단계를 이어서 진행합니다.";
+"ask.recovery.finished" = "이번 작업이 종료되었습니다";
+"ask.recovery.finishedBody" = "아래 입력창에서 질문을 이어갈 수 있습니다.";
+"ask.recovery.inspect" = "다음에 할 일";
+"ask.recovery.retransmit" = "대화 업데이트";
 "ask.recovery.continue" = "작업 계속";
-"ask.recovery.close" = "닫기";
-"ask.recovery.end" = "이 작업 종료";
-"ask.recovery.newRequest" = "새 요청 작성";
-"ask.recovery.newRequestBody" = "결과를 확인한 후 새 요청을 입력하고 보내세요.";
+"ask.recovery.close" = "대화로 돌아가기";
+"ask.recovery.end" = "남은 작업 중지";
+"ask.recovery.followUpBody" = "이미 완료되었다면 다시 할 필요가 없습니다. 도움이 더 필요하다면 대화로 돌아가 아직 끝나지 않은 일을 Typeflux에 알려 주세요.";
+"ask.recovery.message" = "내 메시지";
+"ask.recovery.stopped" = "남은 작업이 중지되었습니다";
 
 /* GUL-193 Reasoning effort levels */
 "ask.reasoning.xhigh" = "매우 높음";

@@ -2242,25 +2242,26 @@
 "ask.skills.install.nameConflict" = "技能名稱與本機資料夾衝突。請先重新命名衝突的資料夾，再安裝。";
 
 /* Execution recovery */
-"ask.recovery.unknown" = "請確認上次操作的結果";
-"ask.recovery.unknownBody" = "上次操作可能已經完成。請先檢查相關應用程式或檔案，避免重複操作。";
-"ask.recovery.checkBody" = "Typeflux 不會自動重複這次操作。";
-"ask.recovery.endBody" = "結束任務只會停止後續步驟，已經完成的操作不會撤銷。";
-"ask.recovery.binding" = "請回到開始這項任務的裝置，並使用原帳戶查看結果或繼續處理。";
-"ask.recovery.otherDevice" = "請在原裝置繼續";
-"ask.recovery.saved" = "結果尚未同步";
-"ask.recovery.savedBody" = "結果已儲存在本機。可以重新同步，無需再做一次。";
-"ask.recovery.paused" = "任務已暫停";
-"ask.recovery.activeBody" = "上次任務尚未完成，可以從中斷處繼續。";
-"ask.recovery.finished" = "任務已結束";
-"ask.recovery.finishedBody" = "可以繼續提問，或開始新的任務。";
-"ask.recovery.inspect" = "查看處理方式";
-"ask.recovery.retransmit" = "同步結果";
-"ask.recovery.continue" = "繼續任務";
-"ask.recovery.close" = "關閉";
-"ask.recovery.end" = "結束此任務";
-"ask.recovery.newRequest" = "撰寫新請求";
-"ask.recovery.newRequestBody" = "確認結果後，請輸入並傳送新的請求。";
+"ask.recovery.unknown" = "還不能確認這次處理的結果";
+"ask.recovery.unknownBody" = "Typeflux 無法確認這次處理是否完成。為避免做兩遍，不會自動重複操作。";
+"ask.recovery.checkBody" = "如果這次涉及傳訊息、修改檔案等操作，請先到對應的應用程式裡看看是否已經完成。";
+"ask.recovery.endBody" = "停止後，Typeflux 不會繼續這次任務，已經完成的操作不會撤銷。之後可以回到對話裡繼續提問。";
+"ask.recovery.binding" = "請回到傳送這則訊息時使用的裝置，登入當時的帳戶，再開啟這段對話。";
+"ask.recovery.otherDevice" = "請回到原來的裝置處理";
+"ask.recovery.saved" = "對話進度還沒更新";
+"ask.recovery.savedBody" = "處理結果已儲存在這台 Mac 上。點選「更新對話」查看最新進度，不會把操作再做一遍。";
+"ask.recovery.paused" = "這次處理還沒完成";
+"ask.recovery.activeBody" = "點選「繼續處理」，Typeflux 會接著完成剩下的步驟。";
+"ask.recovery.finished" = "這次處理已結束";
+"ask.recovery.finishedBody" = "可以在下方輸入框繼續提問。";
+"ask.recovery.inspect" = "接下來怎麼做";
+"ask.recovery.retransmit" = "更新對話";
+"ask.recovery.continue" = "繼續處理";
+"ask.recovery.close" = "返回對話";
+"ask.recovery.end" = "停止後續處理";
+"ask.recovery.followUpBody" = "如果已經完成，就不用再做。若還需要協助，返回對話後告訴 Typeflux 哪些事還沒完成。";
+"ask.recovery.message" = "你的訊息";
+"ask.recovery.stopped" = "後續處理已停止";
 
 /* GUL-193 Reasoning effort levels */
 "ask.reasoning.xhigh" = "超高";

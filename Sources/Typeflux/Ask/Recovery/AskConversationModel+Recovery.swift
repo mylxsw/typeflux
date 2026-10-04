@@ -20,6 +20,19 @@ extension AskConversationModel {
         selected != nil && recoveryPresentation.isVisible
     }
 
+    /// Quote only a message explicitly attached to this run, never a newer question.
+    var recoveryRequestText: String? {
+        guard let value = selected, let run = value.run,
+              run.needsRecoveryInspection || selectedRecoveryEntries.contains(where: {
+                  $0.audit?.identity.runId == run.id && $0.unknown
+              }),
+              let message = value.messages.first(where: {
+                  $0.role == "user" && $0.runId == run.id && $0.steered != true
+              }) else { return nil }
+        let text = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? nil : text
+    }
+
     var canRetransmitReceipts: Bool {
         guard !recoveryWorking, let run = selected?.run else { return false }
         return selectedRecoveryEntries.contains {
@@ -135,11 +148,10 @@ extension AskConversationModel {
         } catch { reportOperationError(error, id: value.id, owner: current.account) }
     }
 
-    /// The user must type and send fresh instructions. Never prefill or replay the old tool call.
-    func prepareRecoveryRequest() {
-        guard let run = selected?.run, !run.isActive, !recoveryWorking else { return }
+    /// Returning to the conversation does not confirm an outcome or start any work.
+    func dismissRecoveryInspector() {
+        guard !recoveryWorking else { return }
         inspectingRecovery = false
-        commandFeedback = L("ask.recovery.newRequestBody")
     }
 
     func logRecovery(_ entry: AskExecutionEntry, event: AskExecutionAudit.Event) {

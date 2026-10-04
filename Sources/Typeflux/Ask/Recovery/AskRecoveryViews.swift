@@ -99,7 +99,8 @@ struct AskRecoveryInspector: View {
                 HStack(alignment: .top, spacing: 14) {
                     AskRecoverySymbol(presentation: presentation, size: 40)
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(L(presentation.titleKey))
+                        Text(L(presentation.unknown && model.selected?.run?.status == "cancelled"
+                                ? "ask.recovery.stopped" : presentation.titleKey))
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(StudioTheme.textPrimary)
                         Text(L(presentation.bodyKey))
@@ -108,12 +109,28 @@ struct AskRecoveryInspector: View {
                             .lineSpacing(4)
                     }
                 }
+                if let message = model.recoveryRequestText {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(L("ask.recovery.message"))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                        Text(message)
+                            .font(.system(size: 13))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                            .lineLimit(3)
+                            .textSelection(.enabled)
+                            .help(message)
+                    }
+                    .padding(.leading, 12)
+                    .overlay(alignment: .leading) { Rectangle().fill(AskTheme.border).frame(width: 2) }
+                    .padding(.leading, 54)
+                }
                 if presentation.unknown {
                     VStack(alignment: .leading, spacing: 14) {
                         guidance("ask.recovery.checkBody", symbol: "checkmark.shield")
                         Rectangle().fill(AskTheme.separator).frame(height: 1)
-                        guidance(presentation.active ? "ask.recovery.endBody" : "ask.recovery.newRequestBody",
-                                 symbol: presentation.active ? "stop.circle" : "square.and.pencil")
+                        guidance(presentation.active ? "ask.recovery.endBody" : "ask.recovery.followUpBody",
+                                 symbol: presentation.active ? "stop.circle" : "bubble.left")
                     }
                     .padding(16)
                     .background(AskTheme.raisedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -122,21 +139,22 @@ struct AskRecoveryInspector: View {
             .padding(24)
             Rectangle().fill(AskTheme.separator).frame(height: 1)
             HStack(spacing: 12) {
-                Button(L("ask.recovery.close")) { model.inspectingRecovery = false }
-                    .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+                if !presentation.active {
+                    Spacer(minLength: 0)
+                }
+                Button(L("ask.recovery.close"), action: model.dismissRecoveryInspector)
+                    .buttonStyle(AskCapsuleButtonStyle(kind: presentation.active ? .secondary : .primary))
                     .keyboardShortcut(.cancelAction)
-                Spacer(minLength: 0)
+                if presentation.active {
+                    Spacer(minLength: 0)
+                }
                 if model.recoveryWorking {
                     ProgressView().controlSize(.small).accessibilityLabel(L("ask.working"))
                 }
-                Group {
-                    if presentation.active {
-                        Button(L("ask.recovery.end")) { Task { await model.endRecoveryRun() } }
-                    } else {
-                        Button(L("ask.recovery.newRequest")) { model.prepareRecoveryRequest() }
-                    }
+                if presentation.active {
+                    Button(L("ask.recovery.end")) { Task { await model.endRecoveryRun() } }
+                        .buttonStyle(AskCapsuleButtonStyle())
                 }
-                .buttonStyle(AskCapsuleButtonStyle())
             }
             .disabled(model.recoveryWorking)
             .padding(.horizontal, 24)

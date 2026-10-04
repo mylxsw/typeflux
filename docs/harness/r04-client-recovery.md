@@ -51,7 +51,14 @@ with confirmed results stay quiet. A card appears only for the current task's
 unconfirmed results, unknown outcomes, or device work that can be continued.
 Ordinary server execution and earlier tasks' bound journal entries do not create
 a recovery notice. The card offers plain-language sync, continue, or review
-actions. Review explains what the user should check in the affected app or file;
+actions. Review explains why the result is uncertain and asks the user to check
+an app or file only if the task involved an external action. When available, it
+quotes the original user message explicitly associated with the current run;
+it never substitutes an unrelated or unbound message. Returning to the chat
+only closes the explanation: it does not send instructions, start a new task,
+or mark an unknown result as confirmed. If the work is already complete, the
+user need not repeat it. The stop action explains that it ends further work,
+and the sheet confirms when that work has stopped. Internal details such as
 raw receipts, hashes, tool identifiers and audit transitions stay out of the user
 interface. The journal is retained unchanged. Ending the inspected run uses
 `/cancel`; it neither undoes effects nor marks an unknown operation successful.
@@ -63,7 +70,9 @@ and a task that needs review in [light](../images/ask-recovery-review-zh.png),
 [narrow](../images/ask-recovery-review-narrow-zh.png) windows. The notice uses the
 conversation's surfaces, icon treatment and capsule controls; its actions wrap
 below the description when space is limited. The [review sheet content](../images/ask-recovery-inspector-zh.png)
-uses the same controls and can shrink for the minimum window width. These are
+uses the same controls and can shrink for the minimum window width. A task that
+is [still active](../images/ask-recovery-active-zh.png) explains what stopping
+does; an ended task only offers to return to the chat. These are
 synthetic local test conversations, not captures of a live provider session.
 
 An unknown operation blocks ordinary resume, steering and queued-message resume.

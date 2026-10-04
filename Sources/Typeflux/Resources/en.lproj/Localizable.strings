@@ -2245,25 +2245,26 @@
 "ask.skills.install.nameConflict" = "This skill name conflicts with local folders. Rename the conflicting folders before installing.";
 
 /* Execution recovery */
-"ask.recovery.unknown" = "Please check the previous result";
-"ask.recovery.unknownBody" = "The previous action may already be complete. Check the relevant app or file before doing it again.";
-"ask.recovery.checkBody" = "Typeflux will not automatically repeat this action.";
-"ask.recovery.endBody" = "Ending this task stops further work. It does not undo actions that have already finished.";
-"ask.recovery.binding" = "Return to the device where you started this task and sign in to the original account to check the result or continue.";
-"ask.recovery.otherDevice" = "Continue on the original device";
-"ask.recovery.saved" = "Results need syncing";
-"ask.recovery.savedBody" = "The results are saved on this Mac. You can sync them again without repeating the work.";
-"ask.recovery.paused" = "Task paused";
-"ask.recovery.activeBody" = "The previous task is unfinished. You can continue where you left off.";
-"ask.recovery.finished" = "Task ended";
-"ask.recovery.finishedBody" = "You can ask a follow-up question or start a new task.";
+"ask.recovery.unknown" = "We couldn't confirm the result";
+"ask.recovery.unknownBody" = "Typeflux couldn't confirm whether this work finished. To avoid doing it twice, it won't repeat the action automatically.";
+"ask.recovery.checkBody" = "If this involved sending a message or changing a file, check the relevant app to see whether it's already done.";
+"ask.recovery.endBody" = "Stopping prevents Typeflux from continuing this task. It won't undo anything already done. You can then return to the chat and ask another question.";
+"ask.recovery.binding" = "Return to the device you used to send this message, sign in to the same account, and open this conversation.";
+"ask.recovery.otherDevice" = "Return to the original device";
+"ask.recovery.saved" = "The conversation needs an update";
+"ask.recovery.savedBody" = "The results are saved on this Mac. Click \"Update conversation\" to refresh its progress without repeating the work.";
+"ask.recovery.paused" = "This work is unfinished";
+"ask.recovery.activeBody" = "Click \"Continue\" and Typeflux will carry on with the remaining steps.";
+"ask.recovery.finished" = "This work has ended";
+"ask.recovery.finishedBody" = "You can ask another question in the message box below.";
 "ask.recovery.inspect" = "What to do next";
-"ask.recovery.retransmit" = "Sync results";
-"ask.recovery.continue" = "Continue task";
-"ask.recovery.close" = "Close";
-"ask.recovery.end" = "End this task";
-"ask.recovery.newRequest" = "Write a new request";
-"ask.recovery.newRequestBody" = "After checking the result, type and send a new request.";
+"ask.recovery.retransmit" = "Update conversation";
+"ask.recovery.continue" = "Continue";
+"ask.recovery.close" = "Back to chat";
+"ask.recovery.end" = "Stop further work";
+"ask.recovery.followUpBody" = "If it's already done, there's no need to do it again. If you still need help, return to the chat and tell Typeflux what remains unfinished.";
+"ask.recovery.message" = "Your message";
+"ask.recovery.stopped" = "Further work has stopped";
 
 /* GUL-193 Reasoning effort levels */
 "ask.reasoning.xhigh" = "Extra high";

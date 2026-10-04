@@ -2235,25 +2235,26 @@
 "ask.skills.install.nameConflict" = "スキル名がローカルフォルダと競合しています。競合するフォルダの名前を変更してからインストールしてください。";
 
 /* Execution recovery */
-"ask.recovery.unknown" = "前回の操作結果を確認してください";
-"ask.recovery.unknownBody" = "前回の操作はすでに完了している可能性があります。繰り返す前に、関連するアプリやファイルを確認してください。";
-"ask.recovery.checkBody" = "Typeflux がこの操作を自動で繰り返すことはありません。";
-"ask.recovery.endBody" = "タスクを終了すると、この先の作業が停止します。完了済みの操作は取り消されません。";
-"ask.recovery.binding" = "このタスクを開始したデバイスに戻り、元のアカウントでログインして結果を確認するか、タスクを続けてください。";
-"ask.recovery.otherDevice" = "元のデバイスで続けてください";
-"ask.recovery.saved" = "結果の同期が必要です";
-"ask.recovery.savedBody" = "結果はこのMacに保存されています。作業を繰り返さずに再同期できます。";
-"ask.recovery.paused" = "タスクは一時停止中です";
-"ask.recovery.activeBody" = "前回のタスクはまだ完了していません。中断したところから続けられます。";
-"ask.recovery.finished" = "タスクは終了しました";
-"ask.recovery.finishedBody" = "追加の質問をするか、新しいタスクを開始できます。";
-"ask.recovery.inspect" = "対処方法を見る";
-"ask.recovery.retransmit" = "結果を同期";
-"ask.recovery.continue" = "タスクを続ける";
-"ask.recovery.close" = "閉じる";
-"ask.recovery.end" = "このタスクを終了";
-"ask.recovery.newRequest" = "新しいリクエストを書く";
-"ask.recovery.newRequestBody" = "結果を確認してから、新しいリクエストを入力して送信してください。";
+"ask.recovery.unknown" = "今回の処理結果を確認できませんでした";
+"ask.recovery.unknownBody" = "Typeflux は今回の処理が完了したか確認できませんでした。二重に実行しないよう、自動で同じ操作を繰り返すことはありません。";
+"ask.recovery.checkBody" = "メッセージの送信やファイルの変更などを行った場合は、該当するアプリで完了しているか確認してください。";
+"ask.recovery.endBody" = "停止すると、Typeflux はこのタスクの続きを行いません。完了済みの操作は取り消されません。その後は会話に戻って質問を続けられます。";
+"ask.recovery.binding" = "このメッセージを送信したデバイスに戻り、そのときのアカウントでログインして、この会話を開いてください。";
+"ask.recovery.otherDevice" = "元のデバイスで確認してください";
+"ask.recovery.saved" = "会話の進行状況がまだ更新されていません";
+"ask.recovery.savedBody" = "処理結果はこの Mac に保存されています。「会話を更新」をクリックすると、同じ操作を繰り返さずに最新の進行状況を確認できます。";
+"ask.recovery.paused" = "今回の処理はまだ完了していません";
+"ask.recovery.activeBody" = "「処理を続ける」をクリックすると、Typeflux が残りの手順を進めます。";
+"ask.recovery.finished" = "今回の処理は終了しました";
+"ask.recovery.finishedBody" = "下の入力欄から質問を続けられます。";
+"ask.recovery.inspect" = "次にすること";
+"ask.recovery.retransmit" = "会話を更新";
+"ask.recovery.continue" = "処理を続ける";
+"ask.recovery.close" = "会話に戻る";
+"ask.recovery.end" = "この先の処理を停止";
+"ask.recovery.followUpBody" = "すでに完了していれば、やり直す必要はありません。まだ助けが必要な場合は、会話に戻り、何が未完了なのか Typeflux に伝えてください。";
+"ask.recovery.message" = "あなたのメッセージ";
+"ask.recovery.stopped" = "この先の処理を停止しました";
 
 /* GUL-193 Reasoning effort levels */
 "ask.reasoning.xhigh" = "超高";
