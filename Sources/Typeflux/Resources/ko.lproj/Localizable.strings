@@ -1768,7 +1768,7 @@
 "ask.settings.skills.install" = "GitHub에서 설치…";
 "ask.settings.skills.installTitle" = "GitHub에서 스킬 설치";
 "ask.settings.skills.installHint" = "저장소, 폴더 또는 SKILL.md 링크를 붙여 넣으세요. SKILL.md가 있는 각 폴더가 하나의 스킬이 되며, 같은 이름의 스킬은 업데이트됩니다.";
-"ask.settings.skills.installWarning" = "스킬은 Ask가 따르는 지침과 코드 샌드박스에서 읽을 수 있는 파일입니다. 신뢰할 수 있는 출처에서만 설치하세요.";
+"ask.settings.skills.installWarning" = "스킬은 지침과 샌드박스에서 읽을 수 있는 파일을 제공합니다. 신뢰할 수 있는 소스만 사용하세요. 같은 이름은 교체하고 이전 버전 하나를 보관합니다. 비활성 상태는 유지되며 권한 선언으로 접근 권한이 부여되지 않습니다.";
 "ask.settings.skills.installAction" = "설치";
 "ask.settings.skills.installing" = "설치 중…";
 "ask.settings.skills.local" = "로컬";
@@ -2149,3 +2149,27 @@
 "ask.terminal.error.invalidCursor" = "The output cursor is invalid.";
 "ask.terminal.error.portUnavailable" = "The requested listener port is unavailable.";
 "ask.terminal.truncated" = "Output is truncated; the retained log may also be incomplete.";
+
+"ask.skills.parse.malformed" = "YAML 프런트매터가 잘못되었습니다. 구문과 종료 구분자를 확인하세요.";
+
+"ask.skills.parse.unsupported" = "지원하지 않는 구조입니다. 스칼라 필드, 스칼라 metadata, 권한 목록을 사용하세요. 앵커, 사용자 지정 태그, 중첩 객체는 지원하지 않습니다.";
+
+"ask.skills.parse.invalidSkill" = "유효한 이름과 비어 있지 않은 본문이 필요합니다.";
+
+"ask.skills.install.truncated" = "GitHub 파일 트리가 불완전하여 설치하지 않았습니다. 더 작은 저장소를 사용하세요.";
+
+"ask.skills.install.unsafeResource" = "안전하지 않은 경로, 심볼릭 링크, 하위 모듈 또는 지원하지 않는 파일이 있습니다. 변경하지 않았습니다.";
+
+"ask.skills.install.invalidSource" = "소스 버전 또는 다운로드한 파일을 확인할 수 없어 설치하지 않았습니다.";
+
+"ask.skills.install.noPrevious" = "이전 버전이 없습니다.";
+
+"ask.settings.skills.actionFailed" = "스킬을 변경할 수 없음";
+
+"ask.settings.skills.rollback" = "이전 버전 복원";
+
+"ask.settings.skills.unverifiedVersion" = "이전 설치: 커밋 알 수 없음";
+
+"ask.settings.skills.declarations" = "선언된 권한(접근 권한 부여 안 됨):";
+
+"ask.skills.install.nameConflict" = "스킬 이름이 로컬 폴더와 충돌합니다. 충돌하는 폴더 이름을 변경한 후 설치하세요.";
