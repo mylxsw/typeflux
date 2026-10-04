@@ -43,8 +43,18 @@ struct AskBudgetResources: Codable, Equatable, Sendable {
     }
 }
 
+/// Persisted at dispatch, independently of receipt fields and Memory source ownership.
+struct AskBudgetInvocationIdentity: Codable, Equatable, Sendable {
+    var owner: String
+    var conversationId: String
+    var rootId: String
+    var runId: String
+    var deviceId: String
+}
+
 struct AskBudgetReservation: Codable, Equatable, Sendable {
     var runId: String?
+    var identity: AskBudgetInvocationIdentity?
     var operationId: String
     var stepId: String
     var callId: String
@@ -130,7 +140,8 @@ struct AskBudgetController: Codable, Equatable, Sendable {
     mutating func reserve(_ proposed: AskBudgetReservation, at now: Date) throws {
         guard valid, !proposed.operationId.isEmpty, proposed.reserved.valid else { throw AskBudgetError.invalid }
         if let old = reservations[proposed.operationId] {
-            guard old.reserved == proposed.reserved, old.kind == proposed.kind, old.callId == proposed.callId,
+            guard old.runId == proposed.runId, old.identity == proposed.identity,
+                  old.reserved == proposed.reserved, old.kind == proposed.kind, old.callId == proposed.callId,
                   old.stepId == proposed.stepId else { throw AskBudgetError.invalid }
             guard old.state == "reserved" else { throw AskBudgetError.replay }
             return
