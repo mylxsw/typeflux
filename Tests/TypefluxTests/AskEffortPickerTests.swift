@@ -135,6 +135,66 @@ struct AskEffortPickerTests {
         return hosting.fittingSize
     }
 
+    /// The glass menu renders the card once, so a binding alone never redraws it. A change
+    /// made on the card must still redraw it at once and reach the model.
+    @Test func theCardRedrawsWhileOpen() async throws {
+        let fixture = try fixture()
+        defer { fixture.model.resetSession() }
+        final class Box { var effort = AskReasoningEffort.high; var reference = "cloud:deep" }
+        final class KeyWindow: NSWindow { override var canBecomeKey: Bool { true } }
+        let box = Box()
+        let card = AskModelEffortCard(library: fixture.model.modelLibrary,
+                                      reference: Binding(get: { box.reference }, set: { box.reference = $0 }),
+                                      effort: Binding(get: { box.effort }, set: { box.effort = $0 }), loggedIn: true)
+        let size = NSSize(width: AskModelEffortCard.width, height: 160)
+        let window = KeyWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless,
+                               backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: .aqua)
+        let hosting = NSHostingView(rootView: card.frame(width: size.width, height: size.height))
+        window.contentView = hosting
+        window.makeKeyAndOrderFront(nil)
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(300))
+
+        func click(_ point: NSPoint) throws {
+            for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+                let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+                                                            timestamp: ProcessInfo.processInfo.systemUptime,
+                                                            windowNumber: window.windowNumber, context: nil,
+                                                            eventNumber: 0, clickCount: 1,
+                                                            pressure: type == .leftMouseDown ? 1 : 0))
+                NSApp.sendEvent(event)
+            }
+        }
+        /// Rows where the fill's blue is drawn at `column`, in points from the top.
+        func blueRows(atX column: CGFloat) throws -> [CGFloat] {
+            hosting.layoutSubtreeIfNeeded()
+            let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+            hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+            let scale = CGFloat(bitmap.pixelsWide) / hosting.bounds.width
+            return stride(from: CGFloat(0), to: size.height, by: 1).filter { top in
+                guard let color = bitmap.colorAt(x: Int(column * scale), y: Int(top * scale))?.usingColorSpace(.sRGB)
+                else { return false }
+                return color.blueComponent - color.redComponent > 0.3
+            }
+        }
+
+        // At "High" the fill covers the start of the track.
+        #expect(try !blueRows(atX: 30).isEmpty)
+        // ↺ writes "Auto" through the binding; scan the right edge for it.
+        var reset = false
+        for row in stride(from: CGFloat(4), to: size.height - 4, by: 2) {
+            try click(NSPoint(x: size.width - 24, y: row))
+            try await Task.sleep(for: .milliseconds(10))
+            if box.effort == .providerDefault { reset = true; break }
+        }
+        #expect(reset, "the reset button reached the binding")
+        try await Task.sleep(for: .milliseconds(400))
+        // The card redraws at once, without reopening: the fill is gone.
+        #expect(try blueRows(atX: 30).isEmpty)
+    }
+
     @Test func cardPagesAndChipRender() throws {
         let fixture = try fixture()
         defer { fixture.model.resetSession() }
