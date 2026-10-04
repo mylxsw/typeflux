@@ -110,3 +110,25 @@
 "Loading conversation…" = "Loading conversation…";
 "Load this conversation before sending a follow-up." = "Load this conversation before sending a follow-up.";
 "Stopped" = "Stopped";
+
+/* Settings and account */
+"Settings" = "Settings";
+"Appearance" = "Appearance";
+"Follow system" = "System";
+"Light appearance" = "Light";
+"Dark appearance" = "Dark";
+"Language" = "Language";
+"Change the app language in iOS Settings." = "Change the app language in iOS Settings.";
+"About" = "About";
+"Version" = "Version";
+"Privacy Policy" = "Privacy Policy";
+"Done" = "Done";
+"Unable to open Settings" = "Unable to open Settings";
+"OK" = "OK";
+"Open the Settings app and choose Typeflux to change its language." = "Open the Settings app and choose Typeflux to change its language.";
+"Status" = "Status";
+"Signed in" = "Signed in";
+"Signing out removes this account from this device. Your cloud conversations stay in your account." = "Signing out removes this account from this device. Your cloud conversations stay in your account.";
+"Sign out of Typeflux?" = "Sign out of Typeflux?";
+"Cancel" = "Cancel";
+"You'll need to sign in again to access your conversations." = "You'll need to sign in again to access your conversations.";

@@ -69,7 +69,9 @@ final class ChatFlowTests: XCTestCase {
         XCTAssertFalse(app.buttons["chat.history.preview"].exists)
         app.buttons["chat.history.Today"].tap()
         app.buttons["chat.account"].tap()
-        app.buttons["Sign out"].tap()
+        app.buttons["settings.account"].tap()
+        app.buttons["account.signOut"].tap()
+        app.buttons.matching(identifier: "account.confirmSignOut").firstMatch.tap()
         let submit = app.buttons["login.submit"]
         XCTAssertTrue(submit.waitForExistence(timeout: 5))
         XCTAssertFalse(submit.isEnabled)
@@ -110,8 +112,9 @@ final class ChatFlowTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["有什么想问的？"].waitForExistence(timeout: 5))
         attachScreenshot(app, name: "v3-zh-dark-empty")
         let composer = app.textFields["chat.composer"]
-        composer.tap(); composer.typeText("Hello")
+        composer.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        composer.typeText("Hello")
         app.buttons["modelPicker"].tap()
         XCTAssertTrue(app.buttons["changeModel"].waitForExistence(timeout: 5))
         app.buttons["changeModel"].tap()
@@ -127,14 +130,24 @@ final class ChatFlowTests: XCTestCase {
     }
 
     @MainActor
-    func testLandscapeKeyboardCanReachLastModel() {
+    func testLandscapeKeyboardCanReachLastModel() async throws {
         let app = launchPreview()
         app.buttons["chat.new"].tap()
+        let landscapeWidth = app.windows.firstMatch.frame.height
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
+        let window = app.windows.firstMatch
+        for _ in 0 ..< 50 {
+            if abs(window.frame.width - landscapeWidth) < 1 {
+                break
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertGreaterThan(window.frame.width, window.frame.height)
         let composer = app.textFields["chat.composer"]
-        composer.tap(); composer.typeText("Hello")
+        composer.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        composer.typeText("Hello")
         app.buttons["modelPicker"].tap()
         let changeModel = app.buttons["changeModel"]
         XCTAssertTrue(changeModel.waitForExistence(timeout: 5))
@@ -163,6 +176,7 @@ final class ChatFlowTests: XCTestCase {
 
     @MainActor
     private func launchPreview(arguments: [String] = [], language: String = "en") -> XCUIApplication {
+        XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
         app.launchArguments = ["--synthetic-preview", "-AppleLanguages", "(\(language))", "-AppleLocale",
                                language == "en" ? "en_US" : "zh_CN"] + arguments

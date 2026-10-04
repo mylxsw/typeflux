@@ -6,12 +6,13 @@ import UIKit
 /// tables and code blocks never create a second vertical transcript scroll view.
 struct ChatTranscriptView: View {
     let conversation: ChatConversation
+    var allowsQuote = true
     var quote: (String) -> Void
 
     var body: some View {
         ForEach(ChatTranscript.items(conversation)) { item in
             switch item {
-            case let .message(message): ChatMessageView(message: message, quote: quote)
+            case let .message(message): ChatMessageView(message: message, allowsQuote: allowsQuote, quote: quote)
             case let .activity(activity): ChatActivityView(activity: activity)
             }
         }
@@ -46,6 +47,7 @@ struct ChatTranscriptView: View {
 
 private struct ChatMessageView: View {
     let message: ChatMessage
+    let allowsQuote: Bool
     let quote: (String) -> Void
     @State private var copied = false
 
@@ -67,7 +69,7 @@ private struct ChatMessageView: View {
         HStack(alignment: .top, spacing: 0) {
             Spacer(minLength: 36)
             VStack(alignment: .trailing, spacing: 8) {
-                attachedImage
+                ChatMessageImages(message: message)
                 if !message.text.isEmpty {
                     Text(message.text).font(.body).lineSpacing(3).textSelection(.enabled)
                         .padding(.horizontal, 15).padding(.vertical, 11)
@@ -88,7 +90,7 @@ private struct ChatMessageView: View {
             if let reasoning = message.reasoning, !reasoning.isEmpty {
                 ChatReasoningView(text: reasoning, milliseconds: message.reasoningMilliseconds, active: false)
             }
-            attachedImage
+            ChatMessageImages(message: message)
             if !message.text.isEmpty {
                 ChatMarkdownView(text: message.text)
             }
@@ -117,6 +119,7 @@ private struct ChatMessageView: View {
                     }
                     .accessibilityLabel(NSLocalizedString("Quote response", comment: "Message action"))
                     .accessibilityIdentifier("chat.quote." + message.id)
+                    .disabled(!allowsQuote)
                 }
                 .font(.system(size: 14)).foregroundStyle(ChatTheme.textTertiary).buttonStyle(.plain)
                 .padding(.leading, -12)
@@ -126,14 +129,6 @@ private struct ChatMessageView: View {
         .onChange(of: message.text) { _, _ in copied = false }
     }
 
-    @ViewBuilder private var attachedImage: some View {
-        if let image = message.image, let uiImage = ImageAttachment.decode(image) {
-            Image(uiImage: uiImage).resizable().scaledToFit().frame(maxHeight: 260)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .accessibilityLabel(NSLocalizedString("Attached photo", comment: "Message image"))
-        }
-    }
-
     private var orphanedToolResult: some View {
         DisclosureGroup(NSLocalizedString(
             message.isError == true ? "Tool failed" : "View tool output",
@@ -141,9 +136,24 @@ private struct ChatMessageView: View {
         )) {
             Text(message.text).font(.system(.footnote, design: .monospaced)).textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            attachedImage
+            ChatMessageImages(message: message)
         }
         .font(.subheadline).tint(ChatTheme.textSecondary)
+    }
+}
+
+private struct ChatMessageImages: View {
+    let message: ChatMessage
+
+    var body: some View {
+        ForEach(Array(message.imageDataURLs.enumerated()), id: \.offset) { index, dataURL in
+            if let uiImage = ImageAttachment.decode(dataURL) {
+                Image(uiImage: uiImage).resizable().scaledToFit().frame(maxHeight: 260)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .accessibilityLabel(NSLocalizedString("Attached photo", comment: "Message image"))
+                    .accessibilityIdentifier("chat.photo.\(message.id).\(index)")
+            }
+        }
     }
 }
 
@@ -312,9 +322,8 @@ private struct ChatToolStepView: View {
                     Text(showResult && step.result != nil ? step.result?.text ?? "" : step.call.function.arguments)
                         .font(.system(.footnote, design: .monospaced)).textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    if showResult, let image = step.result?.image, let uiImage = ImageAttachment.decode(image) {
-                        Image(uiImage: uiImage).resizable().scaledToFit().frame(maxHeight: 260)
-                            .accessibilityLabel(NSLocalizedString("Tool result image", comment: "Tool image"))
+                    if showResult, let result = step.result {
+                        ChatMessageImages(message: result)
                     }
                 }
                 .padding(12).background(ChatTheme.controlSurface, in: RoundedRectangle(cornerRadius: 10))

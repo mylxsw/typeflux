@@ -50,13 +50,24 @@ public struct ChatMessage: Decodable, Equatable, Identifiable, Sendable {
     }
 
     public var hasImage: Bool { image != nil || attachments?.contains { $0.kind == "image" } == true }
+
+    /// Inline images from both legacy screenshots and newer desktop attachments.
+    /// The presentation layer validates the data URL before decoding it.
+    public var imageDataURLs: [String] {
+        (image.map { [$0] } ?? []) + (attachments ?? []).compactMap { $0.kind == "image" ? $0.image : nil }
+    }
 }
 
-/// Mobile only needs the attachment kind to validate model capabilities. Unknown
-/// desktop metadata and future kinds remain readable without taking ownership of them.
+/// Read-only attachment projection. Desktop file contents and local folder paths
+/// are deliberately not exposed; inline images can be displayed on any device.
 public struct ChatAttachment: Decodable, Equatable, Sendable {
     public var kind: String
-    public init(kind: String) { self.kind = kind }
+    public var id: String?
+    public var name: String?
+    public var image: String?
+    public init(kind: String, id: String? = nil, name: String? = nil, image: String? = nil) {
+        self.kind = kind; self.id = id; self.name = name; self.image = image
+    }
 }
 
 public struct ChatToolCall: Codable, Equatable, Identifiable, Sendable {

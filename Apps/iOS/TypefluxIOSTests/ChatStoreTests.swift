@@ -369,6 +369,81 @@ extension ChatStoreTests {
 }
 
 extension ChatStoreTests {
+    @Test func `login displays and saves the email actually sent to the server`() async {
+        let (store, api, credentials) = makeStore()
+        await store.login(email: "  Person@example.com\n", password: "password")
+        #expect(await api.loginEmails == ["Person@example.com"])
+        #expect(store.email == "Person@example.com")
+        #expect(credentials.value?.email == "Person@example.com")
+    }
+
+    @Test func `confirmed send preserves a new draft and image prepared during the request`() async throws {
+        for uncertainResponse in [false, true] {
+            let (store, api, _) = makeStore()
+            await store.login(email: "user@example.com", password: "password")
+            await api.pauseNextSend()
+            if uncertainResponse {
+                await api.failSend()
+            }
+            store.draft = " First message "
+            store.imageDataURL = "first-image"
+            let sending = Task { await store.send() }
+            try await eventually { await api.waitingForSend }
+            #expect(store.isBusy)
+            #expect(try !store.selectModel(#require(store.models.last)))
+            store.selectReasoningEffort(.high)
+            #expect(store.reasoningEffort == .providerDefault)
+            store.draft = "Second message"
+            store.imageDataURL = "second-image"
+            await api.completeSend()
+            await sending.value
+            #expect(store.draft == "Second message")
+            #expect(store.imageDataURL == "second-image")
+            #expect(!store.isSending)
+            #expect(await api.sentRequests.count == 1)
+            #expect(store.conversation?.messages.last?.text == "First message")
+            #expect(store.errorMessage == nil)
+        }
+    }
+
+    @Test func `late send response cannot clear the next conversation draft`() async throws {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        await api.pauseNextSend()
+        store.draft = "Old question"
+        let sending = Task { await store.send() }
+        try await eventually { await api.waitingForSend }
+        store.newConversation()
+        let selected = store.selectedID
+        store.draft = "New question"
+        await api.completeSend()
+        await sending.value
+        #expect(store.selectedID == selected)
+        #expect(store.conversation == nil)
+        #expect(store.draft == "New question")
+        #expect(!store.isSending)
+    }
+
+    @Test func `late send response cannot enter a new account`() async throws {
+        let (store, api, credentials) = makeStore()
+        await store.login(email: "old@example.com", password: "password")
+        await api.pauseNextSend()
+        store.draft = "Private old account message"
+        let sending = Task { await store.send() }
+        try await eventually { await api.waitingForSend }
+        await store.signOut()
+        await store.login(email: "new@example.com", password: "password")
+        store.draft = "New account question"
+        await api.completeSend()
+        await sending.value
+        #expect(store.email == "new@example.com")
+        #expect(credentials.value?.email == "new@example.com")
+        #expect(store.conversation == nil)
+        #expect(store.selectedID == nil)
+        #expect(store.draft == "New account question")
+        #expect(store.errorMessage == nil)
+    }
+
     @Test func `history must load before sending or validating photo compatibility`() async throws {
         let (store, api, _) = makeStore()
         await store.login(email: "user@example.com", password: "password")
@@ -623,6 +698,7 @@ final class MemoryCredentials: CredentialStore {
 
 private actor FakeChatAPI: ChatAPI {
     var loginCount = 0
+    var loginEmails: [String] = []
     var listCount = 0
     var refreshCount = 0
     var logoutCount = 0
@@ -636,6 +712,10 @@ private actor FakeChatAPI: ChatAPI {
 
     var waitingForList: Bool {
         listContinuation != nil
+    }
+
+    var waitingForSend: Bool {
+        sendContinuation != nil
     }
 
     var document = ChatConversation(id: "one", title: "A conversation", revision: 1)
@@ -655,9 +735,11 @@ private actor FakeChatAPI: ChatAPI {
     private var nextSendLost = false
     private var conversationFails = false
     private var listPaused = false
+    private var sendPaused = false
     private var refreshContinuation: CheckedContinuation<Void, Never>?
     private var conversationContinuation: CheckedContinuation<Void, Never>?
     private var listContinuation: CheckedContinuation<Void, Never>?
+    private var sendContinuation: CheckedContinuation<Void, Never>?
 
     func rejectLogin() {
         loginRejected = true
@@ -727,6 +809,14 @@ private actor FakeChatAPI: ChatAPI {
         listContinuation?.resume(); listContinuation = nil
     }
 
+    func pauseNextSend() {
+        sendPaused = true
+    }
+
+    func completeSend() {
+        sendContinuation?.resume(); sendContinuation = nil
+    }
+
     func setActiveRun() {
         document.run = ChatRun(id: "run", deviceId: "mac", status: "running")
     }
@@ -739,8 +829,9 @@ private actor FakeChatAPI: ChatAPI {
         document.messages = messages
     }
 
-    func login(email _: String, password _: String) async throws -> ChatSession {
+    func login(email: String, password _: String) async throws -> ChatSession {
         loginCount += 1
+        loginEmails.append(email)
         if loginRejected {
             throw ChatAPIError.unauthorized
         }
@@ -798,6 +889,10 @@ private actor FakeChatAPI: ChatAPI {
 
     func send(conversationId: String, request: ChatSendRequest, token _: String) async throws -> ChatConversation {
         sentRequests.append(request)
+        if sendPaused {
+            sendPaused = false
+            await withCheckedContinuation { sendContinuation = $0 }
+        }
         if nextSendRejected {
             nextSendRejected = false
             throw ChatAPIError.server(code: "MODEL_UNAVAILABLE", message: "Choose another model.")

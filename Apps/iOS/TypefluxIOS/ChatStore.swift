@@ -66,6 +66,7 @@ final class ChatStore {
 
     func login(email: String, password: String) async {
         resetAccount()
+        let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
         let generation = accountGeneration
         isLoading = true
         defer {
@@ -76,12 +77,12 @@ final class ChatStore {
         do {
             try credentials.clear()
             let account = try await service.login(
-                email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                email: normalizedEmail,
                 password: password
             )
             try checkAccount(generation)
-            try credentials.save(SavedAccount(email: email, session: account))
-            self.email = email
+            try credentials.save(SavedAccount(email: normalizedEmail, session: account))
+            self.email = normalizedEmail
             session = account
             isAuthenticated = true
             await refreshHome()
@@ -187,7 +188,8 @@ final class ChatStore {
         guard let id = selectedID else { return }
         let generation = accountGeneration
         let selection = selectionGeneration
-        let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        let submittedDraft = draft
+        let text = submittedDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         let request = sendRequest(text: text)
         pendingRequest = request
         activeSendID = request.id
@@ -206,8 +208,7 @@ final class ChatStore {
                 token: token
             ) }
             guard generation == accountGeneration, selection == selectionGeneration else { return }
-            draft = ""
-            imageDataURL = nil
+            clearSubmittedComposer(request, draft: submittedDraft)
             pendingRequest = nil
             accept(value)
             isSending = false
@@ -224,8 +225,7 @@ final class ChatStore {
                 }
                 if generation == accountGeneration, selection == selectionGeneration,
                    conversation?.messages.contains(where: { $0.id == request.id }) == true {
-                    draft = ""
-                    imageDataURL = nil
+                    clearSubmittedComposer(request, draft: submittedDraft)
                     pendingRequest = nil
                     errorMessage = nil
                 }
@@ -333,6 +333,17 @@ extension ChatStore {
 }
 
 private extension ChatStore {
+    func clearSubmittedComposer(_ request: ChatSendRequest, draft submittedDraft: String) {
+        // A quote or another composer action can prepare a new draft while the
+        // server is confirming this message. Only consume what this turn sent.
+        if draft == submittedDraft {
+            draft = ""
+        }
+        if imageDataURL == request.image {
+            imageDataURL = nil
+        }
+    }
+
     func sendRequest(text: String) -> ChatSendRequest {
         let requestedModel = modelRef.isEmpty ? nil : modelRef
         let requestedEffort = reasoningEffort.requestValue(for: selectedModel)

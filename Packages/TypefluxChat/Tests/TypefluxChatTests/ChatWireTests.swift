@@ -121,6 +121,22 @@ final class ChatWireTests: XCTestCase {
         }
     }
 
+    func testDesktopAttachmentImagesSurviveMobileProjectionAlongsideLegacyScreenshots() throws {
+        let payload = #"{"id":"message","role":"user","text":"Compare these","created_at":"2026-01-02T03:04:05Z","image":"data:image/jpeg;base64,legacy","attachments":[{"id":"photo","kind":"image","name":"photo.jpg","image":"data:image/jpeg;base64,photo","byte_size":100},{"id":"folder","kind":"folder","name":"Project","path":"/desktop-only/private"},{"id":"file","kind":"file","name":"notes.txt","text":"Desktop text"},{"kind":"future","image":"not-an-image-attachment"},{"kind":"image"}]}"#
+        let message = try ChatCoding.decoder().decode(ChatMessage.self, from: Data(payload.utf8))
+        XCTAssertEqual(message.imageDataURLs, ["data:image/jpeg;base64,legacy", "data:image/jpeg;base64,photo"])
+        XCTAssertEqual(message.attachments?.first?.id, "photo")
+        XCTAssertEqual(message.attachments?.first?.name, "photo.jpg")
+        XCTAssertEqual(message.attachments?.first?.image, "data:image/jpeg;base64,photo")
+        XCTAssertTrue(message.hasImage)
+        XCTAssertTrue(ChatMessage(id: "text", role: "user", text: "Hello").imageDataURLs.isEmpty)
+        let attached = ChatMessage(id: "image", role: "user", text: "", attachments: [
+            .init(kind: "image", id: "one", name: "one.jpg", image: "one"),
+            .init(kind: "image", id: "two", name: "two.jpg", image: "two")
+        ])
+        XCTAssertEqual(attached.imageDataURLs, ["one", "two"])
+    }
+
     func testEnvelopeDistinguishesUnauthorizedServerAndMalformedResponses() throws {
         let value: Int = try ChatRequest.decode(data: Data(#"{"code":"OK","data":42}"#.utf8), statusCode: 200)
         XCTAssertEqual(value, 42)

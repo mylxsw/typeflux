@@ -36,6 +36,10 @@ replacement document that could erase desktop-only metadata.
 
 - Sign in with an existing email/password account; store access and rotating
   refresh tokens in endpoint-scoped Keychain entries.
+- Open Settings from the history footer. Account shows the signed-in email and
+  a confirmed sign-out action. Appearance supports System, Light, and Dark and
+  persists on this device; Language opens the app's iOS Settings page. Version
+  and the existing privacy-policy link are available in About.
 - Browse and continue cloud conversations, create conversations, and choose
   from the account's cloud models with their server-provided credit multiplier.
 - Use the Mac-aligned colour drop, composer, message bubbles, and history rows.
@@ -47,12 +51,14 @@ replacement document that could erase desktop-only metadata.
 - Read foldable reasoning and grouped tool steps, copy or quote a response, and
   view Markdown headings, lists, quotes, code, and horizontally scrolling tables.
 - Search loaded history and collapse date groups. English and Simplified Chinese
-  follow system language; colours follow light/dark appearance. Reduce Motion
+  follow system language; colours follow the saved appearance preference. Reduce Motion
   freezes ambient animation and Reduce Transparency uses solid card surfaces.
 - Send text and a photo with a vision-capable model; show streamed responses,
   tool activity/results, and cancellation. A conversation containing photos
   requires a vision-capable model. An existing conversation must load
   successfully before its composer can send a follow-up.
+- Read both legacy message images and current Mac image attachments. A late
+  send response clears only the submitted draft and image, preserving later edits.
 - Reload the server snapshot after returning to the foreground. Reconnect an
   interrupted stream without automatically replaying message POSTs.
 - Show runs waiting for a desktop tool or local model as waiting for their
@@ -99,6 +105,13 @@ booted. To choose a specific simulator:
 TYPEFLUX_IOS_TEST_DESTINATION='platform=iOS Simulator,id=<UDID>' scripts/test_ios.sh
 ```
 
+The script builds the test app, generates a photo through the DEBUG-only offline
+fixture, imports it into that simulator's Photos library, and runs the tests.
+It keeps existing Photos assets. A custom destination must contain a concrete
+simulator UDID. Set `TYPEFLUX_IOS_TEST_RESULT_BUNDLE_PATH` to a new path to retain
+the test result, coverage, and screenshots. Direct `xcodebuild test` runs also
+need a seeded photo for the PhotosPicker flow; use the script for a fresh device.
+
 The app defaults to `https://api.typeflux.app`. Override the Xcode build setting
 `TYPEFLUX_API_URL` for an HTTPS staging endpoint; credentials are scoped to the
 configured endpoint. HTTP, URLs containing credentials, queries, or fragments
@@ -109,6 +122,13 @@ arguments in a Debug build. Add `--synthetic-tools` for a desktop-tool run or
 `--synthetic-dark` to force dark appearance. This mode uses labelled synthetic conversations,
 an in-memory account, and no production requests. It is excluded from Release
 builds and is not evidence of live account/API validation.
+
+Additional fixture flags are `--synthetic-rich` (Markdown, reasoning, tools and
+Mac image attachments), `--synthetic-stream` (send to start incremental output),
+`--synthetic-failure`, `--synthetic-empty`, and `--synthetic-history` (pagination).
+`--synthetic-stream-slow` extends each stream stage for inspection. Preview
+preferences use a separate UserDefaults domain and reset to System by default;
+`--synthetic-preserve-settings` explicitly retains them for persistence tests.
 
 The existing `@autotest` PR workflow runs shared-package, iOS, and Mac tests.
 Account registration, password reset, purchasing, and App Store distribution
@@ -125,3 +145,12 @@ account or model response. The model names and credit multipliers are test data.
 <img src="images/ios/v3-conversation.png" alt="Conversation with reasoning and Markdown" width="260">
 <img src="images/ios/v3-zh-dark-empty.png" alt="Simplified Chinese dark appearance" width="260">
 <img src="images/ios/v3-zh-keyboard-models.png" alt="Model selection above the keyboard" width="260">
+
+## Chat and settings verification screenshots
+
+The [39-image screenshot index](images/ios/verification/README.md) covers rich
+replies, long streaming output, stop/failure states, PhotosPicker and image
+messages, models, keyboard layouts, light/dark settings, account information,
+and sign-out confirmation. All images come from the final passing native
+iOS UI-test run using offline fixtures. See the
+[validation report](validation/gul-199-ios-chat.md) for results and limitations.

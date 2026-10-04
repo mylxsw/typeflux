@@ -13,12 +13,13 @@ enum ChatTheme {
     static let accentText = dynamic(light: (0.106, 0.341, 0.839), dark: (0.557, 0.741, 1))
     static let accentSoft = dynamic(light: (0.906, 0.937, 1), dark: (0.082, 0.149, 0.243))
     static let purple = dynamic(light: (0.49, 0.25, 0.94), dark: (0.71, 0.55, 1))
-    static let border = Color(uiColor: UIColor { traits in
+    /// UIKit may resolve dynamic colors off the main actor when appearance changes.
+    static let border = Color(uiColor: UIColor { @Sendable traits in
         traits.userInterfaceStyle == .dark
             ? UIColor.white.withAlphaComponent(0.10)
             : UIColor(red: 0.886, green: 0.898, blue: 0.918, alpha: 1)
     })
-    static let separator = Color(uiColor: UIColor { traits in
+    static let separator = Color(uiColor: UIColor { @Sendable traits in
         traits.userInterfaceStyle == .dark
             ? UIColor.white.withAlphaComponent(0.07)
             : UIColor(red: 0.910, green: 0.922, blue: 0.937, alpha: 1)
@@ -35,7 +36,7 @@ enum ChatTheme {
         // swiftlint:disable:next large_tuple
         light: (CGFloat, CGFloat, CGFloat), dark: (CGFloat, CGFloat, CGFloat)
     ) -> Color {
-        Color(uiColor: UIColor { traits in
+        Color(uiColor: UIColor { @Sendable traits in
             let rgb = traits.userInterfaceStyle == .dark ? dark : light
             return UIColor(red: rgb.0, green: rgb.1, blue: rgb.2, alpha: 1)
         })

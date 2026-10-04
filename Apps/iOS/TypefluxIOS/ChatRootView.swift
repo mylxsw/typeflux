@@ -3,8 +3,9 @@ import TypefluxChat
 
 struct ChatRootView: View {
     @Bindable var store: ChatStore
+    @Bindable var preferences: ChatPreferences
     @State private var compactColumn: NavigationSplitViewColumn = .sidebar
-    @State private var showSignOut = false
+    @State private var showSettings = false
     @State private var search = ""
     @State private var collapsed: Set<ChatHistorySection> = []
 
@@ -59,8 +60,8 @@ struct ChatRootView: View {
                         .accessibilityLabel("New conversation").accessibilityIdentifier("chat.new")
                 }
             }
-            .confirmationDialog(store.email, isPresented: $showSignOut, titleVisibility: .visible) {
-                Button("Sign out", role: .destructive) { Task { await store.signOut() } }
+            .sheet(isPresented: $showSettings) {
+                ChatSettingsView(store: store, preferences: preferences)
             }
         } detail: {
             ChatDetailView(store: store, onNewConversation: newConversation)
@@ -86,9 +87,9 @@ struct ChatRootView: View {
         HStack {
             Text(store.email).font(.caption.weight(.medium)).lineLimit(1).truncationMode(.middle)
             Spacer(minLength: 8)
-            Button { showSignOut = true } label: {
+            Button { showSettings = true } label: {
                 Image(systemName: "gearshape").foregroundStyle(.secondary).frame(width: 44, height: 44)
-            }.accessibilityLabel("Account").accessibilityIdentifier("chat.account")
+            }.accessibilityLabel("Settings").accessibilityIdentifier("chat.account")
         }
         .padding(.horizontal, 18).padding(.top, 4)
         .background(ChatTheme.background)

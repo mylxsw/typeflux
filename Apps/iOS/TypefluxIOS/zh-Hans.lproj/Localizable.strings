@@ -110,3 +110,25 @@
 "Loading conversation…" = "正在加载对话…";
 "Load this conversation before sending a follow-up." = "请先加载此对话，再继续追问。";
 "Stopped" = "已停止";
+
+/* Settings and account */
+"Settings" = "设置";
+"Appearance" = "外观";
+"Follow system" = "跟随系统";
+"Light appearance" = "浅色";
+"Dark appearance" = "深色";
+"Language" = "语言";
+"Change the app language in iOS Settings." = "在 iOS 系统设置中更改应用语言。";
+"About" = "关于";
+"Version" = "版本";
+"Privacy Policy" = "隐私政策";
+"Done" = "完成";
+"Unable to open Settings" = "无法打开设置";
+"OK" = "好";
+"Open the Settings app and choose Typeflux to change its language." = "请打开系统设置，选择 Typeflux 更改语言。";
+"Status" = "状态";
+"Signed in" = "已登录";
+"Signing out removes this account from this device. Your cloud conversations stay in your account." = "退出后将从此设备移除此账号。云端对话仍保留在你的账号中。";
+"Sign out of Typeflux?" = "退出 Typeflux？";
+"Cancel" = "取消";
+"You'll need to sign in again to access your conversations." = "之后需要重新登录才能访问对话。";

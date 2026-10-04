@@ -62,7 +62,7 @@ DEBUG synthetic service; it is not branch coverage or a per-file minimum.
 The shared package measurement excludes its test sources. UI tests use the
 network-free synthetic service and do not prove live model integration.
 
-| Current v3 check | Result |
+| Earlier v3 check | Result |
 | --- | --- |
 | Shared package tests | 33 passed |
 | Shared production line coverage | 97.91% (374/382 lines) |
@@ -96,6 +96,79 @@ non-reasoning models, search/date-group expansion, login validation, foreground
 recovery, cancellation, Chinese dark appearance, and reaching the last model
 with the keyboard open in landscape. Rendering tests cover reduced motion and
 transparency, slider geometry, theme contrast hierarchy, and constrained cards.
+
+## Chat, settings, and account verification
+
+The follow-up audit exercises the actual shipped views and `ChatStore` with a
+DEBUG-only in-memory service. Shared HTTP/SSE contract tests use URLProtocol.
+These are client and protocol checks, not live backend/model validation.
+
+The audit found and fixed four functional issues:
+
+- Current Mac photos are carried in `attachments[].image`; the mobile projection
+  previously read only legacy `message.image`. Both shapes now render and keep
+  text-only models disabled when photos exist.
+- Late successful sends or reconciliation responses could clear a newer draft
+  or image. Only the submitted values are cleared now; account/conversation
+  isolation still rejects stale responses.
+- Switching appearance could trap when UIKit resolved dynamic colors on a
+  background queue. All custom providers are explicitly Sendable, with a test
+  resolving all 12 colors off the main actor in both appearances.
+- Scrolling the long rich-message fixture could saturate the main thread in
+  SwiftUI lazy placement/scroll-offset updates. Exact `VStack` layout of the
+  loaded snapshot removes that loop. This trades lazy per-message layout for
+  stable scrolling; very large conversation rendering has not been benchmarked.
+  Long streamed output still follows the latest text and reaches the final actions.
+
+Settings now includes a persistent System/Light/Dark preference, the system
+language-settings entry, version, and the existing privacy-policy link. Account
+shows the current email and signed-in state, with explicit cancel/confirm
+sign-out. Registration, password reset, subscription controls, and account
+removal are not implemented. No profile data or balance is fabricated.
+
+Visual corrections also cover a continuous background beneath the composer and
+bottom safe area, and a visible selected appearance in dark mode.
+
+| Flow | Client checks |
+| --- | --- |
+| Conversation lifecycle | New chat, loaded history, date groups, pagination, search and follow-up |
+| Sending and streaming | Text, successive stream stages, output longer than the viewport, completion and another turn |
+| Failure and cancellation | Error remains readable, follow-up clears the old run, stop preserves partial output |
+| Rich responses | Headings, lists, quotes, complete table and horizontal scroll, code copy, folded reasoning, quote into draft |
+| Tools | Folded activity, result/argument switching, waiting for the Mac, cancellation |
+| Images | Native PhotosPicker, preview, remove, reselect, send, Mac attachment display, model capability restriction |
+| Models | Unified model/effort card, Auto/reset, supported level adjustment, no-reasoning models, keyboard and landscape |
+| Settings and account | Light/dark persistence across relaunch, return to System, email/status, cancel/confirm sign-out, login validation |
+
+Screenshots are exported unchanged from Xcode UI-test attachments. The final
+screenshot index is in `docs/images/ios/verification/README.md`; a self-contained
+HTML gallery is attached to GUL-199. All account, model, tool, and response
+contents in these screenshots are explicitly synthetic fixtures.
+
+| Final follow-up check | Result |
+| --- | --- |
+| Shared package tests / production line coverage | 35 passed / 97.95% (383/391) |
+| iOS unit tests | 103 passed |
+| iOS UI flows, including portrait and landscape | 15 passed |
+| iOS production line coverage, excluding DEBUG fixture | 97.68% (5020/5139) |
+| iOS complete target line coverage | 97.73% (5375/5500) |
+| ChatStore line coverage | 98.92% (552/558) |
+| iOS Release simulator build | Passed |
+| Mac shared compatibility, Ask HTTP/SSE and auth regression | 58 passed (32 XCTest + 26 Swift Testing) |
+| SwiftFormat, strict SwiftLint, project/localization plists, scheme XML, shell syntax, diff whitespace | Passed |
+| Native screenshots from the final passing run | 39 |
+
+The complete final iOS run used `scripts/test_ios.sh` with
+`TYPEFLUX_IOS_TEST_RESULT_BUNDLE_PATH` set. Coverage comes from `xccov` across
+that combined unit/UI run, excluding only `SyntheticPreview.swift`; it is not
+branch coverage, pure-unit-only coverage, or a per-file minimum. Screenshots
+were exported with `xcrun xcresulttool export attachments`. Shared coverage uses
+the package's LLVM coverage report. The earlier failing attempts led to the
+fixes above; the final run has no skipped or failing iOS tests.
+
+A real account, production model responses, physical devices, the minimum iOS
+17 runtime, and very large-history performance have not been validated. The
+full Mac suite was not repeated; its previously documented failures remain.
 
 ## Existing macOS full-suite failures
 

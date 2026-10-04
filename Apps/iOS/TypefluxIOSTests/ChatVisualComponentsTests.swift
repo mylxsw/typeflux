@@ -156,6 +156,46 @@ struct ChatVisualComponentsTests {
         }
     }
 
+    @Test func `every custom dynamic theme color resolves correctly off the main actor`() async {
+        let colors = [
+            ChatTheme.accent, ChatTheme.background, ChatTheme.card, ChatTheme.raised,
+            ChatTheme.sidebar, ChatTheme.controlSurface, ChatTheme.popover, ChatTheme.accentText,
+            ChatTheme.accentSoft, ChatTheme.purple, ChatTheme.border, ChatTheme.separator
+        ].map { UIColor($0) }
+        let expectedLight: [[CGFloat]] = [
+            [0.18, 0.43, 0.94, 1], [0.985, 0.985, 0.985, 1], [1, 1, 1, 1],
+            [0.965, 0.965, 0.965, 1], [0.940, 0.940, 0.940, 1], [0.925, 0.925, 0.925, 1],
+            [1, 1, 1, 1], [0.106, 0.341, 0.839, 1], [0.906, 0.937, 1, 1],
+            [0.49, 0.25, 0.94, 1], [0.886, 0.898, 0.918, 1], [0.910, 0.922, 0.937, 1]
+        ]
+        let expectedDark: [[CGFloat]] = [
+            [0.09, 0.55, 1, 1], [0.122, 0.122, 0.122, 1], [0.180, 0.180, 0.180, 1],
+            [0.150, 0.150, 0.150, 1], [0.075, 0.075, 0.075, 1], [0.180, 0.180, 0.180, 1],
+            [0.196, 0.196, 0.196, 1], [0.557, 0.741, 1, 1], [0.082, 0.149, 0.243, 1],
+            [0.71, 0.55, 1, 1], [1, 1, 1, 0.10], [1, 1, 1, 0.07]
+        ]
+        let resolved = await Task.detached { @Sendable in
+            dispatchPrecondition(condition: .notOnQueue(.main))
+            return [UIUserInterfaceStyle.light, .dark].map { style in
+                let traits = UITraitCollection(userInterfaceStyle: style)
+                return colors.map { color in
+                    var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+                    let success = color.resolvedColor(with: traits).getRed(
+                        &red,
+                        green: &green,
+                        blue: &blue,
+                        alpha: &alpha
+                    )
+                    return success ? [red, green, blue, alpha] : []
+                }
+            }
+        }.value
+        for (actual, expected) in zip(resolved.flatMap(\.self), expectedLight + expectedDark) {
+            #expect(actual.count == expected.count)
+            #expect(zip(actual, expected).allSatisfy { abs($0 - $1) < 0.00001 })
+        }
+    }
+
     @Test func `orb and slider preserve dimensions with reduced motion`() throws {
         let orb = ImageRenderer(content: ChatOrb(reduceMotionOverride: true))
         let image = try #require(orb.uiImage)

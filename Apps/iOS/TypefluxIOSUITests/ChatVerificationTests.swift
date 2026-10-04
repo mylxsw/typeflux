@@ -1,0 +1,267 @@
+import XCTest
+
+/// These flows drive the shipped views and store with explicitly offline scenarios.
+final class ChatVerificationTests: XCTestCase {
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+    }
+
+    @MainActor
+    func testSettingsAccountAndSignOutConfirmation() {
+        let app = launch()
+        app.buttons["chat.account"].tap()
+        XCTAssertTrue(app.buttons["settings.account"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["settings.language"].exists)
+        screenshot(app, "qa-settings-light")
+        app.buttons["settings.account"].tap()
+        XCTAssertTrue(app.staticTexts["account.email"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["account.email"].label.contains("preview@example.invalid"))
+        screenshot(app, "qa-account")
+        app.buttons["account.signOut"].tap()
+        XCTAssertTrue(app.buttons.matching(identifier: "account.confirmSignOut").firstMatch
+            .waitForExistence(timeout: 5))
+        screenshot(app, "qa-signout-confirmation")
+        app.buttons.matching(identifier: "account.cancelSignOut").firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["account.email"].exists)
+        app.buttons["account.signOut"].tap()
+        app.buttons.matching(identifier: "account.confirmSignOut").firstMatch.tap()
+        XCTAssertTrue(app.buttons["login.submit"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["login.submit"].isEnabled)
+        screenshot(app, "qa-login")
+    }
+
+    @MainActor
+    func testAppearancePersistsAndCanReturnToSystem() {
+        let app = launch()
+        app.buttons["chat.account"].tap()
+        app.buttons["settings.appearance.dark"].tap()
+        screenshot(app, "qa-settings-dark")
+        app.terminate()
+        app.launchArguments.append("--synthetic-preserve-settings")
+        app.launch()
+        XCTAssertTrue(app.buttons["chat.account"].waitForExistence(timeout: 10))
+        app.buttons["chat.account"].tap()
+        XCTAssertTrue(app.buttons["settings.appearance.dark"].isSelected)
+        app.buttons["settings.appearance.system"].tap()
+        XCTAssertTrue(app.buttons["settings.appearance.system"].isSelected)
+    }
+
+    @MainActor
+    func testRichReplyReasoningToolsCopyAndQuote() {
+        let app = launch("--synthetic-rich")
+        app.buttons["chat.history.preview-rich"].tap()
+        let transcript = app.scrollViews.firstMatch
+        for _ in 0 ..< 5 {
+            transcript.swipeDown()
+        }
+        screenshot(app, "qa-rich-conversation")
+        let activity = app.buttons["chat.activity.rich-tool-call"]
+        reveal(activity, in: transcript, upwards: true)
+        XCTAssertEqual(activity.value as? String, "已收起")
+        activity.tap()
+        let tool = app.buttons["chat.tool.rich-search"]
+        reveal(tool, in: transcript, upwards: true)
+        tool.tap()
+        screenshot(app, "qa-tool-details")
+        XCTAssertTrue(app.buttons["结果"].exists)
+        app.buttons["参数"].tap()
+        screenshot(app, "qa-tool-arguments")
+        tool.tap(); activity.tap()
+        let reasoning = app.buttons["思考了 4 秒"]
+        reveal(reasoning, in: transcript, upwards: true)
+        reasoning.tap()
+        XCTAssertEqual(reasoning.value as? String, "已展开")
+        screenshot(app, "qa-reasoning-expanded")
+        let table = app.scrollViews["表格，可横向滚动"]
+        reveal(table, in: transcript, upwards: true)
+        let start = transcript.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.72))
+        let end = transcript.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.30))
+        start.press(forDuration: 0.01, thenDragTo: end)
+        XCTAssertTrue(app.staticTexts["多端合并"].isHittable)
+        XCTAssertTrue(app.staticTexts["方案"].isHittable)
+        screenshot(app, "qa-markdown-table")
+        table.swipeLeft()
+        XCTAssertTrue(app.staticTexts["适用场景"].isHittable)
+        screenshot(app, "qa-markdown-table-scrolled")
+        let copy = app.buttons["复制代码"]
+        reveal(copy, in: transcript, upwards: true)
+        copy.tap()
+        XCTAssertTrue(app.buttons["已复制"].exists)
+        screenshot(app, "qa-markdown-code")
+        let quote = app.buttons["chat.quote.rich-answer"]
+        reveal(quote, in: transcript, upwards: true)
+        quote.tap()
+        XCTAssertTrue((app.textFields["chat.composer"].value as? String)?.contains("> ") == true)
+        screenshot(app, "qa-quote-draft")
+    }
+
+    @MainActor
+    func testHistoricalPhotoRendersAndPreventsTextOnlyModel() {
+        let app = launch("--synthetic-rich", "--synthetic-dark")
+        app.buttons["chat.history.preview-rich"].tap()
+        let photo = app.images["chat.photo.rich-image-question.0"]
+        reveal(photo, in: app.scrollViews.firstMatch, upwards: false)
+        screenshot(app, "qa-history-photo-dark")
+        app.buttons["modelPicker"].tap()
+        app.buttons["changeModel"].tap()
+        XCTAssertFalse(app.buttons["model-text-preview"].isEnabled)
+        XCTAssertTrue(app.buttons["model-preview"].isEnabled)
+        screenshot(app, "qa-photo-model-restriction")
+    }
+
+    @MainActor
+    func testPhotoPickerPreviewRemoveAndSend() {
+        let app = launch("--synthetic-empty")
+        app.buttons["chat.new"].tap()
+        pickPhoto(app)
+        XCTAssertTrue(app.staticTexts["chat.photo.preview"].waitForExistence(timeout: 8))
+        screenshot(app, "qa-photo-composer")
+        app.buttons["chat.photo.remove"].tap()
+        XCTAssertFalse(app.staticTexts["chat.photo.preview"].exists)
+        pickPhoto(app)
+        XCTAssertTrue(app.staticTexts["chat.photo.preview"].waitForExistence(timeout: 8))
+        enter("请描述这张测试图片。", in: app)
+        app.buttons["chat.send"].tap()
+        let photo = app.images.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.photo.")).firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 8))
+        XCTAssertFalse(app.staticTexts["chat.photo.preview"].exists)
+        screenshot(app, "qa-photo-sent")
+    }
+
+    @MainActor
+    func testStreamingCompletesAndAllowsAnotherTurn() {
+        let app = launch("--synthetic-stream", "--synthetic-stream-slow")
+        app.buttons["chat.history.preview-stream"].tap()
+        enter("给我几个可以开始的步骤。", in: app)
+        app.buttons["chat.send"].tap()
+        XCTAssertTrue(app.buttons["停止生成"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["modelPicker"].isEnabled)
+        screenshot(app, "qa-stream-thinking")
+        let preview = app.otherElements["chat.run.preview"]
+        XCTAssertTrue(preview.waitForExistence(timeout: 15))
+        let latest = app.staticTexts["最后，为下一步留下一个清楚的小动作。"]
+        XCTAssertTrue(latest.waitForExistence(timeout: 15))
+        XCTAssertTrue(latest.isHittable)
+        screenshot(app, "qa-stream-progress")
+        let answer = app.buttons["chat.quote.stream-answer-1"]
+        XCTAssertTrue(answer.waitForExistence(timeout: 30))
+        XCTAssertTrue(answer.isHittable)
+        XCTAssertFalse(app.buttons["停止生成"].exists)
+        XCTAssertTrue(app.buttons["modelPicker"].isEnabled)
+        screenshot(app, "qa-stream-completed")
+        enter("再举一个具体的例子。", in: app)
+        app.buttons["chat.send"].tap()
+        XCTAssertTrue(app.buttons["chat.quote.stream-answer-2"].waitForExistence(timeout: 30))
+        screenshot(app, "qa-multi-turn")
+    }
+
+    @MainActor
+    func testStopGenerationPreservesPartialReply() {
+        let app = launch("--synthetic-stream", "--synthetic-stream-slow")
+        app.buttons["chat.history.preview-stream"].tap()
+        enter("详细说明一下这个建议。", in: app)
+        app.buttons["chat.send"].tap()
+        XCTAssertTrue(app.otherElements["chat.run.preview"].waitForExistence(timeout: 15))
+        app.buttons["停止生成"].tap()
+        XCTAssertTrue(app.staticTexts["chat.run.error"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["chat.header.status"].label, "已停止")
+        XCTAssertTrue(app.otherElements["chat.run.preview"].exists)
+        XCTAssertTrue(app.buttons["modelPicker"].isEnabled)
+        screenshot(app, "qa-stream-stopped")
+    }
+
+    @MainActor
+    func testFailedRunIsReadableAndCanContinue() {
+        let app = launch("--synthetic-failure")
+        app.buttons["chat.history.preview-failure"].tap()
+        XCTAssertTrue(app.staticTexts["chat.run.error"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["chat.header.status"].label, "失败")
+        screenshot(app, "qa-run-failed")
+        enter("请继续说明冲突处理。", in: app)
+        XCTAssertTrue(app.buttons["chat.send"].isEnabled)
+        app.buttons["chat.send"].tap()
+        XCTAssertFalse(app.staticTexts["chat.run.error"].exists)
+        screenshot(app, "qa-failure-followup")
+    }
+
+    @MainActor
+    func testHistoryPaginationSearchAndEmptyConversation() {
+        let app = launch("--synthetic-history")
+        screenshot(app, "qa-history-groups")
+        for _ in 0 ..< 3 {
+            let more = app.buttons["chat.loadMore"]
+            reveal(more, in: app.scrollViews.firstMatch, upwards: true)
+            more.tap()
+        }
+        let search = app.textFields["chat.search"]
+        search.tap(); search.typeText("灵感")
+        XCTAssertTrue(app.buttons["chat.history.history-13"].waitForExistence(timeout: 5))
+        screenshot(app, "qa-history-search")
+        app.buttons["chat.history.history-13"].tap()
+        XCTAssertTrue(app.buttons["chat.quote.history-answer-13"].waitForExistence(timeout: 5))
+        app.buttons["chat.detail.new"].tap()
+        XCTAssertTrue(app.staticTexts["有什么想问的？"].waitForExistence(timeout: 5))
+        screenshot(app, "qa-new-conversation")
+    }
+}
+
+private extension ChatVerificationTests {
+    @MainActor
+    func launch(_ arguments: String...) -> XCUIApplication {
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app
+            .launchArguments = ["--synthetic-preview", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"] +
+            arguments
+        app.launch()
+        XCTAssertTrue(app.buttons["chat.new"].waitForExistence(timeout: 10))
+        return app
+    }
+
+    @MainActor
+    func enter(_ text: String, in app: XCUIApplication) {
+        let field = app.textFields["chat.composer"]
+        field.tap(); field.typeText(text)
+    }
+
+    @MainActor
+    func reveal(_ element: XCUIElement, in scroll: XCUIElement, upwards: Bool) {
+        for _ in 0 ..< 14 {
+            if element.exists, element.isHittable {
+                return
+            }
+            let start = scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: upwards ? 0.72 : 0.30))
+            let end = scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: upwards ? 0.30 : 0.72))
+            start.press(forDuration: 0.01, thenDragTo: end)
+        }
+        XCTAssertTrue(element.isHittable)
+    }
+
+    @MainActor
+    func pickPhoto(_ app: XCUIApplication) {
+        app.buttons["chat.attach"].tap()
+        let photo = app.images.matching(NSPredicate(
+            format: "identifier == %@ OR label BEGINSWITH %@ OR label BEGINSWITH %@",
+            "PXGGridLayout-Info", "照片,", "Photo,"
+        )).firstMatch
+        if !photo.waitForExistence(timeout: 20) {
+            let hierarchy = XCTAttachment(string: app.debugDescription)
+            hierarchy.name = "photo-picker-hierarchy"
+            hierarchy.lifetime = .keepAlways
+            add(hierarchy)
+            XCTFail("The Photos picker must contain the seeded test image.")
+            return
+        }
+        screenshot(app, "qa-photo-picker")
+        // The system's PXG image nodes expose frames but no AX activation point.
+        photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+    }
+
+    @MainActor
+    func screenshot(_ app: XCUIApplication, _ name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+}

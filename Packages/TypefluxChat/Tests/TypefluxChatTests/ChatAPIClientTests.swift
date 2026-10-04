@@ -200,6 +200,46 @@ final class ChatAPIClientTests: XCTestCase {
         }
     }
 
+    func testPhotoSendAndEventStreamPreserveImagesToolsReasoningAndTerminalError() async throws {
+        actor Values {
+            var snapshots: [ChatConversation] = []
+            func append(_ value: ChatConversation) { snapshots.append(value) }
+        }
+        let initial = #"{"id":"chat","title":"Photos","revision":1,"updated_at":"2026-01-02T03:04:05Z","messages":[{"id":"photo","role":"user","text":"Compare","created_at":"2026-01-02T03:04:05Z","image":"data:image/jpeg;base64,mobile","attachments":[{"id":"desktop-photo","kind":"image","name":"reference.jpg","image":"data:image/jpeg;base64,desktop"}]}],"run":{"id":"run","device_id":"phone","status":"running","updated_at":"2026-01-02T03:04:05Z"}}"#
+        let progress = #"{"id":"chat","revision":2,"updated_at":"2026-01-02T03:04:06Z","run":{"id":"run","device_id":"phone","status":"waiting_tool","updated_at":"2026-01-02T03:04:06Z","reasoning":"Checking references","reasoning_milliseconds":1300,"preview":"Partial answer","pending":[{"id":"tool","type":"function","function":{"name":"web_fetch","arguments":"{}"}}]}}"#
+        let terminal = #"{"id":"chat","revision":3,"updated_at":"2026-01-02T03:04:07Z","run":{"id":"run","device_id":"phone","status":"failed","updated_at":"2026-01-02T03:04:07Z","preview":"Partial answer","error":"Tool unavailable"}}"#
+        let (api, session, host) = fixture { request, client, proto in
+            if request.url!.path.hasSuffix("/messages") {
+                let body = try self.body(request)
+                XCTAssertEqual(body["image"] as? String, "data:image/jpeg;base64,mobile")
+                XCTAssertEqual(body["reasoning_effort"] as? String, "high")
+                XCTAssertEqual(body["tools"] as? [String], [])
+                self.finish(request, client, proto, body: "{\"code\":\"OK\",\"data\":\(initial)}")
+            } else {
+                XCTAssertTrue(request.url!.path.hasSuffix("/events"))
+                let wire = "event: snapshot\ndata: \(initial)\n\nevent: progress\ndata: \(progress)\n\nevent: progress\ndata: \(terminal)\n\n"
+                self.finish(request, client, proto, body: wire, contentType: "text/event-stream")
+            }
+        }
+        defer { session.invalidateAndCancel(); FixtureProtocol.registry.remove(host) }
+        let sent = try await api.send(conversationId: "chat", request: .init(deviceId: "phone", text: "Compare",
+            image: "data:image/jpeg;base64,mobile", modelRef: "cloud:vision", reasoningEffort: "high"), token: "access")
+        XCTAssertTrue(sent.run?.isActive == true)
+        let values = Values()
+        try await api.observe(id: "chat", token: "access") { await values.append($0) }
+        let snapshots = await values.snapshots
+        XCTAssertEqual(snapshots.map(\.revision), [1, 2, 3])
+        XCTAssertEqual(snapshots[1].run?.pending.first?.function.name, "web_fetch")
+        XCTAssertEqual(snapshots[1].run?.reasoning, "Checking references")
+        XCTAssertEqual(snapshots[1].run?.reasoningMilliseconds, 1300)
+        XCTAssertEqual(snapshots[1].run?.requiresDesktop, true)
+        XCTAssertEqual(snapshots.last?.messages.first?.imageDataURLs,
+                       ["data:image/jpeg;base64,mobile", "data:image/jpeg;base64,desktop"])
+        XCTAssertEqual(snapshots.last?.run?.error, "Tool unavailable")
+        XCTAssertEqual(snapshots.last?.run?.preview, "Partial answer")
+        XCTAssertEqual(snapshots.last?.run?.isActive, false)
+    }
+
     func testCancellationInterruptsAnOpenEventStream() async throws {
         let started = expectation(description: "Stream opened")
         let (api, session, host) = fixture { request, client, proto in

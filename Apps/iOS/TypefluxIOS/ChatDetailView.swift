@@ -18,13 +18,15 @@ struct ChatDetailView: View {
         GeometryReader { geometry in
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 20) {
+                    // Bottom-anchored lazy height estimation can loop when a rich
+                    // reply enters the viewport. Lay out the loaded snapshot exactly.
+                    VStack(alignment: .leading, spacing: 20) {
                         if store.isLoadingConversation, store.conversation == nil {
                             ProgressView("Loading conversation…").frame(maxWidth: .infinity).padding(.vertical, 50)
                         } else if isEmpty {
                             emptyState.frame(minHeight: max(380, geometry.size.height - 156))
                         } else if let conversation = store.conversation {
-                            ChatTranscriptView(conversation: conversation) { text in
+                            ChatTranscriptView(conversation: conversation, allowsQuote: !store.isSending) { text in
                                 store.draft = ChatPresentation.quote(text, into: store.draft)
                                 editorFocused = true
                             }
@@ -41,7 +43,10 @@ struct ChatDetailView: View {
                         proxy.scrollTo("bottom", anchor: .bottom)
                     }
                 }
-                .safeAreaInset(edge: .bottom, spacing: 0) { composer(availableHeight: geometry.size.height) }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    composer(availableHeight: geometry.size.height)
+                        .background { ChatTheme.background.ignoresSafeArea(.container, edges: .bottom) }
+                }
             }
         }
         .background(ChatTheme.background)
@@ -127,7 +132,7 @@ struct ChatDetailView: View {
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
             }.padding(12).frame(minHeight: 58).chatGlass(corner: 16)
-        }.buttonStyle(.plain)
+        }.buttonStyle(.plain).disabled(store.isSending)
     }
 
     private func composer(availableHeight: CGFloat) -> some View {
@@ -151,9 +156,10 @@ struct ChatDetailView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 5))
                     }
                     Text("Photo attached").font(.caption).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("chat.photo.preview")
                     Button { store.imageDataURL = nil } label: {
                         Image(systemName: "xmark").font(.caption).frame(width: 44, height: 44)
-                    }.accessibilityLabel("Remove photo")
+                    }.accessibilityLabel("Remove photo").accessibilityIdentifier("chat.photo.remove")
                 }.padding(.leading, 8).padding(.trailing, 3)
                     .background(ChatTheme.controlSurface.opacity(0.5), in: Capsule())
                     .padding(.horizontal, 6)
