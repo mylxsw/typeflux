@@ -30,7 +30,45 @@ struct AskModelEffortCard: View {
     var onManage: (() -> Void)?
     var offersCloudSignIn = false
     var close: () -> Void = {}
-    @State var page: Page = .effort
+    @State var page: Page
+    /// The glass menu hosts this card in its own panel, rendered once from a snapshot:
+    /// writes through the bindings reach the model but never redraw the card. These
+    /// copies drive what the card shows and are written through on every change.
+    @State private var liveEffort: AskReasoningEffort
+    @State private var liveReference: String
+
+    init(library: AskModelLibrary, reference: Binding<String>, effort: Binding<AskReasoningEffort>,
+         hasImage: Bool = false, loggedIn: Bool, onManage: (() -> Void)? = nil, offersCloudSignIn: Bool = false,
+         close: @escaping () -> Void = {}, page: Page = .effort) {
+        self.library = library
+        _reference = reference
+        _effort = effort
+        self.hasImage = hasImage
+        self.loggedIn = loggedIn
+        self.onManage = onManage
+        self.offersCloudSignIn = offersCloudSignIn
+        self.close = close
+        _page = State(initialValue: page)
+        _liveEffort = State(initialValue: effort.wrappedValue)
+        _liveReference = State(initialValue: reference.wrappedValue)
+    }
+
+    /// The slider and ↺ change the level the card shows and the composer uses.
+    private var effortSelection: Binding<AskReasoningEffort> {
+        Binding(get: { liveEffort }, set: { value in
+            liveEffort = value
+            effort = value
+        })
+    }
+
+    /// Picking a model may move the level to one it offers; read it back afterwards.
+    private var referenceSelection: Binding<String> {
+        Binding(get: { liveReference }, set: { value in
+            liveReference = value
+            reference = value
+            liveEffort = effort
+        })
+    }
 
     /// Sized like the composer's other glass menus: 13pt rows, 11pt captions.
     static let width: CGFloat = 272
@@ -38,7 +76,7 @@ struct AskModelEffortCard: View {
     static let modelsWidth: CGFloat = 330
 
     private var levels: [AskReasoningEffort] {
-        AskReasoningEffort.levels(for: library.registry.resolve(reference)?.1)
+        AskReasoningEffort.levels(for: library.registry.resolve(liveReference)?.1)
     }
 
     var body: some View {
@@ -49,12 +87,12 @@ struct AskModelEffortCard: View {
     }
 
     @ViewBuilder private var effortPage: some View {
-        let shown = effort.nearest(in: levels)
+        let shown = liveEffort.nearest(in: levels)
         VStack(spacing: 0) {
             HStack(alignment: .center, spacing: 0) {
                 Color.clear.frame(width: 24, height: 24)
                 VStack(spacing: 1) {
-                    Text(levels.isEmpty ? library.name(for: reference) : shown.label)
+                    Text(levels.isEmpty ? library.name(for: liveReference) : shown.label)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(levels.isEmpty ? StudioTheme.textPrimary
                             : AskTheme.reasoningText(shown, defaultColor: StudioTheme.textPrimary))
@@ -62,7 +100,7 @@ struct AskModelEffortCard: View {
                         .animation(.easeOut(duration: 0.2), value: shown)
                     Button { page = .models } label: {
                         HStack(spacing: 2) {
-                            Text(levels.isEmpty ? L("ask.reasoning.changeModel") : library.name(for: reference))
+                            Text(levels.isEmpty ? L("ask.reasoning.changeModel") : library.name(for: liveReference))
                                 .lineLimit(1).truncationMode(.middle)
                             Image(systemName: "chevron.right").font(.system(size: 8, weight: .semibold))
                         }
@@ -75,15 +113,15 @@ struct AskModelEffortCard: View {
                     .accessibilityLabel(L("ask.reasoning.changeModel"))
                 }
                 .frame(maxWidth: .infinity)
-                Button { effort = .providerDefault } label: {
+                Button { effortSelection.wrappedValue = .providerDefault } label: {
                     Image(systemName: "arrow.counterclockwise").font(.system(size: 12, weight: .medium))
                         .foregroundStyle(StudioTheme.textSecondary)
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(AskPressableStyle.subtle)
-                .disabled(levels.isEmpty || effort == .providerDefault)
-                .opacity(levels.isEmpty || effort == .providerDefault ? 0.3 : 1)
+                .disabled(levels.isEmpty || liveEffort == .providerDefault)
+                .opacity(levels.isEmpty || liveEffort == .providerDefault ? 0.3 : 1)
                 .help(L("ask.reasoning.reset"))
                 .accessibilityLabel(L("ask.reasoning.reset"))
             }
@@ -98,7 +136,7 @@ struct AskModelEffortCard: View {
                     .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .padding(.top, 10)
             } else {
-                AskEffortSlider(levels: levels, effort: $effort)
+                AskEffortSlider(levels: levels, effort: effortSelection)
                     .padding(.top, 10)
                 Text(shown.caption)
                     .font(.system(size: 11))
@@ -125,7 +163,7 @@ struct AskModelEffortCard: View {
             }
             .buttonStyle(AskPressableStyle.subtle)
             .padding(.leading, 8).padding(.top, 10)
-            AskModelChoices(library: library, reference: $reference, hasImage: hasImage, loggedIn: loggedIn,
+            AskModelChoices(library: library, reference: referenceSelection, hasImage: hasImage, loggedIn: loggedIn,
                             dismiss: { page = .effort }, composerStyle: true,
                             onManage: onManage.map { manage in { close(); manage() } },
                             offersCloudSignIn: offersCloudSignIn)
