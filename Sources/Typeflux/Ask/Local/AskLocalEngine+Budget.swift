@@ -10,9 +10,22 @@ extension AskLocalEngine {
         return try AskBudgetStore(directory: directory).update(
             conversation: record.conversation.id,
             root: root,
-            initial: initial,
-            change
-        )
+            initial: initial
+        ) { journal in
+            // Legacy journals have run IDs but no device binding. Only the
+            // still-persisted run can witness that binding, before retry replaces it.
+            for (id, reservation) in journal.reservations
+                where reservation.identity == nil && reservation.runId == run.id {
+                journal.reservations[id]?.identity = budgetIdentity(record, runId: run.id, deviceId: run.deviceId)
+                journal.revision += 1
+            }
+            try change(&journal)
+        }
+    }
+
+    private func budgetIdentity(_ record: AskLocalRecord, runId: String, deviceId: String) -> AskBudgetInvocationIdentity {
+        .init(owner: AskRoutedAPI.localOwner, conversationId: record.conversation.id,
+              rootId: record.conversation.run?.budgetRootId ?? "", runId: runId, deviceId: deviceId)
     }
 
     func refreshBudget(_ record: inout AskLocalRecord) throws {
@@ -35,6 +48,8 @@ extension AskLocalEngine {
         _ = try budgetJournal(record) { journal in
             try journal.reserve(.init(
                 runId: record.conversation.run?.id,
+                identity: budgetIdentity(record, runId: record.conversation.run?.id ?? "",
+                                         deviceId: record.conversation.run?.deviceId ?? ""),
                 operationId: operationId,
                 stepId: String(record.conversation.run?.steps ?? 0),
                 callId: callId,
@@ -73,6 +88,13 @@ extension AskLocalEngine {
     func settleInference(_ record: AskLocalRecord, _ receipt: AskInferenceResult) throws {
         guard receipt.usage?.isValid != false else { throw AskBudgetError.invalid }
         _ = try budgetJournal(record) { journal in
+            // An operation ID is not authority to charge a reservation. Match
+            // the recorded invocation, even when its run is no longer current.
+            guard let reservation = journal.reservations[receipt.inferenceId],
+                  reservation.operationId == receipt.inferenceId, reservation.callId == receipt.inferenceId,
+                  reservation.kind == "model", reservation.runId == receipt.runId,
+                  reservation.identity == budgetIdentity(record, runId: receipt.runId, deviceId: receipt.deviceId)
+            else { throw AskBudgetError.invalid }
             let tokens = receipt.usage.map { max($0.totalTokens, $0.promptTokens + $0.completionTokens) } ?? 0
             try journal.settle(
                 receipt.inferenceId,

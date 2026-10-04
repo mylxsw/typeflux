@@ -200,14 +200,19 @@ actor AskLocalEngine: AskAPI {
         return try await continueTools(&record)
     }
 
-    func inferenceResult(conversationId: String, request: AskInferenceResult, token _: String) async throws -> AskConversation {
+    func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation {
+        guard token.isEmpty else { throw conflict() }
         var record = try record(conversationId)
-        guard let run = record.conversation.run, run.id == request.runId, run.deviceId == request.deviceId else { throw conflict() }
+        guard let run = record.conversation.run else { throw conflict() }
         if run.budgetEnabled == true {
             try settleInference(record, request)
             try refreshBudget(&record)
-            if run.status != "waiting_inference" || run.inference?.id != request.inferenceId { return record.conversation }
+            if run.id != request.runId || run.status != "waiting_inference"
+                || run.inference?.id != request.inferenceId {
+                return record.conversation
+            }
         }
+        guard run.id == request.runId, run.deviceId == request.deviceId else { throw conflict() }
         if record.lastInferenceId == request.inferenceId { return record.conversation }
         guard run.status == "waiting_inference", let inference = run.inference, inference.id == request.inferenceId else { throw conflict() }
         record.lastInferenceId = request.inferenceId
@@ -450,9 +455,10 @@ actor AskLocalEngine: AskAPI {
             let runId = record.conversation.run?.id
             let result = await executeBuiltin(call, cloudCalls: record.cloudCalls, budgeted: record.conversation.run?.budgetEnabled == true)
             try settleBudgetTool(record, callId: call.id)
-            guard let latest = records[record.conversation.id] else {
+            guard var latest = records[record.conversation.id] else {
                 throw AskLocalError.message(L("ask.local.notFound"))
             }
+            try refreshBudget(&latest)
             // Cancellation or a replacement run wins over a late tool result.
             guard latest.conversation.run?.id == runId,
                   latest.conversation.run?.status == "running", latest.conversation.run?.pending.first?.id == call.id else {
