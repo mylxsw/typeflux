@@ -26,5 +26,11 @@ jobs:
         with:
           ref: refs/pull/${{ github.event.issue.number }}/merge
 
-      - name: Run tests
+      - name: Test shared chat package
+        run: swift test --package-path Packages/TypefluxChat --enable-code-coverage
+
+      - name: Test iOS chat client
+        run: scripts/test_ios.sh
+
+      - name: Run macOS tests
         run: swift test

@@ -205,7 +205,10 @@ import XCTest
             view.layoutSubtreeIfNeeded()
             let image = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
             view.cacheDisplay(in: view.bounds, to: image)
-            XCTAssertEqual(image.pixelsWide, 760)
+            // Bitmap dimensions are backing pixels, not SwiftUI layout points.
+            let backingSize = view.convertToBacking(view.bounds).size
+            XCTAssertEqual(image.pixelsWide, Int(backingSize.width))
+            XCTAssertEqual(image.pixelsHigh, Int(backingSize.height))
         }
         for error in [AskArtifactError.unavailable, .denied, .invalid, .tooLarge, .unsupported,
                       .corrupt, .expired, .previewDisabled, .dynamicUnavailable] {

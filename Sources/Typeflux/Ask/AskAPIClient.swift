@@ -1,4 +1,5 @@
 import Foundation
+import TypefluxChat
 
 protocol AskAPI: Sendable {
     func usage(id: String, runId: String?, cursor: Int64?, token: String) async throws -> AskUsagePage
@@ -120,29 +121,16 @@ struct AskAPIClient: AskAPI {
     }
 
     private func execute<T: Decodable>(path: String, method: String = "GET", body: Data? = nil, token: String) async throws -> T {
-        let path = "/api/v1/ask/conversations" + path
+        let path = ChatRequest.conversationsPath + path
         let (data, response) = try await executor.execute(apiPath: path) { base in
-            let pieces = path.split(separator: "?", maxSplits: 1).map(String.init)
-            var components = URLComponents(url: AuthEndpointResolver.resolve(baseURL: base, path: pieces[0]), resolvingAgainstBaseURL: false)!
-            if pieces.count == 2 { components.percentEncodedQuery = pieces[1] }
-            var request = URLRequest(url: components.url!)
-            request.httpMethod = method
-            request.httpBody = body
-            request.timeoutInterval = 200
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            request.setValue("1", forHTTPHeaderField: "X-Typeflux-Model-Catalog")
-            if recoveryMetadataEnabled {
-                request.setValue("run_recovery_v1", forHTTPHeaderField: "X-Typeflux-Capabilities")
-            }
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("ask-anything", forHTTPHeaderField: "X-Scenario")
-            return request
+            var headers = ["X-Typeflux-Model-Catalog": "1", "X-Scenario": "ask-anything"]
+            if recoveryMetadataEnabled { headers["X-Typeflux-Capabilities"] = "run_recovery_v1" }
+            return ChatRequest.make(baseURL: base, path: path, method: method, body: body,
+                                        token: token, headers: headers)
         }
-        if response.statusCode == 401 { throw AuthError.unauthorized }
-        let envelope = try AskCoding.decoder().decode(APIResponse<T>.self, from: data)
-        guard (200 ..< 300).contains(response.statusCode), envelope.code == "OK", let value = envelope.data else {
-            throw AuthError.serverError(code: envelope.code, message: envelope.message)
-        }
-        return value
+        do { return try ChatRequest.decode(data: data, statusCode: response.statusCode) }
+        catch ChatAPIError.unauthorized { throw AuthError.unauthorized }
+        catch let ChatAPIError.server(code, message) { throw AuthError.serverError(code: code, message: message) }
+        catch { throw AuthError.invalidResponse }
     }
 }

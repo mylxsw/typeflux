@@ -1,4 +1,5 @@
 import Foundation
+import TypefluxChat
 
 struct AskToolDefinition: Codable, Equatable, Sendable {
     var name: String
@@ -6,16 +7,7 @@ struct AskToolDefinition: Codable, Equatable, Sendable {
     var parameters: JSONValue
 }
 
-struct AskToolCall: Codable, Identifiable, Equatable, Sendable {
-    struct Function: Codable, Equatable, Sendable {
-        var name: String
-        var arguments: String
-    }
-    var id: String
-    var type: String?
-    var function: Function
-    var thoughtSignature: String?
-}
+typealias AskToolCall = ChatToolCall
 
 struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     var id: String
@@ -109,11 +101,7 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
     var memoryOff: Bool?
 }
 
-struct AskConversationSummary: Codable, Identifiable, Equatable, Sendable {
-    @AskConversationID var id: String
-    var title: String
-    var updatedAt: Date
-}
+typealias AskConversationSummary = ChatConversationSummary
 
 struct AskSendRequest: Codable, Equatable, Sendable {
     var id: String
@@ -271,51 +259,5 @@ struct AskDraft: Codable, Equatable, Sendable {
     static var followUp: AskDraft { AskDraft(includeScreenshot: false) }
 }
 
-enum AskCoding {
-    static func encoder() -> JSONEncoder {
-        let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        encoder.dateEncodingStrategy = .iso8601
-        return encoder
-    }
-
-    static func decoder() -> JSONDecoder {
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .custom { decoder in
-            let value = try decoder.singleValueContainer().decode(String.self)
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            if let date = formatter.date(from: value) { return date }
-            formatter.formatOptions = [.withInternetDateTime]
-            if let date = formatter.date(from: value) { return date }
-            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Invalid date"))
-        }
-        return decoder
-    }
-}
-
-/// PostgreSQL UUID columns return lowercase, while legacy JSON snapshots retain
-/// the client's uppercase spelling. Identity must be identical at both boundaries.
-@propertyWrapper
-struct AskConversationID: Codable, Equatable, Sendable {
-    private var value: String
-    var wrappedValue: String {
-        get { value }
-        set { value = Self.canonical(newValue) }
-    }
-    init(wrappedValue: String) { value = Self.canonical(wrappedValue) }
-    init(from decoder: Decoder) throws {
-        value = Self.canonical(try decoder.singleValueContainer().decode(String.self))
-    }
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(value)
-    }
-    static func canonical(_ id: String) -> String {
-        UUID(uuidString: id)?.uuidString.lowercased() ?? id
-    }
-    static func legacy(_ id: String) -> String {
-        UUID(uuidString: id)?.uuidString ?? id
-    }
-}
+typealias AskCoding = ChatCoding
+typealias AskConversationID = ChatConversationID
